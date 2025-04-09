@@ -8,7 +8,7 @@ import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import axios from "@/common/axios";
-import { type ExportSelection } from "./ExportDialog";
+import { type ExportSelection } from "./common";
 import { type Validator } from "../util/Validator";
 import { observer } from "mobx-react-lite";
 import { type Repo } from "./repositories/common";

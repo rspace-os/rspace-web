@@ -41,6 +41,7 @@ import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
 import Divider from "@mui/material/Divider";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import useViewportDimensions from "../util/useViewportDimensions";
+import { type ExportSelection } from "./common";
 
 type ExportConfig = {|
   archiveType: string,
@@ -93,29 +94,6 @@ const DEFAULT_STATE = {
  * the value that RSpace delivers for our users as it is one of the major
  * outflows of their data from our system.
  */
-
-export type ExportSelection =
-  | {|
-      type: "selection",
-      /*
-       * Note that if these arrays are larger than 100, the network call to
-       * trigger the export will fail.
-       */
-      exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">,
-      exportNames: Array<string>,
-      exportIds: $ReadOnlyArray<string>,
-    |}
-  | {|
-      type: "group",
-      groupId: string,
-      groupName: string,
-      exportIds: Array<mixed>,
-    |}
-  | {|
-      type: "user",
-      username: string,
-      exportIds: Array<mixed>,
-    |};
 
 type ExportDialogArgs = {|
   open: boolean,

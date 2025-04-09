@@ -15,7 +15,8 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import ExportDialog, { type ExportSelection } from "../ExportDialog";
+import ExportDialog from "../ExportDialog";
+import { type ExportSelection } from "../common";
 import fc from "fast-check";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
