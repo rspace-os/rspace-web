@@ -1,0 +1,18 @@
+//@flow
+
+type Key = string;
+import { type Validator } from "../util/Validator";
+
+type Pane = {|
+  key: Key,
+  prev: ?Pane,
+  next: ?Pane,
+  validator: Validator,
+  title: string,
+|};
+
+declare export const makePane: (Key, string) => Pane;
+declare export const appendPane: (Pane, Pane) => void;
+declare export const numberOfPanes: (Pane) => number;
+declare export const getIndexOfPane: (Pane, Pane) => number;
+declare export const getPaneByKey: (Pane, string) => Pane;
