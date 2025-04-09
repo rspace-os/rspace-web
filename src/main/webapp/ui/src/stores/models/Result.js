@@ -1324,6 +1324,7 @@ export default class Result
         });
         const newIGSN = new IdentifierModel(response.data, globalId, ApiService);
         this.identifiers = this.identifiers.concat(newIGSN);
+        getRootStore().searchStore.search.replaceResult(this);
         getRootStore().uiStore.addAlert(
           mkAlert({
             message: `Identifier ${response.data.doi} created.`,
