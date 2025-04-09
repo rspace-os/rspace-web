@@ -1,0 +1,30 @@
+//@flow
+
+import { type Node } from "react";
+import { type HtmlXmlExportDetailsArgs } from "./HtmlXmlExport";
+import { type PdfExportDetailsArgs } from "./PdfExport";
+import { type WordExportDetailsArgs } from "./WordExport";
+import { type Validator } from "../util/Validator";
+
+type FormatSpecificArgs =
+  | {|
+      exportType: "pdf",
+      ...PdfExportDetailsArgs,
+    |}
+  | {|
+      exportType: "doc",
+      ...WordExportDetailsArgs,
+    |}
+  | {|
+      exportType: "html" | "xml",
+      ...HtmlXmlExportDetailsArgs,
+    |};
+
+type FormatSpecificOptionsArgs = {|
+  ...FormatSpecificArgs,
+  validator: Validator,
+|};
+
+declare export default function FormatSpecificOptions(
+  FormatSpecificOptionsArgs
+): Node;
