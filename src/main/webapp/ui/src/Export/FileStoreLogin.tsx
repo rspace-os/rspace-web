@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
@@ -10,19 +8,19 @@ import FormHelperText from "@mui/material/FormHelperText";
 import LoadingFade from "../components/LoadingFade";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
-import { type FileSystemId } from "./ExportFileStore";
+import { type FileSystemId } from "./common";
 
-type FileStoreLoginArgs = {|
-  hideCancelButton: boolean,
-  callBack: () => void,
-  fileSystemId: FileSystemId,
-|};
+type FileStoreLoginArgs = {
+  hideCancelButton: boolean;
+  callBack: () => void;
+  fileSystemId: FileSystemId;
+};
 
 export default function FileStoreLogin({
   hideCancelButton,
   callBack,
   fileSystemId,
-}: FileStoreLoginArgs): Node {
+}: FileStoreLoginArgs): React.ReactNode {
   const [userName, setUserName] = useState("");
   const [userNameError, setUserNameError] = useState(false);
 
@@ -49,14 +47,7 @@ export default function FileStoreLogin({
     setLoading(true);
 
     axios
-      .post<
-        {|
-          fileSystemId: typeof fileSystemId,
-          nfsusername: string,
-          nfspassword: string,
-        |},
-        string
-      >(url, {
+      .post<string>(url, {
         fileSystemId,
         nfsusername: userName,
         nfspassword: password,
@@ -148,10 +139,7 @@ export default function FileStoreLogin({
           autoHideDuration={6000}
           onClose={() => setToast(false)}
         >
-          <SnackbarContent
-            onClose={() => setToast(false)}
-            message={`Logged in as ${userName}`}
-          />
+          <SnackbarContent message={`Logged in as ${userName}`} />
         </Snackbar>
       </Grid>
       <LoadingFade loading={loading} />
