@@ -19,3 +19,4 @@ export type ExportSelection =
       exportIds: Array<mixed>,
     |};
 
+export type PageSize = "A4" | "LETTER";

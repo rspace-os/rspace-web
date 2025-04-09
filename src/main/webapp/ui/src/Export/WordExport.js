@@ -8,7 +8,7 @@ import Select from "@mui/material/Select";
 import Grid from "@mui/material/Grid";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import { type PageSize } from "./FormatSpecificOptions";
+import { type PageSize } from "./common";
 
 export type WordExportDetails = {|
   exportFormat: "WORD",
