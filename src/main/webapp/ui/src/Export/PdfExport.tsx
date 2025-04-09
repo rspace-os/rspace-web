@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -11,38 +9,37 @@ import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import { type PageSize } from "./common";
 
-export type PdfExportDetails = {|
-  exportFormat: "PDF",
-  exportName: string,
-  provenance: boolean,
-  comments: boolean,
-  annotations: boolean,
-  restartPageNumberPerDoc: boolean,
-  pageSize: PageSize,
-  defaultPageSize: PageSize,
-  dateType: "EXP" | "NEW" | "UPD",
-  includeFooterAtEndOnly: boolean,
-  setPageSizeAsDefault: boolean,
-  includeFieldLastModifiedDate: boolean,
-|};
+export type PdfExportDetails = {
+  exportFormat: "PDF";
+  exportName: string;
+  provenance: boolean;
+  comments: boolean;
+  annotations: boolean;
+  restartPageNumberPerDoc: boolean;
+  pageSize: PageSize;
+  defaultPageSize: PageSize;
+  dateType: "EXP" | "NEW" | "UPD";
+  includeFooterAtEndOnly: boolean;
+  setPageSizeAsDefault: boolean;
+  includeFieldLastModifiedDate: boolean;
+};
 
-export type PdfExportDetailsArgs = {|
-  exportDetails: PdfExportDetails,
-  updateExportDetails: <T: $Keys<PdfExportDetails>>(
-    T,
-    PdfExportDetails[T]
-  ) => void,
-|};
+export type PdfExportDetailsArgs = {
+  exportDetails: PdfExportDetails;
+  updateExportDetails: <T extends keyof PdfExportDetails>(
+    key: T,
+    value: PdfExportDetails[T]
+  ) => void;
+};
 
-type PdfExportArgs = {|
-  ...PdfExportDetailsArgs,
-  validations: {|
-    submitAttempt: boolean,
-    inputValidations: {|
-      exportName: boolean,
-    |},
-  |},
-|};
+type PdfExportArgs = PdfExportDetailsArgs & {
+  validations: {
+    submitAttempt: boolean;
+    inputValidations: {
+      exportName: boolean;
+    };
+  };
+};
 
 const checkboxes = {
   provenance: "Include provenance information",
@@ -64,7 +61,7 @@ export default function PdfExport({
   },
   validations,
   updateExportDetails,
-}: PdfExportArgs): Node {
+}: PdfExportArgs): React.ReactNode {
   return (
     <Grid container direction="column" spacing={2}>
       <Grid item>
@@ -94,7 +91,7 @@ export default function PdfExport({
             fullWidth
             value={pageSize}
             onChange={({ target: { value } }) =>
-              updateExportDetails("pageSize", value)
+              updateExportDetails("pageSize", value as PageSize)
             }
             inputProps={{ name: "pageSize", id: "pageSize" }}
             data-test-id="pdf-size"
@@ -130,7 +127,7 @@ export default function PdfExport({
             fullWidth
             value={dateType}
             onChange={({ target: { value } }) =>
-              updateExportDetails("dateType", value)
+              updateExportDetails("dateType", value as "EXP" | "NEW" | "UPD")
             }
             inputProps={{ name: "dateType", id: "dateType" }}
             data-test-id="date-type"
@@ -148,23 +145,25 @@ export default function PdfExport({
         </Grid>
       </Grid>
       <Grid item container direction="column">
-        {Object.keys(checkboxes).map((k) => (
-          <Grid item key={k}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={rest[k]}
-                  onChange={({ target: { checked } }) =>
-                    updateExportDetails(k, checked)
-                  }
-                  color="primary"
-                  data-test-id={k}
-                />
-              }
-              label={checkboxes[k]}
-            />
-          </Grid>
-        ))}
+        {(Object.keys(checkboxes) as Array<keyof typeof checkboxes>).map(
+          (k) => (
+            <Grid item key={k}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={rest[k]}
+                    onChange={({ target: { checked } }) =>
+                      updateExportDetails(k, checked)
+                    }
+                    color="primary"
+                    data-test-id={k}
+                  />
+                }
+                label={checkboxes[k]}
+              />
+            </Grid>
+          )
+        )}
       </Grid>
     </Grid>
   );
