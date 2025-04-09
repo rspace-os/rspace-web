@@ -1,41 +1,38 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Grid from "@mui/material/Grid";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
 import TextField from "@mui/material/TextField";
 
-export type HtmlXmlExportDetails = {|
-  maxLinkLevel: number,
-  archiveType: "html" | "xml",
-  description: string,
-  allVersions: boolean,
-|};
+export type HtmlXmlExportDetails = {
+  maxLinkLevel: number;
+  archiveType: "html" | "xml";
+  description: string;
+  allVersions: boolean;
+};
 
-export type HtmlXmlExportDetailsArgs = {|
-  exportDetails: HtmlXmlExportDetails,
+export type HtmlXmlExportDetailsArgs = {
+  exportDetails: HtmlXmlExportDetails;
   updateExportDetails: (
-    $Keys<HtmlXmlExportDetails>,
-    $Values<HtmlXmlExportDetails>
-  ) => void,
-|};
+    key: keyof HtmlXmlExportDetails,
+    value: HtmlXmlExportDetails[keyof HtmlXmlExportDetails]
+  ) => void;
+};
 
-type HtmlXmlExportArgs = {|
-  ...HtmlXmlExportDetailsArgs,
-  validations: {|
-    submitAttempt: boolean,
-    inputValidations: {|
-      exportName: boolean,
-    |},
-  |},
-|};
+type HtmlXmlExportArgs = HtmlXmlExportDetailsArgs & {
+  validations: {
+    submitAttempt: boolean;
+    inputValidations: {
+      exportName: boolean;
+    };
+  };
+};
 
 export default function HtmlXmlExport({
   exportDetails: { maxLinkLevel, description },
   updateExportDetails,
-}: HtmlXmlExportArgs): Node {
+}: HtmlXmlExportArgs): React.ReactNode {
   return (
     <Grid container direction="column" spacing={1}>
       <Grid item>
