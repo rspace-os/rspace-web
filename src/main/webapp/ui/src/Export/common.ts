@@ -33,3 +33,58 @@ export type ExportSelection =
  * When generating PDFs, the user can select between A4 and LETTER page sizes.
  */
 export type PageSize = "A4" | "LETTER";
+
+/*
+ * Documents included in the export can reference files in external filestores.
+ * If the user chooses, they can include those files in the export.
+ */
+
+type Path = string;
+
+/**
+ * A link to a file in an external filestore.
+ */
+export type FileLink = {
+  type: "file";
+  size: number;
+  fileSystemFullPath: Path;
+  path: Path;
+};
+
+/**
+ * A link to a folder in an external filestore.
+ */
+export type FolderLink = {
+  type: "folder";
+  // eslint-disable-next-line no-use-before-define
+  content: Array<MixedLink>;
+  fileSystemFullPath: Path;
+  size: null;
+};
+
+type FoundFileLink = {
+  linkType: "file" | "directory";
+  path: Path;
+};
+
+/**
+ * Either a link to file or a folder in an external filestore.
+ */
+export type MixedLink = FileLink | FolderLink;
+
+/**
+ * The Id of an external file system.
+ */
+export type FileSystemId = string;
+
+/**
+ * The metadata associated with an external file system.
+ */
+export type FileSystem = {
+  id: FileSystemId;
+  name: string;
+  foundNfsLinks: Array<FoundFileLink>;
+  loggedAs: string | null;
+  checkedNfsLinks: Array<MixedLink | null>;
+  checkedNfsLinkMessages: { [path: Path]: string };
+};

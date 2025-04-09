@@ -14,7 +14,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { type FileSystem } from "../ExportFileStore";
+import { type FileSystem } from "../common";
 import * as ArrayUtils from "../../util/ArrayUtils";
 
 type FoundLinksListingArgs = {|
