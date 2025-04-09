@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -30,21 +28,23 @@ const WORD_ERRORS = [
   "All selected items are attachments — there are no RSpace documents to export.",
 ];
 
-type FormatChoiceArgs = {|
-  exportConfigUpdate: (("repoData", $ReadOnlyArray<Repo>) => void) &
-    (("archiveType", ArchiveType) => void) &
-    (("fileStores", boolean) => void) &
-    (("allVersions", boolean) => void) &
-    (("repository", boolean) => void),
-  exportSelection: ExportSelection,
-  validator: Validator,
-  archiveType: ArchiveType | "",
-  allowFileStores: boolean,
-  repoSelected: boolean,
-  allVersions: boolean,
-  fileStoresSelected: boolean,
-  updateFileStores: ("includeNfsFiles", boolean) => void,
-|};
+type FormatChoiceArgs = {
+  exportConfigUpdate: {
+    (key: "repoData", repos: ReadonlyArray<Repo>): void;
+    (key: "archiveType", archiveType: ArchiveType): void;
+    (key: "fileStores", includeFilesInFilestores: boolean): void;
+    (key: "allVersions", allVersions: boolean): void;
+    (key: "repository", exportToRepository: boolean): void;
+  };
+  exportSelection: ExportSelection;
+  validator: Validator;
+  archiveType: ArchiveType | "";
+  allowFileStores: boolean;
+  repoSelected: boolean;
+  allVersions: boolean;
+  fileStoresSelected: boolean;
+  updateFileStores: (key: "includeNfsFiles", incluedNfsFiles: boolean) => void;
+};
 
 function FormatChoice({
   exportConfigUpdate,
@@ -56,7 +56,7 @@ function FormatChoice({
   allVersions,
   fileStoresSelected,
   updateFileStores,
-}: FormatChoiceArgs): Node {
+}: FormatChoiceArgs): React.ReactNode {
   const [msgBlockingRepoChoice, setMsgBlockingRepoChoice] = useState(
     Optional.present("Loading")
   );
@@ -70,12 +70,13 @@ function FormatChoice({
 
     axios
       .get<
-        | Array<{ ...Repo, options: { [Repo["repoCfg"]]: mixed } }>
-        | { exceptionMessage: string, ... }
+        | Array<Omit<Repo, "repoCfg"> & { options: Object }>
+        | { exceptionMessage: string }
       >(url)
       .then((response) => {
         const repos = response.data;
-        if (repos.length === 0 || repos.exceptionMessage !== void 0) {
+        if (!Array.isArray(repos)) throw new Error(repos.exceptionMessage);
+        if (repos.length === 0) {
           setMsgBlockingRepoChoice(
             Optional.present(
               "You have not setup a repository, to do so please activate them within Apps"
@@ -83,10 +84,7 @@ function FormatChoice({
           );
           return;
         }
-
         setMsgBlockingRepoChoice(Optional.empty());
-
-        // $FlowExpectedError[incompatible-call]
         exportConfigUpdate(
           "repoData",
           repos.flatMap((repo) => {
@@ -100,12 +98,15 @@ function FormatChoice({
                */
               const keys = Object.keys(repo.options);
               if (keys.length) {
-                return keys.map((k) => ({
-                  repoCfg: k,
-                  // $FlowExpectedError[incompatible-use]
-                  label: repo.options[k]._label,
-                  ...repo,
-                }));
+                return keys.map(
+                  (k) =>
+                    ({
+                      repoCfg: k,
+                      //@ts-expect-error Options is poorly typed
+                      label: repo.options[k]._label,
+                      ...repo,
+                    } as Repo)
+                );
               }
               return [];
             }
@@ -114,7 +115,7 @@ function FormatChoice({
              * destination for each of the other repository services so we
              * just copy the object from the API
              */
-            return { repoCfg: -1, ...repo };
+            return [{ repoCfg: -1, ...repo }];
           })
         );
       })
@@ -131,13 +132,13 @@ function FormatChoice({
     let disabled = false;
     let allMedia = false;
     let isSystem = false;
-    // $FlowExpectedError[cannot-resolve-name] Global variable
+    // @ts-expect-error Global variable
     const isGallery = typeof isGalleryPage !== "undefined" && isGalleryPage;
 
     if (exportSelection.type === "selection") {
       // if all are media, there's nothing to export in this format: RSpac1333
       allMedia = exportSelection.exportTypes.every((n) => n === "MEDIA_FILE");
-      // $FlowExpectedError[cannot-resolve-name] Global variable
+      // @ts-expect-error Global variable
     } else if (typeof isSystemFolderChecked === "function") {
       isSystem = true;
     }
@@ -200,7 +201,7 @@ function FormatChoice({
   const handleChange = ({
     target: { value },
   }: {
-    target: { value: ArchiveType },
+    target: { value: ArchiveType };
   }) => {
     exportConfigUpdate("archiveType", value);
     if (value === "pdf" || value === "doc")
@@ -215,6 +216,7 @@ function FormatChoice({
         aria-label="Select Export"
         name="exportType"
         value={archiveType}
+        // @ts-expect-error TypeScript doesn't realise that the value can only be one of the ArchiveType values
         onChange={handleChange}
       >
         <Stack spacing={2}>
@@ -373,4 +375,4 @@ function FormatChoice({
   );
 }
 
-export default (observer(FormatChoice): typeof FormatChoice);
+export default observer(FormatChoice);
