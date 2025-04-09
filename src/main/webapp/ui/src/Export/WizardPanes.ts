@@ -1,5 +1,3 @@
-//@flow
-
 import { type Validator, mkValidator } from "../util/Validator";
 
 // A unique identifier for each pane
@@ -8,18 +6,18 @@ type Key = string;
 /*
  * This is a doubly-linked list to model the panes of the wizard.
  */
-type Pane = {|
-  key: Key,
+type Pane = {
+  key: Key;
 
-  prev: ?Pane, // null means it is the first pane
-  next: ?Pane, // null means it is the last pane
+  prev: Pane | null; // null means it is the first pane
+  next: Pane | null; // null means it is the last pane
 
   // for validating that the next pane can be moved to
-  validator: Validator,
+  validator: Validator;
 
   // title displayed at the top of the dialog
-  title: string,
-|};
+  title: string;
+};
 
 export const makePane = (key: Key, title: string): Pane => ({
   key,
