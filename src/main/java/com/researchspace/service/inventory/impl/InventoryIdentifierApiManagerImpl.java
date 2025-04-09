@@ -101,16 +101,24 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   public List<ApiInventoryDOI> registerBulkIdentifiers(Integer igsnsToAllocate, User user) {
     List<ApiInventoryDOI> result = new LinkedList<>();
     ApiInventoryDOI currentDoi;
+    int createdOnDatacite = 0;
     for (int i = 0; i < igsnsToAllocate; i++) {
       try {
         currentDoi = createNewDoi(user);
         DigitalObjectIdentifier dbObj = apiIdentifiersHelper.createDoiToSave(currentDoi, user);
+        createdOnDatacite++;
         log.info("New IGSN allocated: {}", dbObj.getIdentifier());
 
         dbObj = doiDao.save(dbObj);
         result.add(new ApiInventoryDOI(dbObj));
       } catch (Exception ex) {
-        log.warn("It was not possible to allocate IGSN: {}", ex.getMessage(), ex);
+        log.warn(
+            "It was not possible to allocate IGSN: {}. "
+                + "Requested registration of {} draft IGSNs, but only managed to register {}",
+            ex.getMessage(),
+            igsnsToAllocate,
+            createdOnDatacite,
+            ex);
         throw ex;
       }
     }
