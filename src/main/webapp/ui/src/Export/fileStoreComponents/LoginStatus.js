@@ -13,7 +13,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import FileStoreLogin from "../FileStoreLogin";
-import { type FileSystem } from "../ExportFileStore";
+import { type FileSystem } from "../common";
 
 type LoginStatusArgs = {|
   // The filesystems to which linked files belong
