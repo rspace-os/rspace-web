@@ -268,10 +268,14 @@ function ExportRepo({
 
   const fetchCrossrefFunders = async (query: string) => {
     try {
+      const searchParams = new URLSearchParams();
+      if (query) {
+        searchParams.append("query", query);
+      }
       const { data } = await axios.get<{|
         message: {| items: Array<{ name: string, ... }> |},
       |}>("https://api.crossref.org/funders", {
-        params: query ? { query } : {},
+        params: searchParams,
       });
       runInAction(() => {
         state.crossrefFunders = data.message.items;
