@@ -56,7 +56,7 @@ type ExportConfig = {|
 type NfsConfig = {|
   excludedFileExtensions: string, // comma-separated
   includeNfsFiles: boolean,
-  maxFileSizeInMB: number,
+  maxFileSizeInMB: number | string,
 |};
 
 type ExportPlanId = number;
@@ -72,7 +72,7 @@ type ExportFileStoreArgs = {|
   exportConfig: ExportConfig,
   exportSelection: ExportSelection,
   nfsConfig: NfsConfig,
-  updateFilters: (("maxFileSizeInMB", number) => void) &
+  updateFilters: (("maxFileSizeInMB", number | string) => void) &
     (("excludedFileExtensions", string) => void),
   validator: Validator,
 |};
@@ -97,7 +97,7 @@ export default function ExportFileStore({
     Array<FileSystem>
   > = useState([]);
   const [planId, setPlanId]: UseState<ExportPlanId> = useState(0);
-  const [maxFileSizeInMB, setMaxFileSizeInMB]: UseState<number> = useState(
+  const [maxFileSizeInMB, setMaxFileSizeInMB]: UseState<number | string> = useState(
     nfsConfig.maxFileSizeInMB
   );
   const [excludedFileExtensions, setExcludedFileExtensions]: UseState<string> =

@@ -72,7 +72,7 @@ const DEFAULT_STATE = {
   nfsConfig: {
     excludedFileExtensions: "",
     includeNfsFiles: false,
-    maxFileSizeInMB: 50,
+    maxFileSizeInMB: (50: number | string),
   },
   exportDetails: ({
     archiveType: "",
