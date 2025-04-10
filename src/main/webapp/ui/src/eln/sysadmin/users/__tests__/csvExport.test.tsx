@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -11,15 +10,16 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../../theme";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
-import USER_LISTING from "./userListing";
-import PDF_CONFIG from "./pdfConfig";
+import axios from "@/common/axios";
+import USER_LISTING from "./userListing.json";
+import PDF_CONFIG from "./pdfConfig.json";
 import userEvent from "@testing-library/user-event";
 
 // Replace JSDOM's Blob with node's so that we have .text()
-// $FlowExpectedError[cannot-resolve-module]
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-member-access
 window.Blob = require("node:buffer").Blob;
 
+// @ts-expect-error global
 window.RS = { newFileStoresExportEnabled: false };
 
 const mockAxios = new MockAdapter(axios);
@@ -33,13 +33,11 @@ afterEach(cleanup);
 describe("CSV Export", () => {
   describe("Selection", () => {
     test("When no rows are selected, every row of the current page should be included in the export.", async () => {
-      let blob;
-      const createObjectURL = jest
-        .fn<[Blob], string>()
-        .mockImplementation((b) => {
-          blob = b;
-          return "";
-        });
+      let blob: Blob | undefined;
+      const createObjectURL = jest.fn().mockImplementation((b: Blob) => {
+        blob = b;
+        return "";
+      });
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = jest.fn();
 
@@ -71,13 +69,11 @@ describe("CSV Export", () => {
     });
 
     test("When one rows is selected, just it should be included in the csv export.", async () => {
-      let blob;
-      const createObjectURL = jest
-        .fn<[Blob], string>()
-        .mockImplementation((b) => {
-          blob = b;
-          return "";
-        });
+      let blob: Blob | undefined;
+      const createObjectURL = jest.fn().mockImplementation((b: Blob) => {
+        blob = b;
+        return "";
+      });
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = jest.fn();
 
@@ -116,13 +112,11 @@ describe("CSV Export", () => {
   });
   describe("Column", () => {
     test("All of the columns should be included in the CSV file.", async () => {
-      let blob;
-      const createObjectURL = jest
-        .fn<[Blob], string>()
-        .mockImplementation((b) => {
-          blob = b;
-          return "";
-        });
+      let blob: Blob | undefined;
+      const createObjectURL = jest.fn().mockImplementation((b: Blob) => {
+        blob = b;
+        return "";
+      });
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = jest.fn();
 
@@ -170,13 +164,11 @@ describe("CSV Export", () => {
     });
     test("The usage column should be a precise number.", async () => {
       const user = userEvent.setup();
-      let blob;
-      const createObjectURL = jest
-        .fn<[Blob], string>()
-        .mockImplementation((b) => {
-          blob = b;
-          return "";
-        });
+      let blob: Blob | undefined;
+      const createObjectURL = jest.fn().mockImplementation((b: Blob) => {
+        blob = b;
+        return "";
+      });
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = jest.fn();
 
