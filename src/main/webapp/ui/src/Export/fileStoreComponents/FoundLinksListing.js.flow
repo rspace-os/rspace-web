@@ -1,0 +1,9 @@
+//@flow
+
+import { type Node } from "react";
+import { type FileSystem } from "../common";
+
+declare export default function FoundLinksListing({|
+  filesCount: number,
+  fileSystems: Array<FileSystem>,
+|}): Node;

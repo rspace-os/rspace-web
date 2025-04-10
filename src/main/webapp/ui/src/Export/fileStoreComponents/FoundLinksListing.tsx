@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Dialog from "@mui/material/Dialog";
@@ -14,13 +12,13 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { type FileSystem } from "../common";
 
-type FoundLinksListingArgs = {|
+type FoundLinksListingArgs = {
   // The total number of files found across all of the filestores
-  filesCount: number,
+  filesCount: number;
 
   // The filesystems to which linked files belong
-  fileSystems: Array<FileSystem>,
-|};
+  fileSystems: Array<FileSystem>;
+};
 
 /**
  * This component displays a card that shows some summary information
@@ -31,7 +29,7 @@ type FoundLinksListingArgs = {|
 export default function FoundLinksListing({
   filesCount,
   fileSystems,
-}: FoundLinksListingArgs): Node {
+}: FoundLinksListingArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
 
   return (
