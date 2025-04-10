@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, act } from "@testing-library/react";
@@ -9,7 +8,7 @@ import "@testing-library/jest-dom";
 import ExportRepoUser from "../ExportRepoUser";
 import { type Person } from "../repositories/common";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 
 const mockAxios = new MockAdapter(axios, { onNoMatch: "throwException" });
 
@@ -19,13 +18,13 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const renderExportRepoUser = ({
+function renderExportRepoUser({
   people,
   updatePeople,
 }: {
-  updatePeople?: (Array<Person>) => void,
-  people?: Array<Person>,
-} = {}) => {
+  updatePeople?: (people: Array<Person>) => void;
+  people?: Array<Person>;
+} = {}) {
   return render(
     <ExportRepoUser
       initialPeople={people ?? []}
@@ -34,7 +33,7 @@ const renderExportRepoUser = ({
       submitAttempt={false}
     />
   );
-};
+}
 
 describe("ExportRepoUser", () => {
   test("If no people are passed as prop, then the current user should be fetched.", async () => {
@@ -45,8 +44,8 @@ describe("ExportRepoUser", () => {
       },
     });
 
-    const updatePeople = jest.fn<[Array<Person>], void>();
-    await act(() => void renderExportRepoUser({ people: [], updatePeople }));
+    const updatePeople = jest.fn<[Array<Person>], unknown[]>();
+    await act(() => renderExportRepoUser({ people: [], updatePeople }));
     expect(updatePeople).toHaveBeenCalled();
   });
 
@@ -54,19 +53,18 @@ describe("ExportRepoUser", () => {
     // `/directory/ajax/subject` is not mocked so that if ExportRepoUser
     // attempts to the make a call the test fails
 
-    const updatePeople = jest.fn<[Array<Person>], void>();
-    await act(
-      () =>
-        void renderExportRepoUser({
-          people: [
-            {
-              email: "joe.bloggs@example.com",
-              type: "author",
-              uniqueName: "Joe Bloggs",
-            },
-          ],
-          updatePeople,
-        })
+    const updatePeople = jest.fn<[Array<Person>], unknown[]>();
+    await act(() =>
+      renderExportRepoUser({
+        people: [
+          {
+            email: "joe.bloggs@example.com",
+            type: "author",
+            uniqueName: "Joe Bloggs",
+          },
+        ],
+        updatePeople,
+      })
     );
     expect(updatePeople).not.toHaveBeenCalled();
   });
