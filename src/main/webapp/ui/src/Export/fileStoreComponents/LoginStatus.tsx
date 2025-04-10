@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Dialog from "@mui/material/Dialog";
@@ -15,17 +13,17 @@ import TableRow from "@mui/material/TableRow";
 import FileStoreLogin from "../FileStoreLogin";
 import { type FileSystem } from "../common";
 
-type LoginStatusArgs = {|
+type LoginStatusArgs = {
   // The filesystems to which linked files belong
-  fileSystems: Array<FileSystem>,
+  fileSystems: Array<FileSystem>;
 
   /*
    * This ia a function that is passed to FileStoreLogin as `callBack`. When
    * FileStoreLogin determines that the user has successfully logged into the
    * filestore, ExportFileStore can fetch the QuickExportPlan.
    */
-  fileStoreCheck: () => void,
-|};
+  fileStoreCheck: () => void;
+};
 
 /**
  * This component displays a status of whether the user is logged into all of
@@ -37,7 +35,7 @@ type LoginStatusArgs = {|
 export default function LoginStatus({
   fileSystems,
   fileStoreCheck,
-}: LoginStatusArgs): Node {
+}: LoginStatusArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
   const loggedOutCount = fileSystems.filter(
     (fs) => fs.loggedAs === null
