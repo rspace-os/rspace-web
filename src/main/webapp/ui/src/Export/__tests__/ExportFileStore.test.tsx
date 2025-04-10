@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import {
@@ -15,8 +14,8 @@ import {
 import "@testing-library/jest-dom";
 import ExportFileStore from "../ExportFileStore";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
-import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan";
+import axios from "@/common/axios";
+import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
 import { mkValidator } from "../../util/Validator";
 import userEvent from "@testing-library/user-event";
 
