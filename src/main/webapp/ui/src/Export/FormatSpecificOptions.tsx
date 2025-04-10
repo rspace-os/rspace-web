@@ -9,7 +9,6 @@ import WordExport, {
   type WordExportDetails,
 } from "./WordExport";
 import { type Validator } from "../util/Validator";
-import { type PageSize } from "./common";
 
 type FormatSpecificArgs =
   | ({
@@ -19,7 +18,7 @@ type FormatSpecificArgs =
       exportType: "doc";
     } & WordExportDetailsArgs)
   | ({
-      exportType: "html" | "xml";
+      exportType: "html" | "xml" | "eln";
     } & HtmlXmlExportDetailsArgs);
 
 type FormatSpecificOptionsArgs = FormatSpecificArgs & {

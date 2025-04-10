@@ -70,7 +70,7 @@ function FormatChoice({
 
     axios
       .get<
-        | Array<Omit<Repo, "repoCfg"> & { options: Object }>
+        | Array<Omit<Repo, "repoCfg"> & { options: object }>
         | { exceptionMessage: string }
       >(url)
       .then((response) => {
@@ -103,6 +103,7 @@ function FormatChoice({
                     ({
                       repoCfg: k,
                       //@ts-expect-error Options is poorly typed
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                       label: repo.options[k]._label,
                       ...repo,
                     } as Repo)
@@ -133,6 +134,7 @@ function FormatChoice({
     let allMedia = false;
     let isSystem = false;
     // @ts-expect-error Global variable
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const isGallery = typeof isGalleryPage !== "undefined" && isGalleryPage;
 
     if (exportSelection.type === "selection") {
