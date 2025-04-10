@@ -1,0 +1,10 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function FileFilters({|
+  maxFileSizeInMB: number | string,
+  setMaxFileSizeInMB: (number | string) => void,
+  excludedFileExtensions: string,
+  setExcludedFileExtensions: (string) => void,
+|}): Node;

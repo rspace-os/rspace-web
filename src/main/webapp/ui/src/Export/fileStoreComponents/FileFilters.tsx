@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Dialog from "@mui/material/Dialog";
@@ -10,14 +8,14 @@ import DialogActions from "@mui/material/DialogActions";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 
-type FoundLinksListingArgs = {|
-  maxFileSizeInMB: number,
-  setMaxFileSizeInMB: (number) => void,
+type FoundLinksListingArgs = {
+  maxFileSizeInMB: number | string;
+  setMaxFileSizeInMB: (maxFileSizeInMB: number | string) => void;
 
   // comma separated string of extensions
-  excludedFileExtensions: string,
-  setExcludedFileExtensions: (string) => void,
-|};
+  excludedFileExtensions: string;
+  setExcludedFileExtensions: (excludedFileExtensions: string) => void;
+};
 
 /**
  * This component allows the user to filter the files from the filestore that
@@ -29,7 +27,7 @@ export default function FileFilters({
   setMaxFileSizeInMB,
   excludedFileExtensions,
   setExcludedFileExtensions,
-}: FoundLinksListingArgs): Node {
+}: FoundLinksListingArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
 
   return (
