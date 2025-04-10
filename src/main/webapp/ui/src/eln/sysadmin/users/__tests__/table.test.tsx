@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { cleanup, screen, waitFor } from "@testing-library/react";
@@ -11,11 +10,12 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../../theme";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
-import USER_LISTING from "./userListing";
-import PDF_CONFIG from "./pdfConfig";
+import axios from "@/common/axios";
+import USER_LISTING from "./userListing.json";
+import PDF_CONFIG from "./pdfConfig.json";
 import { render, within } from "../../../../__tests__/customQueries";
 
+// @ts-expect-error global
 window.RS = { newFileStoresExportEnabled: false };
 
 const mockAxios = new MockAdapter(axios);
@@ -52,9 +52,13 @@ describe("Table Listing", () => {
     );
 
     expect(
+      // @ts-expect-error findTableCell exists on the custom within function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(grid).findTableCell({ columnHeading: "Usage", rowIndex: 1 })
     ).toHaveTextContent("362.01 kB");
     expect(
+      // @ts-expect-error findTableCell exists on the custom within function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(grid).findTableCell({ columnHeading: "Usage", rowIndex: 2 })
     ).toHaveTextContent("0 B");
   });
