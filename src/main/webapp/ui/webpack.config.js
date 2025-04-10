@@ -68,7 +68,7 @@ module.exports = {
       "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.js",
     associatedInventoryRecords:
       "./src/eln-inventory-integration/AssociatedInventoryRecords/index.js",
-    sysadminUsers: "./src/eln/sysadmin/users/index.js",
+    sysadminUsers: "./src/eln/sysadmin/users/index.tsx",
   },
   output: {
     filename: "[name].js",
@@ -84,7 +84,7 @@ module.exports = {
     extensions: [".js", ".jsx", ".ts", ".tsx"],
     alias: {
       Styles: path.resolve(__dirname, "src/util/styles"),
-      '@': path.resolve(__dirname, 'src'),
+      "@": path.resolve(__dirname, "src"),
     },
     fallback: {
       url: require.resolve("url/"),

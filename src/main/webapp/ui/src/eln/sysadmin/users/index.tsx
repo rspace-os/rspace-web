@@ -1,8 +1,6 @@
-//@flow
-
-import { ThemeProvider, styled, useTheme } from "@mui/material/styles";
+import { ThemeProvider, styled } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React, { type Node, type ElementConfig, type Ref } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../../components/ErrorBoundary";
 import Portal from "@mui/material/Portal";
@@ -20,7 +18,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import TagsCombobox from "./TagsCombobox";
 import RsSet, { flattenWithIntersection } from "../../../util/set";
 import * as ArrayUtils from "../../../util/ArrayUtils";
-import { Optional, getByKey } from "../../../util/optional";
+import { Optional } from "../../../util/optional";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
@@ -36,6 +34,9 @@ import {
   GridToolbarColumnsButton,
   GridToolbarExportContainer,
   useGridApiContext,
+  GridColumnVisibilityModel,
+  GridRowSelectionModel,
+  GridSortItem,
 } from "@mui/x-data-grid";
 import TextField from "@mui/material/TextField";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -91,16 +92,41 @@ import useUiPreference, {
 } from "../../../util/useUiPreference";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 
+/*
+ * All of the DOM events that happen inside of components that are themselves
+ * inside menu items, such as events within a dialog, shouln't propagate
+ * outside as the menu will take them to be events that it should
+ * respond to by providing keyboard navigation. See
+ * ../../../../QuirksOfMaterialUi.md, secion "Dialogs inside Menus", for more
+ * information.
+ */
+const EventBoundary = ({ children }: { children: React.ReactNode }) => (
+  // eslint-disable-next-line
+  <div
+    onKeyDown={(e) => {
+      e.stopPropagation();
+    }}
+    onMouseDown={(e) => {
+      e.stopPropagation();
+    }}
+    onClick={(e) => {
+      e.stopPropagation();
+    }}
+  >
+    {children}
+  </div>
+);
+
 const Panel = ({
   anchorEl,
   children,
   onClose,
   ariaLabel,
 }: {
-  anchorEl: ?HTMLElement,
-  children: Node,
-  onClose: () => void,
-  ariaLabel: string,
+  anchorEl: HTMLElement | null;
+  children: React.ReactNode;
+  onClose: () => void;
+  ariaLabel: string;
 }) => (
   <Popover
     open={Boolean(anchorEl)}
@@ -127,33 +153,107 @@ const Panel = ({
   </Popover>
 );
 
-const CustomGrow = React.forwardRef<ElementConfig<typeof Grow>, {||}>(
-  (props: ElementConfig<typeof Grow>, ref: Ref<typeof Grow>) => (
-    <Grow
-      {...props}
-      ref={ref}
-      timeout={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200
-      }
-      style={{
-        transformOrigin: "center 70%",
-      }}
-    />
-  )
-);
+const CustomGrow = React.forwardRef<
+  typeof Grow,
+  React.ComponentProps<typeof Grow>
+>((props: React.ComponentProps<typeof Grow>, ref: React.Ref<typeof Grow>) => (
+  <Grow
+    {...props}
+    ref={ref}
+    timeout={
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200
+    }
+    style={{
+      transformOrigin: "center 70%",
+    }}
+  />
+));
 CustomGrow.displayName = "CustomGrow";
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  "&.MuiPaper-root": {
+    border: theme.borders.themedDialog?.(200, 90, 20),
+    borderRadius: 6,
+    position: "relative",
+  },
+}));
+
+const StyledCardHeader = styled(CardHeader)(({ theme }) => ({
+  borderBottom: theme.borders.themedDialogTitle?.(200, 90, 20),
+  paddingTop: theme.spacing(1.5),
+  paddingBottom: theme.spacing(1.5),
+}));
+
+const StyledCardContent = styled(CardContent)(() => ({
+  "&:last-child": {
+    paddingBottom: 0,
+  },
+}));
+
+const SummaryInfoCard = styled(Card)(({ theme }) => ({
+  border: theme.borders.themedDialogTitle?.(200, 90, 20),
+  boxShadow: "none",
+}));
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  padding: "4px 12px",
+  backgroundColor: "#edf7fc",
+  borderBottom: theme.borders.themedDialogTitle?.(200, 90, 20),
+}));
+
+// @ts-expect-error This works just fine but errors for some reason
+const Abbr = styled("abbr")(({ theme }) => ({
+  textDecorationStyle: "dashed",
+  textDecorationColor: theme.palette.standardIcon,
+  textDecorationThickness: "2px",
+  textDecorationLine: "underline",
+}));
+
+const StyledSearchIcon = styled(SearchIcon)(({ theme }) => ({
+  color: theme.palette.standardIcon.main,
+  height: 20,
+  width: 20,
+}));
+
+const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
+  color: theme.palette.standardIcon.main,
+  height: 20,
+  width: 20,
+}));
+
+const StyledTextField = styled(TextField)(() => ({
+  width: "253px",
+  "& .MuiOutlinedInput-root": {
+    height: "32px",
+  },
+}));
+
+const ChipWithMenu = styled(Chip)(({ theme }) => ({
+  backgroundColor: "transparent",
+  border: "2px solid #94a7b2",
+  color: theme.palette.standardIcon.main,
+  textTransform: "capitalize",
+  letterSpacing: "0.04em",
+  "& .MuiChip-deleteIcon": {
+    color: "#94a7b2",
+    marginRight: 0,
+  },
+}));
 
 const TagDialog = ({
   selectedUsers,
   open,
   onClose,
   setTags,
-}: {|
-  selectedUsers: $ReadOnlyArray<User>,
-  open: boolean,
-  onClose: () => void,
-  setTags: (Array<string>, Array<string>) => Promise<void>,
-|}) => {
+}: {
+  selectedUsers: ReadonlyArray<User>;
+  open: boolean;
+  onClose: () => void;
+  setTags: (
+    addedTags: Array<string>,
+    deletedTags: Array<string>
+  ) => Promise<void>;
+}) => {
   const { addAlert } = React.useContext(AlertContext);
   const [commonTags, setCommonTags] = React.useState<RsSet<string>>(
     new RsSet([])
@@ -170,7 +270,7 @@ const TagDialog = ({
     ];
   }, [commonTags, addedTags, deletedTags]);
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
   React.useEffect(() => {
     setCommonTags(
@@ -265,13 +365,15 @@ const TagDialog = ({
                 onClose();
               } catch (error) {
                 console.error(error);
-                addAlert(
-                  mkAlert({
-                    title: "Could not save tags.",
-                    message: error.message,
-                    variant: "error",
-                  })
-                );
+                if (error instanceof Error) {
+                  addAlert(
+                    mkAlert({
+                      title: "Could not save tags.",
+                      message: error.message,
+                      variant: "error",
+                    })
+                  );
+                }
               } finally {
                 setSubmitting(false);
               }
@@ -284,74 +386,66 @@ const TagDialog = ({
   );
 };
 
-const StyledCard = styled(Card)(({ theme }) => ({
-  "&.MuiPaper-root": {
-    border: theme.borders.themedDialog(200, 90, 20),
-    borderRadius: 6,
-    position: "relative",
-  },
-}));
-
-const StyledCardHeader = styled(CardHeader)(({ theme }) => ({
-  borderBottom: theme.borders.themedDialogTitle(200, 90, 20),
-  paddingTop: theme.spacing(1.5),
-  paddingBottom: theme.spacing(1.5),
-}));
-
-const StyledCardContent = styled(CardContent)(() => ({
-  "&:last-child": {
-    paddingBottom: 0,
-  },
-}));
-
-const SummaryInfoCard = styled(Card)(({ theme }) => ({
-  border: theme.borders.themedDialogTitle(200, 90, 20),
-  boxShadow: "none",
-}));
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  padding: "4px 12px",
-  backgroundColor: "#edf7fc",
-  borderBottom: theme.borders.themedDialogTitle(200, 90, 20),
-}));
-
-const Abbr = styled("abbr")(({ theme }) => ({
-  textDecorationStyle: "dashed",
-  textDecorationColor: theme.palette.standardIcon,
-  textDecorationThickness: "2px",
-  textDecorationLine: "underline",
-}));
-
-const StyledSearchIcon = styled(SearchIcon)(({ theme }) => ({
-  color: theme.palette.standardIcon.main,
-  height: 20,
-  width: 20,
-}));
-
-const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
-  color: theme.palette.standardIcon.main,
-  height: 20,
-  width: 20,
-}));
-
-const StyledTextField = styled(TextField)(() => ({
-  width: "253px",
-  "& .MuiOutlinedInput-root": {
-    height: "32px",
-  },
-}));
-
-const ChipWithMenu = styled(Chip)(({ theme }) => ({
-  backgroundColor: "transparent",
-  border: "2px solid #94a7b2",
-  color: theme.palette.standardIcon.main,
-  textTransform: "capitalize",
-  letterSpacing: "0.04em",
-  "& .MuiChip-deleteIcon": {
-    color: "#94a7b2",
-    marginRight: 0,
-  },
-}));
+const SearchBox = ({
+  userListing,
+}: {
+  userListing: FetchingData.Fetched<UserListing>;
+}) => {
+  const [searchTerm, setSearchTerm] = React.useState("");
+  return (
+    <form
+      role="search"
+      onSubmit={(e) => {
+        e.preventDefault();
+        FetchingData.match(userListing, {
+          loading: () => {},
+          error: () => {},
+          success: (listing) => void listing.setSearchTerm(searchTerm),
+        });
+      }}
+    >
+      <StyledTextField
+        variant="outlined"
+        onChange={({ target: { value } }) => {
+          setSearchTerm(value);
+        }}
+        value={searchTerm}
+        sx={{ height: 32 }}
+        inputProps={{
+          /*
+           * Whilst semantically the correct type would be a "search", that
+           * means browsers add in their own clear buttons which don't fire the
+           * onChange handler
+           */
+          type: "input",
+          role: "searchbox",
+          "aria-label": "Search users",
+        }}
+        InputProps={{
+          startAdornment: <StyledSearchIcon sx={{ mx: 0.5 }} />,
+          endAdornment:
+            searchTerm !== "" ? (
+              <IconButtonWithTooltip
+                title="Clear"
+                icon={<StyledCloseIcon />}
+                size="small"
+                onClick={() => {
+                  setSearchTerm("");
+                  FetchingData.match(userListing, {
+                    loading: () => {},
+                    error: () => {},
+                    success: (listing) => void listing.setSearchTerm(""),
+                  });
+                }}
+              />
+            ) : null,
+        }}
+        size="small"
+        placeholder="Search"
+      />
+    </form>
+  );
+};
 
 /**
  * This is the action that can be performed on a single selected user to either
@@ -362,17 +456,17 @@ const PiAction = ({
   selectedUser,
   setActionsAnchorEl,
   autoFocus,
-}: {|
-  selectedUser: Result<User>,
-  setActionsAnchorEl: (null) => void,
-  autoFocus: boolean,
-|}) => {
+}: {
+  selectedUser: Result<User>;
+  setActionsAnchorEl: (_: null) => void;
+  autoFocus: boolean;
+}) => {
   const [open, setOpen] = React.useState(false);
   const [password, setPassword] = React.useState("");
   const { addAlert } = React.useContext(AlertContext);
   const verificationPasswordNeeded = useCheckVerificationPasswordNeeded();
 
-  const allowedPiAction: Result<{| user: User, action: "revoke" | "grant" |}> =
+  const allowedPiAction: Result<{ user: User; action: "revoke" | "grant" }> =
     selectedUser
       .mapError(() => new Error("Only one user can be modified at a time."))
       .flatMap((user) => {
@@ -437,13 +531,15 @@ const PiAction = ({
                         setOpen(false);
                         setActionsAnchorEl(null);
                       } catch (error) {
-                        addAlert(
-                          mkAlert({
-                            title: "Could not grant PI role to user.",
-                            message: error.message,
-                            variant: "error",
-                          })
-                        );
+                        if (error instanceof Error) {
+                          addAlert(
+                            mkAlert({
+                              title: "Could not grant PI role to user.",
+                              message: error.message,
+                              variant: "error",
+                            })
+                          );
+                        }
                       }
                     }
                     if (action === "revoke") {
@@ -458,13 +554,15 @@ const PiAction = ({
                         setOpen(false);
                         setActionsAnchorEl(null);
                       } catch (error) {
-                        addAlert(
-                          mkAlert({
-                            title: "Could not revoke user's PI role.",
-                            message: error.message,
-                            variant: "error",
-                          })
-                        );
+                        if (error instanceof Error) {
+                          addAlert(
+                            mkAlert({
+                              title: "Could not revoke user's PI role.",
+                              message: error.message,
+                              variant: "error",
+                            })
+                          );
+                        }
                       }
                     }
                   })();
@@ -549,10 +647,10 @@ const PiAction = ({
 const SetUsernamAliasAction = ({
   selectedUser,
   setActionsAnchorEl,
-}: {|
-  selectedUser: Result<User>,
-  setActionsAnchorEl: (null) => void,
-|}) => {
+}: {
+  selectedUser: Result<User>;
+  setActionsAnchorEl: (_: null) => void;
+}) => {
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [alias, setAlias] = React.useState("");
@@ -609,13 +707,15 @@ const SetUsernamAliasAction = ({
                     setOpen(false);
                     setActionsAnchorEl(null);
                   } catch (error) {
-                    addAlert(
-                      mkAlert({
-                        title: "Could not set username alias.",
-                        message: error.message,
-                        variant: "error",
-                      })
-                    );
+                    if (error instanceof Error) {
+                      addAlert(
+                        mkAlert({
+                          title: "Could not set username alias.",
+                          message: error.message,
+                          variant: "error",
+                        })
+                      );
+                    }
                   }
                 })();
               }}
@@ -669,10 +769,10 @@ const SetUsernamAliasAction = ({
 const DeleteAction = ({
   selectedUser,
   setActionsAnchorEl,
-}: {|
-  selectedUser: Result<User>,
-  setActionsAnchorEl: (null) => void,
-|}) => {
+}: {
+  selectedUser: Result<User>;
+  setActionsAnchorEl: (_: null) => void;
+}) => {
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [username, setUsername] = React.useState("");
@@ -741,13 +841,15 @@ const DeleteAction = ({
                     setOpen(false);
                     setActionsAnchorEl(null);
                   } catch (error) {
-                    addAlert(
-                      mkAlert({
-                        title: "Could not delete user's account.",
-                        message: error.message,
-                        variant: "error",
-                      })
-                    );
+                    if (error instanceof Error) {
+                      addAlert(
+                        mkAlert({
+                          title: "Could not delete user's account.",
+                          message: error.message,
+                          variant: "error",
+                        })
+                      );
+                    }
                   }
                 })();
               }}
@@ -825,31 +927,32 @@ const DeleteAction = ({
 const SelectionActions = ({
   selectedIds,
   fetchedListing,
-}: {|
-  selectedIds: $ReadOnlyArray<UserId>,
-  fetchedListing: FetchingData.Fetched<UserListing>,
-|}) => {
+}: {
+  selectedIds: ReadonlyArray<UserId>;
+  fetchedListing: FetchingData.Fetched<UserListing>;
+}) => {
   const { addAlert } = React.useContext(AlertContext);
   const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
-  const [actionsAnchorEl, setActionsAnchorEl] = React.useState(null);
+  const [actionsAnchorEl, setActionsAnchorEl] =
+    React.useState<HTMLElement | null>(null);
   const [tagDialogOpen, setTagDialogOpen] = React.useState(false);
 
-  const exportAllowed =
+  const exportAllowed: Result<React.ReactNode> =
     selectedIds.length === 1
       ? Result.Ok(null)
       : Result.Error([
           new Error("Only one user's work can be exported at a time."),
         ]);
 
-  const selectedUsers: Result<$ReadOnlyArray<User>> =
+  const selectedUsers: Result<ReadonlyArray<User>> =
     selectedIds.length === 0
       ? Result.Error([new Error("No users selected")])
       : Result.all(
-          ...selectedIds.map((id) =>
+          ...(selectedIds.map((id) =>
             FetchingData.getSuccessValue(fetchedListing).flatMap((listing) =>
               listing.getById(id)
             )
-          )
+          ) as [Result<User>, ...Result<User>[]])
         );
 
   const selectedUser: Result<User> = ArrayUtils.getAt(0, selectedIds)
@@ -865,10 +968,10 @@ const SelectionActions = ({
       )
     );
 
-  const enableDisableAction: Result<{|
-    user: User,
-    action: "enable" | "disable",
-  |}> = selectedUser
+  const enableDisableAction: Result<{
+    user: User;
+    action: "enable" | "disable";
+  }> = selectedUser
     .mapError(
       () => new Error("Only one user can be enabled / disabled at a time.")
     )
@@ -1003,13 +1106,15 @@ const SelectionActions = ({
                           );
                           setActionsAnchorEl(null);
                         } catch (error) {
-                          addAlert(
-                            mkAlert({
-                              title: "Could not unlock account.",
-                              message: error.message,
-                              variant: "error",
-                            })
-                          );
+                          if (error instanceof Error) {
+                            addAlert(
+                              mkAlert({
+                                title: "Could not unlock account.",
+                                message: error.message,
+                                variant: "error",
+                              })
+                            );
+                          }
                         }
                       })
                     );
@@ -1052,13 +1157,15 @@ const SelectionActions = ({
                             );
                             setActionsAnchorEl(null);
                           } catch (error) {
-                            addAlert(
-                              mkAlert({
-                                title: "Could not enable account.",
-                                message: error.message,
-                                variant: "error",
-                              })
-                            );
+                            if (error instanceof Error) {
+                              addAlert(
+                                mkAlert({
+                                  title: "Could not enable account.",
+                                  message: error.message,
+                                  variant: "error",
+                                })
+                              );
+                            }
                           }
                         }
                         if (action === "disable") {
@@ -1072,13 +1179,15 @@ const SelectionActions = ({
                             );
                             setActionsAnchorEl(null);
                           } catch (error) {
-                            addAlert(
-                              mkAlert({
-                                title: "Could not disable account.",
-                                message: error.message,
-                                variant: "error",
-                              })
-                            );
+                            if (error instanceof Error) {
+                              addAlert(
+                                mkAlert({
+                                  title: "Could not disable account.",
+                                  message: error.message,
+                                  variant: "error",
+                                })
+                              );
+                            }
                           }
                         }
                       })
@@ -1139,6 +1248,7 @@ const SelectionActions = ({
           username: selectedUser.map((user) => user.username).orElse(""),
           exportIds: [],
         }}
+        // @ts-expect-error RS is a global available on the sysadmin page
         //eslint-disable-next-line
         allowFileStores={RS.newFileStoresExportEnabled}
       />
@@ -1146,39 +1256,14 @@ const SelectionActions = ({
   );
 };
 
-/*
- * All of the DOM events that happen inside of components that are themselves
- * inside menu items, such as events within a dialog, shouln't propagate
- * outside as the menu will take them to be events that it should
- * respond to by providing keyboard navigation. See
- * ../../../../QuirksOfMaterialUi.md, secion "Dialogs inside Menus", for more
- * information.
- */
-const EventBoundary = ({ children }: { children: Node }) => (
-  // eslint-disable-next-line
-  <div
-    onKeyDown={(e) => {
-      e.stopPropagation();
-    }}
-    onMouseDown={(e) => {
-      e.stopPropagation();
-    }}
-    onClick={(e) => {
-      e.stopPropagation();
-    }}
-  >
-    {children}
-  </div>
-);
-
 const ExportMenuItem = ({
   onClick,
   children,
   ...rest
-}: {|
-  onClick: () => Promise<void>,
-  children: Node,
-|}) => (
+}: {
+  onClick: () => Promise<void>;
+  children: React.ReactNode;
+}) => (
   <MenuItem
     onClick={doNotAwait(async () => {
       await onClick();
@@ -1187,11 +1272,11 @@ const ExportMenuItem = ({
        * `GridToolbarExportContainer`. See
        * https://github.com/mui/mui-x/blob/2414dcfe87b8bd4507361a80ab43c8d284ddc4de/packages/x-data-grid/src/components/toolbar/GridToolbarExportContainer.tsx#L99
        * However, if we add `hideMenu` to the type of the `ExportMenuItem`
-       * props then Flow will complain we're not passing it in at the call site
+       * props then TypeScript will complain we're not passing it in at the call site
        */
-      getByKey<"hideMenu", () => void>("hideMenu", rest).do((hideMenu) => {
-        hideMenu();
-      });
+      // @ts-expect-error see explanation above
+      // eslint-disable-next-line
+      rest.hideMenu();
     })}
   >
     {children}
@@ -1202,13 +1287,15 @@ const Toolbar = ({
   userListing,
   setColumnsMenuAnchorEl,
   rowSelectionModel,
-}: {|
-  userListing: FetchingData.Fetched<UserListing>,
-  setColumnsMenuAnchorEl: (HTMLElement) => void,
-  rowSelectionModel: $ReadOnlyArray<UserId>,
-|}) => {
-  const [filterAnchorEl, setFilterAnchorEl] = React.useState(null);
-  const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] = React.useState(null);
+}: {
+  userListing: FetchingData.Fetched<UserListing>;
+  setColumnsMenuAnchorEl: (anchorEl: HTMLElement) => void;
+  rowSelectionModel: ReadonlyArray<UserId>;
+}) => {
+  const [filterAnchorEl, setFilterAnchorEl] =
+    React.useState<HTMLElement | null>(null);
+  const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] =
+    React.useState<HTMLElement | null>(null);
   const [tagsChecked, setTagsChecked] = React.useState(false);
   const [tags, setTags] = React.useState<Array<string>>([]);
 
@@ -1221,7 +1308,7 @@ const Toolbar = ({
    * than having to hook into the logic that triggers the opening of the
    * columns menu in both places, we just set the `anchorEl` pre-emptively.
    */
-  const columnMenuRef = React.useRef();
+  const columnMenuRef = React.useRef<HTMLButtonElement>();
   React.useEffect(() => {
     if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
   }, [setColumnsMenuAnchorEl]);
@@ -1377,12 +1464,12 @@ const Toolbar = ({
       </Panel>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
-        variant="outlined"
+        //variant="outlined"
         ref={(node) => {
           if (node) columnMenuRef.current = node;
         }}
       />
-      <GridToolbarExportContainer variant="outlined">
+      <GridToolbarExportContainer /*variant="outlined"*/>
         <ExportMenuItem onClick={() => exportAllRows()}>
           Export all rows to CSV
         </ExportMenuItem>
@@ -1400,96 +1487,21 @@ const Toolbar = ({
   );
 };
 
-const SearchBox = ({
-  userListing,
-}: {|
-  userListing: FetchingData.Fetched<UserListing>,
-|}) => {
-  const [searchTerm, setSearchTerm] = React.useState("");
-  return (
-    <form
-      role="search"
-      onSubmit={(e) => {
-        e.preventDefault();
-        FetchingData.match(userListing, {
-          loading: () => {},
-          error: () => {},
-          success: (listing) => void listing.setSearchTerm(searchTerm),
-        });
-      }}
-    >
-      <StyledTextField
-        variant="outlined"
-        onChange={({ target: { value } }) => {
-          setSearchTerm(value);
-        }}
-        value={searchTerm}
-        sx={{ height: 32 }}
-        inputProps={{
-          /*
-           * Whilst semantically the correct type would be a "search", that
-           * means browsers add in their own clear buttons which don't fire the
-           * onChange handler
-           */
-          type: "input",
-          role: "searchbox",
-          "aria-label": "Search users",
-        }}
-        InputProps={{
-          startAdornment: <StyledSearchIcon sx={{ mx: 0.5 }} />,
-          endAdornment:
-            searchTerm !== "" ? (
-              <IconButtonWithTooltip
-                title="Clear"
-                icon={<StyledCloseIcon />}
-                size="small"
-                onClick={() => {
-                  setSearchTerm("");
-                  FetchingData.match(userListing, {
-                    loading: () => {},
-                    error: () => {},
-                    success: (listing) => void listing.setSearchTerm(""),
-                  });
-                }}
-              />
-            ) : null,
-        }}
-        size="small"
-        placeholder="Search"
-      />
-    </form>
-  );
-};
-
-export const UsersPage = (): Node => {
-  const theme = useTheme();
-
+export const UsersPage = (): React.ReactNode => {
   const { userListing } = useUserListing();
 
-  const [rowSelectionModel, setRowSelectionModel] = React.useState<
-    $ReadOnlyArray<UserId>
-  >([]);
-  const [sortModel, setSortModel] = React.useState<
-    $ReadOnlyArray<{|
-      field:
-        | "username"
-        | "fileUsage"
-        | "recordCount"
-        | "lastLogin"
-        | "created"
-        | "name"
-        | "firstName"
-        | "lastName"
-        | "email",
-      sort: "asc" | "desc",
-    |}>
-  >([]);
-  const [groupsAnchorEl, setGroupsAnchorEl] = React.useState(null);
+  const [rowSelectionModel, setRowSelectionModel] =
+    React.useState<GridRowSelectionModel>([]);
+  const [sortModel, setSortModel] = React.useState<Array<GridSortItem>>([]);
+  const [groupsAnchorEl, setGroupsAnchorEl] =
+    React.useState<HTMLElement | null>(null);
   const [groupsList, setGroupsList] = React.useState<Array<string>>([]);
-  const [tagsAnchorEl, setTagsAnchorEl] = React.useState(null);
+  const [tagsAnchorEl, setTagsAnchorEl] = React.useState<HTMLElement | null>(
+    null
+  );
   const [tagsList, setTagsList] = React.useState<Array<string>>([]);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
-    React.useState<?HTMLElement>(null);
+    React.useState<HTMLElement | null>(null);
   const [columnVisibility, setColumnVisibility] = useUiPreference(
     PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
     {
@@ -1502,7 +1514,7 @@ export const UsersPage = (): Node => {
         locked: false,
         tags: false,
         usernameAlias: false,
-      },
+      } as GridColumnVisibilityModel,
     }
   );
 
@@ -1514,37 +1526,39 @@ export const UsersPage = (): Node => {
         headerName: "Full Name",
         flex: 1,
         renderCell: (params: {
-          value: string,
-          row: User,
-          tabIndex: number,
-          ...
-        }): Node => (
-          <Link
-            tabIndex={params.tabIndex}
-            href={params.row.url}
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          >
-            {params.value}
-          </Link>
-        ),
+          value?: string;
+          row: User;
+          tabIndex: number;
+        }): React.ReactNode => {
+          if (!params.value) return null;
+          return (
+            <Link
+              tabIndex={params.tabIndex}
+              href={params.row.url}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {params.value}
+            </Link>
+          );
+        },
         disableExport: true,
       }
     ),
-    DataGridColumn.newColumnWithFieldName<_, User>("firstName", {
+    DataGridColumn.newColumnWithFieldName<"firstName", User>("firstName", {
       headerName: "First Name",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithFieldName<_, User>("lastName", {
+    DataGridColumn.newColumnWithFieldName<"lastName", User>("lastName", {
       headerName: "Last Name",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithFieldName<_, User>("email", {
+    DataGridColumn.newColumnWithFieldName<"email", User>("email", {
       headerName: "Email",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueMapper<_, User>(
+    DataGridColumn.newColumnWithValueMapper<"role", User>(
       "role",
       (role) => {
         const roles = role.split(",");
@@ -1561,11 +1575,11 @@ export const UsersPage = (): Node => {
         flex: 1,
       }
     ),
-    DataGridColumn.newColumnWithFieldName<_, User>("username", {
+    DataGridColumn.newColumnWithFieldName<"username", User>("username", {
       headerName: "Username",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueMapper<_, User>(
+    DataGridColumn.newColumnWithValueMapper<"recordCount", User>(
       "recordCount",
       (recordCount) => `${recordCount}`,
       {
@@ -1573,71 +1587,74 @@ export const UsersPage = (): Node => {
         flex: 1,
       }
     ),
-    DataGridColumn.newColumnWithFieldName<_, User>("fileUsage", {
+    DataGridColumn.newColumnWithFieldName<"fileUsage", User>("fileUsage", {
       headerName: "Usage",
       flex: 1,
-      renderCell: (params: { value: number }) => formatFileSize(params.value),
+      renderCell: (params: { value?: number }) => formatFileSize(params.value),
     }),
-    DataGridColumn.newColumnWithFieldName<_, User>("lastLogin", {
+    DataGridColumn.newColumnWithFieldName<"lastLogin", User>("lastLogin", {
       headerName: "Last Login",
       flex: 1,
       valueFormatter: (value: Optional<Date>) =>
         value.map((l) => l.toLocaleString()).orElse("—"),
     }),
-    DataGridColumn.newColumnWithFieldName<_, User>("created", {
+    DataGridColumn.newColumnWithFieldName<"created", User>("created", {
       headerName: "Creation Date",
       flex: 1,
       valueFormatter: (value: Optional<Date>) =>
         value.map((l) => l.toLocaleString()).orElse("—"),
     }),
-    DataGridColumn.newColumnWithFieldName<_, User>("enabled", {
+    DataGridColumn.newColumnWithFieldName<"enabled", User>("enabled", {
       headerName: "Enabled",
       flex: 1,
       sortable: false,
       valueFormatter: (value: boolean) => (value ? "true" : "false"),
-      renderCell: (params: { value: boolean, ... }) =>
+      renderCell: (params: { value?: boolean }) =>
         params.value ? (
           <TickIcon color="success" aria-label="Enabled" aria-hidden="false" />
         ) : (
           <CrossIcon color="error" aria-label="Disabled" aria-hidden="false" />
         ),
     }),
-    DataGridColumn.newColumnWithFieldName<_, User>("locked", {
+    DataGridColumn.newColumnWithFieldName<"locked", User>("locked", {
       headerName: "Locked",
       flex: 1,
       sortable: false,
       valueFormatter: (value: boolean) => (value ? "true" : "false"),
-      renderCell: (params: { value: boolean, ... }) =>
+      renderCell: (params: { value?: boolean }) =>
         params.value ? (
           <LockIcon color="error" aria-label="Locked" aria-hidden="false" />
         ) : (
           <>&mdash;</>
         ),
     }),
-    DataGridColumn.newColumnWithFieldName<_, User>("groups", {
+    DataGridColumn.newColumnWithFieldName<"groups", User>("groups", {
       headerName: "Group Membership",
       flex: 1,
       sortable: false,
       valueFormatter: (value: Array<string>) => value.join(", "),
-      renderCell: (params: { value: Array<string>, tabIndex: number, ... }) => {
-        if (params.value.length === 0) return <>&mdash;</>;
+      renderCell: (params: {
+        value?: Array<string>;
+        tabIndex: number;
+      }): React.ReactNode => {
+        if (!params.value) return <>&mdash;</>;
+        const value = params.value;
+        if (value.length === 0) return <>&mdash;</>;
         return (
           <ChipWithMenu
             role="none"
             tabIndex={-1}
             variant="filled"
-            label={`${params.value.length} group${
-              params.value.length === 1 ? "" : "s"
-            }`}
-            onDelete={(e) => {
+            label={`${value.length} group${value.length === 1 ? "" : "s"}`}
+            onDelete={(e: React.MouseEvent<HTMLButtonElement>) => {
               setGroupsAnchorEl(e.currentTarget);
-              setGroupsList(params.value);
+              setGroupsList(value);
             }}
             deleteIcon={
               <IconButtonWithTooltip
                 sx={{ mr: 0 }}
-                ariaLabel={`${params.value.length} group${
-                  params.value.length === 1 ? "" : "s"
+                ariaLabel={`${value.length} group${
+                  value.length === 1 ? "" : "s"
                 }. Show list of groups.`}
                 title="Show list of groups"
                 tabIndex={params.tabIndex}
@@ -1649,30 +1666,30 @@ export const UsersPage = (): Node => {
         );
       },
     }),
-    DataGridColumn.newColumnWithFieldName<_, User>("tags", {
+    DataGridColumn.newColumnWithFieldName<"tags", User>("tags", {
       headerName: "Tags",
       flex: 1,
       sortable: false,
       valueFormatter: (value: Array<string>) => value.join(", "),
-      renderCell: (params: { value: Array<string>, tabIndex: number, ... }) => {
-        if (params.value.length === 0) return <>&mdash;</>;
+      renderCell: (params: { value?: Array<string>; tabIndex: number }) => {
+        if (!params.value) return <>&mdash;</>;
+        const value = params.value;
+        if (value.length === 0) return <>&mdash;</>;
         return (
           <ChipWithMenu
             role="none"
             tabIndex={-1}
             variant="filled"
-            label={`${params.value.length} tag${
-              params.value.length === 1 ? "" : "s"
-            }`}
-            onDelete={(e) => {
+            label={`${value.length} tag${value.length === 1 ? "" : "s"}`}
+            onDelete={(e: React.MouseEvent<HTMLButtonElement>) => {
               setTagsAnchorEl(e.currentTarget);
-              setTagsList(params.value);
+              setTagsList(value);
             }}
             deleteIcon={
               <IconButtonWithTooltip
                 sx={{ mr: 0 }}
-                ariaLabel={`${params.value.length} tag${
-                  params.value.length === 1 ? "" : "s"
+                ariaLabel={`${value.length} tag${
+                  value.length === 1 ? "" : "s"
                 }. Show list of tags.`}
                 title="Show list of tags"
                 tabIndex={params.tabIndex}
@@ -1684,11 +1701,14 @@ export const UsersPage = (): Node => {
         );
       },
     }),
-    DataGridColumn.newColumnWithFieldName<_, User>("usernameAlias", {
-      headerName: "Username Alias",
-      flex: 1,
-      sortable: false,
-    }),
+    DataGridColumn.newColumnWithFieldName<"usernameAlias", User>(
+      "usernameAlias",
+      {
+        headerName: "Username Alias",
+        flex: 1,
+        sortable: false,
+      }
+    ),
   ];
 
   return (
@@ -1721,11 +1741,14 @@ export const UsersPage = (): Node => {
                           Available Seats
                         </StyledTableCell>
                         <StyledTableCell sx={{ borderBottomWidth: 2 }}>
-                          {FetchingData.match(userListing, {
-                            loading: () => <>&mdash;</>,
-                            error: () => <>&mdash;</>,
-                            success: (listing) => listing.availableSeats,
-                          })}
+                          {FetchingData.match<UserListing, React.ReactNode>(
+                            userListing,
+                            {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.availableSeats,
+                            }
+                          )}
                         </StyledTableCell>
                       </TableRow>
                       <TableRow>
@@ -1735,21 +1758,27 @@ export const UsersPage = (): Node => {
                           </CustomTooltip>
                         </StyledTableCell>
                         <StyledTableCell>
-                          {FetchingData.match(userListing, {
-                            loading: () => <>&mdash;</>,
-                            error: () => <>&mdash;</>,
-                            success: (listing) => listing.billableUsersCount,
-                          })}
+                          {FetchingData.match<UserListing, React.ReactNode>(
+                            userListing,
+                            {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.billableUsersCount,
+                            }
+                          )}
                         </StyledTableCell>
                       </TableRow>
                       <TableRow>
                         <StyledTableCell>System Admins</StyledTableCell>
                         <StyledTableCell>
-                          {FetchingData.match(userListing, {
-                            loading: () => <>&mdash;</>,
-                            error: () => <>&mdash;</>,
-                            success: (listing) => listing.systemAdminCount,
-                          })}
+                          {FetchingData.match<UserListing, React.ReactNode>(
+                            userListing,
+                            {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.systemAdminCount,
+                            }
+                          )}
                         </StyledTableCell>
                       </TableRow>
                       <TableRow>
@@ -1757,11 +1786,14 @@ export const UsersPage = (): Node => {
                           Community Admins
                         </StyledTableCell>
                         <StyledTableCell sx={{ borderBottomWidth: 2 }}>
-                          {FetchingData.match(userListing, {
-                            loading: () => <>&mdash;</>,
-                            error: () => <>&mdash;</>,
-                            success: (listing) => listing.communityAdminCount,
-                          })}
+                          {FetchingData.match<UserListing, React.ReactNode>(
+                            userListing,
+                            {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.communityAdminCount,
+                            }
+                          )}
                         </StyledTableCell>
                       </TableRow>
                       <TableRow>
@@ -1771,11 +1803,14 @@ export const UsersPage = (): Node => {
                           </CustomTooltip>
                         </StyledTableCell>
                         <StyledTableCell sx={{ borderBottom: "unset" }}>
-                          {FetchingData.match(userListing, {
-                            loading: () => <>&mdash;</>,
-                            error: () => <>&mdash;</>,
-                            success: (listing) => listing.totalUsersCount,
-                          })}
+                          {FetchingData.match<UserListing, React.ReactNode>(
+                            userListing,
+                            {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.totalUsersCount,
+                            }
+                          )}
                         </StyledTableCell>
                       </TableRow>
                     </TableBody>
@@ -1820,7 +1855,7 @@ export const UsersPage = (): Node => {
                     success: () => <></>,
                   })}
                   <SelectionActions
-                    selectedIds={rowSelectionModel}
+                    selectedIds={rowSelectionModel as ReadonlyArray<UserId>}
                     fetchedListing={userListing}
                   />
                   <div style={{ width: "100%" }}>
@@ -1829,8 +1864,8 @@ export const UsersPage = (): Node => {
                       autoHeight
                       columns={columns}
                       rows={FetchingData.match(userListing, {
-                        loading: () => ([]: Array<User>),
-                        error: () => ([]: Array<User>),
+                        loading: () => [] as Array<User>,
+                        error: () => [] as Array<User>,
                         success: (listing) => listing.users,
                       })}
                       columnVisibilityModel={columnVisibility}
@@ -1841,7 +1876,7 @@ export const UsersPage = (): Node => {
                       checkboxSelection
                       rowSelectionModel={rowSelectionModel}
                       onRowSelectionModelChange={(
-                        newRowSelectionModel: $ReadOnlyArray<UserId>,
+                        newRowSelectionModel: GridRowSelectionModel,
                         _details
                       ) => {
                         /*
@@ -1897,7 +1932,9 @@ export const UsersPage = (): Node => {
                       }}
                       sortingMode="server"
                       sortModel={sortModel}
-                      onSortModelChange={(newSortModel: typeof sortModel) => {
+                      onSortModelChange={(
+                        newSortModel: Array<GridSortItem>
+                      ) => {
                         FetchingData.match(userListing, {
                           loading: () => {},
                           error: () => {},
@@ -1912,24 +1949,31 @@ export const UsersPage = (): Node => {
                             setSortModel([
                               { field: newOrderBy, sort: newSortOrder },
                             ]);
-                            void listing.setOrdering(
-                              {
-                                username: "username",
-                                fileUsage: "fileUsage()",
-                                recordCount: "recordCount()",
-                                lastLogin: "lastLogin",
-                                created: "creationDate",
-                                name: "lastName",
-                                firstName: "firstName",
-                                lastName: "lastName",
-                                email: "email",
-                              }[newOrderBy],
-                              newSortOrder
-                            );
+                            const apiOrderBy = {
+                              username: "username",
+                              fileUsage: "fileUsage()",
+                              recordCount: "recordCount()",
+                              lastLogin: "lastLogin",
+                              created: "creationDate",
+                              name: "lastName",
+                              firstName: "firstName",
+                              lastName: "lastName",
+                              email: "email",
+                            }[newOrderBy];
+                            if (!apiOrderBy)
+                              throw new Error(
+                                `Invalid order by: ${newOrderBy}`
+                              );
+                            if (typeof newSortOrder !== "string")
+                              throw new Error(
+                                `Invalid sort order: ${newSortOrder}`
+                              );
+                            void listing.setOrdering(apiOrderBy, newSortOrder);
                           },
                         });
                       }}
                       slots={{
+                        // @ts-expect-error The type of toolbar does not account for the slotProps that also get passed
                         toolbar: Toolbar,
                       }}
                       slotProps={{
