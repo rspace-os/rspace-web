@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -16,7 +15,8 @@ afterEach(cleanup);
 
 describe("PdfExport", () => {
   test("Toggling a switch should set a boolean value.", () => {
-    const updateExportDetails: (string, mixed) => void = jest.fn();
+    const updateExportDetails: (key: string, exportDetail: unknown) => void =
+      jest.fn();
 
     render(
       <PdfExport
