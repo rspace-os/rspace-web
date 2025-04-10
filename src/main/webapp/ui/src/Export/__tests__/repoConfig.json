@@ -1,30 +1,30 @@
 {
-    "repoChoice": 0,
-    "appName": "app.repo",
-    "depositToRepository": true,
-    "repoCfg": -1,
-    "selectedDMPs": [],
-    "meta": {
-        "title": "",
-        "description": "",
-        "subject": "",
-        "licenseName": "CC-0",
-        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-        "authors": [
-            {
-                "uniqueName": "user user",
-                "email": "user@user.com",
-                "type": "Author"
-            }
-        ],
-        "contacts": [
-            {
-                "uniqueName": "user user",
-                "email": "user@user.com",
-                "type": "Contact"
-            }
-        ],
-        "publish": "false",
-        "otherProperties": {}
-    }
+  "repoChoice": 0,
+  "appName": "app.repo",
+  "depositToRepository": true,
+  "repoCfg": -1,
+  "selectedDMPs": [],
+  "meta": {
+    "title": "",
+    "description": "",
+    "subject": "",
+    "licenseName": "CC-0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "authors": [
+      {
+        "uniqueName": "user user",
+        "email": "user@user.com",
+        "type": "Author"
+      }
+    ],
+    "contacts": [
+      {
+        "uniqueName": "user user",
+        "email": "user@user.com",
+        "type": "Contact"
+      }
+    ],
+    "publish": false,
+    "otherProperties": {}
+  }
 }
