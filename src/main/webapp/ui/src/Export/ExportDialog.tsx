@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
@@ -26,12 +24,7 @@ import {
   getIndexOfPane,
   getPaneByKey,
 } from "./WizardPanes";
-import {
-  type Person,
-  type Repo,
-  DEFAULT_REPO_CONFIG,
-  type RepoDetails,
-} from "./repositories/common";
+import { type Repo, DEFAULT_REPO_CONFIG } from "./repositories/common";
 import { lift3 } from "../util/optional";
 import { type Tag } from "./repositories/Tags";
 import * as ArrayUtils from "../util/ArrayUtils";
@@ -42,45 +35,49 @@ import Divider from "@mui/material/Divider";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import useViewportDimensions from "../util/useViewportDimensions";
 import { type ExportSelection } from "./common";
+import { doNotAwait } from "../util/Util";
+import { PdfExportDetails } from "./PdfExport";
+import { HtmlXmlExportDetails } from "./HtmlXmlExport";
+import { WordExportDetails } from "./WordExport";
 
-type ExportConfig = {|
-  archiveType: string,
-  repository: boolean,
-  fileStores: boolean,
-  allVersions: boolean,
-  repoData: Array<mixed>,
-|};
+type ExportConfig = {
+  archiveType: string;
+  repository: boolean;
+  fileStores: boolean;
+  allVersions: boolean;
+  repoData: Array<unknown>;
+};
 
 const DEFAULT_STATE = {
   open: false,
   loading: false,
   exportSubmitResponse: "",
-  exportSelection: ({
+  exportSelection: {
     type: "selection",
-    exportTypes: ([]: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">),
-    exportNames: ([]: Array<string>),
-    exportIds: ([]: Array<string>),
-  }: ExportSelection),
+    exportTypes: [] as Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">,
+    exportNames: [] as Array<string>,
+    exportIds: [] as Array<string>,
+  } as ExportSelection,
   exportConfig: {
-    archiveType: "",
+    archiveType: "" as ArchiveType | "",
     repository: false,
     fileStores: false,
     allVersions: false,
-    repoData: ([]: Array<Repo>),
+    repoData: [] as Array<Repo>,
   },
   repositoryConfig: DEFAULT_REPO_CONFIG,
   nfsConfig: {
     excludedFileExtensions: "",
     includeNfsFiles: false,
-    maxFileSizeInMB: (50: number | string),
+    maxFileSizeInMB: 50 as number | string,
   },
-  exportDetails: ({
-    archiveType: "",
+  exportDetails: {
+    archiveType: "" as ArchiveType | "",
     repository: false,
     fileStores: false,
     allVersions: false,
     repoData: [],
-  }: ExportConfig),
+  } as ExportConfig,
 };
 
 /*
@@ -95,19 +92,19 @@ const DEFAULT_STATE = {
  * outflows of their data from our system.
  */
 
-type ExportDialogArgs = {|
-  open: boolean,
-  onClose?: () => void,
-  exportSelection: ExportSelection,
-  allowFileStores: boolean,
-|};
+type ExportDialogArgs = {
+  open: boolean;
+  onClose?: () => void;
+  exportSelection: ExportSelection;
+  allowFileStores: boolean;
+};
 
 function ExportDialog({
   open,
   onClose,
   exportSelection,
   allowFileStores,
-}: ExportDialogArgs): Node {
+}: ExportDialogArgs): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
 
@@ -153,11 +150,14 @@ function ExportDialog({
     // Add initial export name data to the loaded dialog (it is used in PDF and WORD exports)
     let initialExportName;
 
-    if (exportSelection.exportNames && exportSelection.exportNames.length > 0) {
+    if (
+      exportSelection.type === "selection" &&
+      exportSelection.exportNames.length > 0
+    ) {
       initialExportName = exportSelection.exportNames[0].trimStart();
-    } else if (exportSelection.username) {
+    } else if (exportSelection.type === "user") {
       initialExportName = exportSelection.username + " - all work";
-    } else if (exportSelection.groupName) {
+    } else if (exportSelection.type === "group") {
       initialExportName = exportSelection.groupName + " - all work";
     } else {
       initialExportName = "Export Data";
@@ -169,7 +169,7 @@ function ExportDialog({
 
   useEffect(() => {
     axios
-      .get<{| data: {| pageSize: string, defaultPDFConfig: string |} |}>(
+      .get<{ data: { pageSize: string; defaultPDFConfig: string } }>(
         "/export/ajax/defaultPDFConfig"
       )
       .then((response) => {
@@ -225,7 +225,7 @@ function ExportDialog({
       nfsConfig: { ...state.nfsConfig },
     };
     axios
-      .post<typeof data, string>(url, data)
+      .post<string>(url, data)
       .then((response) => {
         setState(
           observable({
@@ -248,7 +248,7 @@ function ExportDialog({
       });
   };
 
-  const fetchTags = (): Promise<Array<Tag>> => {
+  const fetchTags = async (): Promise<Array<Tag>> => {
     runInAction(() => {
       state.loading = true;
     });
@@ -264,73 +264,100 @@ function ExportDialog({
       repositoryConfig: {},
       nfsConfig: { ...state.nfsConfig },
     };
-    return axios
-      .post<typeof data, mixed>(url, data)
-      .then((response) =>
-        Parsers.isObject(response)
-          .flatMap(Parsers.isNotNull)
-          .flatMap(Parsers.getValueWithKey("data"))
-          .flatMap(Parsers.isObject)
-          .flatMap(Parsers.isNotNull)
-          .flatMap(Parsers.getValueWithKey("data"))
-          .flatMap(Parsers.isArray)
-          .flatMap((data) => Result.all(...data.map(Parsers.isString)))
-          .map((data) =>
-            // parse the tag strings and only keep those with metadata
-            ArrayUtils.mapOptional(
-              (tag) =>
-                lift3(
-                  (vocabulary, uri, version) => ({
-                    value: tag.value,
-                    vocabulary,
-                    uri,
-                    version,
-                  }),
-                  tag.vocabulary,
-                  tag.uri,
-                  tag.version
-                ),
-              parseEncodedTags(data.flatMap((str) => str.split(",")))
-            )
+
+    try {
+      const response = await axios.post<unknown>(url, data);
+
+      const result = Parsers.isObject(response)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.getValueWithKey("data"))
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.getValueWithKey("data"))
+        .flatMap(Parsers.isArray)
+        .flatMap((dataArray) =>
+          Result.all(
+            ...(dataArray.map(Parsers.isString) as [
+              Result<string>,
+              ...Result<string>[]
+            ])
           )
-          .mapError(([e]) => {
-            console.error(e);
-            return e;
-          })
-          .orElse<Array<Tag>>([])
-      )
-      .catch((e) => {
-        console.error(e);
-        return ([]: Array<Tag>);
-      })
-      .finally(() => {
-        runInAction(() => {
-          state.loading = false;
-        });
+        )
+        .map((dataStrings) =>
+          // parse the tag strings and only keep those with metadata
+          ArrayUtils.mapOptional(
+            (tag) =>
+              lift3(
+                (vocabulary, uri, version) => ({
+                  value: tag.value,
+                  vocabulary,
+                  uri,
+                  version,
+                }),
+                tag.vocabulary,
+                tag.uri,
+                tag.version
+              ),
+            parseEncodedTags(dataStrings.flatMap((str) => str.split(",")))
+          )
+        )
+        .mapError(([e]) => {
+          console.error(e);
+          return e;
+        })
+        .orElse<Array<Tag>>([]);
+
+      return result;
+    } catch (e) {
+      console.error(e);
+      return [] as Array<Tag>;
+    } finally {
+      runInAction(() => {
+        state.loading = false;
       });
+    }
   };
 
-  // this function is just too complex to adequately type
-  const exportConfigUpdate = (itemToUpdate: any, value: any) => {
-    action<any>((state) => {
+  function exportConfigUpdate(
+    itemToUpdate: "archiveType",
+    value: ArchiveType
+  ): void;
+  function exportConfigUpdate(itemToUpdate: "repository", value: boolean): void;
+  function exportConfigUpdate(
+    itemToUpdate: "allVersions",
+    value: boolean
+  ): void;
+  function exportConfigUpdate(itemToUpdate: "fileStores", value: boolean): void;
+  function exportConfigUpdate(
+    itemToUpdate: "repoData",
+    value: ReadonlyArray<Repo>
+  ): void;
+  function exportConfigUpdate(
+    itemToUpdate:
+      | "archiveType"
+      | "repository"
+      | "allVersions"
+      | "fileStores"
+      | "repoData",
+    value: ArchiveType | boolean | ReadonlyArray<Repo>
+  ) {
+    action((newState: typeof DEFAULT_STATE) => {
       if (itemToUpdate === "archiveType") {
-        state.exportDetails = { ...exportConfigSwitch(value) };
+        // @ts-expect-error Impossible to typecheck
+        newState.exportDetails = { ...exportConfigSwitch(value) };
       } else if (itemToUpdate === "repository") {
-        state.repositoryConfig = value
-          ? DEFAULT_REPO_CONFIG
-          : {
-              depositToRepository: false,
-            };
+        newState.repositoryConfig = DEFAULT_REPO_CONFIG;
       } else if (itemToUpdate === "allVersions") {
-        state.exportDetails.allVersions = value;
+        newState.exportDetails.allVersions = value as boolean;
       }
-      state.exportConfig[itemToUpdate] = value;
+      // @ts-expect-error Impossible to typecheck
+      newState.exportConfig[itemToUpdate] = value;
 
       // some of the switches change which panes are reachable so recreate panes
       if (itemToUpdate === "repository" || itemToUpdate === "fileStores")
         createWizardPanes();
     })(state);
-  };
+  }
 
   const exportConfigSwitch = (type: ArchiveType) => {
     switch (type) {
@@ -347,25 +374,35 @@ function ExportDialog({
     }
   };
 
-  const updateFileStoreFilters = <Key: $Keys<typeof state.nfsConfig>>(
+  const updateFileStoreFilters = <Key extends keyof typeof state.nfsConfig>(
     name: Key,
     value: (typeof state.nfsConfig)[Key]
   ) => {
     runInAction(() => {
-      // $FlowExpectedError[incompatible-type] Flow doesn't always infer type variables that are object keys properly
       state.nfsConfig[name] = value;
     });
   };
 
-  const updateExportDetails = <Key: $Keys<ExportConfig>>(
+  function updateExportDetails<Key extends keyof PdfExportDetails>(
+    name: Key,
+    value: PdfExportDetails[Key]
+  ): void;
+  function updateExportDetails<Key extends keyof HtmlXmlExportDetails>(
+    name: Key,
+    value: HtmlXmlExportDetails[Key]
+  ): void;
+  function updateExportDetails<Key extends keyof WordExportDetails>(
+    name: Key,
+    value: WordExportDetails[Key]
+  ): void;
+  function updateExportDetails<Key extends keyof ExportConfig>(
     name: Key,
     value: (typeof state.exportDetails)[Key]
-  ) => {
+  ) {
     runInAction(() => {
-      // $FlowExpectedError[incompatible-type] Flow doesn't always infer type variables that are object keys properly
       state.exportDetails[name] = value;
     });
-  };
+  }
 
   const updateRepoConfig = (config: typeof state.repositoryConfig) => {
     runInAction(() => {
@@ -401,19 +438,21 @@ function ExportDialog({
                   validator={getPaneByKey(firstPane, "FormatChoice").validator}
                 />
               )}
-              {activePane.key === "FormatSpecificOptions" && (
-                <>
-                  {/* $FlowExpectedError[incompatible-type] */}
-                  <FormatSpecificOptions
-                    exportType={state.exportConfig.archiveType}
-                    exportDetails={state.exportDetails}
-                    updateExportDetails={updateExportDetails}
-                    validator={
-                      getPaneByKey(firstPane, "FormatSpecificOptions").validator
-                    }
-                  />
-                </>
-              )}
+              {activePane.key === "FormatSpecificOptions" &&
+                state.exportConfig.archiveType !== "" && (
+                  <>
+                    <FormatSpecificOptions
+                      exportType={state.exportConfig.archiveType}
+                      // @ts-expect-error Impossible to type check this
+                      exportDetails={state.exportDetails}
+                      updateExportDetails={updateExportDetails}
+                      validator={
+                        getPaneByKey(firstPane, "FormatSpecificOptions")
+                          .validator
+                      }
+                    />
+                  </>
+                )}
               {activePane.key === "ExportRepo" && (
                 <ExportRepo
                   repoList={state.exportConfig.repoData}
@@ -466,7 +505,7 @@ function ExportDialog({
                   <Button
                     size="small"
                     data-test-id="createGroupNextButton"
-                    onClick={() => handleNext()}
+                    onClick={doNotAwait(handleNext)}
                     disabled={state.exportConfig.archiveType === ""}
                   >
                     {activePane.next ? "Next" : "Export"}
@@ -525,4 +564,4 @@ const docConfig = {
   setPageSizeAsDefault: false,
 };
 
-export default (observer(ExportDialog): typeof ExportDialog);
+export default observer(ExportDialog);
