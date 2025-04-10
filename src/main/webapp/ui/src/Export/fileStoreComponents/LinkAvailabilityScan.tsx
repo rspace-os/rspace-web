@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Dialog from "@mui/material/Dialog";
@@ -17,15 +15,15 @@ import TableRow from "@mui/material/TableRow";
 import { type FileSystem } from "../common";
 import * as ArrayUtils from "../../util/ArrayUtils";
 
-type FoundLinksListingArgs = {|
-  scanResultsPresent: boolean,
-  scanResultsAvailableCount: number,
-  scanResultsTotalFileSize: number,
-  scanResultsOmittedCount: number,
-  fileStoreScan: () => void,
-  loadingScanResults: boolean,
-  checkedFileSystems: Array<FileSystem>,
-|};
+type FoundLinksListingArgs = {
+  scanResultsPresent: boolean;
+  scanResultsAvailableCount: number;
+  scanResultsTotalFileSize: number;
+  scanResultsOmittedCount: number;
+  fileStoreScan: () => void;
+  loadingScanResults: boolean;
+  checkedFileSystems: Array<FileSystem>;
+};
 
 /**
  * This component allows the user to trigger a server-side scan of the export
@@ -39,7 +37,7 @@ export default function LinkAvailabilityScan({
   fileStoreScan,
   loadingScanResults,
   checkedFileSystems,
-}: FoundLinksListingArgs): Node {
+}: FoundLinksListingArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
 
   return (
