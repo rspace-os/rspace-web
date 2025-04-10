@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { DeploymentPropertyContext } from "../../eln/useDeploymentProperty";
@@ -9,7 +8,7 @@ import { render, cleanup, screen, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import FormatChoice from "../FormatChoice";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { mkValidator } from "../../util/Validator";
 
 const mockAxios = new MockAdapter(axios);
@@ -112,8 +111,8 @@ describe("FormatChoice", () => {
   describe("Export as Word .doc is dependent on the document conversion lib aspose.", () => {
     test("When aspose is enabled, .doc export option is available", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
-      await act(() => {
-        void render(
+      await act(() =>
+        render(
           <DeploymentPropertyContext.Provider value={new Map()}>
             <FormatChoice
               exportSelection={{
@@ -132,8 +131,8 @@ describe("FormatChoice", () => {
               validator={mkValidator()}
             />
           </DeploymentPropertyContext.Provider>
-        );
-      });
+        )
+      );
 
       const wordElement = screen.getByText(".DOC file");
       expect(wordElement).toBeInTheDocument();
@@ -141,8 +140,8 @@ describe("FormatChoice", () => {
 
     test("When aspose is disabled, .doc export option isn't present", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, false);
-      await act(() => {
-        void render(
+      await act(() =>
+        render(
           <DeploymentPropertyContext.Provider value={new Map()}>
             <FormatChoice
               exportSelection={{
@@ -161,8 +160,8 @@ describe("FormatChoice", () => {
               validator={mkValidator()}
             />
           </DeploymentPropertyContext.Provider>
-        );
-      });
+        )
+      );
 
       const wordElement = screen.queryAllByText(".DOC file");
       expect(wordElement.length).toBe(0);
@@ -177,8 +176,8 @@ describe("FormatChoice", () => {
   describe("Export as Word .doc format is correctly restricted.", () => {
     test("When more than one document is selected, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
-      await act(() => {
-        void render(
+      await act(() =>
+        render(
           <DeploymentPropertyContext.Provider value={new Map()}>
             <FormatChoice
               exportSelection={{
@@ -197,8 +196,8 @@ describe("FormatChoice", () => {
               validator={mkValidator()}
             />
           </DeploymentPropertyContext.Provider>
-        );
-      });
+        )
+      );
 
       expect(
         screen.getByRole("radio", {
@@ -209,8 +208,8 @@ describe("FormatChoice", () => {
 
     test("When the selected document is a folder, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
-      await act(() => {
-        void render(
+      await act(() =>
+        render(
           <DeploymentPropertyContext.Provider value={new Map()}>
             <FormatChoice
               exportSelection={{
@@ -229,8 +228,8 @@ describe("FormatChoice", () => {
               validator={mkValidator()}
             />
           </DeploymentPropertyContext.Provider>
-        );
-      });
+        )
+      );
 
       expect(
         screen.getByRole("radio", {
@@ -241,8 +240,8 @@ describe("FormatChoice", () => {
 
     test("When the selected document is a notebook, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
-      await act(() => {
-        void render(
+      await act(() =>
+        render(
           <DeploymentPropertyContext.Provider value={new Map()}>
             <FormatChoice
               exportSelection={{
@@ -261,8 +260,8 @@ describe("FormatChoice", () => {
               validator={mkValidator()}
             />
           </DeploymentPropertyContext.Provider>
-        );
-      });
+        )
+      );
 
       expect(
         screen.getByRole("radio", {
@@ -273,8 +272,8 @@ describe("FormatChoice", () => {
 
     test("When the selected document is a media file, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
-      await act(() => {
-        void render(
+      await act(() =>
+        render(
           <DeploymentPropertyContext.Provider value={new Map()}>
             <FormatChoice
               exportSelection={{
@@ -293,8 +292,8 @@ describe("FormatChoice", () => {
               validator={mkValidator()}
             />
           </DeploymentPropertyContext.Provider>
-        );
-      });
+        )
+      );
 
       expect(
         screen.getAllByRole("radio", {
@@ -305,8 +304,8 @@ describe("FormatChoice", () => {
   });
   describe("Export as .pdf format is correctly restricted.", () => {
     test("When the selected documents are all media files, .pdf export should be denied.", async () => {
-      await act(() => {
-        void render(
+      await act(() =>
+        render(
           <FormatChoice
             exportSelection={{
               type: "selection",
@@ -323,8 +322,8 @@ describe("FormatChoice", () => {
             updateFileStores={() => {}}
             validator={mkValidator()}
           />
-        );
-      });
+        )
+      );
 
       expect(
         screen.getAllByRole("radio", {
