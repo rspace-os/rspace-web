@@ -14,7 +14,8 @@
     "paths": {
       "@/*": ["src/*"],
       "Styles": ["src/util/styles"]
-    }
+    },
+    "resolveJsonModule": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "custom.d.ts"]
 }

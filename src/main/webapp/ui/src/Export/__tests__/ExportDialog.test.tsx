@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../__mocks__/matchMedia";
 import React, { useState } from "react";
@@ -19,10 +18,9 @@ import ExportDialog from "../ExportDialog";
 import { type ExportSelection } from "../common";
 import fc from "fast-check";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
-import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan";
+import axios from "@/common/axios";
+import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
 import each from "jest-each";
-import { type UseState } from "../../util/types";
 import Alerts from "../../components/Alerts/Alerts";
 import { sleep } from "../../util/Util";
 import userEvent from "@testing-library/user-event";
@@ -32,7 +30,7 @@ window.fetch = jest.fn(() =>
     status: 200,
     ok: true,
     json: () => Promise.resolve({}),
-  })
+  } as Response)
 );
 
 const mockAxios = new MockAdapter(axios);
@@ -44,9 +42,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const arbUserSelection = fc.record<{
-  type: "user",
-  username: string,
-  exportIds: Array<string>,
+  type: "user";
+  username: string;
+  exportIds: Array<string>;
 }>({
   type: fc.constant("user"),
   username: fc.string({ minLength: 1 }),
@@ -54,10 +52,10 @@ const arbUserSelection = fc.record<{
 });
 
 const arbGroupSelection = fc.record<{
-  type: "group",
-  groupId: string,
-  groupName: string,
-  exportIds: Array<string>,
+  type: "group";
+  groupId: string;
+  groupName: string;
+  exportIds: Array<string>;
 }>({
   type: fc.constant("group"),
   groupId: fc.string({ minLength: 1 }),
@@ -68,10 +66,10 @@ const arbGroupSelection = fc.record<{
 const arbDocumentSelection = (args: { max?: number } = {}) =>
   fc.integer({ min: 1, max: args.max ?? 20 }).chain((n) =>
     fc.record<{
-      type: "selection",
-      exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">,
-      exportNames: Array<string>,
-      exportIds: Array<string>,
+      type: "selection";
+      exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">;
+      exportNames: Array<string>;
+      exportIds: Array<string>;
     }>({
       type: fc.constant("selection"),
       exportTypes: fc.array(
@@ -91,11 +89,13 @@ const arbDocumentSelection = (args: { max?: number } = {}) =>
 
 function renderExportDialog({
   allowFileStores,
-}: { allowFileStores?: boolean } = {}): { setProps: (any) => void } {
+}: { allowFileStores?: boolean } = {}): {
+  setProps: (props: { selection: ExportSelection; open: boolean }) => void;
+} {
   let setProps;
   const Wrapper = () => {
     const [open, setOpen] = useState(false);
-    const [selection, setSelection]: UseState<ExportSelection> = useState({
+    const [selection, setSelection] = useState<ExportSelection>({
       type: "selection",
       exportTypes: [],
       exportNames: [],
@@ -105,8 +105,8 @@ function renderExportDialog({
       selection: s,
       open: o,
     }: {
-      selection: ExportSelection,
-      open: boolean,
+      selection: ExportSelection;
+      open: boolean;
     }) => {
       setSelection(s);
       setOpen(o);
