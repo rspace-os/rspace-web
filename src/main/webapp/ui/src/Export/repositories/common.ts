@@ -44,13 +44,17 @@ export type Plan = {
 export type Repo = {
   repoName: string;
   displayName: string;
-  subjects: Array<{ id: string; name: string; parentSubject: number }>;
+  subjects: Array<{
+    id: string | null;
+    name: string;
+    parentSubject: number | null;
+  }>;
   license: {
     licenseRequired: boolean;
     otherLicensePermitted: boolean;
     licenses: Array<{
       licenseDefinition: { url: string; name: string };
-      defaultLicense: boolean;
+      defaultLicense: boolean | null;
     }>;
   };
 

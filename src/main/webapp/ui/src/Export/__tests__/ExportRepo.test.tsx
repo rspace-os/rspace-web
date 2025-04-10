@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import ExportRepo from "../ExportRepo";
 import React from "react";
@@ -16,24 +15,24 @@ import "@testing-library/jest-dom";
 import repoList from "./repoList.json";
 import repoConfig from "./repoConfig.json";
 import funders from "./funders.json";
-import zenodoRepoList from "./zenodoRepoList";
+import zenodoRepoList from "./zenodoRepoList.json";
 import fc, { type Arbitrary } from "fast-check";
 import { mkValidator } from "../../util/Validator";
 import "../../../__mocks__/matchMedia";
 import { type Tag } from "../repositories/Tags";
 
-type DMP = {|
-  dmpUserInternalId: number,
-  dmpTitle: string,
-  dmpId: string,
-|};
+type DMP = {
+  dmpUserInternalId: number;
+  dmpTitle: string;
+  dmpId: string;
+};
 
 window.fetch = jest.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
     json: () => Promise.resolve(funders),
-  })
+  } as Response)
 );
 
 beforeEach(() => {
@@ -43,11 +42,14 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const props = {
-  repoList,
+  repoList: repoList.map((repo) => ({
+    ...repo,
+    repoCfg: -1,
+  })),
   repoDetails: repoConfig,
   validator: mkValidator(),
   updateRepoConfig: () => {},
-  fetchTags: () => Promise.resolve(([]: Array<Tag>)),
+  fetchTags: () => Promise.resolve([] as Array<Tag>),
 };
 
 describe("ExportRepo", () => {
@@ -67,7 +69,9 @@ describe("ExportRepo", () => {
 
   test("Should have first repository in list selected", () => {
     render(<ExportRepo {...props} />);
-    const repo1RadioButton = screen.getByTestId("radio-button-app.repo1");
+    const repo1RadioButton = screen.getByTestId<HTMLInputElement>(
+      "radio-button-app.repo1"
+    );
     expect(repo1RadioButton.checked).toEqual(true);
   });
 
@@ -96,13 +100,15 @@ describe("ExportRepo", () => {
             fc
               .integer({ min: 2, max: 10 })
               .chain((n) =>
-                fc.tuple<Set<number>, Array<DMP>>(
+                fc.tuple<[Set<number>, Array<DMP>]>(
                   arbSetOfIndexes(2, n),
                   arbListOfDMPs(n)
                 )
               ),
             async ([indexes, linkedDMPs]) => {
-              const generatedRepoList = [{ ...zenodoRepoList[0], linkedDMPs }];
+              const generatedRepoList = [
+                { ...zenodoRepoList[0], linkedDMPs, repoCfg: -1 },
+              ];
               render(
                 <ExportRepo
                   repoDetails={props.repoDetails}
