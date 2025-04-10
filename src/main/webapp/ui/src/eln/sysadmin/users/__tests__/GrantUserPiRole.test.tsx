@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import {
@@ -17,13 +16,14 @@ import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
-import USER_LISTING from "./userListing";
-import PDF_CONFIG from "./pdfConfig";
+import axios from "@/common/axios";
+import USER_LISTING from "./userListing.json";
+import PDF_CONFIG from "./pdfConfig.json";
 import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
 
+// @ts-expect-error global
 window.RS = { newFileStoresExportEnabled: false };
 
 beforeEach(() => {
@@ -37,9 +37,7 @@ describe("Grant User PI Role", () => {
     "When `checkVerificationPasswordNeeded` returns true, a message should be shown.",
     async () => {
       const user = userEvent.setup();
-      const createObjectURL = jest
-        .fn<[Blob], string>()
-        .mockImplementation(() => "");
+      const createObjectURL = jest.fn().mockImplementation(() => "");
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = jest.fn();
 
@@ -104,9 +102,7 @@ describe("Grant User PI Role", () => {
     "When `checkVerificationPasswordNeeded` returns false, a message should not be shown.",
     async () => {
       const user = userEvent.setup();
-      const createObjectURL = jest
-        .fn<[Blob], string>()
-        .mockImplementation(() => "");
+      const createObjectURL = jest.fn().mockImplementation(() => "");
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = jest.fn();
 
