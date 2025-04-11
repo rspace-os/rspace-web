@@ -15,10 +15,16 @@ const feature = test.extend<{
     "the sysadmin is on the users page": () => Promise<void>;
   };
   When: {
+    "one row is selected": () => Promise<void>;
     "a CSV export is downloaded": () => Promise<Download>;
+    "a CSV export of the selected rows is downloaded": () => Promise<Download>;
   };
   Then: {
     "it should have a precise usage column": (csv: Download) => Promise<void>;
+    "it should have the same number of columns as are available to view, except for 'Full Name'": (
+      csv: Download
+    ) => Promise<void>;
+    "it should have a single row": (csv: Download) => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -36,6 +42,13 @@ const feature = test.extend<{
   },
   When: async ({ page }, use) => {
     await use({
+      "one row is selected": async (): Promise<void> => {
+        const checkboxes = page.getByRole("checkbox", {
+          name: "Select row",
+        });
+        await expect(checkboxes).toHaveCount(10);
+        await checkboxes.first().click();
+      },
       "a CSV export is downloaded": async (): Promise<Download> => {
         await page.getByRole("button", { name: /Export/ }).click();
         const [download] = await Promise.all([
@@ -48,6 +61,19 @@ const feature = test.extend<{
         ]);
         return download;
       },
+      "a CSV export of the selected rows is downloaded":
+        async (): Promise<Download> => {
+          await page.getByRole("button", { name: /Export/ }).click();
+          const [download] = await Promise.all([
+            page.waitForEvent("download"),
+            page
+              .getByRole("menuitem", {
+                name: /Export selected rows to CSV/,
+              })
+              .click(),
+          ]);
+          return download;
+        },
     });
   },
   Then: async ({ page }, use) => {
@@ -253,6 +279,17 @@ test.describe("CSV Export", () => {
         })
         .click();
     });
+    feature(
+      "When one row is selected, just it should be included in the export",
+      async ({ Given, When, Then }) => {
+        await Given["the sysadmin is on the users page"]();
+        await When["one row is selected"]();
+        const download = await When[
+          "a CSV export of the selected rows is downloaded"
+        ]();
+        await Then["it should have a single row"](download);
+      }
+    );
   });
   test.describe("Columns", () => {
     feature(
