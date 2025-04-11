@@ -172,4 +172,40 @@ test.describe("CSV Export", () => {
         .click();
     });
   });
+  test.describe("Columns", () => {
+    test("All of the columns should be included in the CSV file.", async ({
+      mount,
+      page,
+    }) => {
+      await mount(
+        <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={materialTheme}>
+            <UsersPage />
+          </ThemeProvider>
+        </StyledEngineProvider>
+      );
+
+      await page.getByRole("button", { name: /Select columns/ }).click();
+      const numberOfColumns = await page
+        .getByRole("checkbox", {
+          name: /^(?!Select all rows$|Select row$|Checkbox selection$|Show\/Hide All$|Full Name$).*$/,
+        })
+        .count();
+
+      page.on("download", async (download) => {
+        const path = await download.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        const lines = fileContents.split("\n");
+        const header = lines[0].split(",");
+        expect(header.length).toBe(numberOfColumns);
+      });
+
+      await page.getByRole("button", { name: /Export/ }).click();
+      await page
+        .getByRole("menuitem", {
+          name: /Export this page of rows to CSV/,
+        })
+        .click();
+    });
+  });
 });
