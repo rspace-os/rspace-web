@@ -207,5 +207,31 @@ test.describe("CSV Export", () => {
         })
         .click();
     });
+    test("The usage column should be a precise number.", async ({
+      mount,
+      page,
+    }) => {
+      await mount(
+        <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={materialTheme}>
+            <UsersPage />
+          </ThemeProvider>
+        </StyledEngineProvider>
+      );
+
+      page.on("download", async (download) => {
+        const path = await download.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        expect(fileContents).toContain("362006");
+        expect(fileContents).not.toContain("362.01 kB");
+      });
+
+      await page.getByRole("button", { name: /Export/ }).click();
+      await page
+        .getByRole("menuitem", {
+          name: /Export this page of rows to CSV/,
+        })
+        .click();
+    });
   });
 });
