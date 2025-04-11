@@ -25,6 +25,7 @@ const feature = test.extend<{
       csv: Download
     ) => Promise<void>;
     "it should have a single row": (csv: Download) => Promise<void>;
+    "it should have ten rows": (csv: Download) => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -103,6 +104,12 @@ const feature = test.extend<{
         const fileContents = await fs.readFile(path, "utf8");
         const lines = fileContents.split("\n");
         expect(lines.length).toBe(2);
+      },
+      "it should have ten rows": async (csv: Download) => {
+        const path = await csv.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        const lines = fileContents.split("\n");
+        expect(lines.length).toBe(11);
       },
     });
   },
@@ -253,32 +260,15 @@ test.describe("Accessibility", () => {
 
 test.describe("CSV Export", () => {
   test.describe("Selection", () => {
-    test("When no rows are selected, every row of the current page should be included in the export", async ({
-      mount,
-      page,
-    }) => {
-      await mount(
-        <StyledEngineProvider injectFirst>
-          <ThemeProvider theme={materialTheme}>
-            <UsersPage />
-          </ThemeProvider>
-        </StyledEngineProvider>
-      );
-
-      page.on("download", async (download) => {
-        const path = await download.path();
-        const fileContents = await fs.readFile(path, "utf8");
-        const lines = fileContents.split("\n");
-        expect(lines.length).toBe(11);
-      });
-
-      await page.getByRole("button", { name: /Export/ }).click();
-      await page
-        .getByRole("menuitem", {
-          name: /Export this page of rows to CSV/,
-        })
-        .click();
-    });
+    feature(
+      "When no rows are selected, every row of the current page should be included in the export",
+      async ({ Given, When, Then }) => {
+        await Given["the sysadmin is on the users page"]();
+        // Note that no selection is made
+        const download = await When["a CSV export is downloaded"]();
+        await Then["it should have ten rows"](download);
+      }
+    );
     feature(
       "When one row is selected, just it should be included in the export",
       async ({ Given, When, Then }) => {
