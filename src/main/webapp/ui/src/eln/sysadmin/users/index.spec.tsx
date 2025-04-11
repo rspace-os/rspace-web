@@ -250,55 +250,52 @@ test.describe("CSV Export", () => {
         .click();
     });
     const test2 = test.extend<{
-      GivenTheSysadminIsOnTheUsersPage: () => Promise<void>;
-      WhenACsvExportIsDownloaded: () => Promise<Download>;
-      ThenItShouldHaveAPreciseUsageColumn: (csv: Download) => Promise<void>;
+      steps: {
+        "Given the sysadmin is on the users page": () => Promise<void>;
+        "When a CSV export is downloaded": () => Promise<Download>;
+        "Then it should have a precise usage column": (
+          csv: Download
+        ) => Promise<void>;
+      };
     }>({
-      GivenTheSysadminIsOnTheUsersPage: async ({ mount }, use) => {
-        await use(async () => {
-          await mount(
-            <StyledEngineProvider injectFirst>
-              <ThemeProvider theme={materialTheme}>
-                <UsersPage />
-              </ThemeProvider>
-            </StyledEngineProvider>
-          );
-        });
-      },
-      WhenACsvExportIsDownloaded: async ({ page }, use) => {
-        await use(async (): Promise<Download> => {
-          await page.getByRole("button", { name: /Export/ }).click();
-          const [download] = await Promise.all([
-            page.waitForEvent("download"),
-            page
-              .getByRole("menuitem", {
-                name: /Export this page of rows to CSV/,
-              })
-              .click(),
-          ]);
-          return download;
-        });
-      },
-      ThenItShouldHaveAPreciseUsageColumn: async (_fixtures, use) => {
-        await use(async (csv: Download) => {
-          const path = await csv.path();
-          const fileContents = await fs.readFile(path, "utf8");
-          expect(fileContents).toContain("362006");
-          expect(fileContents).not.toContain("362.01 kB");
+      steps: async ({ mount, page }, use) => {
+        await use({
+          "Given the sysadmin is on the users page": async () => {
+            await mount(
+              <StyledEngineProvider injectFirst>
+                <ThemeProvider theme={materialTheme}>
+                  <UsersPage />
+                </ThemeProvider>
+              </StyledEngineProvider>
+            );
+          },
+          "When a CSV export is downloaded": async (): Promise<Download> => {
+            await page.getByRole("button", { name: /Export/ }).click();
+            const [download] = await Promise.all([
+              page.waitForEvent("download"),
+              page
+                .getByRole("menuitem", {
+                  name: /Export this page of rows to CSV/,
+                })
+                .click(),
+            ]);
+            return download;
+          },
+          "Then it should have a precise usage column": async (
+            csv: Download
+          ) => {
+            const path = await csv.path();
+            const fileContents = await fs.readFile(path, "utf8");
+            expect(fileContents).toContain("362006");
+            expect(fileContents).not.toContain("362.01 kB");
+          },
         });
       },
     });
-    test2(
-      "The usage column should be a precise number.",
-      async ({
-        GivenTheSysadminIsOnTheUsersPage,
-        WhenACsvExportIsDownloaded,
-        ThenItShouldHaveAPreciseUsageColumn,
-      }) => {
-        await GivenTheSysadminIsOnTheUsersPage();
-        const download = await WhenACsvExportIsDownloaded();
-        await ThenItShouldHaveAPreciseUsageColumn(download);
-      }
-    );
+    test2("The usage column should be a precise number.", async ({ steps }) => {
+      await steps["Given the sysadmin is on the users page"]();
+      const download = await steps["When a CSV export is downloaded"]();
+      await steps["Then it should have a precise usage column"](download);
+    });
   });
 });
