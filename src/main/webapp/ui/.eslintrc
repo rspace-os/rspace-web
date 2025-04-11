@@ -97,6 +97,10 @@
     "no-constant-binary-expression": "error",
     "no-duplicate-imports": "warn",
     "no-else-return": ["error", { "allowElseIf": false }],
+
+    // playwright relies on empty patterns being used to destructure fixtures
+    "no-empty-pattern": "off",
+
     "no-eval": "error",
     "no-implicit-coercion": "error",
     "no-implied-eval": "error",

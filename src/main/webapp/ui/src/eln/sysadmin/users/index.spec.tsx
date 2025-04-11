@@ -10,6 +10,58 @@ import USER_LISTING from "./__tests__/userListing.json";
 import fs from "fs/promises";
 import AxeBuilder from "@axe-core/playwright";
 
+const feature = test.extend<{
+  Given: {
+    "the sysadmin is on the users page": () => Promise<void>;
+  };
+  When: {
+    "a CSV export is downloaded": () => Promise<Download>;
+  };
+  Then: {
+    "it should have a precise usage column": (csv: Download) => Promise<void>;
+  };
+}>({
+  Given: async ({ mount }, use) => {
+    await use({
+      "the sysadmin is on the users page": async () => {
+        await mount(
+          <StyledEngineProvider injectFirst>
+            <ThemeProvider theme={materialTheme}>
+              <UsersPage />
+            </ThemeProvider>
+          </StyledEngineProvider>
+        );
+      },
+    });
+  },
+  When: async ({ page }, use) => {
+    await use({
+      "a CSV export is downloaded": async (): Promise<Download> => {
+        await page.getByRole("button", { name: /Export/ }).click();
+        const [download] = await Promise.all([
+          page.waitForEvent("download"),
+          page
+            .getByRole("menuitem", {
+              name: /Export this page of rows to CSV/,
+            })
+            .click(),
+        ]);
+        return download;
+      },
+    });
+  },
+  Then: async ({}, use) => {
+    await use({
+      "it should have a precise usage column": async (csv: Download) => {
+        const path = await csv.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        expect(fileContents).toContain("362006");
+        expect(fileContents).not.toContain("362.01 kB");
+      },
+    });
+  },
+});
+
 test.beforeEach(async ({ page, router }) => {
   await page.evaluate(() => {
     // @ts-expect-error global
@@ -249,53 +301,18 @@ test.describe("CSV Export", () => {
         })
         .click();
     });
-    const test2 = test.extend<{
-      steps: {
-        "Given the sysadmin is on the users page": () => Promise<void>;
-        "When a CSV export is downloaded": () => Promise<Download>;
-        "Then it should have a precise usage column": (
-          csv: Download
-        ) => Promise<void>;
-      };
-    }>({
-      steps: async ({ mount, page }, use) => {
-        await use({
-          "Given the sysadmin is on the users page": async () => {
-            await mount(
-              <StyledEngineProvider injectFirst>
-                <ThemeProvider theme={materialTheme}>
-                  <UsersPage />
-                </ThemeProvider>
-              </StyledEngineProvider>
-            );
-          },
-          "When a CSV export is downloaded": async (): Promise<Download> => {
-            await page.getByRole("button", { name: /Export/ }).click();
-            const [download] = await Promise.all([
-              page.waitForEvent("download"),
-              page
-                .getByRole("menuitem", {
-                  name: /Export this page of rows to CSV/,
-                })
-                .click(),
-            ]);
-            return download;
-          },
-          "Then it should have a precise usage column": async (
-            csv: Download
-          ) => {
-            const path = await csv.path();
-            const fileContents = await fs.readFile(path, "utf8");
-            expect(fileContents).toContain("362006");
-            expect(fileContents).not.toContain("362.01 kB");
-          },
-        });
-      },
-    });
-    test2("The usage column should be a precise number.", async ({ steps }) => {
-      await steps["Given the sysadmin is on the users page"]();
-      const download = await steps["When a CSV export is downloaded"]();
-      await steps["Then it should have a precise usage column"](download);
-    });
+    feature(
+      "The usage column should be a precise number.",
+      async ({ Given, When, Then }) => {
+        await Given["the sysadmin is on the users page"]();
+        const download = await When["a CSV export is downloaded"]();
+        await Then["it should have a precise usage column"](download);
+        /*
+         * Because the CSV file can then be imported into a spreadsheet program
+         * and the usage column will be formatted as a number, for sorting and
+         * other purposes.
+         */
+      }
+    );
   });
 });
