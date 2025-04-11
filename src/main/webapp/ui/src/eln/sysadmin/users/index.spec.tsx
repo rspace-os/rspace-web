@@ -139,5 +139,37 @@ test.describe("CSV Export", () => {
         })
         .click();
     });
+    test("When one row is selected, just it should be included in the export", async ({
+      mount,
+      page,
+    }) => {
+      await mount(
+        <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={materialTheme}>
+            <UsersPage />
+          </ThemeProvider>
+        </StyledEngineProvider>
+      );
+
+      const checkboxes = page.getByRole("checkbox", {
+        name: "Select row",
+      });
+      await expect(checkboxes).toHaveCount(10);
+      await checkboxes.first().click();
+
+      page.on("download", async (download) => {
+        const path = await download.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        const lines = fileContents.split("\n");
+        expect(lines.length).toBe(2);
+      });
+
+      await page.getByRole("button", { name: /Export/ }).click();
+      await page
+        .getByRole("menuitem", {
+          name: /Export selected rows to CSV/,
+        })
+        .click();
+    });
   });
 });

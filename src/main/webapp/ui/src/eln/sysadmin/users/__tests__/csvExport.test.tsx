@@ -31,49 +31,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CSV Export", () => {
-  describe("Selection", () => {
-    test("When one rows is selected, just it should be included in the csv export.", async () => {
-      let blob: Blob | undefined;
-      const createObjectURL = jest.fn().mockImplementation((b: Blob) => {
-        blob = b;
-        return "";
-      });
-      window.URL.createObjectURL = createObjectURL;
-      window.URL.revokeObjectURL = jest.fn();
-
-      mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
-
-      mockAxios
-        .onGet("/export/ajax/defaultPDFConfig")
-        .reply(200, { ...PDF_CONFIG });
-
-      render(
-        <StyledEngineProvider injectFirst>
-          <ThemeProvider theme={materialTheme}>
-            <UsersPage />
-          </ThemeProvider>
-        </StyledEngineProvider>
-      );
-
-      const checkboxes = await screen.findAllByRole("checkbox", {
-        name: /Select row/,
-      });
-      expect(checkboxes.length).toBe(10);
-      fireEvent.click(checkboxes[0]);
-
-      fireEvent.click(screen.getByRole("button", { name: /Export/ }));
-      fireEvent.click(
-        screen.getByRole("menuitem", {
-          name: /Export selected rows to CSV/,
-        })
-      );
-
-      expect(createObjectURL).toHaveBeenCalled();
-      if (typeof blob === "undefined")
-        throw new Error("Impossible, because createObjectURL has been called");
-      expect((await blob.text()).split("\n").length).toBe(2);
-    });
-  });
   describe("Column", () => {
     test("All of the columns should be included in the CSV file.", async () => {
       let blob: Blob | undefined;
