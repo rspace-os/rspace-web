@@ -50,13 +50,33 @@ const feature = test.extend<{
       },
     });
   },
-  Then: async ({}, use) => {
+  Then: async ({ page }, use) => {
     await use({
       "it should have a precise usage column": async (csv: Download) => {
         const path = await csv.path();
         const fileContents = await fs.readFile(path, "utf8");
         expect(fileContents).toContain("362006");
         expect(fileContents).not.toContain("362.01 kB");
+      },
+      "it should have the same number of columns as are available to view, except for 'Full Name'":
+        async (csv: Download) => {
+          await page.getByRole("button", { name: /Select columns/ }).click();
+          const numberOfColumns = await page
+            .getByRole("checkbox", {
+              name: /^(?!Select all rows$|Select row$|Checkbox selection$|Show\/Hide All$|Full Name$).*$/,
+            })
+            .count();
+          const path = await csv.path();
+          const fileContents = await fs.readFile(path, "utf8");
+          const lines = fileContents.split("\n");
+          const header = lines[0].split(",");
+          expect(header.length).toBe(numberOfColumns);
+        },
+      "it should have a single row": async (csv: Download) => {
+        const path = await csv.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        const lines = fileContents.split("\n");
+        expect(lines.length).toBe(2);
       },
     });
   },
@@ -233,74 +253,23 @@ test.describe("CSV Export", () => {
         })
         .click();
     });
-    test("When one row is selected, just it should be included in the export", async ({
-      mount,
-      page,
-    }) => {
-      await mount(
-        <StyledEngineProvider injectFirst>
-          <ThemeProvider theme={materialTheme}>
-            <UsersPage />
-          </ThemeProvider>
-        </StyledEngineProvider>
-      );
-
-      const checkboxes = page.getByRole("checkbox", {
-        name: "Select row",
-      });
-      await expect(checkboxes).toHaveCount(10);
-      await checkboxes.first().click();
-
-      page.on("download", async (download) => {
-        const path = await download.path();
-        const fileContents = await fs.readFile(path, "utf8");
-        const lines = fileContents.split("\n");
-        expect(lines.length).toBe(2);
-      });
-
-      await page.getByRole("button", { name: /Export/ }).click();
-      await page
-        .getByRole("menuitem", {
-          name: /Export selected rows to CSV/,
-        })
-        .click();
-    });
   });
   test.describe("Columns", () => {
-    test("All of the columns should be included in the CSV file.", async ({
-      mount,
-      page,
-    }) => {
-      await mount(
-        <StyledEngineProvider injectFirst>
-          <ThemeProvider theme={materialTheme}>
-            <UsersPage />
-          </ThemeProvider>
-        </StyledEngineProvider>
-      );
-
-      await page.getByRole("button", { name: /Select columns/ }).click();
-      const numberOfColumns = await page
-        .getByRole("checkbox", {
-          name: /^(?!Select all rows$|Select row$|Checkbox selection$|Show\/Hide All$|Full Name$).*$/,
-        })
-        .count();
-
-      page.on("download", async (download) => {
-        const path = await download.path();
-        const fileContents = await fs.readFile(path, "utf8");
-        const lines = fileContents.split("\n");
-        const header = lines[0].split(",");
-        expect(header.length).toBe(numberOfColumns);
-      });
-
-      await page.getByRole("button", { name: /Export/ }).click();
-      await page
-        .getByRole("menuitem", {
-          name: /Export this page of rows to CSV/,
-        })
-        .click();
-    });
+    feature(
+      "All of the columns should be included in the CSV file.",
+      async ({ Given, When, Then }) => {
+        await Given["the sysadmin is on the users page"]();
+        const download = await When["a CSV export is downloaded"]();
+        await Then[
+          "it should have the same number of columns as are available to view, except for 'Full Name'"
+        ](download);
+        /*
+         * Full Name is not included in the CSV file because it is a derived
+         * column from the first and last name columns. It is provided as a
+         * convenience in the UI but would be redundant if included in the CSV.
+         */
+      }
+    );
     feature(
       "The usage column should be a precise number.",
       async ({ Given, When, Then }) => {
