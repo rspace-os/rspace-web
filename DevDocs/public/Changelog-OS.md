@@ -4,6 +4,19 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.9.0 2025-04-10
+
+### ELN Features
+
+- RSDEV-438 (also #230) creation of documents/notebooks can be now triggered from within Shared folder
+- RSDEV-394 various improvements around breadcrumbs displayed on new Gallery page
+
+### ELN Bugfix
+
+- RSDEV-613 fix rare problem where duplication of document that is shared into notebook could result in copy being added to the notebook
+- RSDEV-549 disable spellcheck on various text fields
+- RSDEV-619 fix link to 3rd party 'Buffer Calculator'
+
 # 2.8.0 2025-03-07
 
 ### ELN Features
