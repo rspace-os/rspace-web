@@ -110,3 +110,34 @@ test.describe("Grant User PI role", () => {
     ).not.toBeVisible();
   });
 });
+
+test.describe("CSV Export", () => {
+  test.describe("Selection", () => {
+    test("When no rows are selected, every row of the current page should be included in the export", async ({
+      mount,
+      page,
+    }) => {
+      await mount(
+        <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={materialTheme}>
+            <UsersPage />
+          </ThemeProvider>
+        </StyledEngineProvider>
+      );
+
+      page.on("download", async (download) => {
+        const path = await download.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        const lines = fileContents.split("\n");
+        expect(lines.length).toBe(11);
+      });
+
+      await page.getByRole("button", { name: /Export/ }).click();
+      await page
+        .getByRole("menuitem", {
+          name: /Export this page of rows to CSV/,
+        })
+        .click();
+    });
+  });
+});
