@@ -45,7 +45,7 @@ pipeline {
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
         DOCKER_AMI = 'ami-069082aeb2787a3ba'
-        AWS_TOMCAT_AMI = 'ami-0d2c7a1d1463d921e'
+        AWS_TOMCAT_AMI = 'ami-0c1422d53b04eabcc'
         APP_VERSION = readMavenPom().getVersion()
         DOCKERHUB_PWD = credentials('DOCKER_HUB_RSPACEOPS')
         DOCKERHUB_REPO = 'rspaceops/rspace-services'
