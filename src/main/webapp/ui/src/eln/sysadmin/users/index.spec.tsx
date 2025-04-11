@@ -20,14 +20,23 @@ const feature = test.extend<{
     "a CSV export of the selected rows is downloaded": () => Promise<Download>;
   };
   Then: {
-    "it should have a precise usage column": (csv: Download) => Promise<void>;
-    "it should have the same number of columns as are available to view, except for 'Full Name'": (
-      csv: Download
-    ) => Promise<void>;
-    "it should have {count} rows": (
-      csv: Download,
-      { count }: { count: number }
-    ) => Promise<void>;
+    "{CSV} should have a precise usage column": ({
+      csv,
+    }: {
+      csv: Download;
+    }) => Promise<void>;
+    "{CSV} should have the same number of columns as are available to view, except for 'Full Name'": ({
+      csv,
+    }: {
+      csv: Download;
+    }) => Promise<void>;
+    "{CSV} should have {count} rows": ({
+      csv,
+      count,
+    }: {
+      csv: Download;
+      count: number;
+    }) => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -81,14 +90,14 @@ const feature = test.extend<{
   },
   Then: async ({ page }, use) => {
     await use({
-      "it should have a precise usage column": async (csv: Download) => {
+      "{CSV} should have a precise usage column": async ({ csv }) => {
         const path = await csv.path();
         const fileContents = await fs.readFile(path, "utf8");
         expect(fileContents).toContain("362006");
         expect(fileContents).not.toContain("362.01 kB");
       },
-      "it should have the same number of columns as are available to view, except for 'Full Name'":
-        async (csv: Download) => {
+      "{CSV} should have the same number of columns as are available to view, except for 'Full Name'":
+        async ({ csv }) => {
           await page.getByRole("button", { name: /Select columns/ }).click();
           const numberOfColumns = await page
             .getByRole("checkbox", {
@@ -101,10 +110,7 @@ const feature = test.extend<{
           const header = lines[0].split(",");
           expect(header.length).toBe(numberOfColumns);
         },
-      "it should have {count} rows": async (
-        csv: Download,
-        { count }: { count: number }
-      ) => {
+      "{CSV} should have {count} rows": async ({ csv, count }) => {
         const path = await csv.path();
         const fileContents = await fs.readFile(path, "utf8");
         const lines = fileContents.split("\n");
@@ -264,8 +270,8 @@ test.describe("CSV Export", () => {
       async ({ Given, When, Then }) => {
         await Given["the sysadmin is on the users page"]();
         // Note that no selection is made
-        const download = await When["a CSV export is downloaded"]();
-        await Then["it should have {count} rows"](download, { count: 10 });
+        const csv = await When["a CSV export is downloaded"]();
+        await Then["{CSV} should have {count} rows"]({ csv, count: 10 });
       }
     );
     feature(
@@ -273,10 +279,10 @@ test.describe("CSV Export", () => {
       async ({ Given, When, Then }) => {
         await Given["the sysadmin is on the users page"]();
         await When["one row is selected"]();
-        const download = await When[
+        const csv = await When[
           "a CSV export of the selected rows is downloaded"
         ]();
-        await Then["it should have {count} rows"](download, { count: 1 });
+        await Then["{CSV} should have {count} rows"]({ csv, count: 1 });
       }
     );
   });
@@ -285,10 +291,10 @@ test.describe("CSV Export", () => {
       "All of the columns should be included in the CSV file.",
       async ({ Given, When, Then }) => {
         await Given["the sysadmin is on the users page"]();
-        const download = await When["a CSV export is downloaded"]();
+        const csv = await When["a CSV export is downloaded"]();
         await Then[
-          "it should have the same number of columns as are available to view, except for 'Full Name'"
-        ](download);
+          "{CSV} should have the same number of columns as are available to view, except for 'Full Name'"
+        ]({ csv });
         /*
          * Full Name is not included in the CSV file because it is a derived
          * column from the first and last name columns. It is provided as a
@@ -300,8 +306,8 @@ test.describe("CSV Export", () => {
       "The usage column should be a precise number.",
       async ({ Given, When, Then }) => {
         await Given["the sysadmin is on the users page"]();
-        const download = await When["a CSV export is downloaded"]();
-        await Then["it should have a precise usage column"](download);
+        const csv = await When["a CSV export is downloaded"]();
+        await Then["{CSV} should have a precise usage column"]({ csv });
         /*
          * Because the CSV file can then be imported into a spreadsheet program
          * and the usage column will be formatted as a number, for sorting and
