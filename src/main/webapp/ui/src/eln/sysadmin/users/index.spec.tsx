@@ -24,8 +24,10 @@ const feature = test.extend<{
     "it should have the same number of columns as are available to view, except for 'Full Name'": (
       csv: Download
     ) => Promise<void>;
-    "it should have a single row": (csv: Download) => Promise<void>;
-    "it should have ten rows": (csv: Download) => Promise<void>;
+    "it should have {count} rows": (
+      csv: Download,
+      { count }: { count: number }
+    ) => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -99,17 +101,14 @@ const feature = test.extend<{
           const header = lines[0].split(",");
           expect(header.length).toBe(numberOfColumns);
         },
-      "it should have a single row": async (csv: Download) => {
+      "it should have {count} rows": async (
+        csv: Download,
+        { count }: { count: number }
+      ) => {
         const path = await csv.path();
         const fileContents = await fs.readFile(path, "utf8");
         const lines = fileContents.split("\n");
-        expect(lines.length).toBe(2);
-      },
-      "it should have ten rows": async (csv: Download) => {
-        const path = await csv.path();
-        const fileContents = await fs.readFile(path, "utf8");
-        const lines = fileContents.split("\n");
-        expect(lines.length).toBe(11);
+        expect(lines.length).toBe(count + 1);
       },
     });
   },
@@ -266,7 +265,7 @@ test.describe("CSV Export", () => {
         await Given["the sysadmin is on the users page"]();
         // Note that no selection is made
         const download = await When["a CSV export is downloaded"]();
-        await Then["it should have ten rows"](download);
+        await Then["it should have {count} rows"](download, { count: 10 });
       }
     );
     feature(
@@ -277,7 +276,7 @@ test.describe("CSV Export", () => {
         const download = await When[
           "a CSV export of the selected rows is downloaded"
         ]();
-        await Then["it should have a single row"](download);
+        await Then["it should have {count} rows"](download, { count: 1 });
       }
     );
   });
