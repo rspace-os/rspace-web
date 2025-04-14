@@ -14,6 +14,7 @@ const feature = test.extend<{
   };
   When: {
     "a CSV export is downloaded": () => Promise<Download>;
+    "the researcher selects 'Draft' from the state menu": () => Promise<void>;
   };
   Then: {
     "a table should be shown": () => Promise<void>;
@@ -28,7 +29,9 @@ const feature = test.extend<{
       csv: Download;
       count: number;
     }) => Promise<void>;
+    "there should be a network request with state set to 'draft'": () => void;
   };
+  networkRequests: Array<URL>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -61,9 +64,13 @@ const feature = test.extend<{
         ]);
         return download;
       },
+      "the researcher selects 'Draft' from the state menu": async () => {
+        await page.getByRole("button", { name: /State/ }).click();
+        await page.getByRole("menuitem", { name: /Draft/ }).click();
+      },
     });
   },
-  Then: async ({ page }, use) => {
+  Then: async ({ page, networkRequests }, use) => {
     await use({
       "a table should be shown": async () => {
         const table = page.getByRole("grid");
@@ -100,11 +107,21 @@ const feature = test.extend<{
         const lines = fileContents.split("\n");
         expect(lines.length).toBe(count + 1);
       },
+      "there should be a network request with state set to 'draft'": () => {
+        expect(
+          networkRequests
+            .find((url) => url.searchParams.has("state"))
+            ?.searchParams.get("state")
+        ).toBe("draft");
+      },
     });
+  },
+  networkRequests: async ({}, use) => {
+    await use([]);
   },
 });
 
-test.beforeEach(async ({ router }) => {
+feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     return route.fulfill({
       status: 200,
@@ -115,13 +132,29 @@ test.beforeEach(async ({ router }) => {
     });
   });
 
-  await router.route("/api/inventory/v1/identifiers", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(identifiersJson),
-    });
+  await router.route(
+    (url) => url.pathname === "/api/inventory/v1/identifiers",
+    (route) => {
+      const url = new URL(route.request().url());
+      const state = url.searchParams.get("state");
+      const filteredIdentifiers = state
+        ? identifiersJson.filter((identifier) => identifier.state === state)
+        : identifiersJson;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(filteredIdentifiers),
+      });
+    }
+  );
+
+  page.on("request", (request) => {
+    networkRequests.push(new URL(request.url()));
   });
+});
+
+feature.afterEach(({ networkRequests }) => {
+  networkRequests.splice(0, networkRequests.length);
 });
 
 test.describe("IGSN Table", () => {
@@ -177,6 +210,17 @@ test.describe("IGSN Table", () => {
       // Note that no selection is made
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should have {count} rows"]({ csv, count: 4 });
+    }
+  );
+
+  feature(
+    "Filtering by state makes API call with state parameter",
+    async ({ Given, When, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await When["the researcher selects 'Draft' from the state menu"]();
+      void Then[
+        "there should be a network request with state set to 'draft'"
+      ]();
     }
   );
 });

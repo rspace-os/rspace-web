@@ -15,15 +15,21 @@ import GlobalId from "../../../components/GlobalId";
 import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
 import Box from "@mui/material/Box";
 import MenuItem from "@mui/material/MenuItem";
+import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
+import AccentMenuItem from "../../../components/AccentMenuItem";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
     setColumnsMenuAnchorEl: (anchorEl: HTMLElement | null) => void;
+    state: "draft" | "findable" | "registered" | null;
+    setState: (newState: "draft" | "findable" | "registered" | null) => void;
   }
 }
 
 function Toolbar({
   setColumnsMenuAnchorEl,
+  state,
+  setState,
 }: GridSlotProps["toolbar"]): React.ReactNode {
   const apiRef = useGridApiContext();
 
@@ -43,6 +49,40 @@ function Toolbar({
 
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
+      <MenuWithSelectedState label="State" currentState={state ?? "All"}>
+        <AccentMenuItem
+          title="All"
+          subheader="Show all IGSN IDs"
+          onClick={() => {
+            setState(null);
+          }}
+          current={state === null}
+        />
+        <AccentMenuItem
+          title="Draft"
+          subheader="A newly created IGSN ID without any public metadata."
+          onClick={() => {
+            setState("draft");
+          }}
+          current={state === "draft"}
+        />
+        <AccentMenuItem
+          title="Findable"
+          subheader="A published, searchable IGSN ID with a public landing page."
+          onClick={() => {
+            setState("findable");
+          }}
+          current={state === "findable"}
+        />
+        <AccentMenuItem
+          title="Registered"
+          subheader="An IGSN ID that has been retracted from public access."
+          onClick={() => {
+            setState("registered");
+          }}
+          current={state === "registered"}
+        />
+      </MenuWithSelectedState>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
         ref={(node) => {
@@ -74,9 +114,9 @@ export default function IgsnTable({
   selectedIgsns: ReadonlyArray<Identifier>;
   setSelectedIgsns: (newlySelectedIgsns: ReadonlyArray<Identifier>) => void;
 }): React.ReactNode {
-  const [state] = React.useState<"draft" | "findable" | "registered" | null>(
-    null
-  );
+  const [state, setState] = React.useState<
+    "draft" | "findable" | "registered" | null
+  >(null);
   const [isAssociated] = React.useState<boolean | null>(null);
   const { identifiers, loading } = useIdentifiersListing({
     state,
@@ -149,6 +189,8 @@ export default function IgsnTable({
       slotProps={{
         toolbar: {
           setColumnsMenuAnchorEl,
+          state,
+          setState,
         },
         panel: {
           anchorEl: columnsMenuAnchorEl,
