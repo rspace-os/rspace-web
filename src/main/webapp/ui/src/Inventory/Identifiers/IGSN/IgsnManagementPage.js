@@ -20,7 +20,11 @@ import GlobalId from "../../../components/GlobalId";
 import MenuItem from "@mui/material/MenuItem";
 import Box from "@mui/material/Box";
 import Main from "../../Main";
-import { useIdentifiers, useIdentifiersListing, type Identifier } from "../../useIdentifiers";
+import {
+  useIdentifiers,
+  useIdentifiersListing,
+  type Identifier,
+} from "../../useIdentifiers";
 import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
 import { toTitleCase, doNotAwait } from "../../../util/Util";
 import Menu from "@mui/material/Menu";
@@ -38,125 +42,7 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import PrintDialog from "./PrintDialog";
 import PrintIcon from "@mui/icons-material/Print";
 import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
-
-function Toolbar({
-  state,
-  setState,
-  isAssociated,
-  setIsAssociated,
-  setColumnsMenuAnchorEl,
-}: {
-  state: "draft" | "findable" | "registered" | null,
-  setState: ("draft" | "findable" | "registered" | null) => void,
-  isAssociated: boolean | null,
-  setIsAssociated: (boolean | null) => void,
-  setColumnsMenuAnchorEl: (HTMLElement) => void,
-}): React.Node {
-  const apiRef = useGridApiContext();
-
-  /**
-   * The columns menu can be opened by either tapping the "Columns" toolbar
-   * button or by tapping the "Manage columns" menu item in each column's menu,
-   * logic that is handled my MUI. We provide a custom `anchorEl` so that the
-   * menu is positioned beneath the "Columns" toolbar button to be consistent
-   * with the other toolbar menus, otherwise is appears far to the left. Rather
-   * than having to hook into the logic that triggers the opening of the
-   * columns menu in both places, we just set the `anchorEl` pre-emptively.
-   */
-  const columnMenuRef = React.useRef();
-  React.useEffect(() => {
-    if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
-  }, [setColumnsMenuAnchorEl]);
-
-  const linkedItemStateLabel = (() => {
-    if (isAssociated === null) return "All";
-    if (isAssociated === true) return "Yes";
-    return "No";
-  })();
-
-  return (
-    <GridToolbarContainer sx={{ width: "100%" }}>
-      <MenuWithSelectedState label="State" currentState={state ?? "All"}>
-        <AccentMenuItem
-          title="All"
-          subheader="Show all IGSN IDs"
-          onClick={() => {
-            setState(null);
-          }}
-          current={state === null}
-        />
-        <AccentMenuItem
-          title="Draft"
-          subheader="A newly created IGSN ID without any public metadata."
-          onClick={() => {
-            setState("draft");
-          }}
-          current={state === "draft"}
-        />
-        <AccentMenuItem
-          title="Findable"
-          subheader="A published, searchable IGSN ID with a public landing page."
-          onClick={() => {
-            setState("findable");
-          }}
-          current={state === "findable"}
-        />
-        <AccentMenuItem
-          title="Registered"
-          subheader="An IGSN ID that has been retracted from public access."
-          onClick={() => {
-            setState("registered");
-          }}
-          current={state === "registered"}
-        />
-      </MenuWithSelectedState>
-      <MenuWithSelectedState
-        label="Linked Item"
-        currentState={linkedItemStateLabel}
-      >
-        <AccentMenuItem
-          title="All Identifiers"
-          onClick={() => {
-            setIsAssociated(null);
-          }}
-          current={isAssociated === null}
-        />
-        <AccentMenuItem
-          title="No Linked Item"
-          onClick={() => {
-            setIsAssociated(false);
-          }}
-          current={isAssociated === false}
-        />
-        <AccentMenuItem
-          title="Has Linked Item"
-          onClick={() => {
-            setIsAssociated(true);
-          }}
-          current={isAssociated === true}
-        />
-      </MenuWithSelectedState>
-      <Box flexGrow={1}></Box>
-      <GridToolbarColumnsButton
-        variant="outlined"
-        ref={(node) => {
-          if (node) columnMenuRef.current = node;
-        }}
-      />
-      <GridToolbarExportContainer variant="outlined">
-        <MenuItem
-          onClick={() => {
-            apiRef.current?.exportDataAsCsv({
-              allColumns: true,
-            });
-          }}
-        >
-          Export to CSV
-        </MenuItem>
-      </GridToolbarExportContainer>
-    </GridToolbarContainer>
-  );
-}
+import IgsnTable from "./IgsnTable";
 
 /**
  * The IGSN Management page allows users to view, bulk register, print, and
@@ -173,7 +59,10 @@ export default function IgsnManagementPage({
     "draft" | "findable" | "registered" | null
   >(null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const { identifiers, loading, refreshListing } = useIdentifiersListing({ state, isAssociated });
+  const { identifiers, loading, refreshListing } = useIdentifiersListing({
+    state,
+    isAssociated,
+  });
   const { bulkRegister, deleteIdentifiers } = useIdentifiers();
   const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] =
     React.useState(false);
@@ -183,8 +72,6 @@ export default function IgsnManagementPage({
   const [actionsAnchorEl, setActionsAnchorEl] =
     React.useState<HTMLElement | null>(null);
   const theme = useTheme();
-  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
-    React.useState<?HTMLElement>(null);
   const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
 
   return (
@@ -336,91 +223,9 @@ export default function IgsnManagementPage({
                 </Menu>
               </Stack>
               <div style={{ width: "100%" }}>
-                <DataGrid
-                  columns={[
-                    DataGridColumn.newColumnWithFieldName<_, Identifier>(
-                      "doi",
-                      {
-                        headerName: "DOI",
-                        flex: 1,
-                        sortable: false,
-                        resizable: true,
-                      }
-                    ),
-                    DataGridColumn.newColumnWithFieldName<_, Identifier>(
-                      "state",
-                      {
-                        headerName: "State",
-                        flex: 1,
-                        resizable: true,
-                        sortable: false,
-                        renderCell: ({ row }) => toTitleCase(row.state),
-                      }
-                    ),
-                    DataGridColumn.newColumnWithFieldName<_, Identifier>(
-                      "associatedGlobalId",
-                      {
-                        headerName: "Linked Item",
-                        flex: 1,
-                        resizable: true,
-                        sortable: false,
-                        renderCell: ({ row }) => {
-                          if (row.associatedGlobalId === null) {
-                            return "None";
-                          }
-                          return (
-                            <GlobalId
-                              record={
-                                new LinkableRecordFromGlobalId(
-                                  row.associatedGlobalId
-                                )
-                              }
-                              onClick={() => {}}
-                            />
-                          );
-                        },
-                      }
-                    ),
-                  ]}
-                  rows={identifiers}
-                  getRowId={(row) => row.doi}
-                  initialState={{
-                    columns: {},
-                  }}
-                  density="compact"
-                  disableColumnFilter
-                  hideFooter
-                  autoHeight
-                  loading={loading}
-                  checkboxSelection
-                  rowSelectionModel={selectedIgsns.map((id) => id.doi)}
-                  onRowSelectionModelChange={(
-                    ids: $ReadOnlyArray<Identifier["doi"]>
-                  ) => {
-                    const selectedIdentifiers = identifiers.filter((id) =>
-                      ids.includes(id.doi)
-                    );
-                    setSelectedIgsns(selectedIdentifiers);
-                  }}
-                  slots={{
-                    pagination: null,
-                    toolbar: Toolbar,
-                  }}
-                  slotProps={{
-                    toolbar: {
-                      state,
-                      setState,
-                      isAssociated,
-                      setIsAssociated,
-                      setColumnsMenuAnchorEl,
-                    },
-                    panel: {
-                      anchorEl: columnsMenuAnchorEl,
-                    },
-                  }}
-                  localeText={{
-                    noRowsLabel: "No IGSN IDs",
-                  }}
+                <IgsnTable
+                  selectedIgsns={selectedIgsns}
+                  setSelectedIgsns={setSelectedIgsns}
                 />
               </div>
             </Stack>
