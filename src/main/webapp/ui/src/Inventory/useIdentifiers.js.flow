@@ -1,0 +1,21 @@
+// @flow
+
+export type Identifier = {|
+  id: number,
+  doiType: string,
+  doi: string,
+  associatedGlobalId: string | null,
+  creatorName: string,
+  state: string,
+|};
+
+declare export function useIdentifiers({|
+  state?: "draft" | "findable" | "registered" | null,
+  isAssociated?: boolean | null,
+|}): {|
+  identifiers: $ReadOnlyArray<Identifier>,
+  loading: boolean,
+  error: Error | null,
+  bulkRegister: ({| count: number |}) => Promise<void>,
+  deleteIdentifiers: ($ReadOnlyArray<Identifier>) => Promise<void>,
+|};

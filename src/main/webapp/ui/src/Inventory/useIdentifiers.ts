@@ -1,5 +1,3 @@
-// @flow
-
 import React from "react";
 import axios from "@/common/axios";
 import useOauthToken from "../common/useOauthToken";
@@ -7,14 +5,26 @@ import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
 
-export type Identifier = {|
-  id: number,
-  doiType: string,
-  doi: string,
-  associatedGlobalId: string | null,
-  creatorName: string,
-  state: string,
-|};
+export type Identifier = {
+  id: number;
+  doiType: string;
+  doi: string;
+  associatedGlobalId: string | null;
+  creatorName: string;
+  state: string;
+};
+
+function getErrorMessage(error: unknown): Result<string> {
+  return Parsers.objectPath(["response", "data", "message"], error)
+    .flatMap(Parsers.isString)
+    .orElseTry(() =>
+      Parsers.isObject(error).flatMap((e) =>
+        e instanceof Error
+          ? Result.Ok(e.message)
+          : Result.Error([new Error("Unknown error")])
+      )
+    );
+}
 
 /**
  * Custom hook for working with the /identifiers endpoints
@@ -22,20 +32,20 @@ export type Identifier = {|
 export function useIdentifiers({
   state,
   isAssociated,
-}: {|
-  state?: "draft" | "findable" | "registered" | null,
-  isAssociated?: boolean | null,
-|}): {|
-  identifiers: $ReadOnlyArray<Identifier>,
-  loading: boolean,
-  error: Error | null,
-  bulkRegister: ({| count: number |}) => Promise<void>,
-  deleteIdentifiers: ($ReadOnlyArray<Identifier>) => Promise<void>,
-|} {
+}: {
+  state?: "draft" | "findable" | "registered" | null;
+  isAssociated?: boolean | null;
+}): {
+  identifiers: ReadonlyArray<Identifier>;
+  loading: boolean;
+  error: Error | null;
+  bulkRegister: ({ count }: { count: number }) => Promise<void>;
+  deleteIdentifiers: (identifiers: ReadonlyArray<Identifier>) => Promise<void>;
+} {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const [identifiers, setIdentifiers] = React.useState<
-    $ReadOnlyArray<Identifier>
+    ReadonlyArray<Identifier>
   >([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
@@ -51,16 +61,19 @@ export function useIdentifiers({
       if (typeof isAssociated !== "undefined" && isAssociated !== null) {
         searchParams.append("isAssociated", isAssociated ? "true" : "false");
       }
-      const response = await axios.get<mixed>("/api/inventory/v1/identifiers", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: searchParams,
-      });
+      const response = await axios.get<unknown>(
+        "/api/inventory/v1/identifiers",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: searchParams,
+        }
+      );
       const parsedIdentifiers = Parsers.isArray(response.data)
         .flatMap((array) =>
           Result.all(
-            ...array.map((obj) =>
+            ...(array.map((obj) =>
               Parsers.isObject(obj)
                 .flatMap(Parsers.isNotNull)
                 .flatMap((data) => {
@@ -107,13 +120,18 @@ export function useIdentifiers({
                     });
                   } catch (e) {
                     console.error(e);
+                    if (!(e instanceof Error)) {
+                      return Result.Error<Identifier>([
+                        new Error("Unknown error"),
+                      ]);
+                    }
                     return Result.Error<Identifier>([e]);
                   }
                 })
-            )
+            ) as [Result<Identifier>, ...Result<Identifier>[]])
           )
         )
-        .orElseGet<$ReadOnlyArray<Identifier>>(([e]) => {
+        .orElseGet<ReadonlyArray<Identifier>>(([e]) => {
           setError(
             new Error("Failed to parse identifiers", {
               cause: e,
@@ -130,14 +148,16 @@ export function useIdentifiers({
         });
       setIdentifiers(parsedIdentifiers);
     } catch (e) {
-      setError(e);
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: "Error fetching identifiers",
-          message: e.message,
-        })
-      );
+      if (e instanceof Error) {
+        setError(e);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error fetching identifiers",
+            message: e.message,
+          })
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -151,10 +171,10 @@ export function useIdentifiers({
      */
   }, [state, isAssociated]);
 
-  async function bulkRegister({ count }: {| count: number |}) {
+  async function bulkRegister({ count }: { count: number }) {
     try {
       const token = await getToken();
-      const response = await axios.post<mixed, mixed>(
+      await axios.post<unknown>(
         `/api/inventory/v1/identifiers/bulk/${count}`,
         {},
         {
@@ -171,25 +191,27 @@ export function useIdentifiers({
       );
       void fetchIdentifiers();
     } catch (e) {
-      setError(e);
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: "Error registering identifiers",
-          message: e.response.data.message ?? e.message,
-        })
-      );
+      if (e instanceof Error) {
+        setError(e);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error registering identifiers",
+            message: getErrorMessage(e).elseThrow(),
+          })
+        );
+      }
     }
   }
 
-  async function deleteIdentifiers(identifiers: $ReadOnlyArray<Identifier>) {
+  async function deleteIdentifiers(identifiers: ReadonlyArray<Identifier>) {
     try {
       const token = await getToken();
       const failed: Array<Identifier["doi"]> = [];
       const success: Array<Identifier["doi"]> = [];
       for (const identifier of identifiers) {
         try {
-          await axios.delete<mixed>(
+          await axios.delete<unknown>(
             `/api/inventory/v1/identifiers/${identifier.id}`,
             {
               headers: {
@@ -198,7 +220,7 @@ export function useIdentifiers({
             }
           );
           success.push(identifier.doi);
-        } catch (e) {
+        } catch {
           failed.push(identifier.doi);
         }
       }
@@ -229,14 +251,16 @@ export function useIdentifiers({
       }
       void fetchIdentifiers();
     } catch (e) {
-      setError(e);
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: "Error deleting identifiers",
-          message: e.message,
-        })
-      );
+      if (e instanceof Error) {
+        setError(e);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error deleting identifiers",
+            message: e.message,
+          })
+        );
+      }
     }
   }
 
