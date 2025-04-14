@@ -1,10 +1,7 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../theme";
-import IgsnTable from "./IgsnTable";
-import RsSet from "../../../util/set";
+import identifiersJson from "../../__tests__/identifiers.json";
+import IgsnTableStory from "./IgsnTable.story";
 
 const feature = test.extend<{
   Given: {
@@ -14,18 +11,13 @@ const feature = test.extend<{
   Then: {
     "a table should be shown": () => Promise<void>;
     "the default columns should be Select, DOI, State, and Linked Item": () => Promise<void>;
+    "there should be four rows": () => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
     await use({
       "the researcher is viewing the IGSN table": async () => {
-        await mount(
-          <StyledEngineProvider injectFirst>
-            <ThemeProvider theme={materialTheme}>
-              <IgsnTable selectedIgsns={[]} setSelectedIgsns={() => {}} />
-            </ThemeProvider>
-          </StyledEngineProvider>
-        );
+        await mount(<IgsnTableStory />);
       },
     });
   },
@@ -46,6 +38,10 @@ const feature = test.extend<{
           expect(headers).toEqual(["", "DOI", "State", "Linked Item"]);
           // the empty string at the beginning is the checkbox column
         },
+      "there should be four rows": async () => {
+        const rows = await page.getByRole("row").count();
+        expect(rows).toBe(5); // + 1 for the header row
+      },
     });
   },
 });
@@ -65,9 +61,7 @@ test.beforeEach(async ({ router }) => {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        data: [],
-      }),
+      body: JSON.stringify(identifiersJson),
     });
   });
 });
@@ -88,6 +82,18 @@ test.describe("IGSN Table", () => {
       await Then[
         "the default columns should be Select, DOI, State, and Linked Item"
       ]();
+    }
+  );
+
+  feature(
+    "The mocked data displays four rows",
+    async ({ Given, Then, page }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await page.waitForFunction(() => {
+        const rows = document.querySelectorAll('[role="row"]').length;
+        return rows === 4;
+      });
+      await Then["there should be four rows"]();
     }
   );
 });
