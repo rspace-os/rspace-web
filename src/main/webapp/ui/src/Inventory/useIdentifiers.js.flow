@@ -9,13 +9,21 @@ export type Identifier = {|
   state: string,
 |};
 
-declare export function useIdentifiers({|
+declare export function useIdentifiers(): {|
+  getIdentifiers: ({|
+    state?: "draft" | "findable" | "registered" | null,
+    isAssociated?: boolean | null,
+  |}) => Promise<$ReadOnlyArray<Identifier>>,
+  bulkRegister: ({| count: number |}) => Promise<void>,
+  deleteIdentifiers: ($ReadOnlyArray<Identifier>) => Promise<void>,
+|};
+
+declare export function useIdentifiersListing({|
   state?: "draft" | "findable" | "registered" | null,
   isAssociated?: boolean | null,
 |}): {|
   identifiers: $ReadOnlyArray<Identifier>,
   loading: boolean,
   error: Error | null,
-  bulkRegister: ({| count: number |}) => Promise<void>,
-  deleteIdentifiers: ($ReadOnlyArray<Identifier>) => Promise<void>,
+  refreshListing: () => Promise<void>;
 |};

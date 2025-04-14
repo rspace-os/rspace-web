@@ -5,6 +5,10 @@ import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
 
+/**
+ * The definition of an identifier, as returned by the API. Do note that this
+ * may be different to how identifiers are defined in the rest of the system.
+ */
 export type Identifier = {
   id: number;
   doiType: string;
@@ -29,29 +33,37 @@ function getErrorMessage(error: unknown): Result<string> {
 /**
  * Custom hook for working with the /identifiers endpoints
  */
-export function useIdentifiers({
-  state,
-  isAssociated,
-}: {
-  state?: "draft" | "findable" | "registered" | null;
-  isAssociated?: boolean | null;
-}): {
-  identifiers: ReadonlyArray<Identifier>;
-  loading: boolean;
-  error: Error | null;
+export function useIdentifiers(): {
+  /*
+   * Make a GET request to /identifiers to fetch a list of identifiers.
+   */
+  getIdentifiers: ({
+    state,
+    isAssociated,
+  }: {
+    state?: "draft" | "findable" | "registered" | null;
+    isAssociated?: boolean | null;
+  }) => Promise<ReadonlyArray<Identifier>>;
+  /*
+   * Make a POST request to /identifiers/bulk/{count} to register a number of
+   * identifiers.
+   */
   bulkRegister: ({ count }: { count: number }) => Promise<void>;
+  /*
+   * Make a DELETE request to /identifiers/{id} to delete a number of identifiers.
+   */
   deleteIdentifiers: (identifiers: ReadonlyArray<Identifier>) => Promise<void>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
-  const [identifiers, setIdentifiers] = React.useState<
-    ReadonlyArray<Identifier>
-  >([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<Error | null>(null);
 
-  const fetchIdentifiers = async () => {
-    setLoading(true);
+  const getIdentifiers = async ({
+    state,
+    isAssociated,
+  }: {
+    state?: "draft" | "findable" | "registered" | null;
+    isAssociated?: boolean | null;
+  }) => {
     try {
       const token = await getToken();
       const searchParams = new URLSearchParams();
@@ -70,7 +82,7 @@ export function useIdentifiers({
           params: searchParams,
         }
       );
-      const parsedIdentifiers = Parsers.isArray(response.data)
+      return Parsers.isArray(response.data)
         .flatMap((array) =>
           Result.all(
             ...(array.map((obj) =>
@@ -131,25 +143,9 @@ export function useIdentifiers({
             ) as [Result<Identifier>, ...Result<Identifier>[]])
           )
         )
-        .orElseGet<ReadonlyArray<Identifier>>(([e]) => {
-          setError(
-            new Error("Failed to parse identifiers", {
-              cause: e,
-            })
-          );
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: "Error parsing identifiers",
-              message: "Please try refreshing.",
-            })
-          );
-          return [];
-        });
-      setIdentifiers(parsedIdentifiers);
+        .elseThrow();
     } catch (e) {
       if (e instanceof Error) {
-        setError(e);
         addAlert(
           mkAlert({
             variant: "error",
@@ -157,19 +153,11 @@ export function useIdentifiers({
             message: e.message,
           })
         );
+        throw e;
       }
-    } finally {
-      setLoading(false);
+      throw new Error("Unexpected error");
     }
   };
-
-  React.useEffect(() => {
-    void fetchIdentifiers();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - addAlert wont meaningfully change between renders
-     * - getToken wont meaningfully change between renders
-     */
-  }, [state, isAssociated]);
 
   async function bulkRegister({ count }: { count: number }) {
     try {
@@ -189,10 +177,8 @@ export function useIdentifiers({
           message: `Successfully registered ${count} identifiers`,
         })
       );
-      void fetchIdentifiers();
     } catch (e) {
       if (e instanceof Error) {
-        setError(e);
         addAlert(
           mkAlert({
             variant: "error",
@@ -200,6 +186,7 @@ export function useIdentifiers({
             message: getErrorMessage(e).elseThrow(),
           })
         );
+        throw e;
       }
     }
   }
@@ -249,10 +236,8 @@ export function useIdentifiers({
           })
         );
       }
-      void fetchIdentifiers();
     } catch (e) {
       if (e instanceof Error) {
-        setError(e);
         addAlert(
           mkAlert({
             variant: "error",
@@ -260,9 +245,66 @@ export function useIdentifiers({
             message: e.message,
           })
         );
+        throw e;
       }
     }
   }
 
-  return { identifiers, loading, error, bulkRegister, deleteIdentifiers };
+  return { getIdentifiers, bulkRegister, deleteIdentifiers };
+}
+
+/**
+ * Abstraction over useIdentifiers to provide a simple interface for
+ * fetching a listing of identifiers. Whenever the parameters change,
+ * the identifiers will be fetched again.
+ */
+export function useIdentifiersListing({
+  state,
+  isAssociated,
+}: {
+  state?: "draft" | "findable" | "registered" | null;
+  isAssociated?: boolean | null;
+}): {
+  /*
+   * The fetchede identifiers. When loading is true or error is not null, this
+   * array will contain the last successfully fetched listing.
+   */
+  identifiers: ReadonlyArray<Identifier>;
+
+  /*
+   * Manually refresh the listing.
+   */
+  refreshListing: () => Promise<void>;
+
+  loading: boolean;
+  error: Error | null;
+} {
+  const { getIdentifiers } = useIdentifiers();
+  const [identifiers, setIdentifiers] = React.useState<
+    ReadonlyArray<Identifier>
+  >([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<Error | null>(null);
+
+  async function fetchIdentifiers() {
+    try {
+      setLoading(true);
+      setIdentifiers(await getIdentifiers({ state, isAssociated }));
+    } catch (e) {
+      if (e instanceof Error) {
+        setError(e);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  React.useEffect(() => {
+    void fetchIdentifiers();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - getIdentifiers wont meaningfully change between renders
+     */
+  }, [state, isAssociated]);
+
+  return { identifiers, loading, error, refreshListing: fetchIdentifiers };
 }

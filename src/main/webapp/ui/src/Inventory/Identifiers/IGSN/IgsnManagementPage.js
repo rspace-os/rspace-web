@@ -20,7 +20,7 @@ import GlobalId from "../../../components/GlobalId";
 import MenuItem from "@mui/material/MenuItem";
 import Box from "@mui/material/Box";
 import Main from "../../Main";
-import { useIdentifiers, type Identifier } from "../../useIdentifiers";
+import { useIdentifiers, useIdentifiersListing, type Identifier } from "../../useIdentifiers";
 import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
 import { toTitleCase, doNotAwait } from "../../../util/Util";
 import Menu from "@mui/material/Menu";
@@ -173,11 +173,8 @@ export default function IgsnManagementPage({
     "draft" | "findable" | "registered" | null
   >(null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const { identifiers, loading, bulkRegister, deleteIdentifiers } =
-    useIdentifiers({
-      state,
-      isAssociated,
-    });
+  const { identifiers, loading, refreshListing } = useIdentifiersListing({ state, isAssociated });
+  const { bulkRegister, deleteIdentifiers } = useIdentifiers();
   const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] =
     React.useState(false);
   const [numberOfNewIdentifiers, setNumberOfNewIdentifiers] = React.useState(1);
@@ -257,6 +254,7 @@ export default function IgsnManagementPage({
                     onClick={doNotAwait(async () => {
                       setRegisteringInProgress(true);
                       await bulkRegister({ count: numberOfNewIdentifiers });
+                      void refreshListing();
                       setRegisteringInProgress(false);
                       setBulkRegisterDialogOpen(false);
                     })}
@@ -325,6 +323,7 @@ export default function IgsnManagementPage({
                     subheader="Does not delete any linked item."
                     onClick={() => {
                       void deleteIdentifiers(selectedIgsns).then(() => {
+                        void refreshListing();
                         setSelectedIgsns([]);
                       });
                       setActionsAnchorEl(null);
