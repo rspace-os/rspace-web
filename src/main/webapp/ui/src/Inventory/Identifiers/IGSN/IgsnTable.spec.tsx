@@ -18,6 +18,11 @@ const feature = test.extend<{
     "the researcher selects 'Draft' from the state menu": () => Promise<void>;
     "the researcher selects 'No Linked Item' from the Linked Item menu": () => Promise<void>;
     "the researcher selects the IGSN with DOI '10.82316/khma-em96'": () => Promise<void>;
+    "the researcher selects {count} IGSNs": ({
+      count,
+    }: {
+      count: number;
+    }) => Promise<void>;
   };
   Then: {
     "a table should be shown": () => Promise<void>;
@@ -85,6 +90,18 @@ const feature = test.extend<{
             .first();
           await row.getByRole("checkbox").first().click();
         },
+      "the researcher selects {count} IGSNs": async ({
+        count,
+      }: {
+        count: number;
+      }) => {
+        for (let i = 0; i < count; i++) {
+          await page
+            .getByRole("checkbox", { name: /Select row/ })
+            .nth(0) // for some reason, only the unchecked ones are found
+            .click();
+        }
+      },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -291,6 +308,17 @@ test.describe("IGSN Table", () => {
       await Then[
         "the IGSN with DOI '10.82316/khma-em96' is added to the selection state"
       ]();
+    }
+  );
+
+  feature(
+    "When some IGSNs are selected, CSV exports should include just those rows",
+    async ({ Given, Once, When, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Once["the table has loaded"]();
+      await When["the researcher selects {count} IGSNs"]({ count: 2 });
+      const csv = await When["a CSV export is downloaded"]();
+      await Then["{CSV} should have {count} rows"]({ csv, count: 2 });
     }
   );
 });
