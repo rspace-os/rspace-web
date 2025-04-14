@@ -24,6 +24,7 @@ export default function IgsnTable({
     state,
     isAssociated,
   });
+
   return (
     <DataGrid
       rows={identifiers}
@@ -72,6 +73,20 @@ export default function IgsnTable({
           ids.includes(id.doi)
         );
         setSelectedIgsns(selectedIdentifiers);
+      }}
+      getRowId={(row) => row.doi}
+      initialState={{
+        columns: {},
+      }}
+      density="compact"
+      disableColumnFilter
+      hideFooter
+      autoHeight
+      slots={{
+        pagination: null,
+      }}
+      localeText={{
+        noRowsLabel: "No IGSN IDs",
       }}
     />
   );
