@@ -4,6 +4,7 @@ import React from "react";
 import identifiersJson from "../../__tests__/identifiers.json";
 import IgsnTableStory from "./IgsnTable.story";
 import fs from "fs/promises";
+import * as Jwt from "jsonwebtoken";
 
 const feature = test.extend<{
   Given: {
@@ -138,11 +139,18 @@ const feature = test.extend<{
 
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
+    const payload = {
+      iss: "http://localhost:8080",
+      iat: new Date().getTime(),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      refreshTokenHash:
+        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+    };
     return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
+        data: Jwt.sign(payload, "dummySecretKey"),
       }),
     });
   });
