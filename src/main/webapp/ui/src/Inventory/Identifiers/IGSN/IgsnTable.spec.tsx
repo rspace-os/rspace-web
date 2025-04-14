@@ -7,6 +7,9 @@ const feature = test.extend<{
   Given: {
     "the researcher is viewing the IGSN table": () => Promise<void>;
   };
+  Once: {
+    "the table has loaded": () => Promise<void>;
+  };
   When: {};
   Then: {
     "a table should be shown": () => Promise<void>;
@@ -18,6 +21,16 @@ const feature = test.extend<{
     await use({
       "the researcher is viewing the IGSN table": async () => {
         await mount(<IgsnTableStory />);
+      },
+    });
+  },
+  Once: async ({ page }, use) => {
+    await use({
+      "the table has loaded": async () => {
+        await page.waitForFunction(() => {
+          const rows = document.querySelectorAll('[role="row"]').length;
+          return rows > 1; // (1 is for the header row)
+        });
       },
     });
   },
@@ -87,12 +100,9 @@ test.describe("IGSN Table", () => {
 
   feature(
     "The mocked data displays four rows",
-    async ({ Given, Then, page }) => {
+    async ({ Given, Once, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
-      await page.waitForFunction(() => {
-        const rows = document.querySelectorAll('[role="row"]').length;
-        return rows === 4;
-      });
+      await Once["the table has loaded"]();
       await Then["there should be four rows"]();
     }
   );
