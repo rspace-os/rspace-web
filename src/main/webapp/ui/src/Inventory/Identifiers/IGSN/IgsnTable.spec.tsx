@@ -15,6 +15,7 @@ const feature = test.extend<{
     "a table should be shown": () => Promise<void>;
     "the default columns should be Select, DOI, State, and Linked Item": () => Promise<void>;
     "there should be four rows": () => Promise<void>;
+    "there should be a menu for changing column visibility": () => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -54,6 +55,12 @@ const feature = test.extend<{
       "there should be four rows": async () => {
         const rows = await page.getByRole("row").count();
         expect(rows).toBe(5); // + 1 for the header row
+      },
+      "there should be a menu for changing column visibility": async () => {
+        const menuButton = page.getByRole("button", { name: "Columns" });
+        await menuButton.click();
+        const menu = page.getByRole("tooltip");
+        await expect(menu).toBeVisible();
       },
     });
   },
@@ -104,6 +111,14 @@ test.describe("IGSN Table", () => {
       await Given["the researcher is viewing the IGSN table"]();
       await Once["the table has loaded"]();
       await Then["there should be four rows"]();
+    }
+  );
+
+  feature(
+    "There should be a menu for changing column visibility",
+    async ({ Given, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Then["there should be a menu for changing column visibility"]();
     }
   );
 });
