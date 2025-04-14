@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/experimental-ct-react";
+import { Download } from "playwright-core";
 import React from "react";
 import identifiersJson from "../../__tests__/identifiers.json";
 import IgsnTableStory from "./IgsnTable.story";
+import fs from "fs/promises";
 
 const feature = test.extend<{
   Given: {
@@ -10,12 +12,22 @@ const feature = test.extend<{
   Once: {
     "the table has loaded": () => Promise<void>;
   };
-  When: {};
+  When: {
+    "a CSV export is downloaded": () => Promise<Download>;
+  };
   Then: {
     "a table should be shown": () => Promise<void>;
     "the default columns should be Select, DOI, State, and Linked Item": () => Promise<void>;
     "there should be four rows": () => Promise<void>;
     "there should be a menu for changing column visibility": () => Promise<void>;
+    "there should be a menu for exporting the IGSN table to CSV": () => Promise<void>;
+    "{CSV} should have {count} rows": ({
+      csv,
+      count,
+    }: {
+      csv: Download;
+      count: number;
+    }) => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -35,8 +47,21 @@ const feature = test.extend<{
       },
     });
   },
-  When: async ({}, use) => {
-    await use({});
+  When: async ({ page }, use) => {
+    await use({
+      "a CSV export is downloaded": async () => {
+        await page.getByRole("button", { name: /Export/ }).click();
+        const [download] = await Promise.all([
+          page.waitForEvent("download"),
+          page
+            .getByRole("menuitem", {
+              name: /Export to CSV/,
+            })
+            .click(),
+        ]);
+        return download;
+      },
+    });
   },
   Then: async ({ page }, use) => {
     await use({
@@ -61,6 +86,19 @@ const feature = test.extend<{
         await menuButton.click();
         const menu = page.getByRole("tooltip");
         await expect(menu).toBeVisible();
+      },
+      "there should be a menu for exporting the IGSN table to CSV":
+        async () => {
+          const menuButton = page.getByRole("button", { name: "Export" });
+          await menuButton.click();
+          const menu = page.getByRole("tooltip");
+          await expect(menu).toBeVisible();
+        },
+      "{CSV} should have {count} rows": async ({ csv, count }) => {
+        const path = await csv.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        const lines = fileContents.split("\n");
+        expect(lines.length).toBe(count + 1);
       },
     });
   },
@@ -119,6 +157,26 @@ test.describe("IGSN Table", () => {
     async ({ Given, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
       await Then["there should be a menu for changing column visibility"]();
+    }
+  );
+
+  feature(
+    "There should be a menu for exporting the IGSN table to CSV",
+    async ({ Given, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Then[
+        "there should be a menu for exporting the IGSN table to CSV"
+      ]();
+    }
+  );
+
+  feature(
+    "When there is no selection, all rows should be included in the export.",
+    async ({ Given, When, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      // Note that no selection is made
+      const csv = await When["a CSV export is downloaded"]();
+      await Then["{CSV} should have {count} rows"]({ csv, count: 4 });
     }
   );
 });
