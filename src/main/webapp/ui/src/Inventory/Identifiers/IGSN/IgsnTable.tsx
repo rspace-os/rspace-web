@@ -1,8 +1,6 @@
 import React from "react";
-import { DataGrid } from "@mui/x-data-grid";
-import { type Identifier } from "../../useIdentifiers";
-import Checkbox from "@mui/material/Checkbox";
-import RsSet from "../../../util/set";
+import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
+import { type Identifier, useIdentifiersListing } from "../../useIdentifiers";
 import { DataGridColumn } from "../../../util/table";
 import { toTitleCase } from "../../../util/Util";
 import GlobalId from "../../../components/GlobalId";
@@ -15,55 +13,21 @@ export default function IgsnTable({
   selectedIgsns,
   setSelectedIgsns,
 }: {
-  selectedIgsns: RsSet<Identifier>;
-  setSelectedIgsns: (newSet: RsSet<Identifier>) => void;
+  selectedIgsns: ReadonlyArray<Identifier>;
+  setSelectedIgsns: (newlySelectedIgsns: ReadonlyArray<Identifier>) => void;
 }): React.ReactNode {
+  const [state] = React.useState<"draft" | "findable" | "registered" | null>(
+    null
+  );
+  const [isAssociated] = React.useState<boolean | null>(null);
+  const { identifiers, loading } = useIdentifiersListing({
+    state,
+    isAssociated,
+  });
   return (
     <DataGrid
-      rows={[]}
+      rows={identifiers}
       columns={[
-        {
-          field: "checkbox",
-          headerName: "Select",
-          renderCell: (params: { row: Identifier }) => (
-            <Checkbox
-              color="primary"
-              value={selectedIgsns.hasWithEq(
-                params.row,
-                (a, b) => a.doi === b.doi
-              )}
-              checked={selectedIgsns.hasWithEq(
-                params.row,
-                (a, b) => a.doi === b.doi
-              )}
-              inputProps={{ "aria-label": "IGSN ID selection" }}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setSelectedIgsns(
-                    selectedIgsns.unionWithEq(
-                      new RsSet([params.row]),
-                      (a, b) => a.doi === b.doi
-                    )
-                  );
-                } else {
-                  setSelectedIgsns(
-                    selectedIgsns.subtractWithEq(
-                      new RsSet([params.row]),
-                      (a, b) => a.doi === b.doi
-                    )
-                  );
-                }
-              }}
-              sx={{ p: 0.5 }}
-            />
-          ),
-          hideable: false,
-          width: 70,
-          flex: 0,
-          disableColumnMenu: true,
-          sortable: false,
-          disableExport: true,
-        },
         DataGridColumn.newColumnWithFieldName<"doi", Identifier>("doi", {
           headerName: "DOI",
           flex: 1,
@@ -100,6 +64,15 @@ export default function IgsnTable({
           }
         ),
       ]}
+      loading={loading}
+      checkboxSelection
+      rowSelectionModel={selectedIgsns.map((id) => id.doi)}
+      onRowSelectionModelChange={(ids: GridRowSelectionModel) => {
+        const selectedIdentifiers = identifiers.filter((id) =>
+          ids.includes(id.doi)
+        );
+        setSelectedIgsns(selectedIdentifiers);
+      }}
     />
   );
 }
