@@ -15,6 +15,7 @@ const feature = test.extend<{
   When: {
     "a CSV export is downloaded": () => Promise<Download>;
     "the researcher selects 'Draft' from the state menu": () => Promise<void>;
+    "the researcher selects 'No Linked Item' from the Linked Item menu": () => Promise<void>;
   };
   Then: {
     "a table should be shown": () => Promise<void>;
@@ -30,6 +31,7 @@ const feature = test.extend<{
       count: number;
     }) => Promise<void>;
     "there should be a network request with state set to 'draft'": () => void;
+    "there should be a network request with isAssociated set to 'false'": () => void;
   };
   networkRequests: Array<URL>;
 }>({
@@ -68,6 +70,11 @@ const feature = test.extend<{
         await page.getByRole("button", { name: /State/ }).click();
         await page.getByRole("menuitem", { name: /Draft/ }).click();
       },
+      "the researcher selects 'No Linked Item' from the Linked Item menu":
+        async () => {
+          await page.getByRole("button", { name: /Linked Item/ }).click();
+          await page.getByRole("menuitem", { name: /No Linked Item/ }).click();
+        },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -114,6 +121,14 @@ const feature = test.extend<{
             ?.searchParams.get("state")
         ).toBe("draft");
       },
+      "there should be a network request with isAssociated set to 'false'":
+        () => {
+          expect(
+            networkRequests
+              .find((url) => url.searchParams.has("isAssociated"))
+              ?.searchParams.get("isAssociated")
+          ).toBe("false");
+        },
     });
   },
   networkRequests: async ({}, use) => {
@@ -220,6 +235,19 @@ test.describe("IGSN Table", () => {
       await When["the researcher selects 'Draft' from the state menu"]();
       void Then[
         "there should be a network request with state set to 'draft'"
+      ]();
+    }
+  );
+
+  feature(
+    "Filtering by linked item makes API call with isAssociated parameter",
+    async ({ Given, When, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await When[
+        "the researcher selects 'No Linked Item' from the Linked Item menu"
+      ]();
+      void Then[
+        "there should be a network request with isAssociated set to 'false'"
       ]();
     }
   );
