@@ -17,6 +17,7 @@ const feature = test.extend<{
     "a CSV export is downloaded": () => Promise<Download>;
     "the researcher selects 'Draft' from the state menu": () => Promise<void>;
     "the researcher selects 'No Linked Item' from the Linked Item menu": () => Promise<void>;
+    "the researcher selects the IGSN with DOI '10.82316/khma-em96'": () => Promise<void>;
   };
   Then: {
     "a table should be shown": () => Promise<void>;
@@ -33,6 +34,7 @@ const feature = test.extend<{
     }) => Promise<void>;
     "there should be a network request with state set to 'draft'": () => void;
     "there should be a network request with isAssociated set to 'false'": () => void;
+    "the IGSN with DOI '10.82316/khma-em96' is added to the selection state": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -75,6 +77,13 @@ const feature = test.extend<{
         async () => {
           await page.getByRole("button", { name: /Linked Item/ }).click();
           await page.getByRole("menuitem", { name: /No Linked Item/ }).click();
+        },
+      "the researcher selects the IGSN with DOI '10.82316/khma-em96'":
+        async () => {
+          const row = page
+            .getByRole("row", { name: /10.82316\/khma-em96/ })
+            .first();
+          await row.getByRole("checkbox").first().click();
         },
     });
   },
@@ -129,6 +138,17 @@ const feature = test.extend<{
               .find((url) => url.searchParams.has("isAssociated"))
               ?.searchParams.get("isAssociated")
           ).toBe("false");
+        },
+      "the IGSN with DOI '10.82316/khma-em96' is added to the selection state":
+        async () => {
+          /*
+           * We can't check that setSelectedIdentifiers has actually been called
+           * using Playwright, but because IgsnTable.story renders the selection
+           * we can check what's been rendered.
+           */
+          await expect(
+            page.getByLabel("selected IGSNs").getByText("10.82316/khma-em96")
+          ).toBeVisible();
         },
     });
   },
@@ -256,6 +276,20 @@ test.describe("IGSN Table", () => {
       ]();
       void Then[
         "there should be a network request with isAssociated set to 'false'"
+      ]();
+    }
+  );
+
+  feature(
+    "When a researcher selects an identifier, the selection state is updated",
+    async ({ Given, Once, When, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Once["the table has loaded"]();
+      await When[
+        "the researcher selects the IGSN with DOI '10.82316/khma-em96'"
+      ]();
+      await Then[
+        "the IGSN with DOI '10.82316/khma-em96' is added to the selection state"
       ]();
     }
   );
