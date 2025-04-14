@@ -1,5 +1,10 @@
 // @flow
 
 import { type Node } from "react";
+import RsSet from "../../../util/set";
+import { type Identifier } from "../../useIdentifiers";
 
-declare export default function IgsnTable(): Node;
+declare export default function IgsnTable({|
+  selectedIgsns: RsSet<Identifier>,
+  setSelectedIgsns: (RsSet<Identifier>) => void,
+|}): Node;

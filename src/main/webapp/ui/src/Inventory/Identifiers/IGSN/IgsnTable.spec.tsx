@@ -4,6 +4,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 import IgsnTable from "./IgsnTable";
+import RsSet from "../../../util/set";
 
 const feature = test.extend<{
   Given: {
@@ -12,6 +13,7 @@ const feature = test.extend<{
   When: {};
   Then: {
     "a table should be shown": () => Promise<void>;
+    "the default columns should be Select, DOI, State, and Linked Item": () => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -20,7 +22,10 @@ const feature = test.extend<{
         await mount(
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={materialTheme}>
-              <IgsnTable />
+              <IgsnTable
+                selectedIgsns={new RsSet([])}
+                setSelectedIgsns={() => {}}
+              />
             </ThemeProvider>
           </StyledEngineProvider>
         );
@@ -36,6 +41,13 @@ const feature = test.extend<{
         const table = page.getByRole("grid");
         await expect(table).toBeVisible();
       },
+      "the default columns should be Select, DOI, State, and Linked Item":
+        async () => {
+          const headers = await page
+            .getByRole("columnheader")
+            .allTextContents();
+          expect(headers).toEqual(["Select", "DOI", "State", "Linked Item"]);
+        },
     });
   },
 });
@@ -48,6 +60,16 @@ test.describe("IGSN Table", () => {
     async ({ Given, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
       await Then["a table should be shown"]();
+    }
+  );
+
+  feature(
+    "The default columns should be Select, DOI, State, and Linked Item",
+    async ({ Given, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Then[
+        "the default columns should be Select, DOI, State, and Linked Item"
+      ]();
     }
   );
 });
