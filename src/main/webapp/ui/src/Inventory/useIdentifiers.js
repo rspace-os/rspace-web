@@ -6,7 +6,6 @@ import useOauthToken from "../common/useOauthToken";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
-import RsSet from "../util/set";
 
 export type Identifier = {|
   id: number,
@@ -31,7 +30,7 @@ export function useIdentifiers({
   loading: boolean,
   error: Error | null,
   bulkRegister: ({| count: number |}) => Promise<void>,
-  deleteIdentifiers: (RsSet<Identifier>) => Promise<void>,
+  deleteIdentifiers: ($ReadOnlyArray<Identifier>) => Promise<void>,
 |} {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -82,7 +81,9 @@ export function useIdentifiers({
                       "associatedGlobalId"
                     )(data)
                       .flatMap<string | null>((gId) =>
-                        Parsers.isString(gId).orElseTry(() => Parsers.isNull(gId))
+                        Parsers.isString(gId).orElseTry(() =>
+                          Parsers.isNull(gId)
+                        )
                       )
                       .elseThrow();
 
@@ -181,18 +182,21 @@ export function useIdentifiers({
     }
   }
 
-  async function deleteIdentifiers(identifiers: RsSet<Identifier>) {
+  async function deleteIdentifiers(identifiers: $ReadOnlyArray<Identifier>) {
     try {
       const token = await getToken();
       const failed: Array<Identifier["doi"]> = [];
       const success: Array<Identifier["doi"]> = [];
       for (const identifier of identifiers) {
         try {
-          await axios.delete<mixed>(`/api/inventory/v1/identifiers/${identifier.id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          await axios.delete<mixed>(
+            `/api/inventory/v1/identifiers/${identifier.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
           success.push(identifier.doi);
         } catch (e) {
           failed.push(identifier.doi);
@@ -219,7 +223,7 @@ export function useIdentifiers({
             details: success.map((doi) => ({
               title: `Deleted "${doi}"`,
               variant: "success",
-            }))
+            })),
           })
         );
       }
@@ -234,7 +238,7 @@ export function useIdentifiers({
         })
       );
     }
-  };
+  }
 
   return { identifiers, loading, error, bulkRegister, deleteIdentifiers };
 }
