@@ -15,7 +15,6 @@ import {
   GridToolbarExportContainer,
 } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../../util/table";
-import Checkbox from "@mui/material/Checkbox";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import GlobalId from "../../../components/GlobalId";
 import MenuItem from "@mui/material/MenuItem";
@@ -35,7 +34,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
-import RsSet from "../../../util/set";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import PrintDialog from "./PrintDialog";
 import PrintIcon from "@mui/icons-material/Print";
@@ -168,8 +166,8 @@ export default function IgsnManagementPage({
   selectedIgsns,
   setSelectedIgsns,
 }: {|
-  selectedIgsns: RsSet<Identifier>,
-  setSelectedIgsns: (RsSet<Identifier>) => void,
+  selectedIgsns: $ReadOnlyArray<Identifier>,
+  setSelectedIgsns: ($ReadOnlyArray<Identifier>) => void,
 |}): Node {
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
@@ -191,7 +189,7 @@ export default function IgsnManagementPage({
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<?HTMLElement>(null);
   const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
- 
+
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Main sx={{ overflowY: "auto" }}>
@@ -289,7 +287,7 @@ export default function IgsnManagementPage({
                   aria-haspopup="menu"
                   aria-expanded={false}
                   id="actions-menu"
-                  disabled={selectedIgsns.size === 0}
+                  disabled={selectedIgsns.length === 0}
                   onClick={(event) => {
                     setActionsAnchorEl(event.currentTarget);
                   }}
@@ -320,14 +318,14 @@ export default function IgsnManagementPage({
                       setPrintDialogOpen(false);
                       setActionsAnchorEl(null);
                     }}
-                    itemsToPrint={selectedIgsns.toArray()}
+                    itemsToPrint={selectedIgsns}
                   />
                   <AccentMenuItem
                     title="Delete"
                     subheader="Does not delete any linked item."
                     onClick={() => {
                       void deleteIdentifiers(selectedIgsns).then(() => {
-                        setSelectedIgsns(new RsSet());
+                        setSelectedIgsns([]);
                       });
                       setActionsAnchorEl(null);
                     }}
@@ -341,48 +339,6 @@ export default function IgsnManagementPage({
               <div style={{ width: "100%" }}>
                 <DataGrid
                   columns={[
-                    {
-                      field: "checkbox",
-                      headerName: "Select",
-                      renderCell: (params: { row: Identifier, ... }) => (
-                        <Checkbox
-                          color="primary"
-                          value={selectedIgsns.hasWithEq(
-                            params.row,
-                            (a, b) => a.doi === b.doi
-                          )}
-                          checked={selectedIgsns.hasWithEq(
-                            params.row,
-                            (a, b) => a.doi === b.doi
-                          )}
-                          inputProps={{ "aria-label": "IGSN ID selection" }}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedIgsns(
-                                selectedIgsns.unionWithEq(
-                                  new RsSet([params.row]),
-                                  (a, b) => a.doi === b.doi
-                                )
-                              );
-                            } else {
-                              setSelectedIgsns(
-                                selectedIgsns.subtractWithEq(
-                                  new RsSet([params.row]),
-                                  (a, b) => a.doi === b.doi
-                                )
-                              );
-                            }
-                          }}
-                          sx={{ p: 0.5 }}
-                        />
-                      ),
-                      hideable: false,
-                      width: 70,
-                      flex: 0,
-                      disableColumnMenu: true,
-                      sortable: false,
-                      disableExport: true,
-                    },
                     DataGridColumn.newColumnWithFieldName<_, Identifier>(
                       "doi",
                       {
@@ -437,6 +393,16 @@ export default function IgsnManagementPage({
                   hideFooter
                   autoHeight
                   loading={loading}
+                  checkboxSelection
+                  rowSelectionModel={selectedIgsns.map((id) => id.doi)}
+                  onRowSelectionModelChange={(
+                    ids: $ReadOnlyArray<Identifier["doi"]>
+                  ) => {
+                    const selectedIdentifiers = identifiers.filter((id) =>
+                      ids.includes(id.doi)
+                    );
+                    setSelectedIgsns(selectedIdentifiers);
+                  }}
                   slots={{
                     pagination: null,
                     toolbar: Toolbar,

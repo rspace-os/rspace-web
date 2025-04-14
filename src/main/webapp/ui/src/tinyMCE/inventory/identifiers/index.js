@@ -16,8 +16,7 @@ import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManageme
 import Button from "@mui/material/Button";
 import useOauthToken from "../../../common/useOauthToken";
 import axios from "@/common/axios";
-import { doNotAwait, toTitleCase } from "../../../util/Util";
-import RsSet from "../../../util/set";
+import { toTitleCase } from "../../../util/Util";
 import { type Identifier } from "../../../Inventory/useIdentifiers";
 import Typography from "@mui/material/Typography";
 
@@ -49,9 +48,9 @@ function IdentifiersDialog({
   onClose: () => void,
   editor: Editor,
 |}) {
-  const [selectedIgsns, setSelectedIgsns] = React.useState(
-    new RsSet<Identifier>()
-  );
+  const [selectedIgsns, setSelectedIgsns] = React.useState<
+    $ReadOnlyArray<Identifier>
+  >([]);
   const { getToken } = useOauthToken();
 
   const getBase64 = (file: File): Promise<string> =>
