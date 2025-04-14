@@ -7,14 +7,13 @@ import {
   handleDetailedErrors,
   handleDetailedSuccesses,
 } from "../../util/alerts";
-import { type Id, type GlobalId } from "../definitions/BaseRecord";
+import { type Id, type GlobalId, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
 import { type RecordDetails } from "../definitions/Record";
 import {
   type RecordType,
   type InventoryRecord,
   type LockStatus,
   type CreateOption,
-  inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";

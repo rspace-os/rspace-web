@@ -6,7 +6,7 @@ import { withStyles } from "Styles";
 import Typography from "@mui/material/Typography";
 // $FlowExpectedError[cannot-resolve-module] An .svg, not a JS module
 import EmptyListingSvg from "/src/assets/graphics/EmptyListing.svg";
-import { globalIdToInventoryRecordTypeLabel } from "../../../stores/definitions/InventoryRecord";
+import { globalIdToInventoryRecordTypeLabel } from "../../../stores/definitions/BaseRecord";
 import { type GlobalId } from "../../../stores/definitions/BaseRecord";
 
 type EmptyListingArgs = {|

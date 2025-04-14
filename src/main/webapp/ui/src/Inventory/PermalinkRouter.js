@@ -7,7 +7,7 @@ import React, { type Node, type ComponentType, useContext } from "react";
 import { type PermalinkType } from "../stores/definitions/Search";
 import NavigateContext, { type UseLocation } from "../stores/contexts/Navigate";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
-import { inventoryRecordTypeLabels } from "../stores/definitions/InventoryRecord";
+import { inventoryRecordTypeLabels } from "../stores/definitions/BaseRecord";
 import { globalIdPatterns } from "../stores/definitions/BaseRecord";
 import { match } from "../util/Util";
 

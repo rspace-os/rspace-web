@@ -6,8 +6,7 @@
  * document are to be interpreted as described in RFC 2119.
  */
 
-import { match } from "../../util/Util";
-import { globalIdPatterns, type Id, type GlobalId } from "./BaseRecord";
+import { type Id, type GlobalId } from "./BaseRecord";
 import { type Record, type ReadAccessLevel } from "./Record";
 import { type BlobUrl } from "../../util/types";
 import { type Editable } from "./Editable";
@@ -77,7 +76,8 @@ export type CreateOptionParameter = {|
    * the user in the create dialog. It MUST be an observable object so that
    * when the form field mutates the value, the component is re-rendered.
    */
-  state: | {| key: "split", copies: number |}
+  state:
+    | {| key: "split", copies: number |}
     | {| key: "name", value: string |}
     | {| key: "location", container: Container |}
     | {|
@@ -388,45 +388,3 @@ export interface InventoryRecord
   +usableInLoM: boolean;
   +beingCreatedInContainer: boolean;
 }
-
-/*
- * The corresponding label, as should be rendered by the UI, for each Inventory
- * record.
- */
-export const inventoryRecordTypeLabels = {
-  sample: "Sample",
-  subsample: "Subsample",
-  container: "Container",
-  sampleTemplate: "Sample Template",
-  bench: "Bench",
-  basket: "Basket",
-};
-
-export const globalIdToInventoryRecordTypeLabel: (GlobalId) => $Values<
-  typeof inventoryRecordTypeLabels
-> = match([
-  [
-    (globalId: GlobalId) => globalIdPatterns.sample.test(globalId),
-    inventoryRecordTypeLabels.sample,
-  ],
-  [
-    (globalId: GlobalId) => globalIdPatterns.subsample.test(globalId),
-    inventoryRecordTypeLabels.subsample,
-  ],
-  [
-    (globalId: GlobalId) => globalIdPatterns.container.test(globalId),
-    inventoryRecordTypeLabels.container,
-  ],
-  [
-    (globalId: GlobalId) => globalIdPatterns.sampleTemplate.test(globalId),
-    inventoryRecordTypeLabels.sampleTemplate,
-  ],
-  [
-    (globalId: GlobalId) => globalIdPatterns.bench.test(globalId),
-    inventoryRecordTypeLabels.bench,
-  ],
-  [
-    (globalId: GlobalId) => globalIdPatterns.basket.test(globalId),
-    inventoryRecordTypeLabels.basket,
-  ],
-]);

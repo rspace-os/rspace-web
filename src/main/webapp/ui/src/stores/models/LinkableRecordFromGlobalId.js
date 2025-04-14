@@ -2,7 +2,7 @@
 
 import { type GlobalId } from "../definitions/BaseRecord";
 import { type LinkableRecord } from "../definitions/LinkableRecord";
-import { inventoryRecordTypeLabels, globalIdToInventoryRecordTypeLabel } from "../definitions/InventoryRecord";
+import { inventoryRecordTypeLabels, globalIdToInventoryRecordTypeLabel } from "../definitions/BaseRecord";
 import { getByKey } from "../../util/optional";
 
 
