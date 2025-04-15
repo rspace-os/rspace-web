@@ -13,12 +13,14 @@ import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
+import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummyError;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -132,6 +134,12 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(result.get(0), user);
     inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(result.get(1), user);
     inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(result.get(2), user);
+  }
+
+  @Test(expected = DataCiteConnectionException.class)
+  public void testRegisterBulkIdentifiersThrowsError() {
+    inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummyError());
+    inventoryIdentifierApiMgr.registerBulkIdentifiers(3, user);
   }
 
   @Test

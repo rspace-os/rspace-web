@@ -1,6 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -105,11 +105,17 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       try {
         currentDoi = createNewDoi(user);
         DigitalObjectIdentifier dbObj = apiIdentifiersHelper.createDoiToSave(currentDoi, user);
-        dbObj = doiDao.save(dbObj);
+        log.info("New IGSN allocated: {}", dbObj.getIdentifier());
 
+        dbObj = doiDao.save(dbObj);
         result.add(new ApiInventoryDOI(dbObj));
+      } catch (DataCiteConnectionException dataciteEx) {
+        log.error("It was not possible to allocate IGSN: {}. ", dataciteEx.getMessage(), dataciteEx);
+        if(i == 0){ // if it happens during the first iteration
+          throw dataciteEx; // then stop the loop because it will happen for each of the items
+        }
       } catch (Exception ex) {
-        log.warn("It was not possible to allocate IGSN: {}", ex.getMessage(), ex);
+        log.warn("It was not possible to allocate IGSN: {}. ", ex.getMessage(), ex);
       }
     }
     return result;
@@ -256,6 +262,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     try {
       dataCiteDeleteResult = dataCiteConnector.deleteDoi(doi.getIdentifier());
     } catch (DataCiteConnectionException dcException) {
+      log.error("Error when deleting the DOI from DataCite: ", dcException.getCause());
       throw new DataCiteConnectionException(
           "Error when deleting the DOI from DataCite. "
               + "If the problem persists, please contact your System Admin",
