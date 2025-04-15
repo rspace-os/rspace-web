@@ -295,7 +295,9 @@ const SampleNavItem = observer(() => {
       label="Samples"
       datatestid="SamplesNavFilter"
       selected={
-        !benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE")
+        !benchSearch &&
+        isSearchListing() &&
+        searchStore.isTypeSelected("SAMPLE")
       }
       icon={
         <RecordTypeIcon
@@ -354,22 +356,16 @@ const TemplateNavItem = observer(() => {
   );
 });
 
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 const IgsnNavItem = observer(() => {
-  const theme = useTheme();
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
 
   return (
     <NavItem
       label="IGSN IDs"
-      selected={
-        /identifiers\/igsn/.test(window.location.pathname)
-      }
-      icon={
-        <IgsnIcon 
-          style={{ width: "28px", height: "18px" }}
-        />
-      }
+      selected={/identifiers\/igsn/.test(window.location.pathname)}
+      icon={<IgsnIcon style={{ width: "28px", height: "18px" }} />}
       badge={0}
       onClick={(e: Event) => {
         e.stopPropagation();
@@ -521,7 +517,12 @@ function Sidebar({ id }: SidebarArgs): Node {
           <SampleNavItem />
           <SubsampleNavItem />
           <TemplateNavItem />
-          <IgsnNavItem />
+          {/*
+            * The IGSN Management page code is merged in, to avoid a long-lived
+            * branch, but is not available for researchers to use until we have
+            * other UIs for utilising the unassigned IGSNs.
+            <IgsnNavItem />
+          */}
         </List>
         <List component="nav" aria-label="Other places and action">
           <ExportNavItem />
