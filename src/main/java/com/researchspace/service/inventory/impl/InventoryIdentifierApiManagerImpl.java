@@ -110,8 +110,9 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
         dbObj = doiDao.save(dbObj);
         result.add(new ApiInventoryDOI(dbObj));
       } catch (DataCiteConnectionException dataciteEx) {
-        log.error("It was not possible to allocate IGSN: {}. ", dataciteEx.getMessage(), dataciteEx);
-        if(i == 0){ // if it happens during the first iteration
+        log.error(
+            "It was not possible to allocate IGSN: {}. ", dataciteEx.getMessage(), dataciteEx);
+        if (i == 0) { // if it happens during the first iteration
           throw dataciteEx; // then stop the loop because it will happen for each of the items
         }
       } catch (Exception ex) {
