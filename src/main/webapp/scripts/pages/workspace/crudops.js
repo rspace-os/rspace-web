@@ -308,11 +308,9 @@ function createMoveDialog(onmove, moveparams) {
     open: function () {
       var moveTargetRoot = $("#movetargetRoot").val()
       var scriptUrl = '/fileTree/ajax/directoriesInModel';
-      if (moveTargetRoot === "/") {
-        var types = $(this).data('toMoveTypes');
-        if (onlyNormalDocsOnTypesList(types)) {
-          scriptUrl += '?showNotebooks=true';
-        }
+      var types = $(this).data('toMoveTypes');
+      if (onlyNormalDocsOnTypesList(types)) {
+        scriptUrl += '?showNotebooks=true';
       }
       $("#folder-move-path").html("");
       $('#movefolder-tree').fileTree({
