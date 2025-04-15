@@ -40,6 +40,7 @@ const feature = test.extend<{
     "there should be a network request with state set to 'draft'": () => void;
     "there should be a network request with isAssociated set to 'false'": () => void;
     "the IGSN with DOI '10.82316/khma-em96' is added to the selection state": () => Promise<void>;
+    "the Linked Item column should contains links": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -167,6 +168,41 @@ const feature = test.extend<{
             page.getByLabel("selected IGSNs").getByText("10.82316/khma-em96")
           ).toBeVisible();
         },
+      "the Linked Item column should contains links": async () => {
+        const table = page.getByRole("grid");
+
+        // Locate the header row
+        const headerRow = table.getByRole("row").first();
+
+        // Find the index of the "Linked Item" column
+        const headers = headerRow.getByRole("columnheader");
+        let linkedItemColumnIndex = -1;
+        for (let i = 0; i < (await headers.count()); i++) {
+          const headerText = await headers.nth(i).textContent();
+          if (headerText?.trim() === "Linked Item") {
+            linkedItemColumnIndex = i;
+            break;
+          }
+        }
+
+        // Ensure the "Linked Item" column was found
+        expect(linkedItemColumnIndex).not.toBe(-1);
+
+        // Locate all rows within the table body
+        const rows = table.getByRole("rowgroup").getByRole("row");
+
+        // Iterate through each row and check if the cell in the "Linked Item" column contains a link
+        for (let i = 0; i < (await rows.count()); i++) {
+          const cell = rows
+            .nth(i)
+            .getByRole("gridcell")
+            .nth(linkedItemColumnIndex);
+          const link = cell.locator("a");
+
+          // Assert that the cell contains a link
+          expect(await link.count()).toBeGreaterThan(0);
+        }
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -319,6 +355,15 @@ test.describe("IGSN Table", () => {
       await When["the researcher selects {count} IGSNs"]({ count: 2 });
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should have {count} rows"]({ csv, count: 2 });
+    }
+  );
+
+  feature(
+    "The Linked Item column should contain links to the Inventory record",
+    async ({ Given, Once, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Once["the table has loaded"]();
+      await Then["the Linked Item column should contains links"]();
     }
   );
 });
