@@ -16,6 +16,7 @@ public enum SystemPropertyName {
   DROPBOX_LINKING_ENABLED("dropbox.linking.enabled"),
   GOOGLE_DRIVE_AVAILABLE("googledrive.available"),
   GROUP_AUTOSHARING_AVAILABLE("group_autosharing.available"),
+  INVENTORY_AVAILABLE("inventory.available"),
   ORCID_AVAILABLE("orcid.available"),
   PUBLIC_LAST_LOGIN_AVAILABLE("publicLastLogin.available"),
   PUBLIC_SHARING("public_sharing"),

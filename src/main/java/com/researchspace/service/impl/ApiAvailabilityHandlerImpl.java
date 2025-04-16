@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.model.User;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,7 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
           "Access to all API has been disabled by your administrator", false);
   private static final ServiceOperationResult<String> invDisabled =
       new ServiceOperationResult<String>(
-          "Access to Inventory  has been disabled by your administrator", false);
+          "Access to Inventory has been disabled by your administrator", false);
 
   void setSystemPropertyManager(SystemPropertyPermissionManager systemPropertyManager) {
     this.systemPropertyManager = systemPropertyManager;
@@ -44,11 +45,11 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
   }
 
   private boolean isApiAvailable(User user) {
-    return systemPropertyManager.isPropertyAllowed(user, "api.available");
+    return systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.API_AVAILABLE);
   }
 
   private boolean isInventoryAvailable(User user) {
-    return systemPropertyManager.isPropertyAllowed(user, "inventory.available");
+    return systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.INVENTORY_AVAILABLE);
   }
 
   private boolean isInventoryRequest(HttpServletRequest request) {
