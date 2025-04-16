@@ -71,8 +71,10 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
             + " The number must be greater than 0");
     List<ApiInventoryDOI> result = identifierMgr.registerBulkIdentifiers(count, user);
     if (!count.equals(result.size())) {
-      log.error("Requested registration of {} draft IGSNs, but only managed to register {}",
-          count, result.size());
+      log.error(
+          "Requested registration of {} draft IGSNs, but only managed to register {}",
+          count,
+          result.size());
       throw new InternalServerErrorException(
           "Requested registration of "
               + count

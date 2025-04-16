@@ -219,7 +219,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
       } else {
         return new AjaxReturnObject<>(null, ErrorList.of(result.getMessage()));
       }
-    } catch (MalformedURLException | URISyntaxException e) {
+    } catch (Exception e) {
       log.error("Failure on listing DMPs", e);
       return new AjaxReturnObject<>(null, ErrorList.of("Couldn't list DMPs"));
     }
