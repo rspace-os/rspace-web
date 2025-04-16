@@ -225,35 +225,28 @@ export const PrintOptionsWrapper = ({
           <FormLabel id="print-copties-radiogroup-label">
             Print Copies
           </FormLabel>
-          {printOptions.printerType === "GENERIC" && (
-            <RadioGroup
-              aria-labelledby="print-copties-radiogroup-label"
-              value={printOptions.printCopies}
-              onChange={({ target }) => {
-                if (target.value)
-                  setPrintOptions({
-                    ...printOptions,
-                    printCopies: target.value,
-                  });
-              }}
-            >
-              <FormControlLabel
-                value="1"
-                control={<Radio size="small" />}
-                label="Each barcode once"
-              />
-              <FormControlLabel
-                value="2"
-                control={<Radio size="small" />}
-                label="Each barcode twice (raffle book)"
-              />
-            </RadioGroup>
-          )}
-          {printOptions.printerType === "LABEL" && (
-            <Alert severity="info">
-              For label printers, the number of copies is set to 1 per item.
-            </Alert>
-          )}
+          <RadioGroup
+            aria-labelledby="print-copties-radiogroup-label"
+            value={printOptions.printCopies}
+            onChange={({ target }) => {
+              if (target.value)
+                setPrintOptions({
+                  ...printOptions,
+                  printCopies: target.value,
+                });
+            }}
+          >
+            <FormControlLabel
+              value="1"
+              control={<Radio size="small" />}
+              label="Each barcode once"
+            />
+            <FormControlLabel
+              value="2"
+              control={<Radio size="small" />}
+              label="Each barcode twice (raffle book)"
+            />
+          </RadioGroup>
         </FormControl>
         <FormControl>
           <FormLabel id="print-size-radiogroup-label">Print Size</FormLabel>
@@ -327,9 +320,7 @@ function PrintDialog({
   const HelperText = () => (
     <>
       <Typography variant="body2" className={classes.centered}>
-        <strong>
-          Preview Barcode Label Layout
-        </strong>
+        <strong>Preview Barcode Label Layout</strong>
       </Typography>
     </>
   );
