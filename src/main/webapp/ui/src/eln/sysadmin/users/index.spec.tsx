@@ -50,6 +50,7 @@ const feature = test.extend<{
     }) => Promise<void>;
     "A request to set a verification password is shown": () => Promise<void>;
     "A request to set a verification password is not shown": () => Promise<void>;
+    "the usage should be shown in human-readable format": () => Promise<void>;
   };
 }>({
   Given: async ({ mount, router }, use) => {
@@ -166,6 +167,22 @@ const feature = test.extend<{
           )
         ).toBeVisible();
       },
+      "the usage should be shown in human-readable format": async () => {
+        const grid = page.getByRole("grid");
+        await expect(grid).toBeVisible();
+
+        const columnHeadings = grid.getByRole("columnheader");
+        const headings = await columnHeadings.allTextContents();
+        const usageIndex = headings.findIndex((heading) => heading === "Usage");
+        expect(usageIndex).toBeGreaterThan(-1);
+
+        await expect(
+          grid.getByRole("row").nth(2).getByRole("gridcell").nth(usageIndex)
+        ).toHaveText("362.01 kB");
+        await expect(
+          grid.getByRole("row").nth(3).getByRole("gridcell").nth(usageIndex)
+        ).toHaveText("0 B");
+      },
     });
   },
 });
@@ -193,6 +210,16 @@ test.beforeEach(async ({ page, router }) => {
       body: JSON.stringify(USER_LISTING),
     });
   });
+});
+
+test.describe("Table Listing", () => {
+  feature(
+    "Usage should be in a human-readable format",
+    async ({ Given, When, Then }) => {
+      await Given["the sysadmin is on the users page"]();
+      await Then["the usage should be shown in human-readable format"]();
+    }
+  );
 });
 
 test.describe("Grant User PI role", () => {
