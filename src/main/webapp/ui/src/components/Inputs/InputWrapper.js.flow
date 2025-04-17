@@ -1,0 +1,20 @@
+//@flow
+
+import { type Node } from "react";
+
+export type InputWrapperArgs = {|
+  label?: string,
+  children: ?Node,
+  value?: mixed,
+  error?: boolean,
+  helperText?: ?string,
+  maxLength?: number,
+  disabled?: boolean,
+  actions?: Node,
+  inline?: boolean,
+  explanation?: ?Node,
+  dataTestId?: string,
+  required?: boolean,
+|};
+
+declare export default function InputWrapper(InputWrapperArgs): Node;
