@@ -342,7 +342,8 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
         // Normalize the input to match the same action regardless if the end-user used upper or lowercase.
         return (
             action.type === 'separator' ||
-            action.text.toLowerCase().indexOf(pattern.toLowerCase()) !== -1
+            action.text.toLowerCase().indexOf(pattern.toLowerCase()) !== -1 ||
+            action.aliases?.some(alias => alias.toLowerCase().indexOf(pattern.toLowerCase()) !== -1)
         );
       }).filter((action, i, actions) => {
         // As the end-user filters the list, separators can end up adjacent to
@@ -453,6 +454,7 @@ function initTinyMCE(selector) {
 		const clustermarketEnabled =  integrations.CLUSTERMARKET.enabled && integrations.CLUSTERMARKET.available && properties["clustermarket.web.url"] !== "";
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
 		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
+		const identifiersEnabled = true; // TODO: check if Inventory is enabled
 
 		chemistryAvailable = integrations.CHEMISTRY.available;
 
@@ -535,6 +537,11 @@ function initTinyMCE(selector) {
 		}
 		if (chemistryEnabled) {
 			localTinymcesetup.external_plugins["cheminfo"] = "/scripts/externalTinymcePlugins/chemInfo/plugin.min.js";
+		}
+		if (identifiersEnabled) {
+			localTinymcesetup.external_plugins["identifiers"] = "/ui/dist/tinymceIdentifiers.js";
+			addToToolbarIfNotPresent(localTinymcesetup, " | identifiers");
+			addToMenuIfNotPresent(localTinymcesetup, " | optIdentifiers");
 		}
 	});
 
