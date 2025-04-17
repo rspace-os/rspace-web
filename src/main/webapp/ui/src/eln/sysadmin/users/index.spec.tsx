@@ -7,6 +7,7 @@ import materialTheme from "../../../theme";
 import PDF_CONFIG from "./__tests__/pdfConfig.json";
 import USER_LISTING from "./__tests__/userListing.json";
 import fs from "fs/promises";
+import AxeBuilder from "@axe-core/playwright";
 
 test.beforeEach(async ({ page, router }) => {
   await page.evaluate(() => {
@@ -108,6 +109,46 @@ test.describe("Grant User PI role", () => {
         "Please set your verification password in My RSpace before performing this action."
       )
     ).not.toBeVisible();
+  });
+});
+
+test.describe("Accessibility", () => {
+  test("Should have no axe violations.", async ({ mount, page }) => {
+    await mount(
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={materialTheme}>
+          <UsersPage />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    );
+    
+    // Wait for the table to be loaded
+    await expect(page.getByRole("table")).toBeVisible();
+    
+    // Run the accessibility scan
+    const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+    
+    // Filter out known issues that can't be fixed in component tests
+    expect(
+      accessibilityScanResults.violations.filter((v) => {
+        /*
+         * These violations are expected in component tests as we're not rendering
+         * a complete page with proper document structure:
+         * 
+         * 1. MUI DataGrid renders its immediate children with role=presentation,
+         *    which Firefox considers to be a violation
+         * 2. Component tests don't have main landmarks as they're isolated components
+         * 3. Component tests typically don't have h1 headings as they're not full pages
+         * 4. Content not in landmarks is expected in component testing context
+         */
+        return (
+          v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
+          v.id !== "landmark-one-main" &&
+          v.id !== "page-has-heading-one" &&
+          v.id !== "region"
+        );
+      })
+    ).toEqual([]);
   });
 });
 
