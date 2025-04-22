@@ -31,9 +31,8 @@ import {
   type Action,
   type SharingMode,
   type CreateOption,
-  inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
-import { type Id, type GlobalId } from "../definitions/BaseRecord";
+import { type Id, type GlobalId, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
 import { type RecordDetails } from "../definitions/Record";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
 import {

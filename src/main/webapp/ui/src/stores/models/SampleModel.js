@@ -39,6 +39,7 @@ import {
   type Id,
   type GlobalId,
   getSavedGlobalId,
+  inventoryRecordTypeLabels,
 } from "../definitions/BaseRecord";
 import { type RecordDetails } from "../definitions/Record";
 import {
@@ -47,7 +48,6 @@ import {
   type Action,
   type SharingMode,
   type CreateOption,
-  inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type _LINK } from "../../common/ApiServiceBase";
 import { type PersonAttrs } from "../definitions/Person";

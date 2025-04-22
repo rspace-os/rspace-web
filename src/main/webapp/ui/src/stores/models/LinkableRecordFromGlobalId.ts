@@ -1,10 +1,11 @@
 // @flow
 
-import { type GlobalId } from "../definitions/BaseRecord";
 import { type LinkableRecord } from "../definitions/LinkableRecord";
-import { inventoryRecordTypeLabels, globalIdToInventoryRecordTypeLabel } from "../definitions/InventoryRecord";
+import {
+  type GlobalId,
+  globalIdToInventoryRecordTypeLabel,
+} from "../definitions/BaseRecord";
 import { getByKey } from "../../util/optional";
-
 
 /**
  * This is a LinkableRecord that can be constructed from just a Global Id. It
@@ -13,9 +14,9 @@ import { getByKey } from "../../util/optional";
  * information about the record.
  */
 export default class LinkableRecordFromGlobalId implements LinkableRecord {
-  globalId: ?GlobalId;
+  globalId: GlobalId | null;
   name: string;
-  id: ?number;
+  id: number | null;
 
   constructor(globalId: GlobalId) {
     this.globalId = globalId;
@@ -30,11 +31,11 @@ export default class LinkableRecordFromGlobalId implements LinkableRecord {
 
   get iconName(): string {
     if (!this.globalId) throw new Error("Impossible");
-    return getByKey(this.globalId.substring(0, 2), {
-      "IC": "container",
-      "SA": "sample",
-      "SS": "subsample",
-      "IT": "template",
+    return getByKey(this.globalId.substring(0, 2) as never, {
+      IC: "container",
+      SA: "sample",
+      SS: "subsample",
+      IT: "template",
     }).orElseGet(() => {
       throw new Error("Not an Inventory Record Type");
     });

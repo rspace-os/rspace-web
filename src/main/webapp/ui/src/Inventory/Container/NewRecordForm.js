@@ -4,7 +4,7 @@ import React, { type Node } from "react";
 import useStores from "../../stores/use-stores";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
-import { inventoryRecordTypeLabels } from "../../stores/definitions/InventoryRecord";
+import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
 import NameField from "../components/Fields/Name";
 import Organization from "./Fields/Organization/Organization";
 import ContainerImage from "../components/Fields/Image";

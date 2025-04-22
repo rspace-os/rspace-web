@@ -5,7 +5,7 @@ import { observer } from "mobx-react-lite";
 import useStores from "../../stores/use-stores";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
-import { inventoryRecordTypeLabels } from "../../stores/definitions/InventoryRecord";
+import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
 import SampleModel from "../../stores/models/SampleModel";
 import docLinks from "../../assets/DocLinks";
 import { capitaliseJustFirstChar } from "../../util/Util";

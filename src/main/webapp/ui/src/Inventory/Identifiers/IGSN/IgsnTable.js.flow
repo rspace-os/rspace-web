@@ -1,0 +1,9 @@
+// @flow
+
+import { type Node } from "react";
+import { type Identifier } from "../../useIdentifiers";
+
+declare export default function IgsnTable({|
+  selectedIgsns: $ReadOnlyArray<Identifier>,
+  setSelectedIgsns: ($ReadOnlyArray<Identifier>) => void,
+|}): Node;

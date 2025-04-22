@@ -9,14 +9,13 @@ import {
   type HasEditableFields,
   type HasUneditableFields,
 } from "../definitions/Editable";
-import { type Id, type GlobalId } from "../definitions/BaseRecord";
+import { type Id, type GlobalId, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
 import { type RecordDetails } from "../definitions/Record";
 import {
   type RecordType,
   type Action,
   type InventoryRecord,
   type CreateOption,
-  inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";

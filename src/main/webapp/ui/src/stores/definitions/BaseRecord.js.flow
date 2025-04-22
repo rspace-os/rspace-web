@@ -14,6 +14,15 @@ export type GlobalIdPrefix =
   | "SD"
   | "GP";
 declare export const globalIdPatterns: { [string]: RegExp };
+declare export const inventoryRecordTypeLabels: {|
+  sample: "Sample",
+  subsample: "Subsample",
+  container: "Container",
+  sampleTemplate: "Sample Template",
+  bench: "Bench",
+  basket: "Basket",
+|};
+declare export const globalIdToInventoryRecordTypeLabel: (GlobalId) => $Values<typeof inventoryRecordTypeLabels>;
 
 export interface BaseRecord {
   id: Id;
