@@ -85,6 +85,10 @@ declare module "@mui/material/styles/createPalette" {
       attachment: Pick<RecordPalette, "fg">;
       gallery: Pick<RecordPalette, "fg">;
     };
+    hover: {
+      tableRow: string;
+      iconButton: string;
+    };
   }
   interface PaletteOptions {
     callToAction: PaletteColorOptions;

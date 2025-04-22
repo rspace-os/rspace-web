@@ -1,0 +1,33 @@
+//@flow
+
+import { type Node } from "react";
+import RsSet from "../../util/set";
+import { Optional } from "../../util/optional";
+
+declare export default function TagsCombobox<
+  Toggle:
+    | {|
+        enforce: true,
+        tag: {|
+          value: string,
+          vocabulary: string,
+          uri: string,
+          version: string,
+        |},
+      |}
+    | {|
+        enforce: false,
+        tag: {|
+          value: string,
+          vocabulary: Optional<string>,
+          uri: Optional<string>,
+          version: Optional<string>,
+        |},
+      |}
+>({|
+  enforceOntologies: Toggle["enforce"],
+  value: RsSet<Toggle["tag"]>,
+  anchorEl: ?Element,
+  onSelection: (Toggle["tag"]) => void,
+  onClose: () => void,
+|}): Node;

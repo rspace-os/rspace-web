@@ -1,0 +1,56 @@
+// @flow
+
+export type ExportSelection =
+  | {|
+      type: "selection",
+      exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">,
+      exportNames: Array<string>,
+      exportIds: $ReadOnlyArray<string>,
+    |}
+  | {|
+      type: "group",
+      groupId: string,
+      groupName: string,
+      exportIds: Array<mixed>,
+    |}
+  | {|
+      type: "user",
+      username: string,
+      exportIds: Array<mixed>,
+    |};
+
+export type PageSize = "A4" | "LETTER";
+
+type Path = string;
+
+export type FileLink = {
+  type: "file",
+  size: number,
+  fileSystemFullPath: Path,
+  path: Path,
+};
+
+export type FolderLink = {
+  type: "folder",
+  content: Array<MixedLink>,
+  fileSystemFullPath: Path,
+  size: null,
+};
+
+type FoundFileLink = {|
+  linkType: "file" | "directory",
+  path: Path,
+|};
+export type MixedLink = FileLink | FolderLink;
+
+export type FileSystemId = string;
+
+export type FileSystem = {|
+  id: FileSystemId,
+  name: string,
+  foundNfsLinks: Array<FoundFileLink>,
+  loggedAs: ?string,
+  checkedNfsLinks: Array<?MixedLink>,
+  checkedNfsLinkMessages: { [Path]: string },
+|};
+
