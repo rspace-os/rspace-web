@@ -1837,6 +1837,10 @@
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
+          <artifactId>rda-dmp-common-standard</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
           <artifactId>repository-spi</artifactId>
         </exclusion>
         <exclusion>
@@ -1888,7 +1892,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>dmptool-java-client</artifactId>
-        <version>0.2.1</version>
+        <version>0.2.2</version>
         <exclusions>
             <exclusion>
                 <groupId>com.fasterxml.jackson.core</groupId>
