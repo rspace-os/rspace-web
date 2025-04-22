@@ -10,6 +10,17 @@ import clsx from "clsx";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
+import { Optional } from "../../../util/optional";
+import { type Identifier } from "../../../stores/definitions/Identifier";
+import { type GlobalId } from "../../../stores/definitions/BaseRecord";
+
+export type PrintLabelContents = {|
+  itemLabel: string,
+  locationLabel: string,
+  identifier: Optional<{ doi: string }>,
+  globalId: Optional<GlobalId>,
+  barcodeUrl: string,
+|};
 
 const itemPxWidth = {
   small: "110px",
@@ -110,7 +121,7 @@ type Target = "screen" | "multiplePrint" | "singlePrint";
 
 type PrintContentsArgs = {|
   printOptions: PrintOptions,
-  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
+  itemsToPrint: $ReadOnlyArray<PrintLabelContents>,
   imageLinks?: $ReadOnlyArray<string>,
   target: Target,
 |};
@@ -120,11 +131,11 @@ type PreviewPrintItemArgs = {|
   printOptions: PrintOptions,
 
   /*
-   * If `printOptions.printIdentifierType` is "IGSN", then `itemOwner` SHOULD
-   * have at least one identifier. If it does not then nothing will be
+   * If `printOptions.printIdentifierType` is "IGSN", then `printLabelContents`
+   * SHOULD have a present identifier. If it does not then nothing will be
    * rendered.
    */
-  itemOwner: InventoryRecord,
+  printLabelContents: PrintLabelContents,
 
   imageLinks?: $ReadOnlyArray<string>,
   forPrint?: boolean, // false for screen preview
@@ -134,13 +145,11 @@ type PreviewPrintItemArgs = {|
 export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
   index,
   printOptions,
-  itemOwner,
+  printLabelContents,
   imageLinks,
   target,
 }) => {
   const { printerType, printLayout, printSize } = printOptions;
-
-  const recordString = `${toTitleCase(itemOwner.type)} - ${itemOwner.name}`;
 
   const now = new Date();
 
@@ -167,38 +176,30 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
     return classes.singlePc;
   };
 
-  if (
-    printOptions.printIdentifierType === "IGSN" &&
-    !itemOwner.identifiers[0]
-  ) {
+  const getHeader = () => {
+    return printOptions.printIdentifierType === "GLOBAL ID"
+      ? printLabelContents.globalId.map((globalId) => (
+          <>
+            <strong style={{ fontSize: "0.8em" }}>RSPACE GLOBAL ID</strong>
+            <br />
+            {globalId}
+          </>
+        ))
+      : printLabelContents.identifier.map(({ doi }) => (
+          <>
+            <strong style={{ fontSize: "0.8em" }}>IGSN ID</strong>
+            <br />
+            {doi}
+          </>
+        ));
+  };
+
+  const header = getHeader().orElse(null);
+
+  if (!header) {
     return null;
   }
-  const header =
-    printOptions.printIdentifierType === "GLOBAL ID" ? (
-      <>
-        <strong
-          style={{
-            fontSize: "0.8em",
-          }}
-        >
-          RSPACE GLOBAL ID
-        </strong>
-        <br />
-        {itemOwner.globalId}
-      </>
-    ) : (
-      <>
-        <strong
-          style={{
-            fontSize: "0.8em",
-          }}
-        >
-          IGSN ID
-        </strong>
-        <br />
-        {itemOwner.identifiers[0].doi}
-      </>
-    );
+
   return (
       <>
         <div className={clsx(classes.printItemWrapper, sizeClass())}>
@@ -246,20 +247,19 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
                 </Grid>
                 {printLayout === "FULL" && (
                   <>
-                    <Grid item>{`${window.location.origin}/globalId/${
-                      itemOwner.globalId ?? ""
-                    }`}</Grid>
+                    {printLabelContents.globalId.map((globalId) => (
+                      <Grid
+                        item
+                      >{`${window.location.origin}/globalId/${globalId}`}</Grid>
+                    )).orElse(null)}
                     <Grid item>
                       <strong>Item:</strong>{" "}
                       {printOptions.printCopies === "1" && <br />}
-                      {recordString}
+                      {printLabelContents.itemLabel}
                     </Grid>
                     <Grid item>
                       <strong>Location:</strong>{" "}
-                      {itemOwner instanceof ContainerModel ||
-                      itemOwner instanceof SubSampleModel
-                        ? itemOwner.immediateParentContainer?.globalId ?? "-"
-                        : "-"}
+                      {printLabelContents.locationLabel}
                     </Grid>
                     <Grid item>
                       <strong>Printed:</strong>{" "}
@@ -300,7 +300,7 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
           printOptions.printerType === "LABEL" && classes.block
         )}
       >
-        {itemsToPrint.map((itemOwner, i) => (
+        {itemsToPrint.map((itemToPrint, i) => (
           <>
             <Grid
               item
@@ -314,7 +314,7 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
               <PreviewPrintItem
                 index={i}
                 printOptions={printOptions}
-                itemOwner={itemOwner}
+                printLabelContents={itemToPrint}
                 imageLinks={imageLinks}
                 target={target}
               />
@@ -325,7 +325,7 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
                   <PreviewPrintItem
                     index={i}
                     printOptions={printOptions}
-                    itemOwner={itemOwner}
+                    printLabelContents={itemToPrint}
                     imageLinks={imageLinks}
                     target={target}
                   />

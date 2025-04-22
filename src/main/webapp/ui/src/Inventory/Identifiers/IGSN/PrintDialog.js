@@ -6,7 +6,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import ContextDialog from "../ContextMenu/ContextDialog";
+import ContextDialog from "../../components/ContextMenu/ContextDialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
@@ -16,21 +16,20 @@ import Radio from "@mui/material/Radio";
 import Typography from "@mui/material/Typography";
 import { makeStyles } from "tss-react/mui";
 import useStores from "../../../stores/use-stores";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import Alert from "@mui/material/Alert";
-import PrintContents, { PreviewPrintItem } from "./PrintContents";
+import PrintContents, {
+  PreviewPrintItem,
+} from "../../components/Print/PrintContents";
 import ReactToPrint from "react-to-print";
 import docLinks from "../../../assets/DocLinks";
 import clsx from "clsx";
 import { mkAlert } from "../../../stores/contexts/Alert";
-import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
+import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import ApiService from "../../../common/InvApiService";
 import Stack from "@mui/material/Stack";
-import { toTitleCase } from "../../../util/Util";
-import ContainerModel from "../../../stores/models/ContainerModel";
-import SubSampleModel from "../../../stores/models/SubSampleModel";
 import { Optional } from "../../../util/optional";
+import { type Identifier } from "../../useIdentifiers";
 
 const useStyles = makeStyles()((theme) => ({
   rowWrapper: {
@@ -66,12 +65,6 @@ export type PrintLayout = "BASIC" | "FULL";
 export type PrintSize = "SMALL" | "LARGE";
 
 export type PrintOptions = {
-  /*
-   * All records have a global ID, but some also have an IGSN. The print dialog
-   * should support printing either, where possible.
-   */
-  printIdentifierType?: "GLOBAL ID" | "IGSN",
-
   printerType: PrinterType,
   printLayout: PrintLayout,
   printSize: PrintSize,
@@ -89,7 +82,7 @@ export type PrintOptions = {
 type PrintDialogArgs = {|
   showPrintDialog: boolean,
   onClose: () => void,
-  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
+  itemsToPrint: $ReadOnlyArray<Identifier>,
   printerType?: PrinterType,
   printSize?: PrintSize,
   /* n/a for non-contextMenu cases */
@@ -97,13 +90,11 @@ type PrintDialogArgs = {|
 |};
 
 type OptionsWrapperArgs = {|
-  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
   printOptions: PrintOptions,
   setPrintOptions: (PrintOptions) => void,
 |};
 
 export const PrintOptionsWrapper = ({
-  itemsToPrint,
   printOptions,
   setPrintOptions,
 }: OptionsWrapperArgs): Node => {
@@ -116,40 +107,6 @@ export const PrintOptionsWrapper = ({
       className={isSingleColumnLayout ? classes.fullWidth : classes.halfWidth}
     >
       <Stack spacing={3}>
-        <FormControl>
-          <FormLabel id="identifiers-type-radiogroup-label">
-            Identifier Type
-          </FormLabel>
-          <RadioGroup
-            aria-labelledby="identifiers-type-radiogroup-label"
-            value={printOptions.printIdentifierType}
-            onChange={({ target }) => {
-              if (target.value)
-                setPrintOptions({
-                  ...printOptions,
-                  printIdentifierType: target.value,
-                });
-            }}
-            row
-          >
-            <FormControlLabel
-              value="GLOBAL ID"
-              control={<Radio size="small" />}
-              label="Global ID"
-            />
-            <FormControlLabel
-              value="IGSN"
-              control={<Radio size="small" />}
-              label="IGSN ID"
-            />
-          </RadioGroup>
-          {printOptions.printIdentifierType === "IGSN" &&
-            itemsToPrint.some((record) => record.identifiers.length === 0) && (
-              <Alert severity="error">
-                Some of the selected records do not have an IGSN ID.
-              </Alert>
-            )}
-        </FormControl>
         <FormControl>
           <FormLabel id="printer-type-radiogroup-label">Printer Type</FormLabel>
           <RadioGroup
@@ -229,28 +186,35 @@ export const PrintOptionsWrapper = ({
           <FormLabel id="print-copties-radiogroup-label">
             Print Copies
           </FormLabel>
-          <RadioGroup
-            aria-labelledby="print-copties-radiogroup-label"
-            value={printOptions.printCopies}
-            onChange={({ target }) => {
-              if (target.value)
-                setPrintOptions({
-                  ...printOptions,
-                  printCopies: target.value,
-                });
-            }}
-          >
-            <FormControlLabel
-              value="1"
-              control={<Radio size="small" />}
-              label="Each barcode once"
-            />
-            <FormControlLabel
-              value="2"
-              control={<Radio size="small" />}
-              label="Each barcode twice (raffle book)"
-            />
-          </RadioGroup>
+          {printOptions.printerType === "GENERIC" && (
+            <RadioGroup
+              aria-labelledby="print-copties-radiogroup-label"
+              value={printOptions.printCopies}
+              onChange={({ target }) => {
+                if (target.value)
+                  setPrintOptions({
+                    ...printOptions,
+                    printCopies: target.value,
+                  });
+              }}
+            >
+              <FormControlLabel
+                value="1"
+                control={<Radio size="small" />}
+                label="Each barcode once"
+              />
+              <FormControlLabel
+                value="2"
+                control={<Radio size="small" />}
+                label="Each barcode twice (raffle book)"
+              />
+            </RadioGroup>
+          )}
+          {printOptions.printerType === "LABEL" && (
+            <Alert severity="info">
+              For label printers, the number of copies is set to 1 per item.
+            </Alert>
+          )}
         </FormControl>
         <FormControl>
           <FormLabel id="print-size-radiogroup-label">Print Size</FormLabel>
@@ -309,7 +273,6 @@ function PrintDialog({
   const componentToPrint = useRef<mixed>();
 
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
-    printIdentifierType: "GLOBAL ID",
     printerType: printerType ?? "GENERIC",
     printLayout: "FULL",
     printSize: printSize ?? "LARGE",
@@ -333,35 +296,19 @@ function PrintDialog({
     []
   );
   React.useEffect(() => {
-    if (
-      printOptions.printIdentifierType === "IGSN" &&
-      itemsToPrint.some((record) => record.identifiers.length === 0)
-    ) {
-      return;
-    }
-    if (
-      printOptions.printIdentifierType === "GLOBAL ID" &&
-      itemsToPrint.some((record) => record.barcodes.length === 0)
-    ) {
-      return;
-    }
-
     imageLinks.forEach((img) => URL.revokeObjectURL(img));
 
-    const getImageUrl = async (record: InventoryRecord) => {
-      if (printOptions.printIdentifierType === "IGSN") {
-        const { data } = await ApiService.query<{||}, Blob>(
-          "/barcodes",
-          new URLSearchParams({
-            content: `https://doi.org/${record.identifiers[0].doi}`,
-            barcodeType: "QR",
-          }),
-          true
-        );
-        const file = new File([data], "", { type: "image/png" });
-        return URL.createObjectURL(file);
-      }
-      return URL.createObjectURL(await record.barcodes[0].fetchImage());
+    const getImageUrl = async (identifier: Identifier) => {
+      const { data } = await ApiService.query<{||}, Blob>(
+        "/barcodes",
+        new URLSearchParams({
+          content: `https://doi.org/${identifier.doi}`,
+          barcodeType: "QR",
+        }),
+        true
+      );
+      const file = new File([data], "", { type: "image/png" });
+      return URL.createObjectURL(file);
     };
 
     Promise.all(itemsToPrint.map(getImageUrl))
@@ -378,7 +325,7 @@ function PrintDialog({
           })
         );
       });
-  }, [itemsToPrint, printOptions]);
+  }, [itemsToPrint]);
 
   return (
     <ContextDialog
@@ -395,7 +342,6 @@ function PrintDialog({
           }
         >
           <PrintOptionsWrapper
-            itemsToPrint={itemsToPrint}
             printOptions={printOptions}
             setPrintOptions={setPrintOptions}
           />
@@ -409,58 +355,43 @@ function PrintDialog({
             {imageLinks.length === itemsToPrint.length ? (
               <>
                 {/* we preview only one item, resulting from choice of print options */}
-                {printOptions.printIdentifierType === "IGSN" &&
-                itemsToPrint.some((record) => record.identifiers.length === 0)
-                  ? "Please resolve error."
-                  : ArrayUtils.head(itemsToPrint)
-                      .map((inventoryRecord) => (
-                        <PreviewPrintItem
-                          key={inventoryRecord.globalId}
-                          index={0}
-                          printOptions={printOptions}
-                          printLabelContents={{
-                            itemLabel: `${toTitleCase(
-                              inventoryRecord.type
-                            )} - ${inventoryRecord.name}`,
-                            locationLabel:
-                              inventoryRecord instanceof ContainerModel ||
-                              inventoryRecord instanceof SubSampleModel
-                                ? inventoryRecord.immediateParentContainer
-                                    ?.globalId ?? "-"
-                                : "-",
-                            identifier: ArrayUtils.getAt(
-                              0,
-                              inventoryRecord.identifiers
-                            ).map((identifier) => ({ doi: identifier.doi })),
-                            globalId: Optional.fromNullable(
-                              inventoryRecord.globalId
-                            ),
-                            barcodeUrl: imageLinks[0],
-                          }}
-                          imageLinks={imageLinks}
-                          target="screen"
-                        />
-                      ))
-                      .elseThrow()}
+                {ArrayUtils.head(itemsToPrint)
+                  .map((identifier) => (
+                    <PreviewPrintItem
+                      key={identifier.doi}
+                      index={0}
+                      printOptions={{
+                        ...printOptions,
+                        printIdentifierType: "IGSN",
+                      }}
+                      printLabelContents={{
+                        itemLabel: "-",
+                        locationLabel: "-",
+                        identifier: Optional.present(identifier),
+                        globalId: Optional.empty(),
+                        barcodeUrl: imageLinks[0],
+                      }}
+                      imageLinks={imageLinks}
+                      target="screen"
+                    />
+                  ))
+                  .elseThrow()}
                 {/* we need the whole component for ReactToPrint, but not visible here */}
                 <div className={classes.hidden}>
                   <PrintContents
                     ref={componentToPrint}
-                    printOptions={printOptions}
+                    printOptions={{
+                      ...printOptions,
+                      printIdentifierType: "IGSN",
+                    }}
                     itemsToPrint={ArrayUtils.zipWith(
                       itemsToPrint,
                       imageLinks,
-                      (record, barcodeUrl) => ({
-                        itemLabel: `${toTitleCase(record.type)} - ${
-                          record.name
-                        }`,
-                        locationLabel:
-                          record instanceof ContainerModel ||
-                          record instanceof SubSampleModel
-                            ? record.immediateParentContainer?.globalId ?? "-"
-                            : "-",
-                        identifier: ArrayUtils.getAt(0, record.identifiers).map((identifier) => ({ doi: identifier.doi })),
-                        globalId: Optional.fromNullable(record.globalId),
+                      (identifier, barcodeUrl) => ({
+                        itemLabel: "-",
+                        locationLabel: "-",
+                        identifier: Optional.present(identifier),
+                        globalId: Optional.empty(),
                         barcodeUrl,
                       })
                     )}
@@ -490,10 +421,6 @@ function PrintDialog({
               color="primary"
               variant="contained"
               disableElevation
-              disabled={
-                printOptions.printIdentifierType === "IGSN" &&
-                itemsToPrint.some((record) => record.identifiers.length === 0)
-              }
             >
               {`Print selected (${itemsToPrint.length})`}
             </Button>
@@ -503,7 +430,7 @@ function PrintDialog({
             handleClose();
             trackingStore.trackEvent("user:print:barcodeLabel", {
               count: itemsToPrint.length,
-              printIdentifierType: printOptions.printIdentifierType,
+              printIdentifierType: "IGSN ID",
               printerType: printOptions.printerType,
               printLayout: printOptions.printLayout,
               printSize: printOptions.printSize,
