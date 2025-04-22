@@ -8,7 +8,7 @@ module.exports = {
       severity: "error",
       from: {},
       to: {
-        licenseNot: ["MIT", "BSD", "Apache", "Hippocratic", "ISC"],
+        licenseNot: ["MIT", "BSD", "Apache", "Hippocratic", "ISC", "MPL"],
       },
     },
 
@@ -40,8 +40,8 @@ module.exports = {
       },
     },
 
-// this rule is disabled because cycles are generally not an issue, but the rule can be useful when debugging some issues.
-/*
+    // this rule is disabled because cycles are generally not an issue, but the rule can be useful when debugging some issues.
+    /*
     {
       name: 'no-circular',
       severity: 'warn',
@@ -326,13 +326,15 @@ module.exports = {
 
     {
       name: "restrict-assets-dependencies",
-      comment: "src/assets should only depend on a small subset of the codebase.",
+      comment:
+        "src/assets should only depend on a small subset of the codebase.",
       severity: "error",
       from: {
         path: "src/assets",
       },
       to: {
-        pathNot: "src/assets|src/util|react|node_modules/@mui/material/node/SvgIcon",
+        pathNot:
+          "src/assets|src/util|react|node_modules/@mui/material/node/SvgIcon",
       },
     },
 
@@ -421,9 +423,9 @@ module.exports = {
        dependency-cruiser's current working directory). When not provided
        defaults to './tsconfig.json'.
      */
-     tsConfig: {
-       fileName: 'tsconfig.json'
-     },
+    tsConfig: {
+      fileName: "tsconfig.json",
+    },
 
     /* Webpack configuration to use to get resolve options from.
 
@@ -448,7 +450,7 @@ module.exports = {
       systems) without dependency-cruiser getting a major version bump.
      */
     //babelConfig: {
-      //fileName: 'babel.config.js'
+    //fileName: 'babel.config.js'
     //},
 
     /* List of strings you have in use in addition to cjs/ es6 requires

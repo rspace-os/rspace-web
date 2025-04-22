@@ -1,13 +1,14 @@
-import { defineConfig, devices } from '@playwright/experimental-ct-react';
+import { defineConfig, devices } from "@playwright/experimental-ct-react";
+import path from "path";
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './src',
-  testMatch: '**/*.spec.tsx',
-  tsconfig: './tsconfig.json',
-  snapshotDir: './__snapshots__',
+  testDir: "./src",
+  testMatch: "**/*.spec.tsx",
+  tsconfig: "./tsconfig.json",
+  snapshotDir: "./__snapshots__",
   /* Maximum time one test can run for. */
   timeout: 10 * 1000,
   /* Run tests in files in parallel */
@@ -19,11 +20,11 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: "on-first-retry",
 
     /* Port to use for Playwright component endpoint. */
     ctPort: 3100,
@@ -31,8 +32,10 @@ export default defineConfig({
     ctViteConfig: {
       resolve: {
         alias: {
-          "Styles": "src/util/styles.ts",
+          Styles: "src/util/styles.ts",
+          "@": path.resolve(__dirname, "src"),
         },
+        extensions: [".ts", ".tsx", ".js"],
       },
     },
   },
@@ -40,16 +43,16 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
     },
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
     },
   ],
 });
