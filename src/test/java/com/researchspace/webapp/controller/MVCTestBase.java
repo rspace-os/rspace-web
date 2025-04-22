@@ -7,6 +7,9 @@ import com.jayway.jsonpath.JsonPath;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -47,6 +50,16 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
   }
 
   @Autowired protected MvcTestUtils mvcUtils;
+
+  @Autowired protected SystemPropertyManager sysPropMgr;
+
+  public void disableGlobalApiAccess() {
+    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.DENIED, getSysAdminUser());
+  }
+
+  public void enableGlobalApiAccess() {
+    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.ALLOWED, getSysAdminUser());
+  }
 
   /**
    * Mimics edit lock request, autosave and save, and unlock behaviour from editor via MVC

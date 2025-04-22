@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.UserManager;
@@ -37,6 +38,8 @@ public class OAuthClientController {
 
   @Autowired private IReauthenticator reauthenticator;
 
+  @Autowired private ApiAvailabilityHandler apiHandler;
+
   /** Main endpoint for token grants. New or refreshed. */
   @PostMapping("/token")
   @IgnoreInLoggingInterceptor(ignoreRequestParams = {"client_secret", "password"})
@@ -55,6 +58,9 @@ public class OAuthClientController {
     if (StringUtils.isEmpty(clientSecret)) {
       throw new ApiAuthenticationException("Parameter client_secret must be present!");
     }
+    if (!apiHandler.isAvailable(null, null).isSucceeded()) {
+      throw new ApiAuthenticationException("Access to API has been disabled by RSpace administrator.");
+    }
 
     switch (grantType) {
       case "password":
@@ -69,6 +75,11 @@ public class OAuthClientController {
                 String.format(
                     "Processing login of user [%s] through username alias [%s]",
                     user.getUsername(), username));
+          }
+
+          if (!apiHandler.isAvailable(user, null).isSucceeded()) {
+            throw new ApiAuthenticationException(
+                "User '" + user.getUsername() + "' doesn't have access to API");
           }
           if (user.isLoginDisabled()) {
             throw new ApiAuthenticationException(

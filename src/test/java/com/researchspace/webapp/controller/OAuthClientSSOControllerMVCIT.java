@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -31,19 +32,30 @@ public class OAuthClientSSOControllerMVCIT extends MVCTestBase {
     user.setSignupSource(SignupSource.SSO);
     userMgr.save(user);
 
-    // user1234 now fails
+    // if API access is globally disabled, the SSO verification password shouldn't work either
+    disableGlobalApiAccess();
     OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
-    MvcResult result =
-        postOauthAccessTokenRequest(username, password, app)
-            .andExpect(status().isUnauthorized())
-            .andReturn();
+    postOauthAccessTokenRequest(username, password, app)
+        .andExpect(status().isUnauthorized())
+        .andExpect(result -> assertEquals("Access to API has been disabled by "
+                + "RSpace administrator.", result.getResolvedException().getMessage()));
 
+    // user1234 now fails
+    enableGlobalApiAccess();
+    app = oAuthAppManager.addApp(user, "newApp").getEntity();
+    postOauthAccessTokenRequest(username, password, app)
+        .andExpect(status().isUnauthorized())
+        .andExpect(result -> assertEquals("Invalid user credentials.",
+            result.getResolvedException().getMessage()));
+
+    // save verification password
     password = "abcdefghi";
+    verificationPasswordhandler.encryptAndSavePassword(user, "abcdefghi");
 
     // verification password succeeds
-    verificationPasswordhandler.encryptAndSavePassword(user, "abcdefghi");
-    result =
-        postOauthAccessTokenRequest(username, password, app).andExpect(status().isOk()).andReturn();
+    postOauthAccessTokenRequest(username, password, app)
+        .andExpect(status().isOk())
+        .andReturn();
   }
 
   private ResultActions postOauthAccessTokenRequest(

@@ -14,10 +14,10 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
   private static final ServiceOperationResult<String> enableResult =
       new ServiceOperationResult<>("Enabled", true);
   private static final ServiceOperationResult<String> apiDisabled =
-      new ServiceOperationResult<String>(
+      new ServiceOperationResult<>(
           "Access to all API has been disabled by your administrator", false);
   private static final ServiceOperationResult<String> invDisabled =
-      new ServiceOperationResult<String>(
+      new ServiceOperationResult<>(
           "Access to Inventory has been disabled by your administrator", false);
 
   void setSystemPropertyManager(SystemPropertyPermissionManager systemPropertyManager) {

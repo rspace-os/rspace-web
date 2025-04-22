@@ -33,17 +33,15 @@ public class OAuthClientCommunityControllerMVCIT extends MVCTestBase {
 
     // user1234 now fails
     OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
-    MvcResult result =
-        postOauthAccessTokenRequest(username, password, app)
-            .andExpect(status().isUnauthorized())
-            .andReturn();
+    postOauthAccessTokenRequest(username, password, app)
+        .andExpect(status().isUnauthorized())
+        .andReturn();
 
     password = "abcdefghi";
 
     // verification password succeeds
     verificationPasswordhandler.encryptAndSavePassword(user, "abcdefghi");
-    result =
-        postOauthAccessTokenRequest(username, password, app).andExpect(status().isOk()).andReturn();
+    postOauthAccessTokenRequest(username, password, app).andExpect(status().isOk()).andReturn();
   }
 
   private ResultActions postOauthAccessTokenRequest(
