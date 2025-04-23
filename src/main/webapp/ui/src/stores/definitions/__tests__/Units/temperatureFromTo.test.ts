@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { temperatureFromTo, CELSIUS, KELVIN, FAHRENHEIT } from "../../Units";
