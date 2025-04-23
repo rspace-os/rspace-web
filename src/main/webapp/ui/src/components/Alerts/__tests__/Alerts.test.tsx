@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React, { useContext, useEffect } from "react";
 import { render, cleanup, screen } from "@testing-library/react";
