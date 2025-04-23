@@ -35,7 +35,7 @@ module.exports = {
       "./src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.js",
     createGroup: "./src/CreateGroup/CreateGroup.js",
     myLabGroups: "./src/my-rspace/directory/groups/MyLabGroups.js",
-    rorIntegration: "./src/system-ror/RoRIntegration.js",
+    rorIntegration: "./src/system-ror/RoRIntegration.tsx",
     exportModal: "./src/Export/ExportModal.js",
     groupEditBar: "./src/my-rspace/directory/groups/GroupEditBar.js",
     workspaceToolbar: "./src/Toolbar/Workspace/Toolbar.js",

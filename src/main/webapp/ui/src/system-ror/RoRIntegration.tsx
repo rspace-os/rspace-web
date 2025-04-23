@@ -1,6 +1,4 @@
-//@flow
-"use strict";
-import React, { useEffect, useState, type Node } from "react";
+import React, { useEffect, useState } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
@@ -13,8 +11,35 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 import Alert from "@mui/material/Alert";
 import { Button } from "@mui/material";
-import type { UseState } from "../util/types";
 library.add(faPlus, faMinus);
+
+type AddressV1 = { city: string };
+type RORDataV1 = {
+  status: string;
+  id: string;
+  addresses: Array<AddressV1>;
+  country: { country_name: string };
+  links: Array<string>;
+  name: string;
+  exceptionMessage?: string;
+};
+
+type Location = { geonames_details: { name: string; country_name: string } };
+type Name = { types: Array<string>; value: string };
+type Link = { type: string; value: string };
+type RORDataV2 = {
+  status: string;
+  id: string;
+  locations: Array<Location>;
+  country: { country_name: string };
+  links: Array<Link>;
+  names: Array<Name>;
+  exceptionMessage?: string;
+};
+
+type RoRApiResponse = RORDataV1 | RORDataV2;
+
+type RSpaceApiResponse = { data: { exceptionMessage?: string } };
 
 const RorDetails = styled.div`
   font-size: 18px;
@@ -32,11 +57,12 @@ const RorErrorHelpText = styled.span`
   background-color: #d9d9d9;
 `;
 
-function RoRIntegration(): Node {
-  const [ror, setRor]: UseState<string> = useState("");
-  const [candidateRor, setCandidateRor]: UseState<string> = useState("");
-  const [rorDetails, setRorDetails]: UseState<?RoRApiResponse> = useState(null);
-  const [errorMessage, setErrorMessage]: UseState<string> = useState("");
+// eslint-disable-next-line complexity
+function RoRIntegration(): React.ReactNode {
+  const [ror, setRor] = useState<string>("");
+  const [candidateRor, setCandidateRor] = useState<string>("");
+  const [rorDetails, setRorDetails] = useState<RoRApiResponse | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const handleNetworkError = (e: Error) => {
     setErrorMessage(
       e.message ? e.message : "There is a problem, please try again later"
@@ -51,7 +77,7 @@ function RoRIntegration(): Node {
         );
         setRor(response.data);
       } catch (e) {
-        handleNetworkError(e);
+        if (e instanceof Error) handleNetworkError(e);
       }
     };
 
@@ -87,7 +113,7 @@ function RoRIntegration(): Node {
         setRor(candidateRor);
       }
     } catch (e) {
-      handleNetworkError(e);
+      if (e instanceof Error) handleNetworkError(e);
     }
   };
   const deleteRor = async () => {
@@ -104,7 +130,7 @@ function RoRIntegration(): Node {
         setRorDetails(null);
       }
     } catch (e) {
-      handleNetworkError(e);
+      if (e instanceof Error) handleNetworkError(e);
     }
   };
 
@@ -125,7 +151,7 @@ function RoRIntegration(): Node {
           setRorDetails(response.data);
         }
       } catch (e) {
-        handleNetworkError(e);
+        if (e instanceof Error) handleNetworkError(e);
       }
     } else {
       setRorDetails(null);
@@ -150,13 +176,13 @@ function RoRIntegration(): Node {
   }, [candidateRor]);
 
   const getCityCountryAddressesFromRoRDetails = () => {
-    if (rorDetails && rorDetails.addresses) {
+    if (rorDetails && "addresses" in rorDetails) {
       //v1 api uses addresses
-      return rorDetails.addresses.map((address) => {
+      return rorDetails.addresses.map((address, i) => {
         const cityCountry =
           address.city + ", " + rorDetails.country.country_name;
         return (
-          <RorDetails>
+          <RorDetails key={i}>
             <h5>{cityCountry}</h5>
           </RorDetails>
         );
@@ -178,7 +204,7 @@ function RoRIntegration(): Node {
   };
 
   const getLinksFromRoRDetails = () => {
-    if (rorDetails && rorDetails.locations) {
+    if (rorDetails && "locations" in rorDetails) {
       return rorDetails.links.map((link) => {
         //v2 api
         return (
@@ -207,8 +233,8 @@ function RoRIntegration(): Node {
     }
   };
 
-  const getDisplayName = (): string | void => {
-    if (rorDetails && rorDetails.name) {
+  const getDisplayName = (): string | null => {
+    if (rorDetails && "name" in rorDetails) {
       //v1 api
       return rorDetails.name;
     } else if (rorDetails && rorDetails.names) {
@@ -216,8 +242,9 @@ function RoRIntegration(): Node {
         .filter((name) => name.types.includes("ror_display"))
         .map((name) => name.value)[0];
     }
+    return null;
   };
-  const getSeverity = (errorMessage: string): string => {
+  const getSeverity = (errorMessage: string): "error" | "warning" => {
     if (errorMessage.includes("valid")) {
       return "error";
     }
@@ -336,11 +363,10 @@ function RoRIntegration(): Node {
           {candidateRor && rorDoesNotMatchCandidateRor() && !errorMessage && (
             <Button
               color="primary"
-              label="Link"
               data-test-id="ror-link"
               variant="contained"
               sx={{ marginTop: "10px" }}
-              onClick={() => updateRor()}
+              onClick={() => void updateRor()}
               startIcon={<FontAwesomeIcon icon="plus" />}
             >
               Link
@@ -350,11 +376,10 @@ function RoRIntegration(): Node {
             !errorMessage && (
               <Button
                 color="primary"
-                label="UnLink"
                 data-test-id="ror-link"
                 variant="contained"
                 sx={{ marginTop: "10px" }}
-                onClick={() => deleteRor()}
+                onClick={() => void deleteRor()}
                 startIcon={<FontAwesomeIcon icon="minus" />}
               >
                 UnLink
@@ -365,35 +390,8 @@ function RoRIntegration(): Node {
     </>
   );
 }
-type AddressV1 = {| city: string |};
-type RORDataV1 = {|
-  status: string,
-  id: string,
-  addresses: Array<AddressV1>,
-  country: { country_name: string },
-  links: Array<string>,
-  name: string,
-  exceptionMessage?: string,
-|};
 
-type Location = {| geonames_details: { name: string, country_name: string } |};
-type Name = {| types: Array<string>, value: string |};
-type Link = {| type: string, value: string |};
-type RORDataV2 = {|
-  status: string,
-  id: string,
-  locations: Array<Location>,
-  country: { country_name: string },
-  links: Array<Link>,
-  names: Array<Name>,
-  exceptionMessage?: string,
-|};
-
-type RoRApiResponse = RORDataV1 | RORDataV2;
-
-type RSpaceApiResponse = { data: { exceptionMessage?: string } };
-
-window.addEventListener("loadROR", function () {
+window.addEventListener("loadROR", () => {
   const domContainer = document.getElementById("rorIntegration");
 
   if (domContainer) {
