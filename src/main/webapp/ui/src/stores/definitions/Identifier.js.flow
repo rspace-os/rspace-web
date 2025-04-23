@@ -1,4 +1,5 @@
 //@flow
+
 import { type Id, type GlobalId } from "./BaseRecord";
 import { type GeoLocation, type GeoLocationAttrs } from "./GeoLocation";
 import { type URL, type _LINK } from "../../util/types";
@@ -62,10 +63,6 @@ export type IGSNPublishingState = "draft" | "findable" | "registered";
 
 export type IdentifierDate = { value: Date, type: IGSNDateType };
 
-/*
- * This is the shape of the data output by the server to model an identifier
- * that has been persisted in the database.
- */
 export type IdentifierAttrs = {|
   id: Id,
   rsPublicId: ?string,
