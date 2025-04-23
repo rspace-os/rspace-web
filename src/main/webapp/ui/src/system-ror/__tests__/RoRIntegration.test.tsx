@@ -4,7 +4,7 @@
 /* eslint-env jest */
 import RoRIntegration from "../../system-ror/RoRIntegration";
 import React from "react";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
@@ -50,8 +50,8 @@ const returnV2Details = () => {
     )
     .reply(200, v2ROR);
 };
-const setUpComponent = async () => {
-  await act(() => {
+const setUpComponent = () => {
+  act(() => {
     getWrapper();
   });
 };
@@ -79,7 +79,7 @@ async function assertRoRDetailsText() {
 
 describe("Renders page with ROR data ", () => {
   it("displays page with searchbar when RoR not linked", async () => {
-    await setUpComponent();
+    setUpComponent();
 
     await screen.findByText("Research Organization Registry (ROR) Integration");
     await screen.findByRole("textbox");
@@ -91,7 +91,7 @@ describe("Renders page with ROR data ", () => {
     mockAxios
       .onGet("system/ror/existingGlobalRoRID")
       .reply(200, "https://ror.org/02mhbdp94");
-    await setUpComponent();
+    setUpComponent();
     await screen.findByText("Research Organization Registry (ROR) Integration");
     await screen.findByText(/A ROR ID is linked to this RSpace Instance./);
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
@@ -104,7 +104,7 @@ describe("Renders page with ROR data ", () => {
   });
 
   it("displays ROR v1 details on search and a Link Button ", async () => {
-    await setUpComponent();
+    setUpComponent();
     await screen.findByText("Research Organization Registry (ROR) Integration");
     await screen.findByRole("textbox");
     await searchForRoRDetails();
@@ -119,7 +119,7 @@ describe("Renders page with ROR data ", () => {
 
   it("displays ROR v2 details on search", async () => {
     returnV2Details();
-    await setUpComponent();
+    setUpComponent();
     await screen.findByText("Research Organization Registry (ROR) Integration");
     await screen.findByRole("textbox");
     await searchForRoRDetails();
@@ -128,7 +128,7 @@ describe("Renders page with ROR data ", () => {
   });
 
   it("displays error when invalid ROR entered", async () => {
-    await setUpComponent();
+    setUpComponent();
     await screen.findByText("Research Organization Registry (ROR) Integration");
     await screen.findByRole("textbox");
     await searchForRoRDetails("https://ror.org/02mhbdp941");
@@ -136,7 +136,7 @@ describe("Renders page with ROR data ", () => {
   });
 
   it("displays error when ROR details not found", async () => {
-    await setUpComponent();
+    setUpComponent();
     await screen.findByText("Research Organization Registry (ROR) Integration");
     await screen.findByRole("textbox");
     await searchForRoRDetails("https://ror.org/02mhbdp92");
