@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * These values are stringly-encoded numerical values. Longitudes are decimal values from -180 to
  * 180 inclusive. Latitudes are decimal values from -90 to 90 inclusive. Values can be empty string
@@ -8,43 +6,43 @@
  */
 
 export type GeoLocationBox = {
-  eastBoundLongitude: string,
-  northBoundLatitude: string,
-  southBoundLatitude: string,
-  westBoundLongitude: string,
+  eastBoundLongitude: string;
+  northBoundLatitude: string;
+  southBoundLatitude: string;
+  westBoundLongitude: string;
 };
 export type PolygonPoint = {
-  pointLatitude: string,
-  pointLongitude: string,
+  pointLatitude: string;
+  pointLongitude: string;
 };
 export type SimplePoint = {
-  latitude: string,
-  longitude: string,
+  latitude: string;
+  longitude: string;
 };
 
 export interface GeoLocationPolygon {
-  +length: number;
-  get(i: number): ?{| polygonPoint: PolygonPoint |};
-  set(i: number, key: $Keys<PolygonPoint>, value: string): void;
-  mapPoints<T>(f: (PolygonPoint, number) => T): Array<T>;
+  readonly length: number;
+  get(i: number): { polygonPoint: PolygonPoint } | null;
+  set(i: number, key: keyof PolygonPoint, value: string): void;
+  mapPoints<T>(f: (pp: PolygonPoint, i: number) => T): Array<T>;
   addAnotherPoint(i: number): void;
   removePoint(i: number): void;
-  +isValid: boolean;
-  +empty: boolean;
-  toJson(): mixed;
+  readonly isValid: boolean;
+  readonly empty: boolean;
+  toJson(): unknown;
 }
 
 /*
  * This is the shape of the data output by the server to model a geoLocation that has been persisted
  * in the database, as part of an IGSN identifier or independently.
  */
-export type GeoLocationAttrs = {|
-  geoLocationBox: GeoLocationBox,
-  geoLocationPlace: string,
-  geoLocationPoint: PolygonPoint,
-  geoLocationPolygon: Array<{| polygonPoint: PolygonPoint |}>,
-  geoLocationInPolygonPoint: PolygonPoint,
-|};
+export type GeoLocationAttrs = {
+  geoLocationBox: GeoLocationBox;
+  geoLocationPlace: string;
+  geoLocationPoint: PolygonPoint;
+  geoLocationPolygon: Array<{ polygonPoint: PolygonPoint }>;
+  geoLocationInPolygonPoint: PolygonPoint;
+};
 
 export const newGeoLocation: GeoLocationAttrs = {
   geoLocationBox: {
@@ -126,13 +124,13 @@ export interface GeoLocation {
   /*
    * A GeoLocation is valid if at least one element is complete, and all three not left incomplete.
    */
-  +isValid: boolean;
+  readonly isValid: boolean;
 
   /*
    * Computed values used in the rendering of the UI that facilitates the defining of polygons.
    */
-  +polygonEmpty: boolean;
-  +inPolygonPointIncomplete: boolean;
+  readonly polygonEmpty: boolean;
+  readonly inPolygonPointIncomplete: boolean;
 
-  toJson(): { ... };
+  toJson(): object;
 }
