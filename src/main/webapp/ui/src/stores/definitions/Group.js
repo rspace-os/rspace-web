@@ -1,7 +1,7 @@
 //@flow
 
 import { type Id, type GlobalId } from "./BaseRecord";
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type _LINK } from "../../util/types";
 
 export type Group = {
   id: Id,

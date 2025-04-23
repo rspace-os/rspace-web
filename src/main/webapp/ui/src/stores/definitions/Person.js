@@ -1,6 +1,6 @@
 //@flow
 
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type _LINK } from "../../util/types";
 import { type Container, type WorkbenchId } from "../definitions/Container";
 
 export type Username = string;

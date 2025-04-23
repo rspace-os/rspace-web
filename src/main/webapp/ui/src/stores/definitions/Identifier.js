@@ -1,8 +1,7 @@
 //@flow
 import { type Id, type GlobalId } from "./BaseRecord";
 import { type GeoLocation, type GeoLocationAttrs } from "./GeoLocation";
-import { type URL } from "../../util/types";
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type URL, type _LINK } from "../../util/types";
 import { type RadioOption } from "../../components/Inputs/RadioField";
 import { type Node } from "react";
 import { type Alert } from "../contexts/Alert";

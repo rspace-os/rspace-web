@@ -49,7 +49,7 @@ import {
   type SharingMode,
   type CreateOption,
 } from "../definitions/InventoryRecord";
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type _LINK } from "../../util/types";
 import { type PersonAttrs } from "../definitions/Person";
 import {
   type HasEditableFields,

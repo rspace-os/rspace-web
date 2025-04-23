@@ -7,8 +7,7 @@ import {
   makeObservable,
   runInAction,
 } from "mobx";
-import { type URL as Url } from "../../util/types";
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type URL as Url, type _LINK } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
 import ApiService from "../../common/InvApiService";
 import { type RecordDetails } from "../../stores/definitions/Record";
