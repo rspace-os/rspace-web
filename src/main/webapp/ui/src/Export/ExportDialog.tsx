@@ -275,14 +275,7 @@ function ExportDialog({
         .flatMap(Parsers.isNotNull)
         .flatMap(Parsers.getValueWithKey("data"))
         .flatMap(Parsers.isArray)
-        .flatMap((dataArray) =>
-          Result.all(
-            ...(dataArray.map(Parsers.isString) as [
-              Result<string>,
-              ...Result<string>[]
-            ])
-          )
-        )
+        .flatMap((dataArray) => Result.all(...dataArray.map(Parsers.isString)))
         .map((dataStrings) =>
           // parse the tag strings and only keep those with metadata
           ArrayUtils.mapOptional(

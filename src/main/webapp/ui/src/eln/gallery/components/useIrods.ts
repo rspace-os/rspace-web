@@ -1,5 +1,3 @@
-//@flow
-
 import axios from "@/common/axios";
 import React from "react";
 import Result from "../../../util/result";
@@ -14,14 +12,14 @@ import AlertContext, {
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { stableSort } from "../../../util/table";
 
-type Link = {| operation: string, href: string |};
+type Link = { operation: string; href: string };
 
-function parseIrodsLocationLinks(obj: { ... }): Result<$ReadOnlyArray<Link>> {
+function parseIrodsLocationLinks(obj: object): Result<ReadonlyArray<Link>> {
   return Parsers.getValueWithKey("_links")(obj)
     .flatMap(Parsers.isArray)
     .flatMap((linksArray) =>
       Result.all(
-        ...linksArray.map((m: mixed) =>
+        ...linksArray.map((m: unknown) =>
           Parsers.isObject(m)
             .flatMap(Parsers.isNotNull)
             .flatMap((linkObj) =>
@@ -50,12 +48,12 @@ function parseIrodsLocationLinks(obj: { ... }): Result<$ReadOnlyArray<Link>> {
  */
 const parseSpecificHref =
   (op: string) =>
-  (links: $ReadOnlyArray<Link>): Optional<string> =>
+  (links: ReadonlyArray<Link>): Optional<string> =>
     ArrayUtils.find(({ operation }) => operation === op, links).map(
       ({ href }) => href
     );
 
-const parseOperationError = (error: mixed): Result<string> =>
+const parseOperationError = (error: unknown): Result<string> =>
   Parsers.objectPath(["response", "data", "errors"], error)
     .flatMap(Parsers.isArray)
     .flatMap(ArrayUtils.head)
@@ -71,7 +69,7 @@ const parseOperationError = (error: mixed): Result<string> =>
       return errorMsg;
     });
 
-function handleErrors(response: mixed): Alert {
+function handleErrors(response: unknown): Alert {
   const data = Parsers.objectPath(["data"], response)
     .flatMap(Parsers.isObject)
     .flatMap(Parsers.isNotNull);
@@ -115,7 +113,7 @@ function handleErrors(response: mixed): Alert {
                           Parsers.getValueWithKey("fileName")(obj)
                             .flatMap(Parsers.isString)
                             .map((filename) => ({
-                              variant: "success",
+                              variant: "success" as const,
                               title: filename,
                             }))
                         )
@@ -125,7 +123,7 @@ function handleErrors(response: mixed): Alert {
                            * alert
                            */
                           Result.lift2((filename: string, reason: string) => ({
-                            variant: "error",
+                            variant: "error" as const,
                             title: filename,
                             help: reason,
                           }))(
@@ -161,13 +159,29 @@ function handleErrors(response: mixed): Alert {
 /**
  * A folder on an iRODS system.
  */
-export type IrodsLocation = {|
-  id: number,
-  name: string,
-  path: string,
-  copy: Optional<({| username: string, password: string |}) => Promise<void>>,
-  move: Optional<({| username: string, password: string |}) => Promise<void>>,
-|};
+export type IrodsLocation = {
+  id: number;
+  name: string;
+  path: string;
+  copy: Optional<
+    ({
+      username,
+      password,
+    }: {
+      username: string;
+      password: string;
+    }) => Promise<void>
+  >;
+  move: Optional<
+    ({
+      username,
+      password,
+    }: {
+      username: string;
+      password: string;
+    }) => Promise<void>
+  >;
+};
 
 /**
  * A custom hook for interacting with the /api/v1/gallery/irods API endpoint.
@@ -176,20 +190,20 @@ export default function useIrods(
   /**
    * A list of IDs of files in the Gallery. The order is not significant.
    */
-  selectedIds: $ReadOnlyArray<string>
-): FetchingData.Fetched<{|
+  selectedIds: ReadonlyArray<string>
+): FetchingData.Fetched<{
   /**
    * The URL of the configured iRODS server. This is set by the sysadmin and is
    * the same for all users on a particular instance.
    */
-  serverUrl: string,
+  serverUrl: string;
 
   /**
    * A list of folders on the iRODS server that the current user has configured
    * in the filestores section of the Gallery.
    */
-  configuredLocations: $ReadOnlyArray<IrodsLocation>,
-|}> {
+  configuredLocations: ReadonlyArray<IrodsLocation>;
+}> {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
 
@@ -221,13 +235,7 @@ export default function useIrods(
               Authorization: "Bearer " + (await getToken()),
             },
           });
-          const response = await api.post<
-            {|
-              username: string,
-              password: string,
-            |},
-            ""
-          >(cl, {
+          const response = await api.post<"">(cl, {
             username,
             password,
           });
@@ -255,13 +263,7 @@ export default function useIrods(
               Authorization: "Bearer " + (await getToken()),
             },
           });
-          const response = await api.post<
-            {|
-              username: string,
-              password: string,
-            |},
-            ""
-          >(ml, {
+          const response = await api.post<"">(ml, {
             username,
             password,
           });
@@ -287,7 +289,7 @@ export default function useIrods(
   const [loading, setLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [configuredLocations, setConfiguredLocations] = React.useState<
-    Result<$ReadOnlyArray<IrodsLocation>>
+    Result<ReadonlyArray<IrodsLocation>>
   >(Result.Ok([]));
   const [serverUrl, setServerUrl] = React.useState<Result<string>>(
     Result.Ok("")
@@ -303,12 +305,12 @@ export default function useIrods(
           Authorization: "Bearer " + (await getToken()),
         },
       });
-      const { data } = await api.get<mixed>("/", {
+      const { data } = await api.get<unknown>("/", {
         params: new URLSearchParams({
           recordIds: selectedIds.join(","),
         }),
       });
-      const dataObj: Result<{ ... }> = Parsers.isObject(data).flatMap(
+      const dataObj: Result<object> = Parsers.isObject(data).flatMap(
         Parsers.isNotNull
       );
       setServerUrl(
@@ -331,7 +333,7 @@ export default function useIrods(
         dataObj
           .flatMap(Parsers.getValueWithKey("configuredLocations"))
           .flatMap(Parsers.isArray)
-          .flatMap((array: $ReadOnlyArray<mixed>) => {
+          .flatMap((array: ReadonlyArray<unknown>) => {
             return Result.all(
               ...array.map((x) =>
                 Parsers.isObject(x)
@@ -406,8 +408,8 @@ export default function useIrods(
   if (loading) return { tag: "loading" };
   if (errorMessage) return { tag: "error", error: errorMessage };
   return Result.lift2(
-    (url: string, locations: $ReadOnlyArray<IrodsLocation>) => ({
-      tag: "success",
+    (url: string, locations: ReadonlyArray<IrodsLocation>) => ({
+      tag: "success" as const,
       value: {
         serverUrl: url,
         configuredLocations: locations,

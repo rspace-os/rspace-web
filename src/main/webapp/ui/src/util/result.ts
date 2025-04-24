@@ -294,21 +294,22 @@ export default class Result<T> {
    * user should only be able to proceed with a form completion if every field
    * is in a valid state.
    */
-  static all<U>(
-    r: Result<U>,
-    ...rest: ReadonlyArray<Result<U>>
-  ): Result<ReadonlyArray<U>> {
-    if (typeof r === "undefined") return Result.Ok([]);
-    if (rest.length > 0) {
-      return Result.all(rest[0], ...rest.slice(1))
-        .orElseTry<ReadonlyArray<U>>(() =>
-          r.flatMap<ReadonlyArray<U>>(() => Result.Error([]))
-        )
-        .flatMap<ReadonlyArray<U>>((restOfT) =>
-          r.map<ReadonlyArray<U>>((t: U) => [t, ...restOfT])
-        );
+  static all<U>(...args: ReadonlyArray<Result<U>>): Result<ReadonlyArray<U>> {
+    function helper(r: Result<U>, ...rest: ReadonlyArray<Result<U>>) {
+      if (typeof r === "undefined") return Result.Ok([]);
+      if (rest.length > 0) {
+        return Result.all(rest[0], ...rest.slice(1))
+          .orElseTry<ReadonlyArray<U>>(() =>
+            r.flatMap<ReadonlyArray<U>>(() => Result.Error([]))
+          )
+          .flatMap<ReadonlyArray<U>>((restOfT) =>
+            r.map<ReadonlyArray<U>>((t: U) => [t, ...restOfT])
+          );
+      }
+      return r.map((t) => [t]);
     }
-    return r.map((t) => [t]);
+
+    return helper(...(args as [Result<U>, ...ReadonlyArray<Result<U>>]));
   }
 
   /*

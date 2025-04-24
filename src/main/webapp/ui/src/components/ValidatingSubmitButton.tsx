@@ -24,10 +24,7 @@ export const IsInvalid = (reason: string): ValidationResult =>
 
 export const allAreValid = (
   v: ReadonlyArray<ValidationResult>
-): ValidationResult =>
-  Result.all(...(v as [ValidationResult, ...ValidationResult[]])).map(
-    () => null
-  );
+): ValidationResult => Result.all(...v).map(() => null);
 
 type ValidatingSubmitButtonArgs = {
   children: React.ReactNode;
