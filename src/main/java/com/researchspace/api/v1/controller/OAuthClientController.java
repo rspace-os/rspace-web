@@ -93,7 +93,7 @@ public class OAuthClientController {
         }
 
         response = passwordGrant(clientId, clientSecret, user, password, isJwt);
-        analyticsMgr.apiUsed(user, request);
+        analyticsMgr.apiAccessed(user, false, request);
 
       } catch (DataAccessException e) {
         SECURITY_LOG.warn("OAuth password flow request for unknown user: " + username);

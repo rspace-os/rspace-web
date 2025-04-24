@@ -35,7 +35,9 @@ public enum AnalyticsEvent {
   DISK_USAGE("diskUsage"),
 
   /** API call invoked */
-  API_USED("apiUsed"),
+  API_KEY_USAGE("apiKeyUsed"),
+
+  API_OAUTH_TOKEN_GENERATION("apiOAuthTokenGenerated"),
 
   /** Slack feature call invoked */
   SLACK_USED("slackUsed"),

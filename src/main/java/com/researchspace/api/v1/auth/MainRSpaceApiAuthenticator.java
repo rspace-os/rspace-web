@@ -42,7 +42,7 @@ public class MainRSpaceApiAuthenticator implements ApiAuthenticator {
           throw new ApiAuthenticationException(
               String.format("Access to API has been disabled for user '%s'", user.getUsername()));
         }
-        analyticsMgr.apiUsed(user, request);
+        analyticsMgr.apiAccessed(user, true, request);
       }
       return user;
     }
