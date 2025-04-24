@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { type GalleryFile } from "../useGalleryListing";
 
 /**
@@ -41,15 +39,15 @@ const OpenFolderContext = React.createContext({
 export default function OpenFolderProvider({
   children,
   setPath,
-}: {|
-  children: Node,
+}: {
+  children: React.ReactNode;
 
   /**
    * Whenever the `open` function exposed by `useFolderOpen` is invoked, this
    * function will be called with the new path.
    */
-  setPath: ($ReadOnlyArray<GalleryFile>) => void,
-|}): Node {
+  setPath: (path: ReadonlyArray<GalleryFile>) => void;
+}): React.ReactNode {
   return (
     <OpenFolderContext.Provider
       value={{
@@ -68,7 +66,7 @@ export default function OpenFolderProvider({
  * manipulated by the `setPath` function passed to the nearest
  * `OpenFolderProvider`.
  */
-export function useFolderOpen(): {| openFolder: (GalleryFile) => void |} {
+export function useFolderOpen(): { openFolder: (folder: GalleryFile) => void } {
   const { open } = React.useContext(OpenFolderContext);
   return {
     openFolder: open,
