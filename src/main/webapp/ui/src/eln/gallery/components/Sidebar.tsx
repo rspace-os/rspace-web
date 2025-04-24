@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Box from "@mui/material/Box";
 import { Drawer, Menu } from "../../../components/DialogBoundary";
 import { styled } from "@mui/material/styles";
@@ -46,7 +44,7 @@ import ValidatingSubmitButton, {
 } from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import DnsIcon from "@mui/icons-material/Dns";
-import axios, { type Axios } from "@/common/axios";
+import axios from "@/common/axios";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
@@ -63,25 +61,30 @@ const StyledMenu = styled(Menu)(({ open }) => ({
   },
 }));
 
-const AddButton = styled(({ drawerOpen, ...props }) => (
-  <Button
-    {...props}
-    fullWidth
-    style={{ minWidth: "unset" }}
-    aria-haspopup="menu"
-    variant="contained"
-    color="callToAction"
-    startIcon={
-      <AddIcon
-        style={{
-          marginLeft: drawerOpen ? "0px" : "11px",
-        }}
-      />
-    }
-  >
-    {drawerOpen && <div>Create</div>}
-  </Button>
-))(() => ({
+const AddButton = styled(
+  ({
+    drawerOpen,
+    ...props
+  }: { drawerOpen: boolean } & React.ComponentProps<typeof Button>) => (
+    <Button
+      {...props}
+      fullWidth
+      style={{ minWidth: "unset" }}
+      aria-haspopup="menu"
+      variant="contained"
+      color="callToAction"
+      startIcon={
+        <AddIcon
+          style={{
+            marginLeft: drawerOpen ? "0px" : "11px",
+          }}
+        />
+      }
+    >
+      {drawerOpen && <div>Create</div>}
+    </Button>
+  )
+)(() => ({
   overflowX: "hidden",
   height: "32px",
 }));
@@ -107,17 +110,17 @@ const UploadMenuItem = ({
   onCancel,
   autoFocus,
   tabIndex,
-}: {|
-  folderId: Result<Id>,
-  onUploadComplete: () => void,
-  onCancel: () => void,
+}: {
+  folderId: Result<Id>;
+  onUploadComplete: () => void;
+  onCancel: () => void;
 
   /*
    * These properties are dynamically added by the MUI Menu parent component
    */
-  autoFocus?: boolean,
-  tabIndex?: number,
-|}) => {
+  autoFocus?: boolean;
+  tabIndex?: number;
+}) => {
   const { uploadFiles } = useGalleryActions();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -140,7 +143,7 @@ const UploadMenuItem = ({
         avatar={<UploadFileIcon />}
         backgroundColor={ACCENT_COLOR.background}
         foregroundColor={ACCENT_COLOR.contrastText}
-        onKeyDown={(e: KeyboardEvent) => {
+        onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
           if (e.key === " ") inputRef.current?.click();
         }}
         onClick={() => {
@@ -161,6 +164,7 @@ const UploadMenuItem = ({
             hidden
             multiple
             onChange={({ target: { files } }) => {
+              if (files === null) return;
               void uploadFiles(fId, [...files]).then(() => {
                 onUploadComplete();
                 trackEvent("user:uploaded:file:gallery");
@@ -179,16 +183,16 @@ const NewFolderMenuItem = ({
   onDialogClose,
   autoFocus,
   tabIndex,
-}: {|
-  folderId: Result<Id>,
-  onDialogClose: (boolean) => void,
+}: {
+  folderId: Result<Id>;
+  onDialogClose: (success: boolean) => void;
 
   /*
    * These properties are dynamically added by the MUI Menu parent component
    */
-  autoFocus?: boolean,
-  tabIndex?: number,
-|}) => {
+  autoFocus?: boolean;
+  tabIndex?: number;
+}) => {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const { createFolder } = useGalleryActions();
@@ -283,23 +287,23 @@ const AddFilestoreMenuItem = ({
   onMenuClose,
   autoFocus,
   tabIndex,
-}: {|
-  onMenuClose: (boolean) => void,
+}: {
+  onMenuClose: (success: boolean) => void;
   /*
    * These properties are dynamically added by the MUI Menu parent component
    */
-  autoFocus?: boolean,
-  tabIndex?: number,
-|}) => {
+  autoFocus?: boolean;
+  tabIndex?: number;
+}) => {
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const [open, setOpen] = React.useState(false);
-  const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
-    id: number,
-    name: string,
-    url: string,
-  |}>>(null);
+  const [filesystems, setFilesystems] = React.useState<null | ReadonlyArray<{
+    id: number;
+    name: string;
+    url: string;
+  }>>(null);
   const { getToken } = useOauthToken();
-  const api = React.useRef<Promise<Axios>>(
+  const api = React.useRef(
     (async () => {
       return axios.create({
         baseURL: "/api/v1/gallery",
@@ -312,7 +316,7 @@ const AddFilestoreMenuItem = ({
 
   React.useEffect(() => {
     void (async () => {
-      const { data } = await (await api.current).get<mixed>("filesystems");
+      const { data } = await (await api.current).get<unknown>("filesystems");
       Parsers.isArray(data)
         .flatMap((array) =>
           Result.all(
@@ -332,11 +336,11 @@ const AddFilestoreMenuItem = ({
                       .elseThrow();
                     return Result.Ok({ id, name, url });
                   } catch (e) {
-                    return Result.Error<{|
-                      id: number,
-                      name: string,
-                      url: string,
-                    |}>([e]);
+                    return Result.Error<{
+                      id: number;
+                      name: string;
+                      url: string;
+                    }>([e instanceof Error ? e : new Error("Unknown error")]);
                   }
                 })
             )
@@ -386,10 +390,10 @@ const AddFilestoreMenuItem = ({
   );
 };
 
-type DmpMenuSectionArgs = {|
-  onDialogClose: () => void,
-  showDmpPanel: () => void,
-|};
+type DmpMenuSectionArgs = {
+  onDialogClose: () => void;
+  showDmpPanel: () => void;
+};
 
 const DmpMenuSection = ({
   onDialogClose,
@@ -412,6 +416,7 @@ const DmpMenuSection = ({
      * files. Once we no longer need to maintain backwards compatibility, we
      * could pass `showDmpPanel` down into each DMPDialog component.
      */
+    // @ts-expect-error gallery is a global function
     window.gallery = showDmpPanel;
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - showDmpPanel will not meaningfully change
@@ -435,43 +440,34 @@ const DmpMenuSection = ({
 
 const DrawerTab = styled(
   //eslint-disable-next-line react/display-name
-  React.forwardRef(
-    (
-      {
-        icon,
-        label,
-        index,
-        className,
-        selected,
-        onClick,
-        tabIndex,
-      }: {|
-        icon: Node,
-        label: Node,
-        index: number,
-        className: string,
-        selected: boolean,
-        onClick: () => void,
-        tabIndex: number,
-      |},
-      ref
-    ) => (
-      <ListItem disablePadding className={className}>
-        <ListItemButton
-          selected={selected}
-          onClick={onClick}
-          tabIndex={tabIndex}
-          ref={ref}
-        >
-          <ListItemIcon>{icon}</ListItemIcon>
-          <ListItemText
-            primary={label}
-            sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
-          />
-        </ListItemButton>
-      </ListItem>
-    )
-  )
+  React.forwardRef<
+    HTMLDivElement,
+    {
+      drawerOpen: boolean;
+      icon: React.ReactNode;
+      label: React.ReactNode;
+      index: number;
+      className?: string;
+      selected: boolean;
+      onClick: () => void;
+      tabIndex: number;
+    }
+  >(({ icon, label, index, className, selected, onClick, tabIndex }, ref) => (
+    <ListItem disablePadding className={className}>
+      <ListItemButton
+        selected={selected}
+        onClick={onClick}
+        tabIndex={tabIndex}
+        ref={ref}
+      >
+        <ListItemIcon>{icon}</ListItemIcon>
+        <ListItemText
+          primary={label}
+          sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
+        />
+      </ListItemButton>
+    </ListItem>
+  ))
 )(({ drawerOpen }) => ({
   position: "static",
   "& .MuiListItemText-root": {
@@ -500,15 +496,15 @@ const DrawerTab = styled(
   },
 }));
 
-type SidebarArgs = {|
-  selectedSection: GallerySection | null,
-  setSelectedSection: (GallerySection) => void,
-  drawerOpen: boolean,
-  setDrawerOpen: (boolean) => void,
-  folderId: FetchingData.Fetched<Id>,
-  refreshListing: () => Promise<void>,
-  id: string,
-|};
+type SidebarArgs = {
+  selectedSection: GallerySection | null;
+  setSelectedSection: (section: GallerySection) => void;
+  drawerOpen: boolean;
+  setDrawerOpen: (open: boolean) => void;
+  folderId: FetchingData.Fetched<Id>;
+  refreshListing: () => Promise<void>;
+  id: string;
+};
 
 const Sidebar = ({
   selectedSection,
@@ -518,8 +514,9 @@ const Sidebar = ({
   folderId,
   refreshListing,
   id,
-}: SidebarArgs): Node => {
-  const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
+}: SidebarArgs): React.ReactNode => {
+  const [newMenuAnchorEl, setNewMenuAnchorEl] =
+    React.useState<HTMLElement | null>(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
 
@@ -538,7 +535,7 @@ const Sidebar = ({
     .orElse(false);
 
   const { getTabIndex, getRef, eventHandlers } =
-    useOneDimensionalRovingTabIndex<typeof ListItemButton>({
+    useOneDimensionalRovingTabIndex({
       max: showFilestores ? 9 : 8,
     });
 
@@ -632,7 +629,7 @@ const Sidebar = ({
               tabIndex={getTabIndex(0)}
               ref={(node) => {
                 const ref = getRef(0);
-                if (ref) ref.current = node;
+                if (ref) ref.current = node as HTMLElement | null;
               }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Images"}
@@ -648,7 +645,7 @@ const Sidebar = ({
               tabIndex={getTabIndex(1)}
               ref={(node) => {
                 const ref = getRef(1);
-                if (ref) ref.current = node;
+                if (ref) ref.current = node as HTMLElement | null;
               }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Audios"}
@@ -664,7 +661,7 @@ const Sidebar = ({
               tabIndex={getTabIndex(2)}
               ref={(node) => {
                 const ref = getRef(2);
-                if (ref) ref.current = node;
+                if (ref) ref.current = node as HTMLElement | null;
               }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Videos"}
@@ -680,7 +677,7 @@ const Sidebar = ({
               tabIndex={getTabIndex(3)}
               ref={(node) => {
                 const ref = getRef(3);
-                if (ref) ref.current = node;
+                if (ref) ref.current = node as HTMLElement | null;
               }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Documents"}
@@ -696,7 +693,7 @@ const Sidebar = ({
               tabIndex={getTabIndex(4)}
               ref={(node) => {
                 const ref = getRef(4);
-                if (ref) ref.current = node;
+                if (ref) ref.current = node as HTMLElement | null;
               }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Chemistry"}
@@ -712,7 +709,7 @@ const Sidebar = ({
               tabIndex={getTabIndex(5)}
               ref={(node) => {
                 const ref = getRef(5);
-                if (ref) ref.current = node;
+                if (ref) ref.current = node as HTMLElement | null;
               }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "DMPs"}
@@ -728,7 +725,7 @@ const Sidebar = ({
               tabIndex={getTabIndex(6)}
               ref={(node) => {
                 const ref = getRef(6);
-                if (ref) ref.current = node;
+                if (ref) ref.current = node as HTMLElement | null;
               }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Snippets"}
@@ -744,7 +741,7 @@ const Sidebar = ({
               tabIndex={getTabIndex(7)}
               ref={(node) => {
                 const ref = getRef(7);
-                if (ref) ref.current = node;
+                if (ref) ref.current = node as HTMLElement | null;
               }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Miscellaneous"}
@@ -762,7 +759,7 @@ const Sidebar = ({
                 tabIndex={getTabIndex(8)}
                 ref={(node) => {
                   const ref = getRef(8);
-                  if (ref) ref.current = node;
+                  if (ref) ref.current = node as HTMLElement | null;
                 }}
                 drawerOpen={drawerOpen}
                 selected={selectedSection === "NetworkFiles"}
@@ -782,7 +779,7 @@ const Sidebar = ({
               tabIndex={getTabIndex(showFilestores ? 9 : 8)}
               ref={(node) => {
                 const ref = getRef(showFilestores ? 9 : 8);
-                if (ref) ref.current = node;
+                if (ref) ref.current = node as HTMLElement | null;
               }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "PdfDocuments"}
@@ -803,4 +800,4 @@ const Sidebar = ({
  * for creating new folders, uploading new files, and connecting to external
  * filestores.
  */
-export default (observer(Sidebar): ComponentType<SidebarArgs>);
+export default observer(Sidebar);
