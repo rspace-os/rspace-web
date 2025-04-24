@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Context } from "react";
+import React from "react";
 import axios from "@/common/axios";
 import * as Parsers from "../../util/parsers";
 
@@ -10,9 +8,9 @@ import * as Parsers from "../../util/parsers";
  * call to get this list need not be made by each and every component that uses
  * the information.
  */
-export const CollaboraContext: Context<{|
-  supportedExts: Set<string> | null,
-|}> = React.createContext({ supportedExts: null });
+export const CollaboraContext: React.Context<{
+  supportedExts: Set<string> | null;
+}> = React.createContext({ supportedExts: null as Set<string> | null });
 
 /**
  * For fetching metadata about the integration with Collabora.
@@ -26,12 +24,12 @@ export const CollaboraContext: Context<{|
  * depeloyment property with
  *   const collaboraEnabled = useDeploymentProperty("collabora.wopi.enabled");
  */
-export default function useCollabora(): {|
+export default function useCollabora(): {
   /**
    * The set of file extensions supported by Collabora.
    */
-  supportedExts: Set<string>,
-|} {
+  supportedExts: Set<string>;
+} {
   /*
    * Whilst loading the set, and in the event that the network request fails,
    * this set is empty so that when the UI code queries whether the selected
@@ -49,15 +47,17 @@ export default function useCollabora(): {|
       setSupportedExts(context.supportedExts);
       return;
     }
-    void axios.get<mixed>("/collaboraOnline/supportedExts").then(({ data }) => {
-      Parsers.isObject(data)
-        .flatMap(Parsers.isNotNull)
-        .do((obj) => {
-          const newSupportedExts: Set<string> = new Set(Object.keys(obj));
-          setSupportedExts(newSupportedExts);
-          context.supportedExts = newSupportedExts;
-        });
-    });
+    void axios
+      .get<unknown>("/collaboraOnline/supportedExts")
+      .then(({ data }) => {
+        Parsers.isObject(data)
+          .flatMap(Parsers.isNotNull)
+          .do((obj) => {
+            const newSupportedExts: Set<string> = new Set(Object.keys(obj));
+            setSupportedExts(newSupportedExts);
+            context.supportedExts = newSupportedExts;
+          });
+      });
     // we should probably store the result in session storage
     // as it doesn't need to be loaded everytime this component is mounted
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
