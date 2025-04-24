@@ -1,6 +1,4 @@
-//@flow strict
-
-import React, { type Node } from "react";
+import React from "react";
 import { COLORS as baseThemeColors } from "../../theme";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
@@ -28,7 +26,6 @@ library.add(faShapes);
 library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
-import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 
 /**
  * Constants for the strings that identify gallery sections.
@@ -44,7 +41,7 @@ export const GALLERY_SECTION = {
   SNIPPETS: "Snippets",
   MISCELLANEOUS: "Miscellaneous",
   PDFDOCUMENTS: "PdfDocuments",
-};
+} as const;
 
 /**
  * The Gallery is divided up into a several sections based on the type of the
@@ -115,7 +112,7 @@ export const gallerySectionLabel = {
 /**
  * Mapping of gallery sections to icons that can be shown in the UI.
  */
-export const gallerySectionIcon: { [string]: Node } = {
+export const gallerySectionIcon: Record<string, React.ReactNode> = {
   Images: <FaIcon icon="image" />,
   Audios: <FaIcon icon="volume-low" />,
   Videos: <FaIcon icon="film" />,
@@ -123,9 +120,9 @@ export const gallerySectionIcon: { [string]: Node } = {
   Chemistry: <ChemistryIcon />,
   DMPs: <FaIcon icon="file-invoice" />,
   NetworkFiles: <FilestoreIcon />,
-  Snippets: <FaIcon icon="fa-regular fa-note-sticky" />,
+  Snippets: <FaIcon icon={["far", "note-sticky"]} />,
   Miscellaneous: <FaIcon icon="shapes" />,
-  PdfDocuments: <FaIcon icon="fa-circle-down" />,
+  PdfDocuments: <FaIcon icon="circle-down" />,
 };
 
 /**
