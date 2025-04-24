@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
@@ -56,7 +55,6 @@ describe("AddFilestoreDialog", () => {
     });
     const radio = await screen.findByRole("radio", { name: /irods test/i });
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(baseElement)).toHaveNoViolations();
 
     await act(async () => {
@@ -64,19 +62,19 @@ describe("AddFilestoreDialog", () => {
     });
 
     await act(async () => {
-      await user.click(screen.getByRole("button", { name: /choose filesystem/i }));
+      await user.click(
+        screen.getByRole("button", { name: /choose filesystem/i })
+      );
     });
 
     const treeitem = await screen.findByRole("treeitem", { name: /^test$/i });
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(baseElement)).toHaveNoViolations();
 
     await act(async () => {
       await user.click(treeitem);
     });
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(baseElement)).toHaveNoViolations();
   });
 });
