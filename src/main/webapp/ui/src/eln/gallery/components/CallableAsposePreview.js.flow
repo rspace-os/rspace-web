@@ -1,0 +1,16 @@
+//@flow
+
+import { type Node } from "react";
+import { type GalleryFile } from "../useGalleryListing";
+import Result from "../../../util/result";
+
+declare export function useAsposePreview(): {|
+  openAsposePreview: (GalleryFile) => Promise<void>,
+  loading: boolean,
+|};
+
+declare export function CallableAsposePreview({|
+  children: Node,
+|}): Node;
+
+declare export function supportedAsposeFile(GalleryFile): Result<null>;
