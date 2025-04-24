@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { take, incrementForever } from "../../../util/iterators";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/TextLayer.css";
@@ -39,13 +37,13 @@ const PdfPreviewContext = React.createContext((_link: string) => {});
 /**
  * Use the callable PDF preview component to display a PDF in a dialog.
  */
-export function usePdfPreview(): {|
+export function usePdfPreview(): {
   /**
    * Preview the PDF to be found at the passed URL. If the PDF cannot be
    * loaded then the dialog opens with the message "Failed to load PDF file".
    */
-  openPdfPreview: (string) => void,
-|} {
+  openPdfPreview: (url: string) => void;
+} {
   const openPdfPreview = React.useContext(PdfPreviewContext);
   return {
     openPdfPreview,
@@ -59,7 +57,11 @@ export function usePdfPreview(): {|
  *    const { openPdfPreview } = usePdfPreview();
  *    openPdfPreview("http://example.com/document.pdf");
  */
-export function CallablePdfPreview({ children }: {| children: Node |}): Node {
+export function CallablePdfPreview({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactNode {
   const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(
     null
   );
@@ -69,8 +71,7 @@ export function CallablePdfPreview({ children }: {| children: Node |}): Node {
   function onDocumentLoadSuccess({
     numPages: nextNumPages,
   }: {
-    numPages: number,
-    ...
+    numPages: number;
   }): void {
     setNumPages(nextNumPages);
   }
