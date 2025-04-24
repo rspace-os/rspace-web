@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
@@ -12,7 +11,7 @@ import Sidebar from "../Sidebar";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { dummyId } from "../../useGalleryListing";
 
 function newMockAxios() {
