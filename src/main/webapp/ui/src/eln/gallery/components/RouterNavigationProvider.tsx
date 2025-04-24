@@ -1,12 +1,11 @@
-//@flow
-import React, { type Node } from "react";
+import React from "react";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import * as ReactRouter from "react-router";
 import { useLocation } from "react-router-dom";
 
-type RouterNavigationProviderArgs = {|
-  children: Node,
-|};
+type RouterNavigationProviderArgs = {
+  children: React.ReactNode;
+};
 
 /**
  * This NavigationContext encompasses all of the pages under this React app.
@@ -15,7 +14,7 @@ type RouterNavigationProviderArgs = {|
  */
 export default function RouterNavigationProvider({
   children,
-}: RouterNavigationProviderArgs): Node {
+}: RouterNavigationProviderArgs): React.ReactNode {
   const navigate = ReactRouter.useNavigate();
 
   const useNavigate = () => (url: string) => {
