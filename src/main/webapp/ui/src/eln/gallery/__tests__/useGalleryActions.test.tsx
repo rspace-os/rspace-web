@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, act } from "@testing-library/react";
@@ -12,7 +11,7 @@ import { useGalleryActions, rootDestination } from "../useGalleryActions";
 import { dummyId, Description, LocalGalleryFile } from "../useGalleryListing";
 import Alerts from "../../../components/Alerts/Alerts";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 
 beforeEach(() => {
   jest.clearAllMocks();
