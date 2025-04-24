@@ -127,6 +127,16 @@ export default class Result<T> {
     f(this.state.value);
   }
 
+  /**
+   * Perform an asynchronous side-effect on the value if the result is in an OK
+   * state. Otherwise the first error is returned in the rejected state of the
+   * promise.
+   */
+  doAsync(f: (value: T) => Promise<void>): Promise<void> {
+    if (this.state.key === "error") return Promise.reject(this.state.errors[0]);
+    return f(this.state.value);
+  }
+
   /***************************************
    ** FUNCTIONS APPLIED TO ERROR BRANCH **
    ***************************************/

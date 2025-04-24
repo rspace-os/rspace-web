@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { Dialog } from "../../../components/DialogBoundary";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -9,7 +7,7 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import StepContent from "@mui/material/StepContent";
-import axios, { type Axios } from "@/common/axios";
+import axios from "@/common/axios";
 import Result from "../../../util/result";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
@@ -28,8 +26,8 @@ import { useFilestoreLogin } from "./FilestoreLoginDialog";
 import Typography from "@mui/material/Typography";
 import EventBoundary from "../../../components/EventBoundary";
 
-type AddFilestoreDialogArgs = {|
-  open: boolean,
+type AddFilestoreDialogArgs = {
+  open: boolean;
 
   /**
    * Will be called with `true` if the user successfully added a new a
@@ -37,34 +35,38 @@ type AddFilestoreDialogArgs = {|
    * operation be cancelled for any other reason. In either case the caller
    * MUST set `open` to `false`.
    */
-  onClose: (boolean) => void,
-|};
+  onClose: (success: boolean) => void;
+};
 
-function FilesystemSelectionStep(props: {|
-  setSelectedFilesystem: ({|
-    id: number,
-    name: string,
-    url: string,
-  |}) => void,
-  selectedFilesystem: Optional<{|
-    id: number,
-    name: string,
-    url: string,
-  |}>,
-|}) {
+function FilesystemSelectionStep(props: {
+  setSelectedFilesystem: ({
+    id,
+    name,
+    url,
+  }: {
+    id: number;
+    name: string;
+    url: string;
+  }) => void;
+  selectedFilesystem: Optional<{
+    id: number;
+    name: string;
+    url: string;
+  }>;
+}) {
   const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
-  const [chosenFilesystem, setChosenFilesysem] = React.useState<{|
-    id: number,
-    name: string,
-    url: string,
-  |} | null>(null);
-  const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
-    id: number,
-    name: string,
-    url: string,
-  |}>>(null);
+  const [chosenFilesystem, setChosenFilesysem] = React.useState<{
+    id: number;
+    name: string;
+    url: string;
+  } | null>(null);
+  const [filesystems, setFilesystems] = React.useState<null | ReadonlyArray<{
+    id: number;
+    name: string;
+    url: string;
+  }>>(null);
   const { getToken } = useOauthToken();
-  const api = React.useRef<Promise<Axios>>(
+  const api = React.useRef(
     (async () => {
       return axios.create({
         baseURL: "/api/v1/gallery",
@@ -77,7 +79,7 @@ function FilesystemSelectionStep(props: {|
 
   React.useEffect(() => {
     void (async () => {
-      const { data } = await (await api.current).get<mixed>("filesystems");
+      const { data } = await (await api.current).get<unknown>("filesystems");
       Parsers.isArray(data)
         .flatMap((array) =>
           Result.all(
@@ -97,11 +99,11 @@ function FilesystemSelectionStep(props: {|
                       .elseThrow();
                     return Result.Ok({ id, name, url });
                   } catch (e) {
-                    return Result.Error<{|
-                      id: number,
-                      name: string,
-                      url: string,
-                    |}>([e]);
+                    return Result.Error<{
+                      id: number;
+                      name: string;
+                      url: string;
+                    }>([e instanceof Error ? e : new Error("Unknown error")]);
                   }
                 })
             )
@@ -168,26 +170,26 @@ function FilesystemSelectionStep(props: {|
   );
 }
 
-type FilesystemListing = $ReadOnlyArray<{|
-  nfsId: number,
-  name: string,
-  folder: boolean,
-|}>;
+type FilesystemListing = ReadonlyArray<{
+  nfsId: number;
+  name: string;
+  folder: boolean;
+}>;
 
 function TreeListing({
   fsId,
   fsName,
   path,
   onFailToAuthenticate,
-}: {|
-  fsId: number,
-  fsName: string,
-  path: string,
-  onFailToAuthenticate: () => void,
-|}): Node {
+}: {
+  fsId: number;
+  fsName: string;
+  path: string;
+  onFailToAuthenticate: () => void;
+}): React.ReactNode {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
-  const api = React.useRef<Promise<Axios>>(
+  const api = React.useRef(
     (async () => {
       return axios.create({
         baseURL: "/api/v1/gallery",
@@ -205,34 +207,43 @@ function TreeListing({
       try {
         const { data } = await (
           await api.current
-        ).get<{ content: FilesystemListing, ... }>(
+        ).get<{ content: FilesystemListing }>(
           `filesystems/${fsId}/browse?remotePath=${path}`
         );
         if (!data.content) throw new Error("No content");
         setListing(data.content);
       } catch (e) {
-        if (e.response?.status === 403) {
-          if (
-            await login({
-              filesystemName: fsName,
-              filesystemId: fsId,
-            })
-          ) {
-            await browse();
-          } else {
-            onFailToAuthenticate();
-          }
-        } else {
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: "Failed to browse filestore",
-              message: Parsers.objectPath(["response", "data", "message"], e)
-                .flatMap(Parsers.isString)
-                .orElse(e.message),
-            })
-          );
-        }
+        if (!(e instanceof Error)) return;
+        Parsers.getValueWithKey("response")(e).do(
+          (response) =>
+            void Parsers.isObject(response)
+              .flatMap(Parsers.isNotNull)
+              .flatMap(Parsers.getValueWithKey("status"))
+              .flatMap(Parsers.isNumber)
+              .doAsync(async (status) => {
+                if (status === 403) {
+                  const success = await login({
+                    filesystemName: fsName,
+                    filesystemId: fsId,
+                  });
+                  if (success) {
+                    await browse();
+                  } else {
+                    onFailToAuthenticate();
+                  }
+                } else {
+                  addAlert(
+                    mkAlert({
+                      variant: "error",
+                      title: "Failed to browse filestore",
+                      message: Parsers.objectPath(["data", "message"], response)
+                        .flatMap(Parsers.isString)
+                        .orElse(e.message),
+                    })
+                  );
+                }
+              })
+        );
       }
     }
     void browse();
@@ -266,15 +277,13 @@ function TreeListing({
   );
 }
 
-function FolderSelectionStep(props: {|
-  selectedFilesystem: Optional<{| id: number, name: string, url: string |}>,
-  onConfirm: (string) => void,
-  onCancel: () => void,
-|}) {
+function FolderSelectionStep(props: {
+  selectedFilesystem: Optional<{ id: number; name: string; url: string }>;
+  onConfirm: (folderPath: string) => void;
+  onCancel: () => void;
+}) {
   const { selectedFilesystem, onConfirm, onCancel, ...rest } = props;
-  const [expandedItems, setExpandedItems] = React.useState<
-    $ReadOnlyArray<number>
-  >([]);
+  const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
   const [selectedFolderPath, setSelectedFolderPath] = React.useState("");
 
   return (
@@ -298,12 +307,13 @@ function FolderSelectionStep(props: {|
           }}
           onItemSelectionToggle={(
             event,
-            itemId: string | $ReadOnlyArray<string>,
+            itemId: string | ReadonlyArray<string>,
             selected
           ) => {
-            if (Array.isArray(itemId)) return;
+            if (!(typeof itemId === "string")) return;
+            const selectedFolder: string = itemId;
             if (!selected) return;
-            setSelectedFolderPath(itemId);
+            setSelectedFolderPath(selectedFolder);
           }}
         >
           {selectedFilesystem
@@ -341,10 +351,10 @@ function FolderSelectionStep(props: {|
   );
 }
 
-function NameStep(props: {|
-  onConfirm: (string) => void,
-  onCancel: () => void,
-|}) {
+function NameStep(props: {
+  onConfirm: (name: string) => void;
+  onCancel: () => void;
+}) {
   const { onConfirm, onCancel, ...rest } = props;
   const [name, setName] = React.useState("");
   return (
@@ -396,7 +406,7 @@ function NameStep(props: {|
 export default function AddFilestoreDialog({
   open,
   onClose,
-}: AddFilestoreDialogArgs): Node {
+}: AddFilestoreDialogArgs): React.ReactNode {
   const [activeStep, setActiveStep] = React.useState(-1);
   React.useEffect(() => {
     if (open) {
@@ -407,18 +417,18 @@ export default function AddFilestoreDialog({
   }, [open, setActiveStep]);
 
   const [selectedFilesystem, setSelectedFilesystem] = React.useState<
-    Optional<{|
-      id: number,
-      name: string,
-      url: string,
-    |}>
+    Optional<{
+      id: number;
+      name: string;
+      url: string;
+    }>
   >(Optional.empty());
 
   const [pathOfSelectedFolder, setPathOfSelectedFolder] = React.useState("");
 
   const { addAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
-  const api = React.useRef<Promise<Axios>>(
+  const api = React.useRef(
     (async () => {
       return axios.create({
         baseURL: "/api/v1/gallery",
@@ -435,7 +445,7 @@ export default function AddFilestoreDialog({
         .elseThrow().id;
       await (
         await api.current
-      ).post<_, mixed>(
+      ).post<unknown>(
         "filestores",
         {},
         {
@@ -455,17 +465,19 @@ export default function AddFilestoreDialog({
       );
       onClose(true);
     } catch (e) {
-      const message = Parsers.objectPath(["response", "data", "message"], e)
-        .flatMap(Parsers.isString)
-        .orElse(e.message);
       console.error(e);
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: "Failed to add new filestore",
-          message,
-        })
-      );
+      if (e instanceof Error) {
+        const message = Parsers.objectPath(["response", "data", "message"], e)
+          .flatMap(Parsers.isString)
+          .orElse(e.message);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Failed to add new filestore",
+            message,
+          })
+        );
+      }
     }
   }
 
