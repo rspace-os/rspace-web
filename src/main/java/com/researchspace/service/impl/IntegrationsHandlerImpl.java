@@ -185,6 +185,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case FIELDMARK_APP_NAME:
         setSingleUserToken(info, user, FIELDMARK_APP_NAME, FIELDMARK_USER_TOKEN);
         return;
+      case GALAXY_APP_NAME:
+        setSingleUserToken(info, user, GALAXY_APP_NAME, GALAXY_API_KEY);
+        return;
       case DIGITAL_COMMONS_DATA_APP_NAME:
         setSingleUserToken(
             info, user, DIGITAL_COMMONS_DATA_APP_NAME, DIGITAL_COMMONS_DATA_USER_TOKEN);
@@ -396,6 +399,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (FIELDMARK_APP_NAME.equals(newInfo.getName())) {
       saveNewUserConnectionForSingleOptionApp(
           newInfo.getOptions().get(FIELDMARK_USER_TOKEN).toString(), user, FIELDMARK_APP_NAME);
+    } else if (GALAXY_APP_NAME.equals(newInfo.getName())) {
+      saveNewUserConnectionForSingleOptionApp(
+          newInfo.getOptions().get(GALAXY_API_KEY).toString(), user, GALAXY_APP_NAME);
     } else if (JOVE_APP_NAME.equals(newInfo.getName())) {
       /**
        * Jove doesnt currently fit well into our existing integration handler, so we just get the
@@ -528,6 +534,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DIGITAL_COMMONS_DATA_APP_NAME:
       case DMPONLINE_APP_NAME:
       case FIELDMARK_APP_NAME:
+      case GALAXY_APP_NAME:
         return true;
     }
     return isSingleOptionSetAppConfigIntegration(integrationName);

@@ -58,4 +58,11 @@ public class PropertyHolderTest {
 
     assertEquals("https://base.fieldmark.com", holder.getFieldmarkBaseUrl());
   }
+
+  @Test
+  public void testGetGalaxyProperties() {
+    holder.setFieldmarkBaseUrl("https://base.galaxy.com");
+
+    assertEquals("https://base.galaxy.com", holder.getFieldmarkBaseUrl());
+  }
 }
