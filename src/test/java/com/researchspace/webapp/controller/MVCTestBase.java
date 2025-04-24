@@ -54,11 +54,13 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
   @Autowired protected SystemPropertyManager sysPropMgr;
 
   public void disableGlobalApiAccess() {
-    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.DENIED, getSysAdminUser());
+    sysPropMgr.save(
+        SystemPropertyName.API_AVAILABLE, HierarchicalPermission.DENIED, getSysAdminUser());
   }
 
   public void enableGlobalApiAccess() {
-    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.ALLOWED, getSysAdminUser());
+    sysPropMgr.save(
+        SystemPropertyName.API_AVAILABLE, HierarchicalPermission.ALLOWED, getSysAdminUser());
   }
 
   /**

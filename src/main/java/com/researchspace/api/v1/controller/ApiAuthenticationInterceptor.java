@@ -1,6 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticator;
 import com.researchspace.model.User;
 import javax.servlet.http.HttpServletRequest;
@@ -18,16 +17,11 @@ public class ApiAuthenticationInterceptor extends HandlerInterceptorAdapter {
 
   @Autowired private ApiAuthenticator apiAuthenticator;
 
-  @Autowired private AnalyticsManager analyticsMgr;
-
   @Override
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
     User user = apiAuthenticator.authenticate(request);
     request.setAttribute("user", user);
-    if (user != null) {
-      analyticsMgr.apiUsed(user, request);
-    }
     return true;
   }
 

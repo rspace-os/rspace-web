@@ -78,7 +78,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
     registry
         .addInterceptor(defaultConfig.productAndPropertyAnnotationInterceptor())
         .addPathPatterns("/**");
-    registry.addInterceptor(defaultConfig.apiAvailableInterceptor()).addPathPatterns("/api/**");
     if ("true".equals(permissiveCorsEnabled)) {
       registry
           .addInterceptor(defaultConfig.apiPermissiveCorsInterceptor())
@@ -90,8 +89,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
     }
     registry
         .addInterceptor(defaultConfig.apiAuthenticationInterceptor())
-        .addPathPatterns("/api/**")
-        .excludePathPatterns("/api/inventory/v1/public/**");
+        .addPathPatterns("/api/**");
     registry.addInterceptor(wopiAuthorisation).addPathPatterns("/wopi/files/**");
     registry.addInterceptor(wopiProofKeyValidation).addPathPatterns("/wopi/files/**");
   }

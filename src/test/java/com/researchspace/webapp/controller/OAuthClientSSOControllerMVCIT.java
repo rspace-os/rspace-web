@@ -14,7 +14,6 @@ import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
 @SSOTestContext
@@ -37,25 +36,28 @@ public class OAuthClientSSOControllerMVCIT extends MVCTestBase {
     OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
     postOauthAccessTokenRequest(username, password, app)
         .andExpect(status().isUnauthorized())
-        .andExpect(result -> assertEquals("Access to API has been disabled by "
-                + "RSpace administrator.", result.getResolvedException().getMessage()));
+        .andExpect(
+            result ->
+                assertEquals(
+                    "Access to API has been disabled by RSpace administrator.",
+                    result.getResolvedException().getMessage()));
 
     // user1234 now fails
     enableGlobalApiAccess();
     app = oAuthAppManager.addApp(user, "newApp").getEntity();
     postOauthAccessTokenRequest(username, password, app)
         .andExpect(status().isUnauthorized())
-        .andExpect(result -> assertEquals("Invalid user credentials.",
-            result.getResolvedException().getMessage()));
+        .andExpect(
+            result ->
+                assertEquals(
+                    "Invalid user credentials.", result.getResolvedException().getMessage()));
 
     // save verification password
     password = "abcdefghi";
     verificationPasswordhandler.encryptAndSavePassword(user, "abcdefghi");
 
     // verification password succeeds
-    postOauthAccessTokenRequest(username, password, app)
-        .andExpect(status().isOk())
-        .andReturn();
+    postOauthAccessTokenRequest(username, password, app).andExpect(status().isOk()).andReturn();
   }
 
   private ResultActions postOauthAccessTokenRequest(

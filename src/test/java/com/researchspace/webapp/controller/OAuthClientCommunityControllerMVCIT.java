@@ -13,13 +13,12 @@ import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
 @CommunityTestContext
 public class OAuthClientCommunityControllerMVCIT extends MVCTestBase {
   @Autowired private OAuthAppManager oAuthAppManager;
-  private @Autowired VerificationPasswordResetHandler verificationPasswordhandler;
+  private @Autowired VerificationPasswordResetHandler verificationPasswordHandler;
 
   @Test
   public void googleSignupUserUsesVerificationPassword() throws Exception {
@@ -40,7 +39,7 @@ public class OAuthClientCommunityControllerMVCIT extends MVCTestBase {
     password = "abcdefghi";
 
     // verification password succeeds
-    verificationPasswordhandler.encryptAndSavePassword(user, "abcdefghi");
+    verificationPasswordHandler.encryptAndSavePassword(user, "abcdefghi");
     postOauthAccessTokenRequest(username, password, app).andExpect(status().isOk()).andReturn();
   }
 

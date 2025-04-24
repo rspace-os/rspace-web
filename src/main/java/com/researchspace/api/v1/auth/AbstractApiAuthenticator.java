@@ -53,7 +53,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
     }
 
     User targetUser = userOpt.get();
-    assertLoginAllowed(accessToken, targetUser);
+    assertLoginAllowed(targetUser);
 
     // Requests for inventory from the browser come with JSESSIONID cookies. Hence
     // we have access to the current session. We reuse the session when possible.
@@ -95,13 +95,13 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
     SecurityUtils.getSubject().logout();
   }
 
-  private void assertLoginAllowed(String token, User user) {
+  private void assertLoginAllowed(User user) {
     if (user.isLoginDisabled()) {
       throw new ApiAuthenticationException(
           String.format(
-              "Api access denied as account for user '%s' associated with API key '%s' is locked or"
-                  + " disabled",
-              user.getUsername(), token));
+              "Api access denied as account for user '%s' associated with provided API key is "
+                  + "locked or disabled",
+              user.getUsername()));
     }
   }
 }

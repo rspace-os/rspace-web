@@ -216,12 +216,7 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
     if (userId == null) {
       return;
     }
-    // don't log requests to inventory API, as that's just normal app usage
     String requestURI = req.getRequestURI();
-    if (isInventoryApiRequest(requestURI)) {
-      return;
-    }
-
     Map<String, Object> props = new HashMap<>();
     props.put(AnalyticsProperty.API_METHOD.getLabel(), req.getMethod());
     props.put(AnalyticsProperty.API_URI.getLabel(), requestURI);

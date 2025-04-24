@@ -27,24 +27,21 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
   @Override
   public ServiceOperationResult<String> isAvailable(User user, HttpServletRequest request) {
     // rsinv-365
-    if (isApiAvailable(user)) {
-      if (!isInventoryRequest(request)) {
-        return enableResult; // case 3
-      } else {
-        if (isInventoryAvailable(user)) {
-          return enableResult; // 1
-        } else {
-          // case 2
-          return invDisabled;
-        }
-      }
-    } else {
-      // case 4
-      return apiDisabled;
+    if (!isApiAvailableForUser(user)) {
+      return apiDisabled; // case 4
     }
+    if (isInventoryRequest(request)) {
+      if (isInventoryAvailable(user)) {
+        return enableResult; // 1
+      } else {
+        return invDisabled; // case 2
+      }
+    }
+    return enableResult; // case 3
   }
 
-  private boolean isApiAvailable(User user) {
+  @Override
+  public boolean isApiAvailableForUser(User user) {
     return systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.API_AVAILABLE);
   }
 

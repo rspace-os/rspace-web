@@ -1,7 +1,8 @@
 package com.researchspace.api.v1.config;
 
+import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticator;
-import com.researchspace.api.v1.auth.ApiAuthenticatorImpl;
+import com.researchspace.api.v1.auth.MainRSpaceApiAuthenticator;
 import com.researchspace.api.v1.auth.OAuthTokenAuthenticator;
 import com.researchspace.api.v1.controller.APIFileUploadThrottlingInterceptor;
 import com.researchspace.api.v1.controller.APIRequestThrottlingInterceptor;
@@ -12,6 +13,7 @@ import com.researchspace.api.v1.service.impl.ExportApiSpringBatchHandlerImpl;
 import com.researchspace.api.v1.service.impl.RSFormApiHandlerImpl;
 import com.researchspace.api.v1.throttling.APIFileUploadThrottler;
 import com.researchspace.api.v1.throttling.APIRequestThrottler;
+import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.UserApiKeyManager;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,8 +44,13 @@ public class BaseAPIConfig {
 
   // implementation can be changed in future or altered depending on environment
   @Bean
-  ApiAuthenticator apiAuthenticator(OAuthTokenAuthenticator oAuthTokenAuthenticator) {
-    return new ApiAuthenticatorImpl(apiMgr, oAuthTokenAuthenticator);
+  ApiAuthenticator apiAuthenticator(
+      OAuthTokenAuthenticator oAuthTokenAuthenticator,
+      AnalyticsManager analyticsManager,
+      ApiAvailabilityHandler apiAvailabilityHandler) {
+
+    return new MainRSpaceApiAuthenticator(
+        apiMgr, oAuthTokenAuthenticator, analyticsManager, apiAvailabilityHandler);
   }
 
   @Bean
