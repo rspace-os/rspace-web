@@ -1,6 +1,4 @@
-//@flow strict
-
-import React, { type Node } from "react";
+import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
 import { makeStyles } from "tss-react/mui";
 
@@ -22,7 +20,7 @@ const useStyles = makeStyles()(() => ({
 /**
  * A simple chemical bond for use as a generic icon for chemistry files.
  */
-export default function ChemistryIcon(): Node {
+export default function ChemistryIcon(): React.ReactNode {
   const { classes } = useStyles();
   return (
     <SvgIcon viewBox="0 0 40 40" className={classes.root}>
