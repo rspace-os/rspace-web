@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
@@ -10,9 +9,9 @@ import userEvent from "@testing-library/user-event";
 import * as FetchingData from "../../../util/fetchingData";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
-import page1 from "./getUploadedFiles_1";
-import page2 from "./getUploadedFiles_2";
+import axios from "@/common/axios";
+import page1 from "./getUploadedFiles_1.json";
+import page2 from "./getUploadedFiles_2.json";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -29,9 +28,9 @@ mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
 function WrapperComponent() {
   const listingOf = React.useMemo(
     () => ({
-      tag: "section",
-      section: "Images",
-      path: ([]: $ReadOnlyArray<GalleryFile>),
+      tag: "section" as const,
+      section: "Images" as const,
+      path: [],
     }),
     []
   );
@@ -87,13 +86,15 @@ describe("useGalleryListing", () => {
     mockAxios
       .onGet("/gallery/getUploadedFiles", {
         params: {
-          asymmetricMatch: (params) => params.get("pageNumber") === "0",
+          asymmetricMatch: (params: URLSearchParams) =>
+            params.get("pageNumber") === "0",
         },
       })
       .reply(200, page1)
       .onGet("/gallery/getUploadedFiles", {
         params: {
-          asymmetricMatch: (params) => params.get("pageNumber") === "1",
+          asymmetricMatch: (params: URLSearchParams) =>
+            params.get("pageNumber") === "1",
         },
       })
       .reply(200, page2);
