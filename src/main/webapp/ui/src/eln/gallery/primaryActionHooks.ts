@@ -1,5 +1,3 @@
-//@flow
-
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import * as FetchingData from "../../util/fetchingData";
@@ -32,6 +30,8 @@ export function useSnapGenePreviewOfGalleryFile(): (
 ) => Result<null> {
   const snapGeneEnabled = useDeploymentProperty("snapgene.available");
   return (file) => {
+    if (!file.extension)
+      return Result.Error([new Error("File extension is missing")]);
     if (!dnaFileExtensions.includes(file.extension))
       return Result.Error([new Error("The file is not a DNA file")]);
     return FetchingData.getSuccessValue(snapGeneEnabled)
@@ -163,17 +163,17 @@ export function useAsposePreviewOfGalleryFile(): (
  * depend on the file type and what services as available.
  */
 export default function usePrimaryAction(): (file: GalleryFile) => Result<
-  | {| tag: "open" |}
-  | {|
-      tag: "image",
-      downloadHref: () => Promise<URL>,
-      caption: $ReadOnlyArray<string>,
-    |}
-  | {| tag: "collabora", url: string |}
-  | {| tag: "officeonline", url: string |}
-  | {| tag: "pdf", downloadHref: () => Promise<URL> |}
-  | {| tag: "aspose" |}
-  | {| tag: "snapgene", file: GalleryFile |}
+  | { tag: "open" }
+  | {
+      tag: "image";
+      downloadHref: () => Promise<URL>;
+      caption: ReadonlyArray<string>;
+    }
+  | { tag: "collabora"; url: string }
+  | { tag: "officeonline"; url: string }
+  | { tag: "pdf"; downloadHref: () => Promise<URL> }
+  | { tag: "aspose" }
+  | { tag: "snapgene"; file: GalleryFile }
 > {
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
@@ -184,10 +184,10 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
 
   return (file) =>
     file.canOpen
-      .map(() => ({ tag: "open" }))
+      .map(() => ({ tag: "open" as const }))
       .orElseTry(() =>
         canPreviewAsImage(file).map((downloadHref) => ({
-          tag: "image",
+          tag: "image" as const,
           downloadHref,
           caption: [
             file.description.match({
@@ -200,24 +200,30 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
         }))
       )
       .orElseTry(() =>
-        canEditWithCollabora(file).map((url) => ({ tag: "collabora", url }))
+        canEditWithCollabora(file).map((url) => ({
+          tag: "collabora" as const,
+          url,
+        }))
       )
       .orElseTry(() =>
         canEditWithOfficeOnline(file).map((url) => ({
-          tag: "officeonline",
+          tag: "officeonline" as const,
           url,
         }))
       )
       .orElseTry(() =>
         canPreviewAsPdf(file).map((downloadHref) => ({
-          tag: "pdf",
+          tag: "pdf" as const,
           downloadHref,
         }))
       )
       .orElseTry(() =>
-        canPreviewWithSnapGene(file).map(() => ({ tag: "snapgene", file }))
+        canPreviewWithSnapGene(file).map(() => ({
+          tag: "snapgene" as const,
+          file,
+        }))
       )
       .orElseTry(() =>
-        canPreviewWithAspose(file).map(() => ({ tag: "aspose" }))
+        canPreviewWithAspose(file).map(() => ({ tag: "aspose" as const }))
       );
 }
