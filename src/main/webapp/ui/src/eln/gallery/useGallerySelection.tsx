@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type Context } from "react";
+import React from "react";
 import { type GalleryFile } from "./useGalleryListing";
 import { makeObservable, action, observable, computed } from "mobx";
 import RsSet from "../../util/set";
@@ -23,11 +21,11 @@ class Selection {
    */
   _state: Map<GalleryFile["key"], GalleryFile>;
 
-  #onlyAllowSingleSelection: boolean;
+  private onlyAllowSingleSelection: boolean;
 
   constructor({
     onlyAllowSingleSelection = false,
-  }: {| onlyAllowSingleSelection?: boolean |} = {}) {
+  }: { onlyAllowSingleSelection?: boolean } = {}) {
     makeObservable(this, {
       _state: observable,
       isEmpty: computed,
@@ -38,7 +36,7 @@ class Selection {
       remove: action,
     });
     this._state = new Map<GalleryFile["key"], GalleryFile>();
-    this.#onlyAllowSingleSelection = onlyAllowSingleSelection;
+    this.onlyAllowSingleSelection = onlyAllowSingleSelection;
   }
 
   get isEmpty(): boolean {
@@ -46,7 +44,7 @@ class Selection {
   }
 
   get size(): number {
-    if (this.#onlyAllowSingleSelection) return 1;
+    if (this.onlyAllowSingleSelection) return 1;
     return this._state.size;
   }
 
@@ -55,7 +53,7 @@ class Selection {
   }
 
   append(file: GalleryFile) {
-    if (this.#onlyAllowSingleSelection) this.clear();
+    if (this.onlyAllowSingleSelection) this.clear();
     this._state.set(file.key, file);
   }
 
@@ -88,7 +86,7 @@ class Selection {
 
 const DEFAULT_SELECTION_CONTEXT: Selection = new Selection();
 
-const SelectionContext: Context<Selection> = React.createContext(
+const SelectionContext: React.Context<Selection> = React.createContext(
   DEFAULT_SELECTION_CONTEXT
 );
 
@@ -99,10 +97,10 @@ const SelectionContext: Context<Selection> = React.createContext(
 export const GallerySelection = ({
   children,
   ...rest
-}: {|
-  children: Node,
-  onlyAllowSingleSelection?: boolean,
-|}): Node => (
+}: {
+  children: React.ReactNode;
+  onlyAllowSingleSelection?: boolean;
+}): React.ReactNode => (
   <SelectionContext.Provider value={new Selection(rest)}>
     {children}
   </SelectionContext.Provider>

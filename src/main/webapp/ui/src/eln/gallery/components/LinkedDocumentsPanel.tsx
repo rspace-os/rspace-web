@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { type GalleryFile } from "../useGalleryListing";
@@ -21,16 +19,18 @@ import AnalyticsContext from "../../../stores/contexts/Analytics";
  *
  * @param file The GalleryFile that can be referenced by ELN documents.
  */
-export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
+export function LinkedDocumentsPanel({
   file,
-}): Node => {
+}: {
+  file: GalleryFile;
+}): React.ReactNode {
   const apiRef = useGridApiRef();
   const linkedDocuments = useLinkedDocuments(file);
   const { trackEvent } = React.useContext(AnalyticsContext);
 
   React.useEffect(() => {
     setTimeout(() => {
-      apiRef.current?.autosizeColumns({
+      void apiRef.current?.autosizeColumns({
         includeHeaders: true,
         includeOutliers: true,
       });
@@ -51,26 +51,29 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
       </Typography>
       <DataGrid
         columns={[
-          DataGridColumn.newColumnWithFieldName<_, Document>("name", {
+          DataGridColumn.newColumnWithFieldName<"name", Document>("name", {
             headerName: "Name",
             flex: 1,
             sortable: false,
             resizable: true,
           }),
-          DataGridColumn.newColumnWithFieldName<_, Document>("globalId", {
-            headerName: "Global ID",
-            flex: 0,
-            resizable: true,
-            sortable: false,
-            renderCell: ({ row }) => (
-              <GlobalId
-                record={row.linkableRecord}
-                onClick={() => {
-                  trackEvent("user:click:globalId:galleryLinkedDocuments");
-                }}
-              />
-            ),
-          }),
+          DataGridColumn.newColumnWithFieldName<"globalId", Document>(
+            "globalId",
+            {
+              headerName: "Global ID",
+              flex: 0,
+              resizable: true,
+              sortable: false,
+              renderCell: ({ row }) => (
+                <GlobalId
+                  record={row.linkableRecord}
+                  onClick={() => {
+                    trackEvent("user:click:globalId:galleryLinkedDocuments");
+                  }}
+                />
+              ),
+            }
+          ),
         ]}
         rows={linkedDocuments.documents}
         initialState={{
@@ -95,4 +98,4 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
       />
     </Box>
   );
-};
+}

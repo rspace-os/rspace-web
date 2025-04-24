@@ -1,5 +1,3 @@
-//@flow
-
 import React from "react";
 import axios from "@/common/axios";
 import { type GalleryFile, idToString } from "./useGalleryListing";
@@ -11,30 +9,30 @@ import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
  * An ELN document, to the extent that the Gallery needs to know to provide a
  * table of back-references.
  */
-export type Document = {|
-  id: number,
-  globalId: string,
-  name: string,
+export type Document = {
+  id: number;
+  globalId: string;
+  name: string;
 
-  permalinkHref: string,
+  permalinkHref: string;
 
-  linkableRecord: LinkableRecord,
-|};
+  linkableRecord: LinkableRecord;
+};
 
 class LinkableDocument implements LinkableRecord {
-  id: ?number;
-  globalId: ?string;
+  id: number | null;
+  globalId: string | null;
   name: string;
 
   constructor({
     id,
     globalId,
     name,
-  }: {|
-    id: number,
-    globalId: string,
-    name: string,
-  |}) {
+  }: {
+    id: number;
+    globalId: string;
+    name: string;
+  }) {
     this.id = id;
     this.globalId = globalId;
     this.name = name;
@@ -57,15 +55,13 @@ class LinkableDocument implements LinkableRecord {
 /**
  * Given a GalleryFile, get all of the ELN documents that reference it.
  */
-export default function useLinkedDocuments(file: GalleryFile): {|
-  documents: $ReadOnlyArray<Document>,
-  loading: boolean,
-  errorMessage: string | null,
-|} {
+export default function useLinkedDocuments(file: GalleryFile): {
+  documents: ReadonlyArray<Document>;
+  loading: boolean;
+  errorMessage: string | null;
+} {
   const [loading, setLoading] = React.useState(true);
-  const [documents, setDocuments] = React.useState<$ReadOnlyArray<Document>>(
-    []
-  );
+  const [documents, setDocuments] = React.useState<ReadonlyArray<Document>>([]);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   async function getLinkedDocuments(): Promise<void> {
@@ -73,7 +69,7 @@ export default function useLinkedDocuments(file: GalleryFile): {|
     setLoading(true);
     setErrorMessage(null);
     try {
-      const { data } = await axios.get<mixed>(
+      const { data } = await axios.get<unknown>(
         `/gallery/ajax/getLinkedDocuments/${idToString(file.id).elseThrow()}`
       );
 

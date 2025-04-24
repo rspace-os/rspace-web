@@ -1,7 +1,5 @@
-//@flow
-
-import React, { type Node } from "react";
-import axios, { type Axios } from "@/common/axios";
+import React from "react";
+import axios from "@/common/axios";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -34,7 +32,7 @@ import EXT_BY_TYPE from "./fileExtensionsByType.json";
  * `idToString` function to get a string representation of the Id, with
  * explicit handling for the case where there isn't an id.
  */
-export opaque type Id = number | null;
+export type Id = number | null;
 
 /*
  * dummyId is for use in tests ONLY. All other Ids MUST be got from API calls.
@@ -58,9 +56,9 @@ export function idToString(id: Id): Result<string> {
  * Maps file extensions to icon files
  */
 const mapToSvgImageIcon = (
-  extensions: $ReadOnlyArray<string>,
+  extensions: ReadonlyArray<string>,
   filename: string
-): $ReadOnlyArray<[string, string]> =>
+): ReadonlyArray<[string, string]> =>
   extensions.map((ext) => [ext, `/images/icons/${filename}.svg`]);
 const fileIconMap = new Map([
   ...mapToSvgImageIcon(EXT_BY_TYPE.CHEMISTRY, "chemistry"),
@@ -79,18 +77,18 @@ const fileIconMap = new Map([
 ]);
 
 type DescriptionInternalState =
-  | {| key: "missing" |}
-  | {| key: "empty" |}
-  | {| key: "present", value: string |};
+  | { key: "missing" }
+  | { key: "empty" }
+  | { key: "present"; value: string };
 /**
  * All local Gallery files have a description, but this description may be
  * empty. Filestores and filestores in filestores will not have a description.
  */
 export class Description {
-  +#state: DescriptionInternalState;
+  private readonly state: DescriptionInternalState;
 
   constructor(state: DescriptionInternalState) {
-    this.#state = state;
+    this.state = state;
   }
 
   static Missing(): Description {
@@ -113,14 +111,14 @@ export class Description {
     });
   }
 
-  match<T>(opts: {|
-    missing: () => T,
-    empty: () => T,
-    present: (string) => T,
-  |}): T {
-    if (this.#state.key === "missing") return opts.missing();
-    if (this.#state.key === "empty") return opts.empty();
-    return opts.present(this.#state.value);
+  match<T>(opts: {
+    missing: () => T;
+    empty: () => T;
+    present: (desc: string) => T;
+  }): T {
+    if (this.state.key === "missing") return opts.missing();
+    if (this.state.key === "empty") return opts.empty();
+    return opts.present(this.state.value);
   }
 }
 
@@ -134,8 +132,8 @@ export interface GalleryFile {
    */
   deconstructor(): void;
 
-  +id: Id;
-  +globalId?: string;
+  readonly id: Id;
+  readonly globalId?: string;
   name: string;
 
   /*
@@ -143,38 +141,38 @@ export interface GalleryFile {
    * This will either be an id or a path depending upon the filesystem being
    * accessed, and thus how the class implements this interface.
    */
-  +key: string;
+  readonly key: string;
 
   // null for folders, otherwise usually a non-empty string
-  +extension: string | null;
+  readonly extension: string | null;
 
-  +creationDate?: Date;
-  +modificationDate?: Date;
-  +type?: string;
-  +thumbnailUrl: UrlType;
-  +ownerName?: string;
+  readonly creationDate?: Date;
+  readonly modificationDate?: Date;
+  readonly type?: string;
+  readonly thumbnailUrl: UrlType;
+  readonly ownerName?: string;
   description: Description;
 
   // In bytes. Folders are always 0 bytes
-  +size: number;
+  readonly size: number;
 
   /*
    * A positive natural number, that is incremented whenever the user uploads a
    * new version or otherwise edits the file
    */
-  +version?: number;
+  readonly version?: number;
 
   /*
    * A versioned global Id that refers to an original image file from which
    * this image file was created.
    */
-  +originalImageId?: string | null;
+  readonly originalImageId?: string | null;
 
   /*
    * A list of folders from the top gallery section to the parent of this
    * file/folder
    */
-  +path: $ReadOnlyArray<GalleryFile>;
+  readonly path: ReadonlyArray<GalleryFile>;
 
   /*
    * The names of the folders that form the path, separated with forward slashes
@@ -187,11 +185,11 @@ export interface GalleryFile {
    * These predicates should be false whenever the implementing class cannot
    * be sure that the file is of the respective type.
    */
-  +isFolder: boolean;
-  +isSystemFolder: boolean;
-  +isImage: boolean;
-  +isSnippet: boolean;
-  +isSnippetFolder: boolean;
+  readonly isFolder: boolean;
+  readonly isSystemFolder: boolean;
+  readonly isImage: boolean;
+  readonly isSnippet: boolean;
+  readonly isSnippetFolder: boolean;
 
   /*
    * There are various places in the UI where the user applies some
@@ -200,28 +198,28 @@ export interface GalleryFile {
    * allows the call to generate a new file name by applying a transformation
    * to the name before the extension, leaving the extension in place.
    */
-  transformFilename((string) => string): string;
+  transformFilename(f: (filename: string) => string): string;
 
-  +setName?: (string) => void;
-  +setDescription?: (Description) => void;
+  readonly setName?: (newName: string) => void;
+  readonly setDescription?: (newDescription: Description) => void;
 
-  +linkedDocuments: Node;
+  readonly linkedDocuments: React.ReactNode;
 
-  +canOpen: Result<null>;
-  +canDuplicate: Result<null>;
-  +canDelete: Result<null>;
-  +canRename: Result<null>;
-  +canMoveToIrods: Result<null>;
-  +canBeExported: Result<null>;
-  +canBeMoved: Result<null>;
-  +canUploadNewVersion: Result<null>;
-  +canBeLoggedOutOf: Result<null>;
+  readonly canOpen: Result<null>;
+  readonly canDuplicate: Result<null>;
+  readonly canDelete: Result<null>;
+  readonly canRename: Result<null>;
+  readonly canMoveToIrods: Result<null>;
+  readonly canBeExported: Result<null>;
+  readonly canBeMoved: Result<null>;
+  readonly canUploadNewVersion: Result<null>;
+  readonly canBeLoggedOutOf: Result<null>;
 
   /*
    * A unique identifier across all possible trees that this file may be
    * rendered in.
    */
-  +treeViewItemId: string;
+  readonly treeViewItemId: string;
 }
 
 /**
@@ -291,29 +289,29 @@ function generateIconSrc(
  * filestores section.
  */
 export class LocalGalleryFile implements GalleryFile {
-  +id: Id;
-  +globalId: string;
+  readonly id: Id;
+  readonly globalId: string;
   name: string;
-  +extension: string | null;
-  +creationDate: Date;
-  +modificationDate: Date;
+  readonly extension: string | null;
+  readonly creationDate: Date;
+  readonly modificationDate: Date;
   description: Description;
-  +type: string;
-  +ownerName: string;
-  +gallerySection: GallerySection;
-  +size: number;
-  +version: number;
-  +thumbnailId: number | null;
-  downloadHref: void | (() => Promise<UrlType>);
-  #cachedDownloadHref: UrlType | void;
-  +originalImageId: string | null;
+  readonly type: string;
+  readonly ownerName: string;
+  readonly gallerySection: GallerySection;
+  readonly size: number;
+  readonly version: number;
+  readonly thumbnailId: number | null;
+  downloadHref?: () => Promise<UrlType>;
+  private cachedDownloadHref?: UrlType;
+  readonly originalImageId: string | null;
 
   // this will only ever actually be an array of LocalGalleryFile,
   // but getting the types correct here is tricky
-  +path: $ReadOnlyArray<GalleryFile>;
+  readonly path: ReadonlyArray<GalleryFile>;
 
-  +setName: (string) => void;
-  +setDescription: (Description) => void;
+  readonly setName: (newName: string) => void;
+  readonly setDescription: (newDescription: Description) => void;
 
   constructor({
     id,
@@ -332,24 +330,24 @@ export class LocalGalleryFile implements GalleryFile {
     thumbnailId,
     originalImageId,
     token,
-  }: {|
-    id: Id,
-    globalId: string,
-    name: string,
-    extension: string | null,
-    creationDate: Date,
-    modificationDate: Date,
-    description: Description,
-    type: string,
-    ownerName: string,
-    path: $ReadOnlyArray<GalleryFile>,
-    gallerySection: GallerySection,
-    size: number,
-    version: number,
-    thumbnailId: number | null,
-    originalImageId: string | null,
-    token: string,
-  |}) {
+  }: {
+    id: Id;
+    globalId: string;
+    name: string;
+    extension: string | null;
+    creationDate: Date;
+    modificationDate: Date;
+    description: Description;
+    type: string;
+    ownerName: string;
+    path: ReadonlyArray<GalleryFile>;
+    gallerySection: GallerySection;
+    size: number;
+    version: number;
+    thumbnailId: number | null;
+    originalImageId: string | null;
+    token: string;
+  }) {
     makeObservable(this, {
       name: observable,
       description: observable,
@@ -376,7 +374,7 @@ export class LocalGalleryFile implements GalleryFile {
     });
     if (!this.isFolder) {
       this.downloadHref = async () => {
-        if (this.#cachedDownloadHref) return this.#cachedDownloadHref;
+        if (this.cachedDownloadHref) return this.cachedDownloadHref;
         const { data: blob } = await axios.get<Blob>(
           `/api/v1/files/${idToString(this.id).elseThrow()}/file`,
           {
@@ -387,7 +385,7 @@ export class LocalGalleryFile implements GalleryFile {
           }
         );
         const url = URL.createObjectURL(blob);
-        this.#cachedDownloadHref = url;
+        this.cachedDownloadHref = url;
         return url;
       };
     }
@@ -399,7 +397,7 @@ export class LocalGalleryFile implements GalleryFile {
   }
 
   deconstructor() {
-    if (this.#cachedDownloadHref) URL.revokeObjectURL(this.#cachedDownloadHref);
+    if (this.cachedDownloadHref) URL.revokeObjectURL(this.cachedDownloadHref);
   }
 
   get isFolder(): boolean {
@@ -445,14 +443,14 @@ export class LocalGalleryFile implements GalleryFile {
     );
   }
 
-  transformFilename(f: (string) => string): string {
+  transformFilename(f: (filename: string) => string): string {
     if (this.isFolder) return f(this.name);
     return `${f(filenameExceptExtension(this.name))}.${justFilenameExtension(
       this.name
     )}`;
   }
 
-  get linkedDocuments(): Node {
+  get linkedDocuments(): React.ReactNode {
     return <LinkedDocumentsPanel file={this} />;
   }
 
@@ -528,21 +526,21 @@ export class Filestore implements GalleryFile {
   filesystemName: string;
   name: string;
   description: Description;
-  +isFolder: boolean;
-  +size: number;
-  +path: $ReadOnlyArray<GalleryFile>;
+  readonly isFolder: boolean;
+  readonly size: number;
+  readonly path: ReadonlyArray<GalleryFile>;
 
   constructor({
     id,
     name,
     filesystemId,
     filesystemName,
-  }: {|
-    id: Id,
-    name: string,
-    filesystemId: number,
-    filesystemName: string,
-  |}) {
+  }: {
+    id: Id;
+    name: string;
+    filesystemId: number;
+    filesystemName: string;
+  }) {
     this.id = id;
     this.name = name;
     this.description = Description.Missing();
@@ -587,11 +585,11 @@ export class Filestore implements GalleryFile {
     return false;
   }
 
-  transformFilename(f: (string) => string): string {
+  transformFilename(f: (filename: string) => string): string {
     return f(this.name);
   }
 
-  get linkedDocuments(): Node {
+  get linkedDocuments(): React.ReactNode {
     return null;
   }
 
@@ -639,17 +637,17 @@ export class Filestore implements GalleryFile {
 }
 
 class RemoteFile implements GalleryFile {
-  +nfsId: number | null;
+  readonly nfsId: number | null;
   name: string;
   description: Description;
-  +isFolder: boolean;
-  +size: number;
-  +modificationDate: Date;
-  +path: $ReadOnlyArray<GalleryFile>;
-  downloadHref: void | (() => Promise<UrlType>);
+  readonly isFolder: boolean;
+  readonly size: number;
+  readonly modificationDate: Date;
+  readonly path: ReadonlyArray<GalleryFile>;
+  downloadHref?: () => Promise<UrlType>;
   logicPath: string;
   remotePath: string;
-  #cachedDownloadHref: UrlType | void;
+  private cachedDownloadHref?: UrlType;
 
   constructor({
     nfsId,
@@ -660,16 +658,16 @@ class RemoteFile implements GalleryFile {
     path,
     logicPath,
     token,
-  }: {|
-    nfsId: number | null,
-    name: string,
-    folder: boolean,
-    fileSize: number,
-    modificationDate: Date,
-    path: $ReadOnlyArray<GalleryFile>,
-    logicPath: string,
-    token: string,
-  |}) {
+  }: {
+    nfsId: number | null;
+    name: string;
+    folder: boolean;
+    fileSize: number;
+    modificationDate: Date;
+    path: ReadonlyArray<GalleryFile>;
+    logicPath: string;
+    token: string;
+  }) {
     this.nfsId = nfsId;
     this.name = name;
     this.description = Description.Missing();
@@ -682,7 +680,7 @@ class RemoteFile implements GalleryFile {
     if (!this.isFolder) {
       const filestoreId = path[0].id;
       this.downloadHref = async () => {
-        if (this.#cachedDownloadHref) return this.#cachedDownloadHref;
+        if (this.cachedDownloadHref) return this.cachedDownloadHref;
         const urlSearchParams = new URLSearchParams();
         idToString(this.id).do((id) => {
           urlSearchParams.append("remoteId", id);
@@ -701,14 +699,14 @@ class RemoteFile implements GalleryFile {
           }
         );
         const url = URL.createObjectURL(blob);
-        this.#cachedDownloadHref = url;
+        this.cachedDownloadHref = url;
         return url;
       };
     }
   }
 
   deconstructor() {
-    if (this.#cachedDownloadHref) URL.revokeObjectURL(this.#cachedDownloadHref);
+    if (this.cachedDownloadHref) URL.revokeObjectURL(this.cachedDownloadHref);
   }
 
   get id(): Id {
@@ -759,14 +757,14 @@ class RemoteFile implements GalleryFile {
     return false;
   }
 
-  transformFilename(f: (string) => string): string {
+  transformFilename(f: (filename: string) => string): string {
     if (this.isFolder) return f(this.name);
     return `${f(filenameExceptExtension(this.name))}.${justFilenameExtension(
       this.name
     )}`;
   }
 
-  get linkedDocuments(): Node {
+  get linkedDocuments(): React.ReactNode {
     return null;
   }
 
@@ -850,8 +848,8 @@ class RemoteFile implements GalleryFile {
 }
 
 function parseGalleryFileFromFolderApiResponse(
-  obj: { ... },
-  path: $ReadOnlyArray<GalleryFile>
+  obj: object,
+  path: ReadonlyArray<GalleryFile>
 ): Result<LocalGalleryFile> {
   try {
     const id = Parsers.getValueWithKey("id")(obj)
@@ -896,7 +894,7 @@ function parseGalleryFileFromFolderApiResponse(
       })
     );
   } catch (e) {
-    return Result.Error([e]);
+    return Result.Error([e instanceof Error ? e : new Error("Unknown error")]);
   }
 }
 
@@ -909,7 +907,7 @@ export function useGalleryListing({
   sortOrder,
   orderBy,
   foldersOnly,
-}: {|
+}: {
   /**
    * The location within the Gallery that this listing should show. A location
    * in the Gallery can be defined in one of two ways:
@@ -917,12 +915,12 @@ export function useGalleryListing({
    *   - Or as a specific folder
    */
   listingOf:
-    | {|
-        tag: "section",
-        section: GallerySection,
-        path: $ReadOnlyArray<GalleryFile>,
-      |}
-    | {| tag: "folder", folderId: number |},
+    | {
+        tag: "section";
+        section: GallerySection;
+        path: ReadonlyArray<GalleryFile>;
+      }
+    | { tag: "folder"; folderId: number };
 
   /**
    * The contents of folders within the local sections of the Gallery can be
@@ -931,45 +929,45 @@ export function useGalleryListing({
    * It is not available at all when `section` is "NetworkFiles" and the
    * listing is of remote files.
    */
-  searchTerm: string,
+  searchTerm: string;
 
   /**
    * When viewing a listing of a local section, the listing can be sorted.
    */
-  sortOrder: "DESC" | "ASC",
-  orderBy: "name" | "modificationDate",
+  sortOrder: "DESC" | "ASC";
+  orderBy: "name" | "modificationDate";
 
   /**
    * When viewing a listing of a local section, the listing can be filtered to
    * only return folders. This is so that pagination works correctly within the
    * move dialog where only folders are shown.
    */
-  foldersOnly?: boolean,
-|}): {|
+  foldersOnly?: boolean;
+}): {
   galleryListing: FetchingData.Fetched<
-    | {| tag: "empty", reason: string, refreshing: boolean |}
-    | {|
-        tag: "list",
-        totalHits: number,
-        list: $ReadOnlyArray<GalleryFile>,
-        loadMore: Optional<() => Promise<void>>,
-        refreshing: boolean,
-      |}
-  >,
-  refreshListing: () => Promise<void>,
-  path: FetchingData.Fetched<$ReadOnlyArray<GalleryFile>>,
-  folderId: FetchingData.Fetched<Id>,
-  selectedSection: FetchingData.Fetched<GallerySection>,
-|} {
+    | { tag: "empty"; reason: string; refreshing: boolean }
+    | {
+        tag: "list";
+        totalHits: number;
+        list: ReadonlyArray<GalleryFile>;
+        loadMore: Optional<() => Promise<void>>;
+        refreshing: boolean;
+      }
+  >;
+  refreshListing: () => Promise<void>;
+  path: FetchingData.Fetched<ReadonlyArray<GalleryFile>>;
+  folderId: FetchingData.Fetched<Id>;
+  selectedSection: FetchingData.Fetched<GallerySection>;
+} {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
   const [errorState, setErrorState] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [galleryListing, setGalleryListing] = React.useState<
-    $ReadOnlyArray<GalleryFile>
+    ReadonlyArray<GalleryFile>
   >([]);
-  const [api] = React.useState<Promise<Axios>>(
+  const [api] = React.useState(
     getToken().then((token) =>
       axios.create({
         baseURL: "/api/v1",
@@ -986,18 +984,18 @@ export function useGalleryListing({
    * folder, then the path to the folder and the section need to be fetched.
    */
   const [directFolderPath, setDirectFolderPath] = React.useState<
-    FetchingData.Fetched<$ReadOnlyArray<GalleryFile>>
-  >({ tag: "loading" });
+    FetchingData.Fetched<ReadonlyArray<GalleryFile>>
+  >({ tag: "loading" as const });
   const [directSection, setDirectSection] = React.useState<
     FetchingData.Fetched<GallerySection>
-  >({ tag: "loading" });
+  >({ tag: "loading" as const });
   React.useEffect(() => {
     if (listingOf.tag === "folder") {
       void (async () => {
         try {
           const response = await (
             await api
-          ).get<mixed>(
+          ).get<unknown>(
             `folders/${listingOf.folderId}?includePathToRootFolder=true`
           );
           const data = Parsers.isObject(response.data).flatMap(
@@ -1008,9 +1006,10 @@ export function useGalleryListing({
               .flatMap(Parsers.getValueWithKey("mediaType"))
               .flatMap(Parsers.isString)
               .flatMap(parseGallerySection)
-              .map((value) => ({ tag: "success", value }))
+              .map((value) => ({ tag: "success" as const, value }))
               .elseThrow()
           );
+
           const path = data
             .flatMap(Parsers.getValueWithKey("pathToRootFolder"))
             .flatMap(Parsers.isArray)
@@ -1029,7 +1028,7 @@ export function useGalleryListing({
            */
           const [, , ...pathToRootFolder] = path;
           const parents = pathToRootFolder.reduce(
-            (p: $ReadOnlyArray<GalleryFile>, obj: mixed) => [
+            (p: ReadonlyArray<GalleryFile>, obj: unknown) => [
               ...p,
               Parsers.isObject(obj)
                 .flatMap(Parsers.isNotNull)
@@ -1067,6 +1066,11 @@ export function useGalleryListing({
           setLoading(false);
           setErrorState(true);
           console.error(e);
+          if (!(e instanceof Error)) {
+            setDirectFolderPath({ tag: "error", error: "Unknown error" });
+            setDirectSection({ tag: "error", error: "Unknown error" });
+            return;
+          }
           setDirectFolderPath({ tag: "error", error: e.message });
           setDirectSection({ tag: "error", error: e.message });
         }
@@ -1075,11 +1079,11 @@ export function useGalleryListing({
   }, [listingOf, api]);
   const section =
     listingOf.tag === "section"
-      ? { tag: "success", value: listingOf.section }
+      ? { tag: "success" as const, value: listingOf.section }
       : directSection;
   const path =
     listingOf.tag === "section"
-      ? { tag: "success", value: listingOf.path }
+      ? { tag: "success" as const, value: listingOf.path }
       : directFolderPath;
 
   const [page, setPage] = React.useState<number>(0);
@@ -1093,7 +1097,7 @@ export function useGalleryListing({
 
   function emptyReason(): string {
     if (errorState) return "Error loading files.";
-    return Result.lift2<$ReadOnlyArray<GalleryFile>, GallerySection, string>(
+    return Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, string>(
       (p, s) => {
         if (p.length > 0) {
           const folderName = p[p.length - 1].name;
@@ -1112,7 +1116,7 @@ export function useGalleryListing({
     ).orElse("Loading...");
   }
 
-  function clearAndSetGalleryListing(list: $ReadOnlyArray<GalleryFile>) {
+  function clearAndSetGalleryListing(list: ReadonlyArray<GalleryFile>) {
     galleryListing.forEach((file) => {
       file.deconstructor();
     });
@@ -1120,9 +1124,9 @@ export function useGalleryListing({
   }
 
   function parseGalleryFiles(
-    data: mixed,
+    data: unknown,
     token: string,
-    p: $ReadOnlyArray<GalleryFile>
+    p: ReadonlyArray<GalleryFile>
   ) {
     return Parsers.objectPath(["data", "items", "results"], data)
       .flatMap(Parsers.isArray)
@@ -1238,11 +1242,13 @@ export function useGalleryListing({
                     })
                   );
                 } catch (e) {
-                  return Result.Error<GalleryFile>([e]);
+                  return Result.Error<GalleryFile>([
+                    e instanceof Error ? e : new Error("Unknown error"),
+                  ]);
                 }
               })
           )
-        ).orElseGet<$ReadOnlyArray<GalleryFile>>((errors) => {
+        ).orElseGet<ReadonlyArray<GalleryFile>>((errors) => {
           addAlert(
             mkAlert({
               variant: "error",
@@ -1270,7 +1276,7 @@ export function useGalleryListing({
               })
             );
           });
-        return ([]: $ReadOnlyArray<GalleryFile>);
+        return [];
       });
   }
 
@@ -1279,7 +1285,7 @@ export function useGalleryListing({
     clearAndSetGalleryListing([]);
     setLoading(true);
     try {
-      const { data } = await (await api).get<mixed>("gallery/filestores");
+      const { data } = await (await api).get<unknown>("gallery/filestores");
       Parsers.isArray(data)
         .flatMap((array) =>
           Result.all(
@@ -1324,7 +1330,9 @@ export function useGalleryListing({
                       })
                     );
                   } catch (e) {
-                    return Result.Error<GalleryFile>([e]);
+                    return Result.Error<GalleryFile>([
+                      e instanceof Error ? e : new Error("Unknown error"),
+                    ]);
                   }
                 })
             )
@@ -1356,9 +1364,7 @@ export function useGalleryListing({
     }
   }
 
-  async function getRemoteFiles(
-    pa: $ReadOnlyArray<GalleryFile>
-  ): Promise<void> {
+  async function getRemoteFiles(pa: ReadonlyArray<GalleryFile>): Promise<void> {
     selection.clear();
     clearAndSetGalleryListing([]);
     setLoading(true);
@@ -1369,7 +1375,7 @@ export function useGalleryListing({
             "Remote files path should never be empty. Where is the filestore?"
           )
       )
-      .flatMap((p) =>
+      .flatMap<Filestore>((p) =>
         p instanceof Filestore
           ? Result.Ok(p)
           : Result.Error([new Error("First part of path isn't a filestore")])
@@ -1380,7 +1386,7 @@ export function useGalleryListing({
       const token = await getToken();
       const { data } = await (
         await api
-      ).get<mixed>(
+      ).get<unknown>(
         `gallery/filestores/${idToString(
           filestore.id
         ).elseThrow()}/browse?remotePath=${ArrayUtils.last(pa)
@@ -1438,7 +1444,9 @@ export function useGalleryListing({
                       })
                     );
                   } catch (e) {
-                    return Result.Error<GalleryFile>([e]);
+                    return Result.Error<GalleryFile>([
+                      e instanceof Error ? e : new Error("Unknown error"),
+                    ]);
                   }
                 })
             )
@@ -1461,11 +1469,23 @@ export function useGalleryListing({
     } catch (e) {
       console.error(e);
       if (
-        e.response?.status === 403 &&
-        typeof e.response?.data.message === "string" &&
-        new RegExp("Call '/login' endpoint first?").test(
-          e.response.data.message
-        )
+        Parsers.objectPath(["response", "status"], e)
+          .flatMap(Parsers.isNumber)
+          .flatMap((status) =>
+            status === 403
+              ? Result.Ok(null)
+              : Result.Error([new Error("Not a 403")])
+          )
+          .flatMap(() =>
+            Parsers.objectPath(["response", "data", "message"], e)
+              .flatMap(Parsers.isString)
+              .flatMap((message) =>
+                new RegExp("Call '/login' endpoint first?").test(message)
+                  ? Result.Ok(true)
+                  : Result.Error([new Error("Not a login error")])
+              )
+          )
+          .orElse(false)
       ) {
         if (
           await login({
@@ -1478,15 +1498,18 @@ export function useGalleryListing({
           setErrorState(true);
         }
       } else {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Error retrieving remote files.",
-            message: e.message,
-          })
-        );
-        setErrorState(true);
-        throw e;
+        if (e instanceof Error) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Error retrieving remote files.",
+              message: e.message,
+            })
+          );
+          setErrorState(true);
+          throw e;
+        }
+        throw new Error("Unexpected error");
       }
     } finally {
       setLoading(false);
@@ -1494,7 +1517,7 @@ export function useGalleryListing({
   }
 
   async function getGalleryFiles(
-    p: $ReadOnlyArray<GalleryFile>,
+    p: ReadonlyArray<GalleryFile>,
     s: GallerySection
   ): Promise<void> {
     setErrorState(false);
@@ -1517,7 +1540,7 @@ export function useGalleryListing({
         currentFolderId = `${listingOf.folderId}`;
       }
 
-      const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
+      const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: s,
           currentFolderId,
@@ -1538,7 +1561,6 @@ export function useGalleryListing({
           .flatMap(Parsers.isNotNull)
           .flatMap(Parsers.getValueWithKey("parentId"))
           .flatMap(Parsers.isNumber)
-          .map((x) => x) // possibly a bug in Flow
       );
 
       setTotalPages(
@@ -1557,13 +1579,15 @@ export function useGalleryListing({
     } catch (e) {
       console.error(e);
       setErrorState(true);
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: "Error retrieving gallery files.",
-          message: e.message,
-        })
-      );
+      if (e instanceof Error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error retrieving gallery files.",
+            message: e.message,
+          })
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -1575,7 +1599,7 @@ export function useGalleryListing({
       const token = await getToken();
       const s = FetchingData.getSuccessValue(section).elseThrow();
       const p = FetchingData.getSuccessValue(path).elseThrow();
-      const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
+      const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: s,
           currentFolderId:
@@ -1599,7 +1623,7 @@ export function useGalleryListing({
   }
 
   React.useEffect(() => {
-    Result.lift2<$ReadOnlyArray<GalleryFile>, GallerySection, void>((p, s) => {
+    Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>((p, s) => {
       setPage(0);
       setTotalPages(0);
       void getGalleryFiles(p, s);
@@ -1640,7 +1664,7 @@ export function useGalleryListing({
     },
     path,
     folderId: parentId
-      .map((value: Id) => ({ tag: "success", value }))
+      .map((value: Id) => ({ tag: "success" as const, value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: async () => {
       const pa = FetchingData.getSuccessValue(path).elseThrow();
@@ -1661,7 +1685,7 @@ export function useGalleryListing({
           await Promise.all(
             [...take(incrementForever(), page + 1)].map((p) =>
               axios
-                .get<mixed>(`/gallery/getUploadedFiles`, {
+                .get<unknown>(`/gallery/getUploadedFiles`, {
                   params: new URLSearchParams({
                     mediatype: s,
                     currentFolderId:
@@ -1729,6 +1753,9 @@ export function useGalleryListing({
         if (selection.asSet().some((f) => !newFilesIds.has(f.id)))
           selection.clear();
       } catch (e) {
+        if (!(e instanceof Error)) {
+          return;
+        }
         /*
          * This error is thrown when the user tries to open a folder that has
          * just been deleted. We don't want to show an alert for this as the

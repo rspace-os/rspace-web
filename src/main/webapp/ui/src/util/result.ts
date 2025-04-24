@@ -265,25 +265,25 @@ export default class Result<T> {
    * series of possible options, of which any one suffices; should none pass
    * then a full error report of each branch being tried can be displayed.
    */
-  static any<U>(
-    r: Result<U>,
-    ...rest: ReadonlyArray<Result<U>>
-  ): Result<ReadonlyArray<U>> {
-    if (rest.length > 0) {
-      return (
-        Result.any(rest[0], ...rest.slice(1))
-          .flatMap<ReadonlyArray<U>>((restOfT: ReadonlyArray<U>) =>
-            r
-              // if `r` and `rest` are both OK, then concatenate,
-              .map((t: U) => [t, ...restOfT])
-              // else if `r` is Error and `rest` OK, then return `rest`
-              .orElseTry(() => Result.Ok(restOfT))
-          )
-          // if `rest` is Error, then return `r`
-          .orElseTry(() => r.map((t) => [t]))
-      );
+  static any<U>(...args: ReadonlyArray<Result<U>>): Result<ReadonlyArray<U>> {
+    function helper(r: Result<U>, ...rest: ReadonlyArray<Result<U>>) {
+      if (rest.length > 0) {
+        return (
+          Result.any(rest[0], ...rest.slice(1))
+            .flatMap<ReadonlyArray<U>>((restOfT: ReadonlyArray<U>) =>
+              r
+                // if `r` and `rest` are both OK, then concatenate,
+                .map((t: U) => [t, ...restOfT])
+                // else if `r` is Error and `rest` OK, then return `rest`
+                .orElseTry(() => Result.Ok(restOfT))
+            )
+            // if `rest` is Error, then return `r`
+            .orElseTry(() => r.map((t) => [t]))
+        );
+      }
+      return r.map((t) => [t]);
     }
-    return r.map((t) => [t]);
+    return helper(...(args as [Result<U>, ...ReadonlyArray<Result<U>>]));
   }
 
   /**

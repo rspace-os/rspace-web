@@ -1,5 +1,3 @@
-//@flow
-
 import React from "react";
 import axios from "@/common/axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -25,9 +23,9 @@ const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 /**
  * The destination of a move operation.
  */
-export opaque type Destination =
-  | {| key: "root" |} // the gallery section depends on the type of the file being moved
-  | {| key: "folder", folder: GalleryFile |};
+export type Destination =
+  | { key: "root" } // the gallery section depends on the type of the file being moved
+  | { key: "folder"; folder: GalleryFile };
 
 /**
  * Constructor function for specifying that the destination of a move operation
@@ -50,7 +48,7 @@ export function folderDestination(folder: GalleryFile): Destination {
  * Hook that exposes several functions for uploading files, creating new
  * folders, and performing operations on existing files and folders.
  */
-export function useGalleryActions(): {|
+export function useGalleryActions(): {
   /**
    * For uploading new files.
    *
@@ -64,9 +62,9 @@ export function useGalleryActions(): {|
    */
   uploadFiles: (
     parentId: Id,
-    files: $ReadOnlyArray<File>,
-    options?: { originalImageId: Id, ... }
-  ) => Promise<void>,
+    files: ReadonlyArray<File>,
+    options?: { originalImageId: Id }
+  ) => Promise<void>;
 
   /**
    * For creating new folders.
@@ -75,7 +73,7 @@ export function useGalleryActions(): {|
    *               will be created within.
    * @arg name     The name of the new folder.
    */
-  createFolder: (parentId: Id, name: string) => Promise<void>,
+  createFolder: (parentId: Id, name: string) => Promise<void>;
 
   /**
    * Move files to a different folder.
@@ -92,19 +90,19 @@ export function useGalleryActions(): {|
     section: GallerySection,
     destination: Destination,
     files: RsSet<GalleryFile>
-  ) => Promise<void>,
+  ) => Promise<void>;
 
   /**
    * Delete the specified files. If the files are Filestores then they are disconnected.
    *
    * @arg files The files being deleted.
    */
-  deleteFiles: (files: RsSet<GalleryFile>) => Promise<void>,
+  deleteFiles: (files: RsSet<GalleryFile>) => Promise<void>;
 
   /**
    * Duplicate the specified files.
    */
-  duplicateFiles: (files: RsSet<GalleryFile>) => Promise<void>,
+  duplicateFiles: (files: RsSet<GalleryFile>) => Promise<void>;
 
   /**
    * Rename the specified file.
@@ -112,7 +110,7 @@ export function useGalleryActions(): {|
    * @arg file The file being renamed.
    * @arg newName The new name for the file.
    */
-  rename: (file: GalleryFile, newName: string) => Promise<void>,
+  rename: (file: GalleryFile, newName: string) => Promise<void>;
 
   /**
    * The contents of *file* is replaced with *newFile*. The filename is also
@@ -126,7 +124,7 @@ export function useGalleryActions(): {|
     folderId: Id,
     file: GalleryFile,
     newFile: File
-  ) => Promise<void>,
+  ) => Promise<void>;
 
   /**
    * Modify the description of a specified file.
@@ -137,15 +135,15 @@ export function useGalleryActions(): {|
   changeDescription: (
     file: GalleryFile,
     newDescription: Description
-  ) => Promise<void>,
+  ) => Promise<void>;
 
   /**
    * Download the specified files.
    *
    * @arg files The files being downloaded.
    */
-  download: (files: RsSet<GalleryFile>) => Promise<void>,
-|} {
+  download: (files: RsSet<GalleryFile>) => Promise<void>;
+} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -165,8 +163,8 @@ export function useGalleryActions(): {|
 
   async function uploadFiles(
     parentId: Id,
-    files: $ReadOnlyArray<File>,
-    options?: { originalImageId: Id, ... }
+    files: ReadonlyArray<File>,
+    options?: { originalImageId: Id }
   ) {
     const uploadingAlert = mkAlert({
       message: "Uploading...",
@@ -193,7 +191,7 @@ export function useGalleryActions(): {|
               "originalImageId",
               idToString(options.originalImageId).elseThrow()
             );
-          return api.post<FormData, mixed>("/", formData, {
+          return api.post<unknown>("/", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
@@ -229,18 +227,22 @@ export function useGalleryActions(): {|
           )
       );
     } catch (e) {
-      const message = Parsers.objectPath(["response", "data", "message"], e)
-        .flatMap(Parsers.isString)
-        .orElse(e.message);
-      console.error(e);
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
-          message,
-        })
-      );
-      throw e;
+      if (e instanceof Error) {
+        const message = Parsers.objectPath(["response", "data", "message"], e)
+          .flatMap(Parsers.isString)
+          .orElse(e.message);
+        console.error(e);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
+            message,
+          })
+        );
+        throw e;
+      } else {
+        throw new Error("Unexpected error occurred");
+      }
     } finally {
       removeAlert(uploadingAlert);
     }
@@ -252,15 +254,11 @@ export function useGalleryActions(): {|
       formData.append("folderName", name);
       formData.append("parentId", idToString(parentId).elseThrow());
       formData.append("isMedia", "true");
-      const data = await galleryApi.post<FormData, mixed>(
-        "createFolder",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const data = await galleryApi.post<unknown>("createFolder", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
@@ -280,6 +278,7 @@ export function useGalleryActions(): {|
           )
       );
     } catch (e) {
+      if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
       addAlert(
         mkAlert({
           variant: "error",
@@ -335,7 +334,7 @@ export function useGalleryActions(): {|
         formData.append("filesId[]", idToString(file.id).elseThrow());
       // mediaType is required, but only actually used if target is 0
       formData.append("mediaType", section);
-      const data = await galleryApi.post<FormData, mixed>(
+      const data = await galleryApi.post<unknown>(
         "moveGalleriesElements",
         formData,
         {
@@ -367,6 +366,7 @@ export function useGalleryActions(): {|
           )
       );
     } catch (e) {
+      if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
       addAlert(
         mkAlert({
           variant: "error",
@@ -391,7 +391,7 @@ export function useGalleryActions(): {|
       const formData = new FormData();
       for (const file of files)
         formData.append("idsToDelete[]", idToString(file.id).elseThrow());
-      const data = await galleryApi.post<FormData, mixed>(
+      const data = await galleryApi.post<unknown>(
         "deleteElementFromGallery",
         formData,
         {
@@ -435,7 +435,7 @@ export function useGalleryActions(): {|
       },
     });
     try {
-      await api.delete<mixed>(
+      await api.delete<unknown>(
         `filestores/${idToString(filestore.id).elseThrow()}`
       );
       addAlert(
@@ -445,6 +445,7 @@ export function useGalleryActions(): {|
         })
       );
     } catch (e) {
+      if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
       addAlert(
         mkAlert({
           variant: "error",
@@ -476,6 +477,7 @@ export function useGalleryActions(): {|
         throw new Error("Can only delete local files");
       await deleteLocalFiles(files.filterClass(LocalGalleryFile));
     } catch (e) {
+      if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
       addAlert(
         mkAlert({
           variant: "error",
@@ -513,15 +515,11 @@ export function useGalleryActions(): {|
     });
     try {
       addAlert(duplicatingAlert);
-      const data = await galleryApi.post<FormData, mixed>(
-        "copyGalleries",
-        formData,
-        {
-          headers: {
-            "content-type": "multipart/form-data",
-          },
-        }
-      );
+      const data = await galleryApi.post<unknown>("copyGalleries", formData, {
+        headers: {
+          "content-type": "multipart/form-data",
+        },
+      });
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
@@ -547,6 +545,7 @@ export function useGalleryActions(): {|
           )
       );
     } catch (e) {
+      if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
       addAlert(
         mkAlert({
           variant: "error",
@@ -587,7 +586,7 @@ export function useGalleryActions(): {|
       if (typeof file.setName === "undefined")
         throw new Error("This file cannot be renamed");
       const setName = file.setName;
-      const data = await structuredDocumentApi.post<FormData, mixed>(
+      const data = await structuredDocumentApi.post<unknown>(
         "rename",
         formData,
         {
@@ -612,6 +611,7 @@ export function useGalleryActions(): {|
 
       setName(file.transformFilename(() => newName));
     } catch (e) {
+      if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
       addAlert(
         mkAlert({
           variant: "error",
@@ -651,15 +651,11 @@ export function useGalleryActions(): {|
     });
     try {
       addAlert(uploadingAlert);
-      const { data } = await galleryApi.post<FormData, mixed>(
-        "uploadFile",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const { data } = await galleryApi.post<unknown>("uploadFile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .flatMap(Parsers.isString)
@@ -683,6 +679,7 @@ export function useGalleryActions(): {|
           )
       );
     } catch (e) {
+      if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
       addAlert(
         mkAlert({
           variant: "error",
@@ -732,7 +729,7 @@ export function useGalleryActions(): {|
       if (typeof file.setDescription === "undefined")
         throw new Error("Cannot edit description");
       const setDescription = file.setDescription;
-      const data = await structuredDocumentApi.post<FormData, mixed>(
+      const data = await structuredDocumentApi.post<unknown>(
         "description",
         formData,
         {
@@ -759,6 +756,7 @@ export function useGalleryActions(): {|
 
       setDescription(newDescription);
     } catch (e) {
+      if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
       addAlert(
         mkAlert({
           variant: "error",
@@ -813,12 +811,15 @@ export function useGalleryActions(): {|
               ).elseThrow();
               if (!(data instanceof Blob))
                 throw new Error("Response is not a blob");
-              const json: mixed = JSON.parse(await data.text());
+              const json = JSON.parse(await data.text()) as unknown;
               return Parsers.objectPath(["message"], json)
                 .flatMap(Parsers.isString)
                 .elseThrow();
             } catch (e) {
-              return Promise.resolve(e.message);
+              if (e instanceof Error) {
+                return Promise.resolve(e.message);
+              }
+              return Promise.resolve("Unknown error");
             }
           })
         );
@@ -836,6 +837,7 @@ export function useGalleryActions(): {|
         );
       }
     } catch (e) {
+      if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
       addAlert(
         mkAlert({
           variant: "error",
