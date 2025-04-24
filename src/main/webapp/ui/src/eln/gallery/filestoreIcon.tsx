@@ -1,6 +1,4 @@
-//@flow strict
-
-import React, { type Node } from "react";
+import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
 import { makeStyles } from "tss-react/mui";
 
@@ -21,7 +19,7 @@ const useStyles = makeStyles()(() => ({
 /**
  * A cloud icon for use as a generic icon for filestore.
  */
-export default function ChemistryIcon(): Node {
+export default function FilestoreIcon(): React.ReactNode {
   const { classes } = useStyles();
   return (
     <SvgIcon viewBox="0 0 100 100" className={classes.root}>
