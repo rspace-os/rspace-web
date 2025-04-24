@@ -23,7 +23,6 @@ public class ApiKeyAuthenticatorTest {
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock UserApiKeyManager apiMgr;
-  @Mock UserApiKeyManager apiAvailabilityHandler;
   @InjectMocks ApiKeyAuthenticatorTSS_Spy shiroAPIKeyAuthoriser;
 
   final String apiKey = "abcde";
