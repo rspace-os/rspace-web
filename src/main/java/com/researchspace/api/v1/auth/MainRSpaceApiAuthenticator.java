@@ -52,8 +52,8 @@ public class MainRSpaceApiAuthenticator implements ApiAuthenticator {
     }
 
     throw new ApiAuthenticationException(
-        "API key is missing - please include your apiKey as a header in the format"
-            + " 'apiKey:myAPikey' or with OAuth in the format 'Authorization: Bearer"
+        "API authentication information is missing - please include your apiKey as a header in the"
+            + " format 'apiKey:myAPikey' or with OAuth in the format 'Authorization: Bearer"
             + " <myAccessToken>'.");
   }
 }

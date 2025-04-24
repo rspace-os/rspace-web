@@ -89,7 +89,8 @@ public class WebConfig extends WebMvcConfigurationSupport {
     }
     registry
         .addInterceptor(defaultConfig.apiAuthenticationInterceptor())
-        .addPathPatterns("/api/**");
+        .addPathPatterns("/api/**")
+        .excludePathPatterns("/api/inventory/v1/public/**");
     registry.addInterceptor(wopiAuthorisation).addPathPatterns("/wopi/files/**");
     registry.addInterceptor(wopiProofKeyValidation).addPathPatterns("/wopi/files/**");
   }
