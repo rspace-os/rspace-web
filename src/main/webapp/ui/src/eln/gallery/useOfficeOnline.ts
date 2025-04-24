@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Context } from "react";
+import React from "react";
 import axios from "@/common/axios";
 import * as Parsers from "../../util/parsers";
 
@@ -10,9 +8,9 @@ import * as Parsers from "../../util/parsers";
  * call to get this list need not be made by each and every component that uses
  * the information.
  */
-export const OfficeOnlineContext: Context<{|
-  supportedExts: Set<string> | null,
-|}> = React.createContext({ supportedExts: null });
+export const OfficeOnlineContext: React.Context<{
+  supportedExts: Set<string> | null;
+}> = React.createContext({ supportedExts: null as Set<string> | null });
 
 /**
  * For fetching metadata about the integration with Office Online.
@@ -26,12 +24,12 @@ export const OfficeOnlineContext: Context<{|
  * depeloyment property with
  *   const officeOnlineEnabled = useDeploymentProperty("msoffice.wopy.enabled");
  */
-export default function useOfficeOnline(): {|
+export default function useOfficeOnline(): {
   /**
    * The set of file extensions supported by Office Online.
    */
-  supportedExts: Set<string>,
-|} {
+  supportedExts: Set<string>;
+} {
   /*
    * Whilst loading the set, and in the event that the network request fails,
    * this set is empty so that when the UI code queries whether the selected
@@ -49,7 +47,7 @@ export default function useOfficeOnline(): {|
       setSupportedExts(context.supportedExts);
       return;
     }
-    void axios.get<mixed>("/officeOnline/supportedExts").then(({ data }) => {
+    void axios.get<unknown>("/officeOnline/supportedExts").then(({ data }) => {
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
         .do((obj) => {
