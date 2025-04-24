@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { Dialog } from "../../../components/DialogBoundary";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
@@ -14,13 +12,18 @@ import axios from "@/common/axios";
 import { doNotAwait } from "../../../util/Util";
 import useOauthToken from "../../../common/useOauthToken";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import * as Parsers from "../../../util/parsers";
+import Result from "../../../util/result";
 
-const FilestoreLoginContext = React.createContext<{|
-  login: ({|
-    filesystemName: string,
-    filesystemId: number,
-  |}) => Promise<boolean>,
-|}>({
+const FilestoreLoginContext = React.createContext<{
+  login: ({
+    filesystemName,
+    filesystemId,
+  }: {
+    filesystemName: string;
+    filesystemId: number;
+  }) => Promise<boolean>;
+}>({
   login: () =>
     Promise.reject(
       new Error("FilestoreLoginDialog is not included in the DOM")
@@ -31,12 +34,15 @@ const FilestoreLoginContext = React.createContext<{|
  * Use this hook to trigger a filestore login dialog. Returns true if the login
  * was successful, false if the user cancels the dialog.
  */
-export function useFilestoreLogin(): {|
-  login: ({|
-    filesystemName: string,
-    filesystemId: number,
-  |}) => Promise<boolean>,
-|} {
+export function useFilestoreLogin(): {
+  login: ({
+    filesystemName,
+    filesystemId,
+  }: {
+    filesystemName: string;
+    filesystemId: number;
+  }) => Promise<boolean>;
+} {
   const { login } = React.useContext(FilestoreLoginContext);
   return {
     login,
@@ -52,12 +58,12 @@ const FilestoreLoginDialog = ({
   filesystemId,
   onClose,
   onSuccess,
-}: {|
-  filesystemName: string,
-  filesystemId: number,
-  onClose: () => void,
-  onSuccess: () => void,
-|}): Node => {
+}: {
+  filesystemName: string;
+  filesystemId: number;
+  onClose: () => void;
+  onSuccess: () => void;
+}): React.ReactNode => {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
@@ -77,30 +83,31 @@ const FilestoreLoginDialog = ({
                 Authorization: "Bearer " + (await getToken()),
               },
             });
-            await api.post<
-              {|
-                username: string,
-                password: string,
-              |},
-              mixed
-            >(`filesystems/${filesystemId}/login`, {
+            await api.post<unknown>(`filesystems/${filesystemId}/login`, {
               username,
               password,
             });
             onSuccess();
           } catch (error) {
             console.error(error);
-            const message =
-              error.response?.status === 403
-                ? "Wrong credentials?"
-                : error.response?.data.message ?? error.message;
-            addAlert(
-              mkAlert({
-                variant: "error",
-                title: "Could not authenticate",
-                message,
-              })
-            );
+            if (error instanceof Error) {
+              const message = Parsers.objectPath(["response", "status"], error)
+                .flatMap((status) => {
+                  if (status === 403) return Result.Ok("Wrong credentials?");
+                  return Parsers.objectPath(
+                    ["response", "data", "message"],
+                    error
+                  ).flatMap(Parsers.isString);
+                })
+                .orElse(error.message);
+              addAlert(
+                mkAlert({
+                  variant: "error",
+                  title: "Could not authenticate",
+                  message,
+                })
+              );
+            }
           } finally {
             setSubmitting(false);
           }
@@ -153,22 +160,22 @@ const FilestoreLoginDialog = ({
  */
 export function FilestoreLoginProvider({
   children,
-}: {|
-  children: Node,
-|}): Node {
-  const [resolve, setResolve] = React.useState<null | {|
-    r: (boolean) => void,
-  |}>(null);
+}: {
+  children: React.ReactNode;
+}): React.ReactNode {
+  const [resolve, setResolve] = React.useState<null | {
+    r: (success: boolean) => void;
+  }>(null);
   const [filesystemName, setFilesystemName] = React.useState("");
   const [filesystemId, setFilesystemId] = React.useState(0);
 
   const login = ({
     filesystemName: newFilesystemName,
     filesystemId: newFilesystemId,
-  }: {|
-    filesystemName: string,
-    filesystemId: number,
-  |}): Promise<boolean> => {
+  }: {
+    filesystemName: string;
+    filesystemId: number;
+  }): Promise<boolean> => {
     setFilesystemName(newFilesystemName);
     setFilesystemId(newFilesystemId);
     return new Promise((r) => {
