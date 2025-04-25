@@ -1,19 +1,19 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MoveDialog from "../MoveDialog";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../../assets/branding/rspace/gallery";
 import "../../../../../__mocks__/matchMedia";
 import page1 from "../../__tests__/getUploadedFiles_1.json";
+import * as ArrayUtils from "../../../../util/ArrayUtils";
 
 jest.mock("../CallablePdfPreview", () => ({
   usePdfPreview: () => ({
@@ -52,15 +52,21 @@ describe("MoveDialog", () => {
     );
 
     await waitFor(() => {
-      const getUploadedFilesCalls = mockAxios.history.get.filter(({ url }) =>
-        /getUploadedFiles/.test(url)
+      const getUploadedFilesCalls = mockAxios.history.get.filter(
+        ({ url }: { url: string }) => /getUploadedFiles/.test(url)
       );
       expect(getUploadedFilesCalls.length).toBe(1);
     });
 
-    const getUploadedFilesCalls = mockAxios.history.get.filter(({ url }) =>
-      /getUploadedFiles/.test(url)
+    const getUploadedFilesCalls = mockAxios.history.get.filter(
+      ({ url }: { url: string }) => /getUploadedFiles/.test(url)
     );
-    expect(getUploadedFilesCalls[0].params.get("foldersOnly")).toBe("true");
+    expect(
+      ArrayUtils.head(getUploadedFilesCalls)
+        .map(({ params }: { params: URLSearchParams }) =>
+          params.get("foldersOnly")
+        )
+        .orElse("false")
+    ).toEqual("true");
   });
 });
