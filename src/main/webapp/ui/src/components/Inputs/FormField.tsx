@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
@@ -50,13 +48,13 @@ import { Heading } from "../DynamicHeadingLevel";
  * HTMLFieldSetElements and HTMLLegendElements are rendered instead.
  */
 
-export type FormFieldArgs<T> = {|
+export type FormFieldArgs<T> = {
   /**
    * All form fields MUST have a label. It should be as short as possible,
    * whilst remaining unambiguous. It MUST not end in a full stop. For example:
    * "Name", "Description", "Quantity".
    */
-  label: string,
+  label: string;
 
   /**
    * This function is what actually renders the MUI input component, or
@@ -94,7 +92,12 @@ export type FormFieldArgs<T> = {|
    *     );
    *   }
    */
-  renderInput: ({|
+  renderInput: ({
+    id,
+    value,
+    disabled,
+    error,
+  }: {
     /**
      * This components renders an HTMLLabelElement (or if is `asFieldset` is
      * true then a HTMLLegendElement) with an ID. If `renderInput` is
@@ -107,7 +110,7 @@ export type FormFieldArgs<T> = {|
      * to attach it to; some form fields may only consist of
      * HTMLButtonElements, or other elements that are not strictly interactive.
      */
-    id: string,
+    id: string;
 
     /**
      * These properties are the ones that are passed blindly from this
@@ -117,10 +120,10 @@ export type FormFieldArgs<T> = {|
      * duplication of setting props, and leaves open the potential for this
      * component to amend these values as they are threaded through.
      */
-    value: T,
-    disabled: boolean,
-    error: boolean,
-  |}) => Node,
+    value: T;
+    disabled: boolean;
+    error: boolean;
+  }) => React.ReactNode;
 
   /**
    * Fields, by definition, have a value that is being manipulated and in many
@@ -130,21 +133,21 @@ export type FormFieldArgs<T> = {|
    * of used characters. This prop is used for that additional functionality
    * but is not necessary for the basic usage of displaying a label.
    */
-  value: T,
+  value: T;
 
   /**
    * On top of the behaviour provided by MUI when the Form* components are in
    * a disabled state, this component also adds some toggled behaviour of its
    * own. See `maxLength` props.
    */
-  disabled?: boolean,
+  disabled?: boolean;
 
   /**
    * On top of the behaviour provided by MUI when the Form* components are in
    * an error state, this component also adds some toggled behaviour of its
    * own. See `helperText` and `maxLength` props.
    */
-  error?: boolean,
+  error?: boolean;
 
   /**
    * Helper text is an optional string displayed when the field is in an error
@@ -154,7 +157,7 @@ export type FormFieldArgs<T> = {|
    * "Name must include at least one non-whitespace character." When the
    * `error` prop is not true, the helper text will NOT be shown.
    */
-  helperText?: string | null,
+  helperText?: string | null;
 
   /**
    * If specified and `T` is a string, then a label is shown indicating how
@@ -165,7 +168,7 @@ export type FormFieldArgs<T> = {|
    * and the helper text is a non-empty string. The label is NOT shown if
    * `disabled` is true.
    */
-  maxLength?: number,
+  maxLength?: number;
 
   /**
    * Form fields can optionally have a longer piece of explanatory text beneath
@@ -176,7 +179,7 @@ export type FormFieldArgs<T> = {|
    * Node rather than a string so that it can include HTMLAnchorElements, and
    * other typographic elements.
    */
-  explanation?: Node,
+  explanation?: React.ReactNode;
 
   /**
    * An ID can be attached to the root FormControl component, to be used as
@@ -184,14 +187,14 @@ export type FormFieldArgs<T> = {|
    * on the page that controls this form field (such as enabling/disabling it)
    * then that component should have an `aria-controls` attribute with this ID.
    */
-  id?: string,
+  id?: string;
 
   /**
    * Provides no additional functionality beyond that of MUI's base
    * functionality of the Form* components, which is to say adorning the label
    * with a red asterisk.
    */
-  required?: boolean,
+  required?: boolean;
 
   /**
    * Where a form field contains multiple interactive elements of equal
@@ -203,7 +206,7 @@ export type FormFieldArgs<T> = {|
    * text and a secondary HTMLButtonElement which performs an auxiliary action
    * then this prop need not be true.
    */
-  asFieldset?: boolean,
+  asFieldset?: boolean;
 
   /**
    * The majority of input components render an HTMLInputElement to which an ID
@@ -243,10 +246,10 @@ export type FormFieldArgs<T> = {|
    *    />
    *
    */
-  doNotAttachIdToLabel?: boolean,
+  doNotAttachIdToLabel?: boolean;
 
-  className?: string,
-|};
+  className?: string;
+};
 
 export default function FormField<T>({
   label,
@@ -262,7 +265,7 @@ export default function FormField<T>({
   asFieldset,
   doNotAttachIdToLabel,
   className,
-}: FormFieldArgs<T>): Node {
+}: FormFieldArgs<T>): React.ReactNode {
   const inputId = React.useId();
   const labelId = React.useId();
   const explanationId = React.useId();
@@ -283,7 +286,7 @@ export default function FormField<T>({
   const labelComponent = () => {
     if (disabled) return Heading;
     if (asFieldset) return "legend";
-    // otherwise defaults to a HTMLLabelElement
+    return "label";
   };
 
   return (
@@ -295,9 +298,9 @@ export default function FormField<T>({
       aria-labelledby={labelId}
       required={required}
       id={id}
-      {...((typeof explanation !== "undefined"
+      {...(typeof explanation !== "undefined"
         ? { "aria-describedby": explanationId }
-        : {}): {| "aria-describedby"?: string |})}
+        : {})}
       {...(asFieldset && !disabled ? { component: "fieldset" } : {})}
     >
       <FormLabel
