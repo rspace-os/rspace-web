@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, waitFor } from "@testing-library/react";
@@ -11,7 +10,7 @@ import Carousel from "../Carousel";
 import * as FetchingData from "../../../../util/fetchingData";
 import { useGalleryListing, type GalleryFile } from "../../useGalleryListing";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import page1 from "../../__tests__/getUploadedFiles_1.json";
 
 beforeEach(() => {
@@ -41,9 +40,9 @@ describe("Carousel", () => {
     function Wrapper() {
       const listingOf = React.useMemo(
         () => ({
-          tag: "section",
-          section: "Images",
-          path: ([]: $ReadOnlyArray<GalleryFile>),
+          tag: "section" as const,
+          section: "Images" as const,
+          path: [],
         }),
         []
       );
@@ -83,9 +82,9 @@ describe("Carousel", () => {
     function Wrapper() {
       const listingOf = React.useMemo(
         () => ({
-          tag: "section",
-          section: "Images",
-          path: ([]: $ReadOnlyArray<GalleryFile>),
+          tag: "section" as const,
+          section: "Images" as const,
+          path: [],
         }),
         []
       );
