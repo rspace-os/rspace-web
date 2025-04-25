@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -18,7 +16,7 @@ import { styled } from "@mui/material/styles";
 import { makeStyles } from "tss-react/mui";
 import DialogTitle from "@mui/material/DialogTitle";
 
-const useStyles = makeStyles()((_theme, { height }) => ({
+const useStyles = makeStyles<{ height: number }>()((_theme, { height }) => ({
   /*
    * These height style attributes are to ensure that when a tall image is
    * being edited, it is scaled down rather than overflowing the dialog and
@@ -56,23 +54,22 @@ const readAsBinaryString = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      // $FlowExpectedError[incompatible-cast] reader.result will be string because we called readAsBinaryString
-      resolve((reader.result: string));
+      resolve(reader.result as string);
     };
     reader.onerror = () => {
-      reject(reader.error);
+      reject(reader.error ?? new Error("Failed to read file"));
     };
     reader.readAsBinaryString(file);
   });
 
-type ImageEditingDialogArgs = {|
-  imageFile: ?Blob,
-  open: boolean,
-  close: () => void,
-  submitHandler: (Blob) => void,
-  alt: string,
-  submitButtonLabel?: string,
-|};
+type ImageEditingDialogArgs = {
+  imageFile: Blob | null;
+  open: boolean;
+  close: () => void;
+  submitHandler: (file: Blob) => void;
+  alt: string;
+  submitButtonLabel?: string;
+};
 
 function ImageEditingDialog({
   imageFile,
@@ -81,12 +78,12 @@ function ImageEditingDialog({
   submitHandler,
   alt,
   submitButtonLabel = "Done",
-}: ImageEditingDialogArgs): Node {
+}: ImageEditingDialogArgs): React.ReactNode {
   const [imageHeight, setImageHeight] = React.useState(0);
   const { classes } = useStyles({ height: imageHeight });
-  const [editorData, setEditorData] = React.useState<?string>(null);
+  const [editorData, setEditorData] = React.useState<string | null>(null);
   const [crop, setCrop] = React.useState({
-    unit: "px",
+    unit: "px" as const,
     x: 0,
     y: 0,
     width: 0,
@@ -115,7 +112,7 @@ function ImageEditingDialog({
     };
   }, [imageFile]);
 
-  const onImageLoad = (e: Event): void => {
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>): void => {
     if (e.target instanceof HTMLImageElement) {
       const target: HTMLImageElement = e.target;
       const { naturalHeight, naturalWidth, height, width } = target;
@@ -178,7 +175,17 @@ function ImageEditingDialog({
         crop.height * imageRatio
       );
 
-    return new Promise((resolve) => canvas.toBlob(resolve, format, "1.0"));
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          }
+        },
+        format,
+        "1.0"
+      );
+    });
   };
 
   const mainDialogSubmit = () => {
@@ -294,6 +301,4 @@ function ImageEditingDialog({
   );
 }
 
-export default (observer(
-  ImageEditingDialog
-): ComponentType<ImageEditingDialogArgs>);
+export default observer(ImageEditingDialog);
