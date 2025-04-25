@@ -80,6 +80,7 @@ export type IntegrationStates = {
         optionsId: OptionsId;
       }>
     >
+<<<<<<< HEAD:src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts
   >;
   DIGITALCOMMONSDATA: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
@@ -104,6 +105,35 @@ export type IntegrationStates = {
   FIGSHARE: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
+=======
+  >,
+  DIGITALCOMMONSDATA: IntegrationState<{|
+    ACCESS_TOKEN: Optional<string>,
+  |}>,
+  DMPONLINE: IntegrationState<{|
+    ACCESS_TOKEN: Optional<string>,
+  |}>,
+  DMPTOOL: IntegrationState<{|
+    ACCESS_TOKEN: Optional<string>,
+  |}>,
+  DROPBOX: IntegrationState<{||}>,
+  DRYAD: IntegrationState<{|
+    ACCESS_TOKEN: Optional<string>,
+  |}>,
+  EGNYTE: IntegrationState<{|
+    EGNYTE_DOMAIN: Optional<string>,
+  |}>,
+  EVERNOTE: IntegrationState<{||}>,
+  FIELDMARK: IntegrationState<{|
+    FIELDMARK_USER_TOKEN: Optional<string>,
+  |}>,
+  FIGSHARE: IntegrationState<{|
+    ACCESS_TOKEN: Optional<string>,
+  |}>,
+  GALAXY: IntegrationState<{|
+    GALAXY_API_KEY: Optional<string>,
+  |}>,
+>>>>>>> 5a67011e (Add new card and dialog to apps page):src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.js
   GITHUB: IntegrationState<
     Array<
       Optional<{
@@ -403,6 +433,15 @@ function decodeFigshare(data: FetchedState): IntegrationStates["FIGSHARE"] {
   };
 }
 
+function decodeGalaxy(data: FetchedState): IntegrationStates["GALAXY"] {
+  return {
+    mode: parseState(data),
+    credentials: {
+      GALAXY_API_KEY: parseCredentialString(data.options, "GALAXY_API_KEY"),
+    },
+  };
+}
+
 function decodeGitHub(data: FetchedState): IntegrationStates["GITHUB"] {
   return {
     mode: parseState(data),
@@ -684,6 +723,7 @@ function decodeIntegrationStates(data: {
     EVERNOTE: decodeEvernote(data.EVERNOTE),
     FIELDMARK: decodeFieldmark(data.FIELDMARK),
     FIGSHARE: decodeFigshare(data.FIGSHARE),
+    GALAXY: decodeGalaxy(data.GALAXY),
     GITHUB: decodeGitHub(data.GITHUB),
     GOOGLEDRIVE: decodeGoogleDrive(data.GOOGLEDRIVE),
     JOVE: decodeJove(data.JOVE),
@@ -912,6 +952,21 @@ const encodeIntegrationState = <I extends Integration>(
       options: {
         ...creds.ACCESS_TOKEN.map((token) => ({
           ACCESS_TOKEN: token,
+        })).orElse({}),
+      },
+    };
+  }
+  if (integration === "GALAXY") {
+    return {
+      name: "GALAXY",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: {
+        // $FlowExpectedError[prop-missing]
+        // $FlowExpectedError[incompatible-type]
+        // $FlowExpectedError[incompatible-use]
+        ...data.credentials.GALAXY_API_KEY.map((key) => ({
+          GALAXY_API_KEY: key,
         })).orElse({}),
       },
     };
@@ -1264,6 +1319,8 @@ export function useIntegrationsEndpoint(): {
               return decodeFieldmark(responseData.data) as IntegrationStates[I];
             case "FIGSHARE":
               return decodeFigshare(responseData.data) as IntegrationStates[I];
+            case "GALAXY":
+              return decodeGalaxy(responseData.data) as IntegrationStates[I];
             case "GITHUB":
               return decodeGitHub(responseData.data) as IntegrationStates[I];
             case "GOOGLEDRIVE":
@@ -1371,7 +1428,13 @@ export function useIntegrationsEndpoint(): {
         case "FIELDMARK":
           return decodeFieldmark(response.data.data) as IntegrationStates[I];
         case "FIGSHARE":
+<<<<<<< HEAD:src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts
           return decodeFigshare(response.data.data) as IntegrationStates[I];
+=======
+          return decodeFigshare(response.data.data);
+        case "GALAXY":
+          return decodeGalaxy(response.data.data);
+>>>>>>> 5a67011e (Add new card and dialog to apps page):src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.js
         case "GITHUB":
           return decodeGitHub(response.data.data) as IntegrationStates[I];
         case "GOOGLEDRIVE":
