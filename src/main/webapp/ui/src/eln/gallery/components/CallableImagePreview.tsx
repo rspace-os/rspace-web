@@ -14,7 +14,7 @@ import { type URL } from "../../../util/types";
 const ImagePreviewContext = React.createContext(
   (
     _link: URL,
-    _opts: {
+    _opts?: {
       caption?: ReadonlyArray<string>;
     } | null
   ) => {}
@@ -31,7 +31,7 @@ export function useImagePreview(): {
    */
   openImagePreview: (
     link: URL,
-    opts: {
+    opts?: {
       /*
        * A list of strings, shown from top to bottom, separated by two
        * `<br />`s, placed at the bottom of the viewport

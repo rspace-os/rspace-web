@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import { Optional } from "../../../util/optional";
 import Button from "@mui/material/Button";
@@ -73,26 +71,26 @@ const PreviewWrapper = ({
   previewingAsPdf,
   children,
   visible,
-}: {|
-  file: GalleryFile,
-  previewingAsPdf: boolean,
-  children: Node,
-  visible: boolean,
-|}) => {
+}: {
+  file: GalleryFile;
+  previewingAsPdf: boolean;
+  children: React.ReactNode;
+  visible: boolean;
+}) => {
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openFolder } = useFolderOpen();
   const primaryAction = usePrimaryAction();
-  const [scrollPos, setScrollPos] = React.useState<null | {|
-    scrollLeft: number,
-    scrollTop: number,
-  |}>(null);
-  const [cursorOffset, setCursorOffset] = React.useState<null | {|
-    x: number,
-    y: number,
-  |}>(null);
+  const [scrollPos, setScrollPos] = React.useState<null | {
+    scrollLeft: number;
+    scrollTop: number;
+  }>(null);
+  const [cursorOffset, setCursorOffset] = React.useState<null | {
+    x: number;
+    y: number;
+  }>(null);
 
   function display() {
     if (!visible) return "none";
@@ -119,7 +117,8 @@ const PreviewWrapper = ({
       }}
       key={file.key}
       onMouseDown={(e) => {
-        const thisNode = e.target.closest("[role='button']");
+        const thisNode = (e.target as HTMLElement).closest("[role='button']");
+        if (!thisNode) return;
         setScrollPos({
           scrollLeft: thisNode.scrollLeft,
           scrollTop: thisNode.scrollTop,
@@ -128,7 +127,7 @@ const PreviewWrapper = ({
       }}
       onMouseMove={(e) => {
         if (!scrollPos || !cursorOffset) return;
-        const thisNode = e.target.closest("[role='button']");
+        const thisNode = (e.target as HTMLElement).closest("[role='button']");
         const currentOffset = {
           x: e.nativeEvent.clientX,
           y: e.nativeEvent.clientY,
@@ -137,7 +136,7 @@ const PreviewWrapper = ({
           x: currentOffset.x - cursorOffset.x,
           y: currentOffset.y - cursorOffset.y,
         };
-        thisNode.scrollTo(
+        thisNode?.scrollTo(
           scrollPos.scrollLeft - moved.x,
           scrollPos.scrollTop - moved.y
         );
@@ -221,32 +220,23 @@ const Preview = ({
   file,
   zoom,
   visible,
-}: {|
-  file: GalleryFile,
-  zoom: number,
-  visible: boolean,
-|}) => {
+}: {
+  file: GalleryFile;
+  zoom: number;
+  visible: boolean;
+}) => {
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
   const [numPages, setNumPages] = React.useState<number>(0);
   const [asposePdfUrl, setAsposePdfUrl] = React.useState<
-    | {| tag: "loading" |}
-    | {| tag: "loaded", url: Url |}
-    | {| tag: "error" |}
-    | null
+    { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
   >(null);
   const [imageUrl, setImageUrl] = React.useState<
-    | {| tag: "loading" |}
-    | {| tag: "loaded", url: Url |}
-    | {| tag: "error" |}
-    | null
+    { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
   >(null);
   const [pdfUrl, setPdfUrl] = React.useState<
-    | {| tag: "loading" |}
-    | {| tag: "loaded", url: Url |}
-    | {| tag: "error" |}
-    | null
+    { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
   >(null);
 
   React.useEffect(() => {
@@ -259,9 +249,9 @@ const Preview = ({
         }))
       )
       .orElseTry<
-        | {| key: "image", getDownloadHref: () => Promise<Url> |}
-        | {| key: "pdf", getDownloadHref: () => Promise<Url> |}
-        | {| key: "aspose" |}
+        | { key: "image"; getDownloadHref: () => Promise<Url> }
+        | { key: "pdf"; getDownloadHref: () => Promise<Url> }
+        | { key: "aspose" }
       >(() =>
         canPreviewWithAspose(file).map(() => ({
           key: "aspose",
@@ -274,7 +264,7 @@ const Preview = ({
             try {
               const downloadHref = await preview.getDownloadHref();
               setImageUrl({ tag: "loaded", url: downloadHref });
-            } catch (error) {
+            } catch {
               setImageUrl({ tag: "error" });
             }
           } else if (preview.key === "pdf") {
@@ -282,13 +272,13 @@ const Preview = ({
             try {
               const downloadHref = await preview.getDownloadHref();
               setPdfUrl({ tag: "loaded", url: downloadHref });
-            } catch (error) {
+            } catch {
               setPdfUrl({ tag: "error" });
             }
           } else {
             setAsposePdfUrl({ tag: "loading" });
             try {
-              const { data } = await axios.get<mixed>(
+              const { data } = await axios.get<unknown>(
                 "/Streamfile/ajax/convert/" +
                   idToString(file.id).elseThrow() +
                   "?outputFormat=pdf"
@@ -323,7 +313,7 @@ const Preview = ({
                     throw new Error(msg);
                   });
               }
-            } catch (error) {
+            } catch {
               setAsposePdfUrl({
                 tag: "error",
               });
@@ -340,8 +330,7 @@ const Preview = ({
   function onDocumentLoadSuccess({
     numPages: nextNumPages,
   }: {
-    numPages: number,
-    ...
+    numPages: number;
   }): void {
     setNumPages(nextNumPages);
   }
@@ -409,17 +398,17 @@ const Preview = ({
   return null;
 };
 
-type CarouselArgs = {|
+type CarouselArgs = {
   listing:
-    | {| tag: "empty", reason: string, refreshing: boolean |}
-    | {|
-        tag: "list",
-        list: $ReadOnlyArray<GalleryFile>,
-        totalHits: number,
-        loadMore: Optional<() => Promise<void>>,
-        refreshing: boolean,
-      |},
-|};
+    | { tag: "empty"; reason: string; refreshing: boolean }
+    | {
+        tag: "list";
+        list: ReadonlyArray<GalleryFile>;
+        totalHits: number;
+        loadMore: Optional<() => Promise<void>>;
+        refreshing: boolean;
+      };
+};
 
 /**
  * The carousel view of files allows the user to view files one at a time,
@@ -427,7 +416,7 @@ type CarouselArgs = {|
  * also zoom in and out of the preview; crucial when working with large image
  * files that vary only in small details.
  */
-export default function Carousel({ listing }: CarouselArgs): Node {
+export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
   const [zoom, setZoom] = React.useState(1);
