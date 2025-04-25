@@ -93,6 +93,9 @@ define(function() {
         _printSettings([ 'jove.available' ]);
         _printSettings([ 'protocols_io.available' ]);
 
+        _printCategory('Analysis and Programming');
+        _printSettings([ 'galaxy.available' ]);
+
         _printCategory('Identity');
         _printSettings([ 'orcid.available' ]);
 
