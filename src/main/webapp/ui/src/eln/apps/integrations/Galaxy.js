@@ -11,6 +11,8 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
+import GalaxyIcon from "../../../assets/branding/galaxy/logo.svg";
+import { LOGO_COLOR } from "../../../assets/branding/galaxy";
 
 type GalaxyArgs = {|
   integrationState: IntegrationStates["GALAXY"],
@@ -31,11 +33,11 @@ function Galaxy({ integrationState, update }: GalaxyArgs): Node {
         name="Galaxy"
         integrationState={integrationState}
         explanatoryText="Open, web-based platform for data intensive biomedical research."
-        image={null}
-        color={{ hue: 240, saturation: 100, lightness: 60 }} // Using blue as a placeholder
+        image={GalaxyIcon}
+        color={LOGO_COLOR}
         usageText="You can connect your Galaxy workflows and data to RSpace. This allows you to send data from RSpace to Galaxy and import results back into your notebooks."
         helpLinkText="Galaxy integration docs"
-        website="usegalaxy.org"
+        website="galaxyproject.org"
         docLink="galaxy"
         setupSection={
           <>
