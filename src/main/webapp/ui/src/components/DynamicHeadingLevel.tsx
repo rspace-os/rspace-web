@@ -1,7 +1,5 @@
-//@flow
-
 import Typography from "@mui/material/Typography";
-import React, { type Node, type Context } from "react";
+import React from "react";
 
 /**
  * An accessibility best practice is to have all headings on a web page descend
@@ -36,26 +34,26 @@ import React, { type Node, type Context } from "react";
  * ```
  */
 
-type HeadingContextType = {|
-  level: 1 | 2 | 3 | 4 | 5 | 6,
-|};
+type HeadingContextType = {
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+};
 
-const DEFAULT_HEADING_CONTEXT = {
+const DEFAULT_HEADING_CONTEXT: HeadingContextType = {
   level: 1,
 };
 
-const HContext: Context<HeadingContextType> = React.createContext(
+const HContext: React.Context<HeadingContextType> = React.createContext(
   DEFAULT_HEADING_CONTEXT
 );
 
 export function HeadingContext({
   children,
   level: overridenLevel,
-}: {|
+}: {
   /**
    * More components that render headings using Heading
    */
-  children: Node,
+  children: React.ReactNode;
 
   /**
    * The level of the context can be manually specified, allowing for this
@@ -73,8 +71,8 @@ export function HeadingContext({
    *   </HeadingContext>
    * ```
    */
-  level?: 1 | 2 | 3 | 4 | 5 | 6,
-|}): Node {
+  level?: 1 | 2 | 3 | 4 | 5 | 6;
+}): React.ReactNode {
   const { level } = React.useContext(HContext);
 
   if (typeof overridenLevel !== "undefined" && level > 1)
@@ -103,13 +101,13 @@ export function Heading({
   className,
   id,
   sx,
-}: {|
-  children: Node,
-  variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6",
-  className?: string,
-  id?: string,
-  sx?: { ... },
-|}): Node {
+}: {
+  children: React.ReactNode;
+  variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  className?: string;
+  id?: string;
+  sx?: object;
+}): React.ReactNode {
   const { level } = React.useContext(HContext);
   const v = variant ?? `h${level}`;
 
