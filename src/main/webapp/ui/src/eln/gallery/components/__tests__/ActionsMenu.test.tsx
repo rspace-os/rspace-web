@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, waitFor } from "@testing-library/react";
@@ -21,9 +20,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../../accentedTheme";
 import "../../../../../__mocks__/matchMedia";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import Result from "../../../../util/result";
 import { ACCENT_COLOR } from "../../../../assets/branding/irods";
+import * as ArrayUtils from "../../../../util/ArrayUtils";
+import { ExportSelection } from "../../../../Export/common";
 
 jest.mock("../CallablePdfPreview", () => ({
   usePdfPreview: () => ({
@@ -48,7 +49,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-function SetSelection({ files }: {| files: $ReadOnlyArray<GalleryFile> |}) {
+function SetSelection({ files }: { files: ReadonlyArray<GalleryFile> }) {
   const selection = useGallerySelection();
   React.useEffect(() => {
     selection.clear();
@@ -104,7 +105,7 @@ describe("ActionsMenu", () => {
                 isImage: true,
                 isSnippet: false,
                 isSnippetFolder: false,
-                transformFilename(f: (string) => string) {
+                transformFilename(f: (filename: string) => string) {
                   return f("Foo");
                 },
                 setName: () => {},
@@ -186,7 +187,7 @@ describe("ActionsMenu", () => {
                 isImage: false,
                 isSnippet: false,
                 isSnippetFolder: false,
-                transformFilename(f: (string) => string) {
+                transformFilename(f: (filename: string) => string) {
                   return f("Foo");
                 },
                 setName: () => {},
@@ -266,12 +267,11 @@ describe("ActionsMenu", () => {
                 isImage: false,
                 isSnippet: false,
                 isSnippetFolder: false,
-                transformFilename(f: (string) => string) {
+                transformFilename(f: (filename: string) => string) {
                   return f("Foo");
                 },
                 setName: () => {},
                 setDescription: () => {},
-                open: () => {},
                 linkedDocuments: null,
                 canOpen: Result.Error([new Error("I'm a folder")]),
                 canDuplicate: Result.Ok(null),
@@ -306,12 +306,11 @@ describe("ActionsMenu", () => {
                 isImage: false,
                 isSnippet: false,
                 isSnippetFolder: false,
-                transformFilename(f: (string) => string) {
+                transformFilename(f: (filename: string) => string) {
                   return f("Foo");
                 },
                 setName: () => {},
                 setDescription: () => {},
-                open: () => {},
                 linkedDocuments: null,
                 canOpen: Result.Error([new Error("I'm a folder")]),
                 canDuplicate: Result.Ok(null),
@@ -357,7 +356,13 @@ describe("ActionsMenu", () => {
     await user.click(screen.getByRole("button", { name: /next/i }));
     await user.click(screen.getByRole("button", { name: /export/i }));
 
-    expect(JSON.parse(mockAxios.history.post[0].data)).toEqual(
+    expect(
+      JSON.parse(
+        ArrayUtils.head(mockAxios.history.post)
+          .map(({ data }: { data: string }) => data)
+          .orElse("")
+      )
+    ).toEqual(
       expect.objectContaining({
         exportSelection: expect.objectContaining({
           type: "selection",
@@ -367,7 +372,7 @@ describe("ActionsMenu", () => {
             expect.stringMatching(/[0-9]+/),
             expect.stringMatching(/[0-9]+/),
           ],
-        }),
+        }) as ExportSelection,
       })
     );
   });
