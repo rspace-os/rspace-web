@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 
 /**
  * We use the HTML Drag and Drop API[mdn] to provide support for dragging files
@@ -21,9 +19,9 @@ import React, { type Node } from "react";
  */
 export const DisableDragAndDropByDefault = ({
   children,
-}: {|
-  children: Node,
-|}): Node => (
+}: {
+  children: React.ReactNode;
+}): React.ReactNode => (
   <div
     onDragOver={(e) => {
       /*
@@ -70,16 +68,16 @@ export const DisableDragAndDropByDefault = ({
 export const useFileImportDropZone = ({
   onDrop: onDropProp,
   disabled,
-}: {|
-  onDrop: ($ReadOnlyArray<File>) => void,
-  disabled?: boolean,
-|}): ({|
-  onDragEnter: (DragEvent) => void,
-  onDragOver: (DragEvent) => void,
-  onDragLeave: (DragEvent) => void,
-  onDrop: (DragEvent) => void,
-  over: boolean,
-|}) => {
+}: {
+  onDrop: (files: ReadonlyArray<File>) => void;
+  disabled?: boolean;
+}): {
+  onDragEnter: (e: DragEvent) => void;
+  onDragOver: (e: DragEvent) => void;
+  onDragLeave: (e: DragEvent) => void;
+  onDrop: (e: DragEvent) => void;
+  over: boolean;
+} => {
   const [overCount, setOverCount] = React.useState(0);
 
   function onDragEnter(e: DragEvent) {
