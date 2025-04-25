@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import { styled } from "@mui/material/styles";
@@ -64,14 +62,15 @@ const ActionButton = ({
   label,
   disabled,
   sx,
-}: {|
-  onClick: (Event) => void,
-  label: string,
-  disabled?: boolean,
-  sx: {| borderRadius: number, px: number, py: number |},
-|}): Node => {
+}: {
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  label: string;
+  disabled?: boolean;
+  sx: { borderRadius: number; px: number; py: number };
+}): React.ReactNode => {
   return (
     <Button
+      component="button"
       color="callToAction"
       variant="contained"
       sx={sx}
@@ -118,9 +117,9 @@ const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
  * adjusting the positioning of the content so that the title and action button
  * are shown even when the panel is closed.
  */
-const MobileInfoPanelContent: ComponentType<{|
-  children: Node,
-|}> = styled(Box)(({ theme }) => ({
+const MobileInfoPanelContent: React.ComponentType<{
+  children: React.ReactNode;
+}> = styled(Box)(({ theme }) => ({
   position: "absolute",
   top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
   height: "100%",
@@ -143,14 +142,7 @@ const MobileInfoPanelContent: ComponentType<{|
  *     user can tap to trigger the opening/closing of the floating panel.
  *
  */
-const Puller: ComponentType<{|
-  onClick: () => void,
-  onKeyDown: (KeyboardEvent) => void,
-  tabIndex?: number,
-  role?: string,
-  "aria-controls": string,
-  "aria-expanded": "true" | "false",
-|}> = styled("div")(() => ({
+const Puller = styled("button")(() => ({
   width: 30,
   height: 6,
   backgroundColor: grey[300],
@@ -179,105 +171,103 @@ const Puller: ComponentType<{|
  * @param className Ignore; it is provided by the `styled` HOC.
  */
 const NameFieldForLargeViewports = styled(
-  observer(
-    ({ file, className }: {| file: GalleryFile, className: string |}) => {
-      const { trackEvent } = React.useContext(AnalyticsContext);
-      const { rename } = useGalleryActions();
-      const [name, setName] = React.useState(file.name);
-      const textField = React.useRef(null);
+  observer(({ file, className }: { file: GalleryFile; className?: string }) => {
+    const { trackEvent } = React.useContext(AnalyticsContext);
+    const { rename } = useGalleryActions();
+    const [name, setName] = React.useState(file.name);
+    const textField = React.useRef<HTMLInputElement | null>(null);
 
-      function handleSubmit() {
-        void rename(file, name).then(() => {
-          textField.current?.blur();
-          setName(file.transformFilename(() => name));
-          trackEvent("user:renames:file:gallery");
-        });
-      }
-
-      return (
-        <Stack sx={{ pr: 0.25, pl: 0.75 }}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSubmit();
-            }}
-          >
-            <TextField
-              value={name}
-              placeholder="No Name"
-              /*
-               * We use multiline so that long names wrap, but prevent the user
-               * from typing in a return character by using string replacement.
-               */
-              multiline
-              onChange={({ target: { value } }) =>
-                setName(value.replace(/\n/g, ""))
-              }
-              fullWidth
-              size="small"
-              className={clsx(className, name !== file.name && "modified")}
-              inputProps={{
-                "aria-label": "Name",
-                ref: textField,
-              }}
-              onFocus={() => {
-                if (name === file.name)
-                  setName(filenameExceptExtension(file.name));
-              }}
-              onBlur={() => {
-                if (name === filenameExceptExtension(file.name))
-                  setName(file.name);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setName(file.name);
-                  textField.current?.blur();
-                }
-                /*
-                 * We have to explicitly handle enter key and can't rely on the
-                 * form's onSubmit being automaticaly called because we're using
-                 * a multiline textfield and so the enter key will naturally
-                 * enter a newline
-                 */
-                if (e.key === "Enter") {
-                  handleSubmit();
-                }
-              }}
-            />
-            <Collapse
-              in={name !== file.name}
-              timeout={
-                window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                  ? 0
-                  : 200
-              }
-            >
-              <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                <Button
-                  size="small"
-                  onClick={() => {
-                    setName(file.name);
-                  }}
-                  sx={{ px: 0.75 }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="small"
-                  variant="contained"
-                  color="callToAction"
-                  type="submit"
-                  sx={{ px: 0.75 }}
-                >
-                  Save
-                </Button>
-              </Stack>
-            </Collapse>
-          </form>
-        </Stack>
-      );
+    function handleSubmit() {
+      void rename(file, name).then(() => {
+        textField.current?.blur();
+        setName(file.transformFilename(() => name));
+        trackEvent("user:renames:file:gallery");
+      });
     }
-  )
+
+    return (
+      <Stack sx={{ pr: 0.25, pl: 0.75 }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <TextField
+            value={name}
+            placeholder="No Name"
+            /*
+             * We use multiline so that long names wrap, but prevent the user
+             * from typing in a return character by using string replacement.
+             */
+            multiline
+            onChange={({ target: { value } }) =>
+              setName(value.replace(/\n/g, ""))
+            }
+            fullWidth
+            size="small"
+            className={clsx(className, name !== file.name && "modified")}
+            inputProps={{
+              "aria-label": "Name",
+              ref: textField,
+            }}
+            onFocus={() => {
+              if (name === file.name)
+                setName(filenameExceptExtension(file.name));
+            }}
+            onBlur={() => {
+              if (name === filenameExceptExtension(file.name))
+                setName(file.name);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setName(file.name);
+                textField.current?.blur();
+              }
+              /*
+               * We have to explicitly handle enter key and can't rely on the
+               * form's onSubmit being automaticaly called because we're using
+               * a multiline textfield and so the enter key will naturally
+               * enter a newline
+               */
+              if (e.key === "Enter") {
+                handleSubmit();
+              }
+            }}
+          />
+          <Collapse
+            in={name !== file.name}
+            timeout={
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? 0
+                : 200
+            }
+          >
+            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+              <Button
+                size="small"
+                onClick={() => {
+                  setName(file.name);
+                }}
+                sx={{ px: 0.75 }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="callToAction"
+                type="submit"
+                sx={{ px: 0.75 }}
+              >
+                Save
+              </Button>
+            </Stack>
+          </Collapse>
+        </form>
+      </Stack>
+    );
+  })
 )(({ theme }) => ({
   "&.modified": {
     [`& .${outlinedInputClasses.root}`]: {
@@ -348,12 +338,12 @@ const DescriptionField = styled(
       description: initialDescription,
       minimalStyling = false,
       className,
-    }: {|
-      file: GalleryFile,
-      description: string,
-      minimalStyling?: boolean,
-      className: string,
-    |}) => {
+    }: {
+      file: GalleryFile;
+      description: string;
+      minimalStyling?: boolean;
+      className?: string;
+    }) => {
       const { changeDescription } = useGalleryActions();
 
       const [description, setDescription] =
@@ -475,9 +465,9 @@ const InfoPanelContent = observer(
     file,
     smallViewport = false,
   }: {
-    file: GalleryFile,
-    smallViewport?: boolean,
-  }): Node => {
+    file: GalleryFile;
+    smallViewport?: boolean;
+  }): React.ReactNode => {
     return (
       <Stack sx={{ height: "100%" }}>
         <DescriptionList
@@ -514,12 +504,12 @@ const InfoPanelContent = observer(
                 },
               ])
               .orElse(
-                ([]: $ReadOnlyArray<{|
-                  label: string,
-                  value: Node,
-                  below?: boolean,
-                  reducedPadding?: boolean,
-                |}>)
+                [] as ReadonlyArray<{
+                  label: string;
+                  value: React.ReactNode;
+                  below?: boolean;
+                  reducedPadding?: boolean;
+                }>
               ),
           ]}
           sx={{
@@ -592,7 +582,7 @@ const InfoPanelContent = observer(
   }
 );
 
-const InfoPanelMultipleContent = (): Node => {
+const InfoPanelMultipleContent = (): React.ReactNode => {
   const selection = useGallerySelection();
   const sortedByCreated = selection
     .asSet()
@@ -619,7 +609,11 @@ const InfoPanelMultipleContent = (): Node => {
             selection.asSet().reduce((sum, file) => sum + file.size, 0)
           ),
         },
-        ...Result.lift2<Date, Date, _>((oldestDate, newestDate) => [
+        ...Result.lift2<
+          Date,
+          Date,
+          Array<{ label: string; value: React.ReactNode }>
+        >((oldestDate, newestDate) => [
           {
             label: "Created",
             value: (
@@ -633,7 +627,11 @@ const InfoPanelMultipleContent = (): Node => {
           ArrayUtils.head(sortedByCreated),
           ArrayUtils.last(sortedByCreated)
         ).orElse([]),
-        ...Result.lift2<Date, Date, _>((oldestDate, newestDate) => [
+        ...Result.lift2<
+          Date,
+          Date,
+          Array<{ label: string; value: React.ReactNode }>
+        >((oldestDate, newestDate) => [
           {
             label: "Modified",
             value: (
@@ -646,20 +644,13 @@ const InfoPanelMultipleContent = (): Node => {
         ])(
           ArrayUtils.head(sortedByModified),
           ArrayUtils.last(sortedByModified)
-        ).orElse(
-          ([]: Array<{|
-            label: string,
-            value: Node,
-            below?: boolean,
-            reducedPadding?: boolean,
-          |}>)
-        ),
+        ).orElse([]),
       ]}
     />
   );
 };
 
-const AsposePreviewButton = ({ file }: {| file: GalleryFile |}) => {
+const AsposePreviewButton = ({ file }: { file: GalleryFile }) => {
   const { openAsposePreview, loading } = useAsposePreview();
   return (
     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
@@ -685,7 +676,7 @@ const AsposePreviewButton = ({ file }: {| file: GalleryFile |}) => {
  * selected file, including the name, description, and details such as the
  * documents that link to the file.
  */
-export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
+export function InfoPanelForLargeViewports() {
   const selection = useGallerySelection();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
@@ -890,7 +881,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
       )}
     </>
   );
-};
+}
 
 /**
  * On smaller viewports, the info panel is shown in a floating panel that
@@ -900,9 +891,9 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
  * other data includes the name, description, and details such as the documents
  * that link to the file.
  */
-export const InfoPanelForSmallViewports: ComponentType<{|
-  file: GalleryFile,
-|}> = ({ file }) => {
+export const InfoPanelForSmallViewports: React.ComponentType<{
+  file: GalleryFile;
+}> = ({ file }) => {
   const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
     null
@@ -943,7 +934,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
         "aria-hidden": false,
       }}
       allowSwipeInChildren={(event) => {
-        if (event.target.id === "open") return false;
+        if ((event.target as HTMLElement | null)?.id === "open") return false;
         return true;
       }}
     >
