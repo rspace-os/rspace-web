@@ -100,8 +100,8 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
     if (user.isLoginDisabled()) {
       throw new ApiAuthenticationException(
           String.format(
-              "Api access denied as account for user '%s' associated with provided API key is "
-                  + "locked or disabled",
+              "Api access denied as account for user '%s', who is associated with provided "
+                  + "authentication token, is locked or disabled",
               user.getUsername()));
     }
   }
