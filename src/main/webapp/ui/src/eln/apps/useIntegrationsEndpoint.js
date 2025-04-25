@@ -102,6 +102,9 @@ export type IntegrationStates = {|
   FIGSHARE: IntegrationState<{|
     ACCESS_TOKEN: Optional<string>,
   |}>,
+  GALAXY: IntegrationState<{|
+    GALAXY_API_KEY: Optional<string>,
+  |}>,
   GITHUB: IntegrationState<
     Array<
       Optional<{|
@@ -382,6 +385,15 @@ function decodeFigshare(data: FetchedState): IntegrationStates["FIGSHARE"] {
   };
 }
 
+function decodeGalaxy(data: FetchedState): IntegrationStates["GALAXY"] {
+  return {
+    mode: parseState(data),
+    credentials: {
+      GALAXY_API_KEY: parseCredentialString(data.options, "GALAXY_API_KEY"),
+    },
+  };
+}
+
 function decodeGitHub(data: FetchedState): IntegrationStates["GITHUB"] {
   return {
     mode: parseState(data),
@@ -630,6 +642,7 @@ function decodeIntegrationStates(data: {
     EVERNOTE: decodeEvernote(data.EVERNOTE),
     FIELDMARK: decodeFieldmark(data.FIELDMARK),
     FIGSHARE: decodeFigshare(data.FIGSHARE),
+    GALAXY: decodeGalaxy(data.GALAXY),
     GITHUB: decodeGitHub(data.GITHUB),
     GOOGLEDRIVE: decodeGoogleDrive(data.GOOGLEDRIVE),
     JOVE: decodeJove(data.JOVE),
@@ -854,6 +867,21 @@ const encodeIntegrationState = <I: Integration>(
         // $FlowExpectedError[incompatible-use]
         ...data.credentials.ACCESS_TOKEN.map((token) => ({
           ACCESS_TOKEN: token,
+        })).orElse({}),
+      },
+    };
+  }
+  if (integration === "GALAXY") {
+    return {
+      name: "GALAXY",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: {
+        // $FlowExpectedError[prop-missing]
+        // $FlowExpectedError[incompatible-type]
+        // $FlowExpectedError[incompatible-use]
+        ...data.credentials.GALAXY_API_KEY.map((key) => ({
+          GALAXY_API_KEY: key,
         })).orElse({}),
       },
     };
@@ -1214,6 +1242,8 @@ export function useIntegrationsEndpoint(): {|
               return decodeFieldmark(responseData.data);
             case "FIGSHARE":
               return decodeFigshare(responseData.data);
+            case "GALAXY":
+              return decodeGalaxy(responseData.data);
             case "GITHUB":
               return decodeGitHub(responseData.data);
             case "GOOGLEDRIVE":
@@ -1316,6 +1346,8 @@ export function useIntegrationsEndpoint(): {|
           return decodeFieldmark(response.data.data);
         case "FIGSHARE":
           return decodeFigshare(response.data.data);
+        case "GALAXY":
+          return decodeGalaxy(response.data.data);
         case "GITHUB":
           return decodeGitHub(response.data.data);
         case "GOOGLEDRIVE":
