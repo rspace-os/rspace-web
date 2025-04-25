@@ -72,34 +72,34 @@ export const useFileImportDropZone = ({
   onDrop: (files: ReadonlyArray<File>) => void;
   disabled?: boolean;
 }): {
-  onDragEnter: (e: DragEvent) => void;
-  onDragOver: (e: DragEvent) => void;
-  onDragLeave: (e: DragEvent) => void;
-  onDrop: (e: DragEvent) => void;
+  onDragEnter: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
   over: boolean;
 } => {
   const [overCount, setOverCount] = React.useState(0);
 
-  function onDragEnter(e: DragEvent) {
+  function onDragEnter(e: React.DragEvent) {
     e.preventDefault();
     if (disabled) return;
     e.stopPropagation();
     setOverCount((x) => x + 1);
   }
 
-  function onDragOver(e: DragEvent) {
+  function onDragOver(e: React.DragEvent) {
     e.preventDefault();
     e.stopPropagation();
   }
 
-  function onDragLeave(e: DragEvent) {
+  function onDragLeave(e: React.DragEvent) {
     e.preventDefault();
     if (disabled) return;
     e.stopPropagation();
     setOverCount((x) => x - 1);
   }
 
-  function onDrop(e: DragEvent) {
+  function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setOverCount(0);
 

@@ -12,7 +12,7 @@ export default styled(
     className,
   }: {
     onClick: () => Promise<void>;
-    className: string;
+    className?: string;
   }) => (
     <Button onClick={doNotAwait(onClick)} className={className}>
       Load More

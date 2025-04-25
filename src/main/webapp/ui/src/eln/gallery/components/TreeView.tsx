@@ -1,11 +1,6 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Fade from "@mui/material/Fade";
-import {
-  SELECTED_OR_FOCUS_BORDER,
-  type GallerySection,
-} from "../common";
+import { SELECTED_OR_FOCUS_BORDER, type GallerySection } from "../common";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { styled } from "@mui/material/styles";
 import Avatar from "@mui/material/Avatar";
@@ -53,17 +48,17 @@ const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   },
 }));
 
-type TreeItemContentArgs = {|
-  file: GalleryFile,
-  path: $ReadOnlyArray<GalleryFile>,
-  section: GallerySection,
-  treeViewItemIdMap: Map<string, GalleryFile>,
-  refreshListing: () => Promise<void>,
-  filter: (GalleryFile) => "hide" | "enabled" | "disabled",
-  disableDragAndDrop?: boolean,
-  sortOrder: "DESC" | "ASC",
-  orderBy: "name" | "modificationDate",
-  foldersOnly: boolean,
+type TreeItemContentArgs = {
+  file: GalleryFile;
+  path: ReadonlyArray<GalleryFile>;
+  section: GallerySection;
+  treeViewItemIdMap: Map<string, GalleryFile>;
+  refreshListing: () => Promise<void>;
+  filter: (file: GalleryFile) => "hide" | "enabled" | "disabled";
+  disableDragAndDrop?: boolean;
+  sortOrder: "DESC" | "ASC";
+  orderBy: "name" | "modificationDate";
+  foldersOnly: boolean;
 
   /**
    * If true, then the listing is being refreshed and so the tree view should
@@ -85,10 +80,10 @@ type TreeItemContentArgs = {|
    *      `getGalleryFiles` to get the new folder's contents in the first
    *      instance.
    */
-  refeshing: boolean,
-|};
+  refeshing: boolean;
+};
 
-const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
+const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
   ({
     path,
     file,
@@ -101,9 +96,9 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     orderBy,
     foldersOnly,
     refeshing,
-  }: TreeItemContentArgs): Node => {
+  }: TreeItemContentArgs): React.ReactNode => {
     const listingOf = React.useMemo(
-      () => ({ tag: "section", section, path: [...path, file] }),
+      () => ({ tag: "section" as const, section, path: [...path, file] }),
       /* eslint-disable-next-line react-hooks/exhaustive-deps --
        * - path will not meaningfully change
        * - file will not meaningfully change
@@ -203,21 +198,21 @@ const CustomTreeItem = observer(
     foldersOnly,
     disabled,
     refeshing,
-  }: {|
-    file: GalleryFile,
-    index: number,
-    path: $ReadOnlyArray<GalleryFile>,
-    section: GallerySection,
-    treeViewItemIdMap: Map<string, GalleryFile>,
-    refreshListing: () => Promise<void>,
-    filter: (GalleryFile) => "hide" | "enabled" | "disabled",
-    disableDragAndDrop?: boolean,
-    orderBy: "name" | "modificationDate",
-    sortOrder: "DESC" | "ASC",
-    foldersOnly: boolean,
-    disabled: boolean,
-    refeshing: boolean,
-  |}) => {
+  }: {
+    file: GalleryFile;
+    index: number;
+    path: ReadonlyArray<GalleryFile>;
+    section: GallerySection;
+    treeViewItemIdMap: Map<string, GalleryFile>;
+    refreshListing: () => Promise<void>;
+    filter: (f: GalleryFile) => "hide" | "enabled" | "disabled";
+    disableDragAndDrop?: boolean;
+    orderBy: "name" | "modificationDate";
+    sortOrder: "DESC" | "ASC";
+    foldersOnly: boolean;
+    disabled: boolean;
+    refeshing: boolean;
+  }) => {
     const { uploadFiles } = useGalleryActions();
     const { trackEvent } = React.useContext(AnalyticsContext);
     const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
@@ -229,6 +224,7 @@ const CustomTreeItem = observer(
         }),
         disabled: !file.isFolder,
       });
+    if (!file.id) throw new Error("File ID is missing");
     const { setNodeRef: setDropRef, isOver } = useDroppable({
       id: file.id,
       disabled: disableDragAndDrop || !file.isFolder,
@@ -249,13 +245,13 @@ const CustomTreeItem = observer(
       },
     });
     const dndContext = useDndContext();
-    const [dndDebounce, setDndDebounce] = React.useState<null | TimeoutID>(
+    const [dndDebounce, setDndDebounce] = React.useState<null | NodeJS.Timeout>(
       null
     );
     const dndInProgress = Boolean(dndContext.active);
 
     const normalBorder = `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`;
-    const dropStyle: { [string]: string | number } = {};
+    const dropStyle: { [style: string]: string | number } = {};
     if (dndInProgress && file.isFolder) {
       if (isOver) {
         dropStyle.border = SELECTED_OR_FOCUS_BORDER;
@@ -266,7 +262,7 @@ const CustomTreeItem = observer(
     } else {
       dropStyle.border = normalBorder;
     }
-    const fileUploadDropping: { [string]: string | number } = over
+    const fileUploadDropping: { [style: string]: string | number } = over
       ? {
           border: SELECTED_OR_FOCUS_BORDER,
         }
@@ -326,24 +322,27 @@ const CustomTreeItem = observer(
           onMouseDown={(...args) => {
             setDndDebounce(
               setTimeout(() => {
-                listeners.onMouseDown(...args);
+                listeners?.onMouseDown(...args);
               }, 500)
             );
           }}
           onMouseUp={() => {
-            clearTimeout(dndDebounce);
+            if (dndDebounce !== null) clearTimeout(dndDebounce);
           }}
           onTouchStart={(...args) => {
             setDndDebounce(
               setTimeout(() => {
-                listeners.onTouchStart(...args);
+                listeners?.onTouchStart(...args);
               }, 500)
             );
           }}
           onTouchEnd={() => {
-            clearTimeout(dndDebounce);
+            if (dndDebounce !== null) clearTimeout(dndDebounce);
           }}
-          onKeyDown={listeners?.onKeyDown}
+          {...(listeners?.onKeyDown && {
+            onKeyDown:
+              listeners.onKeyDown as React.KeyboardEventHandler<HTMLLIElement>,
+          })}
           {...attributes}
           style={{
             ...dropStyle,
@@ -372,30 +371,30 @@ const CustomTreeItem = observer(
   }
 );
 
-type TreeViewArgs = {|
+type TreeViewArgs = {
   /**
    * The listing of files to display in the tree view. This component takes the
    * whole FetchingData object so that it can display the loading and error
    * states and doesn't lose the expanded state when the listing is refreshed.
    */
   listing:
-    | {| tag: "empty", reason: string, refreshing: boolean |}
-    | {|
-        tag: "list",
-        list: $ReadOnlyArray<GalleryFile>,
-        totalHits: number,
-        loadMore: Optional<() => Promise<void>>,
-        refreshing: boolean,
-      |},
-  path: $ReadOnlyArray<GalleryFile>,
-  selectedSection: GallerySection,
-  refreshListing: () => Promise<void>,
-  filter?: (GalleryFile) => "hide" | "enabled" | "disabled",
-  disableDragAndDrop?: boolean,
-  sortOrder: "DESC" | "ASC",
-  orderBy: "name" | "modificationDate",
-  foldersOnly?: boolean,
-|};
+    | { tag: "empty"; reason: string; refreshing: boolean }
+    | {
+        tag: "list";
+        list: ReadonlyArray<GalleryFile>;
+        totalHits: number;
+        loadMore: Optional<() => Promise<void>>;
+        refreshing: boolean;
+      };
+  path: ReadonlyArray<GalleryFile>;
+  selectedSection: GallerySection;
+  refreshListing: () => Promise<void>;
+  filter?: (file: GalleryFile) => "hide" | "enabled" | "disabled";
+  disableDragAndDrop?: boolean;
+  sortOrder: "DESC" | "ASC";
+  orderBy: "name" | "modificationDate";
+  foldersOnly?: boolean;
+};
 
 const TreeView = ({
   listing,
@@ -417,9 +416,7 @@ const TreeView = ({
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
 
-  const [expandedItems, setExpandedItems] = React.useState<
-    $ReadOnlyArray<GalleryFile["id"]>
-  >([]);
+  const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
 
   /*
    * Maps the item id used by the tree nodes to the actual file object. This is
@@ -453,9 +450,9 @@ const TreeView = ({
   if (
     listing.tag === "empty" ||
     listing.list.every((file) => filter(file) === "hide")
-  )
+  ) {
     return (
-      <div key={listing.reason}>
+      <div key={listing.tag === "empty" ? listing.reason : "hiding all"}>
         <Fade
           in={true}
           timeout={
@@ -468,12 +465,16 @@ const TreeView = ({
             <PlaceholderLabel>
               {listing.refreshing
                 ? "Refreshing..."
-                : listing.reason ?? "There are no folders."}
+                : listing.tag === "empty"
+                ? listing.reason
+                : "There are no folders."}
             </PlaceholderLabel>
           </div>
         </Fade>
       </div>
     );
+  }
+
   return (
     <SimpleTreeView
       role="region"
@@ -482,13 +483,14 @@ const TreeView = ({
       onExpandedItemsChange={(_event, nodeIds) => {
         setExpandedItems(nodeIds);
       }}
+      multiSelect
       selectedItems={selection
         .asSet()
         .map((file) => file.treeViewItemId)
         .toArray()}
       onItemSelectionToggle={(
         event,
-        itemId: string | $ReadOnlyArray<string>,
+        itemId: string | ReadonlyArray<string>,
         selected
       ) => {
         /*
@@ -514,7 +516,8 @@ const TreeView = ({
          * SimpleTreeView does have a multiSelect mode but attempting to use it
          * just results in console errors.
          */
-        if (event.shiftKey) {
+        const mouseEvent = event as unknown as MouseEvent;
+        if (mouseEvent.shiftKey) {
           if (selected) {
             addAlert(
               mkAlert({
@@ -527,7 +530,7 @@ const TreeView = ({
           }
           return;
         }
-        if (event.ctrlKey || event.metaKey) {
+        if (mouseEvent.ctrlKey || mouseEvent.metaKey) {
           MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
             if (selection.includes(file)) {
               selection.remove(file);
@@ -539,7 +542,7 @@ const TreeView = ({
           // on double click, try and figure out what the user would want
           // to do with a file of this type based on what services are
           // configured
-          if (event.detail > 1) {
+          if (mouseEvent.detail > 1) {
             MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
               primaryAction(file).do((action) => {
                 if (action.tag === "open") {
@@ -635,4 +638,4 @@ const TreeView = ({
  * it easy to drag-and-drop files between folders and to operate on files in
  * different folders.
  */
-export default (observer(TreeView): ComponentType<TreeViewArgs>);
+export default observer(TreeView);
