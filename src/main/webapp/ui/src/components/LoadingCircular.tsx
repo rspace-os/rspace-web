@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { makeStyles } from "tss-react/mui";
 
@@ -25,11 +23,13 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type LoaderCircularArgs = {|
-  message?: string,
-|};
+type LoaderCircularArgs = {
+  message?: string;
+};
 
-export default function LoaderCircular(props: LoaderCircularArgs): Node {
+export default function LoaderCircular(
+  props: LoaderCircularArgs
+): React.ReactNode {
   const { classes } = useStyles();
 
   return (
