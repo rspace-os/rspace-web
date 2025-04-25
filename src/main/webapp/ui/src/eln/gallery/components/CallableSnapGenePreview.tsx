@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import { Dialog } from "../../../components/DialogBoundary";
 import DialogContent from "@mui/material/DialogContent";
@@ -40,6 +38,8 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { stableSort, getSorting, paginationOptions } from "../../../util/table";
 import { ACCENT_COLOR } from "../../../assets/branding/snapgene";
+import * as Parsers from "../../../util/parsers";
+import { type Order } from "../../../util/types";
 
 const CustomDrawer = styled(Drawer)(() => ({
   "& .MuiPaper-root": {
@@ -52,25 +52,25 @@ function DnaPreview({
   show,
   file,
   idOfDnaPreviewTab,
-}: {|
-  show: boolean,
-  file: GalleryFile,
-  idOfDnaPreviewTab: string,
-|}) {
+}: {
+  show: boolean;
+  file: GalleryFile;
+  idOfDnaPreviewTab: string;
+}) {
   const [image, setImage] = React.useState<null | string>(null);
   const [linear, setLinear] = React.useState(false);
   const [showEnzymes, setShowEnzymes] = React.useState(true);
   const [showORFs, setShowORFs] = React.useState(true);
   const [zoom, setZoom] = React.useState(1);
   const [error, setError] = React.useState<null | string>(null);
-  const [scrollPos, setScrollPos] = React.useState<null | {|
-    scrollLeft: number,
-    scrollTop: number,
-  |}>(null);
-  const [cursorOffset, setCursorOffset] = React.useState<null | {|
-    x: number,
-    y: number,
-  |}>(null);
+  const [scrollPos, setScrollPos] = React.useState<null | {
+    scrollLeft: number;
+    scrollTop: number;
+  }>(null);
+  const [cursorOffset, setCursorOffset] = React.useState<null | {
+    x: number;
+    y: number;
+  }>(null);
 
   React.useEffect(() => {
     try {
@@ -82,7 +82,7 @@ function DnaPreview({
         }`
       );
     } catch (e) {
-      setError(e.message);
+      if (e instanceof Error) setError(e.message);
     }
   }, [file, linear, showEnzymes, showORFs]);
 
@@ -99,11 +99,11 @@ function DnaPreview({
       <Stack direction="row" spacing={1}>
         <Select
           value={linear}
-          onChange={(e) => setLinear(e.target.value)}
+          onChange={(e) => setLinear(e.target.value === "true")}
           size="small"
         >
-          <MenuItem value={false}>Circular</MenuItem>
-          <MenuItem value={true}>Linear</MenuItem>
+          <MenuItem value={"false"}>Circular</MenuItem>
+          <MenuItem value={"true"}>Linear</MenuItem>
         </Select>
         <FormControlLabel
           control={
@@ -190,7 +190,7 @@ function DnaPreview({
         ) : (
           <img
             alt={`DNA preview of ${file.name}`}
-            src={image}
+            {...(image !== null ? { src: image } : {})}
             onError={() => {
               setError("Coult not load DNA preview image.");
             }}
@@ -237,36 +237,36 @@ function RestrictionSites({
   show,
   file,
   idOfRestrictionSitesTab,
-}: {|
-  show: boolean,
-  file: GalleryFile,
-  idOfRestrictionSitesTab: string,
-|}) {
-  const [order, setOrder] = React.useState("desc");
+}: {
+  show: boolean;
+  file: GalleryFile;
+  idOfRestrictionSitesTab: string;
+}) {
+  const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("enzyme");
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [loading, setLoading] = React.useState(true);
   const [enzymeSet, setEnzymeSet] = React.useState("UNIQUE_SIX_PLUS");
   const [enzymeList, setEnzymeList] = React.useState<
-    $ReadOnlyArray<{|
-      name: string,
-      id: number,
-      topCutPosition: number,
-      bottomCutPosition: number,
-    |}>
+    ReadonlyArray<{
+      name: string;
+      id: number;
+      topCutPosition: number;
+      bottomCutPosition: number;
+    }>
   >([]);
   const [error, setError] = React.useState<null | string>(null);
 
   const generateEnzymeList = (
-    list: $ReadOnlyArray<{|
-      id: number,
-      name: string,
-      hits: $ReadOnlyArray<{|
-        topCutPosition: number,
-        bottomCutPosition: number,
-      |}>,
-    |}>
+    list: ReadonlyArray<{
+      id: number;
+      name: string;
+      hits: ReadonlyArray<{
+        topCutPosition: number;
+        bottomCutPosition: number;
+      }>;
+    }>
   ) => {
     setEnzymeList(
       list
@@ -289,19 +289,21 @@ function RestrictionSites({
       const url = `/molbiol/dna/enzymes/${idToString(
         file.id
       ).elseThrow()}?enzymeSet=${enzymeSet}`;
-      const response = await axios.get<{|
-        enzymes: $ReadOnlyArray<{|
-          id: number,
-          name: string,
-          hits: $ReadOnlyArray<{|
-            topCutPosition: number,
-            bottomCutPosition: number,
-          |}>,
-        |}>,
-      |}>(url);
+      const response = await axios.get<{
+        enzymes: ReadonlyArray<{
+          id: number;
+          name: string;
+          hits: ReadonlyArray<{
+            topCutPosition: number;
+            bottomCutPosition: number;
+          }>;
+        }>;
+      }>(url);
       generateEnzymeList(response.data.enzymes);
     } catch (e) {
-      setError(e.response.data);
+      Parsers.objectPath(["response", "data"], e)
+        .flatMap(Parsers.isString)
+        .do(setError);
     } finally {
       setLoading(false);
     }
@@ -316,21 +318,18 @@ function RestrictionSites({
      */
   }, [enzymeSet]);
 
-  const handleRequestSort = (_event: mixed, property: string) => {
+  const handleRequestSort = (_event: unknown, property: string) => {
     const isDesc = orderBy === property && order === "desc";
     setOrder(isDesc ? "asc" : "desc");
     setOrderBy(property);
     setPage(0);
   };
 
-  const handleChangePage = (_event: mixed, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event: {
-    target: { value: number, ... },
-    ...
-  }) => {
+  const handleChangeRowsPerPage = (event: { target: { value: string } }) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -417,7 +416,11 @@ function RestrictionSites({
             value={enzymeSet}
             onChange={(event) => setEnzymeSet(event.target.value)}
           >
-            {Object.keys(enzymeSetOptions).map((key) => (
+            {(
+              Object.keys(enzymeSetOptions) as Array<
+                keyof typeof enzymeSetOptions
+              >
+            ).map((key) => (
               <FormControlLabel
                 value={key}
                 key={key}
@@ -437,11 +440,11 @@ function ViewAsFasta({
   show,
   file,
   idOfViewAsFastaTab,
-}: {|
-  show: boolean,
-  file: GalleryFile,
-  idOfViewAsFastaTab: string,
-|}) {
+}: {
+  show: boolean;
+  file: GalleryFile;
+  idOfViewAsFastaTab: string;
+}) {
   const [sequence, setSequence] = React.useState<null | string>(null);
 
   React.useEffect(() => {
@@ -453,10 +456,14 @@ function ViewAsFasta({
           setSequence(response.data);
         })
         .catch((e) => {
-          setSequence(e.response.data);
+          Parsers.objectPath(["response", "data"], e)
+            .flatMap(Parsers.isString)
+            .do(setSequence);
         });
     } catch (e) {
-      setSequence(e.message);
+      if (e instanceof Error) {
+        setSequence(e.message);
+      }
     }
   }, [file]);
 
@@ -512,37 +519,38 @@ const orfHeadCells = [
   },
 ];
 
-type Orf = {|
-  id: number,
-  fullRangeBegin: number,
-  fullRangeEnd: number,
-  molecularWeight: number,
-  readingFrame: number,
-  translation: string,
-|};
+type Orf = {
+  id: number;
+  fullRangeBegin: number;
+  fullRangeEnd: number;
+  molecularWeight: number;
+  readingFrame: number;
+  translation: string;
+};
 
 function OrfTable({
   show,
   file,
   idOfOrfTableTab,
-}: {|
-  show: boolean,
-  file: GalleryFile,
-  idOfOrfTableTab: string,
-|}) {
-  const [order, setOrder] = React.useState("desc");
+}: {
+  show: boolean;
+  file: GalleryFile;
+  idOfOrfTableTab: string;
+}) {
+  const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("version");
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [loading, setLoading] = React.useState(true);
-  const [readingFrameOption, setReadingFrameOption] = React.useState("ALL");
-  const [results, setResults] = React.useState<$ReadOnlyArray<Orf>>([]);
+  const [readingFrameOption, setReadingFrameOption] =
+    React.useState<keyof typeof readingFrameOptions>("ALL");
+  const [results, setResults] = React.useState<ReadonlyArray<Orf>>([]);
   const [filteredResults, setFilteredResults] = React.useState<
-    $ReadOnlyArray<Orf>
+    ReadonlyArray<Orf>
   >([]);
   const [error, setError] = React.useState<null | string>(null);
 
-  const filterResults = (passedResults: $ReadOnlyArray<Orf>) => {
+  const filterResults = (passedResults: ReadonlyArray<Orf>) => {
     const toInclude = readingFrameOptions[readingFrameOption].filter;
     const filtered = passedResults.filter((r) =>
       toInclude.includes(r.readingFrame)
@@ -556,12 +564,14 @@ function OrfTable({
     try {
       const url = `/molbiol/dna/orfs/${idToString(file.id).elseThrow()}`;
       const response = await axios.get<{
-        ORFs: $ReadOnlyArray<Orf>,
+        ORFs: ReadonlyArray<Orf>;
       }>(url);
       setResults(response.data.ORFs);
       filterResults(response.data.ORFs);
     } catch (e) {
-      setError(e.response.data);
+      Parsers.objectPath(["response", "data"], e)
+        .flatMap(Parsers.isString)
+        .do(setError);
     } finally {
       setLoading(false);
     }
@@ -582,21 +592,18 @@ function OrfTable({
      */
   }, [readingFrameOption]);
 
-  const handleRequestSort = (_event: mixed, property: string) => {
+  const handleRequestSort = (_event: unknown, property: string) => {
     const isDesc = orderBy === property && order === "desc";
     setOrder(isDesc ? "asc" : "desc");
     setOrderBy(property);
     setPage(0);
   };
 
-  const handleChangePage = (_event: mixed, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event: {
-    target: { value: string, ... },
-    ...
-  }) => {
+  const handleChangeRowsPerPage = (event: { target: { value: string } }) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -684,9 +691,17 @@ function OrfTable({
             aria-label="Enzyme type"
             name="enzymeSet"
             value={readingFrameOption}
-            onChange={(event) => setReadingFrameOption(event.target.value)}
+            onChange={(event) =>
+              setReadingFrameOption(
+                event.target.value as keyof typeof readingFrameOptions
+              )
+            }
           >
-            {Object.keys(readingFrameOptions).map((key) => (
+            {(
+              Object.keys(readingFrameOptions) as Array<
+                keyof typeof readingFrameOptions
+              >
+            ).map((key) => (
               <FormControlLabel
                 value={key}
                 key={key}
@@ -720,12 +735,12 @@ const SnapGenePreviewContext = React.createContext({
 /**
  * Use the callable snapgene preview component to display a dna sequence in a dialog.
  */
-export function useSnapGenePreview(): {|
+export function useSnapGenePreview(): {
   /**
    * Preview the dna sequence at this GalleryFile.
    */
-  openSnapGenePreview: (GalleryFile) => void,
-|} {
+  openSnapGenePreview: (file: GalleryFile) => void;
+} {
   const { setFile: openSnapGenePreview } = React.useContext(
     SnapGenePreviewContext
   );
@@ -743,9 +758,9 @@ export function useSnapGenePreview(): {|
  */
 export function CallableSnapGenePreview({
   children,
-}: {|
-  children: Node,
-|}): Node {
+}: {
+  children: React.ReactNode;
+}): React.ReactNode {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [tab, setTab] = React.useState("DNA preview");
   const idOfDnaPreviewTab = React.useId();
@@ -754,7 +769,7 @@ export function CallableSnapGenePreview({
   const idOfOrfTableTab = React.useId();
 
   function switchTab(
-    _e: Event,
+    _e: unknown,
     value: "DNA preview" | "Restriction sites" | "View as FASTA" | "ORF table"
   ) {
     setTab(value);
@@ -848,12 +863,7 @@ export function CallableSnapGenePreview({
                   </ListItemButton>
                 </ListItem>
               </CustomDrawer>
-              <Stack
-                orientation="vertical"
-                spacing={1}
-                flexGrow={1}
-                sx={{ minWidth: 0 }}
-              >
+              <Stack spacing={1} flexGrow={1} sx={{ minWidth: 0 }}>
                 <DialogContent>
                   <DnaPreview
                     show={tab === "DNA preview"}
