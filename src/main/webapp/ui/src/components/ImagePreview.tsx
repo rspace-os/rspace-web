@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import "photoswipe/dist/photoswipe.css";
 import { Gallery, Item } from "react-photoswipe-gallery";
 import { type URL } from "../util/types";
@@ -26,24 +24,23 @@ const useStyles = makeStyles()(() => ({
 /**
  * The dimensions of the image being previewed.
  */
-export type PreviewSize = {|
-  width: number,
-  height: number,
-|};
+export type PreviewSize = {
+  width: number;
+  height: number;
+};
 
-type ImagePreviewArgs = {|
-  closePreview: () => void,
-  link: URL,
-  size: ?PreviewSize,
-  setSize: (PreviewSize) => void,
-  modal?: boolean,
+type ImagePreviewArgs = {
+  closePreview: () => void;
+  link: URL;
+  size: PreviewSize | null;
+  setSize: (newSize: PreviewSize) => void;
 
   /*
    * A list of strings, shown from top to bottom, separated by two `<br />`s,
    * placed at the bottom of the viewport
    */
-  caption?: null | $ReadOnlyArray<string>,
-|};
+  caption?: null | ReadonlyArray<string>;
+};
 
 /**
  * A full-screen image previewer.
@@ -53,9 +50,8 @@ export default function ImagePreview({
   link,
   size,
   setSize,
-  modal = true,
   caption,
-}: ImagePreviewArgs): Node {
+}: ImagePreviewArgs): React.ReactNode {
   const { classes } = useStyles();
   return (
     <>
@@ -98,7 +94,6 @@ export default function ImagePreview({
         options={{
           showAnimationDuration: 0,
           hideAnimationDuration: 0,
-          modal,
           escKey: false,
         }}
         withDownloadButton
@@ -120,12 +115,14 @@ export default function ImagePreview({
           {({ ref, open: openFn }) => (
             <img
               className={classes.image}
-              ref={ref}
+              ref={ref as React.Ref<HTMLImageElement>}
               src={link}
               onLoad={() => {
                 setSize({
-                  width: ref.current?.naturalWidth,
-                  height: ref.current?.naturalHeight,
+                  width: (ref as React.MutableRefObject<HTMLImageElement>)
+                    ?.current?.naturalWidth,
+                  height: (ref as React.MutableRefObject<HTMLImageElement>)
+                    ?.current?.naturalHeight,
                 });
                 // for some unknown reason Safari needs 20ms break
                 setTimeout(openFn, 20);

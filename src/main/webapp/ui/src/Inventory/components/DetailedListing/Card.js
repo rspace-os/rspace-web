@@ -282,7 +282,6 @@ function RecordCard({ record }: CardArgs): Node {
             link={link}
             size={size}
             setSize={setSize}
-            modal={true}
           />
         </Portal>
       )}
