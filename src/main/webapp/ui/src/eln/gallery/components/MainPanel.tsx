@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  type ComponentType,
-  type Ref,
-  type ElementConfig,
-} from "react";
+import React from "react";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -19,7 +12,7 @@ import {
   GALLERY_SECTION,
 } from "../common";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import { styled, alpha, lighten } from "@mui/material/styles";
+import { styled, alpha, lighten, SxProps } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
@@ -31,6 +24,7 @@ import {
   useGalleryActions,
   folderDestination,
   rootDestination,
+  Destination,
 } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import { doNotAwait, match } from "../../../util/Util";
@@ -61,7 +55,6 @@ import SwapVertIcon from "@mui/icons-material/SwapVert";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import Link from "@mui/material/Link";
 import { Link as ReactRouterLink } from "react-router-dom";
 import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
 import Box from "@mui/material/Box";
@@ -83,7 +76,7 @@ import Carousel from "./Carousel";
 import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
 import { useFolderOpen } from "./OpenFolderProvider";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
-import Chip from "@mui/material/Chip";
+import Chip, { ChipProps } from "@mui/material/Chip";
 import Badge from "@mui/material/Badge";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -133,7 +126,18 @@ const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
 
 const StyledBreadcrumb = styled(
   //eslint-disable-next-line react/display-name
-  React.forwardRef((props, ref) => <Chip ref={ref} {...props} clickable />)
+  React.forwardRef<
+    HTMLDivElement,
+    ChipProps<
+      React.ElementType,
+      {
+        to: string;
+      }
+    >
+  >((props, ref) => (
+    // @ts-expect-error For some reason the component prop is not recognized
+    <Chip ref={ref} {...props} clickable component={ReactRouterLink} />
+  ))
 )(({ theme }) => ({
   height: theme.spacing(3.5),
   color: alpha(theme.palette.primary.contrastText, 0.85),
@@ -153,13 +157,17 @@ const StyledBreadcrumb = styled(
 StyledBreadcrumb.displayName = "StyledBreadcrumb";
 
 const DragOverlayContents = styled(
-  observer(({ className }) => {
+  observer(({ className }: { className?: string }) => {
     const dndContext = useDndContext();
     const selection = useGallerySelection();
 
     let numberBeingMoved = 0;
     if (dndContext.active) {
-      if (selection.includes(dndContext.active?.data.current.fileBeingMoved))
+      if (
+        selection.includes(
+          dndContext.active?.data.current?.fileBeingMoved as GalleryFile
+        )
+      )
         numberBeingMoved = selection.size;
       else numberBeingMoved = 1;
     }
@@ -195,9 +203,10 @@ const DragCancelFab = () => {
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: "cancel",
     disabled: false,
+    // @ts-expect-error possibly we don't need to pass this, but it seems to work just fine
     data: null,
   });
-  const dropStyle: { [string]: string | number } = isOver
+  const dropStyle: { [style: string]: string | number } = isOver
     ? {
         border: SELECTED_OR_FOCUS_BORDER,
       }
@@ -232,90 +241,74 @@ const DragCancelFab = () => {
 };
 
 const BreadcrumbLink = React.forwardRef<
-  ElementConfig<typeof Link>,
-  null | typeof Link
->(
-  (
-    {
-      folder,
-      section,
-      setSelectedSection,
-      tabIndex,
-      sx,
-    }: {|
-      /*
-       * Undefined means that it is a link to the root of the section
-       */
-      folder?: GalleryFile,
-      section: GallerySection,
-      setSelectedSection: (GallerySection) => void,
-      tabIndex: number,
-      sx: mixed,
-    |},
-    ref:
-      | null
-      | { -current: null | Ref<typeof Link> }
-      | ((null | Ref<typeof Link>) => mixed)
-  ) => {
-    const { setNodeRef: setDropRef, isOver } = useDroppable({
-      id: `/${[
-        section,
-        ...(folder?.path.map(({ name }) => name) ?? []),
-        folder?.name ?? "",
-      ].join("/")}/`,
-      disabled: false,
-      data: {
-        path: folder?.path ?? [],
-        destination: folder ? folderDestination(folder) : rootDestination(),
-      },
-    });
-    const dndContext = useDndContext();
-    const dndInProgress = Boolean(dndContext.active);
-    const { openFolder } = useFolderOpen();
-    const { trackEvent } = React.useContext(AnalyticsContext);
-
-    return (
-      <StyledBreadcrumb
-        component={ReactRouterLink}
-        to={""}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          trackEvent("user:tap:breadcrumb:gallery");
-          if (folder) {
-            openFolder(folder);
-          } else {
-            setSelectedSection(section);
-          }
-        }}
-        ref={(node) => {
-          setDropRef(node);
-          if (!ref) return;
-          if (typeof ref === "function") ref(node);
-          else ref.current = node;
-        }}
-        style={{
-          ...((dndInProgress && !isOver
-            ? { animation: "drop 2s linear infinite" }
-            : {}): { animation?: string, border?: string }),
-          ...((isOver ? { border: SELECTED_OR_FOCUS_BORDER } : {}): {
-            border?: string,
-            animation?: string,
-          }),
-        }}
-        tabIndex={tabIndex}
-        label={
-          folder?.name ??
-          getByKey(section, gallerySectionLabel).orElse("UNKNOWN")
-        }
-        icon={
-          folder ? null : getByKey(section, gallerySectionIcon).orElse(null)
-        }
-        sx={sx}
-      />
-    );
+  // null | typeof Link,
+  HTMLDivElement,
+  {
+    /*
+     * Undefined means that it is a link to the root of the section
+     */
+    folder?: GalleryFile;
+    section: GallerySection;
+    setSelectedSection: (section: GallerySection) => void;
+    tabIndex: number;
+    sx?: SxProps;
   }
-);
+>(({ folder, section, setSelectedSection, tabIndex, sx }, ref) => {
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `/${[
+      section,
+      ...(folder?.path.map(({ name }) => name) ?? []),
+      folder?.name ?? "",
+    ].join("/")}/`,
+    disabled: false,
+    data: {
+      path: folder?.path ?? [],
+      destination: folder ? folderDestination(folder) : rootDestination(),
+    },
+  });
+  const dndContext = useDndContext();
+  const dndInProgress = Boolean(dndContext.active);
+  const { openFolder } = useFolderOpen();
+  const { trackEvent } = React.useContext(AnalyticsContext);
+
+  return (
+    <StyledBreadcrumb
+      to={""}
+      onClick={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        trackEvent("user:tap:breadcrumb:gallery");
+        if (folder) {
+          openFolder(folder);
+        } else {
+          setSelectedSection(section);
+        }
+      }}
+      ref={(node) => {
+        setDropRef(node);
+        if (!ref) return;
+        if (typeof ref === "function") ref(node);
+        else ref.current = node;
+      }}
+      style={{
+        ...(dndInProgress && !isOver
+          ? { animation: "drop 2s linear infinite" }
+          : {}),
+        ...(isOver ? { border: SELECTED_OR_FOCUS_BORDER } : {}),
+      }}
+      tabIndex={tabIndex}
+      label={
+        folder?.name ?? getByKey(section, gallerySectionLabel).orElse("UNKNOWN")
+      }
+      {...(folder
+        ? {}
+        : getByKey(section, gallerySectionIcon)
+            .map((icon) => ({ icon }))
+            .orElse({}))}
+      sx={sx}
+    />
+  );
+});
 BreadcrumbLink.displayName = "BreadcrumbLink";
 
 const Path = observer(
@@ -323,16 +316,16 @@ const Path = observer(
     section,
     path,
     setSelectedSection,
-  }: {|
-    section: GallerySection,
-    path: $ReadOnlyArray<GalleryFile>,
-    setSelectedSection: (GallerySection) => void,
-  |}) => {
+  }: {
+    section: GallerySection;
+    path: ReadonlyArray<GalleryFile>;
+    setSelectedSection: (newSection: GallerySection) => void;
+  }) => {
     const {
       eventHandlers: { onFocus, onBlur, onKeyDown },
       getTabIndex,
       getRef,
-    } = useOneDimensionalRovingTabIndex<typeof Link>({
+    } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
       max: path.length,
       direction: "row",
     });
@@ -385,7 +378,7 @@ const Path = observer(
                   variant: "success",
                 })
               );
-            } catch (error) {
+            } catch {
               addAlert(
                 mkAlert({
                   message:
@@ -399,10 +392,19 @@ const Path = observer(
           icon={<LinkIcon />}
           sx={{
             backgroundColor: (theme) =>
-              alpha(lighten(theme.palette.primary.main, 0.1), 0.6),
+              alpha(
+                lighten((theme.palette.primary as { main: string }).main, 0.1),
+                0.6
+              ),
             "&:hover": {
               backgroundColor: (theme) =>
-                alpha(theme.palette.primary.main, 0.85),
+                alpha(
+                  lighten(
+                    (theme.palette.primary as { main: string }).main,
+                    0.1
+                  ),
+                  0.85
+                ),
             },
             padding: "2px",
             marginLeft: (theme) => theme.spacing(1),
@@ -437,17 +439,17 @@ const FileCard = styled(
           tabIndex,
           onFocus,
           onBlur,
-        }: {|
-          file: GalleryFile,
-          className: string,
-          selected: boolean,
-          index: number,
-          onClick: (Event) => void,
-          tabIndex: number,
-          onFocus: () => void,
-          onBlur: () => void,
-        |},
-        ref
+        }: {
+          file: GalleryFile;
+          className?: string;
+          selected: boolean;
+          index: number;
+          onClick: (event: React.MouseEvent) => void;
+          tabIndex: number;
+          onFocus: () => void;
+          onBlur: () => void;
+        },
+        ref: React.ForwardedRef<HTMLElement>
       ) => {
         const NAME_STYLES = {
           LINE_HEIGHT: 1.5,
@@ -475,16 +477,21 @@ const FileCard = styled(
             disabled: !file.isFolder,
           });
 
+        if (!file.id) throw new Error("File ID is null");
         const { setNodeRef: setDropRef, isOver } = useDroppable({
           id: file.id,
           disabled:
             !file.isFolder ||
-            isBeingMoved(file, dndContext.active?.data.current.fileBeingMoved),
+            isBeingMoved(
+              file,
+              dndContext.active?.data.current?.fileBeingMoved as GalleryFile
+            ),
           data: {
             path: file.path,
             destination: folderDestination(file),
           },
         });
+        if (file.id === null) throw new Error("File ID is null");
         const {
           attributes,
           listeners,
@@ -501,6 +508,7 @@ const FileCard = styled(
          * keyboard controls of MUI's SimpleTreeView stop working. Keeping the
          * correct role for tree items doesn't prevent DndKit from working.
          */
+        // @ts-expect-error This is a bit of a hack
         delete attributes.role;
 
         /*
@@ -519,36 +527,43 @@ const FileCard = styled(
          * these excessive re-renders and make the UI more responsive in
          * updating the selection state.
          */
-        const [dndDebounce, setDndDebounce] = React.useState<null | TimeoutID>(
-          null
-        );
+        const [dndDebounce, setDndDebounce] =
+          React.useState<null | NodeJS.Timeout>(null);
 
         const dropStyle = {
-          ...((isOver ? { borderColor: SELECTED_OR_FOCUS_BLUE } : {}): {
-            [string]: string | number,
-          }),
-          ...((!isOver &&
+          ...(isOver ? { borderColor: SELECTED_OR_FOCUS_BLUE } : {}),
+          ...(!isOver &&
           dndInProgress &&
           file.isFolder &&
-          !isBeingMoved(file, dndContext.active?.data.current.fileBeingMoved)
+          !isBeingMoved(
+            file,
+            dndContext.active?.data.current?.fileBeingMoved as
+              | GalleryFile
+              | null
+              | typeof undefined
+          )
             ? {
                 border: "2px solid white",
                 borderWidth: "2px",
                 borderRadius: "8px",
                 animation: "drop 2s linear infinite",
               }
-            : {}): { [string]: string | number }),
+            : {}),
         };
-        const inGroupBeingDraggedStyle: { [string]: string | number } =
+        const inGroupBeingDraggedStyle =
           Boolean(dndContext.active?.data.current?.fileBeingMoved) &&
-          (selection.includes(dndContext.active.data.current.fileBeingMoved)
+          (selection.includes(
+            dndContext.active?.data.current?.fileBeingMoved as GalleryFile
+          )
             ? selection.includes(file)
-            : file.id === dndContext.active.data.current.fileBeingMoved.id)
+            : file.id ===
+              (dndContext.active?.data.current?.fileBeingMoved as GalleryFile)
+                .id)
             ? {
                 opacity: 0.2,
               }
             : {};
-        const fileUploadDropping: { [string]: string | number } = over
+        const fileUploadDropping = over
           ? {
               borderColor: SELECTED_OR_FOCUS_BLUE,
             }
@@ -592,6 +607,7 @@ const FileCard = styled(
               }}
             >
               <Card
+                component="div"
                 elevation={0}
                 className={className}
                 /*
@@ -604,33 +620,40 @@ const FileCard = styled(
                 /*
                  * These are for dragging files between folders within the gallery
                  */
-                ref={(node) => {
+                ref={(node: HTMLDivElement) => {
                   setDropRef(node);
                   setDragRef(node);
-                  // $FlowExpectedError[prop-missing]
-                  if (ref) ref.current = node;
+                  if (ref) {
+                    if (typeof ref === "function") {
+                      ref(node);
+                    } else {
+                      ref.current = node;
+                    }
+                  }
                 }}
                 onMouseDown={(...args) => {
                   setDndDebounce(
                     setTimeout(() => {
-                      listeners.onMouseDown(...args);
+                      listeners?.onMouseDown(...args);
                     }, 500)
                   );
                 }}
                 onMouseUp={() => {
-                  clearTimeout(dndDebounce);
+                  if (dndDebounce) clearTimeout(dndDebounce);
                 }}
                 onTouchStart={(...args) => {
                   setDndDebounce(
                     setTimeout(() => {
-                      listeners.onTouchStart(...args);
+                      listeners?.onTouchStart(...args);
                     }, 500)
                   );
                 }}
                 onTouchEnd={() => {
-                  clearTimeout(dndDebounce);
+                  if (dndDebounce) clearTimeout(dndDebounce);
                 }}
-                onKeyDown={listeners.onKeyDown}
+                onKeyDown={
+                  listeners?.onKeyDown as React.KeyboardEventHandler<HTMLDivElement>
+                }
                 {...attributes}
                 tabIndex={tabIndex}
                 onFocus={onFocus}
@@ -653,7 +676,7 @@ const FileCard = styled(
                  */
                 {...file.canOpen
                   .map(() => ({
-                    onKeyDown: (e: KeyboardEvent) => {
+                    onKeyDown: (e: React.KeyboardEvent) => {
                       if (e.key === " ") openFolder(file);
                     },
                   }))
@@ -848,17 +871,17 @@ FileCard.displayName = "FileCard";
 const GridView = observer(
   ({
     listing,
-  }: {|
+  }: {
     listing:
-      | {| tag: "empty", reason: string, refreshing: boolean |}
-      | {|
-          tag: "list",
-          list: $ReadOnlyArray<GalleryFile>,
-          totalHits: number,
-          loadMore: Optional<() => Promise<void>>,
-          refreshing: boolean,
-        |},
-  |}) => {
+      | { tag: "empty"; reason: string; refreshing: boolean }
+      | {
+          tag: "list";
+          list: ReadonlyArray<GalleryFile>;
+          totalHits: number;
+          loadMore: Optional<() => Promise<void>>;
+          refreshing: boolean;
+        };
+  }) => {
     const dndContext = useDndContext();
     const selection = useGallerySelection();
     const { openImagePreview } = useImagePreview();
@@ -891,7 +914,7 @@ const GridView = observer(
      * the ref of the card that has focus, if the grid has focus, otherwise the
      * ref of the card that would have focus if the grid had focus
      */
-    const focusFileCardRef = React.useRef(null);
+    const focusFileCardRef = React.useRef<HTMLDivElement | null>(null);
 
     /*
      * When tabIndexCoord changes, perhaps because an arrow key has been
@@ -966,10 +989,10 @@ const GridView = observer(
               return;
             }
             const newCoord: {
-              [string]: ({ x: number, y: number }) => {
-                x: number,
-                y: number,
-              },
+              [key: string]: ({ x, y }: { x: number; y: number }) => {
+                x: number;
+                y: number;
+              };
             } = {
               ArrowRight: ({ x, y }) => ({
                 x: Math.min(x + 1, cols),
@@ -1198,13 +1221,13 @@ const PathAndSearch = observer(
     selectedSection,
     path,
     setSelectedSection,
-  }: {|
-    appliedSearchTerm: string,
-    setAppliedSearchTerm: (string) => void,
-    selectedSection: GallerySection | null,
-    path: $ReadOnlyArray<GalleryFile> | null,
-    setSelectedSection: (GallerySection) => void,
-  |}) => {
+  }: {
+    appliedSearchTerm: string;
+    setAppliedSearchTerm: (searchTerm: string) => void;
+    selectedSection: GallerySection | null;
+    path: ReadonlyArray<GalleryFile> | null;
+    setSelectedSection: (section: GallerySection) => void;
+  }) => {
     const { isViewportVerySmall } = useViewportDimensions();
 
     /*
@@ -1223,7 +1246,7 @@ const PathAndSearch = observer(
      * text field when it is opened , triggering the virtual keyboard.
      */
     const [searchOpen, setSearchOpen] = React.useState(false);
-    const searchTextfield = React.useRef();
+    const searchTextfield = React.useRef<HTMLInputElement | null>(null);
 
     if (!selectedSection) return null;
 
@@ -1308,29 +1331,29 @@ const PathAndSearch = observer(
   }
 );
 
-type GalleryMainPanelArgs = {|
-  selectedSection: GallerySection | null,
-  path: $ReadOnlyArray<GalleryFile> | null,
-  setSelectedSection: (GallerySection) => void,
+type GalleryMainPanelArgs = {
+  selectedSection: GallerySection | null;
+  path: ReadonlyArray<GalleryFile> | null;
+  setSelectedSection: (section: GallerySection) => void;
   galleryListing: FetchingData.Fetched<
-    | {| tag: "empty", reason: string, refreshing: boolean |}
-    | {|
-        tag: "list",
-        list: $ReadOnlyArray<GalleryFile>,
-        totalHits: number,
-        loadMore: Optional<() => Promise<void>>,
-        refreshing: boolean,
-      |}
-  >,
-  folderId: FetchingData.Fetched<Id>,
-  refreshListing: () => Promise<void>,
-  sortOrder: "DESC" | "ASC",
-  orderBy: "name" | "modificationDate",
-  setSortOrder: ("DESC" | "ASC") => void,
-  setOrderBy: ("name" | "modificationDate") => void,
-  appliedSearchTerm: string,
-  setAppliedSearchTerm: (string) => void,
-|};
+    | { tag: "empty"; reason: string; refreshing: boolean }
+    | {
+        tag: "list";
+        list: ReadonlyArray<GalleryFile>;
+        totalHits: number;
+        loadMore: Optional<() => Promise<void>>;
+        refreshing: boolean;
+      }
+  >;
+  folderId: FetchingData.Fetched<Id>;
+  refreshListing: () => Promise<void>;
+  sortOrder: "DESC" | "ASC";
+  orderBy: "name" | "modificationDate";
+  setSortOrder: (order: "DESC" | "ASC") => void;
+  setOrderBy: (orderBy: "name" | "modificationDate") => void;
+  appliedSearchTerm: string;
+  setAppliedSearchTerm: (term: string) => void;
+};
 
 function GalleryMainPanel({
   selectedSection,
@@ -1345,7 +1368,7 @@ function GalleryMainPanel({
   setOrderBy,
   appliedSearchTerm,
   setAppliedSearchTerm,
-}: GalleryMainPanelArgs): Node {
+}: GalleryMainPanelArgs): React.ReactNode {
   const viewportDimensions = useViewportDimensions();
   const { uploadFiles } = useGalleryActions();
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -1367,14 +1390,16 @@ function GalleryMainPanel({
         }
       }),
     });
-  const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
+  const [viewMenuAnchorEl, setViewMenuAnchorEl] =
+    React.useState<HTMLElement | null>(null);
   const [viewMode, _setViewMode] = useUiPreference(
     PREFERENCES.GALLERY_VIEW_MODE,
     {
       defaultValue: "grid",
     }
   );
-  const [sortMenuAnchorEl, setSortMenuAnchorEl] = React.useState(null);
+  const [sortMenuAnchorEl, setSortMenuAnchorEl] =
+    React.useState<HTMLElement | null>(null);
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
 
@@ -1429,11 +1454,11 @@ function GalleryMainPanel({
         sensors={[mouseSensor, touchSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
-          const filesBeingMoved = selection.includes(
-            event.active.data.current.fileBeingMoved
-          )
+          const fileBeingMoved = event.active.data.current
+            ?.fileBeingMoved as GalleryFile;
+          const filesBeingMoved = selection.includes(fileBeingMoved)
             ? selection.asSet()
-            : new RsSet([event.active.data.current.fileBeingMoved]);
+            : new RsSet([fileBeingMoved]);
           /*
            * When tapping, holding, and then releasing on a folder onDragEnd is
            * invoked with event.over.data.current.destination.folder and
@@ -1441,12 +1466,17 @@ function GalleryMainPanel({
            * is clearly an unintended operation and we should not attempt
            * to move the container into itself.
            */
-          if (filesBeingMoved.has(event.over.data.current.destination.folder))
-            return;
+
+          const destination = event.over.data.current
+            .destination as Destination;
+          if (destination.key === "folder") {
+            const destinationFolder = destination.folder;
+            if (filesBeingMoved.has(destinationFolder)) return;
+          }
           if (!selectedSection) return;
           void moveFiles(
             selectedSection,
-            event.over.data.current.destination,
+            event.over.data.current.destination as Destination,
             filesBeingMoved
           ).then(() => {
             void refreshListing();
@@ -1589,7 +1619,7 @@ function GalleryMainPanel({
                   ])()}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
-                  avatar={match<void, Node>([
+                  avatar={match<void, React.ReactNode>([
                     [
                       () => orderBy !== "name",
                       <HorizontalRuleIcon key={null} />,
@@ -1605,7 +1635,7 @@ function GalleryMainPanel({
                   ])()}
                   onClick={() => {
                     setSortMenuAnchorEl(null);
-                    let newSortOrder = "ASC";
+                    let newSortOrder: "ASC" | "DESC" = "ASC";
                     if (orderBy === "name" && sortOrder === "ASC")
                       newSortOrder = "DESC";
                     setSortOrder(newSortOrder);
@@ -1644,7 +1674,7 @@ function GalleryMainPanel({
                   ])()}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
-                  avatar={match<void, Node>([
+                  avatar={match<void, React.ReactNode>([
                     [
                       () => orderBy !== "modificationDate",
                       <HorizontalRuleIcon key={null} />,
@@ -1660,7 +1690,7 @@ function GalleryMainPanel({
                   ])()}
                   onClick={() => {
                     setSortMenuAnchorEl(null);
-                    let newSortOrder = "ASC";
+                    let newSortOrder: "ASC" | "DESC" = "ASC";
                     if (orderBy === "modificationDate" && sortOrder === "ASC")
                       newSortOrder = "DESC";
                     setSortOrder(newSortOrder);
@@ -1815,6 +1845,4 @@ function GalleryMainPanel({
  * the listing of files itself, the info panel, and the dropzone for dragging
  * in files from outside the browser.
  */
-export default (observer(
-  GalleryMainPanel
-): ComponentType<GalleryMainPanelArgs>);
+export default observer(GalleryMainPanel);
