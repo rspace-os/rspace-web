@@ -23,13 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 abstract class AbstractApiAuthenticator implements ApiAuthenticator {
   private @Autowired IUserPermissionUtils userPermissionUtils;
 
-  /*
-   * Package scoped for testing
-   */
-  void doLogin(String apiKey, User u) {
-    SecurityUtils.getSubject().login(new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
-  }
-
   /**
    * Retrieve token from HttpRequest, validating syntax as well
    *
@@ -49,7 +42,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
     if (!userOpt.isPresent()) {
       throw new ApiAuthenticationException(
           String.format(
-              "User could not be authenticated for token %s", abbreviate(accessToken, 10)));
+              "User could not be authenticated for token %s...", abbreviate(accessToken, 4)));
     }
 
     User targetUser = userOpt.get();
@@ -91,6 +84,14 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
     return targetUser;
   }
 
+  /*
+   * Package scoped for testing
+   */
+  void doLogin(String apiKey, User u) {
+    SecurityUtils.getSubject().login(new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
+  }
+
+  @Override
   public void logout() {
     SecurityUtils.getSubject().logout();
   }

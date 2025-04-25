@@ -18,12 +18,12 @@ public class MainRSpaceApiAuthenticator implements ApiAuthenticator {
   private ApiAvailabilityHandler apiHandler;
 
   public MainRSpaceApiAuthenticator(
-      UserApiKeyManager userApiKeyManager,
+      ApiKeyAuthenticator apiKeyAuthenticator,
       OAuthTokenAuthenticator oAuthAuthenticator,
       AnalyticsManager analyticsManager,
       ApiAvailabilityHandler apiAvailabilityHandler) {
 
-    this.apiKeyAuthenticator = new ApiKeyAuthenticator(userApiKeyManager);
+    this.apiKeyAuthenticator = apiKeyAuthenticator;
     this.oAuthAuthenticator = oAuthAuthenticator;
     this.analyticsMgr = analyticsManager;
     this.apiHandler = apiAvailabilityHandler;

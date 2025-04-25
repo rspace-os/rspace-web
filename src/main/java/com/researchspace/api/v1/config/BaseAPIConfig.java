@@ -2,6 +2,7 @@ package com.researchspace.api.v1.config;
 
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticator;
+import com.researchspace.api.v1.auth.ApiKeyAuthenticator;
 import com.researchspace.api.v1.auth.MainRSpaceApiAuthenticator;
 import com.researchspace.api.v1.auth.OAuthTokenAuthenticator;
 import com.researchspace.api.v1.controller.APIFileUploadThrottlingInterceptor;
@@ -40,7 +41,7 @@ public class BaseAPIConfig {
     return new APIFileUploadThrottlingInterceptor(fileUploadThrottler);
   }
 
-  @Autowired @Lazy UserApiKeyManager apiMgr;
+  @Autowired @Lazy UserApiKeyManager apiKeyMgr;
 
   // implementation can be changed in future or altered depending on environment
   @Bean
@@ -50,7 +51,8 @@ public class BaseAPIConfig {
       ApiAvailabilityHandler apiAvailabilityHandler) {
 
     return new MainRSpaceApiAuthenticator(
-        apiMgr, oAuthTokenAuthenticator, analyticsManager, apiAvailabilityHandler);
+        new ApiKeyAuthenticator(apiKeyMgr), oAuthTokenAuthenticator,
+        analyticsManager, apiAvailabilityHandler);
   }
 
   @Bean

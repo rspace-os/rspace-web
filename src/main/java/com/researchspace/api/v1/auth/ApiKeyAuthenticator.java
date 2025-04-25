@@ -36,4 +36,5 @@ public class ApiKeyAuthenticator extends AbstractApiAuthenticator {
   Function<String, Optional<User>> findUserForToken() {
     return apiKey -> apiMgr.findUserByKey(apiKey);
   }
+
 }

@@ -3,6 +3,10 @@ package com.researchspace.api.v1.auth;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.analytics.service.AnalyticsManager;
@@ -27,29 +31,53 @@ import org.springframework.mock.web.MockHttpServletRequest;
 public class MainRSpaceApiAuthenticatorTest {
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
-  @Mock UserApiKeyManager apiKeyMgr;
+  @Mock ApiKeyAuthenticator apiKeyAuthenticator;
   @Mock OAuthTokenAuthenticator oAuthAuthenticator;
   @Mock AnalyticsManager analyticsManager;
   @Mock ApiAvailabilityHandler apiAvailabilityHandler;
-  @InjectMocks MainRSpaceApiAuthenticator apiAuthenticator;
+  @InjectMocks MainRSpaceApiAuthenticator mainRSpaceAuthenticator;
 
   MockHttpServletRequest mockRequest;
 
   @Test
   public void testOauthAuthoriseOK() {
     mockRequest = new MockHttpServletRequest();
+    User user = TestFactory.createAnyUser("testOauthUser");
     when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
+    when(oAuthAuthenticator.authenticate(mockRequest)).thenReturn(user);
+
     setAuthorizationHeader();
-    User authenticatedUser = apiAuthenticator.authenticate(mockRequest);
-    assertNull(authenticatedUser);
+    User authenticatedUser = mainRSpaceAuthenticator.authenticate(mockRequest);
+    assertEquals(user, authenticatedUser);
+
+    verifyNoInteractions(apiKeyAuthenticator);
+    /* currently no event on oauth token usage, only on generation */
+    verifyNoInteractions(analyticsManager);
+  }
+
+  @Test
+  public void testApiKeyAuthoriseOK() {
+    mockRequest = new MockHttpServletRequest();
+    User user = TestFactory.createAnyUser("testApiKeyUser");
+    when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
+    when(apiAvailabilityHandler.isApiAvailableForUser(user)).thenReturn(true);
+    when(apiKeyAuthenticator.authenticate(mockRequest)).thenReturn(user);
+
+    setApiKeyHeader();
+    User authenticatedUser = mainRSpaceAuthenticator.authenticate(mockRequest);
+    assertEquals(user, authenticatedUser);
+
+    verifyNoInteractions(oAuthAuthenticator);
+    verify(analyticsManager, times(1))
+        .apiAccessed(eq(user), eq(true), eq(mockRequest));
   }
 
   private void setApiKeyHeader() {
-    mockRequest.addHeader("apiKey", "1234");
+    mockRequest.addHeader("apiKey", "12345");
   }
 
   private void setAuthorizationHeader() {
-    mockRequest.addHeader("Authorization", "Bearer 123");
+    mockRequest.addHeader("Authorization", "Bearer 54321");
   }
 
 }
