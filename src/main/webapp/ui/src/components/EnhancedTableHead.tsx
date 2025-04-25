@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type Key } from "react";
+import React from "react";
 import { makeStyles } from "tss-react/mui";
 import TableSortLabel from "./TableSortLabel";
 import TableHead from "@mui/material/TableHead";
@@ -23,30 +21,33 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-export type Cell<COLUMN_ID_TYPE: Key> = {|
-  id: COLUMN_ID_TYPE,
-  numeric: boolean,
-  label: string,
-  sortable?: boolean,
-  disablePadding?: boolean,
-|};
+export type Cell<COLUMN_ID_TYPE extends React.Key> = {
+  id: COLUMN_ID_TYPE;
+  numeric: boolean;
+  label: string;
+  sortable?: boolean;
+  disablePadding?: boolean;
+};
 
-type EnhancedTableHeadArgs<COLUMN_ID_TYPE: Key> = {|
-  headCells: Array<Cell<COLUMN_ID_TYPE>>,
-  headStyle?: string,
-  order: Order,
-  orderBy: COLUMN_ID_TYPE,
-  onRequestSort: (Event, COLUMN_ID_TYPE) => void,
-  selectAll?: boolean,
-  onSelectAllClick?: ({ target: { checked: boolean } }) => void,
-  numSelected?: number,
-  rowCount: number,
-  emptyCol?: boolean,
-|};
+type EnhancedTableHeadArgs<COLUMN_ID_TYPE extends React.Key> = {
+  headCells: Array<Cell<COLUMN_ID_TYPE>>;
+  headStyle?: string;
+  order: Order;
+  orderBy: COLUMN_ID_TYPE;
+  onRequestSort: (
+    event: React.MouseEvent<HTMLSpanElement>,
+    column: COLUMN_ID_TYPE
+  ) => void;
+  selectAll?: boolean;
+  onSelectAllClick?: (event: { target: { checked: boolean } }) => void;
+  numSelected?: number;
+  rowCount: number;
+  emptyCol?: boolean;
+};
 
-export default function EnhancedTableHead<COLUMN_ID_TYPE: Key>(
+export default function EnhancedTableHead<COLUMN_ID_TYPE extends React.Key>(
   props: EnhancedTableHeadArgs<COLUMN_ID_TYPE>
-): Node {
+): React.ReactNode {
   const { classes } = useStyles();
   const {
     headCells,
@@ -60,15 +61,17 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE: Key>(
     rowCount,
     emptyCol,
   } = props;
-  const createSortHandler = (property: COLUMN_ID_TYPE) => (event: Event) => {
-    onRequestSort(event, property);
-  };
+  const createSortHandler =
+    (property: COLUMN_ID_TYPE) =>
+    (event: React.MouseEvent<HTMLSpanElement>) => {
+      onRequestSort(event, property);
+    };
 
   return (
     <TableHead>
       <TableRow>
         {selectAll && typeof numSelected === "number" && (
-          <TableCell padding="checkbox" className={headStyle ?? null}>
+          <TableCell padding="checkbox" className={headStyle ?? ""}>
             <Checkbox
               color="primary"
               indeterminate={numSelected > 0 && numSelected < rowCount}
@@ -79,15 +82,15 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE: Key>(
           </TableCell>
         )}
         {emptyCol && (
-          <TableCell padding="checkbox" className={headStyle ?? null} />
+          <TableCell padding="checkbox" className={headStyle ?? ""} />
         )}
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
             align={headCell.numeric ? "right" : "left"}
             padding={headCell.disablePadding ? "none" : "normal"}
-            sortDirection={(orderBy === headCell.id) !== "" ? order : false}
-            className={headStyle ?? null}
+            {...(orderBy === headCell.id && { sortDirection: order })}
+            className={headStyle ?? ""}
           >
             {(typeof headCell.sortable === "undefined" ||
               headCell.sortable === true) && (
