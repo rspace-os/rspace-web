@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import Button from "@mui/material/Button";
 import { type GallerySection } from "../common";
@@ -79,26 +77,26 @@ const UploadNewVersionMenuItem = ({
   onSuccess,
   onError,
   folderId,
-}: {|
+}: {
   /*
    * Called when the selected local file has been uploaded and has successfully
    * replaced the contents of the gallery file.
    */
-  onSuccess: () => void,
+  onSuccess: () => void;
 
   /*
    * Called when either there is an error uploading the file or the user has
    * cancelled the operating system's file picker.
    */
-  onError: () => void,
+  onError: () => void;
 
   /*
    * The current folder being shown in the UI. It's not clear why this is
    * necessary given that the Id of the selected file should be sufficient to
    * identify it, but the API requires it so pass it we must.
    */
-  folderId: FetchingData.Fetched<Id>,
-|}) => {
+  folderId: FetchingData.Fetched<Id>;
+}) => {
   const { uploadNewVersion } = useGalleryActions();
   const { trackEvent } = React.useContext(AnalyticsContext);
   const selection = useGallerySelection();
@@ -134,7 +132,7 @@ const UploadNewVersionMenuItem = ({
           .map(() => "")
           .orElseGet(([e]) => e.message)}
         avatar={<FileUploadIcon />}
-        onKeyDown={(e: KeyboardEvent) => {
+        onKeyDown={(e: React.KeyboardEvent) => {
           if (e.key === " ") newVersionInputRef.current?.click();
         }}
         onClick={() => {
@@ -145,11 +143,14 @@ const UploadNewVersionMenuItem = ({
       />
       {selection
         .asSet()
-        .only.map((file) => [file, file.extension])
+        .only.map<[GalleryFile, string | null]>((file) => [
+          file,
+          file.extension,
+        ])
         .flatMap(([f, ext]) =>
           Parsers.isNotNull(ext)
             .toOptional()
-            .map((e) => [f, e])
+            .map<[GalleryFile, string | null]>((e) => [f, e])
         )
         .map(([file, extension]) => (
           <input
@@ -181,7 +182,8 @@ const UploadNewVersionMenuItem = ({
                * that multiple files have been selected; the OS will prevent
                * it.
                */
-              const newFile = ArrayUtils.head(files)
+              if (!files || files.length === 0) return;
+              const newFile = ArrayUtils.head([...files])
                 .mapError(() => new Error("No files selected"))
                 .elseThrow();
 
@@ -209,11 +211,11 @@ const RenameDialog = ({
   open,
   onClose,
   file,
-}: {|
-  open: boolean,
-  onClose: () => void,
-  file: GalleryFile,
-|}) => {
+}: {
+  open: boolean;
+  onClose: () => void;
+  file: GalleryFile;
+}) => {
   const [newName, setNewName] = React.useState("");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { rename } = useGalleryActions();
@@ -286,18 +288,19 @@ const StyledMenu = styled(Menu)(({ open }) => ({
   },
 }));
 
-type ActionsMenuArgs = {|
-  refreshListing: () => Promise<void>,
-  section: GallerySection | null,
-  folderId: FetchingData.Fetched<Id>,
-|};
+type ActionsMenuArgs = {
+  refreshListing: () => Promise<void>;
+  section: GallerySection | null;
+  folderId: FetchingData.Fetched<Id>;
+};
 
 function ActionsMenu({
   refreshListing,
   section,
   folderId,
-}: ActionsMenuArgs): Node {
-  const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
+}: ActionsMenuArgs): React.ReactNode {
+  const [actionsMenuAnchorEl, setActionsMenuAnchorEl] =
+    React.useState<HTMLElement | null>(null);
   const { deleteFiles, duplicateFiles, uploadFiles, download } =
     useGalleryActions();
   const selection = useGallerySelection();
@@ -336,24 +339,27 @@ function ActionsMenu({
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
       .flatMap<
-        | {| key: "image", downloadHref: () => Promise<URL> |}
-        | {| key: "collabora", url: string |}
-        | {| key: "officeonline", url: string |}
+        | { key: "image"; downloadHref: () => Promise<URL> }
+        | { key: "collabora"; url: string }
+        | { key: "officeonline"; url: string }
       >((file) => {
         if (file.isImage && typeof file.downloadHref !== "undefined")
-          return Result.Ok({ key: "image", downloadHref: file.downloadHref });
+          return Result.Ok({
+            key: "image" as const,
+            downloadHref: file.downloadHref,
+          });
         return canEditWithCollabora(file)
           .map((url) => ({
-            key: "collabora",
+            key: "collabora" as const,
             url,
           }))
           .orElseTry(() =>
             canEditWithOfficeOnline(file).map<
-              | {| key: "image", downloadHref: () => Promise<URL> |}
-              | {| key: "collabora", url: string |}
-              | {| key: "officeonline", url: string |}
+              | { key: "image"; downloadHref: () => Promise<URL> }
+              | { key: "collabora"; url: string }
+              | { key: "officeonline"; url: string }
             >((url) => ({
-              key: "officeonline",
+              key: "officeonline" as const,
               url,
             }))
           )
@@ -376,7 +382,7 @@ function ActionsMenu({
       .flatMap((file) =>
         canPreviewAsImage(file)
           .map((downloadHref) => ({
-            key: "image",
+            key: "image" as const,
             downloadHref,
             caption: [
               file.description.match({
@@ -389,15 +395,21 @@ function ActionsMenu({
           }))
           .orElseTry(() =>
             canPreviewAsPdf(file).map((downloadHref) => ({
-              key: "pdf",
+              key: "pdf" as const,
               downloadHref,
             }))
           )
           .orElseTry(() =>
-            canPreviewWithSnapGene(file).map(() => ({ key: "snapgene", file }))
+            canPreviewWithSnapGene(file).map(() => ({
+              key: "snapgene" as const,
+              file,
+            }))
           )
           .orElseTry(() =>
-            canPreviewWithAspose(file).map(() => ({ key: "aspose", file }))
+            canPreviewWithAspose(file).map(() => ({
+              key: "aspose" as const,
+              file,
+            }))
           )
       )
   );
@@ -594,13 +606,15 @@ function ActionsMenu({
                       });
                       setImageEditorBlob(data);
                     } catch (e) {
-                      addAlert(
-                        mkAlert({
-                          variant: "error",
-                          title: "Failed to download image for editing",
-                          message: e.message,
-                        })
-                      );
+                      if (e instanceof Error) {
+                        addAlert(
+                          mkAlert({
+                            variant: "error",
+                            title: "Failed to download image for editing",
+                            message: e.message,
+                          })
+                        );
+                      }
                     }
                   }
                 })
@@ -735,6 +749,7 @@ function ActionsMenu({
             )
               .map((exportIds) => (
                 <ExportDialog
+                  key={exportIds.join(",")}
                   open={exportOpen}
                   onClose={() => {
                     setExportOpen(false);
@@ -781,6 +796,7 @@ function ActionsMenu({
           )
             .map((selectedIds) => (
               <MoveToIrods
+                key={selectedIds.join(",")}
                 selectedIds={selectedIds}
                 dialogOpen={irodsOpen}
                 setDialogOpen={(newState) => {
@@ -803,6 +819,7 @@ function ActionsMenu({
             .get()
             .map((filestore) => (
               <AccentMenuItem
+                key={filestore.id}
                 title="Log Out"
                 subheader={logOutAllowed
                   .get()
@@ -872,13 +889,15 @@ function ActionsMenu({
             void refreshListing();
             trackEvent("user:edit:image:gallery");
           } catch (e) {
-            addAlert(
-              mkAlert({
-                variant: "error",
-                title: "Failed to process edited image",
-                message: e.message,
-              })
-            );
+            if (e instanceof Error) {
+              addAlert(
+                mkAlert({
+                  variant: "error",
+                  title: "Failed to process edited image",
+                  message: e.message,
+                })
+              );
+            }
           } finally {
             setActionsMenuAnchorEl(null);
           }
@@ -946,4 +965,4 @@ function ActionsMenu({
  * based on the current selection, which can include folders, files of various
  * types, and even files in external filestores.
  */
-export default (observer(ActionsMenu): ComponentType<ActionsMenuArgs>);
+export default observer(ActionsMenu);
