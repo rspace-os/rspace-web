@@ -1,0 +1,11 @@
+//@flow
+
+import { type Node } from "react";
+import { type GallerySection } from "../common";
+
+declare export default function MoveDialog({|
+  open: boolean,
+  onClose: () => void,
+  section: GallerySection,
+  refreshListing: () => Promise<void>,
+|}): Node;

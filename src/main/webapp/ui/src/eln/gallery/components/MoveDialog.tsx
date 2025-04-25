@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -29,19 +27,19 @@ import PlaceholderLabel from "./PlaceholderLabel";
 import { doNotAwait } from "../../../util/Util";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
-type MoveDialogArgs = {|
-  open: boolean,
-  onClose: () => void,
-  section: GallerySection,
-  selectedFiles: RsSet<GalleryFile>,
+type MoveDialogArgs = {
+  open: boolean;
+  onClose: () => void;
+  section: GallerySection;
+  selectedFiles: RsSet<GalleryFile>;
 
   /**
    * A function to refresh the page's main listing after a move operation.
    * Note that this is distinct from the refreshListing function for refreshing
    * the tree view inside of the dialog.
    */
-  refreshListing: () => Promise<void>,
-|};
+  refreshListing: () => Promise<void>;
+};
 
 const MoveDialog = observer(
   ({
@@ -50,15 +48,15 @@ const MoveDialog = observer(
     section,
     selectedFiles,
     refreshListing,
-  }: MoveDialogArgs): Node => {
+  }: MoveDialogArgs): React.ReactNode => {
     const { isViewportVerySmall } = useViewportDimensions();
     const { trackEvent } = React.useContext(AnalyticsContext);
 
     const listingOf = React.useMemo(
       () => ({
-        tag: "section",
+        tag: "section" as const,
         section,
-        path: ([]: $ReadOnlyArray<GalleryFile>),
+        path: [],
       }),
       [section]
     );
@@ -216,8 +214,8 @@ const MoveDialog = observer(
  */
 // eslint-disable-next-line react/display-name -- This is a wrapper component
 export default (
-  props: $Diff<MoveDialogArgs, {| selectedFiles: mixed |}>
-): Node => {
+  props: Omit<MoveDialogArgs, "selectedFiles">
+): React.ReactNode => {
   const selection = useGallerySelection();
   return (
     <GallerySelection onlyAllowSingleSelection>
