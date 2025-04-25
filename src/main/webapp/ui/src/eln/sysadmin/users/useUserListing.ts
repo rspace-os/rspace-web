@@ -234,12 +234,12 @@ export function useUserListing(): {
 
         try {
           const { data } = await axios.post<
-            | object
+            | ""
             | {
                 exceptionMessage: string;
               }
           >("/system/ajax/unlockAccount", formData);
-          if ("exceptionMessage" in data) {
+          if (typeof data === "object" && "exceptionMessage" in data) {
             // note that this exceptionMessage seems to always just be "Database exception - query could not be executed."
             throw new Error(data.exceptionMessage);
           } else {
@@ -257,12 +257,12 @@ export function useUserListing(): {
         formData.append("enabled", "true");
         try {
           const { data } = await axios.post<
-            | object
+            | ""
             | {
                 exceptionMessage: string;
               }
           >("/system/ajax/setAccountEnablement", formData);
-          if ("exceptionMessage" in data) {
+          if (typeof data === "object" && "exceptionMessage" in data) {
             // note that this exceptionMessage seems to always just be "Database exception - query could not be executed."
             throw new Error(data.exceptionMessage);
           } else {
@@ -280,12 +280,12 @@ export function useUserListing(): {
         formData.append("enabled", "false");
         try {
           const { data } = await axios.post<
-            | object
+            | ""
             | {
                 exceptionMessage: string;
               }
           >("/system/ajax/setAccountEnablement", formData);
-          if ("exceptionMessage" in data) {
+          if (typeof data === "object" && "exceptionMessage" in data) {
             // note that this exceptionMessage seems to always just be "Database exception - query could not be executed."
             throw new Error(data.exceptionMessage);
           } else {
