@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import TextField from "@mui/material/TextField";
@@ -10,34 +8,34 @@ import NoValue from "../../components/NoValue";
 import Grid from "@mui/material/Grid";
 import FormGroup from "@mui/material/FormGroup";
 
-export type ChoiceOption<OptionValue: string> = {
-  value: OptionValue,
-  label: Node,
-  disabled?: boolean,
-  editing?: boolean,
+export type ChoiceOption<OptionValue extends string> = {
+  value: OptionValue;
+  label: React.ReactNode;
+  disabled?: boolean;
+  editing?: boolean;
 };
 
-export type ChoiceFieldArgs<OptionValue: string> = {|
+export type ChoiceFieldArgs<OptionValue extends string> = {
   // required
-  options: $ReadOnlyArray<ChoiceOption<OptionValue>>,
-  value: $ReadOnlyArray<OptionValue>,
+  options: ReadonlyArray<ChoiceOption<OptionValue>>;
+  value: ReadonlyArray<OptionValue>;
 
   // optional
-  name: string,
-  disabled?: boolean,
-  onChange?: ({
-    target: { name: string, value: $ReadOnlyArray<OptionValue>, ... },
-  }) => void,
-  allowOptionDeletion?: boolean,
+  name: string;
+  disabled?: boolean;
+  onChange?: (event: {
+    target: { name: string; value: ReadonlyArray<OptionValue> };
+  }) => void;
+  allowOptionDeletion?: boolean;
   onOptionChange?: (
-    number,
-    {| label: string, value: OptionValue, editing: true |}
-  ) => void,
-  onOptionRemove?: (number) => void,
-  hideWhenDisabled?: boolean,
-|};
+    index: number,
+    option: { label: string; value: OptionValue; editing: true }
+  ) => void;
+  onOptionRemove?: (index: number) => void;
+  hideWhenDisabled?: boolean;
+};
 
-export default function ChoiceField<OptionValue: string>({
+export default function ChoiceField<OptionValue extends string>({
   disabled,
   name,
   onChange,
@@ -47,14 +45,13 @@ export default function ChoiceField<OptionValue: string>({
   onOptionChange = () => {},
   onOptionRemove = () => {},
   hideWhenDisabled = true,
-}: ChoiceFieldArgs<OptionValue>): Node {
-  const updateSelected = (newValues: $ReadOnlyArray<OptionValue>) => {
+}: ChoiceFieldArgs<OptionValue>): React.ReactNode {
+  const updateSelected = (newValues: ReadonlyArray<OptionValue>) => {
     onChange?.({ target: { name, value: newValues } });
   };
 
   const handleToggleCheckbox = (e: {
-    target: { value: OptionValue, checked: boolean, ... },
-    ...
+    target: { value: OptionValue; checked: boolean };
   }) => {
     let newValues: typeof value = [];
     if (value.includes(e.target.value) && !e.target.checked) {
@@ -80,7 +77,7 @@ export default function ChoiceField<OptionValue: string>({
     updateSelected(newValues);
   };
 
-  const filteredOptions = (): $ReadOnlyArray<ChoiceOption<OptionValue>> => {
+  const filteredOptions = (): ReadonlyArray<ChoiceOption<OptionValue>> => {
     return disabled && hideWhenDisabled
       ? options.filter((o) => value.includes(o.value))
       : options;
@@ -105,7 +102,14 @@ export default function ChoiceField<OptionValue: string>({
                 name={`${name} - ${i}`}
                 value={option.value}
                 checked={value.includes(option.value)}
-                onChange={handleToggleCheckbox}
+                onChange={(event) => {
+                  handleToggleCheckbox({
+                    target: {
+                      value: event.target.value as OptionValue,
+                      checked: event.target.checked,
+                    },
+                  });
+                }}
                 disabled={disabled || option.disabled || !option.value}
               />
             }
@@ -129,14 +133,18 @@ export default function ChoiceField<OptionValue: string>({
           {option.editing && (
             <TextField
               variant="standard"
+              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus={!option.value}
               value={option.value}
               onChange={(e) => {
                 if (value.includes(option.value)) {
-                  handleUpdateValue(option.value, e.target.value);
+                  handleUpdateValue(
+                    option.value,
+                    e.target.value as OptionValue
+                  );
                 }
                 onOptionChange(i, {
-                  value: e.target.value,
+                  value: e.target.value as OptionValue,
                   label: e.target.value,
                   editing: true,
                 });
