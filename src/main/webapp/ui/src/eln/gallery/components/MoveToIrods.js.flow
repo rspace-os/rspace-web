@@ -1,0 +1,9 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function Wrapper({|
+  selectedIds: $ReadOnlyArray<string>,
+  dialogOpen: boolean,
+  setDialogOpen: (boolean) => void,
+|}): Node;

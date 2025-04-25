@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import Dialog from "@mui/material/Dialog";
@@ -50,35 +48,42 @@ const CustomDialog = styled(Dialog)(() => ({
   },
 }));
 
-const CustomFieldset = withStyles<{| children: Node |}, { root: string }>(
-  (theme) => ({
-    root: {
-      border: theme.borders.card,
-      margin: 0,
-      borderRadius: theme.spacing(0.5),
-      padding: theme.spacing(2),
-      paddingTop: theme.spacing(0.5),
-      "& > legend": {
-        padding: theme.spacing(0.25, 1),
-        fontWeight: 700,
-        fontSize: "1rem",
-        letterSpacing: "0.02em",
-        color: "#3b5958",
-      },
-      "& label": {
-        fontSize: "0.9rem",
-        letterSpacing: "0.03em",
-      },
-      "& input": {
-        padding: theme.spacing(1),
-      },
+const CustomFieldset = withStyles<
+  { children: React.ReactNode },
+  { root: string }
+>((theme) => ({
+  root: {
+    border: theme.borders.card,
+    margin: 0,
+    borderRadius: theme.spacing(0.5),
+    padding: theme.spacing(2),
+    paddingTop: theme.spacing(0.5),
+    "& > legend": {
+      padding: theme.spacing(0.25, 1),
+      fontWeight: 700,
+      fontSize: "1rem",
+      letterSpacing: "0.02em",
+      color: "#3b5958",
     },
-  })
-)(({ classes, children }) => (
-  <fieldset className={classes.root}>{children}</fieldset>
-));
+    "& label": {
+      fontSize: "0.9rem",
+      letterSpacing: "0.03em",
+    },
+    "& input": {
+      padding: theme.spacing(1),
+    },
+  },
+}))(
+  ({
+    classes,
+    children,
+  }: {
+    children: React.ReactNode;
+    classes: { root: string };
+  }) => <fieldset className={classes.root}>{children}</fieldset>
+);
 
-const ErrorAlert = ({ message }: {| message: string |}) => {
+const ErrorAlert = ({ message }: { message: string }) => {
   if (message === "No iRODS filestore configured")
     return (
       <Alert severity="error">
@@ -96,11 +101,11 @@ const ErrorAlert = ({ message }: {| message: string |}) => {
   );
 };
 
-type MoveCopyDialogArgs = {|
-  selectedIds: $ReadOnlyArray<string>,
-  dialogOpen: boolean,
-  setDialogOpen: (boolean) => void,
-|};
+type MoveCopyDialogArgs = {
+  selectedIds: ReadonlyArray<string>;
+  dialogOpen: boolean;
+  setDialogOpen: (open: boolean) => void;
+};
 
 function MoveCopyDialog({
   selectedIds,
@@ -109,7 +114,8 @@ function MoveCopyDialog({
 }: MoveCopyDialogArgs) {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const irods = useIrods(selectedIds);
-  const [locationsAnchorEl, setLocationsAnchorEl] = React.useState(null);
+  const [locationsAnchorEl, setLocationsAnchorEl] =
+    React.useState<HTMLElement | null>(null);
   const [selectedDestination, setSelectedDestination] =
     React.useState<IrodsLocation | null>(null);
   const [keepCopyInRspace, setKeepCopyInRspace] = React.useState(false);
@@ -388,11 +394,11 @@ function MoveCopyDialog({
   );
 }
 
-type WrapperArgs = {|
-  selectedIds: $ReadOnlyArray<string>,
-  dialogOpen: boolean,
-  setDialogOpen: (boolean) => void,
-|};
+type WrapperArgs = {
+  selectedIds: ReadonlyArray<string>;
+  dialogOpen: boolean;
+  setDialogOpen: (open: boolean) => void;
+};
 
 const accentTheme = Object.freeze(createAccentedTheme(ACCENT_COLOR));
 
@@ -403,7 +409,7 @@ export default function Wrapper({
   selectedIds,
   dialogOpen,
   setDialogOpen,
-}: WrapperArgs): Node {
+}: WrapperArgs): React.ReactNode {
   return (
     <ThemeProvider theme={accentTheme}>
       <MoveCopyDialog
