@@ -32,7 +32,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): Node {
       <IntegrationCard
         name="Galaxy"
         integrationState={integrationState}
-        explanatoryText="Open, web-based platform for data intensive biomedical research."
+        explanatoryText="Galaxy is a free, open-source system for data analysis, workflows, and more."
         image={GalaxyIcon}
         color={LOGO_COLOR}
         usageText="You can connect your Galaxy workflows and data to RSpace. This allows you to send data from RSpace to Galaxy and import results back into your notebooks."
