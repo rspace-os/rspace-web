@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import ImagePreview, {
   type PreviewSize,
 } from "../../../components/ImagePreview";
@@ -16,9 +14,9 @@ import { type URL } from "../../../util/types";
 const ImagePreviewContext = React.createContext(
   (
     _link: URL,
-    _opts: ?{
-      caption?: $ReadOnlyArray<string>,
-    }
+    _opts: {
+      caption?: ReadonlyArray<string>;
+    } | null
   ) => {}
 );
 
@@ -26,22 +24,22 @@ const ImagePreviewContext = React.createContext(
  * Use the callable image preview component to display an image in a fullscreen
  * lightroom modal.
  */
-export function useImagePreview(): {|
+export function useImagePreview(): {
   /**
    * Preview the image to be found at the passed URL. If the image cannot be
    * loaded then nothing happens.
    */
   openImagePreview: (
-    URL,
-    ?{
+    link: URL,
+    opts: {
       /*
        * A list of strings, shown from top to bottom, separated by two
        * `<br />`s, placed at the bottom of the viewport
        */
-      caption?: $ReadOnlyArray<string>,
-    }
-  ) => void,
-|} {
+      caption?: ReadonlyArray<string>;
+    } | null
+  ) => void;
+} {
   const openImagePreview = React.useContext(ImagePreviewContext);
   return {
     openImagePreview,
@@ -60,12 +58,16 @@ export function useImagePreview(): {|
  *      caption: ["Example image with caption"],
  *    });
  */
-export function CallableImagePreview({ children }: {| children: Node |}): Node {
+export function CallableImagePreview({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactNode {
   const [link, setLink] = React.useState<null | URL>(null);
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
     null
   );
-  const [caption, setCaption] = React.useState<null | $ReadOnlyArray<string>>(
+  const [caption, setCaption] = React.useState<null | ReadonlyArray<string>>(
     null
   );
 
