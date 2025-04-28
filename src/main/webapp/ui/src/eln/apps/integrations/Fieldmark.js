@@ -19,7 +19,9 @@ type FieldmarkArgs = {|
 |};
 
 /*
- * Fieldmark uses OAuth based authentication, as implemeted by the form below.
+ * Fieldmark uses an API-key-like authentication mechanism, wherein the user
+ * copies a string from the Fieldmark website into the text field provided
+ * below..
  */
 function Fieldmark({ integrationState, update }: FieldmarkArgs): Node {
   const [apiKey, setApiKey] = React.useState(
