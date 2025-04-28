@@ -25,7 +25,7 @@ type AnalyticsContextType = {
    * @arg properties An optional collection of key-value pairs of data
    *                 associated with the event
    */
-  trackEvent: (event: string, properties?: object) => void;
+  trackEvent: (event: string, properties?: Record<string, unknown>) => void;
 };
 
 const DEFAULT_ANALYTICS_CONTEXT: AnalyticsContextType = makeAutoObservable({

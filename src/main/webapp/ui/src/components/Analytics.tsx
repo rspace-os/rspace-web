@@ -1,11 +1,33 @@
-//@flow strict
-
-import React, { type Node, useEffect, useRef, useContext } from "react";
+import React, { useEffect, useRef, useContext } from "react";
 import axios from "@/common/axios";
 import AnalyticsContext from "../stores/contexts/Analytics";
 import { runInAction } from "mobx";
 import { usePostHog, PostHogProvider } from "posthog-js/react";
 import posthog from "posthog-js";
+
+declare global {
+  interface Window {
+    analytics: {
+      initialize: unknown;
+      invoked: boolean;
+      methods: Array<string>;
+      factory: (
+        method: unknown
+      ) => (...args: unknown[]) => typeof window.analytics;
+      push: (...args: unknown[]) => void;
+      load: (
+        key: string,
+        options?: typeof window.analytics._loadOptions
+      ) => void;
+      identify: (userId: string) => void;
+      track: (event: string, properties?: Record<string, unknown>) => void;
+      page: () => void;
+      _loadOptions: unknown;
+      _writeKey: string;
+      SNIPPET_VERSION: string;
+    };
+  }
+}
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -19,13 +41,14 @@ const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 function loadIntercom({
   analyticsServerKey,
   analyticsUserId,
-}: {|
-  analyticsServerKey: string,
-  analyticsUserId: string,
-|}): Promise<void> {
+}: {
+  analyticsServerKey: string;
+  analyticsUserId: string;
+}): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       // Segment loads Intercom, hide the intercom icon as we use Lighthouse (HelpDocs.js)
+      // @ts-expect-error we're not passing the app_id here
       window.intercomSettings = {
         hide_default_launcher: true,
         // place intercom in same position as lighthouse
@@ -77,24 +100,23 @@ function loadIntercom({
         // for it to load to actually record data. The `method` is
         // stored as the first argument, so we can replay the data.
         analytics.factory = function (method) {
-          return function () {
-            // $FlowExpectedError[method-unbinding] Ignore issues in copied code
-            var args = Array.prototype.slice.call(arguments);
-            args.unshift(method);
-            analytics.push(args);
+          return function (...args) {
+            analytics.push([method, ...args]);
             return analytics;
           };
         };
         // For each of our methods, generate a queueing stub.
-        for (var i = 0; i < analytics.methods.length; i++) {
-          var key = analytics.methods[i];
+        for (let i = 0; i < analytics.methods.length; i++) {
+          const key = analytics.methods[i];
+          // @ts-expect-error the type of analytics[key] and analytics.factory(key) may not unify
           analytics[key] = analytics.factory(key);
         }
         // Define a method to load Analytics.js from our CDN,
         // and that will be sure to only ever load it once.
-        analytics.load = function (key, options) { //eslint-disable-line
+        analytics.load = function (key, options) {
+          //eslint-disable-line
           // Create an async script element based on your key.
-          var script = document.createElement("script");
+          const script = document.createElement("script");
           script.type = "text/javascript";
           script.async = true;
           script.src =
@@ -102,9 +124,8 @@ function loadIntercom({
             key +
             "/analytics.min.js";
           // Insert our script next to the first script element.
-          var first = document.getElementsByTagName("script")[0];
-          // $FlowExpectedError[incompatible-use] Ignoring issues in copied code
-          first.parentNode.insertBefore(script, first);
+          const first = document.getElementsByTagName("script")[0];
+          first.parentNode?.insertBefore(script, first);
           analytics._loadOptions = options;
         };
         analytics._writeKey = analyticsServerKey;
@@ -141,11 +162,13 @@ function PostHogAnalyticsContext() {
   return <></>;
 }
 
-type AnalyticsArgs = {|
-  children: Node,
-|};
+type AnalyticsArgs = {
+  children: React.ReactNode;
+};
 
-export default function Analytics({ children }: AnalyticsArgs): Node {
+export default function Analytics({
+  children,
+}: AnalyticsArgs): React.ReactNode {
   const [postHogEnabled, setPostHogEnable] = React.useState(false);
   const analyticsContext = useContext(AnalyticsContext);
   const api = useRef(
@@ -165,13 +188,13 @@ export default function Analytics({ children }: AnalyticsArgs): Node {
           analyticsServerKey,
           analyticsUserId,
         },
-      } = await api.current.get<{|
-        analyticsEnabled: boolean,
-        analyticsServerType: "posthog" | "segment",
-        analyticsServerHost: string,
-        analyticsServerKey: string,
-        analyticsUserId: string,
-      |}>("/analyticsProperties");
+      } = await api.current.get<{
+        analyticsEnabled: boolean;
+        analyticsServerType: "posthog" | "segment";
+        analyticsServerHost: string;
+        analyticsServerKey: string;
+        analyticsUserId: string;
+      }>("/analyticsProperties");
       if (analyticsEnabled) {
         if (analyticsServerType === "posthog") {
           setPostHogEnable(true);
