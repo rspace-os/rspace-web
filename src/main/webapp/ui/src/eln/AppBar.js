@@ -18,6 +18,7 @@ import { ACCENT_COLOR as OTHER_COLOR } from "../assets/branding/rspace/other";
 function currentPage() {
   const pages = {
     workspace: "Workspace",
+    notebookEditor: "Workspace",
     dashboard: "Other",
     system: "System",
     community: "System",
