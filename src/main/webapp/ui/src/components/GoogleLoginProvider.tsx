@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import * as FetchingData from "../util/fetchingData";
 import * as Parsers from "../util/parsers";
 import { useDeploymentProperty } from "../eln/useDeploymentProperty";
@@ -15,7 +13,7 @@ import { useDeploymentProperty } from "../eln/useDeploymentProperty";
  * `gapi`, that is used by `./AppBar/index.js` to log the user out of their
  * Google account.
  */
-export default function GoogleLoginProvider(): Node {
+export default function GoogleLoginProvider(): React.ReactNode {
   const cloud = useDeploymentProperty("deployment.cloud");
 
   React.useEffect(() => {
@@ -27,7 +25,7 @@ export default function GoogleLoginProvider(): Node {
       .do(() => {
         if (!document.getElementById(scriptId)) {
           const loadScript = () => {
-            return new Promise((resolve, reject) => {
+            return new Promise<void>((resolve, reject) => {
               const script = document.createElement("script");
               script.src = "https://accounts.google.com/gsi/client";
               script.id = scriptId;
