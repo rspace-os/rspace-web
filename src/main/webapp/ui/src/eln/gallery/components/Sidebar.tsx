@@ -452,22 +452,27 @@ const DrawerTab = styled(
       onClick: () => void;
       tabIndex: number;
     }
-  >(({ icon, label, index, className, selected, onClick, tabIndex }, ref) => (
-    <ListItem disablePadding className={className}>
-      <ListItemButton
-        selected={selected}
-        onClick={onClick}
-        tabIndex={tabIndex}
-        ref={ref}
-      >
-        <ListItemIcon>{icon}</ListItemIcon>
-        <ListItemText
-          primary={label}
-          sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
-        />
-      </ListItemButton>
-    </ListItem>
-  ))
+  >(
+    (
+      { icon, label, index, className, selected, onClick, tabIndex },
+      ref: React.ForwardedRef<HTMLDivElement>
+    ) => (
+      <ListItem disablePadding className={className}>
+        <ListItemButton
+          selected={selected}
+          onClick={onClick}
+          tabIndex={tabIndex}
+          ref={ref}
+        >
+          <ListItemIcon>{icon}</ListItemIcon>
+          <ListItemText
+            primary={label}
+            sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
+          />
+        </ListItemButton>
+      </ListItem>
+    )
+  )
 )(({ drawerOpen }) => ({
   position: "static",
   "& .MuiListItemText-root": {
@@ -535,7 +540,7 @@ const Sidebar = ({
     .orElse(false);
 
   const { getTabIndex, getRef, eventHandlers } =
-    useOneDimensionalRovingTabIndex({
+    useOneDimensionalRovingTabIndex<HTMLDivElement>({
       max: showFilestores ? 9 : 8,
     });
 
@@ -627,10 +632,7 @@ const Sidebar = ({
               icon={gallerySectionIcon.Images}
               index={0}
               tabIndex={getTabIndex(0)}
-              ref={(node) => {
-                const ref = getRef(0);
-                if (ref) ref.current = node as HTMLElement | null;
-              }}
+              ref={getRef(0)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Images"}
               onClick={() => {
@@ -643,10 +645,7 @@ const Sidebar = ({
               icon={gallerySectionIcon.Audios}
               index={1}
               tabIndex={getTabIndex(1)}
-              ref={(node) => {
-                const ref = getRef(1);
-                if (ref) ref.current = node as HTMLElement | null;
-              }}
+              ref={getRef(1)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Audios"}
               onClick={() => {
@@ -659,10 +658,7 @@ const Sidebar = ({
               icon={gallerySectionIcon.Videos}
               index={2}
               tabIndex={getTabIndex(2)}
-              ref={(node) => {
-                const ref = getRef(2);
-                if (ref) ref.current = node as HTMLElement | null;
-              }}
+              ref={getRef(2)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Videos"}
               onClick={() => {
@@ -675,10 +671,7 @@ const Sidebar = ({
               icon={gallerySectionIcon.Documents}
               index={3}
               tabIndex={getTabIndex(3)}
-              ref={(node) => {
-                const ref = getRef(3);
-                if (ref) ref.current = node as HTMLElement | null;
-              }}
+              ref={getRef(3)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Documents"}
               onClick={() => {
@@ -691,10 +684,7 @@ const Sidebar = ({
               icon={gallerySectionIcon.Chemistry}
               index={4}
               tabIndex={getTabIndex(4)}
-              ref={(node) => {
-                const ref = getRef(4);
-                if (ref) ref.current = node as HTMLElement | null;
-              }}
+              ref={getRef(4)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Chemistry"}
               onClick={() => {
@@ -707,10 +697,7 @@ const Sidebar = ({
               icon={gallerySectionIcon.DMPs}
               index={5}
               tabIndex={getTabIndex(5)}
-              ref={(node) => {
-                const ref = getRef(5);
-                if (ref) ref.current = node as HTMLElement | null;
-              }}
+              ref={getRef(5)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "DMPs"}
               onClick={() => {
@@ -723,10 +710,7 @@ const Sidebar = ({
               icon={gallerySectionIcon.Snippets}
               index={6}
               tabIndex={getTabIndex(6)}
-              ref={(node) => {
-                const ref = getRef(6);
-                if (ref) ref.current = node as HTMLElement | null;
-              }}
+              ref={getRef(6)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Snippets"}
               onClick={() => {
@@ -739,10 +723,7 @@ const Sidebar = ({
               icon={gallerySectionIcon.Miscellaneous}
               index={7}
               tabIndex={getTabIndex(7)}
-              ref={(node) => {
-                const ref = getRef(7);
-                if (ref) ref.current = node as HTMLElement | null;
-              }}
+              ref={getRef(7)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Miscellaneous"}
               onClick={() => {
@@ -757,10 +738,7 @@ const Sidebar = ({
                 icon={gallerySectionIcon.NetworkFiles}
                 index={8}
                 tabIndex={getTabIndex(8)}
-                ref={(node) => {
-                  const ref = getRef(8);
-                  if (ref) ref.current = node as HTMLElement | null;
-                }}
+                ref={getRef(8)}
                 drawerOpen={drawerOpen}
                 selected={selectedSection === "NetworkFiles"}
                 onClick={() => {
@@ -777,10 +755,7 @@ const Sidebar = ({
               icon={gallerySectionIcon.PdfDocuments}
               index={showFilestores ? 9 : 8}
               tabIndex={getTabIndex(showFilestores ? 9 : 8)}
-              ref={(node) => {
-                const ref = getRef(showFilestores ? 9 : 8);
-                if (ref) ref.current = node as HTMLElement | null;
-              }}
+              ref={getRef(showFilestores ? 9 : 8)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "PdfDocuments"}
               onClick={() => {
