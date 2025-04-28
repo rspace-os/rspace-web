@@ -1,17 +1,15 @@
-//@flow strict
-
 import axios from "@/common/axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
 
-export type Repository = {|
-  description: string,
-  full_name: string,
-|};
+export type Repository = {
+  description: string;
+  full_name: string;
+};
 
-export type RepositoryListing = {|
-  repositories: Array<Repository>,
-  accessToken: string,
-|};
+export type RepositoryListing = {
+  repositories: Array<Repository>;
+  accessToken: string;
+};
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -19,10 +17,10 @@ const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
  * There is an API endpoint that allows the UI to fetch a list of all of the
  * user's GitHub repositories.
  */
-export function useGitHubEndpoint(): {|
-  getAllRepositories: (string) => Promise<Array<Repository>>,
-  oauthUrl: () => Promise<string>,
-|} {
+export function useGitHubEndpoint(): {
+  getAllRepositories: (authToken: string) => Promise<Array<Repository>>;
+  oauthUrl: () => Promise<string>;
+} {
   const api = axios.create({
     baseURL: "/github",
     timeout: ONE_MINUTE_IN_MS,
@@ -32,16 +30,16 @@ export function useGitHubEndpoint(): {|
     authToken: string
   ): Promise<Array<Repository>> => {
     const response = await api.get<
-      | {| success: true, data: Array<Repository>, error: null |}
-      | {|
-          success: false,
-          data: null,
+      | { success: true; data: Array<Repository>; error: null }
+      | {
+          success: false;
+          data: null;
           errorMsg:
             | string
-            | {|
-                errorMessages: Array<string>,
-              |},
-        |}
+            | {
+                errorMessages: Array<string>;
+              };
+        }
     >("/allRepositories", { params: new URLSearchParams({ authToken }) });
     if (!response.data.success) {
       if (response.data.errorMsg) {
@@ -61,11 +59,11 @@ export function useGitHubEndpoint(): {|
   };
 
   const oauthUrl = async (): Promise<string> => {
-    const response = await api.get<{|
-      success: true,
-      data: string,
-      error: null,
-    |}>("/oauthUrl");
+    const response = await api.get<{
+      success: true;
+      data: string;
+      error: null;
+    }>("/oauthUrl");
     return response.data.data;
   };
 
