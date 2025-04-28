@@ -79,9 +79,6 @@ function printSettingsList() {
     _printCategory('API');
     _printSettings([ 'api.available' ]);
 
-    _printCategory('Onboarding');
-    _printSettings([ 'onboarding.available' ]);
-
     _printCategory('Lab Group Settings');
     _printSettings(['pi_can_edit_all_work_in_labgroup' ]);
     _printSettings(['group_autosharing.available' ]);
