@@ -1,7 +1,5 @@
-//@flow
-
 import Dialog from "@mui/material/Dialog";
-import React, { type Node, type ElementConfig, type Ref } from "react";
+import React from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
 import AppBar from "../../../components/AppBar";
 import Button from "@mui/material/Button";
@@ -47,21 +45,22 @@ const CustomDialog = styled(Dialog)(({ theme }) => ({
   },
 }));
 
-const CustomGrow = React.forwardRef<ElementConfig<typeof Grow>, {||}>(
-  (props: ElementConfig<typeof Grow>, ref: Ref<typeof Grow>) => (
-    <Grow
-      {...props}
-      ref={ref}
-      timeout={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300
-      }
-      easing="ease-in-out"
-      style={{
-        transformOrigin: "center 70%",
-      }}
-    />
-  )
-);
+const CustomGrow = React.forwardRef<
+  typeof Grow,
+  React.ComponentProps<typeof Grow>
+>((props, ref) => (
+  <Grow
+    {...props}
+    ref={ref}
+    timeout={
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300
+    }
+    easing="ease-in-out"
+    style={{
+      transformOrigin: "center 70%",
+    }}
+  />
+));
 CustomGrow.displayName = "CustomGrow";
 
 const Picker = observer(
@@ -70,12 +69,12 @@ const Picker = observer(
     onClose,
     onSubmit,
     validateSelection,
-  }: {|
-    open: boolean,
-    onClose: () => void,
-    onSubmit: (RsSet<GalleryFile>) => void,
-    validateSelection: (GalleryFile) => Result<null>,
-  |}) => {
+  }: {
+    open: boolean;
+    onClose: () => void;
+    onSubmit: (selection: RsSet<GalleryFile>) => void;
+    validateSelection: (file: GalleryFile) => Result<null>;
+  }) => {
     const sidebarId = React.useId();
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
@@ -121,9 +120,9 @@ const Picker = observer(
       ? setLargerViewportSidebarOpenState
       : setSmallViewportSidebarOpenState;
 
-    const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+    const [path, setPath] = React.useState<ReadonlyArray<GalleryFile>>([]);
     const listingOf = React.useMemo(
-      () => ({ tag: "section", section: selectedSection, path }),
+      () => ({ tag: "section" as const, section: selectedSection, path }),
       [selectedSection, path]
     );
     const { galleryListing, folderId, refreshListing } = useGalleryListing({
@@ -256,13 +255,13 @@ export default function Wrapper({
   onSubmit,
   onlyAllowSingleSelection,
   validateSelection = () => Result.Ok(null),
-}: {|
-  open: boolean,
-  onClose: () => void,
-  onSubmit: (RsSet<GalleryFile>) => void,
-  onlyAllowSingleSelection?: boolean,
-  validateSelection?: (GalleryFile) => Result<null>,
-|}): Node {
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (selection: RsSet<GalleryFile>) => void;
+  onlyAllowSingleSelection?: boolean;
+  validateSelection?: (file: GalleryFile) => Result<null>;
+}): React.ReactNode {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <GallerySelection onlyAllowSingleSelection={onlyAllowSingleSelection}>
