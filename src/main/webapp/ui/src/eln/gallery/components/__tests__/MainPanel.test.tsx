@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
@@ -13,8 +12,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { BrowserRouter } from "react-router-dom";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
-import page1 from "../../__tests__/getUploadedFiles_1";
+import axios from "@/common/axios";
+import page1 from "../../__tests__/getUploadedFiles_1.json";
 
 expect.extend(toHaveNoViolations);
 
