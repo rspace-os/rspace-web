@@ -18,7 +18,7 @@ module.exports = {
      * implement each of those pages.
      */
     apps: "./src/eln/apps/index.js",
-    gallery: "./src/eln/gallery/index.js",
+    gallery: "./src/eln/gallery/index.tsx",
 
     /*
      * The Electronic Notebook (ELN) is a traditional multipage application

@@ -1,5 +1,3 @@
-//@flow
-
 import React from "react";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
@@ -64,18 +62,18 @@ const WholePage = styled(
     setSelectedSection,
     setPath,
     autoSelect,
-  }: {|
+  }: {
     listingOf:
-      | {|
-          tag: "section",
-          section: GallerySection,
-          path: $ReadOnlyArray<GalleryFile>,
-        |}
-      | {| tag: "folder", folderId: number |},
-    setSelectedSection: ({| mediaType: GallerySection |}) => void,
-    setPath: ($ReadOnlyArray<GalleryFile>) => void,
-    autoSelect?: $ReadOnlyArray<number>,
-  |}) => {
+      | {
+          tag: "section";
+          section: GallerySection;
+          path: ReadonlyArray<GalleryFile>;
+        }
+      | { tag: "folder"; folderId: number };
+    setSelectedSection: ({ mediaType }: { mediaType: GallerySection }) => void;
+    setPath: (path: ReadonlyArray<GalleryFile>) => void;
+    autoSelect?: ReadonlyArray<number>;
+  }) => {
     const theme = useTheme();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
     const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
@@ -111,7 +109,7 @@ const WholePage = styled(
             selection.append(f);
           }
         });
-      } catch (e) {
+      } catch {
         /*
          * This will throw when processing files from external filestores that
          * do not have an id, but that's fine as external filestores cannot be
@@ -305,11 +303,13 @@ const WholePage = styled(
  * gallery will show the images section.
  */
 function LandingPage() {
-  const [searchParams, setSelectedSection] = useSearchParamState({
+  const [searchParams, setSelectedSection] = useSearchParamState<{
+    mediaType: (typeof GALLERY_SECTION)[keyof typeof GALLERY_SECTION];
+  }>({
     mediaType: GALLERY_SECTION.IMAGES,
   });
   const selectedSection = searchParams.mediaType;
-  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+  const [path, setPath] = React.useState<ReadonlyArray<GalleryFile>>([]);
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   return FetchingData.match(filestoresEnabled, {
     loading: () => null,
@@ -355,19 +355,25 @@ function GalleryFolder() {
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
 
-  return (
-    <WholePage
-      listingOf={{ tag: "folder", folderId }}
-      setSelectedSection={({ mediaType }) => {
-        navigate(`/gallery?mediaType=${mediaType}`);
-      }}
-      setPath={() => {}}
-    />
-  );
+  return Parsers.isNotBottom(folderId)
+    .flatMap(Parsers.parseInteger)
+    .map((fId) => {
+      return (
+        <WholePage
+          key={"whole page"}
+          listingOf={{ tag: "folder", folderId: fId }}
+          setSelectedSection={({ mediaType }) => {
+            navigate(`/gallery?mediaType=${mediaType}`);
+          }}
+          setPath={() => {}}
+        />
+      );
+    })
+    .orElse(null);
 }
 
 function GalleryFileInFolder() {
-  const { fileId } = useParams();
+  const { fileId: fileIdParam } = useParams();
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
   const [folderId, setFolderId] = React.useState<FetchingData.Fetched<number>>({
@@ -378,20 +384,25 @@ function GalleryFileInFolder() {
   async function fetchFileDetails() {
     try {
       const token = await getToken();
-      const { data } = await axios.get<mixed>(`/api/v1/files/${fileId}`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      });
+      const { data } = await axios.get<unknown>(
+        `/api/v1/files/${fileIdParam}`,
+        {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        }
+      );
       setFolderId(
         Parsers.objectPath(["parentFolderId"], data)
           .flatMap(Parsers.isNumber)
-          .map((id) => ({ tag: "success", value: id }))
+          .map((id) => ({ tag: "success" as const, value: id }))
           .orElseGet(([e]) => ({ tag: "error", error: e.message }))
       );
     } catch (error) {
       console.error("Error fetching file details", error);
-      setFolderId({ tag: "error", error });
+      if (error instanceof Error) {
+        setFolderId({ tag: "error", error: error.message });
+      }
     }
   }
 
@@ -402,7 +413,7 @@ function GalleryFileInFolder() {
      */
   }, []);
 
-  return FetchingData.match(folderId, {
+  return FetchingData.match<number, React.ReactNode>(folderId, {
     loading: () => "Loading...",
     error: (error) => `Error: ${error}`,
     success: (fId) => (
@@ -412,7 +423,10 @@ function GalleryFileInFolder() {
           navigate(`/gallery/?mediaType=${mediaType}`);
         }}
         setPath={() => {}}
-        autoSelect={[fileId]}
+        autoSelect={Parsers.isNotBottom(fileIdParam)
+          .flatMap(Parsers.parseInteger)
+          .map((fileId) => [fileId])
+          .orElse([])}
       />
     ),
   });
