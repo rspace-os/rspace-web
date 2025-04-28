@@ -532,9 +532,14 @@ const Sidebar = ({
      */
   }, [viewport]);
 
+  const showFilestores = FetchingData.getSuccessValue(filestoresEnabled)
+    .flatMap(Parsers.isBoolean)
+    .flatMap(Parsers.isTrue)
+    .orElse(false);
+
   const { getTabIndex, getRef, eventHandlers } =
     useOneDimensionalRovingTabIndex<typeof ListItemButton>({
-      max: 8,
+      max: showFilestores ? 9 : 8,
     });
 
   return (
@@ -748,39 +753,35 @@ const Sidebar = ({
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
-            {FetchingData.getSuccessValue(filestoresEnabled)
-              .flatMap(Parsers.isBoolean)
-              .flatMap(Parsers.isTrue)
-              .map(() => (
-                <DrawerTab
-                  key={null}
-                  label={gallerySectionLabel.NetworkFiles}
-                  icon={gallerySectionIcon.NetworkFiles}
-                  index={7}
-                  tabIndex={getTabIndex(7)}
-                  ref={(node) => {
-                    const ref = getRef(8);
-                    if (ref) ref.current = node;
-                  }}
-                  drawerOpen={drawerOpen}
-                  selected={selectedSection === "NetworkFiles"}
-                  onClick={() => {
-                    setSelectedSection("NetworkFiles");
-                    if (viewport.isViewportSmall) setDrawerOpen(false);
-                  }}
-                />
-              ))
-              .orElse(null)}
+            {showFilestores && (
+              <DrawerTab
+                key={null}
+                label={gallerySectionLabel.NetworkFiles}
+                icon={gallerySectionIcon.NetworkFiles}
+                index={8}
+                tabIndex={getTabIndex(8)}
+                ref={(node) => {
+                  const ref = getRef(8);
+                  if (ref) ref.current = node;
+                }}
+                drawerOpen={drawerOpen}
+                selected={selectedSection === "NetworkFiles"}
+                onClick={() => {
+                  setSelectedSection("NetworkFiles");
+                  if (viewport.isViewportSmall) setDrawerOpen(false);
+                }}
+              />
+            )}
           </List>
           <Divider />
           <List sx={{ position: "static" }}>
             <DrawerTab
               label={gallerySectionLabel.PdfDocuments}
               icon={gallerySectionIcon.PdfDocuments}
-              index={8}
-              tabIndex={getTabIndex(8)}
+              index={showFilestores ? 9 : 8}
+              tabIndex={getTabIndex(showFilestores ? 9 : 8)}
               ref={(node) => {
-                const ref = getRef(8);
+                const ref = getRef(showFilestores ? 9 : 8);
                 if (ref) ref.current = node;
               }}
               drawerOpen={drawerOpen}
