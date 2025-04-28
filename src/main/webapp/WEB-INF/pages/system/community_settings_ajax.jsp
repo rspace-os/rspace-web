@@ -14,6 +14,11 @@
         <div class="settingCategoryRow">
            <h2>{{category}}</h2>
         </div>
+    </div> 
+    <div id="systemSettingsSubCategoryRowTemplate" style="display:none">
+        <div class="settingSubCategoryRow">
+           <h3>{{subcategory}}</h3>
+        </div>
     </div>
 
     <script type="html/text" id="systemSettingRowTemplate" style="display:none">

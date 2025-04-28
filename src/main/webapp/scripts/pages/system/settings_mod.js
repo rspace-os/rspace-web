@@ -179,6 +179,12 @@ define(function() {
         $('#systemSettingsList').append(categoryDiv);
     }
 
+    function _printSubCategory(subCategoryName) {
+      var subCategoryRowTemplate = $('#systemSettingsSubCategoryRowTemplate').html();
+      var subCategoryDiv = Mustache.render(subCategoryRowTemplate, { subcategory: subCategoryName })
+      $('#systemSettingsList').append(subCategoryDiv);
+    }
+
     function _printSettings(settingsToPrint) {
         var settingRowTemplate = $('#systemSettingRowTemplate').html();
 
