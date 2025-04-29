@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import AscensciaIcon from "../../../assets/branding/ascenscia/logo.svg";
 import { observer } from "mobx-react-lite";
@@ -13,7 +11,7 @@ import { LOGO_COLOR } from "../../../assets/branding/ascenscia";
  * The integration is actually on Ascenscia's end; the user passes their RSpace
  * API key to Ascenscia.
  */
-function Ascenscia(): Node {
+function Ascenscia(): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -50,4 +48,4 @@ function Ascenscia(): Node {
   );
 }
 
-export default (React.memo(observer(Ascenscia)): AbstractComponent<{||}>);
+export default React.memo(observer(Ascenscia));
