@@ -1,13 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useEffect,
-  useState,
-  useContext,
-  type AbstractComponent,
-} from "react";
+import React, { useEffect, useState, useContext } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
@@ -17,10 +9,10 @@ import Link from "@mui/material/Link";
 import { useDryadEndpoint } from "../useDryad";
 import { LOGO_COLOR } from "../../../assets/branding/dryad";
 
-type DryadArgs = {|
-  integrationState: IntegrationStates["DRYAD"],
-  update: (IntegrationStates["DRYAD"]) => void,
-|};
+type DryadArgs = {
+  integrationState: IntegrationStates["DRYAD"];
+  update: (newIntegrationState: IntegrationStates["DRYAD"]) => void;
+};
 
 /*
  * Dryad uses OAuth based authentication, as implemented by this form.
@@ -46,7 +38,7 @@ type DryadArgs = {|
  * The process of disconnecing is via a standard API call made by
  * ../useDryad.
  */
-function Dryad({ integrationState, update }: DryadArgs): Node {
+function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useDryadEndpoint();
   const [connected, setConnected] = useState(
@@ -139,4 +131,4 @@ function Dryad({ integrationState, update }: DryadArgs): Node {
   );
 }
 
-export default (React.memo(Dryad): AbstractComponent<DryadArgs>);
+export default React.memo(Dryad);
