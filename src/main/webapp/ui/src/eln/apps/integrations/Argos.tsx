@@ -1,23 +1,21 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import ArgosIcon from "../../../assets/branding/argos/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/argos";
 import { observer } from "mobx-react-lite";
 
-type ArgosArgs = {|
-  integrationState: IntegrationStates["ARGOS"],
-  update: (IntegrationStates["ARGOS"]) => void,
-|};
+type ArgosArgs = {
+  integrationState: IntegrationStates["ARGOS"];
+  update: (newIntegrationState: IntegrationStates["ARGOS"]) => void;
+};
 
 /*
  * There is no authentication mechanism with Argos. All DMPs are public and by
  * simply enabling the integration users can import those DMPs into the Gallery
  */
-function Argos({ integrationState, update }: ArgosArgs): Node {
+function Argos({ integrationState, update }: ArgosArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -42,4 +40,4 @@ function Argos({ integrationState, update }: ArgosArgs): Node {
   );
 }
 
-export default (React.memo(observer(Argos)): AbstractComponent<ArgosArgs>);
+export default React.memo(observer(Argos));
