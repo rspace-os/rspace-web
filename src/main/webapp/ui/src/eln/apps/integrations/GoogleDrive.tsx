@@ -1,21 +1,24 @@
 //@flow strict
 
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import GoogleDriveIcon from "../../../assets/branding/googledrive/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/googledrive";
 
-type GoogleDriveArgs = {|
-  integrationState: IntegrationStates["GOOGLEDRIVE"],
-  update: (IntegrationStates["GOOGLEDRIVE"]) => void,
-|};
+type GoogleDriveArgs = {
+  integrationState: IntegrationStates["GOOGLEDRIVE"];
+  update: (newIntegrationState: IntegrationStates["GOOGLEDRIVE"]) => void;
+};
 
 /*
  * Authentication with Google happens when the user uses the dialog on the document editor page.
  */
-function GoogleDrive({ integrationState, update }: GoogleDriveArgs): Node {
+function GoogleDrive({
+  integrationState,
+  update,
+}: GoogleDriveArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -45,4 +48,4 @@ function GoogleDrive({ integrationState, update }: GoogleDriveArgs): Node {
   );
 }
 
-export default (React.memo(GoogleDrive): AbstractComponent<GoogleDriveArgs>);
+export default React.memo(GoogleDrive);
