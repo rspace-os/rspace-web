@@ -1,16 +1,14 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import DropboxIcon from "../../../assets/branding/dropbox/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/dropbox";
 
-type DropboxArgs = {|
-  integrationState: IntegrationStates["DROPBOX"],
-  update: (IntegrationStates["DROPBOX"]) => void,
-|};
+type DropboxArgs = {
+  integrationState: IntegrationStates["DROPBOX"];
+  update: (newIntegrationState: IntegrationStates["DROPBOX"]) => void;
+};
 
 /*
  * Note that authentication with dropbox is performed when the user goes to
@@ -22,7 +20,7 @@ type DropboxArgs = {|
  * false then the import file button will not be available in the RSpace
  * document editor.
  */
-function Dropbox({ integrationState, update }: DropboxArgs): Node {
+function Dropbox({ integrationState, update }: DropboxArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -50,4 +48,4 @@ function Dropbox({ integrationState, update }: DropboxArgs): Node {
   );
 }
 
-export default (React.memo(Dropbox): AbstractComponent<DropboxArgs>);
+export default React.memo(Dropbox);
