@@ -1,13 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useEffect,
-  useState,
-  useContext,
-  type AbstractComponent,
-} from "react";
+import React, { useEffect, useState, useContext } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
@@ -16,10 +8,10 @@ import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
 import { useProtocolsioEndpoint } from "../useProtocolsio";
 import { LOGO_COLOR } from "../../../assets/branding/protocolsio";
 
-type ProtocolsIOArgs = {|
-  integrationState: IntegrationStates["PROTOCOLS_IO"],
-  update: (IntegrationStates["PROTOCOLS_IO"]) => void,
-|};
+type ProtocolsIOArgs = {
+  integrationState: IntegrationStates["PROTOCOLS_IO"];
+  update: (newIntegrationState: IntegrationStates["PROTOCOLS_IO"]) => void;
+};
 
 /*
  * ProtocolsIO uses OAuth based authentication, as implemented by this form.
@@ -45,7 +37,10 @@ type ProtocolsIOArgs = {|
  * The process of disconnecing is via a standard API call made by
  * ../useProtocolsio.
  */
-function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): Node {
+function ProtocolsIO({
+  integrationState,
+  update,
+}: ProtocolsIOArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useProtocolsioEndpoint();
   const [connected, setConnected] = useState(
@@ -130,4 +125,4 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): Node {
   );
 }
 
-export default (React.memo(ProtocolsIO): AbstractComponent<ProtocolsIOArgs>);
+export default React.memo(ProtocolsIO);
