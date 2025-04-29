@@ -1,22 +1,20 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import JoveIcon from "../../../assets/branding/jove/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/jove";
 
-type JoveArgs = {|
-  integrationState: IntegrationStates["JOVE"],
-  update: (IntegrationStates["JOVE"]) => void,
-|};
+type JoveArgs = {
+  integrationState: IntegrationStates["JOVE"];
+  update: (newIntegrationState: IntegrationStates["JOVE"]) => void;
+};
 
 /*
  * There is no authentication mechanism for Jove. All users can use it to embed
  * videos into their documents.
  */
-function Jove({ integrationState, update }: JoveArgs): Node {
+function Jove({ integrationState, update }: JoveArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -44,4 +42,4 @@ function Jove({ integrationState, update }: JoveArgs): Node {
   );
 }
 
-export default (React.memo(Jove): AbstractComponent<JoveArgs>);
+export default React.memo(Jove);
