@@ -4,7 +4,6 @@ import static com.researchspace.api.v1.controller.API_VERSION.ONE;
 import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -20,7 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-public class StatusControllerAndEXceptionHandlingV1MVCIT extends API_MVC_TestBase {
+public class StatusControllerAndExceptionHandlingV1MVCIT extends API_MVC_TestBase {
 
   private static final int MIN_KEY_LENGTH = 16;
 
@@ -92,7 +91,7 @@ public class StatusControllerAndEXceptionHandlingV1MVCIT extends API_MVC_TestBas
   }
 
   @Test
-  public void unavailableAPIGenerates503() throws Exception {
+  public void unavailableAPIGenerates401() throws Exception {
     try {
       disableAPI(apiUser);
       MvcResult result =
@@ -100,7 +99,7 @@ public class StatusControllerAndEXceptionHandlingV1MVCIT extends API_MVC_TestBas
       ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
       assertNotNull(error);
       log.warn(error.toString());
-      assertEquals(FORBIDDEN.value(), error.getHttpCode());
+      assertEquals(UNAUTHORIZED.value(), error.getHttpCode());
     } finally {
       enableAPI(apiUser);
     }

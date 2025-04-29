@@ -87,13 +87,17 @@ public interface AnalyticsManager {
   void recordCreated(HistoricalEvent event);
 
   /**
+   * Registers specific calls to public API made with API Key, or fact of generating OAuth token
+   * through username/password flow.
+   */
+  void apiAccessed(User user, boolean apiKeyAccess, HttpServletRequest req);
+
+  /**
    * To calculate and upload file usage for every user in the system
    *
    * <p>Notifies segment about current file/document usage.
    */
   void uploadUsersDiskUsage();
-
-  void apiUsed(User user, HttpServletRequest req);
 
   /**
    * Returns string representing userId as known by the analytics, which can also be used as opaque

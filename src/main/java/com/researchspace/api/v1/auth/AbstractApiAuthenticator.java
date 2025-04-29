@@ -23,13 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 abstract class AbstractApiAuthenticator implements ApiAuthenticator {
   private @Autowired IUserPermissionUtils userPermissionUtils;
 
-  /*
-   * Package scoped for testing
-   */
-  void doLogin(String apiKey, User u) {
-    SecurityUtils.getSubject().login(new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
-  }
-
   /**
    * Retrieve token from HttpRequest, validating syntax as well
    *
@@ -49,11 +42,11 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
     if (!userOpt.isPresent()) {
       throw new ApiAuthenticationException(
           String.format(
-              "User could not be authenticated for token %s", abbreviate(accessToken, 10)));
+              "User could not be authenticated for token %s...", abbreviate(accessToken, 4)));
     }
 
     User targetUser = userOpt.get();
-    assertLoginAllowed(accessToken, targetUser);
+    assertLoginAllowed(targetUser);
 
     // Requests for inventory from the browser come with JSESSIONID cookies. Hence
     // we have access to the current session. We reuse the session when possible.
@@ -91,17 +84,25 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
     return targetUser;
   }
 
+  /*
+   * Package scoped for testing
+   */
+  void doLogin(String apiKey, User u) {
+    SecurityUtils.getSubject().login(new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
+  }
+
+  @Override
   public void logout() {
     SecurityUtils.getSubject().logout();
   }
 
-  private void assertLoginAllowed(String token, User user) {
+  private void assertLoginAllowed(User user) {
     if (user.isLoginDisabled()) {
       throw new ApiAuthenticationException(
           String.format(
-              "Api access denied as account for user '%s' associated with API key '%s' is locked or"
-                  + " disabled",
-              user.getUsername(), token));
+              "Api access denied as account for user '%s', who is associated with provided "
+                  + "authentication token, is locked or disabled",
+              user.getUsername()));
     }
   }
 }

@@ -22,6 +22,7 @@ public class OAuthAPIAccessMVCIT extends API_MVC_TestBase {
     RSpaceTestUtils.logout();
 
     // Get access token
+    enableGlobalApiAccess();
     MvcResult result =
         mockMvc
             .perform(
