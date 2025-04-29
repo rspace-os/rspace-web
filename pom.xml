@@ -2763,7 +2763,7 @@
         </property>
       </activation>
       <properties>
-        <npm.dependencies.collection.arg>ci</npm.dependencies.collection.arg> <!-- overrides default value -->
+        <npm.dependencies.collection.arg>ci --force</npm.dependencies.collection.arg> <!-- overrides default value -->
       </properties>
     </profile>
     <profile>
@@ -2780,7 +2780,7 @@
             <artifactId>frontend-maven-plugin</artifactId>
             <version>1.8.0</version>
             <configuration>
-              <nodeVersion>v17.2.0</nodeVersion>
+              <nodeVersion>v22.15.0</nodeVersion>
               <workingDirectory>src/main/webapp/ui</workingDirectory>
             </configuration>
             <executions>
