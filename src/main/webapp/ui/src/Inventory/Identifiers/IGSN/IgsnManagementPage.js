@@ -120,18 +120,23 @@ export default function IgsnManagementPage({
               >
                 <DialogTitle>Bulk Register IGSN IDs</DialogTitle>
                 <DialogContent>
-                  <TextField
-                    label="Number of new IGSN IDs"
-                    type="number"
-                    inputProps={{ min: 1, max: 100 }}
-                    value={numberOfNewIdentifiers}
-                    onChange={(e) => setNumberOfNewIdentifiers(e.target.value)}
-                    fullWidth
-                    sx={{ mt: 1 }}
-                    error={
-                      numberOfNewIdentifiers < 1 || numberOfNewIdentifiers > 100
-                    }
-                  />
+                  <Stack spacing={3}>
+                    <Typography>
+                      IGSN IDs in Draft state will be created.
+                    </Typography>
+                    <TextField
+                      label="Number of new IGSN IDs"
+                      type="number"
+                      inputProps={{ min: 1, max: 100 }}
+                      value={numberOfNewIdentifiers}
+                      onChange={(e) => setNumberOfNewIdentifiers(e.target.value)}
+                      fullWidth
+                      sx={{ mt: 1 }}
+                      error={
+                        numberOfNewIdentifiers < 1 || numberOfNewIdentifiers > 100
+                      }
+                    />
+                  </Stack>
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={() => setBulkRegisterDialogOpen(false)}>
