@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type AbstractComponent, type Node } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import BoxIcon from "../../../assets/branding/box/logo.svg";
@@ -16,10 +14,10 @@ import Typography from "@mui/material/Typography";
 import { Optional } from "../../../util/optional";
 import { LOGO_COLOR } from "../../../assets/branding/box";
 
-type BoxArgs = {|
-  integrationState: IntegrationStates["BOX"],
-  update: (IntegrationStates["BOX"]) => void,
-|};
+type BoxArgs = {
+  integrationState: IntegrationStates["BOX"];
+  update: (newIntegrationState: IntegrationStates["BOX"]) => void;
+};
 
 /*
  * Note that authentication with box is performaned when the user goes to
@@ -31,7 +29,7 @@ type BoxArgs = {|
  * false then the import file button will not be available in the RSpace
  * document editor.
  */
-function Box({ integrationState, update }: BoxArgs): Node {
+function Box({ integrationState, update }: BoxArgs): React.ReactNode {
   const [linkType, setLinkType] = React.useState(
     integrationState.credentials.BOX_LINK_TYPE.orElse("LIVE")
   );
@@ -88,7 +86,7 @@ function Box({ integrationState, update }: BoxArgs): Node {
                     value={linkType}
                     sx={{ alignItems: "flex-start" }}
                     onChange={(_event, value) => {
-                      setLinkType(value);
+                      setLinkType(value as typeof linkType);
                     }}
                   >
                     <FormControlLabel
@@ -173,4 +171,4 @@ function Box({ integrationState, update }: BoxArgs): Node {
   );
 }
 
-export default (React.memo(Box): AbstractComponent<BoxArgs>);
+export default React.memo(Box);
