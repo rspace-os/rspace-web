@@ -28,16 +28,16 @@ export type OptionsId = string;
  * polymorphic over the type of the credentials so that each integration can
  * accurately model the particular credentials it requires.
  */
-export type IntegrationState<Credentials> = {|
+export type IntegrationState<Credentials> = {
   /**
    * UNAVAILABLE : When the sysadmin has not allowed the integration.
    * DISABLED    : Sysadmin has allowed it but the user has not enabled it.
    * ENABLED     : Sysadmin has allowed it and the user has enabled it.
    * EXTERNAL    : The app is a third-party integrating with RSpace.
    */
-  mode: "UNAVAILABLE" | "DISABLED" | "ENABLED" | "EXTERNAL",
-  credentials: Credentials,
-|};
+  mode: "UNAVAILABLE" | "DISABLED" | "ENABLED" | "EXTERNAL";
+  credentials: Credentials;
+};
 
 /**
  * This type maps integrations to their current state.
@@ -57,126 +57,125 @@ export type IntegrationState<Credentials> = {|
  * does not uphold this invariant. Do note that an unavailable integration may
  * have an associated credential because it may have been available previously.
  */
-export type IntegrationStates = {|
-  ARGOS: IntegrationState<{||}>,
-  ASCENSCIA: IntegrationState<null>,
-  BOX: IntegrationState<{|
-    BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">,
-    "box.api.enabled": Optional<boolean>,
-  |}>,
-  CHEMISTRY: IntegrationState<{||}>,
-  CLUSTERMARKET: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
+export type IntegrationStates = {
+  ARGOS: IntegrationState<Record<string, never>>;
+  ASCENSCIA: IntegrationState<null>;
+  BOX: IntegrationState<{
+    BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">;
+    "box.api.enabled": Optional<boolean>;
+  }>;
+  CHEMISTRY: IntegrationState<Record<string, never>>;
+  CLUSTERMARKET: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
   DATAVERSE: IntegrationState<
     Array<
-      Optional<{|
-        DATAVERSE_APIKEY: string,
-        DATAVERSE_URL: string,
-        DATAVERSE_ALIAS: string,
-        _label: string,
-        optionsId: OptionsId,
-      |}>
+      Optional<{
+        DATAVERSE_APIKEY: string;
+        DATAVERSE_URL: string;
+        DATAVERSE_ALIAS: string;
+        _label: string;
+        optionsId: OptionsId;
+      }>
     >
-  >,
-  DIGITALCOMMONSDATA: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  DMPONLINE: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  DMPTOOL: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  DROPBOX: IntegrationState<{||}>,
-  DRYAD: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  EGNYTE: IntegrationState<{|
-    EGNYTE_DOMAIN: Optional<string>,
-  |}>,
-  EVERNOTE: IntegrationState<{||}>,
-  FIELDMARK: IntegrationState<{|
-    FIELDMARK_USER_TOKEN: Optional<string>,
-  |}>,
-  FIGSHARE: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
+  >;
+  DIGITALCOMMONSDATA: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
+  DMPONLINE: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
+  DMPTOOL: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
+  DROPBOX: IntegrationState<Record<string, never>>;
+  DRYAD: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
+  EGNYTE: IntegrationState<{
+    EGNYTE_DOMAIN: Optional<string>;
+  }>;
+  EVERNOTE: IntegrationState<Record<string, never>>;
+  FIELDMARK: IntegrationState<{
+    FIELDMARK_USER_TOKEN: Optional<string>;
+  }>;
+  FIGSHARE: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
   GITHUB: IntegrationState<
     Array<
-      Optional<{|
+      Optional<{
         /*
          * we use an inner Optional so that the user can see which repo is in an
          * invalid state, and can thus remove and readd
          */
-        GITHUB_ACCESS_TOKEN: Optional<string>,
-        GITHUB_REPOSITORY_FULL_NAME: string,
-        optionsId: OptionsId,
-      |}>
+        GITHUB_ACCESS_TOKEN: Optional<string>;
+        GITHUB_REPOSITORY_FULL_NAME: string;
+        optionsId: OptionsId;
+      }>
     >
-  >,
-  GOOGLEDRIVE: IntegrationState<{|
-    ["googledrive.linking.enabled"]: Optional<boolean>,
-  |}>,
-  JOVE: IntegrationState<{||}>,
+  >;
+  GOOGLEDRIVE: IntegrationState<{
+    ["googledrive.linking.enabled"]: Optional<boolean>;
+  }>;
+  JOVE: IntegrationState<Record<string, never>>;
   MSTEAMS: IntegrationState<
     Array<
-      Optional<{|
-        MSTEAMS_CHANNEL_LABEL: string,
-        MSTEAMS_WEBHOOK_URL: string,
-        optionsId: OptionsId,
-      |}>
+      Optional<{
+        MSTEAMS_CHANNEL_LABEL: string;
+        MSTEAMS_WEBHOOK_URL: string;
+        optionsId: OptionsId;
+      }>
     >
-  >,
-  NEXTCLOUD: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  OMERO: IntegrationState<{||}>,
-  ONEDRIVE: IntegrationState<{||}>,
-  OWNCLOUD: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  PROTOCOLS_IO: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  PYRAT: IntegrationState<{|
-    configuredServers: $ReadOnlyArray<{|
-      url: string,
-      alias: string,
-    |}>,
-    authenticatedServers: $ReadOnlyArray<{|
-      url: string,
-      alias: string,
-      apiKey: string,
-      optionsId: OptionsId,
-    |}>,
-  |}>,
+  >;
+  NEXTCLOUD: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
+  OMERO: IntegrationState<Record<string, never>>;
+  ONEDRIVE: IntegrationState<Record<string, never>>;
+  OWNCLOUD: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
+  PROTOCOLS_IO: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
+  PYRAT: IntegrationState<{
+    configuredServers: ReadonlyArray<{
+      url: string;
+      alias: string;
+    }>;
+    authenticatedServers: ReadonlyArray<{
+      url: string;
+      alias: string;
+      apiKey: string;
+      optionsId: OptionsId;
+    }>;
+  }>;
   SLACK: IntegrationState<
     Array<
-      Optional<{|
-        SLACK_TEAM_NAME: string,
-        SLACK_CHANNEL_ID: string,
-        SLACK_CHANNEL_NAME: string,
-        SLACK_USER_ID: string,
-        SLACK_CHANNEL_LABEL: string,
-        SLACK_USER_ACCESS_TOKEN: string,
-        SLACK_TEAM_ID: string,
-        SLACK_WEBHOOK_URL: string,
-        optionsId: OptionsId,
-      |}>
+      Optional<{
+        SLACK_TEAM_NAME: string;
+        SLACK_CHANNEL_ID: string;
+        SLACK_CHANNEL_NAME: string;
+        SLACK_USER_ID: string;
+        SLACK_CHANNEL_LABEL: string;
+        SLACK_USER_ACCESS_TOKEN: string;
+        SLACK_TEAM_ID: string;
+        SLACK_WEBHOOK_URL: string;
+        optionsId: OptionsId;
+      }>
     >
-  >,
-  ZENODO: IntegrationState<{|
-    ZENODO_USER_TOKEN: Optional<string>,
-  |}>,
-|};
+  >;
+  ZENODO: IntegrationState<{
+    ZENODO_USER_TOKEN: Optional<string>;
+  }>;
+};
 
 type FetchedState = {
-  name: string,
-  available: boolean,
-  enabled: boolean,
-  options: { ... },
-  ...
+  name: string;
+  available: boolean;
+  enabled: boolean;
+  options: Record<string, unknown>;
 };
 
 /**
@@ -188,7 +187,7 @@ type FetchedState = {
 function parseState({
   enabled,
   available,
-}: FetchedState): IntegrationState<mixed>["mode"] {
+}: FetchedState): IntegrationState<unknown>["mode"] {
   if (!available) return "UNAVAILABLE";
   if (!enabled) return "DISABLED";
   return "ENABLED";
@@ -199,9 +198,9 @@ function parseState({
  * does that that value is a string. If so, then the value is returned wrapped
  * in Optional.present, otherwise Optional.empty is returned.
  */
-function parseCredentialString(
-  options: { ... },
-  key: string
+function parseCredentialString<K extends string>(
+  options: Record<K, unknown>,
+  key: K
 ): Optional<string> {
   return getByKey(key, options).flatMap((cred) =>
     typeof cred === "string" ? Optional.present(cred) : Optional.empty()
@@ -213,16 +212,16 @@ function parseCredentialString(
  * does that that value is a boolean. If so, then the value is returned wrapped
  * in Optional.present, otherwise Optional.empty is returned.
  */
-function parseCredentialBoolean(
-  options: { ... },
-  key: string
+function parseCredentialBoolean<K extends string>(
+  options: Record<K, unknown>,
+  key: K
 ): Optional<boolean> {
   return getByKey(key, options).flatMap((cred) =>
     typeof cred === "boolean" ? Optional.present(cred) : Optional.empty()
   );
 }
 
-export type Integration = $Keys<IntegrationStates>;
+export type Integration = keyof IntegrationStates;
 
 function decodeArgos(data: FetchedState): IntegrationStates["ARGOS"] {
   return { mode: parseState(data), credentials: {} };
@@ -232,21 +231,16 @@ function decodeBox(data: FetchedState): IntegrationStates["BOX"] {
   return {
     mode: parseState(data),
     credentials: {
-      BOX_LINK_TYPE: getByKey("BOX_LINK_TYPE", data.options)
-        .flatMap((option) =>
-          typeof option === "string"
-            ? Optional.present(option)
-            : Optional.empty()
-        )
+      BOX_LINK_TYPE: Parsers.getValueWithKey("BOX_LINK_TYPE")(data.options)
+        .flatMap(Parsers.isString)
         .flatMap((option) =>
           Result.first(
-            (parseString("LIVE", option): Result<"LIVE" | "VERSIONED" | "ASK">),
-            (parseString("VERSIONED", option): Result<
-              "LIVE" | "VERSIONED" | "ASK"
-            >),
-            (parseString("ASK", option): Result<"LIVE" | "VERSIONED" | "ASK">)
-          ).toOptional()
-        ),
+            parseString("LIVE", option),
+            parseString("VERSIONED", option),
+            parseString("ASK", option)
+          )
+        )
+        .toOptional(),
       ["box.api.enabled"]: parseCredentialBoolean(
         data.options,
         "box.api.enabled"
@@ -274,17 +268,31 @@ function decodeClustermarket(
 }
 
 function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
+  function isValidConfig(config: unknown): config is {
+    DATAVERSE_APIKEY: string;
+    DATAVERSE_URL: string;
+    DATAVERSE_ALIAS: string;
+    _label: string;
+  } {
+    return Parsers.isObject(config)
+      .flatMap(Parsers.isNotNull)
+      .flatMap(Parsers.isRecord)
+      .map<boolean>((configRecord: Record<string, unknown>) => {
+        return (
+          typeof configRecord.DATAVERSE_APIKEY === "string" &&
+          typeof configRecord.DATAVERSE_URL === "string" &&
+          typeof configRecord.DATAVERSE_ALIAS === "string" &&
+          typeof configRecord._label === "string"
+        );
+      })
+      .orElse(false);
+  }
   return {
     mode: parseState(data),
     credentials:
       Object.entries(data.options).length > 0
         ? Object.entries(data.options).map(([optionsId, config]) =>
-            typeof config === "object" &&
-            config !== null &&
-            typeof config.DATAVERSE_APIKEY === "string" &&
-            typeof config.DATAVERSE_URL === "string" &&
-            typeof config.DATAVERSE_ALIAS === "string" &&
-            typeof config._label === "string"
+            isValidConfig(config)
               ? Optional.present({
                   DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
                   DATAVERSE_URL: config.DATAVERSE_URL,
@@ -344,16 +352,21 @@ function decodeDryad(data: FetchedState): IntegrationStates["DRYAD"] {
 }
 
 function decodeEgnyte(data: FetchedState): IntegrationStates["EGNYTE"] {
-  let EGNYTE_DOMAIN = Optional.empty<string>();
-  if (Object.values(data.options).length === 1) {
-    const option = Object.values(data.options)[0];
-    if (typeof option === "object" && option !== null) {
-      EGNYTE_DOMAIN = parseCredentialString(option, "EGNYTE_DOMAIN");
-    }
-  }
   return {
     mode: parseState(data),
-    credentials: { EGNYTE_DOMAIN },
+    credentials: {
+      EGNYTE_DOMAIN:
+        Object.values(data.options).length === 1
+          ? ArrayUtils.head(Object.values(data.options))
+              .flatMap(Parsers.isObject)
+              .flatMap(Parsers.isNotNull)
+              .flatMap(Parsers.isRecord)
+              .toOptional()
+              .flatMap((option) =>
+                parseCredentialString(option, "EGNYTE_DOMAIN")
+              )
+          : Optional.empty(),
+    },
   };
 }
 
@@ -387,27 +400,27 @@ function decodeGitHub(data: FetchedState): IntegrationStates["GITHUB"] {
     mode: parseState(data),
     credentials:
       Object.entries(data.options).length > 0
-        ? Object.entries(data.options).map(([optionsId, config]) => {
-            if (typeof config !== "object" || config === null)
-              return Optional.empty();
-            if (typeof config.GITHUB_REPOSITORY_FULL_NAME !== "string")
-              return Optional.empty();
-            const name = config.GITHUB_REPOSITORY_FULL_NAME;
-            if (typeof config.GITHUB_ACCESS_TOKEN === "string") {
-              return Optional.present({
-                /*
-                 * we use an inner Optional so that the user can see which repo
-                 * is in an invalid state, and can thus remove and readd
-                 */
-                GITHUB_ACCESS_TOKEN: Optional.fromNullable(
-                  config.GITHUB_ACCESS_TOKEN
-                ),
-                GITHUB_REPOSITORY_FULL_NAME: name,
-                optionsId,
-              });
-            }
-            return Optional.empty();
-          })
+        ? Object.entries(data.options).map(([optionsId, config]) =>
+            Parsers.isObject(config)
+              .flatMap(Parsers.isNotNull)
+              .flatMap(Parsers.isRecord)
+              .flatMap((configRecord) =>
+                Parsers.isString(configRecord.GITHUB_REPOSITORY_FULL_NAME).map(
+                  (GITHUB_REPOSITORY_FULL_NAME) => ({
+                    /*
+                     * we use an inner Optional so that the user can see which repo
+                     * is in an invalid state, and can thus remove and readd
+                     */
+                    GITHUB_ACCESS_TOKEN: Parsers.isString(
+                      configRecord.GITHUB_ACCESS_TOKEN
+                    ).toOptional(),
+                    GITHUB_REPOSITORY_FULL_NAME,
+                    optionsId,
+                  })
+                )
+              )
+              .toOptional()
+          )
         : [],
   };
 }
@@ -434,17 +447,28 @@ function decodeMsTeams(data: FetchedState): IntegrationStates["MSTEAMS"] {
   return {
     mode: parseState(data),
     credentials: Object.entries(data.options).map(([optionsId, config]) => {
-      if (typeof config !== "object" || config === null)
-        return Optional.empty();
-      if (typeof config.MSTEAMS_CHANNEL_LABEL !== "string")
-        return Optional.empty();
-      if (typeof config.MSTEAMS_WEBHOOK_URL !== "string")
-        return Optional.empty();
-      return Optional.present({
-        MSTEAMS_CHANNEL_LABEL: config.MSTEAMS_CHANNEL_LABEL,
-        MSTEAMS_WEBHOOK_URL: config.MSTEAMS_WEBHOOK_URL,
-        optionsId,
-      });
+      return Parsers.isObject(config)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.isRecord)
+        .flatMap((configRecord) =>
+          Result.lift2<
+            string,
+            string,
+            {
+              MSTEAMS_CHANNEL_LABEL: string;
+              MSTEAMS_WEBHOOK_URL: string;
+              optionsId: string;
+            }
+          >((MSTEAMS_CHANNEL_LABEL, MSTEAMS_WEBHOOK_URL) => ({
+            MSTEAMS_CHANNEL_LABEL,
+            MSTEAMS_WEBHOOK_URL,
+            optionsId,
+          }))(
+            Parsers.isString(configRecord.MSTEAMS_CHANNEL_LABEL),
+            Parsers.isString(configRecord.MSTEAMS_WEBHOOK_URL)
+          )
+        )
+        .toOptional();
     }),
   };
 }
@@ -498,7 +522,7 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
         .flatMap(Parsers.isNotNull)
         .flatMap((configuredServers) =>
           Result.all(
-            ...Object.values(configuredServers).map((config) => {
+            ...Object.values(configuredServers).map((config: unknown) => {
               try {
                 const server = Parsers.isObject(config)
                   .flatMap(Parsers.isNotNull)
@@ -511,10 +535,10 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
                   .elseThrow();
                 return Result.Ok({ alias, url });
               } catch {
-                return Result.Error<{|
-                  url: string,
-                  alias: string,
-                |}>([new Error("Could not parse out pyrat configured server")]);
+                return Result.Error<{
+                  url: string;
+                  alias: string;
+                }>([new Error("Could not parse out pyrat configured server")]);
               }
             })
           )
@@ -530,7 +554,7 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
         )
         .flatMap((servers) =>
           Result.all(
-            ...servers.map(([key, config]) => {
+            ...servers.map(([key, config]: [string, unknown]) => {
               try {
                 const server = Parsers.isObject(config)
                   .flatMap(Parsers.isNotNull)
@@ -547,12 +571,12 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
                 const optionsId = Parsers.isString(key).elseThrow();
                 return Result.Ok({ alias, url, apiKey, optionsId });
               } catch {
-                return Result.Error<{|
-                  url: string,
-                  alias: string,
-                  apiKey: string,
-                  optionsId: OptionsId,
-                |}>([
+                return Result.Error<{
+                  url: string;
+                  alias: string;
+                  apiKey: string;
+                  optionsId: OptionsId;
+                }>([
                   new Error("Could not parse out pyrat authenticated server"),
                 ]);
               }
@@ -568,30 +592,51 @@ function decodeSlack(data: FetchedState): IntegrationStates["SLACK"] {
   return {
     mode: parseState(data),
     credentials: Object.entries(data.options).map(([optionsId, config]) => {
-      if (typeof config !== "object" || config === null)
-        return Optional.empty();
-      if (typeof config.SLACK_TEAM_NAME !== "string") return Optional.empty();
-      if (typeof config.SLACK_CHANNEL_ID !== "string") return Optional.empty();
-      if (typeof config.SLACK_CHANNEL_NAME !== "string")
-        return Optional.empty();
-      if (typeof config.SLACK_CHANNEL_LABEL !== "string")
-        return Optional.empty();
-      if (typeof config.SLACK_USER_ID !== "string") return Optional.empty();
-      if (typeof config.SLACK_USER_ACCESS_TOKEN !== "string")
-        return Optional.empty();
-      if (typeof config.SLACK_TEAM_ID !== "string") return Optional.empty();
-      if (typeof config.SLACK_WEBHOOK_URL !== "string") return Optional.empty();
-      return Optional.present({
-        SLACK_TEAM_NAME: config.SLACK_TEAM_NAME,
-        SLACK_CHANNEL_ID: config.SLACK_CHANNEL_ID,
-        SLACK_CHANNEL_NAME: config.SLACK_CHANNEL_NAME,
-        SLACK_USER_ID: config.SLACK_USER_ID,
-        SLACK_CHANNEL_LABEL: config.SLACK_CHANNEL_LABEL,
-        SLACK_USER_ACCESS_TOKEN: config.SLACK_USER_ACCESS_TOKEN,
-        SLACK_TEAM_ID: config.SLACK_TEAM_ID,
-        SLACK_WEBHOOK_URL: config.SLACK_WEBHOOK_URL,
-        optionsId,
-      });
+      return Parsers.isObject(config)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.isRecord)
+        .toOptional()
+        .flatMap((configRecord) => {
+          try {
+            const SLACK_TEAM_NAME = Parsers.isString(
+              configRecord.SLACK_TEAM_NAME
+            ).elseThrow();
+            const SLACK_CHANNEL_ID = Parsers.isString(
+              configRecord.SLACK_CHANNEL_ID
+            ).elseThrow();
+            const SLACK_CHANNEL_NAME = Parsers.isString(
+              configRecord.SLACK_CHANNEL_NAME
+            ).elseThrow();
+            const SLACK_CHANNEL_LABEL = Parsers.isString(
+              configRecord.SLACK_CHANNEL_LABEL
+            ).elseThrow();
+            const SLACK_USER_ID = Parsers.isString(
+              configRecord.SLACK_USER_ID
+            ).elseThrow();
+            const SLACK_USER_ACCESS_TOKEN = Parsers.isString(
+              configRecord.SLACK_USER_ACCESS_TOKEN
+            ).elseThrow();
+            const SLACK_TEAM_ID = Parsers.isString(
+              configRecord.SLACK_TEAM_ID
+            ).elseThrow();
+            const SLACK_WEBHOOK_URL = Parsers.isString(
+              configRecord.SLACK_WEBHOOK_URL
+            ).elseThrow();
+            return Optional.present({
+              SLACK_TEAM_NAME,
+              SLACK_CHANNEL_ID,
+              SLACK_CHANNEL_NAME,
+              SLACK_CHANNEL_LABEL,
+              SLACK_USER_ID,
+              SLACK_USER_ACCESS_TOKEN,
+              SLACK_TEAM_ID,
+              SLACK_WEBHOOK_URL,
+              optionsId,
+            });
+          } catch {
+            return Optional.empty();
+          }
+        });
     }),
   };
 }
@@ -609,7 +654,7 @@ function decodeZenodo(data: FetchedState): IntegrationStates["ZENODO"] {
 }
 
 function decodeIntegrationStates(data: {
-  [Integration]: FetchedState,
+  [integration in Integration]: FetchedState;
 }): IntegrationStates {
   return {
     ARGOS: decodeArgos(data.ARGOS),
@@ -645,7 +690,8 @@ function decodeIntegrationStates(data: {
   };
 }
 
-const encodeIntegrationState = <I: Integration>(
+// eslint-disable-next-line complexity
+const encodeIntegrationState = <I extends Integration>(
   integration: I,
   data: IntegrationStates[I]
 ): FetchedState => {
@@ -658,23 +704,19 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "BOX") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["BOX"]["credentials"] = data.credentials;
     return {
       name: "BOX",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[prop-missing]
-        // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.BOX_LINK_TYPE.map((token) => ({
+        ...creds.BOX_LINK_TYPE.map((token) => ({
           BOX_LINK_TYPE: token,
         })).orElse({
           BOX_LINK_TYPE: "",
         }),
-        // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials["box.api.enabled"]
-          // $FlowExpectedError[incompatible-use]
+        ...creds["box.api.enabled"]
           .map((token) => ({
             ["box.api.enabled"]: token,
           }))
@@ -701,9 +743,8 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "DATAVERSE") {
+    // @ts-expect-error Looks like this is a bug in TypeScript
     const creds: IntegrationStates["DATAVERSE"]["credentials"] =
-      // $FlowExpectedError[prop-missing]
-      // $FlowExpectedError[incompatible-type]
       data.credentials;
     return {
       name: "DATAVERSE",
@@ -711,21 +752,21 @@ const encodeIntegrationState = <I: Integration>(
       enabled: data.mode === "ENABLED",
       options: Object.fromEntries(
         ArrayUtils.mapOptional<
-          Optional<{|
-            DATAVERSE_APIKEY: string,
-            DATAVERSE_URL: string,
-            DATAVERSE_ALIAS: string,
-            _label: string,
-            optionsId: OptionsId,
-          |}>,
+          Optional<{
+            DATAVERSE_APIKEY: string;
+            DATAVERSE_URL: string;
+            DATAVERSE_ALIAS: string;
+            _label: string;
+            optionsId: OptionsId;
+          }>,
           [
             OptionsId,
-            {|
-              DATAVERSE_APIKEY: string,
-              DATAVERSE_URL: string,
-              DATAVERSE_ALIAS: string,
-              _label: string,
-            |}
+            {
+              DATAVERSE_APIKEY: string;
+              DATAVERSE_URL: string;
+              DATAVERSE_ALIAS: string;
+              _label: string;
+            }
           ]
         >(
           (config) =>
@@ -744,40 +785,39 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "DIGITALCOMMONSDATA") {
+    // @ts-expect-error Looks like this is a bug in TypeScript
+    const creds: IntegrationStates["DIGITALCOMMONSDATA"]["credentials"] =
+      data.credentials;
     return {
       name: "DIGITALCOMMONSDATA",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      // $FlowExpectedError[prop-missing]
-      // $FlowExpectedError[incompatible-type]
-      // $FlowExpectedError[incompatible-use]
-      options: data.credentials.ACCESS_TOKEN.map((token) => ({
+      options: creds.ACCESS_TOKEN.map((token) => ({
         ACCESS_TOKEN: token,
       })).orElse({}),
     };
   }
   if (integration === "DMPONLINE") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["DMPONLINE"]["credentials"] =
+      data.credentials;
     return {
       name: "DMPONLINE",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      // $FlowExpectedError[prop-missing]
-      // $FlowExpectedError[incompatible-type]
-      // $FlowExpectedError[incompatible-use]
-      options: data.credentials.ACCESS_TOKEN.map((token) => ({
+      options: creds.ACCESS_TOKEN.map((token) => ({
         ACCESS_TOKEN: token,
       })).orElse({}),
     };
   }
   if (integration === "DMPTOOL") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["DMPTOOL"]["credentials"] = data.credentials;
     return {
       name: "DMPTOOL",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      // $FlowExpectedError[prop-missing]
-      // $FlowExpectedError[incompatible-type]
-      // $FlowExpectedError[incompatible-use]
-      options: data.credentials.ACCESS_TOKEN.map((token) => ({
+      options: creds.ACCESS_TOKEN.map((token) => ({
         ACCESS_TOKEN: token,
       })).orElse({}),
     };
@@ -791,30 +831,28 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "DRYAD") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["DRYAD"]["credentials"] = data.credentials;
     return {
       name: "DRYAD",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[prop-missing]
-        // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.ACCESS_TOKEN.map((token) => ({
+        ...creds.ACCESS_TOKEN.map((token) => ({
           ACCESS_TOKEN: token,
         })).orElse({}),
       },
     };
   }
   if (integration === "EGNYTE") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["EGNYTE"]["credentials"] = data.credentials;
     return {
       name: "EGNYTE",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[prop-missing]
-        // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.EGNYTE_DOMAIN.map((token) => ({
+        ...creds.EGNYTE_DOMAIN.map((token) => ({
           EGNYTE_DOMAIN: token,
         })).orElse({}),
       },
@@ -829,14 +867,14 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "FIELDMARK") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["FIELDMARK"]["credentials"] =
+      data.credentials;
     return {
       name: "FIELDMARK",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      // $FlowExpectedError[prop-missing]
-      // $FlowExpectedError[incompatible-type]
-      // $FlowExpectedError[incompatible-use]
-      options: data.credentials.FIELDMARK_USER_TOKEN.map((token) => ({
+      options: creds.FIELDMARK_USER_TOKEN.map((token) => ({
         FIELDMARK_USER_TOKEN: token,
       })).orElse({
         FIELDMARK_USER_TOKEN: "",
@@ -844,40 +882,29 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "FIGSHARE") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["FIGSHARE"]["credentials"] =
+      data.credentials;
     return {
       name: "FIGSHARE",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[prop-missing]
-        // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.ACCESS_TOKEN.map((token) => ({
+        ...creds.ACCESS_TOKEN.map((token) => ({
           ACCESS_TOKEN: token,
         })).orElse({}),
       },
     };
   }
   if (integration === "GITHUB") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["GITHUB"]["credentials"] = data.credentials;
     return {
       name: "GITHUB",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: Object.fromEntries(
-        ArrayUtils.mapOptional<
-          Optional<{|
-            GITHUB_ACCESS_TOKEN: string,
-            GITHUB_REPOSITORY_FULL_NAME: string,
-            optionsId: OptionsId,
-          |}>,
-          [
-            OptionsId,
-            {|
-              GITHUB_ACCESS_TOKEN: string,
-              GITHUB_REPOSITORY_FULL_NAME: string,
-            |}
-          ]
-        >(
+        ArrayUtils.mapOptional(
           (config) =>
             config.map((c) => [
               c.optionsId,
@@ -886,22 +913,21 @@ const encodeIntegrationState = <I: Integration>(
                 GITHUB_REPOSITORY_FULL_NAME: c.GITHUB_REPOSITORY_FULL_NAME,
               },
             ]),
-          // $FlowExpectedError[prop-missing]
-          // $FlowExpectedError[incompatible-call]
-          data.credentials
+          creds
         )
       ),
     };
   }
   if (integration === "GOOGLEDRIVE") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["GOOGLEDRIVE"]["credentials"] =
+      data.credentials;
     return {
       name: "GOOGLEDRIVE",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials["googledrive.linking.enabled"]
-          // $FlowExpectedError[incompatible-use]
+        ...creds["googledrive.linking.enabled"]
           .map((enabled) => ({
             ["googledrive.linking.enabled"]: enabled,
           }))
@@ -926,15 +952,15 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "NEXTCLOUD") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["NEXTCLOUD"]["credentials"] =
+      data.credentials;
     return {
       name: "NEXTCLOUD",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[prop-missing]
-        // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.ACCESS_TOKEN.map((token) => ({
+        ...creds.ACCESS_TOKEN.map((token) => ({
           ACCESS_TOKEN: token,
         })).orElse({}),
       },
@@ -957,15 +983,15 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "OWNCLOUD") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["OWNCLOUD"]["credentials"] =
+      data.credentials;
     return {
       name: "OWNCLOUD",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[prop-missing]
-        // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.ACCESS_TOKEN.map((token) => ({
+        ...creds.ACCESS_TOKEN.map((token) => ({
           ACCESS_TOKEN: token,
         })).orElse({}),
       },
@@ -980,25 +1006,21 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "PYRAT") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["PYRAT"]["credentials"] = data.credentials;
     return {
       name: "PYRAT",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: Object.fromEntries(
-        // $FlowExpectedError[incompatible-use]
-        // $FlowExpectedError[prop-missing]
-        // $FlowExpectedError[incompatible-type]
-        data.credentials.authenticatedServers.map(
-          // $FlowExpectedError[prop-missing]
-          ({ alias, url, apiKey, optionsId }) => [
-            optionsId,
-            {
-              PYRAT_ALIAS: alias,
-              PYRAT_URL: url,
-              PYRAT_APIKEY: apiKey,
-            },
-          ]
-        )
+        creds.authenticatedServers.map(({ alias, url, apiKey, optionsId }) => [
+          optionsId,
+          {
+            PYRAT_ALIAS: alias,
+            PYRAT_URL: url,
+            PYRAT_APIKEY: apiKey,
+          },
+        ])
       ),
     };
   }
@@ -1016,15 +1038,14 @@ const encodeIntegrationState = <I: Integration>(
     };
   }
   if (integration === "ZENODO") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["ZENODO"]["credentials"] = data.credentials;
     return {
       name: "ZENODO",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[prop-missing]
-        // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.ZENODO_USER_TOKEN.map((token) => ({
+        ...creds.ZENODO_USER_TOKEN.map((token) => ({
           ZENODO_USER_TOKEN: token,
         })).orElse({
           ZENODO_USER_TOKEN: "",
@@ -1048,13 +1069,13 @@ const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
  *                context to display toasts after the calls to modify the state
  *                of the integrations has either failed or completed successfully.
  */
-export function useIntegrationsEndpoint(): {|
+export function useIntegrationsEndpoint(): {
   /**
    * Calls the `/allIntegrations` API endpoint.
    *
    * @returns A promise of the current state of all of the integrations.
    */
-  allIntegrations: () => Promise<IntegrationStates>,
+  allIntegrations: () => Promise<IntegrationStates>;
 
   /**
    * Calls the `/update` API endpoint, updating the mode of the integration
@@ -1066,10 +1087,10 @@ export function useIntegrationsEndpoint(): {|
    *         `Error`. Should the update be successful, then a success toast is
    *         shown and the returned promise resolves with void.
    */
-  update: <I: Integration & string>(
+  update: <I extends Integration>(
     integration: I,
     newState: IntegrationStates[I]
-  ) => Promise<IntegrationStates[I]>,
+  ) => Promise<IntegrationStates[I]>;
 
   /**
    * Calls the `/saveAppOptions` API endpoint, creating a new configuration or
@@ -1094,11 +1115,11 @@ export function useIntegrationsEndpoint(): {|
    *         Called SHOULD update any UI state, using runInAction, so that the
    *         UI updates.
    */
-  saveAppOptions: <I: Integration & string>(
+  saveAppOptions: <I extends Integration>(
     appName: I,
     optionsId: Optional<OptionsId>,
-    newOption: { ... }
-  ) => Promise<IntegrationStates[I]>,
+    newOption: object
+  ) => Promise<IntegrationStates[I]>;
 
   /**
    * Calls the `deleteAppOptions` API endpoint, deleting a configuration option
@@ -1109,11 +1130,11 @@ export function useIntegrationsEndpoint(): {|
    *         that the caller displays an alert to indicate to the user that the
    *         action failed, displaying `error.message`.
    */
-  deleteAppOptions: <I: Integration & string>(
+  deleteAppOptions: <I extends Integration>(
     appName: I,
     optionsId: OptionsId
-  ) => Promise<void>,
-|} {
+  ) => Promise<void>;
+} {
   const api = axios.create({
     baseURL: "/integration",
     timeout: ONE_MINUTE_IN_MS,
@@ -1122,16 +1143,16 @@ export function useIntegrationsEndpoint(): {|
 
   const allIntegrations = async (): Promise<IntegrationStates> => {
     const states = await api.get<
-      | {|
-          success: true,
-          data: { [Integration]: FetchedState },
-          error: null,
-        |}
-      | {|
-          success: false,
-          data: null,
-          error: string,
-        |}
+      | {
+          success: true;
+          data: { [integration in Integration]: FetchedState };
+          error: null;
+        }
+      | {
+          success: false;
+          data: null;
+          error: string;
+        }
     >("allIntegrations");
     if (states.data.success) {
       const data = states.data.data;
@@ -1141,28 +1162,31 @@ export function useIntegrationsEndpoint(): {|
   };
 
   const update = React.useCallback(
-    async <I: Integration & string>(
+    // eslint-disable-next-line complexity
+    async <I extends Integration>(
       integration: I,
       newState: IntegrationStates[I]
     ): Promise<IntegrationStates[I]> => {
       try {
         const { data: responseData } = await api.post<
-          FetchedState,
-          | {| success: true, data: FetchedState |}
-          | {|
-              success: false,
-              data: null,
+          | { success: true; data: FetchedState }
+          | {
+              success: false;
+              data: null;
               errorMsg:
                 | string
-                | {|
-                    errorMessages: Array<string>,
-                  |},
-            |}
-          | {| errorId: string, exceptionMessage: string, tstamp: string |}
+                | {
+                    errorMessages: Array<string>;
+                  };
+            }
+          | { errorId: string; exceptionMessage: string; tstamp: string }
         >("update", encodeIntegrationState(integration, newState));
 
+        if (!("success" in responseData))
+          throw new Error(responseData.exceptionMessage);
         if (!responseData.success) {
           if (
+            !responseData.success &&
             responseData.errorMsg !== null &&
             typeof responseData.errorMsg !== "undefined"
           ) {
@@ -1177,7 +1201,7 @@ export function useIntegrationsEndpoint(): {|
               );
             }
           }
-          throw new Error(responseData.exceptionMessage);
+          throw new Error("Unknown error");
         } else {
           addAlert(
             mkAlert({
@@ -1187,91 +1211,103 @@ export function useIntegrationsEndpoint(): {|
           );
           switch (integration) {
             case "ARGOS":
-              return decodeArgos(responseData.data);
+              return decodeArgos(responseData.data) as IntegrationStates[I];
             case "BOX":
-              return decodeBox(responseData.data);
+              return decodeBox(responseData.data) as IntegrationStates[I];
             case "CHEMISTRY":
-              return decodeChemistry(responseData.data);
+              return decodeChemistry(responseData.data) as IntegrationStates[I];
             case "CLUSTERMARKET":
-              return decodeClustermarket(responseData.data);
+              return decodeClustermarket(
+                responseData.data
+              ) as IntegrationStates[I];
             case "DATAVERSE":
-              return decodeDataverse(responseData.data);
+              return decodeDataverse(responseData.data) as IntegrationStates[I];
             case "DIGITALCOMMONSDATA":
-              return decodeDigitalCommonsData(responseData.data);
+              return decodeDigitalCommonsData(
+                responseData.data
+              ) as IntegrationStates[I];
             case "DMPONLINE":
-              return decodeDmponline(responseData.data);
+              return decodeDmponline(responseData.data) as IntegrationStates[I];
             case "DMPTOOL":
-              return decodeDmpTool(responseData.data);
+              return decodeDmpTool(responseData.data) as IntegrationStates[I];
             case "DROPBOX":
-              return decodeDropbox(responseData.data);
+              return decodeDropbox(responseData.data) as IntegrationStates[I];
             case "DRYAD":
-              return decodeDryad(responseData.data);
+              return decodeDryad(responseData.data) as IntegrationStates[I];
             case "EGNYTE":
-              return decodeEgnyte(responseData.data);
+              return decodeEgnyte(responseData.data) as IntegrationStates[I];
             case "EVERNOTE":
-              return decodeEvernote(responseData.data);
+              return decodeEvernote(responseData.data) as IntegrationStates[I];
             case "FIELDMARK":
-              return decodeFieldmark(responseData.data);
+              return decodeFieldmark(responseData.data) as IntegrationStates[I];
             case "FIGSHARE":
-              return decodeFigshare(responseData.data);
+              return decodeFigshare(responseData.data) as IntegrationStates[I];
             case "GITHUB":
-              return decodeGitHub(responseData.data);
+              return decodeGitHub(responseData.data) as IntegrationStates[I];
             case "GOOGLEDRIVE":
-              return decodeGoogleDrive(responseData.data);
+              return decodeGoogleDrive(
+                responseData.data
+              ) as IntegrationStates[I];
             case "JOVE":
-              return decodeJove(responseData.data);
+              return decodeJove(responseData.data) as IntegrationStates[I];
             case "MSTEAMS":
-              return decodeMsTeams(responseData.data);
+              return decodeMsTeams(responseData.data) as IntegrationStates[I];
             case "NEXTCLOUD":
-              return decodeNextCloud(responseData.data);
+              return decodeNextCloud(responseData.data) as IntegrationStates[I];
             case "OMERO":
-              return decodeOmero(responseData.data);
+              return decodeOmero(responseData.data) as IntegrationStates[I];
             case "ONEDRIVE":
-              return decodeOneDrive(responseData.data);
+              return decodeOneDrive(responseData.data) as IntegrationStates[I];
             case "OWNCLOUD":
-              return decodeOwnCloud(responseData.data);
+              return decodeOwnCloud(responseData.data) as IntegrationStates[I];
             case "PROTOCOLS_IO":
-              return decodeProtocolsIo(responseData.data);
+              return decodeProtocolsIo(
+                responseData.data
+              ) as IntegrationStates[I];
             case "PYRAT":
-              return decodePyrat(responseData.data);
+              return decodePyrat(responseData.data) as IntegrationStates[I];
             case "SLACK":
-              return decodeSlack(responseData.data);
+              return decodeSlack(responseData.data) as IntegrationStates[I];
             case "ZENODO":
-              return decodeZenodo(responseData.data);
+              return decodeZenodo(responseData.data) as IntegrationStates[I];
             default:
               throw new Error("Invalid integration");
           }
         }
       } catch (e) {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Update failed.",
-            message: e.message,
-          })
-        );
+        if (e instanceof Error)
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Update failed.",
+              message: e.message,
+            })
+          );
         throw e;
       }
     },
     []
   );
 
-  const saveAppOptions = async <I: Integration & string>(
+  // eslint-disable-next-line complexity
+  const saveAppOptions = async <I extends Integration>(
     appName: I,
     optionsId: Optional<OptionsId>,
-    newOption: { ... }
+    newOption: object
   ): Promise<IntegrationStates[I]> => {
     const params = new URLSearchParams({
       appName,
       ...optionsId.map((o) => ({ optionsId: o })).orElse({}),
     });
     const response = await api.post<
-      { ... },
-      | {| success: true, data: FetchedState |}
-      | {| success: false, data: null, errorMsg: string |}
-      | {| errorId: string, exceptionMessage: string, tstamp: string |}
+      | { success: true; data: FetchedState }
+      | { success: false; data: null; errorMsg: string }
+      | { errorId: string; exceptionMessage: string; tstamp: string }
     >("saveAppOptions", newOption, { params });
 
+    if (!("success" in response.data)) {
+      throw new Error(response.data.exceptionMessage);
+    }
     if (!response.data.success) {
       if (
         response.data.errorMsg !== null &&
@@ -1279,99 +1315,90 @@ export function useIntegrationsEndpoint(): {|
       ) {
         throw new Error(response.data.errorMsg);
       }
-      if (
-        response.data.exceptionMessage !== null &&
-        typeof response.data.exceptionMessage !== "undefined"
-      ) {
-        throw new Error(response.data.exceptionMessage);
-      }
       throw new Error("Unknown reason");
     } else {
       switch (appName) {
         case "ARGOS":
-          return decodeArgos(response.data.data);
+          return decodeArgos(response.data.data) as IntegrationStates[I];
         case "BOX":
-          return decodeBox(response.data.data);
+          return decodeBox(response.data.data) as IntegrationStates[I];
         case "CHEMISTRY":
-          return decodeChemistry(response.data.data);
+          return decodeChemistry(response.data.data) as IntegrationStates[I];
         case "CLUSTERMARKET":
-          return decodeClustermarket(response.data.data);
+          return decodeClustermarket(
+            response.data.data
+          ) as IntegrationStates[I];
         case "DATAVERSE":
-          return decodeDataverse(response.data.data);
+          return decodeDataverse(response.data.data) as IntegrationStates[I];
         case "DIGITALCOMMONSDATA":
-          return decodeDigitalCommonsData(response.data.data);
+          return decodeDigitalCommonsData(
+            response.data.data
+          ) as IntegrationStates[I];
         case "DMPONLINE":
-          return decodeDmponline(response.data.data);
+          return decodeDmponline(response.data.data) as IntegrationStates[I];
         case "DMPTOOL":
-          return decodeDmpTool(response.data.data);
+          return decodeDmpTool(response.data.data) as IntegrationStates[I];
         case "DROPBOX":
-          return decodeDropbox(response.data.data);
+          return decodeDropbox(response.data.data) as IntegrationStates[I];
         case "DRYAD":
-          return decodeDryad(response.data.data);
+          return decodeDryad(response.data.data) as IntegrationStates[I];
         case "EGNYTE":
-          return decodeEgnyte(response.data.data);
+          return decodeEgnyte(response.data.data) as IntegrationStates[I];
         case "EVERNOTE":
-          return decodeEvernote(response.data.data);
+          return decodeEvernote(response.data.data) as IntegrationStates[I];
         case "FIELDMARK":
-          return decodeFieldmark(response.data.data);
+          return decodeFieldmark(response.data.data) as IntegrationStates[I];
         case "FIGSHARE":
-          return decodeFigshare(response.data.data);
+          return decodeFigshare(response.data.data) as IntegrationStates[I];
         case "GITHUB":
-          return decodeGitHub(response.data.data);
+          return decodeGitHub(response.data.data) as IntegrationStates[I];
         case "GOOGLEDRIVE":
-          return decodeGoogleDrive(response.data.data);
+          return decodeGoogleDrive(response.data.data) as IntegrationStates[I];
         case "JOVE":
-          return decodeJove(response.data.data);
+          return decodeJove(response.data.data) as IntegrationStates[I];
         case "MSTEAMS":
-          return decodeMsTeams(response.data.data);
+          return decodeMsTeams(response.data.data) as IntegrationStates[I];
         case "NEXTCLOUD":
-          return decodeNextCloud(response.data.data);
+          return decodeNextCloud(response.data.data) as IntegrationStates[I];
         case "OMERO":
-          return decodeOmero(response.data.data);
+          return decodeOmero(response.data.data) as IntegrationStates[I];
         case "ONEDRIVE":
-          return decodeOneDrive(response.data.data);
+          return decodeOneDrive(response.data.data) as IntegrationStates[I];
         case "OWNCLOUD":
-          return decodeOwnCloud(response.data.data);
+          return decodeOwnCloud(response.data.data) as IntegrationStates[I];
         case "PROTOCOLS_IO":
-          return decodeProtocolsIo(response.data.data);
+          return decodeProtocolsIo(response.data.data) as IntegrationStates[I];
         case "PYRAT":
-          return decodePyrat(response.data.data);
+          return decodePyrat(response.data.data) as IntegrationStates[I];
         case "SLACK":
-          return decodeSlack(response.data.data);
+          return decodeSlack(response.data.data) as IntegrationStates[I];
         case "ZENODO":
-          return decodeZenodo(response.data.data);
+          return decodeZenodo(response.data.data) as IntegrationStates[I];
         default:
           throw new Error("Invalid integration");
       }
     }
   };
 
-  const deleteAppOptions = async <I: Integration & string>(
+  const deleteAppOptions = async <I extends Integration>(
     appName: I,
     optionsId: OptionsId
   ): Promise<void> => {
     const formData = new FormData();
     formData.append("optionsId", `${optionsId}`);
     const response = await api.post<
-      FormData,
-      | {| success: true, data: FetchedState |}
-      | {| success: false, data: null, errorMsg: string |}
-      | {| errorId: string, exceptionMessage: string, tstamp: string |}
+      | { success: true; data: FetchedState }
+      | { success: false; data: null; errorMsg: string }
+      | { errorId: string; exceptionMessage: string; tstamp: string }
     >("deleteAppOptions", formData, {
       params: new URLSearchParams({ appName }),
     });
 
-    // if success, update states so that the UI updates
+    if (!("success" in response.data)) {
+      throw new Error(response.data.exceptionMessage);
+    }
     if (!response.data.success) {
-      if (
-        response.data.exceptionMessage !== null &&
-        typeof response.data.exceptionMessage !== "undefined"
-      ) {
-        throw new Error(response.data.errorMsg);
-      }
-      if (response.data.exceptionMessage) {
-        throw new Error(response.data.exceptionMessage);
-      }
+      throw new Error(response.data.errorMsg);
     }
   };
 

@@ -7,6 +7,7 @@ declare export function parseInteger(string): Result<number>;
 declare export function parseBoolean("true" | "false"): Result<boolean>;
 declare export function parseDate(string | number): Result<Date>;
 declare export function isObject(mixed): Result<{ ... } | null>;
+declare export function isRecord({ ... }): Result<{ [string]: mixed }>;
 declare export function isNull<T>(T | null): Result<null>;
 declare export function isNotNull<T>(T | null): Result<T>;
 declare export function isNotBottom<T>(?T): Result<T>;
