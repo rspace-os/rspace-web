@@ -11,12 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   private @Autowired SystemPropertyPermissionManager systemPropertyManager;
-  private static final ServiceOperationResult<String> enableResult =
+  private static final ServiceOperationResult<String> enabledResult =
       new ServiceOperationResult<>("Enabled", true);
-  private static final ServiceOperationResult<String> apiDisabled =
+  private static final ServiceOperationResult<String> apiDisabledResult =
       new ServiceOperationResult<>(
           "Access to all API has been disabled by your administrator", false);
-  private static final ServiceOperationResult<String> invDisabled =
+  private static final ServiceOperationResult<String> invDisabledResult =
       new ServiceOperationResult<>(
           "Access to Inventory has been disabled by your administrator", false);
 
@@ -26,18 +26,17 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   @Override
   public ServiceOperationResult<String> isAvailable(User user, HttpServletRequest request) {
-    // rsinv-365
     if (!isApiAvailableForUser(user)) {
-      return apiDisabled; // case 4
+      return apiDisabledResult;
     }
     if (isInventoryRequest(request)) {
       if (isInventoryAvailable(user)) {
-        return enableResult; // 1
+        return enabledResult;
       } else {
-        return invDisabled; // case 2
+        return invDisabledResult;
       }
     }
-    return enableResult; // case 3
+    return enabledResult;
   }
 
   @Override

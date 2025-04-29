@@ -87,8 +87,8 @@ public interface AnalyticsManager {
   void recordCreated(HistoricalEvent event);
 
   /**
-   * Registers specific calls to public API made with API Key,
-   * or fact of generating OAuth token through username/password flow.
+   * Registers specific calls to public API made with API Key, or fact of generating OAuth token
+   * through username/password flow.
    */
   void apiAccessed(User user, boolean apiKeyAccess, HttpServletRequest req);
 

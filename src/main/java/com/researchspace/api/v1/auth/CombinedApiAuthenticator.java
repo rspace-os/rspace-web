@@ -3,21 +3,21 @@ package com.researchspace.api.v1.auth;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.model.User;
 import com.researchspace.service.ApiAvailabilityHandler;
-import com.researchspace.service.UserApiKeyManager;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * Main authenticator implementation, that checks if it should call the ApiKeyAuthenticator or the
- * OAuthTokenAuthenticator.
+ * Main authenticator implementation in RSpace, supports API authentication through
+ * ApiKeyAuthenticator and OAuthTokenAuthenticator, depending on passed request headers.
  */
-public class MainRSpaceApiAuthenticator implements ApiAuthenticator {
+public class CombinedApiAuthenticator implements ApiAuthenticator {
 
   private ApiKeyAuthenticator apiKeyAuthenticator;
   private OAuthTokenAuthenticator oAuthAuthenticator;
   private AnalyticsManager analyticsMgr;
   private ApiAvailabilityHandler apiHandler;
 
-  public MainRSpaceApiAuthenticator(
+  public CombinedApiAuthenticator(
       ApiKeyAuthenticator apiKeyAuthenticator,
       OAuthTokenAuthenticator oAuthAuthenticator,
       AnalyticsManager analyticsManager,
@@ -31,7 +31,7 @@ public class MainRSpaceApiAuthenticator implements ApiAuthenticator {
 
   @Override
   public User authenticate(HttpServletRequest request) {
-    if (request.getHeader("apiKey") != null) {
+    if (StringUtils.isNotEmpty(request.getHeader("apiKey"))) {
       if (!apiHandler.isApiAvailableForUser(null)) {
         throw new ApiAuthenticationException(
             "Access to API has been disabled by RSpace administrator.");
@@ -47,7 +47,7 @@ public class MainRSpaceApiAuthenticator implements ApiAuthenticator {
       return user;
     }
 
-    if (request.getHeader("Authorization") != null) {
+    if (StringUtils.isNotEmpty(request.getHeader("Authorization"))) {
       return oAuthAuthenticator.authenticate(request);
     }
 

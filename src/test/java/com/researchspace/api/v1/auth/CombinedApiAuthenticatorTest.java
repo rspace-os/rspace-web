@@ -1,7 +1,5 @@
 package com.researchspace.api.v1.auth;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -13,29 +11,22 @@ import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.model.User;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.ApiAvailabilityHandler;
-import com.researchspace.service.UserApiKeyManager;
-import java.util.Optional;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.UnavailableSecurityManagerException;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-public class MainRSpaceApiAuthenticatorTest {
+public class CombinedApiAuthenticatorTest {
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock ApiKeyAuthenticator apiKeyAuthenticator;
   @Mock OAuthTokenAuthenticator oAuthAuthenticator;
   @Mock AnalyticsManager analyticsManager;
   @Mock ApiAvailabilityHandler apiAvailabilityHandler;
-  @InjectMocks MainRSpaceApiAuthenticator mainRSpaceAuthenticator;
+  @InjectMocks CombinedApiAuthenticator combinedApiAuthenticator;
 
   MockHttpServletRequest mockRequest;
 
@@ -47,7 +38,7 @@ public class MainRSpaceApiAuthenticatorTest {
     when(oAuthAuthenticator.authenticate(mockRequest)).thenReturn(user);
 
     setAuthorizationHeader();
-    User authenticatedUser = mainRSpaceAuthenticator.authenticate(mockRequest);
+    User authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
     assertEquals(user, authenticatedUser);
 
     verifyNoInteractions(apiKeyAuthenticator);
@@ -64,12 +55,11 @@ public class MainRSpaceApiAuthenticatorTest {
     when(apiKeyAuthenticator.authenticate(mockRequest)).thenReturn(user);
 
     setApiKeyHeader();
-    User authenticatedUser = mainRSpaceAuthenticator.authenticate(mockRequest);
+    User authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
     assertEquals(user, authenticatedUser);
 
     verifyNoInteractions(oAuthAuthenticator);
-    verify(analyticsManager, times(1))
-        .apiAccessed(eq(user), eq(true), eq(mockRequest));
+    verify(analyticsManager, times(1)).apiAccessed(eq(user), eq(true), eq(mockRequest));
   }
 
   private void setApiKeyHeader() {
@@ -79,5 +69,4 @@ public class MainRSpaceApiAuthenticatorTest {
   private void setAuthorizationHeader() {
     mockRequest.addHeader("Authorization", "Bearer 54321");
   }
-
 }

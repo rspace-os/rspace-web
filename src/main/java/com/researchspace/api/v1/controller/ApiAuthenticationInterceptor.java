@@ -15,23 +15,22 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
  */
 public class ApiAuthenticationInterceptor extends HandlerInterceptorAdapter {
 
-  @Autowired private ApiAuthenticator apiAuthenticator;
+  @Autowired private ApiAuthenticator combinedApiAuthenticator;
 
   @Override
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
-    User user = apiAuthenticator.authenticate(request);
+    User user = combinedApiAuthenticator.authenticate(request);
     request.setAttribute("user", user);
     return true;
   }
 
-  /** Logs out. */
   @Override
   public void postHandle(
       HttpServletRequest request,
       HttpServletResponse response,
       Object handler,
       ModelAndView modelAndView) {
-    apiAuthenticator.logout();
+    combinedApiAuthenticator.logout();
   }
 }

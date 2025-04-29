@@ -220,8 +220,8 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
     Map<String, Object> props = new HashMap<>();
     props.put(AnalyticsProperty.API_METHOD.getLabel(), req.getMethod());
     props.put(AnalyticsProperty.API_URI.getLabel(), requestURI);
-    AnalyticsEvent event = apiKeyUsage ? AnalyticsEvent.API_KEY_USAGE
-        : AnalyticsEvent.API_OAUTH_TOKEN_GENERATION;
+    AnalyticsEvent event =
+        apiKeyUsage ? AnalyticsEvent.API_KEY_USAGE : AnalyticsEvent.API_OAUTH_TOKEN_GENERATION;
     track(userId, event.getLabel(), props);
   }
 
