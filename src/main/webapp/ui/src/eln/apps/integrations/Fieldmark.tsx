@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
@@ -13,17 +11,20 @@ import TextField from "@mui/material/TextField";
 import { Optional } from "../../../util/optional";
 import { LOGO_COLOR } from "../../../assets/branding/fieldmark";
 
-type FieldmarkArgs = {|
-  integrationState: IntegrationStates["FIELDMARK"],
-  update: (IntegrationStates["FIELDMARK"]) => void,
-|};
+type FieldmarkArgs = {
+  integrationState: IntegrationStates["FIELDMARK"];
+  update: (newIntegrationState: IntegrationStates["FIELDMARK"]) => void;
+};
 
 /*
  * Fieldmark uses an API-key-like authentication mechanism, wherein the user
  * copies a string from the Fieldmark website into the text field provided
  * below..
  */
-function Fieldmark({ integrationState, update }: FieldmarkArgs): Node {
+function Fieldmark({
+  integrationState,
+  update,
+}: FieldmarkArgs): React.ReactNode {
   const [apiKey, setApiKey] = React.useState(
     integrationState.credentials.FIELDMARK_USER_TOKEN.orElse("")
   );
@@ -96,4 +97,4 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): Node {
   );
 }
 
-export default (React.memo(Fieldmark): AbstractComponent<FieldmarkArgs>);
+export default React.memo(Fieldmark);
