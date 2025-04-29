@@ -5,7 +5,7 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
     <!-- Galaxy integration -->
-    <changeSet id="2025-04-23a" context="run,dev-test" author="nico">
+    <changeSet id="2025-04-23a" context="run" author="nico">
         <comment>Create a new app - Galaxy</comment>
         <insert tableName="App">
             <column name="id" type="NUMERIC" value="NULL" />
@@ -15,7 +15,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2025-04-23b" context="run,dev-test" author="nico">
+    <changeSet id="2025-04-23b" context="run" author="nico">
         <comment>Create a new system properties for Galaxy</comment>
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
@@ -37,7 +37,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2025-04-23c" context="run,dev-test" author="nico">
+    <changeSet id="2025-04-23c" context="run" author="nico">
         <comment>Property Descriptor for Galaxy App</comment>
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
@@ -47,7 +47,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2025-04-23d" context="run,dev-test" author="nico">
+    <changeSet id="2025-04-23d" context="run" author="nico">
         <comment>AppConfigElementDescriptor for Galaxy App: id, descriptor_id, app_id</comment>
         <sql>insert into AppConfigElementDescriptor (descriptor_id, app_id)
                  select pd.id as descriptor_id, app.id as app_id
