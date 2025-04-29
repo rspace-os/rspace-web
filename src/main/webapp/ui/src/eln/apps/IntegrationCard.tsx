@@ -1,13 +1,4 @@
-//@flow strict
-
-import React, {
-  type Node,
-  useState,
-  useContext,
-  type ElementProps,
-  forwardRef,
-  type Ref,
-} from "react";
+import React, { useState, useContext, forwardRef } from "react";
 import Typography from "@mui/material/Typography";
 import { type IntegrationState } from "./useIntegrationsEndpoint";
 import Card from "@mui/material/Card";
@@ -18,7 +9,12 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import { observer } from "mobx-react-lite";
 import Grow from "@mui/material/Grow";
-import { createTheme, ThemeProvider, useTheme } from "@mui/material/styles";
+import {
+  createTheme,
+  ThemeOptions,
+  ThemeProvider,
+  useTheme,
+} from "@mui/material/styles";
 import DialogTitle from "@mui/material/DialogTitle";
 import CardActionArea from "@mui/material/CardActionArea";
 import { makeStyles } from "tss-react/mui";
@@ -45,73 +41,59 @@ function hsl(
     : `hsl(${hue} ${saturation}% ${lightness}% / ${opacity}%)`;
 }
 
-const accentTextColor = (
-  color: Hsl,
-  opacity: number = 100
-) => hsl(color.hue, color.saturation, 27, opacity);
+const accentTextColor = (color: Hsl, opacity: number = 100) =>
+  hsl(color.hue, color.saturation, 27, opacity);
 
-const mainTextColor = (
-  color: Hsl,
-  opacity: number = 100
-) => hsl(color.hue, color.saturation, 20, opacity);
+const mainTextColor = (color: Hsl, opacity: number = 100) =>
+  hsl(color.hue, color.saturation, 20, opacity);
 
-const borderColor = (
-  color: Hsl,
-  opacity: number = 25
-) => hsl(color.hue, color.saturation, 20, opacity);
+const borderColor = (color: Hsl, opacity: number = 25) =>
+  hsl(color.hue, color.saturation, 20, opacity);
 
-const shadowColor = (
-  color: Hsl,
-  elevation: "high" | "low"
-) =>
-  `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px ${
-    elevation === "high" ? 12 : 8
-  }px ${elevation === "high" ? 4 : 0}px`;
-
-type IntegrationCardArgs<Credentials> = {|
+type IntegrationCardArgs<Credentials> = {
   // The name of the integration, as rendered in the UI. Be sure to check how
   // the company chooses to brand the service.
-  name: string,
+  name: string;
 
   // Brief explanation of what the service is, for those who haven't
   // heard of it before. Derive this from the service's website. Keep it very
   // brief as it will be shown both in the card and in the header of the dialog
-  explanatoryText: string,
+  explanatoryText: string;
 
   // The website of the integration's service. Format like as `example.com`, as
   // `https://` will be prefixed when used as a `href` property, and will be
   // displayed in the UI as passed.
-  website: string,
+  website: string;
 
   // Logo, or similar image. This MUST be an SVG. Try to make any new images
   // conform with the existing ones; either a white silhouette where the logo
   // allows, or else with a border based on the logo's most common colour.
-  image: string,
+  image: string;
 
   // The most common colour in the logo. This will be the accent colour of both
   // the card, the dialog, and both their contents. If the most appropriate
   // colour is very light, then do make sure that all UI elements meet the AA
   // colour contrast accessibility requirement.
-  color: Hsl,
+  color: Hsl;
 
   // The current state of the integration; whether it is enabled or disabled,
   // any configurations/credentials.
-  integrationState: IntegrationState<Credentials>,
+  integrationState: IntegrationState<Credentials>;
 
   // An explanation of what value connect the service to RSpace provides.
   // Describe the behaviour of RSpace when the integration is enabled.
-  usageText: Node,
+  usageText: React.ReactNode;
 
   // The name of a link in ../../assets/DocLinks to our user-facing
   // documentation. We cannot infer this from `name` because some very similar
   // integrations share a single page of documentation.
-  docLink: string,
+  docLink: string;
 
   // The text that should be shown when linking to our user-facing
   // documentation. This string should follow accessibility best-practices, in
   // that it should be understandable without any surrounding context.
   // Something like "Foo integration docs" is best, simply "Foo" is not.
-  helpLinkText: string,
+  helpLinkText: string;
 
   // This is the content of the dialog beneath the "Setup" heading.
   // This include instructions, which should use regular <ol> and <li> tags to
@@ -119,15 +101,15 @@ type IntegrationCardArgs<Credentials> = {|
   // This should also include any <forms>s for providing credentials.
   // If nothing else is necessary, at the very lease, instruct the user on
   // where they can use the integration within RSpace once enabled.
-  setupSection: Node,
+  setupSection: React.ReactNode;
 
   // Function to be called to update the mode of the integration i.e. whether
   // it is enabled or disable.
-  update: (IntegrationState<Credentials>["mode"]) => void,
-|};
+  update: (newState: IntegrationState<Credentials>["mode"]) => void;
+};
 
-const CustomGrow = forwardRef<ElementProps<typeof Grow>, {||}>(
-  (props: ElementProps<typeof Grow>, ref: Ref<typeof Grow>) => (
+const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>(
+  (props, ref) => (
     <Grow
       {...props}
       ref={ref}
@@ -142,7 +124,10 @@ const CustomGrow = forwardRef<ElementProps<typeof Grow>, {||}>(
 );
 CustomGrow.displayName = "CustomGrow";
 
-const useStyles = makeStyles()((theme, { color, mode }) => ({
+const useStyles = makeStyles<{
+  color: Hsl;
+  mode: IntegrationState<unknown>["mode"];
+}>()((theme, { color, mode }) => ({
   card: {
     display: "flex",
     flexDirection: "column",
@@ -232,7 +217,7 @@ function IntegrationCard<Credentials>({
   docLink,
   website,
   setupSection,
-}: IntegrationCardArgs<Credentials>): Node {
+}: IntegrationCardArgs<Credentials>): React.ReactNode {
   const [open, setOpen] = useState(false);
   const mode = integrationState.mode;
   const theme = useTheme();
@@ -242,9 +227,8 @@ function IntegrationCard<Credentials>({
   return (
     <ThemeProvider
       theme={createTheme({
-        ...theme,
+        ...(theme as any as ThemeOptions),
         components: {
-          ...theme.components,
           MuiLink: {
             defaultProps: {
               target: "_blank",
@@ -252,7 +236,6 @@ function IntegrationCard<Credentials>({
             },
             styleOverrides: {
               root: {
-                ...theme?.components?.MuiLink?.styleOverrides?.root,
                 color: accentTextColor(color),
                 textDecorationColor: accentTextColor(color, 40),
                 outlineColor: mainTextColor(color, 25),
@@ -527,4 +510,4 @@ function IntegrationCard<Credentials>({
   );
 }
 
-export default (observer(IntegrationCard): typeof IntegrationCard);
+export default observer(IntegrationCard);
