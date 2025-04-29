@@ -1,23 +1,21 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import { observer } from "mobx-react-lite";
 import EvernoteIcon from "../../../assets/branding/evernote/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/evernote";
 
-type EvernoteArgs = {|
-  integrationState: IntegrationStates["EVERNOTE"],
-  update: (IntegrationStates["EVERNOTE"]) => void,
-|};
+type EvernoteArgs = {
+  integrationState: IntegrationStates["EVERNOTE"];
+  update: (newIntegrationState: IntegrationStates["EVERNOTE"]) => void;
+};
 
 /*
  * There is no authentication mechanism with Evernote. All users can use it to
  * import documents into RSpace.
  */
-function Evernote({ integrationState, update }: EvernoteArgs): Node {
+function Evernote({ integrationState, update }: EvernoteArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -42,6 +40,4 @@ function Evernote({ integrationState, update }: EvernoteArgs): Node {
   );
 }
 
-export default (React.memo(
-  observer(Evernote)
-): AbstractComponent<EvernoteArgs>);
+export default React.memo(observer(Evernote));
