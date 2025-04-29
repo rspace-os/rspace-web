@@ -1,0 +1,5 @@
+//@flow strict
+
+declare export function useDryadEndpoint(): {|
+  disconnect: () => Promise<void>,
+|};
