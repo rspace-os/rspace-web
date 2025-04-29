@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow strict
 /* eslint-env jest */
 import React from "react";
 import { cleanup, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -9,7 +8,7 @@ import "@testing-library/jest-dom";
 import GitHub from "../GitHub";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { observable } from "mobx";
 import { render, within } from "../../../../__tests__/customQueries";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
@@ -41,7 +40,6 @@ describe("GitHub", () => {
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      // $FlowExpectedError[incompatible-call] See expect.extend above
       expect(await axe(baseElement)).toHaveNoViolations();
     });
   });
@@ -132,17 +130,20 @@ describe("GitHub", () => {
         error: null,
       });
 
-      jest.spyOn(window, "open").mockImplementation(() => ({
-        document: {
-          URL: "https://test.researchspace.com/github/redirect_uri",
-          getElementById: () => ({ value: "oauth token" }),
-        },
-        addEventListener: (_, f) => {
-          f();
-        },
-        removeEventListener: () => {},
-        close: () => {},
-      }));
+      jest.spyOn(window, "open").mockImplementation(
+        () =>
+          ({
+            document: {
+              URL: "https://test.researchspace.com/github/redirect_uri",
+              getElementById: () => ({ value: "oauth token" }),
+            },
+            addEventListener: (_: unknown, f: () => void) => {
+              f();
+            },
+            removeEventListener: () => {},
+            close: () => {},
+          } as unknown as Window)
+      );
 
       render(
         <GitHub
@@ -164,6 +165,7 @@ describe("GitHub", () => {
 
       const newReposTable = screen.getAllByRole("table")[1];
       expect(
+        // @ts-expect-error findTableCell comes from customQueries
         await within(newReposTable).findTableCell({
           columnHeading: "Repository Name",
           rowIndex: 0,
@@ -184,17 +186,20 @@ describe("GitHub", () => {
       });
       mockAxios.onPost("integration/saveAppOptions");
 
-      jest.spyOn(window, "open").mockImplementation(() => ({
-        document: {
-          URL: "https://test.researchspace.com/github/redirect_uri",
-          getElementById: () => ({ value: "oauth token" }),
-        },
-        addEventListener: (_, f) => {
-          f();
-        },
-        removeEventListener: () => {},
-        close: () => {},
-      }));
+      jest.spyOn(window, "open").mockImplementation(
+        () =>
+          ({
+            document: {
+              URL: "https://test.researchspace.com/github/redirect_uri",
+              getElementById: () => ({ value: "oauth token" }),
+            },
+            addEventListener: (_: unknown, f: () => void) => {
+              f();
+            },
+            removeEventListener: () => {},
+            close: () => {},
+          } as unknown as Window)
+      );
 
       render(
         <GitHub
@@ -258,17 +263,20 @@ describe("GitHub", () => {
         },
       });
 
-      jest.spyOn(window, "open").mockImplementation(() => ({
-        document: {
-          URL: "https://test.researchspace.com/github/redirect_uri",
-          getElementById: () => ({ value: "oauth token" }),
-        },
-        addEventListener: (_, f) => {
-          f();
-        },
-        removeEventListener: () => {},
-        close: () => {},
-      }));
+      jest.spyOn(window, "open").mockImplementation(
+        () =>
+          ({
+            document: {
+              URL: "https://test.researchspace.com/github/redirect_uri",
+              getElementById: () => ({ value: "oauth token" }),
+            },
+            addEventListener: (_: unknown, f: () => void) => {
+              f();
+            },
+            removeEventListener: () => {},
+            close: () => {},
+          } as unknown as Window)
+      );
 
       render(
         <GitHub
@@ -305,6 +313,7 @@ describe("GitHub", () => {
 
       const connectedReposTable = screen.getAllByRole("table")[0];
       expect(
+        // @ts-expect-error findTableCell comes from customQueries
         await within(connectedReposTable).findTableCell({
           columnHeading: "Repository Name",
           rowIndex: 0,
@@ -312,6 +321,7 @@ describe("GitHub", () => {
       ).toHaveTextContent("a repo");
 
       expect(
+        // @ts-expect-error findTableCell comes from customQueries
         await within(allReposTable).findTableCell({
           columnHeading: "Repository Name",
           rowIndex: 0,
@@ -350,17 +360,20 @@ describe("GitHub", () => {
         },
       });
 
-      jest.spyOn(window, "open").mockImplementation(() => ({
-        document: {
-          URL: "https://test.researchspace.com/github/redirect_uri",
-          getElementById: () => ({ value: "oauth token" }),
-        },
-        addEventListener: (_, f) => {
-          f();
-        },
-        removeEventListener: () => {},
-        close: () => {},
-      }));
+      jest.spyOn(window, "open").mockImplementation(
+        () =>
+          ({
+            document: {
+              URL: "https://test.researchspace.com/github/redirect_uri",
+              getElementById: () => ({ value: "oauth token" }),
+            },
+            addEventListener: (_: unknown, f: () => void) => {
+              f();
+            },
+            removeEventListener: () => {},
+            close: () => {},
+          } as unknown as Window)
+      );
 
       render(<GitHub integrationState={integrationState} update={() => {}} />);
 
@@ -438,7 +451,7 @@ describe("GitHub", () => {
     });
     test("Removing a repository should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable({
-        mode: "DISABLED",
+        mode: "DISABLED" as const,
         credentials: [
           Optional.present({
             GITHUB_ACCESS_TOKEN: Optional.present("access token"),
