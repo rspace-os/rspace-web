@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { cleanup, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -10,7 +9,7 @@ import MSTeams from "../MSTeams";
 import { Optional } from "../../../../util/optional";
 import { render, within } from "../../../../__tests__/customQueries";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
@@ -45,6 +44,7 @@ describe("MSTeams", () => {
 
       const table = screen.getByRole("table");
       expect(
+        // @ts-expect-error findTableCell comes from customQueries
         await within(table).findTableCell({
           columnHeading: "Channel Connector Name",
           rowIndex: 0,
@@ -64,7 +64,7 @@ describe("MSTeams", () => {
       });
 
       const integrationState = observable({
-        mode: "DISABLED",
+        mode: "DISABLED" as const,
         credentials: [
           Optional.present({
             optionsId: "1",
