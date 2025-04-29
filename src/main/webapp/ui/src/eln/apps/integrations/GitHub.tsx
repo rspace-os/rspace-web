@@ -1,12 +1,7 @@
 //@flow strict
 
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useContext,
-  useState,
-  type AbstractComponent,
-} from "react";
+import React, { useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import {
   type IntegrationStates,
@@ -31,17 +26,20 @@ import GitHubIcon from "../../../assets/branding/github/logo.svg";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { LOGO_COLOR } from "../../../assets/branding/github";
 
+type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
+
+type UnwrapArray<T extends Array<unknown>> = {
+  [K in keyof T]: UnwrapOptional<T[K]>;
+};
+
 const DialogContent = observer(
   ({
     linkedRepos,
     integrationState,
-  }: {|
-    linkedRepos: $TupleMap<
-      IntegrationStates["GITHUB"]["credentials"],
-      <A>(Optional<A>) => A
-    >,
-    integrationState: IntegrationStates["GITHUB"],
-  |}) => {
+  }: {
+    linkedRepos: UnwrapArray<IntegrationStates["GITHUB"]["credentials"]>;
+    integrationState: IntegrationStates["GITHUB"];
+  }) => {
     const { addAlert } = useContext(AlertContext);
     const { deleteAppOptions, saveAppOptions } = useIntegrationsEndpoint();
     const { getAllRepositories, oauthUrl } = useGitHubEndpoint();
@@ -51,7 +49,7 @@ const DialogContent = observer(
     const [allRepositories, setAllRepositories] = useState<
       Optional<Array<Repository>>
     >(Optional.empty());
-    const [accessToken, setAccessToken] = useState<?string>(null);
+    const [accessToken, setAccessToken] = useState<string | null>(null);
     const [loadingAllRepositories, setLoadingAllRepositories] = useState(false);
 
     const addHandler = async () => {
@@ -76,12 +74,25 @@ const DialogContent = observer(
          * then call the `/allRepositories` endpoint.
          */
         const authWindow = window.open(await oauthUrl());
+        if (!authWindow) {
+          throw new Error("Failed to open GitHub authentication window");
+        }
 
-        const authToken: string = await new Promise((resolve) => {
+        const authToken: string = await new Promise((resolve, reject) => {
           const f = () => {
             if (authWindow.document.URL.indexOf("redirect_uri") > 0) {
-              const code =
-                authWindow.document.getElementById("gitHubAccessToken").value;
+              const accessTokenInput =
+                authWindow.document.getElementById("gitHubAccessToken");
+              if (!accessTokenInput) {
+                reject(new Error("Failed to retrieve access token"));
+                return;
+              }
+              // @ts-expect-error value will be on the input; don't cast to HTMLInputElement because test relies on a simple mock
+              const code = accessTokenInput.value;
+              if (code === null) {
+                reject(new Error("Failed to retrieve access token"));
+                return;
+              }
               setAccessToken(code);
               authWindow.removeEventListener("load", f);
               authWindow.close();
@@ -94,13 +105,15 @@ const DialogContent = observer(
         const response = await getAllRepositories(authToken);
         setAllRepositories(Optional.present(response));
       } catch (e) {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Could not fetch listing of repositories",
-            message: e.message,
-          })
-        );
+        if (e instanceof Error) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not fetch listing of repositories",
+              message: e.message,
+            })
+          );
+        }
       } finally {
         setLoadingAllRepositories(false);
       }
@@ -160,13 +173,15 @@ const DialogContent = observer(
                             })
                           );
                         } catch (e) {
-                          addAlert(
-                            mkAlert({
-                              variant: "error",
-                              title: "Failed to remove repository.",
-                              message: e.message,
-                            })
-                          );
+                          if (e instanceof Error) {
+                            addAlert(
+                              mkAlert({
+                                variant: "error",
+                                title: "Failed to remove repository.",
+                                message: e.message,
+                              })
+                            );
+                          }
                         }
                       })}
                     >
@@ -234,7 +249,7 @@ const DialogContent = observer(
                                       optionIdsOfExistingRepos
                                     ).first;
                                   copyOfRepos.push(observable(newlySavedRepo));
-                                } catch (e) {
+                                } catch {
                                   throw new Error(
                                     "Save completed but cannot show results."
                                   );
@@ -254,13 +269,15 @@ const DialogContent = observer(
                                 })
                               );
                             } catch (e) {
-                              addAlert(
-                                mkAlert({
-                                  variant: "error",
-                                  title: "Failed to add repository.",
-                                  message: e.message,
-                                })
-                              );
+                              if (e instanceof Error) {
+                                addAlert(
+                                  mkAlert({
+                                    variant: "error",
+                                    title: "Failed to add repository.",
+                                    message: e.message,
+                                  })
+                                );
+                              }
                             }
                           })}
                         >
@@ -291,20 +308,20 @@ const DialogContent = observer(
   }
 );
 
-type GitHubArgs = {|
+type GitHubArgs = {
   /*
    * This is the current state of the GitHub integration. It must be a mobx
    * observable because this component will mutate it when a new repository is
    * added or an existing one is removed from the configured credentials.
    */
-  integrationState: IntegrationStates["GITHUB"],
+  integrationState: IntegrationStates["GITHUB"];
 
   /*
    * Event handler that is called when the user enables or disabled the
    * integration. Not called at any other time.
    */
-  update: (IntegrationStates["GITHUB"]) => void,
-|};
+  update: (newIntegrationState: IntegrationStates["GITHUB"]) => void;
+};
 
 /*
  * GitHub uses OAuth authentication, but the credential is stored on a
@@ -313,7 +330,7 @@ type GitHubArgs = {|
  * reason, the current implementation is a little bit of hack and should be
  * further refined once the old apps page has been deprecated.
  */
-function GitHub({ integrationState, update }: GitHubArgs): Node {
+function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -359,4 +376,4 @@ function GitHub({ integrationState, update }: GitHubArgs): Node {
   );
 }
 
-export default (React.memo(observer(GitHub)): AbstractComponent<GitHubArgs>);
+export default React.memo(observer(GitHub));
