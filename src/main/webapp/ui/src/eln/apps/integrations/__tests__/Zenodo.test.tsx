@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow strict
 /* eslint-env jest */
 import React, { useState } from "react";
 import {
@@ -13,10 +12,11 @@ import {
   within,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import fc, { type Command } from "fast-check";
+import fc from "fast-check";
 import Zenodo from "../Zenodo";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
+import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -25,8 +25,8 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const ZenodoWrapper = () => {
-  const [state, setState] = useState({
-    mode: "DISABLED",
+  const [state, setState] = useState<IntegrationStates["ZENODO"]>({
+    mode: "DISABLED" as const,
     credentials: { ZENODO_USER_TOKEN: Optional.present("") },
   });
   return (
@@ -56,24 +56,24 @@ describe("Zenodo", () => {
    *   - Disabling the integration is only possible if the integration is enabled
    */
 
-  type Model = {|
-    open: boolean,
-    enabled: boolean,
-  |};
+  type Model = {
+    open: boolean;
+    enabled: boolean;
+  };
 
-  type Real = {|
-    getByRole: typeof screen.getByRole,
-    getByLabelText: typeof screen.getByLabelText,
-  |};
+  type Real = {
+    getByRole: typeof screen.getByRole;
+    getByLabelText: typeof screen.getByLabelText;
+  };
 
-  class OpenDialogCommand implements Command<Model, Real> {
+  class OpenDialogAsyncCommand implements fc.AsyncCommand<Model, Real> {
     constructor() {}
 
     check(model: Model): boolean {
       return !model.open;
     }
 
-    run(model: Model, { getByRole }: Real) {
+    async run(model: Model, { getByRole }: Real) {
       fireEvent.click(getByRole("button", { name: /^zenodo/i }));
       expect(getByRole("dialog")).toBeVisible();
       model.open = true;
@@ -84,7 +84,7 @@ describe("Zenodo", () => {
     }
   }
 
-  class CloseDialogCommand implements Command<Model, Real> {
+  class CloseDialogAsyncCommand implements fc.AsyncCommand<Model, Real> {
     constructor() {}
 
     check(model: Model): boolean {
@@ -109,7 +109,7 @@ describe("Zenodo", () => {
     }
   }
 
-  class EnableCommand implements Command<Model, Real> {
+  class EnableAsyncCommand implements fc.AsyncCommand<Model, Real> {
     constructor() {}
 
     check(model: Model): boolean {
@@ -133,7 +133,7 @@ describe("Zenodo", () => {
     }
   }
 
-  class DisableCommand implements Command<Model, Real> {
+  class DisableAsyncCommand implements fc.AsyncCommand<Model, Real> {
     constructor() {}
 
     check(model: Model): boolean {
@@ -157,7 +157,7 @@ describe("Zenodo", () => {
     }
   }
 
-  class SetApiKeyCommand implements Command<Model, Real> {
+  class SetApiKeyAsyncCommand implements fc.AsyncCommand<Model, Real> {
     apiKey: string;
 
     constructor(apiKey: string) {
@@ -188,19 +188,17 @@ describe("Zenodo", () => {
   test(
     "Model testing all possible actions",
     async () => {
-      const allCommands = [
-        fc.constant<Command<Model, Real>>(new OpenDialogCommand()),
-        fc.constant<Command<Model, Real>>(new CloseDialogCommand()),
-        fc.constant<Command<Model, Real>>(new EnableCommand()),
-        fc.constant<Command<Model, Real>>(new DisableCommand()),
-        fc
-          .string()
-          .map<Command<Model, Real>>((apiKey) => new SetApiKeyCommand(apiKey)),
+      const allAsyncCommands = [
+        fc.constant(new OpenDialogAsyncCommand()),
+        fc.constant(new CloseDialogAsyncCommand()),
+        fc.constant(new EnableAsyncCommand()),
+        fc.constant(new DisableAsyncCommand()),
+        fc.string().map((apiKey) => new SetApiKeyAsyncCommand(apiKey)),
       ];
       await fc.assert(
         fc.asyncProperty(
-          fc.commands<Model, Real>(allCommands, { size: "medium" }),
-          async (cmds: Array<Command<Model, Real>>) => {
+          fc.commands(allAsyncCommands, { size: "medium" }),
+          async (cmds) => {
             cleanup();
             const { getByRole, getByLabelText } = render(<ZenodoWrapper />);
             const s = () => ({
