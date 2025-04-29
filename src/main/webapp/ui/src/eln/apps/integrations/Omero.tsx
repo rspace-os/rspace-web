@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, useState, type AbstractComponent } from "react";
+import React, { useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import OmeroIcon from "../../../assets/branding/omero/logo.svg";
@@ -9,15 +7,15 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import { LOGO_COLOR } from "../../../assets/branding/omero";
 
-type OmeroArgs = {|
-  integrationState: IntegrationStates["OMERO"],
-  update: (IntegrationStates["OMERO"]) => void,
-|};
+type OmeroArgs = {
+  integrationState: IntegrationStates["OMERO"];
+  update: (newIntegrationState: IntegrationStates["OMERO"]) => void;
+};
 
 /*
  * Omero passes a username and password in a regular form submission.
  */
-function Omero({ integrationState, update }: OmeroArgs): Node {
+function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   return (
@@ -86,4 +84,4 @@ function Omero({ integrationState, update }: OmeroArgs): Node {
   );
 }
 
-export default (React.memo(Omero): AbstractComponent<OmeroArgs>);
+export default React.memo(Omero);
