@@ -1,12 +1,7 @@
 //@flow strict
 
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useContext,
-  useState,
-  type AbstractComponent,
-} from "react";
+import React, { useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import {
   type IntegrationStates,
@@ -34,21 +29,21 @@ import { observer } from "mobx-react-lite";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { LOGO_COLOR } from "../../../assets/branding/msteams";
 
-type MSTeamsArgs = {|
-  integrationState: IntegrationStates["MSTEAMS"],
-  update: (IntegrationStates["MSTEAMS"]) => void,
-|};
+type MSTeamsArgs = {
+  integrationState: IntegrationStates["MSTEAMS"];
+  update: (newIntegrationState: IntegrationStates["MSTEAMS"]) => void;
+};
 
 /*
  * Microsoft's Teams integration uses a Webhook URL based approach, where the
  * user provides us with a URL to which we can call to send messages to their
  * Teams channel.
  */
-function MSTeams({ integrationState, update }: MSTeamsArgs): Node {
+function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
   const { deleteAppOptions, saveAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = useContext(AlertContext);
-  const [newChannelName, setNewChannelName] = useState<?string>(null);
-  const [newWebhook, setNewWebhook] = useState<?string>(null);
+  const [newChannelName, setNewChannelName] = useState<string | null>(null);
+  const [newWebhook, setNewWebhook] = useState<string | null>(null);
 
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
@@ -122,13 +117,15 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): Node {
                                       })
                                     );
                                   } catch (e) {
-                                    addAlert(
-                                      mkAlert({
-                                        variant: "error",
-                                        title: "Failed to remove channel.",
-                                        message: e.message,
-                                      })
-                                    );
+                                    if (e instanceof Error) {
+                                      addAlert(
+                                        mkAlert({
+                                          variant: "error",
+                                          title: "Failed to remove channel.",
+                                          message: e.message,
+                                        })
+                                      );
+                                    }
                                   }
                                 })}
                               >
@@ -153,7 +150,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): Node {
                     ) : (
                       <Card variant="outlined">
                         <form
-                          onSubmit={async (event) => {
+                          onSubmit={doNotAwait(async (event) => {
                             event.preventDefault();
                             try {
                               const newState = await saveAppOptions(
@@ -177,15 +174,17 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): Node {
                                 })
                               );
                             } catch (e) {
-                              addAlert(
-                                mkAlert({
-                                  variant: "error",
-                                  title: "Failed to add channel.",
-                                  message: e.message,
-                                })
-                              );
+                              if (e instanceof Error) {
+                                addAlert(
+                                  mkAlert({
+                                    variant: "error",
+                                    title: "Failed to add channel.",
+                                    message: e.message,
+                                  })
+                                );
+                              }
                             }
-                          }}
+                          })}
                         >
                           <CardContent>
                             <TextField
@@ -224,4 +223,4 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): Node {
   );
 }
 
-export default (React.memo(observer(MSTeams)): AbstractComponent<MSTeamsArgs>);
+export default React.memo(observer(MSTeams));
