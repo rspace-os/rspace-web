@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow strict
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -34,7 +33,6 @@ describe("Omero", () => {
 
     expect(await screen.findByRole("dialog")).toBeVisible();
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(baseElement)).toHaveNoViolations();
   });
   test("Should render username and password fields.", () => {
