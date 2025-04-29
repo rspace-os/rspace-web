@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, useState, type AbstractComponent } from "react";
+import React, { useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import TextField from "@mui/material/TextField";
@@ -14,15 +12,15 @@ import Button from "@mui/material/Button";
 import ZenodoIcon from "../../../assets/branding/zenodo/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/zenodo";
 
-type ZenodoArgs = {|
-  integrationState: IntegrationStates["ZENODO"],
-  update: (IntegrationStates["ZENODO"]) => void,
-|};
+type ZenodoArgs = {
+  integrationState: IntegrationStates["ZENODO"];
+  update: (newIntegrationState: IntegrationStates["ZENODO"]) => void;
+};
 
 /*
  * Zenodo uses API-key based authentication, as implemeted by the form below.
  */
-function Zenodo({ integrationState, update }: ZenodoArgs): Node {
+function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
   const [apiKey, setApiKey] = useState(
     integrationState.credentials.ZENODO_USER_TOKEN.orElse("")
   );
@@ -94,4 +92,4 @@ function Zenodo({ integrationState, update }: ZenodoArgs): Node {
   );
 }
 
-export default (React.memo(observer(Zenodo)): AbstractComponent<ZenodoArgs>);
+export default React.memo(observer(Zenodo));
