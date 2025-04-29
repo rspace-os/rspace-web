@@ -1,7 +1,7 @@
 //@flow strict
 
 import Grid from "@mui/material/Grid";
-import React, { type Node, useState, type AbstractComponent } from "react";
+import React, { useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import {
   useIntegrationsEndpoint,
@@ -25,21 +25,21 @@ import Typography from "@mui/material/Typography";
 import RsSet from "../../../util/set";
 import { LOGO_COLOR } from "../../../assets/branding/pyrat";
 
-type PyratArgs = {|
-  integrationState: IntegrationStates["PYRAT"],
-  update: (IntegrationStates["PYRAT"]) => void,
-|};
+type PyratArgs = {
+  integrationState: IntegrationStates["PYRAT"];
+  update: (newIntegrationState: IntegrationStates["PYRAT"]) => void;
+};
 
 /*
  * Pyrat uses API-key based authentication, as implemeted by the form below.
  */
-function Pyrat({ integrationState, update }: PyratArgs): Node {
+function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
   const authenticatedServers = useLocalObservable(() => [
     ...integrationState.credentials.authenticatedServers,
   ]);
-  const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | EventTarget>(
+  const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(
     null
   );
 
@@ -108,13 +108,14 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                             );
                           })
                           .catch((e) => {
-                            addAlert(
-                              mkAlert({
-                                variant: "error",
-                                title: "Error saving API key.",
-                                message: e.message,
-                              })
-                            );
+                            if (e instanceof Error)
+                              addAlert(
+                                mkAlert({
+                                  variant: "error",
+                                  title: "Error saving API key.",
+                                  message: e.message,
+                                })
+                              );
                           });
                       }}
                     >
@@ -155,13 +156,14 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                                 );
                               })
                               .catch((e) => {
-                                addAlert(
-                                  mkAlert({
-                                    variant: "error",
-                                    title: "Could not delete API key.",
-                                    message: e.message,
-                                  })
-                                );
+                                if (e instanceof Error)
+                                  addAlert(
+                                    mkAlert({
+                                      variant: "error",
+                                      title: "Could not delete API key.",
+                                      message: e.message,
+                                    })
+                                  );
                               });
                           }}
                         >
@@ -227,13 +229,14 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                             });
                           })
                           .catch((e) => {
-                            addAlert(
-                              mkAlert({
-                                variant: "error",
-                                title: "Error added new PyRAT server.",
-                                message: e.message,
-                              })
-                            );
+                            if (e instanceof Error)
+                              addAlert(
+                                mkAlert({
+                                  variant: "error",
+                                  title: "Error added new PyRAT server.",
+                                  message: e.message,
+                                })
+                              );
                           });
                       }}
                     >
@@ -259,4 +262,4 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
 /**
  * The card and dialog for configuring the PyRAT integration
  */
-export default (React.memo(observer(Pyrat)): AbstractComponent<PyratArgs>);
+export default React.memo(observer(Pyrat));
