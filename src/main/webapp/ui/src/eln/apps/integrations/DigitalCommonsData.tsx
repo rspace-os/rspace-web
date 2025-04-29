@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
@@ -10,10 +8,12 @@ import { useDigitalCommonsDataEndpoint } from "../useDigitalCommonsDataEndpoint"
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { LOGO_COLOR } from "../../../assets/branding/digitalcommonsdata";
 
-type DigitalCommonsDataArgs = {|
-  integrationState: IntegrationStates["DIGITALCOMMONSDATA"],
-  update: (IntegrationStates["DIGITALCOMMONSDATA"]) => void,
-|};
+type DigitalCommonsDataArgs = {
+  integrationState: IntegrationStates["DIGITALCOMMONSDATA"];
+  update: (
+    newIntegrationState: IntegrationStates["DIGITALCOMMONSDATA"]
+  ) => void;
+};
 
 /*
  * Digital Commons Data uses OAuth based authentication, as implemeted by the form below.
@@ -21,7 +21,7 @@ type DigitalCommonsDataArgs = {|
 function DigitalCommonsData({
   integrationState,
   update,
-}: DigitalCommonsDataArgs): Node {
+}: DigitalCommonsDataArgs): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDigitalCommonsDataEndpoint();
   const [connected, setConnected] = React.useState(
@@ -105,6 +105,4 @@ function DigitalCommonsData({
   );
 }
 
-export default (React.memo(
-  DigitalCommonsData
-): AbstractComponent<DigitalCommonsDataArgs>);
+export default React.memo(DigitalCommonsData);
