@@ -37,8 +37,6 @@ define(function() {
         _printSettings([ 'pi_can_edit_all_work_in_labgroup' ]);
         _printSettings(['group_autosharing.available']);
         _printSettings(['self_service_labgroups']);
-        _printSettings(['public_sharing']);
-        _printSettings(['publicdocs_allow_seo']);
         _printSettings(['allow_project_groups']);
 
          _printSubCategory('Privacy');
@@ -61,6 +59,8 @@ define(function() {
         ]);
 
         _printCategory('Data Repositories and Publishing');
+        _printSettings([ 'public_sharing' ]);
+        _printSettings([ 'publicdocs_allow_seo' ]);
         _printSettings([ 'dataverse.available' ]);
         _printSettings([ 'digitalCommonsData.available' ]);
         _printSettings([ 'dryad.available' ]);
