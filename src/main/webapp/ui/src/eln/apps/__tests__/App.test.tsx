@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import {
@@ -16,7 +15,7 @@ import { axe, toHaveNoViolations } from "jest-axe";
 import App from "../App";
 import "../../../__tests__/assertSemanticHeadings";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import "../../../../__mocks__/matchMedia";
@@ -72,7 +71,7 @@ describe("Apps page", () => {
 
     await screen.findAllByText(/Something went wrong!/i);
 
-    // $FlowExpectedError[incompatible-call] See expect.extend in assertSemanticHeadings
+    // @ts-expect-error assertHeadings comes from assertSemanticHeadings
     expect(container).assertHeadings([
       { level: 1, content: "Apps" },
       { level: 2, content: "Enabled" },

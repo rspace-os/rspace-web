@@ -1,14 +1,13 @@
-//@flow
 /* eslint-env jest */
 
 import { match } from "../util/Util";
 import { Optional } from "../util/optional";
 import * as ArrayUtils from "../util/ArrayUtils";
 
-type HeadingsSpec = Array<{|
-  level: 1 | 2 | 3 | 4 | 5 | 6,
-  content: string,
-|}>;
+type HeadingsSpec = Array<{
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+  content: string;
+}>;
 
 expect.extend({
   /*
@@ -56,15 +55,13 @@ expect.extend({
       NodeFilter.SHOW_ELEMENT,
       {
         acceptNode(node) {
-          // $FlowExpectedError[cannot-resolve-name]
           if (node instanceof SVGElement) return NodeFilter.FILTER_SKIP;
           if (!(node instanceof HTMLElement)) throw new Error("Not an element");
           return /^H\d$/.test(node.tagName)
             ? NodeFilter.FILTER_ACCEPT
             : NodeFilter.FILTER_SKIP;
         },
-      },
-      false
+      }
     );
 
     const actualHeadings: HeadingsSpec = [];
@@ -76,8 +73,10 @@ expect.extend({
         [(t) => t === "H4", 4],
         [(t) => t === "H5", 5],
         [(t) => t === "H6", 6],
-      ])(tw.currentNode.tagName);
+      ])((tw.currentNode as HTMLElement).tagName);
 
+      if (tw.currentNode.textContent === null)
+        throw new Error("Node has no text content");
       actualHeadings.push({
         level,
         content: tw.currentNode.textContent,
