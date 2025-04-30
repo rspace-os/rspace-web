@@ -1,13 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useEffect,
-  useState,
-  useContext,
-  type AbstractComponent,
-} from "react";
+import React, { useEffect, useState, useContext } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
@@ -16,10 +8,10 @@ import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
 import { useFigshareEndpoint } from "../useFigshare";
 import { LOGO_COLOR } from "../../../assets/branding/figshare";
 
-type FigshareArgs = {|
-  integrationState: IntegrationStates["FIGSHARE"],
-  update: (IntegrationStates["FIGSHARE"]) => void,
-|};
+type FigshareArgs = {
+  integrationState: IntegrationStates["FIGSHARE"];
+  update: (newIntegrationState: IntegrationStates["FIGSHARE"]) => void;
+};
 
 /*
  * Figshare uses OAuth based authentication, as implemented by this form.
@@ -45,7 +37,7 @@ type FigshareArgs = {|
  * The process of disconnecing is via a standard API call made by
  * ../useFigshare.
  */
-function Figshare({ integrationState, update }: FigshareArgs): Node {
+function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useFigshareEndpoint();
   const [connected, setConnected] = useState(
@@ -129,4 +121,4 @@ function Figshare({ integrationState, update }: FigshareArgs): Node {
   );
 }
 
-export default (React.memo(Figshare): AbstractComponent<FigshareArgs>);
+export default React.memo(Figshare);
