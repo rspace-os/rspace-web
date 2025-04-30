@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import DMPonlineIcon from "../../../assets/branding/dmponline/logo.svg";
@@ -11,16 +9,19 @@ import Button from "@mui/material/Button";
 import { useDmpOnlineEndpoint } from "../useDmpOnlineEndpoint";
 import { LOGO_COLOR } from "../../../assets/branding/dmponline";
 
-type DMPOnlineArgs = {|
-  integrationState: IntegrationStates["DMPONLINE"],
-  update: (IntegrationStates["DMPONLINE"]) => void,
-|};
+type DMPOnlineArgs = {
+  integrationState: IntegrationStates["DMPONLINE"];
+  update: (newIntegrationState: IntegrationStates["DMPONLINE"]) => void;
+};
 
 /*
  * There is no authentication mechanism with DMPonline. All DMPs are public and by
  * simply enabling the integration users can import those DMPs into the Gallery
  */
-function DMPOnline({ integrationState, update }: DMPOnlineArgs): Node {
+function DMPOnline({
+  integrationState,
+  update,
+}: DMPOnlineArgs): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmpOnlineEndpoint();
   const [connected, setConnected] = React.useState(
@@ -104,6 +105,4 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): Node {
   );
 }
 
-export default (React.memo(
-  observer(DMPOnline)
-): AbstractComponent<DMPOnlineArgs>);
+export default React.memo(observer(DMPOnline));
