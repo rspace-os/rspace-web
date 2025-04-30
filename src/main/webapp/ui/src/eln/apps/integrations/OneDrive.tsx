@@ -1,16 +1,14 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import OneDriveIcon from "../../../assets/branding/onedrive/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/onedrive";
 
-type OneDriveArgs = {|
-  integrationState: IntegrationStates["ONEDRIVE"],
-  update: (IntegrationStates["ONEDRIVE"]) => void,
-|};
+type OneDriveArgs = {
+  integrationState: IntegrationStates["ONEDRIVE"];
+  update: (newIntegrationState: IntegrationStates["ONEDRIVE"]) => void;
+};
 
 /*
  * Note that authentication with microsoft is performed when the user goes to
@@ -22,7 +20,7 @@ type OneDriveArgs = {|
  * false then the import file button will not be available in the RSpace
  * document editor.
  */
-function OneDrive({ integrationState, update }: OneDriveArgs): Node {
+function OneDrive({ integrationState, update }: OneDriveArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -50,4 +48,4 @@ function OneDrive({ integrationState, update }: OneDriveArgs): Node {
   );
 }
 
-export default (React.memo(OneDrive): AbstractComponent<OneDriveArgs>);
+export default React.memo(OneDrive);
