@@ -1,12 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useContext,
-  useState,
-  type AbstractComponent,
-} from "react";
+import React, { useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import {
   useIntegrationsEndpoint,
@@ -31,6 +24,12 @@ import Typography from "@mui/material/Typography";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { LOGO_COLOR } from "../../../assets/branding/dataverse";
 
+type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
+
+type UnwrapArray<T extends Array<unknown>> = {
+  [K in keyof T]: UnwrapOptional<T[K]>;
+};
+
 /*
  * This is the type of the configurations, as passed into this component. If
  * any of the credentials cannot be parsed from the API call made by
@@ -38,9 +37,8 @@ import { LOGO_COLOR } from "../../../assets/branding/dataverse";
  * such, we can discard the Optional wrapper around each Dataverse
  * configuration.
  */
-type Configurations = $TupleMap<
-  IntegrationStates["DATAVERSE"]["credentials"],
-  <A>(Optional<A>) => A
+type Configurations = UnwrapArray<
+  IntegrationStates["DATAVERSE"]["credentials"]
 >;
 
 /*
@@ -48,28 +46,28 @@ type Configurations = $TupleMap<
  * differently, storing state information specific to the fields of the form.
  */
 
-type ExistingConfig = {|
-  DATAVERSE_APIKEY: string,
-  DATAVERSE_URL: string,
-  DATAVERSE_ALIAS: string,
-  _label: string,
-  optionsId: OptionsId,
-  dirty: boolean,
-|};
+type ExistingConfig = {
+  DATAVERSE_APIKEY: string;
+  DATAVERSE_URL: string;
+  DATAVERSE_ALIAS: string;
+  _label: string;
+  optionsId: OptionsId;
+  dirty: boolean;
+};
 
-type NewConfig = {|
-  DATAVERSE_APIKEY: string,
-  DATAVERSE_URL: string,
-  DATAVERSE_ALIAS: string,
-|};
+type NewConfig = {
+  DATAVERSE_APIKEY: string;
+  DATAVERSE_URL: string;
+  DATAVERSE_ALIAS: string;
+};
 
 const AddButton = ({
   newConfig,
   setNewConfig,
-}: {|
-  newConfig: NewConfig | null,
-  setNewConfig: (NewConfig) => void,
-|}) => {
+}: {
+  newConfig: NewConfig | null;
+  setNewConfig: (newConfig: NewConfig) => void;
+}) => {
   return (
     <Button
       disabled={Boolean(newConfig)}
@@ -92,10 +90,10 @@ const DialogContent = observer(
   ({
     configs,
     integrationState,
-  }: {|
-    configs: Configurations,
-    integrationState: IntegrationStates["DATAVERSE"],
-  |}) => {
+  }: {
+    configs: Configurations;
+    integrationState: IntegrationStates["DATAVERSE"];
+  }) => {
     const { addAlert } = useContext(AlertContext);
     const { test } = useDataverseTestEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
@@ -157,13 +155,14 @@ const DialogContent = observer(
           })
         );
       } catch (e) {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Error saving Dataverse configuration.",
-            message: e.message,
-          })
-        );
+        if (e instanceof Error)
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Error saving Dataverse configuration.",
+              message: e.message,
+            })
+          );
       }
     }
 
@@ -201,13 +200,14 @@ const DialogContent = observer(
           })
         );
       } catch (e) {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Could not save Dataverse details",
-            message: e.message,
-          })
-        );
+        if (e instanceof Error)
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not save Dataverse details",
+              message: e.message,
+            })
+          );
       }
     }
 
@@ -308,13 +308,14 @@ const DialogContent = observer(
                               })
                             );
                           } catch (e) {
-                            addAlert(
-                              mkAlert({
-                                variant: "error",
-                                title: "Could not delete configuration.",
-                                message: e.message,
-                              })
-                            );
+                            if (e instanceof Error)
+                              addAlert(
+                                mkAlert({
+                                  variant: "error",
+                                  title: "Could not delete configuration.",
+                                  message: e.message,
+                                })
+                              );
                           }
                         })}
                       >
@@ -332,13 +333,14 @@ const DialogContent = observer(
                               })
                             );
                           } catch (e) {
-                            addAlert(
-                              mkAlert({
-                                variant: "error",
-                                title: "Connection details are not valid.",
-                                message: e.message,
-                              })
-                            );
+                            if (e instanceof Error)
+                              addAlert(
+                                mkAlert({
+                                  variant: "error",
+                                  title: "Connection details are not valid.",
+                                  message: e.message,
+                                })
+                              );
                           }
                         })}
                       >
@@ -472,22 +474,25 @@ const DialogContent = observer(
   }
 );
 
-type DataverseArgs = {|
+type DataverseArgs = {
   /*
    * This is the current state of the Dataverse integration. It must be a mobx
    * observable because this component will mutate it when a new dataverse is
    * added or an existing one is removed from the configured credentials.
    */
-  integrationState: IntegrationStates["DATAVERSE"],
+  integrationState: IntegrationStates["DATAVERSE"];
 
   /*
    * Event handler that is called when the user enables or disabled the
    * integration. Not called at any other time.
    */
-  update: (IntegrationStates["DATAVERSE"]) => void,
-|};
+  update: (newIntegrationState: IntegrationStates["DATAVERSE"]) => void;
+};
 
-function Dataverse({ integrationState, update }: DataverseArgs): Node {
+function Dataverse({
+  integrationState,
+  update,
+}: DataverseArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -537,6 +542,4 @@ function Dataverse({ integrationState, update }: DataverseArgs): Node {
   );
 }
 
-export default (React.memo(
-  observer(Dataverse)
-): AbstractComponent<DataverseArgs>);
+export default React.memo(observer(Dataverse));
