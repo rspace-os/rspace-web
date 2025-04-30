@@ -1,13 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useEffect,
-  useContext,
-  useState,
-  type AbstractComponent,
-} from "react";
+import React, { useEffect, useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -16,10 +8,10 @@ import OwnCloudIcon from "../../../assets/branding/owncloud/logo.svg";
 import { useOwncloudEndpoint } from "../useOwncloud";
 import { LOGO_COLOR } from "../../../assets/branding/owncloud";
 
-type OwnCloudArgs = {|
-  integrationState: IntegrationStates["OWNCLOUD"],
-  update: (IntegrationStates["OWNCLOUD"]) => void,
-|};
+type OwnCloudArgs = {
+  integrationState: IntegrationStates["OWNCLOUD"];
+  update: (newIntegrationState: IntegrationStates["OWNCLOUD"]) => void;
+};
 
 /*
  * OwnCloud uses OAuth based authentication, as implemented by this form.
@@ -45,7 +37,7 @@ type OwnCloudArgs = {|
  * The process of disconnecing is via a standard API call made by
  * ../useOwncloud.
  */
-function OwnCloud({ integrationState, update }: OwnCloudArgs): Node {
+function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useOwncloudEndpoint();
   const [connected, setConnected] = useState(
@@ -129,4 +121,4 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): Node {
   );
 }
 
-export default (React.memo(OwnCloud): AbstractComponent<OwnCloudArgs>);
+export default React.memo(OwnCloud);
