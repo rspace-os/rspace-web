@@ -953,7 +953,9 @@ const encodeIntegrationState = <I extends Integration>(
         // $FlowExpectedError[incompatible-use]
         ...data.credentials.GALAXY_API_KEY.map((key) => ({
           GALAXY_API_KEY: key,
-        })).orElse({}),
+        })).orElse({
+          GALAXY_API_KEY: "",
+        }),
       },
     };
   }
