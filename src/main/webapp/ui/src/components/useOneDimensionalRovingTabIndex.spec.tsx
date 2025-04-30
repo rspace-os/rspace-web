@@ -21,6 +21,7 @@ const feature = test.extend<{
     "the user presses the down arrow key": () => Promise<void>;
     "the user presses the up arrow key": () => Promise<void>;
     "the user presses the right arrow key": () => Promise<void>;
+    "the user presses the left arrow key": () => Promise<void>;
   };
   Then: {
     "there should be a button": () => Promise<void>;
@@ -75,6 +76,9 @@ const feature = test.extend<{
       },
       "the user presses the right arrow key": async () => {
         await page.keyboard.press("ArrowRight");
+      },
+      "the user presses the left arrow key": async () => {
+        await page.keyboard.press("ArrowLeft");
       },
     });
   },
@@ -167,6 +171,36 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await When["the roving list has focus"]();
         await When["the user presses the right arrow key"]();
         await Then["the second list item gains focus"]();
+      }
+    );
+    feature(
+      "The left arrow moves the focus back in the horizontal layout",
+      async ({ Given, When, Then }) => {
+        await Given["the horizontal example component is rendered"]();
+        await When["the roving list has focus"]();
+        await When["the user presses the right arrow key"]();
+        await When["the user presses the left arrow key"]();
+        await Then["the first list item gains focus"]();
+      }
+    );
+    feature(
+      "The focus wraps back to the beginning in horizontal layout",
+      async ({ Given, When, Then }) => {
+        await Given["the horizontal example component is rendered"]();
+        await When["the roving list has focus"]();
+        await When["the user presses the right arrow key"]();
+        await When["the user presses the right arrow key"]();
+        await Then["the first list item gains focus"]();
+      }
+    );
+    feature(
+      "The focus wraps forward to the end in horizontal layout",
+      async ({ Given, When, Then }) => {
+        await Given["the horizontal example component is rendered"]();
+        await When["the roving list has focus"]();
+        await When["the user presses the left arrow key"]();
+        await When["the user presses the left arrow key"]();
+        await Then["the first list item gains focus"]();
       }
     );
   });
