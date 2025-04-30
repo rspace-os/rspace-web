@@ -1,0 +1,9 @@
+//@flow strict
+
+import { type Node } from "react";
+import { type IntegrationStates } from "../useIntegrationsEndpoint";
+
+declare export default function Egnyte({|
+  integrationState: IntegrationStates["EGNYTE"],
+  update: (IntegrationStates["EGNYTE"]) => void,
+|}): Node;

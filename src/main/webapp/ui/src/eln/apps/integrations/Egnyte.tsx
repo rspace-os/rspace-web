@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, useState, type AbstractComponent } from "react";
+import React, { useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import TextField from "@mui/material/TextField";
@@ -13,15 +11,15 @@ import Button from "@mui/material/Button";
 import EgnyteIcon from "../../../assets/branding/egnyte/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/egnyte";
 
-type EgnyteArgs = {|
-  integrationState: IntegrationStates["EGNYTE"],
-  update: (IntegrationStates["EGNYTE"]) => void,
-|};
+type EgnyteArgs = {
+  integrationState: IntegrationStates["EGNYTE"];
+  update: (newIntegrationState: IntegrationStates["EGNYTE"]) => void;
+};
 
 /*
  * Egnyte has a domain URL that is configured by the this text field.
  */
-function Egnyte({ integrationState, update }: EgnyteArgs): Node {
+function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
   const [url, setUrl] = useState(integrationState.credentials.EGNYTE_DOMAIN);
 
   return (
@@ -88,4 +86,4 @@ function Egnyte({ integrationState, update }: EgnyteArgs): Node {
   );
 }
 
-export default (React.memo(Egnyte): AbstractComponent<EgnyteArgs>);
+export default React.memo(Egnyte);
