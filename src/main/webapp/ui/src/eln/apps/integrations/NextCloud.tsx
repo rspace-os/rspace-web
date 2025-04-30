@@ -1,13 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useEffect,
-  useContext,
-  useState,
-  type AbstractComponent,
-} from "react";
+import React, { useEffect, useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -16,10 +8,10 @@ import NextCloudIcon from "../../../assets/branding/nextcloud/logo.svg";
 import { useNextcloudEndpoint } from "../useNextcloud";
 import { LOGO_COLOR } from "../../../assets/branding/nextcloud";
 
-type NextCloudArgs = {|
-  integrationState: IntegrationStates["NEXTCLOUD"],
-  update: (IntegrationStates["NEXTCLOUD"]) => void,
-|};
+type NextCloudArgs = {
+  integrationState: IntegrationStates["NEXTCLOUD"];
+  update: (newIntegrationState: IntegrationStates["NEXTCLOUD"]) => void;
+};
 
 /*
  * NextCloud uses OAuth based authentication, as implemented by this form.
@@ -45,7 +37,10 @@ type NextCloudArgs = {|
  * The process of disconnecing is via a standard API call made by
  * ../useNextcloud.
  */
-function NextCloud({ integrationState, update }: NextCloudArgs): Node {
+function NextCloud({
+  integrationState,
+  update,
+}: NextCloudArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useNextcloudEndpoint();
   const [connected, setConnected] = useState(
@@ -129,4 +124,4 @@ function NextCloud({ integrationState, update }: NextCloudArgs): Node {
   );
 }
 
-export default (React.memo(NextCloud): AbstractComponent<NextCloudArgs>);
+export default React.memo(NextCloud);
