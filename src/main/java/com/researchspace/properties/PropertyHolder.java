@@ -224,6 +224,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Setter
   private String fieldmarkBaseUrl;
 
+  @Value("${galaxy.api.url}")
+  @Getter
+  @Setter
+  private String galaxyBaseUrl;
+
   @Value("${aspose.enabled:true}")
   private String asposeEnabled;
 
