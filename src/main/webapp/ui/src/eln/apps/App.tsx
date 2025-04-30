@@ -1,14 +1,6 @@
-//@flow
-
 import { observer } from "mobx-react-lite";
 import { observable } from "mobx";
-import React, {
-  type Node,
-  type ComponentType,
-  useState,
-  useContext,
-  useEffect,
-} from "react";
+import React, { useState, useContext, useEffect } from "react";
 import Typography from "@mui/material/Typography";
 import {
   useIntegrationsEndpoint,
@@ -69,7 +61,7 @@ function ErrorMessage() {
   );
 }
 
-function App(): Node {
+function App(): React.ReactNode {
   const { allIntegrations } = useIntegrationsEndpoint();
   const { trackEvent, isAvailable: analyticsIsAvailable } =
     useContext(AnalyticsContext);
@@ -83,17 +75,14 @@ function App(): Node {
     doNotAwait(async () => {
       try {
         setAllStates(
-          // $FlowExpectedError[incompatible-call]
           observable({
             tag: "success",
-            // $FlowExpectedError[prop-missing]
-            // $FlowExpectedError[incompatible-call]
-            // $FlowExpectedError[incompatible-indexer]
             value: mapObject((k, v) => observable(v), await allIntegrations()),
-          })
+          }) as FetchingData.Fetched<IntegrationStates>
         );
       } catch (e) {
-        setAllStates(observable({ tag: "error", error: e.message }));
+        if (e instanceof Error)
+          setAllStates(observable({ tag: "error", error: e.message }));
       }
     }),
     []
@@ -111,7 +100,7 @@ function App(): Node {
                 if (event === "Apps page dialog opened") {
                   if (typeof properties !== "undefined") {
                     getByKey("integrationName", properties).do(
-                      (integrationName: mixed) => {
+                      (integrationName: unknown) => {
                         if (typeof integrationName === "string") {
                           setLastDialogOpened(integrationName);
                         }
@@ -316,4 +305,4 @@ function App(): Node {
   );
 }
 
-export default (observer(App): ComponentType<{||}>);
+export default observer(App);
