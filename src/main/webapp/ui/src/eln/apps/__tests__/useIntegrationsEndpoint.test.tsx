@@ -1,14 +1,13 @@
 /*
  * @jest-environment jsdom
  */
-//@flow strict
 /* eslint-env jest */
 import React, { useEffect } from "react";
 import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { Optional } from "../../../util/optional";
 import "../../../../__mocks__/matchMedia";
 
