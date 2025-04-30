@@ -1,13 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useEffect,
-  useContext,
-  useState,
-  type AbstractComponent,
-} from "react";
+import React, { useEffect, useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -16,10 +8,10 @@ import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
 import { useClustermarketEndpoint } from "../useClustermarket";
 import { LOGO_COLOR } from "../../../assets/branding/clustermarket";
 
-type ClustermarketArgs = {|
-  integrationState: IntegrationStates["CLUSTERMARKET"],
-  update: (IntegrationStates["CLUSTERMARKET"]) => void,
-|};
+type ClustermarketArgs = {
+  integrationState: IntegrationStates["CLUSTERMARKET"];
+  update: (newIntegrationState: IntegrationStates["CLUSTERMARKET"]) => void;
+};
 
 /*
  * Clustermarket uses OAuth based authentication, as implemented by this form.
@@ -45,7 +37,10 @@ type ClustermarketArgs = {|
  * The process of disconnecing is via a standard API call made by
  * ../useClustermarket.
  */
-function Clustermarket({ integrationState, update }: ClustermarketArgs): Node {
+function Clustermarket({
+  integrationState,
+  update,
+}: ClustermarketArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useClustermarketEndpoint();
   const [connected, setConnected] = useState(
@@ -130,6 +125,4 @@ function Clustermarket({ integrationState, update }: ClustermarketArgs): Node {
   );
 }
 
-export default (React.memo(
-  Clustermarket
-): AbstractComponent<ClustermarketArgs>);
+export default React.memo(Clustermarket);
