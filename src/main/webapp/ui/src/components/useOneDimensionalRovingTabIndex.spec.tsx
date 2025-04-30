@@ -15,11 +15,13 @@ const feature = test.extend<{
     }) => Promise<void>;
     "the roving list has focus": () => Promise<void>;
     "the user presses the down arrow key": () => Promise<void>;
+    "the user presses the up arrow key": () => Promise<void>;
   };
   Then: {
     "there should be a button": () => Promise<void>;
     "the before button should gain focus": () => Promise<void>;
     "the after button should gain focus": () => Promise<void>;
+    "the first list item gains focus": () => Promise<void>;
     "the second list item gains focus": () => Promise<void>;
   };
 }>({
@@ -60,6 +62,9 @@ const feature = test.extend<{
       "the user presses the down arrow key": async () => {
         await page.keyboard.press("ArrowDown");
       },
+      "the user presses the up arrow key": async () => {
+        await page.keyboard.press("ArrowUp");
+      },
     });
   },
   Then: async ({ page }, use) => {
@@ -74,6 +79,13 @@ const feature = test.extend<{
       "the after button should gain focus": async () => {
         const secondButton = page.getByRole("button").last();
         await expect(secondButton).toBeFocused();
+      },
+      "the first list item gains focus": async () => {
+        const secondListItem = page
+          .getByRole("listitem")
+          .first()
+          .getByRole("button");
+        await expect(secondListItem).toBeFocused();
       },
       "the second list item gains focus": async () => {
         const secondListItem = page
@@ -107,5 +119,15 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
       await When["the user presses the down arrow key"]();
       await Then["the second list item gains focus"]();
     });
+    feature(
+      "The up arrow moves the focus back",
+      async ({ Given, When, Then }) => {
+        await Given["the simple example component is rendered"]();
+        await When["the roving list has focus"]();
+        await When["the user presses the down arrow key"]();
+        await When["the user presses the up arrow key"]();
+        await Then["the first list item gains focus"]();
+      }
+    );
   });
 });
