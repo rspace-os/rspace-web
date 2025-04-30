@@ -1,12 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, {
-  type Node,
-  useState,
-  useContext,
-  type AbstractComponent,
-} from "react";
+import React, { useState, useContext } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
@@ -32,30 +25,33 @@ import Typography from "@mui/material/Typography";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { LOGO_COLOR } from "../../../assets/branding/slack";
 
-type Channel = {|
-  SLACK_TEAM_NAME: string,
-  SLACK_CHANNEL_ID: string,
-  SLACK_CHANNEL_NAME: string,
-  SLACK_USER_ID: string,
-  SLACK_CHANNEL_LABEL: string,
-  SLACK_USER_ACCESS_TOKEN: string,
-  SLACK_TEAM_ID: string,
-  SLACK_WEBHOOK_URL: string,
-|};
+type Channel = {
+  SLACK_TEAM_NAME: string;
+  SLACK_CHANNEL_ID: string;
+  SLACK_CHANNEL_NAME: string;
+  SLACK_USER_ID: string;
+  SLACK_CHANNEL_LABEL: string;
+  SLACK_USER_ACCESS_TOKEN: string;
+  SLACK_TEAM_ID: string;
+  SLACK_WEBHOOK_URL: string;
+};
+
+type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
+
+type UnwrapArray<T extends Array<unknown>> = {
+  [K in keyof T]: UnwrapOptional<T[K]>;
+};
 
 const DialogContent = observer(
   ({
     linkedChannels,
     integrationState,
-  }: {|
-    linkedChannels: $TupleMap<
-      IntegrationStates["SLACK"]["credentials"],
-      <A>(Optional<A>) => A
-    >,
-    integrationState: IntegrationStates["SLACK"],
-  |}) => {
+  }: {
+    linkedChannels: UnwrapArray<IntegrationStates["SLACK"]["credentials"]>;
+    integrationState: IntegrationStates["SLACK"];
+  }) => {
     const [loadingNewChannel, setLoadingNewChannel] = useState(false);
-    const [newChannel, setNewChannel] = useState<?Channel>(null);
+    const [newChannel, setNewChannel] = useState<Channel | null>(null);
     const { addAlert } = useContext(AlertContext);
     const { oauthUrl } = useSlackEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
@@ -83,67 +79,81 @@ const DialogContent = observer(
          * without the need for a JSP.
          */
         const authWindow = window.open(await oauthUrl());
+        if (!authWindow) {
+          throw new Error("Failed to open Slack authentication window");
+        }
 
-        let timer;
-        const channelDetailsJson: string = await new Promise((resolve) => {
-          const f = () => {
-            try {
-              if (authWindow.document.URL.indexOf("redirect_uri") > 0) {
-                const slackResponse =
-                  authWindow.document.getElementById("slackResponse").value;
-                authWindow.close();
-                clearInterval(timer);
-                resolve(slackResponse);
+        let timer: NodeJS.Timeout;
+        const channelDetailsJson: string = await new Promise(
+          (resolve, reject) => {
+            const f = () => {
+              try {
+                if (authWindow.document.URL.indexOf("redirect_uri") > 0) {
+                  const slackResponseInput =
+                    authWindow.document.getElementById("slackResponse");
+                  if (!slackResponseInput) {
+                    reject(new Error("Failed to retrieve access token"));
+                    return;
+                  }
+                  // @ts-expect-error value will be on the input; don't cast to HTMLInputElement because test relies on a simple mock
+                  const slackResponse = slackResponseInput.value;
+                  authWindow.close();
+                  clearInterval(timer);
+                  resolve(slackResponse);
+                }
+              } catch {
+                // do nothing, as we will retry 1s later
               }
-            } catch {
-              // do nothing, as we will retry 1s later
-            }
-          };
-          timer = setInterval(f, 1000);
-        });
+            };
+            timer = setInterval(f, 1000);
+          }
+        );
 
-        const channelDetails = JSON.parse(channelDetailsJson);
+        const channelDetails: unknown = JSON.parse(channelDetailsJson);
         if (typeof channelDetails !== "object" || channelDetails === null)
           throw new Error(
             "Could not decode channel details. Invalid root object"
           );
+        const channelDetailsRecord = channelDetails as Record<string, unknown>;
         if (
-          typeof channelDetails.incoming_webhook !== "object" ||
-          channelDetails.incoming_webhook === null
+          typeof channelDetailsRecord.incoming_webhook !== "object" ||
+          channelDetailsRecord.incoming_webhook === null
         )
           throw new Error(
             "Could not decode channel details. Invalid incoming_webhook"
           );
-        if (typeof channelDetails.team_name !== "string")
+        const incomingWebhookRecord =
+          channelDetailsRecord.incoming_webhook as Record<string, unknown>;
+        if (typeof channelDetailsRecord.team_name !== "string")
           throw new Error(
             "Could not decode channel details. Invalid team name"
           );
-        const SLACK_TEAM_NAME = channelDetails.team_name;
-        if (typeof channelDetails.incoming_webhook.channel_id !== "string")
+        const SLACK_TEAM_NAME = channelDetailsRecord.team_name;
+        if (typeof incomingWebhookRecord.channel_id !== "string")
           throw new Error(
             "Could not decode channel details. Invalid channel id"
           );
-        const SLACK_CHANNEL_ID = channelDetails.incoming_webhook.channel_id;
-        if (typeof channelDetails.incoming_webhook.channel !== "string")
+        const SLACK_CHANNEL_ID = incomingWebhookRecord.channel_id;
+        if (typeof incomingWebhookRecord.channel !== "string")
           throw new Error(
             "Could not decode channel details. Invalid channel name"
           );
-        const SLACK_CHANNEL_NAME = channelDetails.incoming_webhook.channel;
+        const SLACK_CHANNEL_NAME = incomingWebhookRecord.channel;
         const SLACK_CHANNEL_LABEL = SLACK_CHANNEL_NAME;
-        if (typeof channelDetails.user_id !== "string")
+        if (typeof channelDetailsRecord.user_id !== "string")
           throw new Error("Could not decode channel details. Invalid user id");
-        const SLACK_USER_ID = channelDetails.user_id;
-        if (typeof channelDetails.access_token !== "string")
+        const SLACK_USER_ID = channelDetailsRecord.user_id;
+        if (typeof channelDetailsRecord.access_token !== "string")
           throw new Error(
             "Could not decode channel details. Invalid access token"
           );
-        const SLACK_USER_ACCESS_TOKEN = channelDetails.access_token;
-        if (typeof channelDetails.team_id !== "string")
+        const SLACK_USER_ACCESS_TOKEN = channelDetailsRecord.access_token;
+        if (typeof channelDetailsRecord.team_id !== "string")
           throw new Error("Could not decode channel details. Invalid user id");
-        const SLACK_TEAM_ID = channelDetails.team_id;
-        if (typeof channelDetails.incoming_webhook.url !== "string")
+        const SLACK_TEAM_ID = channelDetailsRecord.team_id;
+        if (typeof incomingWebhookRecord.url !== "string")
           throw new Error("Could not decode channel details. Invalid url");
-        const SLACK_WEBHOOK_URL = channelDetails.incoming_webhook.url;
+        const SLACK_WEBHOOK_URL = incomingWebhookRecord.url;
         setNewChannel(
           observable({
             SLACK_TEAM_NAME,
@@ -157,13 +167,14 @@ const DialogContent = observer(
           })
         );
       } catch (e) {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Could not get details of new Slack channel.",
-            message: e.message,
-          })
-        );
+        if (e instanceof Error)
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not get details of new Slack channel.",
+              message: e.message,
+            })
+          );
       } finally {
         setLoadingNewChannel(false);
       }
@@ -177,38 +188,36 @@ const DialogContent = observer(
                 onSubmit={doNotAwait(async (event) => {
                   event.preventDefault();
                   try {
-                    const params: { optionsId: mixed, ... } = {
+                    const params: { optionsId: unknown } = {
                       ...channel,
                     };
                     delete params.optionsId;
                     const newState = await saveAppOptions(
                       "SLACK",
                       Optional.present(channel.optionsId),
-                      (params: { ... })
+                      params
                     );
                     runInAction(() => {
                       integrationState.credentials = newState.credentials;
-                      ArrayUtils.all(newState.credentials)
-                        .map((newCreds) => {
-                          const indexOfNewConfig = newCreds.findIndex(
-                            (c) => c.optionsId === channel.optionsId
-                          );
-                          if (indexOfNewConfig === -1)
-                            throw new Error(
-                              "Save completed but cannot show results."
-                            );
+                      const newCreds = ArrayUtils.all(newState.credentials)
+                        .toResult(
+                          () =>
+                            new Error("Save completed but cannot show results")
+                        )
+                        .elseThrow();
+                      const indexOfNewConfig = newCreds.findIndex(
+                        (c) => c.optionsId === channel.optionsId
+                      );
+                      if (indexOfNewConfig === -1)
+                        throw new Error(
+                          "Save completed but cannot show results."
+                        );
 
-                          copyOfChannels.splice(
-                            index,
-                            1,
-                            observable(newCreds[indexOfNewConfig])
-                          );
-                        })
-                        .orElseGet(() => {
-                          throw new Error(
-                            "Save completed but cannot show results."
-                          );
-                        });
+                      copyOfChannels.splice(
+                        index,
+                        1,
+                        observable(newCreds[indexOfNewConfig])
+                      );
                     });
                     addAlert(
                       mkAlert({
@@ -217,13 +226,14 @@ const DialogContent = observer(
                       })
                     );
                   } catch (e) {
-                    addAlert(
-                      mkAlert({
-                        variant: "error",
-                        title: "Failed to change label.",
-                        message: e.message,
-                      })
-                    );
+                    if (e instanceof Error)
+                      addAlert(
+                        mkAlert({
+                          variant: "error",
+                          title: "Failed to change label.",
+                          message: e.message,
+                        })
+                      );
                   }
                 })}
               >
@@ -277,13 +287,14 @@ const DialogContent = observer(
                           })
                         );
                       } catch (e) {
-                        addAlert(
-                          mkAlert({
-                            variant: "error",
-                            title: "Could not delete channel.",
-                            message: e.message,
-                          })
-                        );
+                        if (e instanceof Error)
+                          addAlert(
+                            mkAlert({
+                              variant: "error",
+                              title: "Could not delete channel.",
+                              message: e.message,
+                            })
+                          );
                       }
                     })}
                   >
@@ -327,13 +338,14 @@ const DialogContent = observer(
                       })
                     );
                   } catch (e) {
-                    addAlert(
-                      mkAlert({
-                        variant: "error",
-                        title: "Failed to add channel.",
-                        message: e.message,
-                      })
-                    );
+                    if (e instanceof Error)
+                      addAlert(
+                        mkAlert({
+                          variant: "error",
+                          title: "Failed to add channel.",
+                          message: e.message,
+                        })
+                      );
                   }
                 })}
               >
@@ -387,10 +399,10 @@ const DialogContent = observer(
   }
 );
 
-type SlackArgs = {|
-  integrationState: IntegrationStates["SLACK"],
-  update: (IntegrationStates["SLACK"]) => void,
-|};
+type SlackArgs = {
+  integrationState: IntegrationStates["SLACK"];
+  update: (newIntegrationState: IntegrationStates["SLACK"]) => void;
+};
 
 /*
  * Slack uses OAuth authentication, but the credential is stored on a
@@ -399,7 +411,7 @@ type SlackArgs = {|
  * little bit of hack and should be further refined once the old apps page has
  * been deprecated.
  */
-function Slack({ integrationState, update }: SlackArgs): Node {
+function Slack({ integrationState, update }: SlackArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -439,4 +451,4 @@ function Slack({ integrationState, update }: SlackArgs): Node {
   );
 }
 
-export default (React.memo(Slack): AbstractComponent<SlackArgs>);
+export default React.memo(Slack);
