@@ -1,0 +1,5 @@
+//@flow strict
+
+declare export function useClustermarketEndpoint(): {|
+  disconnect: () => Promise<void>,
+|};

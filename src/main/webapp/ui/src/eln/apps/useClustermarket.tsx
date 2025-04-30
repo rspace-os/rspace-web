@@ -1,14 +1,12 @@
-//@flow strict
-
 import React from "react";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
-export function useClustermarketEndpoint(): {|
-  disconnect: () => Promise<void>,
-|} {
+export function useClustermarketEndpoint(): {
+  disconnect: () => Promise<void>;
+} {
   const { addAlert } = React.useContext(AlertContext);
   const api = axios.create({
     baseURL: "/apps/clustermarket",
