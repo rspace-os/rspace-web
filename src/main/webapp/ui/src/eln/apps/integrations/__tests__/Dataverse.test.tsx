@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import {
@@ -15,7 +14,7 @@ import "@testing-library/jest-dom";
 import Dataverse from "../Dataverse";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
@@ -47,7 +46,6 @@ describe("Dataverse", () => {
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      // $FlowExpectedError[incompatible-call] See expect.extend above
       expect(await axe(baseElement)).toHaveNoViolations();
     });
   });
@@ -592,7 +590,7 @@ describe("Dataverse", () => {
 
     test("Deleting a config should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable({
-        mode: "DISABLED",
+        mode: "DISABLED" as const,
         credentials: [
           Optional.present({
             DATAVERSE_APIKEY: "apikey",
