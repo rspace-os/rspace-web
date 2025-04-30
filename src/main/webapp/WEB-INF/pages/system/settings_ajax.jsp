@@ -15,6 +15,11 @@
            <h2>{{category}}</h2>
         </div>
     </div>
+    <div id="systemSettingsSubCategoryRowTemplate" style="display:none">
+        <div class="settingSubCategoryRow">
+           <h3>{{subcategory}}</h3>
+        </div>
+    </div>
     <div id="systemSettingRowTemplate" style="display:none">
         <div class="settingRow" data-name="{{setting.name}}">
             <div class="settingName bootstrap-custom-flat">

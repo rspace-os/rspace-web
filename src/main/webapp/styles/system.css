@@ -380,6 +380,9 @@ button:focus {
 .settingCategoryRow {
   margin: 20px 5px 20px 5px; }
 
+.settingSubCategoryRow {
+  margin: 20px 5px 8px 5px; }
+
 .settingRow {
   margin: 10px;
   line-height: 20px; }

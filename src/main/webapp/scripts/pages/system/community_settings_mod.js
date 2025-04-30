@@ -29,66 +29,67 @@ function loadSettingsFromServer() {
 
 function printSettingsList() {
 
-    _printCategory('3rd party File Stores');
-    _printSettings([
-            'dropbox.available',
-            'dropbox.linking.enabled',
-            'box.available',
-            'box.linking.enabled',
-            'box.api.enabled',
-            'onedrive.available',
-            'onedrive.linking.enabled',
-            'googledrive.available',
-            'egnyte.available',
-            'owncloud.available',
-            'nextcloud.available',
-            'evernote.available'
-    ]);
+    _printCategory('RSpace Settings');
 
-    _printCategory('Protocols');
-    _printSettings([ 'protocols_io.available' ]);
-    _printSettings([ 'jove.available' ]);
-
-    _printCategory('Chemistry');
-    _printSettings([ 'chemistry.available' ]);
-
-    _printCategory('Molecular Biology');
-    _printSettings([ 'snapgene.available' ]);
-
-    _printCategory('Communication');
-    _printSettings([ 'msteams.available' ]);
-    _printSettings([ 'slack.available' ]);
-    _printSettings([ 'orcid.available' ]);
-
-    _printCategory('Data Management Plans');
-    _printSettings([ 'dmponline.available' ]);
-    _printSettings([ 'dmptool.available' ]);
-    _printSettings([ 'argos.available' ]);
-
-    _printCategory('Repositories');
-    _printSettings([ 'dataverse.available' ]);
-    _printSettings([ 'github.available' ]);
-    _printSettings([ 'figshare.available' ]);
-    _printSettings([ 'pyrat.available' ]);
-    _printSettings([ 'clustermarket.available' ]);
-    _printSettings([ 'omero.available' ]);
-    _printSettings([ 'dryad.available' ]);
-    _printSettings([ 'zenodo.available' ]);
-
-
-    _printCategory('API');
+    _printSubCategory('RSpace API');
     _printSettings([ 'api.available' ]);
 
-    _printCategory('Lab Group Settings');
-    _printSettings(['pi_can_edit_all_work_in_labgroup' ]);
-    _printSettings(['group_autosharing.available' ]);
+    _printSubCategory('Lab Group Settings');
+    _printSettings([ 'pi_can_edit_all_work_in_labgroup' ]);
+    _printSettings(['group_autosharing.available']);
     _printSettings(['self_service_labgroups']);
     _printSettings(['public_sharing']);
     _printSettings(['publicdocs_allow_seo']);
     _printSettings(['allow_project_groups']);
 
-     _printCategory('Privacy');
+     _printSubCategory('Privacy');
      _printSettings([ 'publicLastLogin.available' ]);
+
+    _printCategory('Storage and Document Management');
+    _printSettings([
+            'box.available',
+            'box.linking.enabled',
+            'box.api.enabled',
+            'dropbox.available',
+            'dropbox.linking.enabled',
+            'egnyte.available',
+            'evernote.available',
+            'googledrive.available',
+            'onedrive.available',
+            'onedrive.linking.enabled',
+            'nextcloud.available',
+            'owncloud.available',
+    ]);
+
+    _printCategory('Data Repositories and Publishing');
+    _printSettings([ 'dataverse.available' ]);
+    _printSettings([ 'dryad.available' ]);
+    _printSettings([ 'figshare.available' ]);
+    _printSettings([ 'zenodo.available' ]);
+
+    _printCategory('Data Management Plans');
+    _printSettings([ 'argos.available' ]);
+    _printSettings([ 'dmponline.available' ]);
+    _printSettings([ 'dmptool.available' ]);
+
+    _printCategory('Collaboration and Communication');
+    _printSettings([ 'msteams.available' ]);
+    _printSettings([ 'slack.available' ]);
+    _printSettings([ 'github.available' ]);
+
+    _printCategory('Scientific Tools and Specialized Data');
+    _printSettings([ 'chemistry.available' ]);
+    _printSettings([ 'clustermarket.available' ]);
+    _printSettings([ 'omero.available' ]);
+    _printSettings([ 'pyrat.available' ]);
+    _printSettings([ 'snapgene.available' ]);
+
+    _printCategory('Research Methods and Protocols');
+    _printSettings([ 'jove.available' ]);
+    _printSettings([ 'protocols_io.available' ]);
+
+    _printCategory('Identity');
+    _printSettings([ 'orcid.available' ]);
 
     addSettingRowsHandlers();
 }
@@ -175,6 +176,12 @@ function _printCategory(categoryName) {
     var categoryRowTemplate = $('#systemSettingsCategoryRowTemplate').html();
     var categoryDiv = Mustache.render(categoryRowTemplate, { category: categoryName })
     $('#systemSettingsList').append(categoryDiv);
+}
+
+function _printSubCategory(subCategoryName) {
+  var subCategoryRowTemplate = $('#systemSettingsSubCategoryRowTemplate').html();
+  var subCategoryDiv = Mustache.render(subCategoryRowTemplate, { subcategory: subCategoryName })
+  $('#systemSettingsList').append(subCategoryDiv);
 }
 
 function _printSettings(settingsToPrint) {
