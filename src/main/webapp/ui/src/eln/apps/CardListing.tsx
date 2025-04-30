@@ -1,6 +1,4 @@
-//@flow strict
-
-import React, { type Node } from "react";
+import React from "react";
 import {
   type IntegrationStates,
   type IntegrationState,
@@ -37,23 +35,26 @@ import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 
-type CardListingArgs = {|
+type CardListingArgs = {
   /*
    * This prop determines which integrationStates.are shown in this listing. It is
    * passed to each integration's card which will only render themselves if the
    * integration's current mode matches this value.
    */
-  mode: IntegrationState<mixed>["mode"],
+  mode: IntegrationState<unknown>["mode"];
 
   /*
    * This is a mapping of integrationStates.to their current mode, as exposed by
    * the useIntegrationsEndpoint custom hook.
    */
-  integrationStates: IntegrationStates,
-|};
+  integrationStates: IntegrationStates;
+};
 
 //eslint-disable-next-line complexity
-function CardListing({ mode, integrationStates }: CardListingArgs): Node {
+function CardListing({
+  mode,
+  integrationStates,
+}: CardListingArgs): React.ReactNode {
   const { update } = useIntegrationsEndpoint();
 
   /*
@@ -481,4 +482,4 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
   );
 }
 
-export default (observer(CardListing): typeof CardListing);
+export default observer(CardListing);

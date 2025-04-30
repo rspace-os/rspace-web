@@ -1,0 +1,9 @@
+//@flow strict
+
+import { type Node } from "react";
+import { type IntegrationState, type IntegrationStates } from "./useIntegrationsEndpoint";
+
+declare export default function CardListing({|
+  mode: IntegrationState<mixed>["mode"],
+  integrationStates: IntegrationStates,
+|}): Node;
