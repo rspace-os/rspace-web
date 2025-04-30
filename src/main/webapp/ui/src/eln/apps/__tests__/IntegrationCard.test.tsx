@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow strict
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -142,10 +141,7 @@ describe("IntegrationCard", () => {
   });
 
   test("When tapped, the enable button should invoke update.", () => {
-    const update = jest.fn<
-      ["ENABLED" | "DISABLED" | "UNAVAILABLE" | "EXTERNAL"],
-      void,
-    >();
+    const update = jest.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -173,10 +169,7 @@ describe("IntegrationCard", () => {
   });
 
   test("When tapped, the disable button should invoke update.", () => {
-    const update = jest.fn<
-      ["ENABLED" | "DISABLED" | "UNAVAILABLE" | "EXTERNAL"],
-      void,
-    >();
+    const update = jest.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
