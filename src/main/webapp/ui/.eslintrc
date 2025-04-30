@@ -6,7 +6,7 @@
     }
   },
   "env": {
-    "es2022": true,
+    "es2023": true,
     "browser": true
   },
   "extends": [

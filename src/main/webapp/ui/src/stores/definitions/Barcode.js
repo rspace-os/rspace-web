@@ -3,8 +3,7 @@
 import { type Node } from "react";
 import { type Id } from "./BaseRecord";
 import { type Username } from "./Person";
-import { type IsoTimestamp } from "../../util/types";
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type IsoTimestamp, type _LINK } from "../../util/types";
 import { type URL } from "../../util/types";
 
 /*

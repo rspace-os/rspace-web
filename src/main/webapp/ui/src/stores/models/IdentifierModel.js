@@ -26,8 +26,7 @@ import {
 import React, { type Node } from "react";
 import GeoLocationModel from "../models/GeoLocationModel";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
-import { type URL } from "../../util/types";
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type URL, type _LINK } from "../../util/types";
 import {
   type Identifier,
   type IdentifierAttrs,

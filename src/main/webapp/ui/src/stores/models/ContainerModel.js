@@ -1,8 +1,7 @@
 // @flow
 
 import ContentsChips from "../../Inventory/Container/Content/ContentsChips";
-import { type URL, type Point } from "../../util/types";
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type URL, type Point, type _LINK } from "../../util/types";
 import { match, classMixin, clamp } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { selectColor } from "../../util/colors";

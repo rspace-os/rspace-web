@@ -1,0 +1,15 @@
+//@flow
+
+import { type Node } from "react";
+import { type URL } from "../../../util/types";
+
+declare export function useImagePreview(): {|
+  openImagePreview: (
+    URL,
+    ?{
+      caption?: $ReadOnlyArray<string>,
+    }
+  ) => void,
+|};
+
+declare export function CallableImagePreview({| children: Node |}): Node;

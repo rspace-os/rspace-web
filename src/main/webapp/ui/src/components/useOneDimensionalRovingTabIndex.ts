@@ -54,7 +54,7 @@ export default function useOneDimensionalRovingTabIndex<
   eventHandlers: {
     onFocus: () => void;
     onBlur: () => void;
-    onKeyDown: (event: KeyboardEvent) => void;
+    onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void;
   };
   /**
    * Given the index of an element of the vertical list, return that element's
@@ -66,7 +66,7 @@ export default function useOneDimensionalRovingTabIndex<
    * Given the index of an element of the vertical list, return a ref if it has
    * a tab index of 0. Otherwise returns null.
    */
-  getRef: (index: number) => null | { current: RefComponent | null };
+  getRef: (index: number) => null | React.RefObject<RefComponent>;
 } {
   const [rovingTabIndex, setRovingTabIndex] = React.useState(0);
   const [hasFocus, setHasFocus] = React.useState(false);
@@ -99,7 +99,7 @@ export default function useOneDimensionalRovingTabIndex<
     setHasFocus(false);
   }
 
-  function onKeyDown(e: KeyboardEvent) {
+  function onKeyDown(e: React.KeyboardEvent<HTMLElement>) {
     /*
      * By using modulo rather than min and max the user's focus wraps around
      * when reaching the end.

@@ -1,7 +1,7 @@
 //@flow
 
 import ApiService from "../../common/InvApiService";
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type _LINK } from "../../util/types";
 import { type Container, type WorkbenchId } from "../definitions/Container";
 import getRootStore from "../stores/RootStore";
 import {

@@ -127,6 +127,16 @@ export default class Result<T> {
     f(this.state.value);
   }
 
+  /**
+   * Perform an asynchronous side-effect on the value if the result is in an OK
+   * state. Otherwise the first error is returned in the rejected state of the
+   * promise.
+   */
+  doAsync(f: (value: T) => Promise<void>): Promise<void> {
+    if (this.state.key === "error") return Promise.reject(this.state.errors[0]);
+    return f(this.state.value);
+  }
+
   /***************************************
    ** FUNCTIONS APPLIED TO ERROR BRANCH **
    ***************************************/
@@ -255,25 +265,25 @@ export default class Result<T> {
    * series of possible options, of which any one suffices; should none pass
    * then a full error report of each branch being tried can be displayed.
    */
-  static any<U>(
-    r: Result<U>,
-    ...rest: ReadonlyArray<Result<U>>
-  ): Result<ReadonlyArray<U>> {
-    if (rest.length > 0) {
-      return (
-        Result.any(rest[0], ...rest.slice(1))
-          .flatMap<ReadonlyArray<U>>((restOfT: ReadonlyArray<U>) =>
-            r
-              // if `r` and `rest` are both OK, then concatenate,
-              .map((t: U) => [t, ...restOfT])
-              // else if `r` is Error and `rest` OK, then return `rest`
-              .orElseTry(() => Result.Ok(restOfT))
-          )
-          // if `rest` is Error, then return `r`
-          .orElseTry(() => r.map((t) => [t]))
-      );
+  static any<U>(...args: ReadonlyArray<Result<U>>): Result<ReadonlyArray<U>> {
+    function helper(r: Result<U>, ...rest: ReadonlyArray<Result<U>>) {
+      if (rest.length > 0) {
+        return (
+          Result.any(rest[0], ...rest.slice(1))
+            .flatMap<ReadonlyArray<U>>((restOfT: ReadonlyArray<U>) =>
+              r
+                // if `r` and `rest` are both OK, then concatenate,
+                .map((t: U) => [t, ...restOfT])
+                // else if `r` is Error and `rest` OK, then return `rest`
+                .orElseTry(() => Result.Ok(restOfT))
+            )
+            // if `rest` is Error, then return `r`
+            .orElseTry(() => r.map((t) => [t]))
+        );
+      }
+      return r.map((t) => [t]);
     }
-    return r.map((t) => [t]);
+    return helper(...(args as [Result<U>, ...ReadonlyArray<Result<U>>]));
   }
 
   /**
@@ -294,21 +304,22 @@ export default class Result<T> {
    * user should only be able to proceed with a form completion if every field
    * is in a valid state.
    */
-  static all<U>(
-    r: Result<U>,
-    ...rest: ReadonlyArray<Result<U>>
-  ): Result<ReadonlyArray<U>> {
-    if (typeof r === "undefined") return Result.Ok([]);
-    if (rest.length > 0) {
-      return Result.all(rest[0], ...rest.slice(1))
-        .orElseTry<ReadonlyArray<U>>(() =>
-          r.flatMap<ReadonlyArray<U>>(() => Result.Error([]))
-        )
-        .flatMap<ReadonlyArray<U>>((restOfT) =>
-          r.map<ReadonlyArray<U>>((t: U) => [t, ...restOfT])
-        );
+  static all<U>(...args: ReadonlyArray<Result<U>>): Result<ReadonlyArray<U>> {
+    function helper(r: Result<U>, ...rest: ReadonlyArray<Result<U>>) {
+      if (typeof r === "undefined") return Result.Ok([]);
+      if (rest.length > 0) {
+        return Result.all(rest[0], ...rest.slice(1))
+          .orElseTry<ReadonlyArray<U>>(() =>
+            r.flatMap<ReadonlyArray<U>>(() => Result.Error([]))
+          )
+          .flatMap<ReadonlyArray<U>>((restOfT) =>
+            r.map<ReadonlyArray<U>>((t: U) => [t, ...restOfT])
+          );
+      }
+      return r.map((t) => [t]);
     }
-    return r.map((t) => [t]);
+
+    return helper(...(args as [Result<U>, ...ReadonlyArray<Result<U>>]));
   }
 
   /*

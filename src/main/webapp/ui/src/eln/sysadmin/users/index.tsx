@@ -948,11 +948,11 @@ const SelectionActions = ({
     selectedIds.length === 0
       ? Result.Error([new Error("No users selected")])
       : Result.all(
-          ...(selectedIds.map((id) =>
+          ...selectedIds.map((id) =>
             FetchingData.getSuccessValue(fetchedListing).flatMap((listing) =>
               listing.getById(id)
             )
-          ) as [Result<User>, ...Result<User>[]])
+          )
         );
 
   const selectedUser: Result<User> = ArrayUtils.getAt(0, selectedIds)
