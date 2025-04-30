@@ -1,10 +1,14 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
-import { SimpleExample } from "./useOneDimensionalRovingTabIndex.story";
+import {
+  SimpleExample,
+  HorizontalExample,
+} from "./useOneDimensionalRovingTabIndex.story";
 
 const feature = test.extend<{
   Given: {
     "the simple example component is rendered": () => Promise<void>;
+    "the horizontal example component is rendered": () => Promise<void>;
   };
   Once: Record<string, never>;
   When: {
@@ -16,6 +20,7 @@ const feature = test.extend<{
     "the roving list has focus": () => Promise<void>;
     "the user presses the down arrow key": () => Promise<void>;
     "the user presses the up arrow key": () => Promise<void>;
+    "the user presses the right arrow key": () => Promise<void>;
   };
   Then: {
     "there should be a button": () => Promise<void>;
@@ -29,6 +34,9 @@ const feature = test.extend<{
     await use({
       "the simple example component is rendered": async () => {
         await mount(<SimpleExample />);
+      },
+      "the horizontal example component is rendered": async () => {
+        await mount(<HorizontalExample />);
       },
     });
   },
@@ -64,6 +72,9 @@ const feature = test.extend<{
       },
       "the user presses the up arrow key": async () => {
         await page.keyboard.press("ArrowUp");
+      },
+      "the user presses the right arrow key": async () => {
+        await page.keyboard.press("ArrowRight");
       },
     });
   },
@@ -147,6 +158,15 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await When["the user presses the up arrow key"]();
         await When["the user presses the up arrow key"]();
         await Then["the first list item gains focus"]();
+      }
+    );
+    feature(
+      "The right arrow moves the focus in the horizontal layout",
+      async ({ Given, When, Then }) => {
+        await Given["the horizontal example component is rendered"]();
+        await When["the roving list has focus"]();
+        await When["the user presses the right arrow key"]();
+        await Then["the second list item gains focus"]();
       }
     );
   });
