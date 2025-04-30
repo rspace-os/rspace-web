@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
@@ -10,15 +8,15 @@ import { useDmptoolEndpoint } from "../useDmptoolEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { LOGO_COLOR } from "../../../assets/branding/dmptool";
 
-type DMPToolArgs = {|
-  integrationState: IntegrationStates["DMPTOOL"],
-  update: (IntegrationStates["DMPTOOL"]) => void,
-|};
+type DMPToolArgs = {
+  integrationState: IntegrationStates["DMPTOOL"];
+  update: (newIntegrationState: IntegrationStates["DMPTOOL"]) => void;
+};
 
 /*
  * DMPTool uses OAuth based authentication, as implemeted by the form below.
  */
-function DMPTool({ integrationState, update }: DMPToolArgs): Node {
+function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmptoolEndpoint();
   const [connected, setConnected] = React.useState(
@@ -102,4 +100,4 @@ function DMPTool({ integrationState, update }: DMPToolArgs): Node {
   );
 }
 
-export default (React.memo(DMPTool): AbstractComponent<DMPToolArgs>);
+export default React.memo(DMPTool);
