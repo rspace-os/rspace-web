@@ -12,7 +12,7 @@ import { modulo } from "../util/Util";
  * This custom hook provides an abstraction over implementing a roving tab
  * index for a one-dimensional list of elements, so that either the up and down
  * arrow keys provide navigation between the elements in the list, or the left
- * and right arrow keys dow. Tab and shift-tab move the user's focus out of the
+ * and right arrow keys do. Tab and shift-tab move the user's focus out of the
  * list, and when they return the focus resumes on the last element in the list
  * that had focus.
  *
