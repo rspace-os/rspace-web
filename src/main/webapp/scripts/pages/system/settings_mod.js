@@ -31,6 +31,7 @@ define(function() {
 
         _printCategory('RSpace Settings');
 
+        _printSubCategory('RSpace API');
         _printSettings([ 'api.available' ]);
 
         _printSubCategory('Lab Group Settings');
