@@ -5,6 +5,7 @@ import static com.researchspace.api.v1.config.ProdAPIConfig.API_USER_MIN_INTERVA
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticator;
 import com.researchspace.api.v1.auth.OAuthTokenAuthenticator;
 import com.researchspace.api.v1.controller.APIRequestThrottlingInterceptor;
@@ -13,6 +14,7 @@ import com.researchspace.api.v1.service.ExportApiHandler;
 import com.researchspace.api.v1.service.RSFormApiHandler;
 import com.researchspace.api.v1.throttling.APIRequestThrottler;
 import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.IconImageManager;
 import com.researchspace.service.UserApiKeyManager;
@@ -33,16 +35,15 @@ import org.springframework.test.context.TestPropertySource;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-  ProdProfileCanSetFromPropertiesTest.UserPropertiesSet.class,
-  ProdProfileCanSetFromPropertiesTest.DisabledThrottling.class,
-  ProdProfileCanSetFromPropertiesTest.UserPropertiesSetWronglyLogsWarning.class
+    ProdProfileCanSetFromPropertiesTest.UserPropertiesSet.class,
+    ProdProfileCanSetFromPropertiesTest.DisabledThrottling.class,
+    ProdProfileCanSetFromPropertiesTest.UserPropertiesSetWronglyLogsWarning.class
 })
 public class ProdProfileCanSetFromPropertiesTest {
-  // using a test-specific spring profile enables more precise control over what
-  // beans are created,
-  // so as to avoid having to load entire Spring-prod beans before running the
-  // test.
-  // Also it avoid polluting 'prod' profile with duplicate bean definitions
+
+  /* using a test-specific spring profile enables more precise control over what
+     beans are created, to avoid having to load entire Spring-prod beans before running the
+     test. It also avoids polluting 'prod' profile with duplicate bean definitions */
   @Configuration
   @Profile("api-prod-config-test")
   public static class ApiProdConfigTestHelper {
@@ -50,7 +51,8 @@ public class ProdProfileCanSetFromPropertiesTest {
     // these are mocks for various transitive dependencies
     @Mock UserApiKeyManager userApiKeyMgr;
 
-    @Mock OAuthTokenAuthenticator oauthTokenAuthenticator;
+    @Mock OAuthTokenAuthenticator oAuthTokenAuthenticator;
+
     @Mock FormManager formMgr;
 
     private void initMocks() {
@@ -66,7 +68,7 @@ public class ProdProfileCanSetFromPropertiesTest {
     @Bean
     OAuthTokenAuthenticator oAuthTokenAuthenticator() {
       initMocks();
-      return oauthTokenAuthenticator;
+      return oAuthTokenAuthenticator;
     }
 
     @Bean
@@ -111,9 +113,12 @@ public class ProdProfileCanSetFromPropertiesTest {
     }
 
     @Bean
-    // something in spring 5.2 update causes dependency not to set, setting required to false fixes.
-    ApiAuthenticator apiAuthenticator(
-        @Autowired(required = false) OAuthTokenAuthenticator oAuthTokenAuthenticator) {
+    @Override
+      // something in spring 5.2 update causes dependency not to set, setting required to false fixes.
+    ApiAuthenticator combinedApiAuthenticator(
+        @Autowired(required = false) OAuthTokenAuthenticator oAuthTokenAuthenticator,
+        @Autowired(required = false) AnalyticsManager analyticsManager,
+        @Autowired(required = false) ApiAvailabilityHandler apiAvailabilityHandler) {
       initMocks();
       return apiAuthenticator;
     }
@@ -154,7 +159,6 @@ public class ProdProfileCanSetFromPropertiesTest {
     }
   }
 
-  // rspac-2096
   @TestPropertySource(
       properties = {"api.throttling.enabled=false", API_GLOBAL_MIN_INTERVAL + "=200000"})
   @ContextConfiguration(classes = {ApiProdConfigTestHelper.class, ProdApiConfTss.class})
@@ -162,12 +166,11 @@ public class ProdProfileCanSetFromPropertiesTest {
   public static class DisabledThrottling extends APIProdConfigTestBase {
 
     @Test
-    public void testNoLimitation() {
+    public void testNoLimitationWithApiThrottlingEnabledSetToFalse() {
       assertEquals(0, globalMinInteval());
       assertEquals(APIRequestThrottler.PASS_THRU, globalThrottler);
       assertEquals(APIRequestThrottler.PASS_THRU, userThrottler);
-      // 30 very rapid invocations would trigger the throttler to reject requests, if
-      // it was enabled.
+      /* 30 very rapid invocations would trigger the throttler to reject requests, if  it was enabled */
       IntStream.range(0, 30)
           .forEach(
               i -> {
