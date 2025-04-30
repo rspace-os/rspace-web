@@ -1,5 +1,3 @@
-//@flow strict
-
 import axios from "@/common/axios";
 import { type OptionsId } from "./useIntegrationsEndpoint";
 
@@ -10,12 +8,12 @@ const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
  * mechanism for checking that the connection details they have provided are
  * valid.
  */
-export function useDataverseTestEndpoint(): {|
+export function useDataverseTestEndpoint(): {
   /**
    * Test that the saved configuration is valid.
    */
-  test: (OptionsId) => Promise<void>,
-|} {
+  test: (optionsId: OptionsId) => Promise<void>;
+} {
   const api = axios.create({
     baseURL: "/repository/ajax/testRepository",
     timeout: ONE_MINUTE_IN_MS,
@@ -23,7 +21,7 @@ export function useDataverseTestEndpoint(): {|
 
   const test = async (optionsId: OptionsId): Promise<void> => {
     const response = await api.get<
-      string | {| errorId: string, exceptionMessage: string, tstamp: string |}
+      string | { errorId: string; exceptionMessage: string; tstamp: string }
     >(optionsId);
     if (typeof response.data === "object") {
       throw new Error(response.data.exceptionMessage);
