@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import {
@@ -14,7 +13,7 @@ import {
 import "@testing-library/jest-dom";
 import Slack from "../Slack";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { observable } from "mobx";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
@@ -104,18 +103,23 @@ describe("Slack", () => {
         ],
       },
     };
-    jest.spyOn(window, "open").mockImplementation(() => ({
-      document: {
-        URL: "https://test.researchspace.com/slack/redirect_uri",
-        getElementById: () => ({ value: JSON.stringify(channelDetails) }),
-      },
-      addEventListener: (_, f) => {
-        f();
-      },
-      removeEventListener: () => {},
-      close: () => {},
-    }));
-    jest.spyOn(window, "setInterval").mockImplementation((f) => f());
+    jest.spyOn(window, "open").mockImplementation(
+      () =>
+        ({
+          document: {
+            URL: "https://test.researchspace.com/slack/redirect_uri",
+            getElementById: () => ({ value: JSON.stringify(channelDetails) }),
+          },
+          addEventListener: (_: unknown, f: () => void) => {
+            f();
+          },
+          removeEventListener: () => {},
+          close: () => {},
+        } as unknown as Window)
+    );
+    jest
+      .spyOn(window, "setInterval")
+      .mockImplementation((f) => f() as unknown as NodeJS.Timeout);
   });
   test("When the add flow is triggered, the channel details should be shown.", async () => {
     const integrationState = observable<IntegrationStates["SLACK"]>({
@@ -393,7 +397,7 @@ describe("Slack", () => {
     });
 
     const integrationState = observable({
-      mode: "DISABLED",
+      mode: "DISABLED" as const,
       credentials: [
         Optional.present({
           SLACK_TEAM_NAME: "RSpace Dev",
