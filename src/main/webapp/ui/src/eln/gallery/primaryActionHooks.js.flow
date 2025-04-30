@@ -1,0 +1,41 @@
+//@flow
+
+import Result from "../../util/result";
+import * as Parsers from "../../util/parsers";
+import * as FetchingData from "../../util/fetchingData";
+import { type GalleryFile, chemistryFilePreview } from "./useGalleryListing";
+import { type URL } from "../../util/types";
+
+declare export function useSnapGenePreviewOfGalleryFile(): (
+  file: GalleryFile
+) => Result<null>;
+
+declare export function useImagePreviewOfGalleryFile(): (
+  file: GalleryFile
+) => Result<() => Promise<URL>>;
+
+declare export function useCollaboraEdit(): (file: GalleryFile) => Result<string>;
+
+declare export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string>;
+
+declare export function usePdfPreviewOfGalleryFile(): (
+  file: GalleryFile
+) => Result<() => Promise<URL>>;
+
+declare export function useAsposePreviewOfGalleryFile(): (
+  file: GalleryFile
+) => Result<null>;
+
+declare export default function usePrimaryAction(): (file: GalleryFile) => Result<
+  | {| tag: "open" |}
+  | {|
+      tag: "image",
+      downloadHref: () => Promise<URL>,
+      caption: $ReadOnlyArray<string>,
+    |}
+  | {| tag: "collabora", url: string |}
+  | {| tag: "officeonline", url: string |}
+  | {| tag: "pdf", downloadHref: () => Promise<URL> |}
+  | {| tag: "aspose" |}
+  | {| tag: "snapgene", file: GalleryFile |}
+>;

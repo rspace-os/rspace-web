@@ -67,3 +67,12 @@ export type URL = string;
  * This is a URL whose protocol is "blob".
  */
 export type BlobUrl = URL;
+
+/**
+ * The type of the `_links` property in the JSON API response, which is part of
+ * implementing Hypermedia as the Engine of Application State (HATEOAS).
+ */
+export type _LINK = {
+  link: URL;
+  rel: string;
+};

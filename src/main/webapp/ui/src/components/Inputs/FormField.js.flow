@@ -1,0 +1,26 @@
+//@flow
+
+import { type Node } from "react";
+
+export type FormFieldArgs<T> = {|
+  label: string,
+  renderInput: ({|
+    id: string,
+    value: T,
+    disabled: boolean,
+    error: boolean,
+  |}) => Node,
+  value: T,
+  disabled?: boolean,
+  error?: boolean,
+  helperText?: string | null,
+  maxLength?: number,
+  explanation?: Node,
+  id?: string,
+  required?: boolean,
+  asFieldset?: boolean,
+  doNotAttachIdToLabel?: boolean,
+  className?: string,
+|};
+
+declare export default function FormField<T>(FormFieldArgs<T>): Node;

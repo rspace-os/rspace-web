@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 /** Authenticates API requests by using the supplied OAuth token that RSpace issues. */
 @Service
-public class OAuthTokenAuthenticator extends AbstractApiAuthenticator implements ApiAuthenticator {
+public class OAuthTokenAuthenticator extends AbstractApiAuthenticator {
 
   @Autowired private OAuthTokenManager tokenManager;
 

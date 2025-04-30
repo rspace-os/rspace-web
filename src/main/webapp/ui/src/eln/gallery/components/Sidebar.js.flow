@@ -1,0 +1,16 @@
+//@flow
+
+import { type Node } from "react";
+import { type GallerySection } from "../common";
+import * as FetchingData from "../../../util/fetchingData";
+import { type Id } from "../useGalleryListing";
+
+declare export default function Sidebar({|
+  selectedSection: GallerySection | null,
+  setSelectedSection: (GallerySection) => void,
+  drawerOpen: boolean,
+  setDrawerOpen: (boolean) => void,
+  folderId: FetchingData.Fetched<Id>,
+  refreshListing: () => Promise<void>,
+  id: string,
+|}): Node;

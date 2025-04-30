@@ -1,0 +1,16 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export function HeadingContext({|
+  children: Node,
+  level?: 1 | 2 | 3 | 4 | 5 | 6,
+|}): Node;
+
+declare export function Heading({|
+  children: Node,
+  variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6",
+  className?: string,
+  id?: string,
+  sx?: { ... },
+|}): Node;

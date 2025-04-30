@@ -85,7 +85,7 @@ export function useIdentifiers(): {
       return Parsers.isArray(response.data)
         .flatMap((array) =>
           Result.all(
-            ...(array.map((obj) =>
+            ...array.map((obj) =>
               Parsers.isObject(obj)
                 .flatMap(Parsers.isNotNull)
                 .flatMap((data) => {
@@ -140,7 +140,7 @@ export function useIdentifiers(): {
                     return Result.Error<Identifier>([e]);
                   }
                 })
-            ) as [Result<Identifier>, ...Result<Identifier>[]])
+            )
           )
         )
         .elseThrow();

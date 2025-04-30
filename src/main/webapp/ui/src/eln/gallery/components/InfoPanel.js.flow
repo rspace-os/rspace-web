@@ -1,0 +1,10 @@
+//@flow
+
+import { type Node } from "react";
+import { type GalleryFile } from "../useGalleryListing";
+
+declare export const CLOSED_MOBILE_INFO_PANEL_HEIGHT: number;
+declare export function InfoPanelForLargeViewports(): Node;
+declare export function InfoPanelForSmallViewports({|
+  file: GalleryFile,
+|}): Node;

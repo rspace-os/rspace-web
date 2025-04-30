@@ -31,3 +31,7 @@ export type IsoTimestamp = string;
 
 export type URL = string;
 export type BlobUrl = URL;
+export type _LINK = {|
+  link: URL,
+  rel: string,
+|};

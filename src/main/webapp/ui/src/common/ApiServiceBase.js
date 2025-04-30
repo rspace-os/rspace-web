@@ -16,11 +16,6 @@ type JSON =
   | {}
   | { [string]: string | number | boolean | null | JSON | Array<JSON> };
 
-export type _LINK = {|
-  link: URL,
-  rel: string,
-|};
-
 const toast = mkAlert({
   variant: "warning",
   title: "Could not authenticate via API",

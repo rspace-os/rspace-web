@@ -89,8 +89,8 @@ public class ApiKeyAuthenticatorTest {
     shiroAPIKeyAuthoriser.authenticate(mockRequest);
   }
 
-  private void setUpExpectations(User disabled) {
-    Mockito.when(apiMgr.findUserByKey(apiKey)).thenReturn(Optional.of(disabled));
+  private void setUpExpectations(User user) {
+    Mockito.when(apiMgr.findUserByKey(apiKey)).thenReturn(Optional.of(user));
     setApiKeyHeader();
   }
 

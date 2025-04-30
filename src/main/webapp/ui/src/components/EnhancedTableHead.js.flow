@@ -1,0 +1,27 @@
+//@flow
+
+import { type Order } from "../util/types";
+import { type Node, type Key } from "react";
+
+export type Cell<COLUMN_ID_TYPE: Key> = {|
+  id: COLUMN_ID_TYPE,
+  numeric: boolean,
+  label: string,
+  sortable?: boolean,
+  disablePadding?: boolean,
+|};
+
+declare export default function EnhancedTableHead<COLUMN_ID_TYPE: Key>(
+{|
+  headCells: Array<Cell<COLUMN_ID_TYPE>>,
+  headStyle?: string,
+  order: Order,
+  orderBy: COLUMN_ID_TYPE,
+  onRequestSort: (Event, COLUMN_ID_TYPE) => void,
+  selectAll?: boolean,
+  onSelectAllClick?: ({ target: { checked: boolean } }) => void,
+  numSelected?: number,
+  rowCount: number,
+  emptyCol?: boolean,
+|}
+): Node;

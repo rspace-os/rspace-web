@@ -1,0 +1,34 @@
+//@flow
+
+import { type Node } from "react";
+import { type GalleryFile } from "./useGalleryListing";
+import RsSet from "../../util/set";
+
+declare class Selection {
+  _state: Map<GalleryFile["key"], GalleryFile>;
+
+  constructor({| onlyAllowSingleSelection?: boolean |}): Selection;
+
+  get isEmpty(): boolean;
+
+  get size(): number;
+
+  clear(): void;
+
+  append(GalleryFile): void;
+
+  remove(GalleryFile): void;
+
+  includes(GalleryFile): boolean;
+
+  asSet(): RsSet<GalleryFile>;
+
+  get label(): string;
+}
+
+declare export function GallerySelection({|
+  children: Node,
+  onlyAllowSingleSelection?: boolean,
+|}): Node;
+
+declare export function useGallerySelection(): Selection;

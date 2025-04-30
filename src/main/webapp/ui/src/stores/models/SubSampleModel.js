@@ -1,7 +1,7 @@
 // @flow
 
 import { mkAlert } from "../contexts/Alert";
-import { type _LINK } from "../../common/ApiServiceBase";
+import { type _LINK } from "../../util/types";
 import ApiService from "../../common/InvApiService";
 import { classMixin } from "../../util/Util";
 import RsSet from "../../util/set";

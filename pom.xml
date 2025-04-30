@@ -2763,7 +2763,7 @@
         </property>
       </activation>
       <properties>
-        <npm.dependencies.collection.arg>ci</npm.dependencies.collection.arg> <!-- overrides default value -->
+        <npm.dependencies.collection.arg>ci --force</npm.dependencies.collection.arg> <!-- overrides default value -->
       </properties>
     </profile>
     <profile>

@@ -1,0 +1,18 @@
+//@flow
+
+import { type Node } from "react";
+import { type URL } from "../util/types";
+
+export type PreviewSize = {|
+  width: number,
+  height: number,
+|};
+
+declare export default function ImagePreview({|
+  closePreview: () => void,
+  link: URL,
+  size: ?PreviewSize,
+  setSize: (PreviewSize) => void,
+  caption?: null | $ReadOnlyArray<string>,
+|}): Node;
+

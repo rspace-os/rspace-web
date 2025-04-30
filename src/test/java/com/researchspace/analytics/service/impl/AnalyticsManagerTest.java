@@ -322,13 +322,17 @@ public class AnalyticsManagerTest extends SpringTransactionalTest {
     final String expectedUserId = analyticsManager.getAnalyticsUserId(testUser);
     MockHttpServletRequest mockRequest = new MockHttpServletRequest();
 
-    mockRequest.setRequestURI("/app/api/inventory/v1/samples");
-    analyticsManager.apiUsed(testUser, mockRequest);
-    assertNull(analyticsManagerImplTSS.userId);
-
-    mockRequest.setRequestURI("/app/api/v1/documents");
-    analyticsManager.apiUsed(testUser, mockRequest);
+    mockRequest.setRequestURI("/api/inventory/v1/samples");
+    analyticsManager.apiAccessed(testUser, true, mockRequest);
     assertEquals(expectedUserId, analyticsManagerImplTSS.userId);
+    assertEquals("apiKeyUsed", analyticsManagerImplTSS.label);
+    assertEquals("/api/inventory/v1/samples", analyticsManagerImplTSS.props.get("apiUri"));
+
+    mockRequest.setRequestURI("/api/v1/documents");
+    analyticsManager.apiAccessed(testUser, false, mockRequest);
+    assertEquals(expectedUserId, analyticsManagerImplTSS.userId);
+    assertEquals("apiOAuthTokenGenerated", analyticsManagerImplTSS.label);
+    assertEquals("/api/v1/documents", analyticsManagerImplTSS.props.get("apiUri"));
   }
 
   @Test

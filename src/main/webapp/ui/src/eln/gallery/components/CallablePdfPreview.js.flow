@@ -1,0 +1,9 @@
+// @flow
+
+import { type Node } from "react";
+
+declare export function usePdfPreview(): {|
+  openPdfPreview: (string) => void,
+|};
+
+declare export function CallablePdfPreview({| children: Node |}): Node;

@@ -158,6 +158,11 @@ declare module "@mui/material/IconButton" {
     standardIcon: true;
   }
 }
+declare module "@mui/material/Badge" {
+  interface BadgePropsColorOverrides {
+    callToAction: true;
+  }
+}
 
 /**
  * These colours are defined in a way that can be adjusted where they are

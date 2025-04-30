@@ -1,0 +1,12 @@
+//@flow
+
+import { type Node } from "react";
+import { type GallerySection } from "../common";
+import * as FetchingData from "../../../util/fetchingData";
+import { type Id } from "../useGalleryListing";
+
+declare export default function ActionsMenu({|
+  refreshListing: () => Promise<void>,
+  section: GallerySection | null,
+  folderId: FetchingData.Fetched<Id>,
+|}): Node;

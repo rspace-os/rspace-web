@@ -14,6 +14,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
@@ -110,10 +111,11 @@ public class UserDetailsApiController extends BaseApiController implements UserD
         properties.isCloud() ? "/images/mainLogoCloudN2.png" : "/public/banner");
 
     ApiUiNavigationVisibleTabs visibleTabs = new ApiUiNavigationVisibleTabs();
-    visibleTabs.setInventory(systemPropertyManager.isPropertyAllowed(user, "inventory.available"));
+    visibleTabs.setInventory(
+        systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.INVENTORY_AVAILABLE));
     visibleTabs.setMyLabGroups(user.hasRole(Role.PI_ROLE));
     visibleTabs.setPublished(
-        systemPropertyPermissionManager.isPropertyAllowed(user, "public_sharing"));
+        systemPropertyPermissionManager.isPropertyAllowed(user, SystemPropertyName.PUBLIC_SHARING));
     visibleTabs.setSystem(user.hasAdminRole());
     navigationData.setVisibleTabs(visibleTabs);
 

@@ -101,10 +101,10 @@ export function isNull<T>(x: T | null): Result<null> {
 /**
  * Parses something that might be null into just that something.
  *
- * Often composed with `isObject` to parse a `mixed` value into one that is
+ * Often composed with `isObject` to parse a `unknown` value into one that is
  * certain to be a set of key-value pairs as `null` is a type of object.
  * ```
- *   const isKeyValuePair = (m: mixed): Result<{ ... }> =>
+ *   const isKeyValuePair = (m: unknown): Result<object> =>
  *     isObject(m).flatMap(isNotNull);
  * ```
  */

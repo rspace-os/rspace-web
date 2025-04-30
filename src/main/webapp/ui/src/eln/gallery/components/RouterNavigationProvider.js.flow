@@ -1,0 +1,7 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function RouterNavigationProvider({|
+  children: Node
+|}): Node;

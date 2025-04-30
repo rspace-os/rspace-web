@@ -11,11 +11,19 @@ import javax.servlet.http.HttpServletRequest;
 public interface ApiAvailabilityHandler {
 
   /**
-   * Checks whether API is available for a given user, returning optional explanatory message if
-   * it's not.
+   * Checks whether API is available for a given user and request uri, returning optional
+   * explanatory message if it's not
    *
    * @param user
    * @return A {@link ServiceOperationResult} with optional message if result is <code>false</code>
    */
   ServiceOperationResult<String> isAvailable(User user, HttpServletRequest request);
+
+  /**
+   * Check if global 'api.available' system setting makes API available for a given user.
+   *
+   * @param user
+   * @return A {@link ServiceOperationResult} with optional message if result is <code>false</code>
+   */
+  boolean isApiAvailableForUser(User user);
 }

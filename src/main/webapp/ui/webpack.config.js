@@ -18,7 +18,7 @@ module.exports = {
      * implement each of those pages.
      */
     apps: "./src/eln/apps/index.js",
-    gallery: "./src/eln/gallery/index.js",
+    gallery: "./src/eln/gallery/index.tsx",
 
     /*
      * The Electronic Notebook (ELN) is a traditional multipage application
@@ -35,7 +35,7 @@ module.exports = {
       "./src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.js",
     createGroup: "./src/CreateGroup/CreateGroup.js",
     myLabGroups: "./src/my-rspace/directory/groups/MyLabGroups.js",
-    rorIntegration: "./src/system-ror/RoRIntegration.js",
+    rorIntegration: "./src/system-ror/RoRIntegration.tsx",
     exportModal: "./src/Export/ExportModal.js",
     groupEditBar: "./src/my-rspace/directory/groups/GroupEditBar.js",
     workspaceToolbar: "./src/Toolbar/Workspace/Toolbar.js",
