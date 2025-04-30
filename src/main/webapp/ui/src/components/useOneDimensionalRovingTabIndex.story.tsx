@@ -11,7 +11,7 @@ import Button from "@mui/material/Button";
  */
 export function SimpleExample(): React.ReactNode {
   const { getTabIndex, getRef, eventHandlers } =
-    useOneDimensionalRovingTabIndex<HTMLDivElement>({ max: 3 });
+    useOneDimensionalRovingTabIndex<HTMLDivElement>({ max: 1 });
   return (
     <>
       <Button>Before the list</Button>

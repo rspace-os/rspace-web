@@ -129,5 +129,25 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await Then["the first list item gains focus"]();
       }
     );
+    feature(
+      "The focus wraps back to the beginning",
+      async ({ Given, When, Then }) => {
+        await Given["the simple example component is rendered"]();
+        await When["the roving list has focus"]();
+        await When["the user presses the down arrow key"]();
+        await When["the user presses the down arrow key"]();
+        await Then["the first list item gains focus"]();
+      }
+    );
+    feature(
+      "The focus wraps forward to the end",
+      async ({ Given, When, Then }) => {
+        await Given["the simple example component is rendered"]();
+        await When["the roving list has focus"]();
+        await When["the user presses the up arrow key"]();
+        await When["the user presses the up arrow key"]();
+        await Then["the first list item gains focus"]();
+      }
+    );
   });
 });
