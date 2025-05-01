@@ -1,20 +1,16 @@
-// @flow
-
-import React, { type ComponentType } from "react";
+import React from "react";
 import { withStyles } from "Styles";
 
-const SubSample: ComponentType<{||}> = withStyles<{||}, { svg: string }>(
-  () => ({
-    svg: {
-      height: 83,
-      opacity: 0.7,
-      position: "absolute",
-      bottom: -28,
-      width: 83,
-      right: 0,
-    },
-  })
-)(({ classes }) => (
+const SubSample = withStyles<Record<string, never>, { svg: string }>(() => ({
+  svg: {
+    height: 83,
+    opacity: 0.7,
+    position: "absolute",
+    bottom: -28,
+    width: 83,
+    right: 0,
+  },
+}))(({ classes }) => (
   <svg
     version="1.1"
     x="0px"
