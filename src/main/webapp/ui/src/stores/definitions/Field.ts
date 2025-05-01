@@ -1,5 +1,3 @@
-//@flow
-
 import { type Attachment } from "./Attachment";
 import { type BaseRecord } from "./BaseRecord";
 import { type ValidationResult } from "../../components/ValidatingSubmitButton";
@@ -19,29 +17,29 @@ export type FieldType =
 
 export type OptionValue = string;
 
-export type Option = {|
-  value: OptionValue,
-  label: string,
-  editing: boolean,
-|};
+export type Option = {
+  value: OptionValue;
+  label: string;
+  editing: boolean;
+};
 
 export interface Field extends BaseRecord {
-  attachment: ?Attachment;
-  originalAttachment: ?Attachment;
+  attachment: Attachment | null;
+  originalAttachment: Attachment | null;
   mandatory: boolean;
   columnIndex: number;
   type: FieldType;
   error: boolean;
   content: string | number;
-  selectedOptions: ?Array<string>;
+  selectedOptions: Array<string> | null;
   options: Array<Option>;
 
-  +paramsForBackend: { ... };
-  +hasContent: boolean;
-  +renderContentAsString: string;
+  readonly paramsForBackend: object;
+  readonly hasContent: boolean;
+  readonly renderContentAsString: string;
 
   validate(): ValidationResult;
-  setAttributesDirty({ ... }): void;
-  setAttachment(File | GalleryFile): void;
-  setError(boolean): void;
+  setAttributesDirty(attributes: Record<string, unknown>): void;
+  setAttachment(file: File | GalleryFile): void;
+  setError(error: boolean): void;
 }
