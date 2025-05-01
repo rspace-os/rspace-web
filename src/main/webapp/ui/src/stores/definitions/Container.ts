@@ -1,5 +1,3 @@
-// @flow
-
 import { type InventoryRecord } from "./InventoryRecord";
 import { type Search, type SearchView } from "./Search";
 import { type SubSample } from "./SubSample";
@@ -23,10 +21,10 @@ export const encodeA1Z26 = (num: number): string =>
 export const layoutToLabels = (
   layout: Axis,
   n: number
-): Array<{ value: number, label: string | number }> =>
+): Array<{ value: number; label: string | number }> =>
   ArrayUtils.zipWith(
     arrayToN(n),
-    match<Axis, any>([
+    match<Axis, Array<string | number>>([
       [(l) => l === "N123", arrayToN(n)],
       [(l) => l === "N321", arrayToN(n).reverse()],
       [(l) => l === "ABC", arrayToN(n).map(encodeA1Z26)],
@@ -36,17 +34,17 @@ export const layoutToLabels = (
   );
 
 export type GridLayout = {
-  columnsNumber: number | "",
-  rowsNumber: number | "",
-  columnsLabelType: Axis,
-  rowsLabelType: Axis,
+  columnsNumber: number | "";
+  rowsNumber: number | "";
+  columnsLabelType: Axis;
+  rowsLabelType: Axis;
 };
 
-export type ContentSummary = {|
-  totalCount: number,
-  subSampleCount: number,
-  containerCount: number,
-|};
+export type ContentSummary = {
+  totalCount: number;
+  subSampleCount: number;
+  containerCount: number;
+};
 
 export function cTypeToDefaultSearchView(cType: ContainerType): SearchView {
   if (cType === "GRID") return "GRID";
@@ -55,28 +53,28 @@ export function cTypeToDefaultSearchView(cType: ContainerType): SearchView {
 }
 
 export interface Location extends Point {
-  id: ?number;
-  content: ?(SubSample | Container); //eslint-disable-line no-use-before-define
+  id: number | null;
+  content: SubSample | Container | null; //eslint-disable-line no-use-before-define
   coordX: number;
   coordY: number;
   selected: boolean;
   parentContainer: Container; //eslint-disable-line no-use-before-define
 
-  toggleSelected(?boolean): void;
+  toggleSelected(value: boolean | null): void;
   selectOnlyThis(): void;
-  setPosition(number, number): void;
-  setDimensions(number, number): void;
+  setPosition(x: number, y: number): void;
+  setDimensions(width: number, height: number): void;
 
-  +siblings: Array<Location>;
-  isShallow(Search): boolean;
-  isShallowSelected(Search): boolean;
-  isSelectable(Search): boolean;
-  isShallowUnselected(Search): boolean;
-  +isSiblingSelected: ?boolean;
-  isGreyedOut(Search): boolean;
-  +name: ?string;
-  +hasContent: boolean;
-  +uniqueColor: string;
+  readonly siblings: Array<Location>;
+  isShallow(search: Search): boolean;
+  isShallowSelected(search: Search): boolean;
+  isSelectable(search: Search): boolean;
+  isShallowUnselected(search: Search): boolean;
+  readonly isSiblingSelected: boolean | null;
+  isGreyedOut(search: Search): boolean;
+  readonly name: string | null;
+  readonly hasContent: boolean;
+  readonly uniqueColor: string;
 
   /*
    * The marshalled version of the data modelled by the implementation of this
@@ -84,10 +82,10 @@ export interface Location extends Point {
    * MUST always be JSON serialisable, and it is advisable to write a unit test
    * to assert as such for each implementation.
    */
-  +paramsForBackend: { ... };
+  readonly paramsForBackend: object;
 }
 
-/*
+/**
  * Containers form the organisational structure of the Inventory system,
  * enabling the modelling of a lab's means of storing samples and other items
  * of interest. Containers form a tree structure with containers capable of
@@ -135,7 +133,7 @@ export interface Container extends InventoryRecord {
    * If the container is a Grid container, then this defines the labelling of
    * the axis.
    */
-  gridLayout: ?GridLayout;
+  gridLayout: GridLayout | null;
 
   /*
    * An instance of the standard Search mechanisn, intended for making possible
@@ -147,12 +145,12 @@ export interface Container extends InventoryRecord {
    * For determining what colour to highlight a location, to identify groups of
    * location content based on properties like shared sample.
    */
-  getColor(Id): ?string;
+  getColor(sampleId: Id): string | null;
 
   /*
    * For un/selecting all locations (e.g. when selecting one for creation).
    */
-  toggleAllLocations(boolean): void;
+  toggleAllLocations(value: boolean): void;
 
   /*
    * Calculates whether an ongoing more operation can store its current
@@ -160,7 +158,7 @@ export interface Container extends InventoryRecord {
    * this computed property requires that it reach out and grab the global
    * variable defining what is currently being moved.
    */
-  +canStoreRecords: boolean;
+  readonly canStoreRecords: boolean;
 
   /*
    * All containers have locations in which content may or may not be stored.
@@ -175,13 +173,13 @@ export interface Container extends InventoryRecord {
    *   and removed (provided they are empty).
    */
   locationsCount: number;
-  locations: ?Array<Location>;
-  findLocation(col: number, row: number): ?Location;
+  locations: Array<Location> | null;
+  findLocation(col: number, row: number): Location | null;
 
   /*
    * All of the container's locations, sorted by their ID.
    */
-  +sortedLocations: ?Array<Location>;
+  readonly sortedLocations: Array<Location> | null;
 
   /*
    * Locations can be selected independently of the contents they may contain
@@ -189,13 +187,13 @@ export interface Container extends InventoryRecord {
    * then the selected state of the Location MUST be synchronised with the
    * selected state of the Record.
    */
-  +selectedLocations: ?Array<Location>;
+  readonly selectedLocations: Array<Location> | null;
 
   /*
    * Some containers are used to model user workbenches, an underlying
    * implementation detail that should be opaque from a user's perspective.
    */
-  +isWorkbench: boolean;
+  readonly isWorkbench: boolean;
 
   /*
    * State variables used for selecting regions of a container to ease
