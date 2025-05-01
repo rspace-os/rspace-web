@@ -1,5 +1,3 @@
-// @flow
-
 import { type Sample } from "./Sample";
 import { type Field } from "./Field";
 
@@ -8,6 +6,6 @@ export interface Template extends Sample {
   defaultUnitId: number;
   getLatest(): void;
   historicalVersion: boolean;
-  latest: ?Template;
-  moveField(Field, number): void;
+  latest: Template | null;
+  moveField(field: Field, newIndex: number): void;
 }
