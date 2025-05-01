@@ -90,7 +90,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -597,20 +596,40 @@ public class WorkspaceController extends BaseController {
     }
 
     int moveCounter = 0;
-    for (Long id : toMove) {
-      if (target.getId().equals(id)) {
+    for (Long recordIdToMove : toMove) {
+      if (target.getId().equals(recordIdToMove)) {
         continue;
       }
       Folder sourceFolder =
-          getMoveSourceFolderId(id, settings.getParentFolderId(), user, usersRootFolder);
-      boolean isFolder = !isRecord(id);
+          getMoveSourceFolderId(
+              recordIdToMove, settings.getParentFolderId(), user, usersRootFolder);
+      boolean isFolder = !isRecord(recordIdToMove) || recordManager.get(recordIdToMove).isFolder();
       ServiceOperationResult<? extends BaseRecord> moveResult = null;
       if (isFolder) {
-        moveResult = folderManager.move(id, target.getId(), sourceFolder.getId(), user);
+        moveResult = folderManager.move(recordIdToMove, target.getId(), sourceFolder.getId(), user);
       } else {
-        moveResult = recordManager.move(id, target.getId(), sourceFolder.getId(), user);
+        BaseRecord baseRecordToMove = recordManager.get(recordIdToMove);
+        if (target.isNotebook() && target.isShared()) {
+          try {
+            SharingResult sharingResult =
+                recordShareHandler.moveIntoSharedNotebook(baseRecordToMove, (Notebook) target);
+            if (!sharingResult.getSharedIds().isEmpty()) {
+              moveCounter = moveCounter + sharingResult.getSharedIds().size();
+            }
+          } catch (Exception ex) {
+            log.error(
+                "It was not possible to move the record [{}] into the shared notebook [{}]: {}",
+                baseRecordToMove.getId(),
+                target.getId(),
+                ex.getMessage());
+            break;
+          }
+        } else {
+          moveResult =
+              recordManager.move(recordIdToMove, target.getId(), sourceFolder.getId(), user);
+        }
       }
-      if (moveResult.isSucceeded()) {
+      if (moveResult != null && moveResult.isSucceeded()) {
         moveCounter++;
         auditService.notify(new MoveAuditEvent(user, moveResult.getEntity(), sourceFolder, target));
       }
@@ -760,32 +779,7 @@ public class WorkspaceController extends BaseController {
       anonymousShare.setPublishOnInternet(existingAnonymousShareConfig.isPublishOnInternet());
       shareConfig.setValues(new ShareConfigElement[] {anonymousShare});
     }
-    ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> result =
-        recordShareHandler.shareRecords(shareConfig, sharer);
-    List<Long> sharedIds =
-        result.getResults().stream()
-            .map(rgs -> rgs.getShared().getId())
-            .collect(Collectors.toList());
-    List<String> publicLinks =
-        result.getResults().stream()
-            .map(
-                rgs -> {
-                  if (rgs.getPublicLink() == null) {
-                    return null;
-                  }
-                  String prefix = "";
-                  if (rgs.getShared().isStructuredDocument()) {
-                    prefix = "/public/publishedView/document/";
-                  } else if (rgs.getShared().isNotebook()) {
-                    prefix = "/public/publishedView/notebook/";
-                  }
-                  return rgs.getShared().getName() + "_&_&_" + prefix + rgs.getPublicLink();
-                })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-    result.getExceptions().forEach(e -> error.addErrorMsg(e.getMessage()));
-    result.getFailures().forEach(rgs -> error.addErrorMsg(rgs.getShared().getName()));
-    SharingResult sharingResult = new SharingResult(sharedIds, publicLinks);
+    SharingResult sharingResult = recordShareHandler.shareRecordsWithResult(shareConfig, sharer);
     return new AjaxReturnObject<>(sharingResult, error);
   }
 
@@ -1344,4 +1338,5 @@ public class WorkspaceController extends BaseController {
     documentTagManager.saveTagsForRecords(recordTags, user);
     return ResponseEntity.status(HttpStatus.OK).build();
   }
+
 }
