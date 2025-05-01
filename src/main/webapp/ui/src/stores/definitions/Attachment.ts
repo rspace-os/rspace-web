@@ -1,5 +1,3 @@
-//@flow
-
 import { type Record } from "./Record";
 import { type URL } from "../../util/types";
 import { type GlobalId } from "./BaseRecord";
@@ -25,7 +23,7 @@ import { type GlobalId } from "./BaseRecord";
  * "attachment".
  */
 export interface Attachment extends Record {
-  imageLink: ?URL;
+  imageLink: URL | null;
   loadingImage: boolean;
   loadingString: boolean;
   chemicalString: string;
@@ -76,11 +74,11 @@ export interface Attachment extends Record {
    * best practice to call this method as early as possible to minimise
    * excess memory usage.
    */
-  revokeAuthenticatedLink(URL): void;
+  revokeAuthenticatedLink(link: URL): void;
 
-  +isChemicalFile: boolean;
-  +chemistrySupported: boolean;
-  +previewSupported: boolean;
+  readonly isChemicalFile: boolean;
+  readonly chemistrySupported: boolean;
+  readonly previewSupported: boolean;
 
   /**
    * Save any changes to the attachment; uploading new attachments, or deletion
