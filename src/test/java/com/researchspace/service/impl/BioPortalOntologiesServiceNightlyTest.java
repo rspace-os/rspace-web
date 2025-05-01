@@ -8,6 +8,7 @@ import static org.junit.Assert.assertEquals;
 import com.researchspace.client.BioPortalOntologiesClient;
 import java.util.List;
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
@@ -17,6 +18,7 @@ public class BioPortalOntologiesServiceNightlyTest {
 
   @SneakyThrows
   @Test
+  @Disabled("BioPortal tags retrieval currently doesn't work, see rspace-os/rspace-web issue #319")
   @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testListResults() {
     List<String> results = service.getBioOntologyDataForQuery("Tolstoy");
