@@ -1,4 +1,3 @@
-//@flow
 import { type RecordType, type InventoryRecord } from "./InventoryRecord";
 import { type GlobalId } from "./BaseRecord";
 
@@ -10,10 +9,10 @@ export interface TreeView {
   filteredTypes: Array<RecordType>;
 
   expanded: Array<string>;
-  setExpanded(Array<string>): void;
+  setExpanded(ids: Array<string>): void;
 
-  +selected: ?GlobalId;
-  setSelected(?GlobalId): void;
+  readonly selected: GlobalId | null;
+  setSelected(globalId: GlobalId | null): void;
 
-  +selectedNode: ?InventoryRecord;
+  readonly selectedNode: InventoryRecord | null;
 }
