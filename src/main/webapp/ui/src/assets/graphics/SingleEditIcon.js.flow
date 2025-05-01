@@ -1,0 +1,6 @@
+//@flow
+
+import { type Element } from "react";
+import SvgIcon from "@mui/material/SvgIcon";
+
+declare export default Element<typeof SvgIcon>;
