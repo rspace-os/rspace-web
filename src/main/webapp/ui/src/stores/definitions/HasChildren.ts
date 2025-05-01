@@ -21,7 +21,7 @@ export interface HasChildren {
    * MUST be empty. The array MAY also be empty if the children have not been
    * loaded yet.
    */
-  +children: Array<InventoryRecord>;
+  readonly children: Array<InventoryRecord>;
 
   /**
    * If true, then the UI MAY provide a mechanism to navigate to a listing of
@@ -29,5 +29,5 @@ export interface HasChildren {
    * by relying on the data that all InventoryRecords have, such as id and
    * global id.
    */
-  +canNavigateToChildren: boolean;
+  readonly canNavigateToChildren: boolean;
 }
