@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
  * "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
@@ -14,7 +12,7 @@ import { type HasChildren } from "./HasChildren";
 import { type Factory } from "./Factory";
 import { type Attachment } from "./Attachment";
 import { type Identifier } from "./Identifier";
-import { type Node } from "react";
+import React from "react";
 import { type ExtraField, type ExtraFieldAttrs } from "./ExtraField";
 import { type BarcodeRecord } from "./Barcode";
 import { type AdjustableTableRowOptions } from "./Tables";
@@ -33,7 +31,7 @@ export type LockStatus =
   | "UNLOCKED_OK"
   | "CANNOT_LOCK";
 
-/*
+/**
  * Where it is inconvenient to identify the class of an inventory record by any
  * other means, these strings provide a simple enum for switching over
  * instances of their respective classes.
@@ -44,7 +42,7 @@ export type RecordType =
   | "subSample"
   | "sampleTemplate";
 
-/*
+/**
  * The API encodes the type of the various Inventory records using an all-caps
  * snake-case encoding.
  */
@@ -61,15 +59,15 @@ export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
   return "SAMPLE_TEMPLATE";
 }
 
-export type CreateOptionParameter = {|
-  label: string,
+export type CreateOptionParameter = {
+  label: string;
 
   /**
    * A brief description of the required information. MUST describe any
    * conditions on the data that would prevent the user from proceeding to the
    * next step; see validState below.
    */
-  explanation: string,
+  explanation: string;
 
   /**
    * It is this object that determines the form field that will be presented to
@@ -77,25 +75,25 @@ export type CreateOptionParameter = {|
    * when the form field mutates the value, the component is re-rendered.
    */
   state:
-    | {| key: "split", copies: number |}
-    | {| key: "name", value: string |}
-    | {| key: "location", container: Container |}
-    | {|
-        key: "fields",
-        copyFieldContent: $ReadOnlyArray<{|
-          id: Id,
-          name: string,
-          content: string,
-          hasContent: boolean,
-          selected: boolean,
-        |}>,
-      |}
-    | {| key: "newSubsamplesCount", count: number |}
-    | {|
-        key: "newSubsamplesQuantity",
-        quantity: number | "",
-        quantityLabel: string,
-      |},
+    | { key: "split"; copies: number }
+    | { key: "name"; value: string }
+    | { key: "location"; container: Container }
+    | {
+        key: "fields";
+        copyFieldContent: ReadonlyArray<{
+          id: Id;
+          name: string;
+          content: string;
+          hasContent: boolean;
+          selected: boolean;
+        }>;
+      }
+    | { key: "newSubsamplesCount"; count: number }
+    | {
+        key: "newSubsamplesQuantity";
+        quantity: number | "";
+        quantityLabel: string;
+      };
 
   /**
    * The user is prevented from moving to the next step if the current step is
@@ -103,8 +101,8 @@ export type CreateOptionParameter = {|
    * data in sufficient detail so as to make it obvious what the problem is
    * when this function returns false.
    */
-  validState: () => boolean,
-|};
+  validState: () => boolean;
+};
 
 /**
  * The create dialog (../../Inventory/components/ContextMenu/CreateDialog.js)
@@ -114,26 +112,26 @@ export type CreateOptionParameter = {|
  * information to collect from the user and how to proceed when the dialog is
  * submitted.
  */
-export type CreateOption = {|
+export type CreateOption = {
   /**
    * A brief description of what new record(s) are to be created. Disambiguiate
    * with a few words if there are multiple ways of creating the same record
    * type.
    */
-  label: string,
+  label: string;
 
   /**
    * Avoid disabling options where possible. However, where necessary this is
    * available. When true, `explanation` MUST explain why the user is unable to
    * use this option.
    */
-  disabled?: boolean,
+  disabled?: boolean;
 
   /**
    * When enabled, this provides a bit more information about how the new
    * records will be created. If the option is disabled, this MUST explain why.
    */
-  explanation: string,
+  explanation: string;
 
   /**
    * Each option in the create dialog can have a series of steps that require
@@ -141,14 +139,14 @@ export type CreateOption = {|
    * record(s). This might be the new record's name, the number of new records
    * to be created, or anything else that the user must specify.
    */
-  parameters?: $ReadOnlyArray<CreateOptionParameter>,
+  parameters?: ReadonlyArray<CreateOptionParameter>;
 
   /**
    * When called, the paramters MUST be put back into their initial values.
    * This is called when the create dialog is closed so that when the user
    * opens the dialog again the state is returned to an initial state.
    */
-  onReset: () => void,
+  onReset: () => void;
 
   /**
    * When the create dialog is submitted, this function will be invoked. It
@@ -157,14 +155,14 @@ export type CreateOption = {|
    * MUST move the user a step toward creating the new record(s) and it MUST be
    * clear how much work remains before the new record will be finalised.
    */
-  onSubmit: () => Promise<void>,
-|};
+  onSubmit: () => Promise<void>;
+};
 
 export interface CreateFrom {
-  +createOptions: $ReadOnlyArray<CreateOption>;
+  readonly createOptions: ReadonlyArray<CreateOption>;
 }
 
-/*
+/**
  * This is the base definition of all Inventory records. In other words, this
  * is the minimum definition of what it means to be a record in the Inventory
  * system, that the rest of the frontend code can depend on, particularly where
@@ -186,7 +184,7 @@ export interface InventoryRecord
   /*
    * These properties are simply shared by all record classes.
    */
-  description: ?string;
+  description: string | null;
   tags: Array<Tag>;
   permittedActions: Set<Action>;
   type: ApiRecordType;
@@ -196,14 +194,16 @@ export interface InventoryRecord
   created: string;
   lastModified: string;
   modifiedByFullName: string;
-  +illustration: Node;
+  readonly illustration: React.ReactNode;
 
   /*
    * Records may have an associated image. It MUST be possible to set the
    * various image types with setAttributesDirty
    */
-  image: ?BlobUrl;
-  fetchImage("image" | "locationsImage" | "thumbnail"): Promise<?BlobUrl>;
+  image: BlobUrl | null;
+  fetchImage(
+    imageType: "image" | "locationsImage" | "thumbnail"
+  ): Promise<BlobUrl | null>;
 
   /*
    * These relate to loading and fetching of the data associated with the Record.
@@ -219,22 +219,26 @@ export interface InventoryRecord
    */
   loading: boolean;
   infoLoaded: boolean;
-  +noFullDetails: boolean;
+  readonly noFullDetails: boolean;
 
   /*
    * These computed properties are related to permissions and are used to determine
    * which actions can be performed on a record, or which details can be displayed
    */
-  +canRead: boolean;
-  +canEdit: boolean;
-  +canTransfer: boolean;
-  +readAccessLevel: ReadAccessLevel;
+  readonly canRead: boolean;
+  readonly canEdit: boolean;
+  readonly canTransfer: boolean;
+  readonly readAccessLevel: ReadAccessLevel;
 
   /*
    * When new data is available, typically by making a GET request, the
    * instance of InventoryRecord can be repopulated with this method.
    */
-  populateFromJson(Factory, any, ?any): void;
+  populateFromJson(
+    factory: Factory,
+    params: any,
+    defaultParams: any | null
+  ): void;
 
   /*
    * After some set of other Records have been modified, it may be desirable to
@@ -242,19 +246,23 @@ export interface InventoryRecord
    * determine whether the InventoryRecord should be updated from the set of
    * Global IDs and if so then it SHOULD trigger network activity.
    */
-  updateBecauseRecordsChanged(Set<GlobalId>): void;
+  updateBecauseRecordsChanged(recordIds: Set<GlobalId>): void;
 
   /*
    * For creating and editing InventoryRecord and their associated fields. For
    * more information see ./Editable.js
    */
-  +state: State;
+  readonly state: State;
   create(): Promise<void>;
-  setEditing(boolean, ?boolean, ?boolean): Promise<LockStatus>;
+  setEditing(
+    value: boolean,
+    refresh: boolean | null,
+    silent: boolean | null
+  ): Promise<LockStatus>;
   editing: boolean;
-  isFieldEditable(string): boolean;
+  isFieldEditable(field: string): boolean;
   setFieldsStateForBatchEditing(): void;
-  +supportsBatchEditing: boolean;
+  readonly supportsBatchEditing: boolean;
   currentlyEditableFields: Set<string>;
 
   /**
@@ -263,7 +271,7 @@ export interface InventoryRecord
    * see: https://www.doi.org and https://www.igsn.org
    */
   addIdentifier(): Promise<void>;
-  removeIdentifier(Id): Promise<void>;
+  removeIdentifier(id: Id): Promise<void>;
   updateIdentifiers(): void;
 
   /*
@@ -272,7 +280,7 @@ export interface InventoryRecord
    * that physically exist this will most often be their bench, but for purely
    * virtual records this will be some other search listing.
    */
-  +showNewlyCreatedRecordSearchParams: CoreFetcherArgs;
+  readonly showNewlyCreatedRecordSearchParams: CoreFetcherArgs;
 
   /*
    * The value of the enum, as defined above, for the current instance of the
@@ -280,15 +288,15 @@ export interface InventoryRecord
    * should be avoided, using polymorphism instead, but it is necessary in some
    * places as a pragmatic solution to simple logic.
    */
-  +recordType: RecordType;
+  readonly recordType: RecordType;
 
   /*
    * These labels are used for rendering purposes. Best to consult the
    * components where they are used for more details.
    */
-  +ownerLabel: ?string;
-  +recordLinkLabel: string;
-  +showRecordOnNavigate: boolean;
+  readonly ownerLabel: string | null;
+  readonly recordLinkLabel: string;
+  readonly showRecordOnNavigate: boolean;
 
   /*
    * When the instance of the implementation of this interface has been
@@ -305,7 +313,7 @@ export interface InventoryRecord
    * MUST always be JSON serialisable, and it is advisable to write a unit test
    * to assert as such for each implementation.
    */
-  +paramsForBackend: any;
+  readonly paramsForBackend: any;
 
   /*
    * Many of the classes of Inventory records are analogous to physical objects
@@ -319,7 +327,7 @@ export interface InventoryRecord
   isInWorkbench(): boolean; // any parent is a bench
   isOnWorkbench(): boolean; // immediate parent is a bench
   isMovable(): boolean;
-  +hasSubSamples: boolean;
+  readonly hasSubSamples: boolean;
 
   /*
    * At times, it is desirable to edit multiple attributes of an
@@ -335,7 +343,7 @@ export interface InventoryRecord
    * may be operated on as a group e.g. when navigating away from a particular
    * record all of the scoped toasts can be cleared.
    */
-  addScopedToast(Alert): void;
+  addScopedToast(alert: Alert): void;
   clearAllScopedToasts(): void;
 
   /*
@@ -343,7 +351,7 @@ export interface InventoryRecord
    * using checkboxes.
    */
   selected: boolean;
-  toggleSelected(?boolean): void;
+  toggleSelected(value: boolean | null): void;
 
   /*
    * this method is for exposing a collection of properties that may be
@@ -357,18 +365,21 @@ export interface InventoryRecord
    * information see ./ExtraFields.js
    */
   extraFields: Array<ExtraField>;
-  addExtraField(ExtraFieldAttrs): void;
-  updateExtraField(string, { name: string, type: string }): void;
-  removeExtraField(?number, number): void;
-  +visibleExtraFields: Array<ExtraField>;
-  +hasUnsavedExtraField: boolean;
-  +fieldNamesInUse: Array<string>;
+  addExtraField(newExtraFieldAttrs: ExtraFieldAttrs): void;
+  updateExtraField(
+    oldFieldName: string,
+    updatedField: { name: string; type: string }
+  ): void;
+  removeExtraField(id: number | null, index: number): void;
+  readonly visibleExtraFields: Array<ExtraField>;
+  readonly hasUnsavedExtraField: boolean;
+  readonly fieldNamesInUse: Array<string>;
 
   /*
    * An InventoryRecord can specify that any associated context menu MUST be
    * disabled.
    */
-  contextMenuDisabled(): ?string;
+  contextMenuDisabled(): string | null;
 
   /*
    * An InventoryRecord MAY have an associated Search which can be refreshed
@@ -385,6 +396,6 @@ export interface InventoryRecord
    */
   showTopLinkInBreadcrumbs(): boolean;
 
-  +usableInLoM: boolean;
-  +beingCreatedInContainer: boolean;
+  readonly usableInLoM: boolean;
+  readonly beingCreatedInContainer: boolean;
 }
