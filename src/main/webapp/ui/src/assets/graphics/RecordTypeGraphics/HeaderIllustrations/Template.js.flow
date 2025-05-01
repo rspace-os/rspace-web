@@ -1,0 +1,6 @@
+// @flow
+
+import { type Node } from "react";
+
+declare export default function Template(): Node;
+

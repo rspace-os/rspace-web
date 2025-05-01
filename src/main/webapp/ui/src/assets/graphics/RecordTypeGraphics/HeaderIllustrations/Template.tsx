@@ -1,9 +1,7 @@
-// @flow
-
-import React, { type ComponentType } from "react";
+import React from "react";
 import { withStyles } from "Styles";
 
-const SampleTemplate: ComponentType<{||}> = withStyles<{||}, { svg: string }>(
+const SampleTemplate = withStyles<Record<string, never>, { svg: string }>(
   () => ({
     svg: {
       height: 83,
