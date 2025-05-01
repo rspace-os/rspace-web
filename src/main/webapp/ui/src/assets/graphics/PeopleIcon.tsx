@@ -1,12 +1,11 @@
-//@flow
-import React, { type Node } from "react";
+import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
 
 export default function PeopleIcon({
   className,
 }: {
-  className?: string,
-}): Node {
+  className?: string;
+}): React.ReactNode {
   return (
     <SvgIcon
       focusable="false"
