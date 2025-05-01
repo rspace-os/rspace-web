@@ -12,3 +12,4 @@ export type DocumentAttrs = {|
 |};
 
 export type Document = Record;
+
