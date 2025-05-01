@@ -18,10 +18,7 @@ export type AdjustableTableRowOptions<T: AdjustableTableRowLabel> = Map<
   () => CellContent
 >;
 
-/*
- * All classes which implement this interface can be used as the source data
- * for a table row that has an adjustable column.
- */
 export interface AdjustableTableRow<T: AdjustableTableRowLabel> {
   adjustableTableOptions(): AdjustableTableRowOptions<T>;
 }
+
