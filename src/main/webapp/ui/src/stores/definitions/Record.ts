@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
  * "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
@@ -12,14 +10,13 @@ import { type Person } from "../definitions/Person";
 import { type InventoryRecord } from "./InventoryRecord";
 import { type Tag } from "./Tag";
 import { type LinkableRecord } from "./LinkableRecord";
-import { type GlobalId } from "./BaseRecord";
 
 export type ReadAccessLevel = "full" | "limited" | "public";
 
 /**
  * A URL to a small image to be displayed alongside summary information.
  */
-export type Thumbnail = ?URL;
+export type Thumbnail = URL | null;
 
 /**
  * An assortment of key-value pairs, this interface defines a loose collection
@@ -29,26 +26,26 @@ export type Thumbnail = ?URL;
  * All pairings are optional and wont be applicable to the majority of
  * implementations; each of which should just return the relevant data.
  */
-export type RecordDetails = {|
+export type RecordDetails = {
   /*
    * There are some record types where we don't want to show the Global Id in
    * the UI because the user need not be aware of it; its essentially just an
    * implementation detail and may just confuse them. For example, attachments
    */
-  hideGlobalId?: boolean,
+  hideGlobalId?: boolean;
 
-  modified?: [string, string],
-  owner?: ?string,
-  description?: ?string,
-  tags?: Array<Tag>,
-  quantity?: string,
-  contents?: Container,
-  location?: InventoryRecord,
-  size?: number,
-  sample?: InventoryRecord,
-  version?: number,
-  galleryFile?: LinkableRecord,
-|};
+  modified?: [string, string];
+  owner?: string | null;
+  description?: string | null;
+  tags?: Array<Tag>;
+  quantity?: string;
+  contents?: Container;
+  location?: InventoryRecord;
+  size?: number;
+  sample?: InventoryRecord;
+  version?: number;
+  galleryFile?: LinkableRecord;
+};
 
 /**
  * This interface describes Inventory-specific records, but in a more generic
@@ -58,13 +55,13 @@ export type RecordDetails = {|
  * with. This includes Attachments as well as all InventoryRecords.
  */
 export interface Record extends LinkableRecord {
-  owner: ?Person;
+  owner: Person | null;
   thumbnail?: Thumbnail;
 
-  +deleted: boolean;
-  +cardTypeLabel: string;
-  +currentUserIsOwner?: ?boolean;
-  +readAccessLevel?: ReadAccessLevel;
+  readonly deleted: boolean;
+  readonly cardTypeLabel: string;
+  readonly currentUserIsOwner?: boolean | null;
+  readonly readAccessLevel?: ReadAccessLevel;
 
-  +recordDetails: RecordDetails;
+  readonly recordDetails: RecordDetails;
 }
