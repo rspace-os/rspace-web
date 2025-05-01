@@ -1,9 +1,7 @@
-// @flow
-
-import React, { type ComponentType } from "react";
+import React from "react";
 import { withStyles } from "Styles";
 
-const GridContainer: ComponentType<{||}> = withStyles<{||}, { svg: string }>(
+const GridContainer = withStyles<Record<string, never>, { svg: string }>(
   () => ({
     svg: {
       height: 83,
