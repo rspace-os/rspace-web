@@ -35,15 +35,15 @@ import org.springframework.test.context.TestPropertySource;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-    ProdProfileCanSetFromPropertiesTest.UserPropertiesSet.class,
-    ProdProfileCanSetFromPropertiesTest.DisabledThrottling.class,
-    ProdProfileCanSetFromPropertiesTest.UserPropertiesSetWronglyLogsWarning.class
+  ProdProfileCanSetFromPropertiesTest.UserPropertiesSet.class,
+  ProdProfileCanSetFromPropertiesTest.DisabledThrottling.class,
+  ProdProfileCanSetFromPropertiesTest.UserPropertiesSetWronglyLogsWarning.class
 })
 public class ProdProfileCanSetFromPropertiesTest {
 
   /* using a test-specific spring profile enables more precise control over what
-     beans are created, to avoid having to load entire Spring-prod beans before running the
-     test. It also avoids polluting 'prod' profile with duplicate bean definitions */
+  beans are created, to avoid having to load entire Spring-prod beans before running the
+  test. It also avoids polluting 'prod' profile with duplicate bean definitions */
   @Configuration
   @Profile("api-prod-config-test")
   public static class ApiProdConfigTestHelper {
@@ -114,7 +114,7 @@ public class ProdProfileCanSetFromPropertiesTest {
 
     @Bean
     @Override
-      // something in spring 5.2 update causes dependency not to set, setting required to false fixes.
+    // something in spring 5.2 update causes dependency not to set, setting required to false fixes.
     ApiAuthenticator combinedApiAuthenticator(
         @Autowired(required = false) OAuthTokenAuthenticator oAuthTokenAuthenticator,
         @Autowired(required = false) AnalyticsManager analyticsManager,
