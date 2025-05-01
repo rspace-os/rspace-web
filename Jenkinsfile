@@ -151,6 +151,7 @@ pipeline {
             steps {
                 dir('src/main/webapp/ui') {
                     echo 'Running TypeScript check'
+                    sh 'npm run tsc --version'
                     sh 'npm run tsc --noEmit'
                 }
             }
