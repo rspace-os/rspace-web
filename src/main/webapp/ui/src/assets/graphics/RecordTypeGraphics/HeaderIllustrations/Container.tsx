@@ -1,20 +1,16 @@
-// @flow
-
-import React, { type ComponentType } from "react";
+import React from "react";
 import { withStyles } from "Styles";
 
-const Container: ComponentType<{||}> = withStyles<{||}, { svg: string }>(
-  () => ({
-    svg: {
-      height: 83,
-      opacity: 0.7,
-      position: "absolute",
-      bottom: -28,
-      width: 83,
-      right: 0,
-    },
-  })
-)(({ classes }) => (
+const Container = withStyles<Record<string, never>, { svg: string }>(() => ({
+  svg: {
+    height: 83,
+    opacity: 0.7,
+    position: "absolute",
+    bottom: -28,
+    width: 83,
+    right: 0,
+  },
+}))(({ classes }) => (
   <svg
     version="1.1"
     className={classes.svg}
