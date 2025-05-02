@@ -14,20 +14,15 @@ import {
 
 export type Quantity = {
   // API always deals with numbers, but input fields can read in empty string
-  numericValue: number | "",
-  unitId: number,
+  numericValue: number | "";
+  unitId: number;
 };
 
-export type RecordWithQuantityEditableFields = {
-  ...ResultEditableFields,
-  quantity: ?Quantity,
-  ...
+export type RecordWithQuantityEditableFields = ResultEditableFields & {
+  quantity: ?Quantity;
 };
 
-export type RecordWithQuantityUneditableFields = {
-  ...ResultUneditableFields,
-  ...
-};
+export type RecordWithQuantityUneditableFields = ResultUneditableFields;
 
 /*
  * Some samples/subsamples don't have a quantity; these functions just provide
@@ -112,7 +107,9 @@ export default class RecordWithQuantity
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): {[key in keyof RecordWithQuantityEditableFields]: ?string} & {[key in keyof RecordWithQuantityUneditableFields]: ?string} {
+  get noValueLabel(): {
+    [key in keyof RecordWithQuantityEditableFields]: ?string;
+  } & { [key in keyof RecordWithQuantityUneditableFields]: ?string } {
     return {
       ...super.noValueLabel,
       quantity: null,

@@ -7,7 +7,11 @@ import {
   type HasEditableFields,
   type HasUneditableFields,
 } from "../definitions/Editable";
-import { type Id, type GlobalId, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+import {
+  type Id,
+  type GlobalId,
+  inventoryRecordTypeLabels,
+} from "../definitions/BaseRecord";
 import { type RecordDetails } from "../definitions/Record";
 import {
   type RecordType,
@@ -48,7 +52,7 @@ import {
   defaultVisibleResultFields,
   defaultEditableResultFields,
 } from "./Result";
-import React, { type Node } from "react";
+import React from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
 import { type SubSample } from "../definitions/SubSample";
 import { type BarcodeAttrs } from "../definitions/Barcode";
@@ -60,56 +64,52 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 
-type SubSampleEditableFields = {
-  ...RecordWithQuantityEditableFields,
+type SubSampleEditableFields = RecordWithQuantityEditableFields;
+
+type SubSampleUneditableFields = RecordWithQuantityUneditableFields & {
+  sample: Sample;
+  location: InventoryRecord;
 };
 
-type SubSampleUneditableFields = {
-  ...RecordWithQuantityUneditableFields,
-  sample: Sample,
-  location: InventoryRecord,
-  ...
-};
-
-export type Note = {|
-  id?: number,
+export type Note = {
+  id?: number;
   createdBy: {
-    firstName: string,
-    lastName: string,
-    id: PersonId,
-  },
-  created: string,
-  content: string,
-|};
+    firstName: string;
+    lastName: string;
+    id: PersonId;
+  };
+  created: string;
+  content: string;
+};
 
-export type SubSampleAttrs = {|
-  id: Id, // can't be null, because created on the server first
-  type: string,
-  globalId: ?GlobalId,
-  name?: string,
-  quantity: Quantity,
-  extraFields?: Array<ExtraFieldAttrs>,
-  description?: string,
-  permittedActions: Array<Action>,
-  tags: ?string,
-  notes?: Array<Note>,
-  iconId?: string,
-  newBase64Image?: string,
-  image?: string,
-  parentContainers: Array<ContainerAttrs>,
-  lastNonWorkbenchParent: ?string,
-  lastMoveDate: ?Date,
-  sample?: SampleAttrs | SampleModel,
-  owner: ?PersonAttrs,
-  created: ?string,
-  lastModified: ?string,
-  modifiedByFullName: ?string,
-  deleted: boolean,
-  attachments: Array<AttachmentJson>,
-  barcodes: Array<BarcodeAttrs>,
-  identifiers: Array<IdentifierAttrs>,
-  _links: Array<_LINK>,
-|};
+export type SubSampleAttrs = {
+  id: Id; // can't be null, because created on the server first
+  type: string;
+  globalId: ?GlobalId;
+  name?: string;
+  quantity: Quantity;
+  extraFields?: Array<ExtraFieldAttrs>;
+  description?: string;
+  permittedActions: Array<Action>;
+  tags: ?string;
+  notes?: Array<Note>;
+  iconId?: string;
+  newBase64Image?: string;
+  image?: string;
+  parentContainers: Array<ContainerAttrs>;
+  lastNonWorkbenchParent: ?string;
+  lastMoveDate: ?Date;
+  sample?: SampleAttrs | SampleModel;
+  owner: ?PersonAttrs;
+  created: ?string;
+  lastModified: ?string;
+  modifiedByFullName: ?string;
+  deleted: boolean;
+  attachments: Array<AttachmentJson>;
+  barcodes: Array<BarcodeAttrs>;
+  identifiers: Array<IdentifierAttrs>;
+  _links: Array<_LINK>;
+};
 
 const FIELDS = new Set([...RESULT_FIELDS, "quantity", "notes"]);
 const defaultVisibleFields = new Set([
@@ -132,14 +132,14 @@ export default class SubSampleModel
   sample: SampleModel;
   parentContainers: Array<ContainerModel>;
   parentLocation: ?Location;
-  allParentContainers: ?() => Array<ContainerModel>;
+  allParentContainers: ?(() => Array<ContainerModel>);
   rootParentContainer: ?ContainerModel;
   immediateParentContainer: ?ContainerModel;
   lastNonWorkbenchParent: ?string;
   lastMoveDate: ?Date;
-  createOptionsParametersState: {|
-    split: {| key: "split",  copies: number |}
-  |};
+  createOptionsParametersState: {
+    split: { key: "split"; copies: number };
+  };
 
   constructor(factory: Factory, params: SubSampleAttrs) {
     super(factory);
@@ -171,7 +171,7 @@ export default class SubSampleModel
     if (this.recordType === "subSample")
       this.populateFromJson(factory, params, {});
 
-    this.createOptionsParametersState = { split: { key: "split", copies: 2 }};
+    this.createOptionsParametersState = { split: { key: "split", copies: 2 } };
   }
 
   populateFromJson(
@@ -186,7 +186,6 @@ export default class SubSampleModel
     this.parentContainers = params.parentContainers ?? [];
     this.lastNonWorkbenchParent = params.lastNonWorkbenchParent;
     this.lastMoveDate = params.lastMoveDate;
-    // $FlowExpectedError[prop-missing] Defined on the mixin
     this.initializeMovableMixin(factory);
 
     /*
@@ -259,7 +258,7 @@ export default class SubSampleModel
     this.setEditable(FIELDS, false);
   }
 
-  async createNote(params: {| content: string |}): Promise<void> {
+  async createNote(params: { content: string }): Promise<void> {
     if (this.state === "edit") {
       const newNote: Note = {
         ...params,
@@ -278,10 +277,10 @@ export default class SubSampleModel
 
     if (!this.id) throw new Error("id is required.");
     try {
-      const { data } = await ApiService.post<
-        typeof params,
-        { notes: Array<Note> }
-      >(`subSamples/${this.id}/notes`, params);
+      const { data } = await ApiService.post<{ notes: Array<Note> }>(
+        `subSamples/${this.id}/notes`,
+        params
+      );
 
       runInAction(() => {
         this.notes = data.notes;
@@ -347,7 +346,7 @@ export default class SubSampleModel
         super.update(refresh),
         ...this.notes
           .filter((n) => !n.id)
-          .map((n) => ApiService.post<void, void>(`subSamples/${id}/notes`, n)),
+          .map((n) => ApiService.post<void>(`subSamples/${id}/notes`, n)),
       ]);
 
     if (noteResults.some(({ status }) => status === "rejected")) {
@@ -360,9 +359,7 @@ export default class SubSampleModel
             .map(
               ({
                 reason: {
-                  // $FlowExpectedError[incompatible-use] rejected promises have a reason property
                   config: { data: jsonData },
-                  // $FlowExpectedError[incompatible-use] rejected promises have a reason property
                   response: {
                     data: {
                       errors: [error],
@@ -391,7 +388,7 @@ export default class SubSampleModel
     return "subsample";
   }
 
-  get illustration(): Node {
+  get illustration(): React.ReactNode {
     return <SubSampleIllustration />;
   }
 
@@ -423,7 +420,9 @@ export default class SubSampleModel
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): {[key in keyof SubSampleEditableFields]: ?string} & {[key in keyof SubSampleUneditableFields]: ?string} {
+  get noValueLabel(): { [key in keyof SubSampleEditableFields]: ?string } & {
+    [key in keyof SubSampleUneditableFields]: ?string;
+  } {
     return {
       ...super.noValueLabel,
       quantity: null,
@@ -443,17 +442,24 @@ export default class SubSampleModel
     return true;
   }
 
-  get createOptions(): $ReadOnlyArray<CreateOption> {
+  get createOptions(): ReadonlyArray<CreateOption> {
     return [
       {
         label: "Subsample, by splitting",
-        explanation: this.canEdit ? "New subsamples will be created by diving the quantity of this subsample equally amongst them." : "You do not have permission to edit this subsample.",
-        parameters: [{
-          label: "Number of new subsamples",
-          explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
-          state: this.createOptionsParametersState.split,
-          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
-        }],
+        explanation: this.canEdit
+          ? "New subsamples will be created by diving the quantity of this subsample equally amongst them."
+          : "You do not have permission to edit this subsample.",
+        parameters: [
+          {
+            label: "Number of new subsamples",
+            explanation:
+              "The total number of subsamples wanted, including the source (between 2 and 100)",
+            state: this.createOptionsParametersState.split,
+            validState: () =>
+              this.createOptionsParametersState.split.copies >= 2 &&
+              this.createOptionsParametersState.split.copies <= 100,
+          },
+        ],
         disabled: !this.canEdit,
         onReset: () => {
           this.createOptionsParametersState.split.copies = 2;
@@ -464,7 +470,7 @@ export default class SubSampleModel
             this
           );
         },
-      }
+      },
     ];
   }
 }
@@ -473,7 +479,7 @@ export default class SubSampleModel
 classMixin(SubSampleModel, Movable);
 
 type BatchSubSampleEditableFields = ResultCollectionEditableFields &
-  $Diff<SubSampleEditableFields, {| name: mixed |}>;
+  Omit<SubSampleEditableFields, "name">;
 
 /*
  * This is a wrapper class around a set of SubSamples, making it easier to
@@ -517,7 +523,7 @@ export class SubSampleCollection
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): {[key in keyof BatchSubSampleEditableFields]: ?string} {
+  get noValueLabel(): { [key in keyof BatchSubSampleEditableFields]: ?string } {
     const currentQuanities = new RsSet(
       this.records.map((r) => getValue(r.quantity))
     );

@@ -60,9 +60,13 @@ import {
   type Alias,
   type SampleSource,
 } from "../definitions/Sample";
-import { CELSIUS, type Temperature, validateTemperature } from "../definitions/Units";
+import {
+  CELSIUS,
+  type Temperature,
+  validateTemperature,
+} from "../definitions/Units";
 import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
-import React, { type Node } from "react";
+import React from "react";
 import { type BarcodeAttrs } from "../definitions/Barcode";
 import { type SharedWithGroup } from "../definitions/Group";
 import type { IdentifierAttrs } from "../definitions/Identifier";
@@ -75,64 +79,60 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
-import * as ArrayUtils  from "../../util/ArrayUtils";
+import * as ArrayUtils from "../../util/ArrayUtils";
 
-type SampleEditableFields = {
-  ...RecordWithQuantityEditableFields,
-  expiryDate: ?string,
-  sampleSource: SampleSource,
-  storageTempMin: ?Temperature,
-  storageTempMax: ?Temperature,
-  subSampleAlias: Alias,
-  ...
+type SampleEditableFields = RecordWithQuantityEditableFields & {
+  expiryDate: ?string;
+  sampleSource: SampleSource;
+  storageTempMin: ?Temperature;
+  storageTempMax: ?Temperature;
+  subSampleAlias: Alias;
 };
 
-type SampleUneditableFields = {
-  ...RecordWithQuantityUneditableFields,
-};
+type SampleUneditableFields = RecordWithQuantityUneditableFields;
 
 export type SubSampleTargetLocation = {
-  containerId: Id,
-  location: { id: Id },
+  containerId: Id;
+  location: { id: Id };
 };
 
 export type SampleInContainerParams = {
-  newSampleSubSampleTargetLocations: Array<SubSampleTargetLocation>,
+  newSampleSubSampleTargetLocations: Array<SubSampleTargetLocation>;
 };
 
-export type SampleAttrs = {|
-  id: Id,
-  type: string,
-  globalId: ?GlobalId,
-  name: string,
-  permittedActions: Array<Action>,
-  templateId: Id,
-  templateVersion: ?number,
-  subSampleAlias: Alias,
-  subSamplesCount: number | "",
-  subSamples: Array<SubSampleAttrs>,
-  quantity: Quantity,
-  storageTempMin: ?Temperature,
-  storageTempMax: ?Temperature,
-  fields: Array<FieldModelAttrs>,
-  extraFields: Array<ExtraFieldAttrs>,
-  description: string,
-  tags: ?string,
-  sampleSource: string,
-  expiryDate: ?string,
-  iconId: ?number,
-  owner: ?PersonAttrs,
-  created: ?string,
-  lastModified: ?string,
-  modifiedByFullName: ?string,
-  deleted: boolean,
-  attachments: Array<AttachmentJson>,
-  barcodes: Array<BarcodeAttrs>,
-  identifiers: Array<IdentifierAttrs>,
-  sharingMode: SharingMode,
-  sharedWith: Array<SharedWithGroup>,
-  _links: Array<_LINK>,
-|};
+export type SampleAttrs = {
+  id: Id;
+  type: string;
+  globalId: ?GlobalId;
+  name: string;
+  permittedActions: Array<Action>;
+  templateId: Id;
+  templateVersion: ?number;
+  subSampleAlias: Alias;
+  subSamplesCount: number | "";
+  subSamples: Array<SubSampleAttrs>;
+  quantity: Quantity;
+  storageTempMin: ?Temperature;
+  storageTempMax: ?Temperature;
+  fields: Array<FieldModelAttrs>;
+  extraFields: Array<ExtraFieldAttrs>;
+  description: string;
+  tags: ?string;
+  sampleSource: string;
+  expiryDate: ?string;
+  iconId: ?number;
+  owner: ?PersonAttrs;
+  created: ?string;
+  lastModified: ?string;
+  modifiedByFullName: ?string;
+  deleted: boolean;
+  attachments: Array<AttachmentJson>;
+  barcodes: Array<BarcodeAttrs>;
+  identifiers: Array<IdentifierAttrs>;
+  sharingMode: SharingMode;
+  sharedWith: Array<SharedWithGroup>;
+  _links: Array<_LINK>;
+};
 
 const DEFAULT_SAMPLE: SampleAttrs = {
   id: null,
@@ -214,22 +214,26 @@ export default class SampleModel
   subSampleAlias: Alias;
   templateId: Id;
   templateVersion: ?number;
-  createOptionsParametersState: {|
-    split: {| key: "split",  copies: number |},
-    newSubsamplesCount: {| key: "newSubsamplesCount", count: number |},
-    newSubsamplesQuantity: {| key: "newSubsamplesQuantity", quantity: number | "", quantityLabel: string |},
-    name: {| key: "name", value: string |},
-    fields: {|
-      key: "fields",
-      copyFieldContent: $ReadOnlyArray<{|
-        id: Id,
-        name: string,
-        content: string,
-        hasContent: boolean,
-        selected: boolean,
-      |}>,
-    |},
-  |};
+  createOptionsParametersState: {
+    split: { key: "split"; copies: number };
+    newSubsamplesCount: { key: "newSubsamplesCount"; count: number };
+    newSubsamplesQuantity: {
+      key: "newSubsamplesQuantity";
+      quantity: number | "";
+      quantityLabel: string;
+    };
+    name: { key: "name"; value: string };
+    fields: {
+      key: "fields";
+      copyFieldContent: ReadonlyArray<{
+        id: Id;
+        name: string;
+        content: string;
+        hasContent: boolean;
+        selected: boolean;
+      }>;
+    };
+  };
 
   constructor(factory: Factory, params: SampleAttrs = { ...DEFAULT_SAMPLE }) {
     super(factory);
@@ -312,31 +316,35 @@ export default class SampleModel
     this.subSampleAlias = params.subSampleAlias;
     this.templateId = params.templateId;
     this.templateVersion = params.templateVersion ?? 1;
-      this.createOptionsParametersState = {
-        split: { key: "split", copies: 2 },
-        name: { key: "name", value: "" },
-        fields: {
-          key: "fields",
-          copyFieldContent: [
-            ...this.fields.map(f => ({
-              id: f.id,
-              name: f.name,
-              content: f.renderContentAsString,
-              hasContent: f.hasContent,
-              selected: false
-            })),
-            ...this.extraFields.map(e => ({
-              id: e.id,
-              name: e.name,
-              content: e.content,
-              hasContent: e.hasContent,
-              selected: false
-            }))
-          ],
-        },
+    this.createOptionsParametersState = {
+      split: { key: "split", copies: 2 },
+      name: { key: "name", value: "" },
+      fields: {
+        key: "fields",
+        copyFieldContent: [
+          ...this.fields.map((f) => ({
+            id: f.id,
+            name: f.name,
+            content: f.renderContentAsString,
+            hasContent: f.hasContent,
+            selected: false,
+          })),
+          ...this.extraFields.map((e) => ({
+            id: e.id,
+            name: e.name,
+            content: e.content,
+            hasContent: e.hasContent,
+            selected: false,
+          })),
+        ],
+      },
       newSubsamplesCount: { key: "newSubsamplesCount", count: 1 },
-      newSubsamplesQuantity: { key: "newSubsamplesQuantity", quantity: 1, quantityLabel: this.quantityUnitLabel },
-      };
+      newSubsamplesQuantity: {
+        key: "newSubsamplesQuantity",
+        quantity: 1,
+        quantityLabel: this.quantityUnitLabel,
+      },
+    };
   }
 
   get recordType(): RecordType {
@@ -476,18 +484,25 @@ export default class SampleModel
       return newFields?.find((f) => f.name === field.name)?.globalId;
     };
 
-    const fieldAttachments: Array<Attachment> = ArrayUtils.filterNull(this.fields
-      .filter((f) => Boolean(f.attachment))
-      // handle removal of correct field attachment
-      .map((f) =>
-        f.attachment?.removed ? f.originalAttachment : f.attachment
-      ));
+    const fieldAttachments: Array<Attachment> = ArrayUtils.filterNull(
+      this.fields
+        .filter((f) => Boolean(f.attachment))
+        // handle removal of correct field attachment
+        .map((f) =>
+          f.attachment?.removed ? f.originalAttachment : f.attachment
+        )
+    );
 
-    await Promise.all(fieldAttachments.map(attachment => {
-      const g = findGlobalIdOfField(attachment);
-      if (!g) return Promise.reject(new Error("Could not find Global Id for a field"));
-      return attachment.save(g);
-    }));
+    await Promise.all(
+      fieldAttachments.map((attachment) => {
+        const g = findGlobalIdOfField(attachment);
+        if (!g)
+          return Promise.reject(
+            new Error("Could not find Global Id for a field")
+          );
+        return attachment.save(g);
+      })
+    );
   }
 
   updateFieldsState() {
@@ -527,8 +542,8 @@ export default class SampleModel
   }
 
   overrideTemp(
-    min: ?{ numericValue: number, unitId: number },
-    max: ?{ numericValue: number, unitId: number }
+    min: ?{ numericValue: number; unitId: number },
+    max: ?{ numericValue: number; unitId: number }
   ) {
     if (!min || !max) return;
 
@@ -685,7 +700,7 @@ export default class SampleModel
   async updateToLatestTemplate(): Promise<void> {
     if (!this.id) throw new Error("Does not have an id.");
     try {
-      await ApiService.post<{||}, void>(
+      await ApiService.post<void>(
         `samples/${this.id}/actions/updateToLatestTemplateVersion`,
         {}
       );
@@ -776,7 +791,6 @@ export default class SampleModel
   }
 
   get children(): Array<InventoryRecord> {
-    // $FlowExpectedError[incompatible-return] I think this is a bug in flow
     return this.subSamples;
   }
 
@@ -784,7 +798,7 @@ export default class SampleModel
     void this.fetchAdditionalInfo();
   }
 
-  get illustration(): Node {
+  get illustration(): React.ReactNode {
     return <SampleIllustration />;
   }
 
@@ -817,7 +831,9 @@ export default class SampleModel
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): {[key in keyof SampleEditableFields]: ?string} & {[key in keyof SampleUneditableFields]: ?string} {
+  get noValueLabel(): { [key in keyof SampleEditableFields]: ?string } & {
+    [key in keyof SampleUneditableFields]: ?string;
+  } {
     return {
       ...super.noValueLabel,
       sampleSource: null,
@@ -879,41 +895,57 @@ export default class SampleModel
     };
   }
 
-  get createOptions(): $ReadOnlyArray<CreateOption> {
-    let splitExplanation = "Subsamples will be created by dividing the existing subsample quantity amongst them.";
+  get createOptions(): ReadonlyArray<CreateOption> {
+    let splitExplanation =
+      "Subsamples will be created by dividing the existing subsample quantity amongst them.";
     if (this.subSamples.length > 1)
-      splitExplanation = "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead.";
+      splitExplanation =
+        "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead.";
     if (!this.canEdit)
       splitExplanation = "You do not have permission to edit this sample.";
 
     return [
       {
         label: "Subsamples, by creating new ones",
-        explanation: this.canEdit ? "Additional subsamples will be created with the specified quantity." : "You do not have permission to edit this sample.",
-        parameters: [{
-          label: "Number of new subsamples",
-          explanation: "Between 1 and 100.",
-          state: this.createOptionsParametersState.newSubsamplesCount,
-          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
-        }, {
-          label: "Quantity per subsample",
-          explanation: "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
-          state: this.createOptionsParametersState.newSubsamplesQuantity,
-          validState: () => this.createOptionsParametersState.newSubsamplesQuantity.quantity !== "",
-        }],
+        explanation: this.canEdit
+          ? "Additional subsamples will be created with the specified quantity."
+          : "You do not have permission to edit this sample.",
+        parameters: [
+          {
+            label: "Number of new subsamples",
+            explanation: "Between 1 and 100.",
+            state: this.createOptionsParametersState.newSubsamplesCount,
+            validState: () =>
+              this.createOptionsParametersState.split.copies >= 2 &&
+              this.createOptionsParametersState.split.copies <= 100,
+          },
+          {
+            label: "Quantity per subsample",
+            explanation:
+              "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
+            state: this.createOptionsParametersState.newSubsamplesQuantity,
+            validState: () =>
+              this.createOptionsParametersState.newSubsamplesQuantity
+                .quantity !== "",
+          },
+        ],
         disabled: !this.canEdit,
         onReset: () => {
           this.createOptionsParametersState.newSubsamplesCount.count = 1;
           this.createOptionsParametersState.newSubsamplesQuantity.quantity = 1;
         },
         onSubmit: () => {
-          if (!this.quantity) throw new Error("Don't know what the sample's current quantity is");
+          if (!this.quantity)
+            throw new Error("Don't know what the sample's current quantity is");
           const unitId = this.quantity.unitId;
           return getRootStore().searchStore.search.createNewSubsamples({
             sample: this,
-            numberOfNewSubsamples: this.createOptionsParametersState.newSubsamplesCount.count,
+            numberOfNewSubsamples:
+              this.createOptionsParametersState.newSubsamplesCount.count,
             quantityPerSubsample: {
-              numericValue: this.createOptionsParametersState.newSubsamplesQuantity.quantity,
+              numericValue:
+                this.createOptionsParametersState.newSubsamplesQuantity
+                  .quantity,
               unitId,
             },
           });
@@ -923,70 +955,89 @@ export default class SampleModel
         label: "Subsamples, by splitting the existing subsample",
         explanation: splitExplanation,
         disabled: this.subSamples.length > 1 || !this.canEdit,
-        parameters: [{
-          label: "Number of new subsamples",
-          explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
-          state: this.createOptionsParametersState.split,
-          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
-        }],
+        parameters: [
+          {
+            label: "Number of new subsamples",
+            explanation:
+              "The total number of subsamples wanted, including the source (between 2 and 100)",
+            state: this.createOptionsParametersState.split,
+            validState: () =>
+              this.createOptionsParametersState.split.copies >= 2 &&
+              this.createOptionsParametersState.split.copies <= 100,
+          },
+        ],
         onReset: () => {
           this.createOptionsParametersState.split.copies = 2;
         },
         onSubmit: () => {
-          if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
+          if (this.subSamples.length !== 1)
+            throw new Error(
+              "Can only split samples when there is one subsample"
+            );
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this.subSamples[0],
+            this.subSamples[0]
           );
         },
       },
       {
         label: "Template",
-        explanation: "Create a template from this sample, to easily create similar samples.",
-        parameters: [{
-          label: "Name",
-          explanation: "A name for the new template. At least two characters.",
-          state: this.createOptionsParametersState.name,
-          validState: () => this.createOptionsParametersState.name.value.length >= 2,
-        },{
-          label: "Field default values",
-          explanation: "All of the sample fields will be included in the template. Select which fields should also retain their current value as a default field value.",
-          state: this.createOptionsParametersState.fields,
-          validState: () => true,
-        }],
+        explanation:
+          "Create a template from this sample, to easily create similar samples.",
+        parameters: [
+          {
+            label: "Name",
+            explanation:
+              "A name for the new template. At least two characters.",
+            state: this.createOptionsParametersState.name,
+            validState: () =>
+              this.createOptionsParametersState.name.value.length >= 2,
+          },
+          {
+            label: "Field default values",
+            explanation:
+              "All of the sample fields will be included in the template. Select which fields should also retain their current value as a default field value.",
+            state: this.createOptionsParametersState.fields,
+            validState: () => true,
+          },
+        ],
         onReset: () => {
           this.createOptionsParametersState.name.value = "";
           this.createOptionsParametersState.fields.copyFieldContent = [
-              ...this.fields.map(f => ({
-                id: f.id,
-                name: f.name,
-                content: f.renderContentAsString,
-                hasContent: f.hasContent,
-                selected: false
-              })),
-              ...this.extraFields.map(e => ({
-                id: e.id,
-                name: e.name,
-                content: e.content,
-                hasContent: e.hasContent,
-                selected: false
-              }))
-            ];
+            ...this.fields.map((f) => ({
+              id: f.id,
+              name: f.name,
+              content: f.renderContentAsString,
+              hasContent: f.hasContent,
+              selected: false,
+            })),
+            ...this.extraFields.map((e) => ({
+              id: e.id,
+              name: e.name,
+              content: e.content,
+              hasContent: e.hasContent,
+              selected: false,
+            })),
+          ];
         },
         onSubmit: () => {
           return getRootStore().searchStore.search.createTemplateFromSample(
             this.createOptionsParametersState.name.value,
             this,
-            new RsSet(this.createOptionsParametersState.fields.copyFieldContent.filter(({ selected }) => selected).map(({ id }) => id)),
+            new RsSet(
+              this.createOptionsParametersState.fields.copyFieldContent
+                .filter(({ selected }) => selected)
+                .map(({ id }) => id)
+            )
           );
         },
-      }
+      },
     ];
   }
 }
 
 type BatchSampleEditableFields = ResultCollectionEditableFields &
-  $Diff<SampleEditableFields, {| name: mixed |}>;
+  Omit<SampleEditableFields, "name">;
 
 /*
  * This is a wrapper class around a set of Samples, making it easier to perform
@@ -1057,7 +1108,7 @@ export class SampleCollection
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): {[key in keyof BatchSampleEditableFields]: ?string} {
+  get noValueLabel(): { [key in keyof BatchSampleEditableFields]: ?string } {
     const currentSources = new RsSet(this.records.map((r) => r.sampleSource));
     const currentExpiryDates = new RsSet(this.records.map((r) => r.expiryDate));
     const allTemperaturesUnspecified =

@@ -3,7 +3,7 @@ import { makeObservable, observable } from "mobx";
 
 export default class TrackingStore {
   rootStore: RootStore;
-  trackEvent: (event: string, properties?: { ... }) => void;
+  trackEvent: (event: string, properties?: Record<string, unknown>) => void;
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;

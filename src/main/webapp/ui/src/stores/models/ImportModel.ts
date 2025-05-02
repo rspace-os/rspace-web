@@ -45,7 +45,7 @@ export const Fields: { [string]: symbol } = {
   none: Symbol.for("IGNORE"),
 };
 
-type Field = $Values<typeof Fields>;
+type Field = (typeof Fields)[keyof typeof Fields];
 
 // returns null for custom and none
 export const getTypeOfField: (field: Field) => ?FieldType = match([
@@ -98,7 +98,7 @@ const transitionMapping: { [string]: Set<string> } = {
   successfullySubmitted: new Set(["initial", "parsing"]),
   //   and the success state where the user can start over with a new file
 };
-export type State = $Keys<typeof transitionMapping>;
+export type State = keyof typeof transitionMapping;
 
 const DEFAULT_NEW_TEMPLATE_NAME = "New template";
 
@@ -333,7 +333,7 @@ export default class Import {
    * A Finite State Automata (State Machine) that models the steps of the
    * import process, ensuring that the several steps are performed in order.
    */
-  state: StateMachine<$Keys<typeof transitionMapping>>;
+  state: StateMachine<keyof typeof transitionMapping>;
 
   /*
    * this is required for handling the import process:

@@ -123,23 +123,21 @@ export default class PersonModel implements Person {
           users: [username],
           exportMode,
           // if omitted, ZIP is assumed
-          ...((resultFileType === null ? {} : { resultFileType }): {|
-            resultFileType?: ExportFileType,
-          |}),
-          ...((includeContainerContent === null
+          ...(resultFileType === null ? {} : { resultFileType }),
+          ...(includeContainerContent === null
             ? {}
             : {
                 includeContainerContent: includeContainerContent === "INCLUDE",
-              }): {| includeContainerContent?: boolean |}),
+              }),
         })
       );
 
       const { data } = await showToastWhilstPending(
         "Exporting User Data...",
-        ApiService.post<
-          typeof params,
-          { _links: Array<{ link: string, rel: string }> }
-        >("export", params)
+        ApiService.post<{ _links: Array<{ link: string; rel: string }> }>(
+          "export",
+          params
+        )
       );
       const downloadLink = data._links[1];
       const fileName = downloadLink.link.split("downloadArchive/")[1];
@@ -149,7 +147,10 @@ export default class PersonModel implements Person {
       link.setAttribute("rel", downloadLink.rel);
       link.setAttribute("download", fileName);
       link.click(); // trigger download
-      trackingStore.trackEvent("user:export:allTheirItems:Inventory", exportOptions);
+      trackingStore.trackEvent(
+        "user:export:allTheirItems:Inventory",
+        exportOptions
+      );
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
@@ -176,7 +177,7 @@ type SortOptions = {
    * Ignores lexicographical sorting for the current user if true and places
    * them always first. Will throw error if current user is not yet known.
    */
-  placeCurrentFirst?: boolean,
+  placeCurrentFirst?: boolean;
 };
 
 export const sortPeople = (

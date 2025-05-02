@@ -36,11 +36,11 @@ export default class CacheFetcher
     super.setAttributes(p);
   }
 
-  setBenchOwner(_: mixed) {
+  setBenchOwner(_: unknown) {
     // do nothing; bench filter is not allowed in grid and image view
   }
 
-  setDeletedItems(_: mixed) {
+  setDeletedItems(_: unknown) {
     // do nothing; status filter is not allowed in grid and image view
   }
 

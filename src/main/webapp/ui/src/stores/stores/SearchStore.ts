@@ -29,26 +29,25 @@ import { mkAlert } from "../contexts/Alert";
 import { showToastWhilstPending } from "../../util/alerts";
 import React from "react";
 
-export type SavedSearch = {|
-  ...CoreFetcherArgs,
-  name: string,
-|};
+export type SavedSearch = CoreFetcherArgs & {
+  name: string;
+};
 
 export type NewInContainerParams = {
-  parentContainers: Array<ContainerModel>,
+  parentContainers: Array<ContainerModel>;
   /*
    * An empty object is used to denote that a location does not need to be
    * specified when the parent container is a list container
    */
-  parentLocation: | {|
-        coordX: number,
-        coordY: number,
-      |}
-    | {||},
+  parentLocation:
+    | {
+        coordX: number;
+        coordY: number;
+      }
+    | Record<string, never>;
 };
 
 const SAVED_SEARCHES: ?Array<SavedSearch> = JSON.parse(
-  // $FlowExpectedError[incompatible-call]
   localStorage.getItem("searches")
 );
 
@@ -68,10 +67,7 @@ const normaliseSavedSearches = (
 
 export const getContainer = async (id: Id): Promise<ContainerModel> => {
   if (id) {
-    const { data } = await ApiService.get<void, ContainerAttrs>(
-      "containers",
-      id
-    );
+    const { data } = await ApiService.get<ContainerAttrs>("containers", id);
     return new ContainerModel(new MemoisedFactory(), data);
   }
   throw new Error("Cannot get container without id");
@@ -176,9 +172,7 @@ export default class SearchStore {
   async getBaskets(): Promise<void> {
     const { uiStore } = this.rootStore;
     try {
-      const { data } = await ApiService.get<void, Array<BasketAttrs>>(
-        "baskets"
-      );
+      const { data } = await ApiService.get<Array<BasketAttrs>>("baskets");
       runInAction(() => {
         this.savedBaskets = data.map(
           (basketAttrs) => new BasketModel(basketAttrs)
@@ -200,9 +194,7 @@ export default class SearchStore {
     const { uiStore } = this.rootStore;
     try {
       if (id) {
-        const { data } = await ApiService.get<void, BasketAttrs>(
-          `baskets/${id}`
-        );
+        const { data } = await ApiService.get<BasketAttrs>(`baskets/${id}`);
         if (data) return new BasketModel(data);
       } else throw new Error("Cannot retrieve Basket without id");
     } catch (e) {
@@ -222,10 +214,7 @@ export default class SearchStore {
     try {
       const res = await showToastWhilstPending(
         "Creating Basket...",
-        ApiService.post<
-          {| name: string, globalIds: Array<GlobalId> |},
-          BasketAttrs
-        >("baskets", { name, globalIds: items })
+        ApiService.post<BasketAttrs>("baskets", { name, globalIds: items })
       );
       if (res.status === 201 && res.data) {
         // refetch to update list
@@ -271,7 +260,7 @@ export default class SearchStore {
         ) {
           const res = await showToastWhilstPending(
             "Deleting Basket...",
-            ApiService.delete<void, void>(`baskets`, id)
+            ApiService.delete<void>(`baskets`, id)
           );
           if (res.status === 200) {
             // refetch to update list
@@ -386,7 +375,7 @@ export default class SearchStore {
   }
 
   async getBench(workbenchId: WorkbenchId): Promise<Container> {
-    const { data } = await ApiService.get<void, ContainerAttrs>(
+    const { data } = await ApiService.get<ContainerAttrs>(
       "workbenches",
       workbenchId
     );
@@ -398,7 +387,7 @@ export default class SearchStore {
     version: ?number,
     factory: Factory
   ): Promise<TemplateModel> {
-    const { data } = await ApiService.get<void, TemplateAttrs>(
+    const { data } = await ApiService.get<TemplateAttrs>(
       "sampleTemplates",
       typeof version === "number" ? `${id}/versions/${version}` : `${id}`
     );

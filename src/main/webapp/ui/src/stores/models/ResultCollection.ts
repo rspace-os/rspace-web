@@ -11,10 +11,10 @@ import { PersistedBarcode } from "./Barcode";
 import { type SharedWithGroup } from "../definitions/Group";
 import { areSameTag } from "../definitions/Tag";
 
-export type BatchName = {|
+export type BatchName = {
   common: string,
   suffix: "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED",
-|};
+};
 
 /*
  * For adding a numerical index as a suffix to the name of records, the indexes
@@ -29,10 +29,8 @@ export const formatIndex = (index: number, numOfRecords: number): string => {
   return (index + 1).toString().padStart(widthWithPadding, "0");
 };
 
-export type ResultCollectionEditableFields = {
-  ...$Diff<ResultEditableFields, {| name: string |}>,
+export type ResultCollectionEditableFields = Omit<ResultEditableFields, "name"> & {
   name: BatchName,
-  ...
 };
 
 /*
@@ -67,7 +65,7 @@ export default class ResultCollection<ResultSubtype: Result> {
     return this.records.size;
   }
 
-  get fieldValues(): { ...ResultCollectionEditableFields } {
+  get fieldValues(): ResultCollectionEditableFields {
     const currentDescriptions = new RsSet(
       this.records.map((r) => r.description)
     );
@@ -263,7 +261,7 @@ export class MixedResultCollection
     });
   }
 
-  get fieldValues(): { ...ResultCollectionEditableFields } {
+  get fieldValues(): ResultCollectionEditableFields {
     return super.fieldValues;
   }
 

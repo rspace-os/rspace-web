@@ -30,22 +30,22 @@ export type ElnFieldId = number;
 export type ElnDocumentId = number;
 
 export type Quantity = {
-  unitId: number,
-  numericValue: number,
+  unitId: number;
+  numericValue: number;
 };
 
 export type MaterialAttrs = {
-  invRec: InventoryRecord,
-  usedQuantity: ?Quantity,
+  invRec: InventoryRecord;
+  usedQuantity: ?Quantity;
 };
 
 type MaterialBackendParams = {
   invRec: {
-    id: ?number,
-    type: string,
-  },
-  usedQuantity: ?Quantity,
-  updateInventoryQuantity: ?boolean,
+    id: ?number;
+    type: string;
+  };
+  usedQuantity: ?Quantity;
+  updateInventoryQuantity: ?boolean;
 };
 
 /*
@@ -204,7 +204,6 @@ export class Material {
 
       /* update used quantity value */
       const newValue = this.originalUsedValue + newDelta;
-      // $FlowExpectedError[incompatible-use] usedQuantity != null because invRec is a SubSample
       this.usedQuantity.numericValue = fromCommonUnit(
         newValue,
         this.originalUsedId
@@ -275,22 +274,22 @@ export class Material {
 }
 
 export type ListOfMaterialsAttrs = {
-  id: ?number,
-  name: string,
-  description: string,
-  elnFieldId: number,
-  materials: Array<{|
-    invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs,
-    usedQuantity: ?Quantity,
-  |}>,
+  id: ?number;
+  name: string;
+  description: string;
+  elnFieldId: number;
+  materials: Array<{
+    invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs;
+    usedQuantity: ?Quantity;
+  }>;
 };
 
 type ListOfMaterialsBackendParams = {
-  id: ListOfMaterialsId,
-  name: string,
-  description: string,
-  elnFieldId: ElnFieldId,
-  materials: Array<MaterialBackendParams>,
+  id: ListOfMaterialsId;
+  name: string;
+  description: string;
+  elnFieldId: ElnFieldId;
+  materials: Array<MaterialBackendParams>;
 };
 
 /*
@@ -534,10 +533,10 @@ export class ListOfMaterials {
   async create(): Promise<void> {
     this.setLoading(true);
     try {
-      const { data } = await InvApiService.post<
-        ListOfMaterialsBackendParams,
-        { id: Id }
-      >(`listOfMaterials`, this.paramsForBackend);
+      const { data } = await InvApiService.post<{ id: Id }>(
+        `listOfMaterials`,
+        this.paramsForBackend
+      );
       this.id = data.id; // making list 'not new'
       getRootStore().uiStore.addAlert(
         mkAlert({
@@ -587,7 +586,7 @@ export class ListOfMaterials {
     const id = this.id;
     this.setLoading(true);
     try {
-      await InvApiService.update<ListOfMaterialsBackendParams, void>(
+      await InvApiService.update<void>(
         `listOfMaterials`,
         id,
         this.paramsForBackend
@@ -657,7 +656,7 @@ export class ListOfMaterials {
     try {
       await showToastWhilstPending(
         `Deleting ${this.name}...`,
-        InvApiService.delete<ListOfMaterialsId, void>(`listOfMaterials`, id)
+        InvApiService.delete<void>(`listOfMaterials`, id)
       );
       getRootStore().uiStore.addAlert(
         mkAlert({
@@ -709,25 +708,25 @@ export class ListOfMaterials {
           // if omitted, ZIP is assumed
           ...(resultFileType === null ? {} : { resultFileType }),
           // leaving values as string in RadioField, converting to boolean here
-          ...((includeSubsamplesInSample === null
+          ...(includeSubsamplesInSample === null
             ? {}
             : {
                 includeSubsamplesInSample:
                   includeSubsamplesInSample === "INCLUDE",
-              }): {| includeSubsamplesInSample?: boolean |}),
-          ...((includeContainerContent === null
+              }),
+          ...(includeContainerContent === null
             ? {}
             : {
                 includeContainerContent: includeContainerContent === "INCLUDE",
-              }): {| includeContainerContent?: boolean |}),
+              }),
         })
       );
       const { data } = await showToastWhilstPending(
         `Exporting ${this.name}...`,
-        InvApiService.post<
-          typeof params,
-          { _links: Array<{ link: string, rel: string }> }
-        >("export", params)
+        InvApiService.post<{ _links: Array<{ link: string; rel: string }> }>(
+          "export",
+          params
+        )
       );
       const downloadLink = data._links[1];
       const fileName = downloadLink.link.split("downloadArchive/")[1];
@@ -761,7 +760,6 @@ export class ListOfMaterials {
           })),
         })
       );
-      // $FlowExpectedError[incompatible-type] this.id !== null
       console.error(`Error exporting List of Materials ${this.id}`, error);
       if (error.response.status === 404)
         throw new Error("Resource could not be found.");

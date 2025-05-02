@@ -20,33 +20,31 @@ import { type LinkableRecord } from "../definitions/LinkableRecord";
 type AttachmentId = ?number;
 type Bytes = number;
 
-type CommonAttrs = {|
-  id: AttachmentId,
-  name: string,
-  size: Bytes,
-|};
+type CommonAttrs = {
+  id: AttachmentId;
+  name: string;
+  size: Bytes;
+};
 
 /**
  * This is the shape of the JSON object that the server will respond with to
  * model an attachment that was created by the user uploading a file from their
  * device.
  */
-type FromServer = {|
-  ...CommonAttrs,
-  globalId: GlobalId,
-  contentMimeType: string,
-  _links: Array<_LINK>,
-|};
+type FromServer = CommonAttrs & {
+  globalId: GlobalId;
+  contentMimeType: string;
+  _links: Array<_LINK>;
+};
 
 /**
  * This is the shape of the JSON object that the server will respond with to
  * model an attachment that was created by the user choosing a file that is
  * already in the Gallery
  */
-type FromServerFromGallery = {|
-  ...FromServer,
-  mediaFileGlobalId: string,
-|};
+type FromServerFromGallery = FromServer & {
+  mediaFileGlobalId: string;
+};
 
 /**
  * This is the shape of the JSON object that the server will respond with to
@@ -61,21 +59,19 @@ export type AttachmentJson = FromServer | FromServerFromGallery;
  * the react code when a user has selecting a file on their device for use as a
  * new attachment.
  */
-type FromUpload = {|
-  ...CommonAttrs,
-  file: File,
-|};
+type FromUpload = CommonAttrs & {
+  file: File;
+};
 
 /**
  * This is the shape of the object that the code below expects to receive from
  * the react code when a user chooses a file in the Gallery for use as a new
  * attachment.
  */
-type FromGallery = {|
-  ...CommonAttrs,
-  galleryId: string,
-  downloadHref: null | (() => Promise<Url>),
-|};
+type FromGallery = CommonAttrs & {
+  galleryId: string;
+  downloadHref: null | (() => Promise<Url>);
+};
 
 /**
  * Attachments that were created from Gallery files refer back those files via
@@ -98,11 +94,11 @@ class LinkableGalleryFile implements LinkableRecord {
     id,
     globalId,
     name,
-  }: {|
-    id: number,
-    globalId: string,
-    name: string,
-  |}) {
+  }: {
+    id: number;
+    globalId: string;
+    name: string;
+  }) {
     this.id = id;
     this.globalId = globalId;
     this.name = name;
@@ -202,7 +198,7 @@ export class ExistingAttachment implements Attachment {
   async getFile(): Promise<File> {
     if (this.file) return this.file;
     if (!this.link) throw new Error("No file specified");
-    const { data } = await ApiService.query<{||}, Blob>(
+    const { data } = await ApiService.query<Blob>(
       this.link,
       new URLSearchParams(),
       true
@@ -280,10 +276,7 @@ export class ExistingAttachment implements Attachment {
     } else {
       const id = this.id;
       this.setLoadingImage(true);
-      return ApiService.query<
-        {| imageParams: { width: ?number, height: ?number } |},
-        Blob
-      >(
+      return ApiService.query<Blob>(
         `/files/${id}/file/image`,
         new URLSearchParams({
           imageParams: JSON.stringify({
@@ -309,10 +302,9 @@ export class ExistingAttachment implements Attachment {
       throw new Error("Cannot generate chemical preview without file id");
     } else {
       this.setLoadingString(true);
-      const response = ApiService.get<
-        void,
-        {| data: { chemElements: string } |}
-      >(`/files/${id}/chemFileDetails`);
+      const response = ApiService.get<{ data: { chemElements: string } }>(
+        `/files/${id}/chemFileDetails`
+      );
       return response
         .then((r) => {
           if (r.status === 200) {
@@ -388,7 +380,7 @@ export class ExistingAttachment implements Attachment {
 
   async save(_parentGlobalId: GlobalId): Promise<void> {
     if (typeof this.id === "number" && this.removed) {
-      await ApiService.delete<mixed, mixed>("files", this.id);
+      await ApiService.delete<unknown>("files", this.id);
       return;
     }
     return Promise.resolve();
@@ -591,10 +583,7 @@ export class NewlyUploadedAttachment implements Attachment {
     } else {
       const id = this.id;
       this.setLoadingImage(true);
-      return ApiService.query<
-        {| imageParams: { width: ?number, height: ?number } |},
-        Blob
-      >(
+      return ApiService.query<Blob>(
         `/files/${id}/file/image`,
         new URLSearchParams({
           imageParams: JSON.stringify({
@@ -620,10 +609,9 @@ export class NewlyUploadedAttachment implements Attachment {
       throw new Error("Cannot generate chemical preview without file id");
     } else {
       this.setLoadingString(true);
-      const response = ApiService.get<
-        void,
-        {| data: { chemElements: string } |}
-      >(`/files/${id}/chemFileDetails`);
+      const response = ApiService.get<{ data: { chemElements: string } }>(
+        `/files/${id}/chemFileDetails`
+      );
       return response
         .then((r) => {
           if (r.status === 200) {
@@ -720,7 +708,7 @@ export class NewlyUploadedAttachment implements Attachment {
 
     if (!this.removed) {
       const formData = await toFormData();
-      await ApiService.post<FormData, mixed>("files", formData);
+      await ApiService.post<unknown>("files", formData);
       return;
     }
     return Promise.resolve();
@@ -881,10 +869,7 @@ export class NewGalleryAttachment implements Attachment {
 
   async save(parentGlobalId: GlobalId): Promise<void> {
     if (this.removed) return Promise.resolve();
-    await ApiService.post<
-      {| parentGlobalId: GlobalId, mediaFileGlobalId: string |},
-      mixed
-    >("attachments", {
+    await ApiService.post<unknown>("attachments", {
       parentGlobalId,
       mediaFileGlobalId: this.galleryId,
     });

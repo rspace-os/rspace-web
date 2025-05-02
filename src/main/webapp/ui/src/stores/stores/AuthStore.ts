@@ -14,22 +14,22 @@ export type DataCiteServerUrl =
   | "https://api.datacite.org"
   | "https://api.test.datacite.org";
 
-export type SystemSettings = {|
-  datacite: {|
+export type SystemSettings = {
+  datacite: {
     enabled: IntegrationState,
     serverUrl: DataCiteServerUrl,
     username: string,
     password: string,
     repositoryPrefix: string,
-  |},
-|};
+  },
+};
 
 export default class AuthStore {
   rootStore: RootStore;
   isAuthenticated: boolean = false;
   isSynchronizing: boolean = true;
   isSigningOut: boolean = false;
-  timeoutId: null | TimeoutID = null;
+  timeoutId: null | NodeJS.Timeout = null;
   systemSettings: SystemSettings;
 
   constructor(rootStore: RootStore) {
@@ -92,7 +92,7 @@ export default class AuthStore {
   }
 
   static async getStatus() {
-    await ElnApiService.get<void, void>("status");
+    await ElnApiService.get<void>("status");
   }
 
   synchronizeWithSessionStorage(): Promise<void> {
@@ -125,7 +125,7 @@ export default class AuthStore {
 
   async getSystemSettings(): Promise<void> {
     try {
-      const { data } = await InvApiService.get<void, SystemSettings>(
+      const { data } = await InvApiService.get<SystemSettings>(
         "system/settings",
         ""
       );
@@ -149,7 +149,7 @@ export default class AuthStore {
     newSettings: SystemSettings[SettingFor]
   ): Promise<void> {
     try {
-      await InvApiService.put<SystemSettings, void>("system/settings", {
+      await InvApiService.put<void>("system/settings", {
         [settingFor]: newSettings,
       });
       this.rootStore.uiStore.addAlert(

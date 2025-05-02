@@ -45,14 +45,15 @@ export const DEFAULT_SEARCH = {
 };
 
 export const DEFAULT_FETCHER = {
-  results: ([]: Array<InventoryRecord>),
+  results: [],
   loading: false,
   count: 0,
   error: "",
 };
 
-const omitDefault = <T: {}>(obj: T): T => {
+const omitDefault = <T extends object>(obj: any): any => {
   Object.keys({ ...obj })
+    // @ts-expect-error this function is pretty hacky
     .filter((k) => obj[k] === DEFAULT_SEARCH[k])
     .forEach((k) => delete obj[k]);
   return obj;
@@ -87,15 +88,15 @@ export const parseCoreFetcherArgsFromUrl = (
   ).flatMap(parseDeletedItems);
   // prettier-ignore
   return {
-    ...((query          ? { query          } : {}): {| query          ?: string       |}),
-    ...((orderBy        ? { orderBy        } : {}): {| orderBy        ?: string       |}),
-    ...((ownedBy        ? { ownedBy        } : {}): {| ownedBy        ?: string       |}),
-    ...((parentGlobalId ? { parentGlobalId } : {}): {| parentGlobalId ?: string       |}),
-    ...(deletedItems.map(dItems  => ({ deletedItems: dItems })).orElse({}): {| deletedItems ?: DeletedItems |}),
-    ...(order.map(       o       => ({ order:        o      })).orElse({}): {| order        ?: Order        |}),
-    ...(pageNumber.map(  pNumber => ({ pageNumber:   pNumber})).orElse({}): {| pageNumber   ?: number       |}),
-    ...(pageSize.map(    pSize   => ({ pageSize:     pSize  })).orElse({}): {| pageSize     ?: number       |}),
-    ...(resultType.map(  rType   => ({ resultType:   rType  })).orElse({}): {| resultType   ?: ResultType   |}),
+    ...((query          ? { query          } : {})),
+    ...((orderBy        ? { orderBy        } : {})),
+    ...((ownedBy        ? { ownedBy        } : {})),
+    ...((parentGlobalId ? { parentGlobalId } : {})),
+    ...(deletedItems.map(dItems  => ({ deletedItems: dItems })).orElse({})),
+    ...(order.map(       o       => ({ order:        o      })).orElse({})),
+    ...(pageNumber.map(  pNumber => ({ pageNumber:   pNumber})).orElse({})),
+    ...(pageSize.map(    pSize   => ({ pageSize:     pSize  })).orElse({})),
+    ...(resultType.map(  rType   => ({ resultType:   rType  })).orElse({})),
   };
 };
 
@@ -306,7 +307,7 @@ export default class CoreFetcher {
         const slug = params.permalink.version
           ? `${params.permalink.id}/versions/${params.permalink.version}`
           : params.permalink.id;
-        const { data } = await ApiService.get<void, any>(endpoint, slug);
+        const { data } = await ApiService.get<any>(endpoint, slug);
         runInAction(() => {
           this.count = 1;
         });
@@ -326,12 +327,12 @@ export default class CoreFetcher {
          * A URLSearchParams object, rather than `params` as it is, is passed
          * to ApiService.query so that square brackets are properly encoded.
          */
-        const { data } = await ApiService.query<void, any>(
+        const { data } = await ApiService.query<any>(
           endpoint,
           // $FlowExpectedError[incompatible-call]
           new URLSearchParams(omitNull(params))
         );
-        const records = match<void, Array<{ ... }>>([
+        const records = match<void, Array<unknown>>([
           [() => endpoint === "search", data.records],
           [() => endpoint === "samples", data.samples],
           [() => endpoint === "subSamples", data.subSamples],
@@ -466,13 +467,7 @@ export default class CoreFetcher {
     const keysOfComplexData = new RsSet(["owner", "benchOwner", "permalink"]);
     const keysOfSimpleData: RsSet<string> = (new RsSet(
       Object.keys(DEFAULT_SEARCH)
-    ): RsSet<string>).subtract(keysOfComplexData);
-    // $FlowExpectedError[incompatible-type]
-    // $FlowExpectedError[incompatible-return]
-    // $FlowExpectedError[prop-missing]
-    // $FlowExpectedError[incompatible-indexer]
-    // $FlowExpectedError[incompatible-exact]
-    // $FlowExpectedError[incompatible-call]
+    )).subtract(keysOfComplexData);
     return filterObject((k) => keysOfSimpleData.has(k), {
       ...DEFAULT_SEARCH,
       ...this,

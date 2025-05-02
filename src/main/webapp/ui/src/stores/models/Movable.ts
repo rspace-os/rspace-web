@@ -23,15 +23,11 @@ export class Movable {
   initializeMovableMixin(factory: Factory) {
     // first check required for 'public view' case
     if (this.parentContainers && this.parentContainers.length > 0) {
-      // $FlowExpectedError[incompatible-type] Will return a ContainerModel
       this.immediateParentContainer = factory.newRecord(
         this.parentContainers[0]
       );
       this.allParentContainers = () => [
-        // $FlowExpectedError[incompatible-type] immediateParentContainer is not null
         this.immediateParentContainer,
-        // $FlowExpectedError[incompatible-use] allParentContainers will be not null
-        // $FlowExpectedError[not-a-function]
         ...this.immediateParentContainer.allParentContainers(),
       ];
       this.parentContainers = null;
@@ -43,7 +39,6 @@ export class Movable {
       this.parentContainers = null;
     }
     if (this.lastNonWorkbenchParent)
-      // $FlowExpectedError[incompatible-type]
       this.lastNonWorkbenchParent = factory.newRecord(
         this.lastNonWorkbenchParent
       );
@@ -119,8 +114,7 @@ export class Movable {
       );
       options.set("Current Location", () => ({
         renderOption: "location",
-        // $FlowFixMe[prop-missing]: this will be an InventoryRecord
-        data: (this: InventoryRecord),
+        data: this,
       }));
       if (this.isInGridContainer()) {
         options.set("Grid Coordinates", () => ({

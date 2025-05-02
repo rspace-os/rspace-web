@@ -30,17 +30,17 @@ import { type Panel } from "../../util/types";
 import { Optional } from "../../util/optional";
 
 type SerialisedRecord =
-  | {|
+  | {
       ...$Exact<BulkEndpointRecordSerialisation>,
       globalId: ?GlobalId,
       removeFromParentContainerRequest: true,
-    |}
-  | {|
+    }
+  | {
       ...$Exact<BulkEndpointRecordSerialisation>,
       globalId: ?GlobalId,
-      parentContainers: $ReadOnlyArray<{ ... }>,
+      parentContainers: ReadonlyArray<{ ... }>,
       parentLocation?: { ... },
-    |};
+    };
 
 export default class MoveStore {
   rootStore: RootStore;
@@ -81,7 +81,6 @@ export default class MoveStore {
 
   get activeResult(): ?Container {
     return (
-      // $FlowExpectedError[prop-missing] Move's search's activeResult will always be a container
       this.search?.activeResult ?? this.rootStore.peopleStore.currentUser?.bench
     );
   }

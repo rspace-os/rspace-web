@@ -16,7 +16,7 @@ import NumberIcon from "../../components/NumberIcon";
  * issue https://github.com/facebook/flow/issues/3258
  */
 
-export const FieldTypes: { [string]: symbol } = {
+export const FieldTypes: { [fieldName: string]: symbol } = {
   choice: Symbol.for("choice"),
   date: Symbol.for("date"),
   number: Symbol.for("number"),
@@ -29,7 +29,7 @@ export const FieldTypes: { [string]: symbol } = {
   attachment: Symbol.for("attachment"),
 };
 
-export type FieldType = $Values<typeof FieldTypes>;
+export type FieldType = (typeof FieldTypes)[keyof typeof FieldTypes];
 
 export const compatibleFieldTypes = (
   fieldType: FieldType
@@ -80,7 +80,7 @@ export const fieldTypeToApiString = (fieldType: FieldType): string => {
 };
 
 export const apiStringToFieldType = (apiString: string): FieldType => {
-  const map: {[string]: symbol} = {
+  const map: { [fieldName: string]: symbol } = {
     choice: FieldTypes.choice,
     date: FieldTypes.date,
     number: FieldTypes.number,
@@ -102,72 +102,41 @@ export const apiStringToFieldType = (apiString: string): FieldType => {
 export const hasOptions = (fieldType: FieldType): boolean =>
   fieldType === FieldTypes.choice || fieldType === FieldTypes.radio;
 
-export const FIELD_LABEL: { [FieldType]: string } = {
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
+export const FIELD_LABEL: { [fieldName: FieldType]: string } = {
   [FieldTypes.choice]: "Choice",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.date]: "Date",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.number]: "Number",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.radio]: "Radio",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.plain_text]: "Plain text",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.formatted_text]: "Formatted text",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.uri]: "URI",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.time]: "Time",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.attachment]: "Attachment",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.reference]: "Reference",
 };
 
-export const FIELD_ICON: { [FieldType]: Element } = {
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
+export const FIELD_ICON: { [fieldName: FieldType]: React.ReactNode } = {
   [FieldTypes.choice]: <CheckBoxOutlinedIcon />,
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.date]: <EventOutlinedIcon />,
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.number]: <NumberIcon />,
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.radio]: <RadioButtonCheckedOutlinedIcon />,
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.plain_text]: <ShortTextOutlinedIcon />,
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.formatted_text]: <SubjectOutlinedIcon />,
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.uri]: <LinkOutlinedIcon />,
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.time]: <QueryBuilderOutlinedIcon />,
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
-  [FieldTypes.reference]: <LinkOutlinedIcon />,
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.attachment]: <AttachFileOutlinedIcon />,
 };
 
-export const FIELD_HELP_TEXT: { [FieldType]: string } = {
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
+export const FIELD_HELP_TEXT: { [fieldName: FieldType]: string } = {
   [FieldTypes.choice]: "Choose many options.",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.date]: "A single date.",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.number]: "Any numerical value.",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.radio]: "Choose one option.",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.plain_text]: "A short plain-text label.",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.formatted_text]: "A longer formatted piece of text.",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.uri]: "A Web link.",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.time]: "A time of day.",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.attachment]: "A single file, e.g. document, or chemistry file.",
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   [FieldTypes.reference]: "",
 };
 
@@ -184,7 +153,11 @@ export const SUPPORTED_TYPES: Set<FieldType> = new Set<FieldType>([
 ]);
 
 export const FIELD_DATA: {
-  [FieldType]: { icon: Node, help: string, label: string },
+  [fieldName: FieldType]: {
+    icon: React.ReactNode;
+    help: string;
+    label: string;
+  };
 } = listToObject(Object.values(FieldTypes), (f) => ({
   icon: FIELD_ICON[f],
   help: FIELD_HELP_TEXT[f],

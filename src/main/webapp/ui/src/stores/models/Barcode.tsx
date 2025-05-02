@@ -3,14 +3,14 @@ import {
   type PersistedBarcodeAttrs,
   type GeneratedBarcodeAttrs,
 } from "../definitions/Barcode";
-import React, { type Node } from "react";
+import React from "react";
 import { makeObservable, observable, computed, action } from "mobx";
 import { type Id } from "../definitions/BaseRecord";
 import { type URL } from "../../util/types";
 import ApiService from "../../common/InvApiService";
 
 function fetchImage(url: URL, description: string): Promise<File> {
-  return ApiService.query<{||}, Blob>(url, new URLSearchParams(), true).then(
+  return ApiService.query<Blob>(url, new URLSearchParams(), true).then(
     ({ data }) => {
       return new File([data], description, { type: "image/png" });
     }
@@ -89,11 +89,10 @@ export class PersistedBarcode implements BarcodeRecord {
     });
   }
 
-  get paramsForBackend(): { ... } {
+  get paramsForBackend(): object {
     const params: {
-      newBarcodeRequest?: true,
-      deleteBarcodeRequest?: true,
-      ...
+      newBarcodeRequest?: true;
+      deleteBarcodeRequest?: true;
     } = {
       id: this.id,
       data: this.data,
@@ -120,13 +119,13 @@ export class PersistedBarcode implements BarcodeRecord {
     return true;
   }
 
-  get renderedDescription(): Node {
+  get renderedDescription(): React.ReactNode {
     return <>{this.description}</>;
   }
 }
 
 export class GeneratedBarcode implements BarcodeRecord {
-  data: BarcodeValue;
+  data: string;
   description: string;
   imageUrl: ?URL;
   image: ?File;

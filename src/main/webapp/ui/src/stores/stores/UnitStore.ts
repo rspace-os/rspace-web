@@ -16,16 +16,15 @@ export type UnitCategory =
   | "molarity"
   | "concentration";
 
-export type Unit = {|
-  id: number,
-  label: string,
-  category: UnitCategory,
-  description: string,
-|};
+export type Unit = {
+  id: number;
+  label: string;
+  category: UnitCategory;
+  description: string;
+};
 
 const SAVED_UNITS: Array<Unit> =
-  // $FlowExpectedError[incompatible-call]
-  JSON.parse(localStorage.getItem("units")) || [];
+  JSON.parse(localStorage.getItem("units") ?? "") || [];
 
 export default class UnitStore {
   rootStore: RootStore;
@@ -47,7 +46,7 @@ export default class UnitStore {
 
   async fetchUnits(): Promise<void> {
     try {
-      const { data } = await ElnApiService.get<void, Array<Unit>>("units");
+      const { data } = await ElnApiService.get<Array<Unit>>("units");
       runInAction(() => {
         this.units = data;
         this.persistUnits();
@@ -74,12 +73,10 @@ export default class UnitStore {
     return this.units.filter((u: Unit) => categories.includes(u.category));
   }
 
-  getUnit(unitId: number): ?Unit {
-    if (this.loading || this.units.length < 1) {
+  getUnit(unitId: number): Unit | undefined {
+    if (this.loading || this.units.length < 1)
       return SAVED_UNITS.find((u: Unit) => u.id === unitId);
-    } else {
-      return this.units.find((u: Unit) => u.id === unitId);
-    }
+    return this.units.find((u: Unit) => u.id === unitId);
   }
 
   persistUnits(): void {

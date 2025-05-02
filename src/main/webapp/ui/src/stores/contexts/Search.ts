@@ -8,12 +8,12 @@ import getRootStore from "../stores/RootStore";
  * be that Inventory's main search, the contents of different record types, or
  * other features like the Picker or the Move dialog.
  */
-type SearchContextType = {|
+type SearchContextType = {
   /*
    *  This is an instance of ../models/Search, the main class that performs the
    *  actual search operation.
    */
-  search: Search,
+  search: Search;
 
   /*
    *  This is the parent result, in the situations where the search is scoped
@@ -22,21 +22,21 @@ type SearchContextType = {|
    *  to it's subsamples, or a template where search is scoped to the samples
    *  that have been created from that template.
    */
-  scopedResult?: ?Record,
+  scopedResult?: ?Record;
 
   /*
    *  If true, tapping on one of the records in the search result, regardless
    *  of current view, should not modify the state of the system. Moreover,
    *  checkboxes and a context menu should not be available.
    */
-  disabled?: boolean,
+  disabled?: boolean;
 
   /*
    *  If true, when the associated result is tapped, the user will be navigated
    *  to the permalink page for the result as opposed to simply seting the
    *  active result.
    */
-  isChild?: boolean,
+  isChild?: boolean;
 
   /*
    *  This is the search onto which new activeResults will be set. In the case
@@ -46,8 +46,8 @@ type SearchContextType = {|
    *  search of a container's content the main search's activeResult should be
    *  set instead of the container's content which isn't shown.
    */
-  differentSearchForSettingActiveResult: Search,
-|};
+  differentSearchForSettingActiveResult: Search;
+};
 
 const DEFAULT_SEARCH_CONTEXT = {
   search: getRootStore().searchStore.search,

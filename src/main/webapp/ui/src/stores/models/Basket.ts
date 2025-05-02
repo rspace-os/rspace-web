@@ -86,12 +86,9 @@ export default class BasketModel implements Basket {
         if (itemsCount > 0 && typeof this.id === "number") {
           const res = await showToastWhilstPending(
             `Adding item${itemsCount > 1 ? "s" : ""} to Basket...`,
-            ApiService.post<{| globalIds: typeof itemsToAdd |}, void>(
-              `baskets/${this.id}/addItems`,
-              {
-                globalIds: itemsToAdd,
-              }
-            )
+            ApiService.post<void>(`baskets/${this.id}/addItems`, {
+              globalIds: itemsToAdd,
+            })
           );
           if (res.status === 200) {
             // refetch to update basket items list
@@ -139,12 +136,9 @@ export default class BasketModel implements Basket {
         const itemsCount = itemIds.length;
         const res = await showToastWhilstPending(
           `Removing item${itemsCount > 1 ? "s" : ""} from Basket...`,
-          ApiService.post<{| globalIds: typeof itemIds |}, void>(
-            `baskets/${this.id}/removeItems`,
-            {
-              globalIds: itemIds,
-            }
-          )
+          ApiService.post<void>(`baskets/${this.id}/removeItems`, {
+            globalIds: itemIds,
+          })
         );
         if (res.status === 200) {
           // refetch to update basket items list
@@ -183,7 +177,7 @@ export default class BasketModel implements Basket {
       if (this.id) {
         await showToastWhilstPending(
           `Updating Basket details...`,
-          ApiService.put<BasketDetails, void>(`baskets/${this.id}`, details)
+          ApiService.put<void>(`baskets/${this.id}`, details)
         );
         uiStore.addAlert(
           mkAlert({

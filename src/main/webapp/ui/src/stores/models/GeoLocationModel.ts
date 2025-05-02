@@ -36,9 +36,9 @@ export const boxComplete = (box: GeoLocationBox): boolean => {
 };
 
 export class GeoLocationPolygonModel implements GeoLocationPolygon {
-  +points: Array<{| polygonPoint: PolygonPoint |}>;
+  readonly points: Array<{ polygonPoint: PolygonPoint }>;
 
-  constructor(points: Array<{| polygonPoint: PolygonPoint |}>) {
+  constructor(points: Array<{ polygonPoint: PolygonPoint }>) {
     makeObservable(this, {
       points: observable,
       length: computed,
@@ -55,16 +55,16 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
     return this.points.length;
   }
 
-  get(i: number): ?{| polygonPoint: PolygonPoint |} {
+  get(i: number): ?{ polygonPoint: PolygonPoint } {
     return this.points[i];
   }
 
-  set(i: number, key: $Keys<PolygonPoint>, value: string): void {
+  set(i: number, key: keyof PolygonPoint, value: string): void {
     this.points[i].polygonPoint[key] = value;
     if (i === 0) this.points[this.length - 1].polygonPoint[key] = value;
   }
 
-  mapPoints<T>(f: (PolygonPoint, number) => T): Array<T> {
+  mapPoints<T>(f: (point: PolygonPoint, index: number) => T): Array<T> {
     return this.points.map(({ polygonPoint }, i) => f(polygonPoint, i));
   }
 
@@ -96,7 +96,7 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
     });
   }
 
-  toJson(): mixed {
+  toJson(): unknown {
     return this.points;
   }
 }
@@ -193,7 +193,7 @@ export default class GeoLocationModel implements GeoLocation {
     );
   }
 
-  toJson(): { ... } {
+  toJson(): object {
     return {
       geoLocationBox: this.geoLocationBox,
       geoLocationPlace: this.geoLocationPlace,

@@ -40,22 +40,22 @@ export function hasOptions(type: FieldType): boolean {
   return type === "radio" || type === "choice";
 }
 
-export type FieldModelAttrs = {|
-  id?: number,
-  globalId?: GlobalId,
-  name?: string,
-  type: FieldType,
-  content?: ?string,
-  selectedOptions: ?Array<OptionValue>,
+export type FieldModelAttrs = {
+  id?: number;
+  globalId?: GlobalId;
+  name?: string;
+  type: FieldType;
+  content?: ?string;
+  selectedOptions: ?Array<OptionValue>;
   definition?: ?{
-    options: Array<OptionValue>,
-  },
-  initial?: boolean,
-  editing?: boolean,
-  columnIndex: ?number,
-  attachment: ?AttachmentJson,
-  mandatory: boolean,
-|};
+    options: Array<OptionValue>;
+  };
+  initial?: boolean;
+  editing?: boolean;
+  columnIndex: ?number;
+  attachment: ?AttachmentJson;
+  mandatory: boolean;
+};
 
 export default class FieldModel implements Field {
   id: Id;
@@ -281,8 +281,8 @@ export default class FieldModel implements Field {
     return this.owner.permalinkURL;
   }
 
-  get paramsForBackend(): { ... } {
-    const ret: any = { ...this };
+  get paramsForBackend(): object {
+    const ret = { ...this };
     if (!ret.id) ret.newFieldRequest = true;
 
     switch (ret.type) {

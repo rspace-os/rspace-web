@@ -5,7 +5,11 @@ import {
   handleDetailedErrors,
   handleDetailedSuccesses,
 } from "../../util/alerts";
-import { type Id, type GlobalId, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+import {
+  type Id,
+  type GlobalId,
+  inventoryRecordTypeLabels,
+} from "../definitions/BaseRecord";
 import { type RecordDetails } from "../definitions/Record";
 import {
   type RecordType,
@@ -48,15 +52,14 @@ import {
 
 const mainSearch = () => getRootStore().searchStore.search;
 
-export type TemplateAttrs = {|
-  ...SampleAttrs,
-  id: Id, // can't be null, because created on the server first
-  iconId: ?number,
-  defaultUnitId: ?number,
-  historicalVersion: boolean,
-  version: number,
-  quantity: null,
-|};
+export type TemplateAttrs = SampleAttrs & {
+  id: Id; // can't be null, because created on the server first
+  iconId: ?number;
+  defaultUnitId: ?number;
+  historicalVersion: boolean;
+  version: number;
+  quantity: null;
+};
 
 const DEFAULT_TEMPLATE: TemplateAttrs = {
   id: null,
@@ -405,13 +408,10 @@ export default class TemplateModel extends SampleModel implements Template {
     )
       return;
     try {
-      const { data } = await ApiService.post<
-        {||},
-        {
-          errorCount: number,
-          results: Array<{ error: { errors: Array<string> }, record: any }>,
-        }
-      >(
+      const { data } = await ApiService.post<{
+        errorCount: number;
+        results: Array<{ error: { errors: Array<string> }; record: any }>;
+      }>(
         `sampleTemplates/${id.toString()}/actions/updateSamplesToLatestTemplateVersion`,
         {}
       );
@@ -605,7 +605,7 @@ export default class TemplateModel extends SampleModel implements Template {
     return false;
   }
 
-  get createOptions(): $ReadOnlyArray<CreateOption> {
+  get createOptions(): ReadonlyArray<CreateOption> {
     return [
       {
         label: "Sample",

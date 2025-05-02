@@ -7,13 +7,13 @@ import { type Location, type Container } from "../definitions/Container";
 import { type SubSample } from "../definitions/SubSample";
 import { type Search } from "../definitions/Search";
 
-export type LocationAttrs = {|
-  id: ?number,
-  coordX: number,
-  coordY: number,
-  content: ?(SubSampleModel | ContainerModel),
-  parentContainer: ContainerModel,
-|};
+export type LocationAttrs = {
+  id: ?number;
+  coordX: number;
+  coordY: number;
+  content: ?(SubSampleModel | ContainerModel);
+  parentContainer: ContainerModel;
+};
 
 export default class LocationModel implements Location {
   loading: boolean = false;
@@ -159,14 +159,14 @@ export default class LocationModel implements Location {
     return !this.isGreyedOut(search);
   }
 
-  get name(): ?string {
+  get name(): string | null {
     return this.content?.name;
   }
 
   get paramsForBackend(): {} {
     const params: {
-      parentContainer: mixed,
-      content: ?(SubSample | Container),
+      parentContainer: unknown;
+      content: ?(SubSample | Container);
     } = { ...this };
     delete params.parentContainer;
     delete params.content;
@@ -235,9 +235,7 @@ export default class LocationModel implements Location {
     // Sync selection of location and content
     if (this.parentContainer.cType !== "LIST" && !moveStore.isMoving) {
       const activeContainer = getRootStore().searchStore.activeResult;
-      // $FlowExpectedError[prop-missing]
       if (activeContainer?.contentSearch) {
-        // $FlowExpectedError[incompatible-use] This is only used when activeResult is a container, with contentSearch
         const content = activeContainer.contentSearch.cacheFetcher.results.find(
           (r) => r.globalId === this.content?.globalId
         );

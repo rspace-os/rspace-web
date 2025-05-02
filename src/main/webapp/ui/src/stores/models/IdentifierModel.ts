@@ -21,7 +21,7 @@ import {
   makeObservable,
   runInAction,
 } from "mobx";
-import React, { type Node } from "react";
+import React from "react";
 import GeoLocationModel from "../models/GeoLocationModel";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type URL, type _LINK } from "../../util/types";
@@ -44,7 +44,7 @@ import {
 } from "../definitions/GeoLocation";
 import { mkAlert, type Alert } from "../contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import typeof InvApiService from "../../common/InvApiService";
+import InvApiService from "../../common/InvApiService";
 
 type GeoLocationBox = {
   eastBoundLongitude: string,
@@ -100,16 +100,16 @@ const identifierDateOptions: Array<DropdownOption> = [
  * and their schema is defined by datacite, not RS.
  * this function lets us extract all properties different from "value" and "type".
  */
-export const subFields = <Key: string, Value, Field: { [Key]: Value }>(
+export const subFields = <Key extends string, Value, Field extends { [Key]: Value }>(
   field: Field
-): Array<{| key: Key, value: Value |}> =>
+): Array<{ key: Key, value: Value }> =>
   Object.entries(field)
     .filter((item) => item[0] !== "value" && item[0] !== "type")
     .map((item) => {
       return { key: item[0], value: item[1] };
     });
 
-export const subFieldsForNew: { ... } = {
+export const subFieldsForNew: object = {
   Subjects: {
     subjectScheme: "",
     schemeURI: "",
@@ -152,7 +152,7 @@ export default class IdentifierModel implements Identifier {
   descriptions: ?Array<IdentifierDescription> = [];
   alternateIdentifiers: ?Array<AlternateIdentifier> = [];
   dates: ?Array<IdentifierDate> = [];
-  geoLocations: ?$ReadOnlyArray<GeoLocation> = [];
+  geoLocations: ?ReadonlyArray<GeoLocation> = [];
   _links: Array<_LINK> = [];
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
@@ -426,7 +426,7 @@ export default class IdentifierModel implements Identifier {
     this.dates = dates;
   }
 
-  setGeoLocations(geoLocations: $ReadOnlyArray<GeoLocation>) {
+  setGeoLocations(geoLocations: ReadonlyArray<GeoLocation>) {
     this.geoLocations = geoLocations;
   }
 
@@ -438,10 +438,10 @@ export default class IdentifierModel implements Identifier {
   async publish({
     confirm,
     addAlert,
-  }: {|
-    confirm: (Node, Node, string, string) => Promise<boolean>,
+  }: {
+    confirm: (React.ReactNode, React.ReactNode, string, string) => Promise<boolean>,
     addAlert: (Alert) => void,
-  |}): Promise<void> {
+  }): Promise<void> {
     if (!this.ApiServiceBase)
       throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
@@ -469,7 +469,6 @@ export default class IdentifierModel implements Identifier {
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
         const response = await ApiServiceBase.post<
-          {||},
           {
             state: IGSNPublishingState,
             url: string,
@@ -526,10 +525,10 @@ export default class IdentifierModel implements Identifier {
   async retract({
     confirm,
     addAlert,
-  }: {|
-    confirm: (Node, Node, string, string) => Promise<boolean>,
+  }: {
+    confirm: (React.ReactNode, React.ReactNode, string, string) => Promise<boolean>,
     addAlert: (Alert) => void,
-  |}): Promise<void> {
+  }): Promise<void> {
     if (!this.ApiServiceBase)
       throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
@@ -557,7 +556,6 @@ export default class IdentifierModel implements Identifier {
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
         const response = await ApiServiceBase.post<
-          {||},
           { state: IGSNPublishingState }
         >(`/identifiers/${this.id}/retract`, {});
         this.updateState(response.data.state);
@@ -600,9 +598,9 @@ export default class IdentifierModel implements Identifier {
    */
   async republish({
     addAlert,
-  }: {|
+  }: {
     addAlert: (Alert) => void,
-  |}): Promise<void> {
+  }): Promise<void> {
     if (!this.ApiServiceBase)
       throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
@@ -620,7 +618,6 @@ export default class IdentifierModel implements Identifier {
       // retract
       try {
         const response = await ApiServiceBase.post<
-          {||},
           { state: IGSNPublishingState }
         >(`/identifiers/${id}/retract`, {});
         this.updateState(response.data.state);
@@ -642,7 +639,6 @@ export default class IdentifierModel implements Identifier {
       // publish
       try {
         const response = await ApiServiceBase.post<
-          {||},
           {
             state: IGSNPublishingState,
             url: string,
@@ -698,7 +694,7 @@ export default class IdentifierModel implements Identifier {
     }
   }
 
-  toJson(): { ... } {
+  toJson(): object {
     return {
       parentGlobalId: this.parentGlobalId,
       id: this.id,
