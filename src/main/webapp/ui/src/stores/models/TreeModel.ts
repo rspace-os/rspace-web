@@ -1,5 +1,3 @@
-// @flow
-
 import { action, observable, computed, makeObservable } from "mobx";
 import Search from "./Search";
 import Result from "./Result";
