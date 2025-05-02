@@ -64,7 +64,7 @@ import {
   makeObservable,
   runInAction,
 } from "mobx";
-import React, { type Node } from "react";
+import React from "react";
 import ListContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/ListContainer";
 import GridContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/GridContainer";
 import VisualContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/VisualContainer";
@@ -82,13 +82,10 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 
-type ContainerEditableFields = {
-  ...ResultEditableFields,
-  ...
-};
+type ContainerEditableFields = ResultEditableFields;
 
-type ContainerUneditableFields = {
-  ...ResultUneditableFields,
+type ContainerUneditableFields = ResultUneditableFields &
+{
   location: InventoryRecord,
 };
 
@@ -97,7 +94,7 @@ export type ContainerInContainerParams = {
   parentLocation?: Location,
 };
 
-export type ContainerAttrs = {|
+export type ContainerAttrs = {
   id: ?Id,
   type: string,
   globalId: ?GlobalId,
@@ -108,23 +105,22 @@ export type ContainerAttrs = {|
   permittedActions: Array<Action>,
   quantity: null,
   extraFields?: Array<ExtraFieldAttrs>,
-  tags: ?Array<Tag>,
-  locations: $ReadOnlyArray<{
-    ...$Diff<LocationAttrs, {| parentContainer: mixed, content: mixed |}>,
-    content: ?(ContainerAttrs | SubSampleAttrs),
+  tags: Array<Tag> | null,
+  locations: ReadonlyArray<Omit<LocationAttrs, "parentContainer" | "content" > & {
+    content: ContainerAttrs | SubSampleAttrs | null,
   }>,
-  gridLayout: ?GridLayout,
+  gridLayout: GridLayout | null,
   cType: string,
-  locationsCount: ?number,
-  contentSummary: ?ContentSummary,
+  locationsCount: number | null,
+  contentSummary: ContentSummary | null,
   image?: string,
   parentContainers: Array<ContainerAttrs>,
-  lastNonWorkbenchParent: ?ContainerAttrs,
-  lastMoveDate: ?Date,
-  owner: ?PersonAttrs,
-  created: ?string,
-  lastModified: ?string,
-  modifiedByFullName: ?string,
+  lastNonWorkbenchParent: ContainerAttrs | null,
+  lastMoveDate: Date | null,
+  owner: PersonAttrs | null,
+  created: string | null,
+  lastModified: string | null,
+  modifiedByFullName: string | null,
   deleted: boolean,
   attachments: Array<AttachmentJson>,
   barcodes: Array<BarcodeAttrs>,
@@ -132,9 +128,9 @@ export type ContainerAttrs = {|
   sharingMode: SharingMode,
   sharedWith: Array<SharedWithGroup>,
   _links: Array<_LINK>,
-|};
+};
 
-const DEFAULT_CONTAINER = {
+const DEFAULT_CONTAINER: ContainerAttrs = {
   id: null,
   type: "CONTAINER",
   globalId: null,
@@ -145,16 +141,13 @@ const DEFAULT_CONTAINER = {
   permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"],
   quantity: null,
   tags: null,
-  locations: ([]: Array<{
-    ...$Diff<LocationAttrs, {| parentContainer: mixed, content: mixed |}>,
-    content: ?(ContainerAttrs | SubSampleAttrs),
-  }>),
+  locations: [],
   gridLayout: null,
   cType: "LIST",
   locationsCount: Infinity,
   contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0 },
   // user bench is added to parentConatiners for new Movable
-  parentContainers: ([]: Array<ContainerAttrs>),
+  parentContainers: [],
   lastNonWorkbenchParent: null,
   lastMoveDate: null,
   owner: null,
@@ -162,12 +155,12 @@ const DEFAULT_CONTAINER = {
   deleted: false,
   lastModified: null,
   modifiedByFullName: null,
-  attachments: ([]: Array<AttachmentJson>),
-  barcodes: ([]: Array<BarcodeAttrs>),
-  identifiers: ([]: Array<IdentifierAttrs>),
+  attachments: [],
+  barcodes: [],
+  identifiers: [],
   sharingMode: "OWNER_GROUPS",
-  sharedWith: ([]: Array<SharedWithGroup>),
-  _links: ([]: Array<_LINK>),
+  sharedWith: [],
+  _links: [],
 };
 
 const FIELDS = new Set([
@@ -201,7 +194,7 @@ export default class ContainerModel
   canStoreSamples: boolean = true;
   quantity: null = null; // Could this be removed from the API?
   locations: ?Array<Location> = [];
-  unchangedLocationsIds: Array<number> = [];
+  unchangedLocationsIds: ReadonlyArray<number> = [];
   locationsImage: ?BlobUrl = null;
   gridLayout: ?GridLayout = null;
   newBase64LocationsImage: ?string = null;
@@ -214,12 +207,12 @@ export default class ContainerModel
   contentSummary: Permissioned<ContentSummary>;
   contentSearch: SearchInterface;
   parentContainers: Array<Container>;
-  parentLocation: ?Location;
-  allParentContainers: ?() => Array<Container>;
-  rootParentContainer: ?Container;
-  immediateParentContainer: ?Container;
-  lastNonWorkbenchParent: ?Container;
-  lastMoveDate: ?Date;
+  parentLocation: Location | null;
+  allParentContainers: (() => Array<Container>) | null;
+  rootParentContainer: Container | null;
+  immediateParentContainer: Container | null;
+  lastNonWorkbenchParent: Container | null;
+  lastMoveDate: Date | null;
   siblingColorCache: Map<Id, string> = new Map<Id, string>();
 
   constructor(factory: Factory, params: ContainerAttrs = DEFAULT_CONTAINER) {
@@ -322,7 +315,6 @@ export default class ContainerModel
     this.parentContainers = params.parentContainers;
     this.lastNonWorkbenchParent = params.lastNonWorkbenchParent;
     this.lastMoveDate = params.lastMoveDate;
-    // $FlowFixMe[prop-missing] Defined on the mixin
     this.initializeMovableMixin(factory);
 
     const searchParams = {
@@ -370,7 +362,6 @@ export default class ContainerModel
       ).flat();
     if (this.locations) {
       this.unchangedLocationsIds = Object.freeze(
-        // $FlowExpectedError[incompatible-call]
         this.locations.map((l) => l.id)
       );
       this.initializedLocations = true;
@@ -485,7 +476,7 @@ export default class ContainerModel
       : null;
   }
 
-  get selectedLocations(): ?Array<Location> {
+  get selectedLocations(): Array<Location> | null {
     return this.locations?.filter((l: Location) => l.selected);
   }
 
@@ -540,16 +531,16 @@ export default class ContainerModel
   }
 
   get getLocationsForApi(): Array<
-    | {|
+    | {
         id: ?number,
         coordX: ?number,
         coordY: ?number,
         newLocationRequest?: boolean,
-      |}
-    | {|
+      }
+    | {
         id: number,
         deleteLocationRequest: boolean,
-      |}> {
+      }> {
     const locationModelToObject = pick("id", "coordX", "coordY");
 
     const locations = this.locations;
@@ -585,7 +576,7 @@ export default class ContainerModel
       .map(({ sample: { id } }) => id);
   }
 
-  getColor(sampleId: Id): ?string {
+  getColor(sampleId: Id): string | undefined {
     if (this.siblingColorCache.has(sampleId)) {
       return this.siblingColorCache.get(sampleId);
     }
@@ -696,7 +687,7 @@ export default class ContainerModel
     this.setLoading(false);
   }
 
-  findLocation(col: number, row: number): ?Location {
+  findLocation(col: number, row: number): Location | undefined {
     return this.locations?.find(
       (loc) => loc.coordX === col && loc.coordY === row
     );
@@ -730,12 +721,12 @@ export default class ContainerModel
 
   startSelection(
     event: MouseEvent,
-    padding: {|
+    padding: {
       left: number,
       top: number,
       right: number,
       bottom: number,
-    |} = { left: 0, top: 0, right: 0, bottom: 0 }
+    } = { left: 0, top: 0, right: 0, bottom: 0 }
   ) {
     if (event.button === 2) return;
     if (event.currentTarget instanceof Element) {
@@ -753,12 +744,12 @@ export default class ContainerModel
 
   moveSelection(
     event: MouseEvent,
-    padding: {|
+    padding: {
       left: number,
       top: number,
       right: number,
       bottom: number,
-    |} = { left: 0, top: 0, right: 0, bottom: 0 }
+    } = { left: 0, top: 0, right: 0, bottom: 0 }
   ) {
     // currentTarget is either Table or TableContainer
     if (event.currentTarget instanceof Element) {
@@ -907,7 +898,6 @@ export default class ContainerModel
 
     const options = new Map([
       ...super.adjustableTableOptions(),
-      // $FlowFixMe[prop-missing] Defined on the mixin
       ...this.adjustableTableOptions_movable(),
     ]);
     if (this.readAccessLevel !== "full") {

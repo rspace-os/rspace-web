@@ -28,11 +28,11 @@ export default class PeopleStore {
     });
   }
 
-  async fetchCurrentUser(): Promise<?PersonModel> {
+  async fetchCurrentUser(): Promise<PersonModel | undefined> {
     try {
       const [user, operated] = await Promise.all([
-        ElnApiService.get<void, PersonAttrs>("userDetails/whoami"),
-        ElnApiService.get<void, boolean>("userDetails/isOperatedAs"),
+        ElnApiService.get<PersonAttrs>("userDetails/whoami"),
+        ElnApiService.get<boolean>("userDetails/isOperatedAs"),
       ]);
       const currentUser = new MemoisedFactory().newPerson(user.data);
       runInAction(() => {
@@ -53,8 +53,7 @@ export default class PeopleStore {
     if (this.groupMembers) return this.groupMembers;
     try {
       const { data } = await ElnApiService.get<
-        void,
-        Array<PersonAttrs> | {| data: null, message: string |}
+        Array<PersonAttrs> | { data: null; message: string }
       >("userDetails/groupMembers");
       if (this.currentUser === null)
         throw new Error("Current user is not known");
@@ -84,7 +83,7 @@ export default class PeopleStore {
     if (searchTerm.length < 3)
       throw new Error("Search string must be at least 3 characters long.");
     try {
-      const { data } = await ElnApiService.get<void, Array<PersonAttrs>>(
+      const { data } = await ElnApiService.get<Array<PersonAttrs>>(
         "",
         `userDetails/search?query=${searchTerm}`
       );
@@ -104,7 +103,7 @@ export default class PeopleStore {
     if (searchTerm.length < 3)
       throw new Error("Search string must be at least 3 characters long.");
     try {
-      const { data } = await ElnApiService.get<void, Array<Group>>(
+      const { data } = await ElnApiService.get<Array<Group>>(
         "",
         `groups/search?query=${searchTerm}`
       );
@@ -115,17 +114,14 @@ export default class PeopleStore {
     }
   }
 
-  async getUser(username: Username): Promise<?PersonModel> {
+  async getUser(username: Username): Promise<PersonModel | undefined> {
     return [...(await this.searchPeople(username))].find(
       (u) => u.username === username
     );
   }
 
   async getPersonFromBenchId(id: WorkbenchId): Promise<PersonModel> {
-    const { data } = await InvApiService.get<void, ContainerAttrs>(
-      "workbenches",
-      id
-    );
+    const { data } = await InvApiService.get<ContainerAttrs>("workbenches", id);
     const factory = new MemoisedFactory();
     if (!data.owner) throw new Error("This bench doesn't have an owner");
     const person = factory.newPerson({
@@ -138,9 +134,9 @@ export default class PeopleStore {
 
   fetchCurrentUsersGroups(): Promise<Array<Group>> {
     if (!this.currentUsersGroups) {
-      this.currentUsersGroups = ElnApiService.get<void, Array<Group>>(
-        "groups"
-      ).then(({ data }) => data);
+      this.currentUsersGroups = ElnApiService.get<Array<Group>>("groups").then(
+        ({ data }) => data
+      );
     }
     return this.currentUsersGroups;
   }

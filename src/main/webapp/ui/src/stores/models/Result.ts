@@ -45,7 +45,7 @@ import {
   makeObservable,
   runInAction,
 } from "mobx";
-import React, { type Node } from "react";
+import React from "react";
 import {
   type HasEditableFields,
   type HasUneditableFields,
@@ -100,12 +100,10 @@ export type ResultEditableFields = {
   barcodes: Array<BarcodeRecord>,
   sharingMode: SharingMode,
   sharedWith: ?Array<SharedWithGroup>,
-  ...
 };
 
 export type ResultUneditableFields = {
   owner: ?Person,
-  ...
 };
 
 export const sortProperties: Array<SortProperty> = [
@@ -127,11 +125,11 @@ export const isSortable = (propKey: string): boolean =>
 const calculateUploadProgress = (soFar: number, total: number): number =>
   Math.floor((soFar / total) * 10) * 10;
 
-type LockOwner = {|
+type LockOwner = {
   firstName: string,
   lastName: string,
   username: string,
-|};
+};
 
 export class RecordLockedError extends Error {
   record: Result; //eslint-disable-line
@@ -217,7 +215,7 @@ export default class Result
   iconId: ?number;
   barcodes: Array<BarcodeRecord>;
   factory: Factory;
-  fetchingAdditionalInfo: ?Promise<mixed> = null;
+  fetchingAdditionalInfo: ?Promise<unknown> = null;
   sharingMode: SharingMode;
   sharedWith: ?Array<SharedWithGroup>;
 
@@ -424,7 +422,7 @@ export default class Result
    * as a nested object. This difference of around 2KB may seem small but it
    * compounds when there are many thousands of search results in memory.
    */
-  processLinks(_links: [{| link: URLType, rel: string |}]): void {
+  processLinks(_links: [{ link: URLType, rel: string }]): void {
     this._links = Object.fromEntries(
       _links.map(({ link, rel }) => [rel, link])
     );
@@ -512,18 +510,17 @@ export default class Result
       name?: string,
       description?: ?string,
       extraFields?: typeof extraFields,
-      tags?: Array<{|
+      tags?: Array<{
         value: string,
         uri: ?string,
         ontologyName: ?string,
         ontologyVersion: ?string,
-      |}>,
+      }>,
       newBase64Image?: ?string,
       barcodes?: Array<{ ... }>,
       identifiers?: mixed,
       sharingMode?: SharingMode,
       sharedWith?: ?Array<SharedWithGroup>,
-      ...
     } = {
       id: this.id,
       globalId: this.globalId,
@@ -719,7 +716,7 @@ export default class Result
   async releaseLock(silent: boolean = false): Promise<?boolean> {
     try {
       if (!this.globalId) throw new Error("globalId is required.");
-      const response = await ApiService.delete<"", void>(
+      const response = await ApiService.delete<void>(
         `editLocks/${this.globalId}`,
         ""
       );
@@ -750,22 +747,21 @@ export default class Result
     }
   }
 
-  async checkLock(silent: boolean = false): Promise<{|
+  async checkLock(silent: boolean = false): Promise<{
     status: LockStatus,
     remainingTimeInSeconds: number,
     lockOwner: LockOwner,
-  |}> {
+  }> {
     if (!this.globalId) throw new Error("globalId is required.");
     const globalId = this.globalId;
     try {
       return (
         await ApiService.post<
-          {},
-          {|
+          {
             status: LockStatus,
             remainingTimeInSeconds: number,
             lockOwner: LockOwner,
-          |}
+          }
         >(`editLocks/${globalId}`, {})
       ).data;
     } catch (error) {
@@ -901,8 +897,7 @@ export default class Result
   }
 
   // to be implemented by the classes that extend this abtract one (and can be created inside a container)
-  get inContainerParams(): | ?ContainerInContainerParams
-    | ?SampleInContainerParams {
+  get inContainerParams(): ?ContainerInContainerParams | ?SampleInContainerParams {
     return null;
   }
 
