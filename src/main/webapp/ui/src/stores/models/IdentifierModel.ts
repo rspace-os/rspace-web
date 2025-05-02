@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * ====  A POINT ABOUT THE IMPORTS  ===========================================
  *
@@ -64,46 +62,6 @@ export type IdentifierGeoLocation = {
   geoLocationPlace: string,
   geoLocationPoint: PolygonPoint,
   geoLocationPolygon: GeoLocationPolygon,
-};
-
-export const newGeoLocation = {
-  geoLocationBox: {
-    eastBoundLongitude: "",
-    northBoundLatitude: "",
-    southBoundLatitude: "",
-    westBoundLongitude: "",
-  },
-  geoLocationPlace: "",
-  geoLocationPoint: {
-    pointLatitude: "",
-    pointLongitude: "",
-  },
-  geoLocationPolygon: [
-    {
-      polygonPoint: {
-        pointLatitude: "",
-        pointLongitude: "",
-      },
-    },
-    {
-      polygonPoint: {
-        pointLatitude: "",
-        pointLongitude: "",
-      },
-    },
-    {
-      polygonPoint: {
-        pointLatitude: "",
-        pointLongitude: "",
-      },
-    },
-    {
-      polygonPoint: {
-        pointLatitude: "",
-        pointLongitude: "",
-      },
-    },
-  ],
 };
 
 const creatorTypeOptions: Array<RadioOption<string>> = [
