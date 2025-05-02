@@ -1,5 +1,3 @@
-//@flow
-
 import { type RootStore } from "./RootStore";
 import { makeObservable, observable } from "mobx";
 
