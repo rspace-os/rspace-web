@@ -1,5 +1,3 @@
-// @flow
-
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import RsSet from "../../util/set";
