@@ -1,5 +1,3 @@
-// @flow
-
 import { action, observable, computed, makeObservable } from "mobx";
 import Result from "./Result";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
