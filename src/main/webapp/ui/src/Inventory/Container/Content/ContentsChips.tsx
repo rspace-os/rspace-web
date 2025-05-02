@@ -1,14 +1,14 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { type Container } from "../../../stores/definitions/Container";
 import CountChip from "./CountChip";
 
-type ContentsChipsArgs = {|
-  record: Container,
-|};
+type ContentsChipsArgs = {
+  record: Container;
+};
 
-export default function ContentsChips({ record }: ContentsChipsArgs): Node {
+export default function ContentsChips({
+  record,
+}: ContentsChipsArgs): React.ReactNode {
   return (
     <>
       {record.canStoreContainers && (
