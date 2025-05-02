@@ -1,5 +1,3 @@
-// @flow
-
 import { action, computed, override, makeObservable } from "mobx";
 import CoreFetcher from "./CoreFetcher";
 import {
