@@ -1,5 +1,3 @@
-// @flow
-
 import AuthStore from "./AuthStore";
 import UiStore from "./UiStore";
 import UnitStore from "./UnitStore";
