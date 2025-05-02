@@ -1,9 +1,7 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
 
-export default function NumberIcon(): Node {
+export default function NumberIcon(): React.ReactNode {
   return (
     <SvgIcon viewBox="0 0 312 312">
       <path
