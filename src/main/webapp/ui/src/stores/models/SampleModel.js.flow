@@ -1,0 +1,250 @@
+// @flow
+
+import ApiService from "../../common/InvApiService";
+import {
+  action,
+  computed,
+  observable,
+  override,
+  makeObservable,
+  runInAction,
+} from "mobx";
+import { match } from "../../util/Util";
+import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import { type ExtraFieldAttrs } from "../definitions/ExtraField";
+import RecordWithQuantity, {
+  type Quantity,
+  type RecordWithQuantityEditableFields,
+  type RecordWithQuantityUneditableFields,
+} from "./RecordWithQuantity";
+import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
+import getRootStore from "../stores/RootStore";
+import { mkAlert } from "../contexts/Alert";
+import Search from "./Search";
+import {
+  RESULT_FIELDS,
+  defaultVisibleResultFields,
+  defaultEditableResultFields,
+} from "./Result";
+import { type Factory } from "../definitions/Factory";
+import ResultCollection, {
+  type ResultCollectionEditableFields,
+} from "./ResultCollection";
+import RsSet from "../../util/set";
+import { blobToBase64 } from "../../util/files";
+import { type AdjustableTableRowOptions } from "../definitions/Tables";
+import { type AttachmentJson } from "./AttachmentModel";
+import { type CoreFetcherArgs } from "../definitions/Search";
+import {
+  type Id,
+  type GlobalId,
+  getSavedGlobalId,
+  inventoryRecordTypeLabels,
+} from "../definitions/BaseRecord";
+import { type RecordDetails } from "../definitions/Record";
+import {
+  type InventoryRecord,
+  type RecordType,
+  type Action,
+  type SharingMode,
+  type CreateOption,
+} from "../definitions/InventoryRecord";
+import { type _LINK } from "../../util/types";
+import { type PersonAttrs } from "../definitions/Person";
+import {
+  type HasEditableFields,
+  type HasUneditableFields,
+} from "../definitions/Editable";
+import { type Template } from "../definitions/Template";
+import { type Attachment } from "../definitions/Attachment";
+import {
+  type Sample,
+  type Alias,
+  type SampleSource,
+} from "../definitions/Sample";
+import { CELSIUS, type Temperature, validateTemperature } from "../definitions/Units";
+import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
+import React, { type Node } from "react";
+import { type BarcodeAttrs } from "../definitions/Barcode";
+import { type SharedWithGroup } from "../definitions/Group";
+import type { IdentifierAttrs } from "../definitions/Identifier";
+import type { Field } from "../definitions/Field";
+import {
+  IsInvalid,
+  IsValid,
+  allAreValid,
+  type ValidationResult,
+} from "../../components/ValidatingSubmitButton";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
+import * as ArrayUtils  from "../../util/ArrayUtils";
+
+type SampleEditableFields = {
+  ...RecordWithQuantityEditableFields,
+  expiryDate: ?string,
+  sampleSource: SampleSource,
+  storageTempMin: ?Temperature,
+  storageTempMax: ?Temperature,
+  subSampleAlias: Alias,
+  ...
+};
+
+type SampleUneditableFields = {
+  ...RecordWithQuantityUneditableFields,
+};
+
+export type SubSampleTargetLocation = {
+  containerId: Id,
+  location: { id: Id },
+};
+
+export type SampleInContainerParams = {
+  newSampleSubSampleTargetLocations: Array<SubSampleTargetLocation>,
+};
+
+export type SampleAttrs = {|
+  id: Id,
+  type: string,
+  globalId: ?GlobalId,
+  name: string,
+  permittedActions: Array<Action>,
+  templateId: Id,
+  templateVersion: ?number,
+  subSampleAlias: Alias,
+  subSamplesCount: number | "",
+  subSamples: Array<SubSampleAttrs>,
+  quantity: Quantity,
+  storageTempMin: ?Temperature,
+  storageTempMax: ?Temperature,
+  fields: Array<FieldModelAttrs>,
+  extraFields: Array<ExtraFieldAttrs>,
+  description: string,
+  tags: ?string,
+  sampleSource: string,
+  expiryDate: ?string,
+  iconId: ?number,
+  owner: ?PersonAttrs,
+  created: ?string,
+  lastModified: ?string,
+  modifiedByFullName: ?string,
+  deleted: boolean,
+  attachments: Array<AttachmentJson>,
+  barcodes: Array<BarcodeAttrs>,
+  identifiers: Array<IdentifierAttrs>,
+  sharingMode: SharingMode,
+  sharedWith: Array<SharedWithGroup>,
+  _links: Array<_LINK>,
+|};
+
+declare const FIELDS: Set<string>;
+export { FIELDS as SAMPLE_FIELDS };
+declare const defaultVisibleFields: Set<string>;
+export { defaultVisibleFields as defaultVisibleSampleFields };
+declare const defaultEditableFields: Set<string>;
+export { defaultEditableFields as defaultEditableSampleFields };
+
+declare export default class SampleModel
+  extends RecordWithQuantity
+  implements
+    Sample,
+    HasEditableFields<SampleEditableFields>,
+    HasUneditableFields<SampleUneditableFields>
+{
+  subSamplesCount: number;
+  subSamples: Array<SubSampleModel>;
+  newSampleSubSamplesCount: ?number;
+  newSampleSubSampleTargetLocations: ?Array<SubSampleTargetLocation>;
+  storageTempMin: ?Temperature;
+  storageTempMax: ?Temperature;
+  fields: Array<Field>;
+  expiryDate: SampleEditableFields["expiryDate"];
+  template: ?Template;
+  sampleSource: SampleEditableFields["sampleSource"];
+  search: Search;
+  subSampleAlias: Alias;
+  templateId: Id;
+  templateVersion: ?number;
+  createOptionsParametersState: {|
+    split: {| key: "split",  copies: number |},
+    newSubsamplesCount: {| key: "newSubsamplesCount", count: number |},
+    newSubsamplesQuantity: {| key: "newSubsamplesQuantity", quantity: number | "", quantityLabel: string |},
+    name: {| key: "name", value: string |},
+    fields: {|
+      key: "fields",
+      copyFieldContent: $ReadOnlyArray<{|
+        id: Id,
+        name: string,
+        content: string,
+        hasContent: boolean,
+        selected: boolean,
+      |}>,
+    |},
+  |};
+
+  constructor(factory: Factory, params?: SampleAttrs): SampleModel;
+
+  populateFromJson(factory: Factory, params: any, defaultParams?: ?any): void;
+  get recordType(): RecordType;
+  fetchAdditionalInfo(silent?: boolean): Promise<void>;
+  get minTempValue(): ?number;
+  get maxTempValue(): ?number;
+  get tempUnitId(): ?number;
+  get paramsForBackend(): any;
+  overrideFields(fields: Array<Field> | Array<FieldModelAttrs>): void;
+  saveAttachments(newRecord?: InventoryRecord): Promise<void>;
+  saveFieldAttachments(
+    newResultGlobalId?: GlobalId,
+    newFields?: Array<Field>
+  ): Promise<void>;
+  updateFieldsState(): void;
+  setFieldsStateForBatchEditing(): void;
+  overrideTemp(
+    min: ?{ numericValue: number, unitId: number },
+    max: ?{ numericValue: number, unitId: number }
+  ): void;
+  overrideName(tempName: string): void;
+  overrideSource(tempSource: string): void;
+  setTemplate(template: Template): Promise<void>;
+  sampleCreationParams(includeContentForFields: Set<Id>): Promise<{}>;
+  validateQuantity(): ValidationResult;
+  validate(): ValidationResult;
+  get recordTypeLabel(): string;
+  get cardTypeLabel(): string;
+  updateToLatestTemplate(): Promise<void>;
+  get hasSelectedSubsample(): boolean;
+  contextMenuDisabled(): ?string;
+  get fieldNamesInUse(): Array<string>;
+  adjustableTableOptions(): AdjustableTableRowOptions<string>;
+  get hasSubSamples(): boolean;
+  get iconName(): string;
+  get showNewlyCreatedRecordSearchParams(): CoreFetcherArgs;
+  get children(): Array<InventoryRecord>;
+  loadChildren(): void;
+  get illustration(): Node;
+  get recordDetails(): RecordDetails;
+  get fieldValues(): any;
+  get supportsBatchEditing(): boolean;
+  get noValueLabel(): {[key in keyof SampleEditableFields]: ?string} & {[key in keyof SampleUneditableFields]: ?string};
+  refreshAssociatedSearch(): void;
+  updateBecauseRecordsChanged(recordIds: Set<GlobalId>): void;
+  get enforceMandatoryFields(): boolean;
+  get usableInLoM(): boolean;
+  get beingCreatedInContainer(): boolean;
+  get inContainerParams(): SampleInContainerParams;
+  get createOptions(): $ReadOnlyArray<CreateOption>;
+}
+
+type BatchSampleEditableFields = ResultCollectionEditableFields &
+  $Diff<SampleEditableFields, {| name: mixed |}>;
+
+declare export class SampleCollection
+  extends ResultCollection<SampleModel>
+  implements HasEditableFields<BatchSampleEditableFields>
+{
+  constructor(samples: RsSet<SampleModel>): SampleCollection;
+  get allSameTemperatures(): boolean;
+  get fieldValues(): BatchSampleEditableFields;
+  get noValueLabel(): {[key in keyof BatchSampleEditableFields]: ?string};
+  setFieldsDirty(newFieldValues: any): void;
+  setFieldEditable(fieldName: string, value: boolean): void;
+}

@@ -1,5 +1,3 @@
-// @flow
-
 import ApiService from "../../common/InvApiService";
 import {
   action,
