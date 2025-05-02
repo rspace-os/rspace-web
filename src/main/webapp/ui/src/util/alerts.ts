@@ -1,5 +1,3 @@
-// @flow
-
 import getRootStore from "../stores/stores/RootStore";
 import { mkAlert } from "../stores/contexts/Alert";
 import { toTitleCase } from "./Util";
@@ -43,7 +41,7 @@ const bulkSuccessAlert = (
 export const handleDetailedSuccesses = (
   records: Array<InventoryRecord>,
   operation: Operation,
-  recordAltOperation: (InventoryRecord) => string = () => operation,
+  recordAltOperation: (record: InventoryRecord) => string = () => operation,
   message?: ?string = null
 ) => {
   const variant = "success";
@@ -120,7 +118,7 @@ export const handleDetailedErrors = (
     record?: InventoryRecord,
   }>,
   operation: string,
-  retryFunction: ?(Array<InventoryRecord>) => Promise<void>, // requires record on data array
+  retryFunction: ((records: Array<InventoryRecord>) => Promise<void>) | null, // requires record on data array
   defaultHelp: ?string
 ): boolean => {
   const errorData = data.filter(({ response }) => Boolean(response.error));
