@@ -1,5 +1,3 @@
-// @flow
-
 import ContentsChips from "../../Inventory/Container/Content/ContentsChips";
 import { type URL, type Point, type _LINK } from "../../util/types";
 import { match, classMixin, clamp } from "../../util/Util";
