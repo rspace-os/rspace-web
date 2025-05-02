@@ -1,5 +1,3 @@
-// @flow
-
 import { type Document, type DocumentAttrs } from "../definitions/Document";
 import PersonModel from "./PersonModel";
 
