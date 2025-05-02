@@ -1,5 +1,3 @@
-// @flow
-
 import ApiService from "../../common/InvApiService";
 import { match, toTitleCase, filterObject } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
