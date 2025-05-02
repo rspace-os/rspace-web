@@ -1,20 +1,18 @@
-// @flow
-
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import TableSortLabel from "../../../components/TableSortLabel";
 import SearchContext from "../../../stores/contexts/Search";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 
 export type SortProperty = {
-  key: string,
-  label: AdjustableTableRowLabel,
-  adjustColumn: boolean,
+  key: string;
+  label: AdjustableTableRowLabel;
+  adjustColumn: boolean;
 };
 
-type SortablePropertyArgs = {|
-  property: SortProperty,
-|};
+type SortablePropertyArgs = {
+  property: SortProperty;
+};
 
 function SortableProperty({ property }: SortablePropertyArgs): Node {
   const { search } = useContext(SearchContext);
@@ -39,6 +37,4 @@ function SortableProperty({ property }: SortablePropertyArgs): Node {
   );
 }
 
-export default (observer(
-  SortableProperty
-): ComponentType<SortablePropertyArgs>);
+export default observer(SortableProperty);
