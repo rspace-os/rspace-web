@@ -1,5 +1,3 @@
-//@flow
-
 import { computed, makeObservable, observable, override } from "mobx";
 import getRootStore from "../stores/RootStore";
 import Result, {
