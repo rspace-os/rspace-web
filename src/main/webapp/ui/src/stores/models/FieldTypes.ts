@@ -1,5 +1,3 @@
-//@flow
-
 import React from "react";
 import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined";
 import RadioButtonCheckedOutlinedIcon from "@mui/icons-material/RadioButtonCheckedOutlined";
