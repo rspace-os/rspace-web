@@ -1,5 +1,3 @@
-// @flow
-
 import axios from "@/common/axios";
 import { action, observable, makeObservable } from "mobx";
 import InvApiService from "../../common/InvApiService";
