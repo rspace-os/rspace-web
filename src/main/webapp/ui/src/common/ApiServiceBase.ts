@@ -1,20 +1,11 @@
-// @flow
-
-import axios, {
-  type Axios,
-  type AxiosPromise,
-  type AxiosRequestConfig,
-} from "@/common/axios";
+import axios from "@/common/axios";
 import { when } from "mobx";
 import getRootStore from "../stores/stores/RootStore";
 import JwtService from "./JwtService";
-import { type URL } from "../util/types";
 import { sleep } from "../util/Util";
 import { mkAlert } from "../stores/contexts/Alert";
 
-type JSON =
-  | {}
-  | { [string]: string | number | boolean | null | JSON | Array<JSON> };
+type JSON = any;
 
 const toast = mkAlert({
   variant: "warning",
@@ -26,7 +17,7 @@ const toast = mkAlert({
 
 // Axios wrapper for making requests to RSpace APIs
 class ApiServiceBase {
-  api: Axios;
+  api: Axios.AxiosInstance;
 
   constructor(baseUrl: string) {
     this.api = axios.create({
@@ -34,16 +25,18 @@ class ApiServiceBase {
       timeout: 360000,
     });
 
-    this.api.interceptors.response.use(null, (...args) =>
-      this.on401Retry(...args)
+    this.api.interceptors.response.use(
+      (response) => response,
+      (...args) => this.on401Retry(...args)
     );
     // Global because in some places we use axios instead of this.api for requesting /api/v1/
-    axios.interceptors.response.use(null, (...args) =>
-      this.on401Retry(...args)
+    axios.interceptors.response.use(
+      (response) => response,
+      (...args) => this.on401Retry(...args)
     );
   }
 
-  async on401Retry(error: any): mixed {
+  async on401Retry(error: any): Promise<unknown> {
     if (
       error.config &&
       error.response &&
@@ -71,7 +64,8 @@ class ApiServiceBase {
       error.config.baseURL = "";
       error.config.data = { __isRetryRequest: true };
 
-      error.config.headers.Authorization = "Bearer " + (JwtService.getToken() ?? "");
+      error.config.headers.Authorization =
+        "Bearer " + (JwtService.getToken() ?? "");
 
       if (getRootStore().authStore.isAuthenticated) {
         return this.api(error.config);
@@ -90,11 +84,11 @@ class ApiServiceBase {
     // this.api.defaults.headers.common.apiKey = getToken();
   }
 
-  query<T, U>(
+  query<T>(
     resource: string,
     params: URLSearchParams,
     isBlob: boolean = false
-  ): AxiosPromise<T, U> {
+  ): Promise<Axios.AxiosXHR<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() =>
       this.api.get(resource, {
         params,
@@ -103,40 +97,46 @@ class ApiServiceBase {
     );
   }
 
-  get<T, U>(resource: string, slug: string | number = ""): AxiosPromise<T, U> {
+  get<T>(
+    resource: string,
+    slug: string | number = ""
+  ): Promise<Axios.AxiosXHR<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.get(`${resource}/${slug}`);
     });
   }
 
-  post<T, U>(
+  post<T>(
     resource: string,
-    params: JSON | FormData,
-    config?: AxiosRequestConfig<any, any>
-  ): AxiosPromise<T, U> {
+    params: object | FormData,
+    config?: Axios.AxiosXHRConfigBase<unknown>
+  ): Promise<Axios.AxiosXHR<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
-      return this.api.post(`${resource}`, params, config);
+      return this.api.post<T>(`${resource}`, params, config);
     });
   }
 
-  update<T, U>(
+  update<T>(
     resource: string,
     slug: string | number,
     params: JSON,
-    config?: AxiosRequestConfig<any, any>
-  ): AxiosPromise<T, U> {
+    config?: Axios.AxiosXHRConfigBase<unknown>
+  ): Promise<Axios.AxiosXHR<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
-      return this.api.put(`${resource}/${slug}`, params, config);
+      return this.api.put<T>(`${resource}/${slug}`, params, config);
     });
   }
 
-  put<T, U>(resource: string, params: JSON): AxiosPromise<T, U> {
+  put<T>(resource: string, params: JSON): Promise<Axios.AxiosXHR<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.put(`${resource}`, params);
     });
   }
 
-  delete<T, U>(resource: string, slug: string | number): AxiosPromise<T, U> {
+  delete<T>(
+    resource: string,
+    slug: string | number
+  ): Promise<Axios.AxiosXHR<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.delete(`${resource}/${slug ? slug : ""}`);
     });

@@ -1,0 +1,45 @@
+// @flow
+
+import axios, {
+  type Axios,
+  type AxiosPromise,
+  type AxiosRequestConfig,
+} from "@/common/axios";
+
+type JSON = {} | { [string]: string | number | boolean | null | JSON | Array<JSON> };
+
+declare export default class ApiServiceBase {
+  api: Axios;
+
+  constructor(baseUrl: string): ApiServiceBase;
+
+  on401Retry(error: any): Promise<mixed>;
+
+  setAuthorizationHeader(): void;
+
+  query<T, U>(
+    resource: string,
+    params: URLSearchParams,
+    isBlob?: boolean,
+  ): AxiosPromise<T, U>;
+
+  get<T, U>(string, slug?: string | number): AxiosPromise<T, U>;
+
+  post<T, U>(
+    resource: string,
+    params: JSON | FormData,
+    config?: AxiosRequestConfig<any, any>
+  ): AxiosPromise<T, U>;
+
+  update<T, U>(
+    resource: string,
+    slug: string | number,
+    params: JSON,
+    config?: AxiosRequestConfig<any, any>
+  ): AxiosPromise<T, U>;
+
+  put<T, U>(resource: string, params: JSON): AxiosPromise<T, U>;
+
+  delete<T, U>(resource: string, slug: string | number): AxiosPromise<T, U>;
+}
+
