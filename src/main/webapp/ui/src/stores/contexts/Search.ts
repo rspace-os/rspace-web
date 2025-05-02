@@ -1,4 +1,3 @@
-//@flow
 import React, { type Context } from "react";
 import { type Search } from "../definitions/Search";
 import { type Record } from "../definitions/Record";
