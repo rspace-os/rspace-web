@@ -1,5 +1,3 @@
-// @flow
-
 import type { RootStore } from "./RootStore";
 import Import, { type State } from "../models/ImportModel";
 import { action, observable, makeObservable } from "mobx";
