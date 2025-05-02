@@ -1,0 +1,35 @@
+// @flow
+
+import { observable, override, makeObservable, runInAction } from "mobx";
+import CoreFetcher from "./CoreFetcher";
+import {
+  type CoreFetcherArgs,
+  type CacheFetcher as CacheFetcherInterface,
+} from "../../definitions/Search";
+import { type Factory } from "../../definitions/Factory";
+import { type InventoryRecord } from "../../definitions/InventoryRecord";
+
+declare export default class CacheFetcher
+  extends CoreFetcher
+  implements CacheFetcherInterface
+{
+  cachedResults: Array<InventoryRecord>;
+  cachedPageSize: number;
+
+  constructor(factory: Factory, params: ?CoreFetcherArgs): CacheFetcher;
+
+  setAttributes(params: CoreFetcherArgs): void;
+
+  setBenchOwner(_: mixed): void;
+
+  setDeletedItems(_: mixed): void;
+
+  setPage(pageNumber: number): Promise<void>;
+
+  performInitialSearch(params: ?CoreFetcherArgs): Promise<void>;
+
+  search(
+    params: ?CoreFetcherArgs,
+    storeResults: (Array<InventoryRecord>) => void
+  ): Promise<void>;
+}
