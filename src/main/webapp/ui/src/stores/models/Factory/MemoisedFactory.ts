@@ -1,5 +1,3 @@
-//@flow
-
 import { type PersonId, type PersonAttrs } from "../../definitions/Person";
 import { type GlobalId } from "../../definitions/BaseRecord";
 import PersonModel from "../PersonModel";
