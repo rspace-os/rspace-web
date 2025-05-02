@@ -1,5 +1,3 @@
-// @flow
-
 import getRootStore from "../stores/RootStore";
 import ContainerModel from "./ContainerModel";
 import Result from "./Result";

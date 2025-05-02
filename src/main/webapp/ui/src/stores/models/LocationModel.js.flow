@@ -1,0 +1,53 @@
+// @flow
+
+import getRootStore from "../stores/RootStore";
+import ContainerModel from "./ContainerModel";
+import Result from "./Result";
+import SubSampleModel from "./SubSampleModel";
+import { action, computed, observable, makeObservable } from "mobx";
+import { type Location, type Container } from "../definitions/Container";
+import { type SubSample } from "../definitions/SubSample";
+import { type Search } from "../definitions/Search";
+
+export type LocationAttrs = {|
+  id: ?number,
+  coordX: number,
+  coordY: number,
+  content: ?(SubSampleModel | ContainerModel),
+  parentContainer: ContainerModel,
+|};
+
+declare export default class LocationModel implements Location {
+  loading: boolean;
+  id: ?number;
+  coordX: number;
+  coordY: number;
+  content: ?(SubSample | Container);
+  selected: boolean;
+  parentContainer: Container;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+
+  constructor(params: LocationAttrs): LocationModel;
+
+  isGreyedOut(search: Search): boolean;
+  isShallow(search: Search): boolean;
+  isShallowSelected(search: Search): boolean;
+  isShallowUnselected(search: Search): boolean;
+  get siblings(): Array<Location>;
+  get isSiblingSelected(): ?boolean;
+  get allSiblingsSelected(): boolean;
+  isSelectable(search: Search): boolean;
+  get name(): ?string;
+  get paramsForBackend(): {};
+  get hasContent(): boolean;
+  get uniqueColor(): string;
+  setAttributes(params: LocationAttrs): void;
+  toggleSelected(value: ?boolean): void;
+  selectOnlyThis(): void;
+  setPosition(x: number, y: number): void;
+  setDimensions(width: number, height: number): void;
+}
+
