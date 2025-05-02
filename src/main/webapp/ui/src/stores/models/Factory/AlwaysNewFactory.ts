@@ -1,5 +1,3 @@
-//@flow
-
 import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
 import ContainerModel from "../ContainerModel";
 import PersonModel from "../PersonModel";
