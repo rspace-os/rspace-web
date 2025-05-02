@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { makeStyles } from "tss-react/mui";
 import Chip from "@mui/material/Chip";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
@@ -9,10 +7,10 @@ import {
   type ContentSummary,
 } from "../../../stores/definitions/Container";
 
-type CountChipArgs = {|
-  type: string,
-  record: Container,
-|};
+type CountChipArgs = {
+  type: string;
+  record: Container;
+};
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -31,7 +29,7 @@ function getCount(type: string, cs: ContentSummary): number {
   );
 }
 
-const CountChip = ({ type, record }: CountChipArgs): Node => {
+const CountChip = ({ type, record }: CountChipArgs): React.ReactNode => {
   const { classes } = useStyles();
   if (!record.contentSummary.isAccessible) return null;
   const count = getCount(type, record.contentSummary.value);
