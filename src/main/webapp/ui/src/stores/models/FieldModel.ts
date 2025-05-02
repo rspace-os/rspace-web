@@ -1,5 +1,3 @@
-// @flow
-
 import { action, observable, computed, makeObservable } from "mobx";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import {
