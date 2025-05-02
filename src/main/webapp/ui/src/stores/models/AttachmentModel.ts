@@ -1,5 +1,3 @@
-//@flow
-
 import {
   observable,
   action,
@@ -827,7 +825,7 @@ export class NewGalleryAttachment implements Attachment {
 
   async createChemicalPreview(): Promise<void> {
     return Promise.reject(
-        new Error("Gallery files do not support chemical preview")
+      new Error("Gallery files do not support chemical preview")
     );
   }
 
