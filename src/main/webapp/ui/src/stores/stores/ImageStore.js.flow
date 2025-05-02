@@ -1,0 +1,17 @@
+// @flow
+
+import axios from "@/common/axios";
+import type { RootStore } from "./RootStore";
+import JwtService from "../../common/JwtService";
+import { type URL as URLType, type BlobUrl } from "../../util/types";
+
+declare export default class ImageStore {
+  rootStore: RootStore;
+  cache: Map<URLType, BlobUrl>;
+  waiting: Map<URLType, Promise<mixed>>;
+
+  constructor(rootStore: RootStore): ImageStore;
+
+  fetchImage(url: URLType): Promise<BlobUrl>;
+}
+
