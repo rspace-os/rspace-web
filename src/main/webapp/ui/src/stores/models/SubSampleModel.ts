@@ -1,5 +1,3 @@
-// @flow
-
 import { mkAlert } from "../contexts/Alert";
 import { type _LINK } from "../../util/types";
 import ApiService from "../../common/InvApiService";
