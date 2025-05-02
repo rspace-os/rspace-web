@@ -1,5 +1,3 @@
-// @flow
-
 import ApiService from "../../common/InvApiService";
 import { type Container, type WorkbenchId } from "../definitions/Container";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
