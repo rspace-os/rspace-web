@@ -1,5 +1,3 @@
-// @flow
-
 import { action, observable, computed, makeObservable } from "mobx";
 import { isMobile } from "react-device-detect";
 import { type Alert } from "../contexts/Alert";
