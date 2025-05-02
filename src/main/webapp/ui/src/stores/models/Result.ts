@@ -1,5 +1,3 @@
-// @flow
-
 import { type URL as URLType } from "../../util/types";
 import ApiService from "../../common/InvApiService";
 import { sameKeysAndValues, match, isoToLocale } from "../../util/Util";
