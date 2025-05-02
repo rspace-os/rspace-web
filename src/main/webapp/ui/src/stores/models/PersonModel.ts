@@ -1,5 +1,3 @@
-//@flow
-
 import ApiService from "../../common/InvApiService";
 import { type _LINK } from "../../util/types";
 import { type Container, type WorkbenchId } from "../definitions/Container";

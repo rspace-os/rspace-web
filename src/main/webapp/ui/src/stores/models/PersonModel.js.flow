@@ -1,0 +1,64 @@
+//@flow
+
+import ApiService from "../../common/InvApiService";
+import { type _LINK } from "../../util/types";
+import { type Container, type WorkbenchId } from "../definitions/Container";
+import getRootStore from "../stores/RootStore";
+import {
+  observable,
+  computed,
+  makeObservable,
+  action,
+  runInAction,
+} from "mobx";
+import {
+  type Person,
+  type Username,
+  type PersonId,
+  type PersonName,
+  type Email,
+  type PersonAttrs,
+} from "../definitions/Person";
+import { type ExportOptions, type ExportFileType } from "../definitions/Search";
+import { mkAlert } from "../contexts/Alert";
+import { showToastWhilstPending } from "../../util/alerts";
+
+declare export default class PersonModel implements Person {
+  id: PersonId;
+  username: Username;
+  firstName: PersonName;
+  lastName: PersonName;
+  email: ?Email;
+  hasPiRole: boolean;
+  hasSysAdminRole: boolean;
+  workbenchId: WorkbenchId;
+  bench: ?Container;
+  _links: Array<_LINK>;
+  isOperated: boolean;
+  processingUserActions: boolean;
+
+  constructor(attrs: PersonAttrs): PersonModel;
+
+  get isCurrentUser(): boolean;
+  get label(): string;
+  get firstInitial(): string;
+  get fullName(): PersonName;
+  get groupByLabel(): string;
+  setProcessingUserActions(value: boolean): void;
+  getBench(): Promise<Container>;
+  exportRecords(
+    exportOptions: ExportOptions,
+    username: Username
+  ): Promise<void>;
+  exportData(exportOptions: ExportOptions, username: Username): Promise<void>;
+}
+
+type SortOptions = {
+  placeCurrentFirst?: boolean,
+};
+
+declare export const sortPeople: (
+  people: Array<PersonModel>,
+  options?: SortOptions
+) => Array<PersonModel>;
+
