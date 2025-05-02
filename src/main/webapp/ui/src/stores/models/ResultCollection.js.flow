@@ -1,0 +1,53 @@
+//@flow
+
+import Result, { type ResultEditableFields } from "./Result";
+import { action, observable, makeObservable, computed, override } from "mobx";
+import { match } from "../../util/Util";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
+import { truncateIsoTimestamp } from "../definitions/Units";
+import {
+  type HasEditableFields,
+} from "../definitions/Editable";
+import { PersistedBarcode } from "./Barcode";
+import { type SharedWithGroup } from "../definitions/Group";
+import { areSameTag } from "../definitions/Tag";
+
+export type BatchName = {|
+  common: string,
+  suffix: "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED",
+|};
+
+declare export const formatIndex: (index: number, numOfRecords: number) => string;
+
+export type ResultCollectionEditableFields = {
+  ...$Diff<ResultEditableFields, {| name: string |}>,
+  name: BatchName,
+  ...
+};
+
+declare export default class ResultCollection<ResultSubtype: Result> {
+  records: RsSet<ResultSubtype>;
+  name: BatchName;
+  sharedWith: Array<SharedWithGroup>;
+
+  constructor(records: RsSet<ResultSubtype>): ResultCollection<ResultSubtype>;
+
+  get size(): number;
+  get fieldValues(): { ...ResultCollectionEditableFields };
+  get canChooseWhichToEdit(): boolean;
+  isFieldEditable(fieldName: string): boolean;
+  get noValueLabel(): {[key in keyof ResultCollectionEditableFields]: ?string};
+  setFieldsDirty(newFieldValues: {}): void;
+}
+
+declare export class MixedResultCollection
+  extends ResultCollection<Result>
+  implements HasEditableFields<ResultCollectionEditableFields>
+{
+  constructor(records: RsSet<Result>): MixedResultCollection;
+  get fieldValues(): { ...ResultCollectionEditableFields };
+  get noValueLabel(): {[key in keyof ResultCollectionEditableFields]: ?string};
+  setFieldsDirty(newFieldValues: {}): void;
+  setFieldEditable(fieldName: string, value: boolean): void;
+}

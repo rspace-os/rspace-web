@@ -1,5 +1,3 @@
-//@flow
-
 import Result, { type ResultEditableFields } from "./Result";
 import { action, observable, makeObservable, computed, override } from "mobx";
 import { match } from "../../util/Util";
