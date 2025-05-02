@@ -1,0 +1,115 @@
+// @flow
+
+import ApiService from "../../common/InvApiService";
+import { type URL as URLType } from "../../util/types";
+import { doNotAwait, sleep } from "../../util/Util";
+import {
+  handleDetailedErrors,
+  handleDetailedSuccesses,
+} from "../../util/alerts";
+import { type Id, type GlobalId, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+import { type RecordDetails } from "../definitions/Record";
+import {
+  type RecordType,
+  type InventoryRecord,
+  type LockStatus,
+  type CreateOption,
+} from "../definitions/InventoryRecord";
+import { type AdjustableTableRowOptions } from "../definitions/Tables";
+import getRootStore from "../stores/RootStore";
+import { mkAlert } from "../contexts/Alert";
+import { type CoreFetcherArgs } from "../definitions/Search";
+import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import { type Factory } from "../definitions/Factory";
+import SampleModel, {
+  SAMPLE_FIELDS,
+  defaultVisibleSampleFields,
+  defaultEditableSampleFields,
+  type SampleAttrs,
+} from "./SampleModel";
+import Search from "./Search";
+import {
+  action,
+  observable,
+  computed,
+  override,
+  makeObservable,
+  runInAction,
+} from "mobx";
+import React, { type Node } from "react";
+import { type Template } from "../definitions/Template";
+import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
+import docLinks from "../../assets/DocLinks";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import type { Field } from "../definitions/Field";
+import {
+  IsInvalid,
+  IsValid,
+  type ValidationResult,
+} from "../../components/ValidatingSubmitButton";
+
+export type TemplateAttrs = {|
+  ...SampleAttrs,
+  id: Id, // can't be null, because created on the server first
+  iconId: ?number,
+  defaultUnitId: ?number,
+  historicalVersion: boolean,
+  version: number,
+  quantity: null,
+|};
+
+declare export default class TemplateModel extends SampleModel implements Template {
+  defaultUnitId: number;
+  version: number;
+  latest: ?Template;
+  historicalVersion: boolean;
+  icon: ?string;
+
+  constructor(
+    factory: Factory,
+    params?: TemplateAttrs
+  ): TemplateModel;
+
+  populateFromJson(factory: Factory, params: any, defaultParams: ?any): void;
+  get recordType(): RecordType;
+  updateFieldsState(): void;
+  fetchAdditionalInfo(): Promise<void>;
+  fetchIcon(): void;
+  addField(fieldParams: FieldModelAttrs): void;
+  removeCustomField(
+    id: Id,
+    index: number,
+    deleteFromSamples?: boolean
+  ): void;
+  get recordTypeLabel(): string;
+  get globalIdOfLatest(): ?string;
+  getLatest(): void;
+  get paramsForBackend(): any;
+  setEditing(
+    value: boolean,
+    refresh: ?boolean,
+    goToLatest: ?boolean
+  ): Promise<LockStatus>;
+  setActiveResultToLatest(): Promise<TemplateModel>;
+  update(): Promise<void>;
+  updateSamplesToLatest(): Promise<void>;
+  contextMenuDisabled(): ?string;
+  get permalinkURL(): ?URLType;
+  get fieldNamesInUse(): Array<string>;
+  adjustableTableOptions(): AdjustableTableRowOptions<string>;
+  get hasSubSamples(): boolean;
+  moveField(field: Field, newIndex: number): void;
+  get iconName(): string;
+  get illustration(): Node;
+  get showNewlyCreatedRecordSearchParams(): CoreFetcherArgs;
+  get children(): Array<InventoryRecord>;
+  get recordDetails(): RecordDetails;
+  get validSubSampleAlias(): boolean;
+  validateQuantity(): ValidationResult;
+  validate(): ValidationResult;
+  updateBecauseRecordsChanged(recordIds: Set<GlobalId>): void;
+  get enforceMandatoryFields(): boolean;
+  get showBarcode(): boolean;
+  get usableInLoM(): boolean;
+  get createOptions(): $ReadOnlyArray<CreateOption>;
+}

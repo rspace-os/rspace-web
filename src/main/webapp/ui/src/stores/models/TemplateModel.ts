@@ -1,5 +1,3 @@
-// @flow
-
 import ApiService from "../../common/InvApiService";
 import { type URL as URLType } from "../../util/types";
 import { doNotAwait, sleep } from "../../util/Util";
