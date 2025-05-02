@@ -1,5 +1,3 @@
-//@flow
-
 import type GlobalId from "../models/Result";
 import { isoToLocale } from "../../util/Util";
 import React from "react";
