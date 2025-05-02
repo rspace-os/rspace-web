@@ -1,5 +1,3 @@
-// @flow
-
 import InvApiService from "../../common/InvApiService";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { toCommonUnit, fromCommonUnit } from "../definitions/Units";
