@@ -42,6 +42,7 @@ import org.apache.commons.lang.time.StopWatch;
 import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,11 +55,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
-@TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://howler.researchspace.com:8076",
-      "chemistry.provider=indigo"
-    })
+@TestPropertySource(properties = "chemistry.service.url=")
+@Ignore // RSDEV-88 current default chemistry implementation returns empty data. No front-end code
+// calls RSChemController endpoints
 public class RSChemControllerMVCIT extends MVCTestBase {
 
   @Autowired private MockServletContext servletContext;
