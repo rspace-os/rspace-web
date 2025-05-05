@@ -46,6 +46,7 @@ import CreateMenu from "../ToolbarCreateMenu";
 import SocialActions from "../ToolbarSocial";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
+import Analytics from "../../components/Analytics";
 
 class WorkspaceToolbar extends React.Component {
   constructor(props) {
@@ -529,12 +530,14 @@ class WorkspaceToolbar extends React.Component {
     return (
       <StyledEngineProvider injectFirst>
         <ThemeProvider theme={materialTheme}>
-          <BaseToolbar content={this.content()} />
-          {this.state.advancedOpen && (
-            <AdvancedSearch ref={this.advancedSearch} />
-          )}
-          <TagDialog />
-          <CompareDialog />
+          <Analytics>
+            <BaseToolbar content={this.content()} />
+            {this.state.advancedOpen && (
+              <AdvancedSearch ref={this.advancedSearch} />
+            )}
+            <TagDialog />
+            <CompareDialog />
+          </Analytics>
         </ThemeProvider>
       </StyledEngineProvider>
     );

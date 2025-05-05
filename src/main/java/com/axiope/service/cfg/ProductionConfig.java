@@ -166,6 +166,8 @@ public class ProductionConfig extends BaseConfig {
     inits.add(licenseServerChecker());
     inits.add(fileStoreRootDetector());
     inits.add(indexer());
+    inits.add(chemistryIndexer());
+    inits.add(chemistryImageUpdater());
     inits.add(integrationsHandlerInitialisor());
     inits.add(sampleTemplateAppInitialiser());
     inits.add(customForms());
@@ -186,6 +188,9 @@ public class ProductionConfig extends BaseConfig {
     List<IApplicationInitialisor> inits = new ArrayList<>();
     inits.add(loadfromCSV());
     inits.add(indexer());
+    inits.add(chemistryIndexer());
+
+    inits.add(chemistryImageUpdater());
     inits.add(licenseServerChecker());
     inits.add(sharedSnippetsFolderCreator());
     mgr.setApplicationInitialisors(inits);

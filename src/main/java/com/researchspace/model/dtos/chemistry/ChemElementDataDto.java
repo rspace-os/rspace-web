@@ -17,7 +17,7 @@ public class ChemElementDataDto {
   private String fileName;
   private Long fieldId;
   private String chemString;
-  @Builder.Default private String chemElementsFormat = "mrv";
+  private String chemElementsFormat;
   private Integer fullHeight;
   private Integer fullWidth;
   private Integer previewHeight;

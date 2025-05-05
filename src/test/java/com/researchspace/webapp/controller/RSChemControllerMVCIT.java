@@ -18,12 +18,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.linkedelements.FieldParser;
-import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
+import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.RecordInformation;
@@ -33,6 +33,7 @@ import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
+import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPage;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,6 @@ import org.apache.commons.lang.time.StopWatch;
 import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,9 +54,11 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
-@TestPropertySource(properties = "chemistry.web.url=http://howler.researchspace.com:8099")
-@Ignore // RSDEV-88 current default chemistry implementation returns empty data. No front-end code
-// calls RSChemController endpoints
+@TestPropertySource(
+    properties = {
+      "chemistry.service.url=http://howler.researchspace.com:8076",
+      "chemistry.provider=indigo"
+    })
 public class RSChemControllerMVCIT extends MVCTestBase {
 
   @Autowired private MockServletContext servletContext;
@@ -113,7 +115,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     assertNotNull(savedChemElement.getId());
     assertNotNull(rsChemElementManager.get(savedChemElement.getId()).getCreationDate());
 
-    assertEquals(ChemElementsFormat.MRV, savedChemElement.getChemElementsFormat());
+    assertEquals(chemistryProvider.graphicFormat(), savedChemElement.getChemElementsFormat());
     // now we use this data to generate a Chem element String
     String fldData = generateChemElementImageURl(savedChemElement);
     // ..add it tofield
@@ -235,23 +237,26 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void teststructureSearchRoundTrip() throws Exception {
+  public void testStructureSearchRoundTrip() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
     String chemdata = RSpaceTestUtils.getExampleChemString();
     // we save a new chem element, created in chem editor for example.
     addChemStructureToField(fld, user);
+    ChemicalSearchRequestDTO request = new ChemicalSearchRequestDTO(chemdata, 0, 0, "SUBSTRUCTURE");
     MvcResult result =
         mockMvc
             .perform(
-                post("/chemical/ajax/searchChemElement")
-                    .param("chem", chemdata)
-                    .principal(principal))
+                post("/chemical/search")
+                    .content(getAsJsonString(request))
+                    .principal(principal)
+                    .contentType(APPLICATION_JSON))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     assertNull(result.getResolvedException());
-    String hits = result.getModelAndView().getModel().get("totalHitCount").toString();
-    assertEquals(1, Integer.parseInt(hits));
+    ChemSearchResultsPage resultsPage =
+        (ChemSearchResultsPage) result.getModelAndView().getModel().get("chemSearchResultsPage");
+    assertEquals(1, resultsPage.totalHitCount.intValue());
   }
 
   @Test
@@ -267,14 +272,18 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                post("/chemical/ajax/searchChemElement")
-                    .param("chem", chemdata)
+                post("/chemical/search")
+                    .param("searchInput", chemdata)
+                    .param("pageNumber", "0")
+                    .param("pageSize", "10")
+                    .param("searchType", "SUBSTRUCTURE")
                     .principal(principal))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     assertNull(result.getResolvedException());
-    String hits = result.getModelAndView().getModel().get("totalHitCount").toString();
-    assertEquals(2, Integer.parseInt(hits));
+    ChemSearchResultsPage resultsPage =
+        (ChemSearchResultsPage) result.getModelAndView().getModel().get("chemSearchResultsPage");
+    assertEquals(2, resultsPage.getTotalHitCount().intValue());
   }
 
   @Test

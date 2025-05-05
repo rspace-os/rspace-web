@@ -81,7 +81,7 @@ type IntegrationCardArgs<Credentials> = {|
   // The website of the integration's service. Format like as `example.com`, as
   // `https://` will be prefixed when used as a `href` property, and will be
   // displayed in the UI as passed.
-  website: string,
+  website?: string,
 
   // Logo, or similar image. This MUST be an SVG. Try to make any new images
   // conform with the existing ones; either a white silhouette where the logo
@@ -486,11 +486,18 @@ function IntegrationCard<Credentials>({
         <DialogContent>
           <section>
             <Typography variant="body2">{usageText}</Typography>
-            <Typography variant="body2">
-              See <Link href={`https://${website}`}>{website}</Link>
-              {" and our "}
-              <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
-            </Typography>
+            {typeof website === "string" ? (
+              <Typography variant="body2">
+                See <Link href={`https://${website}`}>{website}</Link>
+                {" and our "}
+                <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
+              </Typography>
+            ) : (
+              <Typography variant="body2">
+                See our <Link href={docLinks[docLink]}>{helpLinkText}</Link> for
+                more.
+              </Typography>
+            )}
           </section>
           <Divider orientation="horizontal" />
           <section>

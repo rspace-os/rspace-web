@@ -283,4 +283,6 @@ public interface IPropertyHolder extends Versionable {
   String getGalaxyBaseUrl();
 
   boolean isAsposeEnabled();
+
+  String getChemistryProvider();
 }

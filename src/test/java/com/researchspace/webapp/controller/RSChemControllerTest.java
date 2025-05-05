@@ -11,6 +11,7 @@ import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
+import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.record.Folder;
@@ -21,6 +22,7 @@ import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
+import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -38,7 +40,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.servlet.ModelAndView;
 
 public class RSChemControllerTest {
 
@@ -74,13 +75,14 @@ public class RSChemControllerTest {
     final Folder rootFolder = TestFactory.createAFolder("root", user);
     final ChemicalSearchResults hits = new ChemicalSearchResults();
     String smile = "CCC(C1)";
-    String searchType = "substructure";
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(user);
-    when(chemicalService.searchChemicals(smile, searchType, 0, 10, user)).thenReturn(hits);
     when(folderManager.getRootFolderForUser(user)).thenReturn(rootFolder);
+    when(chemicalService.searchChemicals(smile, "SUBSTRUCTURE", 0, 10, user)).thenReturn(hits);
 
-    ModelAndView mav = rsChemController.searchChemElement(smile, searchType, 0, 10);
-    assertEquals(0, Integer.parseInt(mav.getModelMap().get("totalHitCount").toString()));
+    ChemSearchResultsPage resultsPage =
+        rsChemController.searchChemicals(
+            new ChemicalSearchRequestDTO(smile, 0, 10, "SUBSTRUCTURE"));
+    assertNull(resultsPage.getTotalHitCount());
   }
 
   private void generalMocks() {

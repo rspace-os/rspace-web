@@ -10,15 +10,13 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class ChemicalSearchResultsDTO {
-  private List<Integer> reactionHits;
-  private List<Integer> structureHits;
-  private List<Integer> rgroupHits;
+
+  // chemicalHits is used to match chemicals by their RSChemElement.id
+  private List<Long> chemicalHits;
   private int totalHits;
 
   public ChemicalSearchResultsDTO() {
-    this.reactionHits = new ArrayList<>();
-    this.structureHits = new ArrayList<>();
-    this.rgroupHits = new ArrayList<>();
+    this.chemicalHits = new ArrayList<>();
     this.totalHits = 0;
   }
 }

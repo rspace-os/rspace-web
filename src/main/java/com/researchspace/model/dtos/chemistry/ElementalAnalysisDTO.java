@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos.chemistry;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -35,6 +36,9 @@ public class ElementalAnalysisDTO {
   }
 
   private List<MoleculeInfoDTO> filterByRole(MoleculeRole role) {
+    if (moleculeInfo == null) {
+      return Collections.emptyList();
+    }
     return moleculeInfo.stream()
         .filter(mol -> role.equals(mol.getRole()))
         .collect(Collectors.toList());

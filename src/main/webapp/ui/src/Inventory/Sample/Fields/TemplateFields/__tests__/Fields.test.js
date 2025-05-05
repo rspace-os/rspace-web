@@ -12,6 +12,10 @@ import { makeMockSample } from "../../../../../stores/models/__tests__/SampleMod
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 
+jest.mock("../../../../../components/Ketcher/KetcherDialog", () =>
+  jest.fn(() => <div></div>)
+);
+
 beforeEach(() => {
   jest.clearAllMocks();
 });

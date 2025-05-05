@@ -83,14 +83,14 @@
        <column name="reactionId" type="integer"/>
      </addColumn>
     </changeSet>
-    
+
      <changeSet id="2018-11-28d" author="richard" context="run">
      <comment>RSPAC-1661. Add optional reactionId for linking to cd_id column in reaction table</comment>
      <addColumn  tableName="RSChemElement_AUD">
        <column name="reactionId" type="integer"/>
      </addColumn>
     </changeSet>
-    
+
     <changeSet id="18-12-17a" author="richard">
      <comment>RSPAC-1615. Alter encryption method, all encrypted tokens are now obsolete</comment>
      <sql>delete from UserConnection</sql>

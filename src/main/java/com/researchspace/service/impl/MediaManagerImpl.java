@@ -597,11 +597,11 @@ public class MediaManagerImpl implements MediaManager {
       InputStream dataImageIS, String chem, ChemElementsFormat format, long fieldId, Record record)
       throws IOException {
     byte[] data = IOUtils.toByteArray(dataImageIS);
-    String mrvString = chemistryProvider.convert(chem);
+    String convertedChem = chemistryProvider.convertToDefaultFormat(chem, format.getLabel());
     RSChemElement rsChemElement =
         RSChemElement.builder()
             .dataImage(data)
-            .chemElements(mrvString)
+            .chemElements(convertedChem)
             .chemElementsFormat(format)
             .parentId(fieldId)
             .record(record)

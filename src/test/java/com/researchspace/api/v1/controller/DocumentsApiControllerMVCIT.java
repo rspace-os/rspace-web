@@ -65,7 +65,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-@TestPropertySource(properties = "chemistry.web.url=http://howler.researchspace.com:8099")
+@TestPropertySource(
+    properties = {
+      "chemistry.service.url=http://howler.researchspace.com:8076",
+      "chemistry.provider=indigo"
+    })
 @RunWith(ConditionalTestRunner.class)
 public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 

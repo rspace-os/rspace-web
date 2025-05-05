@@ -152,12 +152,18 @@ import com.researchspace.service.audit.search.LogLineContentProviderImpl;
 import com.researchspace.service.audit.search.UpdateRecordNamePostProcessor;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl;
+import com.researchspace.service.chemistry.ChemistryClient;
+import com.researchspace.service.chemistry.ChemistryProvider;
+import com.researchspace.service.chemistry.DefaultChemistryProvider;
+import com.researchspace.service.chemistry.IndigoChemistryProvider;
 import com.researchspace.service.cloud.impl.CommunityManualUserSignupPolicy;
 import com.researchspace.service.cloud.impl.CommunityPostSignupVerification;
 import com.researchspace.service.cloud.impl.CreateLabGroupRequestHandler;
 import com.researchspace.service.cloud.impl.ShareRecordRequestHandler;
 import com.researchspace.service.impl.ApiAvailabilityHandlerImpl;
 import com.researchspace.service.impl.AsyncDepositorImpl;
+import com.researchspace.service.impl.ChemistryImageUpdateInitialisor;
+import com.researchspace.service.impl.ChemistrySearchIndexInitialisor;
 import com.researchspace.service.impl.CollabGroupShareRequestCreateHandler;
 import com.researchspace.service.impl.CollabGroupShareRequestUpdateHandler;
 import com.researchspace.service.impl.ContentInitialiserUtilsImpl;
@@ -271,6 +277,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.ui.velocity.VelocityEngineFactoryBean;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.multipart.MultipartResolver;
@@ -334,11 +341,11 @@ public abstract class BaseConfig {
   @Value("${argos.url}")
   URL argosApiUrl;
 
-  @Value("${chemistry.web.url}")
-  String chemistryWebUrl;
-
   @Value("${aws.s3.hasS3Access}")
   private boolean hasS3Access;
+
+  @Value("${chemistry.provider}")
+  private String chemistryProvider;
 
   protected Logger log = LoggerFactory.getLogger(BaseConfig.class);
 
@@ -473,6 +480,16 @@ public abstract class BaseConfig {
   @Bean
   public IApplicationInitialisor indexer() {
     return new LuceneSearchIndexInitialisor();
+  }
+
+  @Bean
+  public IApplicationInitialisor chemistryIndexer() {
+    return new ChemistrySearchIndexInitialisor();
+  }
+
+  @Bean
+  public IApplicationInitialisor chemistryImageUpdater() {
+    return new ChemistryImageUpdateInitialisor();
   }
 
   @Bean
@@ -1230,10 +1247,6 @@ public abstract class BaseConfig {
     this.snapGeneWebUrl = url;
   }
 
-  void setChemistryWSUrl(String url) {
-    this.chemistryWebUrl = url;
-  }
-
   @Bean
   StrictEmailContentGenerator strictEmailContentGenerator() {
     return new StrictEmailContentGenerator();
@@ -1310,5 +1323,23 @@ public abstract class BaseConfig {
   @Bean
   public BreadcrumbGenerator getBreadCrumbGenerator() {
     return new DefaultBreadcrumbGenerator();
+  }
+
+  @Bean
+  public ChemistryProvider chemistryProvider() {
+    if (chemistryProvider.equals("indigo")) {
+      return new IndigoChemistryProvider(chemistryServiceClient());
+    }
+    return new DefaultChemistryProvider();
+  }
+
+  @Bean
+  public ChemistryClient chemistryServiceClient() {
+    return new ChemistryClient(restTemplate());
+  }
+
+  @Bean
+  public RestTemplate restTemplate() {
+    return new RestTemplate();
   }
 }

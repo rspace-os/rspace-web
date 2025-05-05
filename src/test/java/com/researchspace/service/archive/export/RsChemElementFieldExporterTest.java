@@ -54,7 +54,7 @@ public class RsChemElementFieldExporterTest {
     RSChemElement chem = new RSChemElement();
     chem.setId(1L);
     chem.setDataImage("dummy_image".getBytes());
-    chem.setChemElementsFormat(ChemElementsFormat.MRV);
+    chem.setChemElementsFormat(ChemElementsFormat.MOL);
 
     final int initRecordFolderContentLength = archiveRecordFolder.listFiles().length;
     String replacementUrl = chemExporter.getReplacementUrl(context, chem);
@@ -79,7 +79,7 @@ public class RsChemElementFieldExporterTest {
     RSChemElement chem = new RSChemElement();
     chem.setId(1L);
     chem.setDataImage(smallImageBytes);
-    chem.setChemElementsFormat(ChemElementsFormat.MRV);
+    chem.setChemElementsFormat(ChemElementsFormat.MOL);
 
     // mock larger image response
     FileProperty imageFileProperty = new FileProperty();

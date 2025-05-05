@@ -112,8 +112,12 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
 
   @Override
   public RSChemElement save(RSChemElement rsChemElement, User user) {
-    RSChemElement persisted = chemistryProvider.save(rsChemElement);
-    return rsChemElementDao.save(persisted);
+    // chemistry implementations differ on save - closed-source generates different types of
+    // chemistry-specific IDs (generated in chemistryProvider.save()), whereas open-source used the
+    // ID of the RSChemElement, hence the double save to the DB here to cover both cases.
+    RSChemElement savedToDB = rsChemElementDao.save(rsChemElement);
+    RSChemElement chemistrySaved = chemistryProvider.save(savedToDB);
+    return rsChemElementDao.save(chemistrySaved);
   }
 
   @Override
@@ -121,41 +125,47 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
     rsChemElementDao.remove(id);
   }
 
-  public List<ChemSearchedItem> search(String chemQuery, String searchType, User subject) {
+  @Override
+  public List<ChemSearchedItem> search(
+      String chemQuery, String searchType, Integer searchResultLimit, User subject) {
+
     ChemicalSearchResultsDTO searchResults = chemistryProvider.search(chemQuery, searchType);
     List<RSChemElement> elements = rsChemElementDao.getChemElementsForChemIds(searchResults);
-    return getChemSearchedItems(elements, subject);
+    return getChemSearchedItems(elements, searchResultLimit, subject);
   }
 
   /**
    * Given a list of RSChemElement raw search hits, filters by permission, deletion and presence of
    * link in text field to ensure that returned hits are relevant.
    *
-   * @param lstChemElements
+   * @param chemElementsList
+   * @param searchResultLimit optional, size of results at which we stop searching further
    * @param user
    * @return
    */
   private List<ChemSearchedItem> getChemSearchedItems(
-      List<RSChemElement> lstChemElements, User user) {
-    List<ChemSearchedItem> lstChemSearchedItems = new ArrayList<>();
+      List<RSChemElement> chemElementsList, Integer searchResultLimit, User user) {
 
-    for (RSChemElement rsChemElement : lstChemElements) {
+    List<ChemSearchedItem> searchResult = new ArrayList<>();
+    for (RSChemElement rsChemElement : chemElementsList) {
+      addGalleryFileToSearchResults(user, searchResult, rsChemElement);
 
-      addGalleryFileToSearchResults(user, lstChemSearchedItems, rsChemElement);
       Long fieldId = rsChemElement.getParentId();
-      // the field will be null for snippets and gallery files that haven't been inserted into a doc
-      // yet.
+      // the field will be null for snippets and gallery files not inserted into a doc yet
       Field field = getField(user, rsChemElement, fieldId);
-      if (field == null) {
-        continue;
+      if (field != null) {
+        if (fieldParser.hasChemElement(rsChemElement.getId(), field.getFieldData())) {
+          addStructuredDocumentToSearchResults(
+              user, searchResult, rsChemElement, field.getStructuredDocument());
+        }
       }
-      if (fieldParser.hasChemElement(rsChemElement.getId(), field.getFieldData())) {
-        addStructuredDocumentToSearchResults(
-            user, lstChemSearchedItems, rsChemElement, field.getStructuredDocument());
+
+      if (searchResultLimit != null && (searchResult.size() >= searchResultLimit)) {
+        break;
       }
     }
 
-    return lstChemSearchedItems;
+    return searchResult;
   }
 
   private Field getField(User user, RSChemElement rsChemElement, Long fieldId) {
@@ -242,28 +252,39 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
   }
 
   @Override
-  public RSChemElement saveChemElement(ChemicalDataDTO chemicalDataDTO, User subject)
-      throws IOException {
+  public RSChemElement saveChemElement(ChemicalDataDTO chemical, User subject) throws IOException {
+
+    // image not generated on front-end therefore generate here
+    if (chemical.getImageBase64() == null || chemical.getImageBase64().isEmpty()) {
+      ChemicalExportFormat outputFormat =
+          ChemicalExportFormat.builder()
+              .exportType(ChemicalExportType.PNG)
+              .width(500)
+              .height(500)
+              .build();
+      byte[] imageBytes =
+          chemistryProvider.exportToImage(
+              chemical.getChemElements(), chemical.getChemElementsFormat(), outputFormat);
+      String base64Image = ImageUtils.getBase64DataImageFromImageBytes(imageBytes, "png");
+      chemical.setImageBase64(base64Image);
+    }
 
     Field field =
-        getFieldAndAssertAuthorised(
-            chemicalDataDTO.getFieldId(), subject, "save chemical structure");
-    byte[] decodedBytes =
-        ImageUtils.getImageBytesFromBase64DataImage(chemicalDataDTO.getImageBase64());
+        getFieldAndAssertAuthorised(chemical.getFieldId(), subject, "save chemical structure");
+    byte[] decodedBytes = ImageUtils.getImageBytesFromBase64DataImage(chemical.getImageBase64());
 
     RSChemElement rsChemElement = null;
-    if (chemicalDataDTO.getRsChemElementId() != null) {
-      rsChemElement = get(chemicalDataDTO.getRsChemElementId(), subject);
-    } else if (chemicalDataDTO.getEcatChemFileId() != null) {
+    if (chemical.getRsChemElementId() != null) {
+      rsChemElement = get(chemical.getRsChemElementId(), subject);
+    } else if (chemical.getEcatChemFileId() != null) {
       rsChemElement =
-          rsChemElementDao.getChemElementFromChemistryGalleryFile(
-              chemicalDataDTO.getEcatChemFileId());
+          rsChemElementDao.getChemElementFromChemistryGalleryFile(chemical.getEcatChemFileId());
     }
 
     if (rsChemElement != null) {
       rsChemElement.setDataImage(decodedBytes);
-      rsChemElement.setChemElements(chemicalDataDTO.getChemElements());
-      rsChemElement.setChemElementsFormat(ChemElementsFormat.MRV);
+      rsChemElement.setChemElements(chemical.getChemElements());
+      rsChemElement.setChemElementsFormat(chemistryProvider.graphicFormat());
       // need to save field, if we need to remove a previous revision id
       boolean revisionRemoved =
           textUpdater.removeRevisionsFromChemWithId(field, rsChemElement.getId() + "");
@@ -274,19 +295,21 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       rsChemElement =
           RSChemElement.builder()
               .dataImage(decodedBytes)
-              .chemElements(chemicalDataDTO.getChemElements())
-              .chemElementsFormat(ChemElementsFormat.MRV)
+              .chemElements(chemical.getChemElements())
+              .chemElementsFormat(chemistryProvider.graphicFormat())
+              .smilesString(
+                  getSmilesString(chemical.getChemElements(), chemical.getChemElementsFormat()))
               .parentId(field.getId())
               .record(field.getStructuredDocument())
               .build();
     }
     // Set Chemistry file related params if chem file id isn't null
-    if (chemicalDataDTO.getEcatChemFileId() != null) {
-      rsChemElement.setEcatChemFileId(chemicalDataDTO.getEcatChemFileId());
+    if (chemical.getEcatChemFileId() != null) {
+      rsChemElement.setEcatChemFileId(chemical.getEcatChemFileId());
       rsChemElement.setParentId(field.getId());
       rsChemElement.setRecord(field.getStructuredDocument());
       EcatChemistryFile chemistryFile =
-          chemistryFileManager.get(chemicalDataDTO.getEcatChemFileId(), subject);
+          chemistryFileManager.get(chemical.getEcatChemFileId(), subject);
       field.addMediaFileLink(chemistryFile);
       fieldMgr.save(field, subject);
     }
@@ -382,7 +405,9 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
                 .ecatChemFileId(ecatChemFileId)
                 .dataImage(toCopy.getDataImage())
                 .imageFileProperty(toCopy.getImageFileProperty())
-                .chemElements(chemistryProvider.convert(toCopy.getChemElements()))
+                .chemElements(
+                    chemistryProvider.convertToDefaultFormat(
+                        toCopy.getChemElements(), toCopy.getChemElementsFormat().getLabel()))
                 .chemElementsFormat(toCopy.getChemElementsFormat())
                 .build();
       } else {
@@ -399,9 +424,13 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       Field field)
       throws IOException {
     RSChemElement result;
+    String convertedChem =
+        chemistryProvider.convertToDefaultFormat(
+            chemistryFile.getChemString(), chemistryFile.getExtension());
     byte[] image =
         chemistryProvider.exportToImage(
             chemistryFile.getChemString(),
+            chemistryFile.getExtension(),
             ChemicalExportFormat.builder()
                 .height(chemElementDataDto.getFullHeight())
                 .width(chemElementDataDto.getFullWidth())
@@ -412,8 +441,10 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
             .parentId(field.getId())
             .dataImage(image)
             .ecatChemFileId(chemistryFile.getId())
-            .chemElements(chemistryProvider.convert(chemistryFile.getChemString()))
-            .chemElementsFormat(chemFormat(chemElementDataDto))
+            .chemElements(convertedChem)
+            .chemElementsFormat(chemistryProvider.defaultFormat())
+            .smilesString(
+                getSmilesString(chemistryFile.getChemString(), chemistryFile.getExtension()))
             .record(field.getStructuredDocument())
             .build();
     // Save chem element here so the id isn't null when saving chem image
@@ -423,17 +454,15 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
     return result;
   }
 
-  private ChemElementsFormat chemFormat(ChemElementDataDto chemElementDataDto) {
-    return ChemElementsFormat.valueOf(chemElementDataDto.getChemElementsFormat().toUpperCase());
-  }
-
   @Override
   public RSChemElement generateRsChemElementFromChemistryFile(
       EcatChemistryFile chemistryFile, long fieldId, User user) throws IOException {
     ChemElementDataDto dto =
         ChemElementDataDto.builder()
-            .chemString(chemistryProvider.convert(chemistryFile.getChemString()))
-            .chemElementsFormat("MRV")
+            .chemString(
+                chemistryProvider.convertToDefaultFormat(
+                    chemistryFile.getChemString(), chemistryFile.getFileName()))
+            .chemElementsFormat(chemistryProvider.defaultFormat().getLabel())
             .ecatChemFileId(chemistryFile.getId())
             .fileName(chemistryFile.getName())
             .fieldId(fieldId)
@@ -478,7 +507,8 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
 
   private byte[] getUpdatedImageBytes(
       EcatChemistryFile chemistryFile, ChemicalExportFormat exportFormat) {
-    return chemistryProvider.exportToImage(chemistryFile.getChemString(), exportFormat);
+    return chemistryProvider.exportToImage(
+        chemistryFile.getChemString(), chemistryFile.getExtension(), exportFormat);
   }
 
   @Override
@@ -488,8 +518,10 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
     toUpdate.setChemId(null);
     toUpdate.setReactionId(null);
     toUpdate.setRgroupId(null);
-    toUpdate.setChemElements(chemistryProvider.convert(newChemistryFile.getChemString()));
-    toUpdate.setChemElementsFormat(ChemElementsFormat.MRV);
+    toUpdate.setChemElements(
+        chemistryProvider.convertToDefaultFormat(
+            newChemistryFile.getChemString(), newChemistryFile.getExtension()));
+    toUpdate.setChemElementsFormat(chemistryProvider.defaultFormat());
     return save(toUpdate, user);
   }
 
@@ -504,46 +536,65 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
   }
 
   @Override
+  public List<Object[]> getAllIdAndSmilesStringPairs() {
+    return rsChemElementDao.getAllIdAndSmilesStringPairs();
+  }
+
+  /* smiles is used as an alternative chemical format, but failure to generate smiles shouldn't stop an otherwise
+  successful file upload
+   */
+  private String getSmilesString(String originalChem, String originalFormat) {
+    String smiles;
+    try {
+      smiles = chemistryProvider.convert(originalChem, originalFormat, "smiles");
+    } catch (Exception e) {
+      logger.info("Unable to convert to smlies format from {}", originalFormat);
+      smiles = null;
+    }
+    return smiles;
+  }
+
+  @Override
   public void generateRsChemElementForNewlyUploadedChemistryFile(
       EcatChemistryFile chemFile, User subject) throws IOException {
+
+    String chemInDefaultFormat =
+        chemistryProvider.convert(
+            chemFile.getChemString(),
+            chemFile.getExtension(),
+            chemistryProvider.defaultFormat().getLabel());
 
     // Create Basic Chem Element in order for searching of gallery files to work
     RSChemElement rsChemElement =
         RSChemElement.builder()
-            .chemElements(chemistryProvider.convert(chemFile.getChemString()))
-            .chemElementsFormat(ChemElementsFormat.MRV)
+            .chemElements(chemInDefaultFormat)
+            .chemElementsFormat(chemistryProvider.defaultFormat())
+            .smilesString(getSmilesString(chemFile.getChemString(), chemFile.getExtension()))
             .ecatChemFileId(chemFile.getId())
             .build();
 
-    ChemicalExportFormat format =
+    ChemicalExportFormat outputFormat =
         ChemicalExportFormat.builder()
             .exportType(ChemicalExportType.PNG)
             .height(1000)
             .width(1000)
             .build();
-    generateRsChemExportBytes(format, rsChemElement);
+    byte[] image =
+        chemistryProvider.exportToImage(
+            chemFile.getChemString(), chemFile.getExtension(), outputFormat);
+    rsChemElement.setDataImage(image);
     saveChemImagePng(
         rsChemElement, new ByteArrayInputStream(rsChemElement.getDataImage()), subject);
-  }
-
-  /**
-   * Generate the byte representation of the given {@link RSChemElement} in the given format format
-   * is currently limited to either PNG or JPEG export with a specified size (width x height)
-   *
-   * @param format the ChemicalExportFormat to generate the bytes with
-   * @param rsChemElement the {@link RSChemElement} to generate the bytes of
-   * @return the byte array representation of the rschemelement
-   */
-  private RSChemElement generateRsChemExportBytes(
-      ChemicalExportFormat format, RSChemElement rsChemElement) {
-    byte[] image = chemistryProvider.exportToImage(rsChemElement.getChemElements(), format);
-    rsChemElement.setDataImage(image);
-    return rsChemElement;
   }
 
   @Override
   public List<String> getSupportedTypes() {
     return chemistryProvider.getSupportedFileTypes();
+  }
+
+  @Override
+  public List<RSChemElement> getAllChemElementsByFormat(ChemElementsFormat format) {
+    return rsChemElementDao.getAllChemicalsWithFormat(format);
   }
 
   private Field getFieldAndAssertAuthorised(long fieldId, User subject, String authFailureMsg) {

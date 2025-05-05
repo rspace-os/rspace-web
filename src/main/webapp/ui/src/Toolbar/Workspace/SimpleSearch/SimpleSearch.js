@@ -21,6 +21,7 @@ library.add(faFilter, faSearch, faBars);
 import UserSelect from "../AdvancedSearch/UserSelect/UserSelect";
 import TagSelect from "../AdvancedSearch/TagSelect/TagSelect";
 import ScopeDialog from "./SimpleSearchScopeDialog";
+import ChemicalSearcher from "./ChemicalSearcher";
 
 function formatDateForTooltip(date /*: ?Date*/) /*: string*/ {
   if (date === null) return "";
@@ -80,7 +81,7 @@ const SearchBar = styled.div`
   }
 `;
 
-let FILTERS = {
+const FILTERS = {
   global: "All",
   fullText: "Text",
   tag: "Tag(s)",
@@ -96,12 +97,14 @@ let FILTERS = {
 const DEFAULT_STATE = {
   recordsDialog: false,
   selectedRecords: [],
-  open: false,
+  filterDropdownIsOpen: false,
   anchorEl: null,
   filter: "global",
   term: "",
   from: null,
   to: null,
+  chemicalSearchDialogOpen: false,
+  chemistryProvider: "",
 };
 
 class SimpleSearch extends React.Component {
@@ -118,7 +121,7 @@ class SimpleSearch extends React.Component {
   setQueries = (queries) => {
     if (!queries.length) return;
 
-    let query = queries[0];
+    const query = queries[0];
     this.setState({
       filter: query.filter,
       term: query.term,
@@ -127,26 +130,35 @@ class SimpleSearch extends React.Component {
     });
   };
 
+  // let chemistryProvider;
+
   componentDidMount = () => {
-    // don't make backend call while there is no open-source
-    // chemistry module.
+    axios
+      .get("/integration/integrationInfo", {
+        params: {
+          name: "CHEMISTRY",
+        },
+      })
+      .then((response) => {
+        const integration = response.data.data;
+        if (integration && integration.available && integration.enabled) {
+          FILTERS.chemical = "Chemical";
+        }
+      });
 
-    // axios
-    //   .get("/integration/integrationInfo", {
-    //     params: {
-    //       name: "CHEMISTRY",
-    //     },
-    //   })
-    //   .then((response) => {
-    //     var integration = response.data.data;
-    //     if (integration && integration.available && integration.enabled) {
-    //       FILTERS.chemical = "Chemical";
-    //     }
-    //   });
+    axios
+      .get("/deploymentproperties/ajax/property", {
+        params: {
+          name: "chemistry.provider",
+        },
+      })
+      .then((response) => {
+        this.setState({ chemistryProvider: response.data });
+      });
 
-    let toolbar = this;
+    const toolbar = this;
     // Bad practise. Change when the reset button is in React
-    $(document).on("click", "#resetSearch", function (e) {
+    $(document).on("click", "#resetSearch", (e) => {
       toolbar.resetState();
     });
   };
@@ -163,11 +175,14 @@ class SimpleSearch extends React.Component {
   };
 
   handleOpen = (event) => {
-    this.setState({ open: true, anchorEl: event.currentTarget });
+    this.setState({
+      filterDropdownIsOpen: true,
+      anchorEl: event.currentTarget,
+    });
   };
 
   handleClose = () => {
-    this.setState({ open: false });
+    this.setState({ filterDropdownIsOpen: false });
   };
 
   handleCloseModal = () => {
@@ -177,13 +192,15 @@ class SimpleSearch extends React.Component {
   handleSelect = (key) => {
     if (this.props.advancedOpen) {
       return;
-    } else if (key == "global") {
+    }
+    if (key === "global") {
       this.props.hideIcons(false);
-    } else if (key == "chemical") {
-      loadChemSearcher();
-      this.resetState();
-      this.handleClose();
-      return;
+    } else if (key === "chemical") {
+      if (this.state.chemistryProvider === "indigo") {
+        this.setState({ chemicalSearchDialogOpen: true }, () => {
+          this.handleClose();
+        });
+      }
     } else {
       this.props.hideIcons(true);
     }
@@ -204,22 +221,20 @@ class SimpleSearch extends React.Component {
       ) == -1
     ) {
       return this.state.term.length >= 2;
-    } else if (
-      ["owner", "tag"].findIndex((i) => i == this.state.filter) != -1
-    ) {
-      return this.state.term.length >= 1;
-    } else {
-      return true;
     }
+    if (["owner", "tag"].findIndex((i) => i == this.state.filter) != -1) {
+      return this.state.term.length >= 1;
+    }
+    return true;
   };
 
   submitSearch = (e) => {
     e.preventDefault();
-    let selectedRecords = getSelectedGlobalIds();
+    const selectedRecords = getSelectedGlobalIds();
 
     if (!this.isValid) {
     } else if (selectedRecords.length) {
-      this.setState({ selectedRecords: selectedRecords });
+      this.setState({ selectedRecords });
       this.setState({ recordsDialog: true });
     } else {
       this.submit();
@@ -257,26 +272,29 @@ class SimpleSearch extends React.Component {
         59,
         59
       )}`;
-    } else {
-      if (options[0] === 'tag' && this.state.term && this.state.term.indexOf(",") !== -1) {
-        return this.state.term.replaceAll(",", "__rspactags_comma__");
-      }
-      return this.state.term;
     }
+    if (
+      options[0] === "tag" &&
+      this.state.term &&
+      this.state.term.indexOf(",") !== -1
+    ) {
+      return this.state.term.replaceAll(",", "__rspactags_comma__");
+    }
+    return this.state.term;
   };
 
   toISO = (date, hours, minutes, seconds) => {
     if (typeof date === "string") {
       return date;
-    } else if (date) {
+    }
+    if (date) {
       date.setHours(hours);
       date.setMinutes(minutes);
       date.setSeconds(seconds);
 
       return date.toISOString();
-    } else {
-      return null;
     }
+    return null;
   };
 
   handleSelectAutocomplete = (selects, label) => {
@@ -294,7 +312,7 @@ class SimpleSearch extends React.Component {
   };
 
   removeRecord = (record_id) => {
-    let idx = this.state.selectedRecords.findIndex((r) => r == record_id);
+    const idx = this.state.selectedRecords.findIndex((r) => r == record_id);
     this.setState({
       selectedRecords: update(this.state.selectedRecords, {
         $splice: [[idx, 1]],
@@ -304,156 +322,172 @@ class SimpleSearch extends React.Component {
 
   render() {
     return (
-      <Paper style={{ flexGrow: "1", display: "flex" }} elevation={0}>
-        <form onSubmit={this.submitSearch} style={{ width: "100%" }}>
-          <SearchBar>
-            {this.state.filter == "global" && (
-              <Tooltip title="Filters" enterDelay={300}>
-                <IconButton
-                  data-test-id="s-search-filter"
-                  color="default"
-                  aria-haspopup="true"
-                  onClick={this.handleOpen}
-                  disabled={this.props.advancedOpen}
-                  aria-label="Filters"
+      <>
+        <>
+          <Paper style={{ flexGrow: "1", display: "flex" }} elevation={0}>
+            <form onSubmit={this.submitSearch} style={{ width: "100%" }}>
+              <SearchBar>
+                {(this.state.filter === "global" ||
+                  this.state.filter === "chemical") && (
+                  <Tooltip title="Filters" enterDelay={300}>
+                    <IconButton
+                      data-test-id="s-search-filter"
+                      color="default"
+                      aria-haspopup="true"
+                      onClick={this.handleOpen}
+                      disabled={this.props.advancedOpen}
+                      aria-label="Filters"
+                    >
+                      <FontAwesomeIcon icon="filter" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {this.state.filter !== "global" &&
+                  this.state.filter !== "chemical" && (
+                    <Chip
+                      data-test-id="s-search-filtered"
+                      label={FILTERS[this.state.filter]}
+                      clickable={!this.props.advancedOpen}
+                      variant={this.props.advancedOpen ? "default" : "outlined"}
+                      color={this.props.advancedOpen ? "default" : "primary"}
+                      aria-haspopup="true"
+                      onClick={
+                        this.props.advancedOpen ? () => {} : this.handleOpen
+                      }
+                      onDelete={() => this.handleSelect("global")}
+                      deleteIcon={
+                        <FontAwesomeIcon
+                          icon="times"
+                          style={{ padding: "10px" }}
+                          data-test-id="s-search-rm-filter"
+                        />
+                      }
+                    />
+                  )}
+                <Menu
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "left",
+                  }}
+                  anchorEl={this.state.anchorEl}
+                  keepMounted
+                  open={this.state.filterDropdownIsOpen}
+                  onClose={this.handleClose}
                 >
-                  <FontAwesomeIcon icon="filter" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {this.state.filter != "global" && (
-              <Chip
-                data-test-id="s-search-filtered"
-                label={FILTERS[this.state.filter]}
-                clickable={!this.props.advancedOpen}
-                variant={this.props.advancedOpen ? "default" : "outlined"}
-                color={this.props.advancedOpen ? "default" : "primary"}
-                aria-haspopup="true"
-                onClick={this.props.advancedOpen ? () => {} : this.handleOpen}
-                onDelete={() => this.handleSelect("global")}
-                deleteIcon={
-                  <FontAwesomeIcon
-                    icon="times"
-                    style={{ padding: "10px" }}
-                    data-test-id="s-search-rm-filter"
+                  {Object.keys(FILTERS).map((key) => (
+                    <MenuItem
+                      data-test-id={`s-search-filter-${key}`}
+                      onClick={() => this.handleSelect(key)}
+                      key={key}
+                      style={{ minHeight: "25px" }}
+                      selected={this.state.filter == key}
+                    >
+                      {FILTERS[key]}
+                    </MenuItem>
+                  ))}
+                </Menu>
+                {!["lastModified", "created", "owner", "tag"].includes(
+                  this.state.filter
+                ) && (
+                  <InputBase
+                    data-test-id="s-search-input-normal"
+                    disabled={this.props.advancedOpen}
+                    placeholder="Search"
+                    value={this.state.term}
+                    onChange={this.handleChange}
+                    inputProps={{ "aria-label": "Search" }}
                   />
-                }
-              />
-            )}
-            <Menu
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-              anchorEl={this.state.anchorEl}
-              keepMounted
-              open={this.state.open}
-              onClose={this.handleClose}
-            >
-              {Object.keys(FILTERS).map((key) => (
-                <MenuItem
-                  data-test-id={`s-search-filter-${key}`}
-                  onClick={() => this.handleSelect(key)}
-                  key={key}
-                  style={{ minHeight: "25px" }}
-                  selected={this.state.filter == key}
+                )}
+                {this.state.filter == "owner" && (
+                  <UserSelect
+                    updateSelected={this.handleSelectAutocomplete}
+                    selected={
+                      this.state.filter == "owner" ? this.state.term : null
+                    }
+                    testId="s-search-input-user"
+                  />
+                )}
+                {this.state.filter == "tag" && (
+                  <TagSelect
+                    updateSelected={this.handleSelectAutocomplete}
+                    selected={
+                      this.state.filter == "tag" ? this.state.term : null
+                    }
+                    testId="s-search-input-tag"
+                  />
+                )}
+                {["lastModified", "created"].includes(this.state.filter) && (
+                  <>
+                    <Tooltip title={formatDateForTooltip(this.state.from)}>
+                      <div>
+                        <DateField
+                          value={this.state.from}
+                          onChange={({ target: { value } }) =>
+                            this.handleDateChange("from", value)
+                          }
+                          maxDate={this.state.to || new Date()}
+                          disableFuture
+                          placeholder="the beginning"
+                          label="From"
+                          datatestid="s-search-input-from"
+                        />
+                      </div>
+                    </Tooltip>
+                    <Tooltip title={formatDateForTooltip(this.state.to)}>
+                      <div>
+                        <DateField
+                          value={this.state.to}
+                          onChange={({ target: { value } }) =>
+                            this.handleDateChange("to", value)
+                          }
+                          minDate={this.state.from || new Date(1990, 1, 1)}
+                          disableFuture
+                          placeholder="now"
+                          label="To"
+                          datatestid="s-search-input-to"
+                        />
+                      </div>
+                    </Tooltip>
+                  </>
+                )}
+                <IconButton
+                  aria-label="Search"
+                  type="submit"
+                  onClick={this.submitSearch}
+                  disabled={this.props.advancedOpen || !this.isValid()}
+                  data-test-id="s-search-submit"
                 >
-                  {FILTERS[key]}
-                </MenuItem>
-              ))}
-            </Menu>
-            {!["lastModified", "created", "owner", "tag"].includes(
-              this.state.filter
-            ) && (
-              <InputBase
-                data-test-id="s-search-input-normal"
-                disabled={this.props.advancedOpen}
-                placeholder="Search"
-                value={this.state.term}
-                onChange={this.handleChange}
-                inputProps={{ "aria-label": "Search" }}
-              />
-            )}
-            {this.state.filter == "owner" && (
-              <UserSelect
-                updateSelected={this.handleSelectAutocomplete}
-                selected={this.state.filter == "owner" ? this.state.term : null}
-                testId="s-search-input-user"
-              />
-            )}
-            {this.state.filter == "tag" && (
-              <TagSelect
-                updateSelected={this.handleSelectAutocomplete}
-                selected={this.state.filter == "tag" ? this.state.term : null}
-                testId="s-search-input-tag"
-              />
-            )}
-            {["lastModified", "created"].includes(this.state.filter) && (
-              <>
-                <Tooltip title={formatDateForTooltip(this.state.from)}>
-                  <div>
-                    <DateField
-                      value={this.state.from}
-                      onChange={({ target: { value } }) =>
-                        this.handleDateChange("from", value)
-                      }
-                      maxDate={this.state.to || new Date()}
-                      disableFuture
-                      placeholder="the beginning"
-                      label="From"
-                      datatestid="s-search-input-from"
-                    />
-                  </div>
+                  <FontAwesomeIcon icon="search" />
+                </IconButton>
+                <Divider />
+                <Tooltip
+                  title="Advanced search"
+                  enterDelay={300}
+                  data-test-id="toggle-advanced"
+                >
+                  <IconButton
+                    onClick={this.toggleAdvanced}
+                    aria-label="Advanced search"
+                  >
+                    <FontAwesomeIcon icon="bars" />
+                  </IconButton>
                 </Tooltip>
-                <Tooltip title={formatDateForTooltip(this.state.to)}>
-                  <div>
-                    <DateField
-                      value={this.state.to}
-                      onChange={({ target: { value } }) =>
-                        this.handleDateChange("to", value)
-                      }
-                      minDate={this.state.from || new Date(1990, 1, 1)}
-                      disableFuture
-                      placeholder="now"
-                      label="To"
-                      datatestid="s-search-input-to"
-                    />
-                  </div>
-                </Tooltip>
-              </>
-            )}
-            <IconButton
-              aria-label="Search"
-              type="submit"
-              onClick={this.submitSearch}
-              disabled={this.props.advancedOpen || !this.isValid()}
-              data-test-id="s-search-submit"
-            >
-              <FontAwesomeIcon icon="search" />
-            </IconButton>
-            <Divider />
-            <Tooltip
-              title="Advanced search"
-              enterDelay={300}
-              data-test-id="toggle-advanced"
-            >
-              <IconButton
-                onClick={this.toggleAdvanced}
-                aria-label="Advanced search"
-              >
-                <FontAwesomeIcon icon="bars" />
-              </IconButton>
-            </Tooltip>
-          </SearchBar>
-        </form>
-        <ScopeDialog
-          open={this.state.recordsDialog}
-          selectedRecords={this.state.selectedRecords}
-          removeRecord={(r) => this.removeRecord(r)}
-          submit={this.submit}
-          searchEverywhere={this.searchEverywhere}
-        />
-      </Paper>
+              </SearchBar>
+            </form>
+            <ScopeDialog
+              open={this.state.recordsDialog}
+              selectedRecords={this.state.selectedRecords}
+              removeRecord={(r) => this.removeRecord(r)}
+              submit={this.submit}
+              searchEverywhere={this.searchEverywhere}
+            />
+          </Paper>
+          <ChemicalSearcher
+            isOpen={this.state.chemicalSearchDialogOpen}
+            onClose={() => this.setState({ chemicalSearchDialogOpen: false })}
+          />
+        </>
+      </>
     );
   }
 }

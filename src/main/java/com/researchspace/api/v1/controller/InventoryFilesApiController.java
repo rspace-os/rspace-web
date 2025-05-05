@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.InventoryFilesApi;
 import com.researchspace.api.v1.model.ApiInventoryFile;
 import com.researchspace.files.service.FileStore;
-import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
@@ -31,6 +30,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -202,7 +202,9 @@ public class InventoryFilesApiController extends BaseApiInventoryController
         new ChemicalExportFormat(
             ChemicalExportType.PNG, imageRequest.width, imageRequest.height, imageRequest.scale);
     try {
-      byte[] chemistryExportResponse = chemistryProvider.exportToImage(chemString, format);
+      byte[] chemistryExportResponse =
+          chemistryProvider.exportToImage(
+              chemString, FilenameUtils.getExtension(fileProperty.getFileName()), format);
       return new ByteArrayInputStream(chemistryExportResponse);
     } catch (Exception e) {
       throw new InternalServerErrorException(e.getMessage());
@@ -212,18 +214,21 @@ public class InventoryFilesApiController extends BaseApiInventoryController
   @Override
   public AjaxReturnObject<ChemEditorInputDto> getChemFileDto(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
-
     InventoryFile invFile = doGetInventoryFile(id, user);
-    String chemString = chemistryProvider.convert(fileStore.findFile(invFile.getFileProperty()));
+    File file = fileStore.findFile(invFile.getFileProperty());
+    String chemString = chemistryProvider.convert(file);
+    String extension = FilenameUtils.getExtension(file.getName());
 
     RSChemElement chem =
         RSChemElement.builder()
-            .chemElements(chemistryProvider.convert(chemString))
-            .chemElementsFormat(ChemElementsFormat.MRV)
+            .chemElements(chemistryProvider.convertToDefaultFormat(chemString, extension))
+            .chemElementsFormat(chemistryProvider.defaultFormat())
             .build();
 
-    return new AjaxReturnObject<ChemEditorInputDto>(
-        new ChemEditorInputDto(null, chem.getChemElements(), chem.getChemElementsFormat()), null);
+    return new AjaxReturnObject<>(
+        new ChemEditorInputDto(
+            null, chem.getChemElements(), chem.getChemElementsFormat(), chem.getEcatChemFileId()),
+        null);
   }
 
   @Override

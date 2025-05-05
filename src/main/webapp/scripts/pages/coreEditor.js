@@ -1997,7 +1997,6 @@ function navigateAwayFromCurrentDocument(urlToOpen, modalTargetElem) {
 
 //handle file upload via local computer or Dnd into doc editor, or in attachment info panels
 function initGalleryFileUpload() {
-
   setUpFileUpload({
     url: '/gallery/ajax/uploadFile/',
     fileChooserId: '.fromLocalComputer',

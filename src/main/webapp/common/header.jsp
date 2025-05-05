@@ -189,6 +189,10 @@
     </script>
 
     <script>
+      RS.chemistryProvider = "${applicationScope['RS_DEPLOY_PROPS']['chemistryProvider']}";
+    </script>
+
+    <script>
       $(document).ready(function () {
         var $navbar = $(".rs-navbar");
         var $dropdowns = $navbar.find(".rs-dropdown");

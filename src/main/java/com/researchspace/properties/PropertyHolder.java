@@ -232,6 +232,9 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${aspose.enabled:true}")
   private String asposeEnabled;
 
+  @Value("${chemistry.provider}")
+  private String chemistryProvider;
+
   @Override
   public Key getJwtKey() {
     if (this.jwtKey == null) {
@@ -526,6 +529,10 @@ public class PropertyHolder implements IMutablePropertyHolder {
 
   public boolean isAsposeEnabled() {
     return Boolean.parseBoolean(asposeEnabled);
+  }
+
+  public String getChemistryProvider() {
+    return chemistryProvider;
   }
 
   /*

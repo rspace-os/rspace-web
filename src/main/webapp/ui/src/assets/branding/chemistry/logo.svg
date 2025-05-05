@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 27.8.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FA8B1E;}
+	.st1{fill:#FFFFFF;}
+  .element{
+    fill: none;
+    stroke: white;
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-miterlimit: 10;
+  }
+</style>
+<rect y="0" class="st0" width="100" height="100"/>
+  <g>
+    <polygon class="element"
+      points="70.5,14.25 29.5,14.25 8.75,50 29.5,85.75 70.5,85.75 91.25,50"
+    />
+    <g>
+      <line
+        class="element"
+        x1="63"
+        y1="28"
+        x2="75.75"
+        y2="50.25"
+      />
+    </g>
+  </g>
+</svg>

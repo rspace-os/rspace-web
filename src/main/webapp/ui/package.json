@@ -112,6 +112,9 @@
     "jest-junit": "=15.0.0",
     "jsdom": "^20.0.3",
     "jwt-decode": "=3.1.2",
+    "ketcher-core": "2.26.0",
+    "ketcher-react": "2.26.0",
+    "ketcher-standalone": "2.26.0",
     "leaflet": "^1.9.4",
     "mobx": "=6.7.0",
     "mobx-react": "=7.6.0",
@@ -140,7 +143,8 @@
     "tss-react": "=4.6.0"
   },
   "overrides": {
-    "word-wrap": "=1.2.5"
+    "word-wrap": "=1.2.5",
+    "fbjs": "=3.0.2"
   },
   "jest": {
     "moduleNameMapper": {

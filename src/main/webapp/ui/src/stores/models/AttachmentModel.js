@@ -378,7 +378,7 @@ export class ExistingAttachment implements Attachment {
   }
 
   get previewSupported(): boolean {
-    return this.isImageFile;
+    return this.isImageFile || this.chemistrySupported;
   }
 
   get recordDetails(): RecordDetails {
@@ -825,13 +825,13 @@ export class NewGalleryAttachment implements Attachment {
     return Promise.resolve();
   }
 
-  createChemicalPreview(): Promise<void> {
+  async createChemicalPreview(): Promise<void> {
     return Promise.reject(
-      new Error("Gallery files do not support chemical preview")
+        new Error("Gallery files do not support chemical preview")
     );
   }
 
-  revokeChemicalPreview() {}
+  revokeChemicalPreview(): void {}
 
   setImageLink(): Promise<void> {
     return Promise.reject(

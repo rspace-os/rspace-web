@@ -129,16 +129,18 @@ export const DataGridColumn = {
 
   /**
    * Define a new column where the cell's value is the output of the
-   * `valueGetter` function.
+   * `valueGetter` function. If you want to use this field in a table that
+   * supports export to CSV then `Value` must be a string.
    */
   newColumnWithValueGetter<
     Field extends string,
-    Row extends object & { [K in Field]: unknown }
+    Row extends object & { [K in Field]: unknown },
+    Value
   >(
     // Unique identifier for the column
     field: Field,
     // Function for getting a cell's value from a Row
-    valueGetter: (row: Row) => string,
+    valueGetter: (row: Row) => Value,
     rest: Omit<GridColDef<Row>, "field" | "valueGetter">
   ): GridColDef<Row> {
     return {

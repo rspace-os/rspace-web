@@ -74,10 +74,14 @@ export default function ChemCard(props): Node {
     axios
       .get(url)
       .then((response) => {
-        setChem(response.data.data);
+        if (response.data.data) {
+          setChem(response.data.data);
+        } else {
+          console.warn("error when retrieving info for chem elem " + props.item.id, response.data.error)
+        }
       })
       .catch((error) => {
-        console.log(error);
+        console.warn(error);
       });
   };
 

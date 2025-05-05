@@ -3,12 +3,15 @@ package com.researchspace.chemistry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.ChemSearchedItem;
+import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
@@ -19,6 +22,7 @@ import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.record.BreadcrumbGenerator;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
@@ -48,6 +52,8 @@ public class ChemistryServiceTest {
   @Mock ChemistryProvider chemistryProvider;
 
   @Mock AuditManager auditManager;
+
+  @Mock EcatChemistryFileManager fileManager;
 
   @InjectMocks RSChemService chemistryService;
 
@@ -83,18 +89,47 @@ public class ChemistryServiceTest {
   public void searchChemicals() {
     String chemQuery = "CC";
     String searchType = "substructure";
-    List<ChemSearchedItem> searchedItems = createSearchItems();
-    when(chemElementManager.search(chemQuery, searchType, user)).thenReturn(searchedItems);
 
+    // chem manager finding 10 results for any search
+    List<ChemSearchedItem> searchedItems = createSearchItems();
+    when(chemElementManager.search(eq(chemQuery), eq(searchType), anyInt(), eq(user)))
+        .thenReturn(searchedItems);
+
+    // let's test different pagination & result limiting
+
+    // 1st page when splitting for pages of 5
     ChemicalSearchResults actual =
         chemistryService.searchChemicals(chemQuery, searchType, 0, 5, user);
-
     assertEquals(0, actual.getStartHit());
     assertEquals(4, actual.getEndHit());
     assertEquals(10, actual.getTotalHitCount());
     assertEquals(2, actual.getTotalPageCount());
     assertEquals(5, actual.getPagedRecords().size());
     assertTrue(searchedItems.containsAll(actual.getPagedRecords()));
+
+    // 1st page when splitting for pages of 4
+    actual = chemistryService.searchChemicals(chemQuery, searchType, 0, 4, user);
+    assertEquals(0, actual.getStartHit());
+    assertEquals(3, actual.getEndHit());
+    assertNull(actual.getTotalHitCount()); // total calculations were cut off
+    assertNull(actual.getTotalPageCount()); // total calculations were cut off
+    assertEquals(4, actual.getPagedRecords().size());
+
+    // 2nd page when splitting for pages of 4
+    actual = chemistryService.searchChemicals(chemQuery, searchType, 1, 4, user);
+    assertEquals(4, actual.getStartHit());
+    assertEquals(7, actual.getEndHit());
+    assertEquals(10, actual.getTotalHitCount()); // no cutoff at page-before-last
+    assertEquals(3, actual.getTotalPageCount()); // no cutoff at page-before-last
+    assertEquals(4, actual.getPagedRecords().size());
+
+    // 3rd page when splitting for pages of 4
+    actual = chemistryService.searchChemicals(chemQuery, searchType, 2, 4, user);
+    assertEquals(8, actual.getStartHit());
+    assertEquals(9, actual.getEndHit());
+    assertEquals(10, actual.getTotalHitCount()); // no cutoff at last page
+    assertEquals(3, actual.getTotalPageCount()); // no cutoff at last page
+    assertEquals(2, actual.getPagedRecords().size());
   }
 
   @Test
@@ -102,10 +137,13 @@ public class ChemistryServiceTest {
     String inputStructure = "CC";
     String converted = "CC-converted";
     String params = "some-params";
-    when(chemistryProvider.convert(inputStructure)).thenReturn(converted);
+    String inputFormat = "some-format";
+    when(chemistryProvider.convertToDefaultFormat(inputStructure, inputFormat))
+        .thenReturn(converted);
 
     ChemConversionInputDto conversionInput = new ChemConversionInputDto();
     conversionInput.setStructure(inputStructure);
+    conversionInput.setInputFormat(inputFormat);
     conversionInput.setParameters(params);
     ConvertedStructureDto convertedStructure = chemistryService.convert(conversionInput);
 
@@ -153,6 +191,44 @@ public class ChemistryServiceTest {
         chemistryService.getChemicalEditorInput(chemicalId, null, user);
 
     assertNull(editorInput);
+  }
+
+  @Test
+  public void whenChemistryFileExists_thenReturnFileContents() {
+    String fileContents = "some-contents";
+    long chemId = 123L;
+    long fileId = 456L;
+    Integer revision = null;
+
+    RSChemElement chemElement = new RSChemElement();
+    chemElement.setId(chemId);
+    chemElement.setEcatChemFileId(fileId);
+    when(chemElementManager.get(chemId, user)).thenReturn(chemElement);
+
+    EcatChemistryFile file = new EcatChemistryFile();
+    file.setChemString(fileContents);
+    when(fileManager.get(fileId, user)).thenReturn(file);
+    String actual = chemistryService.getChemicalFileContents(chemId, revision, user);
+    assertEquals("some-contents", actual);
+  }
+
+  @Test
+  public void whenChemistryFileDoesNotExist_thenReturnEmptyString() {
+    String fileContents = "some-contents";
+    long chemId = 123L;
+    long fileId = 456L;
+    Integer revision = null;
+
+    RSChemElement chemElement = new RSChemElement();
+    chemElement.setId(chemId);
+    chemElement.setEcatChemFileId(fileId);
+    when(chemElementManager.get(chemId, user)).thenReturn(chemElement);
+
+    EcatChemistryFile file = new EcatChemistryFile();
+    file.setChemString(fileContents);
+    when(fileManager.get(fileId, user)).thenReturn(null);
+    String actual = chemistryService.getChemicalFileContents(chemId, revision, user);
+    assertEquals("", actual);
   }
 
   private List<ChemSearchedItem> createSearchItems() {
