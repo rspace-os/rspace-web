@@ -1,0 +1,5 @@
+//@flow strict
+
+declare export function useSlackEndpoint(): {|
+  oauthUrl: () => Promise<string>,
+|};

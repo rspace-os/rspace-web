@@ -414,7 +414,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               backgroundColor: mainBackground,
               borderBottom: dialogBorder,
               borderWidth: "2px",
-              textTransform: "uppercase",
+              textTransform: "uppercase", // this is where it is coming from
               fontWeight: 700,
               lineHeight: 1.167,
               padding: "0",

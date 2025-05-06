@@ -1,0 +1,10 @@
+//@flow strict
+
+import { type Node } from "react";
+import { type IntegrationStates } from "../useIntegrationsEndpoint";
+
+declare export default function Dryad({|
+  integrationState: IntegrationStates["DRYAD"],
+  update: (IntegrationStates["DRYAD"]) => void,
+|}): Node;
+

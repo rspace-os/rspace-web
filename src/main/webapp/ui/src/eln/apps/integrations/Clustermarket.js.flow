@@ -1,0 +1,9 @@
+//@flow strict
+
+import { type Node } from "react";
+import { type IntegrationStates } from "../useIntegrationsEndpoint";
+
+declare export default function Clustermarket({|
+  integrationState: IntegrationStates["CLUSTERMARKET"],
+  update: (IntegrationStates["CLUSTERMARKET"]) => void,
+|}): Node;

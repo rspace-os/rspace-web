@@ -1,0 +1,10 @@
+//@flow strict
+
+import { type Node } from "react";
+import { type IntegrationStates } from "../useIntegrationsEndpoint";
+
+declare export default function GoogleDrive({|
+  integrationState: IntegrationStates["GOOGLEDRIVE"],
+  update: (IntegrationStates["GOOGLEDRIVE"]) => void,
+|}): Node;
+
