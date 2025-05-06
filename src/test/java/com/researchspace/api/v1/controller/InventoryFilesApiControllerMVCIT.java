@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import javax.imageio.ImageIO;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.http.HttpStatus;
@@ -33,10 +34,10 @@ import org.springframework.test.web.servlet.MvcResult;
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://howler.researchspace.com:8076",
-      "chemistry.provider=indigo"
-    })
+        properties = {
+                "chemistry.service.url=http://your-chem-service:8090",
+                "chemistry.provider=indigo"
+        })
 public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   @Before
@@ -97,8 +98,8 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(0, apiContainer.getAttachments().size());
   }
 
+  @Ignore("Requires chemistry service to run. See https://documentation.researchspace.com/article/1jbygguzoa")
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void uploadRetrieveImageInventoryFileAttachment() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);

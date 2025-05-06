@@ -42,6 +42,7 @@ import org.apache.commons.lang.time.StopWatch;
 import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,13 +53,14 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+@Ignore("Requires chemistry service to run. See https://documentation.researchspace.com/article/1jbygguzoa")
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://howler.researchspace.com:8076",
-      "chemistry.provider=indigo"
-    })
+        properties = {
+                "chemistry.service.url=http://your-chem-service:8090",
+                "chemistry.provider=indigo"
+        })
 public class RSChemControllerMVCIT extends MVCTestBase {
 
   @Autowired private MockServletContext servletContext;
@@ -78,7 +80,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testConvert() throws Exception {
     String chemdata = RSpaceTestUtils.getMolString("Amfetamine.mol");
     MvcResult result =
@@ -98,7 +99,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
    * @throws Exception
    */
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testCRUDRoundTrip() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
@@ -221,7 +221,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testGetInfo() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
@@ -240,8 +239,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
-  public void testStructureSearchRoundTrip() throws Exception {
+  public void teststructureSearchRoundTrip() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
     String chemdata = RSpaceTestUtils.getExampleChemString();
