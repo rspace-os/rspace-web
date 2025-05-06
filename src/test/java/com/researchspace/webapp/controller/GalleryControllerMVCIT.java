@@ -34,6 +34,7 @@ import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
@@ -50,6 +51,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
@@ -63,6 +65,7 @@ import org.springframework.ui.ModelMap;
       "chemistry.service.url=http://howler.researchspace.com:8076",
       "chemistry.provider=indigo"
     })
+@RunWith(ConditionalTestRunner.class)
 public class GalleryControllerMVCIT extends MVCTestBase {
 
   private @Autowired GalleryController galleryController;
@@ -685,6 +688,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   // Chemistry File Specific Tests
   // 1. Generic test, check file goes in correct "Chemistry" folder
   // 2. Check RsChemElement is generated with a chemId
+  @RunIfSystemPropertyDefined("nightly")
   @Test
   public void testUploadingChemistryFile() throws IOException, URISyntaxException {
     Folder chemistryFolder =

@@ -55,9 +55,11 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
-@TestPropertySource(properties = "chemistry.service.url=")
-@Ignore // RSDEV-88 current default chemistry implementation returns empty data. No front-end code
-// calls RSChemController endpoints
+@TestPropertySource(
+        properties = {
+                "chemistry.service.url=http://howler.researchspace.com:8076",
+                "chemistry.provider=indigo"
+        })
 public class RSChemControllerMVCIT extends MVCTestBase {
 
   @Autowired private MockServletContext servletContext;
@@ -77,6 +79,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testConvert() throws Exception {
     String chemdata = RSpaceTestUtils.getMolString("Amfetamine.mol");
     MvcResult result =
@@ -96,6 +99,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
    * @throws Exception
    */
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testCRUDRoundTrip() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
@@ -218,6 +222,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testGetInfo() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
@@ -236,6 +241,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testStructureSearchRoundTrip() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
