@@ -111,9 +111,6 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
 
   @Override
   public RSChemElement save(RSChemElement rsChemElement, User user) {
-    // chemistry implementations differ on save - closed-source generates different types of
-    // chemistry-specific IDs (generated in chemistryProvider.save()), whereas open-source used the
-    // ID of the RSChemElement, hence the double save to the DB here to cover both cases.
     RSChemElement savedToDB = rsChemElementDao.save(rsChemElement);
     RSChemElement chemistrySaved = chemistryProvider.save(savedToDB);
     return rsChemElementDao.save(chemistrySaved);

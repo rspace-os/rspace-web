@@ -411,7 +411,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @Ignore("Requires chemistry service to run. See https://documentation.researchspace.com/article/1jbygguzoa")
   public void testChemistryFileUploadNewVersion() throws Exception {
     User user = createInitAndLoginAnyUser();
     mockPrincipal = user::getUsername;
