@@ -2,13 +2,13 @@ import getRootStore from "../stores/stores/RootStore";
 import { mkAlert } from "../stores/contexts/Alert";
 import { toTitleCase } from "./Util";
 import * as ArrayUtils from "./ArrayUtils";
-import Result from "../stores/models/Result";
 import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { traverseObjectTree } from "./unsafeUtils";
+import { Optional } from "./optional";
 library.add(faSpinner);
 
 type Operation =
@@ -42,7 +42,7 @@ export const handleDetailedSuccesses = (
   records: Array<InventoryRecord>,
   operation: Operation,
   recordAltOperation: (record: InventoryRecord) => string = () => operation,
-  message?: ?string = null
+  message?: string | null = null
 ) => {
   const variant = "success";
   getRootStore().uiStore.addAlert(
@@ -112,10 +112,10 @@ export const handleDetailedErrors = (
   data: Array<{
     response: {
       error: {
-        errors: Array<string>,
-      },
-    },
-    record?: InventoryRecord,
+        errors: Array<string>;
+      };
+    };
+    record?: InventoryRecord;
   }>,
   operation: string,
   retryFunction: ((records: Array<InventoryRecord>) => Promise<void>) | null, // requires record on data array
@@ -143,9 +143,9 @@ export const handleDetailedErrors = (
           ? Object.freeze({
               retryFunction: () => {
                 return retryFunction(
-                  ArrayUtils.filterClass(
-                    Result,
-                    errorData.map((r) => r.record)
+                  ArrayUtils.mapOptional(
+                    (r) => Optional.fromNullable(r.record),
+                    errorData
                   )
                 );
               },
@@ -160,19 +160,22 @@ export const handleDetailedErrors = (
 /**
  * Shows a loading alert whilst a promise is pending.
  */
-export const showToastWhilstPending = <A>(
+export async function showToastWhilstPending<A>(
   message: string,
   promise: Promise<A>
-): Promise<A> => {
+): Promise<A> {
+  const loadingIcon = <FontAwesomeIcon icon="spinner" spin size="1x" />;
   const processingAlert = mkAlert({
     message,
     variant: "notice",
     isInfinite: true,
     allowClosing: false,
-    icon: <FontAwesomeIcon icon="spinner" spin size="1x" />,
+    icon: loadingIcon,
   });
   getRootStore().uiStore.addAlert(processingAlert);
-  return promise.finally(() => {
+  try {
+    return await promise;
+  } finally {
     getRootStore().uiStore.removeAlert(processingAlert);
-  });
-};
+  }
+}
