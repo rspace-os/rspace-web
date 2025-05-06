@@ -38,11 +38,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import lombok.Setter;
 import org.apache.shiro.authz.AuthorizationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,7 +52,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, Long>
     implements RSChemElementManager {
 
-  private static final Logger logger = LoggerFactory.getLogger(RSChemElementManagerImpl.class);
   protected @Autowired AuditManager auditManager;
   private @Autowired RSChemElementDao rsChemElementDao;
   private @Autowired EcatChemistryFileManager chemistryFileManager;
@@ -125,13 +124,49 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
     rsChemElementDao.remove(id);
   }
 
+  @Value("${chemistry.search.chemIdsDbQuery.pageSize:1000}")
+  @Setter
+  private Integer chemSearchChemIdsPageSize = 1000;
+
   @Override
   public List<ChemSearchedItem> search(
-      String chemQuery, String searchType, Integer searchResultLimit, User subject) {
+      String chemQuery, String searchType, int searchResultLimit, User subject) {
 
-    ChemicalSearchResultsDTO searchResults = chemistryProvider.search(chemQuery, searchType);
-    List<RSChemElement> elements = rsChemElementDao.getChemElementsForChemIds(searchResults);
-    return getChemSearchedItems(elements, searchResultLimit, subject);
+    ChemicalSearchResultsDTO chemServiceResults = chemistryProvider.search(chemQuery, searchType);
+    List<Long> chemServiceResultIds = chemServiceResults.getChemicalHits();
+    int chemServiceTotalHits = chemServiceResultIds.size();
+    log.info("Chemical service search reported " + chemServiceTotalHits + " hits");
+
+    List<ChemSearchedItem> foundResults = new ArrayList<>();
+    int chemIdsProcessedPages = 0;
+
+    for (int fromIndex = 0, toIndex, currentResultsLimit = searchResultLimit;
+        (fromIndex < chemServiceTotalHits) && (currentResultsLimit > 0);
+        chemIdsProcessedPages++) {
+
+      toIndex = fromIndex + chemSearchChemIdsPageSize;
+      if (toIndex > chemServiceTotalHits) {
+        toIndex = chemServiceTotalHits;
+      }
+      List<Long> idsPageToProcess = chemServiceResultIds.subList(fromIndex, toIndex);
+      List<RSChemElement> possibleResults =
+          rsChemElementDao.getChemElementsForChemIds(idsPageToProcess);
+      foundResults.addAll(
+          getFilteredChemSearchedItems(possibleResults, currentResultsLimit, subject));
+
+      currentResultsLimit = searchResultLimit - foundResults.size();
+      fromIndex += chemSearchChemIdsPageSize;
+    }
+
+    if (chemIdsProcessedPages > 10) {
+      log.warn(
+          "Processed "
+              + chemIdsProcessedPages
+              + " pages of chemIds before results were "
+              + "collected, consider increasing chemIdsPageSize property for better performance");
+    }
+
+    return foundResults;
   }
 
   /**
@@ -143,20 +178,25 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
    * @param user
    * @return
    */
-  private List<ChemSearchedItem> getChemSearchedItems(
+  private List<ChemSearchedItem> getFilteredChemSearchedItems(
       List<RSChemElement> chemElementsList, Integer searchResultLimit, User user) {
 
+    if (searchResultLimit <= 0) {
+      return List.of();
+    }
     List<ChemSearchedItem> searchResult = new ArrayList<>();
     for (RSChemElement rsChemElement : chemElementsList) {
       addGalleryFileToSearchResults(user, searchResult, rsChemElement);
 
       Long fieldId = rsChemElement.getParentId();
-      // the field will be null for snippets and gallery files not inserted into a doc yet
-      Field field = getField(user, rsChemElement, fieldId);
-      if (field != null) {
-        if (fieldParser.hasChemElement(rsChemElement.getId(), field.getFieldData())) {
-          addStructuredDocumentToSearchResults(
-              user, searchResult, rsChemElement, field.getStructuredDocument());
+      // fieldId will be null for snippets and gallery files not inserted into a doc yet
+      if (fieldId != null) {
+        Field field = getField(user, rsChemElement, fieldId);
+        if (field != null) {
+          if (fieldParser.hasChemElement(rsChemElement.getId(), field.getFieldData())) {
+            addStructuredDocumentToSearchResults(
+                user, searchResult, rsChemElement, field.getStructuredDocument());
+          }
         }
       }
 
@@ -170,16 +210,10 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
 
   private Field getField(User user, RSChemElement rsChemElement, Long fieldId) {
     Optional<Field> field;
-    if (fieldId == null) {
-      logger.warn(
-          "Field id is null for chemElement {}; maybe is a snippet or gallery file?",
-          rsChemElement.getId());
-      return null;
-    }
     try {
       field = fieldManager.get(fieldId, user);
     } catch (DataAccessException ex) {
-      logger.warn(
+      log.warn(
           "Could not find this field with id [{}] for chemElement [{}],  maybe is a snippet or"
               + " gallery file?",
           fieldId,
@@ -197,14 +231,16 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       User user, List<ChemSearchedItem> lstChemSearchedItems, RSChemElement rsChemElement) {
     if (rsChemElement.getEcatChemFileId() != null) {
       EcatChemistryFile chemistryFile = chemistryFileManager.get(rsChemElement.getEcatChemFileId());
-      if (permissionUtils.isPermitted(chemistryFile, PermissionType.READ, user)) {
-        ChemSearchedItem chemSearchedItem = new ChemSearchedItem();
-        chemSearchedItem.setChemId(rsChemElement.getId());
-        chemSearchedItem.setRecordId(chemistryFile.getId());
-        chemSearchedItem.setRecordName(chemistryFile.getName());
-        chemSearchedItem.setRecord(chemistryFile);
-        if (!containsEcatChemFileId(lstChemSearchedItems, chemistryFile.getId())) {
-          lstChemSearchedItems.add(chemSearchedItem);
+      if (chemistryFile != null && isNotDeletedForUser(chemistryFile, user)) {
+        if (permissionUtils.isPermitted(chemistryFile, PermissionType.READ, user)) {
+          ChemSearchedItem chemSearchedItem = new ChemSearchedItem();
+          chemSearchedItem.setChemId(rsChemElement.getId());
+          chemSearchedItem.setRecordId(chemistryFile.getId());
+          chemSearchedItem.setRecordName(chemistryFile.getName());
+          chemSearchedItem.setRecord(chemistryFile);
+          if (!containsEcatChemFileId(lstChemSearchedItems, chemistryFile.getId())) {
+            lstChemSearchedItems.add(chemSearchedItem);
+          }
         }
       }
     }
@@ -230,9 +266,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       List<ChemSearchedItem> lstChemSearchedItems,
       RSChemElement rsChemElement,
       StructuredDocument structuredDocument) {
-    if (structuredDocument != null
-        && !structuredDocument.isDeleted()
-        && !((BaseRecord) structuredDocument).isDeletedForUser(user)) {
+    if (structuredDocument != null && isNotDeletedForUser(structuredDocument, user)) {
       if (permissionUtils.isPermitted((BaseRecord) structuredDocument, PermissionType.READ, user)) {
         ChemSearchedItem chemSearchedItem = new ChemSearchedItem();
         chemSearchedItem.setChemId(rsChemElement.getId());
@@ -244,6 +278,10 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
         }
       }
     }
+  }
+
+  public boolean isNotDeletedForUser(BaseRecord baseRecord, User user) {
+    return !baseRecord.isDeleted() && !baseRecord.isDeletedForUser(user);
   }
 
   @Override
@@ -548,7 +586,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
     try {
       smiles = chemistryProvider.convert(originalChem, originalFormat, "smiles");
     } catch (Exception e) {
-      logger.info("Unable to convert to smlies format from {}", originalFormat);
+      log.info("Unable to convert to smiles format from {}", originalFormat);
       smiles = null;
     }
     return smiles;

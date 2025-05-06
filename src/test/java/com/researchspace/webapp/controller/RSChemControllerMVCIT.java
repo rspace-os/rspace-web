@@ -42,7 +42,6 @@ import org.apache.commons.lang.time.StopWatch;
 import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,10 +55,10 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
-        properties = {
-                "chemistry.service.url=http://howler.researchspace.com:8076",
-                "chemistry.provider=indigo"
-        })
+    properties = {
+      "chemistry.service.url=http://howler.researchspace.com:8076",
+      "chemistry.provider=indigo"
+    })
 public class RSChemControllerMVCIT extends MVCTestBase {
 
   @Autowired private MockServletContext servletContext;
@@ -248,7 +247,8 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     String chemdata = RSpaceTestUtils.getExampleChemString();
     // we save a new chem element, created in chem editor for example.
     addChemStructureToField(fld, user);
-    ChemicalSearchRequestDTO request = new ChemicalSearchRequestDTO(chemdata, 0, 0, "SUBSTRUCTURE");
+    ChemicalSearchRequestDTO request =
+        new ChemicalSearchRequestDTO(chemdata, 0, 10, "SUBSTRUCTURE");
     MvcResult result =
         mockMvc
             .perform(
@@ -274,15 +274,15 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     // ecatchemistryfile.
     addChemStructureToFieldWithLinkedChemFile(
         addChemistryFileToGallery("Amfetamine.mol", user), fld, user);
+    ChemicalSearchRequestDTO request =
+        new ChemicalSearchRequestDTO(chemdata, 0, 10, "SUBSTRUCTURE");
     MvcResult result =
         mockMvc
             .perform(
                 post("/chemical/search")
-                    .param("searchInput", chemdata)
-                    .param("pageNumber", "0")
-                    .param("pageSize", "10")
-                    .param("searchType", "SUBSTRUCTURE")
-                    .principal(principal))
+                    .content(getAsJsonString(request))
+                    .principal(principal)
+                    .contentType(APPLICATION_JSON))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     assertNull(result.getResolvedException());

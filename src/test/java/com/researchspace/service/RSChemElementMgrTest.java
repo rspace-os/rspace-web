@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +16,7 @@ import com.researchspace.dao.RSChemElementDao;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.linkedelements.FieldParserImpl;
 import com.researchspace.model.ChemElementsFormat;
+import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.RSChemElement;
@@ -104,48 +106,69 @@ public class RSChemElementMgrTest {
   }
 
   @Test
-  public void testGetChemSearchedItemsWithSearchCutoff() throws Exception {
+  public void testGetChemSearchedItemsWithSearchCutoffAndIdsPagination() throws Exception {
     // mock 4 chem elements, each with separate doc to which user has access to
     final Long fieldID1 = 11L;
-    RSChemElement chemElement = TestFactory.createChemElement(fieldID1, 1L);
+    final Long chemId1 = 1L;
+    RSChemElement chemElement1 = TestFactory.createChemElement(fieldID1, chemId1);
     final StructuredDocument sd1 = TestFactory.createAnySD();
     when(mockPermissionUtils.isPermitted(sd1, PermissionType.READ, user)).thenReturn(true);
-    when(mockFieldMgr.get(fieldID1, user)).thenReturn(setUpField(fieldID1, sd1));
+    when(mockFieldMgr.get(fieldID1, user)).thenReturn(setUpField(fieldID1, sd1, chemId1));
 
     final Long fieldID2 = 12L;
-    RSChemElement chemElement2 = TestFactory.createChemElement(fieldID2, 1L);
+    final Long chemId2 = 2L;
+    RSChemElement chemElement2 = TestFactory.createChemElement(fieldID2, chemId2);
     final StructuredDocument sd2 = TestFactory.createAnySD();
     when(mockPermissionUtils.isPermitted(sd2, PermissionType.READ, user)).thenReturn(true);
-    when(mockFieldMgr.get(fieldID2, user)).thenReturn(setUpField(fieldID2, sd2));
+    when(mockFieldMgr.get(fieldID2, user)).thenReturn(setUpField(fieldID2, sd2, chemId2));
 
     final Long fieldID3 = 13L;
-    RSChemElement chemElement3 = TestFactory.createChemElement(fieldID3, 1L);
+    final Long chemId3 = 3L;
+    RSChemElement chemElement3 = TestFactory.createChemElement(fieldID3, chemId3);
     final StructuredDocument sd3 = TestFactory.createAnySD();
     when(mockPermissionUtils.isPermitted(sd3, PermissionType.READ, user)).thenReturn(true);
-    when(mockFieldMgr.get(fieldID3, user)).thenReturn(setUpField(fieldID3, sd3));
+    when(mockFieldMgr.get(fieldID3, user)).thenReturn(setUpField(fieldID3, sd3, chemId3));
 
     final Long fieldID4 = 14L;
-    RSChemElement chemElement4 = TestFactory.createChemElement(fieldID4, 1L);
+    final Long chemId4 = 4L;
+    RSChemElement chemElement4 = TestFactory.createChemElement(fieldID4, chemId4);
     final StructuredDocument sd4 = TestFactory.createAnySD();
     when(mockPermissionUtils.isPermitted(sd4, PermissionType.READ, user)).thenReturn(true);
-    when(mockFieldMgr.get(fieldID4, user)).thenReturn(setUpField(fieldID4, sd4));
+    when(mockFieldMgr.get(fieldID4, user)).thenReturn(setUpField(fieldID4, sd4, chemId4));
 
     final List<Long> results =
         List.of(
-            chemElement.getId(), chemElement2.getId(), chemElement3.getId(), chemElement4.getId());
+            chemElement1.getId(), chemElement2.getId(), chemElement3.getId(), chemElement4.getId());
     ChemicalSearchResultsDTO res =
-        ChemicalSearchResultsDTO.builder().chemicalHits(results).totalHits(2).build();
+        ChemicalSearchResultsDTO.builder().chemicalHits(results).totalHits(4).build();
     when(chemistryProvider.search(anyString(), anyString())).thenReturn(res);
-    when(chemDao.getChemElementsForChemIds(res))
-        .thenReturn(List.of(chemElement, chemElement2, chemElement3, chemElement4));
 
-    // no cutoff
-    int searchHitsNumber = chemElementManager.search("", "", null, user).size();
-    assertEquals(4, searchHitsNumber);
+    // no cutoff, db query page size set to 3 - chemDao should be queried twice
+    chemElementManager.setChemSearchChemIdsPageSize(3);
+    when(chemDao.getChemElementsForChemIds(res.getChemicalHits().subList(0, 3)))
+        .thenReturn(List.of(chemElement1, chemElement2, chemElement3));
+    when(chemDao.getChemElementsForChemIds(res.getChemicalHits().subList(3, 4)))
+        .thenReturn(List.of(chemElement4));
+    List<ChemSearchedItem> searchHits = chemElementManager.search("", "", 10, user);
+    assertEquals(4, searchHits.size());
 
     // cutoff at 3 - manager will only return 3 elems
-    searchHitsNumber = chemElementManager.search("", "", 3, user).size();
-    assertEquals(3, searchHitsNumber);
+    searchHits = chemElementManager.search("", "", 3, user);
+    assertEquals(3, searchHits.size());
+
+    /* reduce db query pagination to 1, with cutoff at 2 - the chemDao should only be called twice,
+    i.e. paginated db queries should stop as soon as searchResultLimit is reached */
+    when(chemDao.getChemElementsForChemIds(res.getChemicalHits().subList(0, 1)))
+        .thenReturn(List.of(chemElement1));
+    when(chemDao.getChemElementsForChemIds(res.getChemicalHits().subList(1, 2)))
+        .thenReturn(List.of(chemElement2));
+    chemElementManager.setChemSearchChemIdsPageSize(1);
+    searchHits = chemElementManager.search("", "", 2, user);
+    assertEquals(2, searchHits.size());
+    // verify no further calls after cutoff
+    verify(chemDao, times(1)).getChemElementsForChemIds(res.getChemicalHits().subList(0, 1));
+    verify(chemDao, times(1)).getChemElementsForChemIds(res.getChemicalHits().subList(1, 2));
+    verify(chemDao, never()).getChemElementsForChemIds(res.getChemicalHits().subList(2, 3));
   }
 
   @Test
@@ -160,9 +183,14 @@ public class RSChemElementMgrTest {
     assertEquals(0, getNumberSearchHits(chemElement));
   }
 
-  private Optional<Field> setUpField(final Long fieldID, final StructuredDocument sd) {
+  private Optional<Field> setUpField(Long fieldID, StructuredDocument sd) {
+    return setUpField(fieldID, sd, 1L);
+  }
+
+  private Optional<Field> setUpField(Long fieldID, StructuredDocument sd, Long chemId) {
     final Field expectedField = sd.getFields().get(0);
-    expectedField.setFieldData(exampleContent);
+    expectedField.setFieldData(
+        exampleContent.replace("1\" class=\"chem\"", chemId + "\" class=\"chem\""));
     expectedField.setId(fieldID);
     return Optional.of(expectedField);
   }
@@ -185,10 +213,33 @@ public class RSChemElementMgrTest {
     final Long fieldID = 10L;
     RSChemElement chemElement = TestFactory.createChemElement(fieldID, 1L);
     final StructuredDocument sd = TestFactory.createAnySD();
-    sd.setRecordDeleted(true);
+    when(mockPermissionUtils.isPermitted(sd, PermissionType.READ, user)).thenReturn(true);
 
     final Optional<Field> expectedField = setUpField(fieldID, sd);
     when(mockFieldMgr.get(fieldID, user)).thenReturn(expectedField);
+
+    // sanity check, the doc should be found fine
+    assertEquals(1, getNumberSearchHits(chemElement));
+
+    // confirm deleted doc is not found
+    sd.setRecordDeleted(true);
+    assertEquals(0, getNumberSearchHits(chemElement));
+  }
+
+  @Test
+  public void testGetChemSearchedGalleryItem() throws Exception {
+    RSChemElement chemElement = TestFactory.createChemElement(null, 1L);
+    EcatChemistryFile chemFile = createMockChemFile();
+    chemElement.setEcatChemFileId(chemFile.getId());
+
+    when(ecatChemistryFileManager.get(chemFile.getId())).thenReturn(chemFile);
+    when(mockPermissionUtils.isPermitted(chemFile, PermissionType.READ, user)).thenReturn(true);
+
+    // sanity check, the gallery item should be found fine
+    assertEquals(1, getNumberSearchHits(chemElement));
+
+    // confirm deleted doc is not found
+    chemFile.setRecordDeleted(true);
     assertEquals(0, getNumberSearchHits(chemElement));
   }
 
@@ -278,7 +329,7 @@ public class RSChemElementMgrTest {
         ChemicalSearchResultsDTO.builder().chemicalHits(results).totalHits(1).build();
 
     when(chemistryProvider.search(anyString(), anyString())).thenReturn(res);
-    when(chemDao.getChemElementsForChemIds(res)).thenReturn(List.of(chemElement));
-    return chemElementManager.search("ignored", "ignored", null, user).size();
+    when(chemDao.getChemElementsForChemIds(res.getChemicalHits())).thenReturn(List.of(chemElement));
+    return chemElementManager.search("ignored", "ignored", 10, user).size();
   }
 }

@@ -2,19 +2,13 @@ package com.researchspace.dao;
 
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
-import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import java.util.List;
 
 public interface RSChemElementDao extends GenericDao<RSChemElement, Long> {
 
   List<RSChemElement> getAllChemElementsFromField(Long fieldId);
 
-  /**
-   * Altered in 1.55 from String->integer
-   * @param rawResults a <code>ChemSearchResults</code of cd_id FK references
-   * @return
-   */
-  List<RSChemElement> getChemElementsForChemIds(ChemicalSearchResultsDTO rawResults);
+  List<RSChemElement> getChemElementsForChemIds(List<Long> chemIds);
 
   /**
    * Get the List of {@link RSChemElement} that matches the given EcatChemistryFile Id

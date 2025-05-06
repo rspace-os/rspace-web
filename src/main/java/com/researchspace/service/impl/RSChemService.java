@@ -95,6 +95,7 @@ public class RSChemService implements ChemistryService {
       String chemQuery, String searchType, int pageNumber, int pageSize, User user) {
 
     int start = (pageNumber * pageSize);
+    /* let's limit processed results to one full page after current page, and one more hit */
     int searchResultLimit = start + (2 * pageSize) + 1;
     List<ChemSearchedItem> searchResults =
         rsChemElementManager.search(chemQuery, searchType, searchResultLimit, user);

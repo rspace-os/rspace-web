@@ -4,9 +4,9 @@ import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.RSChemElementDao;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
-import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.collections.CollectionUtils;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -32,21 +32,17 @@ public class RSChemElementDaoHibernate extends GenericDaoHibernate<RSChemElement
     return sq.list();
   }
 
-  public List<RSChemElement> getChemElementsForChemIds(
-      ChemicalSearchResultsDTO chemSearchRawResults) {
-    List<RSChemElement> hits = new ArrayList<>();
-    if (chemSearchRawResults != null) {
-      if (!chemSearchRawResults.getChemicalHits().isEmpty()) {
-        Query<RSChemElement> chemicalQuery =
-            getSession()
-                .createQuery(
-                    " from RSChemElement chem where chem.id in (:chemicalIds) ",
-                    RSChemElement.class);
-        chemicalQuery.setParameterList("chemicalIds", chemSearchRawResults.getChemicalHits());
-        hits.addAll(chemicalQuery.list());
-      }
+  public List<RSChemElement> getChemElementsForChemIds(List<Long> chemIds) {
+    List<RSChemElement> result = new ArrayList<>();
+    if (!CollectionUtils.isEmpty(chemIds)) {
+      Query<RSChemElement> chemicalQuery =
+          getSession()
+              .createQuery(
+                  " from RSChemElement chem where chem.id in (:chemicalIds) ", RSChemElement.class);
+      chemicalQuery.setParameterList("chemicalIds", chemIds);
+      result.addAll(chemicalQuery.list());
     }
-    return hits;
+    return result;
   }
 
   @Override

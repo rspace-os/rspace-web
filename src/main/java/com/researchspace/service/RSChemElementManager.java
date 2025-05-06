@@ -45,12 +45,12 @@ public interface RSChemElementManager extends GenericManager<RSChemElement, Long
   /**
    * @param chemQuery search query, for chemistry service
    * @param searchType search type, for chemistry service
-   * @param searchResultLimit (optional) size of results at which we stop searching further
+   * @param searchResultLimit size of results list at which we stop searching further
    * @param subject user running the search
    * @return list of the search results for given user, optionally limited to searchResultLimit
    */
   List<ChemSearchedItem> search(
-      String chemQuery, String searchType, Integer searchResultLimit, User subject);
+      String chemQuery, String searchType, int searchResultLimit, User subject);
 
   /**
    * Gets chemical info about a particular RSChemElement
