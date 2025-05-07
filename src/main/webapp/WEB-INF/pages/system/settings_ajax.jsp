@@ -2,7 +2,10 @@
 
 <div id="systemSettingsView">
 
-    <div style="margin: 5px;"><spring:message code="system.settings.header.info" /></div>
+    <div style="margin: 5px;">
+      <spring:message code="system.settings.header.info" />
+      Some settings can only be adjusted by IT staff with with access to the server environment, for more information about additional settings see: <a href="https://documentation.researchspace.com/article/6i9j335fy1-additional-server-properties-settings" rel="noreferrer">Additional Server Properties / Settings</a>
+    </div>
 
     <div id="systemSettingsList">
         <div id="settingsLoadingMsg">
