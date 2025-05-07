@@ -12,7 +12,6 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.User;
 import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -34,10 +33,10 @@ import org.springframework.test.web.servlet.MvcResult;
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
-        properties = {
-                "chemistry.service.url=http://your-chem-service:8090",
-                "chemistry.provider=indigo"
-        })
+    properties = {
+      "chemistry.service.url=http://your-chem-service:8090",
+      "chemistry.provider=indigo"
+    })
 public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   @Before
@@ -98,7 +97,9 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(0, apiContainer.getAttachments().size());
   }
 
-  @Ignore("Requires chemistry service to run. See https://documentation.researchspace.com/article/1jbygguzoa")
+  @Ignore(
+      "Requires chemistry service to run. See"
+          + " https://documentation.researchspace.com/article/1jbygguzoa")
   @Test
   public void uploadRetrieveImageInventoryFileAttachment() throws Exception {
     User anyUser = createInitAndLoginAnyUser();

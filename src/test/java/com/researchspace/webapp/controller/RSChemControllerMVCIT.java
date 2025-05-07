@@ -53,14 +53,16 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-@Ignore("Requires chemistry service to run. See https://documentation.researchspace.com/article/1jbygguzoa")
+@Ignore(
+    "Requires chemistry service to run. See"
+        + " https://documentation.researchspace.com/article/1jbygguzoa")
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
-        properties = {
-                "chemistry.service.url=http://your-chem-service:8090",
-                "chemistry.provider=indigo"
-        })
+    properties = {
+      "chemistry.service.url=http://your-chem-service:8090",
+      "chemistry.provider=indigo"
+    })
 public class RSChemControllerMVCIT extends MVCTestBase {
 
   @Autowired private MockServletContext servletContext;

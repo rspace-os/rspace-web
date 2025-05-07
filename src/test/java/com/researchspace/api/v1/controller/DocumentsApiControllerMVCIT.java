@@ -43,7 +43,6 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.InternalLinkManager;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RecordEditorTracker;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestGroup;
@@ -924,7 +923,9 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         exception.getMessage());
   }
 
-  @Ignore("Requires chemistry service to run. See https://documentation.researchspace.com/article/1jbygguzoa")
+  @Ignore(
+      "Requires chemistry service to run. See"
+          + " https://documentation.researchspace.com/article/1jbygguzoa")
   @Test
   public void testInsertingChemistryFileViaAPI() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
