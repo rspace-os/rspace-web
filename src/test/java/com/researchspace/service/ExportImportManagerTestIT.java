@@ -666,6 +666,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  @Ignore // requires instance of chemistry service
   public void checkOldAndNewChemicalImport() throws Exception {
     // want to check that document with external links is imported OK
     final User userToImport = createAndSaveUser(getRandomAlphabeticString("user"));

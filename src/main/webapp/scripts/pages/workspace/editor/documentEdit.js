@@ -424,7 +424,8 @@ function insertContentAfterFileUpload(activeEditorId, result) {
     json.rotation = result.rotation;
 
     template = "insertedImageTemplate";
-  } else if (result.type == "Document" || result.type == "Miscellaneous" || result.type == "Chemistry") {
+  } else if (result.type == "Document" || result.type == "Miscellaneous"
+      || (result.type == "Chemistry" && !chemistryAvailable)) {
     json.id = result.id;
     json.name = result.name;
     json.iconPath = RS.getIconPathForExtension(result.extension);
@@ -433,6 +434,8 @@ function insertContentAfterFileUpload(activeEditorId, result) {
       result.type == "Document"
         ? "insertedDocumentTemplate"
         : "insertedMiscdocTemplate";
+  } else if (result.type == "Chemistry") {
+    insertChemElement(result.id, activeEditorId, result.name);
   }
 
   if (template) {

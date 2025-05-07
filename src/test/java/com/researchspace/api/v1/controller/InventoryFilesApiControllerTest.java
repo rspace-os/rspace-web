@@ -225,15 +225,16 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
   private void mockErrorChemistryWeb() throws IOException {
     when(chemistryProvider.convert(any(File.class))).thenReturn("123chemString");
     when(chemistryProvider.getSupportedFileTypes()).thenReturn(Collections.singletonList("mol"));
-    when(chemistryProvider.exportToImage(anyString(), any(ChemicalExportFormat.class)))
+    when(chemistryProvider.exportToImage(anyString(), anyString(), any(ChemicalExportFormat.class)))
         .thenThrow(RuntimeException.class);
   }
 
   private void mockSuccessChemistryWeb() throws IOException {
     when(chemistryProvider.getSupportedFileTypes()).thenReturn(Collections.singletonList("mol"));
-    when(chemistryProvider.exportToImage(anyString(), any(ChemicalExportFormat.class)))
+    when(chemistryProvider.exportToImage(anyString(), anyString(), any(ChemicalExportFormat.class)))
         .thenReturn(new byte[] {1, 2, 3});
     when(chemistryProvider.convert(any(File.class))).thenReturn("123chemString");
-    when(chemistryProvider.convert("123chemString")).thenReturn("123chemStringConverted");
+    when(chemistryProvider.convertToDefaultFormat("123chemString", "mol"))
+        .thenReturn("123chemStringConverted");
   }
 }

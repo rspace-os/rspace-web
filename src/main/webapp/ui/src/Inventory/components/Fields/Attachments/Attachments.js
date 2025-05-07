@@ -43,6 +43,10 @@ import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import UploadIcon from "@mui/icons-material/Publish";
 import Result from "../../../../util/result";
+import axios from "@/common/axios";
+import { useDeploymentProperty } from "../../../../eln/useDeploymentProperty";
+import * as FetchingData from "../../../../util/fetchingData";
+import * as Parser from "../../../../util/parsers";
 
 const GalleryPicker = React.lazy(() =>
   import("../../../../eln/gallery/picker")
@@ -76,6 +80,11 @@ const CollapseContents = <
   fieldOwner?: FieldOwner,
   editable: boolean,
 }): Node => {
+  const chemistryProvider = FetchingData.getSuccessValue(
+    useDeploymentProperty("chemistry.provider")
+  )
+    .flatMap(Parser.isString)
+    .orElse("");
   return (
     <Box mt={1}>
       <TableContainer>
@@ -93,6 +102,7 @@ const CollapseContents = <
                 key={i}
                 fieldOwner={fieldOwner}
                 editable={editable}
+                chemistryProvider={chemistryProvider}
               />
             ))}
           </TableBody>

@@ -12,7 +12,6 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.User;
 import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -21,6 +20,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import javax.imageio.ImageIO;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.http.HttpStatus;
@@ -32,7 +32,11 @@ import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
-@TestPropertySource(properties = "chemistry.web.url=http://howler.researchspace.com:8099")
+@TestPropertySource(
+    properties = {
+      "chemistry.service.url=http://your-chem-service:8090",
+      "chemistry.provider=indigo"
+    })
 public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   @Before
@@ -93,8 +97,10 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(0, apiContainer.getAttachments().size());
   }
 
+  @Ignore(
+      "Requires chemistry service to run. See"
+          + " https://documentation.researchspace.com/article/1jbygguzoa")
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void uploadRetrieveImageInventoryFileAttachment() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -120,23 +126,28 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals("chemical.mol", apiFile.getName());
 
     // Standard sunny day request
-    String imageRequest = "{ \"height\": 500, \"width\": 500, \"scale\": 50.0 }";
+    String imageRequest = "{ \"height\": 800, \"width\": 800, \"scale\": 80.0 }";
     result = getFileImage(anyUser, apiKey, attachmentId, imageRequest);
     assertNull(result.getResolvedException());
     assertEquals("image/png", result.getResponse().getContentType());
-    byte[] responseBytes = result.getResponse().getContentAsByteArray();
-    assertNotNull(responseBytes);
+    byte[] responseImage = result.getResponse().getContentAsByteArray();
+    assertNotNull(responseImage);
+    InputStream in = new ByteArrayInputStream(responseImage);
+    BufferedImage buffered = ImageIO.read(in);
+    assertEquals(800, buffered.getHeight());
+    assertEquals(800, buffered.getWidth());
 
-    // No params should still return a default image of 200x200
+    // No params should still return a default image of 500x500
     String imageRequest2 = "{}";
     result = getFileImage(anyUser, apiKey, attachmentId, imageRequest2);
     assertNull(result.getResolvedException());
     assertEquals("image/png", result.getResponse().getContentType());
-    byte[] responseImage = result.getResponse().getContentAsByteArray();
-    InputStream in = new ByteArrayInputStream(responseImage);
-    BufferedImage buffered = ImageIO.read(in);
-    assertEquals(200, buffered.getHeight());
-    assertEquals(200, buffered.getWidth());
+    byte[] responseImage2 = result.getResponse().getContentAsByteArray();
+    assertNotNull(responseImage2);
+    InputStream in2 = new ByteArrayInputStream(responseImage2);
+    BufferedImage buffered2 = ImageIO.read(in2);
+    assertEquals(500, buffered2.getHeight());
+    assertEquals(500, buffered2.getWidth());
   }
 
   @Test

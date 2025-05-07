@@ -1,5 +1,6 @@
 const path = require("path");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const webpack = require("webpack");
 
 module.exports = {
   entry: {
@@ -61,6 +62,8 @@ module.exports = {
     tinymceClustermarket: "./src/tinyMCE/clustermarket/index.js",
     tinymceOmero: "./src/tinyMCE/omero/index.js",
     tinymceJove: "./src/tinyMCE/jove/index.js",
+    tinymceKetcher: "./src/tinyMCE/ketcher/KetcherTinyMce.js",
+    ketcherViewer: "./src/tinyMCE/ketcher/KetcherViewer.js",
     tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.js",
     baseSearch: "./src/components/BaseSearch.js",
     confirmationDialog: "./src/components/ConfirmationDialog.js",
@@ -77,7 +80,14 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     publicPath: "/ui/dist/",
   },
-  plugins: [new CleanWebpackPlugin()],
+  plugins: [
+    new CleanWebpackPlugin(),
+    //mocks process object, required by the ketcher-react package which would
+    // fail otherwise
+    new webpack.DefinePlugin({
+      process: { env: {} },
+    }),
+  ],
   optimization: {
     runtimeChunk: "single",
   },

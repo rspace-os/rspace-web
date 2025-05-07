@@ -2,10 +2,11 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.RSChemElementDao;
+import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
-import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.collections.CollectionUtils;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -31,31 +32,17 @@ public class RSChemElementDaoHibernate extends GenericDaoHibernate<RSChemElement
     return sq.list();
   }
 
-  public List<RSChemElement> getChemElementsForChemIds(
-      ChemicalSearchResultsDTO chemSearchRawResults) {
-    List<RSChemElement> hits = new ArrayList<>();
-    if (chemSearchRawResults != null) {
-
-      if (chemSearchRawResults.getStructureHits().size() > 0) {
-        Query<RSChemElement> structureQuery =
-            getSession()
-                .createQuery(
-                    " from RSChemElement chem where chem.chemId in (:chemIds) ",
-                    RSChemElement.class);
-        structureQuery.setParameterList("chemIds", chemSearchRawResults.getStructureHits());
-        hits.addAll(structureQuery.list());
-      }
-      if (chemSearchRawResults.getReactionHits().size() > 0) {
-        Query<RSChemElement> reactionQuery =
-            getSession()
-                .createQuery(
-                    " from RSChemElement chem where chem.reactionId in (:reactionIds) ",
-                    RSChemElement.class);
-        reactionQuery.setParameterList("reactionIds", chemSearchRawResults.getReactionHits());
-        hits.addAll(reactionQuery.list());
-      }
+  public List<RSChemElement> getChemElementsForChemIds(List<Long> chemIds) {
+    List<RSChemElement> result = new ArrayList<>();
+    if (!CollectionUtils.isEmpty(chemIds)) {
+      Query<RSChemElement> chemicalQuery =
+          getSession()
+              .createQuery(
+                  " from RSChemElement chem where chem.id in (:chemicalIds) ", RSChemElement.class);
+      chemicalQuery.setParameterList("chemicalIds", chemIds);
+      result.addAll(chemicalQuery.list());
     }
-    return hits;
+    return result;
   }
 
   @Override
@@ -79,5 +66,21 @@ public class RSChemElementDaoHibernate extends GenericDaoHibernate<RSChemElement
                 RSChemElement.class);
     sq.setParameter("ecatChemFileId", ecatChemFileId);
     return sq.uniqueResult();
+  }
+
+  @Override
+  public List<Object[]> getAllIdAndSmilesStringPairs() {
+    return getSession().createNativeQuery("select id, smilesString from RSChemElement").list();
+  }
+
+  @Override
+  public List<RSChemElement> getAllChemicalsWithFormat(ChemElementsFormat format) {
+    Query<RSChemElement> query =
+        getSession()
+            .createQuery(
+                " from RSChemElement chem where chem.chemElementsFormat = :format",
+                RSChemElement.class);
+    query.setParameter("format", format);
+    return query.list();
   }
 }

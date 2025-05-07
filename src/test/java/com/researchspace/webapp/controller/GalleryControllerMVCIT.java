@@ -34,7 +34,6 @@ import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -47,6 +46,7 @@ import org.apache.http.entity.ContentType;
 import org.hibernate.criterion.Order;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -58,7 +58,11 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.ui.ModelMap;
 
-@TestPropertySource(properties = "chemistry.web.url=http://howler.researchspace.com:8099")
+@TestPropertySource(
+    properties = {
+      "chemistry.service.url=http://your-chem-service:8090",
+      "chemistry.provider=indigo"
+    })
 public class GalleryControllerMVCIT extends MVCTestBase {
 
   private @Autowired GalleryController galleryController;
@@ -406,7 +410,9 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @Ignore(
+      "Requires chemistry service to run. See"
+          + " https://documentation.researchspace.com/article/1jbygguzoa")
   public void testChemistryFileUploadNewVersion() throws Exception {
     User user = createInitAndLoginAnyUser();
     mockPrincipal = user::getUsername;
@@ -681,6 +687,9 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   // Chemistry File Specific Tests
   // 1. Generic test, check file goes in correct "Chemistry" folder
   // 2. Check RsChemElement is generated with a chemId
+  @Ignore(
+      "Requires chemistry service to run. See"
+          + " https://documentation.researchspace.com/article/1jbygguzoa")
   @Test
   public void testUploadingChemistryFile() throws IOException, URISyntaxException {
     Folder chemistryFolder =

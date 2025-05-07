@@ -8,6 +8,7 @@ import Grid from "@mui/material/Grid";
 import Argos from "./integrations/Argos";
 import Ascenscia from "./integrations/Ascenscia";
 import Box from "./integrations/Box";
+import Chemistry from "./integrations/Chemistry";
 import Clustermarket from "./integrations/Clustermarket";
 import Dataverse from "./integrations/Dataverse";
 import DigitalCommonsData from "./integrations/DigitalCommonsData";
@@ -227,6 +228,16 @@ function CardListing({
     [update]
   );
 
+  const chemistryUpdate = React.useCallback(
+    (newState: IntegrationStates["CHEMISTRY"]) => {
+      void runInAction(async () => {
+        integrationStates.CHEMISTRY = await update("CHEMISTRY", newState);
+      });
+    },
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [update]
+  );
+
   const nextCloudUpdate = React.useCallback(
     (newState: IntegrationStates["NEXTCLOUD"]) => {
       void runInAction(async () => {
@@ -423,6 +434,12 @@ function CardListing({
       )}
       {integrationStates.JOVE.mode === mode && (
         <Jove integrationState={integrationStates.JOVE} update={joveUpdate} />
+      )}
+      {integrationStates.CHEMISTRY.mode === mode && (
+        <Chemistry
+          integrationState={integrationStates.CHEMISTRY}
+          update={chemistryUpdate}
+        />
       )}
       {integrationStates.NEXTCLOUD.mode === mode && (
         <NextCloud

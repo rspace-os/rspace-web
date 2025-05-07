@@ -831,18 +831,26 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
 
   protected EcatChemistryFile addChemistryFileToGallery(String fileName, User user)
       throws IOException {
+    return addChemistryFileToGallery(fileName, null, user);
+  }
+
+  protected EcatChemistryFile addChemistryFileToGallery(
+      String fileName, String smilesString, User user) throws IOException {
     File chemFile = RSpaceTestUtils.getResource(fileName);
     EcatChemistryFile chemistryFile =
         mediaMgr.saveNewChemFile(
             chemFile.getName(), new FileInputStream(chemFile), user, null, null);
-    String converted = chemistryProvider.convert(chemistryFile.getChemString());
+    String converted =
+        chemistryProvider.convertToDefaultFormat(
+            chemistryFile.getChemString(), chemistryFile.getExtension());
     // Create Basic Chem Element to simulate file being uploaded to gallery
     RSChemElement rsChemElement =
         RSChemElement.builder()
             .ecatChemFileId(chemistryFile.getId())
             .dataImage(getBase64Image().getBytes(StandardCharsets.UTF_8))
             .chemElements(converted)
-            .chemElementsFormat(ChemElementsFormat.MRV)
+            .chemElementsFormat(chemistryProvider.defaultFormat())
+            .smilesString(smilesString)
             .build();
     rsChemElementManager.save(rsChemElement, user);
     return chemistryFile;
@@ -995,7 +1003,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
       throws IOException {
     String imageBytes = RSpaceTestUtils.getChemImage();
 
-    String mrv = chemistryProvider.convert(chemString);
+    String mrv = chemistryProvider.convertToDefaultFormat(chemString);
     ChemicalDataDTO chemicalData =
         ChemicalDataDTO.builder()
             .chemElements(mrv)

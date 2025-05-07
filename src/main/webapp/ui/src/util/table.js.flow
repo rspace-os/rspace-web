@@ -43,9 +43,9 @@ declare export const DataGridColumn: {|
     mapFunction: (Row[Field]) => string,
     rest: ColumnProps<Row, Row[Field]>
   ): Column<Row>,
-  newColumnWithValueGetter<Field: string, Row: { ... }>(
+  newColumnWithValueGetter<Field: string, Row: { ... }, Value>(
     field: Field,
-    valueGetter: (Row) => string,
+    valueGetter: (Row) => Value,
     rest: ColumnProps<Row, mixed>
   ): Column<Row>
 |};

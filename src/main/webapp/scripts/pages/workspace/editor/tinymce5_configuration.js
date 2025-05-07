@@ -123,6 +123,15 @@ var tinymcesetup = {
 					tinyMCE.activeEditor.execCommand("cmdSketch");
 				} else if ($target.hasClass("sketch")) {
 					tinyMCE.activeEditor.execCommand("cmdSketch");
+				} else if ($target.hasClass("chem")) {
+					if($target.attr("data-chemfileid")) {
+						var result = tinyMCE.activeEditor.execCommand("cmdKetcherViewable");
+					} else {
+						result = tinyMCE.activeEditor.execCommand("cmdKetcherEditable");
+					}
+					if (!result) {
+						apprise('To operate on a chemical structure please active Chemistry integration on Apps page');
+					}
 				} else if ($target.hasClass("attachmentIcon") && $target.parents(".boxVersionLink").length) {
 					showBoxLinkInfo($target.parents(".boxVersionLink"));
 				}
@@ -446,16 +455,17 @@ function initTinyMCE(selector) {
 		var googleDriveEnabled = integrations.GOOGLEDRIVE.enabled && integrations.GOOGLEDRIVE.available && integrations.GOOGLEDRIVE.options['googledrive.linking.enabled'];
 		var egnyteEnabled      = integrations.EGNYTE.enabled && integrations.EGNYTE.available;
 		var gitHubEnabled      = integrations.GITHUB.enabled && integrations.GITHUB.available;
-		var chemistryEnabled      = integrations.CHEMISTRY.enabled && integrations.CHEMISTRY.available;
+		var chemistryEnabled   = integrations.CHEMISTRY.enabled && integrations.CHEMISTRY.available;
 		var protocolsIOEnabled = integrations.PROTOCOLS_IO.enabled && integrations.PROTOCOLS_IO.available;
 		var ownCloudEnabled    = integrations.OWNCLOUD.enabled && integrations.OWNCLOUD.available && properties["ownCloud.url"] !== '';
-		var nextCloudEnabled    = integrations.NEXTCLOUD.enabled && integrations.NEXTCLOUD.available && properties["nextcloud.url"] !== '';
+		var nextCloudEnabled   = integrations.NEXTCLOUD.enabled && integrations.NEXTCLOUD.available && properties["nextcloud.url"] !== '';
 		let pyratEnabled       = integrations.PYRAT.enabled && integrations.PYRAT.available && properties["pyrat.server.config"] !== "";
 		const clustermarketEnabled =  integrations.CLUSTERMARKET.enabled && integrations.CLUSTERMARKET.available && properties["clustermarket.web.url"] !== "";
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
 		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
 		const identifiersEnabled = true; // TODO: check if Inventory is enabled
 
+		const chemistryProvider = properties["chemistry.provider"];
 		chemistryAvailable = integrations.CHEMISTRY.available;
 
 		// File repositories section
@@ -537,6 +547,9 @@ function initTinyMCE(selector) {
 		}
 		if (chemistryEnabled) {
 			localTinymcesetup.external_plugins["cheminfo"] = "/scripts/externalTinymcePlugins/chemInfo/plugin.min.js";
+			localTinymcesetup.external_plugins["ketcher"] = "/scripts/externalTinymcePlugins/ketcher/plugin.min.js";
+			addToMenuIfNotPresent(localTinymcesetup, " ketcherMenuItem");
+			addToToolbarIfNotPresent(localTinymcesetup, "| ketcher23");
 		}
 		if (identifiersEnabled) {
 			localTinymcesetup.external_plugins["identifiers"] = "/ui/dist/tinymceIdentifiers.js";

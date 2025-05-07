@@ -78,6 +78,9 @@ jest.mock("../../stores/stores/RootStore", () => () => ({
     }),
   },
 }));
+jest.mock("../../components/Ketcher/KetcherDialog", () =>
+  jest.fn(() => <div></div>)
+);
 
 window.fetch = jest.fn(() =>
   Promise.resolve({

@@ -21,6 +21,7 @@ import { type Attachment } from "../../../stores/definitions/Attachment";
 
 jest.mock("@mui/material/TextField", () => jest.fn(() => <div></div>));
 jest.mock("../FileField", () => jest.fn(() => <div></div>));
+jest.mock("../../Ketcher/KetcherDialog", () => jest.fn(() => <div></div>));
 
 beforeEach(() => {
   jest.clearAllMocks();

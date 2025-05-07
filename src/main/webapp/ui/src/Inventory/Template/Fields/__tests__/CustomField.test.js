@@ -23,6 +23,9 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
     getUnit: () => ({ label: "ml" }),
   },
 }));
+jest.mock("../../../../components/Ketcher/KetcherDialog", () =>
+  jest.fn(() => <div></div>)
+);
 
 afterEach(cleanup);
 

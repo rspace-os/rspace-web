@@ -131,6 +131,8 @@ public class TestAppConfig extends BaseConfig {
     List<IApplicationInitialisor> inits = new ArrayList<IApplicationInitialisor>();
     inits.add(fileStoreRootDetector());
     inits.add(indexer());
+    inits.add(chemistryIndexer());
+    inits.add(chemistryImageUpdater());
     // must be before devGrpSetup
     inits.add(sampleTemplateAppInitialiser());
     inits.add(devGrpSetup());

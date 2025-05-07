@@ -2107,7 +2107,7 @@
         <artifactId>jutf7</artifactId>
         <version>1.0.0</version>
     </dependency>
-    <!-- transitive dependency used by tika and JChemBase, this forces the most up-to-date version  -->
+    <!-- transitive dependency used by tika, this forces the most up-to-date version  -->
     <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-csv</artifactId>

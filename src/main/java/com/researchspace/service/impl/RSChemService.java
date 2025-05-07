@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.RSChemElement;
@@ -92,9 +93,13 @@ public class RSChemService implements ChemistryService {
   @Override
   public ChemicalSearchResults searchChemicals(
       String chemQuery, String searchType, int pageNumber, int pageSize, User user) {
-    List<ChemSearchedItem> searchResults = rsChemElementManager.search(chemQuery, searchType, user);
-    List<ChemSearchedItem> pagedRecords = new ArrayList<>();
+
     int start = (pageNumber * pageSize);
+    /* let's limit processed results to one full page after current page, and one more hit */
+    int searchResultLimit = start + (2 * pageSize) + 1;
+    List<ChemSearchedItem> searchResults =
+        rsChemElementManager.search(chemQuery, searchType, searchResultLimit, user);
+    List<ChemSearchedItem> pagedRecords = new ArrayList<>();
     int end = Math.min(searchResults.size() - 1, (pageNumber * pageSize) + pageSize - 1);
 
     for (int i = start; i <= end; i++) {
@@ -110,16 +115,23 @@ public class RSChemService implements ChemistryService {
       searchResultToBreadcrumb.put(chemSearchedItem.getRecordId(), breadcrumb);
     }
 
-    int totalHitCount = searchResults.size();
+    Integer totalHitCount = null;
+    Integer totalPageCount = null;
+    /* if number of found results is at limit or more, the results calculation was probably cut off;
+    don't populate total size and page count */
+    if (searchResults.size() < searchResultLimit) {
+      totalHitCount = searchResults.size();
+      totalPageCount = (int) Math.ceil(((double) totalHitCount) / ((double) pageSize));
+    }
 
-    int totalPageCount = (int) Math.ceil(((double) totalHitCount) / ((double) pageSize));
     return new ChemicalSearchResults(
         pagedRecords, start, end, searchResultToBreadcrumb, totalHitCount, totalPageCount);
   }
 
   @Override
   public ConvertedStructureDto convert(ChemConversionInputDto input) {
-    String converted = chemistryProvider.convert(input.getStructure());
+    String converted =
+        chemistryProvider.convertToDefaultFormat(input.getStructure(), input.getInputFormat());
     return ConvertedStructureDto.builder()
         .structure(converted)
         .format(input.getParameters())
@@ -129,7 +141,14 @@ public class RSChemService implements ChemistryService {
   @Override
   public ChemElementDataDto getChemicalsForFile(Long chemistryFileId, User user) {
     EcatChemistryFile chemistryFile = chemistryFileManager.get(chemistryFileId, user);
-    return chemistryProvider.getChemicalsForFile(chemistryFile);
+    return ChemElementDataDto.builder()
+        .ecatChemFileId(chemistryFile.getId())
+        .fileName(chemistryFile.getName())
+        .chemString(
+            chemistryProvider.convertToDefaultFormat(
+                chemistryFile.getChemString(), chemistryFile.getExtension()))
+        .chemElementsFormat(chemistryProvider.defaultFormat().getLabel())
+        .build();
   }
 
   @Override
@@ -137,7 +156,13 @@ public class RSChemService implements ChemistryService {
     EcatChemistryFile chemistryFile = chemistryFileManager.get(chemistryFileId, user);
     List<RSChemElement> chemicalElements =
         rsChemElementManager.getRSChemElementsLinkedToFile(chemistryFileId, user);
-    return chemistryProvider.getUpdatableChemicals(chemistryFile, chemicalElements);
+    return ChemElementDataDto.builder()
+        .ecatChemFileId(chemistryFile.getId())
+        .fileName(chemistryFile.getName())
+        .chemString(chemistryFile.getChemString())
+        .chemElementsFormat(chemistryProvider.defaultFormat().getLabel())
+        .rsChemElements(chemicalElements)
+        .build();
   }
 
   @Override
@@ -179,14 +204,35 @@ public class RSChemService implements ChemistryService {
       return null;
     }
     return new ChemEditorInputDto(
-        chemical.getId(), chemical.getChemElements(), chemical.getChemElementsFormat());
+        chemical.getId(),
+        chemical.getChemElements(),
+        chemical.getChemElementsFormat(),
+        chemical.getEcatChemFileId());
   }
 
   @Override
   public Optional<ElementalAnalysisDTO> getElementalAnalysis(
       long chemId, Integer revision, User user) {
     RSChemElement chemical = getChemicalElementByRevision(chemId, revision, user);
+    if (chemical == null) {
+      return null;
+    }
     return rsChemElementManager.getInfo(chemical);
+  }
+
+  @Override
+  public String getChemicalFileContents(long chemId, Integer revision, User subject) {
+    RSChemElement chemical = getChemicalElementByRevision(chemId, revision, subject);
+    EcatChemistryFile file = chemistryFileManager.get(chemical.getEcatChemFileId(), subject);
+    if (file != null) {
+      return file.getChemString();
+    }
+    return "";
+  }
+
+  @Override
+  public List<RSChemElement> getAllChemicalsByFormat(ChemElementsFormat format) {
+    return rsChemElementManager.getAllChemElementsByFormat(format);
   }
 
   @Data
@@ -194,11 +240,11 @@ public class RSChemService implements ChemistryService {
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ChemicalSearchResults {
-    List<ChemSearchedItem> pagedRecords;
+    List<ChemSearchedItem> pagedRecords = new ArrayList<>();
     int startHit;
     int endHit;
     Map<Long, Breadcrumb> breadcrumbMap;
-    int totalHitCount;
-    int totalPageCount;
+    Integer totalHitCount;
+    Integer totalPageCount;
   }
 }

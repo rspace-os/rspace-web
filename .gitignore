@@ -5,7 +5,7 @@
 /SecurityEvents.txt
 /SlowRequests.txt
 /emailErrors.txt
-/error.log
+/error.log*
 /httpRequests.log
 /FTsearchIndices/
 /LuceneFTsearchIndices/

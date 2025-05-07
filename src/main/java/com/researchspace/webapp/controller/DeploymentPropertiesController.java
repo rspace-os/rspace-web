@@ -99,6 +99,9 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${netfilestores.enabled}")
   private String netfilestoresEnabled;
 
+  @Value("${chemistry.provider}")
+  private String chemistryProvider;
+
   @Value("${deployment.cloud}")
   private String cloudDeployment;
 
@@ -172,6 +175,8 @@ public class DeploymentPropertiesController extends BaseController {
         return officeOnlineEnabled;
       case "netfilestores.enabled":
         return netfilestoresEnabled;
+      case "chemistry.provider":
+        return chemistryProvider;
       case "deployment.cloud":
         return cloudDeployment;
       default:
@@ -243,6 +248,7 @@ public class DeploymentPropertiesController extends BaseController {
 
     properties.put("server.urls.prefix", baseURL);
     properties.put("aspose.enabled", String.valueOf(isAsposeEnabled()));
+    properties.put("chemistry.provider", chemistryProvider);
 
     return properties;
   }

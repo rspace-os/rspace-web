@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
@@ -45,4 +46,8 @@ public interface ChemistryService {
   ChemEditorInputDto getChemicalEditorInput(long chemId, Integer revision, User user);
 
   Optional<ElementalAnalysisDTO> getElementalAnalysis(long chemId, Integer revision, User user);
+
+  String getChemicalFileContents(long chemId, Integer revision, User subject);
+
+  List<RSChemElement> getAllChemicalsByFormat(ChemElementsFormat format);
 }

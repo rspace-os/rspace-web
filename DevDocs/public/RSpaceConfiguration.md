@@ -225,13 +225,7 @@ Instructions on setting up a Snapgene server is in our Help documentation https:
 
 ### Chemistry service
 
-To set a URL of a Snapgene server, use
-
-* **chemistry.web.url**  	 The web URL of the Chemistry server, e.g.
-
-  chemistry.web.url=https://my-chemistry-service.myedu.edu
-
-Instructions on setting up a Chemistry server is in our Help documentation https://researchspace.helpdocs.io/article/5k7qib0n3t-installation-of-rspace-add-on-services
+Instructions on setting up a Chemistry server is in our Help documentation https://documentation.researchspace.com/article/1jbygguzoa-setting-up-the-new-rspace-chemistry-service-on-docker
 
 ### MySQL
 

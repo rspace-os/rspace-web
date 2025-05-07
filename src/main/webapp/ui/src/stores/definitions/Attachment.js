@@ -16,7 +16,7 @@ import { type GlobalId } from "./BaseRecord";
  * provides the means to upload, preview, and download those attached files.
  * This interface specifies the mechanisms exposed by the attachment model code
  * for use by the UI code. Some special behaviour is defined for Chemistry
- * files.
+ * files and the Ketcher integration.
  *
  * Attachments are themselves a type of record, with a Global Id prefix of
  * "IF", whose job is to associate a file with another Inventory record; either

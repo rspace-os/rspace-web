@@ -24,6 +24,9 @@ import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
 import UploadIcon from "@mui/icons-material/Publish";
 import BigIconButton from "../BigIconButton";
 import Result from "../../util/result";
+import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
+import * as FetchingData from "../../util/fetchingData";
+import * as Parser from "../../util/parsers";
 
 const GalleryPicker = React.lazy(() => import("../../eln/gallery/picker"));
 
@@ -84,6 +87,12 @@ function AttachmentField<
   const { classes } = useStyles();
   const { trackingStore } = useStores();
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
+
+  const chemistryProvider = FetchingData.getSuccessValue(
+    useDeploymentProperty("chemistry.provider")
+  )
+    .flatMap(Parser.isString)
+    .orElse("");
 
   const onFileSelection = (file: File | GalleryFile) => {
     if (typeof file.type !== "string") throw new Error("Unknown file type");
@@ -224,6 +233,7 @@ function AttachmentField<
                   attachment={attachment}
                   editable={!disabled}
                   fieldOwner={fieldOwner}
+                  chemistryProvider={chemistryProvider}
                 />
               </TableBody>
             </Table>

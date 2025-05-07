@@ -12,6 +12,7 @@ scripts/externalTinymcePlugins/github/plugin.min.js
 scripts/externalTinymcePlugins/googledrive/plugin.min.js
 scripts/externalTinymcePlugins/internallink/plugin.min.js
 scripts/externalTinymcePlugins/jove/plugin.min.js
+scripts/externalTinymcePlugins/ketcher/plugin.min.js
 scripts/externalTinymcePlugins/mathjax/plugin.min.js
 scripts/externalTinymcePlugins/nexcloud/plugin.min.js
 scripts/externalTinymcePlugins/onedrive/plugin.min.js
@@ -124,6 +125,7 @@ ui/dist/imageEditor.js
 ui/dist/internalLink.js
 ui/dist/inventoryEntry.js
 ui/dist/inventoryRecordIdentifierPublicPage.js
+ui/dist/ketcherViewer.js
 ui/dist/labgroupsTable.js
 ui/dist/materialsListing.js
 ui/dist/memberAutoshareStatusWrapper.js
@@ -139,6 +141,7 @@ ui/dist/structuredDocumentToolbar.js
 ui/dist/sysadminUsers.js
 ui/dist/tinymceClustermarket.js
 ui/dist/tinymceJove.js
+ui/dist/tinymceKetcher.js
 ui/dist/tinymceOmero.js
 ui/dist/tinymcePyrat.js
 ui/dist/tinymceShortcuts.js

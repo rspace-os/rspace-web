@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.FileProperty;
@@ -41,7 +42,15 @@ public interface RSChemElementManager extends GenericManager<RSChemElement, Long
 
   void delete(long id, User user) throws Exception;
 
-  List<ChemSearchedItem> search(String chemQuery, String searchType, User subject);
+  /**
+   * @param chemQuery search query, for chemistry service
+   * @param searchType search type, for chemistry service
+   * @param searchResultLimit size of results list at which we stop searching further
+   * @param subject user running the search
+   * @return list of the search results for given user, optionally limited to searchResultLimit
+   */
+  List<ChemSearchedItem> search(
+      String chemQuery, String searchType, int searchResultLimit, User subject);
 
   /**
    * Gets chemical info about a particular RSChemElement
@@ -177,6 +186,13 @@ public interface RSChemElementManager extends GenericManager<RSChemElement, Long
    */
   List<RSChemElement> getAllRSChemElementsByField(Long fieldId, User user);
 
+  /**
+   * Get the list of id-smilesString pairs for all chemical items saved on database.
+   *
+   * @return list of 2-element arrays, each holding id of a chem element, and its smilesString
+   */
+  List<Object[]> getAllIdAndSmilesStringPairs();
+
   void generateRsChemElementForNewlyUploadedChemistryFile(EcatChemistryFile media, User subject)
       throws IOException;
 
@@ -186,4 +202,6 @@ public interface RSChemElementManager extends GenericManager<RSChemElement, Long
    * @return a list of strings of the supported file extensions
    */
   List<String> getSupportedTypes();
+
+  List<RSChemElement> getAllChemElementsByFormat(ChemElementsFormat format);
 }

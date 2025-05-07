@@ -1,8 +1,7 @@
 package com.researchspace.service.chemistry;
 
-import com.researchspace.model.EcatChemistryFile;
+import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
-import com.researchspace.model.dtos.chemistry.ChemElementDataDto;
 import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
@@ -14,14 +13,15 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 /***
- * Dummy implementation with limited functionality. To be replaced with open-source chemistry module
- * implementation.
+ * Dummy implementation of ChemistryProvider. Used as a default with no functionality when no other chemistry is used
+ * and for integration tests.
  */
 @Service
 public class DefaultChemistryProvider implements ChemistryProvider {
 
   @Override
-  public byte[] exportToImage(String chemicalString, ChemicalExportFormat chemicalExportFormat) {
+  public byte[] exportToImage(
+      String chemicalString, String inputFormat, ChemicalExportFormat chemicalExportFormat) {
     return new byte[0];
   }
 
@@ -31,7 +31,12 @@ public class DefaultChemistryProvider implements ChemistryProvider {
   }
 
   @Override
-  public String convert(String chemical) {
+  public String convertToDefaultFormat(String chemical) {
+    return "";
+  }
+
+  @Override
+  public String convert(String chemical, String outputFormat) {
     return "";
   }
 
@@ -56,13 +61,7 @@ public class DefaultChemistryProvider implements ChemistryProvider {
   }
 
   @Override
-  public ChemElementDataDto getUpdatableChemicals(
-      EcatChemistryFile chemistryFile, List<RSChemElement> chemicalElements) {
-    return new ChemElementDataDto();
-  }
-
-  @Override
-  public ChemElementDataDto getChemicalsForFile(EcatChemistryFile chemistryFile) {
-    return new ChemElementDataDto();
+  public ChemElementsFormat defaultFormat() {
+    return ChemElementsFormat.MOL;
   }
 }

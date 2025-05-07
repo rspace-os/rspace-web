@@ -43,7 +43,6 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.InternalLinkManager;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RecordEditorTracker;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestGroup;
@@ -56,6 +55,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +65,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-@TestPropertySource(properties = "chemistry.web.url=http://howler.researchspace.com:8099")
+@TestPropertySource(
+    properties = {
+      "chemistry.service.url=http://your-chem-service:8090",
+      "chemistry.provider=indigo"
+    })
 @RunWith(ConditionalTestRunner.class)
 public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
@@ -919,8 +923,10 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         exception.getMessage());
   }
 
+  @Ignore(
+      "Requires chemistry service to run. See"
+          + " https://documentation.researchspace.com/article/1jbygguzoa")
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testInsertingChemistryFileViaAPI() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);

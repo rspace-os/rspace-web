@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class ChemicalDataDTO {
   private Long ecatChemFileId;
   @NotNull private String chemElements;
-  @NotNull @Builder.Default private String chemElementsFormat = "mrv";
+  @NotNull private String chemElementsFormat;
   @NotNull private String imageBase64;
   @NotNull private long fieldId;
   private Long rsChemElementId;

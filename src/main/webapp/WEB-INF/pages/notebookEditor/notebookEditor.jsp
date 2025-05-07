@@ -46,6 +46,7 @@
         data-can-delete="${permDTO.deleteRecord}"
         data-can-share="${canShare}">
       </div>
+      <div id="tinymce-ketcher"></div>
       <jsp:include page="notebookMainPanel.jsp" >
         <jsp:param name="publicDocument" value="false"/>
       </jsp:include>

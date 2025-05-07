@@ -31,6 +31,7 @@ var gdScope = 'https://www.googleapis.com/auth/drive.file'
 var gdPickerApiLoaded = false;
 var gdOauthToken;
 
+var chemistryAvailable = false;
 
 function insertURL() {
   var url = $('#src').attr('value');
@@ -1218,6 +1219,7 @@ function insertChemistryFileFromGallery(mediaType, data) {
     promises.push(insertChemElement(val.id, fieldId, fileName));
   });
   Promise.all(promises)
+  .then(() => RS.trackEvent("user:add:chemistry_object:document", { from: "gallery" }))
   .catch((error) => {
     console.error("Error while inserting chemicals from Gallery:", error);
   })
@@ -1514,6 +1516,7 @@ $(document).ready(function () {
     var googleDriveEnabled = integrations.GOOGLEDRIVE.enabled && integrations.GOOGLEDRIVE.available;
     var nextcloudEnabled = integrations.NEXTCLOUD.enabled && integrations.NEXTCLOUD.available && properties["nextcloud.url"] !== '';
     var ownCloudEnabled = integrations.OWNCLOUD.enabled && integrations.OWNCLOUD.available && properties["ownCloud.url"] !== '';
+    chemistryAvailable = integrations.CHEMISTRY.available;
 
     if (dropboxEnabled) {
       $('#fromDropbox').show();
