@@ -21,6 +21,7 @@ export function DataGridWithRadioSelection({
   onSelectionChange,
   localeText,
   selectRadioAriaLabelFunc,
+  selectedRowId: externalSelectedRowId,
   ...props
 }: {
   /*
@@ -32,6 +33,12 @@ export function DataGridWithRadioSelection({
    * When the selection changes, this function will be called.
    */
   onSelectionChange: (selectedId: GridRowId) => void;
+
+  /*
+   * The currently selected row ID (for controlled mode).
+   * If provided, the component will be in controlled mode.
+   */
+  selectedRowId?: GridRowId | null;
 
   /*
    * Each of the radio buttons should have an aria-label that describes what the
@@ -48,12 +55,25 @@ export function DataGridWithRadioSelection({
   | "onRowSelectionModelChange"
 >) {
   const apiRef = useGridApiRef();
-  const [selectedRowId, setSelectedRowId] = React.useState<GridRowId | null>(
-    null
-  );
+  const isControlled = externalSelectedRowId !== undefined;
+  const [internalSelectedRowId, setInternalSelectedRowId] =
+    React.useState<GridRowId | null>(null);
 
-  const radioSelectionColumn: GridColDef = React.useMemo(
-    () => ({
+  const selectedRowId = isControlled
+    ? externalSelectedRowId
+    : internalSelectedRowId;
+
+  const radioSelectionColumn: GridColDef = React.useMemo(() => {
+    const handleSelectionChange = (newSelectedId: GridRowId | null) => {
+      if (!isControlled) {
+        setInternalSelectedRowId(newSelectedId);
+      }
+      if (newSelectedId !== null) {
+        onSelectionChange(newSelectedId);
+      }
+    };
+
+    return {
       ...GRID_CHECKBOX_SELECTION_COL_DEF,
       renderHeader: () => "Select",
       renderCell: (params: GridRenderCellParams) => {
@@ -65,11 +85,10 @@ export function DataGridWithRadioSelection({
             checked={isSelected}
             onChange={(event: unknown, selected: boolean | null) => {
               if (selected === null) {
-                setSelectedRowId(null);
+                handleSelectionChange(null);
                 return;
               }
-              setSelectedRowId(params.id);
-              onSelectionChange(params.id);
+              handleSelectionChange(params.id);
             }}
             aria-label={selectRadioAriaLabelFunc(params.row)}
             onClick={(e) => e.stopPropagation()} // Prevent row selection on click
@@ -80,9 +99,13 @@ export function DataGridWithRadioSelection({
       flex: 0,
       hideable: false,
       disableMenuColumn: true,
-    }),
-    [onSelectionChange, selectedRowId, selectRadioAriaLabelFunc]
-  );
+    };
+  }, [
+    selectedRowId,
+    onSelectionChange,
+    selectRadioAriaLabelFunc,
+    isControlled,
+  ]);
 
   const allColumns = React.useMemo(() => {
     return [radioSelectionColumn, ...columns];
