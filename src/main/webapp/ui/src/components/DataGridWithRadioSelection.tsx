@@ -10,7 +10,11 @@ import {
 import { Radio } from "@mui/material";
 
 /**
- * A DataGrid, where the first column is a Radio field for selecting a single column
+ * A DataGrid, where the first column is a Radio field for selecting a single
+ * column. MUI's DataGrid supports checkbox-based selection by setting the
+ * `checkboxSelection` prop and whilst the `disableMultipleRowSelection` does
+ * what it suggests it does not change the checkboxes to radio buttons, which is
+ * the more semantic UI element for singular selection.
  */
 export function DataGridWithRadioSelection({
   columns,
@@ -19,8 +23,21 @@ export function DataGridWithRadioSelection({
   selectRadioAriaLabelFunc,
   ...props
 }: {
+  /*
+   * The list of other columns to which the selection column with be prepended.
+   */
   columns: GridColDef[];
+
+  /*
+   * When the selection changes, this function will be called.
+   */
   onSelectionChange: (selectedId: GridRowId) => void;
+
+  /*
+   * Each of the radio buttons should have an aria-label that describes what the
+   * UI element is for to those using screen readers. This function allows
+   * callers to specify a label that is specific to each row e.g. "Select Foo"
+   */
   selectRadioAriaLabelFunc: (col: GridRenderCellParams["row"]) => string;
 } & Omit<
   React.ComponentProps<typeof DataGrid>,
