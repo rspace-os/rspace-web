@@ -10,12 +10,10 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import {
-  DataGrid,
   GridToolbarContainer,
   GridToolbarColumnsButton,
-  GridRowSelectionModel,
+  GridRowId,
 } from "@mui/x-data-grid";
-import Radio from "@mui/material/Radio";
 import { makeStyles } from "tss-react/mui";
 import { ThemeProvider } from "@mui/material/styles";
 import Link from "@mui/material/Link";
@@ -36,6 +34,7 @@ import ValidatingSubmitButton, {
 } from "../../components/ValidatingSubmitButton";
 import { DataGridColumn } from "../../util/table";
 import { ACCENT_COLOR } from "../../assets/branding/dmponline";
+import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 
 const useStyles = makeStyles<{ listing: FetchingData.Fetched<unknown> }>()(
   (theme, props: { listing: FetchingData.Fetched<unknown> }) => ({
@@ -97,22 +96,6 @@ const DMPDialogContent = ({
   };
 
   const columns = [
-    {
-      field: "radio",
-      headerName: "Select",
-      renderCell: (params: { row: DmpSummary }) => (
-        <Radio
-          color="primary"
-          value={selection?.id === params.row.id}
-          checked={selection?.id === params.row.id}
-          inputProps={{ "aria-label": "Plan selection" }}
-        />
-      ),
-      hideable: false,
-      width: 70,
-      flex: 0,
-      disableColumnMenu: true,
-    },
     DataGridColumn.newColumnWithFieldName<"title", DmpSummary>("title", {
       headerName: "Title",
       hideable: false,
@@ -201,13 +184,24 @@ const DMPDialogContent = ({
               ),
               success: () => <></>,
             })}
-            <DataGrid
+            <DataGridWithRadioSelection
               rows={FetchingData.match(listing, {
                 loading: () => [] as Array<DmpSummary>,
                 error: () => [] as Array<DmpSummary>,
                 success: (l) => l.dmps,
               })}
               columns={columns}
+              selectedRowId={selection?.id}
+              onSelectionChange={(newSelectionId: GridRowId) => {
+                FetchingData.match(listing, {
+                  loading: () => {},
+                  error: () => {},
+                  success: (l) => {
+                    setSelection(l.getById(String(newSelectionId)));
+                  },
+                });
+              }}
+              selectRadioAriaLabelFunc={(row) => `Select ${row.title}`}
               initialState={{
                 columns: {
                   columnVisibilityModel: {
@@ -218,20 +212,7 @@ const DMPDialogContent = ({
               }}
               disableColumnFilter
               density="compact"
-              getRowId={(row: DmpSummary) => row.id}
-              onRowSelectionModelChange={(
-                newSelection: GridRowSelectionModel
-              ) => {
-                FetchingData.match(listing, {
-                  loading: () => {},
-                  error: () => {},
-                  success: (l) => {
-                    if (newSelection[0]) {
-                      setSelection(l.getById(String(newSelection[0])));
-                    }
-                  },
-                });
-              }}
+              getRowId={(row) => row.id}
               hideFooterSelectedRowCount
               paginationMode="server"
               rowCount={FetchingData.match(listing, {
