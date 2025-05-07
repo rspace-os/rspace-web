@@ -375,7 +375,7 @@ function PrintDialog({
                       target="screen"
                     />
                   ))
-                  .elseThrow()}
+                  .orElse("Nothing to preview")}
                 {/* we need the whole component for ReactToPrint, but not visible here */}
                 <div className={classes.hidden}>
                   <PrintContents
