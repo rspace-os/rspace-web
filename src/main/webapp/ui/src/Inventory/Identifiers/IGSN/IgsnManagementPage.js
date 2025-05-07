@@ -23,6 +23,7 @@ import Main from "../../Main";
 import {
   useIdentifiers,
   useIdentifiersListing,
+  useIdentifiersRefresh,
   type Identifier,
 } from "../../useIdentifiers";
 import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
@@ -59,10 +60,11 @@ export default function IgsnManagementPage({
     "draft" | "findable" | "registered" | null
   >(null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const { identifiers, loading, refreshListing } = useIdentifiersListing({
+  const { identifiers, loading } = useIdentifiersListing({
     state,
     isAssociated,
   });
+  const { refreshListing } = useIdentifiersRefresh();
   const { bulkRegister, deleteIdentifiers } = useIdentifiers();
   const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] =
     React.useState(false);
@@ -129,11 +131,14 @@ export default function IgsnManagementPage({
                       type="number"
                       inputProps={{ min: 1, max: 100 }}
                       value={numberOfNewIdentifiers}
-                      onChange={(e) => setNumberOfNewIdentifiers(e.target.value)}
+                      onChange={(e) =>
+                        setNumberOfNewIdentifiers(e.target.value)
+                      }
                       fullWidth
                       sx={{ mt: 1 }}
                       error={
-                        numberOfNewIdentifiers < 1 || numberOfNewIdentifiers > 100
+                        numberOfNewIdentifiers < 1 ||
+                        numberOfNewIdentifiers > 100
                       }
                     />
                   </Stack>
@@ -146,7 +151,7 @@ export default function IgsnManagementPage({
                     onClick={doNotAwait(async () => {
                       setRegisteringInProgress(true);
                       await bulkRegister({ count: numberOfNewIdentifiers });
-                      void refreshListing();
+                      if (refreshListing) void refreshListing();
                       setRegisteringInProgress(false);
                       setBulkRegisterDialogOpen(false);
                     })}
@@ -215,7 +220,7 @@ export default function IgsnManagementPage({
                     subheader="Does not delete any linked item."
                     onClick={() => {
                       void deleteIdentifiers(selectedIgsns).then(() => {
-                        void refreshListing();
+                        if (refreshListing) void refreshListing();
                         setSelectedIgsns([]);
                       });
                       setActionsAnchorEl(null);

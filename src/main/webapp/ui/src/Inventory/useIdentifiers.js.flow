@@ -27,3 +27,20 @@ declare export function useIdentifiersListing({|
   error: Error | null,
   refreshListing: () => Promise<void>;
 |};
+
+type IdentifiersRefreshContextType = {|
+  refreshListing: (() => Promise<void>) | null,
+  setRefreshListing: (fn: (() => Promise<void>) | null) => void,
+|};
+
+type IdentifiersRefreshProviderProps = {|
+  children: React.Node,
+|};
+
+declare var IdentifiersRefreshContext: React.Context<IdentifiersRefreshContextType>;
+
+declare export function IdentifiersRefreshProvider(
+  props: IdentifiersRefreshProviderProps
+): React.Node;
+
+declare export function useIdentifiersRefresh(): IdentifiersRefreshContextType;

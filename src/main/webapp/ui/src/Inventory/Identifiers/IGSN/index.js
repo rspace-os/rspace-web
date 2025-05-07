@@ -6,6 +6,7 @@ import Sidebar from "../../components/Layout/Sidebar";
 import IgsnManagementPage from "./IgsnManagementPage";
 import Box from "@mui/material/Box";
 import { type Identifier } from "../../useIdentifiers";
+import { IdentifiersRefreshProvider } from "../../useIdentifiers";
 
 /**
  * This is the page where researchers can manage their IGSNs.
@@ -20,10 +21,12 @@ export default function IGSN(): Node {
       <Header sidebarId={sidebarId} />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <Sidebar id={sidebarId} />
-        <IgsnManagementPage
-          selectedIgsns={selectedIgsns}
-          setSelectedIgsns={setSelectedIgsns}
-        />
+        <IdentifiersRefreshProvider>
+          <IgsnManagementPage
+            selectedIgsns={selectedIgsns}
+            setSelectedIgsns={setSelectedIgsns}
+          />
+        </IdentifiersRefreshProvider>
       </Box>
     </>
   );

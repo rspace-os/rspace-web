@@ -8,7 +8,11 @@ import {
   GridToolbarExportContainer,
   GridSlotProps,
 } from "@mui/x-data-grid";
-import { type Identifier, useIdentifiersListing } from "../../useIdentifiers";
+import {
+  type Identifier,
+  useIdentifiersListing,
+  useIdentifiersRefresh,
+} from "../../useIdentifiers";
 import { DataGridColumn } from "../../../util/table";
 import { toTitleCase } from "../../../util/Util";
 import GlobalId from "../../../components/GlobalId";
@@ -142,6 +146,24 @@ function Toolbar({
 
 /**
  * A table listing all of the IGSNs that the current users owns.
+ *
+ * ====  RACE CONDITIONAL WARNING  ===========================================
+ *
+ * This component sets the global refreshListing function in the IdentifiersRefresh
+ * context. Only ONE instance of IgsnTable should be rendered at a time within
+ * the same IdentifiersRefreshProvider.
+ *
+ * If multiple IgsnTable components are rendered simultaneously:
+ * - They will overwrite each other's refreshListing function
+ * - Only the last one to run its useEffect will have its refresh function available
+ * - Components using useIdentifiersRefresh may trigger the wrong table's refresh
+ *
+ * If you need multiple tables, consider:
+ * 1. Using separate IdentifiersRefreshProvider contexts for each table
+ * 2. Modifying the context to support multiple named refresh functions
+ * 3. Using a more comprehensive state management solution
+ *
+ * ============================================================================
  */
 export default function IgsnTable({
   selectedIgsns,
@@ -154,10 +176,16 @@ export default function IgsnTable({
     "draft" | "findable" | "registered" | null
   >(null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const { identifiers, loading } = useIdentifiersListing({
+  const { identifiers, loading, refreshListing } = useIdentifiersListing({
     state,
     isAssociated,
   });
+  const { setRefreshListing } = useIdentifiersRefresh();
+  React.useEffect(() => {
+    setRefreshListing(refreshListing);
+    return () => setRefreshListing(null);
+  }, [refreshListing, setRefreshListing]);
+
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
 

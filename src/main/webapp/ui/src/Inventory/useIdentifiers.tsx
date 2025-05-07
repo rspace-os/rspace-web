@@ -286,7 +286,7 @@ export function useIdentifiersListing({
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
 
-  async function fetchIdentifiers() {
+  const fetchIdentifiers = React.useCallback(async () => {
     try {
       setLoading(true);
       setIdentifiers(await getIdentifiers({ state, isAssociated }));
@@ -297,7 +297,10 @@ export function useIdentifiersListing({
     } finally {
       setLoading(false);
     }
-  }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - getIdentifiers wont meaningfully change between renders
+     */
+  }, [state, isAssociated]);
 
   React.useEffect(() => {
     void fetchIdentifiers();
@@ -307,4 +310,43 @@ export function useIdentifiersListing({
   }, [state, isAssociated]);
 
   return { identifiers, loading, error, refreshListing: fetchIdentifiers };
+}
+
+const IdentifiersRefreshContext = React.createContext<{
+  refreshListing: (() => Promise<void>) | null;
+  setRefreshListing: (fn: (() => Promise<void>) | null) => void;
+}>({
+  refreshListing: null,
+  setRefreshListing: () => {},
+});
+
+/**
+ * Provider component for the refreshListing function
+ */
+export function IdentifiersRefreshProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [refreshListing, setRefreshListing] = React.useState<
+    (() => Promise<void>) | null
+  >(null);
+
+  return (
+    <IdentifiersRefreshContext.Provider
+      value={{
+        refreshListing,
+        setRefreshListing: (f) => setRefreshListing(f),
+      }}
+    >
+      {children}
+    </IdentifiersRefreshContext.Provider>
+  );
+}
+
+/**
+ * Hook to access and set the refreshListing function
+ */
+export function useIdentifiersRefresh() {
+  return React.useContext(IdentifiersRefreshContext);
 }
