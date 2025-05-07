@@ -1,0 +1,34 @@
+//@flow
+
+import { type Node, type ElementConfig } from "react";
+import { DataGrid } from "@mui/x-data-grid";
+
+declare export function DataGridWithRadioSelection<
+    Row,
+    ColumnNames: string,
+    Id: mixed,
+    ToolbarProps: { ... },
+    Value: mixed,
+    SortableColumnNames: ColumnNames,
+    LoadingOverlayProps: { ... },
+  >({|
+  onSelectionChange: (Id) => void,
+  selectedRowId?: Id,
+  selectRadioAriaLabelFunc: (Row) => string,
+  ...$Diff<
+    ElementConfig<typeof DataGrid<
+    Row,
+    ColumnNames,
+    Id,
+    ToolbarProps,
+    Value,
+    SortableColumnNames,
+    LoadingOverlayProps,
+  >>,
+    {|
+      checkboxSelection: mixed,
+      disableMultipleRowSelection: mixed,
+      rowSelectionModel: mixed,
+      onRowSelectionModelChange: mixed,
+    |}>
+|}): Node;
