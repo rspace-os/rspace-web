@@ -1,0 +1,10 @@
+//@flow strict
+
+import { type Node } from "react";
+import { type IntegrationStates } from "../useIntegrationsEndpoint";
+
+declare export default function Chemistry({|
+  integrationState: IntegrationStates["CHEMISTRY"],
+  update: (IntegrationStates["CHEMISTRY"]) => void,
+|}): Node;
+

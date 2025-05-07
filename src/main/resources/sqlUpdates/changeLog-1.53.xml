@@ -105,9 +105,7 @@
 		</addColumn>
 	</changeSet>
 
-
-
-	<!-- Please read DatabaseChangeGuidelines in this folder before committing
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
 		new changesets ! -->
 
 	<!-- only customChange changeSets should be placed below here -->

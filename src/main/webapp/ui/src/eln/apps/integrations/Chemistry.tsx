@@ -1,22 +1,23 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node, type AbstractComponent } from "react";
+import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import ChemistryIcon from "../../../assets/branding/chemistry/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/chemistry";
 
-type ChemistryArgs = {|
-  integrationState: IntegrationStates["CHEMISTRY"],
-  update: (IntegrationStates["CHEMISTRY"]) => void,
-|};
+type ChemistryArgs = {
+  integrationState: IntegrationStates["CHEMISTRY"];
+  update: (newIntegrationState: IntegrationStates["CHEMISTRY"]) => void;
+};
 
 /*
  * There is no authentication mechanism with Chemistry. All users can
  * enable the integration to be able to use it when editing a document.
  */
-function Chemistry({ integrationState, update }: ChemistryArgs): Node {
+function Chemistry({
+  integrationState,
+  update,
+}: ChemistryArgs): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -47,4 +48,4 @@ function Chemistry({ integrationState, update }: ChemistryArgs): Node {
   );
 }
 
-export default (React.memo(Chemistry): AbstractComponent<ChemistryArgs>);
+export default React.memo(Chemistry);

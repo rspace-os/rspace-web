@@ -241,7 +241,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void teststructureSearchRoundTrip() throws Exception {
+  public void testStructureSearchRoundTrip() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
     String chemdata = RSpaceTestUtils.getExampleChemString();
