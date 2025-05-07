@@ -15,11 +15,9 @@ import InvApiService from "../../common/InvApiService";
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
 import {
-  DataGrid,
   GridToolbarContainer,
   GridToolbarColumnsButton,
 } from "@mui/x-data-grid";
-import Radio from "@mui/material/Radio";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
@@ -35,6 +33,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import docLinks from "../../assets/DocLinks";
 import { ACCENT_COLOR } from "../../assets/branding/fieldmark";
+import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 
 /**
  * This class allows us to provide a link to the newly created container in the
@@ -284,31 +283,8 @@ export default function FieldmarkImportDialog({
               </Typography>
             </Grid>
             <Grid item>
-              <DataGrid
+              <DataGridWithRadioSelection
                 columns={[
-                  {
-                    field: "radio",
-                    headerName: "Select",
-                    renderCell: (params: { row: Notebook, ... }) => (
-                      <Radio
-                        color="primary"
-                        value={
-                          selectedNotebook?.metadata.project_id ===
-                          params.row.metadata.project_id
-                        }
-                        checked={
-                          selectedNotebook?.metadata.project_id ===
-                          params.row.metadata.project_id
-                        }
-                        inputProps={{ "aria-label": "Notebook selection" }}
-                      />
-                    ),
-                    hideable: false,
-                    width: 70,
-                    flex: 0,
-                    disableColumnMenu: true,
-                    sortable: false,
-                  },
                   DataGridColumn.newColumnWithFieldName<_, Notebook>("name", {
                     headerName: "Name",
                     flex: 1,
@@ -368,6 +344,17 @@ export default function FieldmarkImportDialog({
                   },
                 }}
                 rows={notebooks ?? []}
+                selectedRowId={selectedNotebook?.metadata.project_id}
+                onSelectionChange={(newSelectionId) => {
+                  ArrayUtils.find(
+                    (n) => n.metadata.project_id === newSelectionId,
+                    notebooks ?? []
+                  )
+                  .do((newlySelectedNotebook) => {
+                    setSelectedNotebook(newlySelectedNotebook);
+                  });
+                }}
+                selectRadioAriaLabelFunc={(row) => `Select notebook: ${row.name}`}
                 disableColumnFilter
                 hideFooter
                 autoHeight
@@ -388,21 +375,6 @@ export default function FieldmarkImportDialog({
                   },
                 }}
                 getRowId={(row) => row.metadata.project_id}
-                onRowSelectionModelChange={(
-                  newSelection: $ReadOnlyArray<string>
-                ) => {
-                  ArrayUtils.head(newSelection)
-                    .toOptional()
-                    .flatMap((selectedId) =>
-                      ArrayUtils.find(
-                        (n) => n.metadata.project_id === selectedId,
-                        notebooks ?? []
-                      )
-                    )
-                    .do((newlySelectedNotebook) => {
-                      setSelectedNotebook(newlySelectedNotebook);
-                    });
-                }}
               />
             </Grid>
           </Grid>
