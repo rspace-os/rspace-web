@@ -90,6 +90,24 @@ export function isObject(m: unknown): Result<object | null> {
 }
 
 /**
+ * An `object` is any non-primitive value (i.e. anything that isn't null,
+ * undefined, boolean, number, string, etc) -- note that whilst JavaScript
+ * considers null to be an object TypeScript does not. A `Record` is a type of
+ * object that is a set of key-value pairs, usually created using object literal
+ * syntax or the Object constructor. This function checks if the given object is
+ * a record and assumes that its keys are strings.
+ */
+export function isRecord(obj: object): Result<Record<string, unknown>> {
+  if (!(obj instanceof Object))
+    return Result.Error([new TypeError("Not an object")]);
+  if (Array.isArray(obj))
+    return Result.Error([new TypeError("Not an object, is an array")]);
+  if (Object.getPrototypeOf(obj) !== Object.prototype)
+    return Result.Error([new TypeError("Not a plain object")]);
+  return Result.Ok(obj as Record<string, unknown>);
+}
+
+/**
  * Parses something that might be null into the something that certainly is.
  */
 export function isNull<T>(x: T | null): Result<null> {

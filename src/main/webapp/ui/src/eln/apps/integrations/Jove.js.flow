@@ -1,0 +1,10 @@
+//@flow strict
+
+import { type Node } from "react";
+import { type IntegrationStates } from "../useIntegrationsEndpoint";
+
+declare export default function Jove({|
+  integrationState: IntegrationStates["JOVE"],
+  update: (IntegrationStates["JOVE"]) => void,
+|}): Node;
+

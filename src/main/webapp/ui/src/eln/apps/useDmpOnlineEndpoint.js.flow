@@ -1,0 +1,7 @@
+//@flow strict
+
+import { type Node } from "react";
+
+declare export function useDmpOnlineEndpoint(): {|
+  disconnect: () => Promise<void>,
+|};

@@ -49,6 +49,8 @@ pipeline {
         APP_VERSION = readMavenPom().getVersion()
         DOCKERHUB_PWD = credentials('DOCKER_HUB_RSPACEOPS')
         DOCKERHUB_REPO = 'rspaceops/rspace-services'
+
+        NODE_OPTIONS="--max-old-space-size=5120"
     }
 
     stages {

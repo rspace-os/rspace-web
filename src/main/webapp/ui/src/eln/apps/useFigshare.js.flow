@@ -1,0 +1,5 @@
+//@flow strict
+
+declare export function useFigshareEndpoint(): {|
+  disconnect: () => Promise<void>,
+|};

@@ -1,0 +1,10 @@
+//@flow strict
+
+import { type Node } from "react";
+import { type IntegrationStates } from "../useIntegrationsEndpoint";
+
+declare export default function GitHub({|
+  integrationState: IntegrationStates["GITHUB"],
+  update: (IntegrationStates["GITHUB"]) => void,
+|}): Node;
+

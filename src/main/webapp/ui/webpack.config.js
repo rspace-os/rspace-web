@@ -18,7 +18,7 @@ module.exports = {
      * Some of the ELN pages are Single Page Applications too. These JS bundles
      * implement each of those pages.
      */
-    apps: "./src/eln/apps/index.js",
+    apps: "./src/eln/apps/index.tsx",
     gallery: "./src/eln/gallery/index.tsx",
 
     /*

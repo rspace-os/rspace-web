@@ -1,0 +1,7 @@
+//@flow strict
+
+import { type OptionsId } from "./useIntegrationsEndpoint";
+
+declare export function useDataverseTestEndpoint(): {|
+  test: (OptionsId) => Promise<void>,
+|};
