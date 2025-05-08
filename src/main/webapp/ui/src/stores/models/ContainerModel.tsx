@@ -946,7 +946,7 @@ export default class ContainerModel
     };
   }
 
-  get illustration(): Node {
+  get illustration(): React.ReactNode {
     if (this.cType === "IMAGE") return <VisualContainerIllustration />;
     if (this.cType === "GRID") return <GridContainerIllustration />;
     return <ListContainerIllustration />;

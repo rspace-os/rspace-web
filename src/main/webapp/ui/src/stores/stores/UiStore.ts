@@ -4,18 +4,18 @@ import { type Alert } from "../contexts/Alert";
 import type { RootStore } from "./RootStore";
 import { match } from "../../util/Util";
 import theme from "../../theme";
-import type { Node } from "react";
+import React from "react";
 import { type Panel } from "../../util/types";
 import { pick } from "../../util/unsafeUtils";
 
 type ConfirmationDialogProps = {
-  title: Node,
-  message: Node,
-  yesLabel: string,
-  noLabel: string,
-  yes: () => void,
-  no: () => void,
-  confirmationSpinner: boolean,
+  title: Node;
+  message: Node;
+  yesLabel: string;
+  noLabel: string;
+  yes: () => void;
+  no: () => void;
+  confirmationSpinner: boolean;
 };
 
 const beforeUnloadAction = (e: Event & { returnValue: string }) => {
@@ -23,16 +23,18 @@ const beforeUnloadAction = (e: Event & { returnValue: string }) => {
   e.returnValue = "";
 };
 
-const breakpoints: { [string]: symbol } = Object.freeze({
-  xs: Symbol("xs"),
-  sm: Symbol("sm"),
-  md: Symbol("md"),
-  lg: Symbol("lg"),
-  xl: Symbol("xl"),
-});
+const breakpoints: Record<"xs" | "sm" | "md" | "lg" | "xl", symbol> =
+  Object.freeze({
+    xs: Symbol("xs"),
+    sm: Symbol("sm"),
+    md: Symbol("md"),
+    lg: Symbol("lg"),
+    xl: Symbol("xl"),
+  });
 
-const isSingleColumnLayout = (viewportSize: $Values<typeof breakpoints>) =>
-  [breakpoints.xs, breakpoints.sm].includes(viewportSize);
+const isSingleColumnLayout = (
+  viewportSize: (typeof breakpoints)[keyof typeof breakpoints]
+) => [breakpoints.xs, breakpoints.sm].includes(viewportSize);
 
 export default class UiStore {
   rootStore: RootStore;
@@ -41,8 +43,8 @@ export default class UiStore {
   infoVisible: boolean = false;
   dialogVisiblePanel: "left" | "right" = "left";
   confirmPageNavigation: boolean = false;
-  confirmationDialogProps: ?ConfirmationDialogProps = null;
-  viewportSize: $Values<typeof breakpoints>;
+  confirmationDialogProps: ConfirmationDialogProps | null = null;
+  viewportSize: (typeof breakpoints)[keyof typeof breakpoints];
   dirty: boolean = false;
   discardChangesCallback: () => Promise<void>;
 
@@ -55,15 +57,15 @@ export default class UiStore {
    * component easier to test and potentially reusable outside of Inventory.
    * For more info, see ../contexts/Alert
    */
-  addAlert: (Alert) => void = () => {};
-  removeAlert: (Alert) => void = () => {};
+  addAlert: (alert: Alert) => void = () => {};
+  removeAlert: (alert: Alert) => void = () => {};
 
   /*
    * When batch editing, we don't want popups to appear for each record that the
    * user currently has a lock for. As such, this flag is intended to prevent
    * such dialogs whilst it is true.
    */
-  recentBatchEditExpiryCheck: ?boolean = null;
+  recentBatchEditExpiryCheck: boolean | null = null;
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {
@@ -146,7 +148,7 @@ export default class UiStore {
     try {
       document.createEvent("TouchEvent");
       return true;
-    } catch (e) {
+    } catch {
       return false;
     }
   }
@@ -164,7 +166,7 @@ export default class UiStore {
     ].includes(this.viewportSize);
   }
 
-  toggleSidebar(isOpen?: boolean = !this.sidebarOpen): void {
+  toggleSidebar(isOpen: boolean = !this.sidebarOpen): void {
     this.sidebarOpen = isOpen;
   }
 
@@ -204,8 +206,8 @@ export default class UiStore {
    * because doing otherwise would be poor UX.
    */
   confirm(
-    title: Node,
-    message: Node,
+    title: React.ReactNode,
+    message: React.ReactNode,
     yesLabel: string = "OK",
     noLabel: string = "Cancel",
 
@@ -226,12 +228,11 @@ export default class UiStore {
           yesLabel,
           noLabel,
           yes: () => {
-            const returnYes = action<void>(() => {
+            const returnYes = action(() => {
               this.closeConfirmationDialog();
               resolve(true);
             });
             if (onConfirm) {
-              // $FlowExpectedError[incompatible-use] confirmationDialogProps will not be null
               this.confirmationDialogProps.confirmationSpinner = true;
               void onConfirm().then(returnYes);
             } else {

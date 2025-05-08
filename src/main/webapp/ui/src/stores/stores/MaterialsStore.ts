@@ -29,18 +29,18 @@ type DocumentLists = Map<ElnDocumentId, Array<ListOfMaterials>>;
 export default class MaterialsStore {
   rootStore: RootStore;
   loading: boolean = false;
-  originalList: ?ListOfMaterials;
-  currentList: ?ListOfMaterials;
+  originalList: ListOfMaterials | undefined;
+  currentList: ListOfMaterials | undefined;
   fieldLists: FieldLists;
   documentLists: DocumentLists;
-  setupPromise: ?Promise<void> = null; // access only through this.setup
+  setupPromise: Promise<void> | null = null; // access only through this.setup
 
   /*
    * This is globally set for all LoM if it can be determined based on whether
    * the user can edit the entire page. Otherwise, it is null, and every LoM
    * that user wishes to see should be checked against the API.
    */
-  canEdit: ?boolean = null;
+  canEdit: boolean | null = null;
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {

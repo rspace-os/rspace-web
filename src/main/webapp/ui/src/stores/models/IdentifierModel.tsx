@@ -22,7 +22,7 @@ import {
   runInAction,
 } from "mobx";
 import React from "react";
-import GeoLocationModel from "../models/GeoLocationModel";
+import GeoLocationModel from "./GeoLocationModel";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type URL, type _LINK } from "../../util/types";
 import {
@@ -47,21 +47,21 @@ import * as ArrayUtils from "../../util/ArrayUtils";
 import InvApiService from "../../common/InvApiService";
 
 type GeoLocationBox = {
-  eastBoundLongitude: string,
-  northBoundLatitude: string,
-  southBoundLatitude: string,
-  westBoundLongitude: string,
+  eastBoundLongitude: string;
+  northBoundLatitude: string;
+  southBoundLatitude: string;
+  westBoundLongitude: string;
 };
 type PolygonPoint = {
-  pointLatitude: string,
-  pointLongitude: string,
+  pointLatitude: string;
+  pointLongitude: string;
 };
 
 export type IdentifierGeoLocation = {
-  geoLocationBox: GeoLocationBox,
-  geoLocationPlace: string,
-  geoLocationPoint: PolygonPoint,
-  geoLocationPolygon: GeoLocationPolygon,
+  geoLocationBox: GeoLocationBox;
+  geoLocationPlace: string;
+  geoLocationPoint: PolygonPoint;
+  geoLocationPolygon: GeoLocationPolygon;
 };
 
 const creatorTypeOptions: Array<RadioOption<string>> = [
@@ -100,9 +100,13 @@ const identifierDateOptions: Array<DropdownOption> = [
  * and their schema is defined by datacite, not RS.
  * this function lets us extract all properties different from "value" and "type".
  */
-export const subFields = <Key extends string, Value, Field extends { [Key]: Value }>(
+export const subFields = <
+  Key extends string,
+  Value,
+  Field extends { [key: Key]: Value }
+>(
   field: Field
-): Array<{ key: Key, value: Value }> =>
+): Array<{ key: Key; value: Value }> =>
   Object.entries(field)
     .filter((item) => item[0] !== "value" && item[0] !== "type")
     .map((item) => {
@@ -260,7 +264,6 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Creator Type",
         value: this.creatorType,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setCreatorType(v),
         radioOptions: creatorTypeOptions,
       },
@@ -430,8 +433,13 @@ export default class IdentifierModel implements Identifier {
     confirm,
     addAlert,
   }: {
-    confirm: (React.ReactNode, React.ReactNode, string, string) => Promise<boolean>,
-    addAlert: (Alert) => void,
+    confirm: (
+      title: React.ReactNode,
+      message: React.ReactNode,
+      yesLabel: string,
+      noLabel: string
+    ) => Promise<boolean>;
+    addAlert: (alert: Alert) => void;
   }): Promise<void> {
     if (!this.ApiServiceBase)
       throw new Error("This operation requires the user be authenticated");
@@ -459,15 +467,13 @@ export default class IdentifierModel implements Identifier {
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
-        const response = await ApiServiceBase.post<
-          {
-            state: IGSNPublishingState,
-            url: string,
-            publicUrl: string,
-            creatorAffiliation: ?string,
-            creatorAffiliationIdentifier: ?string,
-          }
-        >(`/identifiers/${this.id}/publish`, {});
+        const response = await ApiServiceBase.post<{
+          state: IGSNPublishingState;
+          url: string;
+          publicUrl: string;
+          creatorAffiliation: ?string;
+          creatorAffiliationIdentifier: ?string;
+        }>(`/identifiers/${this.id}/publish`, {});
         const {
           state,
           url,
@@ -517,8 +523,13 @@ export default class IdentifierModel implements Identifier {
     confirm,
     addAlert,
   }: {
-    confirm: (React.ReactNode, React.ReactNode, string, string) => Promise<boolean>,
-    addAlert: (Alert) => void,
+    confirm: (
+      title: React.ReactNode,
+      message: React.ReactNode,
+      yesLabel: string,
+      noLabel: string
+    ) => Promise<boolean>;
+    addAlert: (alert: Alert) => void;
   }): Promise<void> {
     if (!this.ApiServiceBase)
       throw new Error("This operation requires the user be authenticated");
@@ -546,9 +557,9 @@ export default class IdentifierModel implements Identifier {
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
-        const response = await ApiServiceBase.post<
-          { state: IGSNPublishingState }
-        >(`/identifiers/${this.id}/retract`, {});
+        const response = await ApiServiceBase.post<{
+          state: IGSNPublishingState;
+        }>(`/identifiers/${this.id}/retract`, {});
         this.updateState(response.data.state);
         addAlert(
           mkAlert({
@@ -587,11 +598,7 @@ export default class IdentifierModel implements Identifier {
    * the UiStore as this class is used on the public page where the global
    * stores are not available as the user is not authenticated.
    */
-  async republish({
-    addAlert,
-  }: {
-    addAlert: (Alert) => void,
-  }): Promise<void> {
+  async republish({ addAlert }: { addAlert: (Alert) => void }): Promise<void> {
     if (!this.ApiServiceBase)
       throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
@@ -608,9 +615,9 @@ export default class IdentifierModel implements Identifier {
 
       // retract
       try {
-        const response = await ApiServiceBase.post<
-          { state: IGSNPublishingState }
-        >(`/identifiers/${id}/retract`, {});
+        const response = await ApiServiceBase.post<{
+          state: IGSNPublishingState;
+        }>(`/identifiers/${id}/retract`, {});
         this.updateState(response.data.state);
       } catch (error) {
         const serverErrorResponse = error.response.data;
@@ -629,15 +636,13 @@ export default class IdentifierModel implements Identifier {
 
       // publish
       try {
-        const response = await ApiServiceBase.post<
-          {
-            state: IGSNPublishingState,
-            url: string,
-            publicUrl: string,
-            creatorAffiliation: ?string,
-            creatorAffiliationIdentifier: ?string,
-          }
-        >(`/identifiers/${id}/publish`, {});
+        const response = await ApiServiceBase.post<{
+          state: IGSNPublishingState;
+          url: string;
+          publicUrl: string;
+          creatorAffiliation: ?string;
+          creatorAffiliationIdentifier: ?string;
+        }>(`/identifiers/${id}/publish`, {});
         const {
           state,
           url,

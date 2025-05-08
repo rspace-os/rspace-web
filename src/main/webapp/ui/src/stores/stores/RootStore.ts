@@ -10,16 +10,16 @@ import ImageStore from "./ImageStore";
 import MaterialsStore from "./MaterialsStore";
 
 export type StoreContainer = {
-  authStore: AuthStore,
-  uiStore: UiStore,
-  unitStore: UnitStore,
-  searchStore: SearchStore,
-  peopleStore: PeopleStore,
-  moveStore: MoveStore,
-  trackingStore: TrackingStore,
-  importStore: ImportStore,
-  imageStore: ImageStore,
-  materialsStore: MaterialsStore,
+  authStore: AuthStore;
+  uiStore: UiStore;
+  unitStore: UnitStore;
+  searchStore: SearchStore;
+  peopleStore: PeopleStore;
+  moveStore: MoveStore;
+  trackingStore: TrackingStore;
+  importStore: ImportStore;
+  imageStore: ImageStore;
+  materialsStore: MaterialsStore;
 };
 
 class RootStore {
@@ -68,7 +68,7 @@ class RootStore {
 
 export type { RootStore };
 
-let rootStore;
+let rootStore: undefined | RootStore;
 export default function getRootStore(): StoreContainer {
   if (!rootStore) {
     rootStore = new RootStore();

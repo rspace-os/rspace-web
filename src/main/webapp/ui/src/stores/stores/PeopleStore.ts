@@ -12,9 +12,9 @@ import { type Group } from "../definitions/Group";
 
 export default class PeopleStore {
   rootStore: RootStore;
-  currentUser: ?PersonModel = null;
-  groupMembers: ?RsSet<PersonModel>;
-  currentUsersGroups: ?Promise<Array<Group>>;
+  currentUser: PersonModel | null = null;
+  groupMembers: RsSet<PersonModel> | null;
+  currentUsersGroups: Promise<Array<Group>> | null;
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;

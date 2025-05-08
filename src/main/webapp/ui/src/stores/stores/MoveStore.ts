@@ -31,11 +31,11 @@ import { Optional } from "../../util/optional";
 
 type SerialisedRecord =
   | (BulkEndpointRecordSerialisation & {
-      globalId: ?GlobalId;
+      globalId: GlobalId | null;
       removeFromParentContainerRequest: true;
     })
   | (BulkEndpointRecordSerialisation & {
-      globalId: ?GlobalId;
+      globalId: GlobalId | null;
       parentContainers: ReadonlyArray<object>;
       parentLocation?: object;
     });
@@ -46,7 +46,7 @@ export default class MoveStore {
   isMoving: boolean = false;
   submitting: "NO" | "MAKE-TOP" | "TO-OTHER" = "NO";
   selectedResults: Array<ContainerModel | SubSampleModel> = [];
-  search: Search | null;
+  search: Search | null = null;
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {
@@ -85,7 +85,7 @@ export default class MoveStore {
   }
 
   get targetLocations(): Array<Location> | null {
-    return this.activeResult?.selectedLocations;
+    return this.activeResult?.selectedLocations ?? null;
   }
 
   get selectedResultsIncludesContainers(): boolean {
@@ -148,7 +148,7 @@ export default class MoveStore {
     }
   }
 
-  async setTargetContainer(c: ?Container) {
+  async setTargetContainer(c: Container | null) {
     const container = c ?? this.rootStore.peopleStore.currentUser?.bench;
     if (this.search) {
       try {
