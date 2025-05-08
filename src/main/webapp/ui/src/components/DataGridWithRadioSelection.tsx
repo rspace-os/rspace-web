@@ -90,8 +90,17 @@ export function DataGridWithRadioSelection({
               }
               handleSelectionChange(params.id);
             }}
-            aria-label={selectRadioAriaLabelFunc(params.row)}
+            inputProps={{
+              "aria-label": selectRadioAriaLabelFunc(params.row),
+            }}
             onClick={(e) => e.stopPropagation()} // Prevent row selection on click
+            onKeyDown={(e) => {
+              if (e.key === " " || e.key === "Spacebar") {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSelectionChange(params.id);
+              }
+            }}
           />
         );
       },
