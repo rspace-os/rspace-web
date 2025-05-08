@@ -164,7 +164,7 @@ function SpecifiedStorageTemperature({
     });
   };
 
-  const handleMinFieldChange = (value: number) => {
+  const handleMinFieldChange = (value: sbtring) => {
     setMinField(value);
     const newMin = parseInt(value, DECIMAL);
     const newMax = !Number.isNaN(newMin) && newMin > max ? newMin : max;
@@ -179,7 +179,7 @@ function SpecifiedStorageTemperature({
     );
   };
 
-  const handleMaxFieldChange = (value: number) => {
+  const handleMaxFieldChange = (value: string) => {
     setMaxField(value);
     const newMax = parseInt(value, DECIMAL);
     const newMin = !Number.isNaN(newMax) && newMax < min ? newMax : min;
@@ -237,7 +237,7 @@ function SpecifiedStorageTemperature({
                           <NumberField
                             value={minField}
                             onChange={({ target: { value: newValue } }) => {
-                              handleMinFieldChange(parseInt(newValue, 10));
+                              handleMinFieldChange(newValue);
                             }}
                             variant="outlined"
                             size="small"
@@ -259,7 +259,7 @@ function SpecifiedStorageTemperature({
                           <NumberField
                             value={maxField}
                             onChange={({ target: { value } }) => {
-                              handleMaxFieldChange(parseInt(value, 10));
+                              handleMaxFieldChange(value);
                             }}
                             variant="outlined"
                             size="small"
