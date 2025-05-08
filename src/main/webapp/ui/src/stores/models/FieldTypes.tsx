@@ -51,30 +51,18 @@ export const fieldTypeToApiString = (fieldType: FieldType): string => {
   if (!(typeof fieldType === "symbol"))
     throw new Error("FieldTypes are all Symbols.");
   const map = {
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.choice]: "choice",
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.date]: "date",
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.number]: "number",
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.radio]: "radio",
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.plain_text]: "string",
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.formatted_text]: "text",
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.uri]: "uri",
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.time]: "time",
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.reference]: "reference",
-    // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
     [FieldTypes.attachment]: "attachment",
   };
-  // $FlowExpectedError[invalid-computed-prop] Symbols are not supported by flow
   if (!map[fieldType])
-    // $FlowExpectedError[incompatible-type] fieldType is a valid FieldType
     throw new Error(`Invalid field type: Symbol(${Symbol.keyFor(fieldType)})`);
   return map[fieldType];
 };

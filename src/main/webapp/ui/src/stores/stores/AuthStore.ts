@@ -16,12 +16,12 @@ export type DataCiteServerUrl =
 
 export type SystemSettings = {
   datacite: {
-    enabled: IntegrationState,
-    serverUrl: DataCiteServerUrl,
-    username: string,
-    password: string,
-    repositoryPrefix: string,
-  },
+    enabled: IntegrationState;
+    serverUrl: DataCiteServerUrl;
+    username: string;
+    password: string;
+    repositoryPrefix: string;
+  };
 };
 
 export default class AuthStore {
@@ -144,7 +144,7 @@ export default class AuthStore {
     }
   }
 
-  async updateSystemSettings<SettingFor: $Keys<SystemSettings>>(
+  async updateSystemSettings<SettingFor extends keyof SystemSettings>(
     settingFor: SettingFor,
     newSettings: SystemSettings[SettingFor]
   ): Promise<void> {

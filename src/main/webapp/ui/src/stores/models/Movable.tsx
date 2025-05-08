@@ -1,4 +1,4 @@
-import type GlobalId from "../models/Result";
+import type GlobalId from "./Result";
 import { isoToLocale } from "../../util/Util";
 import React from "react";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";

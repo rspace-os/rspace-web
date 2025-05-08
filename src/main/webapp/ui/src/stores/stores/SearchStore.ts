@@ -103,7 +103,7 @@ export default class SearchStore {
     this.search = new Search({
       factory: new MemoisedFactory(),
       callbacks: {
-        setActiveResult: (r) => r?.refreshAssociatedSearch(),
+        setActiveResult: (r: InventoryRecord) => r?.refreshAssociatedSearch(),
       },
     });
     this.search.canEditActiveResult = true;

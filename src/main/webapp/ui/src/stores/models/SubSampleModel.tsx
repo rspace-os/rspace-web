@@ -131,12 +131,12 @@ export default class SubSampleModel
   notes: Array<Note> = [];
   sample: SampleModel;
   parentContainers: Array<ContainerModel>;
-  parentLocation: ?Location;
-  allParentContainers: ?(() => Array<ContainerModel>);
-  rootParentContainer: ?ContainerModel;
-  immediateParentContainer: ?ContainerModel;
-  lastNonWorkbenchParent: ?string;
-  lastMoveDate: ?Date;
+  parentLocation: Location | null = null;
+  allParentContainers: (() => Array<ContainerModel>) | null = null;
+  rootParentContainer: ContainerModel | null = null;
+  immediateParentContainer: ContainerModel | null = null;
+  lastNonWorkbenchParent: string | null = null;
+  lastMoveDate: Date | null = null;
   createOptionsParametersState: {
     split: { key: "split"; copies: number };
   };
@@ -322,7 +322,6 @@ export default class SubSampleModel
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     const options = new Map([
       ...super.adjustableTableOptions(),
-      // $FlowExpectedError[prop-missing] Defined on the mixin
       ...this.adjustableTableOptions_movable(),
     ]);
     if (this.readAccessLevel === "public") {
@@ -341,13 +340,12 @@ export default class SubSampleModel
     const id = this.id;
     this.setLoading(true);
 
-    const [{}, ...noteResults] =
-      await Promise.allSettled([
-        super.update(refresh),
-        ...this.notes
-          .filter((n) => !n.id)
-          .map((n) => ApiService.post<void>(`subSamples/${id}/notes`, n)),
-      ]);
+    const [{}, ...noteResults] = await Promise.allSettled([
+      super.update(refresh),
+      ...this.notes
+        .filter((n) => !n.id)
+        .map((n) => ApiService.post<void>(`subSamples/${id}/notes`, n)),
+    ]);
 
     if (noteResults.some(({ status }) => status === "rejected")) {
       getRootStore().uiStore.addAlert(
@@ -420,8 +418,10 @@ export default class SubSampleModel
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): { [key in keyof SubSampleEditableFields]: ?string } & {
-    [key in keyof SubSampleUneditableFields]: ?string;
+  get noValueLabel(): {
+    [key in keyof SubSampleEditableFields]: string | null;
+  } & {
+    [key in keyof SubSampleUneditableFields]: string | null;
   } {
     return {
       ...super.noValueLabel,
@@ -523,7 +523,9 @@ export class SubSampleCollection
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): { [key in keyof BatchSubSampleEditableFields]: ?string } {
+  get noValueLabel(): {
+    [key in keyof BatchSubSampleEditableFields]: string | null;
+  } {
     const currentQuanities = new RsSet(
       this.records.map((r) => getValue(r.quantity))
     );
@@ -537,7 +539,7 @@ export class SubSampleCollection
     return this.records.first.quantityCategory;
   }
 
-  setFieldsDirty(newFieldValues: any): void {
+  setFieldsDirty(newFieldValues: Record<string, unknown>): void {
     super.setFieldsDirty(newFieldValues);
   }
 

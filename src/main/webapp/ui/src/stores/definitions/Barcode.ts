@@ -80,7 +80,7 @@ export interface BarcodeRecord {
    * throw an error. Null MUST be returned if the barcode record can be
    * discarded without communicating with the server.
    */
-  deletedCopy(): string | null;
+  deletedCopy(): BarcodeRecord | null;
   readonly isDeleted: boolean;
   readonly isDeletable: boolean;
 

@@ -103,8 +103,8 @@ type SearchArgs = {
      * Note that this callback is called after setActiveResult (naturally) and
      * the resulting call to fetchAdditionalInfo have both completed.
      */
-    setActiveResult?: (?Result) => void,
-  ,
+    setActiveResult?: (r: InventoryRecord | null) => void,
+  },
   factory: Factory,
 };
 
@@ -145,9 +145,9 @@ export default class Search implements SearchInterface {
   dynamicFetcher: DynamicFetcherInterface;
   staticFetcher: CoreFetcherInterface;
   cacheFetcher: CacheFetcherInterface;
-  alwaysFilterOut: (InventoryRecord) => boolean = () => false;
+  alwaysFilterOut: (r: InventoryRecord) => boolean = () => false;
   callbacks: ?{
-    setActiveResult?: (?Result) => void,
+    setActiveResult?: (r: InventoryRecord | null) => void,
   };
 
   /*
@@ -155,7 +155,7 @@ export default class Search implements SearchInterface {
    *  when the user changes the type filters allowing the code to do custom
    *  behaviour such as updating the URL.
    */
-  overrideSearchOnFilter: ?(CoreFetcherArgs) => void;
+  overrideSearchOnFilter: ((args: CoreFetcherArgs) => void) | null;
 
   /*
    * For simultaneously editing a bunch of records.
@@ -1584,7 +1584,7 @@ export default class Search implements SearchInterface {
    * implements InventoryRecord in test code, without worrying that this method
    * might add elements to the set that would violate the subtype invariant.
    */
-  isActiveResultTemplateOfAny<T: InventoryRecord>(records: RsSet<T>): boolean {
+  isActiveResultTemplateOfAny<T extends InventoryRecord>(records: RsSet<T>): boolean {
     const activeResultGlobalId =
       getRootStore().searchStore.activeResult?.globalId;
     for (const sample of records.filterClass(SampleModel)) {

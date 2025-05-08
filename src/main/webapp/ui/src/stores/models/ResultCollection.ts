@@ -176,7 +176,6 @@ export default class ResultCollection<ResultSubtype: Result> {
       .toArray((a, b) => (a.id ?? -1) - (b.id ?? -1))
       .map((record, i) => {
         if ("name" in newFieldValues) {
-          // $FlowExpectedError[prop-missing]
           const name = newFieldValues.name;
           const suffix = match<string, () => string>([
             [(s) => s === "NONE", () => ""],

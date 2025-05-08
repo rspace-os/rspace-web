@@ -145,7 +145,7 @@ export interface Container extends InventoryRecord {
    * For determining what colour to highlight a location, to identify groups of
    * location content based on properties like shared sample.
    */
-  getColor(sampleId: Id): string | null;
+  getColor(sampleId: Id): string | undefined;
 
   /*
    * For un/selecting all locations (e.g. when selecting one for creation).
@@ -174,7 +174,7 @@ export interface Container extends InventoryRecord {
    */
   locationsCount: number;
   locations: Array<Location> | null;
-  findLocation(col: number, row: number): Location | null;
+  findLocation(col: number, row: number): Location | undefined;
 
   /*
    * All of the container's locations, sorted by their ID.

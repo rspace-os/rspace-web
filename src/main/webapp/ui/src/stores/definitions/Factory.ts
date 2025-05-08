@@ -27,7 +27,9 @@ export interface Factory {
    * instance of Result requires. This is why `any` is the type of the argument
    * as it cannot be determined before runtime what the attributes must be.
    */
-  newRecord(params: any): InventoryRecord;
+  newRecord(
+    params: Record<string, unknown> & { globalId: GlobalId }
+  ): InventoryRecord;
 
   newPerson(attrs: PersonAttrs): Person;
   newBarcode(attrs: PersistedBarcodeAttrs): BarcodeRecord;

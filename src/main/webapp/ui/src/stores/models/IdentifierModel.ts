@@ -157,12 +157,12 @@ export default class IdentifierModel implements Identifier {
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
 
-  ApiServiceBase: InvApiService | null = null;
+  ApiServiceBase: typeof InvApiService | null = null;
 
   constructor(
     attrs: IdentifierAttrs,
     parentGlobalId: GlobalId,
-    ApiServiceBase?: InvApiService
+    ApiServiceBase?: typeof InvApiService
   ) {
     makeObservable(this, {
       parentGlobalId: observable,
@@ -255,7 +255,6 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Creator Name",
         value: this.creatorName,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setCreatorName(v),
       },
       {
@@ -268,26 +267,22 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Name",
         value: this.title,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setTitle(v),
       },
       {
         key: "Publisher",
         value: this.publisher,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setPublisher(v),
       },
       {
         key: "Publication Year",
         value: this.publicationYear,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setPublicationYear(v),
         isValid: (v) => typeof v === "string" && /^\d\d\d\d$/.test(v),
       },
       {
         key: "Resource Type",
         value: this.resourceType,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setResourceType(v),
       },
     ];
@@ -325,13 +320,11 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Subjects",
         value: this.subjects,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setSubjects(v),
       },
       {
         key: "Descriptions",
         value: this.descriptions,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setDescriptions(v),
         options: identifierDescriptionOptions,
         selectAriaLabel: "Description Type",
@@ -339,13 +332,11 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Alternate Identifiers",
         value: this.alternateIdentifiers,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setAlternateIdentifiers(v),
       },
       {
         key: "Dates",
         value: this.dates,
-        // $FlowFixMe[incompatible-call]
         handler: (v) => this.setDates(v),
         options: identifierDateOptions,
         selectAriaLabel: "Event Type",

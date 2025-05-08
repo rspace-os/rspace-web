@@ -30,17 +30,15 @@ import { type Panel } from "../../util/types";
 import { Optional } from "../../util/optional";
 
 type SerialisedRecord =
-  | {
-      ...$Exact<BulkEndpointRecordSerialisation>,
-      globalId: ?GlobalId,
-      removeFromParentContainerRequest: true,
-    }
-  | {
-      ...$Exact<BulkEndpointRecordSerialisation>,
-      globalId: ?GlobalId,
-      parentContainers: ReadonlyArray<{ ... }>,
-      parentLocation?: { ... },
-    };
+  | (BulkEndpointRecordSerialisation & {
+      globalId: ?GlobalId;
+      removeFromParentContainerRequest: true;
+    })
+  | (BulkEndpointRecordSerialisation & {
+      globalId: ?GlobalId;
+      parentContainers: ReadonlyArray<object>;
+      parentLocation?: object;
+    });
 
 export default class MoveStore {
   rootStore: RootStore;
@@ -48,7 +46,7 @@ export default class MoveStore {
   isMoving: boolean = false;
   submitting: "NO" | "MAKE-TOP" | "TO-OTHER" = "NO";
   selectedResults: Array<ContainerModel | SubSampleModel> = [];
-  search: ?Search;
+  search: Search | null;
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {
@@ -75,17 +73,18 @@ export default class MoveStore {
     this.rootStore = rootStore;
   }
 
-  get results(): ?Array<InventoryRecord> {
+  get results(): Array<InventoryRecord> | undefined {
     return this.search?.filteredResults;
   }
 
-  get activeResult(): ?Container {
+  get activeResult(): Container | null | undefined {
     return (
-      this.search?.activeResult ?? this.rootStore.peopleStore.currentUser?.bench
+      (this.search?.activeResult as Container) ??
+      this.rootStore.peopleStore.currentUser?.bench
     );
   }
 
-  get targetLocations(): ?Array<Location> {
+  get targetLocations(): Array<Location> | null {
     return this.activeResult?.selectedLocations;
   }
 
@@ -186,7 +185,7 @@ export default class MoveStore {
     records.map(async (record) => {
       if (record instanceof SampleModel) {
         if (!record.infoLoaded) {
-          await (record.fetchAdditionalInfo(): void);
+          await record.fetchAdditionalInfo();
         }
         this.selectedResults = [...this.selectedResults, ...record.subSamples];
       } else if (
@@ -250,18 +249,15 @@ export default class MoveStore {
     await this.refreshAfterMove();
   }
 
-  async moveRecords(records: $ReadOnlyArray<SerialisedRecord>): Promise<void> {
+  async moveRecords(records: ReadonlyArray<SerialisedRecord>): Promise<void> {
     try {
-      const { data } = await ApiService.bulk<
-        mixed,
-        {
-          successCount: number,
-          results: Array<{ error: { errors: Array<string> }, record: any }>,
-          errorCount: number,
-        }
-      >(records, "MOVE", true);
+      const { data } = await ApiService.bulk<{
+        successCount: number;
+        results: Array<{ error: { errors: Array<string> }; record: unknown }>;
+        errorCount: number;
+      }>(records, "MOVE", true);
       const factory = new MemoisedFactory();
-      const results: Array<InventoryRecord> = data.results
+      const results = data.results
         .filter((r) => Boolean(r.record))
         .map((r) => {
           const newRecord = factory.newRecord(r.record);

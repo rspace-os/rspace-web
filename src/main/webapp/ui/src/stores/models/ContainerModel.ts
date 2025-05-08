@@ -193,11 +193,11 @@ export default class ContainerModel
   canStoreContainers: boolean = true;
   canStoreSamples: boolean = true;
   quantity: null = null; // Could this be removed from the API?
-  locations: ?Array<Location> = [];
+  locations: Array<Location> | null = [];
   unchangedLocationsIds: ReadonlyArray<number> = [];
-  locationsImage: ?BlobUrl = null;
-  gridLayout: ?GridLayout = null;
-  newBase64LocationsImage: ?string = null;
+  locationsImage: BlobUrl | null = null;
+  gridLayout: GridLayout | null = null;
+  newBase64LocationsImage: string | null = null;
   cType: ContainerType = "LIST";
   selectionMode: boolean = false;
   selectionStart: Point = { x: 0, y: 0 };
@@ -465,8 +465,8 @@ export default class ContainerModel
 
   get canStore(): Array<"containers" | "samples"> {
     return [
-      ...(this.canStoreContainers ? ["containers"] : []),
-      ...(this.canStoreSamples ? ["samples"] : []),
+      ...(this.canStoreContainers ? ["containers" as const] : []),
+      ...(this.canStoreSamples ? ["samples" as const] : []),
     ];
   }
 

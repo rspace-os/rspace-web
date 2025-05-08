@@ -12,7 +12,7 @@ import {
   type BarcodeRecord,
 } from "../../definitions/Barcode";
 import { PersistedBarcode } from "../Barcode";
-import { type IdentifierAttrs } from "../../definitions/Identifier";
+import { Identifier, type IdentifierAttrs } from "../../definitions/Identifier";
 import IdentifierModel from "../IdentifierModel";
 import { type DocumentAttrs, type Document } from "../../definitions/Document";
 import { newDocument } from "../Document";
@@ -25,7 +25,7 @@ import InvApiService from "../../../common/InvApiService";
  * instantiation logic is not necessary.
  */
 export default class AlwaysNewFactory implements Factory {
-  newRecord(params: any): Result {
+  newRecord(params: Record<string, unknown> & { globalId: GlobalId }): Result {
     if (params instanceof Result)
       throw new Error("Cannot instantiate Record from Result");
     const g = params.globalId ?? "";
@@ -54,7 +54,7 @@ export default class AlwaysNewFactory implements Factory {
     attrs: IdentifierAttrs,
     parentGlobalId: GlobalId,
     ApiService: typeof InvApiService
-  ): IdentifierModel {
+  ): Identifier {
     return new IdentifierModel(attrs, parentGlobalId, ApiService);
   }
 

@@ -458,7 +458,7 @@ export default class TemplateModel extends SampleModel implements Template {
     );
   }
 
-  get permalinkURL(): ?URLType {
+  get permalinkURL(): URLType | null {
     if (!this.id) return null;
     const id = this.id;
 
@@ -582,7 +582,7 @@ export default class TemplateModel extends SampleModel implements Template {
   }
 
   //eslint-disable-next-line no-unused-vars
-  updateBecauseRecordsChanged(recordIds: Set<GlobalId>) {
+  updateBecauseRecordsChanged(_recordIds: Set<GlobalId>) {
     /*
      * Whilst Sample has subsamples who when changed effect the Sample's
      * properties, Templates have no such data.

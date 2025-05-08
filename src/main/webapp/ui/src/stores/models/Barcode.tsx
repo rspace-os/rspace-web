@@ -24,12 +24,12 @@ function fetchImage(url: URL, description: string): Promise<File> {
  */
 export class PersistedBarcode implements BarcodeRecord {
   id: Id;
-  data: BarcodeValue;
+  data: string;
   description: string;
   newBarcodeRequest: boolean;
   deleteBarcodeRequest: boolean;
-  imageUrl: ?URL;
-  image: ?File;
+  imageUrl: URL | null;
+  image: File | null;
 
   constructor(attrs: PersistedBarcodeAttrs) {
     makeObservable(this, {
@@ -78,7 +78,7 @@ export class PersistedBarcode implements BarcodeRecord {
     this.deleteBarcodeRequest = true;
   }
 
-  deletedCopy(): ?BarcodeRecord {
+  deletedCopy(): BarcodeRecord | null {
     if (this.id === null) return null;
     return new PersistedBarcode({
       id: this.id,

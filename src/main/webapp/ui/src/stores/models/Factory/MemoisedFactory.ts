@@ -5,8 +5,9 @@ import Result from "../Result";
 import AlwaysNewFactory from "./AlwaysNewFactory";
 import { type Factory } from "../../definitions/Factory";
 import { type DocumentAttrs, type Document } from "../../definitions/Document";
+import { InventoryRecord } from "../../definitions/InventoryRecord";
 
-/*
+/**
  * A Factory which memoises the instantiation of new objects, thereby
  * preventing the allocation of additional memory. This is preffered where the
  * instantiated objects will exist for a long period of time and where a great
@@ -33,18 +34,17 @@ export default class MemoisedFactory extends AlwaysNewFactory {
    * existing object, so do call `populateFromJson` on the returned object if
    * the data has changed.
    */
-  newRecord(params: any): Result {
+  newRecord(
+    params: Record<string, unknown> & { globalId: GlobalId }
+  ): InventoryRecord {
     if (params instanceof Result)
       throw new Error("Cannot instantiate Record from Result");
     const globalId = params.globalId;
     const existingRecord = this.recordCache.get(globalId);
-    if (existingRecord) {
-      return existingRecord;
-    } else {
-      const newResult = super.newRecord(params);
-      this.recordCache.set(globalId, newResult);
-      return newResult;
-    }
+    if (existingRecord) return existingRecord;
+    const newResult = super.newRecord(params);
+    this.recordCache.set(globalId, newResult);
+    return newResult;
   }
 
   /*
