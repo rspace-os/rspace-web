@@ -7,6 +7,7 @@ import com.researchspace.model.RSChemElement;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.collections.CollectionUtils;
+import org.hibernate.annotations.QueryHints;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -32,7 +33,7 @@ public class RSChemElementDaoHibernate extends GenericDaoHibernate<RSChemElement
     return sq.list();
   }
 
-  public List<RSChemElement> getChemElementsForChemIds(List<Long> chemIds) {
+  public List<RSChemElement> getChemElementsForReadOnlyAndClearDBSession(List<Long> chemIds) {
     List<RSChemElement> result = new ArrayList<>();
     if (!CollectionUtils.isEmpty(chemIds)) {
       Query<RSChemElement> chemicalQuery =
@@ -40,7 +41,9 @@ public class RSChemElementDaoHibernate extends GenericDaoHibernate<RSChemElement
               .createQuery(
                   " from RSChemElement chem where chem.id in (:chemicalIds) ", RSChemElement.class);
       chemicalQuery.setParameterList("chemicalIds", chemIds);
+      chemicalQuery.setHint(QueryHints.READ_ONLY, true);
       result.addAll(chemicalQuery.list());
+      getSession().clear();
     }
     return result;
   }

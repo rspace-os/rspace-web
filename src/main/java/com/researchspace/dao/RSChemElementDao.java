@@ -8,7 +8,7 @@ public interface RSChemElementDao extends GenericDao<RSChemElement, Long> {
 
   List<RSChemElement> getAllChemElementsFromField(Long fieldId);
 
-  List<RSChemElement> getChemElementsForChemIds(List<Long> chemIds);
+  List<RSChemElement> getChemElementsForReadOnlyAndClearDBSession(List<Long> chemIds);
 
   /**
    * Get the List of {@link RSChemElement} that matches the given EcatChemistryFile Id

@@ -147,7 +147,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       }
       List<Long> idsPageToProcess = chemServiceResultIds.subList(fromIndex, toIndex);
       List<RSChemElement> possibleResults =
-          rsChemElementDao.getChemElementsForChemIds(idsPageToProcess);
+          rsChemElementDao.getChemElementsForReadOnlyAndClearDBSession(idsPageToProcess);
       foundResults.addAll(
           getFilteredChemSearchedItems(possibleResults, currentResultsLimit, subject));
 
@@ -190,9 +190,18 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       if (fieldId != null) {
         Field field = getField(user, rsChemElement, fieldId);
         if (field != null) {
-          if (fieldParser.hasChemElement(rsChemElement.getId(), field.getFieldData())) {
-            addStructuredDocumentToSearchResults(
-                user, searchResult, rsChemElement, field.getStructuredDocument());
+          StructuredDocument structuredDocument = field.getStructuredDocument();
+          boolean isPermitted =
+              structuredDocument != null
+                  && isNotDeletedForUser(structuredDocument, user)
+                  && permissionUtils.isPermitted(
+                      (BaseRecord) structuredDocument, PermissionType.READ, user);
+
+          if (isPermitted) {
+            if (fieldParser.hasChemElement(rsChemElement.getId(), field.getFieldData())) {
+              addStructuredDocumentToSearchResults(
+                  user, searchResult, rsChemElement, structuredDocument);
+            }
           }
         }
       }
@@ -263,17 +272,14 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       List<ChemSearchedItem> lstChemSearchedItems,
       RSChemElement rsChemElement,
       StructuredDocument structuredDocument) {
-    if (structuredDocument != null && isNotDeletedForUser(structuredDocument, user)) {
-      if (permissionUtils.isPermitted((BaseRecord) structuredDocument, PermissionType.READ, user)) {
-        ChemSearchedItem chemSearchedItem = new ChemSearchedItem();
-        chemSearchedItem.setChemId(rsChemElement.getId());
-        chemSearchedItem.setRecordId(structuredDocument.getId());
-        chemSearchedItem.setRecordName(structuredDocument.getName());
-        chemSearchedItem.setRecord(structuredDocument);
-        if (!lstChemSearchedItems.contains(chemSearchedItem)) {
-          lstChemSearchedItems.add(chemSearchedItem);
-        }
-      }
+
+    ChemSearchedItem chemSearchedItem = new ChemSearchedItem();
+    chemSearchedItem.setChemId(rsChemElement.getId());
+    chemSearchedItem.setRecordId(structuredDocument.getId());
+    chemSearchedItem.setRecordName(structuredDocument.getName());
+    chemSearchedItem.setRecord(structuredDocument);
+    if (!lstChemSearchedItems.contains(chemSearchedItem)) {
+      lstChemSearchedItems.add(chemSearchedItem);
     }
   }
 
