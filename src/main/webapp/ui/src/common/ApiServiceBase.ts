@@ -90,7 +90,7 @@ class ApiServiceBase {
     isBlob: boolean = false
   ): Promise<Axios.AxiosXHR<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() =>
-      this.api.get(resource, {
+      this.api.get<T>(resource, {
         params,
         responseType: isBlob ? "blob" : "json",
       })

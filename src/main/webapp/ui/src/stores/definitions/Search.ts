@@ -446,5 +446,5 @@ export interface Search {
    */
   readonly benchSearch: boolean;
 
-  currentBasket(basket: ReadonlyArray<Basket>): Basket | null;
+  currentBasket(basket: ReadonlyArray<Basket>): Basket | undefined;
 }

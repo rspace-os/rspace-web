@@ -13,6 +13,7 @@ import {
   type Thumbnail,
   type ReadAccessLevel,
 } from "../definitions/Record";
+import { type Location } from "../definitions/Container";
 import {
   type Action,
   type RecordType,
@@ -55,8 +56,8 @@ import { type Attachment } from "../definitions/Attachment";
 import { type BarcodeRecord } from "../definitions/Barcode";
 import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
 import { type SharedWithGroup } from "../definitions/Group";
-import { type ContainerInContainerParams } from "../models/ContainerModel";
-import { type SampleInContainerParams } from "../models/SampleModel";
+import { type ContainerInContainerParams } from "./ContainerModel";
+import { type SampleInContainerParams } from "./SampleModel";
 import {
   calculateProgress,
   noProgress,
@@ -184,8 +185,8 @@ export default class Result
 {
   loading: boolean = false;
   editing: boolean = false;
-  id: ?Id = null;
-  globalId: ?GlobalId = null;
+  id: Id | null = null;
+  globalId: GlobalId | null = null;
   type: ApiRecordType;
   name: ResultEditableFields["name"] = "";
   description: ResultEditableFields["description"] = "";
@@ -212,10 +213,10 @@ export default class Result
   newBase64Image: ResultEditableFields["newBase64Image"] = null;
   attachments: Array<Attachment> = [];
   identifiers: Array<Identifier> = [];
-  iconId: ?number;
-  barcodes: Array<BarcodeRecord>;
+  iconId: number | null = null;
+  barcodes: Array<BarcodeRecord> = [];
   factory: Factory;
-  fetchingAdditionalInfo: ?Promise<unknown> = null;
+  fetchingAdditionalInfo: Promise<{ data: unknown }> | null = null;
   sharingMode: SharingMode;
   sharedWith: ?Array<SharedWithGroup>;
 
@@ -507,6 +508,8 @@ export default class Result
     }));
 
     const params: {
+      id: Id,
+      globalId: GlobalId | null,
       name?: string,
       description?: ?string,
       extraFields?: typeof extraFields,
@@ -517,8 +520,8 @@ export default class Result
         ontologyVersion: ?string,
       }>,
       newBase64Image?: ?string,
-      barcodes?: Array<{ ... }>,
-      identifiers?: mixed,
+      barcodes?: Array<object>,
+      identifiers?: unknown,
       sharingMode?: SharingMode,
       sharedWith?: ?Array<SharedWithGroup>,
     } = {
@@ -713,7 +716,7 @@ export default class Result
     });
   }
 
-  async releaseLock(silent: boolean = false): Promise<?boolean> {
+  async releaseLock(silent: boolean = false): Promise<boolean | null> {
     try {
       if (!this.globalId) throw new Error("globalId is required.");
       const response = await ApiService.delete<void>(
@@ -790,12 +793,12 @@ export default class Result
 
   async setEditing(
     value: boolean,
-    refresh: ?boolean,
-    silent: ?boolean
+    refresh?: boolean | null,
+    silent?: boolean | null
   ): Promise<LockStatus> {
     refresh = refresh ?? true;
     silent = silent ?? false;
-    const doSetEditing = action<void>(() => {
+    const doSetEditing = action<() => void>(() => {
       this.editing = value;
       this.updateFieldsState();
     });
@@ -919,8 +922,7 @@ export default class Result
 
     // `instanceof ContainerModel` would add a cyclical dependency
     if (!activeResult || !("locations" in activeResult)) return;
-    // $FlowExpectedError[prop-missing] Effectively asserted activeResult is a Container
-    const locations = activeResult.locations;
+    const locations = activeResult.locations as ReadonlyArray<Location>;
 
     /*
      * Each search has a list of results, amongst which the same record may
@@ -930,7 +932,7 @@ export default class Result
      * selection across different searches. Note the use of `this` rather
      * than comparing IDs.
      */
-    const parentLocation = locations.find(({ content }) => content === this);
+    const parentLocation = locations.find(({ content }) => content as Result | null === this);
 
     // this check is necessary to avoid stack overflow
     if (parentLocation?.selected !== value) {
@@ -950,7 +952,7 @@ export default class Result
 
     this.setLoading(true);
     try {
-      this.fetchingAdditionalInfo = ApiService.query(
+      this.fetchingAdditionalInfo = ApiService.query<unknown>(
         `${this.recordType}s/${id}`,
         new URLSearchParams(queryParameters)
       );

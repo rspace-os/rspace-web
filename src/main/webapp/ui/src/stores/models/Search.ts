@@ -85,7 +85,7 @@ export const getViewGroup = (
 
 const prepareRecordsForBulkApi = (
   records: Array<InventoryRecord>,
-  opts?: {| forceDelete?: boolean |}
+  opts?: { forceDelete?: boolean }
 ) =>
   records.map((record) => ({
     id: record.id,
@@ -94,19 +94,19 @@ const prepareRecordsForBulkApi = (
     ...(opts ?? {}),
   }));
 
-type SearchArgs = {|
+type SearchArgs = {
   fetcherParams?: CoreFetcherArgs,
   treeArgs?: TreeAttrs,
   uiConfig?: Partial<UiConfig>,
-  callbacks?: {|
+  callbacks?: {
     /*
      * Note that this callback is called after setActiveResult (naturally) and
      * the resulting call to fetchAdditionalInfo have both completed.
      */
     setActiveResult?: (?Result) => void,
-  |},
+  ,
   factory: Factory,
-|};
+};
 
 const DEFAULT_UI_CONFIG: UiConfig = {
   allowedSearchModules: new Set([
@@ -146,9 +146,9 @@ export default class Search implements SearchInterface {
   staticFetcher: CoreFetcherInterface;
   cacheFetcher: CacheFetcherInterface;
   alwaysFilterOut: (InventoryRecord) => boolean = () => false;
-  callbacks: ?{|
+  callbacks: ?{
     setActiveResult?: (?Result) => void,
-  |};
+  };
 
   /*
    *  When set, it overrides the default behaviour of reperforming a search
@@ -353,10 +353,10 @@ export default class Search implements SearchInterface {
 
   get batchEditingRecordsByType():
     | null
-    | {| type: "container", records: RsSet<ContainerModel> |}
-    | {| type: "sample", records: RsSet<SampleModel> |}
-    | {| type: "subSample", records: RsSet<SubSampleModel> |}
-    | {| type: "mixed", records: RsSet<Result> |} {
+    | { type: "container", records: RsSet<ContainerModel> }
+    | { type: "sample", records: RsSet<SampleModel> }
+    | { type: "subSample", records: RsSet<SubSampleModel> }
+    | { type: "mixed", records: RsSet<Result> } {
     if (!this.batchEditingRecords) return null;
     const records: RsSet<InventoryRecord> = this.batchEditingRecords;
     if (records.every((r) => r instanceof ContainerModel)) {
@@ -434,7 +434,7 @@ export default class Search implements SearchInterface {
    */
   async deleteRecords(
     records: Array<InventoryRecord>,
-    opts?: {| forceDelete?: boolean |}
+    opts?: { forceDelete?: boolean }
   ): Promise<void> {
     this.setProcessingContextActions(true);
     const { uiStore } = getRootStore();
@@ -443,19 +443,15 @@ export default class Search implements SearchInterface {
       const { data } = await showToastWhilstPending(
         "Sending to trash...",
         ApiService.bulk<
-          mixed,
           {
             results: Array<{
               error: { errors: Array<string> },
               record: null | {
                 type: string,
                 canBeDeleted?: boolean,
-                subSamples: $ReadOnlyArray<{
+                subSamples: ReadonlyArray<{
                   storedInContainer: boolean,
-                  ...$Diff<SubSampleAttrs, { sample: mixed }>,
-                  ...
-                }>,
-                ...
+                } & Omit<SubSampleAttrs, "sample">>,
               },
             }>,
             errorCount: number,
@@ -649,7 +645,6 @@ export default class Search implements SearchInterface {
       const { data } = await showToastWhilstPending(
         "Restoring...",
         ApiService.bulk<
-          mixed,
           {
             results: Array<{ error: { errors: Array<string> }, record: any }>,
             errorCount: number,
@@ -729,7 +724,6 @@ export default class Search implements SearchInterface {
       const { data } = await showToastWhilstPending(
         "Duplicating...",
         ApiService.bulk<
-          mixed,
           {
             results: Array<{ error: { errors: Array<string> }, record: any }>,
             errorCount: number,
@@ -815,7 +809,6 @@ export default class Search implements SearchInterface {
       const { data } = await showToastWhilstPending(
         "Splitting...",
         ApiService.post<
-          { split: true, numSubSamples: number },
           Array<SubSampleAttrs>
         >(`subSamples/${id}/actions/split`, {
           split: true,
@@ -907,7 +900,6 @@ export default class Search implements SearchInterface {
       const { data } = await showToastWhilstPending(
         "Transferring...",
         ApiService.bulk<
-          mixed,
           {
             results: Array<{ error: { errors: Array<string> }, record: any }>,
             errorCount: number,
@@ -1053,20 +1045,15 @@ export default class Search implements SearchInterface {
     }
   }
 
-  async createNewSubsamples(opts: {|
+  async createNewSubsamples(opts: {
     sample: Sample,
     numberOfNewSubsamples: number,
     quantityPerSubsample: Quantity,
-  |}): Promise<void> {
+  }): Promise<void> {
     const { uiStore, searchStore } = getRootStore();
     try {
       const { data } = await ApiService.post<
-        {|
-          sampleId: number,
-          numSubSamples: string,
-          singleSubSampleQuantity: Quantity,
-        |},
-        $ReadOnlyArray<SubSampleAttrs>
+        ReadonlyArray<SubSampleAttrs>
       >("subSamples", {
         sampleId: opts.sample.id,
         numSubSamples: `${opts.numberOfNewSubsamples}`,
@@ -1144,22 +1131,17 @@ export default class Search implements SearchInterface {
             : {
                 includeSubsamplesInSample:
                   includeSubsamplesInSample === "INCLUDE",
-              }): {|
-            includeSubsamplesInSample?: boolean,
-          |}),
+              })),
           ...((includeContainerContent === null
             ? {}
             : {
                 includeContainerContent: includeContainerContent === "INCLUDE",
-              }): {|
-            includeContainerContent?: boolean,
-          |}),
+              })),
         })
       );
       const { data } = await showToastWhilstPending(
         "Exporting...",
         ApiService.post<
-          typeof params,
           { _links: Array<{ link: string, rel: string }> }
         >("export", params)
       );
@@ -1348,7 +1330,7 @@ export default class Search implements SearchInterface {
 
     // in the move dialog, choosing a bench should set it as the target
     if (user) {
-      doNotAwait<mixed>(async () => {
+      doNotAwait(async () => {
         const bench = user.bench ?? (await user.getBench());
         await getRootStore().moveStore.setTargetContainer(bench);
       })();
@@ -1520,11 +1502,10 @@ export default class Search implements SearchInterface {
           const {
             data: { results, errorCount },
           } = await ApiService.bulk<
-            mixed,
             {
               results: Array<{
                 error: { errors: Array<string> },
-                record: { globalId: ?GlobalId, ... },
+                record: { globalId: ?GlobalId },
               }>,
               errorCount: number,
             }
@@ -1614,7 +1595,7 @@ export default class Search implements SearchInterface {
     return false;
   }
 
-  currentBasket(baskets: $ReadOnlyArray<Basket>): ?Basket {
+  currentBasket(baskets: ReadonlyArray<Basket>): Basket | undefined {
     return baskets.find((b) => b.globalId === this.fetcher.parentGlobalId);
   }
 }
