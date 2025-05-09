@@ -185,7 +185,7 @@ public class SharingHandlerImpl implements SharingHandler {
   @Override
   @Transactional
   public SharingResult moveIntoSharedNotebook(
-      BaseRecord baseRecordToMove, Notebook targetSharedNotebook) {
+      Group group, BaseRecord baseRecordToMove, Notebook targetSharedNotebook) {
     Validate.isTrue(
         targetSharedNotebook != null && targetSharedNotebook.isShared(),
         "Notebook must be already shared");
@@ -198,7 +198,7 @@ public class SharingHandlerImpl implements SharingHandler {
           baseRecordToMove.getOwner(), baseRecordToMove, pathToRootSharedFolder);
     }
     ShareConfigCommand shareConfig =
-        buildShareCommandForTarget(baseRecordToMove.getId(), targetSharedNotebook);
+        buildShareCommandForTarget(baseRecordToMove.getId(), group.getId(), targetSharedNotebook);
     SharingResult sharingResult = shareRecordsWithResult(shareConfig, baseRecordToMove.getOwner());
     if (sharingResult.getError().hasErrorMessages()) {
       throw new IllegalStateException(
@@ -210,17 +210,12 @@ public class SharingHandlerImpl implements SharingHandler {
   }
 
   @NotNull
-  private static ShareConfigCommand buildShareCommandForTarget(Long idToMove, Folder target) {
-    ShareConfigElement shareElement = new ShareConfigElement();
-    Group group = target.getOwner().getPrimaryLabGroupWithPIRole();
-    shareElement.setGroupid(group.getId());
+  private static ShareConfigCommand buildShareCommandForTarget(
+      Long idToMove, Long groupId, Folder target) {
+    ShareConfigElement shareElement = new ShareConfigElement(groupId, "read");
     shareElement.setGroupFolderId(target.getId());
-    shareElement.setOperation("write");
-    shareElement.setAllowedOps(List.of("read", "write"));
-    ShareConfigCommand shareConfig =
-        new ShareConfigCommand(
-            new Long[] {idToMove}, new ShareConfigElement[] {shareElement}, false);
-    return shareConfig;
+    return new ShareConfigCommand(
+        new Long[] {idToMove}, new ShareConfigElement[] {shareElement}, false);
   }
 
   @NotNull

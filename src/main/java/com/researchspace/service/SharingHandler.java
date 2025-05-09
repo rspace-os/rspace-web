@@ -22,7 +22,8 @@ public interface SharingHandler {
   ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> shareIntoSharedFolder(
       User user, Folder sharedFolder, Long recordId);
 
-  SharingResult moveIntoSharedNotebook(BaseRecord baseRecordToMove, Notebook targetSharedNotebook);
+  SharingResult moveIntoSharedNotebook(
+      Group group, BaseRecord baseRecordToMove, Notebook targetSharedNotebook);
 
   ServiceOperationResult<RecordGroupSharing> unshare(Long recordGroupShareId, User subject);
 
