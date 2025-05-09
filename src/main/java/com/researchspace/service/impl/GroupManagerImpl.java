@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.service.RecordDeletionManager.MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER;
 import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX;
 
 import com.researchspace.Constants;
@@ -55,6 +56,7 @@ import com.researchspace.model.record.ChildAddPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.GroupInvitation;
 import com.researchspace.model.views.GroupInvitation.Invitee;
@@ -764,6 +766,20 @@ public class GroupManagerImpl implements GroupManager {
     // should be last call once all FKs are removed
     groupDao.remove(group.getId());
     return group;
+  }
+
+  public Group getGroupFromAnyLevelOfSharedFolder(User user, Folder sharedFolder) {
+    Optional<Folder> sharedFolderRoot =
+        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(sharedFolder.getId(), user);
+    RSPath path = folderMgr.getShortestPathToSharedRootFolder(sharedFolder.getId(), user);
+    if (path.isEmpty() || path.size() <= MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER) {
+      String msg =
+          String.format(
+              "The folder '%s' is not a shared subfolder - id [%d] is not in a shared folder!",
+              sharedFolder.getName(), sharedFolder.getId());
+      throw new IllegalArgumentException(msg);
+    }
+    return this.getGroupByCommunalGroupFolderId(sharedFolderRoot.get().getId());
   }
 
   @Override

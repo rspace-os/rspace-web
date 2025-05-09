@@ -457,7 +457,8 @@ public class RSCommunityController extends BaseController {
         }
       }
     }
-    SharingResult sharingResult = new SharingResult(new ArrayList<>(sharedIds), new ArrayList<>());
+    SharingResult sharingResult =
+        new SharingResult(new ArrayList<>(sharedIds), new ArrayList<>(), error);
     return new AjaxReturnObject<>(sharingResult, error);
   }
 
