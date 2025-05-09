@@ -611,7 +611,7 @@ public class WorkspaceController extends BaseController {
         BaseRecord baseRecordToMove = recordManager.get(recordIdToMove);
         if (target.isNotebook() && target.isShared()) {
           try {
-            Group group = groupManager.getGroupByCommunalGroupFolderId(sourceFolder.getId());
+            Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder);
             SharingResult sharingResult =
                 recordShareHandler.moveIntoSharedNotebook(
                     group, baseRecordToMove, (Notebook) target);
