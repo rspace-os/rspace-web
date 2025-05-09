@@ -49,7 +49,7 @@ import {
   IsValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
-import { getErrorMessage } from "@/util/error";
+import { getErrorMessage } from "../../util/error";
 
 const mainSearch = () => getRootStore().searchStore.search;
 

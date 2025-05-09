@@ -55,7 +55,7 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
     return this.points.length;
   }
 
-  get(i: number): ?{ polygonPoint: PolygonPoint } {
+  get(i: number): { polygonPoint: PolygonPoint } | undefined {
     return this.points[i];
   }
 

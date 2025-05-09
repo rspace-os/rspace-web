@@ -216,7 +216,7 @@ export interface CoreFetcher {
   /*
    * Ordering of results
    */
-  order: string;
+  order: "asc" | "desc";
   setOrder(order: Order, orderBy: string): void;
   isCurrentSort(key: string): boolean;
   invertSortOrder(): Order;
@@ -371,7 +371,7 @@ export interface Search {
    */
   setTypeFilter(resultType: ResultType, doSearch: boolean | null): void;
   setOwner(user: Person | null, doSearch: boolean | null): void;
-  setBench(user: Person | null, doSearch: boolean | null): void;
+  setBench(user: Person | null, doSearch?: boolean): void;
   setDeletedItems(deletedItems: DeletedItems, doSearch: boolean | null): void;
   setParentGlobalId(
     parentGlobalId: GlobalId | null,

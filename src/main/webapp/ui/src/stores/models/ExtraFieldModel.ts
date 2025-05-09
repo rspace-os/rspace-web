@@ -56,12 +56,12 @@ export default class ExtraFieldModel implements ExtraField {
     this.invalidInput = false;
   }
 
-  setAttributesDirty(attrs: {}) {
+  setAttributesDirty(attrs: Record<string, unknown>) {
     this.owner.setAttributesDirty({});
     this.setAttributes(attrs);
   }
 
-  setAttributes(attrs: {}) {
+  setAttributes(attrs: Record<string, unknown>) {
     Object.assign(this, attrs);
   }
 

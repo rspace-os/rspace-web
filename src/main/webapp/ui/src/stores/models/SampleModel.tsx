@@ -80,6 +80,7 @@ import {
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import * as ArrayUtils from "../../util/ArrayUtils";
+import { getErrorMessage } from "@/util/error";
 
 type SampleEditableFields = RecordWithQuantityEditableFields & {
   expiryDate: ?string;
@@ -203,7 +204,8 @@ export default class SampleModel
   subSamplesCount: number = 0;
   subSamples: Array<SubSampleModel> = [];
   newSampleSubSamplesCount: ?number = 1;
-  newSampleSubSampleTargetLocations: ?Array<SubSampleTargetLocation> = null;
+  newSampleSubSampleTargetLocations: Array<SubSampleTargetLocation> | null =
+    null;
   storageTempMin: ?Temperature;
   storageTempMax: ?Temperature;
   fields: Array<Field> = [];
@@ -384,15 +386,15 @@ export default class SampleModel
     await this.fetchingAdditionalInfo;
   }
 
-  get minTempValue(): ?number {
+  get minTempValue(): number | null {
     return this.storageTempMin ? this.storageTempMin.numericValue : null;
   }
 
-  get maxTempValue(): ?number {
+  get maxTempValue(): number | null {
     return this.storageTempMax ? this.storageTempMax.numericValue : null;
   }
 
-  get tempUnitId(): ?number {
+  get tempUnitId(): number | null {
     return this.storageTempMax ? this.storageTempMax.unitId : null;
   }
 
@@ -403,7 +405,7 @@ export default class SampleModel
    * ./__tests__/SampleModel/paramsForBackend.test.js for the tests that assert
    * that this object can be serialised; any changes should be reflected there.
    */
-  get paramsForBackend(): object {
+  get paramsForBackend(): Record<string, unknown> {
     const fields = this.fields.map((field) => field.paramsForBackend);
 
     // Calculate total quantity when creating new
@@ -447,7 +449,6 @@ export default class SampleModel
           f.owner = this;
           return f;
         }
-        // $FlowFixMe[cannot-spread-interface]
         return new FieldModel({ ...f }, this);
       }),
     });
@@ -477,7 +478,9 @@ export default class SampleModel
     newResultGlobalId?: GlobalId,
     newFields?: Array<Field>
   ): Promise<void> {
-    const findGlobalIdOfField = (attachment: Attachment): ?GlobalId => {
+    const findGlobalIdOfField = (
+      attachment: Attachment
+    ): GlobalId | null | undefined => {
       const field = this.fields.find((f) => f.attachment === attachment);
       if (!field) throw new Error("Could not find field");
       if (!newResultGlobalId) return field.globalId;
@@ -542,8 +545,8 @@ export default class SampleModel
   }
 
   overrideTemp(
-    min: ?{ numericValue: number; unitId: number },
-    max: ?{ numericValue: number; unitId: number }
+    min: { numericValue: number; unitId: number } | null,
+    max: { numericValue: number; unitId: number } | null
   ) {
     if (!min || !max) return;
 
@@ -592,7 +595,7 @@ export default class SampleModel
       this.setAttributes({
         quantity: {
           numericValue: this.quantity?.numericValue,
-          unitId: parseInt(template.defaultUnitId),
+          unitId: template.defaultUnitId,
         },
         subSampleAlias: template.subSampleAlias,
         expiryDate: template.expiryDate,
@@ -715,8 +718,7 @@ export default class SampleModel
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: "Updating sample to latest template failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
         })
       );
@@ -728,7 +730,7 @@ export default class SampleModel
     return Boolean(this.search.selectedResults[0]);
   }
 
-  contextMenuDisabled(): ?string {
+  contextMenuDisabled(): string | null {
     const searchShowsSelection = new Set(["LIST", "GRID", "IMAGE"]).has(
       this.search.searchView
     );
@@ -830,9 +832,8 @@ export default class SampleModel
     return true;
   }
 
-  //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): { [key in keyof SampleEditableFields]: ?string } & {
-    [key in keyof SampleUneditableFields]: ?string;
+  get noValueLabel(): { [key in keyof SampleEditableFields]: string | null } & {
+    [key in keyof SampleUneditableFields]: string | null;
   } {
     return {
       ...super.noValueLabel,
@@ -846,7 +847,7 @@ export default class SampleModel
 
   refreshAssociatedSearch() {
     if (this.id !== null) {
-      void this.search.fetcher.performInitialSearch();
+      void this.search.fetcher.performInitialSearch({});
     }
   }
 
@@ -1107,8 +1108,9 @@ export class SampleCollection
     };
   }
 
-  //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): { [key in keyof BatchSampleEditableFields]: ?string } {
+  get noValueLabel(): {
+    [key in keyof BatchSampleEditableFields]: string | null;
+  } {
     const currentSources = new RsSet(this.records.map((r) => r.sampleSource));
     const currentExpiryDates = new RsSet(this.records.map((r) => r.expiryDate));
     const allTemperaturesUnspecified =
@@ -1116,7 +1118,7 @@ export class SampleCollection
       this.records.every((s) => !s.storageTempMax);
     const allSameTemperatures = this.allSameTemperatures;
 
-    const temperatureLabel = match<void, ?string>([
+    const temperatureLabel = match<void, string | null?>([
       [() => !allSameTemperatures, "Varies"],
       [() => allTemperaturesUnspecified, "Unspecified"],
       [() => true, null],
@@ -1132,7 +1134,7 @@ export class SampleCollection
     };
   }
 
-  setFieldsDirty(newFieldValues: any): void {
+  setFieldsDirty(newFieldValues: Record<string, unknown>): void {
     super.setFieldsDirty(newFieldValues);
   }
 

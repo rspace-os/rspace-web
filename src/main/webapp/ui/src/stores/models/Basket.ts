@@ -11,15 +11,16 @@ import { type URL } from "../../util/types";
 import getRootStore from "../stores/RootStore";
 import { mkAlert } from "../contexts/Alert";
 import { showToastWhilstPending } from "../../util/alerts";
+import { getErrorMessage } from "../../util/error";
 
-/*
+/**
  * This class models any basket (collection of items)
  * stored in the Inventory system.
  */
 export default class BasketModel implements Basket {
   name: string;
-  id: ?Id;
-  globalId: ?GlobalId;
+  id: Id;
+  globalId: GlobalId;
   items: Array<InventoryRecord>;
   itemCount: number;
   _links: Array<URL>;
@@ -119,7 +120,7 @@ export default class BasketModel implements Basket {
       uiStore.addAlert(
         mkAlert({
           title: "Error adding items to Basket.",
-          message: e.response?.data.message ?? e.message ?? "",
+          message: getErrorMessage(e, ""),
           variant: "error",
         })
       );
@@ -161,7 +162,7 @@ export default class BasketModel implements Basket {
       uiStore.addAlert(
         mkAlert({
           title: "Error removing items from Basket.",
-          message: e.message || "",
+          message: (e as Error).message || "",
           variant: "error",
         })
       );
@@ -194,7 +195,7 @@ export default class BasketModel implements Basket {
       uiStore.addAlert(
         mkAlert({
           title: "Error updating Basket details.",
-          message: e.message || "",
+          message: (e as Error).message || "",
           variant: "error",
         })
       );

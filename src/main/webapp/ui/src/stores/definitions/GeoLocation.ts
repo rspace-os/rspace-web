@@ -22,7 +22,7 @@ export type SimplePoint = {
 
 export interface GeoLocationPolygon {
   readonly length: number;
-  get(i: number): { polygonPoint: PolygonPoint } | null;
+  get(i: number): { polygonPoint: PolygonPoint } | undefined;
   set(i: number, key: keyof PolygonPoint, value: string): void;
   mapPoints<T>(f: (pp: PolygonPoint, i: number) => T): Array<T>;
   addAnotherPoint(i: number): void;

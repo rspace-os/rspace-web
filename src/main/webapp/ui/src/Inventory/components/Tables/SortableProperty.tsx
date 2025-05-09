@@ -14,7 +14,7 @@ type SortablePropertyArgs = {
   property: SortProperty;
 };
 
-function SortableProperty({ property }: SortablePropertyArgs): Node {
+function SortableProperty({ property }: SortablePropertyArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
 
   const setOrder = (key: string) => {

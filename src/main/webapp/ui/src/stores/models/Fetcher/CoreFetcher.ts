@@ -265,7 +265,7 @@ export default class CoreFetcher {
    * the search parameters cleared then call `setupAndPerformInitialSearch` on
    * the instance of the Search class that owns this CoreFetcher.
    */
-  async performInitialSearch(params: ?CoreFetcherArgs = null) {
+  async performInitialSearch(params: CoreFetcherArgs | null = null) {
     this.resetSearch();
     await this.search(params, (r) => this.setResults(r));
   }
@@ -327,17 +327,53 @@ export default class CoreFetcher {
          * A URLSearchParams object, rather than `params` as it is, is passed
          * to ApiService.query so that square brackets are properly encoded.
          */
-        const { data } = await ApiService.query<any>(
+        const { data } = await ApiService.query<{
+          totalHits: number;
+          records?: Array<Record<string, unknown> & { globalId: GlobalId }>;
+          samples?: Array<Record<string, unknown> & { globalId: GlobalId }>;
+          subSamples?: Array<Record<string, unknown> & { globalId: GlobalId }>;
+          containers?: Array<Record<string, unknown> & { globalId: GlobalId }>;
+          sampleTemplates?: Array<
+            Record<string, unknown> & { globalId: GlobalId }
+          >;
+        }>(
           endpoint,
-          // $FlowExpectedError[incompatible-call]
-          new URLSearchParams(omitNull(params))
+          new URLSearchParams(omitNull(params) as Record<string, string>)
         );
-        const records = match<void, Array<unknown>>([
-          [() => endpoint === "search", data.records],
-          [() => endpoint === "samples", data.samples],
-          [() => endpoint === "subSamples", data.subSamples],
-          [() => endpoint === "containers", data.containers],
-          [() => endpoint === "sampleTemplates", data.templates],
+        const records = match<
+          void,
+          Array<Record<string, unknown> & { globalId: GlobalId }>
+        >([
+          [
+            () => endpoint === "search",
+            data.records as Array<
+              Record<string, unknown> & { globalId: GlobalId }
+            >,
+          ],
+          [
+            () => endpoint === "samples",
+            data.samples as Array<
+              Record<string, unknown> & { globalId: GlobalId }
+            >,
+          ],
+          [
+            () => endpoint === "subSamples",
+            data.subSamples as Array<
+              Record<string, unknown> & { globalId: GlobalId }
+            >,
+          ],
+          [
+            () => endpoint === "containers",
+            data.containers as Array<
+              Record<string, unknown> & { globalId: GlobalId }
+            >,
+          ],
+          [
+            () => endpoint === "sampleTemplates",
+            data.sampleTemplates as Array<
+              Record<string, unknown> & { globalId: GlobalId }
+            >,
+          ],
         ])();
         runInAction(() => {
           this.count = data.totalHits || records.length;
@@ -346,7 +382,7 @@ export default class CoreFetcher {
         storeResults(
           records.map((result) => {
             const newRecord = factory.newRecord(result);
-            newRecord.populateFromJson(factory, result);
+            newRecord.populateFromJson(factory, result, null);
             return newRecord;
           })
         );
@@ -505,8 +541,8 @@ export default class CoreFetcher {
     });
   }
 
-  get parentGlobalIdType(): ?ParentGlobalIdType {
-    return match<?GlobalId, ?ParentGlobalIdType>([
+  get parentGlobalIdType(): ParentGlobalIdType | null {
+    return match<GlobalId | null, ParentGlobalIdType | null>([
       [(id) => globalIdPatterns.sample.test(id ?? ""), "SAMPLE"],
       [(id) => globalIdPatterns.subsample.test(id ?? ""), "SUBSAMPLE"],
       [(id) => globalIdPatterns.container.test(id ?? ""), "CONTAINER"],
@@ -525,12 +561,12 @@ export default class CoreFetcher {
     this.resultType = resultType;
   }
 
-  setOwner(owner: ?Person) {
+  setOwner(owner: Person | null) {
     this.owner = owner;
-    this.ownedBy = owner?.username;
+    this.ownedBy = owner === null ? null : owner.username;
   }
 
-  setBenchOwner(owner: ?Person) {
+  setBenchOwner(owner: Person | null) {
     this.benchOwner = owner;
     if (owner?.workbenchId) {
       this.parentGlobalId = `BE${owner.workbenchId}`;
@@ -539,7 +575,7 @@ export default class CoreFetcher {
     }
   }
 
-  setParentGlobalId(parentGlobalId: ?GlobalId) {
+  setParentGlobalId(parentGlobalId: GlobalId | null) {
     this.parentGlobalId = parentGlobalId;
   }
 

@@ -1321,7 +1321,7 @@ export default class Search implements SearchInterface {
     if (doSearch) this.performSearch();
   }
 
-  setBench(user: ?Person, doSearch: ?boolean = true) {
+  setBench(user: Person | null, doSearch: boolean = true) {
     this.staticFetcher.setBenchOwner(user);
     this.dynamicFetcher.setBenchOwner(user);
     this.cacheFetcher.setBenchOwner(user);

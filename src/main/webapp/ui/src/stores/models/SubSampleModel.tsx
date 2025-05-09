@@ -63,6 +63,7 @@ import {
   IsValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
+import { getErrorMessage } from "../../util/error";
 
 type SubSampleEditableFields = RecordWithQuantityEditableFields;
 
@@ -297,8 +298,7 @@ export default class SubSampleModel
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: "Creating note failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
           duration: 8000,
         })

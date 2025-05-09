@@ -5,7 +5,7 @@ import ElnApiService from "../../common/ElnApiService";
 import JwtService from "../../common/JwtService";
 import type { RootStore } from "./RootStore";
 import { mkAlert } from "../contexts/Alert";
-import { getErrorMessage } from "@/util/error";
+import { getErrorMessage } from "../../util/error";
 
 /* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
 const publicView = document.getElementById("public_document_view") !== null;
