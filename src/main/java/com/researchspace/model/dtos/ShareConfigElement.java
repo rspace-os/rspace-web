@@ -19,7 +19,7 @@ public class ShareConfigElement {
   private Long externalGroupId;
 
   private String operation;
-  private List<String> allowedOps = Arrays.asList(new String[] {"read", "write"});
+  private List<String> allowedOps = Arrays.asList("read", "write");
 
   private boolean isAutoshare = false;
   private String publicationSummary;
@@ -27,21 +27,21 @@ public class ShareConfigElement {
   private boolean publishOnInternet;
 
   /**
-   * Assumes 'id' is a group Id. Set UserId explicitly if the object identified by id is a user, not
-   * a group.
+   * Assumes 'groupId' is a group Id. Set UserId explicitly if the object identified by id is a
+   * user, not a group.
    *
-   * @param id
+   * @param groupId
    * @param operation
    */
-  public ShareConfigElement(Long id, String operation) {
-    this.groupid = id;
+  public ShareConfigElement(Long groupId, String operation) {
+    this.groupid = groupId;
     this.operation = operation;
   }
 
   /**
-   * ALternate constructor that will set user or group id properly depending on the
+   * Alternate constructor that will set user or group id properly depending on the
    *
-   * @param id
+   * @param rgs
    * @param operation
    */
   public ShareConfigElement(RecordGroupSharing rgs, String operation) {

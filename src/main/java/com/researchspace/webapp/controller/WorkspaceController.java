@@ -611,8 +611,10 @@ public class WorkspaceController extends BaseController {
         BaseRecord baseRecordToMove = recordManager.get(recordIdToMove);
         if (target.isNotebook() && target.isShared()) {
           try {
+            Group group = groupManager.getGroupByCommunalGroupFolderId(sourceFolder.getId());
             SharingResult sharingResult =
-                recordShareHandler.moveIntoSharedNotebook(baseRecordToMove, (Notebook) target);
+                recordShareHandler.moveIntoSharedNotebook(
+                    group, baseRecordToMove, (Notebook) target);
             if (!sharingResult.getSharedIds().isEmpty()) {
               moveCounter = moveCounter + sharingResult.getSharedIds().size();
             }
@@ -1338,5 +1340,4 @@ public class WorkspaceController extends BaseController {
     documentTagManager.saveTagsForRecords(recordTags, user);
     return ResponseEntity.status(HttpStatus.OK).build();
   }
-
 }
