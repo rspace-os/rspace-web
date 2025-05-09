@@ -104,7 +104,7 @@ test("Importing a selected DMP should call the import endpoint.", async ({
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByText("foo")).toBeVisible();
 
-  const cell = page.getByRole("gridcell", { name: "Plan selection" }).first();
+  const cell = page.getByRole("gridcell", { name: "Select plan: Foo" }).first();
   await cell.getByRole("radio").click();
 
   const [request] = await Promise.all([
