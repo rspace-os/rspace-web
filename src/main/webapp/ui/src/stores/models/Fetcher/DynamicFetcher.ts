@@ -7,7 +7,7 @@ import {
 import { type Factory } from "../../definitions/Factory";
 import { type InventoryRecord } from "../../definitions/InventoryRecord";
 
-/*
+/**
  * This is so that the number of search results is highly divisible, for
  * distributing over 2, 3, or 4 columns.
  */
@@ -17,7 +17,7 @@ export default class DynamicFetcher
   extends CoreFetcher
   implements DynamicFetcherInterface
 {
-  constructor(factory: Factory, params: ?CoreFetcherArgs) {
+  constructor(factory: Factory, params: CoreFetcherArgs | null) {
     super(factory, params);
     makeObservable(this, {
       dynamicSearch: action,
@@ -44,7 +44,7 @@ export default class DynamicFetcher
     return Math.min(DYNAMIC_PAGE_SIZE, this.count - this.results.length);
   }
 
-  async performInitialSearch(params: ?CoreFetcherArgs = null) {
+  async performInitialSearch(params: CoreFetcherArgs | null = null) {
     this.resetSearch();
     if (params) params.pageNumber = 0;
     await this.search(params, (r) => this.addResults([], r));

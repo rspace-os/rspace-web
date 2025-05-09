@@ -14,7 +14,7 @@ export default class CacheFetcher
   cachedResults: Array<InventoryRecord> = [];
   cachedPageSize: number = 0;
 
-  constructor(factory: Factory, params: ?CoreFetcherArgs) {
+  constructor(factory: Factory, params: CoreFetcherArgs | null) {
     super(factory, params);
     makeObservable(this, {
       cachedResults: observable,
@@ -44,11 +44,12 @@ export default class CacheFetcher
     // do nothing; status filter is not allowed in grid and image view
   }
 
+  // eslint-disable-next-line -- has to be async because the superclass is
   async setPage(pageNumber: number): Promise<void> {
     this.pageNumber = pageNumber;
   }
 
-  performInitialSearch(params: ?CoreFetcherArgs = null): Promise<void> {
+  performInitialSearch(params: CoreFetcherArgs | null = null): Promise<void> {
     if (params?.query || params?.resultType || params?.owner) {
       /*
        * this.results will be set on the first call, or when instances of this
@@ -70,22 +71,21 @@ export default class CacheFetcher
         ...params,
         pageSize: this.results.length,
       });
-    } else {
-      /*
-       * If we're no longer filtering grid/image view by one of the allowed
-       * search parameters, then we simply restore the cached search results.
-       */
-      runInAction(() => {
-        if (this.cachedResults.length) {
-          this.results = this.cachedResults;
-          this.pageSize = this.cachedPageSize;
-        }
-      });
-
-      return this.search(params, (results: Array<InventoryRecord>) =>
-        this.setResults(results)
-      );
     }
+    /*
+     * If we're no longer filtering grid/image view by one of the allowed
+     * search parameters, then we simply restore the cached search results.
+     */
+    runInAction(() => {
+      if (this.cachedResults.length) {
+        this.results = this.cachedResults;
+        this.pageSize = this.cachedPageSize;
+      }
+    });
+
+    return this.search(params, (results: Array<InventoryRecord>) =>
+      this.setResults(results)
+    );
   }
 
   async search(

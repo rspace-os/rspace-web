@@ -17,7 +17,7 @@ import { InventoryRecord } from "../../definitions/InventoryRecord";
  * is performed on only a subset of the attributes.
  */
 export default class MemoisedFactory extends AlwaysNewFactory {
-  recordCache: Map<GlobalId, Result>;
+  recordCache: Map<GlobalId, InventoryRecord>;
   personCache: Map<PersonId, PersonModel>;
   documentCache: Map<GlobalId, Document>;
 

@@ -28,18 +28,20 @@ import { type InventoryRecord } from "../../definitions/InventoryRecord";
 import { type Order, parseOrder } from "../../../util/types";
 import { pick } from "../../../util/unsafeUtils";
 import Result from "../../../util/result";
+import { getErrorMessage } from "@/util/error";
+import * as Parsers from "../../../util/parsers";
 
 export const DEFAULT_SEARCH = {
   query: "",
   pageSize: 10,
   pageNumber: 0,
   orderBy: "modificationDate",
-  order: "desc",
+  order: "desc" as const,
   parentGlobalId: null,
-  resultType: "ALL",
+  resultType: "ALL" as const,
   ownedBy: null,
   owner: null,
-  deletedItems: "EXCLUDE",
+  deletedItems: "EXCLUDE" as const,
   permalink: null,
   benchOwner: null,
 };
@@ -51,11 +53,11 @@ export const DEFAULT_FETCHER = {
   error: "",
 };
 
-const omitDefault = <T extends object>(obj: any): any => {
-  Object.keys({ ...obj })
+const omitDefault = <T extends object>(obj: T): object => {
+  (Object.keys({ ...obj }) as Array<keyof T>)
     // @ts-expect-error this function is pretty hacky
     .filter((k) => obj[k] === DEFAULT_SEARCH[k])
-    .forEach((k) => delete obj[k]);
+    .forEach((k: keyof T) => delete obj[k]);
   return obj;
 };
 
@@ -115,37 +117,55 @@ export const generateUrlFromCoreFetcherArgs = (
   const params = pick(...Object.keys(DEFAULT_SEARCH))({
     ...DEFAULT_SEARCH,
     ...fetcherArgs,
-  });
+  }) as Partial<typeof DEFAULT_SEARCH>;
   delete params.permalink;
   delete params.benchOwner;
   delete params.owner;
-  const searchParams = new URLSearchParams(omitDefault(omitNull(params)));
+  const searchParams = new URLSearchParams(
+    omitDefault(omitNull(params)) as Record<string, string>
+  );
   return `/inventory/search?${searchParams.toString()}`;
 };
 
 export default class CoreFetcher {
-  results: Array<InventoryRecord> = [];
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  results: Array<InventoryRecord>;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   loading: boolean;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   count: number;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   error: string;
   endpoint: string = "search";
-  query: ?string;
-  resultType: ?ResultType;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  query: string;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  resultType: ResultType;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   pageNumber: number;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   pageSize: number;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   orderBy: string;
-  order: string;
-  parentGlobalId: ?GlobalId;
-  permalink: ?Permalink;
-  ownedBy: ?Username;
-  owner: ?Person;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  order: Order;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  parentGlobalId: GlobalId | null;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  permalink: Permalink | null;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  ownedBy: Username | null;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  owner: Person | null;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   deletedItems: DeletedItems;
-  benchOwner: ?Person;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  benchOwner: Person | null;
   factory: Factory;
 
   constructor(
     factory: Factory,
-    params: ?CoreFetcherArgs = {
+    params: CoreFetcherArgs | null = {
       ...DEFAULT_SEARCH,
       ...DEFAULT_FETCHER,
     }
@@ -307,7 +327,9 @@ export default class CoreFetcher {
         const slug = params.permalink.version
           ? `${params.permalink.id}/versions/${params.permalink.version}`
           : params.permalink.id;
-        const { data } = await ApiService.get<any>(endpoint, slug);
+        const { data } = await ApiService.get<
+          Record<string, unknown> & { globalId: GlobalId }
+        >(endpoint, slug);
         runInAction(() => {
           this.count = 1;
         });
@@ -397,14 +419,21 @@ export default class CoreFetcher {
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `Could not perform search.`,
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
-          details:
-            error.response?.data.errors.map((error) => ({
-              title: error,
-              variant: "error",
-            })) ?? [],
+          details: Parsers.objectPath(["response", "data", "errors"], error)
+            .flatMap(Parsers.isArray)
+            .flatMap((errors) =>
+              Result.all(
+                ...errors.map((e) =>
+                  Parsers.isString(e).map((title) => ({
+                    title,
+                    variant: "error" as const,
+                  }))
+                )
+              )
+            )
+            .orElse([]),
         })
       );
       console.error("Could not perform search with parameters", params, error);
@@ -417,7 +446,7 @@ export default class CoreFetcher {
    * `this`, else defaults where values are required or omitting them where
    * they are not.
    */
-  generateParams(editedParams: ?(CoreFetcherArgs | {}) = {}): CoreFetcherArgs {
+  generateParams(editedParams: Partial<CoreFetcherArgs> = {}): CoreFetcherArgs {
     const keys = new Set([...Object.keys(DEFAULT_SEARCH), "permalink"]);
 
     // $FlowExpectedError[cannot-spread-indexer] There's no way flow can tell what's going on here
@@ -437,12 +466,16 @@ export default class CoreFetcher {
    */
   applySearchParams(params: CoreFetcherArgs): CoreFetcherArgs {
     this.setAttributes(params);
-    const preparedParams: CoreFetcherArgs = Object.entries(
-      DEFAULT_SEARCH
+    const preparedParams: CoreFetcherArgs = (
+      Object.entries(DEFAULT_SEARCH) as Array<
+        [
+          keyof typeof DEFAULT_SEARCH,
+          (typeof DEFAULT_SEARCH)[keyof typeof DEFAULT_SEARCH]
+        ]
+      >
     ).reduce(
       (acc, [k, v]) => ({
         ...acc,
-        // $FlowExpectedError[invalid-computed-prop]
         [k]: acc[k] || this[k] || v,
       }),
       params
@@ -463,9 +496,9 @@ export default class CoreFetcher {
    * `this`, or else the defaults.
    */
   generateQuery(editedParams: CoreFetcherArgs): URLSearchParams {
-    const params = pick(...Object.keys(DEFAULT_SEARCH))(
-      this.generateParams(editedParams)
-    );
+    const params = pick(
+      ...(Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>)
+    )(this.generateParams(editedParams)) as Partial<CoreFetcherArgs>;
 
     // These aren't URL serialisable
     delete params.owner;
@@ -474,7 +507,9 @@ export default class CoreFetcher {
 
     params.pageNumber = 0;
 
-    return new URLSearchParams(omitDefault(omitNull(params)));
+    return new URLSearchParams(
+      omitDefault(omitNull(params)) as Record<string, string>
+    );
   }
 
   /*
@@ -489,9 +524,11 @@ export default class CoreFetcher {
         ...DEFAULT_SEARCH,
         ...editedParams,
       })
-    );
+    ) as Partial<CoreFetcherArgs>;
     // Don't need to delete those that aren't serialisable as they are null.
-    return new URLSearchParams(omitDefault(omitNull(params)));
+    return new URLSearchParams(
+      omitDefault(omitNull(params)) as Record<string, string>
+    );
   }
 
   /*
@@ -507,7 +544,7 @@ export default class CoreFetcher {
     return filterObject((k) => keysOfSimpleData.has(k), {
       ...DEFAULT_SEARCH,
       ...this,
-    });
+    }) as Partial<CoreFetcherArgs>;
   }
 
   setResults(results: Array<InventoryRecord> = []): void {
