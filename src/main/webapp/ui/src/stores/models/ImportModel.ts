@@ -28,8 +28,9 @@ import { parseString } from "../../util/parsers";
 import { type Field as TemplateField } from "../definitions/Field";
 import { pick } from "../../util/unsafeUtils";
 import Result from "../../util/result";
+import { getErrorMessage } from "@/util/error";
 
-export const Fields: { [string]: symbol } = {
+export const Fields: { [fieldName: string]: symbol } = {
   name: Symbol.for("NAME"),
   description: Symbol.for("DESCRIPTION"),
   expiry_date: Symbol.for("EXPIRY DATE"),
@@ -48,7 +49,7 @@ export const Fields: { [string]: symbol } = {
 type Field = (typeof Fields)[keyof typeof Fields];
 
 // returns null for custom and none
-export const getTypeOfField: (field: Field) => ?FieldType = match([
+export const getTypeOfField: (field: Field) => FieldType | null = match([
   [(f) => f === Fields.name, FieldTypes.plain_text],
   [(f) => f === Fields.description, FieldTypes.formatted_text],
   [(f) => f === Fields.expiry_date, FieldTypes.date],
@@ -63,7 +64,7 @@ export const getTypeOfField: (field: Field) => ?FieldType = match([
   [() => true, null],
 ]);
 
-const transitionMapping: { [string]: Set<string> } = {
+const transitionMapping: { [state: string]: Set<string> } = {
   initial: new Set(["parsing", "submitting"]),
   //   clean state, the page has just loaded (or "clear file" button has been pressed)
   parsing: new Set(["parsed", "parsingFailed"]),
@@ -122,10 +123,10 @@ export class ColumnFieldMap {
   fieldName: string;
   fieldType: FieldType;
   chosenFieldType: FieldType;
-  quantityUnitId: ?number;
-  options: ?Array<string>;
+  quantityUnitId: number | null;
+  options: Array<string> | null;
   fieldChangeCallback: (oldField: Field, newField: Field) => void;
-  isNameUnique: (ColumnFieldMap) => boolean;
+  isNameUnique: (columnFieldMap: ColumnFieldMap) => boolean;
   recordType: ImportRecordType;
   columnsWithoutBlankValue: Array<ColumnName>;
 
@@ -147,10 +148,10 @@ export class ColumnFieldMap {
     field: Field;
     fieldName: string;
     fieldType: FieldType;
-    quantityUnitId: ?number;
-    options: ?Array<string>;
+    quantityUnitId: number | null;
+    options: Array<string> | null;
     fieldChangeCallback: (oldField: Field, newField: Field) => void;
-    isNameUnique: (ColumnFieldMap) => boolean;
+    isNameUnique: (columnFieldMap: ColumnFieldMap) => boolean;
     recordType: ImportRecordType;
     columnsWithoutBlankValue: Array<ColumnName>;
   }) {
@@ -188,7 +189,7 @@ export class ColumnFieldMap {
     this.columnsWithoutBlankValue = columnsWithoutBlankValue;
   }
 
-  toggleSelected(value?: boolean = !this.selected) {
+  toggleSelected(value: boolean = !this.selected) {
     this.selected = value;
   }
 
@@ -285,9 +286,9 @@ export default class Import {
    * The CSV files to import, per recordType.
    * Can be POSTed indivudually or together.
    */
-  containersFile: ?File = null;
-  samplesFile: ?File = null;
-  subSamplesFile: ?File = null;
+  containersFile: File | null = null;
+  samplesFile: File | null = null;
+  subSamplesFile: File | null = null;
 
   /*
    * When parsing the CSV file, the server may suggest a different field name
@@ -415,7 +416,7 @@ export default class Import {
     if (template) void template.fetchAdditionalInfo();
   }
 
-  setFile(file: ?File) {
+  setFile(file: File | null) {
     if (this.isSamplesImport) {
       this.samplesFile = file;
     } else if (this.isContainersImport) {
@@ -579,7 +580,7 @@ export default class Import {
     );
   }
 
-  get fileByRecordType(): ?File {
+  get fileByRecordType(): File | null {
     if (this.isSamplesImport) {
       return this.samplesFile;
     }
@@ -705,10 +706,9 @@ export default class Import {
         throw new Error("No file set");
       } else {
         params.append("recordType", this.recordType);
-        // $FlowFixMe[incompatible-call]] if-else block should guarantee one of the files is given
         params.append("file", this.fileByRecordType);
 
-        const { data } = await ApiService.post<typeof params, any>(
+        const { data } = await ApiService.post<unknown>(
           "/import/parseFile",
           params
         );
@@ -736,7 +736,6 @@ export default class Import {
                 const newFieldMap = new ColumnFieldMap({
                   recordType: this.recordType,
                   selected: true,
-                  // $FlowFixMe[incompatible-call]] as source of the fieldName, we can assume there is a columnName
                   columnName: originalColumnName,
                   field: Fields.custom,
                   fieldName: name,
@@ -858,25 +857,19 @@ export default class Import {
       .filter(({ mapping: { selected } }) => selected)
       // $FlowExpectedError[incompatible-use] mapping is now != null
       .filter(({ mapping: { field } }) => field === Fields.custom)
-      .map(
-        ({
-          field, // $FlowExpectedError[incompatible-use] mapping is now != null
-          mapping: { fieldName, chosenFieldType, options },
-          // $FlowFixMe[cannot-spread-interface]
-        }) => ({
-          ...field,
-          name: fieldName,
-          type: fieldTypeToApiString(chosenFieldType),
-          definition:
-            chosenFieldType === FieldTypes.radio ||
-            chosenFieldType === FieldTypes.choice
-              ? {
-                  options,
-                  multiple: false,
-                }
-              : null,
-        })
-      );
+      .map(({ field, mapping: { fieldName, chosenFieldType, options } }) => ({
+        ...field,
+        name: fieldName,
+        type: fieldTypeToApiString(chosenFieldType),
+        definition:
+          chosenFieldType === FieldTypes.radio ||
+          chosenFieldType === FieldTypes.choice
+            ? {
+                options,
+                multiple: false,
+              }
+            : null,
+      }));
     const newUnitId = this.samplesMappings.find(
       ({ selected, field }) => field === Fields.quantity && selected
     )?.quantityUnitId;
@@ -891,11 +884,17 @@ export default class Import {
     };
   }
 
-  findField(mappings: Array<ColumnFieldMap>, field: Field): ?ColumnFieldMap {
+  findField(
+    mappings: Array<ColumnFieldMap>,
+    field: Field
+  ): ColumnFieldMap | undefined {
     return mappings.find((f) => f.field === field);
   }
 
-  findParsedColumnName(mappings: Array<ColumnFieldMap>, field: Field): ?string {
+  findParsedColumnName(
+    mappings: Array<ColumnFieldMap>,
+    field: Field
+  ): string | undefined | null {
     const columnName = this.findField(mappings, field)?.columnName;
     return columnName ?? null;
   }
@@ -945,7 +944,6 @@ export default class Import {
       ...(pContainerImportId
         ? { [pContainerImportId]: "parent container import id" }
         : {}),
-      // $FlowExpectedError[exponential-spread]
       ...(pSampleGlobalId
         ? { [pSampleGlobalId]: "parent sample global id" }
         : {}),
@@ -1083,8 +1081,7 @@ export default class Import {
           title: gatewayTimeout
             ? "Something went wrong but the import may have completed."
             : "Something went wrong and some records were not imported.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: gatewayTimeout ? "warning" : "error",
         })
       );
@@ -1110,10 +1107,10 @@ export default class Import {
    * this computed returns false. It returns null if the user is creating a new
    * template.
    */
-  get importMatchesExistingTemplate(): ?(
+  get importMatchesExistingTemplate():
     | { matches: false; reason: string }
     | { matches: true }
-  ) {
+    | null {
     if (this.createNewTemplate) return null;
     if (!this.template)
       return { matches: false, reason: "Template has not been selected" };
@@ -1189,7 +1186,6 @@ export default class Import {
       mappings: this.mappingsByRecordType,
       resetMappings: () => this.resetMappingsByRecordType(),
     };
-    // $FlowExpectedError[invalid-computed-prop]
     return byType[prop];
   }
 
