@@ -9,8 +9,8 @@ import { type Panel } from "../../util/types";
 import { pick } from "../../util/unsafeUtils";
 
 type ConfirmationDialogProps = {
-  title: Node;
-  message: Node;
+  title: React.ReactNode;
+  message: React.ReactNode;
   yesLabel: string;
   noLabel: string;
   yes: () => void;
@@ -18,8 +18,9 @@ type ConfirmationDialogProps = {
   confirmationSpinner: boolean;
 };
 
-const beforeUnloadAction = (e: Event & { returnValue: string }) => {
+const beforeUnloadAction: EventListener = (e: Event) => {
   e.preventDefault();
+  // @ts-expect-error deprecated
   e.returnValue = "";
 };
 
@@ -233,7 +234,8 @@ export default class UiStore {
               resolve(true);
             });
             if (onConfirm) {
-              this.confirmationDialogProps.confirmationSpinner = true;
+              if (this.confirmationDialogProps)
+                this.confirmationDialogProps.confirmationSpinner = true;
               void onConfirm().then(returnYes);
             } else {
               returnYes();

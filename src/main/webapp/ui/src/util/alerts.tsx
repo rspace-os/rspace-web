@@ -42,7 +42,7 @@ export const handleDetailedSuccesses = (
   records: Array<InventoryRecord>,
   operation: Operation,
   recordAltOperation: (record: InventoryRecord) => string = () => operation,
-  message?: string | null = null
+  message: string | null = null
 ) => {
   const variant = "success";
   getRootStore().uiStore.addAlert(
@@ -119,7 +119,7 @@ export const handleDetailedErrors = (
   }>,
   operation: string,
   retryFunction: ((records: Array<InventoryRecord>) => Promise<void>) | null, // requires record on data array
-  defaultHelp: ?string
+  defaultHelp: string | null
 ): boolean => {
   const errorData = data.filter(({ response }) => Boolean(response.error));
   const variant = "error";
