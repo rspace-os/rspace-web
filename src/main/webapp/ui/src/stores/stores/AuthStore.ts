@@ -5,6 +5,7 @@ import ElnApiService from "../../common/ElnApiService";
 import JwtService from "../../common/JwtService";
 import type { RootStore } from "./RootStore";
 import { mkAlert } from "../contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 
 /* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
 const publicView = document.getElementById("public_document_view") !== null;
@@ -30,7 +31,7 @@ export default class AuthStore {
   isSynchronizing: boolean = true;
   isSigningOut: boolean = false;
   timeoutId: null | NodeJS.Timeout = null;
-  systemSettings: SystemSettings;
+  systemSettings: SystemSettings | undefined;
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {
@@ -74,15 +75,15 @@ export default class AuthStore {
 
           // Reauthenticate few minutes before token expiry
           this.timeoutId = setTimeout(
-            () => this.authenticate(),
+            () => void this.authenticate(),
             JwtService.secondsToExpiry(token) * 1000
           );
         })
       )
       .then(() => {})
       .catch(() => {
-        window.location = "/login";
-      });
+        window.location = "/login" as unknown as Location;
+      }) as Promise<void>;
   }
 
   signOut() {
@@ -110,7 +111,7 @@ export default class AuthStore {
 
       // Reauthenticate few minutes before token expiry
       this.timeoutId = setTimeout(
-        () => this.authenticate(),
+        () => void this.authenticate(),
         JwtService.secondsToExpiry(token) * 1000
       );
       return Promise.resolve();
@@ -134,8 +135,7 @@ export default class AuthStore {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: `Could not get System Settings.`,
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );
@@ -162,7 +162,7 @@ export default class AuthStore {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: `Could not update System Settings.`,
-          message: error.response?.data.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );

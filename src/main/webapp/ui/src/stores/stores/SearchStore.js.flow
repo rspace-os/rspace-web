@@ -52,7 +52,6 @@ declare export default class SearchStore {
   search: Search;
   savedSearches: Array<SavedSearch>;
   savedBaskets: Array<BasketModel>;
-  error: string;
 
   constructor(rootStore: RootStore): SearchStore;
 
@@ -102,4 +101,3 @@ declare export default class SearchStore {
 
   isTypeSelected(resultType: ResultType): boolean;
 }
-

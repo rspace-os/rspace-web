@@ -28,6 +28,7 @@ import {
 } from "../definitions/InventoryRecord";
 import { type Panel } from "../../util/types";
 import { Optional } from "../../util/optional";
+import { getErrorMessage } from "../../util/error";
 
 type SerialisedRecord =
   | (BulkEndpointRecordSerialisation & {
@@ -144,7 +145,7 @@ export default class MoveStore {
       this.search = search;
 
       void search.setSearchView("TREE");
-      await this.setTargetContainer();
+      await this.setTargetContainer(null);
     }
   }
 
@@ -168,7 +169,7 @@ export default class MoveStore {
         if (
           this.selectedResults
             .map((sr) => sr.globalId)
-            .includes(loc.content?.globalId)
+            .includes(loc.content === null ? null : loc.content.globalId)
         ) {
           loc.content = null;
         }
@@ -182,7 +183,7 @@ export default class MoveStore {
      * we have to remove sample objects...
      * ... and include their aliquots
      */
-    records.map(async (record) => {
+    void records.map(async (record) => {
       if (record instanceof SampleModel) {
         if (!record.infoLoaded) {
           await record.fetchAdditionalInfo();
@@ -253,7 +254,10 @@ export default class MoveStore {
     try {
       const { data } = await ApiService.bulk<{
         successCount: number;
-        results: Array<{ error: { errors: Array<string> }; record: unknown }>;
+        results: Array<{
+          error: { errors: Array<string> };
+          record: Record<string, unknown> & { globalId: GlobalId };
+        }>;
         errorCount: number;
       }>(records, "MOVE", true);
       const factory = new MemoisedFactory();
@@ -261,7 +265,7 @@ export default class MoveStore {
         .filter((r) => Boolean(r.record))
         .map((r) => {
           const newRecord = factory.newRecord(r.record);
-          newRecord.populateFromJson(factory, r.record);
+          newRecord.populateFromJson(factory, r.record, null);
           return newRecord;
         });
 
@@ -279,8 +283,10 @@ export default class MoveStore {
       if (data.successCount) {
         this.rootStore.trackingStore.trackEvent("InventoryItemMoved", {
           movedItemsCount: data.successCount,
-          targetCType: results.map((r) => r.paramsForBackend)[0]
-            .parentContainers?.[0]?.cType,
+          targetCType:
+            // eslint-disable-next-line -- this is hacky, buts its just analytics
+            results.map((r) => r.paramsForBackend)[0].parentContainers?.[0]
+              ?.cType,
         });
       }
       void this.setIsMoving(false);
@@ -288,8 +294,7 @@ export default class MoveStore {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: "Move failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
         })
       );
@@ -304,7 +309,7 @@ export default class MoveStore {
 
   resetGrid() {
     this.selectedResults = [];
-    void this.setTargetContainer();
+    void this.setTargetContainer(null);
   }
 
   get globalIdsOfSelectedResults(): Set<GlobalId> {
@@ -318,7 +323,7 @@ export default class MoveStore {
 
   async refreshAfterMove() {
     const { searchStore, peopleStore } = this.rootStore;
-    void searchStore.search.fetcher.performInitialSearch();
+    void searchStore.search.fetcher.performInitialSearch({});
     const activeResult = searchStore.activeResult;
     if (activeResult) {
       if (activeResult.state === "preview") {

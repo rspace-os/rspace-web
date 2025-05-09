@@ -21,7 +21,7 @@ class InvApiService extends ApiServiceBase {
       | "MOVE"
       | "CHANGE_OWNER",
     rollbackOnError: boolean
-  ): Promise<T> {
+  ): Promise<Axios.AxiosXHR<T>> {
     const params = {
       operationType,
       records,

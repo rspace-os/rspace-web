@@ -118,8 +118,10 @@ export const handleDetailedErrors = (
     record?: InventoryRecord;
   }>,
   operation: string,
-  retryFunction: ((records: Array<InventoryRecord>) => Promise<void>) | null, // requires record on data array
-  defaultHelp: string | null
+  retryFunction:
+    | ((records: Array<InventoryRecord>) => Promise<void>)
+    | null = null, // requires record on data array
+  defaultHelp: string | null = null
 ): boolean => {
   const errorData = data.filter(({ response }) => Boolean(response.error));
   const variant = "error";

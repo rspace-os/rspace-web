@@ -47,9 +47,9 @@ export type NewInContainerParams = {
     | Record<string, never>;
 };
 
-const SAVED_SEARCHES: ?Array<SavedSearch> = JSON.parse(
-  localStorage.getItem("searches")
-);
+const SAVED_SEARCHES = JSON.parse(
+  localStorage.getItem("searches") ?? "null"
+) as Array<SavedSearch> | null;
 
 /*
  * Over time the format of saved searches has changed and this function
@@ -78,14 +78,12 @@ export default class SearchStore {
   search: Search;
   savedSearches: Array<SavedSearch>;
   savedBaskets: Array<BasketModel>;
-  error: string;
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {
       search: observable,
       savedSearches: observable,
       savedBaskets: observable,
-      error: observable,
       saveSearch: action,
       deleteSearch: action,
       getBaskets: action,
@@ -103,7 +101,8 @@ export default class SearchStore {
     this.search = new Search({
       factory: new MemoisedFactory(),
       callbacks: {
-        setActiveResult: (r: InventoryRecord) => r?.refreshAssociatedSearch(),
+        setActiveResult: (r: InventoryRecord | null) =>
+          r?.refreshAssociatedSearch(),
       },
     });
     this.search.canEditActiveResult = true;
@@ -119,7 +118,7 @@ export default class SearchStore {
     return this.search.fetcher;
   }
 
-  get activeResult(): ?InventoryRecord {
+  get activeResult(): InventoryRecord | null {
     return this.search.activeResult;
   }
 
@@ -182,7 +181,7 @@ export default class SearchStore {
       uiStore.addAlert(
         mkAlert({
           title: "Error retrieving Baskets.",
-          message: e.message || "",
+          message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
         })
@@ -201,7 +200,7 @@ export default class SearchStore {
       uiStore.addAlert(
         mkAlert({
           title: `Error retrieving Basket.`,
-          message: e.message || "",
+          message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
         })
@@ -232,7 +231,7 @@ export default class SearchStore {
       uiStore.addAlert(
         mkAlert({
           title: "Error creating Basket.",
-          message: e.message || "",
+          message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
         })
@@ -282,7 +281,7 @@ export default class SearchStore {
       uiStore.addAlert(
         mkAlert({
           title: "Error deleting Basket.",
-          message: e.message || "",
+          message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
         })
@@ -326,13 +325,15 @@ export default class SearchStore {
     containerParentDetails?: NewInContainerParams
   ): Promise<ContainerModel> {
     const [currentUsersBench, currentUsersGroups] = await Promise.all<
-      [?Promise<Container>, Promise<Array<Group>>]
+      [Promise<Container> | null, Promise<Array<Group>>]
     >([
-      this.rootStore.peopleStore.currentUser?.getBench(),
+      this.rootStore.peopleStore.currentUser === null
+        ? null
+        : this.rootStore.peopleStore.currentUser.getBench(),
       this.rootStore.peopleStore.fetchCurrentUsersGroups(),
     ]);
     const container = new ContainerModel(new MemoisedFactory());
-    const locationIsDefined: ?boolean =
+    const locationIsDefined: boolean | undefined =
       containerParentDetails &&
       Object.keys(containerParentDetails.parentLocation).length > 0;
 
@@ -384,7 +385,7 @@ export default class SearchStore {
 
   async getTemplate(
     id: number,
-    version: ?number,
+    version: number | null | undefined,
     factory: Factory
   ): Promise<TemplateModel> {
     const { data } = await ApiService.get<TemplateAttrs>(

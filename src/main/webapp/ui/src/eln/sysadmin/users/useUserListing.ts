@@ -5,18 +5,7 @@ import axios from "@/common/axios";
 import { Optional } from "../../../util/optional";
 import Result from "../../../util/result";
 import RsSet from "../../../util/set";
-
-function getErrorMessage(error: unknown): Result<string> {
-  return Parsers.objectPath(["response", "data", "message"], error)
-    .flatMap(Parsers.isString)
-    .orElseTry(() =>
-      Parsers.isObject(error).flatMap((e) =>
-        e instanceof Error
-          ? Result.Ok(e.message)
-          : Result.Error([new Error("Unknown error")])
-      )
-    );
-}
+import { getErrorMessage } from "../../../util/error";
 
 export type UserId = number;
 
@@ -208,7 +197,7 @@ export function useUserListing(): {
           await axios.post<"">("/system/ajax/grantPIRole", formData);
           refreshListing();
         } catch (error) {
-          const errorMsg = getErrorMessage(error).elseThrow();
+          const errorMsg = getErrorMessage(error, "Unknown error");
           console.error(errorMsg);
           throw new Error(errorMsg, { cause: error });
         }
@@ -222,7 +211,7 @@ export function useUserListing(): {
           await axios.post<"">("/system/ajax/revokePIRole", formData);
           refreshListing();
         } catch (error) {
-          const errorMsg = getErrorMessage(error).elseThrow();
+          const errorMsg = getErrorMessage(error, "Unknown error");
           console.error(errorMsg);
           throw new Error(errorMsg, { cause: error });
         }
@@ -314,7 +303,7 @@ export function useUserListing(): {
             });
           refreshListing();
         } catch (error) {
-          const errorMsg = getErrorMessage(error).elseThrow();
+          const errorMsg = getErrorMessage(error, "Unknown error");
           console.error(errorMsg);
           throw new Error(errorMsg, { cause: error });
         }

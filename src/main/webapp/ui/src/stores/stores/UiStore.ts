@@ -45,9 +45,10 @@ export default class UiStore {
   dialogVisiblePanel: "left" | "right" = "left";
   confirmPageNavigation: boolean = false;
   confirmationDialogProps: ConfirmationDialogProps | null = null;
+  // @ts-expect-error It is set by the constructor's call to updateViewportSize
   viewportSize: (typeof breakpoints)[keyof typeof breakpoints];
   dirty: boolean = false;
-  discardChangesCallback: () => Promise<void>;
+  discardChangesCallback: () => Promise<void> = async () => {};
 
   /*
    * These properties keep a reference to the alert context that is used for
@@ -121,16 +122,25 @@ export default class UiStore {
     });
     this.updateViewportSize();
     this.sidebarOpen = Object.values(
-      pick("md", "lg", "xl")(breakpoints)
+      pick("md", "lg", "xl")(breakpoints) as Pick<
+        typeof breakpoints,
+        "md" | "lg" | "xl"
+      >
+      // @ts-expect-error this.viewportSize is initialised by the updateViewportSize call above
     ).includes(this.viewportSize);
   }
 
   updateViewportSize() {
-    this.viewportSize = match<number, symbol>(
-      ["xl", "lg", "md", "sm", "xs"].map((bp) => [
-        (width) => width > theme.breakpoints.values[bp],
-        breakpoints[bp],
-      ])
+    this.viewportSize = match<
+      number,
+      (typeof breakpoints)[keyof typeof breakpoints]
+    >(
+      (Object.keys(breakpoints) as ReadonlyArray<keyof typeof breakpoints>).map(
+        (bp) => [
+          (width) => width > theme.breakpoints.values[bp],
+          breakpoints[bp],
+        ]
+      )
     )(window.innerWidth);
   }
 

@@ -10,7 +10,7 @@ import { type URL as URLType, type BlobUrl } from "../../util/types";
 export default class ImageStore {
   rootStore: RootStore;
   cache: Map<URLType, BlobUrl>;
-  waiting: Map<URLType, Promise<mixed>>;
+  waiting: Map<URLType, Promise<unknown>>;
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
@@ -28,7 +28,7 @@ export default class ImageStore {
       return this.fetchImage(url);
     }
 
-    const promise = axios<void, Blob>({
+    const promise = axios<Blob>({
       method: "get",
       url,
       responseType: "blob",
@@ -36,7 +36,7 @@ export default class ImageStore {
         Authorization: `Bearer ${JwtService.getToken() ?? ""}`,
       },
     });
-    this.waiting.set(url, promise);
+    this.waiting.set(url, promise as Promise<unknown>);
     const { data } = await promise;
     this.waiting.delete(url);
 

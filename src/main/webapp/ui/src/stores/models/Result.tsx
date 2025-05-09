@@ -495,7 +495,7 @@ export default class Result
    * subclass should have a unit test that asserts that this object can be
    * serialised and any changes here should be reflect in each of those.
    */
-  get paramsForBackend(): any {
+  get paramsForBackend(): object {
     const extraFields = this.extraFields.map((ef) => ({
       name: ef.name,
       content: ef.content,

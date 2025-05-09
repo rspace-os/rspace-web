@@ -12,7 +12,7 @@ export const isImportPage: () => boolean = () =>
 
 export default class ImportStore {
   rootStore: RootStore;
-  importData: ?Import = null;
+  importData: Import | null = null;
   fileImportKey: number = 0; // whenever this is incremented the file upload field is cleared
 
   constructor(rootStore: RootStore) {

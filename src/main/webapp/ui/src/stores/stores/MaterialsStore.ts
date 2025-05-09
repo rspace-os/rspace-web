@@ -22,6 +22,7 @@ import {
   IsValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
+import { getErrorMessage } from "../../util/error";
 
 type FieldLists = Map<ElnFieldId, Array<ListOfMaterials>>;
 type DocumentLists = Map<ElnDocumentId, Array<ListOfMaterials>>;
@@ -99,10 +100,10 @@ export default class MaterialsStore {
     this.setLoading(true);
 
     try {
-      const { data } = await InvApiService.get<
-        mixed,
-        Array<ListOfMaterialsAttrs>
-      >(`listOfMaterials/forDocument`, documentId);
+      const { data } = await InvApiService.get<Array<ListOfMaterialsAttrs>>(
+        `listOfMaterials/forDocument`,
+        documentId
+      );
       runInAction(() => {
         this.documentLists.set(
           documentId,
@@ -113,7 +114,7 @@ export default class MaterialsStore {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: `Could not fetch List of Materials data.`,
-          message: error.response?.data.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );
@@ -134,10 +135,10 @@ export default class MaterialsStore {
     this.setLoading(true);
 
     try {
-      const { data } = await InvApiService.get<
-        void,
-        Array<ListOfMaterialsAttrs>
-      >(`listOfMaterials/forField`, fieldId);
+      const { data } = await InvApiService.get<Array<ListOfMaterialsAttrs>>(
+        `listOfMaterials/forField`,
+        fieldId
+      );
       runInAction(() => {
         this.fieldLists.set(
           fieldId,
@@ -148,8 +149,7 @@ export default class MaterialsStore {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: `Could not fetch List of Materials data.`,
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
         })
       );
@@ -168,7 +168,7 @@ export default class MaterialsStore {
 
     if (!id) throw new Error("A list without id cannot be fetched.");
     try {
-      const { data } = await InvApiService.get<void, ListOfMaterialsAttrs>(
+      const { data } = await InvApiService.get<ListOfMaterialsAttrs>(
         `listOfMaterials`,
         id
       );
@@ -179,8 +179,7 @@ export default class MaterialsStore {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: `Could not fetch List of Materials data.`,
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
         })
       );
@@ -216,7 +215,7 @@ export default class MaterialsStore {
     this.fieldLists.set(fieldId, fl);
   }
 
-  setCurrentList(list: ?ListOfMaterials) {
+  setCurrentList(list: ListOfMaterials | undefined) {
     if (list) this.replaceListInField(list, list.elnFieldId);
     this.originalList = list?.clone();
     this.currentList = list;
@@ -254,7 +253,7 @@ export default class MaterialsStore {
   async fetchCanEdit(lomId: ListOfMaterialsId): Promise<boolean> {
     if (!lomId) return true;
     try {
-      const { data } = await InvApiService.get<void, boolean>(
+      const { data } = await InvApiService.get<boolean>(
         `/listOfMaterials/${lomId}/canEdit`
       );
       return data;
@@ -262,8 +261,7 @@ export default class MaterialsStore {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: `Could not fetch permission to edit.`,
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
         })
       );
