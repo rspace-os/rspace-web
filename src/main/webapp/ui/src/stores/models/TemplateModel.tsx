@@ -49,6 +49,7 @@ import {
   IsValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
+import { getErrorMessage } from "@/util/error";
 
 const mainSearch = () => getRootStore().searchStore.search;
 
@@ -108,9 +109,9 @@ const defaultEditableFields = new Set([...defaultEditableSampleFields]);
 export default class TemplateModel extends SampleModel implements Template {
   defaultUnitId: number;
   version: number;
-  latest: ?Template = null;
+  latest: Template | null = null;
   historicalVersion: boolean;
-  icon: ?string = null;
+  icon: string | null = null;
 
   constructor(
     factory: Factory,
@@ -246,11 +247,7 @@ export default class TemplateModel extends SampleModel implements Template {
     });
   }
 
-  removeCustomField(
-    id: Id,
-    index: number,
-    deleteFromSamples?: boolean = false
-  ) {
+  removeCustomField(id: Id, index: number, deleteFromSamples: boolean = false) {
     if (!this.id || !id) {
       this.fields.splice(index, 1);
     } else {
@@ -266,7 +263,7 @@ export default class TemplateModel extends SampleModel implements Template {
     return inventoryRecordTypeLabels.sampleTemplate;
   }
 
-  get globalIdOfLatest(): ?string {
+  get globalIdOfLatest(): string | null {
     if (!this.id) return null;
     return `IT${this.id}`;
   }
@@ -296,7 +293,7 @@ export default class TemplateModel extends SampleModel implements Template {
    * ./__tests__/TemplateModel/paramsForBackend.test.js for the tests that assert
    * that this object can be serialised; any changes should be reflected there.
    */
-  get paramsForBackend(): any {
+  get paramsForBackend(): object {
     const params = super.paramsForBackend;
     if (this.currentlyEditableFields.has("defaultUnitId"))
       params.defaultUnitId = this.defaultUnitId;
@@ -307,8 +304,8 @@ export default class TemplateModel extends SampleModel implements Template {
 
   async setEditing(
     value: boolean,
-    refresh: ?boolean,
-    goToLatest: ?boolean
+    refresh?: boolean,
+    goToLatest?: boolean
   ): Promise<LockStatus> {
     refresh = refresh ?? true;
     goToLatest = goToLatest ?? true;
@@ -361,7 +358,7 @@ export default class TemplateModel extends SampleModel implements Template {
      * is available.
      */
     if (this.id) {
-      await this.search.fetcher.performInitialSearch();
+      await this.search.fetcher.performInitialSearch({});
       // User can only update samples they own
       const samplesToBeUpdated = this.search.fetcher.results.filter(
         // default to true so we don't miss any that could be the current user's
@@ -410,7 +407,10 @@ export default class TemplateModel extends SampleModel implements Template {
     try {
       const { data } = await ApiService.post<{
         errorCount: number;
-        results: Array<{ error: { errors: Array<string> }; record: any }>;
+        results: Array<{
+          error: { errors: Array<string> };
+          record: Record<string, unknown> & { globalId: GlobalId };
+        }>;
       }>(
         `sampleTemplates/${id.toString()}/actions/updateSamplesToLatestTemplateVersion`,
         {}
@@ -428,7 +428,7 @@ export default class TemplateModel extends SampleModel implements Template {
           .filter((r) => !r.error)
           .map((r) => {
             const newRecord = factory.newRecord(r.record);
-            newRecord.populateFromJson(factory, r.record);
+            newRecord.populateFromJson(factory, r.record, null);
             return newRecord;
           }),
         "updated"
@@ -437,8 +437,7 @@ export default class TemplateModel extends SampleModel implements Template {
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: "Updating samples to latest template version failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
         })
       );
@@ -449,7 +448,7 @@ export default class TemplateModel extends SampleModel implements Template {
     }
   }
 
-  contextMenuDisabled(): ?string {
+  contextMenuDisabled(): string | null {
     return (
       super.contextMenuDisabled() ??
       (this.historicalVersion

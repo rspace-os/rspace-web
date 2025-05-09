@@ -12,16 +12,17 @@ import { UserCancelledAction } from "../../util/error";
 import { type TreeView } from "../definitions/TreeView";
 
 export type TreeAttrs = {
-  treeHolder?: Search,
-  filteredTypes?: Array<RecordType>,
+  treeHolder: Search;
+  filteredTypes?: Array<RecordType>;
 };
 
 export default class TreeModel implements HasChildren, TreeView {
+  // @ts-expect-error is set by the constructor's call to setAttributes
   treeHolder: Search;
   expanded: Array<string> = [];
   filteredTypes: Array<RecordType> = ["container"];
 
-  constructor(params: TreeAttrs = {}) {
+  constructor(params: TreeAttrs) {
     makeObservable(this, {
       treeHolder: observable,
       expanded: observable,
@@ -37,8 +38,9 @@ export default class TreeModel implements HasChildren, TreeView {
     this.setAttributes(params);
   }
 
-  get selected(): ?GlobalId {
-    return this.treeHolder.activeResult?.globalId;
+  get selected(): GlobalId | null {
+    if (this.treeHolder.activeResult === null) return null;
+    return this.treeHolder.activeResult.globalId;
   }
 
   get results(): Array<InventoryRecord> {
@@ -49,7 +51,7 @@ export default class TreeModel implements HasChildren, TreeView {
     Object.assign(this, attrs);
   }
 
-  get selectedNode(): ?Result {
+  get selectedNode(): Result | null {
     return findNode(this.selected, this);
   }
 
@@ -57,7 +59,7 @@ export default class TreeModel implements HasChildren, TreeView {
     this.expanded = ids;
   }
 
-  setSelected(globalId: ?GlobalId) {
+  setSelected(globalId: GlobalId | null) {
     this.treeHolder
       .setActiveResult(findNode(globalId, this))
       .then(() => {
@@ -70,7 +72,7 @@ export default class TreeModel implements HasChildren, TreeView {
   }
 
   get children(): Array<InventoryRecord> {
-    return this.treeHolder.results;
+    return this.treeHolder?.results ?? [];
   }
 
   loadChildren() {}
@@ -85,13 +87,13 @@ export default class TreeModel implements HasChildren, TreeView {
  *  record type, to find the record with the passed Global ID. Null is returned
  *  if no such record exists in the tree.
  */
-const findNode = (globalId: ?GlobalId, node: HasChildren): ?Result => {
-  if (node instanceof Result && node.globalId === globalId) {
-    return node;
-  } else {
-    return node.children.reduce<?Result>(
-      (acc, result) => acc ?? findNode(globalId, result),
-      null
-    );
-  }
+const findNode = (
+  globalId: GlobalId | null,
+  node: HasChildren
+): Result | null => {
+  if (node instanceof Result && node.globalId === globalId) return node;
+  return node.children.reduce<Result | null>(
+    (acc, result) => acc ?? findNode(globalId, result),
+    null
+  );
 };

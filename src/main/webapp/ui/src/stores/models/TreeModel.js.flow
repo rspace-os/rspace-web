@@ -14,7 +14,7 @@ import { UserCancelledAction } from "../../util/error";
 import { type TreeView } from "../definitions/TreeView";
 
 export type TreeAttrs = {
-  treeHolder?: Search,
+  treeHolder: Search,
   filteredTypes?: Array<RecordType>,
 };
 
@@ -23,7 +23,7 @@ declare export default class TreeModel implements HasChildren, TreeView {
   expanded: Array<string>;
   filteredTypes: Array<RecordType>;
 
-  constructor(params?: TreeAttrs): TreeModel;
+  constructor(params: TreeAttrs): TreeModel;
   get selected(): ?GlobalId;
   get results(): Array<InventoryRecord>;
   setAttributes(attrs: TreeAttrs): void;
@@ -34,4 +34,3 @@ declare export default class TreeModel implements HasChildren, TreeView {
   loadChildren(): void;
   get canNavigateToChildren(): boolean;
 }
-

@@ -403,7 +403,7 @@ export default class SampleModel
    * ./__tests__/SampleModel/paramsForBackend.test.js for the tests that assert
    * that this object can be serialised; any changes should be reflected there.
    */
-  get paramsForBackend(): any {
+  get paramsForBackend(): object {
     const fields = this.fields.map((field) => field.paramsForBackend);
 
     // Calculate total quantity when creating new

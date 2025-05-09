@@ -256,8 +256,8 @@ export interface InventoryRecord
   create(): Promise<void>;
   setEditing(
     value: boolean,
-    refresh: boolean | null,
-    silent: boolean | null
+    refresh?: boolean | null,
+    silent?: boolean | null
   ): Promise<LockStatus>;
   editing: boolean;
   isFieldEditable(field: string): boolean;

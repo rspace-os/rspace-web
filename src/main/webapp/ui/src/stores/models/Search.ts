@@ -96,7 +96,9 @@ const prepareRecordsForBulkApi = (
 
 type SearchArgs = {
   fetcherParams?: CoreFetcherArgs;
-  treeArgs?: TreeAttrs;
+  treeArgs?: Omit<TreeAttrs, "treeHolder"> & {
+    treeHolder?: TreeAttrs["treeHolder"];
+  };
   uiConfig?: Partial<UiConfig>;
   callbacks?: {
     /*
