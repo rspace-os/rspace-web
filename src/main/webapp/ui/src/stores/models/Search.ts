@@ -60,7 +60,11 @@ import {
   type ExportOptions,
 } from "../definitions/Search";
 import { type Sample } from "../definitions/Sample";
-import { InvalidState, UserCancelledAction } from "../../util/error";
+import {
+  getErrorMessage,
+  InvalidState,
+  UserCancelledAction,
+} from "../../util/error";
 import { type Basket } from "../definitions/Basket";
 import { type SubSample } from "../definitions/SubSample";
 import { noProgress } from "../../util/progress";
@@ -70,6 +74,10 @@ import {
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
 import { type Quantity } from "./RecordWithQuantity";
+
+type UnwrapArray<T extends Array<unknown>> = {
+  [K in keyof T]: T[K];
+};
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
@@ -139,7 +147,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
 };
 
 export default class Search implements SearchInterface {
-  activeResult: ?InventoryRecord = null;
+  activeResult: InventoryRecord | null = null;
   processingContextActions: boolean = false;
   error: string;
   tree: TreeView;
@@ -148,9 +156,11 @@ export default class Search implements SearchInterface {
   staticFetcher: CoreFetcherInterface;
   cacheFetcher: CacheFetcherInterface;
   alwaysFilterOut: (r: InventoryRecord) => boolean = () => false;
-  callbacks: ?{
-    setActiveResult?: (r: InventoryRecord | null) => void;
-  };
+  callbacks:
+    | {
+        setActiveResult?: (r: InventoryRecord | null) => void;
+      }
+    | undefined;
 
   /*
    *  When set, it overrides the default behaviour of reperforming a search
@@ -162,7 +172,7 @@ export default class Search implements SearchInterface {
   /*
    * For simultaneously editing a bunch of records.
    */
-  batchEditingRecords: ?RsSet<InventoryRecord>;
+  batchEditingRecords: RsSet<InventoryRecord> | null;
   editLoading: "no" | "batch" | "single";
 
   canEditActiveResult: boolean;
@@ -244,9 +254,9 @@ export default class Search implements SearchInterface {
       filteredTypes: ["container", "subSample", "sample", "sampleTemplate"],
       ...treeArgs,
     });
-    this.dynamicFetcher = new DynamicFetcher(factory, fetcherParams);
+    this.dynamicFetcher = new DynamicFetcher(factory, fetcherParams ?? null);
     this.staticFetcher = new CoreFetcher(factory, fetcherParams);
-    this.cacheFetcher = new CacheFetcher(factory, fetcherParams);
+    this.cacheFetcher = new CacheFetcher(factory, fetcherParams ?? null);
 
     this.canEditActiveResult = false;
     this.uiConfig = {
@@ -316,7 +326,7 @@ export default class Search implements SearchInterface {
   }
 
   async cleanUpActiveResult(
-    options?: { releaseLock?: boolean } = {}
+    options: { releaseLock?: boolean } = {}
   ): Promise<void> {
     const { releaseLock = true } = options;
     const activeResult = this.activeResult;
@@ -383,8 +393,8 @@ export default class Search implements SearchInterface {
   }
 
   async setActiveResult(
-    result: ?InventoryRecord = null,
-    options?: { defaultToFirstResult?: boolean; force?: boolean } = {}
+    result: InventoryRecord | null = null,
+    options: { defaultToFirstResult?: boolean; force?: boolean } = {}
   ): Promise<void> {
     const { defaultToFirstResult = true, force = false } = options;
     if (this.canEditActiveResult && !force) {
@@ -395,7 +405,7 @@ export default class Search implements SearchInterface {
     await this.cleanBatchEditing();
     await this.cleanUpActiveResult({ releaseLock: !force });
 
-    const assignment = action(async (r: Result) => {
+    const assignment = action(async (r: Result | null) => {
       if (r) {
         if (!r.infoLoaded && r.id) {
           r.setLoading(true); // don't give react a chance to render without loading being true
@@ -421,8 +431,8 @@ export default class Search implements SearchInterface {
   async toBench(username?: Username) {
     const { peopleStore } = getRootStore();
 
-    const benchOwner: ?Person = username
-      ? await peopleStore.getUser(username)
+    const benchOwner: Person | null = username
+      ? (await peopleStore.getUser(username)) ?? null
       : peopleStore.currentUser;
 
     this.setOwner(null, false);
@@ -441,21 +451,23 @@ export default class Search implements SearchInterface {
     this.setProcessingContextActions(true);
     const { uiStore } = getRootStore();
 
+    type SubSampleResponse = {
+      storedInContainer: boolean;
+    } & Omit<SubSampleAttrs, "sample">;
+    type SampleResponse = {
+      globalId: GlobalId;
+      type: string;
+      canBeDeleted?: boolean;
+      subSamples: Array<SubSampleResponse>;
+    };
+
     try {
       const { data } = await showToastWhilstPending(
         "Sending to trash...",
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
-            record: null | {
-              type: string;
-              canBeDeleted?: boolean;
-              subSamples: ReadonlyArray<
-                {
-                  storedInContainer: boolean;
-                } & Omit<SubSampleAttrs, "sample">
-              >;
-            };
+            record: null | SampleResponse;
           }>;
           errorCount: number;
         }>(prepareRecordsForBulkApi(records, opts), "DELETE", false)
@@ -476,10 +488,10 @@ export default class Search implements SearchInterface {
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
-        ...data.results
-          .filter(({ error }) => !error)
-          .filter(({ record }) => record !== null && record.type !== "SAMPLE")
-          .map(({ record }) => record)
+        ...ArrayUtils.filterNull(
+          data.results.filter(({ error }) => !error).map(({ record }) => record)
+        )
+          .filter((record) => record.type !== "SAMPLE")
           /*
            * The list is reversed because the server processes each record in
            * turn and the processing of one record will at times impact how
@@ -496,14 +508,19 @@ export default class Search implements SearchInterface {
         ...samplesThatCouldBeDeleted,
       ].map((record) => {
         const newRecord = factory.newRecord(record);
-        newRecord.populateFromJson(factory, record);
+        newRecord.populateFromJson(factory, record, null);
         return newRecord;
       });
 
       if (samplesThatCouldNotBeDeleted.length > 0) {
         const subsamplesThatPreventedSampleDeletion =
           samplesThatCouldNotBeDeleted
-            .flatMap((s) => s.subSamples.map((ss) => [s, ss]))
+            .flatMap((s) =>
+              s.subSamples.map<[SampleResponse, SubSampleResponse]>((ss) => [
+                s,
+                ss,
+              ])
+            )
             .filter(([, ss]) => ss.storedInContainer);
         uiStore.addAlert(
           mkAlert({
@@ -523,7 +540,7 @@ export default class Search implements SearchInterface {
               record: factory.newRecord({
                 ...ss,
                 sample: s,
-              }),
+              } as Record<string, unknown> & { globalId: GlobalId }),
             })),
             actionLabel: "Move all to trash",
             onActionClick: () => {
@@ -550,8 +567,7 @@ export default class Search implements SearchInterface {
       uiStore.addAlert(
         mkAlert({
           title: "Sending to trash failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
         })
       );
@@ -618,7 +634,7 @@ export default class Search implements SearchInterface {
       samplesOfDeletedSubSamples.filter((s) => s.subSamplesCount === 0)
     );
 
-    for (const sample: SampleModel of nowEmptySamples) {
+    for (const sample of nowEmptySamples) {
       uiStore.addAlert(
         mkAlert({
           message: `Send Sample ${sample.name} to trash too?`,
@@ -628,7 +644,7 @@ export default class Search implements SearchInterface {
           onActionClick: doNotAwait(async () => {
             await this.deleteRecords([sample]);
             await sample.fetchAdditionalInfo();
-            await searchStore.search.fetcher.performInitialSearch();
+            await searchStore.search.fetcher.performInitialSearch(null);
           }),
         })
       );
@@ -647,7 +663,10 @@ export default class Search implements SearchInterface {
       const { data } = await showToastWhilstPending(
         "Restoring...",
         ApiService.bulk<{
-          results: Array<{ error: { errors: Array<string> }; record: any }>;
+          results: Array<{
+            error: { errors: Array<string> };
+            record: Record<string, unknown> & { globalId: GlobalId };
+          }>;
           errorCount: number;
         }>(prepareRecordsForBulkApi(records), "RESTORE", false)
       );
@@ -657,7 +676,7 @@ export default class Search implements SearchInterface {
         .filter(({ error }) => !error)
         .map(({ record }) => {
           const newRecord = factory.newRecord(record);
-          newRecord.populateFromJson(factory, record);
+          newRecord.populateFromJson(factory, record, {});
           return newRecord;
         });
 
@@ -676,8 +695,7 @@ export default class Search implements SearchInterface {
       uiStore.addAlert(
         mkAlert({
           title: "Restore failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
         })
       );
@@ -702,7 +720,7 @@ export default class Search implements SearchInterface {
     // update sidebar bench count
     if (currentUser) void currentUser.getBench();
 
-    await this.fetcher.performInitialSearch();
+    await this.fetcher.performInitialSearch({});
 
     if (activeResult) {
       if (recordIds.has(activeResult.globalId))
@@ -710,10 +728,10 @@ export default class Search implements SearchInterface {
 
       // Re-search because restoring a sample also restores its subsamples
       if (activeResult instanceof SampleModel)
-        await activeResult.refreshAssociatedSearch();
+        activeResult.refreshAssociatedSearch();
 
       if (this.isActiveResultTemplateOfAny(restoredRecords))
-        await activeResult.refreshAssociatedSearch();
+        activeResult.refreshAssociatedSearch();
     }
   }
 
@@ -724,7 +742,10 @@ export default class Search implements SearchInterface {
       const { data } = await showToastWhilstPending(
         "Duplicating...",
         ApiService.bulk<{
-          results: Array<{ error: { errors: Array<string> }; record: any }>;
+          results: Array<{
+            error: { errors: Array<string> };
+            record: Record<string, unknwon> & { globalId: GlobalId };
+          }>;
           errorCount: number;
         }>(prepareRecordsForBulkApi(records), "DUPLICATE", true)
       );
@@ -739,7 +760,7 @@ export default class Search implements SearchInterface {
           (erroredRecords) => this.duplicateRecords(erroredRecords)
         )
       ) {
-        await this.fetcher.performInitialSearch();
+        await this.fetcher.performInitialSearch({});
         return;
       }
 
@@ -750,7 +771,7 @@ export default class Search implements SearchInterface {
       const factory = this.factory.newFactory();
       const newRecords = data.results.map((r) => {
         const newRecord = factory.newRecord(r.record);
-        newRecord.populateFromJson(factory, r.record);
+        newRecord.populateFromJson(factory, r.record, null);
         return newRecord;
       });
 
@@ -776,7 +797,7 @@ export default class Search implements SearchInterface {
           : null
       );
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
-      await this.fetcher.performInitialSearch();
+      await this.fetcher.performInitialSearch({});
       if (this.activeResult && data.results.length > 0) {
         await this.setActiveResult(newRecords[0]);
       }
@@ -784,8 +805,7 @@ export default class Search implements SearchInterface {
       uiStore.addAlert(
         mkAlert({
           title: "Duplication failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
         })
       );
@@ -816,7 +836,7 @@ export default class Search implements SearchInterface {
       );
 
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
-      void this.fetcher.performInitialSearch();
+      void this.fetcher.performInitialSearch({});
 
       const factory = this.factory.newFactory();
       handleDetailedSuccesses(
@@ -824,7 +844,7 @@ export default class Search implements SearchInterface {
           subsample,
           ...data.map((r) => {
             const newRecord = factory.newRecord(r);
-            newRecord.populateFromJson(factory, r);
+            newRecord.populateFromJson(factory, r, null);
             return newRecord;
           }),
         ],
@@ -838,8 +858,7 @@ export default class Search implements SearchInterface {
       uiStore.addAlert(
         mkAlert({
           title: "Splitting subsample failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
           duration: 8000,
         })
@@ -899,7 +918,10 @@ export default class Search implements SearchInterface {
       const { data } = await showToastWhilstPending(
         "Transferring...",
         ApiService.bulk<{
-          results: Array<{ error: { errors: Array<string> }; record: any }>;
+          results: Array<{
+            error: { errors: Array<string> };
+            record: Record<string, unknown> & { globalId: GlobalId };
+          }>;
           errorCount: number;
         }>(prepareRecordsForBulkApi(records), "CHANGE_OWNER", true)
       );
@@ -909,7 +931,7 @@ export default class Search implements SearchInterface {
         .filter(({ error }) => !error)
         .map(({ record }) => {
           const newRecord = factory.newRecord(record);
-          newRecord.populateFromJson(factory, record);
+          newRecord.populateFromJson(factory, record, null);
           return newRecord;
         });
       const recordsOnBench = successfullyTranferred.every((r) =>
@@ -939,8 +961,7 @@ export default class Search implements SearchInterface {
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: "Transfer failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );
@@ -968,7 +989,7 @@ export default class Search implements SearchInterface {
     // update sidebar bench count
     if (currentUser) void currentUser.getBench();
 
-    await this.fetcher.performInitialSearch();
+    await this.fetcher.performInitialSearch({});
 
     if (searchStore.activeResult) {
       const activeResult = searchStore.activeResult;
@@ -988,7 +1009,7 @@ export default class Search implements SearchInterface {
        * then refresh the template's sample listing
        */
       if (this.isActiveResultTemplateOfAny(transferredRecords))
-        await activeResult.refreshAssociatedSearch();
+        await activeResult.refreshAssociatedSearch({});
     }
   }
 
@@ -1004,7 +1025,7 @@ export default class Search implements SearchInterface {
         ...(await sample.sampleCreationParams(includeContentForFields)),
         name,
       };
-      const { data } = await ApiService.post<typeof args, TemplateAttrs>(
+      const { data } = await ApiService.post<TemplateAttrs>(
         "sampleTemplates",
         args
       );
@@ -1023,13 +1044,12 @@ export default class Search implements SearchInterface {
           ],
         })
       );
-      void this.fetcher.performInitialSearch();
+      void this.fetcher.performInitialSearch({});
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
           title: `Template creation failed.`,
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
           details: error.response?.data.errors.map((e) => ({
             title: e,
@@ -1061,14 +1081,14 @@ export default class Search implements SearchInterface {
         opts.sample.fetchAdditionalInfo(),
         opts.sample.refreshAssociatedSearch(),
         searchStore.search.fetcher.parentGlobalId === opts.sample.globalId
-          ? searchStore.search.fetcher.performInitialSearch()
+          ? searchStore.search.fetcher.performInitialSearch({})
           : Promise.resolve(),
       ]);
 
       const factory = this.factory.newFactory();
       const successfullyCreated = data.map((record) => {
         const newRecord = factory.newRecord(record);
-        newRecord.populateFromJson(factory, record);
+        newRecord.populateFromJson(factory, record, null);
         return newRecord;
       });
 
@@ -1087,8 +1107,7 @@ export default class Search implements SearchInterface {
       uiStore.addAlert(
         mkAlert({
           title: "Subsample creation failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
           details: error.response?.data.errors.map((e) => ({
             title: e,
@@ -1166,8 +1185,7 @@ export default class Search implements SearchInterface {
       uiStore.addAlert(
         mkAlert({
           title: `Data export failed.`,
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );

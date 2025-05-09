@@ -22,7 +22,7 @@ type SearchContextType = {
    *  to it's subsamples, or a template where search is scoped to the samples
    *  that have been created from that template.
    */
-  scopedResult?: ?Record;
+  scopedResult?: Record | null;
 
   /*
    *  If true, tapping on one of the records in the search result, regardless

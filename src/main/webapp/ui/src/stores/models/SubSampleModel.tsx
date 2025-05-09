@@ -110,7 +110,7 @@ export type SubSampleAttrs = {
   barcodes: Array<BarcodeAttrs>;
   identifiers: Array<IdentifierAttrs>;
   _links: Array<_LINK>;
-};
+} & Record<string, unknown>;
 
 const FIELDS = new Set([...RESULT_FIELDS, "quantity", "notes"]);
 const defaultVisibleFields = new Set([

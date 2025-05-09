@@ -28,7 +28,7 @@ export interface Factory {
    * as it cannot be determined before runtime what the attributes must be.
    */
   newRecord(
-    params: Record<string, unknown> & { globalId: GlobalId }
+    params: Record<string, unknown> & { globalId: GlobalId | null }
   ): InventoryRecord;
 
   newPerson(attrs: PersonAttrs): Person;
