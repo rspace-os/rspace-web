@@ -124,8 +124,7 @@ const feature = test.extend<{
       },
       "the progress indicator should disappear after completion": async () => {
         const progressBar = page.getByRole("progressbar");
-        await page.waitForTimeout(6000); // Wait for progress to complete
-        await expect(progressBar).not.toBeVisible();
+        await expect(progressBar).not.toBeVisible({ timeout: 10000 });
       },
       "there shouldn't be any axe violations": async () => {
         const accessibilityScanResults = await new AxeBuilder({
