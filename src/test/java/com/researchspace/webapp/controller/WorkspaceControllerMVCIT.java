@@ -1330,7 +1330,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     mockMvc
         .perform(
             post("/workspace/ajax/move")
-                .param("parentFolderId", piRootFolder.getId() + "")
+                .param("parentFolderId", sharedFolderId + "")
                 .param("toMove[]", sharedDocument.getId() + "")
                 .param("target", sharedNotebook.getId() + "")
                 .principal(piUser::getUsername))

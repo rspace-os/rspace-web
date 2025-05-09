@@ -1,7 +1,5 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.service.RecordDeletionManager.MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER;
-
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
@@ -33,7 +31,6 @@ import com.researchspace.service.UserManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
@@ -98,20 +95,7 @@ public class SharingHandlerImpl implements SharingHandler {
   @Override
   public ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
       shareIntoSharedFolder(User user, Folder sharedFolder, Long recordId) {
-    Optional<Folder> sharedFolderRoot =
-        folderManager.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-            sharedFolder.getId(), user);
-    RSPath path = folderManager.getShortestPathToSharedRootFolder(sharedFolder.getId(), user);
-    if (path.isEmpty() || path.size() <= MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER) {
-      String msg =
-          String.format(
-              "The folder '%s' is not a shared subfolder - id [%d] is not in a shared folder!",
-              sharedFolder.getName(), sharedFolder.getId());
-      throw new IllegalArgumentException(msg);
-    }
-
-    Group sharedGroup =
-        groupManager.getGroupByCommunalGroupFolderId(sharedFolderRoot.get().getId());
+    Group sharedGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedFolder);
     ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "write");
     shareConfigElement.setGroupFolderId(sharedFolder.getId());
     ShareConfigCommand shareConfig =
