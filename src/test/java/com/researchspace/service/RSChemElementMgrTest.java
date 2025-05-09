@@ -145,9 +145,9 @@ public class RSChemElementMgrTest {
 
     // no cutoff, db query page size set to 3 - chemDao should be queried twice
     chemElementManager.setChemSearchChemIdsPageSize(3);
-    when(chemDao.getChemElementsForChemIds(res.getChemicalHits().subList(0, 3)))
+    when(chemDao.getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(0, 3)))
         .thenReturn(List.of(chemElement1, chemElement2, chemElement3));
-    when(chemDao.getChemElementsForChemIds(res.getChemicalHits().subList(3, 4)))
+    when(chemDao.getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(3, 4)))
         .thenReturn(List.of(chemElement4));
     List<ChemSearchedItem> searchHits = chemElementManager.search("", "", 10, user);
     assertEquals(4, searchHits.size());
@@ -158,17 +158,20 @@ public class RSChemElementMgrTest {
 
     /* reduce db query pagination to 1, with cutoff at 2 - the chemDao should only be called twice,
     i.e. paginated db queries should stop as soon as searchResultLimit is reached */
-    when(chemDao.getChemElementsForChemIds(res.getChemicalHits().subList(0, 1)))
+    when(chemDao.getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(0, 1)))
         .thenReturn(List.of(chemElement1));
-    when(chemDao.getChemElementsForChemIds(res.getChemicalHits().subList(1, 2)))
+    when(chemDao.getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(1, 2)))
         .thenReturn(List.of(chemElement2));
     chemElementManager.setChemSearchChemIdsPageSize(1);
     searchHits = chemElementManager.search("", "", 2, user);
     assertEquals(2, searchHits.size());
     // verify no further calls after cutoff
-    verify(chemDao, times(1)).getChemElementsForChemIds(res.getChemicalHits().subList(0, 1));
-    verify(chemDao, times(1)).getChemElementsForChemIds(res.getChemicalHits().subList(1, 2));
-    verify(chemDao, never()).getChemElementsForChemIds(res.getChemicalHits().subList(2, 3));
+    verify(chemDao, times(1))
+        .getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(0, 1));
+    verify(chemDao, times(1))
+        .getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(1, 2));
+    verify(chemDao, never())
+        .getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(2, 3));
   }
 
   @Test
@@ -329,7 +332,8 @@ public class RSChemElementMgrTest {
         ChemicalSearchResultsDTO.builder().chemicalHits(results).totalHits(1).build();
 
     when(chemistryProvider.search(anyString(), anyString())).thenReturn(res);
-    when(chemDao.getChemElementsForChemIds(res.getChemicalHits())).thenReturn(List.of(chemElement));
+    when(chemDao.getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits()))
+        .thenReturn(List.of(chemElement));
     return chemElementManager.search("ignored", "ignored", 10, user).size();
   }
 }
