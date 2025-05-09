@@ -168,7 +168,7 @@ const feature = test.extend<{
 });
 
 test.describe("ValidatingSubmitButton", () => {
-  feature("The button shows is descendents", async ({ Given, Then }) => {
+  feature("The button shows its descendants", async ({ Given, Then }) => {
     await Given["the ValidatingSubmitButton is rendered"]();
     await Then["the button should have the label 'Submit'"]();
   });
