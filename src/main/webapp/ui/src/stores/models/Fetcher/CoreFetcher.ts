@@ -278,8 +278,8 @@ export default class CoreFetcher {
   }
 
   async search(
-    _params: ?CoreFetcherArgs = null,
-    storeResults: (Array<InventoryRecord>) => void
+    _params: CoreFetcherArgs | null = null,
+    storeResults: (results: Array<InventoryRecord>) => void
   ) {
     this.setLoading(true);
 
@@ -381,7 +381,7 @@ export default class CoreFetcher {
    * `this`, else defaults where values are required or omitting them where
    * they are not.
    */
-  generateParams(editedParams: ?CoreFetcherArgs | {} = {}): CoreFetcherArgs {
+  generateParams(editedParams: ?(CoreFetcherArgs | {}) = {}): CoreFetcherArgs {
     const keys = new Set([...Object.keys(DEFAULT_SEARCH), "permalink"]);
 
     // $FlowExpectedError[cannot-spread-indexer] There's no way flow can tell what's going on here
@@ -465,9 +465,9 @@ export default class CoreFetcher {
    */
   get serialize(): Partial<CoreFetcherArgs> {
     const keysOfComplexData = new RsSet(["owner", "benchOwner", "permalink"]);
-    const keysOfSimpleData: RsSet<string> = (new RsSet(
+    const keysOfSimpleData: RsSet<string> = new RsSet(
       Object.keys(DEFAULT_SEARCH)
-    )).subtract(keysOfComplexData);
+    ).subtract(keysOfComplexData);
     return filterObject((k) => keysOfSimpleData.has(k), {
       ...DEFAULT_SEARCH,
       ...this,

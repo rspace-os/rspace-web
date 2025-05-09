@@ -29,7 +29,11 @@ import {
   type SharingMode,
   type CreateOption,
 } from "../definitions/InventoryRecord";
-import { type Id, type GlobalId, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+import {
+  type Id,
+  type GlobalId,
+  inventoryRecordTypeLabels,
+} from "../definitions/BaseRecord";
 import { type RecordDetails } from "../definitions/Record";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
 import {
@@ -84,50 +88,51 @@ import * as Parsers from "../../util/parsers";
 
 type ContainerEditableFields = ResultEditableFields;
 
-type ContainerUneditableFields = ResultUneditableFields &
-{
-  location: InventoryRecord,
+type ContainerUneditableFields = ResultUneditableFields & {
+  location: InventoryRecord;
 };
 
 export type ContainerInContainerParams = {
-  parentContainers?: Array<{ id: Id }>,
-  parentLocation?: Location,
+  parentContainers?: Array<{ id: Id }>;
+  parentLocation?: Location;
 };
 
 export type ContainerAttrs = {
-  id: ?Id,
-  type: string,
-  globalId: ?GlobalId,
-  name: string,
-  canStoreContainers: boolean,
-  canStoreSamples: boolean,
-  description: string,
-  permittedActions: Array<Action>,
-  quantity: null,
-  extraFields?: Array<ExtraFieldAttrs>,
-  tags: Array<Tag> | null,
-  locations: ReadonlyArray<Omit<LocationAttrs, "parentContainer" | "content" > & {
-    content: ContainerAttrs | SubSampleAttrs | null,
-  }>,
-  gridLayout: GridLayout | null,
-  cType: string,
-  locationsCount: number | null,
-  contentSummary: ContentSummary | null,
-  image?: string,
-  parentContainers: Array<ContainerAttrs>,
-  lastNonWorkbenchParent: ContainerAttrs | null,
-  lastMoveDate: Date | null,
-  owner: PersonAttrs | null,
-  created: string | null,
-  lastModified: string | null,
-  modifiedByFullName: string | null,
-  deleted: boolean,
-  attachments: Array<AttachmentJson>,
-  barcodes: Array<BarcodeAttrs>,
-  identifiers: Array<IdentifierAttrs>,
-  sharingMode: SharingMode,
-  sharedWith: Array<SharedWithGroup>,
-  _links: Array<_LINK>,
+  id: ?Id;
+  type: string;
+  globalId: ?GlobalId;
+  name: string;
+  canStoreContainers: boolean;
+  canStoreSamples: boolean;
+  description: string;
+  permittedActions: Array<Action>;
+  quantity: null;
+  extraFields?: Array<ExtraFieldAttrs>;
+  tags: Array<Tag> | null;
+  locations: ReadonlyArray<
+    Omit<LocationAttrs, "parentContainer" | "content"> & {
+      content: ContainerAttrs | SubSampleAttrs | null;
+    }
+  >;
+  gridLayout: GridLayout | null;
+  cType: string;
+  locationsCount: number | null;
+  contentSummary: ContentSummary | null;
+  image?: string;
+  parentContainers: Array<ContainerAttrs>;
+  lastNonWorkbenchParent: ContainerAttrs | null;
+  lastMoveDate: Date | null;
+  owner: PersonAttrs | null;
+  created: string | null;
+  lastModified: string | null;
+  modifiedByFullName: string | null;
+  deleted: boolean;
+  attachments: Array<AttachmentJson>;
+  barcodes: Array<BarcodeAttrs>;
+  identifiers: Array<IdentifierAttrs>;
+  sharingMode: SharingMode;
+  sharedWith: Array<SharedWithGroup>;
+  _links: Array<_LINK>;
 };
 
 const DEFAULT_CONTAINER: ContainerAttrs = {
@@ -496,7 +501,7 @@ export default class ContainerModel
     return locations.filter((l: Location) => l.isShallowUnselected(search));
   }
 
-  get rows(): Array<{ value: number, label: string | number }> {
+  get rows(): Array<{ value: number; label: string | number }> {
     if (!this.gridLayout) return [];
     if (this.gridLayout.rowsNumber === "") return [];
     return layoutToLabels(
@@ -506,8 +511,8 @@ export default class ContainerModel
   }
 
   get columns(): Array<{
-    value: number,
-    label: string | number,
+    value: number;
+    label: string | number;
   }> {
     if (!this.gridLayout) return [];
     if (this.gridLayout.columnsNumber === "") return [];
@@ -532,15 +537,16 @@ export default class ContainerModel
 
   get getLocationsForApi(): Array<
     | {
-        id: ?number,
-        coordX: ?number,
-        coordY: ?number,
-        newLocationRequest?: boolean,
+        id: ?number;
+        coordX: ?number;
+        coordY: ?number;
+        newLocationRequest?: boolean;
       }
     | {
-        id: number,
-        deleteLocationRequest: boolean,
-      }> {
+        id: number;
+        deleteLocationRequest: boolean;
+      }
+  > {
     const locationModelToObject = pick("id", "coordX", "coordY");
 
     const locations = this.locations;
@@ -722,10 +728,10 @@ export default class ContainerModel
   startSelection(
     event: MouseEvent,
     padding: {
-      left: number,
-      top: number,
-      right: number,
-      bottom: number,
+      left: number;
+      top: number;
+      right: number;
+      bottom: number;
     } = { left: 0, top: 0, right: 0, bottom: 0 }
   ) {
     if (event.button === 2) return;
@@ -745,10 +751,10 @@ export default class ContainerModel
   moveSelection(
     event: MouseEvent,
     padding: {
-      left: number,
-      top: number,
-      right: number,
-      bottom: number,
+      left: number;
+      top: number;
+      right: number;
+      bottom: number;
     } = { left: 0, top: 0, right: 0, bottom: 0 }
   ) {
     // currentTarget is either Table or TableContainer
@@ -805,7 +811,8 @@ export default class ContainerModel
     if (location.selected) {
       location.toggleSelected(false);
     } else {
-      const canSelectOneMore = selectedLocations.length + 1 <= search.uiConfig.selectionLimit;
+      const canSelectOneMore =
+        selectedLocations.length + 1 <= search.uiConfig.selectionLimit;
       const canSelectThisLocation = location.isSelectable(search);
 
       if (search.uiConfig.onlyAllowSelectingEmptyLocations) {
@@ -1045,7 +1052,9 @@ export default class ContainerModel
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): {[key in keyof ContainerEditableFields]: ?string} & {[key in keyof ContainerUneditableFields]: ?string} {
+  get noValueLabel(): { [key in keyof ContainerEditableFields]: ?string } & {
+    [key in keyof ContainerUneditableFields]: ?string;
+  } {
     return {
       ...super.noValueLabel,
       location: null,
@@ -1082,9 +1091,9 @@ export default class ContainerModel
 
   get inContainerParams(): ContainerInContainerParams {
     return {
-      ...((this.beingCreatedInContainer
+      ...(this.beingCreatedInContainer
         ? { parentContainers: [{ id: this.parentContainers[0].id }] }
-        : {}): { parentContainers?: Array<{ id: Id }> }),
+        : {}),
       ...(this.parentLocation ? { parentLocation: this.parentLocation } : {}),
     };
   }
@@ -1096,29 +1105,41 @@ export default class ContainerModel
     };
   }
 
-  get createOptions(): $ReadOnlyArray<CreateOption> {
-    let newContainerExplanation = "The container will be automatically added to this container.";
+  get createOptions(): ReadonlyArray<CreateOption> {
+    let newContainerExplanation =
+      "The container will be automatically added to this container.";
     if (!this.canStoreContainers)
-      newContainerExplanation = "Containers cannot be stored inside this container.";
+      newContainerExplanation =
+        "Containers cannot be stored inside this container.";
     if (!this.canEdit)
-      newContainerExplanation = "You do not have permission to edit the contents of this container.";
+      newContainerExplanation =
+        "You do not have permission to edit the contents of this container.";
 
-    let newSampleExplanation = "The subsample will be automatically added to this container.";
+    let newSampleExplanation =
+      "The subsample will be automatically added to this container.";
     if (!this.canStoreSamples)
-      newSampleExplanation = "Subsamples cannot be stored inside this container.";
+      newSampleExplanation =
+        "Subsamples cannot be stored inside this container.";
     if (!this.canEdit)
-      newSampleExplanation = "You do not have permission to edit the contents of this container.";
+      newSampleExplanation =
+        "You do not have permission to edit the contents of this container.";
 
     return [
       {
         label: "Container",
         explanation: newContainerExplanation,
-        parameters: [{
-          label: "Location",
-          explanation: this.cType === "LIST" ? "No location selection required for list containers." : "Specify a single location for where the new container should be placed.",
-          state: { key: "location", container: this },
-          validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
-        }],
+        parameters: [
+          {
+            label: "Location",
+            explanation:
+              this.cType === "LIST"
+                ? "No location selection required for list containers."
+                : "Specify a single location for where the new container should be placed.",
+            state: { key: "location", container: this },
+            validState: () =>
+              this.cType === "LIST" || this.selectedLocations?.length === 1,
+          },
+        ],
         disabled: !this.canStoreContainers || !this.canEdit,
         onReset: () => {
           // nothing to reset
@@ -1131,28 +1152,35 @@ export default class ContainerModel
             });
             return;
           }
-          if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
+          if (this.selectedLocations?.length !== 1)
+            throw new Error("Only one selection permitted");
           const location = this.selectedLocations[0];
           await getRootStore().searchStore.createNewContainer({
             parentContainers: [this],
             parentLocation: {
               coordX: location.coordX,
-              coordY: location.coordY
-            }
+              coordY: location.coordY,
+            },
           });
         },
       },
       {
         label: "Sample",
         explanation: newSampleExplanation,
-        parameters: [{
-          label: "Location",
-          explanation: this.cType === "LIST" ? "No location selection required for list containers." : "Specify a single location for where the new container should be placed.",
-          state: { key: "location", container: this },
-          validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
-        }],
+        parameters: [
+          {
+            label: "Location",
+            explanation:
+              this.cType === "LIST"
+                ? "No location selection required for list containers."
+                : "Specify a single location for where the new container should be placed.",
+            state: { key: "location", container: this },
+            validState: () =>
+              this.cType === "LIST" || this.selectedLocations?.length === 1,
+          },
+        ],
         disabled: !this.canStoreSamples || !this.canEdit,
-        onReset: ( ) => {
+        onReset: () => {
           // nothing to reset
         },
         onSubmit: async () => {
@@ -1163,27 +1191,25 @@ export default class ContainerModel
             });
             return;
           }
-          if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
+          if (this.selectedLocations?.length !== 1)
+            throw new Error("Only one selection permitted");
           const location = this.selectedLocations[0];
           await getRootStore().searchStore.createNewSample({
             parentContainers: [this],
             parentLocation: {
               coordX: location.coordX,
-              coordY: location.coordY
-            }
+              coordY: location.coordY,
+            },
           });
         },
-      }
+      },
     ];
   }
 }
 
 classMixin(ContainerModel, Movable);
 
-type BatchContainerEditableFields = {
-  ...ResultCollectionEditableFields,
-  ...
-};
+type BatchContainerEditableFields = ResultCollectionEditableFields;
 
 /*
  * This is a wrapper class around a set of Containers, making it easier to
@@ -1206,7 +1232,7 @@ export class ContainerCollection
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): {[key in keyof BatchContainerEditableFields]: ?string} {
+  get noValueLabel(): { [key in keyof BatchContainerEditableFields]: ?string } {
     return super.noValueLabel;
   }
 

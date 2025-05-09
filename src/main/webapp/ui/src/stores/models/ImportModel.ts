@@ -142,17 +142,17 @@ export class ColumnFieldMap {
     recordType,
     columnsWithoutBlankValue,
   }: {
-    selected: boolean,
-    columnName: ColumnName,
-    field: Field,
-    fieldName: string,
-    fieldType: FieldType,
-    quantityUnitId: ?number,
-    options: ?Array<string>,
-    fieldChangeCallback: (oldField: Field, newField: Field) => void,
-    isNameUnique: (ColumnFieldMap) => boolean,
-    recordType: ImportRecordType,
-    columnsWithoutBlankValue: Array<ColumnName>,
+    selected: boolean;
+    columnName: ColumnName;
+    field: Field;
+    fieldName: string;
+    fieldType: FieldType;
+    quantityUnitId: ?number;
+    options: ?Array<string>;
+    fieldChangeCallback: (oldField: Field, newField: Field) => void;
+    isNameUnique: (ColumnFieldMap) => boolean;
+    recordType: ImportRecordType;
+    columnsWithoutBlankValue: Array<ColumnName>;
   }) {
     makeObservable(this, {
       selected: observable,
@@ -833,19 +833,18 @@ export default class Import {
   }
 
   transformTemplateInfoForSubmission(): {
-    fields: Array<any>,
-    name: string,
-    ...
+    fields: Array<any>;
+    name: string;
   } {
     if (!this.createNewTemplate) return pick("id")(this.template);
     if (!this.templateInfo) throw new Error("TemplateInfo is null");
-    const templateFieldWithMappings: Array<{|
-      field: TemplateField,
-      mapping: ?ColumnFieldMap,
-    |}> = ArrayUtils.zipWith<
+    const templateFieldWithMappings: Array<{
+      field: TemplateField;
+      mapping: ?ColumnFieldMap;
+    }> = ArrayUtils.zipWith<
       TemplateField,
       ?ColumnFieldMap,
-      {| field: TemplateField, mapping: ?ColumnFieldMap |}
+      { field: TemplateField; mapping: ?ColumnFieldMap }
     >(
       this.templateInfo.fields,
       this.templateInfo.fields.map(({ name }) =>
@@ -902,7 +901,7 @@ export default class Import {
   }
 
   makeMappingsObject(mappings: Array<ColumnFieldMap>): {
-    [string]: string,
+    [string]: string;
   } {
     const name = this.findParsedColumnName(mappings, Fields.name);
     if (!name) throw new Error("Name is a required field");
@@ -1010,7 +1009,7 @@ export default class Import {
         },
       } = await showToastWhilstPending(
         `Importing Records...`,
-        ApiService.post<typeof params, any>("/import/importFiles", params)
+        ApiService.post<unknown>("/import/importFiles", params)
       );
 
       // multiple results can be returned and should be handled per type
@@ -1112,8 +1111,8 @@ export default class Import {
    * template.
    */
   get importMatchesExistingTemplate(): ?(
-    | {| matches: false, reason: string |}
-    | {| matches: true |}
+    | { matches: false; reason: string }
+    | { matches: true }
   ) {
     if (this.createNewTemplate) return null;
     if (!this.template)
@@ -1203,14 +1202,14 @@ export default class Import {
    *         or is an invalid string
    */
   updateRecordType(urlSearchParams: URLSearchParams): void {
-    const recordTypeParam: ?string = urlSearchParams.get("recordType");
+    const recordTypeParam = urlSearchParams.get("recordType");
     if (!recordTypeParam)
       throw new Error("recordType URL arg is missing but required");
 
     const recordType: ImportRecordType = Result.first(
-      (parseString("SAMPLES", recordTypeParam): Result<ImportRecordType>),
-      (parseString("CONTAINERS", recordTypeParam): Result<ImportRecordType>),
-      (parseString("SUBSAMPLES", recordTypeParam): Result<ImportRecordType>)
+      parseString("SAMPLES", recordTypeParam),
+      parseString("CONTAINERS", recordTypeParam),
+      parseString("SUBSAMPLES", recordTypeParam)
     ).orElseGet(() => {
       throw new Error(
         `Could not parse URL arg, invaid value: "${recordTypeParam}".`

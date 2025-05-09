@@ -4,16 +4,14 @@ import { match } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
 import { truncateIsoTimestamp } from "../definitions/Units";
-import {
-  type HasEditableFields,
-} from "../definitions/Editable";
+import { type HasEditableFields } from "../definitions/Editable";
 import { PersistedBarcode } from "./Barcode";
 import { type SharedWithGroup } from "../definitions/Group";
 import { areSameTag } from "../definitions/Tag";
 
 export type BatchName = {
-  common: string,
-  suffix: "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED",
+  common: string;
+  suffix: "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED";
 };
 
 /*
@@ -29,15 +27,18 @@ export const formatIndex = (index: number, numOfRecords: number): string => {
   return (index + 1).toString().padStart(widthWithPadding, "0");
 };
 
-export type ResultCollectionEditableFields = Omit<ResultEditableFields, "name"> & {
-  name: BatchName,
+export type ResultCollectionEditableFields = Omit<
+  ResultEditableFields,
+  "name"
+> & {
+  name: BatchName;
 };
 
 /*
  * This is a wrapper around a set of Results, making it easier to perform batch
  * operations e.g. editing.
  */
-export default class ResultCollection<ResultSubtype: Result> {
+export default class ResultCollection<ResultSubtype extends Result> {
   records: RsSet<ResultSubtype>;
   name: BatchName;
   sharedWith: Array<SharedWithGroup>;
@@ -137,7 +138,9 @@ export default class ResultCollection<ResultSubtype: Result> {
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): {[key in keyof ResultCollectionEditableFields]: ?string} {
+  get noValueLabel(): {
+    [key in keyof ResultCollectionEditableFields]: ?string;
+  } {
     const currentNames = new RsSet(this.records.map((r) => r.name));
     const currentDescriptions = new RsSet(
       this.records.map((r) => r.description)
@@ -265,7 +268,9 @@ export class MixedResultCollection
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): {[key in keyof ResultCollectionEditableFields]: ?string} {
+  get noValueLabel(): {
+    [key in keyof ResultCollectionEditableFields]: ?string;
+  } {
     return super.noValueLabel;
   }
 

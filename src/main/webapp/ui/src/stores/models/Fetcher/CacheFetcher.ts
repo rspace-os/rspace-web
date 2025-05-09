@@ -50,7 +50,6 @@ export default class CacheFetcher
 
   performInitialSearch(params: ?CoreFetcherArgs = null): Promise<void> {
     if (params?.query || params?.resultType || params?.owner) {
-
       /*
        * this.results will be set on the first call, or when instances of this
        * class are instantiated. Thereafer, we keep a reference to this
@@ -72,7 +71,6 @@ export default class CacheFetcher
         pageSize: this.results.length,
       });
     } else {
-
       /*
        * If we're no longer filtering grid/image view by one of the allowed
        * search parameters, then we simply restore the cached search results.
@@ -91,8 +89,8 @@ export default class CacheFetcher
   }
 
   async search(
-    params: ?CoreFetcherArgs = null,
-    storeResults: (Array<InventoryRecord>) => void
+    params: CoreFetcherArgs | null = null,
+    storeResults: (results: Array<InventoryRecord>) => void
   ) {
     if (params?.query || params?.resultType || params?.owner) {
       await super.search(params, storeResults);

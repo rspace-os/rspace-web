@@ -95,17 +95,17 @@ const prepareRecordsForBulkApi = (
   }));
 
 type SearchArgs = {
-  fetcherParams?: CoreFetcherArgs,
-  treeArgs?: TreeAttrs,
-  uiConfig?: Partial<UiConfig>,
+  fetcherParams?: CoreFetcherArgs;
+  treeArgs?: TreeAttrs;
+  uiConfig?: Partial<UiConfig>;
   callbacks?: {
     /*
      * Note that this callback is called after setActiveResult (naturally) and
      * the resulting call to fetchAdditionalInfo have both completed.
      */
-    setActiveResult?: (r: InventoryRecord | null) => void,
-  },
-  factory: Factory,
+    setActiveResult?: (r: InventoryRecord | null) => void;
+  };
+  factory: Factory;
 };
 
 const DEFAULT_UI_CONFIG: UiConfig = {
@@ -147,7 +147,7 @@ export default class Search implements SearchInterface {
   cacheFetcher: CacheFetcherInterface;
   alwaysFilterOut: (r: InventoryRecord) => boolean = () => false;
   callbacks: ?{
-    setActiveResult?: (r: InventoryRecord | null) => void,
+    setActiveResult?: (r: InventoryRecord | null) => void;
   };
 
   /*
@@ -353,10 +353,10 @@ export default class Search implements SearchInterface {
 
   get batchEditingRecordsByType():
     | null
-    | { type: "container", records: RsSet<ContainerModel> }
-    | { type: "sample", records: RsSet<SampleModel> }
-    | { type: "subSample", records: RsSet<SubSampleModel> }
-    | { type: "mixed", records: RsSet<Result> } {
+    | { type: "container"; records: RsSet<ContainerModel> }
+    | { type: "sample"; records: RsSet<SampleModel> }
+    | { type: "subSample"; records: RsSet<SubSampleModel> }
+    | { type: "mixed"; records: RsSet<Result> } {
     if (!this.batchEditingRecords) return null;
     const records: RsSet<InventoryRecord> = this.batchEditingRecords;
     if (records.every((r) => r instanceof ContainerModel)) {
@@ -382,7 +382,7 @@ export default class Search implements SearchInterface {
 
   async setActiveResult(
     result: ?InventoryRecord = null,
-    options?: { defaultToFirstResult?: boolean, force?: boolean } = {}
+    options?: { defaultToFirstResult?: boolean; force?: boolean } = {}
   ): Promise<void> {
     const { defaultToFirstResult = true, force = false } = options;
     if (this.canEditActiveResult && !force) {
@@ -393,7 +393,7 @@ export default class Search implements SearchInterface {
     await this.cleanBatchEditing();
     await this.cleanUpActiveResult({ releaseLock: !force });
 
-    const assignment: (?Result) => Promise<void> = action(async (r) => {
+    const assignment = action(async (r: Result) => {
       if (r) {
         if (!r.infoLoaded && r.id) {
           r.setLoading(true); // don't give react a chance to render without loading being true
@@ -442,21 +442,21 @@ export default class Search implements SearchInterface {
     try {
       const { data } = await showToastWhilstPending(
         "Sending to trash...",
-        ApiService.bulk<
-          {
-            results: Array<{
-              error: { errors: Array<string> },
-              record: null | {
-                type: string,
-                canBeDeleted?: boolean,
-                subSamples: ReadonlyArray<{
-                  storedInContainer: boolean,
-                } & Omit<SubSampleAttrs, "sample">>,
-              },
-            }>,
-            errorCount: number,
-          }
-        >(prepareRecordsForBulkApi(records, opts), "DELETE", false)
+        ApiService.bulk<{
+          results: Array<{
+            error: { errors: Array<string> };
+            record: null | {
+              type: string;
+              canBeDeleted?: boolean;
+              subSamples: ReadonlyArray<
+                {
+                  storedInContainer: boolean;
+                } & Omit<SubSampleAttrs, "sample">
+              >;
+            };
+          }>;
+          errorCount: number;
+        }>(prepareRecordsForBulkApi(records, opts), "DELETE", false)
       );
 
       /*
@@ -644,12 +644,10 @@ export default class Search implements SearchInterface {
     try {
       const { data } = await showToastWhilstPending(
         "Restoring...",
-        ApiService.bulk<
-          {
-            results: Array<{ error: { errors: Array<string> }, record: any }>,
-            errorCount: number,
-          }
-        >(prepareRecordsForBulkApi(records), "RESTORE", false)
+        ApiService.bulk<{
+          results: Array<{ error: { errors: Array<string> }; record: any }>;
+          errorCount: number;
+        }>(prepareRecordsForBulkApi(records), "RESTORE", false)
       );
 
       const factory = this.factory.newFactory();
@@ -710,7 +708,7 @@ export default class Search implements SearchInterface {
 
       // Re-search because restoring a sample also restores its subsamples
       if (activeResult instanceof SampleModel)
-        await (activeResult.refreshAssociatedSearch(): void);
+        await activeResult.refreshAssociatedSearch();
 
       if (this.isActiveResultTemplateOfAny(restoredRecords))
         await activeResult.refreshAssociatedSearch();
@@ -723,12 +721,10 @@ export default class Search implements SearchInterface {
     try {
       const { data } = await showToastWhilstPending(
         "Duplicating...",
-        ApiService.bulk<
-          {
-            results: Array<{ error: { errors: Array<string> }, record: any }>,
-            errorCount: number,
-          }
-        >(prepareRecordsForBulkApi(records), "DUPLICATE", true)
+        ApiService.bulk<{
+          results: Array<{ error: { errors: Array<string> }; record: any }>;
+          errorCount: number;
+        }>(prepareRecordsForBulkApi(records), "DUPLICATE", true)
       );
       if (
         handleDetailedErrors(
@@ -808,12 +804,13 @@ export default class Search implements SearchInterface {
     try {
       const { data } = await showToastWhilstPending(
         "Splitting...",
-        ApiService.post<
-          Array<SubSampleAttrs>
-        >(`subSamples/${id}/actions/split`, {
-          split: true,
-          numSubSamples: `${copies}`,
-        })
+        ApiService.post<Array<SubSampleAttrs>>(
+          `subSamples/${id}/actions/split`,
+          {
+            split: true,
+            numSubSamples: `${copies}`,
+          }
+        )
       );
 
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
@@ -899,12 +896,10 @@ export default class Search implements SearchInterface {
     try {
       const { data } = await showToastWhilstPending(
         "Transferring...",
-        ApiService.bulk<
-          {
-            results: Array<{ error: { errors: Array<string> }, record: any }>,
-            errorCount: number,
-          }
-        >(prepareRecordsForBulkApi(records), "CHANGE_OWNER", true)
+        ApiService.bulk<{
+          results: Array<{ error: { errors: Array<string> }; record: any }>;
+          errorCount: number;
+        }>(prepareRecordsForBulkApi(records), "CHANGE_OWNER", true)
       );
 
       const factory = this.factory.newFactory();
@@ -1046,19 +1041,20 @@ export default class Search implements SearchInterface {
   }
 
   async createNewSubsamples(opts: {
-    sample: Sample,
-    numberOfNewSubsamples: number,
-    quantityPerSubsample: Quantity,
+    sample: Sample;
+    numberOfNewSubsamples: number;
+    quantityPerSubsample: Quantity;
   }): Promise<void> {
     const { uiStore, searchStore } = getRootStore();
     try {
-      const { data } = await ApiService.post<
-        ReadonlyArray<SubSampleAttrs>
-      >("subSamples", {
-        sampleId: opts.sample.id,
-        numSubSamples: `${opts.numberOfNewSubsamples}`,
-        singleSubSampleQuantity: opts.quantityPerSubsample,
-      });
+      const { data } = await ApiService.post<ReadonlyArray<SubSampleAttrs>>(
+        "subSamples",
+        {
+          sampleId: opts.sample.id,
+          numSubSamples: `${opts.numberOfNewSubsamples}`,
+          singleSubSampleQuantity: opts.quantityPerSubsample,
+        }
+      );
       await Promise.all([
         opts.sample.fetchAdditionalInfo(),
         opts.sample.refreshAssociatedSearch(),
@@ -1126,24 +1122,25 @@ export default class Search implements SearchInterface {
           // if omitted, ZIP is assumed
           ...(resultFileType === null ? {} : { resultFileType }),
           // leaving values as string in RadioField, converting to boolean here
-          ...((includeSubsamplesInSample === null
+          ...(includeSubsamplesInSample === null
             ? {}
             : {
                 includeSubsamplesInSample:
                   includeSubsamplesInSample === "INCLUDE",
-              })),
-          ...((includeContainerContent === null
+              }),
+          ...(includeContainerContent === null
             ? {}
             : {
                 includeContainerContent: includeContainerContent === "INCLUDE",
-              })),
+              }),
         })
       );
       const { data } = await showToastWhilstPending(
         "Exporting...",
-        ApiService.post<
-          { _links: Array<{ link: string, rel: string }> }
-        >("export", params)
+        ApiService.post<{ _links: Array<{ link: string; rel: string }> }>(
+          "export",
+          params
+        )
       );
       const downloadLink = data._links[1];
       const fileName = downloadLink.link.split("downloadArchive/")[1];
@@ -1501,15 +1498,13 @@ export default class Search implements SearchInterface {
         try {
           const {
             data: { results, errorCount },
-          } = await ApiService.bulk<
-            {
-              results: Array<{
-                error: { errors: Array<string> },
-                record: { globalId: ?GlobalId },
-              }>,
-              errorCount: number,
-            }
-          >(
+          } = await ApiService.bulk<{
+            results: Array<{
+              error: { errors: Array<string> };
+              record: { globalId: ?GlobalId };
+            }>;
+            errorCount: number;
+          }>(
             [
               ...records.map((r) => ({
                 ...r.paramsForBackend,
@@ -1584,7 +1579,9 @@ export default class Search implements SearchInterface {
    * implements InventoryRecord in test code, without worrying that this method
    * might add elements to the set that would violate the subtype invariant.
    */
-  isActiveResultTemplateOfAny<T extends InventoryRecord>(records: RsSet<T>): boolean {
+  isActiveResultTemplateOfAny<T extends InventoryRecord>(
+    records: RsSet<T>
+  ): boolean {
     const activeResultGlobalId =
       getRootStore().searchStore.activeResult?.globalId;
     for (const sample of records.filterClass(SampleModel)) {
