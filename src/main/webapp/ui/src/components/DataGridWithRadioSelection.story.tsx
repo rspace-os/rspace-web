@@ -1,6 +1,13 @@
 import React from "react";
 import { DataGridWithRadioSelection } from "./DataGridWithRadioSelection";
-import { GridColDef, GridRowId } from "@mui/x-data-grid";
+import {
+  GridColDef,
+  GridRowId,
+  GridToolbarContainer,
+  GridToolbarExportContainer,
+  useGridApiContext,
+} from "@mui/x-data-grid";
+import MenuItem from "@mui/material/MenuItem";
 
 const rows = [
   { id: 1, firstName: "John", lastName: "Doe", age: 35 },
@@ -125,6 +132,47 @@ export function DataGridWithFeatures() {
           ? `Selected ID: ${lastSelectedId}`
           : "Nothing selected"}
       </div>
+    </div>
+  );
+}
+
+const CsvExportToolbar = () => {
+  const apiRef = useGridApiContext();
+
+  return (
+    <GridToolbarContainer sx={{ width: "100%" }}>
+      <GridToolbarExportContainer>
+        <MenuItem
+          onClick={() => {
+            apiRef.current?.exportDataAsCsv({
+              allColumns: true,
+            });
+          }}
+        >
+          Export to CSV
+        </MenuItem>
+      </GridToolbarExportContainer>
+    </GridToolbarContainer>
+  );
+};
+
+/**
+ * For testing how export to CSV export works with the custom selection
+ */
+export function DataGridWithExportToCsv() {
+  return (
+    <div style={{ height: 400, width: "100%" }}>
+      <DataGridWithRadioSelection
+        rows={rows}
+        columns={columns}
+        onSelectionChange={() => {}}
+        selectRadioAriaLabelFunc={(row) =>
+          `Select ${row.firstName} ${row.lastName}`
+        }
+        slots={{
+          toolbar: CsvExportToolbar,
+        }}
+      />
     </div>
   );
 }
