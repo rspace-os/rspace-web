@@ -1069,7 +1069,7 @@ export default class Result
             variant: "error",
           })
         );
-        if ("message" in error) {
+        if (error instanceof Error) {
           console.error(error.message);
         }
       }
@@ -1161,7 +1161,7 @@ export default class Result
             variant: "error",
           })
         );
-        if ("message" in error) {
+        if (error instanceof Error) {
           console.error(error.message);
         }
       }
@@ -1189,8 +1189,11 @@ export default class Result
     }
     return (
       this.currentlyVisibleFields.has(field) &&
+      // @ts-expect-error Shouldn't be indexing
       this[field] !== "" &&
+      // @ts-expect-error Shouldn't be indexing
       this[field] !== null &&
+      // @ts-expect-error Shouldn't be indexing
       typeof this[field] !== "undefined"
     );
   }
@@ -1465,7 +1468,7 @@ export default class Result
   }
 
   get ownerLabel(): string | null {
-    return this.owner?.fullName;
+    return this.owner === null ? null : this.owner.fullName;
   }
 
   get currentUserIsOwner(): boolean | null {

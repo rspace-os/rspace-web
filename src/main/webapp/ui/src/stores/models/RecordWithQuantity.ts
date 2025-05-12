@@ -56,7 +56,11 @@ export default class RecordWithQuantity
     });
   }
 
-  populateFromJson(factory: Factory, params: any, defaultParams: ?any = {}) {
+  populateFromJson(
+    factory: Factory,
+    params: object,
+    defaultParams: object = {}
+  ) {
     super.populateFromJson(factory, params, defaultParams);
     params = { ...defaultParams, ...params };
     this.quantity = params.quantity;
@@ -108,8 +112,8 @@ export default class RecordWithQuantity
 
   //eslint-disable-next-line no-unused-vars
   get noValueLabel(): {
-    [key in keyof RecordWithQuantityEditableFields]: ?string;
-  } & { [key in keyof RecordWithQuantityUneditableFields]: ?string } {
+    [key in keyof RecordWithQuantityEditableFields]: string | null;
+  } & { [key in keyof RecordWithQuantityUneditableFields]: string | null } {
     return {
       ...super.noValueLabel,
       quantity: null,
