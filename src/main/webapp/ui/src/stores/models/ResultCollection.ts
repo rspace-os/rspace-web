@@ -7,7 +7,7 @@ import { truncateIsoTimestamp } from "../definitions/Units";
 import { type HasEditableFields } from "../definitions/Editable";
 import { PersistedBarcode } from "./Barcode";
 import { type SharedWithGroup } from "../definitions/Group";
-import { areSameTag } from "../definitions/Tag";
+import { areSameTag, Tag } from "../definitions/Tag";
 
 export type BatchName = {
   common: string;
@@ -137,9 +137,8 @@ export default class ResultCollection<ResultSubtype extends Result> {
     return this.records.every((r) => r.isFieldEditable(fieldName));
   }
 
-  //eslint-disable-next-line no-unused-vars
   get noValueLabel(): {
-    [key in keyof ResultCollectionEditableFields]: ?string;
+    [key in keyof ResultCollectionEditableFields]: string | null;
   } {
     const currentNames = new RsSet(this.records.map((r) => r.name));
     const currentDescriptions = new RsSet(
@@ -160,14 +159,14 @@ export default class ResultCollection<ResultSubtype extends Result> {
     };
   }
 
-  setFieldsDirty(newFieldValues: {}): void {
-    const values: any = { ...newFieldValues };
+  setFieldsDirty(newFieldValues: object): void {
+    const values: Record<string, unknown> = { ...newFieldValues };
     if ("name" in values) {
-      this.name = values.name;
+      this.name = values.name as BatchName;
       delete values.name;
     }
     if ("sharedWith" in values) {
-      this.sharedWith = values.sharedWith;
+      this.sharedWith = values.sharedWith as Array<SharedWithGroup>;
     }
 
     const commonTags = flattenWithIntersectionWithEq(
@@ -177,9 +176,9 @@ export default class ResultCollection<ResultSubtype extends Result> {
 
     this.records
       .toArray((a, b) => (a.id ?? -1) - (b.id ?? -1))
-      .map((record, i) => {
+      .forEach((record, i) => {
         if ("name" in newFieldValues) {
-          const name = newFieldValues.name;
+          const name = newFieldValues.name as BatchName;
           const suffix = match<string, () => string>([
             [(s) => s === "NONE", () => ""],
             [
@@ -242,7 +241,7 @@ export default class ResultCollection<ResultSubtype extends Result> {
            */
           values.tags = new RsSet(record.tags)
             .subtractWithEq(commonTags, areSameTag)
-            .unionWithEq(new RsSet(values.tags), areSameTag)
+            .unionWithEq(new RsSet(values.tags as Array<Tag>), areSameTag)
             .toArray();
         }
 
@@ -267,14 +266,13 @@ export class MixedResultCollection
     return super.fieldValues;
   }
 
-  //eslint-disable-next-line no-unused-vars
   get noValueLabel(): {
-    [key in keyof ResultCollectionEditableFields]: ?string;
+    [key in keyof ResultCollectionEditableFields]: string | null;
   } {
     return super.noValueLabel;
   }
 
-  setFieldsDirty(newFieldValues: {}): void {
+  setFieldsDirty(newFieldValues: object): void {
     super.setFieldsDirty(newFieldValues);
   }
 
