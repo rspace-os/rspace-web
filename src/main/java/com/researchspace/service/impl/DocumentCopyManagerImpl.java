@@ -156,7 +156,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
           rsChemElementManager.save(copyChem, user);
         } catch (IOException e) {
           log.error(
-              "Problem saving chemical while duplicating document with id {}.",
+              "Problem saving chemical in document with id {}.",
               destRecord.getId(),
               e);
         }
