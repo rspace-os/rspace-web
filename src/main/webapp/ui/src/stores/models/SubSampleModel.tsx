@@ -86,25 +86,25 @@ export type Note = {
 export type SubSampleAttrs = {
   id: Id; // can't be null, because created on the server first
   type: string;
-  globalId: ?GlobalId;
+  globalId: GlobalId | null;
   name?: string;
   quantity: Quantity;
   extraFields?: Array<ExtraFieldAttrs>;
   description?: string;
   permittedActions: Array<Action>;
-  tags: ?string;
+  tags: string | null;
   notes?: Array<Note>;
   iconId?: string;
   newBase64Image?: string;
   image?: string;
   parentContainers: Array<ContainerAttrs>;
-  lastNonWorkbenchParent: ?string;
-  lastMoveDate: ?Date;
+  lastNonWorkbenchParent: string | null;
+  lastMoveDate: Date | null;
   sample?: SampleAttrs | SampleModel;
-  owner: ?PersonAttrs;
-  created: ?string;
-  lastModified: ?string;
-  modifiedByFullName: ?string;
+  owner: PersonAttrs | null;
+  created: string | null;
+  lastModified: string | null;
+  modifiedByFullName: string | null;
   deleted: boolean;
   attachments: Array<AttachmentJson>;
   barcodes: Array<BarcodeAttrs>;
@@ -177,16 +177,19 @@ export default class SubSampleModel
 
   populateFromJson(
     factory: Factory,
-    params: object,
+    passedParams: object,
     defaultParams: object = {}
   ): void {
-    super.populateFromJson(factory, params, defaultParams);
-    params = { ...defaultParams, ...params };
+    super.populateFromJson(factory, passedParams, defaultParams);
+    const params = { ...defaultParams, ...passedParams } as SubSampleAttrs;
     this.notes = params.notes ?? [];
+    // @ts-expect-error parentLocation is on the mixed in class, Movable
     this.parentLocation = params.parentLocation;
+    // @ts-expect-error parentContainers is on the mixed in class, Movable
     this.parentContainers = params.parentContainers ?? [];
     this.lastNonWorkbenchParent = params.lastNonWorkbenchParent;
     this.lastMoveDate = params.lastMoveDate;
+    // @ts-expect-error initializeMovableMixin is on the mixed in class, Movable
     this.initializeMovableMixin(factory);
 
     /*

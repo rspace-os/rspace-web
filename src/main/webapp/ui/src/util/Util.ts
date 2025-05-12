@@ -287,13 +287,13 @@ export const filterMap = <A, B>(
  * @deprecated
  */
 export function classMixin<T>(
-  cls: { new (...args: unknown[]): T },
-  ...src: Array<T>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cls: { new (...args: any[]): T },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ...src: Array<{ new (...args: any[]): any }>
 ): void {
   for (const _cl of src) {
-    // @ts-expect-error prototype is always there
     for (const key of Object.getOwnPropertyNames(_cl.prototype)) {
-      // @ts-expect-error prototype is always there
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       cls.prototype[key] = _cl.prototype[key];
     }

@@ -107,9 +107,12 @@ const defaultVisibleFields = new Set([
 const defaultEditableFields = new Set([...defaultEditableSampleFields]);
 
 export default class TemplateModel extends SampleModel implements Template {
+  // @ts-expect-error Initialised by populateFromJson
   defaultUnitId: number;
+  // @ts-expect-error Initialised by populateFromJson
   version: number;
   latest: Template | null = null;
+  // @ts-expect-error Initialised by populateFromJson
   historicalVersion: boolean;
   icon: string | null = null;
 
