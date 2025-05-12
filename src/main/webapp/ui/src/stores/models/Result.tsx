@@ -733,10 +733,7 @@ export default class Result
             title: `Relinquishing control of ${
               this.globalId ?? "UNKNOWN"
             } failed`,
-            message:
-              error.response?.data.message ??
-              error.message ??
-              "Unknown reason.",
+            message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           })
         );
@@ -772,10 +769,7 @@ export default class Result
         getRootStore().uiStore.addAlert(
           mkAlert({
             title: `Something went wrong while checking the lock for "${this.name}"`,
-            message:
-              error.response?.data.message ??
-              error.message ??
-              "Unknown reason.",
+            message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           })
         );
@@ -976,10 +970,7 @@ export default class Result
             title: `Could not load full details of ${
               this.globalId ?? "UNKNOWN"
             }.`,
-            message:
-              error.response?.data.message ??
-              error.message ??
-              "Unknown reason.",
+            message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           })
         );
@@ -1030,10 +1021,7 @@ export default class Result
         getRootStore().uiStore.addAlert(
           mkAlert({
             title: "Could not save changes to attachments.",
-            message:
-              error.response?.data.message ??
-              error.message ??
-              "Unknown reason.",
+            message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           })
         );
@@ -1077,10 +1065,7 @@ export default class Result
         getRootStore().uiStore.addAlert(
           mkAlert({
             title: `Something went wrong and the ${this.recordType} was not saved.`,
-            message:
-              error.response?.data.message ??
-              error.message ??
-              "Unknown reason.",
+            message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           })
         );
@@ -1129,10 +1114,7 @@ export default class Result
         getRootStore().uiStore.addAlert(
           mkAlert({
             title: "Could not save changes to attachments.",
-            message:
-              error.response?.data.message ??
-              error.message ??
-              "Unknown reason.",
+            message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           })
         );
