@@ -344,19 +344,13 @@ export default class SubSampleModel
     const id = this.id;
     this.setLoading(true);
 
-    const [{ status: updateStatus, value: updateValue }, ...noteResults] =
+    const [{}, ...noteResults] =
       await Promise.allSettled([
         super.update(refresh),
         ...this.notes
           .filter((n) => !n.id)
           .map((n) => ApiService.post<void, void>(`subSamples/${id}/notes`, n)),
       ]);
-
-    if (updateStatus === "fulfilled" && updateValue) {
-      getRootStore().trackingStore.trackEvent("InventoryRecordEdited", {
-        type: this.recordType,
-      });
-    }
 
     if (noteResults.some(({ status }) => status === "rejected")) {
       getRootStore().uiStore.addAlert(
