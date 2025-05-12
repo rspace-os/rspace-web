@@ -104,28 +104,28 @@ export type SampleInContainerParams = {
 export type SampleAttrs = {
   id: Id;
   type: string;
-  globalId: ?GlobalId;
+  globalId: GlobalId | null;
   name: string;
   permittedActions: Array<Action>;
   templateId: Id;
-  templateVersion: ?number;
+  templateVersion: number | null;
   subSampleAlias: Alias;
   subSamplesCount: number | "";
   subSamples: Array<SubSampleAttrs>;
   quantity: Quantity;
-  storageTempMin: ?Temperature;
-  storageTempMax: ?Temperature;
+  storageTempMin: Temperature | null;
+  storageTempMax: Temperature | null;
   fields: Array<FieldModelAttrs>;
   extraFields: Array<ExtraFieldAttrs>;
   description: string;
-  tags: ?string;
+  tags: string | null;
   sampleSource: string;
-  expiryDate: ?string;
-  iconId: ?number;
-  owner: ?PersonAttrs;
-  created: ?string;
-  lastModified: ?string;
-  modifiedByFullName: ?string;
+  expiryDate: string | null;
+  iconId: number | null;
+  owner: PersonAttrs | null;
+  created: string | null;
+  lastModified: string | null;
+  modifiedByFullName: string | null;
   deleted: boolean;
   attachments: Array<AttachmentJson>;
   barcodes: Array<BarcodeAttrs>;
@@ -300,13 +300,17 @@ export default class SampleModel
     });
   }
 
-  populateFromJson(factory: Factory, params: any, defaultParams: ?any = {}) {
+  populateFromJson(
+    factory: Factory,
+    params: object,
+    defaultParams: object = {}
+  ) {
     super.populateFromJson(factory, params, defaultParams);
     params = { ...defaultParams, ...params };
     this.subSamplesCount = params.subSamplesCount;
     this.subSamples = (params.subSamples ?? []).map((s) => {
       const newRecord = factory.newRecord({ ...s, sample: this });
-      newRecord.populateFromJson(factory, { ...s, sample: this });
+      newRecord.populateFromJson(factory, { ...s, sample: this }, null);
       return newRecord;
     });
     this.storageTempMin = params.storageTempMin;
@@ -1159,3 +1163,4 @@ export class SampleCollection
     }
   }
 }
+ww;

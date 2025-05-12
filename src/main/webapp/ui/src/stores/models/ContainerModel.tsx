@@ -297,7 +297,11 @@ export default class ContainerModel
       this.populateFromJson(factory, params, DEFAULT_CONTAINER);
   }
 
-  populateFromJson(factory: Factory, params: any, defaultParams: ?any = {}) {
+  populateFromJson(
+    factory: Factory,
+    params: object,
+    defaultParams: object = {}
+  ) {
     super.populateFromJson(factory, params, defaultParams);
     params = { ...DEFAULT_CONTAINER, ...params };
     this.canStoreContainers = params.canStoreContainers;
@@ -710,7 +714,7 @@ export default class ContainerModel
    * ./__tests__/ContainerModel/paramsForBackend.test.js for the tests that assert
    * that this object can be serialised; any changes should be reflected there.
    */
-  get paramsForBackend(): any {
+  get paramsForBackend(): Record<string, unknown> {
     const params = { ...super.paramsForBackend };
     if (this.currentlyEditableFields.has("canStoreContainers"))
       params.canStoreContainers = this.canStoreContainers;

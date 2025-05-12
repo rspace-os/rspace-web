@@ -81,6 +81,7 @@ import {
   allAreValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
+import { getErrorMessage } from "@/util/error";
 
 export type ResultEditableFields = {
   /*
@@ -215,7 +216,7 @@ export default class Result
   iconId: number | null = null;
   barcodes: Array<BarcodeRecord> = [];
   factory: Factory;
-  fetchingAdditionalInfo: Promise<{ data: unknown }> | null = null;
+  fetchingAdditionalInfo: Promise<{ data: object }> | null = null;
   sharingMode: SharingMode;
   sharedWith: Array<SharedWithGroup> | null;
 
@@ -335,8 +336,8 @@ export default class Result
 
   populateFromJson(
     factory: Factory,
-    params: any,
-    defaultParams: ?any = {}
+    params: object,
+    defaultParams: object = {}
   ): void {
     params = { ...defaultParams, ...params };
     this.id = params.id;
@@ -495,7 +496,7 @@ export default class Result
    * subclass should have a unit test that asserts that this object can be
    * serialised and any changes here should be reflect in each of those.
    */
-  get paramsForBackend(): object {
+  get paramsForBackend(): Record<string, unknown> {
     const extraFields = this.extraFields.map((ef) => ({
       name: ef.name,
       content: ef.content,
@@ -1174,10 +1175,7 @@ export default class Result
         getRootStore().uiStore.addAlert(
           mkAlert({
             title: `Something went wrong and the ${this.recordType} was not saved.`,
-            message:
-              error.response?.data.message ??
-              error.message ??
-              "Unknown reason.",
+            message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           })
         );
@@ -1348,12 +1346,10 @@ export default class Result
       }
     } catch (error) {
       // in case of errors like 404 the server provides a specific response message that we want to display
-      const serverErrorResponse = error.response.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `The Identifier could not be created.`,
-          message:
-            serverErrorResponse.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );
@@ -1380,7 +1376,7 @@ export default class Result
         )
       ) {
         if (!id) throw new Error("DOI Id must be known.");
-        const response = await ApiService.delete<"", mixed>(
+        const response = await ApiService.delete<unknown>(
           `/identifiers/${id}`,
           ""
         );
@@ -1398,12 +1394,10 @@ export default class Result
         }
       }
     } catch (error) {
-      const serverErrorResponse = error.response.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `The Identifier draft could not be deleted.`,
-          message:
-            serverErrorResponse.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );

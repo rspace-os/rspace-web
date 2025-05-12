@@ -89,7 +89,7 @@ export class PersistedBarcode implements BarcodeRecord {
     });
   }
 
-  get paramsForBackend(): object {
+  get paramsForBackend(): Record<string, unknown> {
     const params: {
       newBarcodeRequest?: true;
       deleteBarcodeRequest?: true;

@@ -369,14 +369,11 @@ export interface Search {
    * fetcher. If the second arguments are true then they MUST also fetch the
    * latest data from the server with that new parameter.
    */
-  setTypeFilter(resultType: ResultType, doSearch: boolean | null): void;
-  setOwner(user: Person | null, doSearch: boolean | null): void;
-  setBench(user: Person | null, doSearch?: boolean): void;
-  setDeletedItems(deletedItems: DeletedItems, doSearch: boolean | null): void;
-  setParentGlobalId(
-    parentGlobalId: GlobalId | null,
-    doSearch: boolean | null
-  ): void;
+  setTypeFilter(resultType: ResultType, doSearch: boolean): void;
+  setOwner(user: Person | null, doSearch: boolean): void;
+  setBench(user: Person | null, doSearch: boolean): void;
+  setDeletedItems(deletedItems: DeletedItems, doSearch: boolean): void;
+  setParentGlobalId(parentGlobalId: GlobalId | null, doSearch: boolean): void;
 
   /*
    * These setters MUST update the state of the staticFetcher (the only with

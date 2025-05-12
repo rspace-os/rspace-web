@@ -177,8 +177,8 @@ export default class SubSampleModel
 
   populateFromJson(
     factory: Factory,
-    params: any,
-    defaultParams: ?any = {}
+    params: object,
+    defaultParams: object = {}
   ): void {
     super.populateFromJson(factory, params, defaultParams);
     params = { ...defaultParams, ...params };
@@ -222,7 +222,7 @@ export default class SubSampleModel
    * ./__tests__/SubSampleModel/paramsForBackend.test.js for the tests that assert
    * that this object can be serialised; any changes should be reflected there.
    */
-  get paramsForBackend(): any {
+  get paramsForBackend(): Record<string, unknown> {
     const params = { ...super.paramsForBackend };
     if (this.currentlyEditableFields.has("quantity"))
       params.quantity = this.quantity;

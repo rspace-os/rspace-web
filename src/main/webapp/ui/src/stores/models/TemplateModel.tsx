@@ -38,7 +38,7 @@ import {
   makeObservable,
   runInAction,
 } from "mobx";
-import React, { type Node } from "react";
+import React from "react";
 import { type Template } from "../definitions/Template";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import docLinks from "../../assets/DocLinks";
@@ -53,10 +53,10 @@ import { getErrorMessage } from "../../util/error";
 
 const mainSearch = () => getRootStore().searchStore.search;
 
-export type TemplateAttrs = SampleAttrs & {
+export type TemplateAttrs = Omit<SampleAttrs, "quantity"> & {
   id: Id; // can't be null, because created on the server first
-  iconId: ?number;
-  defaultUnitId: ?number;
+  iconId: number | null;
+  defaultUnitId: number | null;
   historicalVersion: boolean;
   version: number;
   quantity: null;
@@ -168,11 +168,18 @@ export default class TemplateModel extends SampleModel implements Template {
     if (this.iconId) this.fetchIcon();
   }
 
-  populateFromJson(factory: Factory, params: any, defaultParams: ?any = {}) {
+  populateFromJson(
+    factory: Factory,
+    params: object,
+    defaultParams: object = {}
+  ) {
     super.populateFromJson(factory, params, defaultParams);
     params = { ...defaultParams, ...params };
+    // @ts-expect-error We assume that params has this property
     this.defaultUnitId = params.defaultUnitId ?? 3;
+    // @ts-expect-error We assume that params has this property
     this.version = params.version;
+    // @ts-expect-error We assume that params has this property
     this.historicalVersion = params.historicalVersion;
   }
 
@@ -208,7 +215,7 @@ export default class TemplateModel extends SampleModel implements Template {
     const id = this.id;
     this.setLoading(true);
     try {
-      this.fetchingAdditionalInfo = ApiService.get(
+      this.fetchingAdditionalInfo = ApiService.get<object>(
         "sampleTemplates",
         this.version ? `${id}/versions/${this.version}` : `${id}`
       );
@@ -293,7 +300,7 @@ export default class TemplateModel extends SampleModel implements Template {
    * ./__tests__/TemplateModel/paramsForBackend.test.js for the tests that assert
    * that this object can be serialised; any changes should be reflected there.
    */
-  get paramsForBackend(): object {
+  get paramsForBackend(): Record<string, unknown> {
     const params = super.paramsForBackend;
     if (this.currentlyEditableFields.has("defaultUnitId"))
       params.defaultUnitId = this.defaultUnitId;
@@ -522,7 +529,7 @@ export default class TemplateModel extends SampleModel implements Template {
     return "template";
   }
 
-  get illustration(): Node {
+  get illustration(): React.ReactNode {
     return <TemplateIllustration />;
   }
 

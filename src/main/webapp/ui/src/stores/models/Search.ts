@@ -744,7 +744,7 @@ export default class Search implements SearchInterface {
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
-            record: Record<string, unknwon> & { globalId: GlobalId };
+            record: Record<string, unknown> & { globalId: GlobalId };
           }>;
           errorCount: number;
         }>(prepareRecordsForBulkApi(records), "DUPLICATE", true)
@@ -1009,7 +1009,7 @@ export default class Search implements SearchInterface {
        * then refresh the template's sample listing
        */
       if (this.isActiveResultTemplateOfAny(transferredRecords))
-        await activeResult.refreshAssociatedSearch({});
+        activeResult.refreshAssociatedSearch();
     }
   }
 
@@ -1198,7 +1198,7 @@ export default class Search implements SearchInterface {
 
   async setSearchView(view: SearchView = "LIST"): Promise<void> {
     const selectedResultsIds = this.selectedResults.map((res) => res.globalId);
-    const currentSearchParams = this.fetcher.generateParams();
+    const currentSearchParams = this.fetcher.generateParams({});
     const priorView = this.searchView;
     const priorFetcher = this.fetcher;
 
@@ -1314,7 +1314,7 @@ export default class Search implements SearchInterface {
 
   performSearch() {
     this.fetcher.pageNumber = 0; // setPage performs network activity
-    const searchParams = this.fetcher.generateParams();
+    const searchParams = this.fetcher.generateParams({});
     if (this.overrideSearchOnFilter) {
       this.overrideSearchOnFilter(searchParams);
     } else {
@@ -1332,7 +1332,7 @@ export default class Search implements SearchInterface {
     await this.fetcher.setPage(pageNumber);
   }
 
-  setOwner(user: ?Person, doSearch: ?boolean = true) {
+  setOwner(user: Person | null, doSearch: boolean = true) {
     this.staticFetcher.setOwner(user);
     this.dynamicFetcher.setOwner(user);
     this.cacheFetcher.setOwner(user);
@@ -1354,21 +1354,21 @@ export default class Search implements SearchInterface {
     }
   }
 
-  setTypeFilter(resultType: ResultType, doSearch: ?boolean = true) {
+  setTypeFilter(resultType: ResultType, doSearch: boolean = true) {
     this.staticFetcher.setResultType(resultType);
     this.dynamicFetcher.setResultType(resultType);
     this.cacheFetcher.setResultType(resultType);
     if (doSearch) this.performSearch();
   }
 
-  setDeletedItems(deletedItems: DeletedItems, doSearch: ?boolean = true) {
+  setDeletedItems(deletedItems: DeletedItems, doSearch: boolean = true) {
     this.staticFetcher.setDeletedItems(deletedItems);
     this.dynamicFetcher.setDeletedItems(deletedItems);
     this.cacheFetcher.setDeletedItems(deletedItems);
     if (doSearch) this.performSearch();
   }
 
-  setParentGlobalId(parentGlobalId: ?GlobalId, doSearch: ?boolean = true) {
+  setParentGlobalId(parentGlobalId: GlobalId | null, doSearch: boolean = true) {
     this.staticFetcher.setParentGlobalId(parentGlobalId);
     this.dynamicFetcher.setParentGlobalId(parentGlobalId);
     this.cacheFetcher.setParentGlobalId(parentGlobalId);
@@ -1561,10 +1561,7 @@ export default class Search implements SearchInterface {
           uiStore.addAlert(
             mkAlert({
               title: "Update failed.",
-              message:
-                error.response?.data.message ??
-                error.message ??
-                "Unknown reason.",
+              message: getErrorMessage(error, "Unknown reason"),
               variant: "error",
             })
           );
