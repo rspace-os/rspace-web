@@ -78,6 +78,15 @@ public interface GroupManager {
   Group removeGroup(Long groupId, User subject);
 
   /**
+   * Returns the group from shareFolder (or any of the subfolders fo the share folder)
+   *
+   * @param user
+   * @param sharedFolder
+   * @return Returns the group
+   */
+  Group getGroupFromAnyLevelOfSharedFolder(User user, Folder sharedFolder);
+
+  /**
    * Changes the role in a group for the specified user
    *
    * @param groupId The group
