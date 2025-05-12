@@ -1,4 +1,6 @@
-import ApiService from "../../common/InvApiService";
+import ApiService, {
+  BulkEndpointRecordSerialisation,
+} from "../../common/InvApiService";
 import {
   match,
   doNotAwait,
@@ -74,10 +76,8 @@ import {
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
 import { type Quantity } from "./RecordWithQuantity";
-
-type UnwrapArray<T extends Array<unknown>> = {
-  [K in keyof T]: T[K];
-};
+import * as Parsers from "../../util/parsers";
+import UtilResult from "../../util/result";
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
@@ -149,7 +149,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
 export default class Search implements SearchInterface {
   activeResult: InventoryRecord | null = null;
   processingContextActions: boolean = false;
-  error: string;
+  error: string | undefined;
   tree: TreeView;
   searchView: SearchView = "LIST";
   dynamicFetcher: DynamicFetcherInterface;
@@ -453,6 +453,10 @@ export default class Search implements SearchInterface {
 
     type SubSampleResponse = {
       storedInContainer: boolean;
+      parentContainers: Array<{
+        name: string;
+        globalId: GlobalId;
+      }>;
     } & Omit<SubSampleAttrs, "sample">;
     type SampleResponse = {
       globalId: GlobalId;
@@ -529,18 +533,16 @@ export default class Search implements SearchInterface {
               "Some of the samples could not be trashed because the subsamples are in containers.",
             message: "Please move them to the trash first.",
             details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
-              title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${
-                ss.parentContainers.length > 0
-                  ? `(in ${ss.parentContainers[0].name} ${
-                      ss.parentContainers[0].globalId ?? ""
-                    })`
-                  : ""
-              }`,
+              title: `Could not trash "${
+                ss.name ?? "UNKNOWN"
+              }" ${ArrayUtils.head(ss.parentContainers)
+                .map(({ name, globalId }) => `(in ${name} ${globalId ?? ""})`)
+                .orElse("")}`,
               variant: "error",
               record: factory.newRecord({
                 ...ss,
                 sample: s,
-              } as Record<string, unknown> & { globalId: GlobalId }),
+              } as any as Record<string, unknown> & { globalId: GlobalId }),
             })),
             actionLabel: "Move all to trash",
             onActionClick: () => {
@@ -1051,10 +1053,17 @@ export default class Search implements SearchInterface {
           title: `Template creation failed.`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-          details: error.response?.data.errors.map((e) => ({
-            title: e,
-            variant: "error",
-          })),
+          details: Parsers.objectPath(["response", "data", "errors"], error)
+            .flatMap(Parsers.isArray)
+            .flatMap((errors) =>
+              UtilResult.all(...errors.map(Parsers.isString)).map((titles) =>
+                titles.map((title) => ({
+                  title,
+                  variant: "error" as const,
+                }))
+              )
+            )
+            .orElse(undefined),
         })
       );
       console.error("Could not create template from sample.", error);
@@ -1109,10 +1118,17 @@ export default class Search implements SearchInterface {
           title: "Subsample creation failed.",
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-          details: error.response?.data.errors.map((e) => ({
-            title: e,
-            variant: "error",
-          })),
+          details: Parsers.objectPath(["response", "data", "errors"], error)
+            .flatMap(Parsers.isArray)
+            .flatMap((errors) =>
+              UtilResult.all(...errors.map(Parsers.isString)).map((titles) =>
+                titles.map((title) => ({
+                  title,
+                  variant: "error" as const,
+                }))
+              )
+            )
+            .orElse(undefined),
         })
       );
       throw error;
@@ -1427,7 +1443,7 @@ export default class Search implements SearchInterface {
         const person = await this.rejectIfSearchParametersChange(
           peopleStore.getUser(params.ownedBy)
         );
-        this.setOwner(person, false);
+        this.setOwner(person ?? null, false);
       } catch (e) {
         if (e instanceof InvalidState) return;
         throw e;
@@ -1521,15 +1537,18 @@ export default class Search implements SearchInterface {
           } = await ApiService.bulk<{
             results: Array<{
               error: { errors: Array<string> };
-              record: { globalId: ?GlobalId };
+              record: { globalId: GlobalId | null };
             }>;
             errorCount: number;
           }>(
             [
-              ...records.map((r) => ({
-                ...r.paramsForBackend,
-                type: r.type,
-              })),
+              ...records.map(
+                (r) =>
+                  ({
+                    ...r.paramsForBackend,
+                    type: r.type,
+                  } as BulkEndpointRecordSerialisation)
+              ),
             ],
             "UPDATE",
             false
@@ -1546,12 +1565,13 @@ export default class Search implements SearchInterface {
           ) {
             return;
           }
-          const newRecordData = Object.fromEntries(
+          const newRecordData: Record<GlobalId, any> = Object.fromEntries(
             results.map(({ record }) => [record.globalId, record])
           );
           const factory = this.factory.newFactory();
           for (const r of records) {
-            r.populateFromJson(factory, newRecordData[r.globalId]);
+            if (r.globalId === null) continue;
+            r.populateFromJson(factory, newRecordData[r.globalId], null);
           }
           handleDetailedSuccesses(records, "updated");
           await Promise.all(records.map((r) => r.cancel()));

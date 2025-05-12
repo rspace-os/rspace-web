@@ -83,10 +83,10 @@ import * as ArrayUtils from "../../util/ArrayUtils";
 import { getErrorMessage } from "@/util/error";
 
 type SampleEditableFields = RecordWithQuantityEditableFields & {
-  expiryDate: ?string;
+  expiryDate: string | null;
   sampleSource: SampleSource;
-  storageTempMin: ?Temperature;
-  storageTempMax: ?Temperature;
+  storageTempMin: Temperature | null;
+  storageTempMax: Temperature | null;
   subSampleAlias: Alias;
 };
 
@@ -119,7 +119,7 @@ export type SampleAttrs = {
   extraFields: Array<ExtraFieldAttrs>;
   description: string;
   tags: string | null;
-  sampleSource: string;
+  sampleSource: SampleSource;
   expiryDate: string | null;
   iconId: number | null;
   owner: PersonAttrs | null;
@@ -203,19 +203,28 @@ export default class SampleModel
 {
   subSamplesCount: number = 0;
   subSamples: Array<SubSampleModel> = [];
-  newSampleSubSamplesCount: ?number = 1;
+  newSampleSubSamplesCount: number | null = 1;
   newSampleSubSampleTargetLocations: Array<SubSampleTargetLocation> | null =
     null;
+  // @ts-expect-error storageTempMin is initialised by populateFromJson
   storageTempMin: ?Temperature;
+  // @ts-expect-error storageTempMax is initialised by populateFromJson
   storageTempMax: ?Temperature;
   fields: Array<Field> = [];
+  // @ts-expect-error expiryDate is initialised by populateFromJson
   expiryDate: SampleEditableFields["expiryDate"];
+  // @ts-expect-error template is initialised by populateFromJson
   template: ?Template;
+  // @ts-expect-error sampleSource is initialised by populateFromJson
   sampleSource: SampleEditableFields["sampleSource"];
   search: Search;
+  // @ts-expect-error subSampleAlias is initialised by populateFromJson
   subSampleAlias: Alias;
+  // @ts-expect-error templateId is initialised by populateFromJson
   templateId: Id;
-  templateVersion: ?number;
+  // @ts-expect-error templateVersion is initialised by populateFromJson
+  templateVersion: number | null;
+  // @ts-expect-error createOptionsParametersState is initialised by populateFromJson
   createOptionsParametersState: {
     split: { key: "split"; copies: number };
     newSubsamplesCount: { key: "newSubsamplesCount"; count: number };
@@ -302,15 +311,22 @@ export default class SampleModel
 
   populateFromJson(
     factory: Factory,
-    params: object,
+    passedParams: object,
     defaultParams: object = {}
   ) {
-    super.populateFromJson(factory, params, defaultParams);
-    params = { ...defaultParams, ...params };
-    this.subSamplesCount = params.subSamplesCount;
+    super.populateFromJson(factory, passedParams, defaultParams);
+    const params = {
+      ...defaultParams,
+      ...passedParams,
+    } as SampleAttrs & { template: Template | null };
+    if (typeof params.subSamplesCount === "number")
+      this.subSamplesCount = params.subSamplesCount;
     this.subSamples = (params.subSamples ?? []).map((s) => {
-      const newRecord = factory.newRecord({ ...s, sample: this });
-      newRecord.populateFromJson(factory, { ...s, sample: this }, null);
+      const newRecord = factory.newRecord({
+        ...s,
+        sample: this,
+      }) as SubSampleModel;
+      newRecord.populateFromJson(factory, { ...s, sample: this });
       return newRecord;
     });
     this.storageTempMin = params.storageTempMin;
@@ -378,10 +394,12 @@ export default class SampleModel
                 runInAction(() => {
                   this.template = template;
                 });
+                // @ts-expect-error Not clear why this does not store the returned data
                 resolve();
               })
               .catch(reject);
           } else {
+            // @ts-expect-error Not clear why this does not store the returned data
             resolve();
           }
         })
@@ -453,7 +471,7 @@ export default class SampleModel
           f.owner = this;
           return f;
         }
-        return new FieldModel({ ...f }, this);
+        return new FieldModel({ ...f } as FieldModelAttrs, this);
       }),
     });
   }
@@ -1122,7 +1140,7 @@ export class SampleCollection
       this.records.every((s) => !s.storageTempMax);
     const allSameTemperatures = this.allSameTemperatures;
 
-    const temperatureLabel = match<void, string | null?>([
+    const temperatureLabel = match<void, string | null>([
       [() => !allSameTemperatures, "Varies"],
       [() => allTemperaturesUnspecified, "Unspecified"],
       [() => true, null],
@@ -1163,4 +1181,3 @@ export class SampleCollection
     }
   }
 }
-ww;

@@ -130,7 +130,9 @@ export default class SubSampleModel
     HasUneditableFields<SubSampleUneditableFields>
 {
   notes: Array<Note> = [];
+  // @ts-expect-error parentContainers is initialised by populateFromJson
   sample: SampleModel;
+  // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<ContainerModel>;
   parentLocation: Location | null = null;
   allParentContainers: (() => Array<ContainerModel>) | null = null;
@@ -201,6 +203,7 @@ export default class SubSampleModel
     if (params.sample instanceof SampleModel) {
       this.sample = params.sample;
     } else {
+      if (!params.sample) throw new Error("params.sample is undefined");
       const newSample = factory.newRecord(params.sample);
       if (newSample instanceof SampleModel) {
         this.sample = newSample;
@@ -325,7 +328,8 @@ export default class SubSampleModel
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     const options = new Map([
       ...super.adjustableTableOptions(),
-      ...this.adjustableTableOptions_movable(),
+      // @ts-expect-error adjustableTableOptions_movable is on the mixed in class, Movable
+      ...(this.adjustableTableOptions_movable() as AdjustableTableRowOptions<string>),
     ]);
     if (this.readAccessLevel === "public") {
       options.set("Sample", () => ({ renderOption: "node", data: null }));

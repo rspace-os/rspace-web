@@ -951,7 +951,7 @@ export default class Result
 
     this.setLoading(true);
     try {
-      this.fetchingAdditionalInfo = ApiService.query<unknown>(
+      this.fetchingAdditionalInfo = ApiService.query<object>(
         `${this.recordType}s/${id}`,
         new URLSearchParams(queryParameters)
       );
