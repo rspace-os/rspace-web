@@ -140,11 +140,15 @@ const chemExtensions = new Set([
  */
 export class ExistingAttachment implements Attachment {
   id: AttachmentId;
+  // @ts-expect-error globalId is initialised by populateFromJson
   globalId: ?GlobalId;
   name: string;
   size: Bytes;
+  // @ts-expect-error link is initialised by populateFromJson
   link: ?Url;
+  // @ts-expect-error file is initialised by populateFromJson
   file: ?File;
+  // @ts-expect-error imageLink is initialised by populateFromJson
   imageLink: ?Url;
   chemicalString: string = "";
   removed: boolean;
@@ -152,7 +156,9 @@ export class ExistingAttachment implements Attachment {
   loadingString: boolean = false;
   contentMimeType: string;
   onRemoveCallback: (Attachment) => void;
+  // @ts-expect-error permalinkURL is initialised by populateFromJson
   permalinkURL: ?Url;
+  // @ts-expect-error owner is initialised by populateFromJson
   owner: ?Person; // For the info button
 
   constructor(

@@ -28,7 +28,9 @@ export class PersistedBarcode implements BarcodeRecord {
   description: string;
   newBarcodeRequest: boolean;
   deleteBarcodeRequest: boolean;
+// @ts-expect-error imageUrl is initialised by populateFromJson
   imageUrl: URL | null;
+// @ts-expect-error image is initialised by populateFromJson
   image: File | null;
 
   constructor(attrs: PersistedBarcodeAttrs) {

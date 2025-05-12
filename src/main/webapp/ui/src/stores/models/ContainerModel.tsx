@@ -208,12 +208,19 @@ export default class ContainerModel
   selectionStart: Point = { x: 0, y: 0 };
   selectionEnd: Point = { x: 0, y: 0 };
   initializedLocations: boolean = false;
+// @ts-expect-error locationsCount is initialised by populateFromJson
   locationsCount: number;
+// @ts-expect-error contentSummary is initialised by populateFromJson
   contentSummary: Permissioned<ContentSummary>;
+// @ts-expect-error contentSearch is initialised by populateFromJson
   contentSearch: SearchInterface;
+// @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<Container>;
+// @ts-expect-error parentLocation is initialised by populateFromJson
   parentLocation: Location | null;
+// @ts-expect-error allParentContainers is initialised by populateFromJson
   allParentContainers: (() => Array<Container>) | null;
+// @ts-expect-error rootParentContainer is initialised by populateFromJson
   rootParentContainer: Container | null;
   immediateParentContainer: Container | null;
   lastNonWorkbenchParent: Container | null;
