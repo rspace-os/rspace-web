@@ -81,7 +81,9 @@ import {
   allAreValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
-import { getErrorMessage } from "@/util/error";
+import { getErrorMessage } from "../../util/error";
+import * as Parsers from "../../util/parsers";
+import UtilResult from "../../util/result";
 
 export type ResultEditableFields = {
   /*
@@ -1132,39 +1134,66 @@ export default class Result
       this.setAttributes({
         uploadProgress: 0,
       });
-      if (
-        "response" in error &&
-        typeof error.response === "object" &&
-        "status" in error.response &&
-        error.response.status === 400
-      ) {
-        const { response } = error;
-        const newAlert = mkAlert({
-          message: "Please correct the invalid fields and try again.",
-          variant: "error",
-          details: response.data.data?.validationErrors.map(
-            ({ field, message }) => ({
-              title: field,
-              help: message,
+      Parsers.objectPath(["response"], error).do((response) => {
+        try {
+          const statusCode = Parsers.objectPath(["status"], response)
+            .flatMap(Parsers.isNumber)
+            .elseThrow();
+          if (statusCode !== 400) throw new Error("Not a 400 status code");
+          const validationErrors = Parsers.objectPath(
+            ["data", "data", "validationErrors"],
+            response
+          )
+            .flatMap(Parsers.isArray)
+            .elseThrow();
+          const newAlert = mkAlert({
+            message: "Please correct the invalid fields and try again.",
+            variant: "error",
+            details: UtilResult.any(
+              ...validationErrors.map((e) =>
+                Parsers.isObject(e)
+                  .flatMap(Parsers.isNotNull)
+                  .flatMap((obj) =>
+                    UtilResult.lift2<
+                      string,
+                      string,
+                      { title: string; help: string; variant: "error" }
+                    >((title, help) => ({
+                      title,
+                      help,
+                      variant: "error",
+                    }))(
+                      Parsers.getValueWithKey("field")(obj).flatMap(
+                        Parsers.isString
+                      ),
+                      Parsers.getValueWithKey("message")(obj).flatMap(
+                        Parsers.isString
+                      )
+                    )
+                  )
+              )
+            )
+              .mapError(
+                () => new Error("Could not parse any validation errors")
+              )
+              .elseThrow(),
+            retryFunction: () => this.update().then(() => {}),
+          });
+          getRootStore().uiStore.addAlert(newAlert);
+          getRootStore().searchStore.activeResult?.addScopedToast(newAlert);
+        } catch {
+          getRootStore().uiStore.addAlert(
+            mkAlert({
+              title: `Something went wrong and the ${this.recordType} was not saved.`,
+              message: getErrorMessage(error, "Unknown reason."),
               variant: "error",
             })
-          ),
-          retryFunction: () => this.update().then(() => {}),
-        });
-        getRootStore().uiStore.addAlert(newAlert);
-        getRootStore().searchStore.activeResult?.addScopedToast(newAlert);
-      } else {
-        getRootStore().uiStore.addAlert(
-          mkAlert({
-            title: `Something went wrong and the ${this.recordType} was not saved.`,
-            message: getErrorMessage(error, "Unknown reason."),
-            variant: "error",
-          })
-        );
-        if (error instanceof Error) {
-          console.error(error.message);
+          );
+          if (error instanceof Error) {
+            console.error(error.message);
+          }
         }
-      }
+      });
       /*
        * Rethrow error so that super.update calls in child classes can execute
        * type-specific update logic only if update was successful
