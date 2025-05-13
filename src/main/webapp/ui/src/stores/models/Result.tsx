@@ -200,7 +200,7 @@ type ResultAttrs = {
   identifiers: Array<IdentifierAttrs>;
 };
 
-/*
+/**
  * Typically the result of some search action, this class provides the
  * implementation for the Record interface at RUNTIME. It facilitates the
  * listing, viewing, editing, creating, and various other contextual actions of
@@ -224,28 +224,40 @@ export default class Result
   editing: boolean = false;
   id: Id | null = null;
   globalId: GlobalId | null = null;
+  // @ts-expect-error type is initialised by populateFromJson
   type: ApiRecordType;
   name: ResultEditableFields["name"] = "";
   description: ResultEditableFields["description"] = "";
   selected: boolean = false; // whether its checkbox is selected
   infoLoaded: boolean = false; // whether the full information is fetched
   extraFields: Array<ExtraField> = [];
+  // @ts-expect-error currentlyVisibleFields is initialised by populateFromJson
   currentlyVisibleFields: Set<string>;
+  // @ts-expect-error currentlyEditableFields is initialised by populateFromJson
   currentlyEditableFields: Set<string>;
   image: ResultEditableFields["image"] = null;
   thumbnail: Thumbnail = null;
   tags: ResultEditableFields["tags"] = [];
+  // @ts-expect-error created is initialised by populateFromJson
   created: string;
+  // @ts-expect-error lastModified is initialised by populateFromJson
   lastModified: string;
+  // @ts-expect-error modifiedByFullName is initialised by populateFromJson
   modifiedByFullName: string;
+  // @ts-expect-error owner is initialised by populateFromJson
   owner: ?Person;
   deleted: boolean = false;
+  // @ts-expect-error _links is initialised by populateFromJson
   _links: { [_: string]: URLType };
+  // @ts-expect-error uploadProgress is initialised by populateFromJson
   uploadProgress: Progress;
+  // @ts-expect-error lastEditInput is initialised by populateFromJson
   lastEditInput: Date;
+  // @ts-expect-error lockExpiry is initialised by populateFromJson
   lockExpiry: Date;
   lockExpired: boolean = false;
   expiryCheckInterval: NodeJS.Timeout | undefined;
+  // @ts-expect-error permittedActions is initialised by populateFromJson
   permittedActions: Set<Action>;
   newBase64Image: ResultEditableFields["newBase64Image"] = null;
   attachments: Array<Attachment> = [];
@@ -254,7 +266,9 @@ export default class Result
   barcodes: Array<BarcodeRecord> = [];
   factory: Factory;
   fetchingAdditionalInfo: Promise<{ data: object }> | null = null;
+  // @ts-expect-error sharingMode is initialised by populateFromJson
   sharingMode: SharingMode;
+  // @ts-expect-error sharingWith is initialised by populateFromJson
   sharedWith: Array<SharedWithGroup> | null;
 
   /*
