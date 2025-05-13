@@ -5,7 +5,6 @@ import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.InternalLinkDao;
-import com.researchspace.dao.RSChemElementDao;
 import com.researchspace.dao.RSMathDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.files.service.FileStore;
@@ -37,6 +36,7 @@ import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FileDuplicateStrategy;
+import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RequiresActiveLicense;
 import com.researchspace.service.ThumbnailManager;
 import com.researchspace.service.exceptions.RecordCopyException;
@@ -64,7 +64,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
 
   private @Autowired EcatCommentDao ecatCommentDao;
   private @Autowired EcatImageAnnotationDao imageAnnotationDao;
-  private @Autowired RSChemElementDao rsChemElementDao;
+  private @Autowired RSChemElementManager rsChemElementManager;
   private @Autowired RSMathDao mathDao;
   private @Autowired FieldDao fieldDao;
   private @Autowired FieldManager fieldMgr;
@@ -152,7 +152,15 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
         RSChemElement copyChem = origChem.shallowCopy();
         copyChem.setParentId(destFieldId);
         copyChem.setRecord(destRecord);
-        rsChemElementDao.save(copyChem);
+        try {
+          rsChemElementManager.save(copyChem, user);
+        } catch (IOException e) {
+          log.error(
+              "Problem saving chemical in document with id {}.",
+              destRecord.getId(),
+              e);
+        }
+
         chemOldKey2NewKey.put(origChem.getId(), copyChem.getId());
       }
     }
