@@ -39,6 +39,16 @@ const OverviewSection = observer(
       globalId: activeResult.globalId,
     });
 
+    /*
+     * Name is a required field so it effectively starts in an error state.
+     */
+    React.useEffect(() => {
+      setFormSectionError(formSectionError, "name", true);
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - formSectionError will not meaningfully change
+       */
+    }, []);
+
     return (
       <StepperPanel
         icon="sample"
