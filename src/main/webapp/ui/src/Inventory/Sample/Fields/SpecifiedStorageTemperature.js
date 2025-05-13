@@ -120,16 +120,16 @@ function SpecifiedStorageTemperature({
 
   const [min, setMin] = useState(minValue);
   const [max, setMax] = useState(maxValue);
-  const [minField, setMinField] = useState<number>(minValue);
-  const [maxField, setMaxField] = useState<number>(maxValue);
+  const [minField, setMinField] = useState<string>(`${minValue}`);
+  const [maxField, setMaxField] = useState<string>(`${maxValue}`);
 
   useEffect(() => {
     setMin(storageTempMin.numericValue);
     setMax(storageTempMax.numericValue);
     if (!Number.isNaN(storageTempMin.numericValue))
-      setMinField(storageTempMin.numericValue);
+      setMinField(`${storageTempMin.numericValue}`);
     if (!Number.isNaN(storageTempMax.numericValue))
-      setMaxField(storageTempMax.numericValue);
+      setMaxField(`${storageTempMax.numericValue}`);
   }, [storageTempMin, storageTempMax]);
 
   const handleButtonPressed = (
@@ -138,8 +138,8 @@ function SpecifiedStorageTemperature({
   ): void => {
     setMin(newMin);
     setMax(newMax);
-    setMinField(newMin);
-    setMaxField(newMax);
+    setMinField(`${newMin}`);
+    setMaxField(`${newMax}`);
     setTemperatures({
       storageTempMin: { numericValue: newMin, unitId },
       storageTempMax: { numericValue: newMax, unitId },
@@ -156,15 +156,15 @@ function SpecifiedStorageTemperature({
     const maxValueInNewUnit = temperatureFromTo(unitId, newUnitId, max);
     setMin(minValueInNewUnit);
     setMax(maxValueInNewUnit);
-    setMinField(minValueInNewUnit);
-    setMaxField(maxValueInNewUnit);
+    setMinField(`${minValueInNewUnit}`);
+    setMaxField(`${maxValueInNewUnit}`);
     setTemperatures({
       storageTempMin: { numericValue: minValueInNewUnit, unitId: newUnitId },
       storageTempMax: { numericValue: maxValueInNewUnit, unitId: newUnitId },
     });
   };
 
-  const handleMinFieldChange = (value: number) => {
+  const handleMinFieldChange = (value: string) => {
     setMinField(value);
     const newMin = parseInt(value, DECIMAL);
     const newMax = !Number.isNaN(newMin) && newMin > max ? newMin : max;
@@ -179,7 +179,7 @@ function SpecifiedStorageTemperature({
     );
   };
 
-  const handleMaxFieldChange = (value: number) => {
+  const handleMaxFieldChange = (value: string) => {
     setMaxField(value);
     const newMax = parseInt(value, DECIMAL);
     const newMin = !Number.isNaN(newMax) && newMax < min ? newMax : min;
@@ -237,7 +237,7 @@ function SpecifiedStorageTemperature({
                           <NumberField
                             value={minField}
                             onChange={({ target: { value: newValue } }) => {
-                              handleMinFieldChange(parseInt(newValue, 10));
+                              handleMinFieldChange(newValue);
                             }}
                             variant="outlined"
                             size="small"
@@ -259,7 +259,7 @@ function SpecifiedStorageTemperature({
                           <NumberField
                             value={maxField}
                             onChange={({ target: { value } }) => {
-                              handleMaxFieldChange(parseInt(value, 10));
+                              handleMaxFieldChange(value);
                             }}
                             variant="outlined"
                             size="small"

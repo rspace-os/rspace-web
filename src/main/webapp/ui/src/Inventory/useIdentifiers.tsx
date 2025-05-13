@@ -336,7 +336,7 @@ export function IdentifiersRefreshProvider({
     <IdentifiersRefreshContext.Provider
       value={{
         refreshListing,
-        setRefreshListing: (f) => setRefreshListing(f),
+        setRefreshListing: (f) => setRefreshListing(() => f),
       }}
     >
       {children}

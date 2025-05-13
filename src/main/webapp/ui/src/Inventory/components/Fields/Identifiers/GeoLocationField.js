@@ -121,6 +121,8 @@ const GeoLocationField = ({
             runInAction(() => {
               geoLocationPoint.pointLatitude = value;
             });
+          }}
+          onBlur={() => {
             doUpdateIdentifiers();
           }}
           error={
@@ -160,6 +162,8 @@ const GeoLocationField = ({
             runInAction(() => {
               geoLocationPoint.pointLongitude = value;
             });
+          }}
+          onBlur={() => {
             doUpdateIdentifiers();
           }}
           error={
@@ -244,6 +248,8 @@ const GeoLocationField = ({
                     runInAction(() => {
                       geoLocationBox.northBoundLatitude = value;
                     });
+                  }}
+                  onBlur={() => {
                     doUpdateIdentifiers();
                   }}
                   error={
@@ -274,6 +280,8 @@ const GeoLocationField = ({
                     runInAction(() => {
                       geoLocationBox.westBoundLongitude = value;
                     });
+                  }}
+                  onBlur={() => {
                     doUpdateIdentifiers();
                   }}
                   error={
@@ -304,6 +312,8 @@ const GeoLocationField = ({
                     runInAction(() => {
                       geoLocationBox.southBoundLatitude = value;
                     });
+                  }}
+                  onBlur={() => {
                     doUpdateIdentifiers();
                   }}
                   error={
@@ -334,6 +344,8 @@ const GeoLocationField = ({
                     runInAction(() => {
                       geoLocationBox.eastBoundLongitude = value;
                     });
+                  }}
+                  onBlur={() => {
                     doUpdateIdentifiers();
                   }}
                   error={

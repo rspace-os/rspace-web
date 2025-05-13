@@ -45,6 +45,7 @@ export type NumberFieldArgs = {|
     },
   |}) => void,
   onFocus?: ({| target: HTMLInputElement |}) => void,
+  onBlur?: ({| target: HTMLInputElement |}) => void,
   onKeyDown?: ({| key: string |}) => void,
   size?: "small" | "medium",
   variant?: "filled" | "outlined" | "standard",
