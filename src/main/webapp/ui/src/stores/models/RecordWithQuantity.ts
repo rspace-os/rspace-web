@@ -19,7 +19,7 @@ export type Quantity = {
 };
 
 export type RecordWithQuantityEditableFields = ResultEditableFields & {
-  quantity: ?Quantity;
+  quantity: Quantity | null;
 };
 
 export type RecordWithQuantityUneditableFields = ResultUneditableFields;
@@ -28,11 +28,11 @@ export type RecordWithQuantityUneditableFields = ResultUneditableFields;
  * Some samples/subsamples don't have a quantity; these functions just provide
  * fallbacks.
  */
-export const getUnitId = (q: ?Quantity): number => q?.unitId ?? 3;
-export const getValue = (q: ?Quantity): number => q?.numericValue || 0;
-export const getQuantityUnitLabel = (q: ?Quantity): string =>
+export const getUnitId = (q: Quantity | null): number => q?.unitId ?? 3;
+export const getValue = (q: Quantity | null): number => q?.numericValue || 0;
+export const getQuantityUnitLabel = (q: Quantity | null): string =>
   q ? getRootStore().unitStore.getUnit(q.unitId)?.label ?? "..." : "";
-export const getLabel = (q: ?Quantity): string =>
+export const getLabel = (q: Quantity | null): string =>
   q ? `${getValue(q)} ${getQuantityUnitLabel(q)}` : "";
 
 export default class RecordWithQuantity
@@ -41,6 +41,7 @@ export default class RecordWithQuantity
     HasEditableFields<RecordWithQuantityEditableFields>,
     HasUneditableFields<RecordWithQuantityUneditableFields>
 {
+  // @ts-expect-error quantity is initialised by populateFromJson
   quantity: RecordWithQuantityEditableFields["quantity"];
 
   constructor(factory: Factory) {
@@ -58,11 +59,13 @@ export default class RecordWithQuantity
 
   populateFromJson(
     factory: Factory,
-    params: object,
+    passedParams: object,
     defaultParams: object = {}
   ) {
-    super.populateFromJson(factory, params, defaultParams);
-    params = { ...defaultParams, ...params };
+    super.populateFromJson(factory, passedParams, defaultParams);
+    const params = { ...defaultParams, ...passedParams } as {
+      quantity: Quantity;
+    };
     this.quantity = params.quantity;
   }
 
