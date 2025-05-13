@@ -23,7 +23,9 @@ import {
   setFormSectionError,
 } from "../components/Stepper/StepperPanelHeader";
 import { observer } from "mobx-react-lite";
-import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import SynchroniseFormSections, {
+  UnsynchroniseFormSections,
+} from "../components/Stepper/SynchroniseFormSections";
 
 const OverviewSection = observer(
   ({ activeResult }: { activeResult: ContainerModel }) => {
@@ -140,7 +142,9 @@ export default function NewRecordForm(): Node {
         titleText={`New ${inventoryRecordTypeLabels.container}`}
         resetScrollPosition={Symbol("always reset scroll")}
       >
-        <OverviewSection activeResult={activeResult} />
+        <UnsynchroniseFormSections>
+          <OverviewSection activeResult={activeResult} />
+        </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
         <StepperPanel
           title="Barcodes"
