@@ -4,6 +4,23 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.10.0 2025-05-13
+
+### ELN Features
+
+- RSDEV-268 reordered setting on System -> Configuration page
+- RSDEV-242 allow PIs to move shared documents into shared notebooks
+
+### ELN Bugfix
+
+- RSDEV-641 prevent user from inadvertently creating notebooks more than once
+- RSDEV-595, RSDEV-606, RSDEV-665 various fixes around chemistry files processing and chemical search
+
+### Inventory Features
+
+- RSDEV-636 allow printing two copies of each barcode (raffle-book style) with a label printer
+- RSDEV-570 new interface for managing IGSN IDs (requires Datacite integration)
+
 # 2.9.0 2025-04-10
 
 ### ELN Features
