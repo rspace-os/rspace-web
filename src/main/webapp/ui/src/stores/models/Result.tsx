@@ -1121,7 +1121,7 @@ export default class Result
           })
         );
       }
-      this.populateFromJson(this.factory.newFactory(), data);
+      this.populateFromJson(this.factory.newFactory(), data as object);
       await this.setEditing(false, refresh);
       getRootStore().searchStore.search.replaceResult(this);
       getRootStore().uiStore.addAlert(
