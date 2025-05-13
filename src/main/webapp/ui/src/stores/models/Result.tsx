@@ -84,6 +84,7 @@ import {
 import { getErrorMessage } from "../../util/error";
 import * as Parsers from "../../util/parsers";
 import UtilResult from "../../util/result";
+import { AxiosProgressEvent } from "@/common/axios";
 
 export type ResultEditableFields = {
   /*
@@ -1101,12 +1102,14 @@ export default class Result
         this.id,
         params,
         {
-          onUploadProgress: (progressEvent) =>
+          onUploadProgress: (progressEvent: AxiosProgressEvent) =>
             this.setAttributes({
-              uploadProgress: calculateUploadProgress(
-                progressEvent.loaded,
-                progressEvent.total
-              ),
+              uploadProgress: progressEvent.total
+                ? calculateUploadProgress(
+                    progressEvent.loaded,
+                    progressEvent.total
+                  )
+                : 0,
             }),
         }
       );

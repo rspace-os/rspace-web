@@ -42,3 +42,5 @@ axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
  * header.
  */
 export default axios;
+
+export * from "axios";

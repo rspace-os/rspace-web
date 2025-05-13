@@ -3,6 +3,7 @@ import { when } from "mobx";
 import getRootStore from "../stores/stores/RootStore";
 import { type ApiRecordType } from "../stores/definitions/InventoryRecord";
 import { type Id } from "../stores/definitions/BaseRecord";
+import { AxiosResponse } from "@/common/axios";
 
 export type BulkEndpointRecordSerialisation = {
   id: Id;
@@ -21,7 +22,7 @@ class InvApiService extends ApiServiceBase {
       | "MOVE"
       | "CHANGE_OWNER",
     rollbackOnError: boolean
-  ): Promise<Axios.AxiosXHR<T>> {
+  ): Promise<AxiosResponse<T>> {
     const params = {
       operationType,
       records,

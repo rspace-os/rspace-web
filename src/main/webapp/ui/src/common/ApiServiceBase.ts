@@ -1,11 +1,16 @@
-import axios from "@/common/axios";
+import axios, {
+  type AxiosRequestConfig,
+  type AxiosInstance,
+  type AxiosResponse,
+  type AxiosError,
+} from "@/common/axios";
 import { when } from "mobx";
 import getRootStore from "../stores/stores/RootStore";
 import JwtService from "./JwtService";
 import { sleep } from "../util/Util";
 import { mkAlert } from "../stores/contexts/Alert";
 
-type JSON = any;
+type JSON = unknown;
 
 const toast = mkAlert({
   variant: "warning",
@@ -17,15 +22,16 @@ const toast = mkAlert({
 
 // Axios wrapper for making requests to RSpace APIs
 class ApiServiceBase {
-  api: Axios.AxiosInstance;
+  api: AxiosInstance;
 
   constructor(baseUrl: string) {
-    this.api = axios.create({
+    const api = axios.create({
       baseURL: baseUrl,
       timeout: 360000,
     });
+    this.api = api;
 
-    this.api.interceptors.response.use(
+    api.interceptors.response.use(
       (response) => response,
       (...args) => this.on401Retry(...args)
     );
@@ -36,7 +42,7 @@ class ApiServiceBase {
     );
   }
 
-  async on401Retry(error: any): Promise<unknown> {
+  async on401Retry(error: AxiosError): Promise<unknown> {
     if (
       error.config &&
       error.response &&
@@ -88,7 +94,7 @@ class ApiServiceBase {
     resource: string,
     params: URLSearchParams,
     isBlob: boolean = false
-  ): Promise<Axios.AxiosXHR<T>> {
+  ): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() =>
       this.api.get<T>(resource, {
         params,
@@ -100,17 +106,17 @@ class ApiServiceBase {
   get<T>(
     resource: string,
     slug: string | number = ""
-  ): Promise<Axios.AxiosXHR<T>> {
+  ): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
-      return this.api.get(`${resource}/${slug}`);
+      return this.api.get<T>(`${resource}/${slug}`);
     });
   }
 
   post<T>(
     resource: string,
     params: object | FormData,
-    config?: Axios.AxiosXHRConfigBase<unknown>
-  ): Promise<Axios.AxiosXHR<T>> {
+    config?: AxiosRequestConfig<unknown>
+  ): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.post<T>(`${resource}`, params, config);
     });
@@ -120,14 +126,14 @@ class ApiServiceBase {
     resource: string,
     slug: string | number,
     params: JSON,
-    config?: Axios.AxiosXHRConfigBase<unknown>
-  ): Promise<Axios.AxiosXHR<T>> {
+    config?: AxiosRequestConfig<unknown>
+  ): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.put<T>(`${resource}/${slug}`, params, config);
     });
   }
 
-  put<T>(resource: string, params: JSON): Promise<Axios.AxiosXHR<T>> {
+  put<T>(resource: string, params: JSON): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.put(`${resource}`, params);
     });
@@ -136,7 +142,7 @@ class ApiServiceBase {
   delete<T>(
     resource: string,
     slug: string | number
-  ): Promise<Axios.AxiosXHR<T>> {
+  ): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.delete(`${resource}/${slug ? slug : ""}`);
     });
