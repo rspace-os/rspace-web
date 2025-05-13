@@ -1,4 +1,4 @@
-import { type URL as URLType, type BlobUrl } from "../../util/types";
+import { type URL as URLType, type BlobUrl, _LINK } from "../../util/types";
 import ApiService from "../../common/InvApiService";
 import { sameKeysAndValues, match, isoToLocale } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -30,14 +30,14 @@ import {
 } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
 import { mkAlert, type Alert } from "../contexts/Alert";
-import { newExistingAttachment } from "./AttachmentModel";
+import { AttachmentJson, newExistingAttachment } from "./AttachmentModel";
 import ExtraFieldModel from "./ExtraFieldModel";
 import {
   type ExtraFieldAttrs,
   type ExtraField,
 } from "../definitions/ExtraField";
 import { type CoreFetcherArgs } from "../definitions/Search";
-import { type Person } from "../definitions/Person";
+import { PersonAttrs, type Person } from "../definitions/Person";
 import {
   action,
   computed,
@@ -52,7 +52,10 @@ import {
 } from "../definitions/Editable";
 import { type Factory } from "../definitions/Factory";
 import { type Attachment } from "../definitions/Attachment";
-import { type BarcodeRecord } from "../definitions/Barcode";
+import {
+  PersistedBarcodeAttrs,
+  type BarcodeRecord,
+} from "../definitions/Barcode";
 import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
 import { type SharedWithGroup } from "../definitions/Group";
 import { type ContainerInContainerParams } from "./ContainerModel";
@@ -165,6 +168,37 @@ const defaultVisibleFields: Set<string> = new Set([...FIELDS]);
 export { defaultVisibleFields as defaultVisibleResultFields };
 const defaultEditableFields: Set<string> = new Set();
 export { defaultEditableFields as defaultEditableResultFields };
+
+type ResultAttrs = {
+  id: Id | null;
+  globalId: string | null;
+  type: ApiRecordType;
+  name: string;
+  description: string;
+  extraFields?: Array<ExtraFieldAttrs>;
+  tags:
+    | Array<{
+        value: string;
+        uri: string;
+        ontologyName: string;
+        ontologyVersion: string;
+      }>
+    | null
+    | "";
+  lastModified: string;
+  created: string;
+  modifiedByFullName: string;
+  owner: PersonAttrs | null;
+  deleted: boolean;
+  permittedActions: Array<Action>;
+  attachments: Array<AttachmentJson>;
+  iconId: number | null;
+  sharingMode: SharingMode;
+  sharedWith: Array<SharedWithGroup>;
+  _links: Array<_LINK>;
+  barcodes: Array<PersistedBarcodeAttrs>;
+  identifiers: Array<IdentifierAttrs>;
+};
 
 /*
  * Typically the result of some search action, this class provides the
@@ -339,10 +373,10 @@ export default class Result
 
   populateFromJson(
     factory: Factory,
-    params: object,
+    passedParams: object,
     defaultParams: object = {}
   ): void {
-    params = { ...defaultParams, ...params };
+    const params = { ...defaultParams, ...passedParams } as ResultAttrs;
     this.id = params.id;
     this.globalId = params.globalId;
     this.type = params.type;
@@ -425,7 +459,7 @@ export default class Result
    * as a nested object. This difference of around 2KB may seem small but it
    * compounds when there are many thousands of search results in memory.
    */
-  processLinks(_links: [{ link: URLType; rel: string }]): void {
+  processLinks(_links: Array<_LINK>): void {
     this._links = Object.fromEntries(
       _links.map(({ link, rel }) => [rel, link])
     );
@@ -485,7 +519,7 @@ export default class Result
   }
 
   get state(): State {
-    return match<{ editing: boolean; id: ?Id }, State>([
+    return match<{ editing: boolean; id: Id | null }, State>([
       [({ editing }) => editing, "edit"],
       [({ id }) => Boolean(id), "preview"],
       [() => true, "create"],
@@ -1006,10 +1040,12 @@ export default class Result
       }>(`${this.recordType}s?`, params, {
         onUploadProgress: (progressEvent) =>
           this.setAttributes({
-            uploadProgress: calculateProgress({
-              progressMade: progressEvent.loaded,
-              total: progressEvent.total,
-            }),
+            uploadProgress: progressEvent.total
+              ? calculateUploadProgress(
+                  progressEvent.loaded,
+                  progressEvent.total
+                )
+              : 0,
           }),
       });
       const newRecord = this.factory.newFactory().newRecord(data);
@@ -1048,34 +1084,67 @@ export default class Result
       this.setAttributes({
         uploadProgress: noProgress,
       });
-      if ("response" in error && error.response.status === 400) {
-        const { response } = error;
-        const newAlert = mkAlert({
-          message: "Please correct the invalid fields and try again.",
-          variant: "error",
-          details: response.data.data?.validationErrors.map(
-            ({ field, message }) => ({
-              title: field,
-              help: message,
+      Parsers.objectPath(["response"], error).do((response) => {
+        try {
+          const statusCode = Parsers.objectPath(["status"], response)
+            .flatMap(Parsers.isNumber)
+            .elseThrow();
+          if (statusCode !== 400) throw new Error("Not a 400 status code");
+          const validationErrors = Parsers.objectPath(
+            ["data", "data", "validationErrors"],
+            response
+          )
+            .flatMap(Parsers.isArray)
+            .elseThrow();
+          const newAlert = mkAlert({
+            message: "Please correct the invalid fields and try again.",
+            variant: "error",
+            details: UtilResult.any(
+              ...validationErrors.map((e) =>
+                Parsers.isObject(e)
+                  .flatMap(Parsers.isNotNull)
+                  .flatMap((obj) =>
+                    UtilResult.lift2<
+                      string,
+                      string,
+                      { title: string; help: string; variant: "error" }
+                    >((title, help) => ({
+                      title,
+                      help,
+                      variant: "error",
+                    }))(
+                      Parsers.getValueWithKey("field")(obj).flatMap(
+                        Parsers.isString
+                      ),
+                      Parsers.getValueWithKey("message")(obj).flatMap(
+                        Parsers.isString
+                      )
+                    )
+                  )
+              )
+            )
+              .mapError(
+                () => new Error("Could not parse any validation errors")
+              )
+              .elseThrow(),
+            retryFunction: () => this.update().then(() => {}),
+          });
+          getRootStore().uiStore.addAlert(newAlert);
+          getRootStore().searchStore.activeResult?.addScopedToast(newAlert);
+        } catch {
+          getRootStore().uiStore.addAlert(
+            mkAlert({
+              title: `Something went wrong and the ${this.recordType} was not saved.`,
+              message: getErrorMessage(error, "Unknown reason."),
               variant: "error",
             })
-          ),
-          retryFunction: () => this.create(),
-        });
-        getRootStore().uiStore.addAlert(newAlert);
-        getRootStore().searchStore.activeResult?.addScopedToast(newAlert);
-      } else {
-        getRootStore().uiStore.addAlert(
-          mkAlert({
-            title: `Something went wrong and the ${this.recordType} was not saved.`,
-            message: getErrorMessage(error, "Unknown reason."),
-            variant: "error",
-          })
-        );
-        if (error instanceof Error) {
-          console.error(error.message);
+          );
+          if (error instanceof Error) {
+            console.error(error.message);
+          }
         }
-      }
+      });
+      throw error;
     } finally {
       this.setLoading(false);
     }
@@ -1135,7 +1204,7 @@ export default class Result
       );
     } catch (error) {
       this.setAttributes({
-        uploadProgress: 0,
+        uploadProgress: noProgress,
       });
       Parsers.objectPath(["response"], error).do((response) => {
         try {
