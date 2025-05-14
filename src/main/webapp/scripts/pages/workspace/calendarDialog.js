@@ -7,6 +7,7 @@ function clearCalendarDialogAttachments() {
 }
 
 function initCreateCalendarEntryDlg() {
+  console.debug("initCreateCalendarEntryDlg");
   if (!RS.useBootstrapModals) {
      $('#createCalendarEntryDlg').dialog({
         modal: true,
