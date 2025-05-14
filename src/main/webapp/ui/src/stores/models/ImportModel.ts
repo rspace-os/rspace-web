@@ -16,7 +16,7 @@ import {
   type FieldType,
 } from "./FieldTypes";
 import { type ImportRecordType } from "../stores/ImportStore";
-import TemplateModel from "./TemplateModel";
+import TemplateModel, { TemplateAttrs } from "./TemplateModel";
 import {
   computed,
   action,
@@ -25,11 +25,12 @@ import {
   runInAction,
 } from "mobx";
 import { parseString } from "../../util/parsers";
-import { type Field as TemplateField } from "../definitions/Field";
+import { type FieldModelAttrs as TemplateField } from "../models/FieldModel";
 import { pick } from "../../util/unsafeUtils";
 import Result from "../../util/result";
 import { getErrorMessage } from "../../util/error";
 import * as Parsers from "../../util/parsers";
+import { GlobalId } from "../definitions/BaseRecord";
 
 export const Fields: { [fieldName: string]: symbol } = {
   name: Symbol.for("NAME"),
@@ -65,7 +66,7 @@ export const getTypeOfField: (field: Field) => FieldType | null = match([
   [() => true, null],
 ]);
 
-const transitionMapping: { [state: string]: Set<string> } = {
+const transitionMapping = {
   initial: new Set(["parsing", "submitting"]),
   //   clean state, the page has just loaded (or "clear file" button has been pressed)
   parsing: new Set(["parsed", "parsingFailed"]),
@@ -218,9 +219,10 @@ export class ColumnFieldMap {
 
   // returns false for custom; caller should handle
   typeIsCompatibleWithField(field: Field): boolean {
+    const type = getTypeOfField(field);
+    if (type === null) return false;
     return (
-      this.allValidTypes.includes(getTypeOfField(field)) ||
-      field === Fields.none // make none selectable (for containers)
+      this.allValidTypes.includes(type) || field === Fields.none // make none selectable (for containers)
     );
   }
 
@@ -256,7 +258,7 @@ export class ColumnFieldMap {
     return this.field !== Fields.custom || this.validFieldName;
   }
 
-  get fieldsByRecordType(): { [string]: symbol } {
+  get fieldsByRecordType(): { [fieldName: string]: symbol } {
     const exclusions = {
       SAMPLES: new Set([
         "parent_sample_global_id",
@@ -278,7 +280,10 @@ export class ColumnFieldMap {
         "custom",
       ]),
     };
-    return filterObject((key) => !exclusions[this.recordType].has(key), Fields);
+    return filterObject(
+      (key: string) => !exclusions[this.recordType].has(key),
+      Fields
+    );
   }
 }
 
@@ -295,7 +300,8 @@ export default class Import {
    * When parsing the CSV file, the server may suggest a different field name
    * from that of the CSV's column name (ie when column name would match a default template field name).
    */
-  fieldNameForColumnName: { [string]: string };
+  // @ts-expect-error initialised by parsing CSV
+  fieldNameForColumnName: { [columnName: string]: string };
 
   /*
    * Determines if we are creating a new template or importing using an
@@ -314,14 +320,14 @@ export default class Import {
    * of a suggested template. The user has the opportunity to then modify this
    * definition in whichever way the UI exposes this object.
    */
-  templateInfo: TemplateModel | null;
+  templateInfo: TemplateAttrs | null;
 
   /*
    * When importing using an existing template, this is the template chosen by
    * the user. Only the `id` is passed to the server and so no modifications
    * should be permitted by the UI.
    */
-  template: TemplateModel | null;
+  template: TemplateModel | null = null;
 
   /*
    * The column-to-field mappings, per recordType.
@@ -335,7 +341,7 @@ export default class Import {
    * A Finite State Automata (State Machine) that models the steps of the
    * import process, ensuring that the several steps are performed in order.
    */
-  state: StateMachine<keyof typeof transitionMapping>;
+  state: StateMachine<string>;
 
   /*
    * this is required for handling the import process:
@@ -707,12 +713,16 @@ export default class Import {
         throw new Error("No file set");
       } else {
         params.append("recordType", this.recordType);
-        params.append("file", this.fileByRecordType);
+        params.append("file", this.fileByRecordType as Blob);
 
-        const { data } = await ApiService.post<unknown>(
-          "/import/parseFile",
-          params
-        );
+        const { data } = await ApiService.post<{
+          columnNames: Array<string>;
+          columnsWithoutBlankValue: Array<string>;
+          fieldNameForColumnName?: Record<string, string>;
+          templateInfo?: TemplateAttrs;
+          quantityUnitForColumn?: { [column: string]: number };
+          radioOptionsForColumn?: { [column: string]: Array<string> };
+        }>("/import/parseFile", params);
 
         if (this.isSamplesImport) {
           if (
@@ -724,44 +734,60 @@ export default class Import {
             throw new Error("Field name for column name mapping data missing.");
 
           runInAction(() => {
-            this.templateInfo = data.templateInfo;
+            this.templateInfo = data.templateInfo as TemplateAttrs;
 
-            this.fieldNameForColumnName = data.fieldNameForColumnName;
+            this.fieldNameForColumnName = data.fieldNameForColumnName as Record<
+              string,
+              string
+            >;
 
-            this.samplesMappings = data.templateInfo.fields.map(
-              ({ name, type }): ColumnFieldMap => {
-                const originalColumnName = Object.keys(
-                  data.fieldNameForColumnName
-                ).find((key) => this.fieldNameForColumnName[key] === name);
+            this.samplesMappings = (
+              data.templateInfo as TemplateAttrs
+            ).fields.map(({ name, type }): ColumnFieldMap => {
+              const originalColumnName = Object.keys(
+                data.fieldNameForColumnName as Record<string, string>
+              ).find(
+                (key) => this.fieldNameForColumnName[key] === name
+              ) as string;
 
-                const newFieldMap = new ColumnFieldMap({
-                  recordType: this.recordType,
-                  selected: true,
-                  columnName: originalColumnName,
-                  field: Fields.custom,
-                  fieldName: name,
-                  fieldType: apiStringToFieldType(type),
-                  quantityUnitId:
-                    data.quantityUnitForColumn[originalColumnName] ?? null,
-                  options:
-                    data.radioOptionsForColumn[originalColumnName] ?? null,
-                  fieldChangeCallback: fieldChangeHandler,
-                  isNameUnique: (c) => this.isNameUnique(c),
-                  columnsWithoutBlankValue: data.columnsWithoutBlankValue,
-                });
+              const newFieldMap = new ColumnFieldMap({
+                recordType: this.recordType,
+                selected: true,
+                columnName: originalColumnName,
+                field: Fields.custom,
+                fieldName: name as string,
+                fieldType: apiStringToFieldType(type),
+                quantityUnitId:
+                  (
+                    data.quantityUnitForColumn as Exclude<
+                      undefined,
+                      typeof data.quantityUnitForColumn
+                    >
+                  )[originalColumnName] ?? null,
+                options: (
+                  data.radioOptionsForColumn as Exclude<
+                    undefined,
+                    typeof data.radioOptionsForColumn
+                  >
+                )[originalColumnName],
+                fieldChangeCallback: fieldChangeHandler,
+                isNameUnique: (c) => this.isNameUnique(c),
+                columnsWithoutBlankValue: data.columnsWithoutBlankValue,
+              });
 
-                // after creation: auto-select conversion in suitable cases
-                const fieldsByRecordType = newFieldMap.fieldsByRecordType;
-                if (
-                  newFieldMap.isCompatibleWithField(
-                    fieldsByRecordType[nameToMatch(name)]
-                  )
-                ) {
-                  newFieldMap.setField(fieldsByRecordType[nameToMatch(name)]);
-                }
-                return newFieldMap;
+              // after creation: auto-select conversion in suitable cases
+              const fieldsByRecordType = newFieldMap.fieldsByRecordType;
+              if (
+                newFieldMap.isCompatibleWithField(
+                  fieldsByRecordType[nameToMatch(name as string)]
+                )
+              ) {
+                newFieldMap.setField(
+                  fieldsByRecordType[nameToMatch(name as string)]
+                );
               }
-            );
+              return newFieldMap;
+            });
           });
         } else {
           // same process for containers and subsamples
@@ -813,11 +839,13 @@ export default class Import {
       }
     } catch (error) {
       console.error("parsing failed", error);
-      const {
-        response: { data },
-      } = error;
       this.state.transitionTo("parsingFailed", () => ({
-        fileErrorMessage: data.message,
+        fileErrorMessage: Parsers.objectPath(
+          ["response", "data", "message"],
+          error
+        )
+          .flatMap(Parsers.isString)
+          .orElse("Unknown reason."),
       }));
       this.resetAllMappings();
     }
@@ -825,37 +853,40 @@ export default class Import {
 
   get fileErrorMessage(): string {
     this.state.assertCurrentState("parsingFailed");
-    return this.state.data.fileErrorMessage;
+    return (this.state.data as { fileErrorMessage: string }).fileErrorMessage;
   }
 
   fieldIsChosen(field: Field): boolean {
     return this.mappingsByRecordType.some((m) => m.field === field);
   }
 
-  transformTemplateInfoForSubmission(): {
-    fields: Array<any>;
-    name: string;
-  } {
+  transformTemplateInfoForSubmission():
+    | {
+        fields: Array<unknown>;
+        name: string;
+      }
+    | { id: number } {
     if (!this.createNewTemplate)
-      return pick("id")(this.template) as { id: TemplateModel["id"] };
+      return pick("id")(this.template) as { id: number };
     if (!this.templateInfo) throw new Error("TemplateInfo is null");
     const templateFieldWithMappings: Array<{
       field: TemplateField;
-      mapping: ColumnFieldMap | null;
+      mapping: ColumnFieldMap;
     }> = ArrayUtils.zipWith<
       TemplateField,
-      ColumnFieldMap | null,
-      { field: TemplateField; mapping: ColumnFieldMap | null }
+      ColumnFieldMap,
+      { field: TemplateField; mapping: ColumnFieldMap }
     >(
       this.templateInfo.fields,
-      this.templateInfo.fields.map(
-        ({ name }) =>
-          this.samplesMappings.find((f) => f.fieldName === name) ?? null
+      ArrayUtils.filterNull(
+        this.templateInfo.fields.map(
+          ({ name }) =>
+            this.samplesMappings.find((f) => f.fieldName === name) ?? null
+        )
       ),
       (f, m) => ({ field: f, mapping: m })
     );
     const processedFields = templateFieldWithMappings
-      .filter(({ mapping }) => Boolean(mapping))
       .filter(({ mapping: { selected } }) => selected)
       .filter(({ mapping: { field } }) => field === Fields.custom)
       .map(({ field, mapping: { fieldName, chosenFieldType, options } }) => ({
@@ -901,7 +932,7 @@ export default class Import {
   }
 
   makeMappingsObject(mappings: Array<ColumnFieldMap>): {
-    [columnName: string]: string;
+    [columnName: string]: string | null;
   } {
     const name = this.findParsedColumnName(mappings, Fields.name);
     if (!name) throw new Error("Name is a required field");
@@ -998,6 +1029,19 @@ export default class Import {
         })
       );
 
+      type ImportResults = {
+        type: string;
+        status: string;
+        results: ReadonlyArray<{
+          error: { errors: ReadonlyArray<string> } | null;
+          record: Record<string, unknown> & { globalId: GlobalId };
+        }>;
+        templateResult: {
+          error: { errors: ReadonlyArray<string> };
+          record: Record<string, unknown> & { globalId: GlobalId };
+        };
+      };
+
       const {
         // renaming status property to prevent duplication.
         data: {
@@ -1008,7 +1052,12 @@ export default class Import {
         },
       } = await showToastWhilstPending(
         `Importing Records...`,
-        ApiService.post<unknown>("/import/importFiles", params)
+        ApiService.post<{
+          status: string;
+          sampleResults: ImportResults;
+          containerResults: ImportResults;
+          subSampleResults: ImportResults;
+        }>("/import/importFiles", params)
       );
 
       // multiple results can be returned and should be handled per type
@@ -1030,14 +1079,16 @@ export default class Import {
               message: `Could not import invalid ${labelByResultsType} data.`,
               variant: "error",
               details: results
-                .map(({ error }, i) => [error, i])
+                .map(
+                  ({ error }, i) =>
+                    [error, i] as [{ errors: ReadonlyArray<string> }, number]
+                )
                 .filter(([error]) => error)
                 .flatMap(([error, i]) =>
                   error.errors.map((e) => ({
                     title: `Row ${i + 1}`,
                     help: e,
-                    variant: "error",
-                    record: null,
+                    variant: "error" as const,
                   }))
                 ),
               retryFunction: () => this.importFiles(),
