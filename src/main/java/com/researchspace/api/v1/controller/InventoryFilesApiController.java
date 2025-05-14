@@ -6,7 +6,6 @@ import com.researchspace.api.v1.InventoryFilesApi;
 import com.researchspace.api.v1.model.ApiInventoryFile;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.FileProperty;
-import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
@@ -217,15 +216,9 @@ public class InventoryFilesApiController extends BaseApiInventoryController
     InventoryFile invFile = doGetInventoryFile(id, user);
     File file = fileStore.findFile(invFile.getFileProperty());
 
-    RSChemElement chem =
-        RSChemElement.builder()
-            .chemElements(chemistryProvider.convert(file))
-            .chemElementsFormat(chemistryProvider.defaultFormat())
-            .build();
-
     return new AjaxReturnObject<>(
         new ChemEditorInputDto(
-            null, chem.getChemElements(), chem.getChemElementsFormat(), chem.getEcatChemFileId()),
+            null, chemistryProvider.convert(file), chemistryProvider.defaultFormat(), null),
         null);
   }
 
