@@ -2,11 +2,14 @@ import {
   type BarcodeRecord,
   type PersistedBarcodeAttrs,
   type GeneratedBarcodeAttrs,
+  type FromServer,
+  NewlyCreated,
+  Deleted,
 } from "../definitions/Barcode";
 import React from "react";
 import { makeObservable, observable, computed, action } from "mobx";
 import { type Id } from "../definitions/BaseRecord";
-import { type URL } from "../../util/types";
+import { _LINK, type URL } from "../../util/types";
 import ApiService from "../../common/InvApiService";
 
 function fetchImage(url: URL, description: string): Promise<File> {
@@ -28,9 +31,7 @@ export class PersistedBarcode implements BarcodeRecord {
   description: string;
   newBarcodeRequest: boolean;
   deleteBarcodeRequest: boolean;
-// @ts-expect-error imageUrl is initialised by populateFromJson
   imageUrl: URL | null;
-// @ts-expect-error image is initialised by populateFromJson
   image: File | null;
 
   constructor(attrs: PersistedBarcodeAttrs) {
@@ -45,27 +46,34 @@ export class PersistedBarcode implements BarcodeRecord {
       paramsForBackend: computed,
       isDeleted: computed,
     });
+    // @ts-expect-error just the NewlyCreated attrs
     if (attrs.newBarcodeRequest) {
       this.id = null;
       this.newBarcodeRequest = true;
       this.deleteBarcodeRequest = false;
       this.description = attrs.description;
+      this.imageUrl = null;
+      this.image = null;
+      // @ts-expect-error just the Deleted attrs
     } else if (attrs.deleteBarcodeRequest) {
-      this.id = attrs.id;
+      const deletedAttrs = attrs as Deleted;
+      this.id = deletedAttrs.id;
       this.newBarcodeRequest = false;
       this.deleteBarcodeRequest = true;
       this.description = attrs.description;
-      this.imageUrl = attrs.imageUrl;
+      this.imageUrl = deletedAttrs.imageUrl;
+      this.image = null;
     } else {
-      this.id = attrs.id;
+      const fromServerAttrs = attrs as FromServer;
+      this.id = fromServerAttrs.id;
       this.newBarcodeRequest = false;
       this.deleteBarcodeRequest = false;
       this.description = attrs.description;
 
       this.image = null;
-      const imageUrl = attrs._links.find(
-        ({ rel }) => rel === "enclosure"
-      )?.link;
+      const imageUrl =
+        fromServerAttrs._links.find(({ rel }) => rel === "enclosure")?.link ??
+        null;
       this.imageUrl = imageUrl;
     }
     this.data = attrs.data;
@@ -95,6 +103,9 @@ export class PersistedBarcode implements BarcodeRecord {
     const params: {
       newBarcodeRequest?: true;
       deleteBarcodeRequest?: true;
+      id: Id;
+      data: string;
+      description: string;
     } = {
       id: this.id,
       data: this.data,
@@ -129,15 +140,13 @@ export class PersistedBarcode implements BarcodeRecord {
 export class GeneratedBarcode implements BarcodeRecord {
   data: string;
   description: string;
-  imageUrl: ?URL;
-  image: ?File;
+  imageUrl: URL | null;
 
   constructor(attrs: GeneratedBarcodeAttrs) {
     makeObservable(this, {
       data: observable,
       description: observable,
       imageUrl: observable,
-      image: observable,
       paramsForBackend: computed,
       isDeleted: computed,
     });

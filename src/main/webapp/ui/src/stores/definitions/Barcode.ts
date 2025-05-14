@@ -22,7 +22,7 @@ export type GeneratedBarcodeAttrs = {
  * This is the shape of the data outputted by the server to model a barcode
  * that has been persisted in the database.
  */
-type FromServer = {
+export type FromServer = {
   id: Id;
   created: IsoTimestamp;
   createdBy: Username;
@@ -34,7 +34,7 @@ type FromServer = {
 /*
  * This is the data that must be specified when a new BarcodeRecord is created.
  */
-type NewlyCreated = {
+export type NewlyCreated = {
   data: string;
   newBarcodeRequest: true;
   description: string;
@@ -44,7 +44,7 @@ type NewlyCreated = {
  * This is the data that must be specified when a BarcodeRecord is to be
  * deleted.
  */
-type Deleted = {
+export type Deleted = {
   id: Id;
   data: string;
   description: string;

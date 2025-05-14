@@ -45,7 +45,6 @@ declare export class GeneratedBarcode implements BarcodeRecord {
   data: BarcodeValue;
   description: string;
   imageUrl: ?URL;
-  image: ?File;
 
   constructor(attrs: GeneratedBarcodeAttrs): GeneratedBarcode;
 
@@ -67,4 +66,3 @@ declare export class GeneratedBarcode implements BarcodeRecord {
 
   get renderedDescription(): Node;
 }
-
