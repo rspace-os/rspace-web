@@ -182,11 +182,10 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
         uploadedFile.getId(), new ApiInventoryFileImageRequest(1, 1, 1.0), user, resp);
     assertArrayEquals(new byte[] {1, 2, 3}, resp.getContentAsByteArray());
 
-    resp = new MockHttpServletResponse();
     AjaxReturnObject<ChemEditorInputDto> chemDto =
         invFilesApi.getChemFileDto(uploadedFile.getId(), user);
     assertTrue(chemDto.isSuccess());
-    assertEquals("123chemStringConverted", chemDto.getData().getChemElements());
+    assertEquals("123chemString", chemDto.getData().getChemElements());
   }
 
   @Test()
@@ -234,7 +233,5 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
     when(chemistryProvider.exportToImage(anyString(), anyString(), any(ChemicalExportFormat.class)))
         .thenReturn(new byte[] {1, 2, 3});
     when(chemistryProvider.convert(any(File.class))).thenReturn("123chemString");
-    when(chemistryProvider.convertToDefaultFormat("123chemString", "mol"))
-        .thenReturn("123chemStringConverted");
   }
 }
