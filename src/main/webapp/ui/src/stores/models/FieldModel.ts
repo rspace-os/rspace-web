@@ -45,35 +45,45 @@ export type FieldModelAttrs = {
   globalId?: GlobalId;
   name?: string;
   type: FieldType;
-  content?: ?string;
-  selectedOptions: ?Array<OptionValue>;
-  definition?: ?{
+  content?: string | null;
+  selectedOptions: Array<OptionValue> | null;
+  definition?: {
     options: Array<OptionValue>;
-  };
+  } | null;
   initial?: boolean;
   editing?: boolean;
-  columnIndex: ?number;
-  attachment: ?AttachmentJson;
+  columnIndex: number | null;
+  attachment: AttachmentJson | null;
   mandatory: boolean;
 };
 
 export default class FieldModel implements Field {
+  // @ts-expect-error Initialised by setAttributes
   id: Id;
-  globalId: ?GlobalId;
+  // @ts-expect-error Initialised by setAttributes
+  globalId: GlobalId | null;
+  // @ts-expect-error Initialised by setAttributes
   type: FieldType;
+  // @ts-expect-error Initialised by setAttributes
   name: string;
-  content: string | number;
-  selectedOptions: ?Array<string>;
-  definition: {} = {};
+  // @ts-expect-error Initialised by setAttributes
+  content: string | number | Date;
+  // @ts-expect-error Initialised by setAttributes
+  selectedOptions: Array<string> | null;
+  definition: object = {};
   initial: boolean = false;
   editing: boolean = false;
   deleteFieldRequest: boolean = false;
   deleteFieldOnSampleUpdate: boolean = false;
   options: Array<Option> = [];
+  // @ts-expect-error Initialised by setAttributes
   owner: Sample;
+  // @ts-expect-error Initialised by setAttributes
   columnIndex: number;
-  attachment: ?Attachment;
-  originalAttachment: ?Attachment = null;
+  // @ts-expect-error Initialised by setAttributes
+  attachment: Attachment | null;
+  originalAttachment: Attachment | null = null;
+  // @ts-expect-error Initialised by setAttributes
   mandatory: boolean;
   error: boolean;
 
@@ -116,7 +126,14 @@ export default class FieldModel implements Field {
       "name",
       "initial",
       "mandatory"
-    )(_params);
+    )(_params) as object & {
+      content: string | number | Date;
+      type: FieldType;
+      initial: boolean;
+      attachment?: AttachmentJson;
+      owner: Result;
+      options: Array<OptionValue> | Array<Option>;
+    };
 
     params.initial = params.initial ?? false;
 
@@ -147,18 +164,21 @@ export default class FieldModel implements Field {
          * date object, we only use the time component throughout the UI.
          */
       } else {
-        throw new UnparsableString(params.content, "Invalid time format");
+        throw new UnparsableString(
+          params.content as string,
+          "Invalid time format"
+        );
       }
     }
 
     if (hasOptions(params.type)) {
-      params.options = params.options.map(formatOption);
+      params.options = (params.options as Array<OptionValue>).map(formatOption);
     }
 
     if (params.type === "number") {
-      if (isNaN(params.content)) params.content = "";
+      if (isNaN(params.content as number)) params.content = "";
       if (params.content !== "") {
-        params.content = parseFloat(params.content);
+        params.content = parseFloat(params.content as string);
       }
     }
 
@@ -172,8 +192,9 @@ export default class FieldModel implements Field {
       this.setAttributes({
         attachment: newExistingAttachment(
           attachment,
+          // @ts-expect-error owner is set by the setAttributes call above
           this.owner.id ? this.permalinkURL : "",
-          (a) => {
+          (a: Attachment) => {
             if (!this.originalAttachment) this.originalAttachment = a;
             this.setAttributesDirty({});
           }
@@ -277,12 +298,12 @@ export default class FieldModel implements Field {
     });
   }
 
-  get permalinkURL(): ?URLType {
+  get permalinkURL(): URLType | null {
     return this.owner.permalinkURL;
   }
 
   get paramsForBackend(): object {
-    const ret = { ...this };
+    const ret: typeof this & { newFieldRequest?: boolean } = { ...this };
     if (!ret.id) ret.newFieldRequest = true;
 
     switch (ret.type) {
@@ -317,6 +338,6 @@ export default class FieldModel implements Field {
       "deleteFieldOnSampleUpdate",
       "columnIndex",
       "mandatory"
-    )(ret);
+    )(ret) as object;
   }
 }

@@ -887,7 +887,7 @@ export class NewGalleryAttachment implements Attachment {
  */
 export const newGalleryAttachment = (
   file: GalleryFile,
-  onRemoveCallback: (Attachment) => void
+  onRemoveCallback: (attachment: Attachment) => void
 ): NewGalleryAttachment => {
   if (!file.globalId)
     throw new Error("Cannot attach a file that does not have a Global Id");
