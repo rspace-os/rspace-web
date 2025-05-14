@@ -8,20 +8,24 @@ import { type SubSample } from "../definitions/SubSample";
 import { type Search } from "../definitions/Search";
 
 export type LocationAttrs = {
-  id: ?number;
+  id: number | null;
   coordX: number;
   coordY: number;
-  content: ?(SubSampleModel | ContainerModel);
+  content: SubSampleModel | ContainerModel | null;
   parentContainer: ContainerModel;
 };
 
 export default class LocationModel implements Location {
   loading: boolean = false;
-  id: ?number = null;
+  id: number | null = null;
+  // @ts-expect-error Set by constructor's call to setAttributes
   coordX: number;
+  // @ts-expect-error Set by constructor's call to setAttributes
   coordY: number;
-  content: ?(SubSample | Container);
+  // @ts-expect-error Set by constructor's call to setAttributes
+  content: SubSample | Container | null;
   selected: boolean = false;
+  // @ts-expect-error Set by constructor's call to setAttributes
   parentContainer: Container;
   x: number = 0;
   y: number = 0;
@@ -128,20 +132,16 @@ export default class LocationModel implements Location {
       return [];
     if (!this.parentContainer.locations)
       throw new Error("Locations of container must be known.");
-    const locations = this.parentContainer.locations;
-    return locations
-      .filter(
-        ({ content }) =>
-          content instanceof SubSampleModel && Boolean(content.sample.id)
-      )
-      .filter(
-        // $FlowExpectedError[incompatible-use] this.content.sample.id !== null is asserted above
-        // $FlowExpectedError[prop-missing]
-        (loc) => loc.content.sample.id === this.content.sample.id
-      );
+    return this.parentContainer.locations.filter(
+      (loc) =>
+        loc.content instanceof SubSampleModel &&
+        Boolean(loc.content.sample.id) &&
+        this.content instanceof SubSampleModel &&
+        loc.content.sample.id === this.content.sample.id
+    );
   }
 
-  get isSiblingSelected(): ?boolean {
+  get isSiblingSelected(): boolean | null {
     return (
       this.content &&
       this.content.recordType === "subSample" &&
@@ -160,13 +160,13 @@ export default class LocationModel implements Location {
   }
 
   get name(): string | null {
-    return this.content?.name;
+    return this.content === null ? null : this.content.name;
   }
 
-  get paramsForBackend(): {} {
+  get paramsForBackend(): object {
     const params: {
       parentContainer: unknown;
-      content: ?(SubSample | Container);
+      content?: SubSample | Container | null;
     } = { ...this };
     delete params.parentContainer;
     delete params.content;
@@ -201,7 +201,7 @@ export default class LocationModel implements Location {
    * is a Container. This is so that a selection made in grid or image view is
    * maintained when switching to list view.
    */
-  toggleSelected(value: ?boolean): void {
+  toggleSelected(value?: boolean | null): void {
     value = value ?? !this.selected;
     const moveStore = getRootStore().moveStore;
     if (
@@ -216,12 +216,10 @@ export default class LocationModel implements Location {
         const selectedGlobalIds = selectedLocations.map(
           (l) => l.content?.globalId
         );
-        const firstNotPlaced:
-          | ContainerModel
-          // $FlowExpectedError[incompatible-type] this.search.results will be Array<ContainerModel | SubSampleModel>
-          | SubSampleModel = moveStore.selectedResults.find(
-          (r) => !selectedGlobalIds.includes(r.globalId)
-        );
+        const firstNotPlaced =
+          moveStore.selectedResults.find(
+            (r) => !selectedGlobalIds.includes(r.globalId)
+          ) ?? null;
 
         // set new location
         this.content = firstNotPlaced;
@@ -235,8 +233,10 @@ export default class LocationModel implements Location {
     // Sync selection of location and content
     if (this.parentContainer.cType !== "LIST" && !moveStore.isMoving) {
       const activeContainer = getRootStore().searchStore.activeResult;
-      if (activeContainer?.contentSearch) {
-        const content = activeContainer.contentSearch.cacheFetcher.results.find(
+      if ((activeContainer as Container | null)?.contentSearch) {
+        const content = (
+          activeContainer as Container
+        ).contentSearch.cacheFetcher.results.find(
           (r) => r.globalId === this.content?.globalId
         );
         if (content) content.toggleSelected(value);
