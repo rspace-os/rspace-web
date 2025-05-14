@@ -16,8 +16,9 @@ import { type Attachment } from "../definitions/Attachment";
 import { type GlobalId, type Id } from "../definitions/BaseRecord";
 import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
 import { type LinkableRecord } from "../definitions/LinkableRecord";
+import { getErrorMessage } from "@/util/error";
 
-type AttachmentId = ?number;
+type AttachmentId = number | null;
 type Bytes = number;
 
 type CommonAttrs = {
@@ -42,7 +43,7 @@ type FromServer = CommonAttrs & {
  * model an attachment that was created by the user choosing a file that is
  * already in the Gallery
  */
-type FromServerFromGallery = FromServer & {
+export type FromServerFromGallery = FromServer & {
   mediaFileGlobalId: string;
 };
 
@@ -80,14 +81,14 @@ type FromGallery = CommonAttrs & {
  * including icon, permalink, and tooltip label.
  */
 class LinkableGalleryFile implements LinkableRecord {
-  globalId: ?string;
+  globalId: string | null;
 
   /*
    * Note that the name and id are not required as part of rendering the Global
    * Id are simply required for the LinkableRecord interface to be useful in
    * other circumstances. As such, any random value will suffice for these properties.
    */
-  id: ?number;
+  id: number | null;
   name: string;
 
   constructor({
@@ -144,27 +145,24 @@ export class ExistingAttachment implements Attachment {
   globalId: ?GlobalId;
   name: string;
   size: Bytes;
-  // @ts-expect-error link is initialised by populateFromJson
-  link: ?Url;
+  link: Url | null;
   // @ts-expect-error file is initialised by populateFromJson
-  file: ?File;
+  file: File | null;
   // @ts-expect-error imageLink is initialised by populateFromJson
-  imageLink: ?Url;
+  imageLink: Url | null;
   chemicalString: string = "";
   removed: boolean;
   loadingImage: boolean = false;
   loadingString: boolean = false;
   contentMimeType: string;
-  onRemoveCallback: (Attachment) => void;
-  // @ts-expect-error permalinkURL is initialised by populateFromJson
-  permalinkURL: ?Url;
-  // @ts-expect-error owner is initialised by populateFromJson
-  owner: ?Person; // For the info button
+  onRemoveCallback: (attachment: Attachment) => void;
+  permalinkURL: Url | null;
+  owner: Person | null; // For the info button
 
   constructor(
     attrs: FromServer,
-    permalinkURL: ?Url,
-    onRemoveCallback: (Attachment) => void
+    permalinkURL: Url | null,
+    onRemoveCallback: (attachment: Attachment) => void
   ) {
     makeObservable(this, {
       name: observable,
@@ -195,7 +193,8 @@ export class ExistingAttachment implements Attachment {
     this.size = attrs.size;
     this.globalId = attrs.globalId;
     this.contentMimeType = attrs.contentMimeType;
-    this.link = attrs._links.find(({ rel }) => rel === "enclosure")?.link;
+    this.link =
+      attrs._links.find(({ rel }) => rel === "enclosure")?.link ?? null;
     this.removed = false;
     this.onRemoveCallback = onRemoveCallback;
     this.permalinkURL = permalinkURL;
@@ -227,7 +226,7 @@ export class ExistingAttachment implements Attachment {
   async setImageLink(): Promise<void> {
     const file = await this.getFile();
     if (!file) throw new Error("File is not yet known.");
-    let imageFile;
+    let imageFile: Blob;
     if (this.isChemicalFile) imageFile = await this.fetchChemicalImage();
     runInAction(() => {
       this.imageLink = URL.createObjectURL(imageFile || file);
@@ -322,10 +321,7 @@ export class ExistingAttachment implements Attachment {
           getRootStore().uiStore.addAlert(
             mkAlert({
               title: "Fetching chemical file failed.",
-              message:
-                error?.response?.data.message ??
-                error.message ??
-                "Unknown reason.",
+              message: getErrorMessage(error, "Unknown reason."),
               variant: "error",
             })
           );
@@ -403,8 +399,8 @@ export class ExistingAttachmentFromGallery extends ExistingAttachment {
 
   constructor(
     attrs: FromServerFromGallery,
-    permalinkURL: ?Url,
-    onRemoveCallback: (Attachment) => void
+    permalinkURL: Url | null,
+    onRemoveCallback: (attachment: Attachment) => void
   ) {
     const { mediaFileGlobalId, ...rest } = attrs;
     super(rest, permalinkURL, onRemoveCallback);
@@ -434,10 +430,10 @@ export class ExistingAttachmentFromGallery extends ExistingAttachment {
  */
 export function newExistingAttachment(
   attrs: AttachmentJson,
-  permalinkURL: ?Url,
-  onRemoveCallback: (Attachment) => void
+  permalinkURL: Url | null,
+  onRemoveCallback: (attachment: Attachment) => void
 ): ExistingAttachment {
-  const { mediaFileGlobalId, ...rest } = attrs;
+  const { mediaFileGlobalId, ...rest } = attrs as FromServerFromGallery;
   if (typeof mediaFileGlobalId === "string") {
     return new ExistingAttachmentFromGallery(
       { ...rest, mediaFileGlobalId },
@@ -455,24 +451,24 @@ export function newExistingAttachment(
  */
 export class NewlyUploadedAttachment implements Attachment {
   id: AttachmentId;
-  globalId: ?GlobalId;
+  globalId: GlobalId | null;
   name: string;
   size: Bytes;
-  link: ?Url;
-  file: ?File; // will never actually be null because the user just uploaded it
-  imageLink: ?Url;
+  link: Url | null = null;
+  file: File | null; // will never actually be null because the user just uploaded it
+  imageLink: Url | null = null;
   chemicalString: string = "";
   removed: boolean;
   loadingImage: boolean = false;
   loadingString: boolean = false;
-  onRemoveCallback: (Attachment) => void;
-  permalinkURL: ?Url;
-  owner: ?Person; // For the info button
+  onRemoveCallback: (attachment: Attachment) => void;
+  permalinkURL: Url | null;
+  owner: Person | null; // For the info button
 
   constructor(
     attrs: FromUpload,
-    permalinkURL: ?Url,
-    onRemoveCallback: (Attachment) => void
+    permalinkURL: Url | null,
+    onRemoveCallback: (attachment: Attachment) => void
   ) {
     makeObservable(this, {
       name: observable,
@@ -534,7 +530,7 @@ export class NewlyUploadedAttachment implements Attachment {
       throw new Error(
         "Impossible because the user already selected a file to upload"
       );
-    let imageFile;
+    let imageFile: Blob;
     if (this.isChemicalFile) imageFile = await this.fetchChemicalImage();
     runInAction(() => {
       this.imageLink = URL.createObjectURL(imageFile || file);
@@ -726,8 +722,8 @@ export class NewlyUploadedAttachment implements Attachment {
  */
 export const newAttachment = (
   file: File,
-  permalinkURL: ?Url,
-  onRemoveCallback: (Attachment) => void
+  permalinkURL: Url | null,
+  onRemoveCallback: (attachment: Attachment) => void
 ): NewlyUploadedAttachment => {
   return new NewlyUploadedAttachment(
     {
@@ -751,22 +747,25 @@ export class NewGalleryAttachment implements Attachment {
   name: string;
   size: Bytes;
   removed: boolean = false;
-  onRemoveCallback: (Attachment) => void;
-  permalinkURL: ?Url;
-  downloadHref: null | (() => Promise<Url>);
+  onRemoveCallback: (attachment: Attachment) => void;
+  permalinkURL: Url | null;
+  downloadHref: null | (() => Promise<Url>) = null;
 
   /*
    * Dummy values to satisfy Attachment interface
    */
-  globalId: ?GlobalId = null;
+  globalId: GlobalId | null = null;
   id: Id = null;
-  imageLink: ?Url = null;
-  owner: ?Person = null;
+  imageLink: Url | null = null;
+  owner: Person | null = null;
   loadingImage: boolean = false;
   loadingString: boolean = false;
   chemicalString: string = "";
 
-  constructor(attrs: FromGallery, onRemoveCallback: (Attachment) => void) {
+  constructor(
+    attrs: FromGallery,
+    onRemoveCallback: (attachment: Attachment) => void
+  ) {
     makeObservable(this, {
       galleryId: observable,
       name: observable,
