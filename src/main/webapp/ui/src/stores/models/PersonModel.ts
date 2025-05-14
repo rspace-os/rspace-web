@@ -20,17 +20,18 @@ import {
 import { type ExportOptions, type ExportFileType } from "../definitions/Search";
 import { mkAlert } from "../contexts/Alert";
 import { showToastWhilstPending } from "../../util/alerts";
+import { getErrorMessage } from "@/util/error";
 
 export default class PersonModel implements Person {
   id: PersonId;
   username: Username;
   firstName: PersonName;
   lastName: PersonName;
-  email: ?Email;
+  email: Email | null;
   hasPiRole: boolean;
   hasSysAdminRole: boolean;
   workbenchId: WorkbenchId;
-  bench: ?Container;
+  bench: Container | null;
   _links: Array<_LINK>;
   isOperated: boolean = false;
   processingUserActions: boolean = false;
@@ -155,8 +156,7 @@ export default class PersonModel implements Person {
       uiStore.addAlert(
         mkAlert({
           title: `Data export failed.`,
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );

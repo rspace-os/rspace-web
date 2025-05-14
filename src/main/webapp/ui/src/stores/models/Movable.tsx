@@ -114,7 +114,7 @@ export class Movable {
       );
       options.set("Current Location", () => ({
         renderOption: "location",
-        data: this,
+        data: this as unknown as InventoryRecord,
       }));
       if (this.isInGridContainer()) {
         options.set("Grid Coordinates", () => ({
