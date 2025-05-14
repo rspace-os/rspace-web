@@ -517,6 +517,22 @@
 	</div>
 
 	<div id="pwdConfirmDialog" style="display: none;">
+    <p>
+      <strong>Important: Your API Key Grants Full Access to Your RSpace Account and Data</strong>
+    </p>
+    <p>
+    This API key provides access to your account, research data, and
+    intellectual property. If exposed or compromised:
+    </p>
+    <ul>
+      <li>Unauthorized users could access and steal your data</li>
+      <li>Your intellectual property could be copied or misused</li>
+      <li>Your data may be permanently deleted or altered without your consent</li>
+    </ul>
+    <p>
+      Are you sure you want to generate a new API key? Please store it securely
+      and never share it with others or expose it in client-side code.
+    </p>
 		<table>
 			<tr>
 				<td><label for="pwdConfirm">Please confirm your password </label></td>
