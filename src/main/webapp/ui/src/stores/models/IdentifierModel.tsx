@@ -45,6 +45,7 @@ import {
 import { mkAlert, type Alert } from "../contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import InvApiService from "../../common/InvApiService";
+import { getErrorMessage } from "@/util/error";
 
 type GeoLocationBox = {
   eastBoundLongitude: string;
@@ -103,11 +104,11 @@ const identifierDateOptions: Array<DropdownOption> = [
 export const subFields = <
   Key extends string,
   Value,
-  Field extends { [key: Key]: Value }
+  Field extends Record<Key, Value>
 >(
   field: Field
 ): Array<{ key: Key; value: Value }> =>
-  Object.entries(field)
+  (Object.entries(field) as Array<[Key, Value]>)
     .filter((item) => item[0] !== "value" && item[0] !== "type")
     .map((item) => {
       return { key: item[0], value: item[1] };
@@ -137,26 +138,26 @@ export const RECOMMENDED_FIELDS_LABELS = {
 export default class IdentifierModel implements Identifier {
   parentGlobalId: GlobalId;
   id: Id;
-  rsPublicId: ?string;
+  rsPublicId: string | null;
   doi: string;
   doiType: string;
   creatorName: string;
   creatorType: CreatorType;
-  creatorAffiliation: ?string;
-  creatorAffiliationIdentifier: ?string;
+  creatorAffiliation: string | null;
+  creatorAffiliationIdentifier: string | null;
   title: string; // item.name
-  publicUrl: ?URL;
+  publicUrl: URL | null;
   publisher: string;
   publicationYear: string;
   resourceType: string;
   resourceTypeGeneral: string;
-  url: ?URL;
+  url: URL | null;
   state: IGSNPublishingState = "draft";
-  subjects: ?Array<IdentifierSubject> = [];
-  descriptions: ?Array<IdentifierDescription> = [];
-  alternateIdentifiers: ?Array<AlternateIdentifier> = [];
-  dates: ?Array<IdentifierDate> = [];
-  geoLocations: ?ReadonlyArray<GeoLocation> = [];
+  subjects: Array<IdentifierSubject> | null = [];
+  descriptions: Array<IdentifierDescription> | null = [];
+  alternateIdentifiers: Array<AlternateIdentifier> | null = [];
+  dates: Array<IdentifierDate> | null = [];
+  geoLocations: ReadonlyArray<GeoLocation> | null = [];
   _links: Array<_LINK> = [];
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
@@ -259,34 +260,34 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Creator Name",
         value: this.creatorName,
-        handler: (v) => this.setCreatorName(v),
+        handler: (v) => this.setCreatorName(v as string),
       },
       {
         key: "Creator Type",
         value: this.creatorType,
-        handler: (v) => this.setCreatorType(v),
+        handler: (v) => this.setCreatorType(v as CreatorType),
         radioOptions: creatorTypeOptions,
       },
       {
         key: "Name",
         value: this.title,
-        handler: (v) => this.setTitle(v),
+        handler: (v) => this.setTitle(v as string),
       },
       {
         key: "Publisher",
         value: this.publisher,
-        handler: (v) => this.setPublisher(v),
+        handler: (v) => this.setPublisher(v as string),
       },
       {
         key: "Publication Year",
         value: this.publicationYear,
-        handler: (v) => this.setPublicationYear(v),
+        handler: (v) => this.setPublicationYear(v as string),
         isValid: (v) => typeof v === "string" && /^\d\d\d\d$/.test(v),
       },
       {
         key: "Resource Type",
         value: this.resourceType,
-        handler: (v) => this.setResourceType(v),
+        handler: (v) => this.setResourceType(v as string),
       },
     ];
   }
@@ -323,24 +324,25 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Subjects",
         value: this.subjects,
-        handler: (v) => this.setSubjects(v),
+        handler: (v) => this.setSubjects(v as Array<IdentifierSubject>),
       },
       {
         key: "Descriptions",
         value: this.descriptions,
-        handler: (v) => this.setDescriptions(v),
+        handler: (v) => this.setDescriptions(v as Array<IdentifierDescription>),
         options: identifierDescriptionOptions,
         selectAriaLabel: "Description Type",
       },
       {
         key: "Alternate Identifiers",
         value: this.alternateIdentifiers,
-        handler: (v) => this.setAlternateIdentifiers(v),
+        handler: (v) =>
+          this.setAlternateIdentifiers(v as Array<AlternateIdentifier>),
       },
       {
         key: "Dates",
         value: this.dates,
-        handler: (v) => this.setDates(v),
+        handler: (v) => this.setDates(v as Array<IdentifierDate>),
         options: identifierDateOptions,
         selectAriaLabel: "Event Type",
       },
@@ -471,8 +473,8 @@ export default class IdentifierModel implements Identifier {
           state: IGSNPublishingState;
           url: string;
           publicUrl: string;
-          creatorAffiliation: ?string;
-          creatorAffiliationIdentifier: ?string;
+          creatorAffiliation: string | null;
+          creatorAffiliationIdentifier: string | null;
         }>(`/identifiers/${this.id}/publish`, {});
         const {
           state,
@@ -499,18 +501,16 @@ export default class IdentifierModel implements Identifier {
       }
     } catch (error) {
       // in case of errors like 422 the server provides a specific response message that we want to display
-      const serverErrorResponse = error.response?.data;
       addAlert(
         mkAlert({
           title: `The identifier could not be published.`,
-          message:
-            serverErrorResponse?.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );
-      throw new Error(
-        `An error occurred while publishing the identifier: ${error}`
-      );
+      throw new Error("An error occurred while publishing the identifier", {
+        cause: error,
+      });
     }
   }
 
@@ -569,18 +569,16 @@ export default class IdentifierModel implements Identifier {
         );
       }
     } catch (error) {
-      const serverErrorResponse = error.response.data;
       addAlert(
         mkAlert({
           title: `The identifier could not be retracted.`,
-          message:
-            serverErrorResponse.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );
-      throw new Error(
-        `An error occurred while retracting the identifier: ${error}`
-      );
+      throw new Error("An error occurred while retracting the identifier", {
+        cause: error,
+      });
     }
   }
 
@@ -598,7 +596,11 @@ export default class IdentifierModel implements Identifier {
    * the UiStore as this class is used on the public page where the global
    * stores are not available as the user is not authenticated.
    */
-  async republish({ addAlert }: { addAlert: (Alert) => void }): Promise<void> {
+  async republish({
+    addAlert,
+  }: {
+    addAlert: (alert: Alert) => void;
+  }): Promise<void> {
     if (!this.ApiServiceBase)
       throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
@@ -620,18 +622,16 @@ export default class IdentifierModel implements Identifier {
         }>(`/identifiers/${id}/retract`, {});
         this.updateState(response.data.state);
       } catch (error) {
-        const serverErrorResponse = error.response.data;
         addAlert(
           mkAlert({
             title: `The identifier could not be republished.`,
-            message:
-              serverErrorResponse.message ?? error.message ?? "Unknown reason.",
+            message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           })
         );
-        throw new Error(
-          `An error occurred while retracting the identifier: ${error}`
-        );
+        throw new Error("An error occurred while retracting the identifier", {
+          cause: error,
+        });
       }
 
       // publish
@@ -640,8 +640,8 @@ export default class IdentifierModel implements Identifier {
           state: IGSNPublishingState;
           url: string;
           publicUrl: string;
-          creatorAffiliation: ?string;
-          creatorAffiliationIdentifier: ?string;
+          creatorAffiliation: string | null;
+          creatorAffiliationIdentifier: string | null;
         }>(`/identifiers/${id}/publish`, {});
         const {
           state,
@@ -671,21 +671,18 @@ export default class IdentifierModel implements Identifier {
          * publish step could fail. Should that happen, the identifier will be left in a registered
          * state and the user will need to manually re-trigger a publish step.
          */
-        const serverErrorResponse = error.response?.data;
         addAlert(
           mkAlert({
             title: `The identifier could not be republished.`,
             message:
               "Identifier has been retracted. Tap publish to try again.\n" +
-              (serverErrorResponse?.message ??
-                error.message ??
-                "Unknown reason."),
+              getErrorMessage(error, "Unknown reason."),
             variant: "error",
           })
         );
-        throw new Error(
-          `An error occurred while republishing the identifier: ${error}`
-        );
+        throw new Error("An error occurred while republishing the identifier", {
+          cause: error,
+        });
       }
     }
   }
