@@ -50,8 +50,9 @@ type SearchContextType = {
 };
 
 const DEFAULT_SEARCH_CONTEXT = {
-  search: getRootStore().searchStore.search,
-  differentSearchForSettingActiveResult: getRootStore().searchStore.search,
+  search: getRootStore().searchStore.search as Search,
+  differentSearchForSettingActiveResult: getRootStore().searchStore
+    .search as Search,
 };
 
 const SearchContext: Context<SearchContextType> = React.createContext(
