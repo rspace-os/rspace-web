@@ -359,7 +359,9 @@ describe("ActionsMenu", () => {
     expect(
       JSON.parse(
         ArrayUtils.head(mockAxios.history.post)
-          .map(({ data }: { data: string }) => data)
+          .flatMap(({ data }: { data?: string }) =>
+            Result.fromNullable(data, new Error("data is missing"))
+          )
           .orElse("")
       )
     ).toEqual(

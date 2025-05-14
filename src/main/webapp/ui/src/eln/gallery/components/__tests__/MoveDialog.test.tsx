@@ -53,18 +53,18 @@ describe("MoveDialog", () => {
 
     await waitFor(() => {
       const getUploadedFilesCalls = mockAxios.history.get.filter(
-        ({ url }: { url: string }) => /getUploadedFiles/.test(url)
+        ({ url }: { url?: string }) => /getUploadedFiles/.test(url ?? "")
       );
       expect(getUploadedFilesCalls.length).toBe(1);
     });
 
     const getUploadedFilesCalls = mockAxios.history.get.filter(
-      ({ url }: { url: string }) => /getUploadedFiles/.test(url)
+      ({ url }: { url?: string }) => /getUploadedFiles/.test(url ?? "")
     );
     expect(
       ArrayUtils.head(getUploadedFilesCalls)
-        .map(({ params }: { params: URLSearchParams }) =>
-          params.get("foldersOnly")
+        .map(({ params }: { params?: URLSearchParams }) =>
+          params?.get("foldersOnly")
         )
         .orElse("false")
     ).toEqual("true");
