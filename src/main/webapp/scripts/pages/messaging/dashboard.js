@@ -1,5 +1,6 @@
-// requires notification.js, messages.js, myrequests.js
+// requires notification.js, messages.js, myrequests.js, ../workspace/calendarDialog.js
 $(document).ready(function() {
+  console.debug("dashboard.js loaded");
   var messageListCSSclass = "messageList";
   var myrequestListCSSclass = "myrequestList";
   var notificationListCSSclass = "notificationList";
@@ -50,4 +51,9 @@ $(document).ready(function() {
   });
    
   unescapeMessageContent();
+
+  initCreateCalendarEntryDlg();
+  $('#createCalendarEntryDlgLink').click(function () {
+    $('#createCalendarEntryDlg').dialog('open');
+  });
 });
