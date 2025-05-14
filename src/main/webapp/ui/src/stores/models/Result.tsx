@@ -171,7 +171,7 @@ export { defaultEditableFields as defaultEditableResultFields };
 
 type ResultAttrs = {
   id: Id | null;
-  globalId: string | null;
+  globalId: GlobalId | null;
   type: ApiRecordType;
   name: string;
   description: string;

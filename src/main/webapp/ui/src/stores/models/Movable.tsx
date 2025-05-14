@@ -1,4 +1,4 @@
-import type GlobalId from "./Result";
+import { type GlobalId } from "../definitions/BaseRecord";
 import { isoToLocale } from "../../util/Util";
 import React from "react";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
@@ -10,28 +10,38 @@ import { type Location, type Container } from "../definitions/Container";
 import { type ReadAccessLevel } from "../definitions/Record";
 
 export class Movable {
-  parentContainers: ?Array<ContainerAttrs>;
-  immediateParentContainer: ?ContainerModel;
+  // @ts-expect-error Initialized by the concrete class that implement this one
+  parentContainers: Array<ContainerAttrs> | null;
+  // @ts-expect-error Initialized by initializeMovableMixin
+  immediateParentContainer: ContainerModel | null;
+  // @ts-expect-error Initialized by initializeMovableMixin
   allParentContainers: () => Array<Container>;
-  rootParentContainer: ?Container;
-  parentLocation: ?Location;
+  // @ts-expect-error Initialized by initializeMovableMixin
+  rootParentContainer: Container | null;
+  // @ts-expect-error Initialized by the concrete class that implement this one
+  parentLocation: Location | null;
+  // @ts-expect-error Initialized by the concrete class that implement this one
   lastNonWorkbenchParent: ContainerModel;
-  lastMoveDate: ?string;
+  // @ts-expect-error Initialized by the concrete class that implement this one
+  lastMoveDate: string | null;
+  // @ts-expect-error Initialized by the concrete class that implement this one
   created: string;
+  // @ts-expect-error A computed property defined by ./Result
   readAccessLevel: ReadAccessLevel;
 
   initializeMovableMixin(factory: Factory) {
     // first check required for 'public view' case
     if (this.parentContainers && this.parentContainers.length > 0) {
-      this.immediateParentContainer = factory.newRecord(
+      const immediateParentContainer = factory.newRecord(
         this.parentContainers[0]
-      );
+      ) as ContainerModel;
+      this.immediateParentContainer = immediateParentContainer;
       this.allParentContainers = () => [
-        this.immediateParentContainer,
-        ...this.immediateParentContainer.allParentContainers(),
+        immediateParentContainer,
+        ...(immediateParentContainer.allParentContainers?.() ?? []),
       ];
       this.parentContainers = null;
-      this.rootParentContainer = this.allParentContainers().pop();
+      this.rootParentContainer = this.allParentContainers().pop() ?? null;
     } else {
       this.immediateParentContainer = null;
       this.allParentContainers = () => [];
@@ -40,8 +50,10 @@ export class Movable {
     }
     if (this.lastNonWorkbenchParent)
       this.lastNonWorkbenchParent = factory.newRecord(
-        this.lastNonWorkbenchParent
-      );
+        this.lastNonWorkbenchParent as unknown as Record<string, unknown> & {
+          globalId: GlobalId;
+        }
+      ) as ContainerModel;
   }
 
   hasParentContainers(): boolean {

@@ -138,8 +138,10 @@ export default class SubSampleModel
   allParentContainers: (() => Array<ContainerModel>) | null = null;
   rootParentContainer: ContainerModel | null = null;
   immediateParentContainer: ContainerModel | null = null;
-  lastNonWorkbenchParent: string | null = null;
-  lastMoveDate: Date | null = null;
+  // @ts-expect-error lastNonWorkbenchParent is initialised by populateFromJson
+  lastNonWorkbenchParent: string | null;
+  // @ts-expect-error lastMoveDate is initialised by populateFromJson
+  lastMoveDate: Date | null;
   createOptionsParametersState: {
     split: { key: "split"; copies: number };
   };
