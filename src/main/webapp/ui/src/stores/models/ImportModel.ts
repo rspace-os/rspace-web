@@ -28,7 +28,8 @@ import { parseString } from "../../util/parsers";
 import { type Field as TemplateField } from "../definitions/Field";
 import { pick } from "../../util/unsafeUtils";
 import Result from "../../util/result";
-import { getErrorMessage } from "@/util/error";
+import { getErrorMessage } from "../../util/error";
+import * as Parsers from "../../util/parsers";
 
 export const Fields: { [fieldName: string]: symbol } = {
   name: Symbol.for("NAME"),
@@ -313,14 +314,14 @@ export default class Import {
    * of a suggested template. The user has the opportunity to then modify this
    * definition in whichever way the UI exposes this object.
    */
-  templateInfo: ?TemplateModel;
+  templateInfo: TemplateModel | null;
 
   /*
    * When importing using an existing template, this is the template chosen by
    * the user. Only the `id` is passed to the server and so no modifications
    * should be permitted by the UI.
    */
-  template: ?TemplateModel;
+  template: TemplateModel | null;
 
   /*
    * The column-to-field mappings, per recordType.
@@ -395,7 +396,7 @@ export default class Import {
     this.recordType = recordType;
     this.templateName = DEFAULT_NEW_TEMPLATE_NAME;
     this.templateInfo = null;
-    this.state = new StateMachine(transitionMapping, "initial", (x) => x);
+    this.state = new StateMachine(transitionMapping, "initial", (x) => x, null);
     this.createNewTemplate = true;
   }
 
@@ -411,7 +412,7 @@ export default class Import {
     this.createNewTemplate = value;
   }
 
-  setTemplate(template: ?TemplateModel) {
+  setTemplate(template: TemplateModel | null) {
     this.template = template;
     if (template) void template.fetchAdditionalInfo();
   }
@@ -835,27 +836,27 @@ export default class Import {
     fields: Array<any>;
     name: string;
   } {
-    if (!this.createNewTemplate) return pick("id")(this.template);
+    if (!this.createNewTemplate)
+      return pick("id")(this.template) as { id: TemplateModel["id"] };
     if (!this.templateInfo) throw new Error("TemplateInfo is null");
     const templateFieldWithMappings: Array<{
       field: TemplateField;
-      mapping: ?ColumnFieldMap;
+      mapping: ColumnFieldMap | null;
     }> = ArrayUtils.zipWith<
       TemplateField,
-      ?ColumnFieldMap,
-      { field: TemplateField; mapping: ?ColumnFieldMap }
+      ColumnFieldMap | null,
+      { field: TemplateField; mapping: ColumnFieldMap | null }
     >(
       this.templateInfo.fields,
-      this.templateInfo.fields.map(({ name }) =>
-        this.samplesMappings.find((f) => f.fieldName === name)
+      this.templateInfo.fields.map(
+        ({ name }) =>
+          this.samplesMappings.find((f) => f.fieldName === name) ?? null
       ),
       (f, m) => ({ field: f, mapping: m })
     );
     const processedFields = templateFieldWithMappings
       .filter(({ mapping }) => Boolean(mapping))
-      // $FlowExpectedError[incompatible-use] mapping is now != null
       .filter(({ mapping: { selected } }) => selected)
-      // $FlowExpectedError[incompatible-use] mapping is now != null
       .filter(({ mapping: { field } }) => field === Fields.custom)
       .map(({ field, mapping: { fieldName, chosenFieldType, options } }) => ({
         ...field,
@@ -900,7 +901,7 @@ export default class Import {
   }
 
   makeMappingsObject(mappings: Array<ColumnFieldMap>): {
-    [string]: string;
+    [columnName: string]: string;
   } {
     const name = this.findParsedColumnName(mappings, Fields.name);
     if (!name) throw new Error("Name is a required field");
@@ -1054,7 +1055,7 @@ export default class Import {
               details: results
                 .map(({ record }) => {
                   const newRecord = factory.newRecord(record);
-                  newRecord.populateFromJson(factory, record);
+                  newRecord.populateFromJson(factory, record, null);
                   return newRecord;
                 })
                 .map((record) => ({
@@ -1074,7 +1075,10 @@ export default class Import {
         this.setTemplateName(DEFAULT_NEW_TEMPLATE_NAME);
       }
     } catch (error) {
-      const gatewayTimeout = error.response?.status === 504;
+      const gatewayTimeout =
+        Parsers.objectPath(["response", "status"], error)
+          .flatMap(Parsers.isNumber)
+          .orElse(-1) === 504;
       this.state.transitionTo("nameSelected");
       uiStore.addAlert(
         mkAlert({
@@ -1178,7 +1182,9 @@ export default class Import {
   }
 
   // group all byType computeds
-  byRecordType(prop: string): any {
+  byRecordType(
+    prop: "label" | "fileLoaded" | "file" | "mappings" | "resetMappings"
+  ): unknown {
     const byType = {
       label: this.labelByRecordType,
       fileLoaded: this.fileByRecordTypeLoaded,
