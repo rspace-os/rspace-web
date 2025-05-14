@@ -14,18 +14,31 @@ import {
 } from "../../components/ValidatingSubmitButton";
 
 export default class ExtraFieldModel implements ExtraField {
+  // @ts-expect-error Set by the call to setAttributes
   id: Id;
+  // @ts-expect-error Set by the call to setAttributes
   globalId: GlobalId;
+  // @ts-expect-error Set by the call to setAttributes
   parentGlobalId: GlobalId;
+  // @ts-expect-error Set by the call to setAttributes
   type: ExtraFieldType;
+  // @ts-expect-error Set by the call to setAttributes
   name: string;
+  // @ts-expect-error Set by the call to setAttributes
   content: string;
+  // @ts-expect-error Set by the call to setAttributes
   editable: boolean;
+  // @ts-expect-error Set by the call to setAttributes
   editing: boolean;
+  // @ts-expect-error Set by the call to setAttributes
   newFieldRequest: boolean;
+  // @ts-expect-error Set by the call to setAttributes
   deleteFieldRequest: boolean;
+  // @ts-expect-error Set by the call to setAttributes
   lastModified: string;
+  // @ts-expect-error Set by the call to setAttributes
   initial: boolean;
+  // @ts-expect-error Set by the call to setAttributes
   owner: InventoryRecord;
   invalidInput: boolean;
 
