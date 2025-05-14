@@ -290,8 +290,8 @@ export default class Result<T> {
    * A simple helper wrapped around `any` above, that should multiple succeed
    * then only the first is returned.
    */
-  static first<U>(r: Result<U>, ...rest: ReadonlyArray<Result<U>>): Result<U> {
-    return Result.any(r, ...rest).map((oks) => oks[0]);
+  static first<U>(...args: ReadonlyArray<Result<U>>): Result<U> {
+    return Result.any(...args).map((oks) => oks[0]);
   }
 
   /**

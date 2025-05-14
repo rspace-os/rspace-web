@@ -20,12 +20,15 @@ import {
 } from "mobx";
 import React from "react";
 import { type InventoryRecord } from "../definitions/InventoryRecord";
-import { type Id } from "../definitions/BaseRecord";
+import { GlobalId, type Id } from "../definitions/BaseRecord";
 import { type ExportOptions } from "../definitions/Search";
 import { type UnitCategory } from "../stores/UnitStore";
 import { showToastWhilstPending } from "../../util/alerts";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
+import { getErrorMessage } from "@/util/error";
 
-export type ListOfMaterialsId = ?number;
+export type ListOfMaterialsId = number | null;
 export type ElnFieldId = number;
 export type ElnDocumentId = number;
 
@@ -36,16 +39,16 @@ export type Quantity = {
 
 export type MaterialAttrs = {
   invRec: InventoryRecord;
-  usedQuantity: ?Quantity;
+  usedQuantity: Quantity | null;
 };
 
 type MaterialBackendParams = {
   invRec: {
-    id: ?number;
+    id: number | null;
     type: string;
   };
-  usedQuantity: ?Quantity;
-  updateInventoryQuantity: ?boolean;
+  usedQuantity: Quantity | null;
+  updateInventoryQuantity: boolean | null;
 };
 
 /*
@@ -53,17 +56,19 @@ type MaterialBackendParams = {
  */
 export class Material {
   invRec: InventoryRecord;
-  usedQuantity: ?Quantity;
-  updateInventoryQuantity: ?boolean;
+  usedQuantity: Quantity | null;
+  updateInventoryQuantity: boolean | null;
   editing: boolean = false;
-  originalUsedValue: number;
-  originalUsedId: number;
-  originalInventoryValue: number;
-  originalInventoryId: number;
+  originalUsedValue: number | null = null;
+  originalUsedId: number | null = null;
+  originalInventoryValue: number | null = null;
+  originalInventoryId: number | null = null;
   usedQuantityDelta: number = 0;
   selected: boolean = false;
 
-  constructor(attrs: MaterialAttrs) {
+  constructor(
+    attrs: MaterialAttrs & { updateInventoryQuantity?: boolean | null }
+  ) {
     makeObservable(this, {
       invRec: observable,
       usedQuantity: observable,
@@ -129,12 +134,16 @@ export class Material {
     // based on checkbox, update store before/without saving, to display an immediate estimate
     if (this.invRec instanceof SubSampleModel && this.usedQuantity) {
       const r = this.invRec;
+      if (this.originalInventoryId === null)
+        throw new Error("originalInventoryId has not been initialised");
       const revertedDelta = fromCommonUnit(
         this.updateInventoryQuantity && !isNaN(this.usedQuantityDelta)
           ? this.usedQuantityDelta
           : 0,
         this.originalInventoryId
       );
+      if (this.originalInventoryValue === null)
+        throw new Error("originalInventoryValue has not been initialised");
       const revertedOriginalInventoryValue = fromCommonUnit(
         this.originalInventoryValue,
         this.originalInventoryId
@@ -151,6 +160,10 @@ export class Material {
   cancelChange() {
     const usedQ = this.usedQuantity;
     if (usedQ) {
+      if (this.originalUsedValue === null)
+        throw new Error("originalUsedValue has not been initialised");
+      if (this.originalUsedId === null)
+        throw new Error("originalUsedId has not been initialised");
       usedQ.numericValue = fromCommonUnit(
         this.originalUsedValue,
         this.originalUsedId
@@ -203,6 +216,12 @@ export class Material {
       this.updateDelta(isNaN(additionalValue) ? 0 : additionalValue, unitId);
 
       /* update used quantity value */
+      if (this.originalUsedValue === null)
+        throw new Error("originalUsedValue has not been initialised");
+      if (this.originalUsedId === null)
+        throw new Error("originalUsedId has not been initialised");
+      if (this.usedQuantity === null)
+        throw new Error("usedQuantity has not been initialised");
       const newValue = this.originalUsedValue + newDelta;
       this.usedQuantity.numericValue = fromCommonUnit(
         newValue,
@@ -215,6 +234,8 @@ export class Material {
     const r = this.invRec;
     if (r instanceof SubSampleModel) {
       const roundedDelta = parseFloat(this.usedQuantityDelta.toFixed(3)) ?? 0;
+      if (this.originalInventoryValue === null)
+        throw new Error("originalInventoryValue has not been initialised");
       const remainingAmount = this.originalInventoryValue;
       return roundedDelta <= remainingAmount;
     }
@@ -241,7 +262,7 @@ export class Material {
     return !isNaN(this.usedQuantityDelta) && this.usedQuantityDelta !== 0;
   }
 
-  quantityUnitLabel(unitId: ?number): string {
+  quantityUnitLabel(unitId: number | null): string {
     if (!unitId) return "?";
     const unitStore = getRootStore().unitStore;
     const unit = unitStore.getUnit(unitId);
@@ -274,18 +295,17 @@ export class Material {
 }
 
 export type ListOfMaterialsAttrs = {
-  id: ?number;
+  id: number | null;
   name: string;
   description: string;
   elnFieldId: number;
   materials: Array<{
     invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs;
-    usedQuantity: ?Quantity;
+    usedQuantity: Quantity | null;
   }>;
 };
 
 type ListOfMaterialsBackendParams = {
-  id: ListOfMaterialsId;
   name: string;
   description: string;
   elnFieldId: ElnFieldId;
@@ -301,11 +321,12 @@ export class ListOfMaterials {
   description: string;
   elnFieldId: ElnFieldId;
   materials: Array<Material>;
-  loading: boolean;
+  loading: boolean = false;
+  // @ts-expect-error Is definitely set in the constructor
   canEdit: boolean;
-  editingMode: boolean;
+  editingMode: boolean = false;
   pickerSearch: Search;
-  additionalQuantity: ?Quantity; // shared by all selected materials
+  additionalQuantity: Quantity | null = null; // shared by all selected materials
 
   constructor(attrs: ListOfMaterialsAttrs) {
     makeObservable(this, {
@@ -346,7 +367,9 @@ export class ListOfMaterials {
       (m) =>
         new Material({
           ...m,
-          invRec: factory.newRecord(m.invRec),
+          invRec: factory.newRecord(
+            m.invRec as Record<string, unknown> & { globalId: GlobalId }
+          ),
         })
     );
     this.setLoading(false);
@@ -436,7 +459,7 @@ export class ListOfMaterials {
     this.description = description;
   }
 
-  setAdditionalQuantity(additionalQuantity: ?Quantity) {
+  setAdditionalQuantity(additionalQuantity: Quantity | null) {
     this.additionalQuantity = additionalQuantity;
   }
 
@@ -448,7 +471,7 @@ export class ListOfMaterials {
           new Material({
             invRec: r,
             usedQuantity:
-              r instanceof SubSampleModel
+              r instanceof SubSampleModel && r.quantity !== null
                 ? { unitId: r.quantity.unitId, numericValue: 0 }
                 : null,
           })
@@ -468,7 +491,12 @@ export class ListOfMaterials {
   }
 
   get paramsForBackend(): ListOfMaterialsBackendParams {
-    const bParams: any = { ...this };
+    const bParams: {
+      materials: ReadonlyArray<Material>;
+    } & ListOfMaterialsBackendParams & {
+        id?: unknown;
+        pickerSearch?: unknown;
+      } = { ...this };
     delete bParams.id;
     delete bParams.pickerSearch;
     return {
@@ -550,19 +578,29 @@ export class ListOfMaterials {
         elnFieldId: this.elnFieldId,
       });
     } catch (error) {
-      const serverErrorResponse = error.response?.data;
+      const data = Parsers.objectPath(["response", "data"], error)
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull);
+      const errors = data
+        .flatMap(Parsers.getValueWithKey("errors"))
+        .flatMap(Parsers.isArray)
+        .flatMap((e) => Result.any(...e.map(Parsers.isString)))
+        .orElse([]);
+      const message = data
+        .flatMap(Parsers.getValueWithKey("message"))
+        .orElseTry(() =>
+          Parsers.isObject(error)
+            .flatMap(Parsers.isNotNull)
+            .flatMap((e) => Parsers.getValueWithKey("message")(e))
+        )
+        .flatMap(Parsers.isString)
+        .orElse("Unknown reason.");
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `Something went wrong while updating ${this.name}`,
-          message:
-            Array.isArray(serverErrorResponse.errors) &&
-            serverErrorResponse.errors.length > 0
-              ? "Expand for more information."
-              : serverErrorResponse.message ??
-                error.message ??
-                "Unknown reason.",
+          message: errors.length > 0 ? "Expand for more information." : message,
           variant: "error",
-          details: serverErrorResponse.errors.map((e) => ({
+          details: errors.map((e) => ({
             title: e,
             variant: "error",
           })),
@@ -610,30 +648,41 @@ export class ListOfMaterials {
         elnFieldId: this.elnFieldId,
       });
     } catch (error) {
-      const serverErrorResponse = error.response?.data;
+      const data = Parsers.objectPath(["response", "data"], error)
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull);
+      const errors = data
+        .flatMap(Parsers.getValueWithKey("errors"))
+        .flatMap(Parsers.isArray)
+        .flatMap((e) => Result.any(...e.map(Parsers.isString)))
+        .orElse([]);
+      const message = data
+        .flatMap(Parsers.getValueWithKey("message"))
+        .orElseTry(() =>
+          Parsers.isObject(error)
+            .flatMap(Parsers.isNotNull)
+            .flatMap((e) => Parsers.getValueWithKey("message")(e))
+        )
+        .flatMap(Parsers.isString)
+        .orElse("Unknown reason.");
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `Something went wrong while updating ${this.name}`,
-          message:
-            Array.isArray(serverErrorResponse.errors) &&
-            serverErrorResponse.errors.length > 0
-              ? "Expand for more information."
-              : serverErrorResponse.message ??
-                error.message ??
-                "Unknown reason.",
+          message: errors.length > 0 ? "Expand for more information." : message,
           variant: "error",
-          details: serverErrorResponse.errors.map((e) => ({
+          details: errors.map((e) => ({
             title: e,
             variant: "error",
           })),
         })
       );
-      // $FlowExpectedError[incompatible-type] this.id !== null
       console.error(`Error updating List of Materials ${this.id}`, error);
-      if (error.response.status === 404)
-        throw new Error("Resource could not be found.");
-      if (error.response.status === 422)
-        throw new Error("Query could not be processed.");
+      Parsers.objectPath(["response", "status"], error)
+        .flatMap(Parsers.isNumber)
+        .do((status) => {
+          if (status === 404) throw new Error("Resource could not be found.");
+          if (status === 422) throw new Error("Query could not be processed.");
+        });
       throw error;
     } finally {
       this.setLoading(false);
@@ -673,8 +722,7 @@ export class ListOfMaterials {
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `Something went wrong while deleting ${this.name}`,
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );
@@ -742,29 +790,41 @@ export class ListOfMaterials {
         elnFieldId: this.elnFieldId,
       });
     } catch (error) {
-      const serverErrorResponse = error.response?.data;
+      const data = Parsers.objectPath(["response", "data"], error)
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull);
+      const errors = data
+        .flatMap(Parsers.getValueWithKey("errors"))
+        .flatMap(Parsers.isArray)
+        .flatMap((e) => Result.any(...e.map(Parsers.isString)))
+        .orElse([]);
+      const message = data
+        .flatMap(Parsers.getValueWithKey("message"))
+        .orElseTry(() =>
+          Parsers.isObject(error)
+            .flatMap(Parsers.isNotNull)
+            .flatMap((e) => Parsers.getValueWithKey("message")(e))
+        )
+        .flatMap(Parsers.isString)
+        .orElse("Unknown reason.");
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `Something went wrong while exporting ${this.name}`,
-          message:
-            Array.isArray(serverErrorResponse.errors) &&
-            serverErrorResponse.errors.length > 0
-              ? "Expand for more information."
-              : serverErrorResponse.message ??
-                error.message ??
-                "Unknown reason.",
+          message: errors.length > 0 ? "Expand for more information." : message,
           variant: "error",
-          details: serverErrorResponse.errors.map((e) => ({
+          details: errors.map((e) => ({
             title: e,
             variant: "error",
           })),
         })
       );
       console.error(`Error exporting List of Materials ${this.id}`, error);
-      if (error.response.status === 404)
-        throw new Error("Resource could not be found.");
-      if (error.response.status === 422)
-        throw new Error("Query could not be processed.");
+      Parsers.objectPath(["response", "status"], error)
+        .flatMap(Parsers.isNumber)
+        .do((status) => {
+          if (status === 404) throw new Error("Resource could not be found.");
+          if (status === 422) throw new Error("Query could not be processed.");
+        });
       throw error;
     } finally {
       this.setLoading(false);
@@ -776,12 +836,9 @@ export class ListOfMaterials {
     if (!peopleStore.currentUser) throw new Error("Current user is not known.");
     const currentUser = peopleStore.currentUser;
 
-    const allMaterials: RsSet<ContainerModel | SubSampleModel> = new RsSet(
-      this.materials
-    )
-      // $FlowExpectedError[incompatible-type-arg] isMovable is only true for Container and SubSamples
+    const allMaterials = new RsSet(this.materials)
       .map((m) => m.invRec)
-      .filter((r) => r.isMovable());
+      .filter((r) => r.isMovable()) as RsSet<ContainerModel | SubSampleModel>;
     const parentIsBench = allMaterials.filter((r) =>
       r.isOnCurrentUsersWorkbench()
     );
