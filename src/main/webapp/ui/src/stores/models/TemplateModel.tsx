@@ -210,10 +210,10 @@ export default class TemplateModel extends SampleModel implements Template {
     }
   }
 
-  async fetchAdditionalInfo(): Promise<void> {
-    if (this.fetchingAdditionalInfo || !this.id) {
-      await this.fetchingAdditionalInfo;
-      return;
+  async fetchAdditionalInfo(): Promise<{ data: object }> {
+    if (!this.id) throw new Error("Template doesn't have an id");
+    if (this.fetchingAdditionalInfo) {
+      return this.fetchingAdditionalInfo;
     }
     const id = this.id;
     this.setLoading(true);
@@ -228,6 +228,7 @@ export default class TemplateModel extends SampleModel implements Template {
       runInAction(() => {
         this.infoLoaded = true;
       });
+      return { data };
     } catch (error) {
       console.error(error);
       throw error;

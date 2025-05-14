@@ -98,9 +98,9 @@ export type ContainerInContainerParams = {
 };
 
 export type ContainerAttrs = {
-  id: ?Id;
+  id: Id | null;
   type: string;
-  globalId: ?GlobalId;
+  globalId: GlobalId | null;
   name: string;
   canStoreContainers: boolean;
   canStoreSamples: boolean;
@@ -115,12 +115,13 @@ export type ContainerAttrs = {
     }
   >;
   gridLayout: GridLayout | null;
-  cType: string;
+  cType: ContainerType;
   locationsCount: number | null;
   contentSummary: ContentSummary | null;
   image?: string;
   parentContainers: Array<ContainerAttrs>;
   lastNonWorkbenchParent: ContainerAttrs | null;
+  parentLocation: Location | null;
   lastMoveDate: Date | null;
   owner: PersonAttrs | null;
   created: string | null;
@@ -153,6 +154,7 @@ const DEFAULT_CONTAINER: ContainerAttrs = {
   contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0 },
   // user bench is added to parentConatiners for new Movable
   parentContainers: [],
+  parentLocation: null,
   lastNonWorkbenchParent: null,
   lastMoveDate: null,
   owner: null,
@@ -215,13 +217,14 @@ export default class ContainerModel
   // @ts-expect-error contentSearch is initialised by populateFromJson
   contentSearch: SearchInterface;
   // @ts-expect-error parentContainers is initialised by populateFromJson
-  parentContainers: Array<Container>;
+  parentContainers: Array<ContainerAttrs>;
   // @ts-expect-error parentLocation is initialised by populateFromJson
   parentLocation: Location | null;
   // @ts-expect-error allParentContainers is initialised by populateFromJson
   allParentContainers: (() => Array<Container>) | null;
   // @ts-expect-error rootParentContainer is initialised by populateFromJson
   rootParentContainer: Container | null;
+  // @ts-expect-error initialised by movable
   immediateParentContainer: Container | null;
   // @ts-expect-error lastNonWorkbenchParent is initialised by populateFromJson
   lastNonWorkbenchParent: Container | null;
@@ -308,11 +311,14 @@ export default class ContainerModel
 
   populateFromJson(
     factory: Factory,
-    params: object,
+    passedParams: object,
     defaultParams: object = {}
   ) {
-    super.populateFromJson(factory, params, defaultParams);
-    params = { ...DEFAULT_CONTAINER, ...params };
+    super.populateFromJson(factory, passedParams, defaultParams);
+    const params = {
+      ...DEFAULT_CONTAINER,
+      ...passedParams,
+    } as ContainerAttrs;
     this.canStoreContainers = params.canStoreContainers;
     this.canStoreSamples = params.canStoreSamples;
     this.quantity = params.quantity;
@@ -331,8 +337,10 @@ export default class ContainerModel
         };
     this.parentLocation = params.parentLocation;
     this.parentContainers = params.parentContainers;
+    // @ts-expect-error lastNonWorkbenchParent is enriched by movable
     this.lastNonWorkbenchParent = params.lastNonWorkbenchParent;
     this.lastMoveDate = params.lastMoveDate;
+    // @ts-expect-error is on movable
     this.initializeMovableMixin(factory);
 
     const searchParams = {
@@ -340,7 +348,11 @@ export default class ContainerModel
         parentGlobalId: this.globalId,
       },
       uiConfig: {
-        allowedSearchModules: new Set(["TYPE", "OWNER", "TAG"]),
+        allowedSearchModules: new Set([
+          "TYPE" as const,
+          "OWNER" as const,
+          "TAG" as const,
+        ]),
         allowedTypeFilters: this.allowedTypeFilters,
         hideContentsOfChip: true,
       },
@@ -349,17 +361,25 @@ export default class ContainerModel
     if (!this.contentSearch) this.contentSearch = new Search(searchParams);
     void this.contentSearch.setSearchView(cTypeToDefaultSearchView(this.cType));
 
-    const locations: Array<Location> = (params.locations ?? []).map((l) => {
-      const content = l.content ? factory.newRecord(l.content) : null;
-      content?.populateFromJson(factory, l.content);
+    const locations: Array<Location> = (
+      (params.locations ?? []) as Array<LocationAttrs>
+    ).map((l) => {
+      const content = l.content
+        ? factory.newRecord(
+            l.content as unknown as Record<string, string> & {
+              globalId: GlobalId;
+            }
+          )
+        : null;
+      content?.populateFromJson(factory, l.content, null);
       return new LocationModel({
         ...l,
-        content,
+        content: content as ContainerModel | SubSampleModel | null,
         parentContainer: this,
       });
     });
     this.contentSearch.cacheFetcher.setResults(
-      locations.map((l) => l.content).filter(Boolean)
+      ArrayUtils.filterNull(locations.map((l) => l.content))
     );
     this.initializedLocations = false;
     if (this.cType === "LIST") this.locations = locations;
@@ -380,7 +400,7 @@ export default class ContainerModel
       ).flat();
     if (this.locations) {
       this.unchangedLocationsIds = Object.freeze(
-        this.locations.map((l) => l.id)
+        ArrayUtils.filterNull(this.locations.map((l) => l.id))
       );
       this.initializedLocations = true;
     }
@@ -403,7 +423,7 @@ export default class ContainerModel
     return mapPermissioned(this.contentSummary, ({ totalCount }) => totalCount);
   }
 
-  get hasEnoughSpace(): ?boolean {
+  get hasEnoughSpace(): boolean | null {
     if (this.cType === "LIST") return true;
     if (this.cType === "WORKBENCH") return true;
     const locations = this.locations;
@@ -411,8 +431,8 @@ export default class ContainerModel
 
     const selectedResults = new RsSet(getRootStore().moveStore.selectedResults);
     const gIdsOfItemsBeingMoved = selectedResults.map((rec) => rec.globalId);
-    const gIdsOfContentOfLocations = new RsSet(this.locations).map(
-      (l) => l.content?.globalId
+    const gIdsOfContentOfLocations = new RsSet(this.locations).map((l) =>
+      l.content === null ? null : l.content.globalId
     );
     const gIdsOfItemsBeingMovedThatAreYetToBePlaced =
       gIdsOfItemsBeingMoved.subtract(gIdsOfContentOfLocations);
@@ -420,7 +440,7 @@ export default class ContainerModel
     return numberOfEmptySlots >= gIdsOfItemsBeingMovedThatAreYetToBePlaced.size;
   }
 
-  get isFull(): ?boolean {
+  get isFull(): boolean | null {
     if (!this.availableLocations.isAccessible) return null;
     return Number(this.availableLocations.value) === 0;
   }
@@ -488,14 +508,15 @@ export default class ContainerModel
     ];
   }
 
-  get dimensions(): ?[number | "", number | ""] {
+  get dimensions(): [number | "", number | ""] | null {
     return this.gridLayout
       ? [this.gridLayout.columnsNumber, this.gridLayout.rowsNumber]
       : null;
   }
 
   get selectedLocations(): Array<Location> | null {
-    return this.locations?.filter((l: Location) => l.selected);
+    if (this.locations === null) return null;
+    return this.locations.filter((l: Location) => l.selected);
   }
 
   get selectedResults(): Array<Container | SubSample> {
@@ -535,7 +556,7 @@ export default class ContainerModel
     );
   }
 
-  get sortedLocations(): ?Array<Location> {
+  get sortedLocations(): Array<Location> | null {
     const locations = this.locations;
     if (!locations) return null;
     const existingLocations = locations.filter(
@@ -550,9 +571,9 @@ export default class ContainerModel
 
   get getLocationsForApi(): Array<
     | {
-        id: ?number;
-        coordX: ?number;
-        coordY: ?number;
+        id: number | null;
+        coordX: number | null;
+        coordY: number | null;
         newLocationRequest?: boolean;
       }
     | {
@@ -680,20 +701,21 @@ export default class ContainerModel
   ) {
     if (this.isWorkbench) {
       this.setLoading(false);
-      return;
+      throw new Error("Can't fetch details of bench");
     }
+    let data;
     if (this.fetchingAdditionalInfo) {
-      await this.fetchingAdditionalInfo;
-      return;
+      data = (await this.fetchingAdditionalInfo).data;
+    } else {
+      runInAction(() => {
+        this.initializedLocations = false;
+      });
+      this.fetchingAdditionalInfo = super.fetchAdditionalInfo(
+        silent,
+        queryParameters
+      );
+      data = (await this.fetchingAdditionalInfo).data;
     }
-    runInAction(() => {
-      this.initializedLocations = false;
-    });
-    this.fetchingAdditionalInfo = super.fetchAdditionalInfo(
-      silent,
-      queryParameters
-    );
-    await this.fetchingAdditionalInfo;
     this.setLoading(true);
 
     if (this.cType === "IMAGE") {
@@ -704,6 +726,7 @@ export default class ContainerModel
     }
 
     this.setLoading(false);
+    return { data };
   }
 
   findLocation(col: number, row: number): Location | undefined {
@@ -886,7 +909,7 @@ export default class ContainerModel
     return Boolean(this.selectedResults[0]);
   }
 
-  contextMenuDisabled(): ?string {
+  contextMenuDisabled(): string | null {
     const listViewAndASelectedRecord =
       this.contentSearch.searchView === "LIST" && this.hasSelectedRecord;
     const gridOrImageViewAndSelectedLocation =
@@ -909,16 +932,17 @@ export default class ContainerModel
   }
 
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
-    const renderAvailableLocations = (): ?string => {
+    const renderAvailableLocations = (): string | null => {
       if (!this.availableLocations.isAccessible) return null;
       if (isFinite(this.availableLocations.value))
         return `${this.availableLocations.value}`;
       return "Unlimited";
     };
 
-    const options = new Map([
+    const options: AdjustableTableRowOptions<string> = new Map([
       ...super.adjustableTableOptions(),
-      ...this.adjustableTableOptions_movable(),
+      // @ts-expect-error adjustableTableOptions_movable is on the mixed in class, Movable
+      ...(this.adjustableTableOptions_movable() as AdjustableTableRowOptions<string>),
     ]);
     if (this.readAccessLevel !== "full") {
       options.set("Contents", () => ({ renderOption: "node", data: null }));
@@ -1065,8 +1089,10 @@ export default class ContainerModel
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): { [key in keyof ContainerEditableFields]: ?string } & {
-    [key in keyof ContainerUneditableFields]: ?string;
+  get noValueLabel(): {
+    [key in keyof ContainerEditableFields]: string | null;
+  } & {
+    [key in keyof ContainerUneditableFields]: string | null;
   } {
     return {
       ...super.noValueLabel,
@@ -1074,7 +1100,7 @@ export default class ContainerModel
     };
   }
 
-  get permalinkURL(): ?URL {
+  get permalinkURL(): URL | null {
     if (!this.globalId) return null;
     if (this.isWorkbench)
       return `/inventory/search?parentGlobalId=${this.globalId}`;
@@ -1086,7 +1112,7 @@ export default class ContainerModel
       void this.contentSearch.setSearchView(
         cTypeToDefaultSearchView(this.cType)
       );
-      void this.contentSearch.fetcher.performInitialSearch();
+      void this.contentSearch.fetcher.performInitialSearch({});
     }
   }
 
@@ -1111,7 +1137,7 @@ export default class ContainerModel
     };
   }
 
-  get dataAttachedToRecordCreatedAnaylticsEvent(): {} {
+  get dataAttachedToRecordCreatedAnaylticsEvent(): object {
     return {
       ...super.dataAttachedToRecordCreatedAnaylticsEvent,
       cType: this.cType,
@@ -1224,7 +1250,7 @@ classMixin(ContainerModel, Movable);
 
 type BatchContainerEditableFields = ResultCollectionEditableFields;
 
-/*
+/**
  * This is a wrapper class around a set of Containers, making it easier to
  * perform batch operations e.g. editing.
  */
@@ -1245,11 +1271,13 @@ export class ContainerCollection
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): { [key in keyof BatchContainerEditableFields]: ?string } {
+  get noValueLabel(): {
+    [key in keyof BatchContainerEditableFields]: string | null;
+  } {
     return super.noValueLabel;
   }
 
-  setFieldsDirty(newFieldValues: any): void {
+  setFieldsDirty(newFieldValues: object): void {
     super.setFieldsDirty(newFieldValues);
   }
 

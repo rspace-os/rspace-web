@@ -305,7 +305,7 @@ export interface InventoryRecord
    * populate with the full view, it MUST fetch the latest version of that
    * data.
    */
-  fetchAdditionalInfo(): Promise<void>;
+  fetchAdditionalInfo(): Promise<{ data: object }>;
 
   /*
    * The marshalled version of the data modelled by the implementation of this

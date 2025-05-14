@@ -373,10 +373,11 @@ export default class SampleModel
     return "sample";
   }
 
-  async fetchAdditionalInfo(silent: boolean = false) {
+  async fetchAdditionalInfo(
+    silent: boolean = false
+  ): Promise<{ data: object }> {
     if (this.fetchingAdditionalInfo) {
-      await this.fetchingAdditionalInfo;
-      return;
+      return this.fetchingAdditionalInfo;
     }
     this.fetchingAdditionalInfo = new Promise((resolve, reject) => {
       super
@@ -405,7 +406,7 @@ export default class SampleModel
         })
         .catch(reject);
     });
-    await this.fetchingAdditionalInfo;
+    return this.fetchingAdditionalInfo;
   }
 
   get minTempValue(): number | null {
