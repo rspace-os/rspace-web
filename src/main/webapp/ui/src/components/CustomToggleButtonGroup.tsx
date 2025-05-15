@@ -1,5 +1,3 @@
-// @flow
-
 /*
  * A slightly restyled Material UI button group that allows for toggling
  * between a small set of possible values.
@@ -9,19 +7,17 @@
  */
 import { withStyles } from "Styles";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import { type ComponentType, type ElementProps } from "react";
 
-const CustomToggleButtonGroup: ComponentType<
-  ElementProps<typeof ToggleButtonGroup>
-> = withStyles<ElementProps<typeof ToggleButtonGroup>, { root: string }>(
-  (theme) => ({
-    root: {
-      border: theme.borders.section,
-      backgroundColor: theme.palette.background.default,
-      display: "flex !important",
-    },
-  })
-)(ToggleButtonGroup);
+const CustomToggleButtonGroup = withStyles<
+  Record<string, never>,
+  { root: string }
+>((theme) => ({
+  root: {
+    border: theme.borders.section,
+    backgroundColor: theme.palette.background.default,
+    display: "flex !important",
+  },
+}))(ToggleButtonGroup);
 
 CustomToggleButtonGroup.displayName = "CustomToggleButtonGroup";
 export default CustomToggleButtonGroup;
