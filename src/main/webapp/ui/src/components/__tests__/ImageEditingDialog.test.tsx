@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
@@ -25,10 +24,10 @@ const readAsDataUrl = (file: Blob): Promise<string> =>
     const reader = new FileReader();
     reader.onload = () => {
       // $FlowExpectedError[incompatible-cast] reader.result will be string because we called readAsDataUrl
-      resolve((reader.result: string));
+      resolve(reader.result as string);
     };
     reader.onerror = () => {
-      reject(reader.error);
+      reject(reader.error as Error);
     };
     reader.readAsDataURL(file);
   });
@@ -37,6 +36,7 @@ describe("ImageEditingDialog", () => {
   test("Should have no axe violations.", async () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    if (ctx === null) throw new Error("could not get canvas");
     // 600px to negate any scaling effects
     ctx.canvas.width = 600;
     ctx.canvas.height = 400;
@@ -44,7 +44,10 @@ describe("ImageEditingDialog", () => {
     ctx.fillRect(10, 10, 150, 100);
 
     const blob: Blob = await new Promise((resolve) => {
-      canvas.toBlob(resolve);
+      canvas.toBlob((b: Blob | null) => {
+        if (b === null) throw new Error("toBlob failed");
+        resolve(b);
+      });
     });
 
     const { baseElement } = render(
@@ -78,6 +81,7 @@ describe("ImageEditingDialog", () => {
 
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
+          if (ctx === null) throw new Error("could not get canvas");
           // 600px to negate any scaling effects
           ctx.canvas.width = 600;
           ctx.canvas.height = 400;
@@ -85,10 +89,13 @@ describe("ImageEditingDialog", () => {
           ctx.fillRect(10, 10, 150, 100);
 
           const blob: Blob = await new Promise((resolve) => {
-            canvas.toBlob(resolve);
+            canvas.toBlob((b: Blob | null) => {
+              if (b === null) throw new Error("toBlob failed");
+              resolve(b);
+            });
           });
 
-          const submitHandler = jest.fn<[Blob], void>();
+          const submitHandler = jest.fn();
           render(
             <ImageEditingDialog
               imageFile={blob}
@@ -116,7 +123,7 @@ describe("ImageEditingDialog", () => {
           await waitFor(() => {
             expect(submitHandler).toHaveBeenCalled();
           });
-          const actualBlob = submitHandler.mock.calls[0][0];
+          const actualBlob = submitHandler.mock.calls[0][0] as Blob;
           const actualDataUrl = readAsDataUrl(actualBlob);
 
           if (number % 4 === 0) {
@@ -134,6 +141,7 @@ describe("ImageEditingDialog", () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    if (ctx === null) throw new Error("could not get canvas");
     // 600px to negate any scaling effects
     ctx.canvas.width = 600;
     ctx.canvas.height = 600;
@@ -141,10 +149,13 @@ describe("ImageEditingDialog", () => {
     ctx.fillRect(0, 0, 300, 300);
 
     const blob: Blob = await new Promise((resolve) => {
-      canvas.toBlob(resolve);
+      canvas.toBlob((b: Blob | null) => {
+        if (b === null) throw new Error("toBlob failed");
+        resolve(b);
+      });
     });
 
-    const submitHandler = jest.fn<[Blob], void>();
+    const submitHandler = jest.fn();
     render(
       <ImageEditingDialog
         imageFile={blob}
@@ -177,6 +188,7 @@ describe("ImageEditingDialog", () => {
 
     const canvas2 = document.createElement("canvas");
     const ctx2 = canvas2.getContext("2d");
+    if (ctx2 === null) throw new Error("could not get canvas");
     // 600px to negate any scaling effects
     ctx2.canvas.width = 600;
     ctx2.canvas.height = 600;
@@ -195,6 +207,7 @@ describe("ImageEditingDialog", () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    if (ctx === null) throw new Error("could not get canvas");
     // 600px to negate any scaling effects
     ctx.canvas.width = 600;
     ctx.canvas.height = 600;
@@ -202,10 +215,13 @@ describe("ImageEditingDialog", () => {
     ctx.fillRect(0, 0, 300, 300);
 
     const blob: Blob = await new Promise((resolve) => {
-      canvas.toBlob(resolve);
+      canvas.toBlob((b: Blob | null) => {
+        if (b === null) throw new Error("toBlob failed");
+        resolve(b);
+      });
     });
 
-    const submitHandler = jest.fn<[Blob], void>();
+    const submitHandler = jest.fn();
     render(
       <ImageEditingDialog
         imageFile={blob}
@@ -231,6 +247,7 @@ describe("ImageEditingDialog", () => {
 
     const canvas2 = document.createElement("canvas");
     const ctx2 = canvas2.getContext("2d");
+    if (ctx2 === null) throw new Error("could not get canvas");
     // 600px to negate any scaling effects
     ctx2.canvas.width = 600;
     ctx2.canvas.height = 600;
@@ -249,6 +266,7 @@ describe("ImageEditingDialog", () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    if (ctx === null) throw new Error("could not get canvas");
     // 600px to negate any scaling effects
     ctx.canvas.width = 600;
     ctx.canvas.height = 600;
@@ -256,11 +274,14 @@ describe("ImageEditingDialog", () => {
     ctx.fillRect(0, 0, 300, 300);
 
     const blob: Blob = await new Promise((resolve) => {
-      canvas.toBlob(resolve);
+      canvas.toBlob((b: Blob | null) => {
+        if (b === null) throw new Error("toBlob failed");
+        resolve(b);
+      });
     });
 
-    const submitHandler = jest.fn<[Blob], void>();
-    const close = jest.fn<[], void>();
+    const submitHandler = jest.fn();
+    const close = jest.fn();
     render(
       <ImageEditingDialog
         imageFile={blob}
@@ -291,6 +312,7 @@ describe("ImageEditingDialog", () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    if (ctx === null) throw new Error("could not get canvas");
     // 600px to negate any scaling effects
     ctx.canvas.width = 600;
     ctx.canvas.height = 600;
@@ -298,11 +320,14 @@ describe("ImageEditingDialog", () => {
     ctx.fillRect(0, 0, 300, 300);
 
     const blob: Blob = await new Promise((resolve) => {
-      canvas.toBlob(resolve);
+      canvas.toBlob((b: Blob | null) => {
+        if (b === null) throw new Error("toBlob failed");
+        resolve(b);
+      });
     });
 
-    const submitHandler = jest.fn<[Blob], void>();
-    const close = jest.fn<[], void>();
+    const submitHandler = jest.fn();
+    const close = jest.fn();
 
     render(
       <ImageEditingDialog
