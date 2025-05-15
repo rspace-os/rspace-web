@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -21,7 +20,7 @@ afterEach(cleanup);
 
 describe("ValidatingSubmitButton", () => {
   test("When validationResult is OK and the button is tapped, onClick should be called.", () => {
-    const onClick = jest.fn<[Event], void>();
+    const onClick = jest.fn();
     render(
       <ThemeProvider theme={materialTheme}>
         <ValidatingSubmitButton
@@ -37,7 +36,7 @@ describe("ValidatingSubmitButton", () => {
     expect(onClick).toHaveBeenCalled();
   });
   test("When validationResult is Error and the button is tapped, onClick should not be called.", () => {
-    const onClick = jest.fn<[Event], void>();
+    const onClick = jest.fn();
     render(
       <ThemeProvider theme={materialTheme}>
         <ValidatingSubmitButton
