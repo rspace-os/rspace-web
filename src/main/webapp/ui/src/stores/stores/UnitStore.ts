@@ -24,7 +24,9 @@ export type Unit = {
 };
 
 const SAVED_UNITS: Array<Unit> =
-  JSON.parse(localStorage.getItem("units") ?? "") || [];
+  localStorage.getItem("units") === null
+    ? []
+    : JSON.parse(localStorage.getItem("units") as string) ?? [];
 
 export default class UnitStore {
   rootStore: RootStore;
