@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * A slightly restyled Material UI toggle button, for use with the
  * CustomToggleButtonGroup, that together allows for toggling between a small
@@ -8,14 +6,16 @@
  * So as to be usable throughout the application this component MUST NOT have a
  * dependency on any global state.
  */
-import React, { type ComponentType, type ElementProps } from "react";
+import React from "react";
 import { withStyles } from "Styles";
 import ToggleButton from "@mui/material/ToggleButton";
 import Tooltip from "@mui/material/Tooltip";
 
-const CustomToggleButton: ComponentType<{}> = withStyles<
-  {| title: string, disabled: boolean, ...ElementProps<typeof ToggleButton> |},
-  { root: string, selected: string }
+const CustomToggleButton = withStyles<
+  { title: string; disabled: boolean } & React.ComponentProps<
+    typeof ToggleButton
+  >,
+  { root: string; selected: string }
 >((theme) => ({
   root: {
     margin: `${theme.spacing(0.5)} !important`,
