@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
@@ -30,7 +29,7 @@ describe("IconButtonWithTooltip", () => {
   });
   test("onClick functions correctly.", async () => {
     const user = userEvent.setup();
-    const onClick = jest.fn<[Event], void>();
+    const onClick = jest.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
