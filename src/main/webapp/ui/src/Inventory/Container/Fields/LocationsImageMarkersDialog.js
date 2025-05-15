@@ -108,7 +108,9 @@ function LocationsImageMarkersDialog({
     };
 
   const noMarkersWarning = () =>
-    !activeResult.locations.length ? (
+    activeResult.locations === null ||
+    typeof activeResult.locations === "undefined" ||
+    activeResult.locations.length === 0 ? (
       <Alert severity="warning">
         No marked locations yet; click on the image to add a location marker.
       </Alert>
@@ -227,7 +229,7 @@ function LocationsImageMarkersDialog({
           {rightView === COMPACT_VIEW && (
             <Box ref={tableParent} pr={1}>
               <LocationsTable
-                locations={activeResult.sortedLocations}
+                locations={activeResult.sortedLocations ?? []}
                 onRemove={deleteLocation}
                 isCompactView={rightView === COMPACT_VIEW}
                 parentRef={tableParent}
@@ -245,7 +247,7 @@ function LocationsImageMarkersDialog({
                 className={classes.cardContainer}
               >
                 {noMarkersWarning()}
-                {activeResult.sortedLocations.map(
+                {(activeResult.sortedLocations ?? []).map(
                   (location: Location, index: number) => (
                     <Card location={location} number={index + 1} key={index} />
                   )

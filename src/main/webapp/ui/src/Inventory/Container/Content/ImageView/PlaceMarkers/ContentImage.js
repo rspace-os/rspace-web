@@ -209,14 +209,16 @@ function ContentImage({
     if (activeResult) {
       activeResult.updateLocationsCount(1);
       activeResult.setAttributesDirty({
-        locations: [...activeResult.locations, newLocation],
+        locations: [...(activeResult.locations ?? []), newLocation],
       });
     }
   };
 
   const locationMoved = (indexInSorted: number, { x, y }: Point) => {
     if (editable) {
-      const location = activeResult.sortedLocations[indexInSorted];
+      if (activeResult.sortedLocations == null) throw new Error("activeResult does not have locations");
+      const locations = activeResult.sortedLocations;
+      const location = locations[indexInSorted];
       if (!imageDimensions) throw new Error("Image dimensions are not known");
       const { width: imageWidth, height: imageHeight } = imageDimensions;
       location.coordX = Math.round(
@@ -225,7 +227,6 @@ function ContentImage({
       location.coordY = Math.round(
         ((y + locationMarkerOffset.y) * 1000) / imageHeight
       );
-      const locations = activeResult.sortedLocations;
 
       locations[indexInSorted] = location;
       activeResult.setAttributesDirty({
@@ -263,6 +264,7 @@ function ContentImage({
           />
           {img &&
             imageDimensions &&
+            Array.isArray(activeResult.sortedLocations) &&
             activeResult.sortedLocations
               .map((l: Location) => normalizeCoords(imageDimensions, l))
               .map(

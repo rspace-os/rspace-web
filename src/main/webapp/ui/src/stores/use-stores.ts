@@ -1,5 +1,3 @@
-// @flow
-
 import { useContext } from "react";
 
 import { storesContext } from "./stores-context";
