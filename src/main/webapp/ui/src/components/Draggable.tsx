@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { clamp } from "../util/Util";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
@@ -12,26 +10,28 @@ const getParentDiv = (node: Element): HTMLElement => {
   throw Error("No parent of the given node is a 'div' tag.");
 };
 
-type DraggableArgs = {|
-  children: Node,
-  draggable: boolean,
-  initial: Point,
-  onChange: (Point) => void,
-  onClick: () => void,
-  parent: HTMLElement,
-  onDragStart: () => void,
-  onDragEnd: () => void,
-|};
+type DraggableArgs = {
+  children: React.ReactNode;
+  draggable: boolean;
+  initial: Point;
+  onChange: (newPoint: Point) => void;
+  onClick: () => void;
+  parent: HTMLElement;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+};
 
-const useStyles = makeStyles()((theme, { draggable, position }) => ({
-  container: {
-    position: "absolute",
-    left: position.x,
-    top: position.y,
-    touchAction: "none",
-    cursor: draggable ? "move" : "default",
-  },
-}));
+const useStyles = makeStyles<{ draggable: boolean; position: Point }>()(
+  (theme, { draggable, position }) => ({
+    container: {
+      position: "absolute",
+      left: position.x,
+      top: position.y,
+      touchAction: "none",
+      cursor: draggable ? "move" : "default",
+    },
+  })
+);
 
 /*
  * General purpose wrapper for draggable components.
@@ -46,7 +46,7 @@ function Draggable({
   onDragStart,
   onDragEnd,
   parent,
-}: DraggableArgs): Node {
+}: DraggableArgs): React.ReactNode {
   const [dragging, setDragging] = React.useState(false);
   const [position, setPosition] = React.useState(initial);
   const { classes } = useStyles({ position, draggable });
@@ -60,7 +60,9 @@ function Draggable({
 
   // Tap and hold to start dragging, just tapping is selection.
   // This stores the timeout during that hold process
-  const [initiating, setInitiating] = React.useState<?TimeoutID>(null);
+  const [initiating, setInitiating] = React.useState<NodeJS.Timeout | null>(
+    null
+  );
 
   React.useEffect(() => {
     if (!dragging) {
@@ -68,7 +70,7 @@ function Draggable({
     }
   }, [initial]);
 
-  const onPointerDown = (_event: PointerEvent) => {
+  const onPointerDown = (_event: React.PointerEvent<HTMLDivElement>) => {
     const event = { ..._event };
     const startDragging = () => {
       setInitiating(null);
@@ -98,7 +100,7 @@ function Draggable({
     parentDiv.setPointerCapture(event.pointerId);
   };
 
-  const onPointerMove = (event: PointerEvent) => {
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (dragging) {
       const newPointOnViewport = {
         x: event.pageX,
@@ -169,4 +171,4 @@ function Draggable({
   );
 }
 
-export default (observer(Draggable): ComponentType<DraggableArgs>);
+export default observer(Draggable);
