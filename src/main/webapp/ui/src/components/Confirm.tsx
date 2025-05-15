@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * A general-purpose confirmation dialog, designed for use with UiStore's
  * confirm method, to mimic the browser's default `confirm` function with a
@@ -16,11 +14,11 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import useStores from "../stores/use-stores";
-import { default as React, type Node, type ComponentType } from "react";
+import { default as React } from "react";
 import { observer } from "mobx-react-lite";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
-function Confirm(): Node {
+function Confirm(): React.ReactNode {
   const [open, setOpen] = React.useState(false);
   const { uiStore } = useStores();
 
@@ -68,4 +66,4 @@ function Confirm(): Node {
   );
 }
 
-export default (observer(Confirm): ComponentType<{||}>);
+export default observer(Confirm);
