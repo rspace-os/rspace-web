@@ -1,7 +1,5 @@
-//@flow
-
 import Button from "@mui/material/Button";
-import React, { type Node } from "react";
+import React from "react";
 import { styled } from "@mui/material/styles";
 import ListItemText from "@mui/material/ListItemText";
 import ListItem from "@mui/material/ListItem";
@@ -13,10 +11,10 @@ import Avatar from "@mui/material/Avatar";
  * piece of explanatory text in addition to a label.
  */
 
-type BigIconButtonArgs = {|
-  label: string,
-  icon: Node,
-  explanatoryText: string,
+type BigIconButtonArgs = {
+  label: string;
+  icon: React.ReactNode;
+  explanatoryText: string;
 
   /**
    * When using the button inside of a HTMLLabelElement to trigger an invisible
@@ -24,9 +22,9 @@ type BigIconButtonArgs = {|
    * `component` to "span". This will ensure that click events bubble up to the
    * HTMLLabelElement that should wrap the whole form field.
    */
-  onClick?: () => void,
-  component?: string,
-|};
+  onClick?: () => void;
+  component?: string;
+};
 
 const CustomButton = styled(Button)(({ theme }) => ({
   textTransform: "none",
@@ -44,14 +42,14 @@ export default function BigIconButton({
   explanatoryText,
   onClick,
   component,
-}: BigIconButtonArgs): Node {
+}: BigIconButtonArgs): React.ReactNode {
   return (
     <CustomButton
       fullWidth
       color="primary"
       variant="outlined"
       onClick={onClick}
-      component={component}
+      {...(component ? { component } : {})}
     >
       <ListItem disablePadding>
         <ListItemAvatar>
