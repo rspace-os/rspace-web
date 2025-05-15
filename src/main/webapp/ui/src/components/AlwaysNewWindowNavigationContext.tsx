@@ -1,10 +1,9 @@
-//@flow
-import React, { type Node } from "react";
+import React from "react";
 import NavigateContext from "../stores/contexts/Navigate";
 
-type AlwaysNewWindowNavigationContextArgs = {|
-  children: Node,
-|};
+type AlwaysNewWindowNavigationContextArgs = {
+  children: React.ReactNode;
+};
 
 /**
  * Any calls to `navigate` inside the children of this component will result in
@@ -16,12 +15,12 @@ type AlwaysNewWindowNavigationContextArgs = {|
  */
 export default function AlwaysNewWindowNavigationContext({
   children,
-}: AlwaysNewWindowNavigationContextArgs): Node {
+}: AlwaysNewWindowNavigationContextArgs): React.ReactNode {
   const useNavigate =
     () =>
     (
       url: string,
-      _opts?: {| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+      _opts?: { skipToParentContext?: boolean; modifyVisiblePanel?: boolean }
     ) => {
       /**
        * This navigation context is designed to be a root context and thus
