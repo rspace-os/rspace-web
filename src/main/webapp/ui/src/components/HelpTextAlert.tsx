@@ -1,15 +1,13 @@
-//@flow
-
 import Grid from "@mui/material/Grid";
-import Alert from "@mui/material/Alert";
-import React, { type Node } from "react";
+import Alert, { type AlertColor } from "@mui/material/Alert";
+import React from "react";
 import AlertTitle from "@mui/material/AlertTitle";
 
 type HelpTextAlertProps = {
-  text: string | Node,
-  title?: string,
-  condition: boolean,
-  severity: string,
+  text: string | React.ReactNode;
+  title?: string;
+  condition: boolean;
+  severity: AlertColor;
 };
 
 export default function HelpTextAlert({
@@ -17,7 +15,7 @@ export default function HelpTextAlert({
   title,
   condition,
   severity,
-}: HelpTextAlertProps): Node {
+}: HelpTextAlertProps): React.ReactNode {
   return condition ? (
     <Grid item>
       <Alert severity={severity}>
