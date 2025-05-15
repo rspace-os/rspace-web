@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
@@ -20,7 +19,7 @@ afterEach(cleanup);
 describe("RemoveButton", () => {
   test("Should invoke onClick when clicked.", async () => {
     const user = userEvent.setup();
-    const onClick = jest.fn<[], void>();
+    const onClick = jest.fn();
     render(
       <ThemeProvider theme={materialTheme}>
         <RemoveButton onClick={onClick} />
