@@ -355,9 +355,7 @@ export default class CoreFetcher {
           samples?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           subSamples?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           containers?: Array<Record<string, unknown> & { globalId: GlobalId }>;
-          sampleTemplates?: Array<
-            Record<string, unknown> & { globalId: GlobalId }
-          >;
+          templates?: Array<Record<string, unknown> & { globalId: GlobalId }>;
         }>(
           endpoint,
           new URLSearchParams(omitNull(params) as Record<string, string>)
@@ -392,7 +390,7 @@ export default class CoreFetcher {
           ],
           [
             () => endpoint === "sampleTemplates",
-            data.sampleTemplates as Array<
+            data.templates as Array<
               Record<string, unknown> & { globalId: GlobalId }
             >,
           ],
