@@ -7,17 +7,17 @@
  */
 import { withStyles } from "Styles";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import { type emptyObject } from "../util/types";
 
-const CustomToggleButtonGroup = withStyles<
-  Record<string, never>,
-  { root: string }
->((theme) => ({
-  root: {
-    border: theme.borders.section,
-    backgroundColor: theme.palette.background.default,
-    display: "flex !important",
-  },
-}))(ToggleButtonGroup);
+const CustomToggleButtonGroup = withStyles<emptyObject, { root: string }>(
+  (theme) => ({
+    root: {
+      border: theme.borders.section,
+      backgroundColor: theme.palette.background.default,
+      display: "flex !important",
+    },
+  })
+)(ToggleButtonGroup);
 
 CustomToggleButtonGroup.displayName = "CustomToggleButtonGroup";
 export default CustomToggleButtonGroup;
