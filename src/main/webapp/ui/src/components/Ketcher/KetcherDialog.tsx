@@ -1,7 +1,6 @@
-//@flow
 import "ketcher-react/dist/index.css";
 
-import React, { useState, StrictMode, type Node } from "react";
+import React, { useState, StrictMode } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -12,19 +11,26 @@ import { StandaloneStructServiceProvider } from "ketcher-standalone";
 import { styled } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import { Ketcher } from "ketcher-core";
+
+declare global {
+  interface Window {
+    ketcher: Ketcher;
+  }
+}
 
 const structServiceProvider = new StandaloneStructServiceProvider();
 
-type KetcherDialogArgs = {|
-  isOpen?: boolean,
-  handleClose: ({| closeAndReset: () => Promise<string> |}) => void,
-  existingChem?: string,
-  title: string,
-  handleInsert: (any) => void,
-  actionBtnText?: string,
-  readOnly?: boolean,
-  additionalControls?: Node,
-|};
+type KetcherDialogArgs = {
+  isOpen?: boolean;
+  handleClose: () => void;
+  existingChem?: string;
+  title: string;
+  handleInsert: (ketcher: Ketcher) => void;
+  actionBtnText?: string;
+  readOnly?: boolean;
+  additionalControls?: React.ReactNode;
+};
 
 const StyledDialog = styled(Dialog)(() => ({
   "& > .MuiDialog-container > .MuiPaper-root": {
@@ -41,7 +47,7 @@ const KetcherDialog = ({
   actionBtnText = "",
   readOnly = false,
   additionalControls = null,
-}: KetcherDialogArgs): Node => {
+}: KetcherDialogArgs): React.ReactNode => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -52,12 +58,12 @@ const KetcherDialog = ({
 
   const onInsertClick = () => {
     handleInsert(window.ketcher);
-    window.ketcher.setMolecule("");
+    void window.ketcher.setMolecule("");
   };
 
   const closeAndReset = () => {
-    handleClose(window.ketcher);
-    window.ketcher.setMolecule("");
+    handleClose();
+    void window.ketcher.setMolecule("");
   };
 
   return (
@@ -67,6 +73,7 @@ const KetcherDialog = ({
         <DialogContent style={{ minHeight: "0" }}>
           <Stack sx={{ height: "100%" }}>
             {additionalControls}
+            {/* @ts-expect-error doesn't appear that staticResourcesUrl is in fact required */}
             <Editor
               errorHandler={(message) => {
                 setHasError(true);
@@ -75,7 +82,7 @@ const KetcherDialog = ({
               structServiceProvider={structServiceProvider}
               onInit={(ketcher) => {
                 window.ketcher = ketcher;
-                ketcher.setMolecule(existingChem);
+                void ketcher.setMolecule(existingChem);
                 if (readOnly) {
                   ketcher.editor.setOptions(
                     JSON.stringify({ viewOnlyMode: true })
