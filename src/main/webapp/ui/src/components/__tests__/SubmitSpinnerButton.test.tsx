@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -19,7 +18,7 @@ afterEach(cleanup);
 
 describe("SubmitSpinnerButton", () => {
   test("When the button is tapped, onClick should be called.", () => {
-    const onClick = jest.fn<[Event], void>();
+    const onClick = jest.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -38,7 +37,7 @@ describe("SubmitSpinnerButton", () => {
   });
 
   test("When the button is disabled and tapped, onClick should not be called.", () => {
-    const onClick = jest.fn<[Event], void>();
+    const onClick = jest.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
