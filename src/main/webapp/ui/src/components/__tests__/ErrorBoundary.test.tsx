@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
@@ -14,7 +13,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-function AlwaysError() {
+function AlwaysError(): React.ReactNode {
   throw new Error("foo");
 }
 
