@@ -81,6 +81,7 @@
         <div id="api.available.description"><spring:message code="system.property.description.api.available" /></div>
         <div id="onboarding.available.description"><spring:message code="system.property.description.onboarding.available" /></div>
         <div id="snapgene.available.description"><spring:message code="system.property.description.snapgene.available" /></div>
+        <div id="ascenscia.available.description"><spring:message code="system.property.description.ascenscia.available" /></div>
         <div id="group_autosharing.available.description"><spring:message code="system.property.description.group_autosharing.available" /></div>
         <div id="self_service_labgroups.available.description"><spring:message code="system.property.description.self_service_labgroups" /></div>
         <div id="publicLastLogin.available.description"><spring:message code="system.property.description.publicLastLogin.available" /></div>

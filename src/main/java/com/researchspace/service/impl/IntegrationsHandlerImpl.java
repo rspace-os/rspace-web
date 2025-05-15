@@ -195,6 +195,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DMPONLINE_APP_NAME:
         setSingleUserToken(info, user, DMPONLINE_APP_NAME, DMPONLINE_USER_TOKEN);
         return;
+      case ASCENSCIA_APP_NAME:
+        // do nothing
+        return;
       default:
     }
   }
@@ -535,6 +538,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DMPONLINE_APP_NAME:
       case FIELDMARK_APP_NAME:
       case GALAXY_APP_NAME:
+      case ASCENSCIA_APP_NAME:
         return true;
     }
     return isSingleOptionSetAppConfigIntegration(integrationName);

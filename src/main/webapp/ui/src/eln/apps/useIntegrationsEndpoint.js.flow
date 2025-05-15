@@ -11,7 +11,9 @@ export type IntegrationState<Credentials> = {|
 
 export type IntegrationStates = {|
   ARGOS: IntegrationState<{||}>,
-  ASCENSCIA: IntegrationState<null>,
+  ASCENSCIA: IntegrationState<{|
+    ["ascenscia.enabled"]: Optional<boolean>,
+|}>,
   BOX: IntegrationState<{|
     BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">,
     "box.api.enabled": Optional<boolean>,
