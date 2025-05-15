@@ -1,7 +1,5 @@
-//@flow strict
-
 import SettingsOverscanIcon from "@mui/icons-material/SettingsOverscan";
-import React, { useState, type Node } from "react";
+import React, { useState } from "react";
 import Grow from "@mui/material/Grow";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import Dialog from "@mui/material/Dialog";
@@ -16,29 +14,29 @@ import SubmitSpinnerButton from "./SubmitSpinnerButton";
 import docLinks from "../assets/DocLinks";
 import { withStyles } from "Styles";
 
-type TextAreaDialogArgs = {|
-  query: string,
-  onSubmit: () => void,
-  setQuery: ({ target: { value: string, ... }, ... }) => void,
-  visible: boolean,
-|};
+type TextAreaDialogArgs = {
+  query: string;
+  onSubmit: () => void;
+  setQuery: (event: { target: { value: string } }) => void;
+  visible: boolean;
+};
 
-const Samp = withStyles<{| children: Node |}, {| root: string |}>((theme) => ({
-  root: {
-    backgroundColor: "#eee",
-    borderRadius: 3,
-    padding: theme.spacing(0.125, 0.25),
-  },
-}))(({ classes, children }) => (
-  <samp className={classes.root}>{children}</samp>
-));
+const Samp = withStyles<{ children: React.ReactNode }, { root: string }>(
+  (theme) => ({
+    root: {
+      backgroundColor: "#eee",
+      borderRadius: 3,
+      padding: theme.spacing(0.125, 0.25),
+    },
+  })
+)(({ classes, children }) => <samp className={classes.root}>{children}</samp>);
 
 export default function TextAreaDialog({
   onSubmit,
   setQuery,
   query,
   visible,
-}: TextAreaDialogArgs): Node {
+}: TextAreaDialogArgs): React.ReactNode {
   const [dialogOpen, setDialogOpen] = useState(false);
   const onClose = () => setDialogOpen(false);
   return visible ? (
