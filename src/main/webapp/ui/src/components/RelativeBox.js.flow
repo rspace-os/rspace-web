@@ -1,0 +1,6 @@
+// @flow
+
+import { type Node, type ElementConfig } from "react";
+import Box from "@mui/material/Box";
+
+declare export default function RelativeBox(ElementConfig<typeof Box>): Node;
