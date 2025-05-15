@@ -135,12 +135,12 @@ export default class UiStore {
       number,
       (typeof breakpoints)[keyof typeof breakpoints]
     >(
-      (Object.keys(breakpoints) as ReadonlyArray<keyof typeof breakpoints>).map(
-        (bp) => [
+      (Object.keys(breakpoints) as ReadonlyArray<keyof typeof breakpoints>)
+        .toReversed()
+        .map((bp) => [
           (width) => width > theme.breakpoints.values[bp],
           breakpoints[bp],
-        ]
-      )
+        ])
     )(window.innerWidth);
   }
 
