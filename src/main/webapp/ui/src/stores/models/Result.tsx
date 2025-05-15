@@ -995,7 +995,8 @@ export default class Result
     queryParameters: URLSearchParams = new URLSearchParams()
   ): Promise<{ data: object }> {
     if (this.fetchingAdditionalInfo || !this.id) {
-      await this.fetchingAdditionalInfo;
+      if (this.fetchingAdditionalInfo === null) return { data: {} };
+      return this.fetchingAdditionalInfo;
     }
     const id = this.id;
 
