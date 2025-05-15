@@ -1,17 +1,15 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import CustomTooltip from "./CustomTooltip";
 import IconButton from "@mui/material/IconButton";
 import AddIcon from "@mui/icons-material/Add";
 
-type AddButtonArgs = {|
-  onClick?: (Event) => void,
-  title?: string,
-  disabled?: boolean,
-  datatestid?: string,
-  id?: string,
-|};
+type AddButtonArgs = {
+  onClick?: (event: React.MouseEvent) => void;
+  title?: string;
+  disabled?: boolean;
+  datatestid?: string;
+  id?: string;
+};
 
 const AddButton = ({
   onClick,
@@ -19,7 +17,7 @@ const AddButton = ({
   disabled = false,
   datatestid,
   id,
-}: AddButtonArgs): Node => {
+}: AddButtonArgs): React.ReactNode => {
   return (
     <CustomTooltip title={title} aria-label="">
       <IconButton
