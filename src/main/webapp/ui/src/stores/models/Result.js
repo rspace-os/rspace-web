@@ -201,7 +201,6 @@ export default class Result
   image: ResultEditableFields["image"] = null;
   thumbnail: Thumbnail = null;
   tags: ResultEditableFields["tags"] = [];
-  scopedToasts: Array<Alert> = [];
   created: string;
   lastModified: string;
   modifiedByFullName: string;
@@ -223,6 +222,20 @@ export default class Result
   fetchingAdditionalInfo: ?Promise<mixed> = null;
   sharingMode: SharingMode;
   sharedWith: ?Array<SharedWithGroup>;
+
+  /*
+   * This list of toasts is used to clear alert toasts specific to this record
+   * when the user navigates away from this record. For example, when editing
+   * there may be some info toasts that should be hidden when editing is
+   * completed or cancelled.
+   *
+   * Note that this array may contain toasts that have previously been shown
+   * but are no longer visible, such as those that have automatically been
+   * dismissed after a timeout or those that have been closed by logic that
+   * prevents the same toast from being shown multiple times. As such, this
+   * array should only ever be appended to or cleared entirely.
+   */
+  scopedToasts: Array<Alert> = [];
 
   constructor(factory: Factory) {
     makeObservable(this, {
