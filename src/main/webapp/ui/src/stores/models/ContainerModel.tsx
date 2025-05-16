@@ -1121,7 +1121,7 @@ export default class ContainerModel
   }
 
   showTopLinkInBreadcrumbs(): boolean {
-    return !this.isWorkbench && !this.isInWorkbench();
+    return !this.isWorkbench && !this.isInWorkbench;
   }
 
   get usableInLoM(): boolean {
@@ -1247,6 +1247,10 @@ export default class ContainerModel
         },
       },
     ];
+  }
+
+  get isInWorkbench(): boolean {
+    return this.hasLocationCapability.isInWorkbench;
   }
 
   get isOnWorkbench(): boolean {

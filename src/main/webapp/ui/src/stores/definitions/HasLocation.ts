@@ -30,7 +30,7 @@ export interface HasLocation {
    * Determines whether the Inventory record is transitively on a workbench,
    * which is to say that the root parent container is a workbench.
    */
-  isInWorkbench(): boolean;
+  readonly isInWorkbench: boolean;
 
   /*
    * Determines whether the Inventory record is directly on a workbench,

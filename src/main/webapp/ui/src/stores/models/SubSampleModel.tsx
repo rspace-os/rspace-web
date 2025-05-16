@@ -496,6 +496,10 @@ export default class SubSampleModel
     return this.hasLocationCapability.isOnWorkbenchOfUser(user);
   }
 
+  get isInWorkbench(): boolean {
+    return this.hasLocationCapability.isInWorkbench;
+  }
+
   get isOnWorkbench(): boolean {
     return this.hasLocationCapability.isOnWorkbench;
   }

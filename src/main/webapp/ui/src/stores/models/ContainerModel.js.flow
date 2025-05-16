@@ -264,7 +264,7 @@ declare export default class ContainerModel
   get createOptions(): $ReadOnlyArray<CreateOption>;
 
   +rootParentContainer: Container | null;
-  isInWorkbench(): boolean;
+  +isInWorkbench: boolean;
   +isOnWorkbench: boolean;
   isInWorkbenchOfUser(user: Person): boolean;
   isOnWorkbenchOfUser(user: Person): boolean;

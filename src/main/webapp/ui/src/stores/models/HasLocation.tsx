@@ -76,21 +76,21 @@ export class HasLocationCapability {
     return true;
   }
 
-  isInWorkbench(): boolean {
+  get isInWorkbench(): boolean {
     if (this.rootParentContainer === null) return false;
     return this.rootParentContainer.isWorkbench;
   }
 
   get isOnWorkbench(): boolean {
     return (
-      this.isInWorkbench() &&
+      this.isInWorkbench &&
       this.immediateParentContainer === this.rootParentContainer
     );
   }
 
   isInWorkbenchOfUser(user: Person): boolean {
     return (
-      this.isInWorkbench() && this.rootParentContainer?.id === user.workbenchId
+      this.isInWorkbench && this.rootParentContainer?.id === user.workbenchId
     );
   }
 

@@ -255,9 +255,6 @@ declare export default class Result
   get isWorkbench(): boolean;
   get isTemplate(): boolean;
   get fieldNamesInUse(): Array<string>;
-  isInWorkbench(): boolean;
-  isInCurrentUsersWorkbench(): boolean;
-  isOnCurrentUsersWorkbench(): boolean;
   isMovable(): boolean;
   hasParentContainers(): boolean;
   adjustableTableOptions(): AdjustableTableRowOptions<string>;
