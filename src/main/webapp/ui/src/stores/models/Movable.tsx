@@ -66,13 +66,6 @@ export class Movable {
     return this.immediateParentContainer?.cType === "GRID";
   }
 
-  timeInCurrentLocation(): number {
-    const now = new Date();
-    const movedIn = new Date(this.lastMoveDate || this.created);
-    const msInLocation = now.getTime() - movedIn.getTime();
-    return msInLocation;
-  }
-
   wasHereLast(containerGlobalId: GlobalId): boolean {
     return this.lastNonWorkbenchParent.globalId === containerGlobalId;
   }
