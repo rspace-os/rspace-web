@@ -6,6 +6,7 @@ import { type Point } from "../../util/types";
 import { type Permissioned } from "./PermissionedData";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { match } from "../../util/Util";
+import { type HasLocation } from "./HasLocation";
 
 export type WorkbenchId = number;
 export type ContainerType = "LIST" | "GRID" | "IMAGE" | "WORKBENCH";
@@ -107,7 +108,7 @@ export interface Location extends Point {
  *   their bench. It is intended as a temporary storage location whilst an item
  *   is in use.
  */
-export interface Container extends InventoryRecord {
+export interface Container extends InventoryRecord, HasLocation {
   cType: ContainerType;
 
   /*

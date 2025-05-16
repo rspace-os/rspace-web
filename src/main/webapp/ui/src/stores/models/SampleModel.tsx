@@ -81,6 +81,7 @@ import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getErrorMessage } from "@/util/error";
+import { SubSample } from "../definitions/SubSample";
 
 type SampleEditableFields = RecordWithQuantityEditableFields & {
   expiryDate: string | null;
@@ -1000,7 +1001,7 @@ export default class SampleModel
             );
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this.subSamples[0]
+            this.subSamples[0] as SubSample
           );
         },
       },

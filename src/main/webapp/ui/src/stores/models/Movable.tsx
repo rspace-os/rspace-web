@@ -41,11 +41,9 @@ export class Movable {
         ...(immediateParentContainer.allParentContainers?.() ?? []),
       ];
       this.parentContainers = null;
-      this.rootParentContainer = this.allParentContainers().pop() ?? null;
     } else {
       this.immediateParentContainer = null;
       this.allParentContainers = () => [];
-      this.rootParentContainer = null;
       this.parentContainers = null;
     }
     if (this.lastNonWorkbenchParent)
@@ -68,14 +66,6 @@ export class Movable {
     return (
       this.hasParentContainers() &&
       (this.rootParentContainer?.isWorkbench ?? false)
-    );
-  }
-
-  isInCurrentUsersWorkbench(): boolean {
-    return (
-      this.isInWorkbench() &&
-      this.rootParentContainer?.id ===
-        getRootStore().peopleStore.currentUser?.workbenchId
     );
   }
 

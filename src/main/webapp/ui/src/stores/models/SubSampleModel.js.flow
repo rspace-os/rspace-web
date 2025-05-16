@@ -61,6 +61,8 @@ import {
   IsValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
+import { type Container } from "../definitions/Container";
+import { type Person } from "../definitions/Person";
 
 type SubSampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -125,10 +127,6 @@ declare export default class SubSampleModel
   parentContainers: Array<ContainerModel>;
   parentLocation: ?Location;
   allParentContainers: ?() => Array<ContainerModel>;
-  rootParentContainer: ?ContainerModel;
-  immediateParentContainer: ?ContainerModel;
-  lastNonWorkbenchParent: ?string;
-  lastMoveDate: ?Date;
   createOptionsParametersState: {|
     split: {| key: "split",  copies: number |}
   |};
@@ -162,6 +160,13 @@ declare export default class SubSampleModel
   validate(): ValidationResult;
   get usableInLoM(): boolean;
   get createOptions(): $ReadOnlyArray<CreateOption>;
+  isInWorkbenchOfUser( Person): boolean;
+  isInCurrentUsersWorkbench(): boolean;
+  +immediateParentContainer: Container | null;
+  +rootParentContainer: Container | null;
+  isInWorkbench(): boolean;
+  isInWorkbenchOfUser(user: Person): boolean;
+  +lastNonWorkbenchParent: Container | null;
 }
 
 type BatchSubSampleEditableFields = ResultCollectionEditableFields &

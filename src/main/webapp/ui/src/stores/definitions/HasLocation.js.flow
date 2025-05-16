@@ -1,0 +1,13 @@
+//@flow
+
+import { type Container } from "./Container";
+import { type Person } from "./Person";
+
+export interface HasLocation {
+  isMovable(): boolean;
+  +immediateParentContainer: Container | null;
+  +rootParentContainer: Container | null;
+  isInWorkbench(): boolean;
+  isInWorkbenchOfUser(user: Person): boolean;
+  +lastNonWorkbenchParent: Container | null;
+}

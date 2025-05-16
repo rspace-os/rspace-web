@@ -83,6 +83,7 @@ import {
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
+import { type Person } from "../definitions/Person";
 
 type ContainerEditableFields = {
   ...ResultEditableFields,
@@ -161,11 +162,6 @@ declare export default class ContainerModel
   contentSearch: SearchInterface;
   parentContainers: Array<Container>;
   parentLocation: ?Location;
-  allParentContainers: ?() => Array<Container>;
-  rootParentContainer: ?Container;
-  immediateParentContainer: ?Container;
-  lastNonWorkbenchParent: ?Container;
-  lastMoveDate: ?Date;
   siblingColorCache: Map<Id, string>;
 
   constructor(factory: Factory, params?: ContainerAttrs): ContainerModel;
@@ -266,6 +262,11 @@ declare export default class ContainerModel
   get inContainerParams(): ContainerInContainerParams;
   get dataAttachedToRecordCreatedAnaylticsEvent(): {};
   get createOptions(): $ReadOnlyArray<CreateOption>;
+  +immediateParentContainer: Container | null;
+  +rootParentContainer: Container | null;
+  isInWorkbench(): boolean;
+  isInWorkbenchOfUser(user: Person): boolean;
+  +lastNonWorkbenchParent: Container | null;
 }
 
 type BatchContainerEditableFields = {

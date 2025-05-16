@@ -32,7 +32,7 @@ import RecordWithQuantity, {
   getUnitId,
 } from "./RecordWithQuantity";
 import { Movable } from "./Movable";
-import { type PersonId, type PersonAttrs } from "../definitions/Person";
+import { type PersonId, type PersonAttrs, Person } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
   type ResultCollectionEditableFields,
@@ -64,6 +64,8 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
+import { HasLocationCapability } from "./HasLocation";
+import { Container } from "../definitions/Container";
 
 type SubSampleEditableFields = RecordWithQuantityEditableFields;
 
@@ -98,7 +100,7 @@ export type SubSampleAttrs = {
   newBase64Image?: string;
   image?: string;
   parentContainers: Array<ContainerAttrs>;
-  lastNonWorkbenchParent: string | null;
+  lastNonWorkbenchParent: ContainerAttrs | null;
   lastMoveDate: Date | null;
   sample?: SampleAttrs | SampleModel;
   owner: PersonAttrs | null;
@@ -136,15 +138,13 @@ export default class SubSampleModel
   parentContainers: Array<ContainerModel>;
   parentLocation: Location | null = null;
   allParentContainers: (() => Array<ContainerModel>) | null = null;
-  rootParentContainer: ContainerModel | null = null;
   immediateParentContainer: ContainerModel | null = null;
-  // @ts-expect-error lastNonWorkbenchParent is initialised by populateFromJson
-  lastNonWorkbenchParent: string | null;
   // @ts-expect-error lastMoveDate is initialised by populateFromJson
   lastMoveDate: Date | null;
   createOptionsParametersState: {
     split: { key: "split"; copies: number };
   };
+  hasLocationCapability: HasLocationCapability;
 
   constructor(factory: Factory, params: SubSampleAttrs) {
     super(factory);
@@ -154,9 +154,8 @@ export default class SubSampleModel
       parentLocation: observable,
       parentContainers: observable,
       allParentContainers: observable,
-      rootParentContainer: observable,
+      rootParentContainer: computed,
       immediateParentContainer: observable,
-      lastNonWorkbenchParent: observable,
       lastMoveDate: observable,
       createOptionsParametersState: observable,
       createNote: action,
@@ -177,6 +176,12 @@ export default class SubSampleModel
       this.populateFromJson(factory, params, {});
 
     this.createOptionsParametersState = { split: { key: "split", copies: 2 } };
+
+    this.hasLocationCapability = new HasLocationCapability({
+      parentContainers: params.parentContainers,
+      lastNonWorkbenchParent: params.lastNonWorkbenchParent,
+      factory,
+    });
   }
 
   populateFromJson(
@@ -191,7 +196,6 @@ export default class SubSampleModel
     this.parentLocation = params.parentLocation;
     // @ts-expect-error parentContainers is on the mixed in class, Movable
     this.parentContainers = params.parentContainers ?? [];
-    this.lastNonWorkbenchParent = params.lastNonWorkbenchParent;
     this.lastMoveDate = params.lastMoveDate;
     // @ts-expect-error initializeMovableMixin is on the mixed in class, Movable
     this.initializeMovableMixin(factory);
@@ -479,11 +483,29 @@ export default class SubSampleModel
         onSubmit: () => {
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this
+            this as SubSample
           );
         },
       },
     ];
+  }
+
+  isInWorkbenchOfUser(user: Person): boolean {
+    return this.hasLocationCapability.isInWorkbenchOfUser(user);
+  }
+
+  isInCurrentUsersWorkbench(): boolean {
+    const currentUser = getRootStore().peopleStore.currentUser;
+    if (currentUser === null) return false;
+    return this.hasLocationCapability.isInWorkbenchOfUser(currentUser);
+  }
+
+  get rootParentContainer(): Container | null {
+    return this.hasLocationCapability.rootParentContainer;
+  }
+
+  get lastNonWorkbenchParent(): Container | null {
+    return this.hasLocationCapability.lastNonWorkbenchParent;
   }
 }
 

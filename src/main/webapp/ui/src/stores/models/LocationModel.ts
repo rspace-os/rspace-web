@@ -222,7 +222,7 @@ export default class LocationModel implements Location {
           ) ?? null;
 
         // set new location
-        this.content = firstNotPlaced;
+        this.content = firstNotPlaced as Container | SubSample | null;
       } else {
         this.content = null;
       }

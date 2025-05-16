@@ -46,7 +46,7 @@ import { type AttachmentJson } from "./AttachmentModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import LocationModel, { type LocationAttrs } from "./LocationModel";
 import { Movable } from "./Movable";
-import { type PersonAttrs } from "../definitions/Person";
+import { Person, type PersonAttrs } from "../definitions/Person";
 import Result, {
   defaultVisibleResultFields,
   defaultEditableResultFields,
@@ -85,6 +85,7 @@ import {
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
+import { HasLocationCapability } from "./HasLocation";
 
 type ContainerEditableFields = ResultEditableFields;
 
@@ -222,8 +223,6 @@ export default class ContainerModel
   parentLocation: Location | null;
   // @ts-expect-error allParentContainers is initialised by populateFromJson
   allParentContainers: (() => Array<Container>) | null;
-  // @ts-expect-error rootParentContainer is initialised by populateFromJson
-  rootParentContainer: Container | null;
   // @ts-expect-error initialised by movable
   immediateParentContainer: Container | null;
   // @ts-expect-error lastNonWorkbenchParent is initialised by populateFromJson
@@ -231,6 +230,7 @@ export default class ContainerModel
   // @ts-expect-error lastMoveDate is initialised by populateFromJson
   lastMoveDate: Date | null;
   siblingColorCache: Map<Id, string> = new Map<Id, string>();
+  hasLocationCapability: HasLocationCapability;
 
   constructor(factory: Factory, params: ContainerAttrs = DEFAULT_CONTAINER) {
     super(factory);
@@ -254,7 +254,7 @@ export default class ContainerModel
       parentLocation: observable,
       parentContainers: observable,
       allParentContainers: observable,
-      rootParentContainer: observable,
+      rootParentContainer: computed,
       immediateParentContainer: observable,
       lastNonWorkbenchParent: observable,
       lastMoveDate: observable,
@@ -307,6 +307,12 @@ export default class ContainerModel
 
     if (this.recordType === "container")
       this.populateFromJson(factory, params, DEFAULT_CONTAINER);
+
+    this.hasLocationCapability = new HasLocationCapability({
+      parentContainers: params.parentContainers,
+      lastNonWorkbenchParent: params.lastNonWorkbenchParent,
+      factory,
+    });
   }
 
   populateFromJson(
@@ -446,7 +452,7 @@ export default class ContainerModel
   }
 
   get results(): Array<Container | SubSample> {
-    return this.contentSearch.filteredResults;
+    return this.contentSearch.filteredResults as Array<Container | SubSample>;
   }
 
   get canStoreRecordTypes(): boolean {
@@ -1243,6 +1249,20 @@ export default class ContainerModel
         },
       },
     ];
+  }
+
+  isInWorkbenchOfUser(user: Person): boolean {
+    return this.hasLocationCapability.isInWorkbenchOfUser(user);
+  }
+
+  isInCurrentUsersWorkbench(): boolean {
+    const currentUser = getRootStore().peopleStore.currentUser;
+    if (currentUser === null) return false;
+    return this.hasLocationCapability.isInWorkbenchOfUser(currentUser);
+  }
+
+  get rootParentContainer(): Container | null {
+    return this.hasLocationCapability.rootParentContainer;
   }
 }
 
