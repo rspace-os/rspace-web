@@ -52,6 +52,7 @@ $(document).ready(function() {
   unescapeMessageContent();
 
   initCreateCalendarEntryDlg();
+  initAttachFileToCalendarEntryDlg();
   $('#createCalendarEntryDlgLink').click(function () {
     $('#createCalendarEntryDlg').dialog('open');
   });
