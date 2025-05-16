@@ -40,7 +40,7 @@ declare export function cTypeToDefaultSearchView(cType: ContainerType): SearchVi
 
 export interface Location extends Point {
   id: ?number;
-  content: ?(SubSample | Container); //eslint-disable-line no-use-before-define
+  content: null | (InventoryRecord & HasLocation);
   coordX: number;
   coordY: number;
   selected: boolean;
@@ -97,4 +97,3 @@ export interface Container extends InventoryRecord, HasLocation {
   selectionStart: Point;
   selectionEnd: Point;
 }
-

@@ -55,7 +55,7 @@ export function cTypeToDefaultSearchView(cType: ContainerType): SearchView {
 
 export interface Location extends Point {
   id: number | null;
-  content: SubSample | Container | null; //eslint-disable-line no-use-before-define
+  content: null | (InventoryRecord & HasLocation);
   coordX: number;
   coordY: number;
   selected: boolean;
