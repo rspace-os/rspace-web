@@ -25,7 +25,6 @@ declare export class Movable {
   initializeMovableMixin(factory: Factory): void;
   hasParentContainers(): boolean;
   isMovable(): boolean;
-  isInWorkbench(): boolean;
   isInCurrentUsersWorkbench(): boolean;
   isInGridContainer(): boolean;
   timeInCurrentLocation(): number;

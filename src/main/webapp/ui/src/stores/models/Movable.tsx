@@ -62,13 +62,6 @@ export class Movable {
     return true;
   }
 
-  isInWorkbench(): boolean {
-    return (
-      this.hasParentContainers() &&
-      (this.rootParentContainer?.isWorkbench ?? false)
-    );
-  }
-
   isInGridContainer(): boolean {
     return this.immediateParentContainer?.cType === "GRID";
   }
