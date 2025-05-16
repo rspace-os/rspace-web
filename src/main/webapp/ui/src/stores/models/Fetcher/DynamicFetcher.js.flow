@@ -1,0 +1,28 @@
+// @flow
+
+import { action, computed, override, makeObservable } from "mobx";
+import CoreFetcher from "./CoreFetcher";
+import {
+  type CoreFetcherArgs,
+  type DynamicFetcher as DynamicFetcherInterface,
+} from "../../definitions/Search";
+import { type Factory } from "../../definitions/Factory";
+import { type InventoryRecord } from "../../definitions/InventoryRecord";
+
+declare export const DYNAMIC_PAGE_SIZE: number;
+
+declare export default class DynamicFetcher
+  extends CoreFetcher
+  implements DynamicFetcherInterface
+{
+  constructor(factory: Factory, params: ?CoreFetcherArgs): DynamicFetcher;
+
+  setPage(pageNumber: number): Promise<void>;
+
+  dynamicSearch(): void;
+
+  get nextDynamicPageSize(): number;
+
+  performInitialSearch(params: ?CoreFetcherArgs): Promise<void>;
+}
+

@@ -1,0 +1,159 @@
+//@flow
+
+import {
+  observable,
+  action,
+  computed,
+  makeObservable,
+  runInAction,
+} from "mobx";
+import React, { type Node } from "react";
+import GeoLocationModel from "../models/GeoLocationModel";
+import { type Id, type GlobalId } from "../definitions/BaseRecord";
+import { type URL, type _LINK } from "../../util/types";
+import {
+  type Identifier,
+  type IdentifierAttrs,
+  type AlternateIdentifier,
+  type IdentifierDescription,
+  type IdentifierSubject,
+  type IdentifierField,
+  type DropdownOption,
+  type CreatorType,
+  type IGSNPublishingState,
+  type IdentifierDate,
+} from "../definitions/Identifier";
+import type { RadioOption } from "../../components/Inputs/RadioField";
+import {
+  type GeoLocation,
+  type GeoLocationPolygon,
+} from "../definitions/GeoLocation";
+import { mkAlert, type Alert } from "../contexts/Alert";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import typeof InvApiService from "../../common/InvApiService";
+
+type GeoLocationBox = {
+  eastBoundLongitude: string,
+  northBoundLatitude: string,
+  southBoundLatitude: string,
+  westBoundLongitude: string,
+};
+type PolygonPoint = {
+  pointLatitude: string,
+  pointLongitude: string,
+};
+
+export type IdentifierGeoLocation = {
+  geoLocationBox: GeoLocationBox,
+  geoLocationPlace: string,
+  geoLocationPoint: PolygonPoint,
+  geoLocationPolygon: GeoLocationPolygon,
+};
+
+declare export const subFields: <Key: string, Value, Field: { [Key]: Value }>(
+  field: Field
+) => Array<{| key: Key, value: Value |}>;
+
+declare export const subFieldsForNew: { ... };
+
+declare export const RECOMMENDED_FIELDS_LABELS: {
+  type: string,
+  freeType: string,
+  subjectScheme: string,
+  schemeURI: string,
+  valueURI: string,
+  classificationCode: string,
+};
+
+declare export default class IdentifierModel implements Identifier {
+  parentGlobalId: GlobalId;
+  id: Id;
+  rsPublicId: ?string;
+  doi: string;
+  doiType: string;
+  creatorName: string;
+  creatorType: CreatorType;
+  creatorAffiliation: ?string;
+  creatorAffiliationIdentifier: ?string;
+  title: string; // item.name
+  publicUrl: ?URL;
+  publisher: string;
+  publicationYear: string;
+  resourceType: string;
+  resourceTypeGeneral: string;
+  url: ?URL;
+  state: IGSNPublishingState;
+  subjects: ?Array<IdentifierSubject>;
+  descriptions: ?Array<IdentifierDescription>;
+  alternateIdentifiers: ?Array<AlternateIdentifier>;
+  dates: ?Array<IdentifierDate>;
+  geoLocations: ?$ReadOnlyArray<GeoLocation>;
+  _links: Array<_LINK>;
+  editing: boolean;
+  customFieldsOnPublicPage: boolean;
+
+  ApiServiceBase: InvApiService | null;
+
+  constructor(
+    attrs: IdentifierAttrs,
+    parentGlobalId: GlobalId,
+    ApiServiceBase?: InvApiService
+  ): IdentifierModel;
+
+  get requiredFields(): Array<IdentifierField>;
+
+  get requiredCompleted(): boolean;
+
+  get optionalCompleted(): boolean;
+
+  get isValid(): boolean;
+
+  get recommendedFields(): Array<IdentifierField>;
+
+  get anyRecommendedGiven(): boolean;
+
+  get doiTypeLabel(): string;
+
+  setEditing(value: boolean): void;
+
+  setCreatorName(name: string): void;
+
+  setCreatorType(type: CreatorType): void;
+
+  setTitle(title: string): void;
+
+  setPublisher(publisher: string): void;
+
+  setPublicationYear(year: string): void;
+
+  setResourceType(type: string): void;
+
+  updateState(value: IGSNPublishingState): void;
+
+  setSubjects(subjects: Array<IdentifierSubject>): void;
+
+  setDescriptions(descriptions: Array<IdentifierDescription>): void;
+
+  setAlternateIdentifiers(alternateIdentifiers: Array<AlternateIdentifier>): void;
+
+  setDates(dates: Array<IdentifierDate>): void;
+
+  setGeoLocations(geoLocations: $ReadOnlyArray<GeoLocation>): void;
+
+  publish({|
+    confirm: (Node, Node, string, string) => Promise<boolean>,
+    addAlert: (Alert) => void,
+  |}): Promise<void>;
+
+  retract({|
+    confirm: (Node, Node, string, string) => Promise<boolean>,
+    addAlert: (Alert) => void,
+  |}): Promise<void>;
+
+  republish({|
+    addAlert: (Alert) => void,
+  |}): Promise<void>;
+
+  toJson(): { ... };
+}
+

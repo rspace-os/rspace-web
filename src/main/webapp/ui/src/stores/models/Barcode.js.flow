@@ -1,0 +1,68 @@
+//@flow
+
+import {
+  type BarcodeRecord,
+  type PersistedBarcodeAttrs,
+  type GeneratedBarcodeAttrs,
+} from "../definitions/Barcode";
+import React, { type Node } from "react";
+import { makeObservable, observable, computed, action } from "mobx";
+import { type Id } from "../definitions/BaseRecord";
+import { type URL } from "../../util/types";
+import ApiService from "../../common/InvApiService";
+
+declare export class PersistedBarcode implements BarcodeRecord {
+  id: Id;
+  data: BarcodeValue;
+  description: string;
+  newBarcodeRequest: boolean;
+  deleteBarcodeRequest: boolean;
+  imageUrl: ?URL;
+  image: ?File;
+
+  constructor(attrs: PersistedBarcodeAttrs): PersistedBarcode;
+
+  fetchImage(): Promise<File>;
+
+  markAsDeleted(): void;
+
+  deletedCopy(): ?BarcodeRecord;
+
+  get paramsForBackend(): { ... };
+
+  setDescription(value: string): void;
+
+  get isDeleted(): boolean;
+
+  get isDeletable(): boolean;
+
+  get descriptionIsEditable(): boolean;
+
+  get renderedDescription(): Node;
+}
+
+declare export class GeneratedBarcode implements BarcodeRecord {
+  data: BarcodeValue;
+  description: string;
+  imageUrl: ?URL;
+
+  constructor(attrs: GeneratedBarcodeAttrs): GeneratedBarcode;
+
+  fetchImage(): Promise<File>;
+
+  markAsDeleted(): void;
+
+  deletedCopy(): ?BarcodeRecord;
+
+  get paramsForBackend(): {};
+
+  setDescription(value: string): void;
+
+  get isDeleted(): boolean;
+
+  get isDeletable(): boolean;
+
+  get descriptionIsEditable(): boolean;
+
+  get renderedDescription(): Node;
+}

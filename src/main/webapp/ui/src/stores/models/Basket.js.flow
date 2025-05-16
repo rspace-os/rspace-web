@@ -1,0 +1,39 @@
+//@flow
+
+import { makeObservable, observable, action } from "mobx";
+import {
+  type Basket,
+  type BasketAttrs,
+  type BasketDetails,
+} from "../definitions/Basket";
+import { type Id, type GlobalId } from "../definitions/BaseRecord";
+import { type InventoryRecord } from "../definitions/InventoryRecord";
+import ApiService from "../../common/InvApiService";
+import { type URL } from "../../util/types";
+import getRootStore from "../stores/RootStore";
+import { mkAlert } from "../contexts/Alert";
+import { showToastWhilstPending } from "../../util/alerts";
+
+declare export default class BasketModel implements Basket {
+  name: string;
+  id: ?Id;
+  globalId: ?GlobalId;
+  items: Array<InventoryRecord>;
+  itemCount: number;
+  _links: Array<URL>;
+  loading: boolean;
+
+  constructor(attrs: BasketAttrs): BasketModel;
+
+  setLoading(value: boolean): void;
+
+  getItems(): Promise<void>;
+
+  addItems(itemIds: Array<GlobalId>): Promise<void>;
+
+  removeItems(itemIds: Array<GlobalId>): Promise<void>;
+
+  updateDetails(details: BasketDetails): Promise<void>;
+}
+
+declare export const NEW_BASKET: Basket;

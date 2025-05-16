@@ -1,0 +1,48 @@
+//@flow
+
+import { type Id, type GlobalId } from "./BaseRecord";
+import { type InventoryRecord } from "./InventoryRecord";
+import { type ValidationResult } from "../../components/ValidatingSubmitButton";
+
+export type ExtraFieldType = "Text" | "Number";
+
+export type ExtraFieldAttrs = {
+  id: Id,
+  globalId: ?GlobalId,
+  name: string,
+  lastModified: ?string,
+  type: "text" | "number",
+  content: string,
+  parentGlobalId: ?GlobalId,
+  editable?: boolean,
+  editing?: boolean,
+  initial?: boolean,
+  newFieldRequest?: boolean,
+};
+
+export interface ExtraField {
+  id: Id;
+  name: string; // the key of the key-value pair
+  type: ExtraFieldType;
+  content: string; // the value of the key-value pair
+  owner: InventoryRecord;
+  initial: boolean;
+
+  deleteFieldRequest: boolean;
+
+  newFieldRequest: boolean;
+
+  editing: boolean;
+  editable: boolean;
+
+  setAttributes({}): void;
+  setAttributesDirty({}): void;
+  setEditing(boolean): void;
+
+  invalidInput: boolean;
+  setInvalidInput(boolean): void;
+
+  +hasContent: boolean;
+  +isValid: ValidationResult;
+}
+

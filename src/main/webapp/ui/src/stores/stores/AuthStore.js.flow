@@ -1,0 +1,53 @@
+// @flow
+
+import axios from "@/common/axios";
+import { action, observable, makeObservable } from "mobx";
+import InvApiService from "../../common/InvApiService";
+import ElnApiService from "../../common/ElnApiService";
+import JwtService from "../../common/JwtService";
+import type { RootStore } from "./RootStore";
+import { mkAlert } from "../contexts/Alert";
+
+export type IntegrationState = "true" | "false";
+export type DataCiteServerUrl =
+  | "https://api.datacite.org"
+  | "https://api.test.datacite.org";
+
+export type SystemSettings = {|
+  datacite: {|
+    enabled: IntegrationState,
+    serverUrl: DataCiteServerUrl,
+    username: string,
+    password: string,
+    repositoryPrefix: string,
+  |},
+|};
+
+declare export default class AuthStore {
+  rootStore: RootStore;
+  isAuthenticated: boolean;
+  isSynchronizing: boolean;
+  isSigningOut: boolean;
+  timeoutId: null | TimeoutID;
+  systemSettings: SystemSettings;
+
+  constructor(rootStore: RootStore): AuthStore;
+
+  authenticate(): Promise<void>;
+
+  signOut(): void;
+
+  static getStatus(): Promise<void>;
+
+  synchronizeWithSessionStorage(): Promise<void>;
+
+  setSystemSettings(settings: SystemSettings): void;
+
+  getSystemSettings(): Promise<void>;
+
+  updateSystemSettings<SettingFor: $Keys<SystemSettings>>(
+    settingFor: SettingFor,
+    newSettings: SystemSettings[SettingFor]
+  ): Promise<void>;
+}
+

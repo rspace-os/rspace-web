@@ -119,6 +119,19 @@ module.exports = {
         exclude: /node_modules/,
         use: {
           loader: "ts-loader",
+          options: {
+            /*
+             * By only transpiling and not also doing a type check, this allows
+             * webpack to build code that might fail at runtime with errors that
+             * could be caught by the type checker. This is useful when
+             * developing code but it is important that the Jenkins build runs
+             * the TypeScript compiler separately to ensure that those errors
+             * don't make it into the production code. Devs should also run
+             * `npm run tsc` or rely their editor's LSP integration before
+             * committing.
+             */
+            transpileOnly: true,
+          },
         },
       },
       {

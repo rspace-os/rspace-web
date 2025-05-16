@@ -122,7 +122,7 @@ export const groupBy = <T, K extends string>(
  * recognise a normal filter.
  */
 export const filterClass = <T, U>(
-  clazz: { new (...args: unknown[]): T },
+  clazz: { new (...args: any[]): T },
   array: ReadonlyArray<U>
 ): Array<T> => {
   const arrayOft: Array<T> = [];

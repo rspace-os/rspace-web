@@ -1,0 +1,40 @@
+//@flow
+
+import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
+import ContainerModel from "../ContainerModel";
+import PersonModel from "../PersonModel";
+import { type PersonAttrs } from "../../definitions/Person";
+import Result from "../Result";
+import SampleModel from "../SampleModel";
+import SubSampleModel from "../SubSampleModel";
+import TemplateModel from "../TemplateModel";
+import { type Factory } from "../../definitions/Factory";
+import {
+  type PersistedBarcodeAttrs,
+  type BarcodeRecord,
+} from "../../definitions/Barcode";
+import { PersistedBarcode } from "../Barcode";
+import { type IdentifierAttrs } from "../../definitions/Identifier";
+import IdentifierModel from "../IdentifierModel";
+import { type DocumentAttrs, type Document } from "../../definitions/Document";
+import { newDocument } from "../Document";
+import InvApiService from "../../../common/InvApiService";
+
+declare export default class AlwaysNewFactory implements Factory {
+  newRecord(params: any): Result;
+
+  newPerson(attrs: PersonAttrs): PersonModel;
+
+  newBarcode(attrs: PersistedBarcodeAttrs): BarcodeRecord;
+
+  newIdentifier(
+    attrs: IdentifierAttrs,
+    parentGlobalId: GlobalId,
+    ApiService: typeof InvApiService
+  ): IdentifierModel;
+
+  newDocument(attrs: DocumentAttrs): Document;
+
+  newFactory(): Factory;
+}
+

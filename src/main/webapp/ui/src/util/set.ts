@@ -132,8 +132,7 @@ export default class RsSet<A> extends Set<A> {
    * filter.
    * Usage: see test
    */
-  // filterClass<U extends A>(clazz: { new (...args: unknown[]): U }): RsSet<U> {
-  filterClass<U extends A>(clazz: Class<U>): RsSet<U> {
+  filterClass<U>(clazz: { new (...args: any[]): U }): RsSet<U> {
     const setOft = new RsSet<U>();
     for (const a of this) {
       if (a instanceof clazz) setOft.add(a);

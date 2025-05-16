@@ -77,13 +77,11 @@ describe("method: importFile", () => {
               variant: "error",
               title: "Row 2",
               help: mockErrorMsg,
-              record: null,
             },
             {
               variant: "error",
               title: "Row 3",
               help: mockErrorMsg,
-              record: null,
             },
           ],
         })

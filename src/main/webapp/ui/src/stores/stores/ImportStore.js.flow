@@ -1,0 +1,27 @@
+// @flow
+
+import type { RootStore } from "./RootStore";
+import Import, { type State } from "../models/ImportModel";
+import { action, observable, makeObservable } from "mobx";
+import RsSet from "../../util/set";
+
+export type ImportRecordType = "SAMPLES" | "CONTAINERS" | "SUBSAMPLES";
+
+declare export const IMPORT_PATHNAME: string;
+
+declare export const isImportPage: () => boolean;
+
+declare export default class ImportStore {
+  rootStore: RootStore;
+  importData: ?Import;
+  fileImportKey: number;
+
+  constructor(rootStore: RootStore): ImportStore;
+
+  initializeNewImport(recordType: ImportRecordType): void;
+
+  submitImport(): void;
+
+  isCurrentImportState(state: State | RsSet<State>): boolean;
+}
+

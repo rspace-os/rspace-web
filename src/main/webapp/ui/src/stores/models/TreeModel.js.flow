@@ -1,0 +1,36 @@
+// @flow
+
+import { action, observable, computed, makeObservable } from "mobx";
+import Search from "./Search";
+import Result from "./Result";
+import getRootStore from "../stores/RootStore";
+import { type GlobalId } from "../definitions/BaseRecord";
+import {
+  type RecordType,
+  type InventoryRecord,
+} from "../definitions/InventoryRecord";
+import { type HasChildren } from "../definitions/HasChildren";
+import { UserCancelledAction } from "../../util/error";
+import { type TreeView } from "../definitions/TreeView";
+
+export type TreeAttrs = {
+  treeHolder: Search,
+  filteredTypes?: Array<RecordType>,
+};
+
+declare export default class TreeModel implements HasChildren, TreeView {
+  treeHolder: Search;
+  expanded: Array<string>;
+  filteredTypes: Array<RecordType>;
+
+  constructor(params: TreeAttrs): TreeModel;
+  get selected(): ?GlobalId;
+  get results(): Array<InventoryRecord>;
+  setAttributes(attrs: TreeAttrs): void;
+  get selectedNode(): ?Result;
+  setExpanded(ids: Array<string>): void;
+  setSelected(globalId: ?GlobalId): void;
+  get children(): Array<InventoryRecord>;
+  loadChildren(): void;
+  get canNavigateToChildren(): boolean;
+}

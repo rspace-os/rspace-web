@@ -1,0 +1,169 @@
+// @flow
+
+import {
+  action,
+  computed,
+  observable,
+  makeObservable,
+  runInAction,
+} from "mobx";
+import { mkAlert } from "../../contexts/Alert";
+import ApiService from "../../../common/InvApiService";
+import getRootStore from "../../stores/RootStore";
+import { globalIdPatterns, type GlobalId } from "../../definitions/BaseRecord";
+import { omitNull, match, filterObject } from "../../../util/Util";
+import { parseInteger } from "../../../util/parsers";
+import RsSet from "../../../util/set";
+import { type Person, type Username } from "../../definitions/Person";
+import { type Factory } from "../../definitions/Factory";
+import {
+  parseResultType,
+  type ResultType,
+  parseDeletedItems,
+  type DeletedItems,
+  type CoreFetcherArgs,
+  type Permalink,
+  type ParentGlobalIdType,
+  type PermalinkType,
+} from "../../definitions/Search";
+import { type InventoryRecord } from "../../definitions/InventoryRecord";
+import { type Order, parseOrder } from "../../../util/types";
+import { pick } from "../../../util/unsafeUtils";
+import Result from "../../../util/result";
+
+declare export const DEFAULT_SEARCH: {|
+  query: CoreFetcherArgs["query"],
+  pageSize: number,
+  pageNumber: CoreFetcherArgs["pageNumber"],
+  orderBy: CoreFetcherArgs["orderBy"],
+  order: CoreFetcherArgs["order"],
+  parentGlobalId: CoreFetcherArgs["parentGlobalId"],
+  resultType: CoreFetcherArgs["resultType"],
+  ownedBy: CoreFetcherArgs["ownedBy"],
+  owner: CoreFetcherArgs["owner"],
+  deletedItems: CoreFetcherArgs["deletedItems"],
+  permalink: CoreFetcherArgs["permalink"],
+  benchOwner: CoreFetcherArgs["benchOwner"],
+|};
+
+declare export const DEFAULT_FETCHER: {
+  results: Array<InventoryRecord>,
+  loading: boolean,
+  count: number,
+  error: string
+};
+
+declare export const parseCoreFetcherArgsFromUrl: (
+  searchParams: URLSearchParams
+) => CoreFetcherArgs;
+
+declare export const generateUrlFromCoreFetcherArgs: (
+  fetcherArgs: CoreFetcherArgs
+) => string;
+
+declare export default class CoreFetcher {
+  results: Array<InventoryRecord>;
+  loading: boolean;
+  count: number;
+  error: string;
+  endpoint: string;
+  query: ?string;
+  resultType: ?ResultType;
+  pageNumber: number;
+  pageSize: number;
+  orderBy: string;
+  order: string;
+  parentGlobalId: ?GlobalId;
+  permalink: ?Permalink;
+  ownedBy: ?Username;
+  owner: ?Person;
+  deletedItems: DeletedItems;
+  benchOwner: ?Person;
+  factory: Factory;
+
+  constructor(
+    factory: Factory,
+    params: ?CoreFetcherArgs
+  ): CoreFetcher;
+
+  setLoading(value: boolean): void;
+
+  setAttributes(params: CoreFetcherArgs): void;
+
+  setPage(pageNumber: number): Promise<void>;
+
+  setOrder(order: Order, orderBy: string): void;
+
+  setPageSize(pageSize: number): void;
+
+  setEndpoint(): void;
+
+  performInitialSearch(params: ?CoreFetcherArgs): Promise<void>;
+
+  reperformCurrentSearch(): Promise<void>;
+
+  search(
+    _params: ?CoreFetcherArgs,
+    storeResults: (Array<InventoryRecord>) => void
+  ): Promise<void>;
+
+  generateParams(editedParams: ?CoreFetcherArgs | {}): CoreFetcherArgs;
+
+  applySearchParams(params: CoreFetcherArgs): CoreFetcherArgs;
+
+  generateQuery(editedParams: CoreFetcherArgs): URLSearchParams;
+
+  generateNewQuery(editedParams: CoreFetcherArgs): URLSearchParams;
+
+  get serialize(): Partial<CoreFetcherArgs>;
+
+  setResults(results: Array<InventoryRecord>): void;
+
+  addResults(
+    prependResults: Array<InventoryRecord>,
+    appendResults: Array<InventoryRecord>
+  ): void;
+
+  replaceResult(result: InventoryRecord): void;
+
+  resetSearch(): void;
+
+  resetFetcher(): void;
+
+  get parentGlobalIdType(): ?ParentGlobalIdType;
+
+  setDeletedItems(value: DeletedItems): void;
+
+  setResultType(resultType: ResultType): void;
+
+  setOwner(owner: ?Person): void;
+
+  setBenchOwner(owner: ?Person): void;
+
+  setParentGlobalId(parentGlobalId: ?GlobalId): void;
+
+  get isOrderDesc(): boolean;
+
+  isCurrentSort(key: string): boolean;
+
+  invertSortOrder(): Order;
+
+  defaultSortOrder(key: string): Order;
+
+  /* context-related */
+
+  get parentIsContainer(): boolean;
+
+  get parentIsSample(): boolean;
+
+  get parentIsTemplate(): boolean;
+
+  get parentIsBench(): boolean;
+
+  get basketSearch(): boolean;
+
+  get allTypesAllowed(): boolean;
+
+  get deletedItemsLabel(): string;
+}
+
