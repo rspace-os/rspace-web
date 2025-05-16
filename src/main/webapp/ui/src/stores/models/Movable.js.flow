@@ -27,7 +27,6 @@ declare export class Movable {
   isMovable(): boolean;
   isInWorkbench(): boolean;
   isInCurrentUsersWorkbench(): boolean;
-  isOnWorkbench(): boolean;
   isInGridContainer(): boolean;
   timeInCurrentLocation(): number;
   wasHereLast(containerGlobalId: GlobalId): boolean;
