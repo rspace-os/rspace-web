@@ -88,6 +88,7 @@ function Name<
       disabled={!fieldOwner.isFieldEditable("name")}
       error={Boolean(errorMessage())}
       helperText={errorMessage()}
+      required
       renderInput={(props) => (
         <StringField
           {...props}

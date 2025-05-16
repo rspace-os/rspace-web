@@ -100,3 +100,37 @@ export default function SynchroniseFormSections({
     </FormSectionsContext.Provider>
   );
 }
+
+/**
+ * Sometimes we specifically don't want to synchronise form sections, and the
+ * default open/close state should always be how the section is initially
+ * presented. For example, when creating new records we want to always present
+ * the required name field in the overview section. The user can always toggle
+ * the state of the section, but that state change is not persisted.
+ */
+export function UnsynchroniseFormSections({
+  children,
+}: SynchroniseFormSectionsArgs): Node {
+  const [formSectionExpandedState, setFormSectionExpandedState] = React.useState(defaultFormSectionExpandedState());
+  return (
+    <FormSectionsContext.Provider value={{
+      isExpanded: (recordType, sectionName) =>
+        formSectionExpandedState[recordType][sectionName],
+      setExpanded: (recordType, sectionName, value) => {
+        const formSectionExpandedStateCopy = { ...formSectionExpandedState };
+        formSectionExpandedStateCopy[recordType][sectionName] = value;
+        setFormSectionExpandedState(formSectionExpandedStateCopy);
+      },
+      setAllExpanded: (recordType, value) => {
+        const formSectionExpandedStateCopy = { ...formSectionExpandedState };
+        formSectionExpandedStateCopy[recordType] = mapObject(
+          () => value,
+          formSectionExpandedState[recordType]
+        );
+        setFormSectionExpandedState(formSectionExpandedStateCopy);
+      },
+    }}>
+      {children}
+    </FormSectionsContext.Provider>
+  );
+}

@@ -23,7 +23,9 @@ import {
   useFormSectionError,
   setFormSectionError,
 } from "../components/Stepper/StepperPanelHeader";
-import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import SynchroniseFormSections, {
+  UnsynchroniseFormSections,
+} from "../components/Stepper/SynchroniseFormSections";
 import AccessPermissions from "../components/Fields/AccessPermissions";
 
 const OverviewSection = observer(
@@ -32,6 +34,16 @@ const OverviewSection = observer(
       editing: activeResult.editing,
       globalId: activeResult.globalId,
     });
+
+    /*
+     * Name is a required field so it effectively starts in an error state.
+     */
+    React.useEffect(() => {
+      setFormSectionError(formSectionError, "name", true);
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - formSectionError will not meaningfully change
+       */
+    }, []);
 
     return (
       <StepperPanel
@@ -143,7 +155,9 @@ export default function NewRecordForm(): Node {
         titleText={`New ${inventoryRecordTypeLabels.sampleTemplate}`}
         resetScrollPosition={Symbol("always reset scroll")}
       >
-        <OverviewSection activeResult={activeResult} />
+        <UnsynchroniseFormSections>
+          <OverviewSection activeResult={activeResult} />
+        </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
         <StepperPanel
           title="Access Permissions"

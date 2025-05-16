@@ -30,7 +30,9 @@ import Tags from "../components/Fields/Tags";
 import BarcodesField from "../components/Fields/Barcodes/FormField";
 import IdentifiersField from "../components/Fields/Identifiers/Identifiers";
 import AccessPermissions from "../components/Fields/AccessPermissions";
-import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import SynchroniseFormSections, {
+  UnsynchroniseFormSections,
+} from "../components/Stepper/SynchroniseFormSections";
 
 const OverviewSection = observer(
   ({ activeResult }: { activeResult: SampleModel }) => {
@@ -38,6 +40,16 @@ const OverviewSection = observer(
       editing: activeResult.editing,
       globalId: activeResult.globalId,
     });
+
+    /*
+     * Name is a required field so it effectively starts in an error state.
+     */
+    React.useEffect(() => {
+      setFormSectionError(formSectionError, "name", true);
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - formSectionError will not meaningfully change
+       */
+    }, []);
 
     return (
       <StepperPanel
@@ -213,7 +225,9 @@ function NewRecordForm(): Node {
         titleText={`New ${inventoryRecordTypeLabels.sample}`}
         resetScrollPosition={Symbol("always reset scroll")}
       >
-        <OverviewSection activeResult={activeResult} />
+        <UnsynchroniseFormSections>
+          <OverviewSection activeResult={activeResult} />
+        </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
         <StepperPanel
           icon="sample"
