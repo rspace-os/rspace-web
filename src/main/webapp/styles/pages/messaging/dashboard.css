@@ -87,3 +87,7 @@
   background-image: url("/images/sentRequests.png");
   background-position: 10px 1px; }
 
+#createCalendarEntryDlgLink {
+  padding: 11px 7px 9px 45px;
+  background-image: url("/images/calendar_icon.png");
+  background-position: 10px 1px; }
