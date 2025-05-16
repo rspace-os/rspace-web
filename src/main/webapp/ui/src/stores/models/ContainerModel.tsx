@@ -310,6 +310,8 @@ export default class ContainerModel
       lastMoveDate: params.lastMoveDate,
       lastNonWorkbenchParent: params.lastNonWorkbenchParent,
       factory,
+      inventoryRecord: this,
+      parentLocation: params.parentLocation,
     });
   }
 
@@ -944,8 +946,7 @@ export default class ContainerModel
 
     const options: AdjustableTableRowOptions<string> = new Map([
       ...super.adjustableTableOptions(),
-      // @ts-expect-error adjustableTableOptions_movable is on the mixed in class, Movable
-      ...(this.adjustableTableOptions_movable() as AdjustableTableRowOptions<string>),
+      ...this.hasLocationCapability.adjustableTableOptions(),
     ]);
     if (this.readAccessLevel !== "full") {
       options.set("Contents", () => ({ renderOption: "node", data: null }));

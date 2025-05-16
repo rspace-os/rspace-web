@@ -65,7 +65,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
 import { HasLocationCapability } from "./HasLocation";
-import { Container } from "../definitions/Container";
+import { Container, Location } from "../definitions/Container";
 
 type SubSampleEditableFields = RecordWithQuantityEditableFields;
 
@@ -179,6 +179,8 @@ export default class SubSampleModel
       lastMoveDate: params.lastMoveDate,
       lastNonWorkbenchParent: params.lastNonWorkbenchParent,
       factory,
+      inventoryRecord: this,
+      parentLocation: params.parentLocation as Location | null,
     });
   }
 
@@ -331,8 +333,7 @@ export default class SubSampleModel
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     const options = new Map([
       ...super.adjustableTableOptions(),
-      // @ts-expect-error adjustableTableOptions_movable is on the mixed in class, Movable
-      ...(this.adjustableTableOptions_movable() as AdjustableTableRowOptions<string>),
+      ...this.hasLocationCapability.adjustableTableOptions(),
     ]);
     if (this.readAccessLevel === "public") {
       options.set("Sample", () => ({ renderOption: "node", data: null }));
