@@ -10,6 +10,8 @@
 	<script src="<c:url value='/scripts/pages/messaging/myrequests.js'/>"></script>
 	<script src="<c:url value='/scripts/pages/messaging/messageCreation.js'/>"></script>
   <script src="<c:url value='/scripts/pages/workspace/calendarDialog.js'/>"></script>
+  <script src="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
+  <link href="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" rel="stylesheet" />
 	<script src="<c:url value='/scripts/pages/messaging/dashboard.js'/>"></script>
   <script src="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 </head>
