@@ -139,8 +139,6 @@ export interface InventoryRecord
   +paramsForBackend: any;
 
   hasParentContainers(): boolean;
-  isInWorkbench(): boolean; // any parent is a bench
-  isOnWorkbench(): boolean; // immediate parent is a bench
   isMovable(): boolean;
   +hasSubSamples: boolean;
 
@@ -171,4 +169,3 @@ export interface InventoryRecord
   +usableInLoM: boolean;
   +beingCreatedInContainer: boolean;
 }
-

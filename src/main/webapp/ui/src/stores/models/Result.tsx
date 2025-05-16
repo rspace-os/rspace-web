@@ -1623,11 +1623,6 @@ export default class Result
     return false;
   }
 
-  // see Movable: if only parent is a bench (item is 'on' bench ie at top-level)
-  isOnWorkbench(): boolean {
-    return false;
-  }
-
   // see Movable: if only parent is current user's bench (item is 'on' bench ie at top-level)
   isOnCurrentUsersWorkbench(): boolean {
     return false;

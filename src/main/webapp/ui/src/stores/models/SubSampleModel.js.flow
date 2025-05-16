@@ -165,6 +165,7 @@ declare export default class SubSampleModel
   +immediateParentContainer: Container | null;
   +rootParentContainer: Container | null;
   isInWorkbench(): boolean;
+  +isOnWorkbench: boolean;
   isInWorkbenchOfUser(user: Person): boolean;
   +lastNonWorkbenchParent: Container | null;
   get lastMoveDate(): ?Date;

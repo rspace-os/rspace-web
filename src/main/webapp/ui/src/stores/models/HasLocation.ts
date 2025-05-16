@@ -63,6 +63,13 @@ export class HasLocationCapability implements HasLocation {
     return this.rootParentContainer.isWorkbench;
   }
 
+  get isOnWorkbench(): boolean {
+    return (
+      this.isInWorkbench() &&
+      this.immediateParentContainer === this.rootParentContainer
+    );
+  }
+
   isInWorkbenchOfUser(currentUser: Person): boolean {
     return (
       this.isInWorkbench() &&

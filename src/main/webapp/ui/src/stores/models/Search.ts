@@ -936,8 +936,10 @@ export default class Search implements SearchInterface {
           newRecord.populateFromJson(factory, record, null);
           return newRecord;
         });
-      const recordsOnBench = successfullyTranferred.every((r) =>
-        r.isOnWorkbench()
+      const recordsOnBench = successfullyTranferred.every(
+        (r) =>
+          (r instanceof ContainerModel || r instanceof SubSampleModel) &&
+          r.isOnWorkbench
       );
       const helpMessage = recordsOnBench
         ? `The records have been moved to ${username}'s bench`

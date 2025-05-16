@@ -1128,7 +1128,7 @@ export default class ContainerModel
   }
 
   get beingCreatedInContainer(): boolean {
-    return !this.isOnWorkbench();
+    return !this.isOnWorkbench;
   }
 
   get inContainerParams(): ContainerInContainerParams {
@@ -1246,6 +1246,10 @@ export default class ContainerModel
         },
       },
     ];
+  }
+
+  get isOnWorkbench(): boolean {
+    return this.hasLocationCapability.isOnWorkbench;
   }
 
   isInWorkbenchOfUser(user: Person): boolean {
