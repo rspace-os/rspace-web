@@ -47,6 +47,13 @@ export interface HasLocation {
   isInWorkbenchOfUser(user: Person): boolean;
 
   /*
+   * The timestamp of when this item was last moved. If it has never been moved
+   * from the location it was created in (usually the owner's workbench) then is
+   * null;
+   */
+  lastMoveDate: Date | null;
+
+  /*
    * This is the last container that the Inventory record was last in. In most
    * circumstances this is probably the storage location for the item from where
    * the user retrieved the item prior to beginning an experiment and to where

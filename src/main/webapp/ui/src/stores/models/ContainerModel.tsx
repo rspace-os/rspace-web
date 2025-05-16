@@ -121,9 +121,9 @@ export type ContainerAttrs = {
   contentSummary: ContentSummary | null;
   image?: string;
   parentContainers: Array<ContainerAttrs>;
+  lastMoveDate: string | null;
   lastNonWorkbenchParent: ContainerAttrs | null;
   parentLocation: Location | null;
-  lastMoveDate: Date | null;
   owner: PersonAttrs | null;
   created: string | null;
   lastModified: string | null;
@@ -227,8 +227,6 @@ export default class ContainerModel
   immediateParentContainer: Container | null;
   // @ts-expect-error lastNonWorkbenchParent is initialised by populateFromJson
   lastNonWorkbenchParent: Container | null;
-  // @ts-expect-error lastMoveDate is initialised by populateFromJson
-  lastMoveDate: Date | null;
   siblingColorCache: Map<Id, string> = new Map<Id, string>();
   hasLocationCapability: HasLocationCapability;
 
@@ -257,7 +255,6 @@ export default class ContainerModel
       rootParentContainer: computed,
       immediateParentContainer: observable,
       lastNonWorkbenchParent: observable,
-      lastMoveDate: observable,
       updateLocationsCount: action,
       setOrganization: action,
       findLocation: action,
@@ -310,6 +307,7 @@ export default class ContainerModel
 
     this.hasLocationCapability = new HasLocationCapability({
       parentContainers: params.parentContainers,
+      lastMoveDate: params.lastMoveDate,
       lastNonWorkbenchParent: params.lastNonWorkbenchParent,
       factory,
     });
@@ -345,7 +343,6 @@ export default class ContainerModel
     this.parentContainers = params.parentContainers;
     // @ts-expect-error lastNonWorkbenchParent is enriched by movable
     this.lastNonWorkbenchParent = params.lastNonWorkbenchParent;
-    this.lastMoveDate = params.lastMoveDate;
     // @ts-expect-error is on movable
     this.initializeMovableMixin(factory);
 
@@ -1263,6 +1260,10 @@ export default class ContainerModel
 
   get rootParentContainer(): Container | null {
     return this.hasLocationCapability.rootParentContainer;
+  }
+
+  get lastMoveDate(): Date | null {
+    return this.hasLocationCapability.lastMoveDate;
   }
 }
 

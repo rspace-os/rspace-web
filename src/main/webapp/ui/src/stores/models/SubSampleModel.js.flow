@@ -167,6 +167,7 @@ declare export default class SubSampleModel
   isInWorkbench(): boolean;
   isInWorkbenchOfUser(user: Person): boolean;
   +lastNonWorkbenchParent: Container | null;
+  get lastMoveDate(): ?Date;
 }
 
 type BatchSubSampleEditableFields = ResultCollectionEditableFields &

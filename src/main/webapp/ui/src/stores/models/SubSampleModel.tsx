@@ -100,8 +100,8 @@ export type SubSampleAttrs = {
   newBase64Image?: string;
   image?: string;
   parentContainers: Array<ContainerAttrs>;
+  lastMoveDate: string | null;
   lastNonWorkbenchParent: ContainerAttrs | null;
-  lastMoveDate: Date | null;
   sample?: SampleAttrs | SampleModel;
   owner: PersonAttrs | null;
   created: string | null;
@@ -139,8 +139,6 @@ export default class SubSampleModel
   parentLocation: Location | null = null;
   allParentContainers: (() => Array<ContainerModel>) | null = null;
   immediateParentContainer: ContainerModel | null = null;
-  // @ts-expect-error lastMoveDate is initialised by populateFromJson
-  lastMoveDate: Date | null;
   createOptionsParametersState: {
     split: { key: "split"; copies: number };
   };
@@ -156,7 +154,6 @@ export default class SubSampleModel
       allParentContainers: observable,
       rootParentContainer: computed,
       immediateParentContainer: observable,
-      lastMoveDate: observable,
       createOptionsParametersState: observable,
       createNote: action,
       paramsForBackend: override,
@@ -179,6 +176,7 @@ export default class SubSampleModel
 
     this.hasLocationCapability = new HasLocationCapability({
       parentContainers: params.parentContainers,
+      lastMoveDate: params.lastMoveDate,
       lastNonWorkbenchParent: params.lastNonWorkbenchParent,
       factory,
     });
@@ -196,7 +194,6 @@ export default class SubSampleModel
     this.parentLocation = params.parentLocation;
     // @ts-expect-error parentContainers is on the mixed in class, Movable
     this.parentContainers = params.parentContainers ?? [];
-    this.lastMoveDate = params.lastMoveDate;
     // @ts-expect-error initializeMovableMixin is on the mixed in class, Movable
     this.initializeMovableMixin(factory);
 
@@ -506,6 +503,10 @@ export default class SubSampleModel
 
   get lastNonWorkbenchParent(): Container | null {
     return this.hasLocationCapability.lastNonWorkbenchParent;
+  }
+
+  get lastMoveDate(): Date | null {
+    return this.hasLocationCapability.lastMoveDate;
   }
 }
 

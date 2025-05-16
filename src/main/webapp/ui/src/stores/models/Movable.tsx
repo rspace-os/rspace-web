@@ -126,7 +126,11 @@ export class Movable {
       }
       options.set("Last Moved", () => ({
         renderOption: "node",
-        data: this.lastMoveDate ? isoToLocale(this.lastMoveDate) : <>&mdash;</>,
+        data: this.lastMoveDate ? (
+          this.lastMoveDate.toLocaleString()
+        ) : (
+          <>&mdash;</>
+        ),
       }));
     } else {
       options.set("Previous Location", () => ({

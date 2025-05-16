@@ -3,6 +3,8 @@ import { Factory } from "../definitions/Factory";
 import { HasLocation } from "../definitions/HasLocation";
 import { Person } from "../definitions/Person";
 import { ContainerAttrs } from "./ContainerModel";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -12,13 +14,16 @@ import { ContainerAttrs } from "./ContainerModel";
 export class HasLocationCapability implements HasLocation {
   immediateParentContainer: Container | null;
   lastNonWorkbenchParent: Container | null;
+  lastMoveDate: Date | null;
 
   constructor({
     parentContainers,
+    lastMoveDate,
     lastNonWorkbenchParent,
     factory,
   }: {
     parentContainers: Array<ContainerAttrs> | null;
+    lastMoveDate: string | null;
     lastNonWorkbenchParent: ContainerAttrs | null;
     factory: Factory;
   }) {
@@ -29,6 +34,12 @@ export class HasLocationCapability implements HasLocation {
     } else {
       this.immediateParentContainer = null;
     }
+    this.lastMoveDate = Result.fromNullable(
+      lastMoveDate,
+      new Error("Not yet been moved")
+    )
+      .flatMap(Parsers.parseDate)
+      .orElse(null);
     if (lastNonWorkbenchParent !== null) {
       this.lastNonWorkbenchParent = factory.newRecord(
         lastNonWorkbenchParent
