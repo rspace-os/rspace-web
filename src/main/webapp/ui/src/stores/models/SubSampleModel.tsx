@@ -491,14 +491,12 @@ export default class SubSampleModel
     return this.hasLocationCapability.isInWorkbenchOfUser(user);
   }
 
-  get isOnWorkbench(): boolean {
-    return this.hasLocationCapability.isOnWorkbench;
+  isOnWorkbenchOfUser(user: Person): boolean {
+    return this.hasLocationCapability.isOnWorkbenchOfUser(user);
   }
 
-  isInCurrentUsersWorkbench(): boolean {
-    const currentUser = getRootStore().peopleStore.currentUser;
-    if (currentUser === null) return false;
-    return this.hasLocationCapability.isInWorkbenchOfUser(currentUser);
+  get isOnWorkbench(): boolean {
+    return this.hasLocationCapability.isOnWorkbench;
   }
 
   get rootParentContainer(): Container | null {

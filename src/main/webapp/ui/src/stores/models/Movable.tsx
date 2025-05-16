@@ -76,14 +76,6 @@ export class Movable {
     );
   }
 
-  isOnCurrentUsersWorkbench(): boolean {
-    return (
-      this.isOnWorkbench() &&
-      this.rootParentContainer?.id ===
-        getRootStore().peopleStore.currentUser?.workbenchId
-    );
-  }
-
   isInGridContainer(): boolean {
     return this.immediateParentContainer?.cType === "GRID";
   }

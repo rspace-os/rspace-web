@@ -840,10 +840,10 @@ export class ListOfMaterials {
       .map((m) => m.invRec)
       .filter((r) => r.isMovable()) as RsSet<ContainerModel | SubSampleModel>;
     const parentIsBench = allMaterials.filter((r) =>
-      r.isOnCurrentUsersWorkbench()
+      r.isOnWorkbenchOfUser(currentUser)
     );
     const parentIsOnBench = allMaterials
-      .filter((r) => r.isInCurrentUsersWorkbench())
+      .filter((r) => r.isInWorkbenchOfUser(currentUser))
       .subtract(parentIsBench);
 
     let moving = allMaterials.subtract(parentIsBench).subtract(parentIsOnBench);

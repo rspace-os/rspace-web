@@ -12,7 +12,14 @@ import Result from "../../util/result";
  * provides the state and methods common to all of these Inventory records.
  */
 export class HasLocationCapability implements HasLocation {
+  /*
+   * An Inventory record that has a location will either be inside of another
+   * container, in which case this property will reference that container, or it
+   * will be a root level container. Only containers may reside at the root
+   * level; subsamples must always be inside of another container.
+   */
   immediateParentContainer: Container | null;
+
   lastNonWorkbenchParent: Container | null;
   lastMoveDate: Date | null;
 
@@ -70,10 +77,15 @@ export class HasLocationCapability implements HasLocation {
     );
   }
 
-  isInWorkbenchOfUser(currentUser: Person): boolean {
+  isInWorkbenchOfUser(user: Person): boolean {
     return (
-      this.isInWorkbench() &&
-      this.rootParentContainer?.id === currentUser.workbenchId
+      this.isInWorkbench() && this.rootParentContainer?.id === user.workbenchId
+    );
+  }
+
+  isOnWorkbenchOfUser(user: Person): boolean {
+    return (
+      this.isOnWorkbench && this.rootParentContainer?.id === user.workbenchId
     );
   }
 }

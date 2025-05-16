@@ -1256,10 +1256,8 @@ export default class ContainerModel
     return this.hasLocationCapability.isInWorkbenchOfUser(user);
   }
 
-  isInCurrentUsersWorkbench(): boolean {
-    const currentUser = getRootStore().peopleStore.currentUser;
-    if (currentUser === null) return false;
-    return this.hasLocationCapability.isInWorkbenchOfUser(currentUser);
+  isOnWorkbenchOfUser(user: Person): boolean {
+    return this.hasLocationCapability.isOnWorkbenchOfUser(user);
   }
 
   get rootParentContainer(): Container | null {

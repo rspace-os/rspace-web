@@ -5,7 +5,6 @@ import { type Person } from "./Person";
 
 export interface HasLocation {
   isMovable(): boolean;
-  +immediateParentContainer: Container | null;
   +rootParentContainer: Container | null;
   isInWorkbench(): boolean;
   +isOnWorkbench: boolean;

@@ -47,6 +47,9 @@ import ValidatingSubmitButton, {
   IsValid,
 } from "../../components/ValidatingSubmitButton";
 import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
+import getRootStore from "../../stores/stores/RootStore";
+import ContainerModel from "../../stores/models/ContainerModel";
+import SubSampleModel from "../../stores/models/SubSampleModel";
 
 const EmptyListText = ({ currentList }: { currentList: ?ListOfMaterials }) =>
   currentList && currentList.materials.length === 0 ? (
@@ -266,12 +269,19 @@ const ActionsBar = observer(
     const originalList = materialsStore.originalList;
     const canEditQuantities = currentList?.canEditQuantities;
     const editingMode = currentList?.editingMode;
+    const currentUser = getRootStore().peopleStore.currentUser;
 
     const allOnBench =
-      currentList?.materials.every(
-        // $FlowExpectedError[prop-missing] Only subsample and containers can be placed on bench, both of which have isOnCurrentUsersWorkbench
-        (m) => !m.invRec.isMovable() || m.invRec.isOnCurrentUsersWorkbench()
-      ) ?? false;
+      currentList?.materials.every((m) => {
+        if (
+          !(
+            m.invRec instanceof ContainerModel ||
+            m.invRec instanceof SubSampleModel
+          )
+        )
+          return true;
+        return m.invRec.isOnWorkbenchOfUser(currentUser);
+      }) ?? false;
 
     const moveAllToBenchValidation = () => {
       if (currentList?.materials.length === 0)

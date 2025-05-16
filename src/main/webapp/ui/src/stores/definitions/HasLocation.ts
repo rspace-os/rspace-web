@@ -16,14 +16,6 @@ export interface HasLocation {
   isMovable(): boolean;
 
   /*
-   * An Inventory record that has a location will either be inside of another
-   * container, in which case this property will reference that container, or it
-   * will be a root level container. Only containers may reside at the root
-   * level; subsamples must always be inside of another container.
-   */
-  readonly immediateParentContainer: Container | null;
-
-  /*
    * Because items which have a location have a parent container, and containers
    * are themselves items which have a location, we end up with a tree of
    * containers. At the root of the tree are containers which do not reside
@@ -47,10 +39,16 @@ export interface HasLocation {
   readonly isOnWorkbench: boolean;
 
   /*
-   * Not only is this item on a workbench, but the workbench that it is on is
-   * owned by the specified user.
+   * Not only is this item transitively on a workbench, but the workbench that
+   * it is on is owned by the specified user.
    */
   isInWorkbenchOfUser(user: Person): boolean;
+
+  /*
+   * Not only is this item directly on a workbench, but that workbench that it
+   * is on it owned by the specified user.
+   */
+  isOnWorkbenchOfUser(user: Person): boolean;
 
   /*
    * The timestamp of when this item was last moved. If it has never been moved

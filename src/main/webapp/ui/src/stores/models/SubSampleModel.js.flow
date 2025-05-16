@@ -159,14 +159,12 @@ declare export default class SubSampleModel
   get noValueLabel(): {[key in keyof SubSampleEditableFields]: ?string} & {[key in keyof SubSampleUneditableFields]: ?string};
   validate(): ValidationResult;
   get usableInLoM(): boolean;
-  get createOptions(): $ReadOnlyArray<CreateOption>;
-  isInWorkbenchOfUser( Person): boolean;
-  isInCurrentUsersWorkbench(): boolean;
-  +immediateParentContainer: Container | null;
+
   +rootParentContainer: Container | null;
   isInWorkbench(): boolean;
   +isOnWorkbench: boolean;
   isInWorkbenchOfUser(user: Person): boolean;
+  isOnWorkbenchOfUser(user: Person): boolean;
   +lastNonWorkbenchParent: Container | null;
   get lastMoveDate(): ?Date;
 }
