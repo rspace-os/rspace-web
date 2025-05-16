@@ -66,10 +66,6 @@ export class Movable {
     return this.immediateParentContainer?.cType === "GRID";
   }
 
-  wasHereLast(containerGlobalId: GlobalId): boolean {
-    return this.lastNonWorkbenchParent.globalId === containerGlobalId;
-  }
-
   gridCoordinatesLabel(): string {
     if (!this.immediateParentContainer)
       throw new Error("Parent container must be known.");

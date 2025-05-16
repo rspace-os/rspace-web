@@ -27,7 +27,6 @@ declare export class Movable {
   isMovable(): boolean;
   isInCurrentUsersWorkbench(): boolean;
   isInGridContainer(): boolean;
-  wasHereLast(containerGlobalId: GlobalId): boolean;
   gridCoordinatesLabel(): string;
   adjustableTableOptions_movable(): AdjustableTableRowOptions<string>;
 }
