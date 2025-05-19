@@ -17,7 +17,7 @@ function TopLevelButton({ onClose }: TopLevelButtonArgs) {
     (r) => r instanceof ContainerModel
   );
   const allTopLevel = moveStore.selectedResults.every((r) =>
-    hasLocation(r).isEmpty()
+    hasLocation(r).map(r => r.immediateParentContainer === null).orElse(false)
   );
   return (
     <SubmitSpinner
