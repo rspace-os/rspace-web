@@ -323,8 +323,6 @@ export interface InventoryRecord
    * where they aren't applicable, due to implementation details of various
    * components. It would be ideal if this were not necessary.
    */
-  hasParentContainers(): boolean;
-  isMovable(): boolean;
   readonly hasSubSamples: boolean;
 
   /*

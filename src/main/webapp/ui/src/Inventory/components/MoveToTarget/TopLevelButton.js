@@ -2,6 +2,7 @@
 
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import ContainerModel from "../../../stores/models/ContainerModel";
+import { hasLocation } from "../../../stores/models/HasLocation";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import React, { type ComponentType } from "react";
@@ -15,8 +16,8 @@ function TopLevelButton({ onClose }: TopLevelButtonArgs) {
   const allContainers = moveStore.selectedResults.every(
     (r) => r instanceof ContainerModel
   );
-  const allTopLevel = moveStore.selectedResults.every(
-    (r) => !r.hasParentContainers()
+  const allTopLevel = moveStore.selectedResults.every((r) =>
+    hasLocation(r).isEmpty()
   );
   return (
     <SubmitSpinner

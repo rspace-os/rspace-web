@@ -1613,14 +1613,6 @@ export default class Result
     ];
   }
 
-  isMovable(): boolean {
-    return false;
-  }
-
-  hasParentContainers(): boolean {
-    return false;
-  }
-
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     if (!this.owner) throw new Error("Owner is required");
     const owner = this.owner;

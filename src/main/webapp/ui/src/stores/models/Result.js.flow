@@ -255,8 +255,6 @@ declare export default class Result
   get isWorkbench(): boolean;
   get isTemplate(): boolean;
   get fieldNamesInUse(): Array<string>;
-  isMovable(): boolean;
-  hasParentContainers(): boolean;
   adjustableTableOptions(): AdjustableTableRowOptions<string>;
   get recordLinkLabel(): string;
   get showRecordOnNavigate(): boolean;

@@ -5,8 +5,9 @@ import { type Person } from "./Person";
 import { type InventoryRecord } from "./InventoryRecord";
 
 export interface HasLocation {
-  isMovable(): boolean;
+  +immediateParentContainer: Container | null;
   +rootParentContainer: Container | null;
+  +allParentContainers: $ReadOnlyArray<Container>;
   +isInWorkbench: boolean;
   +isOnWorkbench: boolean;
   isInWorkbenchOfUser(user: Person): boolean;

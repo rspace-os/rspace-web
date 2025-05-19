@@ -265,7 +265,9 @@ declare export default class ContainerModel
   get dataAttachedToRecordCreatedAnaylticsEvent(): {};
   get createOptions(): $ReadOnlyArray<CreateOption>;
 
+  +immediateParentContainer: Container | null;
   +rootParentContainer: Container | null;
+  +allParentContainers: $ReadOnlyArray<Container>;
   +isInWorkbench: boolean;
   +isOnWorkbench: boolean;
   isInWorkbenchOfUser(user: Person): boolean;

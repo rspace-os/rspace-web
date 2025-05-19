@@ -3,18 +3,28 @@ import { InventoryRecord } from "./InventoryRecord";
 import { Person } from "./Person";
 
 /**
+ * This is used to mark implementations of the HasLocation interface so that
+ * runtime we can filter collections of InventoryRecord, operating just on those
+ * that have a location.
+ */
+export const HasLocationMarker = Symbol("HasLocation");
+
+/**
  * Inventory records that model items that physically exist and thus have a
  * real-world location MUST implement this interface. To avoid duplicating
  * logic, each class can delegate most of the logic concerning this location
  * state to the HasLocationCapability model class.
  */
 export interface HasLocation {
+  [HasLocationMarker]: true;
+
   /*
-   * This will always be true for implementations of this interface, and is used
-   * to filter a collection of Inventory records to operate just on those that
-   * have a physical location.
+   * An Inventory record that has a location will either be inside of another
+   * container, in which case this property will reference that container, or it
+   * will be a root level container. Only containers may reside at the root
+   * level; subsamples must always be inside of another container.
    */
-  isMovable(): boolean;
+  readonly immediateParentContainer: Container | null;
 
   /*
    * Because items which have a location have a parent container, and containers
@@ -26,6 +36,8 @@ export interface HasLocation {
    * root container. It will be null if this item is itself a root container.
    */
   readonly rootParentContainer: Container | null;
+
+  readonly allParentContainers: ReadonlyArray<Container>;
 
   /*
    * Determines whether the Inventory record is transitively on a workbench,

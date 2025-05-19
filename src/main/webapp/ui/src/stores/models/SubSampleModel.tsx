@@ -134,7 +134,6 @@ export default class SubSampleModel
   sample: SampleModel;
   // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<ContainerModel>;
-  allParentContainers: (() => Array<ContainerModel>) | null = null;
   createOptionsParametersState: {
     split: { key: "split"; copies: number };
   };
@@ -145,7 +144,6 @@ export default class SubSampleModel
       notes: observable,
       sample: observable,
       parentContainers: observable,
-      allParentContainers: observable,
       rootParentContainer: computed,
       createOptionsParametersState: observable,
       createNote: action,

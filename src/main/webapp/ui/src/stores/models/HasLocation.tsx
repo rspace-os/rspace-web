@@ -6,7 +6,7 @@ import { AdjustableTableRowOptions } from "../definitions/Tables";
 import { type InventoryRecord } from "../definitions/InventoryRecord";
 import React from "react";
 import { Optional } from "../../util/optional";
-import { HasLocation } from "../definitions/HasLocation";
+import { HasLocation, HasLocationMarker } from "../definitions/HasLocation";
 import { GlobalId } from "../definitions/BaseRecord";
 import Result from "./Result";
 
@@ -20,6 +20,8 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
   Base: TBase
 ) {
   return class extends Base implements HasLocation {
+    [HasLocationMarker] = true as const;
+
     /*
      * The timestamp of when this item was last moved. If it has never been moved
      * from the location it was created in (usually the owner's workbench) then is
@@ -37,12 +39,6 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
 
     protected parentLocation: Location | null;
 
-    /*
-     * An Inventory record that has a location will either be inside of another
-     * container, in which case this property will reference that container, or it
-     * will be a root level container. Only containers may reside at the root
-     * level; subsamples must always be inside of another container.
-     */
     public immediateParentContainer: Container | null;
 
     constructor(...args: any[]) {
@@ -81,13 +77,17 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       return super.noValueLabel;
     }
 
-    isMovable(): boolean {
-      return true;
-    }
-
     get rootParentContainer(): Container | null {
       if (this.immediateParentContainer === null) return null;
       return this.immediateParentContainer.rootParentContainer;
+    }
+
+    get allParentContainers(): ReadonlyArray<Container> {
+      if (this.immediateParentContainer === null) return [];
+      return [
+        this.immediateParentContainer,
+        ...this.immediateParentContainer.allParentContainers,
+      ];
     }
 
     get isInWorkbench(): boolean {
@@ -177,4 +177,24 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       return options;
     }
   };
+}
+
+/**
+ * Checks if a given object has a location.
+ */
+export function hasLocation(input: object): Optional<HasLocation> {
+  return HasLocationMarker in input
+    ? Optional.present(input as HasLocation)
+    : Optional.empty();
+}
+
+/**
+ * Filters an iterable collection for those with locations
+ */
+export function* filterForThoseWithLocations<T>(
+  input: Iterable<T>
+): Iterable<HasLocation & T> {
+  for (const val of input) {
+    if (HasLocationMarker in (val as object)) yield val as HasLocation & T;
+  }
 }

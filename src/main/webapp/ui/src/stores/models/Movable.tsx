@@ -38,7 +38,7 @@ export class Movable {
       this.immediateParentContainer = immediateParentContainer;
       this.allParentContainers = () => [
         immediateParentContainer,
-        ...(immediateParentContainer.allParentContainers?.() ?? []),
+        ...(immediateParentContainer.allParentContainers ?? []),
       ];
       this.parentContainers = null;
     } else {

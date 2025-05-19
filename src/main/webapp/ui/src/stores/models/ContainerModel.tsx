@@ -219,8 +219,6 @@ export default class ContainerModel
   contentSearch: SearchInterface;
   // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<ContainerAttrs>;
-  // @ts-expect-error allParentContainers is initialised by populateFromJson
-  allParentContainers: (() => Array<Container>) | null;
   siblingColorCache: Map<Id, string> = new Map<Id, string>();
 
   constructor(factory: Factory, params: ContainerAttrs = DEFAULT_CONTAINER) {
@@ -243,7 +241,6 @@ export default class ContainerModel
       contentSummary: observable,
       contentSearch: observable,
       parentContainers: observable,
-      allParentContainers: observable,
       rootParentContainer: computed,
       updateLocationsCount: action,
       setOrganization: action,
@@ -446,7 +443,7 @@ export default class ContainerModel
   get movingIntoItself(): boolean {
     if (!this.allParentContainers)
       throw new Error("Not yet fully initialised.");
-    const allParentContainers = this.allParentContainers();
+    const allParentContainers = this.allParentContainers;
     const moveStore = getRootStore().moveStore;
     const selectedIds = new RsSet(
       moveStore.selectedResults.map((r) => r.globalId)

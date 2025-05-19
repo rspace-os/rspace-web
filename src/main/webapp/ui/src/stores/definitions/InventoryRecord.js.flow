@@ -138,8 +138,6 @@ export interface InventoryRecord
 
   +paramsForBackend: any;
 
-  hasParentContainers(): boolean;
-  isMovable(): boolean;
   +hasSubSamples: boolean;
 
   setAttributesDirty({}): void;

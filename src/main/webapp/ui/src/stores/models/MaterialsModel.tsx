@@ -27,6 +27,8 @@ import { showToastWhilstPending } from "../../util/alerts";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { getErrorMessage } from "@/util/error";
+import { filterForThoseWithLocations, hasLocation } from "./HasLocation";
+import { HasLocation } from "../definitions/HasLocation";
 
 export type ListOfMaterialsId = number | null;
 export type ElnFieldId = number;
@@ -836,9 +838,9 @@ export class ListOfMaterials {
     if (!peopleStore.currentUser) throw new Error("Current user is not known.");
     const currentUser = peopleStore.currentUser;
 
-    const allMaterials = new RsSet(this.materials)
-      .map((m) => m.invRec)
-      .filter((r) => r.isMovable()) as RsSet<ContainerModel | SubSampleModel>;
+    const allMaterials = new RsSet(
+      filterForThoseWithLocations(this.materials.map((m) => m.invRec))
+    );
     const parentIsBench = allMaterials.filter((r) =>
       r.isOnWorkbenchOfUser(currentUser)
     );

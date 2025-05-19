@@ -6,6 +6,7 @@ import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 import { RecordLink, TopLink, CurrentRecord, InTrash } from "./RecordLink";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
+import { hasLocation } from "../../stores/models/HasLocation";
 
 type BreadcrumbsArgs = {|
   record: InventoryRecord,
@@ -18,10 +19,9 @@ const _Breadcrumbs = ({
 }: BreadcrumbsArgs): Node => {
   const showTopLink = record.showTopLinkInBreadcrumbs();
 
-  const parents = record.hasParentContainers()
-    ? /* $FlowFixMe[prop-missing] parentContainers not on Result, but have been checked above */
-      ArrayUtils.reverse(record.allParentContainers())
-    : [];
+  const parents = hasLocation(record)
+    .map((r) => ArrayUtils.reverse(r.allParentContainers))
+    .orElse(([]: Array<InventoryRecord>));
 
   return (
     <MuiBreadcrumbs aria-label="breadcrumb">

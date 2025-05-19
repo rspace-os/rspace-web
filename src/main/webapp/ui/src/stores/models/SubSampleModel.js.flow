@@ -128,7 +128,6 @@ declare export default class SubSampleModel
   sample: SampleModel;
   parentContainers: Array<ContainerModel>;
   parentLocation: ?Location;
-  allParentContainers: ?() => Array<ContainerModel>;
   createOptionsParametersState: {|
     split: {| key: "split",  copies: number |}
   |};
@@ -162,7 +161,9 @@ declare export default class SubSampleModel
   validate(): ValidationResult;
   get usableInLoM(): boolean;
 
+  +immediateParentContainer: Container | null;
   +rootParentContainer: Container | null;
+  +allParentContainers: $ReadOnlyArray<Container>;
   +isInWorkbench: boolean;
   +isOnWorkbench: boolean;
   isInWorkbenchOfUser(user: Person): boolean;
