@@ -11,6 +11,7 @@ export interface HasLocation {
   +isInWorkbench: boolean;
   +isOnWorkbench: boolean;
   isInWorkbenchOfUser(user: Person): boolean;
+  isOnWorkbenchOfUser(user: Person): boolean;
   +lastNonWorkbenchParent: Container | null;
   +fieldValues: { location: InventoryRecord, ... };
   +noValueLabel: {};

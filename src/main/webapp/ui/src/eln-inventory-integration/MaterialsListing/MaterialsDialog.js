@@ -48,8 +48,7 @@ import ValidatingSubmitButton, {
 } from "../../components/ValidatingSubmitButton";
 import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
 import getRootStore from "../../stores/stores/RootStore";
-import ContainerModel from "../../stores/models/ContainerModel";
-import SubSampleModel from "../../stores/models/SubSampleModel";
+import { hasLocation } from "../../stores/models/HasLocation";
 
 const EmptyListText = ({ currentList }: { currentList: ?ListOfMaterials }) =>
   currentList && currentList.materials.length === 0 ? (
@@ -272,16 +271,13 @@ const ActionsBar = observer(
     const currentUser = getRootStore().peopleStore.currentUser;
 
     const allOnBench =
-      currentList?.materials.every((m) => {
-        if (
-          !(
-            m.invRec instanceof ContainerModel ||
-            m.invRec instanceof SubSampleModel
-          )
-        )
-          return true;
-        return m.invRec.isOnWorkbenchOfUser(currentUser);
-      }) ?? false;
+      currentUser === null
+        ? false
+        : currentList?.materials.every((m) => {
+            return hasLocation(m.invRec)
+              .map((r) => currentUser && r.isOnWorkbenchOfUser(currentUser))
+              .orElse(true);
+          }) ?? false;
 
     const moveAllToBenchValidation = () => {
       if (currentList?.materials.length === 0)
