@@ -1,8 +1,6 @@
-// @flow
-
-// eslint-disable-next-line no-unused-vars
-import tinymce from "tinymce";
-import React, { type Node } from "react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import tinymce, { RawEditorOptions } from "tinymce";
+import React from "react";
 import { Editor } from "@tinymce/tinymce-react";
 import "tinymce/models/dom/model";
 // Theme
@@ -20,6 +18,25 @@ import "tinymce/plugins/media";
 import "tinymce/plugins/quickbars";
 import "tinymce/plugins/autoresize";
 
+/*
+ * This is an unfortunate hack, for which there doesn't seem to be a better
+ * alternative. An attempt was made to have this code run as part of the webpack
+ * config, thereby ensuring that no matter where tinymce is used this setup is
+ * performed. However, this resulted in the tinymce widget simply rendering as a
+ * blank region of the webpack with no console errors. Not at all clear why, and
+ * with little to help debug the underlying issue, this hack seems necessary.
+ * As such, be careful when using tinymce in other components directly to ensure
+ * that they do not depend on this component being rendered on the page to
+ * correctly do this setup and also be aware that there is the possibility of
+ * race conditions where this component is used multiple times on the same page.
+ */
+declare global {
+  interface Window {
+    tinymce: typeof tinymce;
+  }
+}
+window.tinymce = tinymce;
+
 const customStyles =
   `.mce-content-body {
     font-family: "Roboto", "Helvetica", sans-serif;
@@ -31,7 +48,12 @@ const customStyles =
 }` +
   `.tox-editor-header { position: static !important; }`;
 
-export default function StyledTinyMceEditor({ init, ...props }: any): Node {
+export default function StyledTinyMceEditor({
+  init,
+  ...props
+}: {
+  init: RawEditorOptions;
+} & React.ComponentProps<typeof Editor>): React.ReactNode {
   return (
     <Editor
       init={{
