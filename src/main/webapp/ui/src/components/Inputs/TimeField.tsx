@@ -1,7 +1,6 @@
-//@flow
 import "date-fns";
 import Grid from "@mui/material/Grid";
-import React, { type Node } from "react";
+import React from "react";
 import NoValue from "../../components/NoValue";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -9,22 +8,19 @@ import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import TextField from "@mui/material/TextField";
 import { enGB } from "date-fns/locale";
 
-export type TimeFieldArgs = {|
-  // required
-  onChange: ({ target: { value: string } }) => void,
-  value: string,
-
-  // optional
-  disabled?: boolean,
-  id?: string,
-|};
+export type TimeFieldArgs = {
+  onChange: (event: { target: { value: string | null } }) => void;
+  value: string;
+  disabled?: boolean;
+  id?: string;
+};
 
 export default function TimeField({
   disabled,
   value,
   onChange,
   id,
-}: TimeFieldArgs): Node {
+}: TimeFieldArgs): React.ReactNode {
   return (
     <Grid container spacing={0}>
       {disabled && !value ? (
@@ -40,7 +36,6 @@ export default function TimeField({
               onChange={(newValue) => {
                 onChange({ target: { value: newValue } });
               }}
-              clearable
               renderInput={(params) => (
                 <TextField
                   {...params}
