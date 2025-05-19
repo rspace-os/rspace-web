@@ -221,7 +221,7 @@ export default class ContainerModel
   siblingColorCache: Map<Id, string> = new Map<Id, string>();
 
   constructor(factory: Factory, params: ContainerAttrs = DEFAULT_CONTAINER) {
-    super(factory);
+    super(factory, params);
     makeObservable(this, {
       canStoreContainers: observable,
       canStoreSamples: observable,

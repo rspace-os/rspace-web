@@ -138,7 +138,7 @@ export default class SubSampleModel
   };
 
   constructor(factory: Factory, params: SubSampleAttrs) {
-    super(factory);
+    super(factory, params);
     makeObservable(this, {
       notes: observable,
       sample: observable,

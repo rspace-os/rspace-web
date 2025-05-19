@@ -168,7 +168,7 @@ declare export default class Result
   sharingMode: SharingMode;
   sharedWith: ?Array<SharedWithGroup>;
 
-  constructor(factory: Factory): Result;
+  constructor(factory: Factory, params: { ... }): Result;
   get canChooseWhichToEdit(): boolean;
   populateFromJson(
     factory: Factory,

@@ -44,8 +44,8 @@ export default class RecordWithQuantity
   // @ts-expect-error quantity is initialised by populateFromJson
   quantity: RecordWithQuantityEditableFields["quantity"];
 
-  constructor(factory: Factory) {
-    super(factory);
+  constructor(factory: Factory, params: object) {
+    super(factory, params);
     makeObservable(this, {
       quantity: observable,
       quantityCategory: computed,

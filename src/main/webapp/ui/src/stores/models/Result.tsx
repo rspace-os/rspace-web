@@ -285,7 +285,7 @@ export default class Result
    */
   scopedToasts: Array<Alert> = [];
 
-  constructor(factory: Factory) {
+  constructor(factory: Factory, _params: object) {
     makeObservable(this, {
       currentlyVisibleFields: observable,
       currentlyEditableFields: observable,

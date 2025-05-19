@@ -120,7 +120,7 @@ export default class TemplateModel extends SampleModel implements Template {
     factory: Factory,
     params: TemplateAttrs = { ...DEFAULT_TEMPLATE }
   ) {
-    super(factory);
+    super(factory, params as unknown as SampleAttrs);
     makeObservable(this, {
       defaultUnitId: observable,
       version: observable,

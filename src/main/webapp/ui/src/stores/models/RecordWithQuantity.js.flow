@@ -43,7 +43,7 @@ declare export default class RecordWithQuantity
 {
   quantity: RecordWithQuantityEditableFields["quantity"];
 
-  constructor(factory: Factory): RecordWithQuantity;
+  constructor(factory: Factory, params: { ... }): RecordWithQuantity;
 
   populateFromJson(factory: Factory, params: any, defaultParams: ?any): void;
 
@@ -56,4 +56,3 @@ declare export default class RecordWithQuantity
   get fieldValues(): RecordWithQuantityEditableFields & RecordWithQuantityUneditableFields;
   get noValueLabel(): {[key in keyof RecordWithQuantityEditableFields]: ?string} & {[key in keyof RecordWithQuantityUneditableFields]: ?string};
 }
-
