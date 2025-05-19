@@ -2,6 +2,7 @@
 
 import { type Container } from "./Container";
 import { type Person } from "./Person";
+import { type InventoryRecord } from "./InventoryRecord";
 
 export interface HasLocation {
   isMovable(): boolean;
@@ -10,4 +11,6 @@ export interface HasLocation {
   +isOnWorkbench: boolean;
   isInWorkbenchOfUser(user: Person): boolean;
   +lastNonWorkbenchParent: Container | null;
+  +fieldValues: { location: InventoryRecord, ... };
+  +noValueLabel: {};
 }

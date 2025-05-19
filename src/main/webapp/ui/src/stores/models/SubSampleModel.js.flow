@@ -63,6 +63,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import { type Container } from "../definitions/Container";
 import { type Person } from "../definitions/Person";
+import { type HasLocation } from "../definitions/HasLocation";
 
 type SubSampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -120,7 +121,8 @@ declare export default class SubSampleModel
   implements
     SubSample,
     HasEditableFields<SubSampleEditableFields>,
-    HasUneditableFields<SubSampleUneditableFields>
+    HasUneditableFields<SubSampleUneditableFields>,
+    HasLocation
 {
   notes: Array<Note>;
   sample: SampleModel;

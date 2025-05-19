@@ -1,6 +1,6 @@
 import ContentsChips from "../../Inventory/Container/Content/ContentsChips";
 import { type URL, type Point, type _LINK } from "../../util/types";
-import { match, classMixin, clamp } from "../../util/Util";
+import { match, clamp } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { selectColor } from "../../util/colors";
 import RsSet from "../../util/set";
@@ -85,7 +85,7 @@ import {
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
-import { HasLocationCapability } from "./HasLocation";
+import { HasLocationMixin } from "./HasLocation";
 
 type ContainerEditableFields = ResultEditableFields;
 
@@ -192,7 +192,7 @@ const defaultEditableFields = new Set([
 ]);
 
 export default class ContainerModel
-  extends Result
+  extends HasLocationMixin(Result)
   implements
     Container,
     HasEditableFields<ContainerEditableFields>,
@@ -219,16 +219,9 @@ export default class ContainerModel
   contentSearch: SearchInterface;
   // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<ContainerAttrs>;
-  // @ts-expect-error parentLocation is initialised by populateFromJson
-  parentLocation: Location | null;
   // @ts-expect-error allParentContainers is initialised by populateFromJson
   allParentContainers: (() => Array<Container>) | null;
-  // @ts-expect-error initialised by movable
-  immediateParentContainer: Container | null;
-  // @ts-expect-error lastNonWorkbenchParent is initialised by populateFromJson
-  lastNonWorkbenchParent: Container | null;
   siblingColorCache: Map<Id, string> = new Map<Id, string>();
-  hasLocationCapability: HasLocationCapability;
 
   constructor(factory: Factory, params: ContainerAttrs = DEFAULT_CONTAINER) {
     super(factory);
@@ -249,12 +242,9 @@ export default class ContainerModel
       locationsCount: observable,
       contentSummary: observable,
       contentSearch: observable,
-      parentLocation: observable,
       parentContainers: observable,
       allParentContainers: observable,
       rootParentContainer: computed,
-      immediateParentContainer: observable,
-      lastNonWorkbenchParent: observable,
       updateLocationsCount: action,
       setOrganization: action,
       findLocation: action,
@@ -304,15 +294,6 @@ export default class ContainerModel
 
     if (this.recordType === "container")
       this.populateFromJson(factory, params, DEFAULT_CONTAINER);
-
-    this.hasLocationCapability = new HasLocationCapability({
-      parentContainers: params.parentContainers,
-      lastMoveDate: params.lastMoveDate,
-      lastNonWorkbenchParent: params.lastNonWorkbenchParent,
-      factory,
-      inventoryRecord: this,
-      parentLocation: params.parentLocation,
-    });
   }
 
   populateFromJson(
@@ -341,12 +322,7 @@ export default class ContainerModel
       : {
           isAccessible: false,
         };
-    this.parentLocation = params.parentLocation;
     this.parentContainers = params.parentContainers;
-    // @ts-expect-error lastNonWorkbenchParent is enriched by movable
-    this.lastNonWorkbenchParent = params.lastNonWorkbenchParent;
-    // @ts-expect-error is on movable
-    this.initializeMovableMixin(factory);
 
     const searchParams = {
       fetcherParams: {
@@ -946,7 +922,6 @@ export default class ContainerModel
 
     const options: AdjustableTableRowOptions<string> = new Map([
       ...super.adjustableTableOptions(),
-      ...this.hasLocationCapability.adjustableTableOptions(),
     ]);
     if (this.readAccessLevel !== "full") {
       options.set("Contents", () => ({ renderOption: "node", data: null }));
@@ -1081,10 +1056,10 @@ export default class ContainerModel
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get fieldValues(): ContainerEditableFields & ContainerUneditableFields {
     return {
       ...super.fieldValues,
-      location: this,
     };
   }
 
@@ -1093,6 +1068,7 @@ export default class ContainerModel
   }
 
   //eslint-disable-next-line no-unused-vars
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): {
     [key in keyof ContainerEditableFields]: string | null;
   } & {
@@ -1248,33 +1224,7 @@ export default class ContainerModel
       },
     ];
   }
-
-  get isInWorkbench(): boolean {
-    return this.hasLocationCapability.isInWorkbench;
-  }
-
-  get isOnWorkbench(): boolean {
-    return this.hasLocationCapability.isOnWorkbench;
-  }
-
-  isInWorkbenchOfUser(user: Person): boolean {
-    return this.hasLocationCapability.isInWorkbenchOfUser(user);
-  }
-
-  isOnWorkbenchOfUser(user: Person): boolean {
-    return this.hasLocationCapability.isOnWorkbenchOfUser(user);
-  }
-
-  get rootParentContainer(): Container | null {
-    return this.hasLocationCapability.rootParentContainer;
-  }
-
-  get lastMoveDate(): Date | null {
-    return this.hasLocationCapability.lastMoveDate;
-  }
 }
-
-classMixin(ContainerModel, Movable);
 
 type BatchContainerEditableFields = ResultCollectionEditableFields;
 

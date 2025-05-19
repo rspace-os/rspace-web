@@ -1,7 +1,6 @@
 import { mkAlert } from "../contexts/Alert";
 import { type _LINK } from "../../util/types";
 import ApiService from "../../common/InvApiService";
-import { classMixin } from "../../util/Util";
 import RsSet from "../../util/set";
 import {
   type HasEditableFields,
@@ -64,8 +63,7 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
-import { HasLocationCapability } from "./HasLocation";
-import { Container, Location } from "../definitions/Container";
+import { HasLocationMixin } from "./HasLocation";
 
 type SubSampleEditableFields = RecordWithQuantityEditableFields;
 
@@ -125,7 +123,7 @@ const defaultEditableFields = new Set([
 ]);
 
 export default class SubSampleModel
-  extends RecordWithQuantity
+  extends HasLocationMixin(RecordWithQuantity)
   implements
     SubSample,
     HasEditableFields<SubSampleEditableFields>,
@@ -136,24 +134,19 @@ export default class SubSampleModel
   sample: SampleModel;
   // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<ContainerModel>;
-  parentLocation: Location | null = null;
   allParentContainers: (() => Array<ContainerModel>) | null = null;
-  immediateParentContainer: ContainerModel | null = null;
   createOptionsParametersState: {
     split: { key: "split"; copies: number };
   };
-  hasLocationCapability: HasLocationCapability;
 
   constructor(factory: Factory, params: SubSampleAttrs) {
     super(factory);
     makeObservable(this, {
       notes: observable,
       sample: observable,
-      parentLocation: observable,
       parentContainers: observable,
       allParentContainers: observable,
       rootParentContainer: computed,
-      immediateParentContainer: observable,
       createOptionsParametersState: observable,
       createNote: action,
       paramsForBackend: override,
@@ -173,15 +166,6 @@ export default class SubSampleModel
       this.populateFromJson(factory, params, {});
 
     this.createOptionsParametersState = { split: { key: "split", copies: 2 } };
-
-    this.hasLocationCapability = new HasLocationCapability({
-      parentContainers: params.parentContainers,
-      lastMoveDate: params.lastMoveDate,
-      lastNonWorkbenchParent: params.lastNonWorkbenchParent,
-      factory,
-      inventoryRecord: this,
-      parentLocation: params.parentLocation as Location | null,
-    });
   }
 
   populateFromJson(
@@ -192,8 +176,6 @@ export default class SubSampleModel
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = { ...defaultParams, ...passedParams } as SubSampleAttrs;
     this.notes = params.notes ?? [];
-    // @ts-expect-error parentLocation is on the mixed in class, Movable
-    this.parentLocation = params.parentLocation;
     // @ts-expect-error parentContainers is on the mixed in class, Movable
     this.parentContainers = params.parentContainers ?? [];
     // @ts-expect-error initializeMovableMixin is on the mixed in class, Movable
@@ -331,10 +313,7 @@ export default class SubSampleModel
   }
 
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
-    const options = new Map([
-      ...super.adjustableTableOptions(),
-      ...this.hasLocationCapability.adjustableTableOptions(),
-    ]);
+    const options = new Map([...super.adjustableTableOptions()]);
     if (this.readAccessLevel === "public") {
       options.set("Sample", () => ({ renderOption: "node", data: null }));
     } else {
@@ -419,11 +398,11 @@ export default class SubSampleModel
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get fieldValues(): SubSampleEditableFields & SubSampleUneditableFields {
     return {
       ...super.fieldValues,
       sample: this.sample,
-      location: this,
     };
   }
 
@@ -432,6 +411,7 @@ export default class SubSampleModel
   }
 
   //eslint-disable-next-line no-unused-vars
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): {
     [key in keyof SubSampleEditableFields]: string | null;
   } & {
@@ -487,38 +467,7 @@ export default class SubSampleModel
       },
     ];
   }
-
-  isInWorkbenchOfUser(user: Person): boolean {
-    return this.hasLocationCapability.isInWorkbenchOfUser(user);
-  }
-
-  isOnWorkbenchOfUser(user: Person): boolean {
-    return this.hasLocationCapability.isOnWorkbenchOfUser(user);
-  }
-
-  get isInWorkbench(): boolean {
-    return this.hasLocationCapability.isInWorkbench;
-  }
-
-  get isOnWorkbench(): boolean {
-    return this.hasLocationCapability.isOnWorkbench;
-  }
-
-  get rootParentContainer(): Container | null {
-    return this.hasLocationCapability.rootParentContainer;
-  }
-
-  get lastNonWorkbenchParent(): Container | null {
-    return this.hasLocationCapability.lastNonWorkbenchParent;
-  }
-
-  get lastMoveDate(): Date | null {
-    return this.hasLocationCapability.lastMoveDate;
-  }
 }
-
-// copying mixin methods, add type any for flow
-classMixin(SubSampleModel, Movable);
 
 type BatchSubSampleEditableFields = ResultCollectionEditableFields &
   Omit<SubSampleEditableFields, "name">;
