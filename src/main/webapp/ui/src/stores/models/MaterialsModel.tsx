@@ -842,10 +842,10 @@ export class ListOfMaterials {
       filterForThoseWithLocations(this.materials.map((m) => m.invRec))
     );
     const parentIsBench = allMaterials.filter((r) =>
-      r.isOnWorkbenchOfUser(currentUser)
+      r.isDirectlyOnWorkbenchOfUser(currentUser)
     );
     const parentIsOnBench = allMaterials
-      .filter((r) => r.isInWorkbenchOfUser(currentUser))
+      .filter((r) => r.isOnWorkbenchOfUser(currentUser))
       .subtract(parentIsBench);
 
     let moving = allMaterials.subtract(parentIsBench).subtract(parentIsOnBench);

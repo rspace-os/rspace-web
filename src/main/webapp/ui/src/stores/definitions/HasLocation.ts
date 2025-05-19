@@ -37,32 +37,41 @@ export interface HasLocation {
    */
   readonly rootParentContainer: Container | null;
 
+  /**
+   * A list of containers, starting with the immediateParentContainer and ending
+   * with the rootParentContainer.
+   */
   readonly allParentContainers: ReadonlyArray<Container>;
 
   /*
-   * Determines whether the Inventory record is transitively on a workbench,
+   * Determines whether the Inventory record is on a workbench,
    * which is to say that the root parent container is a workbench.
    */
-  readonly isInWorkbench: boolean;
+  readonly isOnWorkbench: boolean;
 
   /*
    * Determines whether the Inventory record is directly on a workbench,
-   * which is to say the immediate parent container is a workbench.
+   * which is to say the immediate parent container is a workbench. If this is
+   * true, then it implies that `isOnWorkbench` is always true.
    */
-  readonly isOnWorkbench: boolean;
+  readonly isDirectlyOnWorkbench: boolean;
 
   /*
    * Not only is this item transitively on a workbench, but the workbench that
    * it is on is owned by the specified user.
    */
-  isInWorkbenchOfUser(user: Person): boolean;
+  isOnWorkbenchOfUser(user: Person): boolean;
 
   /*
    * Not only is this item directly on a workbench, but that workbench that it
    * is on it owned by the specified user.
    */
-  isOnWorkbenchOfUser(user: Person): boolean;
+  isDirectlyOnWorkbenchOfUser(user: Person): boolean;
 
+  /**
+   * Extends the base class's properties for exposing information to form
+   * fields.
+   */
   readonly fieldValues: Record<string, unknown> & { location: InventoryRecord };
   readonly noValueLabel: Record<string, string | null>;
 }

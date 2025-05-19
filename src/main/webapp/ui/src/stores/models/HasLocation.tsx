@@ -96,27 +96,28 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       ];
     }
 
-    get isInWorkbench(): boolean {
+    get isOnWorkbench(): boolean {
       if (this.rootParentContainer === null) return false;
       return this.rootParentContainer.isWorkbench;
     }
 
-    get isOnWorkbench(): boolean {
+    get isDirectlyOnWorkbench(): boolean {
       return (
-        this.isInWorkbench &&
+        this.isOnWorkbench &&
         this.immediateParentContainer === this.rootParentContainer
-      );
-    }
-
-    isInWorkbenchOfUser(user: Person): boolean {
-      return (
-        this.isInWorkbench && this.rootParentContainer?.id === user.workbenchId
       );
     }
 
     isOnWorkbenchOfUser(user: Person): boolean {
       return (
         this.isOnWorkbench && this.rootParentContainer?.id === user.workbenchId
+      );
+    }
+
+    isDirectlyOnWorkbenchOfUser(user: Person): boolean {
+      return (
+        this.isDirectlyOnWorkbench &&
+        this.rootParentContainer?.id === user.workbenchId
       );
     }
 

@@ -275,7 +275,9 @@ const ActionsBar = observer(
         ? false
         : currentList?.materials.every((m) => {
             return hasLocation(m.invRec)
-              .map((r) => currentUser && r.isOnWorkbenchOfUser(currentUser))
+              .map(
+                (r) => currentUser && r.isDirectlyOnWorkbenchOfUser(currentUser)
+              )
               .orElse(true);
           }) ?? false;
 

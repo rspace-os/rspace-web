@@ -267,10 +267,10 @@ declare export default class ContainerModel
   +immediateParentContainer: Container | null;
   +rootParentContainer: Container | null;
   +allParentContainers: $ReadOnlyArray<Container>;
-  +isInWorkbench: boolean;
   +isOnWorkbench: boolean;
-  isInWorkbenchOfUser(user: Person): boolean;
+  +isDirectlyOnWorkbench: boolean;
   isOnWorkbenchOfUser(user: Person): boolean;
+  isDirectlyOnWorkbenchOfUser(user: Person): boolean;
   +lastNonWorkbenchParent: Container | null;
 }
 

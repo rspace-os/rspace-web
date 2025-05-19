@@ -939,7 +939,7 @@ export default class Search implements SearchInterface {
       const recordsOnBench = successfullyTranferred.every(
         (r) =>
           (r instanceof ContainerModel || r instanceof SubSampleModel) &&
-          r.isOnWorkbench
+          r.isDirectlyOnWorkbench
       );
       const helpMessage = recordsOnBench
         ? `The records have been moved to ${username}'s bench`

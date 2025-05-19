@@ -1093,7 +1093,7 @@ export default class ContainerModel
   }
 
   showTopLinkInBreadcrumbs(): boolean {
-    return !this.isWorkbench && !this.isInWorkbench;
+    return !this.isWorkbench && !this.isOnWorkbench;
   }
 
   get usableInLoM(): boolean {
@@ -1101,7 +1101,7 @@ export default class ContainerModel
   }
 
   get beingCreatedInContainer(): boolean {
-    return !this.isOnWorkbench;
+    return !this.isDirectlyOnWorkbench;
   }
 
   get inContainerParams(): ContainerInContainerParams {
