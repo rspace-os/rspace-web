@@ -120,9 +120,9 @@ export type ContainerAttrs = {
   contentSummary: ContentSummary | null;
   image?: string;
   parentContainers: Array<ContainerAttrs>;
+  parentLocation: Location | null;
   lastMoveDate: string | null;
   lastNonWorkbenchParent: ContainerAttrs | null;
-  parentLocation: Location | null;
   owner: PersonAttrs | null;
   created: string | null;
   lastModified: string | null;

@@ -122,6 +122,7 @@ export type ContainerAttrs = {|
   contentSummary: ?ContentSummary,
   image?: string,
   parentContainers: Array<ContainerAttrs>,
+  parentLocation: Location | null,
   lastNonWorkbenchParent: ?ContainerAttrs,
   lastMoveDate: ?Date,
   owner: ?PersonAttrs,

@@ -97,6 +97,7 @@ export type SubSampleAttrs = {
   newBase64Image?: string;
   image?: string;
   parentContainers: Array<ContainerAttrs>;
+  parentLocation: Location | null;
   lastMoveDate: string | null;
   lastNonWorkbenchParent: ContainerAttrs | null;
   sample?: SampleAttrs | SampleModel;
