@@ -2,7 +2,7 @@
 
 import ContentsChips from "../../Inventory/Container/Content/ContentsChips";
 import { type URL, type Point, type _LINK } from "../../util/types";
-import { match, classMixin, clamp } from "../../util/Util";
+import { match, clamp } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { selectColor } from "../../util/colors";
 import RsSet from "../../util/set";
