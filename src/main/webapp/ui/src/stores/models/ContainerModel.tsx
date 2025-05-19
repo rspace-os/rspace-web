@@ -45,8 +45,7 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import LocationModel, { type LocationAttrs } from "./LocationModel";
-import { Movable } from "./Movable";
-import { Person, type PersonAttrs } from "../definitions/Person";
+import { type PersonAttrs } from "../definitions/Person";
 import Result, {
   defaultVisibleResultFields,
   defaultEditableResultFields,

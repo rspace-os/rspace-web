@@ -30,8 +30,7 @@ import RecordWithQuantity, {
   getValue,
   getUnitId,
 } from "./RecordWithQuantity";
-import { Movable } from "./Movable";
-import { type PersonId, type PersonAttrs, Person } from "../definitions/Person";
+import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
   type ResultCollectionEditableFields,
@@ -174,10 +173,6 @@ export default class SubSampleModel
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = { ...defaultParams, ...passedParams } as SubSampleAttrs;
     this.notes = params.notes ?? [];
-    // @ts-expect-error parentContainers is on the mixed in class, Movable
-    this.parentContainers = params.parentContainers ?? [];
-    // @ts-expect-error initializeMovableMixin is on the mixed in class, Movable
-    this.initializeMovableMixin(factory);
 
     /*
      * When a SampleModel is instantiating its SubSamples it passes `this`, an
