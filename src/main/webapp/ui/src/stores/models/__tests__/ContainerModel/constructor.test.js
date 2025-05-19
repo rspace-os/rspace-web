@@ -64,7 +64,7 @@ describe("constructor", () => {
       factory = f();
       mockContainerWithTwoContents(factory);
 
-      expect(mockNewRecord).toBeCalledTimes(7);
+      expect(mockNewRecord).toBeCalledTimes(5);
 
       // the root container
       expect(mockNewRecord).toHaveBeenNthCalledWith(
@@ -81,22 +81,14 @@ describe("constructor", () => {
         3,
         expect.objectContaining({ globalId: "IC1" })
       );
-      expect(mockNewRecord).toHaveBeenNthCalledWith(
-        4,
-        expect.objectContaining({ globalId: "IC1" })
-      );
 
       // the second child and it's parent (i.e. the root)
       expect(mockNewRecord).toHaveBeenNthCalledWith(
-        5,
+        4,
         expect.objectContaining({ globalId: "IC3" })
       );
       expect(mockNewRecord).toHaveBeenNthCalledWith(
-        6,
-        expect.objectContaining({ globalId: "IC1" })
-      );
-      expect(mockNewRecord).toHaveBeenNthCalledWith(
-        7,
+        5,
         expect.objectContaining({ globalId: "IC1" })
       );
     });
