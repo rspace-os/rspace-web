@@ -22,6 +22,7 @@ import {
 import Search from "./Search";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { hasLocation } from "../../stores/models/HasLocation";
+import * as Parsers from "../../util/parsers";
 
 const useStyles = makeStyles()((theme, { alwaysVisibleSidebar }) => ({
   grid: {
@@ -61,7 +62,9 @@ function LeftPanelView(): Node {
     React.useState<?boolean>();
   React.useEffect(() => {
     setIsParentContainerIncluded(
-      hasLocation(searchStore.search.activeResult)
+      Parsers.isNotNull(searchStore.search.activeResult)
+        .toOptional()
+        .flatMap(hasLocation)
         .map((recordWithLocation) =>
           recordWithLocation.allParentContainers
             .map(({ globalId }) => globalId)

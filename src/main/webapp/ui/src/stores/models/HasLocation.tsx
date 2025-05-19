@@ -1,11 +1,11 @@
-import { Container, Location } from "../definitions/Container";
+import { Container, GridLayout, Location } from "../definitions/Container";
 import { Factory } from "../definitions/Factory";
 import { Person } from "../definitions/Person";
 import * as Parsers from "../../util/parsers";
 import { AdjustableTableRowOptions } from "../definitions/Tables";
 import { type InventoryRecord } from "../definitions/InventoryRecord";
 import React from "react";
-import { Optional } from "../../util/optional";
+import { Optional, lift2 } from "../../util/optional";
 import { HasLocation, HasLocationMarker } from "../definitions/HasLocation";
 import { GlobalId } from "../definitions/BaseRecord";
 import Result from "./Result";
@@ -49,9 +49,15 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       )
         .flatMap(Parsers.isArray)
         .elseThrow();
-      this.immediateParentContainer = factory.newRecord(
-        parentContainers[0] as Record<string, unknown> & { globalId: GlobalId }
-      ) as Container;
+      if (parentContainers !== null && parentContainers.length > 0) {
+        this.immediateParentContainer = factory.newRecord(
+          parentContainers[0] as Record<string, unknown> & {
+            globalId: GlobalId;
+          }
+        ) as Container;
+      } else {
+        this.immediateParentContainer = null;
+      }
       this.parentLocation = Parsers.getValueWithKey("parentLocation")(
         params
       ).elseThrow() as Location | null;
@@ -119,19 +125,12 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
         ...super.adjustableTableOptions(),
       ]);
 
-      if (!this.immediateParentContainer)
-        throw new Error("Parent container must be known.");
-      if (!this.parentLocation)
-        throw new Error("Parent location must be known.");
-      const parentLocation = this.parentLocation;
-      const gridCoordinatesLabel = Optional.fromNullable(
-        this.immediateParentContainer.gridLayout
-      )
-        .map(
-          ({ rowsNumber, columnsNumber }) =>
-            `Row ${parentLocation.coordY} of ${rowsNumber}, Column ${parentLocation.coordX} of ${columnsNumber}`
-        )
-        .orElse("");
+      const gridCoordinatesLabel = lift2<GridLayout, Location, string>(
+        ({ rowsNumber, columnsNumber }, parentLocation) =>
+          `Row ${parentLocation.coordY} of ${rowsNumber}, Column ${parentLocation.coordX} of ${columnsNumber}`,
+        Optional.fromNullable(this.immediateParentContainer?.gridLayout),
+        Optional.fromNullable(this.parentLocation)
+      ).orElse("");
 
       if (this.readAccessLevel !== "public") {
         options.set("Previous Location", () =>
