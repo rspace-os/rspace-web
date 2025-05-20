@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
@@ -9,10 +8,13 @@ import "@testing-library/jest-dom";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import ImageIcon from "@mui/icons-material/Image";
 import { __setIsMobile } from "react-device-detect";
-
 import ImageField from "../ImageField";
 import DynamicallyLoadedImageEditor from "../DynamicallyLoadedImageEditor";
 import userEvent from "@testing-library/user-event";
+
+declare module "react-device-detect" {
+  export const __setIsMobile: (value: boolean) => void;
+}
 
 jest.mock("@mui/icons-material/CameraAlt", () => jest.fn(() => <div></div>));
 jest.mock("@mui/icons-material/Image", () => jest.fn(() => <div></div>));
