@@ -2,7 +2,6 @@ import { createTheme, ThemeOptions as MuiThemeOptions } from "@mui/material";
 import { makeStyles } from "tss-react/mui";
 import { grey, red } from "@mui/material/colors";
 import { hslToHex } from "./util/colors";
-import { TypographyOptions } from "@mui/material/styles/createTypography";
 
 /**
  * The RecordPalette type is used to define the colours used for each Inventory
@@ -162,6 +161,22 @@ declare module "@mui/material/IconButton" {
 declare module "@mui/material/Badge" {
   interface BadgePropsColorOverrides {
     callToAction: true;
+  }
+}
+
+declare module "@mui/material/styles/createTypography" {
+  interface Typography {
+    letterSpacing: {
+      spaced: string;
+      dense: string;
+    };
+  }
+
+  interface TypographyOptions {
+    letterSpacing?: {
+      spaced: string;
+      dense: string;
+    };
   }
 }
 
@@ -326,7 +341,7 @@ const baseTheme = createTheme({
       spaced: "0.03em",
       dense: "0.01071em",
     },
-  } as TypographyOptions & { letterSpacing: { spaced: string; dense: string } },
+  },
 });
 
 /**
