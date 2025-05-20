@@ -1,11 +1,10 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 import React from "react";
-import { render, cleanup, type Element } from "@testing-library/react";
+import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import each from "jest-each";
 import InputWrapper from "../InputWrapper";
@@ -148,14 +147,14 @@ describe("InputWrapper", () => {
         value,
         helperText,
         expectFn,
-      }: {|
-        disabled?: boolean,
-        maxLength?: number,
-        error?: boolean,
-        value?: string,
-        helperText?: ?string,
-        expectFn: (container: Element) => void,
-      |}) => {
+      }: {
+        disabled?: boolean;
+        maxLength?: number;
+        error?: boolean;
+        value?: string;
+        helperText?: string | null | undefined;
+        expectFn: (container: Element) => void;
+      }) => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <InputWrapper
