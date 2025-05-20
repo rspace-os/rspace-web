@@ -1,58 +1,60 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import TextField from "@mui/material/TextField";
 import NoValue from "../../components/NoValue";
 
-export type NumberFieldArgs = {|
+export type NumberFieldArgs = {
   // required
-  value: string | number,
+  value: string | number;
 
   // optional
-  autoFocus?: boolean,
-  datatestid?: string,
-  disabled?: boolean,
-  placeholder?: string,
-  error?: boolean,
-  fullWidth?: boolean,
-  helperText?: Node,
-  inputProps?: {|
-    inputMode?: string,
-    step?: number | "any",
-    lang?: string,
-    min?: number,
-    max?: number,
-    style?: { ... },
-  |},
-  InputProps?: {|
-    startAdornment?: Node,
-    endAdornment?: Node,
-  |},
-  name?: string,
-  noValueLabel?: ?string,
-  onChange?: ({|
-    target: {
-      /*
-       * The returned value has to be a string because it is perfectly valid
-       * for the user to input a string that is not a valid encoding of a
-       * number on their way to entering something value, and that should be
-       * storable in state variables. Examples include the empty string and
-       * strings ending in the letter "e".
-       */
-      value: string,
-      checkValidity: () => boolean,
-      ...
-    },
-  |}) => void,
-  onFocus?: ({| target: HTMLInputElement |}) => void,
-  onBlur?: ({| target: HTMLInputElement |}) => void,
-  onKeyDown?: ({| key: string |}) => void,
-  size?: "small" | "medium",
-  variant?: "filled" | "outlined" | "standard",
-  ariaLabel?: string,
-  className?: string,
-  id?: string,
-|};
+  autoFocus?: boolean;
+  datatestid?: string;
+  disabled?: boolean;
+  placeholder?: string;
+  error?: boolean;
+  fullWidth?: boolean;
+  helperText?: React.ReactNode;
+  inputProps?: {
+    inputMode?:
+      | "text"
+      | "search"
+      | "email"
+      | "tel"
+      | "url"
+      | "none"
+      | "numeric"
+      | "decimal";
+    step?: number | "any";
+    lang?: string;
+    min?: number;
+    max?: number;
+    style?: object;
+  };
+  InputProps?: {
+    startAdornment?: React.ReactNode;
+    endAdornment?: React.ReactNode;
+  };
+  name?: string;
+  onChange?: (
+    /*
+     * The returned value has to be a string because it is perfectly valid
+     * for the user to input a string that is not a valid encoding of a
+     * number on their way to entering something value, and that should be
+     * storable in state variables. Examples include the empty string and
+     * strings ending in the letter "e".
+     */
+    event: React.FormEvent<HTMLDivElement>
+  ) => void;
+  onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (event: { key: string }) => void;
+  size?: "small" | "medium";
+  variant?: "filled" | "outlined" | "standard";
+  ariaLabel?: string;
+  className?: string;
+  id?: string;
+  noValueLabel?: string | null;
+};
 
 export default function NumberField({
   value,
@@ -65,7 +67,7 @@ export default function NumberField({
   datatestid,
   ariaLabel,
   ...props
-}: NumberFieldArgs): Node {
+}: NumberFieldArgs): React.ReactNode {
   return disabled && value === "" ? (
     <NoValue label={noValueLabel ?? "None"} />
   ) : (
@@ -89,7 +91,7 @@ export default function NumberField({
       }}
       {...props}
       variant={props.variant ?? "standard"}
-      onInput={(e) => {
+      onInput={(e: React.FormEvent<HTMLDivElement>) => {
         /*
          * onChange only fires if the field is in a valid state and so it would
          * be impossible to show an error state if the user inputted an invalid
