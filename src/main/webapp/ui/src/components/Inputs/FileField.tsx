@@ -1,14 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  type ComponentType,
-  type ElementRef,
-  type ElementConfig,
-  useState,
-  useEffect,
-  forwardRef,
-} from "react";
+import React, { useState, useEffect, forwardRef } from "react";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
@@ -40,22 +30,22 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type ButtonThatTriggersInvisibleInputArgs = {|
-  buttonLabel: string,
+type ButtonThatTriggersInvisibleInputArgs = {
+  buttonLabel: string;
   InputProps: {
-    startAdornment?: Node,
-    endAdornment?: Node,
-  },
-  disabled?: boolean,
-  id: string,
-  icon: Node,
-  explanatoryText?: string,
-  containerProps?: ElementConfig<typeof Grid>,
-|};
+    startAdornment?: React.ReactNode;
+    endAdornment?: React.ReactNode;
+  };
+  disabled?: boolean;
+  id: string;
+  icon: React.ReactNode;
+  explanatoryText?: string;
+  containerProps?: React.ComponentProps<typeof Grid>;
+};
 
 const ButtonThatTriggersInvisibleInput = forwardRef<
-  ButtonThatTriggersInvisibleInputArgs,
-  ElementRef<"label">
+  React.ElementRef<"label">,
+  ButtonThatTriggersInvisibleInputArgs
 >(
   (
     {
@@ -109,33 +99,30 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
 ButtonThatTriggersInvisibleInput.displayName =
   "ButtonThatTriggersInvisibleInput";
 
-export type FileFieldArgs = {|
+export type FileFieldArgs = {
   // required
-  accept: string,
-  onChange: ({
-    binaryString: string,
-    file: File,
-  }) => void,
+  accept: string;
+  onChange: (event: { binaryString: string; file: File }) => void;
 
   // optional
-  id?: string,
+  id?: string;
   InputProps?: {
-    startAdornment?: Node,
-    endAdornment?: Node,
-  },
-  buttonLabel?: string,
-  datatestid?: string,
-  disabled?: boolean,
-  error?: boolean,
-  icon?: Node,
-  loadedFile?: ?File,
-  loading?: boolean,
-  name?: string,
-  showSelectedFilename?: boolean,
-  value?: string,
-  warningAlert?: string,
-  explanatoryText?: string,
-  containerProps?: ElementConfig<typeof Grid>,
+    startAdornment?: React.ReactNode;
+    endAdornment?: React.ReactNode;
+  };
+  buttonLabel?: string;
+  datatestid?: string;
+  disabled?: boolean;
+  error?: boolean;
+  icon?: React.ReactNode;
+  loadedFile?: File | null;
+  loading?: boolean;
+  name?: string;
+  showSelectedFilename?: boolean;
+  value?: string;
+  warningAlert?: string;
+  explanatoryText?: string;
+  containerProps?: React.ComponentProps<typeof Grid>;
 
   /*
    * This overrides the default button that triggers the opening of the
@@ -148,8 +135,8 @@ export type FileFieldArgs = {|
    *   - explanatoryText
    *   - containerProps
    */
-  triggerButton?: ({| id: string |}) => Node,
-|};
+  triggerButton?: ({ id }: { id: string }) => React.ReactNode;
+};
 
 function FileField({
   disabled,
@@ -170,7 +157,7 @@ function FileField({
   loadedFile,
   explanatoryText,
   containerProps,
-}: FileFieldArgs): Node {
+}: FileFieldArgs): React.ReactNode {
   const generatedId = React.useId();
   const id = passedId ?? generatedId;
   const { classes } = useStyles();
@@ -181,11 +168,10 @@ function FileField({
 
   useEffect(() => setSelectedFilename(loadedFile?.name ?? null), [loadedFile]);
 
-  const handleChange = (event: {
-    target: { files: Array<File>, value: string, ... },
-    ...
-  }) => {
-    const file = event.target.files[0];
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
     readFileAsBinaryString(file)
       .then((binaryString) => {
         setFailedToLoad(false);
@@ -226,18 +212,23 @@ function FileField({
               accept,
             }}
             //eslint-disable-next-line
-            inputComponent={forwardRef((_, ref) => (
-              <ButtonThatTriggersInvisibleInput
-                disabled={disabled}
-                buttonLabel={buttonLabel}
-                InputProps={InputProps}
-                id={id}
-                icon={icon}
-                ref={ref}
-                explanatoryText={explanatoryText}
-                containerProps={containerProps}
-              />
-            ))}
+            inputComponent={forwardRef(function FileInputTrigger(
+              _,
+              ref: React.ForwardedRef<HTMLLabelElement>
+            ) {
+              return (
+                <ButtonThatTriggersInvisibleInput
+                  disabled={disabled}
+                  buttonLabel={buttonLabel}
+                  InputProps={InputProps}
+                  id={id}
+                  icon={icon}
+                  ref={ref}
+                  explanatoryText={explanatoryText}
+                  containerProps={containerProps}
+                />
+              );
+            })}
             error={failedToLoad}
             disabled={disabled}
             className={classes.visibleInput}
@@ -263,4 +254,4 @@ function FileField({
   );
 }
 
-export default (observer(FileField): ComponentType<FileFieldArgs>);
+export default observer(FileField);
