@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -18,10 +17,7 @@ afterEach(cleanup);
 
 describe("RadioField", () => {
   test("When a selection is made, the onChange handler is called", () => {
-    const onChange = jest.fn<
-      [{ target: { value: ?("firstOption" | "secondOption"), name: string } }],
-      void
-    >();
+    const onChange = jest.fn();
     render(
       <ThemeProvider theme={materialTheme}>
         <RadioField
@@ -31,13 +27,11 @@ describe("RadioField", () => {
             {
               label: "FirstOption",
               value: "firstOption",
-              disabled: false,
               editing: false,
             },
             {
               label: "SecondOption",
               value: "secondOption",
-              disabled: false,
               editing: false,
             },
           ]}
@@ -51,7 +45,7 @@ describe("RadioField", () => {
         target: expect.objectContaining({
           name: "fieldName",
           value: "firstOption",
-        }),
+        }) as HTMLInputElement,
       })
     );
     expect(onChange).toHaveBeenCalledTimes(1);
