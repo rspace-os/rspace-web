@@ -1,19 +1,17 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import FormControl from "@mui/material/FormControl";
 import { observer } from "mobx-react-lite";
 import useStores from "../../stores/use-stores";
 import InputAdornment from "@mui/material/InputAdornment";
-import Select from "@mui/material/Select";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 
-type UnitSelectArgs = {|
+type UnitSelectArgs = {
   /**
    * A list of categories of units, as defined in the UnitStore.
    * E.g. `[ "volume", "mass" ]` to get "ml", "kg", etc. in the menu
    */
-  categories: Array<string>,
+  categories: Array<string>;
 
   /**
    * The UnitId of the selected unit, as defined in the UnitStore, and
@@ -21,18 +19,18 @@ type UnitSelectArgs = {|
    * value is not significant and is purely a consistent identifier to a
    * particular unit.
    */
-  value: number,
+  value: number;
 
-  handleChange: ({ target: { value: number, ... }, ... }) => void,
-  disabled?: boolean,
-|};
+  handleChange: (event: SelectChangeEvent<number>) => void;
+  disabled?: boolean;
+};
 
 function UnitSelect({
   disabled,
   handleChange,
   value,
   categories,
-}: UnitSelectArgs): Node {
+}: UnitSelectArgs): React.ReactNode {
   const { unitStore } = useStores();
 
   return (
@@ -58,4 +56,4 @@ function UnitSelect({
   );
 }
 
-export default (observer(UnitSelect): ComponentType<UnitSelectArgs>);
+export default observer(UnitSelect);
