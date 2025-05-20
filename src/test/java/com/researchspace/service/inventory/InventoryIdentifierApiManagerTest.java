@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy.DUMMY_VALID_DOI;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,6 +23,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummyError;
 import java.util.List;
+import javax.naming.InvalidNameException;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,7 +145,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testFindIdentifiersByStateAndCreator() {
+  public void testFindIdentifiersByStateAndCreator() throws InvalidNameException {
     // GIVEN
     User anotherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api_another"));
     initialiseContentWithEmptyContent(anotherUser);
@@ -156,33 +158,39 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
 
     // WHEN
     List<ApiInventoryDOI> userAll =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, user, null);
+        inventoryIdentifierApiMgr.findIdentifiers(null, null, null, user);
     List<ApiInventoryDOI> userAssociated =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, user, true);
+        inventoryIdentifierApiMgr.findIdentifiers(null, true, null, user);
     List<ApiInventoryDOI> userAssociatedAndDraft =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner("draft", user, true);
-    List<ApiInventoryDOI> userAssociatedAndRegistered =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner("registered", user, true);
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, null, user);
+    List<ApiInventoryDOI> userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, DUMMY_VALID_DOI, user);
+    List<ApiInventoryDOI> userNotExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, "NOT_" + DUMMY_VALID_DOI, user);
 
+    List<ApiInventoryDOI> userAssociatedAndRegistered =
+        inventoryIdentifierApiMgr.findIdentifiers("registered", true, null, user);
     List<ApiInventoryDOI> userNotAssociated =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, user, false);
+        inventoryIdentifierApiMgr.findIdentifiers(null, false, null, user);
     List<ApiInventoryDOI> userNotAssociatedAndDraft =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner("draft", user, false);
+        inventoryIdentifierApiMgr.findIdentifiers("draft", false, null, user);
     List<ApiInventoryDOI> userNotAssociatedAndRegisterd =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner("registered", user, false);
+        inventoryIdentifierApiMgr.findIdentifiers("registered", false, null, user);
 
     List<ApiInventoryDOI> anotherUserAll =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, anotherUser, null);
+        inventoryIdentifierApiMgr.findIdentifiers(null, null, null, anotherUser);
     List<ApiInventoryDOI> anotherUserAssociated =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, anotherUser, true);
+        inventoryIdentifierApiMgr.findIdentifiers(null, true, null, anotherUser);
     List<ApiInventoryDOI> anotherUserNotAssociated =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, anotherUser, false);
+        inventoryIdentifierApiMgr.findIdentifiers(null, false, null, anotherUser);
 
     // THEN
     assertEquals(3, userAll.size());
     assertEquals(1, userAssociated.size());
     assertEquals(user, userAssociated.get(0).getOwner());
     assertEquals(1, userAssociatedAndDraft.size());
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    assertTrue(userNotExistingDoiAssociatedAndDraft.isEmpty());
     assertTrue(userAssociatedAndRegistered.isEmpty());
 
     assertEquals(2, userNotAssociated.size());

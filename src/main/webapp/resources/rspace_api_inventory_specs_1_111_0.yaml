@@ -5,7 +5,7 @@ info:
   description: >
     Welcome to the RSpace Inventory API.
 
-  version: "1.109"
+  version: "1.111"
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit headers.
   license:
@@ -2167,7 +2167,11 @@ paths:
         and having the specific `state`. 
 
         Moreover you can specify the filter `isAssociated` in case you want ONLY the Identifiers 
-        that have already been bound to a record
+        that have already been bound to a record.
+        
+        You can specify a DOI for the parameter `identifier` in one of the supported formats:
+         * `10.47366/3bgk.v5n1a3`
+         * `https://doi.org/10.47366/3bgk.v5n1a3`
 
       produces:
         - application/json
@@ -2184,6 +2188,11 @@ paths:
           type: boolean
           required: false
           description: Filter only the Identifiers that are already associated to a record
+        - name: identifier
+          description: The identifier you want to search
+          type: string
+          in: query
+          required: false
       responses:
         '200':
           description: The list is successfully returned

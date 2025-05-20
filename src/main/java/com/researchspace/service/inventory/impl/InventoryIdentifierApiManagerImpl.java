@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -28,8 +29,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.naming.InvalidNameException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.routines.UrlValidator;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -78,23 +82,66 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   }
 
   @Override
-  public List<ApiInventoryDOI> findIdentifiersByStateAndOwner(
-      String state, User owner, Boolean isAssociated) {
+  public List<ApiInventoryDOI> findIdentifiers(
+      String state, Boolean isAssociated, String identifier, User owner)
+      throws InvalidNameException {
+    String finalIdentifier;
+    if (isNotBlank(identifier) && isValidIdentifier(identifier) && isValidURL(identifier)) {
+      finalIdentifier = getIdentifierSuffix(identifier);
+    } else {
+      finalIdentifier = identifier;
+    }
     return doiDao.getActiveIdentifiersByOwner(owner).stream()
+        .filter(r -> isBlank(finalIdentifier) || finalIdentifier.equals(r.getIdentifier()))
         .filter(r -> (isAssociated == null) || isAssociated.equals(r.isAssociated()))
         .filter(r -> isBlank(state) || state.equals(r.getState()))
         .map(ApiInventoryDOI::new)
         .collect(Collectors.toList());
   }
 
+  private String getIdentifierSuffix(String identifierUrl) throws InvalidNameException {
+    return "10." + identifierUrl.split("/10.")[1];
+  }
+
+  private boolean isValidIdentifier(String identifier) throws InvalidNameException {
+    // DOI always starts with "10." (as per specs on https://www.doi.org/)
+    if (!identifier.contains("10.")) {
+      throw new InvalidNameException(
+          "Identifier [" + identifier + "] it is not recognized as valid DOI");
+    }
+    return true;
+  }
+
+  private boolean isValidURL(String url) {
+    UrlValidator validator = new UrlValidator();
+    return validator.isValid(url);
+  }
+
   @Override
   public ApiInventoryRecordInfo registerNewIdentifier(GlobalIdentifier invRecOid, User user) {
-    InventoryRecord invRec = invRecRetriever.getInvRecordByGlobalId(invRecOid);
-    if (!invRec.getActiveIdentifiers().isEmpty()) {
-      throw new IllegalArgumentException(
-          "record " + invRecOid.toString() + " already has an identifier");
-    }
+    InventoryRecord invRec = getInventoryRecordIfNotAlreadyAssociated(invRecOid);
     return updateInventoryRecordWithDoiUpdate(user, invRec, createUpdateWithNewDoi(invRec, user));
+  }
+
+  @Override
+  public ApiInventoryRecordInfo assignIdentifier(
+      GlobalIdentifier inventoryOid, Long identifierId, User user) {
+    InventoryRecord inventoryItem = getInventoryRecordIfNotAlreadyAssociated(inventoryOid);
+
+    if (!inventoryItem.getOwner().equals(user)) {
+      throw new IllegalStateException(
+          "You can only assign an identifier to an owned inventory item");
+    }
+    DigitalObjectIdentifier identifierToAssign = doiDao.get(identifierId);
+    //    if(identifierToAssign.canBeAssigned()){
+    //      throw new IllegalStateException(
+    //          "You can only assign an unassigned identifier that is not deleted, in \"draft\"
+    // state");
+    //    }
+    // TODO[nik]: to be implemented
+    // finally associate identifier
+    return null; // updateInventoryRecordithDoiUpdate(user, inventoryOid, new ApiInventoryDOI(user,
+    // new DataCiteDoi));
   }
 
   @Override
@@ -337,6 +384,16 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     publishDoi.setCreatorAffiliation(rorAffiliationName);
     publishDoi.setCreatorAffiliationIdentifier(rorAffiliationID);
     return publishDoi;
+  }
+
+  @NotNull
+  private InventoryRecord getInventoryRecordIfNotAlreadyAssociated(GlobalIdentifier invRecOid) {
+    InventoryRecord invRec = invRecRetriever.getInvRecordByGlobalId(invRecOid);
+    if (!invRec.getActiveIdentifiers().isEmpty()) {
+      throw new IllegalArgumentException(
+          "record " + invRecOid.toString() + " already has an identifier");
+    }
+    return invRec;
   }
 
   /* for testing */
