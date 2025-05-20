@@ -34,6 +34,10 @@ export default defineConfig({
         alias: {
           Styles: "src/util/styles.ts",
           "@": path.resolve(__dirname, "src"),
+          "@mui/utils/deepmerge/": path.resolve(
+            __dirname,
+            "node_modules/@mui/utils/deepmerge/index.js"
+          ),
         },
         extensions: [".ts", ".tsx", ".js"],
       },
@@ -60,7 +64,7 @@ export default defineConfig({
 /*
  * ====  USEFUL COMMANDS  =====================================================
  *
- *  To run all the tests: 
+ *  To run all the tests:
  *    npm run test-ct
  *
  *  To open the Playwright Test UI, (for dev tools in the live browser) run:
