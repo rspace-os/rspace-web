@@ -1,23 +1,22 @@
-//@flow
-import React, { type Node } from "react";
+import React from "react";
 import Editor from "./StyledTinyMceEditor";
 import NoValue from "../../components/NoValue";
 import DOMPurify from "dompurify";
 
-export type TextFieldArgs = {|
+export type TextFieldArgs = {
   // required
-  value: string,
+  value: string;
 
   // optional
-  disabled?: boolean,
-  name?: string,
-  noValueLabel?: ?string,
-  onChange?: ({ target: { name: string, value: string } }) => void,
-  variant?: "filled" | "outlined" | "standard",
-  id?: string,
-|};
+  disabled?: boolean;
+  name?: string;
+  noValueLabel?: string | null;
+  onChange?: (event: { target: { name: string; value: string } }) => void;
+  variant?: "filled" | "outlined" | "standard";
+  id?: string;
+};
 
-export default function TextField(props: TextFieldArgs): Node {
+export default function TextField(props: TextFieldArgs): React.ReactNode {
   const handleEditorChange = (content: string) => {
     const e = {
       target: {
@@ -43,7 +42,6 @@ export default function TextField(props: TextFieldArgs): Node {
   return (
     <Editor
       {...props}
-      onChange={null}
       onEditorChange={handleEditorChange}
       init={{
         menubar: false,
