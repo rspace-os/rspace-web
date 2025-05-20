@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import NoValue from "../../components/NoValue";
 import { isValidDate } from "../../util/Util";
@@ -10,31 +8,31 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { enGB } from "date-fns/locale";
 
-export type DateFieldArgs = {|
+export type DateFieldArgs = {
   // required
-  value: ?string,
+  value: string | null;
 
   // optional
-  label?: Node,
-  alert?: Node,
-  disabled?: boolean,
-  noValueLabel?: ?string,
-  onChange?: ({ target: { value: ?Date } }) => void,
-  minDate?: Date,
-  maxDate?: Date,
-  disableFuture?: boolean,
-  placeholder?: string,
-  datatestid?: string,
-  variant?: "standard" | "outlined",
-  id?: string,
+  label?: React.ReactNode;
+  alert?: React.ReactNode;
+  disabled?: boolean;
+  noValueLabel?: string | null;
+  onChange?: (event: { target: { value: Date | null } }) => void;
+  minDate?: Date;
+  maxDate?: Date;
+  disableFuture?: boolean;
+  placeholder?: string;
+  datatestid?: string;
+  variant?: "standard" | "outlined";
+  id?: string;
 
   /*
    * By default date fields are limited to 10 chars because that's all the
    * space that's need to show a date. However, it may be desirable to have a
    * wider field if there's a long label/placeholder
    * */
-  disableWidthLimit?: boolean,
-|};
+  disableWidthLimit?: boolean;
+};
 
 function DateField({
   label,
@@ -51,7 +49,7 @@ function DateField({
   variant = "standard",
   disableWidthLimit = false,
   id,
-}: DateFieldArgs): Node {
+}: DateFieldArgs): React.ReactNode {
   const error = !(!value || isValidDate(value));
 
   return disabled && !value ? (
@@ -65,7 +63,7 @@ function DateField({
           onChange={(newValue) => {
             onChange?.({ target: { value: newValue } });
           }}
-          clearable
+          // @ts-expect-error It's not documents, but inputProps.placeholder does work
           inputProps={{
             placeholder: placeholder ?? "",
           }}
@@ -94,4 +92,4 @@ function DateField({
   );
 }
 
-export default (observer(DateField): ComponentType<DateFieldArgs>);
+export default observer(DateField);
