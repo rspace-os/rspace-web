@@ -1,11 +1,10 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 import React from "react";
-import { render, cleanup, type Element } from "@testing-library/react";
+import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import NumberField from "../NumberField";
 import TextField from "@mui/material/TextField";
@@ -24,7 +23,7 @@ afterEach(cleanup);
 const expectLabel = (text: string) => (container: Element) =>
   expect(container).toHaveTextContent(text);
 
-const expectTextField = (value: ?(string | number)) => () =>
+const expectTextField = (value: string | number | null) => () =>
   expect(TextField).toHaveBeenCalledWith(
     expect.objectContaining({ value }),
     expect.anything()
@@ -53,12 +52,12 @@ describe("NumberField", () => {
         value,
         noValueLabel,
         expectFn,
-      }: {|
-        disabled: typeof undefined | boolean,
-        value: string | number,
-        noValueLabel: typeof undefined | string,
-        expectFn: (container: Element) => void,
-      |}) => {
+      }: {
+        disabled: typeof undefined | boolean;
+        value: string | number;
+        noValueLabel: typeof undefined | string;
+        expectFn: (container: Element) => void;
+      }) => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <NumberField
