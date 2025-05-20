@@ -177,9 +177,9 @@ function FileField({
 
   const [failedToLoad, setFailedToLoad] = useState(false);
 
-  const [selectedFilename, setSelectedFilename] = useState<?string>(null);
+  const [selectedFilename, setSelectedFilename] = useState<string | null>(null);
 
-  useEffect(() => setSelectedFilename(loadedFile?.name), [loadedFile]);
+  useEffect(() => setSelectedFilename(loadedFile?.name ?? null), [loadedFile]);
 
   const handleChange = (event: {
     target: { files: Array<File>, value: string, ... },

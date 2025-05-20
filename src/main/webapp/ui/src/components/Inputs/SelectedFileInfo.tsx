@@ -1,7 +1,5 @@
-//@flow
-
 import Chip from "@mui/material/Chip";
-import React, { type ComponentType, type Node } from "react";
+import React from "react";
 import clsx from "clsx";
 import { match } from "../../util/Util";
 import { withStyles } from "Styles";
@@ -13,8 +11,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 
 const StatusChip = withStyles<
-  {| error: boolean, selectedFilename: ?string, loading: boolean |},
-  { root: string, label: string, avatar: string }
+  { error: boolean; selectedFilename: string | null; loading: boolean },
+  { root: string; label: string; avatar: string }
 >((theme, { loading, error, selectedFilename }) => ({
   root: {
     height: 20,
@@ -46,33 +44,35 @@ const StatusChip = withStyles<
   },
 }))(({ classes, error, loading, selectedFilename }) => {
   const spinnerIcon = <FontAwesomeIcon icon="spinner" spin size="sm" />;
-  const label = match<void, Node>([
+  const label = match<void, React.ReactNode>([
     [() => loading, spinnerIcon],
     [() => error, "Invalid file."],
     [() => Boolean(selectedFilename), selectedFilename],
     [() => true, "None"],
   ])();
-  const avatar = match<void, Node>([
+  const avatar = match<void, React.ReactElement | null>([
     [() => loading, null],
-    [() => error, <ErrorIcon className={classes.avatar} />],
+    [() => error, <ErrorIcon key="erroricon" className={classes.avatar} />],
     [
       () => Boolean(selectedFilename),
-      <CheckCircleIcon className={classes.avatar} />,
+      <CheckCircleIcon key="checkicon" className={classes.avatar} />,
     ],
     [() => true, null],
   ])();
-  return <Chip classes={classes} label={label} avatar={avatar} />;
+  return (
+    <Chip classes={classes} label={label} {...(avatar ? { avatar } : {})} />
+  );
 });
 
-type SelectedFileInfoArgs = {|
-  selectedFilename: ?string,
-  error: boolean,
-  loading: boolean,
-|};
+type SelectedFileInfoArgs = {
+  selectedFilename: string | null;
+  error: boolean;
+  loading: boolean;
+};
 
-const SelectedFileInfo: ComponentType<SelectedFileInfoArgs> = withStyles<
+const SelectedFileInfo = withStyles<
   SelectedFileInfoArgs,
-  { details: string, detailsLabel: string, filename: string }
+  { details: string; detailsLabel: string; filename: string }
 >((theme) => ({
   details: {
     display: "flex",
