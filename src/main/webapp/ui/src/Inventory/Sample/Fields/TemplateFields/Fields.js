@@ -11,7 +11,6 @@ import DateField from "../../../../components/Inputs/DateField";
 import { truncateIsoTimestamp } from "../../../../stores/definitions/Units";
 import NumberField from "../../../../components/Inputs/NumberField";
 import RadioField from "../../../../components/Inputs/RadioField";
-import ReferenceField from "../../../../components/Inputs/ReferenceField";
 import StringField from "../../../../components/Inputs/StringField";
 import TextField from "../../../../components/Inputs/TextField";
 import TimeField from "../../../../components/Inputs/TimeField";
@@ -201,17 +200,6 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
               }}
             />
           )}
-        />
-      );
-    }
-
-    if (field.type === "reference") {
-      return (
-        <FormField
-          {...commonProps}
-          key={field.name}
-          value={void 0}
-          renderInput={() => <ReferenceField />}
         />
       );
     }
