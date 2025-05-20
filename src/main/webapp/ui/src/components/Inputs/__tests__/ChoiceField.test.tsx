@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 import React from "react";
@@ -21,11 +20,11 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const renderChoiceField = (props: {|
-  disabled?: boolean,
-  hideWhenDisabled?: boolean,
-  value: Array<"foo" | "bar">,
-|}) =>
+const renderChoiceField = (props: {
+  disabled?: boolean;
+  hideWhenDisabled?: boolean;
+  value: Array<"foo" | "bar">;
+}) =>
   render(
     <ThemeProvider theme={materialTheme}>
       <ChoiceField
@@ -99,12 +98,12 @@ describe("ChoiceField", () => {
         hideWhenDisabled,
         value,
         expectFn,
-      }: {|
-        disabled: typeof undefined | boolean,
-        hideWhenDisabled: typeof undefined | boolean,
-        value: Array<"foo" | "bar">,
-        expectFn: () => void,
-      |}) => {
+      }: {
+        disabled: typeof undefined | boolean;
+        hideWhenDisabled: typeof undefined | boolean;
+        value: Array<"foo" | "bar">;
+        expectFn: () => void;
+      }) => {
         renderChoiceField({ disabled, hideWhenDisabled, value });
         expectFn();
       }
