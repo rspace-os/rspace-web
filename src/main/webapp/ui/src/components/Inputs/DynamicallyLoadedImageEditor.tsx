@@ -1,25 +1,23 @@
-//@flow
-
-import React, { lazy, Suspense, type ComponentType, type Node } from "react";
+import React, { lazy, Suspense } from "react";
 import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
 
 const LoadedImageEditorDialog = lazy(() => import("../ImageEditingDialog"));
 
 class ErrorBoundary extends React.Component<
-  { children: Node },
+  { children: React.ReactNode },
   { hasError: boolean }
 > {
-  constructor(props: { children: Node }) {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(): {| hasError: boolean |} {
+  static getDerivedStateFromError(): { hasError: boolean } {
     return { hasError: true };
   }
 
-  render(): Node {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       return (
         <Alert severity="error">
@@ -32,13 +30,13 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-type DynamicallyLoadedImageEditorArgs = {|
-  editorFile: ?Blob,
-  editorOpen: boolean,
-  close: () => void,
-  submitHandler: (Blob) => void,
-  alt: string,
-|};
+type DynamicallyLoadedImageEditorArgs = {
+  editorFile: Blob | null;
+  editorOpen: boolean;
+  close: () => void;
+  submitHandler: (file: Blob) => void;
+  alt: string;
+};
 
 function DynamicallyLoadedImageEditor({
   editorFile,
@@ -46,7 +44,7 @@ function DynamicallyLoadedImageEditor({
   close,
   submitHandler,
   alt,
-}: DynamicallyLoadedImageEditorArgs): Node {
+}: DynamicallyLoadedImageEditorArgs): React.ReactNode {
   return (
     <ErrorBoundary>
       <Suspense fallback="">
@@ -62,6 +60,4 @@ function DynamicallyLoadedImageEditor({
   );
 }
 
-export default (observer(
-  DynamicallyLoadedImageEditor
-): ComponentType<DynamicallyLoadedImageEditorArgs>);
+export default observer(DynamicallyLoadedImageEditor);
