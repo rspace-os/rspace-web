@@ -490,7 +490,8 @@ const FileCard = styled(
             isBeingMoved(
               file,
               dndContext.active?.data.current?.fileBeingMoved as GalleryFile
-            ) || file.id === null,
+            ) ||
+            file.id === null,
           data: {
             path: file.path,
             destination: folderDestination(file),
@@ -1376,10 +1377,17 @@ function GalleryMainPanel({
   const viewportDimensions = useViewportDimensions();
   const { uploadFiles } = useGalleryActions();
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { addAlert } = React.useContext(AlertContext);
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
       onDrop: doNotAwait(async (files) => {
         const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(() => {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              message: "Cannot drop files to upload here.",
+            })
+          );
           throw new Error("Unknown folder id");
         });
         await uploadFiles(fId, files);
