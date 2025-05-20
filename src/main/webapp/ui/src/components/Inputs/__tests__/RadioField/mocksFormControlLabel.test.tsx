@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 import React from "react";
@@ -21,19 +20,19 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const renderRadioField = (props: {|
-  disabled?: boolean,
-  hideWhenDisabled?: boolean,
-  value: ?("foo" | "bar"),
-|}) =>
+const renderRadioField = (props: {
+  disabled?: boolean;
+  hideWhenDisabled?: boolean;
+  value: "foo" | "bar" | null;
+}) =>
   render(
     <ThemeProvider theme={materialTheme}>
       <RadioField
         onChange={() => {}}
         name="foo"
         options={[
-          { label: "Foo", value: "foo", disabled: false, editing: false },
-          { label: "Bar", value: "bar", disabled: false, editing: false },
+          { label: "Foo", value: "foo", editing: false },
+          { label: "Bar", value: "bar", editing: false },
         ]}
         {...props}
       />
@@ -99,12 +98,12 @@ describe("RadioField", () => {
         hideWhenDisabled,
         value,
         expectFn,
-      }: {|
-        disabled: typeof undefined | boolean,
-        hideWhenDisabled: typeof undefined | boolean,
-        value: ?("foo" | "bar"),
-        expectFn: () => void,
-      |}) => {
+      }: {
+        disabled: typeof undefined | boolean;
+        hideWhenDisabled: typeof undefined | boolean;
+        value: "foo" | "bar" | null;
+        expectFn: () => void;
+      }) => {
         renderRadioField({ disabled, hideWhenDisabled, value });
         expectFn();
       }
