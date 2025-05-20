@@ -24,9 +24,6 @@ import NumberField, {
 import RadioField, {
   type RadioFieldArgs,
 } from "../../../components/Inputs/RadioField";
-import ReferenceField, {
-  type ReferenceFieldArgs,
-} from "../../../components/Inputs/ReferenceField";
 import StringField, {
   type StringFieldArgs,
 } from "../../../components/Inputs/StringField";
@@ -57,7 +54,6 @@ type FieldArgs<T: string> =
   | {| type: "File", ...FileFieldArgs |}
   | {| type: "Number", ...NumberFieldArgs |}
   | {| type: "Radio", ...RadioFieldArgs<T> |}
-  | {| type: "Reference", ...ReferenceFieldArgs |}
   | {| type: "String", ...StringFieldArgs |}
   | {| type: "Text", ...TextFieldArgs |}
   | {| type: "Time", ...TimeFieldArgs |}
@@ -145,8 +141,6 @@ function CustomField<T: string>(props: CustomFieldArgs<T>): Node {
     field = <NumberField {...fieldProps} />;
   } else if (props.type === "Radio") {
     field = <RadioField {...fieldProps} />;
-  } else if (props.type === "Reference") {
-    field = <ReferenceField {...fieldProps} />;
   } else if (props.type === "String") {
     field = <StringField {...fieldProps} />;
   } else if (props.type === "Text") {
