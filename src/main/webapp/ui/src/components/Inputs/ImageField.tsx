@@ -1,18 +1,10 @@
-// @flow
-
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CropIcon from "@mui/icons-material/Crop";
 import Grid from "@mui/material/Grid";
 import ImageIcon from "@mui/icons-material/Image";
-import React, {
-  useState,
-  useEffect,
-  type Node,
-  type ComponentType,
-  type ElementProps,
-} from "react";
+import React, { useState, useEffect } from "react";
 import { isMobile } from "react-device-detect";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
@@ -23,7 +15,10 @@ import ImagePreview from "../ImagePreview";
 import NoValue from "../../components/NoValue";
 import FileField from "./FileField";
 
-const useStyles = makeStyles()((theme, { width, height }) => ({
+const useStyles = makeStyles<{
+  width: number | string;
+  height: number | string;
+}>()((theme, { width, height }) => ({
   rounded: {
     margin: 10,
     width,
@@ -37,28 +32,28 @@ const useStyles = makeStyles()((theme, { width, height }) => ({
   preview: { cursor: "zoom-in" },
 }));
 
-export type ImageData = {|
-  dataURL: string,
-  file: Blob,
-  binaryString?: string,
-|};
+export type ImageData = {
+  dataURL: string;
+  file: Blob;
+  binaryString?: string;
+};
 
-type ImageFieldArgs = {|
+type ImageFieldArgs = {
   // required
-  storeImage: (ImageData) => void,
-  imageAsObjectURL: ?string,
-  alt: string,
+  storeImage: (newImageData: ImageData) => void;
+  imageAsObjectURL: string | null;
+  alt: string;
 
   // optional
-  id?: string,
-  disabled?: boolean,
-  width?: string | number,
-  height?: string | number,
-  showPreview?: boolean,
-  warningAlert?: string,
-  endAdornment?: Node,
-  noValueLabel?: ?string,
-|};
+  id?: string;
+  disabled?: boolean;
+  width?: string | number;
+  height?: string | number;
+  showPreview?: boolean;
+  warningAlert?: string;
+  endAdornment?: React.ReactNode;
+  noValueLabel?: string | null;
+};
 
 function ImageField({
   storeImage,
@@ -72,13 +67,15 @@ function ImageField({
   warningAlert = "",
   noValueLabel,
   alt,
-}: ImageFieldArgs): Node {
+}: ImageFieldArgs): React.ReactNode {
   const { classes } = useStyles({ width, height });
-  const [editorFile, setEditorFile] = useState<?Blob>(null);
+  const [editorFile, setEditorFile] = useState<Blob | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
 
-  const [link, setLink] = useState<?string>(null);
-  const [size, setSize] = useState<?{| width: number, height: number |}>(null);
+  const [link, setLink] = useState<string | null>(null);
+  const [size, setSize] = useState<{ width: number; height: number } | null>(
+    null
+  );
 
   const openPreview = () => {
     if (imageAsObjectURL) {
@@ -99,8 +96,8 @@ function ImageField({
     binaryString,
     file,
   }: {
-    binaryString: string,
-    file: File,
+    binaryString: string;
+    file: File;
   }) => {
     if (!/^image/.test(file.type)) {
       throw new Error("Not an image");
@@ -116,8 +113,7 @@ function ImageField({
     new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        // $FlowExpectedError[incompatible-cast] reader.result will be string because we called readAsDataUrl
-        resolve((reader.result: string));
+        resolve(reader.result as string);
       };
       reader.onerror = () => {
         reject(reader.error);
@@ -146,8 +142,8 @@ function ImageField({
   }, [imageAsObjectURL]);
 
   const Preview = withStyles<
-    {| width: mixed, height: mixed, ...ElementProps<typeof Avatar> |},
-    { root: string, img: string }
+    React.ComponentProps<typeof Avatar>,
+    { root: string; img: string }
   >(() => ({
     root: {
       margin: 10,
@@ -160,8 +156,6 @@ function ImageField({
   }))((props) => (
     <Avatar
       imgProps={{
-        width: typeof width === "number" ? width : null,
-        height: typeof height === "number" ? height : null,
         alt,
       }}
       {...props}
@@ -245,4 +239,4 @@ function ImageField({
   );
 }
 
-export default (observer(ImageField): ComponentType<ImageFieldArgs>);
+export default observer(ImageField);
