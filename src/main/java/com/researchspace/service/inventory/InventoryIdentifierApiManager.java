@@ -7,6 +7,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.util.List;
+import javax.naming.InvalidNameException;
 
 /** Handles API actions around inventory DOI identifiers */
 public interface InventoryIdentifierApiManager {
@@ -17,10 +18,14 @@ public interface InventoryIdentifierApiManager {
 
   ApiInventoryRecordInfo findPublishedItemVersionByPublicLink(String publicLink);
 
-  List<ApiInventoryDOI> findIdentifiersByStateAndOwner(
-      String state, User owner, Boolean isAssociated);
+  List<ApiInventoryDOI> findIdentifiers(
+      String state, Boolean isAssociated, String identifier, User owner)
+      throws InvalidNameException;
 
   ApiInventoryRecordInfo registerNewIdentifier(GlobalIdentifier invRecOid, User user);
+
+  ApiInventoryRecordInfo assignIdentifier(
+      GlobalIdentifier inventoryOid, Long identifierId, User user);
 
   List<ApiInventoryDOI> registerBulkIdentifiers(Integer igsnsToAllocate, User user);
 

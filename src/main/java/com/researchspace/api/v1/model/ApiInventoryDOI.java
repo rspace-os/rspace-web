@@ -271,6 +271,13 @@ public class ApiInventoryDOI extends LinkableApiObject {
     return deleteIdentifierRequest;
   }
 
+  private boolean assignIdentifierRequest;
+
+  @JsonIgnore
+  public boolean isAssignIdentifierRequest() {
+    return assignIdentifierRequest;
+  }
+
   public boolean applyChangesToDatabaseDOI(DigitalObjectIdentifier dbIdentifier) {
     boolean contentChanged = false;
 
