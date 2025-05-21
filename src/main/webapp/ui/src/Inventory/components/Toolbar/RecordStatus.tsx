@@ -1,39 +1,39 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { type State } from "../../../stores/definitions/InventoryRecord";
 import { match } from "../../../util/Util";
 import { cyan } from "@mui/material/colors";
 import { useTheme } from "@mui/material/styles";
 import { makeStyles } from "tss-react/mui";
 
-const useStyles = makeStyles()((theme, { color }) => ({
-  box: {
-    height: theme.spacing(3),
-    top: ({ belowContextMenu }) => (belowContextMenu ? 40 : 0),
-    position: "sticky",
-    zIndex: 1000,
-    borderTop: `${theme.spacing(0.5)} solid ${color}`,
-    display: "flex",
-    justifyContent: "flex-end",
-  },
-  tab: {
-    backgroundColor: color,
-    right: theme.spacing(1),
-    color: "white",
-    padding: theme.spacing(0.5, 1.5),
-    borderBottomLeftRadius: theme.spacing(0.5),
-    borderBottomRightRadius: theme.spacing(0.5),
-    position: "absolute",
-    top: theme.spacing(-0.5),
-    fontWeight: 600,
-  },
-}));
+const useStyles = makeStyles<{ color: string; belowContextMenu: boolean }>()(
+  (theme, { color, belowContextMenu }) => ({
+    box: {
+      height: theme.spacing(3),
+      top: belowContextMenu ? 40 : 0,
+      position: "sticky",
+      zIndex: 1000,
+      borderTop: `${theme.spacing(0.5)} solid ${color}`,
+      display: "flex",
+      justifyContent: "flex-end",
+    },
+    tab: {
+      backgroundColor: color,
+      right: theme.spacing(1),
+      color: "white",
+      padding: theme.spacing(0.5, 1.5),
+      borderBottomLeftRadius: theme.spacing(0.5),
+      borderBottomRightRadius: theme.spacing(0.5),
+      position: "absolute",
+      top: theme.spacing(-0.5),
+      fontWeight: 600,
+    },
+  })
+);
 
-type RecordStatusArgs = {|
-  recordState: State,
-  deleted: boolean,
-|};
+type RecordStatusArgs = {
+  recordState: State;
+  deleted: boolean;
+};
 
 /*
  * It can be difficult to tell at a glance what the current state of a record
@@ -43,7 +43,7 @@ type RecordStatusArgs = {|
 export default function RecordStatus({
   recordState,
   deleted,
-}: RecordStatusArgs): Node {
+}: RecordStatusArgs): React.ReactNode {
   const areEditing = recordState === "edit";
   const areCreating = recordState === "create";
   const theme = useTheme();

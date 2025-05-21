@@ -74,6 +74,7 @@ declare module "@mui/material/styles/createPalette" {
     standardIcon: PaletteColor;
     lightestGrey: string;
     warningRed: string;
+    deletedGrey: string;
     modifiedHighlight: string;
     record: {
       container: RecordPalette;
