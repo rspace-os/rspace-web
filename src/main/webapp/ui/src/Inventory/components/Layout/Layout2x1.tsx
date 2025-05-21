@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
@@ -24,10 +22,10 @@ import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
  * of this module) but is not exported and thus is hidden from all those
  * components.
  */
-const UserHiddenRightPanelContext = React.createContext<{|
-  userHiddenRightPanel: boolean,
-  setUserHiddenRightPanel: (boolean) => void,
-|}>({ userHiddenRightPanel: false, setUserHiddenRightPanel: () => {} });
+const UserHiddenRightPanelContext = React.createContext<{
+  userHiddenRightPanel: boolean;
+  setUserHiddenRightPanel: (value: boolean) => void;
+}>({ userHiddenRightPanel: false, setUserHiddenRightPanel: () => {} });
 
 /**
  * If the UI is to be rendered with a single column -- either because the
@@ -57,7 +55,7 @@ export function useIsSingleColumnLayout(): boolean {
  * it to access the UserHiddenRightPanelContext without requiring that it be
  * exported to the whole codebase.
  */
-export const RightPanelToggle: ComponentType<{||}> = observer(() => {
+export const RightPanelToggle = observer(() => {
   const { userHiddenRightPanel, setUserHiddenRightPanel } = React.useContext(
     UserHiddenRightPanelContext
   );
@@ -103,7 +101,6 @@ const useStyles = makeStyles()((theme) => ({
     height: "100%",
     padding: "0px !important",
     flexDirection: "column",
-    height: "100%",
   },
   leftPanelMobile: {
     height: "100%",
@@ -118,11 +115,11 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type Layout2x1Args = {|
-  colRight: Node,
-  colLeft: Node,
-  isDialog?: boolean,
-|};
+type Layout2x1Args = {
+  colRight: React.ReactNode;
+  colLeft: React.ReactNode;
+  isDialog?: boolean;
+};
 
 /*
  * Defines a responsive layout, where both panels are shown on larger devices,
@@ -134,7 +131,7 @@ const Layout2x1 = observer((props: Layout2x1Args) => {
   const hideLeftPanel = isSingleColumnLayout && uiStore.visiblePanel !== "left";
   const hideRightPanel =
     isSingleColumnLayout && uiStore.visiblePanel !== "right";
-  const { classes } = useStyles({ hideLeftPanel, hideRightPanel });
+  const { classes } = useStyles();
 
   return (
     <Grid
@@ -170,7 +167,9 @@ const Layout2x1 = observer((props: Layout2x1Args) => {
   );
 });
 
-export default function Layout2x1Wrapper(props: Layout2x1Args): Node {
+export default function Layout2x1Wrapper(
+  props: Layout2x1Args
+): React.ReactNode {
   const [userHiddenRightPanel, setUserHiddenRightPanel] = useUiPreference(
     PREFERENCES.INVENTORY_HIDDEN_RIGHT_PANEL,
     { defaultValue: false }
