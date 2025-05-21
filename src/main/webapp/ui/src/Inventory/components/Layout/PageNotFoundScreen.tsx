@@ -1,10 +1,8 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 
-export default function PageNotFoundScreen(): Node {
+export default function PageNotFoundScreen(): React.ReactNode {
   return (
     <Grid container>
       <Grid item>
