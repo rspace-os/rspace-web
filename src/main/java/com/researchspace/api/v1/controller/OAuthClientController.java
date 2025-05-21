@@ -11,6 +11,8 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.OAuthTokenManager;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import javax.servlet.http.HttpServletRequest;
@@ -44,6 +46,8 @@ public class OAuthClientController {
 
   @Autowired private AnalyticsManager analyticsMgr;
 
+  private @Autowired SystemPropertyPermissionManager systemPropertyMgr;
+
   /** Main endpoint for token grants. New or refreshed. */
   @PostMapping("/token")
   @IgnoreInLoggingInterceptor(ignoreRequestParams = {"client_secret", "password"})
@@ -66,6 +70,14 @@ public class OAuthClientController {
     if (!apiHandler.isApiAvailableForUser(null)) {
       throw new ApiAuthenticationException(
           "Access to API has been disabled by RSpace administrator.");
+    }
+
+    boolean oauthAuthEnabled =
+        systemPropertyMgr.isPropertyAllowed(
+            (User) null, SystemPropertyName.API_OAUTH_AUTHENTICATION);
+    if (!oauthAuthEnabled) {
+      throw new ApiAuthenticationException(
+          "OAuth authentication has been disabled by RSpace administrator.");
     }
 
     NewOAuthTokenResponse response;
