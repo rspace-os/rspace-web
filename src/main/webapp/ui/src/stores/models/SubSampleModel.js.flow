@@ -63,15 +63,15 @@ import { type Container } from "../definitions/Container";
 import { type Person } from "../definitions/Person";
 import { type HasLocation, type HasLocationEditableFields, type HasLocationUneditableFields } from "../definitions/HasLocation";
 import {
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
+  type HasQuantityEditableFields,
+  type HasQuantityUneditableFields,
   type Quantity,
 } from "../definitions/HasQuantity";
 import { type UnitCategory } from "../stores/UnitStore";
 
-type SubSampleEditableFields = RecordWithQuantityEditableFields & ResultEditableFields & HasLocationEditableFields;
+type SubSampleEditableFields = HasQuantityEditableFields & ResultEditableFields & HasLocationEditableFields;
 
-type SubSampleUneditableFields = RecordWithQuantityUneditableFields & ResultUneditableFields & HasLocationUneditableFields & {
+type SubSampleUneditableFields = HasQuantityUneditableFields & ResultUneditableFields & HasLocationUneditableFields & {
   sample: Sample,
 };
 

@@ -30,12 +30,12 @@ export type Quantity = {
  * There are no fields associated with records that have a quantity that are not
  * editable.
  */
-export type RecordWithQuantityUneditableFields = object;
+export type HasQuantityUneditableFields = object;
 
 /**
  * Where a record has a quantity, the user may edit it in the UI.
  */
-export type RecordWithQuantityEditableFields = {
+export type HasQuantityEditableFields = {
   quantity: Quantity | null;
 };
 
@@ -54,7 +54,7 @@ export interface HasQuantity {
    * can be used to first check if the value is not null, and then get at the
    * numerical value.
    */
-  quantity: RecordWithQuantityEditableFields["quantity"];
+  quantity: HasQuantityEditableFields["quantity"];
 
   /*
    * The category of unit by which the quantity is measured e.g. mass, volume,
@@ -87,11 +87,11 @@ export interface HasQuantity {
 
   adjustableTableOptions(): AdjustableTableRowOptions<string>;
 
-  readonly fieldValues: RecordWithQuantityEditableFields;
+  readonly fieldValues: HasQuantityEditableFields;
 
   readonly noValueLabel: {
-    [key in keyof RecordWithQuantityEditableFields]: string | null;
+    [key in keyof HasQuantityEditableFields]: string | null;
   } & {
-    [key in keyof RecordWithQuantityUneditableFields]: string | null;
+    [key in keyof HasQuantityUneditableFields]: string | null;
   };
 }

@@ -12,8 +12,8 @@ import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import {
   type Quantity,
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
+  type HasQuantityEditableFields,
+  type HasQuantityUneditableFields,
 } from "../definitions/HasQuantity";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import getRootStore from "../stores/RootStore";
@@ -86,7 +86,7 @@ import { getErrorMessage } from "@/util/error";
 import { SubSample } from "../definitions/SubSample";
 import { HasQuantityMixin } from "../models/HasQuantity";
 
-type SampleEditableFields = RecordWithQuantityEditableFields &
+type SampleEditableFields = HasQuantityEditableFields &
   ResultEditableFields & {
     expiryDate: string | null;
     sampleSource: SampleSource;
@@ -95,7 +95,7 @@ type SampleEditableFields = RecordWithQuantityEditableFields &
     subSampleAlias: Alias;
   };
 
-type SampleUneditableFields = RecordWithQuantityUneditableFields &
+type SampleUneditableFields = HasQuantityUneditableFields &
   ResultUneditableFields;
 
 export type SubSampleTargetLocation = {

@@ -1,8 +1,8 @@
 import {
   HasQuantity,
   HasQuantityMarker,
-  RecordWithQuantityEditableFields,
-  RecordWithQuantityUneditableFields,
+  HasQuantityEditableFields,
+  HasQuantityUneditableFields,
   type Quantity,
 } from "../definitions/HasQuantity";
 import * as Parsers from "../../util/parsers";
@@ -82,9 +82,9 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Result>(
     }
 
     get noValueLabel(): {
-      [key in keyof RecordWithQuantityEditableFields]: string | null;
+      [key in keyof HasQuantityEditableFields]: string | null;
     } & {
-      [key in keyof RecordWithQuantityUneditableFields]: string | null;
+      [key in keyof HasQuantityUneditableFields]: string | null;
     } & typeof Result.prototype.noValueLabel {
       return {
         ...super.noValueLabel,

@@ -63,17 +63,17 @@ import {
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
 import {
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
+  type HasQuantityEditableFields,
+  type HasQuantityUneditableFields,
   type Quantity,
 } from "../definitions/HasQuantity";
 import { HasQuantityMixin, getValue, getUnitId } from "./HasQuantity";
 
-type SubSampleEditableFields = RecordWithQuantityEditableFields &
+type SubSampleEditableFields = HasQuantityEditableFields &
   HasLocationEditableFields &
   ResultEditableFields;
 
-type SubSampleUneditableFields = RecordWithQuantityUneditableFields &
+type SubSampleUneditableFields = HasQuantityUneditableFields &
   HasLocationUneditableFields &
   ResultUneditableFields & {
     sample: Sample;

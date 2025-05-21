@@ -14,8 +14,8 @@ import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import {
   type Quantity,
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
+  type HasQuantityEditableFields,
+  type HasQuantityUneditableFields,
 } from "../definitions/HasQuantity";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import getRootStore from "../stores/RootStore";
@@ -80,7 +80,7 @@ import * as ArrayUtils  from "../../util/ArrayUtils";
 import Result, { type ResultEditableFields, type ResultUneditableFields } from "./Result";
 import { type UnitCategory } from "../stores/UnitStore";
 
-type SampleEditableFields = RecordWithQuantityEditableFields & ResultEditableFields & {
+type SampleEditableFields = HasQuantityEditableFields & ResultEditableFields & {
   expiryDate: ?string,
   sampleSource: SampleSource,
   storageTempMin: ?Temperature,
@@ -88,7 +88,7 @@ type SampleEditableFields = RecordWithQuantityEditableFields & ResultEditableFie
   subSampleAlias: Alias,
 };
 
-type SampleUneditableFields = RecordWithQuantityUneditableFields & ResultUneditableFields;
+type SampleUneditableFields = HasQuantityUneditableFields & ResultUneditableFields;
 
 export type SubSampleTargetLocation = {
   containerId: Id,
