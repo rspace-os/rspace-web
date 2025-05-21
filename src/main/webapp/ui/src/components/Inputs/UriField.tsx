@@ -1,18 +1,17 @@
-//@flow
-import React, { type Node } from "react";
+import React from "react";
 import TextField from "@mui/material/TextField";
 import NoValue from "../../components/NoValue";
 
-export type UriFieldArgs = {|
+export type UriFieldArgs = {
   // required
-  value: string,
+  value: string;
 
   // optional
-  disabled?: boolean,
-  name?: string,
-  onChange?: ({| target: HTMLInputElement |}) => void,
-  id?: string,
-|};
+  disabled?: boolean;
+  name?: string;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  id?: string;
+};
 
 export default function UriField({
   disabled,
@@ -20,7 +19,7 @@ export default function UriField({
   onChange,
   name,
   id,
-}: UriFieldArgs): Node {
+}: UriFieldArgs): React.ReactNode {
   return disabled && !value ? (
     <NoValue label="None" />
   ) : (
