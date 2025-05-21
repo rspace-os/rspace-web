@@ -1,5 +1,3 @@
-//@flow
-
 import { useRef, useLayoutEffect } from "react";
 import ResizeObserver from "resize-observer-polyfill";
 
@@ -7,12 +5,12 @@ const useResizeObserver = ({
   callback,
   element,
 }: {
-  callback: () => void,
-  element: {| current: ?HTMLElement |},
+  callback: () => void;
+  element: { current: HTMLElement | null };
 }) => {
   const current = element && element.current;
 
-  const observer = useRef(null);
+  const observer = useRef<ResizeObserver | null>(null);
 
   const observe = () => {
     if (element && element.current && observer.current) {
@@ -30,8 +28,8 @@ const useResizeObserver = ({
     observe();
 
     return () => {
-      if (observer.current && element && element.current) {
-        observer.current.unobserve(element.current);
+      if (observer.current && current) {
+        observer.current.unobserve(current);
       }
     };
   }, [current]);
