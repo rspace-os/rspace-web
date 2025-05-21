@@ -219,7 +219,7 @@ declare export default class SampleModel
   loadChildren(): void;
   get illustration(): Node;
   get recordDetails(): RecordDetails;
-  get fieldValues(): any;
+  get fieldValues(): SampleEditableFields & SampleUneditableFields;
   get supportsBatchEditing(): boolean;
   get noValueLabel(): {[key in keyof SampleEditableFields]: ?string} & {[key in keyof SampleUneditableFields]: ?string};
   refreshAssociatedSearch(): void;

@@ -87,7 +87,7 @@ export interface HasQuantity {
 
   adjustableTableOptions(): AdjustableTableRowOptions<string>;
 
-  readonly fieldValues: HasQuantityEditableFields;
+  readonly fieldValues: HasQuantityEditableFields & HasQuantityUneditableFields;
 
   readonly noValueLabel: {
     [key in keyof HasQuantityEditableFields]: string | null;

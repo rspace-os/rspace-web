@@ -89,7 +89,11 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       [key in keyof HasLocationEditableFields]: string | null;
     } & {
       [key in keyof HasLocationUneditableFields]: string | null;
-    } & typeof Result.prototype.noValueLabel {
+    } & {
+      [key in keyof ResultEditableFields]: string | null;
+    } & {
+      [key in keyof ResultUneditableFields]: string | null;
+    } {
       return {
         ...super.noValueLabel,
         location: null,

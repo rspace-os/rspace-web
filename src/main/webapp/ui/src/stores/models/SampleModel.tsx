@@ -843,7 +843,7 @@ export default class SampleModel
   }
 
   // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
-  get fieldValues(): any {
+  get fieldValues(): SampleEditableFields & SampleUneditableFields {
     return {
       ...super.fieldValues,
       expiryDate: this.expiryDate,

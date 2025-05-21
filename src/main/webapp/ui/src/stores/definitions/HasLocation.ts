@@ -86,7 +86,7 @@ export interface HasLocation {
    * Extends the base class's properties for exposing information to form
    * fields.
    */
-  readonly fieldValues: HasLocationEditableFields;
+  readonly fieldValues: HasLocationEditableFields & HasLocationUneditableFields;
   readonly noValueLabel: {
     [key in keyof HasLocationEditableFields]: string | null;
   } & {

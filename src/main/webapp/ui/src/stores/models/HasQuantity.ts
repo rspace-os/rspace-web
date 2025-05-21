@@ -8,7 +8,7 @@ import {
 import * as Parsers from "../../util/parsers";
 import { Factory } from "../definitions/Factory";
 import { type UnitCategory } from "../stores/UnitStore";
-import Result from "./Result";
+import Result, { ResultEditableFields, ResultUneditableFields } from "./Result";
 import { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
 import { Optional } from "../../util/optional";
@@ -72,9 +72,10 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Result>(
       return options;
     }
 
-    get fieldValues(): typeof Result.prototype.fieldValues & {
-      quantity: Quantity | null;
-    } {
+    get fieldValues(): ResultEditableFields &
+      ResultUneditableFields &
+      HasQuantityEditableFields &
+      HasQuantityUneditableFields {
       return {
         ...super.fieldValues,
         quantity: this.quantity,
@@ -85,7 +86,11 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Result>(
       [key in keyof HasQuantityEditableFields]: string | null;
     } & {
       [key in keyof HasQuantityUneditableFields]: string | null;
-    } & typeof Result.prototype.noValueLabel {
+    } & {
+      [key in keyof ResultEditableFields]: string | null;
+    } & {
+      [key in keyof ResultUneditableFields]: string | null;
+    } {
       return {
         ...super.noValueLabel,
         quantity: null,
