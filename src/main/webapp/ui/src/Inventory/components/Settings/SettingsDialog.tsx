@@ -1,10 +1,4 @@
-//@flow
-import React, {
-  useState,
-  useEffect,
-  type Node,
-  type ComponentType,
-} from "react";
+import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import Button from "@mui/material/Button";
@@ -17,19 +11,22 @@ import DataciteCard from "./DataciteCard";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 
-type SettingsDialogArgs = {|
-  open: boolean,
-  setOpen: (boolean) => void,
-|};
+type SettingsDialogArgs = {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+};
 
-function SettingsDialog({ open, setOpen }: SettingsDialogArgs): Node {
+function SettingsDialog({
+  open,
+  setOpen,
+}: SettingsDialogArgs): React.ReactNode {
   const { authStore } = useStores();
 
   const [fetchingSystemSettings, setFetchingSystemSettings] = useState<
     | null
-    | {| state: "loading" |}
-    | {| state: "loaded" |}
-    | {| state: "error", error: string |}
+    | { state: "loading" }
+    | { state: "loaded" }
+    | { state: "error"; error: string }
   >(null);
 
   /**
@@ -43,7 +40,8 @@ function SettingsDialog({ open, setOpen }: SettingsDialogArgs): Node {
         await authStore.getSystemSettings();
         setFetchingSystemSettings({ state: "loaded" });
       } catch (e) {
-        setFetchingSystemSettings({ state: "error", error: e.message });
+        if (e instanceof Error)
+          setFetchingSystemSettings({ state: "error", error: e.message });
       }
     }
     void initialiseSettings();
@@ -52,6 +50,8 @@ function SettingsDialog({ open, setOpen }: SettingsDialogArgs): Node {
   const handleClose = () => {
     setOpen(false);
   };
+
+  if (!authStore.systemSettings) return null;
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
@@ -77,4 +77,4 @@ function SettingsDialog({ open, setOpen }: SettingsDialogArgs): Node {
   );
 }
 
-export default (observer(SettingsDialog): ComponentType<SettingsDialogArgs>);
+export default observer(SettingsDialog);
