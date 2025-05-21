@@ -32,9 +32,11 @@ export interface HasQuantity {
 
   adjustableTableOptions(): AdjustableTableRowOptions<string>;
 
-  readonly fieldValues: Record<string, unknown> & {
-    quantity: Quantity | null;
-  };
+  readonly fieldValues: RecordWithQuantityEditableFields;
 
-  readonly noValueLabel: Record<string, string | null>;
+  readonly noValueLabel: {
+    [key in keyof RecordWithQuantityEditableFields]: string | null;
+  } & {
+    [key in keyof RecordWithQuantityUneditableFields]: string | null;
+  };
 }

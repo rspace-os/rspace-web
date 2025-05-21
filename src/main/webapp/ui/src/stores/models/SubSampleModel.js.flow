@@ -45,6 +45,8 @@ import {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
+  type ResultEditableFields,
+  type ResultUneditableFields
 } from "./Result";
 import React, { type Node } from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
@@ -59,7 +61,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import { type Container } from "../definitions/Container";
 import { type Person } from "../definitions/Person";
-import { type HasLocation } from "../definitions/HasLocation";
+import { type HasLocation, type HasLocationEditableFields, type HasLocationUneditableFields } from "../definitions/HasLocation";
 import {
   type RecordWithQuantityEditableFields,
   type RecordWithQuantityUneditableFields,
@@ -67,15 +69,10 @@ import {
 } from "../definitions/HasQuantity";
 import { type UnitCategory } from "../stores/UnitStore";
 
-type SubSampleEditableFields = {
-  ...RecordWithQuantityEditableFields,
-};
+type SubSampleEditableFields = RecordWithQuantityEditableFields & ResultEditableFields & HasLocationEditableFields;
 
-type SubSampleUneditableFields = {
-  ...RecordWithQuantityUneditableFields,
+type SubSampleUneditableFields = RecordWithQuantityUneditableFields & ResultUneditableFields & HasLocationUneditableFields & {
   sample: Sample,
-  location: InventoryRecord,
-  ...
 };
 
 export type Note = {|
@@ -123,8 +120,8 @@ declare export default class SubSampleModel
   extends Result
   implements
     SubSample,
-    HasEditableFields<RecordWithQuantityEditableFields>,
-    HasUneditableFields<RecordWithQuantityUneditableFields>,
+    HasEditableFields<SubSampleEditableFields>,
+    HasUneditableFields<SubSampleUneditableFields>,
     HasLocation
 {
   notes: Array<Note>;

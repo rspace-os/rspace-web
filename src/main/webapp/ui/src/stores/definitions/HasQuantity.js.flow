@@ -12,7 +12,6 @@ export type RecordWithQuantityUneditableFields = {};
 
 export type RecordWithQuantityEditableFields = {
   quantity: Quantity | null,
-  ...
 };
 
 export interface HasQuantity {

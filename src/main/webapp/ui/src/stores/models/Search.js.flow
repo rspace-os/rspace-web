@@ -71,7 +71,7 @@ import {
   IsValid,
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
-import { type Quantity } from "./RecordWithQuantity";
+import { type Quantity } from "../definitions/HasQuantity";
 
 declare export const getViewGroup: (
   view: SearchView
@@ -271,4 +271,3 @@ declare export default class Search implements SearchInterface {
 
   currentBasket(baskets: $ReadOnlyArray<Basket>): ?Basket;
 }
-

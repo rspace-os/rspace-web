@@ -9,10 +9,10 @@ import { Person } from "./Person";
  */
 export const HasLocationMarker = Symbol("HasLocation");
 
-export type HasLocationEditableFields = Record<string, unknown>;
+export type HasLocationEditableFields = object;
 
-export type HasLocationUneditableFields = Record<string, unknown> & {
-  location: InventoryRecord | null;
+export type HasLocationUneditableFields = {
+  location: InventoryRecord;
 };
 
 /**
@@ -78,6 +78,10 @@ export interface HasLocation {
    * Extends the base class's properties for exposing information to form
    * fields.
    */
-  readonly fieldValues: Record<string, unknown> & HasLocationEditableFields;
-  readonly noValueLabel: Record<string, string | null>;
+  readonly fieldValues: HasLocationEditableFields;
+  readonly noValueLabel: {
+    [key in keyof HasLocationEditableFields]: string | null;
+  } & {
+    [key in keyof HasLocationUneditableFields]: string | null;
+  };
 }

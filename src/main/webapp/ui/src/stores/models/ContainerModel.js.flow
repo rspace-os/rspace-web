@@ -83,17 +83,13 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 import { type Person } from "../definitions/Person";
-import { type HasLocation } from "../definitions/HasLocation";
+import { type HasLocation, type HasLocationEditableFields, type HasLocationUneditableFields } from "../definitions/HasLocation";
+import { type Quantity } from "../definitions/HasQuantity";
+import { type UnitCategory } from "../stores/UnitStore";
 
-type ContainerEditableFields = {
-  ...ResultEditableFields,
-  ...
-};
+type ContainerEditableFields = ResultEditableFields & HasLocationEditableFields;
 
-type ContainerUneditableFields = {
-  ...ResultUneditableFields,
-  location: InventoryRecord,
-};
+type ContainerUneditableFields = ResultUneditableFields & HasLocationUneditableFields;
 
 export type ContainerInContainerParams = {
   parentContainers?: Array<{ id: Id }>,

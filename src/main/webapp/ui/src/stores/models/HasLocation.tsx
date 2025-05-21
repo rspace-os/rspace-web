@@ -81,7 +81,7 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       HasLocationUneditableFields {
       return {
         ...super.fieldValues,
-        location: this as InventoryRecord | null,
+        location: this as InventoryRecord,
       };
     }
 

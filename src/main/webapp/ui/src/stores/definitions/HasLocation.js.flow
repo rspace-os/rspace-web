@@ -4,6 +4,15 @@ import { type Container } from "./Container";
 import { type Person } from "./Person";
 import { type InventoryRecord } from "./InventoryRecord";
 
+export type HasLocationEditableFields = {
+  ...
+};
+
+export type HasLocationUneditableFields = {
+  location: InventoryRecord,
+  ...
+}
+
 export interface HasLocation {
   +immediateParentContainer: Container | null;
   +rootParentContainer: Container | null;
