@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import AppBar from "../../../components/AppBar";
@@ -9,11 +7,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 
-type HeaderArgs = {|
-  sidebarId: string,
-|};
+type HeaderArgs = {
+  sidebarId: string;
+};
 
-function Header({ sidebarId }: HeaderArgs): Node {
+function Header({ sidebarId }: HeaderArgs): React.ReactNode {
   const { uiStore } = useStores();
 
   const handleToggleOpen = () => {
@@ -40,4 +38,4 @@ function Header({ sidebarId }: HeaderArgs): Node {
   );
 }
 
-export default (observer(Header): ComponentType<HeaderArgs>);
+export default observer(Header);
