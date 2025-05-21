@@ -1,12 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  useRef,
-  useState,
-  useEffect,
-  type ElementRef,
-} from "react";
+import React, { useRef, useState, useEffect } from "react";
 import QrScanner from "qr-scanner";
 import HelpTextAlert from "../../../components/HelpTextAlert";
 import { mkAlert } from "../../../stores/contexts/Alert";
@@ -15,27 +7,27 @@ import BarcodeScannerSkeleton, {
   type BarcodeInput,
 } from "./BarcodeScannerSkeleton";
 
-type QrCodeScannerArgs = {|
-  onClose: () => void,
-  onScan: (BarcodeInput) => void,
-  buttonPrefix: string,
-|};
+type QrCodeScannerArgs = {
+  onClose: () => void;
+  onScan: (scannedBarcodeInput: BarcodeInput) => void;
+  buttonPrefix: string;
+};
 
 export default function QrCodeScanner({
   onClose,
   onScan,
   buttonPrefix,
-}: QrCodeScannerArgs): Node {
+}: QrCodeScannerArgs): React.ReactNode {
   const { uiStore } = useStores();
   const [loading, setLoading] = useState<boolean>(true);
-  const [barcode, setBarcode] = useState<?BarcodeInput>(null);
+  const [barcode, setBarcode] = useState<BarcodeInput | null>(null);
   const [error, setError] = useState(false);
 
-  const videoElem = useRef<?HTMLVideoElement>(null);
+  const videoElem = useRef<HTMLVideoElement | null>(null);
 
-  let qrScanner;
+  let qrScanner: QrScanner | undefined;
 
-  async function startScanner(videoEl: ElementRef<"video">) {
+  async function startScanner(videoEl: HTMLVideoElement) {
     try {
       qrScanner = new QrScanner(
         videoEl,
@@ -48,17 +40,18 @@ export default function QrCodeScanner({
       );
       await qrScanner.start();
     } catch (e) {
-      uiStore.addAlert(
-        mkAlert({
-          title: "Unable to start camera with Barcode Detector.",
-          message:
-            e === "Camera not found."
-              ? `If your device has a camera, please reset camera permission, and try again.`
-              : e,
-          variant: "error",
-          isInfinite: true,
-        })
-      );
+      if (typeof e === "string")
+        uiStore.addAlert(
+          mkAlert({
+            title: "Unable to start camera with Barcode Detector.",
+            message:
+              e === "Camera not found."
+                ? `If your device has a camera, please reset camera permission, and try again.`
+                : e,
+            variant: "error",
+            isInfinite: true,
+          })
+        );
       setError(true);
     } finally {
       setLoading(false);
@@ -69,7 +62,7 @@ export default function QrCodeScanner({
     const videoEl = videoElem.current;
     if (videoEl) {
       void startScanner(videoEl);
-      return () => qrScanner.stop();
+      return () => qrScanner?.stop();
     }
   }, []);
 
