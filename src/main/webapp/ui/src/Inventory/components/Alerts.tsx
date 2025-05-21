@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useContext, useEffect } from "react";
+import React from "react";
 import Alerts from "../../components/Alerts/Alerts";
 import AlertContext from "../../stores/contexts/Alert";
 import useStores from "../../stores/use-stores";
@@ -13,10 +11,10 @@ import useStores from "../../stores/use-stores";
  * context.
  */
 const Inner = () => {
-  const { addAlert, removeAlert } = useContext(AlertContext);
+  const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { uiStore } = useStores();
 
-  useEffect(() => {
+  React.useEffect(() => {
     uiStore.addAlert = addAlert;
     uiStore.removeAlert = removeAlert;
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
@@ -27,9 +25,9 @@ const Inner = () => {
   return <> </>;
 };
 
-type OuterArgs = {|
-  children: Node,
-|};
+type OuterArgs = {
+  children: React.ReactNode;
+};
 
 /**
  * This component is an adapter between the Alert context-based approach to
@@ -48,7 +46,7 @@ type OuterArgs = {|
  * including the general Alert component (../../components/Alerts/Alerts) and
  * should be used in the same way.
  */
-export default function Outer({ children }: OuterArgs): Node {
+export default function Outer({ children }: OuterArgs): React.ReactNode {
   return (
     <Alerts>
       <Inner />
