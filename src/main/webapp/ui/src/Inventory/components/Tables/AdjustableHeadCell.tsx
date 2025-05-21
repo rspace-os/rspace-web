@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useContext, useState, type Node } from "react";
+import React, { useContext, useState } from "react";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
 import { makeStyles } from "tss-react/mui";
@@ -26,26 +24,26 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type AdjustableHeadCellArgs<T: AdjustableTableRowLabel> = {|
-  options: RsSet<T>,
-  onChange: (T) => void,
-  current: T,
-  sortableProperties?: Array<SortProperty>,
-|};
+type AdjustableHeadCellArgs<T extends AdjustableTableRowLabel> = {
+  options: RsSet<T>;
+  onChange: (newlyChosenOption: T) => void;
+  current: T;
+  sortableProperties?: Array<SortProperty>;
+};
 
-function AdjustableHeadCell<T: AdjustableTableRowLabel>({
+function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
   options,
   onChange,
   current,
   sortableProperties,
-}: AdjustableHeadCellArgs<T>): Node {
+}: AdjustableHeadCellArgs<T>): React.ReactNode {
   const { search } = useContext(SearchContext);
   const { order } = search.fetcher;
 
   const [adjustableColumnMenu, setAdjustableColumnMenu] =
-    useState<?EventTarget>(null);
+    useState<Element | null>(null);
 
-  const currentAdjustableProperty: ?SortProperty =
+  const currentAdjustableProperty: SortProperty | null =
     sortableProperties?.find((p) => p.label === current) ?? null;
 
   const content = () => {
@@ -69,7 +67,9 @@ function AdjustableHeadCell<T: AdjustableTableRowLabel>({
             <IconButtonWithTooltip
               title="Column options"
               className={classes.adjustableColumnMenuButton}
-              onClick={({ target }) => setAdjustableColumnMenu(target)}
+              onClick={({ currentTarget }) =>
+                setAdjustableColumnMenu(currentTarget)
+              }
               icon={<SettingsOutlinedIcon sx={{ fontSize: "1.1em" }} />}
               color="standardIcon"
               aria-haspopup="menu"
@@ -102,4 +102,4 @@ function AdjustableHeadCell<T: AdjustableTableRowLabel>({
   );
 }
 
-export default (observer(AdjustableHeadCell): typeof AdjustableHeadCell);
+export default observer(AdjustableHeadCell);
