@@ -1,0 +1,24 @@
+//@flow
+
+import { type UnitCategory } from "../stores/UnitStore";
+
+export type Quantity = {
+  // API always deals with numbers, but input fields can read in empty string
+  numericValue: number | "";
+  unitId: number;
+};
+
+export type RecordWithQuantityEditableFields = Record<string, mixed> & {
+  quantity: Quantity | null;
+};
+
+export interface HasQuantity {
+  quantity: Quantity;
+  +quantityCategory: UnitCategory;
+  +quantityUnitId: number;
+  +quantityValue: number;
+  +quantityLabel: string;
+  +quantityUnitLabel: string;
+  +fieldValues: { quantity: Quantity | null, ... };
+  +noValueLabel: {};
+}
