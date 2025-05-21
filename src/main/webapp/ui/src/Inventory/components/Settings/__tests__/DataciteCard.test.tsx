@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
@@ -35,7 +34,6 @@ describe("DataciteCard", () => {
       </ThemeProvider>
     );
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(container)).toHaveNoViolations();
   });
 });
