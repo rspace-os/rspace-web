@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ElementRef } from "react";
+import React from "react";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import CardActions from "@mui/material/CardActions";
@@ -13,12 +11,18 @@ import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
 import StringField from "../../../components/Inputs/StringField";
-import { barcodeFormatAsString } from "../../../util/barcode";
+import {
+  barcodeFormatAsString,
+  type BarcodeFormat,
+} from "../../../util/barcode";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 
-export type BarcodeInput =
-  | Barcode
-  | {| rawValue: BarcodeValue, format: "Unknown" |};
+export type Barcode = {
+  format: BarcodeFormat;
+  rawValue: string;
+};
+
+export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
 
 const useStyles = makeStyles()((theme) => ({
   video: {
@@ -34,18 +38,18 @@ const useStyles = makeStyles()((theme) => ({
   hidden: { display: "none" },
 }));
 
-type BarcodeScannerSkeletonArgs = {|
-  onClose: () => void,
-  onScan: (BarcodeInput) => void,
-  buttonPrefix: string,
-  beforeScanHelpText: string,
-  barcode: ?BarcodeInput,
-  setBarcode: (?BarcodeInput) => void,
-  loading: boolean,
-  warning?: Node,
-  videoElem: {| current: ?ElementRef<"video"> |},
-  error: boolean,
-|};
+type BarcodeScannerSkeletonArgs = {
+  onClose: () => void;
+  onScan: (scannedBarcodeInput: BarcodeInput) => void;
+  buttonPrefix: string;
+  beforeScanHelpText: string;
+  barcode: BarcodeInput | null;
+  setBarcode: (value: BarcodeInput | null) => void;
+  loading: boolean;
+  warning?: React.ReactNode;
+  videoElem: React.RefObject<HTMLVideoElement>;
+  error: boolean;
+};
 
 export default function BarcodeScannerSkeleton({
   onClose,
@@ -58,7 +62,7 @@ export default function BarcodeScannerSkeleton({
   warning,
   videoElem,
   error,
-}: BarcodeScannerSkeletonArgs): Node {
+}: BarcodeScannerSkeletonArgs): React.ReactNode {
   const { uiStore } = useStores();
   const { classes } = useStyles();
 
@@ -68,14 +72,15 @@ export default function BarcodeScannerSkeleton({
         throw new Error("Unable to search. Scan has not completed.");
       onScan(barcode);
     } catch (e) {
-      uiStore.addAlert(
-        mkAlert({
-          title: "An error occurred.",
-          message: e,
-          variant: "error",
-          isInfinite: true,
-        })
-      );
+      if (e instanceof Error)
+        uiStore.addAlert(
+          mkAlert({
+            title: "An error occurred.",
+            message: e.message,
+            variant: "error",
+            isInfinite: true,
+          })
+        );
     } finally {
       onClose();
     }
@@ -97,7 +102,7 @@ export default function BarcodeScannerSkeleton({
               `Loading Barcode Scanner...`
             ) : barcode?.rawValue ? (
               <>
-                {`Barcode detected: ${barcodeFormatAsString(barcode.format)} 
+                {`Barcode detected: ${barcodeFormatAsString(barcode.format)}
                 format.`}
                 <br />
                 {`${barcode.rawValue}`}

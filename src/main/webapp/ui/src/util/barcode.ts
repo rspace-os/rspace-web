@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 
-type BarcodeFormat =
+export type BarcodeFormat =
   | "aztec"
   | "code_128"
   | "code_39"
