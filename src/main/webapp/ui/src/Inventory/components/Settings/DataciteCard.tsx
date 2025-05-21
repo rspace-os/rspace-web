@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useState, type Node, useId } from "react";
+import React, { useState, useId } from "react";
 import useStores from "../../../stores/use-stores";
 import Box from "@mui/material/Box";
 import FormControl from "@mui/material/FormControl";
@@ -28,8 +26,9 @@ import Fade from "@mui/material/Fade";
 import Grid from "@mui/material/Grid";
 import ApiService from "../../../common/InvApiService";
 import { doNotAwait } from "../../../util/Util";
+import { getErrorMessage } from "../../../util/error";
 
-const SETTINGS_LABELS: { [$Keys<SystemSettings["datacite"]>]: string } = {
+const SETTINGS_LABELS: Record<keyof SystemSettings["datacite"], string> = {
   enabled: "Enabled",
   serverUrl: "Server URL",
   username: "Repository Account ID",
@@ -47,17 +46,18 @@ const dataciteServerUrlOptions: Array<RadioOption<DataCiteServerUrl>> = [
   { value: "https://api.test.datacite.org", label: "Test" },
 ];
 
-type DataciteCardArgs = {|
-  currentSettings: SystemSettings["datacite"],
-|};
+type DataciteCardArgs = {
+  currentSettings: SystemSettings["datacite"];
+};
 
 export default function DataciteCard({
   currentSettings,
-}: DataciteCardArgs): Node {
-  const [updatedSettings, setUpdatedSettings] = useState(currentSettings);
+}: DataciteCardArgs): React.ReactNode {
+  const [updatedSettings, setUpdatedSettings] =
+    useState<SystemSettings["datacite"]>(currentSettings);
   const [savedSettings, setSavedSettings] = useState(currentSettings);
   const [lastTestResult, setLastTestResult] = useState<
-    {| response: "success" |} | {| response: "failed", message: string |} | null
+    { response: "success" } | { response: "failed"; message: string } | null
   >(null);
 
   const [savingInFlight, setSavingInFlight] = useState(false);
@@ -116,7 +116,11 @@ export default function DataciteCard({
         <Box mt={1.5}>
           <FormControl component="fieldset" fullWidth>
             <FormLabel id="igsn-details-label">Details</FormLabel>
-            {Object.entries(updatedSettings)
+            {(
+              Object.entries(updatedSettings) as ReadonlyArray<
+                [keyof typeof updatedSettings, string]
+              >
+            )
               .filter((entry) => entry[0] !== "enabled")
               .map((entry) => (
                 <Grid
@@ -141,7 +145,6 @@ export default function DataciteCard({
                       onChange={({ target }) => {
                         setUpdatedSettings({
                           ...updatedSettings,
-                          // $FlowExpectedError[invalid-computed-prop] Computed properties are not supposed to be used inside of computed properties
                           [entry[0]]: target.value,
                         });
                       }}
@@ -214,7 +217,7 @@ export default function DataciteCard({
           variant="outlined"
           style={{ minWidth: "max-content" }}
           onClick={() => {
-            ApiService.get<void, boolean>("/identifiers/testDataCiteConnection")
+            ApiService.get<boolean>("/identifiers/testDataCiteConnection")
               .then(({ data }) => {
                 setLastTestResult(
                   data
@@ -225,8 +228,7 @@ export default function DataciteCard({
               .catch((e) => {
                 setLastTestResult({
                   response: "failed",
-                  message:
-                    e?.response?.data.message ?? e.message ?? "Unknown reason.",
+                  message: getErrorMessage(e, "Unknown reason."),
                 });
               });
           }}
