@@ -1075,7 +1075,6 @@ export default class ContainerModel
   } {
     return {
       ...super.noValueLabel,
-      location: null,
     };
   }
 

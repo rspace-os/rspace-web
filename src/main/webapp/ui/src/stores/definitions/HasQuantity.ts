@@ -9,9 +9,9 @@ export type Quantity = {
   unitId: number;
 };
 
-export type RecordWithQuantityUneditableFields = Record<string, unknown>;
+export type RecordWithQuantityUneditableFields = object;
 
-export type RecordWithQuantityEditableFields = Record<string, unknown> & {
+export type RecordWithQuantityEditableFields = {
   quantity: Quantity | null;
 };
 

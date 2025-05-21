@@ -85,8 +85,15 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       };
     }
 
-    get noValueLabel(): typeof Result.prototype.noValueLabel {
-      return super.noValueLabel;
+    get noValueLabel(): {
+      [key in keyof HasLocationEditableFields]: string | null;
+    } & {
+      [key in keyof HasLocationUneditableFields]: string | null;
+    } & typeof Result.prototype.noValueLabel {
+      return {
+        ...super.noValueLabel,
+        location: null,
+      };
     }
 
     get rootParentContainer(): Container | null {

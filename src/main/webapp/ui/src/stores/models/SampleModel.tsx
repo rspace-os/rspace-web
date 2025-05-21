@@ -14,7 +14,7 @@ import {
   type Quantity,
   type RecordWithQuantityEditableFields,
   type RecordWithQuantityUneditableFields,
-} from "./RecordWithQuantity";
+} from "../definitions/HasQuantity";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import getRootStore from "../stores/RootStore";
 import { mkAlert } from "../contexts/Alert";
@@ -23,6 +23,8 @@ import Result, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
+  ResultEditableFields,
+  ResultUneditableFields,
 } from "./Result";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
@@ -84,15 +86,17 @@ import { getErrorMessage } from "@/util/error";
 import { SubSample } from "../definitions/SubSample";
 import { HasQuantityMixin } from "../models/HasQuantity";
 
-type SampleEditableFields = RecordWithQuantityEditableFields & {
-  expiryDate: string | null;
-  sampleSource: SampleSource;
-  storageTempMin: Temperature | null;
-  storageTempMax: Temperature | null;
-  subSampleAlias: Alias;
-};
+type SampleEditableFields = RecordWithQuantityEditableFields &
+  ResultEditableFields & {
+    expiryDate: string | null;
+    sampleSource: SampleSource;
+    storageTempMin: Temperature | null;
+    storageTempMax: Temperature | null;
+    subSampleAlias: Alias;
+  };
 
-type SampleUneditableFields = RecordWithQuantityUneditableFields;
+type SampleUneditableFields = RecordWithQuantityUneditableFields &
+  ResultUneditableFields;
 
 export type SubSampleTargetLocation = {
   containerId: Id;

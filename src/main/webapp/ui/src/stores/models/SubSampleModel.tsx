@@ -23,7 +23,6 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import {} from "./RecordWithQuantity";
 import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
@@ -43,6 +42,8 @@ import Result, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
+  ResultEditableFields,
+  ResultUneditableFields,
 } from "./Result";
 import React from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
@@ -69,10 +70,12 @@ import {
 import { HasQuantityMixin, getValue, getUnitId } from "./HasQuantity";
 
 type SubSampleEditableFields = RecordWithQuantityEditableFields &
-  HasLocationEditableFields;
+  HasLocationEditableFields &
+  ResultEditableFields;
 
 type SubSampleUneditableFields = RecordWithQuantityUneditableFields &
-  HasLocationUneditableFields & {
+  HasLocationUneditableFields &
+  ResultUneditableFields & {
     sample: Sample;
   };
 
@@ -409,7 +412,6 @@ export default class SubSampleModel
     return true;
   }
 
-  //eslint-disable-next-line no-unused-vars
   // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): {
     [key in keyof SubSampleEditableFields]: string | null;
@@ -420,7 +422,6 @@ export default class SubSampleModel
       ...super.noValueLabel,
       quantity: null,
       sample: null,
-      location: null,
     };
   }
 
