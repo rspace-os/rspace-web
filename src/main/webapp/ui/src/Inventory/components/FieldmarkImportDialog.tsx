@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import { Dialog } from "../../components/DialogBoundary";
@@ -40,11 +38,11 @@ import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSe
  * success alert toast.
  */
 class ResponseContainer implements LinkableRecord {
-  id: ?number;
-  globalId: ?string;
+  id: number | null;
+  globalId: string | null;
   name: string;
 
-  constructor({ globalId, name }: {| globalId: string, name: string |}) {
+  constructor({ globalId, name }: { globalId: string; name: string }) {
     this.globalId = globalId;
     this.name = name;
     this.id = 0;
@@ -66,9 +64,9 @@ class ResponseContainer implements LinkableRecord {
 
 const GridToolbar = ({
   setColumnsMenuAnchorEl,
-}: {|
-  setColumnsMenuAnchorEl: (HTMLElement) => void,
-|}) => {
+}: {
+  setColumnsMenuAnchorEl: (anchorEl: HTMLElement) => void;
+}) => {
   /**
    * The columns menu can be opened by either tapping the "Columns" toolbar
    * button or by tapping the "Manage columns" menu item in each column's menu,
@@ -78,7 +76,7 @@ const GridToolbar = ({
    * than having to hook into the logic that triggers the opening of the
    * columns menu in both places, we just set the `anchorEl` pre-emptively.
    */
-  const columnMenuRef = React.useRef();
+  const columnMenuRef = React.useRef<HTMLElement | null>(null);
   React.useEffect(() => {
     if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
   }, [setColumnsMenuAnchorEl]);
@@ -87,7 +85,6 @@ const GridToolbar = ({
     <GridToolbarContainer sx={{ width: "100%" }}>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
-        variant="outlined"
         ref={(node) => {
           if (node) columnMenuRef.current = node;
         }}
@@ -117,21 +114,20 @@ function CustomLoadingOverlay() {
   );
 }
 
-type FieldmarkImportDialogArgs = {|
-  open: boolean,
-  onClose: () => void,
-|};
+type FieldmarkImportDialogArgs = {
+  open: boolean;
+  onClose: () => void;
+};
 
 type Notebook = {
-  name: string,
+  name: string;
   metadata: {
-    project_id: string,
-    ispublic: string,
-    pre_description: string,
-    project_lead: string,
-    ...
-  },
-  ...
+    project_id: string;
+    ispublic: boolean;
+    pre_description: string;
+    project_lead: string;
+  };
+  status: string;
 };
 
 /**
@@ -145,15 +141,15 @@ type Notebook = {
 export default function FieldmarkImportDialog({
   open,
   onClose,
-}: FieldmarkImportDialogArgs): Node {
+}: FieldmarkImportDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
   const { addAlert } = React.useContext(AlertContext);
   const [notebooks, setNotebooks] =
-    React.useState<null | $ReadOnlyArray<Notebook>>(null);
+    React.useState<null | ReadonlyArray<Notebook>>(null);
   const [selectedNotebook, setSelectedNotebook] =
     React.useState<null | Notebook>(null);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
-    React.useState<?HTMLElement>(null);
+    React.useState<HTMLElement | null>(null);
   const [fetchingNotebooks, setFetchingNotebooks] = React.useState(false);
   const [importing, setImporting] = React.useState(false);
 
@@ -162,31 +158,32 @@ export default function FieldmarkImportDialog({
       if (!open) return;
       setFetchingNotebooks(true);
       try {
-        const { data } = await InvApiService.get<
-          mixed,
-          $ReadOnlyArray<Notebook>
-        >("/fieldmark/notebooks");
+        const { data } = await InvApiService.get<ReadonlyArray<Notebook>>(
+          "/fieldmark/notebooks"
+        );
         setNotebooks(data);
       } catch (e) {
         console.error(e);
-        const message = Parsers.objectPath(
-          ["response", "data", "data", "validationErrors"],
-          e
-        )
-          .flatMap(Parsers.isArray)
-          .flatMap(ArrayUtils.head)
-          .flatMap(Parsers.isObject)
-          .flatMap(Parsers.isNotNull)
-          .flatMap(Parsers.getValueWithKey("message"))
-          .flatMap(Parsers.isString)
-          .orElse(e.message);
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Could not get notebooks from Fieldmark",
-            message,
-          })
-        );
+        if (e instanceof Error) {
+          const message = Parsers.objectPath(
+            ["response", "data", "data", "validationErrors"],
+            e
+          )
+            .flatMap(Parsers.isArray)
+            .flatMap(ArrayUtils.head)
+            .flatMap(Parsers.isObject)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("message"))
+            .flatMap(Parsers.isString)
+            .orElse(e.message);
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not get notebooks from Fieldmark",
+              message,
+            })
+          );
+        }
       } finally {
         setFetchingNotebooks(false);
       }
@@ -197,10 +194,10 @@ export default function FieldmarkImportDialog({
   async function importNotebook(notebook: Notebook) {
     setImporting(true);
     try {
-      const { data } = await InvApiService.post<
-        { id: string },
-        { containerName: string, containerGlobalId: string, ... }
-      >("/import/fieldmark/notebook", {
+      const { data } = await InvApiService.post<{
+        containerName: string;
+        containerGlobalId: string;
+      }>("/import/fieldmark/notebook", {
         notebookId: notebook.metadata.project_id,
       });
       addAlert(
@@ -221,13 +218,14 @@ export default function FieldmarkImportDialog({
       );
     } catch (e) {
       console.error(e);
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: "Could not import notebook.",
-          message: e.message,
-        })
-      );
+      if (e instanceof Error)
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not import notebook.",
+            message: e.message,
+          })
+        );
       throw e;
     } finally {
       setImporting(false);
@@ -285,26 +283,36 @@ export default function FieldmarkImportDialog({
             <Grid item>
               <DataGridWithRadioSelection
                 columns={[
-                  DataGridColumn.newColumnWithFieldName<_, Notebook>("name", {
-                    headerName: "Name",
-                    flex: 1,
-                    sortable: false,
-                  }),
-                  DataGridColumn.newColumnWithFieldName<_, Notebook>("status", {
-                    headerName: "Status",
-                    flex: 1,
-                    sortable: false,
-                  }),
-                  DataGridColumn.newColumnWithValueGetter<_, Notebook>(
-                    "isPublic",
-                    (notebook) => notebook.metadata.ispublic,
+                  DataGridColumn.newColumnWithFieldName<"name", Notebook>(
+                    "name",
                     {
-                      headerName: "Is Public",
+                      headerName: "Name",
                       flex: 1,
                       sortable: false,
                     }
                   ),
-                  DataGridColumn.newColumnWithValueGetter<_, Notebook>(
+                  DataGridColumn.newColumnWithFieldName<"status", Notebook>(
+                    "status",
+                    {
+                      headerName: "Status",
+                      flex: 1,
+                      sortable: false,
+                    }
+                  ),
+                  DataGridColumn.newColumnWithValueGetter<
+                    "isPublic",
+                    Notebook,
+                    boolean
+                  >("isPublic", (notebook) => notebook.metadata.ispublic, {
+                    headerName: "Is Public",
+                    flex: 1,
+                    sortable: false,
+                  }),
+                  DataGridColumn.newColumnWithValueGetter<
+                    "description",
+                    Notebook,
+                    string
+                  >(
                     "description",
                     (notebook) => notebook.metadata.pre_description,
                     {
@@ -313,7 +321,11 @@ export default function FieldmarkImportDialog({
                       sortable: false,
                     }
                   ),
-                  DataGridColumn.newColumnWithValueGetter<_, Notebook>(
+                  DataGridColumn.newColumnWithValueGetter<
+                    "projectLead",
+                    Notebook,
+                    string
+                  >(
                     "projectLead",
                     (notebook) => notebook.metadata.project_lead,
                     {
@@ -322,15 +334,15 @@ export default function FieldmarkImportDialog({
                       sortable: false,
                     }
                   ),
-                  DataGridColumn.newColumnWithValueGetter<_, Notebook>(
+                  DataGridColumn.newColumnWithValueGetter<
                     "id",
-                    (notebook) => notebook.metadata.project_id,
-                    {
-                      headerName: "Id",
-                      flex: 1,
-                      sortable: false,
-                    }
-                  ),
+                    Notebook,
+                    string
+                  >("id", (notebook) => notebook.metadata.project_id, {
+                    headerName: "Id",
+                    flex: 1,
+                    sortable: false,
+                  }),
                 ]}
                 initialState={{
                   columns: {
@@ -349,12 +361,13 @@ export default function FieldmarkImportDialog({
                   ArrayUtils.find(
                     (n) => n.metadata.project_id === newSelectionId,
                     notebooks ?? []
-                  )
-                  .do((newlySelectedNotebook) => {
+                  ).do((newlySelectedNotebook) => {
                     setSelectedNotebook(newlySelectedNotebook);
                   });
                 }}
-                selectRadioAriaLabelFunc={(row) => `Select notebook: ${row.name}`}
+                selectRadioAriaLabelFunc={(row) =>
+                  `Select notebook: ${row.name}`
+                }
                 disableColumnFilter
                 hideFooter
                 autoHeight
