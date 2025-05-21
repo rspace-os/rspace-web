@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * This is a simple Table that displays the name and Global
  * ID of Records
@@ -7,7 +5,7 @@
 
 import { type Record } from "../../stores/definitions/Record";
 import Collapse from "@mui/material/Collapse";
-import React, { type Node, type ElementProps } from "react";
+import React from "react";
 import Table from "@mui/material/Table";
 import TableHead from "@mui/material/TableHead";
 import TableBody from "@mui/material/TableBody";
@@ -18,7 +16,7 @@ import CardContent from "@mui/material/CardContent";
 import { withStyles } from "Styles";
 
 const CustomContent = withStyles<
-  ElementProps<typeof CardContent>,
+  React.ComponentProps<typeof CardContent>,
   { root: string }
 >(() => ({
   root: {
@@ -26,8 +24,8 @@ const CustomContent = withStyles<
   },
 }))(CardContent);
 
-type SimpleRecordsTableArgs = {|
-  open: boolean,
+type SimpleRecordsTableArgs = {
+  open: boolean;
 
   /*
    * Array has to be ReadOnly (i.e. immutable) because the caller will likely
@@ -35,13 +33,13 @@ type SimpleRecordsTableArgs = {|
    * e.g. an Array<InventoryRecord> or Array<Container>. This component must
    * not mutate the array to add records that do not conform with that subtype.
    */
-  records: $ReadOnlyArray<Record>,
-|};
+  records: ReadonlyArray<Record>;
+};
 
 export default function SimpleRecordsTable({
   open,
   records,
-}: SimpleRecordsTableArgs): Node {
+}: SimpleRecordsTableArgs): React.ReactNode {
   return (
     <Collapse in={open}>
       <CustomContent>
