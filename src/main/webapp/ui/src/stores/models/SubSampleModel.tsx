@@ -23,13 +23,7 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import {
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
-  type Quantity,
-  getValue,
-  getUnitId,
-} from "./RecordWithQuantity";
+import {} from "./RecordWithQuantity";
 import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
@@ -67,7 +61,12 @@ import {
   HasLocationEditableFields,
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
-import { HasQuantityMixin } from "./HasQuantity";
+import {
+  type RecordWithQuantityEditableFields,
+  type RecordWithQuantityUneditableFields,
+  type Quantity,
+} from "../definitions/HasQuantity";
+import { HasQuantityMixin, getValue, getUnitId } from "./HasQuantity";
 
 type SubSampleEditableFields = RecordWithQuantityEditableFields &
   HasLocationEditableFields;

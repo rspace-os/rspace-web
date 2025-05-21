@@ -75,7 +75,7 @@ import {
   IsValid,
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
-import { type Quantity } from "./RecordWithQuantity";
+import { type Quantity } from "../definitions/HasQuantity";
 import * as Parsers from "../../util/parsers";
 import UtilResult from "../../util/result";
 

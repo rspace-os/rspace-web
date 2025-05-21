@@ -9,7 +9,6 @@ import getRootStore from "../stores/RootStore";
 import MemoisedFactory from "./Factory/MemoisedFactory";
 import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
 import { mkAlert } from "../contexts/Alert";
-import RecordWithQuantity from "./RecordWithQuantity";
 import Search from "./Search";
 import {
   action,
@@ -29,6 +28,7 @@ import Result from "../../util/result";
 import { getErrorMessage } from "@/util/error";
 import { filterForThoseWithLocations, hasLocation } from "./HasLocation";
 import { HasLocation } from "../definitions/HasLocation";
+import { filterForThoseWithQuantities, hasQuantity } from "./HasQuantity";
 
 export type ListOfMaterialsId = number | null;
 export type ElnFieldId = number;
@@ -280,11 +280,13 @@ export class Material {
   }
 
   get inventoryQuantityLabel(): string {
-    if (this.invRec instanceof RecordWithQuantity && this.invRec.quantity) {
-      const { numericValue, unitId } = this.invRec.quantity;
-      return `${numericValue} ${this.quantityUnitLabel(unitId)}`;
-    }
-    return "";
+    return hasQuantity(this.invRec)
+      .map((r) => {
+        if (!r.quantity) return "";
+        const { numericValue, unitId } = r.quantity;
+        return `${numericValue} ${this.quantityUnitLabel(unitId)}`;
+      })
+      .orElse("");
   }
 
   get canEditQuantity(): boolean {
@@ -534,10 +536,9 @@ export class ListOfMaterials {
   }
 
   get selectedCategories(): Set<UnitCategory> {
-    return new RsSet(this.selectedMaterials)
-      .map((m) => m.invRec)
-      .filterClass(RecordWithQuantity)
-      .map((r) => r.quantityCategory);
+    return new RsSet(
+      filterForThoseWithQuantities(this.selectedMaterials.map((m) => m.invRec))
+    ).map((r) => r.quantityCategory);
   }
 
   get mixedSelectedCategories(): boolean {

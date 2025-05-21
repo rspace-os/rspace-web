@@ -6,9 +6,9 @@ import {
   Material,
   type ListOfMaterials,
 } from "../../stores/models/MaterialsModel";
-import RecordWithQuantity from "../../stores/models/RecordWithQuantity";
 import NumberField from "../../components/Inputs/NumberField";
 import UnitSelect from "../../components/Inputs/UnitSelect";
+import { hasQuantity } from "../../stores/models/HasQuantity";
 
 type UsedQuantityFieldArgs = {|
   material: Material,
@@ -101,11 +101,9 @@ function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): Node {
         endAdornment: (
           <UnitSelect
             disabled={!material.selected || mixedSelectedCategories}
-            categories={
-              material.invRec instanceof RecordWithQuantity
-                ? [material.invRec.quantityCategory]
-                : []
-            }
+            categories={hasQuantity(material.invRec)
+              .map((r) => [r.quantityCategory])
+              .orElse([])}
             value={getUnitId()}
             handleChange={({ target }) => {
               onChangeUnitId(parseInt(target.value, 10));

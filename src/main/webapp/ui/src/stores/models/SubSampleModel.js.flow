@@ -21,13 +21,11 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import RecordWithQuantity, {
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
-  type Quantity,
+import Result from "./Result";
+import {
   getValue,
   getUnitId,
-} from "./RecordWithQuantity";
+} from "./HasQuantity";
 import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
@@ -62,6 +60,12 @@ import {
 import { type Container } from "../definitions/Container";
 import { type Person } from "../definitions/Person";
 import { type HasLocation } from "../definitions/HasLocation";
+import {
+  type RecordWithQuantityEditableFields,
+  type RecordWithQuantityUneditableFields,
+  type Quantity,
+} from "../definitions/HasQuantity";
+import { type UnitCategory } from "../stores/UnitStore";
 
 type SubSampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -116,11 +120,11 @@ export type SubSampleAttrs = {|
 |};
 
 declare export default class SubSampleModel
-  extends RecordWithQuantity
+  extends Result
   implements
     SubSample,
-    HasEditableFields<SubSampleEditableFields>,
-    HasUneditableFields<SubSampleUneditableFields>,
+    HasEditableFields<RecordWithQuantityEditableFields>,
+    HasUneditableFields<RecordWithQuantityUneditableFields>,
     HasLocation
 {
   notes: Array<Note>;
@@ -169,6 +173,13 @@ declare export default class SubSampleModel
   isDirectlyOnWorkbenchOfUser(user: Person): boolean;
   +lastNonWorkbenchParent: Container | null;
   get lastMoveDate(): ?Date;
+
+  quantity: Quantity;
+  +quantityCategory: UnitCategory;
+  +quantityUnitId: number;
+  +quantityValue: number;
+  +quantityLabel: string;
+  +quantityUnitLabel: string;
 }
 
 type BatchSubSampleEditableFields = ResultCollectionEditableFields &

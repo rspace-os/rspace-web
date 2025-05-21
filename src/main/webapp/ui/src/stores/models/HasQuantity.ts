@@ -9,6 +9,7 @@ import { type UnitCategory } from "../stores/UnitStore";
 import Result from "./Result";
 import { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
+import { Optional } from "../../util/optional";
 
 /*
  * Some samples/subsamples don't have a quantity; these functions just provide
@@ -87,4 +88,24 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Result>(
       };
     }
   };
+}
+
+/**
+ * Checks if a given object has a quantity.
+ */
+export function hasQuantity(input: object): Optional<HasQuantity> {
+  return HasQuantityMarker in input
+    ? Optional.present(input as HasQuantity)
+    : Optional.empty();
+}
+
+/**
+ * Filters an iterable collection for those with quantities.
+ */
+export function* filterForThoseWithQuantities<T>(
+  input: Iterable<T>
+): Iterable<HasQuantity & T> {
+  for (const val of input) {
+    if (HasQuantityMarker in (val as object)) yield val as HasQuantity & T;
+  }
 }

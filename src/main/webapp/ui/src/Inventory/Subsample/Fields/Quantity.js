@@ -8,10 +8,12 @@ import NumberField from "../../../components/Inputs/NumberField";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import {
   type Quantity,
+} from "../../../stores/definitions/HasQuantity";
+import {
   getValue,
   getUnitId,
   getLabel,
-} from "../../../stores/models/RecordWithQuantity";
+} from "../../../stores/models/HasQuantity";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 import Typography from "@mui/material/Typography";
 import type { Sample } from "../../../stores/definitions/Sample";

@@ -273,6 +273,13 @@ declare export default class ContainerModel
   isOnWorkbenchOfUser(user: Person): boolean;
   isDirectlyOnWorkbenchOfUser(user: Person): boolean;
   +lastNonWorkbenchParent: Container | null;
+
+  quantity: Quantity;
+  +quantityCategory: UnitCategory;
+  +quantityUnitId: number;
+  +quantityValue: number;
+  +quantityLabel: string;
+  +quantityUnitLabel: string;
 }
 
 type BatchContainerEditableFields = {

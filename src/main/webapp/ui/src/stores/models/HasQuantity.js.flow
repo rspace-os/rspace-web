@@ -1,1 +1,8 @@
 //@flow
+
+import { type Quantity } from "../definitions/HasQuantity";
+
+declare export const getUnitId: (q: ?Quantity) => number;
+declare export const getValue: (q: ?Quantity) => number;
+declare export const getQuantityUnitLabel: (q: ?Quantity) => string;
+declare export const getLabel: (q: ?Quantity) => string;
