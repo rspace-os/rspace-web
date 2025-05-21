@@ -10,7 +10,7 @@ import {
 import { match } from "../../util/Util";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import RecordWithQuantity, {
+import {
   type Quantity,
   type RecordWithQuantityEditableFields,
   type RecordWithQuantityUneditableFields,
@@ -19,7 +19,7 @@ import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import getRootStore from "../stores/RootStore";
 import { mkAlert } from "../contexts/Alert";
 import Search from "./Search";
-import {
+import Result, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
@@ -78,10 +78,11 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
-import Result from "../../util/result";
+import UtilResult from "../../util/result";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getErrorMessage } from "@/util/error";
 import { SubSample } from "../definitions/SubSample";
+import { HasQuantityMixin } from "../models/HasQuantity";
 
 type SampleEditableFields = RecordWithQuantityEditableFields & {
   expiryDate: string | null;
@@ -196,7 +197,7 @@ const defaultEditableFields: Set<string> = new Set([
 export { defaultEditableFields as defaultEditableSampleFields };
 
 export default class SampleModel
-  extends RecordWithQuantity
+  extends HasQuantityMixin(Result)
   implements
     Sample,
     HasEditableFields<SampleEditableFields>,
@@ -692,8 +693,8 @@ export default class SampleModel
     };
 
     const validateExpiryDate = () => {
-      return Result.first(
-        !this.expiryDate ? Result.Ok(null) : Result.Error<null>([]),
+      return UtilResult.first(
+        !this.expiryDate ? UtilResult.Ok(null) : UtilResult.Error<null>([]),
         Parsers.isNotBottom(this.expiryDate)
           .flatMap(Parsers.parseDate)
           .mapError(() => new Error("Invalid expiry date."))
@@ -837,10 +838,7 @@ export default class SampleModel
     );
   }
 
-  /*
-   * The current value of the editable fields, as required by the interface
-   * `HasEditableFields` and `HasUneditableFields`.
-   */
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get fieldValues(): any {
     return {
       ...super.fieldValues,
@@ -856,6 +854,7 @@ export default class SampleModel
     return true;
   }
 
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): { [key in keyof SampleEditableFields]: string | null } & {
     [key in keyof SampleUneditableFields]: string | null;
   } {

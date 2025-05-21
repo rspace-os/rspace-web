@@ -23,7 +23,7 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import RecordWithQuantity, {
+import {
   type RecordWithQuantityEditableFields,
   type RecordWithQuantityUneditableFields,
   type Quantity,
@@ -45,7 +45,7 @@ import {
   runInAction,
 } from "mobx";
 import { type Alias, type Sample } from "../definitions/Sample";
-import {
+import Result, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
@@ -67,6 +67,7 @@ import {
   HasLocationEditableFields,
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
+import { HasQuantityMixin } from "./HasQuantity";
 
 type SubSampleEditableFields = RecordWithQuantityEditableFields &
   HasLocationEditableFields;
@@ -128,7 +129,7 @@ const defaultEditableFields = new Set([
 ]);
 
 export default class SubSampleModel
-  extends HasLocationMixin(RecordWithQuantity)
+  extends HasQuantityMixin(HasLocationMixin(Result))
   implements
     SubSample,
     HasEditableFields<SubSampleEditableFields>,
