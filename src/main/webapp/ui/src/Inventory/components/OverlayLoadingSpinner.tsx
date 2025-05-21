@@ -1,14 +1,14 @@
-//@flow
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 library.add(faSpinner);
 import { withStyles } from "Styles";
-import React, { type ComponentType } from "react";
+import React from "react";
+import { emptyObject } from "../../util/types";
 
-const OverlayLoadingSpinner: ComponentType<{||}> = withStyles<
-  {||},
-  { overlay: string, wrapper: string, icon: string }
+const OverlayLoadingSpinner = withStyles<
+  emptyObject,
+  { overlay: string; wrapper: string; icon: string }
 >((theme) => ({
   overlay: {
     display: "flex",
