@@ -6,9 +6,14 @@ import { AdjustableTableRowOptions } from "../definitions/Tables";
 import { type InventoryRecord } from "../definitions/InventoryRecord";
 import React from "react";
 import { Optional, lift2 } from "../../util/optional";
-import { HasLocation, HasLocationMarker } from "../definitions/HasLocation";
+import {
+  HasLocation,
+  HasLocationEditableFields,
+  HasLocationMarker,
+  HasLocationUneditableFields,
+} from "../definitions/HasLocation";
 import { GlobalId } from "../definitions/BaseRecord";
-import Result from "./Result";
+import Result, { ResultEditableFields, ResultUneditableFields } from "./Result";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -70,12 +75,13 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       )(params).elseThrow() as Container | null;
     }
 
-    get fieldValues(): typeof Result.prototype.fieldValues & {
-      location: InventoryRecord;
-    } {
+    get fieldValues(): ResultEditableFields &
+      ResultUneditableFields &
+      HasLocationEditableFields &
+      HasLocationUneditableFields {
       return {
         ...super.fieldValues,
-        location: this,
+        location: this as InventoryRecord | null,
       };
     }
 

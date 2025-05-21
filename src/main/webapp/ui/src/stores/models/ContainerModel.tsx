@@ -85,12 +85,15 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 import { HasLocationMixin } from "./HasLocation";
+import {
+  HasLocationEditableFields,
+  HasLocationUneditableFields,
+} from "../definitions/HasLocation";
 
-type ContainerEditableFields = ResultEditableFields;
+type ContainerEditableFields = ResultEditableFields & HasLocationEditableFields;
 
-type ContainerUneditableFields = ResultUneditableFields & {
-  location: InventoryRecord;
-};
+type ContainerUneditableFields = ResultUneditableFields &
+  HasLocationUneditableFields;
 
 export type ContainerInContainerParams = {
   parentContainers?: Array<{ id: Id }>;

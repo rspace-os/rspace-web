@@ -89,7 +89,7 @@ import * as Parsers from "../../util/parsers";
 import UtilResult from "../../util/result";
 import { AxiosProgressEvent } from "@/common/axios";
 
-export type ResultEditableFields = {
+export type ResultEditableFields = Record<string, unknown> & {
   /*
    * As far as the database is concerned, the description can be null, and the
    * records pre-populated in the databases of the development servers have a
@@ -109,7 +109,7 @@ export type ResultEditableFields = {
   sharedWith: Array<SharedWithGroup> | null;
 };
 
-export type ResultUneditableFields = {
+export type ResultUneditableFields = Record<string, unknown> & {
   owner: Person | null;
 };
 

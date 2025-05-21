@@ -9,6 +9,12 @@ import { Person } from "./Person";
  */
 export const HasLocationMarker = Symbol("HasLocation");
 
+export type HasLocationEditableFields = Record<string, unknown>;
+
+export type HasLocationUneditableFields = Record<string, unknown> & {
+  location: InventoryRecord | null;
+};
+
 /**
  * Inventory records that model items that physically exist and thus have a
  * real-world location MUST implement this interface. To avoid duplicating
@@ -72,6 +78,6 @@ export interface HasLocation {
    * Extends the base class's properties for exposing information to form
    * fields.
    */
-  readonly fieldValues: Record<string, unknown> & { location: InventoryRecord };
+  readonly fieldValues: Record<string, unknown> & HasLocationEditableFields;
   readonly noValueLabel: Record<string, string | null>;
 }

@@ -63,13 +63,18 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
 import { HasLocationMixin } from "./HasLocation";
+import {
+  HasLocationEditableFields,
+  HasLocationUneditableFields,
+} from "../definitions/HasLocation";
 
-type SubSampleEditableFields = RecordWithQuantityEditableFields;
+type SubSampleEditableFields = RecordWithQuantityEditableFields &
+  HasLocationEditableFields;
 
-type SubSampleUneditableFields = RecordWithQuantityUneditableFields & {
-  sample: Sample;
-  location: InventoryRecord;
-};
+type SubSampleUneditableFields = RecordWithQuantityUneditableFields &
+  HasLocationUneditableFields & {
+    sample: Sample;
+  };
 
 export type Note = {
   id?: number;
