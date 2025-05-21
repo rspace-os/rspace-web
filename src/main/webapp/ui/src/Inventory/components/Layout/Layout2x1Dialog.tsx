@@ -1,11 +1,9 @@
-// @flow
-
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
-import React, { type Node, type ComponentType, type ElementProps } from "react";
+import React from "react";
 import useStores from "../../../stores/use-stores";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
@@ -15,8 +13,8 @@ import { useIsSingleColumnLayout } from "./Layout2x1";
 
 // Full height and full width
 const AlmostFullscreenDialog = withStyles<
-  {| children: Node, ...ElementProps<typeof Dialog> |},
-  { root: string, paper: string }
+  { children: React.ReactNode } & React.ComponentProps<typeof Dialog>,
+  { root: string; paper: string }
 >(() => ({
   root: {
     userSelect: "none",
@@ -30,42 +28,44 @@ const AlmostFullscreenDialog = withStyles<
   </Dialog>
 ));
 
-const useStyles = makeStyles()((theme, { isSingleColumnLayout }) => ({
-  content: {
-    padding: "0 !important",
-    overflowX: "hidden",
-    /*
-     * This is so that absolutely positioned elments inside the dialog
-     * automatically move as the dialog content is scrolled
-     */
-    position: "relative",
-  },
-  container: {
-    justifyContent: "space-between",
-  },
-  leftPane: {
-    maxWidth: `${((isSingleColumnLayout ? 12 : 5) / 12) * 100}%`,
-    flexBasis: `${((isSingleColumnLayout ? 12 : 5) / 12) * 100}%`,
-  },
-  rightPane: {
-    maxWidth: `${((isSingleColumnLayout ? 12 : 7) / 12) * 100}%`,
-    flexBasis: `${((isSingleColumnLayout ? 12 : 7) / 12) * 100}%`,
-  },
-  hide: {
-    display: "none",
-  },
-}));
+const useStyles = makeStyles<{ isSingleColumnLayout: boolean }>()(
+  (theme, { isSingleColumnLayout }) => ({
+    content: {
+      padding: "0 !important",
+      overflowX: "hidden",
+      /*
+       * This is so that absolutely positioned elments inside the dialog
+       * automatically move as the dialog content is scrolled
+       */
+      position: "relative",
+    },
+    container: {
+      justifyContent: "space-between",
+    },
+    leftPane: {
+      maxWidth: `${((isSingleColumnLayout ? 12 : 5) / 12) * 100}%`,
+      flexBasis: `${((isSingleColumnLayout ? 12 : 5) / 12) * 100}%`,
+    },
+    rightPane: {
+      maxWidth: `${((isSingleColumnLayout ? 12 : 7) / 12) * 100}%`,
+      flexBasis: `${((isSingleColumnLayout ? 12 : 7) / 12) * 100}%`,
+    },
+    hide: {
+      display: "none",
+    },
+  })
+);
 
-type Layout2x1DialogArgs = {|
-  open: boolean,
-  onClose: () => void,
-  colLeft: Node,
-  colRight: Node,
-  actions: Node,
-  dialogTitle: Node,
-|};
+type Layout2x1DialogArgs = {
+  open: boolean;
+  onClose: () => void;
+  colLeft: React.ReactNode;
+  colRight: React.ReactNode;
+  actions: React.ReactNode;
+  dialogTitle: React.ReactNode;
+};
 
-function Layout2x1Dialog(props: Layout2x1DialogArgs): Node {
+function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { classes } = useStyles({
@@ -119,4 +119,4 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): Node {
   );
 }
 
-export default (observer(Layout2x1Dialog): ComponentType<Layout2x1DialogArgs>);
+export default observer(Layout2x1Dialog);
