@@ -1,11 +1,11 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { ExistingAttachment } from "../../AttachmentModel";
 import ApiService from "../../../../common/InvApiService";
+import { AxiosResponse } from "@/common/axios";
 
 jest.mock("../../../stores/RootStore", () => {}); // break import cycle
 
@@ -23,9 +23,15 @@ describe("getFile", () => {
       "",
       () => {}
     );
-    const spy = jest.spyOn(ApiService, "query").mockImplementation(() => ({
-      data: new Blob(),
-    }));
+    const spy = jest.spyOn(ApiService, "query").mockImplementation(() =>
+      Promise.resolve({
+        data: new Blob(),
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {} as unknown,
+      } as AxiosResponse)
+    );
 
     await attachment.getFile();
     await attachment.getFile();
