@@ -93,13 +93,13 @@ public class ApiIdentifiersHelper {
     if (!CollectionUtils.isEmpty(incomingIdentifiers)) {
       for (ApiInventoryDOI apiIdentifier : incomingIdentifiers) {
         if (apiIdentifier.isAssignIdentifierRequest()) {
-          addRecordIdentifierForRegisteredApiIdentifier(apiIdentifier, parentInvRec);
+          addRecordIdentifierForAssignApiIdentifier(apiIdentifier, parentInvRec);
           changed = true;
         }
         if (apiIdentifier.isDeleteIdentifierRequest()) {
           if (apiIdentifier.getId() == null) {
             throw new IllegalArgumentException(
-                "'id' property not provided " + "for DOI with 'deleteIdentifierRequest' flag");
+                "'id' property not provided " + "for DOI with 'assignIdentifierRequest' flag");
           }
           Optional<DigitalObjectIdentifier> dbIdentifier =
               parentInvRec.getActiveIdentifiers().stream()

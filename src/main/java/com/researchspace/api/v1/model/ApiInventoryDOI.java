@@ -187,11 +187,6 @@ public class ApiInventoryDOI extends LinkableApiObject {
     return owner;
   }
 
-  public ApiInventoryDOI(DigitalObjectIdentifier identifier, boolean isAssignIdentifierRequest) {
-    this(identifier);
-    this.setAssignIdentifierRequest(true);
-  }
-
   public ApiInventoryDOI(DigitalObjectIdentifier identifier) {
     setId(identifier.getId());
     setDoi(identifier.getIdentifier());

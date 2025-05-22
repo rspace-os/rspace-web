@@ -302,12 +302,16 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     updatedSubSample = inventoryIdentifierApiMgr.publishIdentifier(createdSubSample.getOid(), user);
     assertEquals(1, updatedSubSample.getIdentifiers().size());
     assertNotNull(updatedSubSample.getIdentifiers().get(0).getUrl());
-    assertEquals("https://doi.org/" + DUMMY_VALID_DOI, updatedSubSample.getIdentifiers().get(0).getPublicUrl());
+    assertEquals(
+        "https://doi.org/" + DUMMY_VALID_DOI,
+        updatedSubSample.getIdentifiers().get(0).getPublicUrl());
     // retract
     updatedSubSample = inventoryIdentifierApiMgr.retractIdentifier(createdSubSample.getOid(), user);
     assertEquals(1, updatedSubSample.getIdentifiers().size());
     assertNotNull(updatedSubSample.getIdentifiers().get(0).getUrl());
-    assertEquals("https://doi.org/" + DUMMY_VALID_DOI, updatedSubSample.getIdentifiers().get(0).getPublicUrl());
+    assertEquals(
+        "https://doi.org/" + DUMMY_VALID_DOI,
+        updatedSubSample.getIdentifiers().get(0).getPublicUrl());
   }
 
   @Test

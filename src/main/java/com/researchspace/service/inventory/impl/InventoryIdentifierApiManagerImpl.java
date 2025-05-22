@@ -140,7 +140,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
 
     return updateInventoryRecordWithDoiUpdate(
-        user, inventoryItem, new ApiInventoryDOI(identifierToAssign, true));
+        user, inventoryItem, assignUpdateWithNewDoi(inventoryItem, identifierToAssign));
   }
 
   @Override
@@ -295,6 +295,13 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     return updateNewAssociatedDoi(invRec, newDoi);
   }
 
+  private ApiInventoryDOI assignUpdateWithNewDoi(
+      InventoryRecord inventoryItem, DigitalObjectIdentifier identifierToAssign) {
+    ApiInventoryDOI newDoi = new ApiInventoryDOI(identifierToAssign);
+    newDoi.setAssignIdentifierRequest(true);
+    return updateNewAssociatedDoi(inventoryItem, newDoi);
+  }
+
   @SneakyThrows
   private ApiInventoryDOI createUpdateWithDeleteDoi(InventoryRecord invRec, User user) {
 
@@ -393,7 +400,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     InventoryRecord invRec = invRecRetriever.getInvRecordByGlobalId(invRecOid);
     if (!invRec.getActiveIdentifiers().isEmpty()) {
       throw new IllegalArgumentException(
-          "Inventory Item \"" + invRecOid.toString() + "\" already has an identifier");
+          "Inventory Item \"" + invRecOid.toString() + "\" has got already an identifier");
     }
     return invRec;
   }

@@ -296,6 +296,9 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl
       contentChanged |=
           identifiersHelper.createDeleteRequestedIdentifiers(
               apiContainer.getIdentifiers(), dbContainer, user);
+      contentChanged |=
+          identifiersHelper.createAssignRequestedIdentifiers(
+              apiContainer.getIdentifiers(), dbContainer, user);
       contentChanged |= apiContainer.applyChangesToDatabaseContainer(dbContainer, user);
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbContainer, apiContainer);
       contentChanged |= saveIncomingContainerImages(dbContainer, apiContainer, user);
