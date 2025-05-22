@@ -282,7 +282,7 @@ export default function IgsnTable({
       <DataGridWithRadioSelection
         {...common}
         getRowId={(row) => row.doi}
-        selectRadioAriaLabelFunc={() => ""}
+        selectRadioAriaLabelFunc={() => "Select IGSN"}
         onSelectionChange={(doi: GridRowId) => {
           const selectedIdentifier = identifiers.find((id) => id.doi === doi);
           if (selectedIdentifier) {
