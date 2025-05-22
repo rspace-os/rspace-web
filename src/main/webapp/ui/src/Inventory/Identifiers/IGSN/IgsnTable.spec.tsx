@@ -178,6 +178,15 @@ const feature = test.extend<{
           await expect(
             page.getByLabel("selected IGSNs").getByText("10.82316/khma-em96")
           ).toBeVisible();
+
+          const row = page
+            .getByRole("row", { name: /10.82316\/khma-em96/ })
+            .first();
+          let widget = row.getByRole("checkbox").first();
+          if ((await widget.count()) === 0) {
+            widget = row.getByRole("radio").first();
+          }
+          await expect(widget).toBeChecked();
         },
       "the Linked Item column should contains links": async () => {
         const table = page.getByRole("grid");
