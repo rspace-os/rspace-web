@@ -11,16 +11,8 @@ import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
 import StringField from "../../../components/Inputs/StringField";
-import {
-  barcodeFormatAsString,
-  type BarcodeFormat,
-} from "../../../util/barcode";
+import { barcodeFormatAsString, type Barcode } from "../../../util/barcode";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
-
-export type Barcode = {
-  format: BarcodeFormat;
-  rawValue: string;
-};
 
 export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
 

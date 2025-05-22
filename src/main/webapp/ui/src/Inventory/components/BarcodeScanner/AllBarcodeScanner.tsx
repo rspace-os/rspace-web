@@ -1,18 +1,12 @@
-//@flow
-
-import React, {
-  type Node,
-  useRef,
-  useState,
-  useEffect,
-  type ElementRef,
-} from "react";
+import React, { useRef, useState, useEffect } from "react";
 import useStores from "../../../stores/use-stores";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import HelpTextAlert from "../../../components/HelpTextAlert";
 import BarcodeScannerSkeleton, {
   type BarcodeInput,
 } from "./BarcodeScannerSkeleton";
+import { doNotAwait } from "../../../util/Util";
+import { BarcodeFormat, type Barcode } from "../../../util/barcode";
 
 // scan once per second
 const SCAN_INTERVAL = 1000;
@@ -33,38 +27,52 @@ const supportedFormats: Array<BarcodeFormat> = [
   "upc_e",
 ];
 
-type AllBarcodeScannerArgs = {|
-  onClose: () => void,
-  onScan: (BarcodeInput) => void,
-  buttonPrefix: string,
-|};
+interface BarcodeDetector {
+  detect(input: HTMLVideoElement): Promise<Array<Barcode>>;
+}
+
+interface BarcodeDetectorConstructor {
+  new ({ formats }: { formats: Array<BarcodeFormat> }): BarcodeDetector;
+}
+
+declare global {
+  interface Window {
+    BarcodeDetector: BarcodeDetectorConstructor;
+  }
+}
+
+type AllBarcodeScannerArgs = {
+  onClose: () => void;
+  onScan: (scannedBarcodeInput: BarcodeInput) => void;
+  buttonPrefix: string;
+};
 
 export default function AllBarcodeScanner({
   onClose,
   onScan,
   buttonPrefix,
-}: AllBarcodeScannerArgs): Node {
+}: AllBarcodeScannerArgs): React.ReactNode {
   const { uiStore } = useStores();
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [barcode, setBarcode] = useState<?BarcodeInput>(null);
+  const [barcode, setBarcode] = useState<BarcodeInput | null>(null);
   const [error, setError] = useState(false);
 
-  const videoElem = useRef<?HTMLVideoElement>(null);
+  const videoElem = useRef<HTMLVideoElement | null>(null);
 
-  let barcodeDetector;
-  let detectionInterval;
-  let stream;
+  let barcodeDetector: BarcodeDetector;
+  let detectionInterval: number;
+  let stream: MediaStream;
 
   /* check for API support in browser, init browser's BarcodeDetector */
   if ("BarcodeDetector" in window) {
     //eslint-disable-next-line no-undef
-    barcodeDetector = new BarcodeDetector({
+    barcodeDetector = new window.BarcodeDetector({
       formats: supportedFormats,
     });
   }
 
-  async function startScanner(videoEl: ElementRef<typeof HTMLVideoElement>) {
+  async function startScanner(videoEl: HTMLVideoElement) {
     try {
       /* start video detector / stream */
       stream = await navigator.mediaDevices?.getUserMedia({
@@ -81,33 +89,36 @@ export default function AllBarcodeScanner({
 
       /* check (browser) support (also done in parent conditional) */
       if (barcodeDetector) {
-        detectionInterval = window.setInterval(async () => {
-          if (!videoEl) throw new TypeError("videoEl must not be null");
-          const barcodes: Array<Barcode> = await barcodeDetector.detect(
-            videoEl
-          );
-          if (barcodes.length <= 0) return;
-          const format: BarcodeFormat = barcodes[0].format;
-          const rawValue: BarcodeValue = barcodes[0].rawValue;
-          const detectedBarcode = { format, rawValue };
-          setBarcode(detectedBarcode);
-        }, SCAN_INTERVAL);
+        detectionInterval = window.setInterval(
+          doNotAwait(async () => {
+            if (!videoEl) throw new TypeError("videoEl must not be null");
+            const barcodes: Array<Barcode> = await barcodeDetector.detect(
+              videoEl
+            );
+            if (barcodes.length <= 0) return;
+            const format: BarcodeFormat = barcodes[0].format;
+            const rawValue: string = barcodes[0].rawValue;
+            const detectedBarcode = { format, rawValue };
+            setBarcode(detectedBarcode);
+          }),
+          SCAN_INTERVAL
+        );
       } else {
         throw new Error("Barcode Detector API not supported");
       }
     } catch (e) {
-      uiStore.addAlert(
-        mkAlert({
-          title: "Unable to start camera with Barcode Detector.",
-          message:
-            // $FlowExpectedError[cannot-resolve-name]
-            e instanceof DOMException
-              ? "Permission to use camera was denied. Please reset camera permission and try again."
-              : e.message,
-          variant: "error",
-          isInfinite: true,
-        })
-      );
+      if (e instanceof Error)
+        uiStore.addAlert(
+          mkAlert({
+            title: "Unable to start camera with Barcode Detector.",
+            message:
+              e instanceof DOMException
+                ? "Permission to use camera was denied. Please reset camera permission and try again."
+                : e.message,
+            variant: "error",
+            isInfinite: true,
+          })
+        );
       setError(true);
     } finally {
       setLoading(false);

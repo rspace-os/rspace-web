@@ -15,6 +15,11 @@ export type BarcodeFormat =
   | "upc_a"
   | "upc_e";
 
+export type Barcode = {
+  format: BarcodeFormat;
+  rawValue: string;
+};
+
 /**
  * Given a barcode format, return a human-readable string.
  */
