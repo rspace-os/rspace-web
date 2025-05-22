@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
@@ -25,12 +24,12 @@ const fooBarTest = ({
   visiblePanel,
   showFoo,
   showBar,
-}: {|
-  isSingleColumnLayout: boolean,
-  visiblePanel: "left" | "right",
-  showFoo: boolean,
-  showBar: boolean,
-|}) => {
+}: {
+  isSingleColumnLayout: boolean;
+  visiblePanel: "left" | "right";
+  showFoo: boolean;
+  showBar: boolean;
+}) => {
   const rootStore = makeMockRootStore({
     uiStore: {
       isSingleColumnLayout,
