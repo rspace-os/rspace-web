@@ -1,12 +1,9 @@
-//@flow
-
-import SubmitSpinner from "../../components/SubmitSpinnerButton";
 import useStores from "../../stores/use-stores";
 import Button from "@mui/material/Button";
 import { makeStyles } from "tss-react/mui";
 import { type Editable } from "../../stores/definitions/Editable";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { doNotAwait } from "../../util/Util";
 import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
 
@@ -26,11 +23,11 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type CommonActionsArgs = {|
-  editableObject: Editable,
-|};
+type CommonActionsArgs = {
+  editableObject: Editable;
+};
 
-function CommonActions({ editableObject }: CommonActionsArgs): Node {
+function CommonActions({ editableObject }: CommonActionsArgs): React.ReactNode {
   const { classes } = useStyles();
   const { uiStore } = useStores();
 
@@ -59,4 +56,4 @@ function CommonActions({ editableObject }: CommonActionsArgs): Node {
   );
 }
 
-export default (observer(CommonActions): ComponentType<CommonActionsArgs>);
+export default observer(CommonActions);
