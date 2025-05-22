@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, waitFor } from "@testing-library/react";
@@ -31,7 +30,7 @@ describe("integrationHelpers", () => {
 
     test("If the sysadmin has not allowed the integration, then false should be returned.", async () => {
       await fc.assert(
-        await fc.asyncProperty(fc.boolean(), async (enabled) => {
+        fc.asyncProperty(fc.boolean(), async (enabled) => {
           const mockAxios = new MockAdapter(axios);
           mockAxios.onGet("/integration/integrationInfo").reply(200, {
             data: {
@@ -59,7 +58,7 @@ describe("integrationHelpers", () => {
 
     test("If the user has not enabled the integration, then false should be returned.", async () => {
       await fc.assert(
-        await fc.asyncProperty(fc.boolean(), async (available) => {
+        fc.asyncProperty(fc.boolean(), async (available) => {
           const mockAxios = new MockAdapter(axios);
           mockAxios.onGet("/integration/integrationInfo").reply(200, {
             data: {
