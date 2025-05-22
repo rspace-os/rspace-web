@@ -6,4 +6,5 @@ import { type Identifier } from "../../useIdentifiers";
 declare export default function IgsnTable({|
   selectedIgsns: $ReadOnlyArray<Identifier>,
   setSelectedIgsns: ($ReadOnlyArray<Identifier>) => void,
+  disableMultipleRowSelection?: boolean,
 |}): Node;
