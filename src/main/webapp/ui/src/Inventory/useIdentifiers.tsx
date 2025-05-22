@@ -52,7 +52,7 @@ export function useIdentifiers(): {
   /*
    * Make a DELETE request to /identifiers/{id} to delete a number of identifiers.
    */
-  deleteIdentifiers: (identifiers: ReadonlyArray<Identifier>) => Promise<void>;
+  deleteIdentifiers: (identifiers: Set<Identifier>) => Promise<void>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -191,7 +191,7 @@ export function useIdentifiers(): {
     }
   }
 
-  async function deleteIdentifiers(identifiers: ReadonlyArray<Identifier>) {
+  async function deleteIdentifiers(identifiers: Set<Identifier>) {
     try {
       const token = await getToken();
       const failed: Array<Identifier["doi"]> = [];
