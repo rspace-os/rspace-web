@@ -2,13 +2,14 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import { Download } from "playwright-core";
 import React from "react";
 import identifiersJson from "../../__tests__/identifiers.json";
-import IgsnTableStory from "./IgsnTable.story";
+import { SimpleIgsnTable, SingularSelectionIgsnTable } from "./IgsnTable.story";
 import fs from "fs/promises";
 import * as Jwt from "jsonwebtoken";
 
 const feature = test.extend<{
   Given: {
     "the researcher is viewing the IGSN table": () => Promise<void>;
+    "the researcher is viewing the IGSN table with singular selection": () => Promise<void>;
   };
   Once: {
     "the table has loaded": () => Promise<void>;
@@ -47,8 +48,12 @@ const feature = test.extend<{
   Given: async ({ mount }, use) => {
     await use({
       "the researcher is viewing the IGSN table": async () => {
-        await mount(<IgsnTableStory />);
+        await mount(<SimpleIgsnTable />);
       },
+      "the researcher is viewing the IGSN table with singular selection":
+        async () => {
+          await mount(<SingularSelectionIgsnTable />);
+        },
     });
   },
   Once: async ({ page }, use) => {
@@ -89,7 +94,13 @@ const feature = test.extend<{
           const row = page
             .getByRole("row", { name: /10.82316\/khma-em96/ })
             .first();
-          await row.getByRole("checkbox").first().click();
+          const checkbox = row.getByRole("checkbox").first();
+          const checkboxCount = await checkbox.count();
+          if (checkboxCount > 0) {
+            await checkbox.click();
+          } else {
+            await row.getByRole("radio").first().click();
+          }
         },
       "the researcher selects {count} IGSNs": async ({
         count,
@@ -337,6 +348,22 @@ test.describe("IGSN Table", () => {
     "When a researcher selects an identifier, the selection state is updated",
     async ({ Given, Once, When, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
+      await Once["the table has loaded"]();
+      await When[
+        "the researcher selects the IGSN with DOI '10.82316/khma-em96'"
+      ]();
+      await Then[
+        "the IGSN with DOI '10.82316/khma-em96' is added to the selection state"
+      ]();
+    }
+  );
+
+  feature(
+    "When a researcher selects an identifier in singluar selection mode, the selection state is updated",
+    async ({ Given, Once, When, Then }) => {
+      await Given[
+        "the researcher is viewing the IGSN table with singular selection"
+      ]();
       await Once["the table has loaded"]();
       await When[
         "the researcher selects the IGSN with DOI '10.82316/khma-em96'"

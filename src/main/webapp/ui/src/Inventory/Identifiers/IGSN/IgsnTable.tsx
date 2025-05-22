@@ -7,6 +7,7 @@ import {
   GridToolbarColumnsButton,
   GridToolbarExportContainer,
   GridSlotProps,
+  GridRowId,
 } from "@mui/x-data-grid";
 import {
   type Identifier,
@@ -264,7 +265,14 @@ export default function IgsnTable({
       <DataGridWithRadioSelection
         {...common}
         selectRadioAriaLabelFunc={() => ""}
-        onSelectionChange={() => {}}
+        onSelectionChange={(doi: GridRowId) => {
+          const selectedIdentifier = identifiers.find((id) => id.doi === doi);
+          if (selectedIdentifier) {
+            setSelectedIgsns([selectedIdentifier]);
+          } else {
+            throw new Error("Selected identifier not found");
+          }
+        }}
         selectedRowId={selectedIgsns.length > 0 ? selectedIgsns[0].doi : null}
       />
     );
