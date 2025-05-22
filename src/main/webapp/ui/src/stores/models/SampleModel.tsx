@@ -213,9 +213,9 @@ export default class SampleModel
   newSampleSubSampleTargetLocations: Array<SubSampleTargetLocation> | null =
     null;
   // @ts-expect-error storageTempMin is initialised by populateFromJson
-  storageTempMin: ?Temperature;
+  storageTempMin: Temperature | null;
   // @ts-expect-error storageTempMax is initialised by populateFromJson
-  storageTempMax: ?Temperature;
+  storageTempMax: Temperature | null;
   fields: Array<Field> = [];
   // @ts-expect-error expiryDate is initialised by populateFromJson
   expiryDate: SampleEditableFields["expiryDate"];

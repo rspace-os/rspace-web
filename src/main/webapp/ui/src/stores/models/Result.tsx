@@ -246,7 +246,7 @@ export default class Result
   // @ts-expect-error modifiedByFullName is initialised by populateFromJson
   modifiedByFullName: string;
   // @ts-expect-error owner is initialised by populateFromJson
-  owner: ?Person;
+  owner: Person | null;
   deleted: boolean = false;
   // @ts-expect-error _links is initialised by populateFromJson
   _links: { [_: string]: URLType };
