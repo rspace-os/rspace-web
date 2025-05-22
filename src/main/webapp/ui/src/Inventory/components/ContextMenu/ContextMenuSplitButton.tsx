@@ -1,6 +1,4 @@
-// @flow
-
-import React, { useState, useRef, type Node } from "react";
+import React, { useState, useRef } from "react";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
@@ -31,13 +29,6 @@ const useStyles = makeStyles()((theme) => ({
     alignItems: "center",
     color: "default",
   },
-  buttonOuter: {
-    height: "100%",
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    borderColor: `${theme.palette.contextMenuButton.border} !important`,
-  },
   buttonLabel: {
     textTransform: "none",
     maxWidth: "85px",
@@ -47,27 +38,27 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export type SplitButtonOption = {|
-  text: string,
-  selection?: () => void,
-|};
+export type SplitButtonOption = {
+  text: string;
+  selection?: () => void;
+};
 
-type ContextMenuSplitButtonArgs = {|
-  options: Array<SplitButtonOption>,
-  icon: Node,
-  loading?: boolean,
-  disabledHelp?: string,
-|};
+type ContextMenuSplitButtonArgs = {
+  options: Array<SplitButtonOption>;
+  icon: React.ReactNode;
+  loading?: boolean;
+  disabledHelp?: string;
+};
 
 export default function ContextMenuSplitButton({
   options,
   icon,
   loading = false,
   disabledHelp = "",
-}: ContextMenuSplitButtonArgs): Node {
+}: ContextMenuSplitButtonArgs): React.ReactNode {
   const { classes } = useStyles();
   const [open, setOpen] = useState(false);
-  const anchorRef = useRef(null);
+  const anchorRef = useRef<HTMLDivElement | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [helpOpen, setHelpOpen] = useState(false);
 
@@ -82,7 +73,7 @@ export default function ContextMenuSplitButton({
   };
 
   const handleClose = (event: Event) => {
-    if (anchorRef.current && anchorRef.current.contains(event.target)) {
+    if (anchorRef.current && anchorRef.current.contains(event.target as Node)) {
       return;
     }
 
@@ -120,11 +111,15 @@ export default function ContextMenuSplitButton({
                   aria-label="split button"
                 >
                   <Button
-                    className={classes.buttonOuter}
                     onClick={options[selectedIndex].selection}
                     disabled={disabledHelp !== ""}
-                    color="contextMenuButton"
                     variant="text"
+                    color="standardIcon"
+                    sx={{
+                      borderRight: "1px solid #bdbdbd !important",
+                      borderColor: "#bdbdbd !important",
+                      color: "rgba(0,0,0,0.87)",
+                    }}
                   >
                     <span className={classes.buttonLabel}>
                       {options[selectedIndex].text}
@@ -132,14 +127,18 @@ export default function ContextMenuSplitButton({
                   </Button>
                   <Button
                     size="small"
-                    aria-controls={open ? "split-button-menu" : null}
-                    aria-expanded={open ? "true" : null}
+                    {...(open
+                      ? {
+                          "aria-controls": "split-button-menu",
+                          "aria-expanded": "true",
+                        }
+                      : {})}
                     aria-haspopup="menu"
                     aria-label="More selection options"
                     onClick={() => setOpen(!open)}
                     disabled={disabledHelp !== ""}
-                    color="contextMenuButton"
                     variant="text"
+                    color="standardIcon"
                   >
                     <ArrowDropDownIcon />
                   </Button>

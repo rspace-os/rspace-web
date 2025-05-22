@@ -118,10 +118,6 @@ declare module "@mui/material/styles/createPalette" {
         badge: string;
       };
     };
-    contextMenuButton: {
-      main: string;
-      border: string;
-    };
     lightestGrey: string;
     menuIconGrey: string;
     faIconGrey: string;
@@ -294,10 +290,6 @@ const baseTheme = createTheme({
         bg: "#e6e6e6",
         badge: "#f7f7f7",
       },
-    },
-    contextMenuButton: {
-      main: "rgba(0, 0, 0, 0.87)",
-      border: "#bdbdbd",
     },
 
     // the lightest grey on a white background that has AA contrast
