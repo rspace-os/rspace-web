@@ -1,16 +1,14 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
 
-type RemoveFromBasketIconArgs = {|
+type RemoveFromBasketIconArgs = {
   // MUI blackmagic: passed className is 'MuiChip-icon'
-  className?: string,
-|};
+  className?: string;
+};
 
 export default function RemoveFromBasketIcon({
   className,
-}: RemoveFromBasketIconArgs): Node {
+}: RemoveFromBasketIconArgs): React.ReactNode {
   return (
     <SvgIcon className={className}>
       <path d="M17 19.22H5V7h7V5H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-10h-2v7.22z"></path>
