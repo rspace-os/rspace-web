@@ -23,6 +23,7 @@ import MenuItem from "@mui/material/MenuItem";
 import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
+import RsSet from "../../../util/set";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
@@ -177,21 +178,21 @@ export default function IgsnTable({
    * can be selected at a time and instead of checkboxes a radio button will be
    * used in the selection column.
    */
-  disableMultipleRowSelection: boolean;
+  disableMultipleRowSelection?: boolean;
 
   /**
    * The selected identifiers. The order of the array is not significant. If
    * `disableMultipleRowSelection` is true, only the first identifier in the array
    * will be used.
    */
-  selectedIgsns: ReadonlyArray<Identifier>;
+  selectedIgsns: RsSet<Identifier>;
 
   /**
    * Callback to update the selected identifiers. If `disableMultipleRowSelection`
    * is true, the passed array will either be empty or contain only one
    * identifier.
    */
-  setSelectedIgsns: (newlySelectedIgsns: ReadonlyArray<Identifier>) => void;
+  setSelectedIgsns: (newlySelectedIgsns: RsSet<Identifier>) => void;
 }): React.ReactNode {
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
@@ -248,7 +249,6 @@ export default function IgsnTable({
       ),
     ],
     loading,
-    getRowId: (row) => row.doi,
     initialState: {
       columns: {},
     },
@@ -281,28 +281,30 @@ export default function IgsnTable({
     return (
       <DataGridWithRadioSelection
         {...common}
+        getRowId={(row) => row.doi}
         selectRadioAriaLabelFunc={() => ""}
         onSelectionChange={(doi: GridRowId) => {
           const selectedIdentifier = identifiers.find((id) => id.doi === doi);
           if (selectedIdentifier) {
-            setSelectedIgsns([selectedIdentifier]);
+            setSelectedIgsns(new RsSet([selectedIdentifier]));
           } else {
             throw new Error("Selected identifier not found");
           }
         }}
-        selectedRowId={selectedIgsns.length > 0 ? selectedIgsns[0].doi : null}
+        selectedRowId={selectedIgsns.only.map(({ doi }) => doi).orElse(null)}
       />
     );
   return (
     <DataGrid
       {...common}
+      getRowId={(row) => row.doi}
       checkboxSelection={true}
-      rowSelectionModel={selectedIgsns.map((id) => id.doi)}
+      rowSelectionModel={selectedIgsns.map((id) => id.doi).toArray()}
       onRowSelectionModelChange={(ids: GridRowSelectionModel) => {
         const selectedIdentifiers = identifiers.filter((id) =>
           ids.includes(id.doi)
         );
-        setSelectedIgsns(selectedIdentifiers);
+        setSelectedIgsns(new RsSet(selectedIdentifiers));
       }}
     />
   );

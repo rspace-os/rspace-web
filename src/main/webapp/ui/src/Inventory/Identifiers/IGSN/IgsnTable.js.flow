@@ -2,9 +2,10 @@
 
 import { type Node } from "react";
 import { type Identifier } from "../../useIdentifiers";
+import RsSet from "../../../util/set";
 
 declare export default function IgsnTable({|
-  selectedIgsns: $ReadOnlyArray<Identifier>,
-  setSelectedIgsns: ($ReadOnlyArray<Identifier>) => void,
+  selectedIgsns: RsSet<Identifier>,
+  setSelectedIgsns: (RsSet<Identifier>) => void,
   disableMultipleRowSelection?: boolean,
 |}): Node;

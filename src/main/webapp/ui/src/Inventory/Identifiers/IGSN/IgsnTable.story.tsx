@@ -4,11 +4,12 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 import IgsnTable from "./IgsnTable";
 import { type Identifier } from "../../useIdentifiers";
+import RsSet from "../../../util/set";
 
 export function SimpleIgsnTable() {
-  const [selectedIgsns, setSelectedIgsns] = React.useState<
-    ReadonlyArray<Identifier>
-  >([]);
+  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
+    new RsSet([])
+  );
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
@@ -19,7 +20,7 @@ export function SimpleIgsnTable() {
         />
         <h2>Selected IGSNs</h2>
         <ul aria-label="selected IGSNs">
-          {selectedIgsns.map((igsn) => (
+          {[...selectedIgsns].map((igsn) => (
             <li key={igsn.id}>{igsn.doi}</li>
           ))}
         </ul>
@@ -29,9 +30,9 @@ export function SimpleIgsnTable() {
 }
 
 export function SingularSelectionIgsnTable() {
-  const [selectedIgsns, setSelectedIgsns] = React.useState<
-    ReadonlyArray<Identifier>
-  >([]);
+  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
+    new RsSet([])
+  );
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
@@ -43,7 +44,7 @@ export function SingularSelectionIgsnTable() {
         />
         <h2>Selected IGSNs</h2>
         <ul aria-label="selected IGSNs">
-          {selectedIgsns.map((igsn) => (
+          {[...selectedIgsns].map((igsn) => (
             <li key={igsn.id}>{igsn.doi}</li>
           ))}
         </ul>
