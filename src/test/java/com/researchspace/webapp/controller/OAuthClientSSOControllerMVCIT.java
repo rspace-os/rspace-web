@@ -33,7 +33,7 @@ public class OAuthClientSSOControllerMVCIT extends MVCTestBase {
 
     // if API access is globally disabled, the SSO verification password shouldn't work either
     disableGlobalApiAccess();
-    disableApiOauthAuthentication();
+    disableApiOAuthAuthentication();
     OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
     postOauthAccessTokenRequest(username, password, app)
         .andExpect(status().isUnauthorized())
@@ -45,7 +45,7 @@ public class OAuthClientSSOControllerMVCIT extends MVCTestBase {
 
     // user1234 now fails
     enableGlobalApiAccess();
-    enableApiOauthAuthentication();
+    enableApiOAuthAuthentication();
     app = oAuthAppManager.addApp(user, "newApp").getEntity();
     postOauthAccessTokenRequest(username, password, app)
         .andExpect(status().isUnauthorized())
@@ -62,7 +62,7 @@ public class OAuthClientSSOControllerMVCIT extends MVCTestBase {
     postOauthAccessTokenRequest(username, password, app).andExpect(status().isOk());
 
     // disabling just oauth authentication also stops generation of access tokens
-    disableApiOauthAuthentication();
+    disableApiOAuthAuthentication();
     postOauthAccessTokenRequest(username, password, app).andExpect(status().isUnauthorized());
   }
 

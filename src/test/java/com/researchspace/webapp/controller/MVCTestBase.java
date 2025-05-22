@@ -69,14 +69,14 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
         SystemPropertyName.API_AVAILABLE, HierarchicalPermission.ALLOWED, getSysAdminUser());
   }
 
-  public void disableApiOauthAuthentication() {
+  public void disableApiOAuthAuthentication() {
     sysPropMgr.save(
         SystemPropertyName.API_OAUTH_AUTHENTICATION,
         HierarchicalPermission.DENIED,
         getSysAdminUser());
   }
 
-  public void enableApiOauthAuthentication() {
+  public void enableApiOAuthAuthentication() {
     sysPropMgr.save(
         SystemPropertyName.API_OAUTH_AUTHENTICATION,
         HierarchicalPermission.ALLOWED,

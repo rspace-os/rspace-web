@@ -33,7 +33,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
 
     // let's disable API on the server
     disableGlobalApiAccess();
-    disableApiOauthAuthentication();
+    disableApiOAuthAuthentication();
 
     // missing parameters (grant_type) are reported first
     mockMvc
@@ -79,7 +79,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
                     result.getResolvedException().getMessage()));
 
     // re-enable OAuth authentication
-    enableApiOauthAuthentication();
+    enableApiOAuthAuthentication();
 
     // next, report invalid value for parameter grant_type
     mockMvc
@@ -208,7 +208,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
 
     OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
     enableGlobalApiAccess();
-    enableApiOauthAuthentication();
+    enableApiOAuthAuthentication();
 
     MvcResult result =
         mockMvc
@@ -246,7 +246,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
     assertNotEquals(oldRefreshToken, response.getRefreshToken());
 
     // confirm that refresh token request won't work after disabling oauth authentication
-    disableApiOauthAuthentication();
+    disableApiOAuthAuthentication();
     mockMvc
         .perform(
             post("/oauth/token")

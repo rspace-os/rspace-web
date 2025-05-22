@@ -21,7 +21,7 @@ public class OAuthAPIAccessMVCIT extends API_MVC_TestBase {
   @Test
   public void createAccessTokenAndAccessApi() throws Exception {
     enableGlobalApiAccess();
-    enableApiOauthAuthentication();
+    enableApiOAuthAuthentication();
 
     User user = createInitAndLoginAnyUser();
     RSpaceTestUtils.logout();
@@ -53,7 +53,7 @@ public class OAuthAPIAccessMVCIT extends API_MVC_TestBase {
     assertTrue(folders.getTotalHits() > 0);
 
     // confirm that access token request doesn't succeed if oauth authentication is disabled
-    disableApiOauthAuthentication();
+    disableApiOAuthAuthentication();
     mockMvc.perform(accessTokenRequest).andExpect(status().isUnauthorized());
   }
 }

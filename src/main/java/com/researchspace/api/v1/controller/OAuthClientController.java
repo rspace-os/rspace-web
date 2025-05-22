@@ -72,10 +72,10 @@ public class OAuthClientController {
           "Access to API has been disabled by RSpace administrator.");
     }
 
-    boolean oauthAuthEnabled =
+    boolean oauthAuthenticationEnabled =
         systemPropertyMgr.isPropertyAllowed(
             (User) null, SystemPropertyName.API_OAUTH_AUTHENTICATION);
-    if (!oauthAuthEnabled) {
+    if (!oauthAuthenticationEnabled) {
       throw new ApiAuthenticationException(
           "OAuth authentication has been disabled by RSpace administrator.");
     }
