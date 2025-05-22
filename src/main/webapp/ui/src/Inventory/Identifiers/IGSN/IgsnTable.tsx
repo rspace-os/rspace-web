@@ -172,9 +172,26 @@ export default function IgsnTable({
   setSelectedIgsns,
   disableMultipleRowSelection = false,
 }: {
-  selectedIgsns: ReadonlyArray<Identifier>;
-  setSelectedIgsns: (newlySelectedIgsns: ReadonlyArray<Identifier>) => void;
+  /**
+   * Whether multiple row selection is disabled. If true, only one identifier
+   * can be selected at a time and instead of checkboxes a radio button will be
+   * used in the selection column.
+   */
   disableMultipleRowSelection: boolean;
+
+  /**
+   * The selected identifiers. The order of the array is not significant. If
+   * `disableMultipleRowSelection` is true, only the first identifier in the array
+   * will be used.
+   */
+  selectedIgsns: ReadonlyArray<Identifier>;
+
+  /**
+   * Callback to update the selected identifiers. If `disableMultipleRowSelection`
+   * is true, the passed array will either be empty or contain only one
+   * identifier.
+   */
+  setSelectedIgsns: (newlySelectedIgsns: ReadonlyArray<Identifier>) => void;
 }): React.ReactNode {
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
