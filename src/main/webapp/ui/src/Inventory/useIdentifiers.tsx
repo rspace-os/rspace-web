@@ -40,9 +40,11 @@ export function useIdentifiers(): {
   getIdentifiers: ({
     state,
     isAssociated,
+    searchTerm,
   }: {
     state?: "draft" | "findable" | "registered" | null;
     isAssociated?: boolean | null;
+    searchTerm?: string;
   }) => Promise<ReadonlyArray<Identifier>>;
   /*
    * Make a POST request to /identifiers/bulk/{count} to register a number of
@@ -60,9 +62,11 @@ export function useIdentifiers(): {
   const getIdentifiers = async ({
     state,
     isAssociated,
+    searchTerm,
   }: {
     state?: "draft" | "findable" | "registered" | null;
     isAssociated?: boolean | null;
+    searchTerm?: string;
   }) => {
     try {
       const token = await getToken();
@@ -72,6 +76,9 @@ export function useIdentifiers(): {
       }
       if (typeof isAssociated !== "undefined" && isAssociated !== null) {
         searchParams.append("isAssociated", isAssociated ? "true" : "false");
+      }
+      if (searchTerm) {
+        searchParams.append("identifier", searchTerm);
       }
       const response = await axios.get<unknown>(
         "/api/inventory/v1/identifiers",
@@ -150,7 +157,7 @@ export function useIdentifiers(): {
           mkAlert({
             variant: "error",
             title: "Error fetching identifiers",
-            message: e.message,
+            message: getErrorMessage(e).elseThrow(),
           })
         );
         throw e;
@@ -261,9 +268,11 @@ export function useIdentifiers(): {
 export function useIdentifiersListing({
   state,
   isAssociated,
+  searchTerm,
 }: {
   state?: "draft" | "findable" | "registered" | null;
   isAssociated?: boolean | null;
+  searchTerm?: string;
 }): {
   /*
    * The fetchede identifiers. When loading is true or error is not null, this
@@ -289,7 +298,7 @@ export function useIdentifiersListing({
   const fetchIdentifiers = React.useCallback(async () => {
     try {
       setLoading(true);
-      setIdentifiers(await getIdentifiers({ state, isAssociated }));
+      setIdentifiers(await getIdentifiers({ state, isAssociated, searchTerm }));
     } catch (e) {
       if (e instanceof Error) {
         setError(e);
@@ -300,14 +309,14 @@ export function useIdentifiersListing({
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - getIdentifiers wont meaningfully change between renders
      */
-  }, [state, isAssociated]);
+  }, [state, isAssociated, searchTerm]);
 
   React.useEffect(() => {
     void fetchIdentifiers();
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - getIdentifiers wont meaningfully change between renders
      */
-  }, [state, isAssociated]);
+  }, [state, isAssociated, searchTerm]);
 
   return { identifiers, loading, error, refreshListing: fetchIdentifiers };
 }

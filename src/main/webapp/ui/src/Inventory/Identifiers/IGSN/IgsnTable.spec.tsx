@@ -24,6 +24,7 @@ const feature = test.extend<{
     }: {
       count: number;
     }) => Promise<void>;
+    "the researcher types 'test' in the search box": () => Promise<void>;
   };
   Then: {
     "a table should be shown": () => Promise<void>;
@@ -42,6 +43,8 @@ const feature = test.extend<{
     "there should be a network request with isAssociated set to 'false'": () => void;
     "the IGSN with DOI '10.82316/khma-em96' is added to the selection state": () => Promise<void>;
     "the Linked Item column should contains links": () => Promise<void>;
+    "a search box should be shown in the toolbar": () => Promise<void>;
+    "there should be a network request with searchTerm set to 'test'": () => void;
   };
   networkRequests: Array<URL>;
 }>({
@@ -89,6 +92,10 @@ const feature = test.extend<{
           await page.getByRole("button", { name: /Linked Item/ }).click();
           await page.getByRole("menuitem", { name: /No Linked Item/ }).click();
         },
+      "the researcher types 'test' in the search box": async () => {
+        await page.getByPlaceholder("Search IGSNs...").fill("test");
+        await page.waitForTimeout(500);
+      },
       "the researcher selects the IGSN with DOI '10.82316/khma-em96'":
         async () => {
           const row = page
@@ -147,6 +154,10 @@ const feature = test.extend<{
           const menu = page.getByRole("tooltip");
           await expect(menu).toBeVisible();
         },
+      "a search box should be shown in the toolbar": async () => {
+        const searchBox = page.getByPlaceholder("Search IGSNs...");
+        await expect(searchBox).toBeVisible();
+      },
       "{CSV} should have {count} rows": async ({ csv, count }) => {
         const path = await csv.path();
         const fileContents = await fs.readFile(path, "utf8");
@@ -168,6 +179,13 @@ const feature = test.extend<{
               ?.searchParams.get("isAssociated")
           ).toBe("false");
         },
+      "there should be a network request with searchTerm set to 'test'": () => {
+        expect(
+          networkRequests
+            .find((url) => url.searchParams.has("identifier"))
+            ?.searchParams.get("identifier")
+        ).toBe("test");
+      },
       "the IGSN with DOI '10.82316/khma-em96' is added to the selection state":
         async () => {
           /*
@@ -253,9 +271,33 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     (route) => {
       const url = new URL(route.request().url());
       const state = url.searchParams.get("state");
-      const filteredIdentifiers = state
-        ? identifiersJson.filter((identifier) => identifier.state === state)
-        : identifiersJson;
+      const isAssociated = url.searchParams.get("isAssociated");
+      const searchTerm = url.searchParams.get("searchTerm");
+
+      let filteredIdentifiers = identifiersJson;
+
+      if (state) {
+        filteredIdentifiers = filteredIdentifiers.filter(
+          (identifier) => identifier.state === state
+        );
+      }
+
+      if (searchTerm) {
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) =>
+          identifier.doi.includes(searchTerm)
+        );
+      }
+
+      if (isAssociated === "true") {
+        filteredIdentifiers = filteredIdentifiers.filter(
+          (identifier) => identifier.associatedGlobalId !== null
+        );
+      } else if (isAssociated === "false") {
+        filteredIdentifiers = filteredIdentifiers.filter(
+          (identifier) => identifier.associatedGlobalId === null
+        );
+      }
+
       return route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -298,6 +340,25 @@ test.describe("IGSN Table", () => {
       await Given["the researcher is viewing the IGSN table"]();
       await Once["the table has loaded"]();
       await Then["there should be four rows"]();
+    }
+  );
+
+  feature(
+    "The toolbar should contain a search box",
+    async ({ Given, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Then["a search box should be shown in the toolbar"]();
+    }
+  );
+
+  feature(
+    "Searching makes API call with searchTerm parameter",
+    async ({ Given, When, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await When["the researcher types 'test' in the search box"]();
+      void Then[
+        "there should be a network request with searchTerm set to 'test'"
+      ]();
     }
   );
 

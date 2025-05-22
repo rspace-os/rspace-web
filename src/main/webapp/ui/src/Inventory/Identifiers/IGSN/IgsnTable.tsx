@@ -9,6 +9,11 @@ import {
   GridSlotProps,
   GridRowId,
 } from "@mui/x-data-grid";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import {
   type Identifier,
   useIdentifiersListing,
@@ -24,6 +29,7 @@ import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
 import RsSet from "../../../util/set";
+import useDebounce from "../../../util/useDebounce";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
@@ -32,6 +38,8 @@ declare module "@mui/x-data-grid" {
     setState: (newState: "draft" | "findable" | "registered" | null) => void;
     isAssociated: boolean | null;
     setIsAssociated: (newIsAssociated: boolean | null) => void;
+    searchTerm: string;
+    setSearchTerm: (newSearchTerm: string) => void;
   }
 }
 
@@ -41,6 +49,8 @@ function Toolbar({
   setState,
   isAssociated,
   setIsAssociated,
+  searchTerm,
+  setSearchTerm,
 }: GridSlotProps["toolbar"]): React.ReactNode {
   const apiRef = useGridApiContext();
 
@@ -63,6 +73,18 @@ function Toolbar({
     if (isAssociated === true) return "Yes";
     return "No";
   })();
+
+  const [localSearchTerm, setLocalSearchTerm] = React.useState(searchTerm);
+  const debouncedCallback = React.useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
+  const debouncedSetSearchTerm = useDebounce<string>(debouncedCallback, 300);
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setLocalSearchTerm(value);
+    debouncedSetSearchTerm(value);
+  };
 
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
@@ -126,6 +148,35 @@ function Toolbar({
           current={isAssociated === true}
         />
       </MenuWithSelectedState>
+      <TextField
+        placeholder="Search IGSNs..."
+        value={localSearchTerm}
+        onChange={handleSearchChange}
+        size="small"
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon fontSize="small" />
+            </InputAdornment>
+          ),
+          endAdornment: localSearchTerm ? (
+            <InputAdornment position="end">
+              <IconButton
+                aria-label="clear search"
+                onClick={() => {
+                  setLocalSearchTerm("");
+                  setSearchTerm("");
+                }}
+                edge="end"
+                size="small"
+              >
+                <ClearIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : null,
+        }}
+        sx={{ width: 200 }}
+      />
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
         ref={(node) => {
@@ -198,9 +249,11 @@ export default function IgsnTable({
     "draft" | "findable" | "registered" | null
   >(null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState<string>("");
   const { identifiers, loading, refreshListing } = useIdentifiersListing({
     state,
     isAssociated,
+    searchTerm,
   });
   const { setRefreshListing } = useIdentifiersRefresh();
   React.useEffect(() => {
@@ -267,6 +320,8 @@ export default function IgsnTable({
         setState,
         isAssociated,
         setIsAssociated,
+        searchTerm,
+        setSearchTerm,
       },
       panel: {
         anchorEl: columnsMenuAnchorEl,
