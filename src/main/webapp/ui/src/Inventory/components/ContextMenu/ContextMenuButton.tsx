@@ -1,12 +1,5 @@
-// @flow
-
 import Chip from "@mui/material/Chip";
-import React, {
-  useState,
-  type Node,
-  type ComponentType,
-  type ElementProps,
-} from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { library } from "@fortawesome/fontawesome-svg-core";
@@ -29,35 +22,25 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type ContextMenuButtonArgs = {|
-  icon: Node,
-  loading?: boolean,
-  variant?: "filled" | "default",
-  disabledHelp?: string,
-  color?: string,
-  active?: boolean,
-  ...$Rest<
-    ElementProps<typeof Chip>,
-    {
-      icon: mixed,
-      loading: mixed,
-      variant: mixed,
-      disabledHelp: mixed,
-      color: mixed,
-      active: mixed,
-    }
-  >,
-|};
+type ContextMenuButtonArgs = {
+  icon: React.ReactElement;
+  loading?: boolean;
+  variant?: "filled" | "default";
+  disabledHelp?: string;
+  active?: boolean;
+} & Omit<
+  React.ComponentProps<typeof Chip>,
+  "icon" | "loading" | "variant" | "disabledHelp" | "color" | "active"
+>;
 
 function ContextMenuButton({
   icon,
   loading,
   variant = "default",
   disabledHelp = "",
-  color = "default",
   active = false,
   ...props
-}: ContextMenuButtonArgs): Node {
+}: ContextMenuButtonArgs): React.ReactNode {
   const { classes } = useStyles();
   const [open, setOpen] = useState(false);
 
@@ -90,7 +73,7 @@ function ContextMenuButton({
               }
               disabled={disabledHelp !== ""}
               clickable={disabledHelp === ""}
-              color={inContrast ? "primary" : color}
+              color={inContrast ? "primary" : "default"}
               aria-disabled={disabledHelp !== ""}
               {...props}
             />
@@ -101,6 +84,4 @@ function ContextMenuButton({
   );
 }
 
-export default (observer(
-  ContextMenuButton
-): ComponentType<ContextMenuButtonArgs>);
+export default observer(ContextMenuButton);
