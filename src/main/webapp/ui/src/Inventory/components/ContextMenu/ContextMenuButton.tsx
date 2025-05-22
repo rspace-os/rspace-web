@@ -23,7 +23,7 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 type ContextMenuButtonArgs = {
-  icon: React.ReactElement;
+  icon?: React.ReactElement;
   loading?: boolean;
   variant?: "filled" | "default";
   disabledHelp?: string;
