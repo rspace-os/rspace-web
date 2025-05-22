@@ -13,32 +13,34 @@ import com.researchspace.model.User;
 import com.researchspace.testutils.RSpaceTestUtils;
 import org.junit.Test;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 public class OAuthAPIAccessMVCIT extends API_MVC_TestBase {
+
   @Test
   public void createAccessTokenAndAccessApi() throws Exception {
+    enableGlobalApiAccess();
+    enableApiOauthAuthentication();
+
     User user = createInitAndLoginAnyUser();
     RSpaceTestUtils.logout();
 
-    // Get access token
-    enableGlobalApiAccess();
-    MvcResult result =
-        mockMvc
-            .perform(
-                post("/oauth/token")
-                    .param("client_id", testOAuthAppClientId)
-                    .param("client_secret", testOAuthAppClientSecret)
-                    .param("grant_type", "password")
-                    .param("username", user.getUsername())
-                    .param("password", "testpass"))
-            .andExpect(status().isOk())
-            .andReturn();
+    MockHttpServletRequestBuilder accessTokenRequest =
+        post("/oauth/token")
+            .param("client_id", testOAuthAppClientId)
+            .param("client_secret", testOAuthAppClientSecret)
+            .param("grant_type", "password")
+            .param("username", user.getUsername())
+            .param("password", "testpass");
+
+    // get access token
+    MvcResult result = mockMvc.perform(accessTokenRequest).andExpect(status().isOk()).andReturn();
     String jsonResponse = result.getResponse().getContentAsString();
     NewOAuthTokenResponse response = parseOAuthTokenResponse(jsonResponse);
     String token = response.getAccessToken();
 
-    // List root folder tree, this could be any call but testing we are accessing API
+    // list root folder tree, this could be any call but testing we are accessing API
     result =
         mockMvc
             .perform(
@@ -49,5 +51,9 @@ public class OAuthAPIAccessMVCIT extends API_MVC_TestBase {
     ApiRecordTreeItemListing folders =
         getFromJsonResponseBody(result, ApiRecordTreeItemListing.class);
     assertTrue(folders.getTotalHits() > 0);
+
+    // confirm that access token request doesn't succeed if oauth authentication is disabled
+    disableApiOauthAuthentication();
+    mockMvc.perform(accessTokenRequest).andExpect(status().isUnauthorized());
   }
 }
