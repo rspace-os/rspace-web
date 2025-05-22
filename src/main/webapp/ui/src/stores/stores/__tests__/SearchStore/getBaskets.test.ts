@@ -1,13 +1,12 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import getRootStore from "../../RootStore";
 
 jest.mock("../../../../common/InvApiService", () => ({
-  get: (endpoint) => {
+  get: (endpoint: string) => {
     if (endpoint === "baskets") {
       return Promise.resolve({
         data: [
