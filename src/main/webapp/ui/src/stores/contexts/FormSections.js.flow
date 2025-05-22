@@ -1,6 +1,6 @@
 //@flow
 
-import React, { type Context } from "react";
+import { type Context } from "react";
 import { type RecordType } from "../definitions/InventoryRecord";
 
 export type AllowedFormTypes = RecordType | "mixed";
@@ -11,4 +11,4 @@ type FormSectionsContext = {|
   setAllExpanded(AllowedFormTypes, boolean): void,
 |};
 
-export default (React.createContext(null): Context<?FormSectionsContext>);
+declare export default Context<?FormSectionsContext>;
