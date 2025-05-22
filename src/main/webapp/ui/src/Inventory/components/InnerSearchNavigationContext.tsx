@@ -1,8 +1,11 @@
-//@flow
-import React, { type Node } from "react";
+import React from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
 import SearchContext from "../../stores/contexts/Search";
 import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFetcher";
+
+type NavigationContextArgs = {
+  children: React.ReactNode;
+};
 
 /**
  * This Navigation Context wraps the search components inside of the Inventory
@@ -16,14 +19,9 @@ import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFet
  * results in the whole page being navigated and not the `activeResult` of the
  * inner search which is never shown in the UI.
  */
-
-type NavigationContextArgs = {|
-  children: Node,
-|};
-
 export default function NavigationContext({
   children,
-}: NavigationContextArgs): Node {
+}: NavigationContextArgs): React.ReactNode {
   const { search } = React.useContext(SearchContext);
 
   const { useNavigate: parentUseNavigate, useLocation } =
@@ -34,7 +32,10 @@ export default function NavigationContext({
     () =>
     (
       url: string,
-      opts: ?{| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+      opts?: {
+        skipToParentContext?: boolean;
+        modifyVisiblePanel?: boolean;
+      }
     ) => {
       const { skipToParentContext = false } = opts ?? {
         skipToParentContext: false,
