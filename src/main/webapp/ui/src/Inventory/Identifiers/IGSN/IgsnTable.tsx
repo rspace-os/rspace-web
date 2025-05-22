@@ -21,6 +21,7 @@ import Box from "@mui/material/Box";
 import MenuItem from "@mui/material/MenuItem";
 import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 import AccentMenuItem from "../../../components/AccentMenuItem";
+import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
@@ -168,9 +169,11 @@ function Toolbar({
 export default function IgsnTable({
   selectedIgsns,
   setSelectedIgsns,
+  disableMultipleRowSelection = false,
 }: {
   selectedIgsns: ReadonlyArray<Identifier>;
   setSelectedIgsns: (newlySelectedIgsns: ReadonlyArray<Identifier>) => void;
+  disableMultipleRowSelection: boolean;
 }): React.ReactNode {
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
@@ -189,81 +192,92 @@ export default function IgsnTable({
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
 
+  const common = {
+    rows: identifiers,
+    columns: [
+      DataGridColumn.newColumnWithFieldName<"doi", Identifier>("doi", {
+        headerName: "DOI",
+        flex: 1,
+        sortable: false,
+        resizable: true,
+      }),
+      DataGridColumn.newColumnWithFieldName<"state", Identifier>("state", {
+        headerName: "State",
+        flex: 1,
+        resizable: true,
+        sortable: false,
+        renderCell: ({ row }) => toTitleCase(row.state),
+      }),
+      DataGridColumn.newColumnWithFieldName<"associatedGlobalId", Identifier>(
+        "associatedGlobalId",
+        {
+          headerName: "Linked Item",
+          flex: 1,
+          resizable: true,
+          sortable: false,
+          renderCell: ({ row }) => {
+            if (row.associatedGlobalId === null) {
+              return "None";
+            }
+            return (
+              <GlobalId
+                record={new LinkableRecordFromGlobalId(row.associatedGlobalId)}
+                onClick={() => {}}
+              />
+            );
+          },
+        }
+      ),
+    ],
+    loading,
+    getRowId: (row) => row.doi,
+    initialState: {
+      columns: {},
+    },
+    density: "compact" as const,
+    disableColumnFilter: true,
+    hideFooter: true,
+    autoHeight: true,
+    slots: {
+      pagination: null,
+      toolbar: Toolbar,
+    },
+    slotProps: {
+      toolbar: {
+        setColumnsMenuAnchorEl,
+        state,
+        setState,
+        isAssociated,
+        setIsAssociated,
+      },
+      panel: {
+        anchorEl: columnsMenuAnchorEl,
+      },
+    },
+    localeText: {
+      noRowsLabel: "No IGSN IDs",
+    },
+  };
+
+  if (disableMultipleRowSelection)
+    return (
+      <DataGridWithRadioSelection
+        {...common}
+        selectRadioAriaLabelFunc={() => ""}
+        onSelectionChange={() => {}}
+        selectedRowId={selectedIgsns.length > 0 ? selectedIgsns[0].doi : null}
+      />
+    );
   return (
     <DataGrid
-      rows={identifiers}
-      columns={[
-        DataGridColumn.newColumnWithFieldName<"doi", Identifier>("doi", {
-          headerName: "DOI",
-          flex: 1,
-          sortable: false,
-          resizable: true,
-        }),
-        DataGridColumn.newColumnWithFieldName<"state", Identifier>("state", {
-          headerName: "State",
-          flex: 1,
-          resizable: true,
-          sortable: false,
-          renderCell: ({ row }) => toTitleCase(row.state),
-        }),
-        DataGridColumn.newColumnWithFieldName<"associatedGlobalId", Identifier>(
-          "associatedGlobalId",
-          {
-            headerName: "Linked Item",
-            flex: 1,
-            resizable: true,
-            sortable: false,
-            renderCell: ({ row }) => {
-              if (row.associatedGlobalId === null) {
-                return "None";
-              }
-              return (
-                <GlobalId
-                  record={
-                    new LinkableRecordFromGlobalId(row.associatedGlobalId)
-                  }
-                  onClick={() => {}}
-                />
-              );
-            },
-          }
-        ),
-      ]}
-      loading={loading}
-      checkboxSelection
+      {...common}
+      checkboxSelection={true}
       rowSelectionModel={selectedIgsns.map((id) => id.doi)}
       onRowSelectionModelChange={(ids: GridRowSelectionModel) => {
         const selectedIdentifiers = identifiers.filter((id) =>
           ids.includes(id.doi)
         );
         setSelectedIgsns(selectedIdentifiers);
-      }}
-      getRowId={(row) => row.doi}
-      initialState={{
-        columns: {},
-      }}
-      density="compact"
-      disableColumnFilter
-      hideFooter
-      autoHeight
-      slots={{
-        pagination: null,
-        toolbar: Toolbar,
-      }}
-      slotProps={{
-        toolbar: {
-          setColumnsMenuAnchorEl,
-          state,
-          setState,
-          isAssociated,
-          setIsAssociated,
-        },
-        panel: {
-          anchorEl: columnsMenuAnchorEl,
-        },
-      }}
-      localeText={{
-        noRowsLabel: "No IGSN IDs",
       }}
     />
   );
