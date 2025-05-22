@@ -1,16 +1,14 @@
-//@flow
-
-import React, { type ComponentType } from "react";
+import React from "react";
 import QrCodeScanner from "./QrCodeScanner";
 import AllBarcodeScanner from "./AllBarcodeScanner";
 import { observer } from "mobx-react-lite";
 import { type BarcodeInput } from "./BarcodeScannerSkeleton";
 
-type BarcodeScannerArgs = {|
-  onClose: () => void,
-  onScan: (BarcodeInput) => void,
-  buttonPrefix: string,
-|};
+type BarcodeScannerArgs = {
+  onClose: () => void;
+  onScan: (scannedBarcodeInput: BarcodeInput) => void;
+  buttonPrefix: string;
+};
 
 /*
  * This component encapsulates the use of the Barcode Detection API
@@ -34,4 +32,4 @@ function BarcodeScanner({ onClose, onScan, buttonPrefix }: BarcodeScannerArgs) {
   );
 }
 
-export default (observer(BarcodeScanner): ComponentType<BarcodeScannerArgs>);
+export default observer(BarcodeScanner);
