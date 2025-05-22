@@ -30,6 +30,9 @@ import AccentMenuItem from "../../../components/AccentMenuItem";
 import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
 import RsSet from "../../../util/set";
 import useDebounce from "../../../util/useDebounce";
+import Popover from "@mui/material/Popover";
+import Button from "@mui/material/Button";
+import BarcodeScanner from "../../components/BarcodeScanner/AllBarcodeScanner";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
@@ -43,6 +46,38 @@ declare module "@mui/x-data-grid" {
   }
 }
 
+const Panel = ({
+  anchorEl,
+  children,
+  onClose,
+}: {
+  anchorEl: HTMLElement | null;
+  children: React.ReactNode;
+  onClose: () => void;
+}) => (
+  <Popover
+    open={Boolean(anchorEl)}
+    anchorEl={anchorEl}
+    onClose={onClose}
+    anchorOrigin={{
+      vertical: "bottom",
+      horizontal: "center",
+    }}
+    transformOrigin={{
+      vertical: "top",
+      horizontal: "center",
+    }}
+    PaperProps={{
+      variant: "outlined",
+      elevation: 0,
+      style: {
+        minWidth: 300,
+      },
+    }}
+  >
+    {Boolean(anchorEl) && children}
+  </Popover>
+);
 function Toolbar({
   setColumnsMenuAnchorEl,
   state,
@@ -85,6 +120,9 @@ function Toolbar({
     setLocalSearchTerm(value);
     debouncedSetSearchTerm(value);
   };
+
+  const [scannerAnchorEl, setScannerAnchorEl] =
+    React.useState<null | HTMLElement>(null);
 
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
@@ -177,6 +215,28 @@ function Toolbar({
         }}
         sx={{ width: 200 }}
       />
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={(event) => {
+          setScannerAnchorEl(event.currentTarget);
+        }}
+      >
+        Scan QR Code
+      </Button>
+      <Panel
+        anchorEl={scannerAnchorEl}
+        onClose={() => setScannerAnchorEl(null)}
+      >
+        <BarcodeScanner
+          onScan={(result) => {
+            setLocalSearchTerm(result.rawValue);
+            setSearchTerm(result.rawValue);
+          }}
+          onClose={() => setScannerAnchorEl(null)}
+          buttonPrefix="Search for IGSN"
+        />
+      </Panel>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
         ref={(node) => {
