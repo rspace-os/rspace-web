@@ -86,13 +86,13 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       String state, Boolean isAssociated, String identifier, User owner)
       throws InvalidNameException {
     String finalIdentifier;
-    if (isNotBlank(identifier) && isValidIdentifier(identifier) && isValidURL(identifier)) {
+    if (isNotBlank(identifier) && isValidURL(identifier) && isValidIdentifier(identifier)) {
       finalIdentifier = getIdentifierSuffix(identifier);
     } else {
       finalIdentifier = identifier;
     }
     return doiDao.getActiveIdentifiersByOwner(owner).stream()
-        .filter(r -> isBlank(finalIdentifier) || finalIdentifier.equals(r.getIdentifier()))
+        .filter(r -> isBlank(finalIdentifier) || r.getIdentifier().contains(finalIdentifier))
         .filter(r -> (isAssociated == null) || isAssociated.equals(r.isAssociated()))
         .filter(r -> isBlank(state) || state.equals(r.getState()))
         .map(ApiInventoryDOI::new)
@@ -104,7 +104,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   }
 
   private boolean isValidIdentifier(String identifier) throws InvalidNameException {
-    // DOI always starts with "10." (as per specs on https://www.doi.org/)
+    // DOI always starts with "10."
+    // as per specs on https://www.doi.org/#:~:text=TRY%20RESOLVING%20A%20DOI
     if (!identifier.contains("10.")) {
       throw new InvalidNameException(
           "Identifier [" + identifier + "] it is not recognized as valid DOI");
@@ -130,18 +131,16 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
 
     if (!inventoryItem.getOwner().equals(user)) {
       throw new IllegalStateException(
-          "You can only assign an identifier to an owned inventory item");
+          "You can only assign an identifier that is owned by the current logged user");
     }
     DigitalObjectIdentifier identifierToAssign = doiDao.get(identifierId);
-    //    if(identifierToAssign.canBeAssigned()){
-    //      throw new IllegalStateException(
-    //          "You can only assign an unassigned identifier that is not deleted, in \"draft\"
-    // state");
-    //    }
-    // TODO[nik]: to be implemented
-    // finally associate identifier
-    return null; // updateInventoryRecordithDoiUpdate(user, inventoryOid, new ApiInventoryDOI(user,
-    // new DataCiteDoi));
+    if (!identifierToAssign.canBeAssigned()) {
+      throw new IllegalStateException(
+          "You can only assign an active unassigned identifier in \"draft\" state");
+    }
+
+    return updateInventoryRecordWithDoiUpdate(
+        user, inventoryItem, new ApiInventoryDOI(identifierToAssign, true));
   }
 
   @Override
@@ -232,6 +231,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private ApiSample getApiSampleUpdateWithIdentifier(
       InventoryRecord invRec, ApiInventoryDOI identifier) {
     ApiSample sample = new ApiSample();
+    sample.setName(invRec.getName());
     sample.setId(invRec.getId());
     sample.getIdentifiers().add(identifier);
     sample.setTags(null); // skip tags update
@@ -241,6 +241,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private ApiSubSample getApiSubSampleUpdateWithIdentifier(
       InventoryRecord invRec, ApiInventoryDOI identifier) {
     ApiSubSample subSample = new ApiSubSample();
+    subSample.setName(invRec.getName());
     subSample.setId(invRec.getId());
     subSample.getIdentifiers().add(identifier);
     subSample.setTags(null); // skip tags update
@@ -250,6 +251,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private ApiContainer getApiContainerUpdateWithIdentifier(
       InventoryRecord invRec, ApiInventoryDOI identifier) {
     ApiContainer container = new ApiContainer();
+    container.setName(invRec.getName());
     container.setId(invRec.getId());
     container.getIdentifiers().add(identifier);
     container.setTags(null);
@@ -391,7 +393,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     InventoryRecord invRec = invRecRetriever.getInvRecordByGlobalId(invRecOid);
     if (!invRec.getActiveIdentifiers().isEmpty()) {
       throw new IllegalArgumentException(
-          "record " + invRecOid.toString() + " already has an identifier");
+          "Inventory Item \"" + invRecOid.toString() + "\" already has an identifier");
     }
     return invRec;
   }

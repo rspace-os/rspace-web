@@ -2249,6 +2249,49 @@ paths:
           description: Identifiers are created
 
 
+  '/identifiers/{doiId}/assign':
+    post:
+      summary: Assign a DataCite IGSN identifier to any inventory item
+      description: >
+        Assign a DataCite IGSN identifier to any inventory item
+        
+        The existing identifier MUST be:
+         * Unassigned
+         * not deleted
+         * in `draft`state
+        
+        It requires object with one `parentGlobalId` property as a request body.
+
+        You must have UPDATE permission for the item to create an identifier for it.
+
+        ## Example request body
+
+        | POST request body | Explanation |
+
+        | --- | --- |
+
+        { "parentGlobalId": "SS12" } | Register new identifier for a SubSample with id=12
+      produces:
+        - application/json
+      tags:
+        - IGSN Identifiers
+      parameters:
+        - name: doiId
+          type: string
+          in: path
+          required: true
+          description: The database ID of the identifier
+        - name: body
+          in: body
+          required: true
+          schema:
+            "$ref": "#/definitions/BasicObject"
+          description: The globalId of the inventory Item (for example "SS12")
+      responses:
+        '201':
+          description: Identifier is assigned to the inventory item
+
+
   '/identifiers/{doiId}':
     delete:
       summary: Delete a draft DataCite IGSN identifier that was not associated or that was registered for the inventory item

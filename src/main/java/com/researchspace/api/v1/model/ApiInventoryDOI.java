@@ -187,6 +187,11 @@ public class ApiInventoryDOI extends LinkableApiObject {
     return owner;
   }
 
+  public ApiInventoryDOI(DigitalObjectIdentifier identifier, boolean isAssignIdentifierRequest) {
+    this(identifier);
+    this.setAssignIdentifierRequest(true);
+  }
+
   public ApiInventoryDOI(DigitalObjectIdentifier identifier) {
     setId(identifier.getId());
     setDoi(identifier.getIdentifier());
@@ -269,6 +274,13 @@ public class ApiInventoryDOI extends LinkableApiObject {
   @JsonIgnore
   public boolean isDeleteIdentifierRequest() {
     return deleteIdentifierRequest;
+  }
+
+  private boolean assignIdentifierRequest;
+
+  @JsonIgnore
+  public boolean isAssignIdentifierRequest() {
+    return assignIdentifierRequest;
   }
 
   public boolean applyChangesToDatabaseDOI(DigitalObjectIdentifier dbIdentifier) {
