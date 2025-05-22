@@ -15,7 +15,7 @@
         <param-name>spring.profiles.default</param-name>
         <param-value>run</param-value>
     </context-param>
-  
+
     <!-- Define the basename for a resource bundle for I18N -->
     <context-param>
         <param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
@@ -50,6 +50,7 @@
             <param-name>forceEncoding</param-name>
             <param-value>true</param-value>
         </init-param>
+        <async-supported>true</async-supported>
     </filter>
     <!-- GZipFilter has issues with XFire's service-listing servlet. -->
     <!-- We recommend you configure gzipping in your servlet container.
@@ -66,6 +67,7 @@
     <filter>
         <filter-name>localeFilter</filter-name>
         <filter-class>com.researchspace.webapp.filter.LocaleFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter>
         <filter-name>anonymousUserFilter</filter-name>
@@ -74,6 +76,7 @@
             <param-name>urlsAllowedForAnonymousAccess</param-name>
             <param-value>/login,/public,/styles,/ssoinfo,/scripts,/resources,/wopi,/api,/oauth</param-value>
         </init-param>
+        <async-supported>true</async-supported>
     </filter>
     <filter>
         <filter-name>rewriteFilter</filter-name>
@@ -92,6 +95,7 @@
             <param-name>confReloadCheckInterval</param-name>
             <param-value>-1</param-value>
         </init-param>
+        <async-supported>true</async-supported>
     </filter>
 
     <filter>
@@ -101,11 +105,13 @@
             <param-name>targetFilterLifecycle</param-name>
             <param-value>true</param-value>
         </init-param>
+        <async-supported>true</async-supported>
     </filter>
 
     <filter>
         <filter-name>sitemesh</filter-name>
         <filter-class>com.opensymphony.module.sitemesh.filter.PageFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter>
         <filter-name>customResourceFilter</filter-name>
@@ -114,6 +120,7 @@
             <param-name>customizableMonitoring.css</param-name>
             <param-value>/styles/customMonitoring.css</param-value>
         </init-param>
+        <async-supported>true</async-supported>
     </filter>
     <filter>
         <filter-name>javamelody</filter-name>
@@ -135,7 +142,6 @@
 		  <param-name>authorized-users</param-name>
 		  <param-value>rs_monitoring:Np4kqEXuGXPKxkcGLR70dTPZcaZ</param-value>
 	     </init-param>
-        
          <init-param>
          <param-name>displayed-counters</param-name>
          <param-value>http,error,log</param-value>
@@ -144,6 +150,7 @@
     <filter>
         <filter-name>hiddenHttpMethodFilter</filter-name>
         <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
 
     <!--  this has to go first to secure subsequent URLs in filters -->
@@ -188,7 +195,7 @@
         <filter-name>rewriteFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-    
+
      <jsp-config>
         <jsp-property-group>
             <url-pattern>*.jsp</url-pattern>
@@ -234,6 +241,7 @@
         <servlet-name>dispatcher</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
+        <async-supported>true</async-supported>
     </servlet>   
 
     <servlet-mapping>
