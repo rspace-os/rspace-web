@@ -21,7 +21,7 @@ import {
 } from "../../util/alerts";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
 import Search from "../models/Search";
-import Result from "../models/Result";
+import InventoryBaseRecord from "../models/InventoryBaseRecord";
 import { type GlobalId, getSavedGlobalId } from "../definitions/BaseRecord";
 import { type Container, type Location } from "../definitions/Container";
 import {
@@ -80,7 +80,7 @@ declare export default class MoveStore {
 
   get globalIdsOfSelectedResults(): Set<GlobalId>;
 
-  isRecordMoving(record: Result): boolean;
+  isRecordMoving(record: InventoryBaseRecord): boolean;
 
   refreshAfterMove(): Promise<void>;
 

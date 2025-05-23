@@ -25,9 +25,9 @@ import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
-} from "./ResultCollection";
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
+} from "./InventoryBaseRecordCollection";
 import SampleModel, { type SampleAttrs } from "./SampleModel";
 import {
   action,
@@ -38,13 +38,13 @@ import {
   runInAction,
 } from "mobx";
 import { type Alias, type Sample } from "../definitions/Sample";
-import Result, {
+import InventoryBaseRecord, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
-  ResultEditableFields,
-  ResultUneditableFields,
-} from "./Result";
+  InventoryBaseRecordEditableFields,
+  InventoryBaseRecordUneditableFields,
+} from "./InventoryBaseRecord";
 import React from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
 import { type SubSample } from "../definitions/SubSample";
@@ -71,11 +71,11 @@ import { HasQuantityMixin, getValue, getUnitId } from "./HasQuantity";
 
 type SubSampleEditableFields = HasQuantityEditableFields &
   HasLocationEditableFields &
-  ResultEditableFields;
+  InventoryBaseRecordEditableFields;
 
 type SubSampleUneditableFields = HasQuantityUneditableFields &
   HasLocationUneditableFields &
-  ResultUneditableFields & {
+  InventoryBaseRecordUneditableFields & {
     sample: Sample;
   };
 
@@ -131,7 +131,7 @@ const defaultEditableFields = new Set([
 ]);
 
 export default class SubSampleModel
-  extends HasQuantityMixin(HasLocationMixin(Result))
+  extends HasQuantityMixin(HasLocationMixin(InventoryBaseRecord))
   implements
     SubSample,
     HasEditableFields<SubSampleEditableFields>,
@@ -469,7 +469,7 @@ export default class SubSampleModel
   }
 }
 
-type BatchSubSampleEditableFields = ResultCollectionEditableFields &
+type BatchSubSampleEditableFields = InventoryBaseRecordCollectionEditableFields &
   Omit<SubSampleEditableFields, "name">;
 
 /*
@@ -477,7 +477,7 @@ type BatchSubSampleEditableFields = ResultCollectionEditableFields &
  * perform batch operations e.g. editing.
  */
 export class SubSampleCollection
-  extends ResultCollection<SubSampleModel>
+  extends InventoryBaseRecordCollection<SubSampleModel>
   implements HasEditableFields<BatchSubSampleEditableFields>
 {
   constructor(subsamples: RsSet<SubSampleModel>) {

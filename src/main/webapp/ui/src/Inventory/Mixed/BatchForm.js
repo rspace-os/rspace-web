@@ -10,7 +10,7 @@ import useStores from "../../stores/use-stores";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
 import FormWrapper from "../components/BatchEditing/FormWrapper";
 import StepperPanel from "../components/Stepper/StepperPanel";
-import { MixedResultCollection } from "../../stores/models/ResultCollection";
+import { MixedInventoryBaseRecordCollection } from "../../stores/models/InventoryBaseRecordCollection";
 import BatchName from "../components/Fields/BatchName";
 import Image from "../components/Fields/Image";
 import Description from "../components/Fields/Description";
@@ -26,14 +26,14 @@ import {
 } from "../components/Stepper/StepperPanelHeader";
 import AccessPermissions from "../components/Fields/AccessPermissions";
 import SubSampleModel from "../../stores/models/SubSampleModel";
-import Result from "../../stores/models/Result";
+import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import RsSet from "../../util/set";
 
 function OverviewSection({
   collection,
   recordsCount,
 }: {
-  collection: MixedResultCollection,
+  collection: MixedInventoryBaseRecordCollection,
   recordsCount: number,
 }) {
   const formSectionError = useFormSectionError({
@@ -68,7 +68,7 @@ function OverviewSection({
   );
 }
 
-function DetailsSection({ collection }: { collection: MixedResultCollection }) {
+function DetailsSection({ collection }: { collection: MixedInventoryBaseRecordCollection }) {
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
@@ -93,17 +93,17 @@ function DetailsSection({ collection }: { collection: MixedResultCollection }) {
 }
 
 type BatchFormArgs = {|
-  records: RsSet<Result>,
+  records: RsSet<InventoryBaseRecord>,
 |};
 
 function BatchForm({ records }: BatchFormArgs): Node {
   const { searchStore } = useStores();
 
   const [collection, setCollection] = useState(
-    new MixedResultCollection(records)
+    new MixedInventoryBaseRecordCollection(records)
   );
   useEffect(() => {
-    setCollection(new MixedResultCollection(records));
+    setCollection(new MixedInventoryBaseRecordCollection(records));
   }, [records]);
 
   return (

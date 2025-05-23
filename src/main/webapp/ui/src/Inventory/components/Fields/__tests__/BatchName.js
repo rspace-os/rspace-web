@@ -7,7 +7,7 @@ import React, { useState } from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import BatchName from "../BatchName";
-import { type BatchName as BatchNameType } from "../../../../stores/models/ResultCollection";
+import { type BatchName as BatchNameType } from "../../../../stores/models/InventoryBaseRecordCollection";
 import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";

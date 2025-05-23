@@ -25,11 +25,11 @@ import {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
-} from "./Result";
+} from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
-} from "./ResultCollection";
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
+} from "./InventoryBaseRecordCollection";
 import RsSet from "../../util/set";
 import { blobToBase64 } from "../../util/files";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
@@ -77,10 +77,10 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 import * as ArrayUtils  from "../../util/ArrayUtils";
-import Result, { type ResultEditableFields, type ResultUneditableFields } from "./Result";
+import InventoryBaseRecord, { type InventoryBaseRecordEditableFields, type InventoryBaseRecordUneditableFields } from "./InventoryBaseRecord";
 import { type UnitCategory } from "../stores/UnitStore";
 
-type SampleEditableFields = HasQuantityEditableFields & ResultEditableFields & {
+type SampleEditableFields = HasQuantityEditableFields & InventoryBaseRecordEditableFields & {
   expiryDate: ?string,
   sampleSource: SampleSource,
   storageTempMin: ?Temperature,
@@ -88,7 +88,7 @@ type SampleEditableFields = HasQuantityEditableFields & ResultEditableFields & {
   subSampleAlias: Alias,
 };
 
-type SampleUneditableFields = HasQuantityUneditableFields & ResultUneditableFields;
+type SampleUneditableFields = HasQuantityUneditableFields & InventoryBaseRecordUneditableFields;
 
 export type SubSampleTargetLocation = {
   containerId: Id,
@@ -141,7 +141,7 @@ declare const defaultEditableFields: Set<string>;
 export { defaultEditableFields as defaultEditableSampleFields };
 
 declare export default class SampleModel
-  extends Result
+  extends InventoryBaseRecord
   implements
     Sample,
     HasEditableFields<SampleEditableFields>,
@@ -238,11 +238,11 @@ declare export default class SampleModel
   +quantityUnitLabel: string;
 }
 
-type BatchSampleEditableFields = ResultCollectionEditableFields &
+type BatchSampleEditableFields = InventoryBaseRecordCollectionEditableFields &
   $Diff<SampleEditableFields, {| name: mixed |}>;
 
 declare export class SampleCollection
-  extends ResultCollection<SampleModel>
+  extends InventoryBaseRecordCollection<SampleModel>
   implements HasEditableFields<BatchSampleEditableFields>
 {
   constructor(samples: RsSet<SampleModel>): SampleCollection;

@@ -1,6 +1,6 @@
 //@flow
 
-import Result, { type ResultEditableFields } from "./Result";
+import InventoryBaseRecord, { type InventoryBaseRecordEditableFields } from "./InventoryBaseRecord";
 import { action, observable, makeObservable, computed, override } from "mobx";
 import { match } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -20,34 +20,34 @@ export type BatchName = {|
 
 declare export const formatIndex: (index: number, numOfRecords: number) => string;
 
-export type ResultCollectionEditableFields = {
-  ...$Diff<ResultEditableFields, {| name: string |}>,
+export type InventoryBaseRecordCollectionEditableFields = {
+  ...$Diff<InventoryBaseRecordEditableFields, {| name: string |}>,
   name: BatchName,
   ...
 };
 
-declare export default class ResultCollection<ResultSubtype: Result> {
+declare export default class InventoryBaseRecordCollection<ResultSubtype: InventoryBaseRecord> {
   records: RsSet<ResultSubtype>;
   name: BatchName;
   sharedWith: Array<SharedWithGroup>;
 
-  constructor(records: RsSet<ResultSubtype>): ResultCollection<ResultSubtype>;
+  constructor(records: RsSet<ResultSubtype>): InventoryBaseRecordCollection<ResultSubtype>;
 
   get size(): number;
-  get fieldValues(): { ...ResultCollectionEditableFields };
+  get fieldValues(): { ...InventoryBaseRecordCollectionEditableFields };
   get canChooseWhichToEdit(): boolean;
   isFieldEditable(fieldName: string): boolean;
-  get noValueLabel(): {[key in keyof ResultCollectionEditableFields]: ?string};
+  get noValueLabel(): {[key in keyof InventoryBaseRecordCollectionEditableFields]: ?string};
   setFieldsDirty(newFieldValues: {}): void;
 }
 
-declare export class MixedResultCollection
-  extends ResultCollection<Result>
-  implements HasEditableFields<ResultCollectionEditableFields>
+declare export class MixedInventoryBaseRecordCollection
+  extends InventoryBaseRecordCollection<InventoryBaseRecord>
+  implements HasEditableFields<InventoryBaseRecordCollectionEditableFields>
 {
-  constructor(records: RsSet<Result>): MixedResultCollection;
-  get fieldValues(): { ...ResultCollectionEditableFields };
-  get noValueLabel(): {[key in keyof ResultCollectionEditableFields]: ?string};
+  constructor(records: RsSet<InventoryBaseRecord>): MixedInventoryBaseRecordCollection;
+  get fieldValues(): { ...InventoryBaseRecordCollectionEditableFields };
+  get noValueLabel(): {[key in keyof InventoryBaseRecordCollectionEditableFields]: ?string};
   setFieldsDirty(newFieldValues: {}): void;
   setFieldEditable(fieldName: string, value: boolean): void;
 }

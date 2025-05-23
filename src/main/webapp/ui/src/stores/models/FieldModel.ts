@@ -10,7 +10,7 @@ import {
   apiStringToFieldType,
   type FieldType as FieldTypeSymbol,
 } from "./FieldTypes";
-import Result from "./Result";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type URL as URLType } from "../../util/types";
 import { type Sample } from "../definitions/Sample";
@@ -87,7 +87,7 @@ export default class FieldModel implements Field {
   mandatory: boolean;
   error: boolean;
 
-  constructor(_params: FieldModelAttrs, owner: Result) {
+  constructor(_params: FieldModelAttrs, owner: InventoryBaseRecord) {
     makeObservable(this, {
       id: observable,
       globalId: observable,
@@ -131,7 +131,7 @@ export default class FieldModel implements Field {
       type: FieldType;
       initial: boolean;
       attachment?: AttachmentJson;
-      owner: Result;
+      owner: InventoryBaseRecord;
       options: Array<OptionValue> | Array<Option>;
     };
 

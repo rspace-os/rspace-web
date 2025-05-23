@@ -1,5 +1,5 @@
 import { action, observable, computed, makeObservable } from "mobx";
-import Result from "./Result";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import {
   type ExtraFieldAttrs,
@@ -42,7 +42,7 @@ export default class ExtraFieldModel implements ExtraField {
   owner: InventoryRecord;
   invalidInput: boolean;
 
-  constructor(attrs: ExtraFieldAttrs, owner: Result) {
+  constructor(attrs: ExtraFieldAttrs, owner: InventoryBaseRecord) {
     makeObservable(this, {
       type: observable,
       name: observable,

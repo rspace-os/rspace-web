@@ -4,7 +4,7 @@ import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
 import ContainerModel from "../ContainerModel";
 import PersonModel from "../PersonModel";
 import { type PersonAttrs } from "../../definitions/Person";
-import Result from "../Result";
+import InventoryBaseRecord from "../InventoryBaseRecord";
 import SampleModel from "../SampleModel";
 import SubSampleModel from "../SubSampleModel";
 import TemplateModel from "../TemplateModel";
@@ -21,7 +21,7 @@ import { newDocument } from "../Document";
 import InvApiService from "../../../common/InvApiService";
 
 declare export default class AlwaysNewFactory implements Factory {
-  newRecord(params: any): Result;
+  newRecord(params: any): InventoryBaseRecord;
 
   newPerson(attrs: PersonAttrs): PersonModel;
 

@@ -13,7 +13,7 @@ import FormField from "../../../../components/Inputs/FormField";
 import TextField from "../../../../components/Inputs/TextField";
 import NumberField from "../../../../components/Inputs/NumberField";
 import Box from "@mui/material/Box";
-import Result from "../../../../stores/models/Result";
+import InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
 
 const useStyles = makeStyles()((theme) => ({
   actionsWrapper: {
@@ -28,7 +28,7 @@ const useStyles = makeStyles()((theme) => ({
 
 type ExtraFieldsArgs = {|
   onErrorStateChange: (string, boolean) => void,
-  result: Result,
+  result: InventoryBaseRecord,
 |};
 
 function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): Node {

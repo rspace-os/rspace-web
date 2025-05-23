@@ -18,7 +18,7 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 library.add(faExternalLinkAlt);
-import Result from "../../stores/models/Result";
+import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import { type Record } from "../../stores/definitions/Record";
 import { withStyles } from "Styles";
 import ContainerModel from "../../stores/models/ContainerModel";
@@ -54,7 +54,7 @@ function InfoPopover({ record }: InfoPopoverArgs): Node {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
 
-  const moveActions = (r: Result) => (
+  const moveActions = (r: InventoryBaseRecord) => (
     <>
       {!r.isWorkbench && (
         <OpenButton
@@ -121,7 +121,7 @@ function InfoPopover({ record }: InfoPopoverArgs): Node {
       <CardContent style={{ overflowY: "auto" }}>
         <RecordDetails record={record} hideName />
       </CardContent>
-      {record instanceof Result && (
+      {record instanceof InventoryBaseRecord && (
         <CardActions style={{ justifyContent: "flex-end" }}>
           {moveStore.isMoving ? (
             moveActions(record)

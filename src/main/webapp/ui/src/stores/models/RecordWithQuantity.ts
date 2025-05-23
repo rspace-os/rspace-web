@@ -1,9 +1,9 @@
 import { computed, makeObservable, observable, override } from "mobx";
 import getRootStore from "../stores/RootStore";
-import Result, {
-  type ResultEditableFields,
-  type ResultUneditableFields,
-} from "./Result";
+import InventoryBaseRecord, {
+  type InventoryBaseRecordEditableFields,
+  type InventoryBaseRecordUneditableFields,
+} from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import { type UnitCategory } from "../stores/UnitStore";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
@@ -18,11 +18,11 @@ export type Quantity = {
   unitId: number;
 };
 
-export type HasQuantityEditableFields = ResultEditableFields & {
+export type HasQuantityEditableFields = InventoryBaseRecordEditableFields & {
   quantity: Quantity | null;
 };
 
-export type HasQuantityUneditableFields = ResultUneditableFields;
+export type HasQuantityUneditableFields = InventoryBaseRecordUneditableFields;
 
 /*
  * Some samples/subsamples don't have a quantity; these functions just provide
@@ -36,7 +36,7 @@ export const getLabel = (q: Quantity | null): string =>
   q ? `${getValue(q)} ${getQuantityUnitLabel(q)}` : "";
 
 export default class HasQuantity
-  extends Result
+  extends InventoryBaseRecord
   implements
     HasEditableFields<HasQuantityEditableFields>,
     HasUneditableFields<HasQuantityUneditableFields>
