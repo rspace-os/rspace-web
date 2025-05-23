@@ -46,7 +46,7 @@ import { type AttachmentJson } from "./AttachmentModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import LocationModel, { type LocationAttrs } from "./LocationModel";
 import { type PersonAttrs } from "../definitions/Person";
-import Result, {
+import InventoryBaseRecord, {
   defaultVisibleResultFields,
   defaultEditableResultFields,
   RESULT_FIELDS,
@@ -194,7 +194,7 @@ const defaultEditableFields = new Set([
 ]);
 
 export default class ContainerModel
-  extends HasLocationMixin(Result)
+  extends HasLocationMixin(InventoryBaseRecord)
   implements
     Container,
     HasEditableFields<ContainerEditableFields>,

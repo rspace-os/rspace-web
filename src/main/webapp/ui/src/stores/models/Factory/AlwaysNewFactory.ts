@@ -2,7 +2,7 @@ import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
 import ContainerModel, { ContainerAttrs } from "../ContainerModel";
 import PersonModel from "../PersonModel";
 import { type PersonAttrs } from "../../definitions/Person";
-import Result from "../InventoryBaseRecord";
+import InventoryBaseRecord from "../InventoryBaseRecord";
 import SampleModel, { SampleAttrs } from "../SampleModel";
 import SubSampleModel, { SubSampleAttrs } from "../SubSampleModel";
 import TemplateModel, { TemplateAttrs } from "../TemplateModel";
@@ -29,8 +29,8 @@ export default class AlwaysNewFactory implements Factory {
   newRecord(
     params: Record<string, unknown> & { globalId: GlobalId }
   ): InventoryRecord {
-    if (params instanceof Result)
-      throw new Error("Cannot instantiate Record from Result");
+    if (params instanceof InventoryBaseRecord)
+      throw new Error("Cannot instantiate Record from InventoryBaseRecord");
     const g = params.globalId ?? "";
     const patterns = globalIdPatterns;
     // prettier-ignore

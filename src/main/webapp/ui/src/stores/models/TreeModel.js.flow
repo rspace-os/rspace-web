@@ -2,7 +2,7 @@
 
 import { action, observable, computed, makeObservable } from "mobx";
 import Search from "./Search";
-import Result from "./InventoryBaseRecord";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import getRootStore from "../stores/RootStore";
 import { type GlobalId } from "../definitions/BaseRecord";
 import {
@@ -27,7 +27,7 @@ declare export default class TreeModel implements HasChildren, TreeView {
   get selected(): ?GlobalId;
   get results(): Array<InventoryRecord>;
   setAttributes(attrs: TreeAttrs): void;
-  get selectedNode(): ?Result;
+  get selectedNode(): ?InventoryBaseRecord;
   setExpanded(ids: Array<string>): void;
   setSelected(globalId: ?GlobalId): void;
   get children(): Array<InventoryRecord>;

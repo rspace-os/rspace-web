@@ -1,7 +1,7 @@
 // @flow
 
 import { action, observable, computed, makeObservable } from "mobx";
-import Result from "./InventoryBaseRecord";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import {
   type ExtraFieldAttrs,
@@ -31,7 +31,7 @@ declare export default class ExtraFieldModel implements ExtraField {
   owner: InventoryRecord;
   invalidInput: boolean;
 
-  constructor(attrs: ExtraFieldAttrs, owner: Result): ExtraFieldModel;
+  constructor(attrs: ExtraFieldAttrs, owner: InventoryBaseRecord): ExtraFieldModel;
 
   setAttributesDirty(attrs: {}): void;
   setAttributes(attrs: {}): void;

@@ -1,4 +1,4 @@
-import Result, { type ResultEditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, { type ResultEditableFields } from "./InventoryBaseRecord";
 import { action, observable, makeObservable, computed, override } from "mobx";
 import { match } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -35,10 +35,10 @@ export type ResultCollectionEditableFields = Omit<
 };
 
 /*
- * This is a wrapper around a set of Results, making it easier to perform batch
+ * This is a wrapper around a set of InventoryBaseRecord, making it easier to perform batch
  * operations e.g. editing.
  */
-export default class ResultCollection<ResultSubtype extends Result> {
+export default class ResultCollection<ResultSubtype extends InventoryBaseRecord> {
   records: RsSet<ResultSubtype>;
   name: BatchName;
   sharedWith: Array<SharedWithGroup>;
@@ -251,10 +251,10 @@ export default class ResultCollection<ResultSubtype extends Result> {
 }
 
 export class MixedResultCollection
-  extends ResultCollection<Result>
+  extends ResultCollection<InventoryBaseRecord>
   implements HasEditableFields<ResultCollectionEditableFields>
 {
-  constructor(records: RsSet<Result>) {
+  constructor(records: RsSet<InventoryBaseRecord>) {
     super(records);
     makeObservable(this, {
       setFieldsDirty: override,

@@ -44,7 +44,7 @@ import { type AttachmentJson } from "./AttachmentModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import LocationModel, { type LocationAttrs } from "./LocationModel";
 import { type PersonAttrs } from "../definitions/Person";
-import Result, {
+import InventoryBaseRecord, {
   defaultVisibleResultFields,
   defaultEditableResultFields,
   RESULT_FIELDS,
@@ -135,7 +135,7 @@ export type ContainerAttrs = {|
 |};
 
 declare export default class ContainerModel
-  extends Result
+  extends InventoryBaseRecord
   implements
     Container,
     HasEditableFields<ContainerEditableFields>,

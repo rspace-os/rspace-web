@@ -38,7 +38,7 @@ import {
   runInAction,
 } from "mobx";
 import { type Alias, type Sample } from "../definitions/Sample";
-import Result, {
+import InventoryBaseRecord, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
@@ -131,7 +131,7 @@ const defaultEditableFields = new Set([
 ]);
 
 export default class SubSampleModel
-  extends HasQuantityMixin(HasLocationMixin(Result))
+  extends HasQuantityMixin(HasLocationMixin(InventoryBaseRecord))
   implements
     SubSample,
     HasEditableFields<SubSampleEditableFields>,

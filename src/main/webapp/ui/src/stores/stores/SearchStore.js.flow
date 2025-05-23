@@ -10,7 +10,7 @@ import {
   type CoreFetcher,
   type ResultType,
 } from "../definitions/Search";
-import Result from "../models/InventoryBaseRecord";
+import InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
 import { type Basket, type BasketAttrs } from "../definitions/Basket";
@@ -75,7 +75,7 @@ declare export default class SearchStore {
 
   deleteBasket(id: Id): Promise<void>;
 
-  createNewHelper(newRecord: Result): Promise<void>;
+  createNewHelper(newRecord: InventoryBaseRecord): Promise<void>;
 
   createNewSample(
     subsampleParentDetails?: NewInContainerParams
@@ -87,7 +87,7 @@ declare export default class SearchStore {
 
   createNewTemplate(): Promise<TemplateModel>;
 
-  createNew(type: "sample" | "container" | "template"): Promise<Result>;
+  createNew(type: "sample" | "container" | "template"): Promise<InventoryBaseRecord>;
 
   getBench(workbenchId: WorkbenchId): Promise<Container>;
 

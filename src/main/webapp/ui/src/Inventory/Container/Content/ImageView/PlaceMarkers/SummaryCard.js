@@ -13,7 +13,7 @@ import Typography from "@mui/material/Typography";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import { preventEventBubbling } from "../../../../../util/Util";
-import Result from "../../../../../stores/models/InventoryBaseRecord";
+import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
 import { type Location } from "../../../../../stores/definitions/Container";
 import useNavigateHelpers from "../../../../useNavigateHelpers";
 
@@ -95,7 +95,7 @@ function SummaryCard({
     : "This location can be chosen as the destination in a move operation.";
 
   const hasImage =
-    location.content instanceof Result && Boolean(location.content.image);
+    location.content instanceof InventoryBaseRecord && Boolean(location.content.image);
 
   return (
     <Card

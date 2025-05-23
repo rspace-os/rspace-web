@@ -14,7 +14,7 @@ import {
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
 import { GlobalId } from "../definitions/BaseRecord";
-import Result, { ResultEditableFields, ResultUneditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, { ResultEditableFields, ResultUneditableFields } from "./InventoryBaseRecord";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -22,7 +22,7 @@ import Result, { ResultEditableFields, ResultUneditableFields } from "./Inventor
  * class provides the state and methods common to all of these Inventory
  * records.
  */
-export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
+export function HasLocationMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(
   Base: TBase
 ) {
   return class extends Base implements HasLocation {

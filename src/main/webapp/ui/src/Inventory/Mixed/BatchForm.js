@@ -26,7 +26,7 @@ import {
 } from "../components/Stepper/StepperPanelHeader";
 import AccessPermissions from "../components/Fields/AccessPermissions";
 import SubSampleModel from "../../stores/models/SubSampleModel";
-import Result from "../../stores/models/InventoryBaseRecord";
+import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import RsSet from "../../util/set";
 
 function OverviewSection({
@@ -93,7 +93,7 @@ function DetailsSection({ collection }: { collection: MixedResultCollection }) {
 }
 
 type BatchFormArgs = {|
-  records: RsSet<Result>,
+  records: RsSet<InventoryBaseRecord>,
 |};
 
 function BatchForm({ records }: BatchFormArgs): Node {
