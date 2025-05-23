@@ -8,7 +8,10 @@ import {
 import * as Parsers from "../../util/parsers";
 import { Factory } from "../definitions/Factory";
 import { type UnitCategory } from "../stores/UnitStore";
-import InventoryBaseRecord, { InventoryBaseRecordEditableFields, InventoryBaseRecordUneditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, {
+  InventoryBaseRecordEditableFields,
+  InventoryBaseRecordUneditableFields,
+} from "./InventoryBaseRecord";
 import { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
 import { Optional } from "../../util/optional";
@@ -25,9 +28,9 @@ export const getQuantityUnitLabel = (q: Quantity | null): string =>
 export const getLabel = (q: Quantity | null): string =>
   q ? `${getValue(q)} ${getQuantityUnitLabel(q)}` : "";
 
-export function HasQuantityMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(
-  Base: TBase
-) {
+export function HasQuantityMixin<
+  TBase extends new (...args: any[]) => InventoryBaseRecord
+>(Base: TBase) {
   return class extends Base implements HasQuantity {
     [HasQuantityMarker] = true as const;
 

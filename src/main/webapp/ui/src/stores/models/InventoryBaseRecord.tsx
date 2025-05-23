@@ -212,7 +212,10 @@ type ResultAttrs = {
  *
  * NOTE: This class is abstract and should not itself be instantiated. Derive
  * subclasses from it, implement the various unimplemented methods, and
- * instantiate those classes instead.
+ * instantiate those classes instead. It is a shame that we can't have
+ * TypeScript enforce this for us with the "abstract" keyword but doing do would
+ * deprive us of the ability to use mixins because mixin factory functions
+ * cannot return abstract classes.
  */
 export default class InventoryBaseRecord
   implements
@@ -1732,7 +1735,8 @@ export default class InventoryBaseRecord
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
-  get fieldValues(): InventoryBaseRecordEditableFields & InventoryBaseRecordUneditableFields {
+  get fieldValues(): InventoryBaseRecordEditableFields &
+    InventoryBaseRecordUneditableFields {
     return {
       name: this.name,
       description: this.description,
@@ -1752,7 +1756,9 @@ export default class InventoryBaseRecord
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): { [key in keyof InventoryBaseRecordEditableFields]: string | null } & {
+  get noValueLabel(): {
+    [key in keyof InventoryBaseRecordEditableFields]: string | null;
+  } & {
     [key in keyof InventoryBaseRecordUneditableFields]: string | null;
   } {
     return {
