@@ -53,6 +53,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../../assets/branding/rspace/inventory";
 import SubmitSpinnerButton from "../../../../components/SubmitSpinnerButton";
+import IgsnTable from "../../../Identifiers/IGSN/IgsnTable";
+import RsSet from "../../../../util/set";
+import { type Identifier as IdentifierInTable } from "../../../useIdentifiers";
 
 const useStyles = makeStyles()((theme) => ({
   primary: {
@@ -571,19 +574,41 @@ const AssignDialog = observer(
     open: boolean,
     onClose: () => void,
   |}): Node => {
+    const [selectedIgsns, setSelectedIgsns] = React.useState<
+      RsSet<IdentifierInTable>
+    >(new RsSet([]));
     return (
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-        <Dialog open={open} onClose={onClose}>
+        <Dialog
+          open={open}
+          onClose={() => {
+            setSelectedIgsns(new RsSet([]));
+            onClose();
+          }}
+          fullWidth
+          maxWidth="lg"
+        >
           <DialogTitle>Assign existing IGSN ID</DialogTitle>
           <DialogContent>
             <Stack spacing={2}>
               <Typography>
                 Select an existing IGSN ID to assign to this item.
               </Typography>
+              <IgsnTable
+                selectedIgsns={selectedIgsns}
+                setSelectedIgsns={setSelectedIgsns}
+                disableMultipleRowSelection
+              />
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={onClose} color="primary">
+            <Button
+              onClick={() => {
+                setSelectedIgsns(new RsSet([]));
+                onClose();
+              }}
+              color="primary"
+            >
               Cancel
             </Button>
             <SubmitSpinnerButton
