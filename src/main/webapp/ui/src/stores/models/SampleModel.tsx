@@ -29,7 +29,7 @@ import InventoryBaseRecord, {
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
   type ResultCollectionEditableFields,
-} from "./ResultCollection";
+} from "./InventoryBaseRecordCollection";
 import RsSet from "../../util/set";
 import { blobToBase64 } from "../../util/files";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";

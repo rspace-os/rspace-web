@@ -27,7 +27,7 @@ import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
   type ResultCollectionEditableFields,
-} from "./ResultCollection";
+} from "./InventoryBaseRecordCollection";
 import SampleModel, { type SampleAttrs } from "./SampleModel";
 import {
   action,

@@ -56,7 +56,7 @@ import InventoryBaseRecord, {
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
   type ResultCollectionEditableFields,
-} from "./ResultCollection";
+} from "./InventoryBaseRecordCollection";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import {

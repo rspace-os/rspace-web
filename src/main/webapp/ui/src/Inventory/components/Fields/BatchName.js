@@ -7,7 +7,7 @@ import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import InputAdornment from "@mui/material/InputAdornment";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import { type BatchName } from "../../../stores/models/ResultCollection";
+import { type BatchName } from "../../../stores/models/InventoryBaseRecordCollection";
 import BatchFormField from "../Inputs/BatchFormField";
 
 const MIN = 2;

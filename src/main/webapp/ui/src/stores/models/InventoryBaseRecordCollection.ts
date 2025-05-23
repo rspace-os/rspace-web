@@ -1,4 +1,6 @@
-import InventoryBaseRecord, { type InventoryBaseRecordEditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, {
+  type InventoryBaseRecordEditableFields,
+} from "./InventoryBaseRecord";
 import { action, observable, makeObservable, computed, override } from "mobx";
 import { match } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -38,7 +40,9 @@ export type ResultCollectionEditableFields = Omit<
  * This is a wrapper around a set of InventoryBaseRecord, making it easier to perform batch
  * operations e.g. editing.
  */
-export default class ResultCollection<ResultSubtype extends InventoryBaseRecord> {
+export default class ResultCollection<
+  ResultSubtype extends InventoryBaseRecord
+> {
   records: RsSet<ResultSubtype>;
   name: BatchName;
   sharedWith: Array<SharedWithGroup>;
