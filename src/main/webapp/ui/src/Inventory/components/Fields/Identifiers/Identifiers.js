@@ -52,7 +52,10 @@ import DialogActions from "@mui/material/DialogActions";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../../assets/branding/rspace/inventory";
-import SubmitSpinnerButton from "../../../../components/SubmitSpinnerButton";
+import ValidatingSubmitButton, {
+  IsValid,
+  IsInvalid,
+} from "../../../../components/ValidatingSubmitButton";
 import IgsnTable from "../../../Identifiers/IGSN/IgsnTable";
 import RsSet from "../../../../util/set";
 import { type Identifier as IdentifierInTable } from "../../../useIdentifiers";
@@ -567,13 +570,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
 );
 
 const AssignDialog = observer(
-  ({
-    open,
-    onClose,
-  }: {|
-    open: boolean,
-    onClose: () => void,
-  |}): Node => {
+  ({ open, onClose }: {| open: boolean, onClose: () => void |}): Node => {
     const [selectedIgsns, setSelectedIgsns] = React.useState<
       RsSet<IdentifierInTable>
     >(new RsSet([]));
@@ -611,12 +608,19 @@ const AssignDialog = observer(
             >
               Cancel
             </Button>
-            <SubmitSpinnerButton
-              onClick={doNotAwait(async () => {})}
-              disabled={false}
+            <ValidatingSubmitButton
               loading={false}
-              label="Assign"
-            />
+              validationResult={
+                selectedIgsns.some((igsn) => igsn.associatedGlobalId !== null)
+                  ? IsInvalid(
+                      "The selected IGSN ID is already assigned to another item."
+                    )
+                  : IsValid()
+              }
+              onClick={doNotAwait(async () => {})}
+            >
+              Assign
+            </ValidatingSubmitButton>
           </DialogActions>
         </Dialog>
       </ThemeProvider>
