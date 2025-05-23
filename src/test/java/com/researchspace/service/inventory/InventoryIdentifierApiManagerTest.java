@@ -2,6 +2,7 @@ package com.researchspace.service.inventory;
 
 import static com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy.DUMMY_VALID_DOI;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,6 +18,7 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -224,6 +226,92 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     assertTrue(
         inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
             anotherUserNotAssociated.get(1), user));
+  }
+
+  @Test
+  public void testAssignIdentifier() {
+    List<ApiInventoryDOI> bulkCreateResult =
+        inventoryIdentifierApiMgr.registerBulkIdentifiers(1, user);
+    assertEquals(1, bulkCreateResult.size());
+    assertFalse(bulkCreateResult.get(0).isAssociated());
+    assertNull(bulkCreateResult.get(0).getAssociatedGlobalId());
+    assertNull(bulkCreateResult.get(0).getTitle());
+
+    ApiContainer createdContainer = createBasicContainerForUser(user);
+    assertEquals(0, createdContainer.getIdentifiers().size());
+
+    ApiInventoryRecordInfo assignIdentifierResult =
+        inventoryIdentifierApiMgr.assignIdentifier(
+            createdContainer.getOid(), bulkCreateResult.get(0).getId(), user);
+    assertEquals(1, assignIdentifierResult.getIdentifiers().size());
+    assertEquals(
+        createdContainer.getOid().getIdString(),
+        assignIdentifierResult.getIdentifiers().get(0).getAssociatedGlobalId());
+    assertEquals(
+        createdContainer.getName(), assignIdentifierResult.getIdentifiers().get(0).getTitle());
+
+    Container refreshedContainer = containerApiMgr.getContainerById(createdContainer.getId(), user);
+    assertEquals(1, refreshedContainer.getActiveIdentifiers().size());
+    assertEquals(
+        bulkCreateResult.get(0).getDoi(),
+        refreshedContainer.getActiveIdentifiers().get(0).getIdentifier());
+
+    // cleanup identifiers
+    ApiInventoryRecordInfo updatedContainer =
+        inventoryIdentifierApiMgr.deleteAssociatedIdentifier(refreshedContainer.getOid(), user);
+    assertEquals(0, updatedContainer.getIdentifiers().size());
+  }
+
+  @Test
+  public void testAssignIdentifierToAnInventoryItemThatGotAlreadyAnIdentifierThrowsErrors() {
+    ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
+    ApiInventoryRecordInfo registeredIdentifier =
+        inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
+
+    ApiInventoryDOI unassignedIdentifier =
+        inventoryIdentifierApiMgr.registerBulkIdentifiers(1, user).get(0);
+
+    boolean exceptionHappened = false;
+    try {
+      inventoryIdentifierApiMgr.assignIdentifier(
+          createdSample.getOid(), unassignedIdentifier.getId(), user);
+    } catch (IllegalArgumentException e) {
+      exceptionHappened = true;
+      assertEquals(
+          "Inventory Item \""
+              + registeredIdentifier.getOid().getIdString()
+              + "\" has got already an identifier",
+          e.getMessage());
+    } finally {
+      assertTrue(exceptionHappened, "The exception didn't happen");
+      // cleanup
+      inventoryIdentifierApiMgr.deleteAssociatedIdentifier(createdSample.getOid(), user);
+      inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(unassignedIdentifier, user);
+    }
+  }
+
+  @Test
+  public void testAssignIdentifierThatWasAlreadyAssociatedThrowsErrors() {
+    ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
+    ApiInventoryRecordInfo registeredIdentifier =
+        inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
+
+    ApiContainer createdContainer = createBasicContainerForUser(user);
+    assertEquals(0, createdContainer.getIdentifiers().size());
+
+    boolean exceptionHappened = false;
+    try {
+      inventoryIdentifierApiMgr.assignIdentifier(
+          createdContainer.getOid(), registeredIdentifier.getIdentifiers().get(0).getId(), user);
+    } catch (IllegalStateException e) {
+      exceptionHappened = true;
+      assertEquals(
+          "You can only assign an active unassigned identifier in \"draft\" state", e.getMessage());
+    } finally {
+      assertTrue(exceptionHappened, "The exception didn't happen");
+      // cleanup
+      inventoryIdentifierApiMgr.deleteAssociatedIdentifier(createdSample.getOid(), user);
+    }
   }
 
   private void addOptionalPropertiesToIncomingDoi(ApiInventoryDOI doiUpdate) {

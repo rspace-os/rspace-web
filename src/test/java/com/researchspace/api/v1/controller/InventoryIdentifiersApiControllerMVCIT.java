@@ -108,32 +108,58 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
 
   @Test
   @RunIfSystemPropertyDefined("nightly")
-  public void realConnectionBulkCreateFindAndDeleteDataciteIdentifier() throws Exception {
+  public void realConnection_BulkCreate_Find_Assign_Delete_Identifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
+    ApiContainer apiContainer = createBasicContainerForUser(anyUser);
+    assertEquals(0, apiContainer.getAttachments().size());
+
     List<ApiInventoryDOI> registeredDoiList = bulkRegisterIdentifiers(anyUser, apiKey, 2);
+    ApiInventoryDOI firstBulkCreated = registeredDoiList.get(0);
+    ApiInventoryDOI secondBulkCreated = registeredDoiList.get(1);
+
     assertNotNull(registeredDoiList);
     assertEquals(2, registeredDoiList.size());
-    assertEquals("draft", registeredDoiList.get(0).getState());
-    assertNull(registeredDoiList.get(0).getAssociatedGlobalId());
-    assertEquals("draft", registeredDoiList.get(1).getState());
-    assertNull(registeredDoiList.get(1).getAssociatedGlobalId());
+    assertEquals("draft", firstBulkCreated.getState());
+    assertNull(firstBulkCreated.getAssociatedGlobalId());
+    assertEquals("draft", secondBulkCreated.getState());
+    assertNull(secondBulkCreated.getAssociatedGlobalId());
 
-    List<ApiInventoryDOI> fetchedUserAll = findIdentifiers(anyUser, apiKey, null, null);
+    ApiInventoryDOI assignedIdentifier =
+        assignIdentifier(anyUser, apiKey, apiContainer.getGlobalId(), firstBulkCreated.getId());
+    assertEquals(firstBulkCreated.getDoi(), assignedIdentifier.getDoi());
+    assertEquals(firstBulkCreated.getId(), assignedIdentifier.getId());
+    assertEquals(apiContainer.getName(), assignedIdentifier.getTitle());
+    assertEquals(apiContainer.getOid().getIdString(), assignedIdentifier.getAssociatedGlobalId());
+
+    List<ApiInventoryDOI> fetchedUserAll = findIdentifiers(anyUser, apiKey, null, null, null);
     List<ApiInventoryDOI> fetchedUserDraftNotAssociated =
-        findIdentifiers(anyUser, apiKey, "draft", false);
+        findIdentifiers(anyUser, apiKey, "draft", false, null);
     List<ApiInventoryDOI> fetchedUserFindableNotAssociated =
-        findIdentifiers(anyUser, apiKey, "findable", false);
-    List<ApiInventoryDOI> fetchedUserAssociated = findIdentifiers(anyUser, apiKey, null, true);
+        findIdentifiers(anyUser, apiKey, "findable", false, null);
+    List<ApiInventoryDOI> fetchedUserAssociated =
+        findIdentifiers(anyUser, apiKey, null, true, null);
+    List<ApiInventoryDOI> fetchedUserSpecificDoi =
+        findIdentifiers(anyUser, apiKey, null, null, firstBulkCreated.getDoi());
+    List<ApiInventoryDOI> fetchedUserSpecificDoiSubstring =
+        findIdentifiers(
+            anyUser,
+            apiKey,
+            null,
+            null,
+            firstBulkCreated.getDoi().substring(0, firstBulkCreated.getDoi().length() - 3));
+
     assertEquals(2, fetchedUserAll.size());
-    assertEquals(2, fetchedUserDraftNotAssociated.size());
+    assertEquals(1, fetchedUserDraftNotAssociated.size());
     assertTrue(fetchedUserFindableNotAssociated.isEmpty());
-    assertTrue(fetchedUserAssociated.isEmpty());
+    assertEquals(1, fetchedUserAssociated.size());
+    assertEquals(1, fetchedUserSpecificDoi.size());
+    assertEquals(1, fetchedUserSpecificDoiSubstring.size());
 
     // cleanup datacite
-    assertTrue(deleteDraftDataCiteDoiForItem(anyUser, apiKey, registeredDoiList.get(0).getId()));
-    assertTrue(deleteDraftDataCiteDoiForItem(anyUser, apiKey, registeredDoiList.get(1).getId()));
+    assertTrue(deleteDraftDataCiteDoiForItem(anyUser, apiKey, firstBulkCreated.getId()));
+    assertTrue(deleteDraftDataCiteDoiForItem(anyUser, apiKey, secondBulkCreated.getId()));
   }
 
   @Test
@@ -202,15 +228,30 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     return registeredDoi;
   }
 
+  private ApiInventoryDOI assignIdentifier(
+      User anyUser, String apiKey, String parentGlobalId, Long identifierId) throws Exception {
+    String bodyToPost = "{ \"parentGlobalId\": \"" + parentGlobalId + "\" }";
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/identifiers/" + identifierId + "/assign", anyUser, bodyToPost))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiInventoryDOI registeredDoi = getFromJsonResponseBody(result, ApiInventoryDOI.class);
+    return registeredDoi;
+  }
+
   private List<ApiInventoryDOI> findIdentifiers(
-      User user, String apiKey, String state, Boolean isAssociated) throws Exception {
+      User user, String apiKey, String state, Boolean isAssociated, String identifier)
+      throws Exception {
     MvcResult result =
         this.mockMvc
             .perform(
                 createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/identifiers", user)
-                    // mix up from and to date
                     .param("isAssociated", isAssociated == null ? null : isAssociated.toString())
-                    .param("state", state))
+                    .param("state", state)
+                    .param("identifier", identifier))
             .andExpect(status().is(HttpStatus.OK.value()))
             .andReturn();
     assertNull(result.getResolvedException());

@@ -96,7 +96,7 @@ public class ApiIdentifiersHelper {
           addRecordIdentifierForAssignApiIdentifier(apiIdentifier, parentInvRec);
           changed = true;
         }
-        if (apiIdentifier.isDeleteIdentifierRequest()) {
+        if (apiIdentifier.isAssignIdentifierRequest()) {
           if (apiIdentifier.getId() == null) {
             throw new IllegalArgumentException(
                 "'id' property not provided " + "for DOI with 'assignIdentifierRequest' flag");
@@ -111,7 +111,8 @@ public class ApiIdentifiersHelper {
                     + apiIdentifier.getDoi()
                     + " doesn't match id of any pre-existing identifiers");
           }
-          dbIdentifier.get().setDeleted(true);
+          dbIdentifier.get().setTitle(parentInvRec.getName());
+          parentInvRec.addIdentifier(dbIdentifier.get());
           changed = true;
         }
       }
