@@ -111,10 +111,10 @@ type LockOwner = {|
 |};
 
 declare export class RecordLockedError extends Error {
-  record: Result;
+  record: InventoryBaseRecord;
   lockOwner: LockOwner;
 
-  constructor(record: Result, lockOwner: LockOwner): RecordLockedError;
+  constructor(record: InventoryBaseRecord, lockOwner: LockOwner): RecordLockedError;
 }
 
 declare const FIELDS: Set<string>;
@@ -124,7 +124,7 @@ export { defaultVisibleFields as defaultVisibleResultFields };
 declare const defaultEditableFields: Set<string>;
 export { defaultEditableFields as defaultEditableResultFields };
 
-declare export default class Result
+declare export default class InventoryBaseRecord
   implements
     InventoryRecord,
     AdjustableTableRow<string>,
@@ -169,7 +169,7 @@ declare export default class Result
   sharingMode: SharingMode;
   sharedWith: ?Array<SharedWithGroup>;
 
-  constructor(factory: Factory, params: { ... }): Result;
+  constructor(factory: Factory, params: { ... }): InventoryBaseRecord;
   get canChooseWhichToEdit(): boolean;
   populateFromJson(
     factory: Factory,

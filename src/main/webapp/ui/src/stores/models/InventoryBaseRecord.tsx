@@ -140,11 +140,11 @@ type LockOwner = {
 };
 
 export class RecordLockedError extends Error {
-  record: Result; //eslint-disable-line
+  record: InventoryBaseRecord; //eslint-disable-line
   lockOwner: LockOwner;
 
   //eslint-disable-next-line
-  constructor(record: Result, lockOwner: LockOwner) {
+  constructor(record: InventoryBaseRecord, lockOwner: LockOwner) {
     super();
     this.name = "RecordLockedError";
     this.record = record;
@@ -214,7 +214,7 @@ type ResultAttrs = {
  * subclasses from it, implement the various unimplemented methods, and
  * instantiate those classes instead.
  */
-export default class Result
+export default class InventoryBaseRecord
   implements
     InventoryRecord,
     AdjustableTableRow<string>,
@@ -982,7 +982,7 @@ export default class Result
      * than comparing IDs.
      */
     const parentLocation = locations.find(
-      ({ content }) => (content as Result | null) === this
+      ({ content }) => (content as InventoryBaseRecord | null) === this
     );
 
     // this check is necessary to avoid stack overflow
