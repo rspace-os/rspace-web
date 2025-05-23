@@ -1,0 +1,15 @@
+// @flow
+
+import { type Node } from "react";
+import { type Point } from "../util/types";
+
+declare export default function Draggable({|
+  children: Node,
+  draggable: boolean,
+  initial: Point,
+  onChange: (Point) => void,
+  onClick: () => void,
+  parent: HTMLElement,
+  onDragStart: () => void,
+  onDragEnd: () => void,
+|}): Node;

@@ -1,0 +1,14 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function KetcherDialog({|
+  isOpen?: boolean,
+  handleClose: () => void,
+  existingChem?: string,
+  title: string,
+  handleInsert: (any) => void,
+  actionBtnText?: string,
+  readOnly?: boolean,
+  additionalControls?: Node,
+|}): Node;

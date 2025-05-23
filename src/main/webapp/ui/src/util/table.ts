@@ -132,11 +132,7 @@ export const DataGridColumn = {
    * `valueGetter` function. If you want to use this field in a table that
    * supports export to CSV then `Value` must be a string.
    */
-  newColumnWithValueGetter<
-    Field extends string,
-    Row extends object & { [K in Field]: unknown },
-    Value
-  >(
+  newColumnWithValueGetter<Field extends string, Row extends object, Value>(
     // Unique identifier for the column
     field: Field,
     // Function for getting a cell's value from a Row

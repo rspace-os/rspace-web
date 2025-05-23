@@ -10,6 +10,7 @@ import { makeStyles } from "tss-react/mui";
 import NoValue from "../../../components/NoValue";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import CustomField from "./CustomField";
+import * as ArrayUtils from "../../../util/ArrayUtils";
 
 const useStyles = makeStyles()((theme) => ({
   textSpacer: {
@@ -44,8 +45,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): Node {
 
     return (
       <Grid container direction="column" spacing={2}>
-        {activeResult.fields
-          .filter((f: FieldModel) => f instanceof FieldModel)
+        {ArrayUtils.filterClass(FieldModel, activeResult.fields)
           .map((field: FieldModel, i: number) => (
             <CustomField
               field={field}

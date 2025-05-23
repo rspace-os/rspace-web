@@ -28,6 +28,7 @@ import { type Group } from "../definitions/Group";
 import { mkAlert } from "../contexts/Alert";
 import { showToastWhilstPending } from "../../util/alerts";
 import React from "react";
+import { type emptyObject } from "../../util/types";
 
 export type SavedSearch = CoreFetcherArgs & {
   name: string;
@@ -44,7 +45,7 @@ export type NewInContainerParams = {
         coordX: number;
         coordY: number;
       }
-    | Record<string, never>;
+    | emptyObject;
 };
 
 const SAVED_SEARCHES = JSON.parse(

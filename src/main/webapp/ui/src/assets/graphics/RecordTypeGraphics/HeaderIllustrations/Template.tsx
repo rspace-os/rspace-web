@@ -1,18 +1,17 @@
 import React from "react";
 import { withStyles } from "Styles";
+import { type emptyObject } from "../../../../util/types";
 
-const SampleTemplate = withStyles<Record<string, never>, { svg: string }>(
-  () => ({
-    svg: {
-      height: 83,
-      opacity: 0.7,
-      position: "absolute",
-      bottom: -44,
-      width: 83,
-      right: 0,
-    },
-  })
-)(({ classes }) => (
+const SampleTemplate = withStyles<emptyObject, { svg: string }>(() => ({
+  svg: {
+    height: 83,
+    opacity: 0.7,
+    position: "absolute",
+    bottom: -44,
+    width: 83,
+    right: 0,
+  },
+}))(({ classes }) => (
   <svg
     version="1.1"
     x="0px"

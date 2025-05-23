@@ -1,0 +1,11 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function DynamicallyLoadedImageEditor({|
+  editorFile: ?Blob,
+  editorOpen: boolean,
+  close: () => void,
+  submitHandler: (Blob) => void,
+  alt: string,
+|}): Node;

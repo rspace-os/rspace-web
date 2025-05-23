@@ -1,0 +1,11 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function FileFormatPrompt({|
+  jpegSize: string,
+  pngSize: string,
+  saveAs: ("png" | "jpeg") => void,
+  closePrompt: () => void,
+  open: boolean,
+|}): Node;

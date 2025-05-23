@@ -1,0 +1,9 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function ChooseToEdit({|
+  checked: boolean,
+  onChange: (boolean) => void,
+  ariaControls?: string,
+|}): Node;

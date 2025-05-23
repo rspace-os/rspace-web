@@ -1,0 +1,9 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function FieldmarkImportDialog({|
+  open: boolean,
+  onClose: () => void,
+|}): Node;
+

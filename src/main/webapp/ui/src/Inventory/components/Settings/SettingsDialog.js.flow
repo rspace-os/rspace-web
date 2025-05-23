@@ -1,0 +1,8 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function SettingsDialog({|
+  open: boolean,
+  setOpen: (boolean) => void,
+|}): Node;

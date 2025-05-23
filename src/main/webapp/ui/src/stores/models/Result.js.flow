@@ -91,6 +91,7 @@ export type ResultEditableFields = {
   barcodes: Array<BarcodeRecord>,
   sharingMode: SharingMode,
   sharedWith: ?Array<SharedWithGroup>,
+  identifiers: Array<Identifier>,
   ...
 };
 

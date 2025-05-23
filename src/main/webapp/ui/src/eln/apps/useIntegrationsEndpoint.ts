@@ -8,6 +8,7 @@ import * as ArrayUtils from "../../util/ArrayUtils";
 import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
+import { type emptyObject } from "../../util/types";
 
 /*
  * This module provide the functionality for interacting with the
@@ -58,13 +59,13 @@ export type IntegrationState<Credentials> = {
  * have an associated credential because it may have been available previously.
  */
 export type IntegrationStates = {
-  ARGOS: IntegrationState<Record<string, never>>;
+  ARGOS: IntegrationState<emptyObject>;
   ASCENSCIA: IntegrationState<null>;
   BOX: IntegrationState<{
     BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">;
     "box.api.enabled": Optional<boolean>;
   }>;
-  CHEMISTRY: IntegrationState<Record<string, never>>;
+  CHEMISTRY: IntegrationState<emptyObject>;
   CLUSTERMARKET: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
@@ -88,14 +89,14 @@ export type IntegrationStates = {
   DMPTOOL: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
-  DROPBOX: IntegrationState<Record<string, never>>;
+  DROPBOX: IntegrationState<emptyObject>;
   DRYAD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
   EGNYTE: IntegrationState<{
     EGNYTE_DOMAIN: Optional<string>;
   }>;
-  EVERNOTE: IntegrationState<Record<string, never>>;
+  EVERNOTE: IntegrationState<emptyObject>;
   FIELDMARK: IntegrationState<{
     FIELDMARK_USER_TOKEN: Optional<string>;
   }>;
@@ -118,7 +119,7 @@ export type IntegrationStates = {
   GOOGLEDRIVE: IntegrationState<{
     ["googledrive.linking.enabled"]: Optional<boolean>;
   }>;
-  JOVE: IntegrationState<Record<string, never>>;
+  JOVE: IntegrationState<emptyObject>;
   MSTEAMS: IntegrationState<
     Array<
       Optional<{
@@ -131,8 +132,8 @@ export type IntegrationStates = {
   NEXTCLOUD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
-  OMERO: IntegrationState<Record<string, never>>;
-  ONEDRIVE: IntegrationState<Record<string, never>>;
+  OMERO: IntegrationState<emptyObject>;
+  ONEDRIVE: IntegrationState<emptyObject>;
   OWNCLOUD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;

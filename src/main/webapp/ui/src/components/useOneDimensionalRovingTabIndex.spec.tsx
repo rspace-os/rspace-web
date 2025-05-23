@@ -4,13 +4,14 @@ import {
   SimpleExample,
   HorizontalExample,
 } from "./useOneDimensionalRovingTabIndex.story";
+import { type emptyObject } from "../util/types";
 
 const feature = test.extend<{
   Given: {
     "the simple example component is rendered": () => Promise<void>;
     "the horizontal example component is rendered": () => Promise<void>;
   };
-  Once: Record<string, never>;
+  Once: emptyObject;
   When: {
     "the user presses the tab key {count} times": ({
       count,

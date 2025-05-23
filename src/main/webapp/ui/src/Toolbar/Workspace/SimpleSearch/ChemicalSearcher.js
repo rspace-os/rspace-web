@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import KetcherDialog from "../../../components/Ketcher/KetcherDialog.js";
+import KetcherDialog from "../../../components/Ketcher/KetcherDialog";
 import axios from "@/common/axios";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";

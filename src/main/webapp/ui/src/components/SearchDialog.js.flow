@@ -1,0 +1,10 @@
+//@flow strict
+
+import { type Node } from "react";
+
+declare export default function TextAreaDialog({|
+  query: string,
+  onSubmit: () => void,
+  setQuery: ({ target: { value: string, ... }, ... }) => void,
+  visible: boolean,
+|}): Node;

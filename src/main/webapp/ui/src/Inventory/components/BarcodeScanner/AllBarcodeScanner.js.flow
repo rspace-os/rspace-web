@@ -1,0 +1,12 @@
+//@flow
+
+import { type Node } from "react";
+import {
+  type BarcodeInput,
+} from "./BarcodeScannerSkeleton";
+
+declare export default function AllBarcodeScanner({|
+  onClose: () => void,
+  onScan: (BarcodeInput) => void,
+  buttonPrefix: string,
+|}): Node;

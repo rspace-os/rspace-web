@@ -1,0 +1,7 @@
+//@flow
+
+declare export default function useResizeObserver({
+  callback: () => void,
+  element: {| current: ?HTMLElement |},
+}): void;
+

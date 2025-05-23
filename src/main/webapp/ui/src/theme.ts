@@ -2,7 +2,6 @@ import { createTheme, ThemeOptions as MuiThemeOptions } from "@mui/material";
 import { makeStyles } from "tss-react/mui";
 import { grey, red } from "@mui/material/colors";
 import { hslToHex } from "./util/colors";
-import { TypographyOptions } from "@mui/material/styles/createTypography";
 
 /**
  * The RecordPalette type is used to define the colours used for each Inventory
@@ -68,12 +67,14 @@ declare module "@mui/material/styles/createPalette" {
   // eslint-disable-next-line no-unused-vars
   interface PaletteColor {
     background: string;
+    saturated?: string;
   }
   interface Palette {
     callToAction: PaletteColor;
     standardIcon: PaletteColor;
     lightestGrey: string;
     warningRed: string;
+    deletedGrey: string;
     modifiedHighlight: string;
     record: {
       container: RecordPalette;
@@ -117,10 +118,6 @@ declare module "@mui/material/styles/createPalette" {
         badge: string;
       };
     };
-    contextMenuButton: {
-      main: string;
-      border: string;
-    };
     lightestGrey: string;
     menuIconGrey: string;
     faIconGrey: string;
@@ -161,6 +158,22 @@ declare module "@mui/material/IconButton" {
 declare module "@mui/material/Badge" {
   interface BadgePropsColorOverrides {
     callToAction: true;
+  }
+}
+
+declare module "@mui/material/styles/createTypography" {
+  interface Typography {
+    letterSpacing: {
+      spaced: string;
+      dense: string;
+    };
+  }
+
+  interface TypographyOptions {
+    letterSpacing?: {
+      spaced: string;
+      dense: string;
+    };
   }
 }
 
@@ -278,10 +291,6 @@ const baseTheme = createTheme({
         badge: "#f7f7f7",
       },
     },
-    contextMenuButton: {
-      main: "rgba(0, 0, 0, 0.87)",
-      border: "#bdbdbd",
-    },
 
     // the lightest grey on a white background that has AA contrast
     lightestGrey: "#949494",
@@ -325,7 +334,7 @@ const baseTheme = createTheme({
       spaced: "0.03em",
       dense: "0.01071em",
     },
-  } as TypographyOptions & { letterSpacing: { spaced: string; dense: string } },
+  },
 });
 
 /**
