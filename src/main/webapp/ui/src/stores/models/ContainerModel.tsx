@@ -52,7 +52,7 @@ import Result, {
   RESULT_FIELDS,
   type ResultEditableFields,
   type ResultUneditableFields,
-} from "./Result";
+} from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
   type ResultCollectionEditableFields,

@@ -9,7 +9,7 @@ import React, { type Node, type ComponentType } from "react";
 import { observer } from "mobx-react-lite";
 import GridItem from "./ContextMenuGridItem";
 import { makeStyles } from "tss-react/mui";
-import Result from "../../../stores/models/Result";
+import Result from "../../../stores/models/InventoryBaseRecord";
 import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 

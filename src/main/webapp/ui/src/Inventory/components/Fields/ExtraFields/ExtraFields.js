@@ -13,7 +13,7 @@ import FormField from "../../../../components/Inputs/FormField";
 import TextField from "../../../../components/Inputs/TextField";
 import NumberField from "../../../../components/Inputs/NumberField";
 import Box from "@mui/material/Box";
-import Result from "../../../../stores/models/Result";
+import Result from "../../../../stores/models/InventoryBaseRecord";
 
 const useStyles = makeStyles()((theme) => ({
   actionsWrapper: {

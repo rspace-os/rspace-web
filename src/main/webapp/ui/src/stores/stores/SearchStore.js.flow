@@ -10,7 +10,7 @@ import {
   type CoreFetcher,
   type ResultType,
 } from "../definitions/Search";
-import Result from "../models/Result";
+import Result from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
 import { type Basket, type BasketAttrs } from "../definitions/Basket";

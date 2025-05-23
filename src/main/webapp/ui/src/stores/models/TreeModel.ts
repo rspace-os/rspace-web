@@ -1,6 +1,6 @@
 import { action, observable, computed, makeObservable } from "mobx";
 import Search from "./Search";
-import Result from "./Result";
+import Result from "./InventoryBaseRecord";
 import getRootStore from "../stores/RootStore";
 import { type GlobalId } from "../definitions/BaseRecord";
 import {

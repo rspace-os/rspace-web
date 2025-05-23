@@ -1,5 +1,5 @@
 import { action, observable, computed, makeObservable } from "mobx";
-import Result from "./Result";
+import Result from "./InventoryBaseRecord";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import {
   type ExtraFieldAttrs,

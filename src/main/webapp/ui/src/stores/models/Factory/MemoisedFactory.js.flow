@@ -3,7 +3,7 @@
 import { type PersonId, type PersonAttrs } from "../../definitions/Person";
 import { type GlobalId } from "../../definitions/BaseRecord";
 import PersonModel from "../PersonModel";
-import Result from "../Result";
+import Result from "../InventoryBaseRecord";
 import AlwaysNewFactory from "./AlwaysNewFactory";
 import { type Factory } from "../../definitions/Factory";
 import { type DocumentAttrs, type Document } from "../../definitions/Document";

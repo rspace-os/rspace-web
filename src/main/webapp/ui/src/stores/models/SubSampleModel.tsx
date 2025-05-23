@@ -44,7 +44,7 @@ import Result, {
   defaultEditableResultFields,
   ResultEditableFields,
   ResultUneditableFields,
-} from "./Result";
+} from "./InventoryBaseRecord";
 import React from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
 import { type SubSample } from "../definitions/SubSample";

@@ -16,7 +16,7 @@ import SortableProperty, {
   type SortProperty,
 } from "../../components/Tables/SortableProperty";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
-import { sortProperties, isSortable } from "../../../stores/models/Result";
+import { sortProperties, isSortable } from "../../../stores/models/InventoryBaseRecord";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";

@@ -17,7 +17,7 @@ import TextField from "../../../../components/Inputs/TextField";
 import TimeField from "../../../../components/Inputs/TimeField";
 import UriField from "../../../../components/Inputs/UriField";
 import { type Field } from "../../../../stores/definitions/Field";
-import Result from "../../../../stores/models/Result";
+import Result from "../../../../stores/models/InventoryBaseRecord";
 import { type GalleryFile } from "../../../../eln/gallery/useGalleryListing";
 
 type FieldsArgs = {|

@@ -3,7 +3,7 @@ import getRootStore from "../stores/RootStore";
 import Result, {
   type ResultEditableFields,
   type ResultUneditableFields,
-} from "./Result";
+} from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import { type UnitCategory } from "../stores/UnitStore";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";

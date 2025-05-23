@@ -21,7 +21,7 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import Result from "./Result";
+import Result from "./InventoryBaseRecord";
 import {
   getValue,
   getUnitId,
@@ -47,7 +47,7 @@ import {
   defaultEditableResultFields,
   type ResultEditableFields,
   type ResultUneditableFields
-} from "./Result";
+} from "./InventoryBaseRecord";
 import React, { type Node } from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
 import { type SubSample } from "../definitions/SubSample";

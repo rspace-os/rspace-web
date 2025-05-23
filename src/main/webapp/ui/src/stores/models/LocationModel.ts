@@ -1,6 +1,6 @@
 import getRootStore from "../stores/RootStore";
 import ContainerModel from "./ContainerModel";
-import Result from "./Result";
+import Result from "./InventoryBaseRecord";
 import SubSampleModel from "./SubSampleModel";
 import { action, computed, observable, makeObservable } from "mobx";
 import { type Location, type Container } from "../definitions/Container";

@@ -7,7 +7,7 @@ import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SortControls from "../SortControls";
-import { sortProperties } from "../../../../stores/models/Result";
+import { sortProperties } from "../../../../stores/models/InventoryBaseRecord";
 import SearchContext from "../../../../stores/contexts/Search";
 import Search from "../../../../stores/models/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";

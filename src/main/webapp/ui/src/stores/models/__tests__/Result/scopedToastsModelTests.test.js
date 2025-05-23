@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
-import Result from "../../Result";
+import Result from "../../InventoryBaseRecord";
 import fc, { type Command } from "fast-check";
 import { mkAlert } from "../../../contexts/Alert";
 import { AddScopedToastCommand } from "./addScopedToast";
