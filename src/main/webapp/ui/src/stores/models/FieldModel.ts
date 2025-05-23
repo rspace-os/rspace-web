@@ -10,7 +10,7 @@ import {
   apiStringToFieldType,
   type FieldType as FieldTypeSymbol,
 } from "./FieldTypes";
-import Result from "./Result";
+import Result from "./InventoryBaseRecord";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type URL as URLType } from "../../util/types";
 import { type Sample } from "../definitions/Sample";

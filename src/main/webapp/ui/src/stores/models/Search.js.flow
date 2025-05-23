@@ -34,7 +34,7 @@ import CacheFetcher from "./Fetcher/CacheFetcher";
 import CoreFetcher from "./Fetcher/CoreFetcher";
 import DynamicFetcher from "./Fetcher/DynamicFetcher";
 import { type Username, type Person } from "../definitions/Person";
-import Result from "./Result";
+import Result from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import SampleModel from "./SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";

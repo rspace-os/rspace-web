@@ -20,7 +20,7 @@ import { observer } from "mobx-react-lite";
 import { withStyles } from "Styles";
 import InfoBadge from "../../../../components/InfoBadge";
 import InfoCard from "../../../../components/InfoCard";
-import Result from "../../../../../stores/models/Result";
+import Result from "../../../../../stores/models/InventoryBaseRecord";
 import { LOCATION_TAPPED_EVENT } from "../../../Fields/LocationsImageMarkersDialog";
 import { type TappedLocationData } from "./ContentImage";
 import Box from "@mui/material/Box";

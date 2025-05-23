@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
-import Result from "../../Result";
+import Result from "../../InventoryBaseRecord";
 import { type Command } from "fast-check";
 import { type Model } from "./common";
 

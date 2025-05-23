@@ -14,7 +14,7 @@ import {
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
 import { GlobalId } from "../definitions/BaseRecord";
-import Result, { ResultEditableFields, ResultUneditableFields } from "./Result";
+import Result, { ResultEditableFields, ResultUneditableFields } from "./InventoryBaseRecord";
 
 /**
  * Inventory records that model items that physically exist and thus have a

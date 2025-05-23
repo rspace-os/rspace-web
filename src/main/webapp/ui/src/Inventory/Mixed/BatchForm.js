@@ -26,7 +26,7 @@ import {
 } from "../components/Stepper/StepperPanelHeader";
 import AccessPermissions from "../components/Fields/AccessPermissions";
 import SubSampleModel from "../../stores/models/SubSampleModel";
-import Result from "../../stores/models/Result";
+import Result from "../../stores/models/InventoryBaseRecord";
 import RsSet from "../../util/set";
 
 function OverviewSection({

@@ -25,7 +25,7 @@ import {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
-} from "./Result";
+} from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
   type ResultCollectionEditableFields,
@@ -77,7 +77,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 import * as ArrayUtils  from "../../util/ArrayUtils";
-import Result, { type ResultEditableFields, type ResultUneditableFields } from "./Result";
+import Result, { type ResultEditableFields, type ResultUneditableFields } from "./InventoryBaseRecord";
 import { type UnitCategory } from "../stores/UnitStore";
 
 type SampleEditableFields = HasQuantityEditableFields & ResultEditableFields & {

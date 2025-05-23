@@ -25,7 +25,7 @@ import Result, {
   defaultEditableResultFields,
   ResultEditableFields,
   ResultUneditableFields,
-} from "./Result";
+} from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
   type ResultCollectionEditableFields,

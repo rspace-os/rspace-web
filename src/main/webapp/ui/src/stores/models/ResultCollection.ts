@@ -1,4 +1,4 @@
-import Result, { type ResultEditableFields } from "./Result";
+import Result, { type ResultEditableFields } from "./InventoryBaseRecord";
 import { action, observable, makeObservable, computed, override } from "mobx";
 import { match } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";

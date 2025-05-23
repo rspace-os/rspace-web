@@ -18,7 +18,7 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 library.add(faExternalLinkAlt);
-import Result from "../../stores/models/Result";
+import Result from "../../stores/models/InventoryBaseRecord";
 import { type Record } from "../../stores/definitions/Record";
 import { withStyles } from "Styles";
 import ContainerModel from "../../stores/models/ContainerModel";

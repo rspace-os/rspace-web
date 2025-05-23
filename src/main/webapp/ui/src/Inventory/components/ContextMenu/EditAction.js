@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 
 import { mkAlert } from "../../../stores/contexts/Alert";
-import { RecordLockedError } from "../../../stores/models/Result";
+import { RecordLockedError } from "../../../stores/models/InventoryBaseRecord";
 import {
   type InventoryRecord,
   type LockStatus,

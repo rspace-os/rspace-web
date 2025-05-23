@@ -19,7 +19,7 @@ import {
 } from "../../util/alerts";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
 import Search from "../models/Search";
-import Result from "../models/Result";
+import Result from "../models/InventoryBaseRecord";
 import { type GlobalId, getSavedGlobalId } from "../definitions/BaseRecord";
 import { type Container, type Location } from "../definitions/Container";
 import {

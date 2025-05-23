@@ -2,7 +2,7 @@ import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
 import ContainerModel, { ContainerAttrs } from "../ContainerModel";
 import PersonModel from "../PersonModel";
 import { type PersonAttrs } from "../../definitions/Person";
-import Result from "../Result";
+import Result from "../InventoryBaseRecord";
 import SampleModel, { SampleAttrs } from "../SampleModel";
 import SubSampleModel, { SubSampleAttrs } from "../SubSampleModel";
 import TemplateModel, { TemplateAttrs } from "../TemplateModel";

@@ -8,7 +8,7 @@ import {
 import * as Parsers from "../../util/parsers";
 import { Factory } from "../definitions/Factory";
 import { type UnitCategory } from "../stores/UnitStore";
-import Result, { ResultEditableFields, ResultUneditableFields } from "./Result";
+import Result, { ResultEditableFields, ResultUneditableFields } from "./InventoryBaseRecord";
 import { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
 import { Optional } from "../../util/optional";
