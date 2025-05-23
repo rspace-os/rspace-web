@@ -45,6 +45,14 @@ import PublishButton from "./PublishButton";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import Stack from "@mui/material/Stack";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import { ThemeProvider } from "@mui/material/styles";
+import createAccentedTheme from "../../../../accentedTheme";
+import { ACCENT_COLOR } from "../../../../assets/branding/rspace/inventory";
+import SubmitSpinnerButton from "../../../../components/SubmitSpinnerButton";
 
 const useStyles = makeStyles()((theme) => ({
   primary: {
@@ -555,12 +563,49 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
   }
 );
 
+const AssignDialog = observer(
+  ({
+    open,
+    onClose,
+  }: {|
+    open: boolean,
+    onClose: () => void,
+  |}): Node => {
+    return (
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+        <Dialog open={open} onClose={onClose}>
+          <DialogTitle>Assign existing IGSN ID</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2}>
+              <Typography>
+                Select an existing IGSN ID to assign to this item.
+              </Typography>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={onClose} color="primary">
+              Cancel
+            </Button>
+            <SubmitSpinnerButton
+              onClick={doNotAwait(async () => {})}
+              disabled={false}
+              loading={false}
+              label="Assign"
+            />
+          </DialogActions>
+        </Dialog>
+      </ThemeProvider>
+    );
+  }
+);
+
 const IdentifiersCard = observer((): Node => {
   const {
     searchStore: { activeResult },
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   const identifiers = activeResult.identifiers ?? [];
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   return (
     <>
       {activeResult.state === "create" && (
@@ -577,6 +622,19 @@ const IdentifiersCard = observer((): Node => {
           >
             Mint new IGSN ID
           </Button>
+          <Button
+            color="primary"
+            variant="outlined"
+            onClick={() => {
+              setAssignDialogOpen(true);
+            }}
+          >
+            Assign existing IGSN ID
+          </Button>
+          <AssignDialog
+            open={assignDialogOpen}
+            onClose={() => setAssignDialogOpen(false)}
+          />
         </Stack>
       )}
       {identifiers.length > 0 && (
