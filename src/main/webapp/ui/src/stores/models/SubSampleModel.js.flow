@@ -28,8 +28,8 @@ import {
 } from "./HasQuantity";
 import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
 } from "./InventoryBaseRecordCollection";
 import SampleModel, { type SampleAttrs } from "./SampleModel";
 import {
@@ -179,11 +179,11 @@ declare export default class SubSampleModel
   +quantityUnitLabel: string;
 }
 
-type BatchSubSampleEditableFields = ResultCollectionEditableFields &
+type BatchSubSampleEditableFields = InventoryBaseRecordCollectionEditableFields &
   $Diff<SubSampleEditableFields, {| name: mixed |}>;
 
 declare export class SubSampleCollection
-  extends ResultCollection<SubSampleModel>
+  extends InventoryBaseRecordCollection<SubSampleModel>
   implements HasEditableFields<BatchSubSampleEditableFields>
 {
   constructor(subsamples: RsSet<SubSampleModel>): SubSampleCollection;

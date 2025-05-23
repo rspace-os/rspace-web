@@ -52,8 +52,8 @@ import InventoryBaseRecord, {
   type InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
 } from "./InventoryBaseRecordCollection";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
@@ -279,12 +279,12 @@ declare export default class ContainerModel
 }
 
 type BatchContainerEditableFields = {
-  ...ResultCollectionEditableFields,
+  ...InventoryBaseRecordCollectionEditableFields,
   ...
 };
 
 declare export class ContainerCollection
-  extends ResultCollection<ContainerModel>
+  extends InventoryBaseRecordCollection<ContainerModel>
   implements HasEditableFields<BatchContainerEditableFields>
 {
   constructor(containers: RsSet<ContainerModel>): ContainerCollection;
