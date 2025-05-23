@@ -89,7 +89,7 @@ import * as Parsers from "../../util/parsers";
 import UtilResult from "../../util/result";
 import { AxiosProgressEvent } from "@/common/axios";
 
-export type ResultEditableFields = {
+export type InventoryBaseRecordEditableFields = {
   /*
    * As far as the database is concerned, the description can be null, and the
    * records pre-populated in the databases of the development servers have a
@@ -217,7 +217,7 @@ export default class InventoryBaseRecord
   implements
     InventoryRecord,
     AdjustableTableRow<string>,
-    HasEditableFields<ResultEditableFields>,
+    HasEditableFields<InventoryBaseRecordEditableFields>,
     HasUneditableFields<ResultUneditableFields>
 {
   loading: boolean = false;
@@ -226,8 +226,8 @@ export default class InventoryBaseRecord
   globalId: GlobalId | null = null;
   // @ts-expect-error type is initialised by populateFromJson
   type: ApiRecordType;
-  name: ResultEditableFields["name"] = "";
-  description: ResultEditableFields["description"] = "";
+  name: InventoryBaseRecordEditableFields["name"] = "";
+  description: InventoryBaseRecordEditableFields["description"] = "";
   selected: boolean = false; // whether its checkbox is selected
   infoLoaded: boolean = false; // whether the full information is fetched
   extraFields: Array<ExtraField> = [];
@@ -235,9 +235,9 @@ export default class InventoryBaseRecord
   currentlyVisibleFields: Set<string>;
   // @ts-expect-error currentlyEditableFields is initialised by populateFromJson
   currentlyEditableFields: Set<string>;
-  image: ResultEditableFields["image"] = null;
+  image: InventoryBaseRecordEditableFields["image"] = null;
   thumbnail: Thumbnail = null;
-  tags: ResultEditableFields["tags"] = [];
+  tags: InventoryBaseRecordEditableFields["tags"] = [];
   // @ts-expect-error created is initialised by populateFromJson
   created: string;
   // @ts-expect-error lastModified is initialised by populateFromJson
@@ -259,7 +259,7 @@ export default class InventoryBaseRecord
   expiryCheckInterval: NodeJS.Timeout | undefined;
   // @ts-expect-error permittedActions is initialised by populateFromJson
   permittedActions: Set<Action>;
-  newBase64Image: ResultEditableFields["newBase64Image"] = null;
+  newBase64Image: InventoryBaseRecordEditableFields["newBase64Image"] = null;
   attachments: Array<Attachment> = [];
   identifiers: Array<Identifier> = [];
   iconId: number | null = null;
@@ -1730,7 +1730,7 @@ export default class InventoryBaseRecord
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
-  get fieldValues(): ResultEditableFields & ResultUneditableFields {
+  get fieldValues(): InventoryBaseRecordEditableFields & ResultUneditableFields {
     return {
       name: this.name,
       description: this.description,
@@ -1749,7 +1749,7 @@ export default class InventoryBaseRecord
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): { [key in keyof ResultEditableFields]: string | null } & {
+  get noValueLabel(): { [key in keyof InventoryBaseRecordEditableFields]: string | null } & {
     [key in keyof ResultUneditableFields]: string | null;
   } {
     return {

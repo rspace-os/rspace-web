@@ -77,10 +77,10 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 import * as ArrayUtils  from "../../util/ArrayUtils";
-import InventoryBaseRecord, { type ResultEditableFields, type ResultUneditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, { type InventoryBaseRecordEditableFields, type ResultUneditableFields } from "./InventoryBaseRecord";
 import { type UnitCategory } from "../stores/UnitStore";
 
-type SampleEditableFields = HasQuantityEditableFields & ResultEditableFields & {
+type SampleEditableFields = HasQuantityEditableFields & InventoryBaseRecordEditableFields & {
   expiryDate: ?string,
   sampleSource: SampleSource,
   storageTempMin: ?Temperature,

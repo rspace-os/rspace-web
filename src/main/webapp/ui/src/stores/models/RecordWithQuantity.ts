@@ -1,7 +1,7 @@
 import { computed, makeObservable, observable, override } from "mobx";
 import getRootStore from "../stores/RootStore";
 import InventoryBaseRecord, {
-  type ResultEditableFields,
+  type InventoryBaseRecordEditableFields,
   type ResultUneditableFields,
 } from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
@@ -18,7 +18,7 @@ export type Quantity = {
   unitId: number;
 };
 
-export type HasQuantityEditableFields = ResultEditableFields & {
+export type HasQuantityEditableFields = InventoryBaseRecordEditableFields & {
   quantity: Quantity | null;
 };
 

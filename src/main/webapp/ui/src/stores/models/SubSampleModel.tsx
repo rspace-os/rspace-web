@@ -42,7 +42,7 @@ import InventoryBaseRecord, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
-  ResultEditableFields,
+  InventoryBaseRecordEditableFields,
   ResultUneditableFields,
 } from "./InventoryBaseRecord";
 import React from "react";
@@ -71,7 +71,7 @@ import { HasQuantityMixin, getValue, getUnitId } from "./HasQuantity";
 
 type SubSampleEditableFields = HasQuantityEditableFields &
   HasLocationEditableFields &
-  ResultEditableFields;
+  InventoryBaseRecordEditableFields;
 
 type SubSampleUneditableFields = HasQuantityUneditableFields &
   HasLocationUneditableFields &
