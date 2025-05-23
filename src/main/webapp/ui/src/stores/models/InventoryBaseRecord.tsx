@@ -86,7 +86,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
 import * as Parsers from "../../util/parsers";
-import UtilResult from "../../util/result";
+import Result from "../../util/result";
 import { AxiosProgressEvent } from "@/common/axios";
 
 export type InventoryBaseRecordEditableFields = {
@@ -1116,12 +1116,12 @@ export default class InventoryBaseRecord
           const newAlert = mkAlert({
             message: "Please correct the invalid fields and try again.",
             variant: "error",
-            details: UtilResult.any(
+            details: Result.any(
               ...validationErrors.map((e) =>
                 Parsers.isObject(e)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) =>
-                    UtilResult.lift2<
+                    Result.lift2<
                       string,
                       string,
                       { title: string; help: string; variant: "error" }
@@ -1238,12 +1238,12 @@ export default class InventoryBaseRecord
           const newAlert = mkAlert({
             message: "Please correct the invalid fields and try again.",
             variant: "error",
-            details: UtilResult.any(
+            details: Result.any(
               ...validationErrors.map((e) =>
                 Parsers.isObject(e)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) =>
-                    UtilResult.lift2<
+                    Result.lift2<
                       string,
                       string,
                       { title: string; help: string; variant: "error" }

@@ -80,7 +80,7 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
-import UtilResult from "../../util/result";
+import Result from "../../util/result";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getErrorMessage } from "@/util/error";
 import { SubSample } from "../definitions/SubSample";
@@ -696,8 +696,8 @@ export default class SampleModel
     };
 
     const validateExpiryDate = () => {
-      return UtilResult.first(
-        !this.expiryDate ? UtilResult.Ok(null) : UtilResult.Error<null>([]),
+      return Result.first(
+        !this.expiryDate ? Result.Ok(null) : Result.Error<null>([]),
         Parsers.isNotBottom(this.expiryDate)
           .flatMap(Parsers.parseDate)
           .mapError(() => new Error("Invalid expiry date."))
