@@ -77,7 +77,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import { type Quantity } from "../definitions/HasQuantity";
 import * as Parsers from "../../util/parsers";
-import UtilResult from "../../util/result";
+import Result from "../../util/result";
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
@@ -1058,7 +1058,7 @@ export default class Search implements SearchInterface {
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
             .flatMap((errors) =>
-              UtilResult.all(...errors.map(Parsers.isString)).map((titles) =>
+              Result.all(...errors.map(Parsers.isString)).map((titles) =>
                 titles.map((title) => ({
                   title,
                   variant: "error" as const,
@@ -1123,7 +1123,7 @@ export default class Search implements SearchInterface {
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
             .flatMap((errors) =>
-              UtilResult.all(...errors.map(Parsers.isString)).map((titles) =>
+              Result.all(...errors.map(Parsers.isString)).map((titles) =>
                 titles.map((title) => ({
                   title,
                   variant: "error" as const,
