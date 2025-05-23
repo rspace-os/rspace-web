@@ -33,6 +33,7 @@ define(function() {
 
         _printSubCategory('RSpace API');
         _printSettings([ 'api.available' ]);
+        _printSettings([ 'api.oauth.authentication' ]);
 
         _printSubCategory('Lab Group Settings');
         _printSettings([ 'pi_can_edit_all_work_in_labgroup' ]);
