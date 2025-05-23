@@ -25,8 +25,8 @@ import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
 } from "./InventoryBaseRecordCollection";
 import SampleModel, { type SampleAttrs } from "./SampleModel";
 import {
@@ -466,15 +466,16 @@ export default class SubSampleModel
   }
 }
 
-type BatchSubSampleEditableFields = ResultCollectionEditableFields &
-  Omit<SubSampleEditableFields, "name" | "identifiers">;
+type BatchSubSampleEditableFields =
+  InventoryBaseRecordCollectionEditableFields &
+    Omit<SubSampleEditableFields, "name" | "identifiers">;
 
 /*
  * This is a wrapper class around a set of SubSamples, making it easier to
  * perform batch operations e.g. editing.
  */
 export class SubSampleCollection
-  extends ResultCollection<SubSampleModel>
+  extends InventoryBaseRecordCollection<SubSampleModel>
   implements HasEditableFields<BatchSubSampleEditableFields>
 {
   constructor(subsamples: RsSet<SubSampleModel>) {

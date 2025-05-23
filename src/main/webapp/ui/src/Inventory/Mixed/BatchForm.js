@@ -10,7 +10,7 @@ import useStores from "../../stores/use-stores";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
 import FormWrapper from "../components/BatchEditing/FormWrapper";
 import StepperPanel from "../components/Stepper/StepperPanel";
-import { MixedResultCollection } from "../../stores/models/InventoryBaseRecordCollection";
+import { MixedInventoryBaseRecordCollection } from "../../stores/models/InventoryBaseRecordCollection";
 import BatchName from "../components/Fields/BatchName";
 import Image from "../components/Fields/Image";
 import Description from "../components/Fields/Description";
@@ -33,7 +33,7 @@ function OverviewSection({
   collection,
   recordsCount,
 }: {
-  collection: MixedResultCollection,
+  collection: MixedInventoryBaseRecordCollection,
   recordsCount: number,
 }) {
   const formSectionError = useFormSectionError({
@@ -68,7 +68,7 @@ function OverviewSection({
   );
 }
 
-function DetailsSection({ collection }: { collection: MixedResultCollection }) {
+function DetailsSection({ collection }: { collection: MixedInventoryBaseRecordCollection }) {
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
@@ -100,10 +100,10 @@ function BatchForm({ records }: BatchFormArgs): Node {
   const { searchStore } = useStores();
 
   const [collection, setCollection] = useState(
-    new MixedResultCollection(records)
+    new MixedInventoryBaseRecordCollection(records)
   );
   useEffect(() => {
-    setCollection(new MixedResultCollection(records));
+    setCollection(new MixedInventoryBaseRecordCollection(records));
   }, [records]);
 
   return (

@@ -27,8 +27,8 @@ import InventoryBaseRecord, {
   InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
 } from "./InventoryBaseRecordCollection";
 import RsSet from "../../util/set";
 import { blobToBase64 } from "../../util/files";
@@ -1063,7 +1063,7 @@ export default class SampleModel
   }
 }
 
-type BatchSampleEditableFields = ResultCollectionEditableFields &
+type BatchSampleEditableFields = InventoryBaseRecordCollectionEditableFields &
   Omit<SampleEditableFields, "name" | "identifiers">;
 
 /*
@@ -1071,7 +1071,7 @@ type BatchSampleEditableFields = ResultCollectionEditableFields &
  * batch operations e.g. editing.
  */
 export class SampleCollection
-  extends ResultCollection<SampleModel>
+  extends InventoryBaseRecordCollection<SampleModel>
   implements HasEditableFields<BatchSampleEditableFields>
 {
   constructor(samples: RsSet<SampleModel>) {

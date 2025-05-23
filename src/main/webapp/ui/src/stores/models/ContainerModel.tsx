@@ -54,8 +54,8 @@ import InventoryBaseRecord, {
   type InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
 } from "./InventoryBaseRecordCollection";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
@@ -1219,14 +1219,14 @@ export default class ContainerModel
   }
 }
 
-type BatchContainerEditableFields = ResultCollectionEditableFields;
+type BatchContainerEditableFields = InventoryBaseRecordCollectionEditableFields;
 
 /**
  * This is a wrapper class around a set of Containers, making it easier to
  * perform batch operations e.g. editing.
  */
 export class ContainerCollection
-  extends ResultCollection<ContainerModel>
+  extends InventoryBaseRecordCollection<ContainerModel>
   implements HasEditableFields<BatchContainerEditableFields>
 {
   constructor(containers: RsSet<ContainerModel>) {
