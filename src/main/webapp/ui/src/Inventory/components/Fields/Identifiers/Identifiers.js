@@ -2,15 +2,12 @@
 
 import React, {
   useState,
-  useEffect,
   type Node,
   type ComponentType,
-  type ElementProps,
   useContext,
 } from "react";
 import { observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
-import { withStyles } from "Styles";
 import useStores from "../../../../stores/use-stores";
 import {
   match,
@@ -19,21 +16,15 @@ import {
 } from "../../../../util/Util";
 import docLinks from "../../../../assets/DocLinks";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
-import AddButton from "../../../../components/AddButton";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import Alert from "@mui/material/Alert";
-import Badge from "@mui/material/Badge";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import CardHeader from "@mui/material/CardHeader";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
-import {
-  type InventoryRecord,
-  type State,
-} from "../../../../stores/definitions/InventoryRecord";
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import {
   type Identifier,
@@ -53,6 +44,7 @@ import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import PublishButton from "./PublishButton";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
+import Stack from "@mui/material/Stack";
 
 const useStyles = makeStyles()((theme) => ({
   primary: {
@@ -64,46 +56,6 @@ const useStyles = makeStyles()((theme) => ({
   bottomSpaced: { marginBottom: theme.spacing(1) },
   highlight: { color: theme.palette.modifiedHighlight },
 }));
-
-const CustomCardHeader = withStyles<
-  ElementProps<typeof CardHeader>,
-  { root: string, action: string }
->((theme) => ({
-  root: {
-    padding: theme.spacing(0, 0, 0, 1.5),
-  },
-  action: {
-    margin: 0,
-  },
-}))(CardHeader);
-
-const ToggleButton = ({
-  identifierCount,
-  open,
-  setOpen,
-}: {
-  identifierCount?: number,
-  open: boolean,
-  setOpen: (boolean) => void,
-}): Node => (
-  <CustomTooltip
-    title={match<void, string>([
-      [() => identifierCount === 0, "No current identifiers"],
-      [() => open, "Hide identifiers listing"],
-      [() => true, "Show identifiers listing"],
-    ])()}
-  >
-    <IconButton
-      onClick={() => setOpen(!open)}
-      disabled={identifierCount === 0}
-      aria-label="Toggle identifiers section"
-    >
-      <Badge color="primary" badgeContent={identifierCount}>
-        <ExpandCollapseIcon open={open} />
-      </Badge>
-    </IconButton>
-  </CustomTooltip>
-);
 
 const IdentifierWrapper = observer(
   ({
@@ -603,76 +555,36 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
   }
 );
 
-const AddButtonWrapper = ({
-  label,
-  disabled,
-  state,
-  onClick,
-}: {
-  label: string,
-  disabled: boolean,
-  state: State,
-  onClick: () => void,
-}): Node => (
-  <label>
-    <AddButton
-      disabled={disabled}
-      title={
-        state === "create"
-          ? "You cannot add an Identifier to an item that has not been created yet. Please save the item first"
-          : disabled
-          ? "You cannot add another Identifier to this item (one already exists)"
-          : "Press to add an IGSN Identifier"
-      }
-      onClick={onClick}
-      datatestid="identifier-add-button"
-    />
-    {label}
-  </label>
-);
-
 const IdentifiersCard = observer((): Node => {
   const {
     searchStore: { activeResult },
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   const identifiers = activeResult.identifiers ?? [];
-  const [open, setOpen] = useState(identifiers.length > 0);
-  useEffect(() => {
-    setOpen(identifiers.length > 0);
-  }, [identifiers.length]);
   return (
-    <Card variant="outlined">
-      <AddButtonWrapper
-        /*
-         * may have more than one in the future, but only one now
-         * if no id, button is disabled (prevent mint and cancel)
-         * if no permission, section is not rendered
-         */
-        label="Create a new Identifier"
-        disabled={activeResult.state === "create" || identifiers.length > 0}
-        state={activeResult.state}
-        onClick={doNotAwait(() => activeResult.addIdentifier())}
-      />
-      <CustomCardHeader
-        subheader={`${
-          open ? "Hide" : "Show"
-        } all Identifiers associated with this item.`}
-        subheaderTypographyProps={{ variant: "body2" }}
-        action={
-          <>
-            <ToggleButton
-              identifierCount={identifiers.length}
-              open={open}
-              setOpen={setOpen}
-            />
-          </>
-        }
-      />
-      <Collapse in={open}>
-        <IdentifiersList activeResult={activeResult} />
-      </Collapse>
-    </Card>
+    <>
+      {activeResult.state === "create" && (
+        <Alert severity="info">
+          This item has not been created yet. Please save the item first.
+        </Alert>
+      )}
+      {activeResult.state !== "create" && identifiers.length === 0 && (
+        <Stack direction="row" spacing={1}>
+          <Button
+            color="primary"
+            variant="outlined"
+            onClick={doNotAwait(() => activeResult.addIdentifier())}
+          >
+            Mint new IGSN ID
+          </Button>
+        </Stack>
+      )}
+      {identifiers.length > 0 && (
+        <Card variant="outlined">
+          <IdentifiersList activeResult={activeResult} />
+        </Card>
+      )}
+    </>
   );
 });
 
