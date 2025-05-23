@@ -285,7 +285,7 @@ export default class Result
    */
   scopedToasts: Array<Alert> = [];
 
-  constructor(factory: Factory) {
+  constructor(factory: Factory, _params: object) {
     makeObservable(this, {
       currentlyVisibleFields: observable,
       currentlyEditableFields: observable,
@@ -1611,34 +1611,6 @@ export default class Result
       ...["Name", "Description", "Preview Image", "Tags", "Attachments"],
       ...this.visibleExtraFields.map((ef) => ef.name),
     ];
-  }
-
-  // see Movable: if top parent is a bench (item is 'in' bench ie at any level)
-  isInWorkbench(): boolean {
-    return false;
-  }
-
-  // see Movable: if top parent is current user's bench (item is 'in' bench ie at any level)
-  isInCurrentUsersWorkbench(): boolean {
-    return false;
-  }
-
-  // see Movable: if only parent is a bench (item is 'on' bench ie at top-level)
-  isOnWorkbench(): boolean {
-    return false;
-  }
-
-  // see Movable: if only parent is current user's bench (item is 'on' bench ie at top-level)
-  isOnCurrentUsersWorkbench(): boolean {
-    return false;
-  }
-
-  isMovable(): boolean {
-    return false;
-  }
-
-  hasParentContainers(): boolean {
-    return false;
   }
 
   adjustableTableOptions(): AdjustableTableRowOptions<string> {

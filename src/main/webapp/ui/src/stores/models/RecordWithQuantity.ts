@@ -18,11 +18,11 @@ export type Quantity = {
   unitId: number;
 };
 
-export type RecordWithQuantityEditableFields = ResultEditableFields & {
+export type HasQuantityEditableFields = ResultEditableFields & {
   quantity: Quantity | null;
 };
 
-export type RecordWithQuantityUneditableFields = ResultUneditableFields;
+export type HasQuantityUneditableFields = ResultUneditableFields;
 
 /*
  * Some samples/subsamples don't have a quantity; these functions just provide
@@ -35,17 +35,17 @@ export const getQuantityUnitLabel = (q: Quantity | null): string =>
 export const getLabel = (q: Quantity | null): string =>
   q ? `${getValue(q)} ${getQuantityUnitLabel(q)}` : "";
 
-export default class RecordWithQuantity
+export default class HasQuantity
   extends Result
   implements
-    HasEditableFields<RecordWithQuantityEditableFields>,
-    HasUneditableFields<RecordWithQuantityUneditableFields>
+    HasEditableFields<HasQuantityEditableFields>,
+    HasUneditableFields<HasQuantityUneditableFields>
 {
   // @ts-expect-error quantity is initialised by populateFromJson
-  quantity: RecordWithQuantityEditableFields["quantity"];
+  quantity: HasQuantityEditableFields["quantity"];
 
-  constructor(factory: Factory) {
-    super(factory);
+  constructor(factory: Factory, params: object) {
+    super(factory, params);
     makeObservable(this, {
       quantity: observable,
       quantityCategory: computed,
@@ -105,8 +105,8 @@ export default class RecordWithQuantity
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
-  get fieldValues(): RecordWithQuantityEditableFields &
-    RecordWithQuantityUneditableFields {
+  get fieldValues(): HasQuantityEditableFields &
+    HasQuantityUneditableFields {
     return {
       ...super.fieldValues,
       quantity: this.quantity,
@@ -115,8 +115,8 @@ export default class RecordWithQuantity
 
   //eslint-disable-next-line no-unused-vars
   get noValueLabel(): {
-    [key in keyof RecordWithQuantityEditableFields]: string | null;
-  } & { [key in keyof RecordWithQuantityUneditableFields]: string | null } {
+    [key in keyof HasQuantityEditableFields]: string | null;
+  } & { [key in keyof HasQuantityUneditableFields]: string | null } {
     return {
       ...super.noValueLabel,
       quantity: null,

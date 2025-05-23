@@ -16,7 +16,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import clsx from "clsx";
-import RecordWithQuantity from "../../stores/models/RecordWithQuantity";
 import {
   Material,
   type ListOfMaterials,
@@ -33,6 +32,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Checkbox from "@mui/material/Checkbox";
 import UsedQuantityField from "./UsedQuantityField";
 import SubSampleModel from "../../stores/models/SubSampleModel";
+import { hasQuantity } from "../../stores/models/HasQuantity";
 
 const NameCell = withStyles<
   {| material: Material |},
@@ -358,11 +358,14 @@ function MaterialsTable({
     const globalId = record.globalId;
 
     // Some samples don't have a quantity, so the UI must check for that
-    const noQuantitySample =
-      record instanceof RecordWithQuantity &&
-      (!record.quantity ||
-        typeof record.quantity.numericValue !== "number" ||
-        !record.quantity.unitId);
+    const noQuantitySample = hasQuantity(record)
+      .map((r) => {
+        if (!r.quantity) return true;
+        if (typeof r.quantity.numericValue !== "number") return true;
+        if (!r.quantity.unitId) return true;
+        return false;
+      })
+      .orElse(false);
 
     return (
       <TableRow
@@ -399,7 +402,7 @@ function MaterialsTable({
             flex={2}
             className={colorCodedQuantity(material, list)}
           >
-            {!(record instanceof RecordWithQuantity) || noQuantitySample ? (
+            {hasQuantity(record).isEmpty() || noQuantitySample ? (
               <>&mdash;</>
             ) : (
               material.inventoryQuantityLabel

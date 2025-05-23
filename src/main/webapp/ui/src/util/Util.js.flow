@@ -61,7 +61,6 @@ declare export function filterMap<A, B>(
   map: Map<A, B>,
   f: (A, B) => boolean
 ): Map<A, B>;
-declare export function classMixin<T>(Class<T>, ...Array<T>): void;
 declare export function partitionAllSettled<A>(allSettled: AllSettled<A>): {|
   fulfilled: Array<A>,
   rejected: Array<Error>,

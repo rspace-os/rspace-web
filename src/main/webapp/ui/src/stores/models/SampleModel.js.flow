@@ -12,11 +12,11 @@ import {
 import { match } from "../../util/Util";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import RecordWithQuantity, {
+import {
   type Quantity,
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
-} from "./RecordWithQuantity";
+  type HasQuantityEditableFields,
+  type HasQuantityUneditableFields,
+} from "../definitions/HasQuantity";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import getRootStore from "../stores/RootStore";
 import { mkAlert } from "../contexts/Alert";
@@ -76,22 +76,19 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
-import Result from "../../util/result";
 import * as ArrayUtils  from "../../util/ArrayUtils";
+import Result, { type ResultEditableFields, type ResultUneditableFields } from "./Result";
+import { type UnitCategory } from "../stores/UnitStore";
 
-type SampleEditableFields = {
-  ...RecordWithQuantityEditableFields,
+type SampleEditableFields = HasQuantityEditableFields & ResultEditableFields & {
   expiryDate: ?string,
   sampleSource: SampleSource,
   storageTempMin: ?Temperature,
   storageTempMax: ?Temperature,
   subSampleAlias: Alias,
-  ...
 };
 
-type SampleUneditableFields = {
-  ...RecordWithQuantityUneditableFields,
-};
+type SampleUneditableFields = HasQuantityUneditableFields & ResultUneditableFields;
 
 export type SubSampleTargetLocation = {
   containerId: Id,
@@ -144,7 +141,7 @@ declare const defaultEditableFields: Set<string>;
 export { defaultEditableFields as defaultEditableSampleFields };
 
 declare export default class SampleModel
-  extends RecordWithQuantity
+  extends Result
   implements
     Sample,
     HasEditableFields<SampleEditableFields>,
@@ -222,7 +219,7 @@ declare export default class SampleModel
   loadChildren(): void;
   get illustration(): Node;
   get recordDetails(): RecordDetails;
-  get fieldValues(): any;
+  get fieldValues(): SampleEditableFields & SampleUneditableFields;
   get supportsBatchEditing(): boolean;
   get noValueLabel(): {[key in keyof SampleEditableFields]: ?string} & {[key in keyof SampleUneditableFields]: ?string};
   refreshAssociatedSearch(): void;
@@ -232,6 +229,13 @@ declare export default class SampleModel
   get beingCreatedInContainer(): boolean;
   get inContainerParams(): SampleInContainerParams;
   get createOptions(): $ReadOnlyArray<CreateOption>;
+
+  quantity: Quantity;
+  +quantityCategory: UnitCategory;
+  +quantityUnitId: number;
+  +quantityValue: number;
+  +quantityLabel: string;
+  +quantityUnitLabel: string;
 }
 
 type BatchSampleEditableFields = ResultCollectionEditableFields &

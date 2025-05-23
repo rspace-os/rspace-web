@@ -75,7 +75,7 @@ import {
   IsValid,
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
-import { type Quantity } from "./RecordWithQuantity";
+import { type Quantity } from "../definitions/HasQuantity";
 import * as Parsers from "../../util/parsers";
 import UtilResult from "../../util/result";
 
@@ -936,8 +936,10 @@ export default class Search implements SearchInterface {
           newRecord.populateFromJson(factory, record, null);
           return newRecord;
         });
-      const recordsOnBench = successfullyTranferred.every((r) =>
-        r.isOnWorkbench()
+      const recordsOnBench = successfullyTranferred.every(
+        (r) =>
+          (r instanceof ContainerModel || r instanceof SubSampleModel) &&
+          r.isDirectlyOnWorkbench
       );
       const helpMessage = recordsOnBench
         ? `The records have been moved to ${username}'s bench`

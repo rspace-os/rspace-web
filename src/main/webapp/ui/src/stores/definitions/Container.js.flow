@@ -8,6 +8,8 @@ import { type Point } from "../../util/types";
 import { type Permissioned } from "./PermissionedData";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { match } from "../../util/Util";
+import { type HasLocation } from "./HasLocation";
+import { type Person } from "./Person";
 
 export type WorkbenchId = number;
 export type ContainerType = "LIST" | "GRID" | "IMAGE" | "WORKBENCH";
@@ -38,7 +40,7 @@ declare export function cTypeToDefaultSearchView(cType: ContainerType): SearchVi
 
 export interface Location extends Point {
   id: ?number;
-  content: ?(SubSample | Container); //eslint-disable-line no-use-before-define
+  content: null | (InventoryRecord & HasLocation);
   coordX: number;
   coordY: number;
   selected: boolean;
@@ -63,7 +65,7 @@ export interface Location extends Point {
   +paramsForBackend: { ... };
 }
 
-export interface Container extends InventoryRecord {
+export interface Container extends InventoryRecord, HasLocation {
   cType: ContainerType;
 
   contentSummary: Permissioned<ContentSummary>;
@@ -95,4 +97,3 @@ export interface Container extends InventoryRecord {
   selectionStart: Point;
   selectionEnd: Point;
 }
-

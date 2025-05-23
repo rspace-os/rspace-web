@@ -283,24 +283,6 @@ export const filterMap = <A, B>(
 ): Map<A, B> => new Map([...map.entries()].filter(([k, v]) => f(k, v)));
 
 /**
- * Combine two classes into one.
- * @deprecated
- */
-export function classMixin<T>(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cls: { new (...args: any[]): T },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ...src: Array<{ new (...args: any[]): any }>
-): void {
-  for (const _cl of src) {
-    for (const key of Object.getOwnPropertyNames(_cl.prototype)) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      cls.prototype[key] = _cl.prototype[key];
-    }
-  }
-}
-
-/**
  * AllSettled is the type returned by Promise.allSettled. This function
  * partitions the returned values and errors into two arrays.
  */
