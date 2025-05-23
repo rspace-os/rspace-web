@@ -2,7 +2,7 @@ import { computed, makeObservable, observable, override } from "mobx";
 import getRootStore from "../stores/RootStore";
 import InventoryBaseRecord, {
   type InventoryBaseRecordEditableFields,
-  type ResultUneditableFields,
+  type InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import { type UnitCategory } from "../stores/UnitStore";
@@ -22,7 +22,7 @@ export type HasQuantityEditableFields = InventoryBaseRecordEditableFields & {
   quantity: Quantity | null;
 };
 
-export type HasQuantityUneditableFields = ResultUneditableFields;
+export type HasQuantityUneditableFields = InventoryBaseRecordUneditableFields;
 
 /*
  * Some samples/subsamples don't have a quantity; these functions just provide

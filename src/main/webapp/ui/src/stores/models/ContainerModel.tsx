@@ -51,7 +51,7 @@ import InventoryBaseRecord, {
   defaultEditableResultFields,
   RESULT_FIELDS,
   type InventoryBaseRecordEditableFields,
-  type ResultUneditableFields,
+  type InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
@@ -92,7 +92,7 @@ import {
 
 type ContainerEditableFields = InventoryBaseRecordEditableFields & HasLocationEditableFields;
 
-type ContainerUneditableFields = ResultUneditableFields &
+type ContainerUneditableFields = InventoryBaseRecordUneditableFields &
   HasLocationUneditableFields;
 
 export type ContainerInContainerParams = {

@@ -24,7 +24,7 @@ import InventoryBaseRecord, {
   defaultVisibleResultFields,
   defaultEditableResultFields,
   InventoryBaseRecordEditableFields,
-  ResultUneditableFields,
+  InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
@@ -96,7 +96,7 @@ type SampleEditableFields = HasQuantityEditableFields &
   };
 
 type SampleUneditableFields = HasQuantityUneditableFields &
-  ResultUneditableFields;
+  InventoryBaseRecordUneditableFields;
 
 export type SubSampleTargetLocation = {
   containerId: Id;
