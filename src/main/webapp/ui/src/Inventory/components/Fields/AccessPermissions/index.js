@@ -10,7 +10,7 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { type SharingMode } from "../../../../stores/definitions/InventoryRecord";
-import ResultCollection from "../../../../stores/models/ResultCollection";
+import ResultCollection from "../../../../stores/models/InventoryBaseRecordCollection";
 import { observer } from "mobx-react-lite";
 import {
   type SharedWithGroup,

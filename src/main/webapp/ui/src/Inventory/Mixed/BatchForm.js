@@ -10,7 +10,7 @@ import useStores from "../../stores/use-stores";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
 import FormWrapper from "../components/BatchEditing/FormWrapper";
 import StepperPanel from "../components/Stepper/StepperPanel";
-import { MixedResultCollection } from "../../stores/models/ResultCollection";
+import { MixedResultCollection } from "../../stores/models/InventoryBaseRecordCollection";
 import BatchName from "../components/Fields/BatchName";
 import Image from "../components/Fields/Image";
 import Description from "../components/Fields/Description";

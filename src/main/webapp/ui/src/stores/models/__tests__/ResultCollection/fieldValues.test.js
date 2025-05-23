@@ -3,7 +3,7 @@
  */
 //@flow
 /* eslint-env jest */
-import ResultCollection from "../../ResultCollection";
+import ResultCollection from "../../InventoryBaseRecordCollection";
 import { PersistedBarcode } from "../../Barcode";
 import { makeMockContainer } from "../ContainerModel/mocking";
 import RsSet from "../../../../util/set";
