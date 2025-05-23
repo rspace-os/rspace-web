@@ -870,7 +870,7 @@ export default class SampleModel
 
   refreshAssociatedSearch() {
     if (this.id !== null) {
-      void this.search.fetcher.performInitialSearch({});
+      void this.search.fetcher.performInitialSearch(null);
     }
   }
 

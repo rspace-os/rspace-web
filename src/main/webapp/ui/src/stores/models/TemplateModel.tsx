@@ -369,7 +369,7 @@ export default class TemplateModel extends SampleModel implements Template {
      * is available.
      */
     if (this.id) {
-      await this.search.fetcher.performInitialSearch({});
+      await this.search.fetcher.performInitialSearch(null);
       // User can only update samples they own
       const samplesToBeUpdated = this.search.fetcher.results.filter(
         // default to true so we don't miss any that could be the current user's

@@ -323,7 +323,7 @@ export default class MoveStore {
 
   async refreshAfterMove() {
     const { searchStore, peopleStore } = this.rootStore;
-    void searchStore.search.fetcher.performInitialSearch({});
+    void searchStore.search.fetcher.performInitialSearch(null);
     const activeResult = searchStore.activeResult;
     if (activeResult) {
       if (activeResult.state === "preview") {

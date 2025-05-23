@@ -1112,7 +1112,7 @@ export default class ContainerModel
       void this.contentSearch.setSearchView(
         cTypeToDefaultSearchView(this.cType)
       );
-      void this.contentSearch.fetcher.performInitialSearch({});
+      void this.contentSearch.fetcher.performInitialSearch(null);
     }
   }
 

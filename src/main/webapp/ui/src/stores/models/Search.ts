@@ -722,7 +722,7 @@ export default class Search implements SearchInterface {
     // update sidebar bench count
     if (currentUser) void currentUser.getBench();
 
-    await this.fetcher.performInitialSearch({});
+    await this.fetcher.performInitialSearch(null);
 
     if (activeResult) {
       if (recordIds.has(activeResult.globalId))
@@ -762,7 +762,7 @@ export default class Search implements SearchInterface {
           (erroredRecords) => this.duplicateRecords(erroredRecords)
         )
       ) {
-        await this.fetcher.performInitialSearch({});
+        await this.fetcher.performInitialSearch(null);
         return;
       }
 
@@ -799,7 +799,7 @@ export default class Search implements SearchInterface {
           : null
       );
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
-      await this.fetcher.performInitialSearch({});
+      await this.fetcher.performInitialSearch(null);
       if (this.activeResult && data.results.length > 0) {
         await this.setActiveResult(newRecords[0]);
       }
@@ -838,7 +838,7 @@ export default class Search implements SearchInterface {
       );
 
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
-      void this.fetcher.performInitialSearch({});
+      void this.fetcher.performInitialSearch(null);
 
       const factory = this.factory.newFactory();
       handleDetailedSuccesses(
@@ -991,7 +991,7 @@ export default class Search implements SearchInterface {
     // update sidebar bench count
     if (currentUser) void currentUser.getBench();
 
-    await this.fetcher.performInitialSearch({});
+    await this.fetcher.performInitialSearch(null);
 
     if (searchStore.activeResult) {
       const activeResult = searchStore.activeResult;
@@ -1046,7 +1046,7 @@ export default class Search implements SearchInterface {
           ],
         })
       );
-      void this.fetcher.performInitialSearch({});
+      void this.fetcher.performInitialSearch(null);
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
@@ -1090,7 +1090,7 @@ export default class Search implements SearchInterface {
         opts.sample.fetchAdditionalInfo(),
         opts.sample.refreshAssociatedSearch(),
         searchStore.search.fetcher.parentGlobalId === opts.sample.globalId
-          ? searchStore.search.fetcher.performInitialSearch({})
+          ? searchStore.search.fetcher.performInitialSearch(null)
           : Promise.resolve(),
       ]);
 
