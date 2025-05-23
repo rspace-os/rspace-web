@@ -137,6 +137,9 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl
       contentChanged |=
           identifiersHelper.createDeleteRequestedIdentifiers(
               apiSubSample.getIdentifiers(), dbSubSample, user);
+      contentChanged |=
+          identifiersHelper.createAssignRequestedIdentifiers(
+              apiSubSample.getIdentifiers(), dbSubSample, user);
       contentChanged |= apiSubSample.applyChangesToDatabaseSubSample(dbSubSample, user);
       contentChanged |= saveIncomingSubSampleImage(dbSubSample, apiSubSample, user);
       boolean moveSuccessful =

@@ -10,6 +10,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.util.List;
+import javax.naming.InvalidNameException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import lombok.Data;
@@ -32,6 +33,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Data
   @NoArgsConstructor
   public static class ApiInventoryIdentifierPost {
+
     @JsonProperty("parentGlobalId")
     private String parentGlobalId;
   }
@@ -40,8 +42,10 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   public List<ApiInventoryDOI> getUserIdentifiers(
       @RequestParam(value = "state", required = false) String state,
       @RequestParam(value = "isAssociated", required = false) Boolean isAssociated,
-      @RequestAttribute(name = "user") User user) {
-    return identifierMgr.findIdentifiersByStateAndOwner(state, user, isAssociated);
+      @RequestParam(value = "identifier", required = false) String identifier,
+      @RequestAttribute(name = "user") User user)
+      throws InvalidNameException {
+    return identifierMgr.findIdentifiers(state, isAssociated, identifier, user);
   }
 
   @Override
@@ -82,6 +86,23 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
               + result.size());
     }
     return result;
+  }
+
+  @Override
+  public ApiInventoryDOI assignIdentifier(
+      @PathVariable Long identifierId,
+      @RequestBody ApiInventoryIdentifierPost inventoryItem,
+      @RequestAttribute(name = "user") User user) {
+    assertDataCiteConnectorEnabled();
+    String globalId = inventoryItem.getParentGlobalId();
+    Validate.isTrue(GlobalIdentifier.isValid(globalId), "not a valid global id: " + globalId);
+    Validate.isTrue(identifierId != null, "identifier must not be null");
+    GlobalIdentifier inventoryOid = new GlobalIdentifier(globalId);
+    assertUserCanEditInventoryRecord(inventoryOid, user);
+
+    ApiInventoryRecordInfo result =
+        identifierMgr.assignIdentifier(inventoryOid, identifierId, user);
+    return result.getIdentifiers().get(0);
   }
 
   @Override

@@ -5,12 +5,14 @@ import lombok.Getter;
 
 public class DataCiteConnectorDummy implements DataCiteConnector {
 
+  public static final String DUMMY_VALID_DOI = "10.82316/n1c0-t35t";
   @Getter public DataCiteDoi doiSentToDatacite;
 
   @Override
   public DataCiteDoi registerDoi(DataCiteDoi dataCiteDoi) {
     doiSentToDatacite = dataCiteDoi;
     dataCiteDoi.getAttributes().setState("draft");
+    dataCiteDoi.setId(DUMMY_VALID_DOI);
     return dataCiteDoi;
   }
 
