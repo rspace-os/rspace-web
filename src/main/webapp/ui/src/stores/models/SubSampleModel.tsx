@@ -43,7 +43,7 @@ import InventoryBaseRecord, {
   defaultVisibleResultFields,
   defaultEditableResultFields,
   InventoryBaseRecordEditableFields,
-  ResultUneditableFields,
+  InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import React from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
@@ -75,7 +75,7 @@ type SubSampleEditableFields = HasQuantityEditableFields &
 
 type SubSampleUneditableFields = HasQuantityUneditableFields &
   HasLocationUneditableFields &
-  ResultUneditableFields & {
+  InventoryBaseRecordUneditableFields & {
     sample: Sample;
   };
 

@@ -95,7 +95,7 @@ export type InventoryBaseRecordEditableFields = {
   ...
 };
 
-export type ResultUneditableFields = {
+export type InventoryBaseRecordUneditableFields = {
   owner: ?Person,
   ...
 };
@@ -129,7 +129,7 @@ declare export default class InventoryBaseRecord
     InventoryRecord,
     AdjustableTableRow<string>,
     HasEditableFields<InventoryBaseRecordEditableFields>,
-    HasUneditableFields<ResultUneditableFields>
+    HasUneditableFields<InventoryBaseRecordUneditableFields>
 {
   loading: boolean;
   editing: boolean;
@@ -270,9 +270,9 @@ declare export default class InventoryBaseRecord
   get canNavigateToChildren(): boolean;
   get illustration(): Node;
   cancel(): Promise<void>;
-  get fieldValues(): InventoryBaseRecordEditableFields & ResultUneditableFields;
+  get fieldValues(): InventoryBaseRecordEditableFields & InventoryBaseRecordUneditableFields;
   get supportsBatchEditing(): boolean;
-  get noValueLabel(): {[key in keyof InventoryBaseRecordEditableFields]: ?string} & {[key in keyof ResultUneditableFields]: ?string};
+  get noValueLabel(): {[key in keyof InventoryBaseRecordEditableFields]: ?string} & {[key in keyof InventoryBaseRecordUneditableFields]: ?string};
   refreshAssociatedSearch(): void;
   updateBecauseRecordsChanged(recordIds: Set<GlobalId>): void;
   showTopLinkInBreadcrumbs(): boolean;

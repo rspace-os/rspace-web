@@ -14,7 +14,7 @@ import {
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
 import { GlobalId } from "../definitions/BaseRecord";
-import InventoryBaseRecord, { InventoryBaseRecordEditableFields, ResultUneditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, { InventoryBaseRecordEditableFields, InventoryBaseRecordUneditableFields } from "./InventoryBaseRecord";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -92,7 +92,7 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Inventory
     }
 
     get fieldValues(): InventoryBaseRecordEditableFields &
-      ResultUneditableFields &
+      InventoryBaseRecordUneditableFields &
       HasLocationEditableFields &
       HasLocationUneditableFields {
       return {
@@ -108,7 +108,7 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Inventory
     } & {
       [key in keyof InventoryBaseRecordEditableFields]: string | null;
     } & {
-      [key in keyof ResultUneditableFields]: string | null;
+      [key in keyof InventoryBaseRecordUneditableFields]: string | null;
     } {
       return {
         ...super.noValueLabel,

@@ -46,7 +46,7 @@ import {
   defaultVisibleResultFields,
   defaultEditableResultFields,
   type InventoryBaseRecordEditableFields,
-  type ResultUneditableFields
+  type InventoryBaseRecordUneditableFields
 } from "./InventoryBaseRecord";
 import React, { type Node } from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
@@ -71,7 +71,7 @@ import { type UnitCategory } from "../stores/UnitStore";
 
 type SubSampleEditableFields = HasQuantityEditableFields & InventoryBaseRecordEditableFields & HasLocationEditableFields;
 
-type SubSampleUneditableFields = HasQuantityUneditableFields & ResultUneditableFields & HasLocationUneditableFields & {
+type SubSampleUneditableFields = HasQuantityUneditableFields & InventoryBaseRecordUneditableFields & HasLocationUneditableFields & {
   sample: Sample,
 };
 

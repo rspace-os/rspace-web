@@ -110,7 +110,7 @@ export type InventoryBaseRecordEditableFields = {
   identifiers: Array<Identifier>;
 };
 
-export type ResultUneditableFields = {
+export type InventoryBaseRecordUneditableFields = {
   owner: Person | null;
 };
 
@@ -219,7 +219,7 @@ export default class InventoryBaseRecord
     InventoryRecord,
     AdjustableTableRow<string>,
     HasEditableFields<InventoryBaseRecordEditableFields>,
-    HasUneditableFields<ResultUneditableFields>
+    HasUneditableFields<InventoryBaseRecordUneditableFields>
 {
   loading: boolean = false;
   editing: boolean = false;
@@ -1732,7 +1732,7 @@ export default class InventoryBaseRecord
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
-  get fieldValues(): InventoryBaseRecordEditableFields & ResultUneditableFields {
+  get fieldValues(): InventoryBaseRecordEditableFields & InventoryBaseRecordUneditableFields {
     return {
       name: this.name,
       description: this.description,
@@ -1753,7 +1753,7 @@ export default class InventoryBaseRecord
 
   //eslint-disable-next-line no-unused-vars
   get noValueLabel(): { [key in keyof InventoryBaseRecordEditableFields]: string | null } & {
-    [key in keyof ResultUneditableFields]: string | null;
+    [key in keyof InventoryBaseRecordUneditableFields]: string | null;
   } {
     return {
       name: null,

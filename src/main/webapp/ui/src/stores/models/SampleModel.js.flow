@@ -77,7 +77,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 import * as ArrayUtils  from "../../util/ArrayUtils";
-import InventoryBaseRecord, { type InventoryBaseRecordEditableFields, type ResultUneditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, { type InventoryBaseRecordEditableFields, type InventoryBaseRecordUneditableFields } from "./InventoryBaseRecord";
 import { type UnitCategory } from "../stores/UnitStore";
 
 type SampleEditableFields = HasQuantityEditableFields & InventoryBaseRecordEditableFields & {
@@ -88,7 +88,7 @@ type SampleEditableFields = HasQuantityEditableFields & InventoryBaseRecordEdita
   subSampleAlias: Alias,
 };
 
-type SampleUneditableFields = HasQuantityUneditableFields & ResultUneditableFields;
+type SampleUneditableFields = HasQuantityUneditableFields & InventoryBaseRecordUneditableFields;
 
 export type SubSampleTargetLocation = {
   containerId: Id,
