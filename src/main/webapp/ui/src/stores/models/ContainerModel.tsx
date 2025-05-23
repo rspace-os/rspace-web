@@ -50,7 +50,7 @@ import InventoryBaseRecord, {
   defaultVisibleResultFields,
   defaultEditableResultFields,
   RESULT_FIELDS,
-  type ResultEditableFields,
+  type InventoryBaseRecordEditableFields,
   type ResultUneditableFields,
 } from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
@@ -90,7 +90,7 @@ import {
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
 
-type ContainerEditableFields = ResultEditableFields & HasLocationEditableFields;
+type ContainerEditableFields = InventoryBaseRecordEditableFields & HasLocationEditableFields;
 
 type ContainerUneditableFields = ResultUneditableFields &
   HasLocationUneditableFields;

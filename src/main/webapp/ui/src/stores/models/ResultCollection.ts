@@ -1,4 +1,4 @@
-import InventoryBaseRecord, { type ResultEditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, { type InventoryBaseRecordEditableFields } from "./InventoryBaseRecord";
 import { action, observable, makeObservable, computed, override } from "mobx";
 import { match } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -28,7 +28,7 @@ export const formatIndex = (index: number, numOfRecords: number): string => {
 };
 
 export type ResultCollectionEditableFields = Omit<
-  ResultEditableFields,
+  InventoryBaseRecordEditableFields,
   "name" | "identifiers"
 > & {
   name: BatchName;

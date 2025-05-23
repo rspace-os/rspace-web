@@ -23,7 +23,7 @@ import InventoryBaseRecord, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
-  ResultEditableFields,
+  InventoryBaseRecordEditableFields,
   ResultUneditableFields,
 } from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
@@ -87,7 +87,7 @@ import { SubSample } from "../definitions/SubSample";
 import { HasQuantityMixin } from "../models/HasQuantity";
 
 type SampleEditableFields = HasQuantityEditableFields &
-  ResultEditableFields & {
+  InventoryBaseRecordEditableFields & {
     expiryDate: string | null;
     sampleSource: SampleSource;
     storageTempMin: Temperature | null;

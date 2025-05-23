@@ -8,7 +8,7 @@ import {
 import * as Parsers from "../../util/parsers";
 import { Factory } from "../definitions/Factory";
 import { type UnitCategory } from "../stores/UnitStore";
-import InventoryBaseRecord, { ResultEditableFields, ResultUneditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, { InventoryBaseRecordEditableFields, ResultUneditableFields } from "./InventoryBaseRecord";
 import { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
 import { Optional } from "../../util/optional";
@@ -82,7 +82,7 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
       return options;
     }
 
-    get fieldValues(): ResultEditableFields &
+    get fieldValues(): InventoryBaseRecordEditableFields &
       ResultUneditableFields &
       HasQuantityEditableFields &
       HasQuantityUneditableFields {
@@ -97,7 +97,7 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
     } & {
       [key in keyof HasQuantityUneditableFields]: string | null;
     } & {
-      [key in keyof ResultEditableFields]: string | null;
+      [key in keyof InventoryBaseRecordEditableFields]: string | null;
     } & {
       [key in keyof ResultUneditableFields]: string | null;
     } {

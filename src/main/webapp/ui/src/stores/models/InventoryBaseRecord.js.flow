@@ -82,7 +82,7 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 
-export type ResultEditableFields = {
+export type InventoryBaseRecordEditableFields = {
   description: ?string,
   name: string,
   tags: Array<Tag>,
@@ -128,7 +128,7 @@ declare export default class InventoryBaseRecord
   implements
     InventoryRecord,
     AdjustableTableRow<string>,
-    HasEditableFields<ResultEditableFields>,
+    HasEditableFields<InventoryBaseRecordEditableFields>,
     HasUneditableFields<ResultUneditableFields>
 {
   loading: boolean;
@@ -136,16 +136,16 @@ declare export default class InventoryBaseRecord
   id: ?Id;
   globalId: ?GlobalId;
   type: ApiRecordType;
-  name: ResultEditableFields["name"];
-  description: ResultEditableFields["description"];
+  name: InventoryBaseRecordEditableFields["name"];
+  description: InventoryBaseRecordEditableFields["description"];
   selected: boolean;
   infoLoaded: boolean;
   extraFields: Array<ExtraField>;
   currentlyVisibleFields: Set<string>;
   currentlyEditableFields: Set<string>;
-  image: ResultEditableFields["image"];
+  image: InventoryBaseRecordEditableFields["image"];
   thumbnail: Thumbnail;
-  tags: ResultEditableFields["tags"];
+  tags: InventoryBaseRecordEditableFields["tags"];
   scopedToasts: Array<Alert>;
   created: string;
   lastModified: string;
@@ -159,7 +159,7 @@ declare export default class InventoryBaseRecord
   lockExpired: boolean;
   expiryCheckInterval: IntervalID;
   permittedActions: Set<Action>;
-  newBase64Image: ResultEditableFields["newBase64Image"];
+  newBase64Image: InventoryBaseRecordEditableFields["newBase64Image"];
   attachments: Array<Attachment>;
   identifiers: Array<Identifier>;
   iconId: ?number;
@@ -270,9 +270,9 @@ declare export default class InventoryBaseRecord
   get canNavigateToChildren(): boolean;
   get illustration(): Node;
   cancel(): Promise<void>;
-  get fieldValues(): ResultEditableFields & ResultUneditableFields;
+  get fieldValues(): InventoryBaseRecordEditableFields & ResultUneditableFields;
   get supportsBatchEditing(): boolean;
-  get noValueLabel(): {[key in keyof ResultEditableFields]: ?string} & {[key in keyof ResultUneditableFields]: ?string};
+  get noValueLabel(): {[key in keyof InventoryBaseRecordEditableFields]: ?string} & {[key in keyof ResultUneditableFields]: ?string};
   refreshAssociatedSearch(): void;
   updateBecauseRecordsChanged(recordIds: Set<GlobalId>): void;
   showTopLinkInBreadcrumbs(): boolean;
