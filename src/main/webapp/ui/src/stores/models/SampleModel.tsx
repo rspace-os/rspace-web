@@ -19,7 +19,7 @@ import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import getRootStore from "../stores/RootStore";
 import { mkAlert } from "../contexts/Alert";
 import Search from "./Search";
-import Result, {
+import InventoryBaseRecord, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
@@ -201,7 +201,7 @@ const defaultEditableFields: Set<string> = new Set([
 export { defaultEditableFields as defaultEditableSampleFields };
 
 export default class SampleModel
-  extends HasQuantityMixin(Result)
+  extends HasQuantityMixin(InventoryBaseRecord)
   implements
     Sample,
     HasEditableFields<SampleEditableFields>,

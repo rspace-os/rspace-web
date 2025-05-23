@@ -1,6 +1,6 @@
 //@flow
 
-import Result, { type ResultEditableFields } from "./InventoryBaseRecord";
+import InventoryBaseRecord, { type ResultEditableFields } from "./InventoryBaseRecord";
 import { action, observable, makeObservable, computed, override } from "mobx";
 import { match } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -26,7 +26,7 @@ export type ResultCollectionEditableFields = {
   ...
 };
 
-declare export default class ResultCollection<ResultSubtype: Result> {
+declare export default class ResultCollection<ResultSubtype: InventoryBaseRecord> {
   records: RsSet<ResultSubtype>;
   name: BatchName;
   sharedWith: Array<SharedWithGroup>;
@@ -42,10 +42,10 @@ declare export default class ResultCollection<ResultSubtype: Result> {
 }
 
 declare export class MixedResultCollection
-  extends ResultCollection<Result>
+  extends ResultCollection<InventoryBaseRecord>
   implements HasEditableFields<ResultCollectionEditableFields>
 {
-  constructor(records: RsSet<Result>): MixedResultCollection;
+  constructor(records: RsSet<InventoryBaseRecord>): MixedResultCollection;
   get fieldValues(): { ...ResultCollectionEditableFields };
   get noValueLabel(): {[key in keyof ResultCollectionEditableFields]: ?string};
   setFieldsDirty(newFieldValues: {}): void;

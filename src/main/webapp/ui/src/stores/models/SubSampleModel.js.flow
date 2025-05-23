@@ -21,7 +21,7 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import Result from "./InventoryBaseRecord";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import {
   getValue,
   getUnitId,
@@ -117,7 +117,7 @@ export type SubSampleAttrs = {|
 |};
 
 declare export default class SubSampleModel
-  extends Result
+  extends InventoryBaseRecord
   implements
     SubSample,
     HasEditableFields<SubSampleEditableFields>,

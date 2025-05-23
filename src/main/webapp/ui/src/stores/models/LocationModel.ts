@@ -1,6 +1,6 @@
 import getRootStore from "../stores/RootStore";
 import ContainerModel from "./ContainerModel";
-import Result from "./InventoryBaseRecord";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import SubSampleModel from "./SubSampleModel";
 import { action, computed, observable, makeObservable } from "mobx";
 import { type Location, type Container } from "../definitions/Container";
@@ -81,7 +81,7 @@ export default class LocationModel implements Location {
     }
     // search inside container is not being performed i.e. move or create dialogs
     return (
-      this.content instanceof Result && search.alwaysFilterOut(this.content)
+      this.content instanceof InventoryBaseRecord && search.alwaysFilterOut(this.content)
     );
   }
 

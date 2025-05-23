@@ -1,6 +1,6 @@
 import { computed, makeObservable, observable, override } from "mobx";
 import getRootStore from "../stores/RootStore";
-import Result, {
+import InventoryBaseRecord, {
   type ResultEditableFields,
   type ResultUneditableFields,
 } from "./InventoryBaseRecord";
@@ -36,7 +36,7 @@ export const getLabel = (q: Quantity | null): string =>
   q ? `${getValue(q)} ${getQuantityUnitLabel(q)}` : "";
 
 export default class HasQuantity
-  extends Result
+  extends InventoryBaseRecord
   implements
     HasEditableFields<HasQuantityEditableFields>,
     HasUneditableFields<HasQuantityUneditableFields>
