@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  useState,
-  useEffect,
-  type Node,
-  type ComponentType,
-} from "react";
+import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
@@ -16,7 +9,7 @@ import Alert from "@mui/material/Alert";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Grid from "@mui/material/Grid";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import useStores from "../../../stores/use-stores";
@@ -29,20 +22,20 @@ import {
   getSavedGlobalId,
 } from "../../../stores/definitions/BaseRecord";
 
-type AddToBasketDialogArgs = {|
-  openAddToBasketDialog: boolean,
-  setOpenAddToBasketDialog: (boolean) => void,
+type AddToBasketDialogArgs = {
+  openAddToBasketDialog: boolean;
+  setOpenAddToBasketDialog: (newOpen: boolean) => void;
   /* n/a for non context menus cases */
-  closeMenu?: () => void,
-  selectedResults: Array<InventoryRecord>,
-|};
+  closeMenu?: () => void;
+  selectedResults: Array<InventoryRecord>;
+};
 
 function AddToBasketDialog({
   openAddToBasketDialog,
   setOpenAddToBasketDialog,
   selectedResults,
   closeMenu,
-}: AddToBasketDialogArgs): Node {
+}: AddToBasketDialogArgs): React.ReactNode {
   const { searchStore } = useStores();
 
   const [targetBaskets, setTargetBaskets] = useState<Array<Basket>>([
@@ -106,15 +99,20 @@ function AddToBasketDialog({
               <InputLabel id={basketSelectorLabel}>Choose a Basket</InputLabel>
               <Select
                 labelId={basketSelectorLabel}
-                value={targetBasket}
-                onChange={({ target: { value } }) => {
-                  setTargetBasket(value);
+                value={`${targetBasket.id ?? undefined}`}
+                onChange={(event: SelectChangeEvent<string>) => {
+                  const selectedBasket = targetBaskets.find(
+                    (b) => `${b.id}` === event.target.value
+                  );
+                  if (selectedBasket) {
+                    setTargetBasket(selectedBasket);
+                  }
                 }}
                 label="Choose a Basket"
                 size="small"
               >
                 {targetBaskets.map((basket) => (
-                  <MenuItem key={basket.id} value={basket}>
+                  <MenuItem key={basket.id} value={`${basket.id}`}>
                     {basket.name}
                   </MenuItem>
                 ))}
@@ -171,6 +169,4 @@ function AddToBasketDialog({
   );
 }
 
-export default (observer(
-  AddToBasketDialog
-): ComponentType<AddToBasketDialogArgs>);
+export default observer(AddToBasketDialog);
