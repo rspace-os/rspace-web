@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType, useId, useContext } from "react";
+import React, { useId, useContext } from "react";
 import { Observer } from "mobx-react-lite";
 import Grid from "@mui/material/Grid";
 import Collapse from "@mui/material/Collapse";
@@ -32,17 +30,20 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type StepperPanelArgs = {|
-  title: Node,
-  sectionName: string,
-  children: Node,
-  formSectionError?: FormSectionError,
-  recordType: AllowedFormTypes,
-  icon?: string,
-  thickBorder?: boolean,
-|};
+type StepperPanelArgs = {
+  title: React.ReactNode;
+  sectionName: string;
+  children: React.ReactNode;
+  formSectionError?: FormSectionError;
+  recordType: AllowedFormTypes;
+  icon?: string;
+  thickBorder?: boolean;
+};
 
-const StepperPanel: ComponentType<StepperPanelArgs> = React.forwardRef(
+const StepperPanel = React.forwardRef<
+  React.ElementRef<typeof Grid>,
+  StepperPanelArgs
+>(
   (
     {
       title,
@@ -52,7 +53,7 @@ const StepperPanel: ComponentType<StepperPanelArgs> = React.forwardRef(
       recordType,
       icon,
       thickBorder,
-    }: StepperPanelArgs,
+    },
     ref
   ) => {
     const { classes } = useStyles();
@@ -61,8 +62,6 @@ const StepperPanel: ComponentType<StepperPanelArgs> = React.forwardRef(
     const formSectionContext = useContext(FormSectionsContext);
     if (!formSectionContext)
       throw new Error("FormSectionContext is required by StepperPanel");
-    const { isExpanded, setExpanded } = formSectionContext;
-
     return (
       <Observer>
         {() => (
@@ -77,9 +76,9 @@ const StepperPanel: ComponentType<StepperPanelArgs> = React.forwardRef(
             <Grid item>
               <StepperPanelHeader
                 onToggle={(value) =>
-                  setExpanded(recordType, sectionName, value)
+                  formSectionContext.setExpanded(recordType, sectionName, value)
                 }
-                open={isExpanded(recordType, sectionName)}
+                open={formSectionContext.isExpanded(recordType, sectionName)}
                 title={title}
                 formSectionError={formSectionError}
                 id={headingId}
@@ -88,7 +87,7 @@ const StepperPanel: ComponentType<StepperPanelArgs> = React.forwardRef(
               />
             </Grid>
             <Collapse
-              in={isExpanded(recordType, sectionName)}
+              in={formSectionContext.isExpanded(recordType, sectionName)}
               className={classes.collapse}
             >
               <Box p={2} pt={1}>
