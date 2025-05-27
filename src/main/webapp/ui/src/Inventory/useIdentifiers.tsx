@@ -4,6 +4,7 @@ import useOauthToken from "../common/useOauthToken";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
+import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
 
 /**
  * The definition of an identifier, as returned by the API. Do note that this
@@ -55,6 +56,14 @@ export function useIdentifiers(): {
    * Make a DELETE request to /identifiers/{id} to delete a number of identifiers.
    */
   deleteIdentifiers: (identifiers: Set<Identifier>) => Promise<void>;
+  /*
+   * Make a POST request to /identifiers/{id}/assign to assign an unassigned
+   * identifier to an existing Inventory record.
+   */
+  assignIdentifier: (
+    identifier: Identifier,
+    record: InventoryRecord
+  ) => Promise<void>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -257,7 +266,42 @@ export function useIdentifiers(): {
     }
   }
 
-  return { getIdentifiers, bulkRegister, deleteIdentifiers };
+  async function assignIdentifier(
+    identifier: Identifier,
+    record: InventoryRecord
+  ) {
+    try {
+      const token = await getToken();
+      await axios.post<unknown>(
+        `/api/inventory/v1/identifiers/${identifier.id}/assign`,
+        { parentGlobalId: record.globalId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      addAlert(
+        mkAlert({
+          variant: "success",
+          message: `Successfully assigned ${identifier.doi} to ${record.globalId}`,
+        })
+      );
+    } catch (e) {
+      if (e instanceof Error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error assgning identifier",
+            message: getErrorMessage(e).elseThrow(),
+          })
+        );
+        throw e;
+      }
+    }
+  }
+
+  return { getIdentifiers, bulkRegister, deleteIdentifiers, assignIdentifier };
 }
 
 /**
