@@ -52,3 +52,31 @@ export function SingularSelectionIgsnTable() {
     </StyledEngineProvider>
   );
 }
+
+export function IgsnTableWithControlDefaults() {
+  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
+    new RsSet([])
+  );
+  return (
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={materialTheme}>
+        <h1>IGSN Table with Control Defaults</h1>
+        <IgsnTable
+          selectedIgsns={selectedIgsns}
+          setSelectedIgsns={setSelectedIgsns}
+          controlDefaults={{
+            state: "draft",
+            isAssociated: false,
+            searchTerm: "test",
+          }}
+        />
+        <h2>Selected IGSNs</h2>
+        <ul aria-label="selected IGSNs">
+          {[...selectedIgsns].map((igsn) => (
+            <li key={igsn.id}>{igsn.doi}</li>
+          ))}
+        </ul>
+      </ThemeProvider>
+    </StyledEngineProvider>
+  );
+}
