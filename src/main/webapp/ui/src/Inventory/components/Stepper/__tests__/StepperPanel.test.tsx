@@ -1,19 +1,16 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React, { useState } from "react";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import StepperPanel from "../StepperPanel";
 import "../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import SynchroniseFormSections from "../SynchroniseFormSections";
-import FormSectionsContext, {
-  type AllowedFormTypes,
-} from "../../../../stores/contexts/FormSections";
+import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../common/InvApiService", () => {});
@@ -68,7 +65,7 @@ describe("StepperPanel", () => {
   describe("Expands and collapses properly", () => {
     test("Expand button works correctly", async () => {
       const user = userEvent.setup();
-      const setExpanded = jest.fn<[AllowedFormTypes, string, boolean], void>();
+      const setExpanded = jest.fn();
       render(
         <ThemeProvider theme={materialTheme}>
           <FormSectionsContext.Provider
@@ -90,7 +87,7 @@ describe("StepperPanel", () => {
     });
     test("Collapse button works correctly", async () => {
       const user = userEvent.setup();
-      const setExpanded = jest.fn<[AllowedFormTypes, string, boolean], void>();
+      const setExpanded = jest.fn();
       render(
         <ThemeProvider theme={materialTheme}>
           <FormSectionsContext.Provider
@@ -117,8 +114,8 @@ describe("StepperPanel", () => {
       setAllExpanded,
       openInit,
     }: {
-      setAllExpanded: (string, boolean) => void,
-      openInit: boolean,
+      setAllExpanded: (recordType: string, newValue: boolean) => void;
+      openInit: boolean;
     }) {
       const [open, setOpen] = useState(openInit);
       return (
@@ -142,7 +139,7 @@ describe("StepperPanel", () => {
 
     test("Collapse all", async () => {
       const user = userEvent.setup();
-      const setAllExpanded = jest.fn<[string, boolean], void>();
+      const setAllExpanded = jest.fn();
       render(<TestComponent setAllExpanded={setAllExpanded} openInit={true} />);
 
       await user.click(screen.getByLabelText("Collapse section"));
@@ -151,7 +148,7 @@ describe("StepperPanel", () => {
     });
     test("Expand all", async () => {
       const user = userEvent.setup();
-      const setAllExpanded = jest.fn<[string, boolean], void>();
+      const setAllExpanded = jest.fn();
       render(
         <TestComponent setAllExpanded={setAllExpanded} openInit={false} />
       );
