@@ -44,6 +44,7 @@ function Template(): Node {
   };
 
   const template = activeResult.template;
+  if (!(template === null || template instanceof TemplateModel)) throw new Error("Template is not a TemplateModel");
   return (
     <>
       <InputWrapper

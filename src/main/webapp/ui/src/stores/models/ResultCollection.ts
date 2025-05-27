@@ -29,7 +29,7 @@ export const formatIndex = (index: number, numOfRecords: number): string => {
 
 export type ResultCollectionEditableFields = Omit<
   ResultEditableFields,
-  "name"
+  "name" | "identifiers"
 > & {
   name: BatchName;
 };

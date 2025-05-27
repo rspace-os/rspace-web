@@ -1,7 +1,8 @@
 import React from "react";
 import { withStyles } from "Styles";
+import { type emptyObject } from "../../../../util/types";
 
-const Sample = withStyles<Record<string, never>, { svg: string }>(() => ({
+const Sample = withStyles<emptyObject, { svg: string }>(() => ({
   svg: {
     height: 83,
     opacity: 0.7,

@@ -5,6 +5,8 @@ import Result from "./result";
  * Some general purpose type definitions.
  */
 
+export type emptyObject = Record<string, never>;
+
 /*
  * For adding optional type definitions to invocations of `useState`
  * Usage:

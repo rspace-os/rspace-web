@@ -107,6 +107,7 @@ export type ResultEditableFields = {
   barcodes: Array<BarcodeRecord>;
   sharingMode: SharingMode;
   sharedWith: Array<SharedWithGroup> | null;
+  identifiers: Array<Identifier>;
 };
 
 export type ResultUneditableFields = {
@@ -245,7 +246,7 @@ export default class Result
   // @ts-expect-error modifiedByFullName is initialised by populateFromJson
   modifiedByFullName: string;
   // @ts-expect-error owner is initialised by populateFromJson
-  owner: ?Person;
+  owner: Person | null;
   deleted: boolean = false;
   // @ts-expect-error _links is initialised by populateFromJson
   _links: { [_: string]: URLType };
@@ -1741,6 +1742,7 @@ export default class Result
       owner: this.owner,
       sharingMode: this.sharingMode,
       sharedWith: this.sharedWith,
+      identifiers: this.identifiers,
     };
   }
 
@@ -1762,6 +1764,7 @@ export default class Result
       owner: null,
       sharingMode: null,
       sharedWith: null,
+      identifiers: null,
     };
   }
 
