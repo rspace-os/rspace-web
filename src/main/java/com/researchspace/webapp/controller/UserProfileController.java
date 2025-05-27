@@ -53,6 +53,7 @@ import com.researchspace.model.frontend.PublicOAuthApps;
 import com.researchspace.model.frontend.PublicOAuthConnAppInfo;
 import com.researchspace.model.frontend.PublicOAuthConnApps;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.PreferenceCategory;
@@ -860,10 +861,7 @@ public class UserProfileController extends BaseController {
             () ->
                 oAuthTokenManager
                     .createNewJwtToken(
-                        INVENTORY_CLIENT_ID,
-                        INVENTORY_CLIENT_SECRET,
-                        user,
-                        OAuthToken.DEFAULT_SCOPE)
+                        INVENTORY_CLIENT_ID, INVENTORY_CLIENT_SECRET, user, OAuthTokenType.UI_TOKEN)
                     .getEntity());
     NewOAuthTokenResponse createdToken = Try.ofCallable(updateWithRetry).get();
 

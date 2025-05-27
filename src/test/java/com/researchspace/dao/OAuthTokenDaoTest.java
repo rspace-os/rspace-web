@@ -5,9 +5,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
-import com.researchspace.auth.OAuthScopes;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -37,8 +37,12 @@ public class OAuthTokenDaoTest extends SpringTransactionalTest {
     assertEquals(
         validToken, tokenDao.findByAccessTokenHash(validToken.getHashedAccessToken()).get());
     assertThat(tokenDao.findByAccessTokenHash("missing hash"), equalTo(Optional.empty()));
-    assertThat(tokenDao.getToken(anyClientId, anyUser.getId()).isPresent(), Matchers.is(true));
-    assertThat(tokenDao.getToken("unknownClient", anyUser.getId()).isPresent(), Matchers.is(false));
+    assertThat(
+        tokenDao.getToken(anyClientId, anyUser.getId(), validToken.getTokenType()).isPresent(),
+        Matchers.is(true));
+    assertThat(
+        tokenDao.getToken("unknownClient", anyUser.getId(), validToken.getTokenType()).isPresent(),
+        Matchers.is(false));
   }
 
   @Test
@@ -70,14 +74,10 @@ public class OAuthTokenDaoTest extends SpringTransactionalTest {
   }
 
   private OAuthToken createValidOAuthToken(User user) {
-    OAuthToken token =
-        new OAuthToken(
-            user,
-            anyClientId,
-            RandomStringUtils.randomAlphabetic(64),
-            Instant.now().plus(1, ChronoUnit.DAYS));
+    OAuthToken token = new OAuthToken(user, anyClientId, OAuthTokenType.UI_TOKEN);
+    token.setHashedAccessToken(RandomStringUtils.randomAlphabetic(64));
+    token.setExpiryTime(Instant.now().plus(1, ChronoUnit.DAYS));
     token.setHashedRefreshToken(RandomStringUtils.randomAlphabetic(64));
-    token.setScope(OAuthScopes.SCOPE_ALL);
     return token;
   }
 }

@@ -1,11 +1,10 @@
 package com.researchspace.api.v1.controller;
 
-import static com.researchspace.auth.OAuthScopes.SCOPE_ALL;
-
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.model.User;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
@@ -159,9 +158,13 @@ public class OAuthClientController {
     }
     ServiceOperationResult<NewOAuthTokenResponse> response;
     if (isJwt) {
-      response = tokenManager.createNewJwtToken(clientId, clientSecret, subject, SCOPE_ALL);
+      response =
+          tokenManager.createNewJwtToken(
+              clientId, clientSecret, subject, OAuthTokenType.API_GENERATED_TOKEN);
     } else {
-      response = tokenManager.createNewToken(clientId, clientSecret, subject, SCOPE_ALL);
+      response =
+          tokenManager.createNewToken(
+              clientId, clientSecret, subject, OAuthTokenType.API_GENERATED_TOKEN);
     }
     if (!response.isSucceeded()) {
       throw new ApiAuthenticationException(response.getMessage());
