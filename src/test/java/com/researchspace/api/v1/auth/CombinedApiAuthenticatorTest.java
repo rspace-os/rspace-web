@@ -59,7 +59,7 @@ public class CombinedApiAuthenticatorTest {
     assertEquals(user, authenticatedUser);
 
     verifyNoInteractions(oAuthAuthenticator);
-    verify(analyticsManager, times(1)).apiAccessed(eq(user), eq(true), eq(mockRequest));
+    verify(analyticsManager, times(1)).apiAccessed(eq(user), eq(mockRequest));
   }
 
   private void setApiKeyHeader() {

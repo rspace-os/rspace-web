@@ -2,6 +2,7 @@ package com.researchspace.api.v1.auth;
 
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.model.User;
+import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.service.ApiAvailabilityHandler;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
@@ -42,13 +43,18 @@ public class CombinedApiAuthenticator implements ApiAuthenticator {
           throw new ApiAuthenticationException(
               String.format("Access to API has been disabled for user '%s'", user.getUsername()));
         }
-        analyticsMgr.apiAccessed(user, true, request);
+        user.setAuthenticatedBy(UserAuthenticationMethod.API_KEY);
+        analyticsMgr.apiAccessed(user, request);
       }
       return user;
     }
 
     if (StringUtils.isNotEmpty(request.getHeader("Authorization"))) {
-      return oAuthAuthenticator.authenticate(request);
+      User user = oAuthAuthenticator.authenticate(request);
+      if (UserAuthenticationMethod.API_OAUTH_TOKEN.equals(user.getAuthenticatedBy())) {
+        analyticsMgr.apiAccessed(user, request);
+      }
+      return user;
     }
 
     throw new ApiAuthenticationException(

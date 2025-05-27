@@ -18,6 +18,7 @@ import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.core.RecordType;
@@ -323,15 +324,17 @@ public class AnalyticsManagerTest extends SpringTransactionalTest {
     MockHttpServletRequest mockRequest = new MockHttpServletRequest();
 
     mockRequest.setRequestURI("/api/inventory/v1/samples");
-    analyticsManager.apiAccessed(testUser, true, mockRequest);
+    testUser.setAuthenticatedBy(UserAuthenticationMethod.API_KEY);
+    analyticsManager.apiAccessed(testUser, mockRequest);
     assertEquals(expectedUserId, analyticsManagerImplTSS.userId);
     assertEquals("apiKeyUsed", analyticsManagerImplTSS.label);
     assertEquals("/api/inventory/v1/samples", analyticsManagerImplTSS.props.get("apiUri"));
 
     mockRequest.setRequestURI("/api/v1/documents");
-    analyticsManager.apiAccessed(testUser, false, mockRequest);
+    testUser.setAuthenticatedBy(UserAuthenticationMethod.API_OAUTH_TOKEN);
+    analyticsManager.apiAccessed(testUser, mockRequest);
     assertEquals(expectedUserId, analyticsManagerImplTSS.userId);
-    assertEquals("apiOAuthTokenGenerated", analyticsManagerImplTSS.label);
+    assertEquals("apiOAuthTokenUsed", analyticsManagerImplTSS.label);
     assertEquals("/api/v1/documents", analyticsManagerImplTSS.props.get("apiUri"));
   }
 

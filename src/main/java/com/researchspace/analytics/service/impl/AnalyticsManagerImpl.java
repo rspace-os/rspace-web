@@ -15,6 +15,7 @@ import com.researchspace.licensews.LicenseServerUnavailableException;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.core.Person;
 import com.researchspace.model.core.RecordType;
@@ -211,7 +212,7 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
   }
 
   @Override
-  public void apiAccessed(User user, boolean apiKeyUsage, HttpServletRequest req) {
+  public void apiAccessed(User user, HttpServletRequest req) {
     String userId = returnIfUserNull(user, "ignoring api used event");
     if (userId == null) {
       return;
@@ -221,7 +222,9 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
     props.put(AnalyticsProperty.API_METHOD.getLabel(), req.getMethod());
     props.put(AnalyticsProperty.API_URI.getLabel(), requestURI);
     AnalyticsEvent event =
-        apiKeyUsage ? AnalyticsEvent.API_KEY_USAGE : AnalyticsEvent.API_OAUTH_TOKEN_GENERATION;
+        UserAuthenticationMethod.API_KEY.equals(user.getAuthenticatedBy())
+            ? AnalyticsEvent.API_KEY_USAGE
+            : AnalyticsEvent.API_OAUTH_TOKEN_USAGE;
     track(userId, event.getLabel(), props);
   }
 

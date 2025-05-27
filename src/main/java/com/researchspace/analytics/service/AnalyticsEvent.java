@@ -37,7 +37,7 @@ public enum AnalyticsEvent {
   /** API call invoked */
   API_KEY_USAGE("apiKeyUsed"),
 
-  API_OAUTH_TOKEN_GENERATION("apiOAuthTokenGenerated"),
+  API_OAUTH_TOKEN_USAGE("apiOAuthTokenUsed"),
 
   /** Slack feature call invoked */
   SLACK_USED("slackUsed"),
