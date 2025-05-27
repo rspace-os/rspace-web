@@ -237,7 +237,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     OAuthAppInfo app = appManager.addApp(user, RandomStringUtils.randomAlphabetic(10)).getEntity();
 
     tokenManager.createNewToken(
-        app.getClientId(), app.getUnhashedClientSecret(), user, OAuthTokenType.UI_TOKEN);
+        app.getClientId(), app.getUnhashedClientSecret(), user, OAuthTokenType.API_GENERATED_TOKEN);
     assertEquals(1, tokenManager.getTokensForUser(user).size());
 
     ServiceOperationResult<OAuthToken> tokenRemovedResult =
