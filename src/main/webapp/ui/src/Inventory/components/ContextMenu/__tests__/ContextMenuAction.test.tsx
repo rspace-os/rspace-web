@@ -1,9 +1,8 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
-import React, { type Node } from "react";
+import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ContextMenuAction from "../ContextMenuAction";
@@ -19,25 +18,25 @@ function OuterComponent({
   onKeyDown,
   children,
 }: {
-  onKeyDown: () => void,
-  children: Node,
+  onKeyDown: () => void;
+  children: React.ReactNode;
 }) {
   return <div onKeyDown={onKeyDown}>{children}</div>;
 }
 
-function InnerComponent(_: {||}) {
+function InnerComponent() {
   return <input />;
 }
 
 describe("ContextMenuAction", () => {
   test("When as a menuitem, keyDown events should not propagated through ContextMenuAction", async () => {
-    const onKeyDown = jest.fn<[], void>();
+    const onKeyDown = jest.fn();
     render(
       <OuterComponent onKeyDown={onKeyDown}>
         <ContextMenuAction
           as="menuitem"
           onClick={() => {}}
-          icon={null}
+          icon={<></>}
           label="Foo"
           disabledHelp=""
         >
@@ -60,7 +59,7 @@ describe("ContextMenuAction", () => {
           render(
             <ContextMenuAction
               as="menuitem"
-              icon={null}
+              icon={<></>}
               disabledHelp={disabledHelp}
               label="Foo"
               onClick={() => {}}
