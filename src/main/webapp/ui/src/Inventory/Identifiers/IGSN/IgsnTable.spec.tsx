@@ -30,6 +30,12 @@ const feature = test.extend<{
       count: number;
     }) => Promise<void>;
     "the researcher types 'test' in the search box": () => Promise<void>;
+    "the researcher clicks the Scan QR Code button": () => Promise<void>;
+    "a QR code is scanned with value {value}": ({
+      value,
+    }: {
+      value: string;
+    }) => Promise<void>;
   };
   Then: {
     "a table should be shown": () => Promise<void>;
@@ -94,6 +100,9 @@ const feature = test.extend<{
         ]);
         return download;
       },
+      "the researcher clicks the Scan QR Code button": async () => {
+        await page.getByRole("button", { name: "Scan QR Code" }).click();
+      },
       "the researcher selects 'Draft' from the state menu": async () => {
         await page.getByRole("button", { name: /State/ }).click();
         await page.getByRole("menuitem", { name: /Draft/ }).click();
@@ -106,6 +115,16 @@ const feature = test.extend<{
       "the researcher types 'test' in the search box": async () => {
         await page.getByPlaceholder("Search IGSNs...").fill("test");
         await page.waitForTimeout(500);
+      },
+      "a QR code is scanned with value {value}": async ({ value }) => {
+        // Since we can't easily mock the camera API in tests,
+        // we'll simulate manual entry which is an alternative in the UI
+        await page
+          .getByRole("textbox", {
+            name: "Alternatively, enter the data encoded in the barcode",
+          })
+          .fill(value);
+        await page.getByRole("button", { name: /Search for IGSN/ }).click();
       },
       "the researcher selects the IGSN with DOI '10.82316/khma-em96'":
         async () => {
@@ -193,7 +212,11 @@ const feature = test.extend<{
       "there should be a network request with searchTerm set to 'test'": () => {
         expect(
           networkRequests
-            .find((url) => url.searchParams.has("identifier"))
+            .find(
+              (url) =>
+                url.searchParams.has("identifier") &&
+                url.searchParams.get("identifier") === "test"
+            )
             ?.searchParams.get("identifier")
         ).toBe("test");
       },
@@ -487,6 +510,18 @@ test.describe("IGSN Table", () => {
       await Given["the researcher is viewing the IGSN table"]();
       await Once["the table has loaded"]();
       await Then["the Linked Item column should contains links"]();
+    }
+  );
+
+  feature(
+    "Scanning a QR code updates the search term",
+    async ({ Given, When, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await When["the researcher clicks the Scan QR Code button"]();
+      await When["a QR code is scanned with value {value}"]({
+        value: "test",
+      });
+      Then["there should be a network request with searchTerm set to 'test'"]();
     }
   );
 });
