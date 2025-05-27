@@ -1,5 +1,4 @@
-// @flow
-import React, { type Node } from "react";
+import React from "react";
 import Alert from "@mui/material/Alert";
 import { type ReadAccessLevel } from "../../stores/definitions/Record";
 import { type Person } from "../../stores/definitions/Person";
@@ -13,16 +12,16 @@ export default function LimitedAccessAlert({
   readAccessLevel,
   owner,
   whatLabel,
-}: {|
+}: {
   /**
    * The level of access that the user has to the Record in question.
    */
-  readAccessLevel: ReadAccessLevel,
+  readAccessLevel: ReadAccessLevel;
 
   /**
    * The owner of the Record in question.
    */
-  owner: Person,
+  owner: Person;
 
   /**
    * A label that describes the Record e.g.
@@ -31,8 +30,8 @@ export default function LimitedAccessAlert({
    *   - "subsample, and parent sample"
    * MUST be all lowercase as it will be inserted into a sentence.
    */
-  whatLabel: string,
-|}): Node {
+  whatLabel: string;
+}): React.ReactNode {
   if (readAccessLevel === "full") return null;
   return (
     <Alert severity="info">
