@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import { makeStyles } from "tss-react/mui";
@@ -22,11 +20,11 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type StepperActionsArgs = {|
-  onSubmit: () => void,
-|};
+type StepperActionsArgs = {
+  onSubmit: () => void;
+};
 
-function StepperActions({ onSubmit }: StepperActionsArgs): Node {
+function StepperActions({ onSubmit }: StepperActionsArgs): React.ReactNode {
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -47,4 +45,4 @@ function StepperActions({ onSubmit }: StepperActionsArgs): Node {
   );
 }
 
-export default (observer(StepperActions): ComponentType<StepperActionsArgs>);
+export default observer(StepperActions);
