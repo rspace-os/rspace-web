@@ -607,6 +607,9 @@ const AssignDialog = observer(
                 selectedIgsns={selectedIgsns}
                 setSelectedIgsns={setSelectedIgsns}
                 disableMultipleRowSelection
+                controlDefaults={{
+                  isAssociated: false,
+                }}
               />
             </Stack>
           </DialogContent>
@@ -632,9 +635,10 @@ const AssignDialog = observer(
               onClick={doNotAwait(async () => {
                 await selectedIgsns.only
                   .toResult(
-                    () => new Error(
-                      "Invalid state: zero or many identifiers are selected"
-                    )
+                    () =>
+                      new Error(
+                        "Invalid state: zero or many identifiers are selected"
+                      )
                   )
                   .doAsync((igsn) => assignIdentifier(igsn, recordToAssignTo));
                 await recordToAssignTo.fetchAdditionalInfo();

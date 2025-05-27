@@ -283,6 +283,7 @@ export default function IgsnTable({
   selectedIgsns,
   setSelectedIgsns,
   disableMultipleRowSelection = false,
+  controlDefaults,
 }: {
   /**
    * Whether multiple row selection is disabled. If true, only one identifier
@@ -304,12 +305,26 @@ export default function IgsnTable({
    * identifier.
    */
   setSelectedIgsns: (newlySelectedIgsns: RsSet<Identifier>) => void;
+
+  /**
+   * Default values for the table controls. If not provided, the controls will
+   * be initialized to their default values.
+   */
+  controlDefaults?: {
+    state?: "draft" | "findable" | "registered" | null;
+    isAssociated?: boolean | null;
+    searchTerm?: string | null;
+  };
 }): React.ReactNode {
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
-  >(null);
-  const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const [searchTerm, setSearchTerm] = React.useState<string>("");
+  >(controlDefaults?.state ?? null);
+  const [isAssociated, setIsAssociated] = React.useState<boolean | null>(
+    controlDefaults?.isAssociated ?? null
+  );
+  const [searchTerm, setSearchTerm] = React.useState<string>(
+    controlDefaults?.searchTerm ?? ""
+  );
   const { identifiers, loading, refreshListing } = useIdentifiersListing({
     state,
     isAssociated,
