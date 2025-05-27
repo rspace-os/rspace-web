@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React, { useEffect, useContext } from "react";
 import { render, cleanup } from "@testing-library/react";
@@ -16,7 +15,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-function MockFormSectionInOuterContext(_: {||}) {
+function MockFormSectionInOuterContext() {
   const formSectionContext = useContext(FormSectionsContext);
   if (!formSectionContext)
     throw new Error("FormSectionContext is required by StepperPanel");
@@ -33,15 +32,18 @@ function MockFormSectionInOuterContext(_: {||}) {
 function MockFormSectionInInnerContext({
   onMountExpectFn,
 }: {
-  onMountExpectFn: ((RecordType, string) => boolean) => void,
+  onMountExpectFn: (
+    f: (recordType: RecordType, section: string) => boolean
+  ) => void;
 }) {
   const formSectionContext = useContext(FormSectionsContext);
   if (!formSectionContext)
     throw new Error("FormSectionContext is required by StepperPanel");
-  const { isExpanded } = formSectionContext;
 
   useEffect(() => {
-    onMountExpectFn(isExpanded);
+    onMountExpectFn((recordType, section) =>
+      formSectionContext.isExpanded(recordType, section)
+    );
   }, []);
 
   return <></>;
@@ -49,7 +51,9 @@ function MockFormSectionInInnerContext({
 
 describe("SynchroniseFormSections", () => {
   test("Nesting SynchroniseFormSections should result in the inner one taking effect.", () => {
-    const onMountExpectFn = (isExpanded: (RecordType, string) => boolean) => {
+    const onMountExpectFn = (
+      isExpanded: (recordType: RecordType, section: string) => boolean
+    ) => {
       /*
        * ...but the inner context should still be saying that the form
        * section is open
