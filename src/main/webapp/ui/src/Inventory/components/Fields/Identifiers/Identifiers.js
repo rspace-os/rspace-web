@@ -58,7 +58,10 @@ import ValidatingSubmitButton, {
 } from "../../../../components/ValidatingSubmitButton";
 import IgsnTable from "../../../Identifiers/IGSN/IgsnTable";
 import RsSet from "../../../../util/set";
-import { type Identifier as IdentifierInTable } from "../../../useIdentifiers";
+import {
+  type Identifier as IdentifierInTable,
+  useIdentifiers,
+} from "../../../useIdentifiers";
 
 const useStyles = makeStyles()((theme) => ({
   primary: {
@@ -570,7 +573,16 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
 );
 
 const AssignDialog = observer(
-  ({ open, onClose }: {| open: boolean, onClose: () => void |}): Node => {
+  ({
+    open,
+    onClose,
+    recordToAssignTo,
+  }: {|
+    open: boolean,
+    onClose: () => void,
+    recordToAssignTo: InventoryRecord,
+  |}): Node => {
+    const { assignIdentifier } = useIdentifiers();
     const [selectedIgsns, setSelectedIgsns] = React.useState<
       RsSet<IdentifierInTable>
     >(new RsSet([]));
@@ -617,7 +629,18 @@ const AssignDialog = observer(
                     )
                   : IsValid()
               }
-              onClick={doNotAwait(async () => {})}
+              onClick={doNotAwait(async () => {
+                await selectedIgsns.only
+                  .toResult(
+                    () => new Error(
+                      "Invalid state: zero or many identifiers are selected"
+                    )
+                  )
+                  .doAsync((igsn) => assignIdentifier(igsn, recordToAssignTo));
+                await recordToAssignTo.fetchAdditionalInfo();
+                setSelectedIgsns(new RsSet([]));
+                onClose();
+              })}
             >
               Assign
             </ValidatingSubmitButton>
@@ -661,6 +684,7 @@ const IdentifiersCard = observer((): Node => {
             Assign existing IGSN ID
           </Button>
           <AssignDialog
+            recordToAssignTo={activeResult}
             open={assignDialogOpen}
             onClose={() => setAssignDialogOpen(false)}
           />
