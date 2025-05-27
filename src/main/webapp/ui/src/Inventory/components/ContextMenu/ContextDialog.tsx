@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { makeStyles } from "tss-react/mui";
 import Dialog from "@mui/material/Dialog";
 import useStores from "../../../stores/use-stores";
@@ -13,13 +11,13 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type ContextDialogArgs = {|
-  children: Node,
-  open: boolean,
-  onClose: () => void,
-  maxWidth?: "xs" | "sm" | "lg",
-  fullWidth?: boolean,
-|};
+type ContextDialogArgs = {
+  children: React.ReactNode;
+  open: boolean;
+  onClose: () => void;
+  maxWidth?: "xs" | "sm" | "lg";
+  fullWidth?: boolean;
+};
 
 export default function ContextDialog({
   children,
@@ -27,14 +25,14 @@ export default function ContextDialog({
   onClose,
   maxWidth,
   fullWidth,
-}: ContextDialogArgs): Node {
+}: ContextDialogArgs): React.ReactNode {
   const { uiStore } = useStores();
   const { classes } = useStyles();
 
   return (
     <Dialog
       classes={{
-        paper: uiStore.isTouchDevice ? classes.dialog : null,
+        paper: uiStore.isTouchDevice ? classes.dialog : undefined,
       }}
       open={open}
       onClose={onClose}

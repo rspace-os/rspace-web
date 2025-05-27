@@ -1,0 +1,11 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function ContextDialog({|
+  children: Node,
+  open: boolean,
+  onClose: () => void,
+  maxWidth?: "xs" | "sm" | "lg",
+  fullWidth?: boolean,
+|}): Node;
