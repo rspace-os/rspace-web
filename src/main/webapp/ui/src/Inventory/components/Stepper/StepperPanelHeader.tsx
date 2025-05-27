@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Box from "@mui/material/Box";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import Grid from "@mui/material/Grid";
@@ -19,17 +17,17 @@ import { Heading } from "../../../components/DynamicHeadingLevel";
 import { useTheme } from "@mui/material/styles";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 
-export opaque type FormSectionError = [
+export type FormSectionError = [
   Set<string>,
-  (Set<string> | ((Set<string>) => Set<string>)) => void
+  React.Dispatch<React.SetStateAction<Set<string>>>
 ];
 
 export function useFormSectionError({
   editing,
   globalId,
 }: {
-  editing: boolean,
-  globalId: ?GlobalId,
+  editing: boolean;
+  globalId: GlobalId | null;
 }): FormSectionError {
   const [errors, setErrors] = useState<Set<string>>(new Set());
 
@@ -54,7 +52,10 @@ export function setFormSectionError(
   }
 }
 
-const useStyles = makeStyles()((theme, { error, recordType }) => ({
+const useStyles = makeStyles<{
+  error: boolean;
+  recordType: AllowedFormTypes;
+}>()((theme, { error, recordType }) => ({
   title: {
     wordBreak: "break-word",
     color: error ? theme.palette.error.main : "initial",
@@ -70,15 +71,15 @@ const useStyles = makeStyles()((theme, { error, recordType }) => ({
   },
 }));
 
-type StepperPanelHeaderArgs = {|
-  onToggle: (boolean) => void,
-  open: boolean,
-  title: Node,
-  formSectionError?: FormSectionError,
-  id: string,
-  recordType: AllowedFormTypes,
-  icon?: string,
-|};
+type StepperPanelHeaderArgs = {
+  onToggle: (newOpen: boolean) => void;
+  open: boolean;
+  title: React.ReactNode;
+  formSectionError?: FormSectionError;
+  id: string;
+  recordType: AllowedFormTypes;
+  icon?: string;
+};
 
 function StepperPanelHeader_({
   onToggle,
@@ -88,7 +89,7 @@ function StepperPanelHeader_({
   id,
   recordType,
   icon,
-}: StepperPanelHeaderArgs): Node {
+}: StepperPanelHeaderArgs): React.ReactNode {
   const numberInErrorState = formSectionError ? formSectionError[0].size : 0;
   const showErrorIndicator = numberInErrorState > 0 && !open;
   const { classes } = useStyles({ error: showErrorIndicator, recordType });
@@ -96,7 +97,6 @@ function StepperPanelHeader_({
   const formSectionContext = useContext(FormSectionsContext);
   if (!formSectionContext)
     throw new Error("FormSectionContext is required by StepperPanel");
-  const { setAllExpanded } = formSectionContext;
   const theme = useTheme();
 
   useEffect(() => {
@@ -161,7 +161,7 @@ function StepperPanelHeader_({
             <Chip
               label={open ? "Expand All" : "Collapse All"}
               onClick={preventEventBubbling(() => {
-                setAllExpanded(recordType, open);
+                formSectionContext.setAllExpanded(recordType, open);
               })}
             />
           </Slide>
@@ -171,6 +171,4 @@ function StepperPanelHeader_({
   );
 }
 
-export const StepperPanelHeader = (observer(
-  StepperPanelHeader_
-): typeof StepperPanelHeader_);
+export const StepperPanelHeader = observer(StepperPanelHeader_);
