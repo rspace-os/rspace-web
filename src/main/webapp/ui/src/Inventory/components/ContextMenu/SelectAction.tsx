@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type ComponentType, forwardRef } from "react";
+import React, { forwardRef } from "react";
 import ContextMenuAction, {
   type ContextMenuRenderOptions,
 } from "./ContextMenuAction";
@@ -11,10 +9,10 @@ import Badge from "@mui/material/Badge";
 import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 
-type SelectActionArgs = {|
-  as: ContextMenuRenderOptions,
-  disabled: string,
-  onSelectOptions?: Array<SplitButtonOption>,
+type SelectActionArgs = {
+  as: ContextMenuRenderOptions;
+  disabled: string;
+  onSelectOptions?: Array<SplitButtonOption>;
 
   /*
    * This has to be a ReadOnlyArray because test code will call this component
@@ -26,10 +24,13 @@ type SelectActionArgs = {|
    * such, we have to make this array read-only to demonstrate to Flow that we
    * don't instend to mutate the array inside this component.
    */
-  selectedResults: $ReadOnlyArray<InventoryRecord>,
-|};
+  selectedResults: ReadonlyArray<InventoryRecord>;
+};
 
-const SelectAction: ComponentType<SelectActionArgs> = forwardRef(
+const SelectAction = forwardRef<
+  React.ElementRef<typeof ContextMenuAction>,
+  SelectActionArgs
+>(
   (
     { as, disabled, onSelectOptions, selectedResults }: SelectActionArgs,
     ref
