@@ -15,6 +15,7 @@ const feature = test.extend<{
     "the researcher is viewing the IGSN table": () => Promise<void>;
     "the researcher is viewing the IGSN table with singular selection": () => Promise<void>;
     "the researcher is viewing the IGSN table with control defaults": () => Promise<void>;
+    "the researcher is viewing the IGSN table with no results": () => Promise<void>;
   };
   Once: {
     "the table has loaded": () => Promise<void>;
@@ -43,6 +44,7 @@ const feature = test.extend<{
     "there should be four rows": () => Promise<void>;
     "there should be a menu for changing column visibility": () => Promise<void>;
     "there should be a menu for exporting the IGSN table to CSV": () => Promise<void>;
+    "a 'No IGSN IDs' message should be displayed": () => Promise<void>;
     "{CSV} should have {count} rows": ({
       csv,
       count,
@@ -59,7 +61,7 @@ const feature = test.extend<{
   };
   networkRequests: Array<URL>;
 }>({
-  Given: async ({ mount }, use) => {
+  Given: async ({ mount, page }, use) => {
     await use({
       "the researcher is viewing the IGSN table": async () => {
         await mount(<SimpleIgsnTable />);
@@ -72,6 +74,20 @@ const feature = test.extend<{
         async () => {
           await mount(<IgsnTableWithControlDefaults />);
         },
+      "the researcher is viewing the IGSN table with no results": async () => {
+        // Intercept API requests and return an empty array
+        await page.route(
+          (url) => url.pathname === "/api/inventory/v1/identifiers",
+          async (route) => {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify([]),
+            });
+          }
+        );
+        await mount(<SimpleIgsnTable />);
+      },
     });
   },
   Once: async ({ page }, use) => {
@@ -274,6 +290,22 @@ const feature = test.extend<{
           // Assert that the cell contains a link
           expect(await link.count()).toBeGreaterThan(0);
         }
+      },
+      "a 'No IGSN IDs' message should be displayed": async () => {
+        // Verify the overlay message is displayed
+        await expect(
+          page.getByRole("grid").getByText("No IGSN IDs")
+        ).toBeVisible();
+
+        // Verify the grid has a header row but no data rows
+        const headerRow = page
+          .getByRole("row")
+          .filter({ has: page.getByRole("columnheader") });
+        await expect(headerRow).toBeVisible();
+
+        // Count should be 1 (just the header row)
+        const rowCount = await page.getByRole("row").count();
+        expect(rowCount).toBe(1);
       },
     });
   },
@@ -510,6 +542,15 @@ test.describe("IGSN Table", () => {
       await Given["the researcher is viewing the IGSN table"]();
       await Once["the table has loaded"]();
       await Then["the Linked Item column should contains links"]();
+    }
+  );
+
+  feature(
+    "When there are no results, a 'No IGSN IDs' message is displayed",
+    async ({ Given, Once, Then }) => {
+      await Given["the researcher is viewing the IGSN table with no results"]();
+      await Once["the table has loaded"]();
+      await Then["a 'No IGSN IDs' message should be displayed"]();
     }
   );
 
