@@ -292,7 +292,7 @@ export function useIdentifiers(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error assgning identifier",
+            title: "Error assigning identifier",
             message: getErrorMessage(e).elseThrow(),
           })
         );
