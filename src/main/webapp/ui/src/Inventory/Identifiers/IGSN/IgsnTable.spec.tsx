@@ -2,7 +2,11 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import { Download } from "playwright-core";
 import React from "react";
 import identifiersJson from "../../__tests__/identifiers.json";
-import { SimpleIgsnTable, SingularSelectionIgsnTable } from "./IgsnTable.story";
+import {
+  SimpleIgsnTable,
+  SingularSelectionIgsnTable,
+  IgsnTableWithControlDefaults,
+} from "./IgsnTable.story";
 import fs from "fs/promises";
 import * as Jwt from "jsonwebtoken";
 
@@ -10,6 +14,7 @@ const feature = test.extend<{
   Given: {
     "the researcher is viewing the IGSN table": () => Promise<void>;
     "the researcher is viewing the IGSN table with singular selection": () => Promise<void>;
+    "the researcher is viewing the IGSN table with control defaults": () => Promise<void>;
   };
   Once: {
     "the table has loaded": () => Promise<void>;
@@ -57,6 +62,10 @@ const feature = test.extend<{
         async () => {
           await mount(<SingularSelectionIgsnTable />);
         },
+      "the researcher is viewing the IGSN table with control defaults":
+        async () => {
+          await mount(<IgsnTableWithControlDefaults />);
+        },
     });
   },
   Once: async ({ page }, use) => {
@@ -64,7 +73,9 @@ const feature = test.extend<{
       "the table has loaded": async () => {
         await page.waitForFunction(() => {
           const rows = document.querySelectorAll('[role="row"]').length;
-          return rows > 1; // (1 is for the header row)
+          const noIgsnMessage =
+            document.body.textContent?.includes("No IGSN IDs");
+          return rows > 1 || noIgsnMessage; // (1 is for the header row) or empty state message
         });
       },
     });
@@ -441,6 +452,21 @@ test.describe("IGSN Table", () => {
       await Then[
         "the IGSN with DOI '10.82316/khma-em96' is added to the selection state"
       ]();
+    }
+  );
+
+  feature(
+    "Control defaults are applied to the table when provided",
+    async ({ Given, Once, Then }) => {
+      await Given[
+        "the researcher is viewing the IGSN table with control defaults"
+      ]();
+      await Once["the table has loaded"]();
+      Then["there should be a network request with state set to 'draft'"]();
+      Then[
+        "there should be a network request with isAssociated set to 'false'"
+      ]();
+      Then["there should be a network request with searchTerm set to 'test'"]();
     }
   );
 
