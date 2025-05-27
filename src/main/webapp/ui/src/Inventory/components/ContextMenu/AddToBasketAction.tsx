@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type ComponentType, forwardRef, useState } from "react";
+import React, { forwardRef, useState } from "react";
 import ContextMenuAction, {
   type ContextMenuRenderOptions,
 } from "./ContextMenuAction";
@@ -10,14 +8,17 @@ import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import AddToBasketDialog from "../Baskets/AddToBasketDialog";
 
-type AddToBasketActionArgs = {|
-  as: ContextMenuRenderOptions,
-  closeMenu: () => void,
-  disabled: string,
-  selectedResults: Array<InventoryRecord>,
-|};
+type AddToBasketActionArgs = {
+  as: ContextMenuRenderOptions;
+  closeMenu: () => void;
+  disabled: string;
+  selectedResults: Array<InventoryRecord>;
+};
 
-const AddToBasketAction: ComponentType<AddToBasketActionArgs> = forwardRef(
+const AddToBasketAction = forwardRef<
+  React.ElementRef<typeof ContextMenuAction>,
+  AddToBasketActionArgs
+>(
   (
     { as, closeMenu, disabled, selectedResults }: AddToBasketActionArgs,
     ref
