@@ -1,6 +1,5 @@
-// @flow
 import AddIcon from "@mui/icons-material/Add";
-import React, { type Node, useContext, type ComponentType } from "react";
+import React, { useContext } from "react";
 import useStores from "../../stores/use-stores";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { UserCancelledAction } from "../../util/error";
@@ -29,13 +28,13 @@ const StyledMenu = styled(Menu)(({ open }) => ({
   },
 }));
 
-type CreateNewArgs = {|
+type CreateNewArgs = {
   /**
    * Called whenever a menu item is clicked, and SHOULD cause the menu to
    * close.
    */
-  onClick: () => void,
-|};
+  onClick: () => void;
+};
 
 /**
  * The menu for creating new items in Inventory, be that creating new items
@@ -47,11 +46,11 @@ type CreateNewArgs = {|
  * button that triggers the menu is styled with the `callToAction` colour so
  * that the button stands out on the page.
  */
-function CreateNew({ onClick }: CreateNewArgs): Node {
+function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const { searchStore, trackingStore, uiStore, importStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
   const showFieldmark = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("FIELDMARK")
@@ -83,7 +82,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
     recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES"
   ) => {
     if (await uiStore.confirmDiscardAnyChanges()) {
-      await importStore.initializeNewImport(recordType);
+      importStore.initializeNewImport(recordType);
       navigate(`/inventory/import?recordType=${recordType}`);
       onClick();
       setAnchorEl(null);
@@ -320,4 +319,4 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
   );
 }
 
-export default (observer(CreateNew): ComponentType<CreateNewArgs>);
+export default observer(CreateNew);
