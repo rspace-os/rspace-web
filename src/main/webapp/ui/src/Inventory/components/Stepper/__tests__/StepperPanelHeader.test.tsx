@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React, { useState } from "react";
 import {
@@ -36,7 +35,7 @@ afterEach(cleanup);
 
 class DummyResult {
   editing: boolean = true;
-  globalId: ?GlobalId = null;
+  globalId: GlobalId | null = null;
 
   constructor() {
     makeObservable(this, {
@@ -134,7 +133,8 @@ describe("StepperPanelHeader", () => {
 
           expect(
             parseInt(
-              (await screen.findByLabelText("Expand section")).textContent,
+              (await screen.findByLabelText("Expand section")).textContent ??
+                "",
               10
             )
           ).toEqual(errors.length);
@@ -162,7 +162,10 @@ describe("StepperPanelHeader", () => {
           await user.click(screen.getByLabelText("Collapse section"));
 
           expect(
-            parseInt(screen.getByLabelText("Expand section").textContent, 10)
+            parseInt(
+              screen.getByLabelText("Expand section").textContent ?? "",
+              10
+            )
           ).toBeLessThanOrEqual(errors.length);
         }
       ),
@@ -223,7 +226,10 @@ describe("StepperPanelHeader", () => {
           );
 
           expect(
-            parseInt(screen.getByLabelText("Expand section").textContent, 10)
+            parseInt(
+              screen.getByLabelText("Expand section").textContent ?? "",
+              10
+            )
           ).toEqual(errors.length);
           await user.click(
             screen.getByRole("button", { name: "Expand section" })
@@ -241,7 +247,10 @@ describe("StepperPanelHeader", () => {
 
           if (errors.length - errorsToRemove.length > 0) {
             expect(
-              parseInt(screen.getByLabelText("Expand section").textContent, 10)
+              parseInt(
+                screen.getByLabelText("Expand section").textContent ?? "",
+                10
+              )
             ).toEqual(errors.length - errorsToRemove.length);
           } else {
             /*
