@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType, forwardRef } from "react";
+import React, { forwardRef } from "react";
 import { Observer } from "mobx-react-lite";
 import ContextMenuButton from "./ContextMenuButton";
 import ContextMenuSplitButton, {
@@ -13,37 +11,42 @@ import EventBoundary from "../../../components/EventBoundary";
 
 export type ContextMenuRenderOptions = "button" | "menuitem";
 
-type CommonArgs = {|
-  as: ContextMenuRenderOptions,
-  icon: Node,
-  disabledHelp: string,
-  children?: Node,
-|};
+type CommonArgs = {
+  as: ContextMenuRenderOptions;
+  icon: React.ReactElement;
+  disabledHelp: string;
+  children?: React.ReactNode;
+};
 
-type SplitButtonArgs = {|
-  options: Array<SplitButtonOption>,
-|};
+type SplitButtonArgs = {
+  options: Array<SplitButtonOption>;
+};
 
-type RegularButtonArgs = {|
-  onClick: (Event) => void,
-  active?: boolean,
-  label: string,
-|};
+type RegularButtonArgs = {
+  onClick: (event: Event) => void;
+  active?: boolean;
+  label: string;
+};
 
-type ContextMenuActionsArgs = {|
-  ...CommonArgs,
-  ...SplitButtonArgs | RegularButtonArgs,
-|};
+type ContextMenuActionsArgs = CommonArgs &
+  (SplitButtonArgs | RegularButtonArgs);
 
-const ContextMenuAction: ComponentType<ContextMenuActionsArgs> = forwardRef(
+const ContextMenuAction = forwardRef<
+  React.ElementRef<typeof StyledMenuItem>,
+  ContextMenuActionsArgs
+>(
   (
     {
       as,
       icon,
+      // @ts-expect-error onClick is on RegularButtonArgs, otherwise this default value is used
       onClick = () => {},
+      // @ts-expect-error onClick is on SplitButtonArgs, otherwise this default value is used
       options = [],
+      // @ts-expect-error onClick is on RegularButtonArgs, otherwise this default value is used
       label = "",
       disabledHelp,
+      // @ts-expect-error onClick is on RegularButtonArgs, otherwise this default value is used
       active = false,
       children,
     }: ContextMenuActionsArgs,
