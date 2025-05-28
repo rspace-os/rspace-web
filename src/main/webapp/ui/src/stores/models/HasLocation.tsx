@@ -2,6 +2,7 @@ import { Container, GridLayout, Location } from "../definitions/Container";
 import { Factory } from "../definitions/Factory";
 import { Person } from "../definitions/Person";
 import * as Parsers from "../../util/parsers";
+import * as ArrayUtils from "../../util/ArrayUtils";
 import { AdjustableTableRowOptions } from "../definitions/Tables";
 import { type InventoryRecord } from "../definitions/InventoryRecord";
 import React from "react";
@@ -30,39 +31,54 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
     /*
      * The timestamp of when this item was last moved. If it has never been moved
      * from the location it was created in (usually the owner's workbench) then is
-     * null;
+     * null. It will also be null if the user does not have permission to view its
+     * location.
      */
     private lastMoveDate: Date | null;
 
     /*
-     * This is the last container that the Inventory record was last in. In most
-     * circumstances this is probably the storage location for the item from where
-     * the user retrieved the item prior to beginning an experiment and to where
-     * they will return it after they are done with using it.
+     * This is the container that the Inventory record was last in, that is not
+     * a workbench. In most circumstances this is probably the storage location
+     * for the item from where the user retrieved the item prior to beginning an
+     * experiment and to where they will return it after they are done with
+     * using it. Is null when the item has not been moved from its initial
+     * location, it has only ever been moved between workbenches, or the user
+     * does not have permission to view its location.
      */
     private lastNonWorkbenchParent: Container | null;
 
+    /*
+     * This is the location within the parent container than the item is
+     * located. If the parent container is a list container, or this item is a
+     * root container, or if the user does not have permission to view the
+     * location of this item, then the value will be null.
+     */
     protected parentLocation: Location | null;
 
+    /**
+     * This is the immediate parent container of the Inventory record. If it is null,
+     * then either it is because the item is a root container or the user does
+     * not have permission to view its location.
+     */
     public immediateParentContainer: Container | null;
 
     constructor(...args: any[]) {
       super(...args);
       const [factory, params] = args as [factory: Factory, params: object];
-      const parentContainers = Parsers.getValueWithKey("parentContainers")(
-        params
-      )
+      this.immediateParentContainer = Parsers.getValueWithKey(
+        "parentContainers"
+      )(params)
         .flatMap(Parsers.isArray)
-        .elseThrow();
-      if (parentContainers !== null && parentContainers.length > 0) {
-        this.immediateParentContainer = factory.newRecord(
-          parentContainers[0] as Record<string, unknown> & {
-            globalId: GlobalId;
-          }
-        ) as Container;
-      } else {
-        this.immediateParentContainer = null;
-      }
+        .flatMap(ArrayUtils.head)
+        .map(
+          (immediateParentContainerParams) =>
+            factory.newRecord(
+              immediateParentContainerParams as Record<string, unknown> & {
+                globalId: GlobalId;
+              }
+            ) as Container
+        )
+        .orElse(null);
       this.parentLocation = Parsers.getValueWithKey("parentLocation")(
         params
       ).elseThrow() as Location | null;
@@ -100,6 +116,13 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       };
     }
 
+    /**
+     * Returns the container that lies at the top of the hierarchy; usually
+     * either a workbench or some other container that acts as a grouping for
+     * lots of other containers and samples e.g. a room or large freezer. If
+     * the container is a root container then null is returned, but also when
+     * the user does not have permission to view the item's location.
+     */
     get rootParentContainer(): Container | null {
       if (this.immediateParentContainer === null) return null;
       return (
@@ -108,6 +131,14 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       );
     }
 
+    /**
+     * Returns all containers that lie between this container and the root
+     * container. Assuming there are at least two containers in the hierarchy,
+     * the first element will always be `this.immediateParentContainer` and the
+     * last `this.rootParentContainer`. If this container is the root container,
+     * or the user does not have permission to view the item's location, an empty
+     * array is returned.
+     */
     get allParentContainers(): ReadonlyArray<Container> {
       if (this.immediateParentContainer === null) return [];
       return [
@@ -116,11 +147,24 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       ];
     }
 
+    /**
+     * Determines whether the Inventory record is on a workbench,
+     * which is to say that the root parent container is a workbench.
+     * Returns false if the user does not have permission to view the item's
+     * location.
+     */
     get isOnWorkbench(): boolean {
       if (this.rootParentContainer === null) return false;
       return this.rootParentContainer.isWorkbench;
     }
 
+    /**
+     * Determines whether the Inventory record is directly on a workbench,
+     * which is to say the immediate parent container is a workbench. If this is
+     * true, then it implies that `isOnWorkbench` is also true. Similarly, if
+     * `isOnWorkbench` is false because the user does not have permission to view
+     * the item's location, then false is returned.
+     */
     get isDirectlyOnWorkbench(): boolean {
       return (
         this.isOnWorkbench &&
@@ -128,12 +172,22 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       );
     }
 
+    /**
+     * Not only is this item on a workbench, but the workbench that it is on is
+     * owned by the specified user. Returns false is the user does not have
+     * permission to view the location of this item.
+     */
     isOnWorkbenchOfUser(user: Person): boolean {
       return (
         this.isOnWorkbench && this.rootParentContainer?.id === user.workbenchId
       );
     }
 
+    /**
+     * Not only is this item directly on a workbench, but that workbench that it
+     * is on is owned by the specified user. Returns false is the user does not have
+     * permission to view the location of this item.
+     */
     isDirectlyOnWorkbenchOfUser(user: Person): boolean {
       return (
         this.isDirectlyOnWorkbench &&
