@@ -68,6 +68,7 @@ declare module "@mui/material/styles/createPalette" {
   interface PaletteColor {
     background: string;
     saturated?: string;
+    placeholderText?: string;
   }
   interface Palette {
     callToAction: PaletteColor;

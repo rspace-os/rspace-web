@@ -1,21 +1,20 @@
-//@flow
-
 import React, { type ComponentType } from "react";
 import Box from "@mui/material/Box";
 import { withStyles } from "Styles";
 import Typography from "@mui/material/Typography";
-// $FlowExpectedError[cannot-resolve-module] An .svg, not a JS module
 import EmptyListingSvg from "/src/assets/graphics/EmptyListing.svg";
-import { globalIdToInventoryRecordTypeLabel } from "../../../stores/definitions/BaseRecord";
-import { type GlobalId } from "../../../stores/definitions/BaseRecord";
+import {
+  globalIdToInventoryRecordTypeLabel,
+  type GlobalId,
+} from "../../../stores/definitions/BaseRecord";
 
-type EmptyListingArgs = {|
-  parentGlobalId: GlobalId,
-|};
+type EmptyListingArgs = {
+  parentGlobalId: GlobalId;
+};
 
 const EmptyListing: ComponentType<EmptyListingArgs> = withStyles<
   EmptyListingArgs,
-  { root: string, heading: string, help: string }
+  { root: string; heading: string; help: string }
 >((theme) => ({
   root: {
     fontWeight: 700,
