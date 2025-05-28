@@ -1,18 +1,15 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { withStyles } from "Styles";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
-// $FlowExpectedError[cannot-resolve-module] An .svg, not a JS module
 import HeroImage from "/src/assets/graphics/NoActiveResult.svg";
 import docLinks from "../../../assets/DocLinks";
 
 const Center = withStyles<
-  {| children: Node |},
-  { outer: string, inner: string }
+  { children: React.ReactNode },
+  { outer: string; inner: string }
 >(() => ({
   outer: {
     minHeight: "100vh",
@@ -53,7 +50,7 @@ const GetStartedButton = () => (
   </Link>
 );
 
-export default function NoActiveResultPlaceholder(): Node {
+export default function NoActiveResultPlaceholder(): React.ReactNode {
   return (
     <>
       <Center>
