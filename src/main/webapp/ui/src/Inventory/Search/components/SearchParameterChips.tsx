@@ -1,12 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  type ComponentType,
-  type ElementProps,
-  useContext,
-  useEffect,
-} from "react";
+import React, { useContext, useEffect } from "react";
 import Chip from "@mui/material/Chip";
 import SearchContext from "../../../stores/contexts/Search";
 import { toTitleCase } from "../../../util/Util";
@@ -16,8 +8,8 @@ import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 
 const CustomChip = withStyles<
-  ElementProps<typeof Chip>,
-  { label: string, root: string }
+  React.ComponentProps<typeof Chip>,
+  { label: string; root: string }
 >(() => ({
   label: {
     letterSpacing: "0.02em",
@@ -28,19 +20,20 @@ const CustomChip = withStyles<
   },
 }))((props) => <Chip size="small" {...props} />);
 
-const CustomGridItem = withStyles<{| children: Node |}, { root: string }>(
-  () => ({
-    root: {
-      maxWidth: "100%",
-    },
-  })
-)(({ children, classes }) => (
+const CustomGridItem = withStyles<
+  { children: React.ReactNode },
+  { root: string }
+>(() => ({
+  root: {
+    maxWidth: "100%",
+  },
+}))(({ children, classes }) => (
   <Grid item className={classes.root}>
     {children}
   </Grid>
 ));
 
-function SearchParameterChips(): Node {
+function SearchParameterChips(): React.ReactNode {
   const { search } = useContext(SearchContext);
   const { searchStore } = useStores();
 
@@ -62,7 +55,7 @@ function SearchParameterChips(): Node {
                     ? () => {
                         search.setTypeFilter("ALL");
                       }
-                    : null
+                    : undefined
                 }
               />
             </Grid>
@@ -98,7 +91,7 @@ function SearchParameterChips(): Node {
                 ? () => {
                     search.setDeletedItems("EXCLUDE");
                   }
-                : null
+                : undefined
             }
           />
         </Grid>
@@ -131,4 +124,4 @@ function SearchParameterChips(): Node {
   );
 }
 
-export default (observer(SearchParameterChips): ComponentType<{||}>);
+export default observer(SearchParameterChips);
