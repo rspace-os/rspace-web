@@ -1,12 +1,10 @@
-//@flow
-
 import TableCell from "@mui/material/TableCell";
 import {
   type AdjustableTableRow,
   type AdjustableTableRowLabel,
   type CellContent,
 } from "../../../stores/definitions/Tables";
-import React, { type Node, useContext } from "react";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import GlobalId from "../../../components/GlobalId";
 import { RecordLink } from "../../../Inventory/components/RecordLink";
@@ -15,15 +13,15 @@ import RecordLocation from "../../../Inventory/components/RecordLocation";
 import TagListing from "../../../components/Tags/TagListing";
 import NavigateContext from "../../../stores/contexts/Navigate";
 
-type AdjustableCellArgs<T: AdjustableTableRowLabel> = {|
-  dataSource: AdjustableTableRow<T>,
-  selectedOption: T,
-|};
+type AdjustableCellArgs<T extends AdjustableTableRowLabel> = {
+  dataSource: AdjustableTableRow<T>;
+  selectedOption: T;
+};
 
-function AdjustableCell<T: AdjustableTableRowLabel>({
+function AdjustableCell<T extends AdjustableTableRowLabel>({
   dataSource,
   selectedOption,
-}: AdjustableCellArgs<T>): Node {
+}: AdjustableCellArgs<T>): React.ReactNode {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
 
@@ -69,4 +67,4 @@ function AdjustableCell<T: AdjustableTableRowLabel>({
   return <TableCell>{content}</TableCell>;
 }
 
-export default (observer(AdjustableCell): typeof AdjustableCell);
+export default observer(AdjustableCell);

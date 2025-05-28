@@ -1,0 +1,13 @@
+//@flow
+
+import { type Node } from "react";
+import {
+  type AdjustableTableRow,
+  type AdjustableTableRowLabel,
+  type CellContent,
+} from "../../../stores/definitions/Tables";
+
+declare export default function AdjustableCell<T: AdjustableTableRowLabel>({|
+  dataSource: AdjustableTableRow<T>,
+  selectedOption: T,
+|}): Node;
