@@ -87,7 +87,7 @@ public interface AnalyticsManager {
   void recordCreated(HistoricalEvent event);
 
   /** Registers specific calls to public API made with API Key or OAuth token. */
-  void apiAccessed(User user, HttpServletRequest req);
+  void publicApiUsed(User user, HttpServletRequest req);
 
   /**
    * To calculate and upload file usage for every user in the system

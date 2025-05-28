@@ -325,17 +325,20 @@ public class AnalyticsManagerTest extends SpringTransactionalTest {
 
     mockRequest.setRequestURI("/api/inventory/v1/samples");
     testUser.setAuthenticatedBy(UserAuthenticationMethod.API_KEY);
-    analyticsManager.apiAccessed(testUser, mockRequest);
+    analyticsManager.publicApiUsed(testUser, mockRequest);
     assertEquals(expectedUserId, analyticsManagerImplTSS.userId);
-    assertEquals("apiKeyUsed", analyticsManagerImplTSS.label);
+    assertEquals("publicApiUsed", analyticsManagerImplTSS.label);
     assertEquals("/api/inventory/v1/samples", analyticsManagerImplTSS.props.get("apiUri"));
+    assertEquals("http://localhost:8080", analyticsManagerImplTSS.props.get("rspaceUrl"));
+    assertEquals("API_KEY", analyticsManagerImplTSS.props.get("apiAuthenticatedBy"));
 
     mockRequest.setRequestURI("/api/v1/documents");
     testUser.setAuthenticatedBy(UserAuthenticationMethod.API_OAUTH_TOKEN);
-    analyticsManager.apiAccessed(testUser, mockRequest);
+    analyticsManager.publicApiUsed(testUser, mockRequest);
     assertEquals(expectedUserId, analyticsManagerImplTSS.userId);
-    assertEquals("apiOAuthTokenUsed", analyticsManagerImplTSS.label);
+    assertEquals("publicApiUsed", analyticsManagerImplTSS.label);
     assertEquals("/api/v1/documents", analyticsManagerImplTSS.props.get("apiUri"));
+    assertEquals("API_OAUTH_TOKEN", analyticsManagerImplTSS.props.get("apiAuthenticatedBy"));
   }
 
   @Test

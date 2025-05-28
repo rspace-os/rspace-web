@@ -44,7 +44,7 @@ public class CombinedApiAuthenticator implements ApiAuthenticator {
               String.format("Access to API has been disabled for user '%s'", user.getUsername()));
         }
         user.setAuthenticatedBy(UserAuthenticationMethod.API_KEY);
-        analyticsMgr.apiAccessed(user, request);
+        analyticsMgr.publicApiUsed(user, request);
       }
       return user;
     }
@@ -52,7 +52,7 @@ public class CombinedApiAuthenticator implements ApiAuthenticator {
     if (StringUtils.isNotEmpty(request.getHeader("Authorization"))) {
       User user = oAuthAuthenticator.authenticate(request);
       if (UserAuthenticationMethod.API_OAUTH_TOKEN.equals(user.getAuthenticatedBy())) {
-        analyticsMgr.apiAccessed(user, request);
+        analyticsMgr.publicApiUsed(user, request);
       }
       return user;
     }
