@@ -1,17 +1,16 @@
-//@flow
-import React, { type Node, useContext } from "react";
+import React, { useContext } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
 import SearchContext from "../../stores/contexts/Search";
 import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFetcher";
 import useStores from "../../stores/use-stores";
 import { mkAlert } from "../../stores/contexts/Alert";
-import { UserCancelledAction } from "../../util/error";
+import { getErrorMessage, UserCancelledAction } from "../../util/error";
 
-type MainSearchNavigationContextArgs = {|
-  children: Node,
-|};
+type MainSearchNavigationContextArgs = {
+  children: React.ReactNode;
+};
 
-/*
+/**
  * This NavigationContext captures calls to `navigate` made within Inventory's
  * main search UI (i.e. /inventory/search) and performs two actions
  *  1. It updates the current search parameters of the page-wide SearchContext,
@@ -21,7 +20,7 @@ type MainSearchNavigationContextArgs = {|
  */
 export default function MainSearchNavigationContext({
   children,
-}: MainSearchNavigationContextArgs): Node {
+}: MainSearchNavigationContextArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
   const { uiStore } = useStores();
   const { useNavigate, useLocation } = useContext(NavigateContext);
@@ -37,8 +36,7 @@ export default function MainSearchNavigationContext({
       uiStore.addAlert(
         mkAlert({
           title: "Search failed.",
-          message:
-            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
           isInfinite: true,
         })
@@ -65,7 +63,10 @@ export default function MainSearchNavigationContext({
     () =>
     (
       url: string,
-      opts: ?{| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+      opts?: {
+        skipToParentContext?: boolean;
+        modifyVisiblePanel?: boolean;
+      } | null
     ) => {
       const { skipToParentContext = false, modifyVisiblePanel = true } =
         opts ?? {

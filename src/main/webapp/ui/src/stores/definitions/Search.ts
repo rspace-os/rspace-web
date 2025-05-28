@@ -360,7 +360,7 @@ export interface Search {
    */
   activeResult: InventoryRecord | null;
   setActiveResult(
-    result: InventoryRecord | null,
+    result?: InventoryRecord | null,
     options?: { defaultToFirstResult?: boolean; force?: boolean }
   ): Promise<void>;
 
