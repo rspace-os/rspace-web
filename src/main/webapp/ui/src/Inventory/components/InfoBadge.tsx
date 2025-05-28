@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType, type ElementProps } from "react";
+import React from "react";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import Tooltip from "@mui/material/Tooltip";
@@ -13,7 +11,7 @@ import { type Record } from "../../stores/definitions/Record";
 import clsx from "clsx";
 
 const CustomTooltip = withStyles<
-  ElementProps<typeof Tooltip>,
+  React.ComponentProps<typeof Tooltip>,
   { tooltip: string }
 >((theme) => ({
   tooltip: {
@@ -22,7 +20,7 @@ const CustomTooltip = withStyles<
   },
 }))(Tooltip);
 
-const useStyles = makeStyles()((theme, { deleted }) => ({
+const useStyles = makeStyles<{ deleted: boolean }>()((theme, { deleted }) => ({
   icon: {
     height: 20,
     width: 20,
@@ -43,13 +41,17 @@ const useStyles = makeStyles()((theme, { deleted }) => ({
   },
 }));
 
-type InfoBadgeArgs = {|
-  inline?: boolean,
-  children: Node,
-  record: Record,
-|};
+type InfoBadgeArgs = {
+  inline?: boolean;
+  children: React.ReactNode;
+  record: Record;
+};
 
-function InfoBadge({ inline = false, children, record }: InfoBadgeArgs): Node {
+function InfoBadge({
+  inline = false,
+  children,
+  record,
+}: InfoBadgeArgs): React.ReactNode {
   const { readAccessLevel, deleted } = record;
   const { classes } = useStyles({ deleted });
 
@@ -81,4 +83,4 @@ function InfoBadge({ inline = false, children, record }: InfoBadgeArgs): Node {
   );
 }
 
-export default (observer(InfoBadge): ComponentType<InfoBadgeArgs>);
+export default observer(InfoBadge);
