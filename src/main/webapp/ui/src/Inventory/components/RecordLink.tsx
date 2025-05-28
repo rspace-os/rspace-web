@@ -1,7 +1,5 @@
-//@flow
-
 import Chip from "@mui/material/Chip";
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext } from "react";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import useStores from "../../stores/use-stores";
 import { emphasize } from "@mui/material/styles";
@@ -31,7 +29,7 @@ const useStyles = makeStyles()((theme) => ({
       boxShadow: theme.shadows[1],
       backgroundColor: emphasize(theme.palette.grey[300], 0.12),
     },
-    transitionDuration: 500,
+    transitionDuration: "500ms",
   },
   overflowRoot: {
     wordBreak: "break-word",
@@ -54,14 +52,14 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type RecordLinkArgs = {|
-  record: InventoryRecord,
-  overflow?: boolean,
-  newTab?: boolean,
-|};
+type RecordLinkArgs = {
+  record: InventoryRecord;
+  overflow?: boolean;
+  newTab?: boolean;
+};
 
-export const RecordLink: ComponentType<RecordLinkArgs> = observer(
-  ({ record, overflow = false }: RecordLinkArgs): Node => {
+export const RecordLink = observer(
+  ({ record, overflow = false }: RecordLinkArgs): React.ReactNode => {
     const { classes } = useStyles();
     const { trackingStore, uiStore } = useStores();
     const { useNavigate } = useContext(NavigateContext);
@@ -75,11 +73,11 @@ export const RecordLink: ComponentType<RecordLinkArgs> = observer(
           label: clsx(overflow && classes.overflowLabel),
         }}
         component="a"
-        href={record.permalinkURL}
+        href={record.permalinkURL || undefined}
         label={record.recordLinkLabel}
         icon={<RecordTypeIcon record={record} />}
         onClick={preventEventBubbling(
-          preventEventDefault(() => {
+          preventEventDefault((_: React.MouseEvent) => {
             if (record.permalinkURL) {
               navigate(record.permalinkURL);
               trackingStore.trackEvent("BreadcrumbClicked");
@@ -94,12 +92,12 @@ export const RecordLink: ComponentType<RecordLinkArgs> = observer(
   }
 );
 
-type TopLinkArgs = {|
-  overflow?: boolean,
-|};
+type TopLinkArgs = {
+  overflow?: boolean;
+};
 
-export const TopLink: ComponentType<TopLinkArgs> = observer(
-  ({ overflow = false }: TopLinkArgs): Node => {
+export const TopLink = observer(
+  ({ overflow = false }: TopLinkArgs): React.ReactNode => {
     const { classes } = useStyles();
     const { searchStore, trackingStore } = useStores();
     const { useNavigate } = useContext(NavigateContext);
@@ -109,7 +107,7 @@ export const TopLink: ComponentType<TopLinkArgs> = observer(
       .generateNewQuery({ resultType: "CONTAINER" })
       .toString()}`;
 
-    const toTopContainers = (e: Event) => {
+    const toTopContainers = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       navigate(containersRoot);
@@ -133,13 +131,13 @@ export const TopLink: ComponentType<TopLinkArgs> = observer(
   }
 );
 
-type CurrentRecordArgs = {|
-  record: InventoryRecord,
-  overflow?: boolean,
-|};
+type CurrentRecordArgs = {
+  record: InventoryRecord;
+  overflow?: boolean;
+};
 
-export const CurrentRecord: ComponentType<CurrentRecordArgs> = observer(
-  ({ record, overflow = false }: CurrentRecordArgs): Node => {
+export const CurrentRecord = observer(
+  ({ record, overflow = false }: CurrentRecordArgs): React.ReactNode => {
     const { classes } = useStyles();
 
     return (
@@ -160,7 +158,7 @@ export const CurrentRecord: ComponentType<CurrentRecordArgs> = observer(
   }
 );
 
-export function InTrash(): Node {
+export function InTrash(): React.ReactNode {
   const { classes } = useStyles();
 
   return (
