@@ -1,0 +1,33 @@
+//@flow
+
+import { type Node, type ElementConfig } from "react";
+import Grid from "@mui/material/Grid";
+
+export type FileFieldArgs = {|
+  accept: string,
+  onChange: ({
+    binaryString: string,
+    file: File,
+  }) => void,
+  id?: string,
+  InputProps?: {
+    startAdornment?: Node,
+    endAdornment?: Node,
+  },
+  buttonLabel?: string,
+  datatestid?: string,
+  disabled?: boolean,
+  error?: boolean,
+  icon?: Node,
+  loadedFile?: ?File,
+  loading?: boolean,
+  name?: string,
+  showSelectedFilename?: boolean,
+  value?: string,
+  warningAlert?: string,
+  explanatoryText?: string,
+  containerProps?: ElementConfig<typeof Grid>,
+  triggerButton?: ({| id: string |}) => Node,
+|};
+
+declare export default function FileField(FileFieldArgs): Node;

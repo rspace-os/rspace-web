@@ -1,0 +1,15 @@
+//@flow
+
+import { type Node } from "react";
+
+export type TextFieldArgs = {|
+  value: string,
+  disabled?: boolean,
+  name?: string,
+  noValueLabel?: ?string,
+  onChange?: ({ target: { name: string, value: string } }) => void,
+  variant?: "filled" | "outlined" | "standard",
+  id?: string,
+|};
+
+declare export default function TextField(props: TextFieldArgs): Node;
