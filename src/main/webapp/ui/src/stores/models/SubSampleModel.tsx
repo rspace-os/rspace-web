@@ -367,14 +367,11 @@ export default class SubSampleModel
     }
   }
 
-  async fetchAdditionalInfo(
-    silent: boolean = false
-  ): Promise<{ data: object }> {
-    const { data } = await super.fetchAdditionalInfo(silent);
+  async fetchAdditionalInfo(silent: boolean = false): Promise<void> {
+    await super.fetchAdditionalInfo(silent);
     getRootStore().trackingStore.trackEvent("InventoryRecordAccessed", {
       type: this.recordType,
     });
-    return { data };
   }
 
   get iconName(): string {

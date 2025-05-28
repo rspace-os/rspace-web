@@ -994,10 +994,11 @@ export default class Result
   async fetchAdditionalInfo(
     silent: boolean = false,
     queryParameters: URLSearchParams = new URLSearchParams()
-  ): Promise<{ data: object }> {
+  ): Promise<void> {
     if (this.fetchingAdditionalInfo || !this.id) {
-      if (this.fetchingAdditionalInfo === null) return { data: {} };
-      return this.fetchingAdditionalInfo;
+      if (this.fetchingAdditionalInfo === null) return;
+      await this.fetchingAdditionalInfo;
+      return;
     }
     const id = this.id;
 
@@ -1015,7 +1016,7 @@ export default class Result
       this.populateFromJson(this.factory.newFactory(), data);
       await this.fetchImage("image");
       await this.fetchImage("thumbnail");
-      return { data };
+      return;
     } catch (error) {
       if (!silent) {
         getRootStore().uiStore.addAlert(
