@@ -256,21 +256,25 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     Session session = getSession();
     CriteriaBuilder cb = session.getCriteriaBuilder();
     int totalDeleted = 0;
+    int batchSize = 100;
 
-    // rather than deleting each Notification individually via the hibernate session (which would
-    // cascade delete to CommunicationTarget), first delete all CommunicationTargets associated with
-    // the Notifications in one query, then the Notifications, greatly reducing the number of
-    // queries.
-    CriteriaDelete<CommunicationTarget> deleteTargets =
-        cb.createCriteriaDelete(CommunicationTarget.class);
-    Root<CommunicationTarget> targetRoot = deleteTargets.from(CommunicationTarget.class);
-    deleteTargets.where(targetRoot.get("communication").get("id").in(notificationIds));
-    session.createQuery(deleteTargets).executeUpdate();
+    // Delete in batches to avoid large transaction issues
+    for (int i = 0; i < notificationIds.size(); i += batchSize) {
+      int endIndex = Math.min(i + batchSize, notificationIds.size());
+      List<Long> batch = notificationIds.subList(i, endIndex);
 
-    CriteriaDelete<Notification> deleteNotifications = cb.createCriteriaDelete(Notification.class);
-    Root<Notification> notificationRoot = deleteNotifications.from(Notification.class);
-    deleteNotifications.where(notificationRoot.get("id").in(notificationIds));
-    totalDeleted += session.createQuery(deleteNotifications).executeUpdate();
+      // First, delete all CommunicationTargets associated with these notifications
+      CriteriaDelete<CommunicationTarget> deleteTargets = cb.createCriteriaDelete(CommunicationTarget.class);
+      Root<CommunicationTarget> targetRoot = deleteTargets.from(CommunicationTarget.class);
+      deleteTargets.where(targetRoot.get("communication").get("id").in(batch));
+      session.createQuery(deleteTargets).executeUpdate();
+
+      // Then, delete the notifications themselves
+      CriteriaDelete<Notification> deleteNotifications = cb.createCriteriaDelete(Notification.class);
+      Root<Notification> notificationRoot = deleteNotifications.from(Notification.class);
+      deleteNotifications.where(notificationRoot.get("id").in(batch));
+      totalDeleted += session.createQuery(deleteNotifications).executeUpdate();
+    }
 
     return totalDeleted;
   }
