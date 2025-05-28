@@ -102,7 +102,10 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
 
     get rootParentContainer(): Container | null {
       if (this.immediateParentContainer === null) return null;
-      return this.immediateParentContainer.rootParentContainer;
+      return (
+        this.immediateParentContainer.rootParentContainer ??
+        this.immediateParentContainer
+      );
     }
 
     get allParentContainers(): ReadonlyArray<Container> {
