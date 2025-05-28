@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Popover from "@mui/material/Popover";
 import Card from "@mui/material/Card";
 import Avatar from "@mui/material/Avatar";
@@ -17,6 +15,7 @@ import axios from "@/common/axios";
 import { makeStyles } from "tss-react/mui";
 import { type PersonId } from "../../stores/definitions/Person";
 import Chip from "@mui/material/Chip";
+import * as Parsers from "../../util/parsers";
 
 const useStyles = makeStyles()((theme) => ({
   text: {
@@ -46,42 +45,42 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type UserDetailsArgs = {|
-  userId: PersonId,
-  fullName: string,
-  position: ["top" | "bottom", "right" | "left"],
-|};
+type UserDetailsArgs = {
+  userId: PersonId;
+  fullName: string;
+  position: ["top" | "bottom", "right" | "left"];
+};
 
-type Group = {|
-  groupId: number,
-  roleInGroup: "PI" | "User",
-  groupName: string,
-|};
-type Person = {|
-  groups: Array<Group>,
-  lastLogin: string,
-  fullname: string,
-  profileImageLink: string,
-  email: string,
-  accountEnabled: boolean,
-|};
+type Group = {
+  groupId: number;
+  roleInGroup: "PI" | "User";
+  groupName: string;
+};
+type Person = {
+  groups: Array<Group>;
+  lastLogin: string;
+  fullname: string;
+  profileImageLink: string;
+  email: string;
+  accountEnabled: boolean;
+};
 
-export default function UserDetails(props: UserDetailsArgs): Node {
+export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
   const { classes } = useStyles();
-  const [anchorEl, setAnchorEl] = React.useState<?EventTarget>(null);
-  const [user, setUser] = React.useState<?Person>(null);
+  const [anchorEl, setAnchorEl] = React.useState<null | Element>(null);
+  const [user, setUser] = React.useState<Person | null>(null);
   const [fetched, setFetched] = React.useState(false);
 
   const fetchUser = () => {
-    let url = `/userform/ajax/miniprofile/${props.userId}`;
+    const url = `/userform/ajax/miniprofile/${props.userId}`;
     axios
-      .get<{| exceptionMessage: string |} | {| data: Person |}>(url)
+      .get<{ exceptionMessage: string } | { data: Person }>(url)
       .then((response) => {
-        if (response.data.exceptionMessage) {
-          setUser(null);
-        } else {
-          setUser(response.data.data);
-        }
+        setUser(
+          Parsers.getValueWithKey("data")(response.data).orElse(
+            null
+          ) as Person | null
+        );
       })
       .catch((error) => {
         console.error(error);
@@ -108,7 +107,7 @@ export default function UserDetails(props: UserDetailsArgs): Node {
     </TableRow>
   )) ?? <></>;
 
-  const handlePopoverOpen = (event: Event) => {
+  const handlePopoverOpen = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     if (!fetched) {
@@ -145,7 +144,6 @@ export default function UserDetails(props: UserDetailsArgs): Node {
           vertical: props.position[0] === "top" ? "bottom" : "top",
           horizontal: props.position[1] === "right" ? "left" : "right",
         }}
-        className={classes.popover}
         classes={{
           paper: classes.paper,
         }}
