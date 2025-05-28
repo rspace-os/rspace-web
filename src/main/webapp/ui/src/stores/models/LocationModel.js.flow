@@ -8,6 +8,8 @@ import { action, computed, observable, makeObservable } from "mobx";
 import { type Location, type Container } from "../definitions/Container";
 import { type SubSample } from "../definitions/SubSample";
 import { type Search } from "../definitions/Search";
+import { type HasLocation } from "../definitions/HasLocation";
+import { type InventoryRecord } from "../definitions/InventoryRecord";
 
 export type LocationAttrs = {|
   id: ?number,
@@ -22,7 +24,7 @@ declare export default class LocationModel implements Location {
   id: ?number;
   coordX: number;
   coordY: number;
-  content: ?(SubSample | Container);
+  content: null | (InventoryRecord & HasLocation);
   selected: boolean;
   parentContainer: Container;
   x: number;

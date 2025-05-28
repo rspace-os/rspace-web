@@ -24,6 +24,7 @@ export const subsampleAttrs = (
   parentContainers: [],
   lastNonWorkbenchParent: null,
   lastMoveDate: null,
+  parentLocation: null,
   owner: null,
   created: null,
   deleted: false,
@@ -57,6 +58,8 @@ export const makeMockSubSampleWithParentContainer = (
     globalId: "IC2",
   }).paramsForBackend;
   parent.parentContainers = [];
+  parent.parentLocation = null;
+  parent.lastNonWorkbenchParent = null;
   return makeMockSubSample({
     parentContainers: [parent],
     ...attrs,
@@ -94,6 +97,7 @@ export const subSampleAttrsArbitrary: Arbitrary<SubSampleAttrs> = fc
       description: fc.constant(""),
       tags: fc.constant(null),
       parentContainers: fc.constant([]),
+      parentLocation: fc.constant(null),
       lastNonWorkbenchParent: fc.constant(null),
       lastMoveDate: fc.constant(null),
       owner: fc.constant(null),

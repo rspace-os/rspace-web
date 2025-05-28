@@ -323,10 +323,6 @@ export interface InventoryRecord
    * where they aren't applicable, due to implementation details of various
    * components. It would be ideal if this were not necessary.
    */
-  hasParentContainers(): boolean;
-  isInWorkbench(): boolean; // any parent is a bench
-  isOnWorkbench(): boolean; // immediate parent is a bench
-  isMovable(): boolean;
   readonly hasSubSamples: boolean;
 
   /*

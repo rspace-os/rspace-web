@@ -91,8 +91,11 @@ describe("computed: paramsForBackend", () => {
         globalId: "IC2",
       }).paramsForBackend;
       parent.parentContainers = [];
+      parent.parentLocation = null;
+      parent.lastNonWorkbenchParent = null;
       const container = makeMockContainer({
         parentContainers: [parent],
+        parentLocation: null,
       });
       expect(JSON.stringify(container.paramsForBackend)).toEqual(
         expect.any(String)

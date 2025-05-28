@@ -40,6 +40,9 @@ public class OAuthClientCommunityControllerMVCIT extends MVCTestBase {
 
     // verification password succeeds
     verificationPasswordHandler.encryptAndSavePassword(user, "abcdefghi");
+
+    // confirm oauth authentication accepts verification password
+    enableApiOAuthAuthentication();
     postOauthAccessTokenRequest(username, password, app).andExpect(status().isOk()).andReturn();
   }
 

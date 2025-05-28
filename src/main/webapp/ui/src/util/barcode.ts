@@ -19,7 +19,7 @@ type BarcodeFormat =
  * Given a barcode format, return a human-readable string.
  */
 export function barcodeFormatAsString(
-  barcodeFormat: BarcodeFormat | "unknown"
+  barcodeFormat: BarcodeFormat | "Unknown"
 ): string {
   return {
     aztec: "Aztec",
@@ -35,6 +35,6 @@ export function barcodeFormatAsString(
     qr_code: "QR Code",
     upc_a: "UPC-A",
     upc_e: "UPC-E",
-    unknown: "Unknown",
+    Unknown: "Unknown",
   }[barcodeFormat];
 }

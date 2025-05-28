@@ -79,15 +79,19 @@
         <div id="fieldmark.available.description"><spring:message code="system.property.description.fieldmark.available" /></div>
         <div id="github.available.description"><spring:message code="system.property.description.github.available" /></div>
         <div id="api.available.description"><spring:message code="system.property.description.api.available" /></div>
+        <div id="api.oauth.authentication.description"><spring:message code="system.property.description.api.oauth.authentication" /></div>
         <div id="onboarding.available.description"><spring:message code="system.property.description.onboarding.available" /></div>
         <div id="snapgene.available.description"><spring:message code="system.property.description.snapgene.available" /></div>
         <div id="group_autosharing.available.description"><spring:message code="system.property.description.group_autosharing.available" /></div>
-        <div id="self_service_labgroups.available.description"><spring:message code="system.property.description.self_service_labgroups" /></div>
+        <div id="self_service_labgroups.description"><spring:message code="system.property.description.self_service_labgroups" /></div>
         <div id="publicLastLogin.available.description"><spring:message code="system.property.description.publicLastLogin.available" /></div>
         <div id="inventory.available.description"><spring:message code="system.property.description.inventory.available" /></div>
         <div id="public_sharing.description"><spring:message code="system.property.description.public_sharing" /></div>
         <div id="publicdocs_allow_seo.description"><spring:message code="system.property.description.publicdocs_allow_seo" /></div>
         <div id="allow_project_groups.description"><spring:message code="system.property.description.allow_project_groups" /></div>
+        <div id="pi_can_edit_all_work_in_labgroup.description"><spring:message code="system.property.description.pi_can_edit_all_work_in_labgroup" /></div>
+        <div id="msteams.available.description"><spring:message code="system.property.description.msteams.available" /></div>
+        <div id="protocols_io.available.description"><spring:message code="system.property.description.protocols_io.available" /></div>
     </div>
 
 </div>

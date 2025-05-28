@@ -120,7 +120,7 @@ export default class TemplateModel extends SampleModel implements Template {
     factory: Factory,
     params: TemplateAttrs = { ...DEFAULT_TEMPLATE }
   ) {
-    super(factory);
+    super(factory, params as unknown as SampleAttrs);
     makeObservable(this, {
       defaultUnitId: observable,
       version: observable,
@@ -369,7 +369,7 @@ export default class TemplateModel extends SampleModel implements Template {
      * is available.
      */
     if (this.id) {
-      await this.search.fetcher.performInitialSearch({});
+      await this.search.fetcher.performInitialSearch(null);
       // User can only update samples they own
       const samplesToBeUpdated = this.search.fetcher.results.filter(
         // default to true so we don't miss any that could be the current user's
@@ -573,7 +573,7 @@ export default class TemplateModel extends SampleModel implements Template {
   validateQuantity(): ValidationResult {
     /*
      * Whilst Templates have a quantity becuase they extend Samples, which
-     * extend RecordWithQuantity, the quantity is not exposed to the user and
+     * implement HasQuantity, the quantity is not exposed to the user and
      * should not be asserted when checking whether the Template is in a valid
      * state.
      */

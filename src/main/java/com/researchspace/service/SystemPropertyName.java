@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public enum SystemPropertyName {
   API_AVAILABLE("api.available"),
+  API_OAUTH_AUTHENTICATION("api.oauth.authentication"),
   BOX_AVAILABLE("box.available"),
   CHEMISTRY_AVAILABLE("chemistry.available"),
   DATACITE_ENABLED("datacite.enabled"),

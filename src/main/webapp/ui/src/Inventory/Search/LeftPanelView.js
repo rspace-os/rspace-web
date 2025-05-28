@@ -21,6 +21,8 @@ import {
 } from "../../stores/definitions/BaseRecord";
 import Search from "./Search";
 import NavigateContext from "../../stores/contexts/Navigate";
+import { hasLocation } from "../../stores/models/HasLocation";
+import * as Parsers from "../../util/parsers";
 
 const useStyles = makeStyles()((theme, { alwaysVisibleSidebar }) => ({
   grid: {
@@ -59,17 +61,17 @@ function LeftPanelView(): Node {
   const [isParentContainerIncluded, setIsParentContainerIncluded] =
     React.useState<?boolean>();
   React.useEffect(() => {
-    if (searchStore.search.activeResult?.hasParentContainers()) {
-      const parents = searchStore.search.activeResult
-        // $FlowExpectedError[incompatible-use]
-        // $FlowExpectedError[prop-missing] if hasParentContainer is true, then allParentContainers exists
-        .allParentContainers()
-        .map((p) => p.globalId);
-      const anyParentIncluded = parents.some((p) => results.includes(p));
-      setIsParentContainerIncluded(anyParentIncluded);
-    } else {
-      setIsParentContainerIncluded(false);
-    }
+    setIsParentContainerIncluded(
+      Parsers.isNotNull(searchStore.search.activeResult)
+        .toOptional()
+        .flatMap(hasLocation)
+        .map((recordWithLocation) =>
+          recordWithLocation.allParentContainers
+            .map(({ globalId }) => globalId)
+            .some((g) => results.includes(g))
+        )
+        .orElse(false)
+    );
   }, [searchStore.search.filteredResults, searchStore.search.activeResult]);
 
   const [inContainerSearch, setInContainerSearch] =

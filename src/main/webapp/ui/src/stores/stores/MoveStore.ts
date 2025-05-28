@@ -29,6 +29,7 @@ import {
 import { type Panel } from "../../util/types";
 import { Optional } from "../../util/optional";
 import { getErrorMessage } from "../../util/error";
+import { HasLocation } from "../definitions/HasLocation";
 
 type SerialisedRecord =
   | (BulkEndpointRecordSerialisation & {
@@ -46,7 +47,7 @@ export default class MoveStore {
   loading: boolean = false;
   isMoving: boolean = false;
   submitting: "NO" | "MAKE-TOP" | "TO-OTHER" = "NO";
-  selectedResults: Array<ContainerModel | SubSampleModel> = [];
+  selectedResults: Array<InventoryRecord & HasLocation> = [];
   search: Search | null = null;
 
   constructor(rootStore: RootStore) {
@@ -323,7 +324,7 @@ export default class MoveStore {
 
   async refreshAfterMove() {
     const { searchStore, peopleStore } = this.rootStore;
-    void searchStore.search.fetcher.performInitialSearch({});
+    void searchStore.search.fetcher.performInitialSearch(null);
     const activeResult = searchStore.activeResult;
     if (activeResult) {
       if (activeResult.state === "preview") {

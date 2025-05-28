@@ -9,7 +9,7 @@ import "@testing-library/jest-dom";
 import Quantity from "../Quantity";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-import { type Quantity as QuantityType } from "../../../../stores/models/RecordWithQuantity";
+import { type Quantity as QuantityType } from "../../../../stores/definitions/HasQuantity";
 
 jest.mock("../../../../stores/stores/RootStore", () => () => ({
   unitStore: {
