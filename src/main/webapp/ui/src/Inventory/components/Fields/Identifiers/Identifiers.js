@@ -609,6 +609,7 @@ const AssignDialog = observer(
                 disableMultipleRowSelection
                 controlDefaults={{
                   isAssociated: false,
+                  state: "draft",
                 }}
               />
             </Stack>
