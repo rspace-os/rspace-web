@@ -1,0 +1,5 @@
+// @flow
+
+import { type StoreContainer } from "./stores/RootStore";
+
+declare export default () => StoreContainer;

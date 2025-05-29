@@ -2,7 +2,7 @@
 
 import ContentsChips from "../../Inventory/Container/Content/ContentsChips";
 import { type URL, type Point, type _LINK } from "../../util/types";
-import { match, classMixin, clamp } from "../../util/Util";
+import { match, clamp } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { selectColor } from "../../util/colors";
 import RsSet from "../../util/set";
@@ -43,7 +43,6 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import LocationModel, { type LocationAttrs } from "./LocationModel";
-import { Movable } from "./Movable";
 import { type PersonAttrs } from "../definitions/Person";
 import Result, {
   defaultVisibleResultFields,
@@ -83,16 +82,14 @@ import {
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
+import { type Person } from "../definitions/Person";
+import { type HasLocation, type HasLocationEditableFields, type HasLocationUneditableFields } from "../definitions/HasLocation";
+import { type Quantity } from "../definitions/HasQuantity";
+import { type UnitCategory } from "../stores/UnitStore";
 
-type ContainerEditableFields = {
-  ...ResultEditableFields,
-  ...
-};
+type ContainerEditableFields = ResultEditableFields & HasLocationEditableFields;
 
-type ContainerUneditableFields = {
-  ...ResultUneditableFields,
-  location: InventoryRecord,
-};
+type ContainerUneditableFields = ResultUneditableFields & HasLocationUneditableFields;
 
 export type ContainerInContainerParams = {
   parentContainers?: Array<{ id: Id }>,
@@ -121,6 +118,7 @@ export type ContainerAttrs = {|
   contentSummary: ?ContentSummary,
   image?: string,
   parentContainers: Array<ContainerAttrs>,
+  parentLocation: Location | null,
   lastNonWorkbenchParent: ?ContainerAttrs,
   lastMoveDate: ?Date,
   owner: ?PersonAttrs,
@@ -141,7 +139,8 @@ declare export default class ContainerModel
   implements
     Container,
     HasEditableFields<ContainerEditableFields>,
-    HasUneditableFields<ContainerUneditableFields>
+    HasUneditableFields<ContainerUneditableFields>,
+    HasLocation
 {
   canStoreContainers: boolean;
   canStoreSamples: boolean;
@@ -161,11 +160,6 @@ declare export default class ContainerModel
   contentSearch: SearchInterface;
   parentContainers: Array<Container>;
   parentLocation: ?Location;
-  allParentContainers: ?() => Array<Container>;
-  rootParentContainer: ?Container;
-  immediateParentContainer: ?Container;
-  lastNonWorkbenchParent: ?Container;
-  lastMoveDate: ?Date;
   siblingColorCache: Map<Id, string>;
 
   constructor(factory: Factory, params?: ContainerAttrs): ContainerModel;
@@ -266,6 +260,22 @@ declare export default class ContainerModel
   get inContainerParams(): ContainerInContainerParams;
   get dataAttachedToRecordCreatedAnaylticsEvent(): {};
   get createOptions(): $ReadOnlyArray<CreateOption>;
+
+  +immediateParentContainer: Container | null;
+  +rootParentContainer: Container | null;
+  +allParentContainers: $ReadOnlyArray<Container>;
+  +isOnWorkbench: boolean;
+  +isDirectlyOnWorkbench: boolean;
+  isOnWorkbenchOfUser(user: Person): boolean;
+  isDirectlyOnWorkbenchOfUser(user: Person): boolean;
+  +lastNonWorkbenchParent: Container | null;
+
+  quantity: Quantity;
+  +quantityCategory: UnitCategory;
+  +quantityUnitId: number;
+  +quantityValue: number;
+  +quantityLabel: string;
+  +quantityUnitLabel: string;
 }
 
 type BatchContainerEditableFields = {

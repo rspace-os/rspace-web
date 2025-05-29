@@ -38,7 +38,7 @@ describe("Scoped Toasts Model Tests", () => {
         async (cmds) => {
           const s = () => ({
             model: { count: 0 },
-            real: new Result(mockFactory()),
+            real: new Result(mockFactory(), {}),
           });
           await fc.asyncModelRun(s, cmds);
         }

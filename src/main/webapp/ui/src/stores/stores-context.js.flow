@@ -1,0 +1,6 @@
+// @flow
+
+import { type Context } from "react";
+import { type StoreContainer } from "./stores/RootStore";
+
+declare export const storesContext: Context<StoreContainer>;

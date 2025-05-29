@@ -8,6 +8,7 @@ import com.researchspace.api.v1.controller.InventoryIdentifiersApiController.Api
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.model.User;
 import java.util.List;
+import javax.naming.InvalidNameException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +24,8 @@ public interface InventoryIdentifiersApi {
 
   @GetMapping
   @ResponseStatus(HttpStatus.OK)
-  List<ApiInventoryDOI> getUserIdentifiers(String state, Boolean isAssociated, User user);
+  List<ApiInventoryDOI> getUserIdentifiers(
+      String state, Boolean isAssociated, String identifier, User user) throws InvalidNameException;
 
   /** Register new IGSN identifier for record with given globalId */
   @PostMapping
@@ -34,6 +36,18 @@ public interface InventoryIdentifiersApi {
   @PostMapping(value = "/bulk/{count}")
   @ResponseStatus(HttpStatus.CREATED)
   List<ApiInventoryDOI> bulkAllocateIdentifiers(Integer count, User user);
+
+  /**
+   * Assign an existing IGSN (identifierId) to a specific inventory item (parentGlobalId)
+   *
+   * @param identifierId
+   * @param parentGlobalId
+   * @param user
+   * @return
+   */
+  @PostMapping(value = "/{identifierId}/assign")
+  ApiInventoryDOI assignIdentifier(
+      Long identifierId, ApiInventoryIdentifierPost parentGlobalId, User user);
 
   @DeleteMapping(value = "/{identifierId}")
   boolean deleteIdentifier(Long identifierId, User user);

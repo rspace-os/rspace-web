@@ -1,0 +1,8 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function UserDetails({|
+  time: string,
+  formatter?: (number, string, string) => string,
+|}): Node;

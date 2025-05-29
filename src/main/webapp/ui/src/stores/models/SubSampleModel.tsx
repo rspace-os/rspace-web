@@ -1,7 +1,6 @@
 import { mkAlert } from "../contexts/Alert";
 import { type _LINK } from "../../util/types";
 import ApiService from "../../common/InvApiService";
-import { classMixin } from "../../util/Util";
 import RsSet from "../../util/set";
 import {
   type HasEditableFields,
@@ -24,14 +23,6 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import RecordWithQuantity, {
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
-  type Quantity,
-  getValue,
-  getUnitId,
-} from "./RecordWithQuantity";
-import { Movable } from "./Movable";
 import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
@@ -47,10 +38,12 @@ import {
   runInAction,
 } from "mobx";
 import { type Alias, type Sample } from "../definitions/Sample";
-import {
+import Result, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
+  ResultEditableFields,
+  ResultUneditableFields,
 } from "./Result";
 import React from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
@@ -64,13 +57,27 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
+import { HasLocationMixin } from "./HasLocation";
+import {
+  HasLocationEditableFields,
+  HasLocationUneditableFields,
+} from "../definitions/HasLocation";
+import {
+  type HasQuantityEditableFields,
+  type HasQuantityUneditableFields,
+  type Quantity,
+} from "../definitions/HasQuantity";
+import { HasQuantityMixin, getValue, getUnitId } from "./HasQuantity";
 
-type SubSampleEditableFields = RecordWithQuantityEditableFields;
+type SubSampleEditableFields = HasQuantityEditableFields &
+  HasLocationEditableFields &
+  ResultEditableFields;
 
-type SubSampleUneditableFields = RecordWithQuantityUneditableFields & {
-  sample: Sample;
-  location: InventoryRecord;
-};
+type SubSampleUneditableFields = HasQuantityUneditableFields &
+  HasLocationUneditableFields &
+  ResultUneditableFields & {
+    sample: Sample;
+  };
 
 export type Note = {
   id?: number;
@@ -98,8 +105,9 @@ export type SubSampleAttrs = {
   newBase64Image?: string;
   image?: string;
   parentContainers: Array<ContainerAttrs>;
-  lastNonWorkbenchParent: string | null;
-  lastMoveDate: Date | null;
+  parentLocation: Location | null;
+  lastMoveDate: string | null;
+  lastNonWorkbenchParent: ContainerAttrs | null;
   sample?: SampleAttrs | SampleModel;
   owner: PersonAttrs | null;
   created: string | null;
@@ -123,7 +131,7 @@ const defaultEditableFields = new Set([
 ]);
 
 export default class SubSampleModel
-  extends RecordWithQuantity
+  extends HasQuantityMixin(HasLocationMixin(Result))
   implements
     SubSample,
     HasEditableFields<SubSampleEditableFields>,
@@ -134,30 +142,17 @@ export default class SubSampleModel
   sample: SampleModel;
   // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<ContainerModel>;
-  parentLocation: Location | null = null;
-  allParentContainers: (() => Array<ContainerModel>) | null = null;
-  rootParentContainer: ContainerModel | null = null;
-  immediateParentContainer: ContainerModel | null = null;
-  // @ts-expect-error lastNonWorkbenchParent is initialised by populateFromJson
-  lastNonWorkbenchParent: string | null;
-  // @ts-expect-error lastMoveDate is initialised by populateFromJson
-  lastMoveDate: Date | null;
   createOptionsParametersState: {
     split: { key: "split"; copies: number };
   };
 
   constructor(factory: Factory, params: SubSampleAttrs) {
-    super(factory);
+    super(factory, params);
     makeObservable(this, {
       notes: observable,
       sample: observable,
-      parentLocation: observable,
       parentContainers: observable,
-      allParentContainers: observable,
-      rootParentContainer: observable,
-      immediateParentContainer: observable,
-      lastNonWorkbenchParent: observable,
-      lastMoveDate: observable,
+      rootParentContainer: computed,
       createOptionsParametersState: observable,
       createNote: action,
       paramsForBackend: override,
@@ -187,14 +182,6 @@ export default class SubSampleModel
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = { ...defaultParams, ...passedParams } as SubSampleAttrs;
     this.notes = params.notes ?? [];
-    // @ts-expect-error parentLocation is on the mixed in class, Movable
-    this.parentLocation = params.parentLocation;
-    // @ts-expect-error parentContainers is on the mixed in class, Movable
-    this.parentContainers = params.parentContainers ?? [];
-    this.lastNonWorkbenchParent = params.lastNonWorkbenchParent;
-    this.lastMoveDate = params.lastMoveDate;
-    // @ts-expect-error initializeMovableMixin is on the mixed in class, Movable
-    this.initializeMovableMixin(factory);
 
     /*
      * When a SampleModel is instantiating its SubSamples it passes `this`, an
@@ -328,11 +315,7 @@ export default class SubSampleModel
   }
 
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
-    const options = new Map([
-      ...super.adjustableTableOptions(),
-      // @ts-expect-error adjustableTableOptions_movable is on the mixed in class, Movable
-      ...(this.adjustableTableOptions_movable() as AdjustableTableRowOptions<string>),
-    ]);
+    const options = new Map([...super.adjustableTableOptions()]);
     if (this.readAccessLevel === "public") {
       options.set("Sample", () => ({ renderOption: "node", data: null }));
     } else {
@@ -384,14 +367,11 @@ export default class SubSampleModel
     }
   }
 
-  async fetchAdditionalInfo(
-    silent: boolean = false
-  ): Promise<{ data: object }> {
-    const { data } = await super.fetchAdditionalInfo(silent);
+  async fetchAdditionalInfo(silent: boolean = false): Promise<void> {
+    await super.fetchAdditionalInfo(silent);
     getRootStore().trackingStore.trackEvent("InventoryRecordAccessed", {
       type: this.recordType,
     });
-    return { data };
   }
 
   get iconName(): string {
@@ -417,11 +397,11 @@ export default class SubSampleModel
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get fieldValues(): SubSampleEditableFields & SubSampleUneditableFields {
     return {
       ...super.fieldValues,
       sample: this.sample,
-      location: this,
     };
   }
 
@@ -429,7 +409,7 @@ export default class SubSampleModel
     return true;
   }
 
-  //eslint-disable-next-line no-unused-vars
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): {
     [key in keyof SubSampleEditableFields]: string | null;
   } & {
@@ -439,7 +419,6 @@ export default class SubSampleModel
       ...super.noValueLabel,
       quantity: null,
       sample: null,
-      location: null,
     };
   }
 
@@ -479,7 +458,7 @@ export default class SubSampleModel
         onSubmit: () => {
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this
+            this as SubSample
           );
         },
       },
@@ -487,11 +466,8 @@ export default class SubSampleModel
   }
 }
 
-// copying mixin methods, add type any for flow
-classMixin(SubSampleModel, Movable);
-
 type BatchSubSampleEditableFields = ResultCollectionEditableFields &
-  Omit<SubSampleEditableFields, "name">;
+  Omit<SubSampleEditableFields, "name" | "identifiers">;
 
 /*
  * This is a wrapper class around a set of SubSamples, making it easier to

@@ -17,11 +17,13 @@ import {
   type Container,
   type Location,
 } from "../../../../stores/definitions/Container";
+import { type SubSample } from "../../../../stores/definitions/SubSample";
 import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import { runInAction } from "mobx";
 import useStores from "../../../../stores/use-stores";
 import { useContainerHelpers } from "./common";
+import { type HasLocation } from "../../../../stores/definitions/HasLocation";
 
 export function Context({
   children,
@@ -147,7 +149,7 @@ export function Context({
           throw new Error("Container must have some selected locations");
         const selectedLocations = container.selectedLocations;
         const sourceLocations: {
-          [GlobalId]: {| content: InventoryRecord, loc: Location |},
+          [GlobalId]: {| content: InventoryRecord & HasLocation, loc: Location |},
         } = Object.fromEntries(
           selectedLocations.map((l) => {
             if (!l.content)
@@ -160,7 +162,7 @@ export function Context({
           })
         );
         const destinationLocations: {
-          [GlobalId]: {| content: ?InventoryRecord, loc: Location |},
+          [GlobalId]: {| content: null | (InventoryRecord & HasLocation), loc: Location |},
         } = Object.fromEntries(
           selectedLocations.map((l) => {
             if (!l.content)

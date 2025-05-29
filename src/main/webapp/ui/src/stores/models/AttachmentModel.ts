@@ -141,8 +141,7 @@ const chemExtensions = new Set([
  */
 export class ExistingAttachment implements Attachment {
   id: AttachmentId;
-  // @ts-expect-error globalId is initialised by populateFromJson
-  globalId: ?GlobalId;
+  globalId: GlobalId | null;
   name: string;
   size: Bytes;
   link: Url | null;

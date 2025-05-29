@@ -1,0 +1,23 @@
+// @flow
+
+import { type Node } from "react";
+
+export type ImageData = {|
+  dataURL: string,
+  file: Blob,
+  binaryString?: string,
+|};
+
+declare export default function ImageField({|
+  storeImage: (ImageData) => void,
+  imageAsObjectURL: ?string,
+  alt: string,
+  id?: string,
+  disabled?: boolean,
+  width?: string | number,
+  height?: string | number,
+  showPreview?: boolean,
+  warningAlert?: string,
+  endAdornment?: Node,
+  noValueLabel?: ?string,
+|}): Node;

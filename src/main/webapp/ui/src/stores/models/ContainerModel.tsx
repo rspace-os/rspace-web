@@ -1,6 +1,6 @@
 import ContentsChips from "../../Inventory/Container/Content/ContentsChips";
 import { type URL, type Point, type _LINK } from "../../util/types";
-import { match, classMixin, clamp } from "../../util/Util";
+import { match, clamp } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { selectColor } from "../../util/colors";
 import RsSet from "../../util/set";
@@ -45,7 +45,6 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import LocationModel, { type LocationAttrs } from "./LocationModel";
-import { Movable } from "./Movable";
 import { type PersonAttrs } from "../definitions/Person";
 import Result, {
   defaultVisibleResultFields,
@@ -85,12 +84,16 @@ import {
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
+import { HasLocationMixin } from "./HasLocation";
+import {
+  HasLocationEditableFields,
+  HasLocationUneditableFields,
+} from "../definitions/HasLocation";
 
-type ContainerEditableFields = ResultEditableFields;
+type ContainerEditableFields = ResultEditableFields & HasLocationEditableFields;
 
-type ContainerUneditableFields = ResultUneditableFields & {
-  location: InventoryRecord;
-};
+type ContainerUneditableFields = ResultUneditableFields &
+  HasLocationUneditableFields;
 
 export type ContainerInContainerParams = {
   parentContainers?: Array<{ id: Id }>;
@@ -120,9 +123,9 @@ export type ContainerAttrs = {
   contentSummary: ContentSummary | null;
   image?: string;
   parentContainers: Array<ContainerAttrs>;
-  lastNonWorkbenchParent: ContainerAttrs | null;
   parentLocation: Location | null;
-  lastMoveDate: Date | null;
+  lastMoveDate: string | null;
+  lastNonWorkbenchParent: ContainerAttrs | null;
   owner: PersonAttrs | null;
   created: string | null;
   lastModified: string | null;
@@ -191,7 +194,7 @@ const defaultEditableFields = new Set([
 ]);
 
 export default class ContainerModel
-  extends Result
+  extends HasLocationMixin(Result)
   implements
     Container,
     HasEditableFields<ContainerEditableFields>,
@@ -218,22 +221,10 @@ export default class ContainerModel
   contentSearch: SearchInterface;
   // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<ContainerAttrs>;
-  // @ts-expect-error parentLocation is initialised by populateFromJson
-  parentLocation: Location | null;
-  // @ts-expect-error allParentContainers is initialised by populateFromJson
-  allParentContainers: (() => Array<Container>) | null;
-  // @ts-expect-error rootParentContainer is initialised by populateFromJson
-  rootParentContainer: Container | null;
-  // @ts-expect-error initialised by movable
-  immediateParentContainer: Container | null;
-  // @ts-expect-error lastNonWorkbenchParent is initialised by populateFromJson
-  lastNonWorkbenchParent: Container | null;
-  // @ts-expect-error lastMoveDate is initialised by populateFromJson
-  lastMoveDate: Date | null;
   siblingColorCache: Map<Id, string> = new Map<Id, string>();
 
   constructor(factory: Factory, params: ContainerAttrs = DEFAULT_CONTAINER) {
-    super(factory);
+    super(factory, params);
     makeObservable(this, {
       canStoreContainers: observable,
       canStoreSamples: observable,
@@ -251,13 +242,8 @@ export default class ContainerModel
       locationsCount: observable,
       contentSummary: observable,
       contentSearch: observable,
-      parentLocation: observable,
       parentContainers: observable,
-      allParentContainers: observable,
-      rootParentContainer: observable,
-      immediateParentContainer: observable,
-      lastNonWorkbenchParent: observable,
-      lastMoveDate: observable,
+      rootParentContainer: computed,
       updateLocationsCount: action,
       setOrganization: action,
       findLocation: action,
@@ -335,13 +321,7 @@ export default class ContainerModel
       : {
           isAccessible: false,
         };
-    this.parentLocation = params.parentLocation;
     this.parentContainers = params.parentContainers;
-    // @ts-expect-error lastNonWorkbenchParent is enriched by movable
-    this.lastNonWorkbenchParent = params.lastNonWorkbenchParent;
-    this.lastMoveDate = params.lastMoveDate;
-    // @ts-expect-error is on movable
-    this.initializeMovableMixin(factory);
 
     const searchParams = {
       fetcherParams: {
@@ -446,7 +426,7 @@ export default class ContainerModel
   }
 
   get results(): Array<Container | SubSample> {
-    return this.contentSearch.filteredResults;
+    return this.contentSearch.filteredResults as Array<Container | SubSample>;
   }
 
   get canStoreRecordTypes(): boolean {
@@ -465,7 +445,7 @@ export default class ContainerModel
   get movingIntoItself(): boolean {
     if (!this.allParentContainers)
       throw new Error("Not yet fully initialised.");
-    const allParentContainers = this.allParentContainers();
+    const allParentContainers = this.allParentContainers;
     const moveStore = getRootStore().moveStore;
     const selectedIds = new RsSet(
       moveStore.selectedResults.map((r) => r.globalId)
@@ -703,18 +683,13 @@ export default class ContainerModel
       this.setLoading(false);
       throw new Error("Can't fetch details of bench");
     }
-    let data;
     if (this.fetchingAdditionalInfo) {
-      data = (await this.fetchingAdditionalInfo).data;
+      await this.fetchingAdditionalInfo;
     } else {
       runInAction(() => {
         this.initializedLocations = false;
       });
-      this.fetchingAdditionalInfo = super.fetchAdditionalInfo(
-        silent,
-        queryParameters
-      );
-      data = (await this.fetchingAdditionalInfo).data;
+      await super.fetchAdditionalInfo(silent, queryParameters);
     }
     this.setLoading(true);
 
@@ -726,7 +701,7 @@ export default class ContainerModel
     }
 
     this.setLoading(false);
-    return { data };
+    return;
   }
 
   findLocation(col: number, row: number): Location | undefined {
@@ -941,8 +916,6 @@ export default class ContainerModel
 
     const options: AdjustableTableRowOptions<string> = new Map([
       ...super.adjustableTableOptions(),
-      // @ts-expect-error adjustableTableOptions_movable is on the mixed in class, Movable
-      ...(this.adjustableTableOptions_movable() as AdjustableTableRowOptions<string>),
     ]);
     if (this.readAccessLevel !== "full") {
       options.set("Contents", () => ({ renderOption: "node", data: null }));
@@ -1077,10 +1050,10 @@ export default class ContainerModel
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get fieldValues(): ContainerEditableFields & ContainerUneditableFields {
     return {
       ...super.fieldValues,
-      location: this,
     };
   }
 
@@ -1089,6 +1062,7 @@ export default class ContainerModel
   }
 
   //eslint-disable-next-line no-unused-vars
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): {
     [key in keyof ContainerEditableFields]: string | null;
   } & {
@@ -1096,7 +1070,6 @@ export default class ContainerModel
   } {
     return {
       ...super.noValueLabel,
-      location: null,
     };
   }
 
@@ -1112,12 +1085,12 @@ export default class ContainerModel
       void this.contentSearch.setSearchView(
         cTypeToDefaultSearchView(this.cType)
       );
-      void this.contentSearch.fetcher.performInitialSearch({});
+      void this.contentSearch.fetcher.performInitialSearch(null);
     }
   }
 
   showTopLinkInBreadcrumbs(): boolean {
-    return !this.isWorkbench && !this.isInWorkbench();
+    return !this.isWorkbench && !this.isOnWorkbench;
   }
 
   get usableInLoM(): boolean {
@@ -1125,7 +1098,7 @@ export default class ContainerModel
   }
 
   get beingCreatedInContainer(): boolean {
-    return !this.isOnWorkbench();
+    return !this.isDirectlyOnWorkbench;
   }
 
   get inContainerParams(): ContainerInContainerParams {
@@ -1245,8 +1218,6 @@ export default class ContainerModel
     ];
   }
 }
-
-classMixin(ContainerModel, Movable);
 
 type BatchContainerEditableFields = ResultCollectionEditableFields;
 

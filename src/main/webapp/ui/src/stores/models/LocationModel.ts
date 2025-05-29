@@ -6,6 +6,8 @@ import { action, computed, observable, makeObservable } from "mobx";
 import { type Location, type Container } from "../definitions/Container";
 import { type SubSample } from "../definitions/SubSample";
 import { type Search } from "../definitions/Search";
+import { type InventoryRecord } from "../definitions/InventoryRecord";
+import { type HasLocation } from "../definitions/HasLocation";
 
 export type LocationAttrs = {
   id: number | null;
@@ -23,7 +25,7 @@ export default class LocationModel implements Location {
   // @ts-expect-error Set by constructor's call to setAttributes
   coordY: number;
   // @ts-expect-error Set by constructor's call to setAttributes
-  content: SubSample | Container | null;
+  content: null | (InventoryRecord & HasLocation);
   selected: boolean = false;
   // @ts-expect-error Set by constructor's call to setAttributes
   parentContainer: Container;
@@ -222,7 +224,7 @@ export default class LocationModel implements Location {
           ) ?? null;
 
         // set new location
-        this.content = firstNotPlaced;
+        this.content = firstNotPlaced as Container | SubSample | null;
       } else {
         this.content = null;
       }

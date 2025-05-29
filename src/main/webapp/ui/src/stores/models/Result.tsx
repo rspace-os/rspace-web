@@ -107,6 +107,7 @@ export type ResultEditableFields = {
   barcodes: Array<BarcodeRecord>;
   sharingMode: SharingMode;
   sharedWith: Array<SharedWithGroup> | null;
+  identifiers: Array<Identifier>;
 };
 
 export type ResultUneditableFields = {
@@ -245,7 +246,7 @@ export default class Result
   // @ts-expect-error modifiedByFullName is initialised by populateFromJson
   modifiedByFullName: string;
   // @ts-expect-error owner is initialised by populateFromJson
-  owner: ?Person;
+  owner: Person | null;
   deleted: boolean = false;
   // @ts-expect-error _links is initialised by populateFromJson
   _links: { [_: string]: URLType };
@@ -285,7 +286,7 @@ export default class Result
    */
   scopedToasts: Array<Alert> = [];
 
-  constructor(factory: Factory) {
+  constructor(factory: Factory, _params: object) {
     makeObservable(this, {
       currentlyVisibleFields: observable,
       currentlyEditableFields: observable,
@@ -993,10 +994,11 @@ export default class Result
   async fetchAdditionalInfo(
     silent: boolean = false,
     queryParameters: URLSearchParams = new URLSearchParams()
-  ): Promise<{ data: object }> {
+  ): Promise<void> {
     if (this.fetchingAdditionalInfo || !this.id) {
-      if (this.fetchingAdditionalInfo === null) return { data: {} };
-      return this.fetchingAdditionalInfo;
+      if (this.fetchingAdditionalInfo === null) return;
+      await this.fetchingAdditionalInfo;
+      return;
     }
     const id = this.id;
 
@@ -1014,7 +1016,7 @@ export default class Result
       this.populateFromJson(this.factory.newFactory(), data);
       await this.fetchImage("image");
       await this.fetchImage("thumbnail");
-      return { data };
+      return;
     } catch (error) {
       if (!silent) {
         getRootStore().uiStore.addAlert(
@@ -1613,34 +1615,6 @@ export default class Result
     ];
   }
 
-  // see Movable: if top parent is a bench (item is 'in' bench ie at any level)
-  isInWorkbench(): boolean {
-    return false;
-  }
-
-  // see Movable: if top parent is current user's bench (item is 'in' bench ie at any level)
-  isInCurrentUsersWorkbench(): boolean {
-    return false;
-  }
-
-  // see Movable: if only parent is a bench (item is 'on' bench ie at top-level)
-  isOnWorkbench(): boolean {
-    return false;
-  }
-
-  // see Movable: if only parent is current user's bench (item is 'on' bench ie at top-level)
-  isOnCurrentUsersWorkbench(): boolean {
-    return false;
-  }
-
-  isMovable(): boolean {
-    return false;
-  }
-
-  hasParentContainers(): boolean {
-    return false;
-  }
-
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     if (!this.owner) throw new Error("Owner is required");
     const owner = this.owner;
@@ -1769,6 +1743,7 @@ export default class Result
       owner: this.owner,
       sharingMode: this.sharingMode,
       sharedWith: this.sharedWith,
+      identifiers: this.identifiers,
     };
   }
 
@@ -1790,6 +1765,7 @@ export default class Result
       owner: null,
       sharingMode: null,
       sharedWith: null,
+      identifiers: null,
     };
   }
 

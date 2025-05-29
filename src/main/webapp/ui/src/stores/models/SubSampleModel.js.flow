@@ -3,7 +3,6 @@
 import { mkAlert } from "../contexts/Alert";
 import { type _LINK } from "../../util/types";
 import ApiService from "../../common/InvApiService";
-import { classMixin } from "../../util/Util";
 import RsSet from "../../util/set";
 import {
   type HasEditableFields,
@@ -22,14 +21,11 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import RecordWithQuantity, {
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
-  type Quantity,
+import Result from "./Result";
+import {
   getValue,
   getUnitId,
-} from "./RecordWithQuantity";
-import { Movable } from "./Movable";
+} from "./HasQuantity";
 import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
@@ -49,6 +45,8 @@ import {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
+  type ResultEditableFields,
+  type ResultUneditableFields
 } from "./Result";
 import React, { type Node } from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
@@ -61,16 +59,20 @@ import {
   IsValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
+import { type Container } from "../definitions/Container";
+import { type Person } from "../definitions/Person";
+import { type HasLocation, type HasLocationEditableFields, type HasLocationUneditableFields } from "../definitions/HasLocation";
+import {
+  type HasQuantityEditableFields,
+  type HasQuantityUneditableFields,
+  type Quantity,
+} from "../definitions/HasQuantity";
+import { type UnitCategory } from "../stores/UnitStore";
 
-type SubSampleEditableFields = {
-  ...RecordWithQuantityEditableFields,
-};
+type SubSampleEditableFields = HasQuantityEditableFields & ResultEditableFields & HasLocationEditableFields;
 
-type SubSampleUneditableFields = {
-  ...RecordWithQuantityUneditableFields,
+type SubSampleUneditableFields = HasQuantityUneditableFields & ResultUneditableFields & HasLocationUneditableFields & {
   sample: Sample,
-  location: InventoryRecord,
-  ...
 };
 
 export type Note = {|
@@ -99,6 +101,7 @@ export type SubSampleAttrs = {|
   newBase64Image?: string,
   image?: string,
   parentContainers: Array<ContainerAttrs>,
+  parentLocation: Location | null;
   lastNonWorkbenchParent: ?string,
   lastMoveDate: ?Date,
   sample?: SampleAttrs | SampleModel,
@@ -114,21 +117,17 @@ export type SubSampleAttrs = {|
 |};
 
 declare export default class SubSampleModel
-  extends RecordWithQuantity
+  extends Result
   implements
     SubSample,
     HasEditableFields<SubSampleEditableFields>,
-    HasUneditableFields<SubSampleUneditableFields>
+    HasUneditableFields<SubSampleUneditableFields>,
+    HasLocation
 {
   notes: Array<Note>;
   sample: SampleModel;
   parentContainers: Array<ContainerModel>;
   parentLocation: ?Location;
-  allParentContainers: ?() => Array<ContainerModel>;
-  rootParentContainer: ?ContainerModel;
-  immediateParentContainer: ?ContainerModel;
-  lastNonWorkbenchParent: ?string;
-  lastMoveDate: ?Date;
   createOptionsParametersState: {|
     split: {| key: "split",  copies: number |}
   |};
@@ -161,7 +160,23 @@ declare export default class SubSampleModel
   get noValueLabel(): {[key in keyof SubSampleEditableFields]: ?string} & {[key in keyof SubSampleUneditableFields]: ?string};
   validate(): ValidationResult;
   get usableInLoM(): boolean;
-  get createOptions(): $ReadOnlyArray<CreateOption>;
+
+  +immediateParentContainer: Container | null;
+  +rootParentContainer: Container | null;
+  +allParentContainers: $ReadOnlyArray<Container>;
+  +isOnWorkbench: boolean;
+  +isDirectlyOnWorkbench: boolean;
+  isOnWorkbenchOfUser(user: Person): boolean;
+  isDirectlyOnWorkbenchOfUser(user: Person): boolean;
+  +lastNonWorkbenchParent: Container | null;
+  get lastMoveDate(): ?Date;
+
+  quantity: Quantity;
+  +quantityCategory: UnitCategory;
+  +quantityUnitId: number;
+  +quantityValue: number;
+  +quantityLabel: string;
+  +quantityUnitLabel: string;
 }
 
 type BatchSubSampleEditableFields = ResultCollectionEditableFields &

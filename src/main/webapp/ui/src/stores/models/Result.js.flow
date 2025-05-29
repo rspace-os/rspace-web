@@ -91,6 +91,7 @@ export type ResultEditableFields = {
   barcodes: Array<BarcodeRecord>,
   sharingMode: SharingMode,
   sharedWith: ?Array<SharedWithGroup>,
+  identifiers: Array<Identifier>,
   ...
 };
 
@@ -168,7 +169,7 @@ declare export default class Result
   sharingMode: SharingMode;
   sharedWith: ?Array<SharedWithGroup>;
 
-  constructor(factory: Factory): Result;
+  constructor(factory: Factory, params: { ... }): Result;
   get canChooseWhichToEdit(): boolean;
   populateFromJson(
     factory: Factory,
@@ -255,12 +256,6 @@ declare export default class Result
   get isWorkbench(): boolean;
   get isTemplate(): boolean;
   get fieldNamesInUse(): Array<string>;
-  isInWorkbench(): boolean;
-  isInCurrentUsersWorkbench(): boolean;
-  isOnWorkbench(): boolean;
-  isOnCurrentUsersWorkbench(): boolean;
-  isMovable(): boolean;
-  hasParentContainers(): boolean;
   adjustableTableOptions(): AdjustableTableRowOptions<string>;
   get recordLinkLabel(): string;
   get showRecordOnNavigate(): boolean;

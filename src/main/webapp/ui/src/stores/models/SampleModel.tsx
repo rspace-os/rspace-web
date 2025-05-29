@@ -10,19 +10,21 @@ import {
 import { match } from "../../util/Util";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import RecordWithQuantity, {
+import {
   type Quantity,
-  type RecordWithQuantityEditableFields,
-  type RecordWithQuantityUneditableFields,
-} from "./RecordWithQuantity";
+  type HasQuantityEditableFields,
+  type HasQuantityUneditableFields,
+} from "../definitions/HasQuantity";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import getRootStore from "../stores/RootStore";
 import { mkAlert } from "../contexts/Alert";
 import Search from "./Search";
-import {
+import Result, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
+  ResultEditableFields,
+  ResultUneditableFields,
 } from "./Result";
 import { type Factory } from "../definitions/Factory";
 import ResultCollection, {
@@ -78,19 +80,23 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
-import Result from "../../util/result";
+import UtilResult from "../../util/result";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getErrorMessage } from "@/util/error";
+import { SubSample } from "../definitions/SubSample";
+import { HasQuantityMixin } from "../models/HasQuantity";
 
-type SampleEditableFields = RecordWithQuantityEditableFields & {
-  expiryDate: string | null;
-  sampleSource: SampleSource;
-  storageTempMin: Temperature | null;
-  storageTempMax: Temperature | null;
-  subSampleAlias: Alias;
-};
+type SampleEditableFields = HasQuantityEditableFields &
+  ResultEditableFields & {
+    expiryDate: string | null;
+    sampleSource: SampleSource;
+    storageTempMin: Temperature | null;
+    storageTempMax: Temperature | null;
+    subSampleAlias: Alias;
+  };
 
-type SampleUneditableFields = RecordWithQuantityUneditableFields;
+type SampleUneditableFields = HasQuantityUneditableFields &
+  ResultUneditableFields;
 
 export type SubSampleTargetLocation = {
   containerId: Id;
@@ -195,7 +201,7 @@ const defaultEditableFields: Set<string> = new Set([
 export { defaultEditableFields as defaultEditableSampleFields };
 
 export default class SampleModel
-  extends RecordWithQuantity
+  extends HasQuantityMixin(Result)
   implements
     Sample,
     HasEditableFields<SampleEditableFields>,
@@ -207,14 +213,14 @@ export default class SampleModel
   newSampleSubSampleTargetLocations: Array<SubSampleTargetLocation> | null =
     null;
   // @ts-expect-error storageTempMin is initialised by populateFromJson
-  storageTempMin: ?Temperature;
+  storageTempMin: Temperature | null;
   // @ts-expect-error storageTempMax is initialised by populateFromJson
-  storageTempMax: ?Temperature;
+  storageTempMax: Temperature | null;
   fields: Array<Field> = [];
   // @ts-expect-error expiryDate is initialised by populateFromJson
   expiryDate: SampleEditableFields["expiryDate"];
   // @ts-expect-error template is initialised by populateFromJson
-  template: ?Template;
+  template: Template | null;
   // @ts-expect-error sampleSource is initialised by populateFromJson
   sampleSource: SampleEditableFields["sampleSource"];
   search: Search;
@@ -247,7 +253,7 @@ export default class SampleModel
   };
 
   constructor(factory: Factory, params: SampleAttrs = { ...DEFAULT_SAMPLE }) {
-    super(factory);
+    super(factory, params);
     makeObservable(this, {
       subSamplesCount: observable,
       subSamples: observable,
@@ -318,7 +324,7 @@ export default class SampleModel
     const params = {
       ...defaultParams,
       ...passedParams,
-    } as SampleAttrs & { template: Template | null };
+    } as SampleAttrs & { template: Template | null | false };
     if (typeof params.subSamplesCount === "number")
       this.subSamplesCount = params.subSamplesCount;
     this.subSamples = (params.subSamples ?? []).map((s) => {
@@ -333,7 +339,7 @@ export default class SampleModel
     this.storageTempMax = params.storageTempMax;
     this.overrideFields(params.fields ?? []);
     this.expiryDate = params.expiryDate;
-    this.template = params.template;
+    this.template = params.template || null;
     this.sampleSource = params.sampleSource;
     this.subSampleAlias = params.subSampleAlias;
     this.templateId = params.templateId;
@@ -373,11 +379,10 @@ export default class SampleModel
     return "sample";
   }
 
-  async fetchAdditionalInfo(
-    silent: boolean = false
-  ): Promise<{ data: object }> {
+  async fetchAdditionalInfo(silent: boolean = false): Promise<void> {
     if (this.fetchingAdditionalInfo) {
-      return this.fetchingAdditionalInfo;
+      await this.fetchingAdditionalInfo;
+      return;
     }
     this.fetchingAdditionalInfo = new Promise((resolve, reject) => {
       super
@@ -406,7 +411,7 @@ export default class SampleModel
         })
         .catch(reject);
     });
-    return this.fetchingAdditionalInfo;
+    return;
   }
 
   get minTempValue(): number | null {
@@ -691,8 +696,8 @@ export default class SampleModel
     };
 
     const validateExpiryDate = () => {
-      return Result.first(
-        !this.expiryDate ? Result.Ok(null) : Result.Error<null>([]),
+      return UtilResult.first(
+        !this.expiryDate ? UtilResult.Ok(null) : UtilResult.Error<null>([]),
         Parsers.isNotBottom(this.expiryDate)
           .flatMap(Parsers.parseDate)
           .mapError(() => new Error("Invalid expiry date."))
@@ -836,11 +841,8 @@ export default class SampleModel
     );
   }
 
-  /*
-   * The current value of the editable fields, as required by the interface
-   * `HasEditableFields` and `HasUneditableFields`.
-   */
-  get fieldValues(): any {
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
+  get fieldValues(): SampleEditableFields & SampleUneditableFields {
     return {
       ...super.fieldValues,
       expiryDate: this.expiryDate,
@@ -855,6 +857,7 @@ export default class SampleModel
     return true;
   }
 
+  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): { [key in keyof SampleEditableFields]: string | null } & {
     [key in keyof SampleUneditableFields]: string | null;
   } {
@@ -870,7 +873,7 @@ export default class SampleModel
 
   refreshAssociatedSearch() {
     if (this.id !== null) {
-      void this.search.fetcher.performInitialSearch({});
+      void this.search.fetcher.performInitialSearch(null);
     }
   }
 
@@ -1000,7 +1003,7 @@ export default class SampleModel
             );
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this.subSamples[0]
+            this.subSamples[0] as SubSample
           );
         },
       },
@@ -1061,7 +1064,7 @@ export default class SampleModel
 }
 
 type BatchSampleEditableFields = ResultCollectionEditableFields &
-  Omit<SampleEditableFields, "name">;
+  Omit<SampleEditableFields, "name" | "identifiers">;
 
 /*
  * This is a wrapper class around a set of Samples, making it easier to perform
