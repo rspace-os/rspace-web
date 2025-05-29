@@ -86,7 +86,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       String state, Boolean isAssociated, String identifier, User owner)
       throws InvalidNameException {
     String finalIdentifier;
-    if (isNotBlank(identifier) && isValidURL(identifier) && isValidIdentifier(identifier)) {
+    if (isNotBlank(identifier) && (isValidURL(identifier) || isValidURL("https://" + identifier))
+        && isValidIdentifier(identifier)) {
       finalIdentifier = getIdentifierSuffix(identifier);
     } else {
       finalIdentifier = identifier;

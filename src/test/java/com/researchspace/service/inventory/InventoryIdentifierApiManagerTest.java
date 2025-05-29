@@ -34,7 +34,8 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
 
   private User user;
 
-  @Autowired private DigitalObjectIdentifierDao doiDao;
+  @Autowired
+  private DigitalObjectIdentifierDao doiDao;
 
   @Before
   public void setUp() throws Exception {
@@ -165,11 +166,9 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         inventoryIdentifierApiMgr.findIdentifiers(null, true, null, user);
     List<ApiInventoryDOI> userAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers("draft", true, null, user);
-    List<ApiInventoryDOI> userExistingDoiAssociatedAndDraft =
-        inventoryIdentifierApiMgr.findIdentifiers("draft", true, DUMMY_VALID_DOI, user);
+
     List<ApiInventoryDOI> userNotExistingDoiAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers("draft", true, "NOT_" + DUMMY_VALID_DOI, user);
-
     List<ApiInventoryDOI> userAssociatedAndRegistered =
         inventoryIdentifierApiMgr.findIdentifiers("registered", true, null, user);
     List<ApiInventoryDOI> userNotAssociated =
@@ -186,12 +185,35 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     List<ApiInventoryDOI> anotherUserNotAssociated =
         inventoryIdentifierApiMgr.findIdentifiers(null, false, null, anotherUser);
 
+    List<ApiInventoryDOI> userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, DUMMY_VALID_DOI, user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true,
+            "https://doi.org/" + DUMMY_VALID_DOI, user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, "doi.org/" + DUMMY_VALID_DOI,
+            user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true,
+            DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3), user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true,
+            "https://doi.org/" + DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3), user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true,
+            "doi.org/" + DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3), user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+
     // THEN
     assertEquals(3, userAll.size());
     assertEquals(1, userAssociated.size());
     assertEquals(user, userAssociated.get(0).getOwner());
     assertEquals(1, userAssociatedAndDraft.size());
-    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
     assertTrue(userNotExistingDoiAssociatedAndDraft.isEmpty());
     assertTrue(userAssociatedAndRegistered.isEmpty());
 
