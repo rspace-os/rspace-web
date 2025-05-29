@@ -614,10 +614,10 @@ const AssignDialog = observer(
                 }}
               />
               <Alert severity="warning" variant="outlined">
-                <AlertTitle>This action cannot be undone!</AlertTitle>
-                Once an IGSN ID has been associated with an item, it cannot be
-                later re-associated with a different Inventory item; a new IGSN
-                ID will have to be created instead.
+                <strong>This action cannot be undone!</strong> Once an IGSN ID
+                has been associated with an item, it cannot be later
+                re-associated with a different Inventory item; a new IGSN ID
+                will have to be created instead.
               </Alert>
             </Stack>
           </DialogContent>
