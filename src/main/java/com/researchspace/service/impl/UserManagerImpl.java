@@ -564,7 +564,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   public User changeEmail(User user, String email) {
     user.setEmail(email);
     user = saveUser(user);
-    SECURITY_LOG.info("{} [{}] changed email to  {}", user.getFullName(), user.getId(), email);
+    SECURITY_LOG.info("User [{}] changed email to [{}]", user.getUsername(), email);
     return user;
   }
 

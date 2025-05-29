@@ -238,7 +238,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
         }
       } catch (AuthorizationException auth) {
         SECURITY_LOG.warn(
-            "Unauthorised API call by user {} to access resource {}", user.getUsername(), id);
+            "Unauthorised API call by user [{}] to access resource [{}]", user.getUsername(), id);
         throw new NotFoundException(createNotFoundMessage(id));
       }
     } else {
