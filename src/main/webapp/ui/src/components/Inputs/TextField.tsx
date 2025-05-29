@@ -16,7 +16,7 @@ export type TextFieldArgs = {
   id?: string;
 };
 
-export default function TextField(props: TextFieldArgs): React.ReactNode {
+export default function TextField({ onChange, ...props }: TextFieldArgs): React.ReactNode {
   const handleEditorChange = (content: string) => {
     const e = {
       target: {
@@ -24,7 +24,7 @@ export default function TextField(props: TextFieldArgs): React.ReactNode {
         value: content,
       },
     };
-    if (props.onChange) props.onChange(e);
+    if (onChange) onChange(e);
   };
 
   if (props.disabled) {
