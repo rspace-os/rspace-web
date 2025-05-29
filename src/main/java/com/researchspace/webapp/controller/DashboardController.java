@@ -230,6 +230,12 @@ public class DashboardController extends BaseController {
     }
   }
 
+  @PostMapping("/ajax/delete")
+  public String delete() {
+    commService.deleteReadNotificationsOlderThanDate(new Date());
+    return "empty"; // returns no content
+  }
+
   /**
    * Marks all notifications as read since a given date-time.
    *
