@@ -11,14 +11,6 @@ import com.researchspace.model.dtos.MessageTypeFilter;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.model.record.BaseRecord;
 import java.util.*;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.CriteriaUpdate;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Subquery;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.Session;
@@ -210,40 +202,20 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
 
   @Override
   public int markAllNotificationsAsRead(String subjectUserName, Date before) {
-    List<Long> commTargetsForUpdate = findCommTargetsForUserBeforeDate(subjectUserName, before);
+    String jpql =
+        "UPDATE CommunicationTarget ct SET ct.status = :status, ct.lastStatusUpdate ="
+            + " :lastStatusUpdate WHERE ct.id IN (SELECT ct.id FROM CommunicationTarget ct JOIN"
+            + " ct.recipient r JOIN ct.communication c WHERE r.username = :subjectUserName AND"
+            + " c.creationTime <= :before AND TYPE(c) = :notificationType)";
 
-    if (commTargetsForUpdate.isEmpty()) {
-      return 0;
-    }
-
-    CriteriaBuilder builder = getSession().getCriteriaBuilder();
-    CriteriaUpdate<CommunicationTarget> update =
-        builder.createCriteriaUpdate(CommunicationTarget.class);
-    Root<CommunicationTarget> updateRoot = update.from(CommunicationTarget.class);
-    update.set("status", CommunicationStatus.COMPLETED);
-    update.set("lastStatusUpdate", new Date());
-    update.where(updateRoot.get("id").in(commTargetsForUpdate));
-
-    return getSession().createQuery(update).executeUpdate();
-  }
-
-  private List<Long> findCommTargetsForUserBeforeDate(String subjectUserName, Date before) {
-    CriteriaBuilder builder = getSession().getCriteriaBuilder();
-    CriteriaQuery<Long> selectQuery = builder.createQuery(Long.class);
-    Root<CommunicationTarget> communicationTarget = selectQuery.from(CommunicationTarget.class);
-    Join<CommunicationTarget, User> recipient = communicationTarget.join("recipient");
-    Join<CommunicationTarget, Communication> communication =
-        communicationTarget.join("communication");
-
-    Predicate username = builder.equal(recipient.get("username"), subjectUserName);
-    Predicate creationTime = builder.lessThanOrEqualTo(communication.get("creationTime"), before);
-    Predicate notificationType = builder.equal(communication.type(), Notification.class);
-
-    selectQuery
-        .select(communicationTarget.get("id"))
-        .where(builder.and(username, creationTime, notificationType));
-
-    return getSession().createQuery(selectQuery).getResultList();
+    return getSession()
+        .createQuery(jpql)
+        .setParameter("status", CommunicationStatus.COMPLETED)
+        .setParameter("lastStatusUpdate", new Date())
+        .setParameter("subjectUserName", subjectUserName)
+        .setParameter("before", before)
+        .setParameter("notificationType", Notification.class)
+        .executeUpdate();
   }
 
   public int deleteReadNotificationsOlderThanDate(Date olderThan) {
@@ -253,68 +225,40 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
       return 0;
     }
 
-    Session session = getSession();
-    CriteriaBuilder cb = session.getCriteriaBuilder();
-    int totalDeleted = 0;
-    int batchSize = 100;
+    // delete all CommunicationTargets associated with deletable Notifications
+    String deleteTargetsJpql =
+        "DELETE FROM CommunicationTarget ct WHERE ct.communication.id IN :notificationIds";
+    getSession()
+        .createQuery(deleteTargetsJpql)
+        .setParameter("notificationIds", notificationIds)
+        .executeUpdate();
 
-    // Delete in batches to avoid large transaction issues
-    for (int i = 0; i < notificationIds.size(); i += batchSize) {
-      int endIndex = Math.min(i + batchSize, notificationIds.size());
-      List<Long> batch = notificationIds.subList(i, endIndex);
-
-      // First, delete all CommunicationTargets associated with these notifications
-      CriteriaDelete<CommunicationTarget> deleteTargets = cb.createCriteriaDelete(CommunicationTarget.class);
-      Root<CommunicationTarget> targetRoot = deleteTargets.from(CommunicationTarget.class);
-      deleteTargets.where(targetRoot.get("communication").get("id").in(batch));
-      session.createQuery(deleteTargets).executeUpdate();
-
-      // Then, delete the notifications themselves
-      CriteriaDelete<Notification> deleteNotifications = cb.createCriteriaDelete(Notification.class);
-      Root<Notification> notificationRoot = deleteNotifications.from(Notification.class);
-      deleteNotifications.where(notificationRoot.get("id").in(batch));
-      totalDeleted += session.createQuery(deleteNotifications).executeUpdate();
-    }
-
-    return totalDeleted;
+    // delete the Notifications themselves
+    String deleteNotificationsJpql = "DELETE FROM Notification n WHERE n.id IN :notificationIds";
+    return getSession()
+        .createQuery(deleteNotificationsJpql)
+        .setParameter("notificationIds", notificationIds)
+        .executeUpdate();
   }
 
+  @SuppressWarnings("unchecked")
   private List<Long> findNotificationsForDeletion(Date olderThan) {
-    Session session = getSession();
-    CriteriaBuilder cb = session.getCriteriaBuilder();
+    // notifications can be deleted when all recipients (CommunicationTargets) have marked as read
+    String jpql =
+        "SELECT n.id FROM Notification n "
+            + "WHERE NOT EXISTS (SELECT ct FROM CommunicationTarget ct "
+            + "                 WHERE ct.communication = n "
+            + "                 AND ct.status <> :completedStatus) "
+            + "AND EXISTS (SELECT ct FROM CommunicationTarget ct "
+            + "           WHERE ct.communication = n "
+            + "           AND ct.status = :completedStatus "
+            + "           AND ct.lastStatusUpdate < :olderThan)";
 
-    CriteriaQuery<Long> query = cb.createQuery(Long.class);
-    Root<Notification> root = query.from(Notification.class);
-    Subquery<Long> subquery = query.subquery(Long.class);
-    Root<CommunicationTarget> subRoot = subquery.from(CommunicationTarget.class);
-    subquery
-        .select(cb.count(subRoot))
-        .where(
-            cb.and(
-                cb.equal(subRoot.get("communication"), root),
-                cb.notEqual(subRoot.get("status"), CommunicationStatus.COMPLETED)));
-
-    // Main query: select notifications with no incomplete recipients and at least one old completed
-    // recipient
-    Subquery<Long> hasOldCompletedSubquery = query.subquery(Long.class);
-    Root<CommunicationTarget> hasOldRoot = hasOldCompletedSubquery.from(CommunicationTarget.class);
-    hasOldCompletedSubquery
-        .select(cb.count(hasOldRoot))
-        .where(
-            cb.and(
-                cb.equal(hasOldRoot.get("communication"), root),
-                cb.equal(hasOldRoot.get("status"), CommunicationStatus.COMPLETED),
-                cb.lessThan(hasOldRoot.get("lastStatusUpdate"), olderThan)));
-
-    query
-        .select(root.get("id"))
-        .where(
-            cb.and(
-                cb.equal(subquery, 0L), // No incomplete recipients
-                cb.greaterThan(hasOldCompletedSubquery, 0L) // At least one old completed recipient
-                ));
-
-    return session.createQuery(query).getResultList();
+    return getSession()
+        .createQuery(jpql)
+        .setParameter("completedStatus", CommunicationStatus.COMPLETED)
+        .setParameter("olderThan", olderThan)
+        .getResultList();
   }
 
   @SuppressWarnings({"unchecked"})
