@@ -804,6 +804,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               color: backgroundContrastTextColor,
               [`&.${alertTitleClasses.root}`]: {
                 color: "inherit",
+                fontWeight: 700,
               },
             },
             h1: {
