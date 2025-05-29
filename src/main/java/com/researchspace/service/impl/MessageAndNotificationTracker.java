@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
-import com.researchspace.messaging.Message;
 import com.researchspace.messaging.NotificationController;
+import com.researchspace.messaging.NotificationMessage;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.service.IMessageAndNotificationTracker;
@@ -26,7 +26,8 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
   private Map<Long, Integer> userToSpecialMessage = new ConcurrentHashMap<>();
 
   private void sendNotificationUpdate(Long userId) {
-    Message notification = new Message(userId, getNotificationCountFor(userId));
+    NotificationMessage notification =
+        new NotificationMessage(getNotificationCountFor(userId), getMessageCountFor(userId));
     notificationController.sendNotificationUpdate(userId, notification);
   }
 
