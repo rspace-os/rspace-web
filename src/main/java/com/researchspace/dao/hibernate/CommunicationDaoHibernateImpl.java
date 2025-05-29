@@ -203,10 +203,10 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   @Override
   public int markAllNotificationsAsRead(String subjectUserName, Date before) {
     String jpql =
-        "UPDATE CommunicationTarget ct SET ct.status = :status, ct.lastStatusUpdate ="
-            + " :lastStatusUpdate WHERE ct.id IN (SELECT ct.id FROM CommunicationTarget ct JOIN"
-            + " ct.recipient r JOIN ct.communication c WHERE r.username = :subjectUserName AND"
-            + " c.creationTime <= :before AND TYPE(c) = :notificationType)";
+            "UPDATE CommunicationTarget ct SET ct.status = :status, ct.lastStatusUpdate ="
+                    + " :lastStatusUpdate WHERE ct.status <> :completedStatus AND ct.id IN (SELECT ct.id FROM CommunicationTarget ct JOIN"
+                    + " ct.recipient r JOIN ct.communication c WHERE r.username = :subjectUserName AND"
+                    + " c.creationTime <= :before AND TYPE(c) = :notificationType)";
 
     return getSession()
         .createQuery(jpql)
