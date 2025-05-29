@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
+import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -103,10 +104,13 @@ public class OAuthClientController {
               "User '" + user.getUsername() + "' has their account locked or disabled.");
         }
 
-        response = passwordGrant(clientId, clientSecret, user, password, isJwt);
+        response = passwordGrant(clientId, clientSecret, user, password, isJwt, request);
 
       } catch (DataAccessException e) {
-        SECURITY_LOG.warn("OAuth password flow request for unknown user: " + username);
+        SECURITY_LOG.warn(
+            "OAuth password flow request for unknown username [{}], from {}",
+            username,
+            RequestUtil.remoteAddr(request));
         throw new ApiAuthenticationException("Invalid user credentials.");
       }
       return response;
@@ -122,7 +126,7 @@ public class OAuthClientController {
       if (!validationResult.isSucceeded()) {
         throw new IllegalArgumentException(validationResult.getMessage());
       }
-      return refreshGrant(clientId, clientSecret, refreshToken, isJwt);
+      return refreshGrant(clientId, clientSecret, refreshToken, isJwt, request);
     }
 
     throw new IllegalArgumentException(
@@ -130,7 +134,12 @@ public class OAuthClientController {
   }
 
   private NewOAuthTokenResponse refreshGrant(
-      String clientId, String clientSecret, String refreshToken, Boolean isJwt) {
+      String clientId,
+      String clientSecret,
+      String refreshToken,
+      Boolean isJwt,
+      HttpServletRequest request) {
+
     ServiceOperationResult<NewOAuthTokenResponse> response;
     if (isJwt) {
       response = tokenManager.refreshJwtAccessToken(clientId, clientSecret, refreshToken);
@@ -138,21 +147,29 @@ public class OAuthClientController {
       response = tokenManager.refreshAccessToken(clientId, clientSecret, refreshToken);
     }
     if (!response.isSucceeded()) {
-      SECURITY_LOG.warn("refresh_token flow request with invalid refreshToken");
+      SECURITY_LOG.warn(
+          "refresh_token flow request with invalid refreshToken, from {}",
+          RequestUtil.remoteAddr(request));
       throw new NotFoundException(response.getMessage());
     }
     return response.getEntity();
   }
 
   private NewOAuthTokenResponse passwordGrant(
-      String clientId, String clientSecret, User subject, String password, Boolean isJwt) {
+      String clientId,
+      String clientSecret,
+      User subject,
+      String password,
+      Boolean isJwt,
+      HttpServletRequest request) {
 
     boolean credentialsMatch = reauthenticator.reauthenticate(subject, password);
 
     if (!credentialsMatch) {
       SECURITY_LOG.warn(
-          "OAuth password flow request with invalid credentials for user: "
-              + subject.getUsername());
+          "OAuth password flow request with invalid credentials " + "for username [{}], from {}",
+          subject.getUsername(),
+          RequestUtil.remoteAddr(request));
       throw new ApiAuthenticationException("Invalid user credentials.");
     }
     ServiceOperationResult<NewOAuthTokenResponse> response;
@@ -168,6 +185,9 @@ public class OAuthClientController {
     if (!response.isSucceeded()) {
       throw new ApiAuthenticationException(response.getMessage());
     }
+
+    SECURITY_LOG.info(
+        "User [{}] generated OAuth token for app [{}]", subject.getUsername(), clientId);
     return response.getEntity();
   }
 }

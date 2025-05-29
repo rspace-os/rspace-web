@@ -22,6 +22,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VerificationPasswordControllerTest {
@@ -49,7 +50,8 @@ public class VerificationPasswordControllerTest {
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(anyUser);
     when(verificationPasswordValidator.isVerificationPasswordSet(anyUser)).thenReturn(true);
 
-    verificationPasswordController.setVerificationPassword(OK_PWD, OK_PWD);
+    verificationPasswordController.setVerificationPassword(
+        OK_PWD, OK_PWD, new MockHttpServletRequest());
     assertUserPasswordNotSaved();
 
     // only saved if validator is OK
@@ -63,7 +65,8 @@ public class VerificationPasswordControllerTest {
     when(userValidator.validatePasswords(
             OK_PWD, "not matching confirm password", anyUser.getUsername()))
         .thenReturn("some error");
-    verificationPasswordController.setVerificationPassword(OK_PWD, "not matching confirm password");
+    verificationPasswordController.setVerificationPassword(
+        OK_PWD, "not matching confirm password", new MockHttpServletRequest());
     assertUserPasswordNotSaved();
   }
 
@@ -74,7 +77,8 @@ public class VerificationPasswordControllerTest {
     when(userValidator.validatePasswords(OK_PWD, OK_PWD, anyUser.getUsername()))
         .thenReturn(UserValidator.FIELD_OK);
     when(verificationPasswordValidator.hashVerificationPassword(OK_PWD)).thenReturn("hashedPW");
-    verificationPasswordController.setVerificationPassword(OK_PWD, OK_PWD);
+    verificationPasswordController.setVerificationPassword(
+        OK_PWD, OK_PWD, new MockHttpServletRequest());
     assertUserPwdSaved();
     assertEquals("hashedPW", anyUser.getVerificationPassword());
   }

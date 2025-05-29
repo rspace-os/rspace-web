@@ -290,10 +290,12 @@ public class SignupController extends BaseController {
   @PostMapping("/passwordResetReply")
   @IgnoreInLoggingInterceptor(ignoreRequestParams = {"password", "confirmPassword"})
   public ModelAndView submitPasswordResetPage(
-      @ModelAttribute PasswordResetCommand passwordResetCommand, BindingResult errors)
+      @ModelAttribute PasswordResetCommand passwordResetCommand,
+      BindingResult errors,
+      HttpServletRequest request)
       throws Exception {
     return passwordResetEmailHandler
-        .submitResetPage(passwordResetCommand, errors)
+        .submitResetPage(passwordResetCommand, errors, request)
         .addObject("passwordType", PasswordType.LOGIN_PASSWORD);
   }
 
