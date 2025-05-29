@@ -1,30 +1,29 @@
-//@flow
-
-import React, { type Node, useContext } from "react";
+import React, { useContext } from "react";
 import SearchContext from "../../../stores/contexts/Search";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
 import { type ResultType } from "../../../stores/definitions/Search";
+import TemplateIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/Template";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { faCircle } from "@fortawesome/free-regular-svg-icons";
 import { match } from "../../../util/Util";
-import RecordTypeIcon from "../../../components/RecordTypeIcon";
 library.add(faCircle);
 import { useTheme } from "@mui/material/styles";
+import RecordTypeIcon from "../../../components/RecordTypeIcon";
 
-type TypeFilterArgs = {|
-  anchorEl: ?HTMLElement,
-  current: ResultType,
-  onClose: (ResultType) => void,
-|};
+type TypeFilterArgs = {
+  anchorEl: HTMLElement | null;
+  current: ResultType;
+  onClose: (newTypeFilter: ResultType) => void;
+};
 
 export default function TypeFilter({
   anchorEl,
   onClose,
   current,
-}: TypeFilterArgs): Node {
+}: TypeFilterArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
   const theme = useTheme();
 
@@ -73,7 +72,7 @@ export default function TypeFilter({
                 recordTypeLabel: "Container",
                 iconName: "container",
               }}
-              color={theme.palette.standardIcon}
+              color={theme.palette.standardIcon.main}
             />
           </ListItemIcon>
           <ListItemText primary="Containers" />
@@ -93,7 +92,7 @@ export default function TypeFilter({
                 recordTypeLabel: "Sample",
                 iconName: "sample",
               }}
-              color={theme.palette.standardIcon}
+              color={theme.palette.standardIcon.main}
             />
           </ListItemIcon>
           <ListItemText
@@ -123,7 +122,7 @@ export default function TypeFilter({
                 recordTypeLabel: "Subsample",
                 iconName: "subsample",
               }}
-              color={theme.palette.standardIcon}
+              color={theme.palette.standardIcon.main}
             />
           </ListItemIcon>
           <ListItemText primary="Subsamples" />
@@ -143,7 +142,7 @@ export default function TypeFilter({
                 recordTypeLabel: "Template",
                 iconName: "template",
               }}
-              color={theme.palette.standardIcon}
+              color={theme.palette.standardIcon.main}
               style={{
                 height: 18,
                 width: 18,
