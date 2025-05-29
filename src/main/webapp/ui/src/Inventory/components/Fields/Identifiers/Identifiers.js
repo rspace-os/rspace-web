@@ -597,11 +597,11 @@ const AssignDialog = observer(
           fullWidth
           maxWidth="lg"
         >
-          <DialogTitle>Assign existing IGSN ID</DialogTitle>
+          <DialogTitle>Link existing IGSN ID</DialogTitle>
           <DialogContent>
             <Stack spacing={2}>
               <Typography>
-                Select an existing IGSN ID to assign to this item.
+                Select an existing IGSN ID to link to this item.
               </Typography>
               <IgsnTable
                 selectedIgsns={selectedIgsns}
@@ -646,7 +646,7 @@ const AssignDialog = observer(
                 onClose();
               })}
             >
-              Assign
+              Link
             </ValidatingSubmitButton>
           </DialogActions>
         </Dialog>
@@ -685,7 +685,7 @@ const IdentifiersCard = observer((): Node => {
               setAssignDialogOpen(true);
             }}
           >
-            Assign existing IGSN ID
+            Link existing IGSN ID
           </Button>
           <AssignDialog
             recordToAssignTo={activeResult}
