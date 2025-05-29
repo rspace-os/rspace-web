@@ -118,7 +118,7 @@ const feature = test.extend<{
         return download;
       },
       "the researcher clicks the Scan QR Code button": async () => {
-        await page.getByRole("button", { name: "Scan QR Code" }).click();
+        await page.getByRole("button", { name: "Scan" }).click();
       },
       "the researcher selects 'Draft' from the state menu": async () => {
         await page.getByRole("button", { name: /State/ }).click();
@@ -311,7 +311,7 @@ const feature = test.extend<{
       "the toolbar controls should be in the order: search, scan, then filters":
         async () => {
           const searchControl = page.getByPlaceholder("Search IGSNs...");
-          const scanButton = page.getByRole("button", { name: "Scan QR Code" });
+          const scanButton = page.getByRole("button", { name: "Scan" });
           const stateFilter = page.getByRole("button", { name: "State" });
           const linkedItemFilter = page.getByRole("button", {
             name: "Linked Item",

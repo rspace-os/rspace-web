@@ -33,6 +33,7 @@ import useDebounce from "../../../util/useDebounce";
 import Popover from "@mui/material/Popover";
 import Button from "@mui/material/Button";
 import BarcodeScanner from "../../components/BarcodeScanner/AllBarcodeScanner";
+import SearchBarcodeIcon from "../../../assets/graphics/SearchBarcode";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
@@ -156,13 +157,13 @@ function Toolbar({
         sx={{ width: 200 }}
       />
       <Button
-        variant="contained"
         color="primary"
         onClick={(event) => {
           setScannerAnchorEl(event.currentTarget);
         }}
+        startIcon={<SearchBarcodeIcon />}
       >
-        Scan QR Code
+        Scan
       </Button>
       <Panel
         anchorEl={scannerAnchorEl}
