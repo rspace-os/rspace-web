@@ -334,7 +334,7 @@ module.exports = {
       },
       to: {
         pathNot:
-          "src/assets|src/util|react|node_modules/@mui/material/node/SvgIcon",
+          "src/assets|src/util|react|node_modules/@mui/material/node/SvgIcon|node_modules/@mui/material/node/utils/index.js",
       },
     },
 
