@@ -126,6 +126,57 @@ function Toolbar({
 
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
+      <TextField
+        placeholder="Search IGSNs..."
+        value={localSearchTerm}
+        onChange={handleSearchChange}
+        size="small"
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon fontSize="small" />
+            </InputAdornment>
+          ),
+          endAdornment: localSearchTerm ? (
+            <InputAdornment position="end">
+              <IconButton
+                aria-label="clear search"
+                onClick={() => {
+                  setLocalSearchTerm("");
+                  setSearchTerm("");
+                }}
+                edge="end"
+                size="small"
+              >
+                <ClearIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : null,
+        }}
+        sx={{ width: 200 }}
+      />
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={(event) => {
+          setScannerAnchorEl(event.currentTarget);
+        }}
+      >
+        Scan QR Code
+      </Button>
+      <Panel
+        anchorEl={scannerAnchorEl}
+        onClose={() => setScannerAnchorEl(null)}
+      >
+        <BarcodeScanner
+          onScan={(result) => {
+            setLocalSearchTerm(result.rawValue);
+            setSearchTerm(result.rawValue);
+          }}
+          onClose={() => setScannerAnchorEl(null)}
+          buttonPrefix="Search for IGSN"
+        />
+      </Panel>
       <MenuWithSelectedState label="State" currentState={state ?? "All"}>
         <AccentMenuItem
           title="All"
@@ -186,57 +237,6 @@ function Toolbar({
           current={isAssociated === true}
         />
       </MenuWithSelectedState>
-      <TextField
-        placeholder="Search IGSNs..."
-        value={localSearchTerm}
-        onChange={handleSearchChange}
-        size="small"
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-          endAdornment: localSearchTerm ? (
-            <InputAdornment position="end">
-              <IconButton
-                aria-label="clear search"
-                onClick={() => {
-                  setLocalSearchTerm("");
-                  setSearchTerm("");
-                }}
-                edge="end"
-                size="small"
-              >
-                <ClearIcon fontSize="small" />
-              </IconButton>
-            </InputAdornment>
-          ) : null,
-        }}
-        sx={{ width: 200 }}
-      />
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={(event) => {
-          setScannerAnchorEl(event.currentTarget);
-        }}
-      >
-        Scan QR Code
-      </Button>
-      <Panel
-        anchorEl={scannerAnchorEl}
-        onClose={() => setScannerAnchorEl(null)}
-      >
-        <BarcodeScanner
-          onScan={(result) => {
-            setLocalSearchTerm(result.rawValue);
-            setSearchTerm(result.rawValue);
-          }}
-          onClose={() => setScannerAnchorEl(null)}
-          buttonPrefix="Search for IGSN"
-        />
-      </Panel>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
         ref={(node) => {

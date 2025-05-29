@@ -58,6 +58,7 @@ const feature = test.extend<{
     "the Linked Item column should contains links": () => Promise<void>;
     "a search box should be shown in the toolbar": () => Promise<void>;
     "there should be a network request with searchTerm set to 'test'": () => void;
+    "the toolbar controls should be in the order: search, scan, then filters": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -307,6 +308,84 @@ const feature = test.extend<{
         const rowCount = await page.getByRole("row").count();
         expect(rowCount).toBe(1);
       },
+      "the toolbar controls should be in the order: search, scan, then filters":
+        async () => {
+          const searchControl = page.getByPlaceholder("Search IGSNs...");
+          const scanButton = page.getByRole("button", { name: "Scan QR Code" });
+          const stateFilter = page.getByRole("button", { name: "State" });
+          const linkedItemFilter = page.getByRole("button", {
+            name: "Linked Item",
+          });
+
+          const searchControlHandle = await searchControl.evaluateHandle((x) =>
+            Promise.resolve(x)
+          );
+          const scanButtonHandle = await scanButton.evaluateHandle((x) =>
+            Promise.resolve(x)
+          );
+          const stateFilterHandle = await stateFilter.evaluateHandle((x) =>
+            Promise.resolve(x)
+          );
+          const linkedItemFilterHandle = await linkedItemFilter.evaluateHandle(
+            (x) => Promise.resolve(x)
+          );
+
+          await expect(searchControl).toBeVisible();
+          await expect(scanButton).toBeVisible();
+          await expect(stateFilter).toBeVisible();
+          await expect(linkedItemFilter).toBeVisible();
+
+          const orderResults = await page.evaluate(
+            ({ search, scan, state, linkedItem }) => {
+              if (!search || !scan || !state || !linkedItem) {
+                return { error: "Failed to find all elements" };
+              }
+
+              const searchBeforeScan = Boolean(
+                search.compareDocumentPosition(scan) &
+                  Node.DOCUMENT_POSITION_FOLLOWING
+              );
+              const scanBeforeState = Boolean(
+                scan.compareDocumentPosition(state) &
+                  Node.DOCUMENT_POSITION_FOLLOWING
+              );
+              const stateBeforeLinkedItem = Boolean(
+                state.compareDocumentPosition(linkedItem) &
+                  Node.DOCUMENT_POSITION_FOLLOWING
+              );
+
+              return {
+                searchBeforeScan,
+                scanBeforeState,
+                stateBeforeLinkedItem,
+              };
+            },
+            {
+              search: searchControlHandle,
+              scan: scanButtonHandle,
+              state: stateFilterHandle,
+              linkedItem: linkedItemFilterHandle,
+            }
+          );
+
+          // Check for evaluate errors
+          if ("error" in orderResults) {
+            throw new Error(orderResults.error);
+          }
+
+          expect(
+            orderResults.searchBeforeScan,
+            "Search textfield should be before scan button"
+          ).toBe(true);
+          expect(
+            orderResults.scanBeforeState,
+            "Scan button should be before state filter control"
+          ).toBe(true);
+          expect(
+            orderResults.stateBeforeLinkedItem,
+            "State filter controlshould be before linked item filter control"
+          ).toBe(true);
+        },
     });
   },
   networkRequests: async ({}, use) => {
@@ -563,6 +642,20 @@ test.describe("IGSN Table", () => {
         value: "test",
       });
       Then["there should be a network request with searchTerm set to 'test'"]();
+    }
+  );
+
+  feature(
+    "The toolbar controls should be in the order: search, scan, then filters",
+    async ({ Given, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Then[
+        "the toolbar controls should be in the order: search, scan, then filters"
+      ]();
+      /*
+       * This is so that the controls are in a consistent order across the whole
+       * product.
+       */
     }
   );
 });
