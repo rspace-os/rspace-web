@@ -216,6 +216,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         .setParameter("subjectUserName", subjectUserName)
         .setParameter("before", before)
         .setParameter("notificationType", Notification.class)
+        .setParameter("completedStatus", CommunicationStatus.COMPLETED)
         .executeUpdate();
   }
 
