@@ -1,22 +1,20 @@
-//@flow
-
-import React, { type Node, useContext } from "react";
+import React, { useContext } from "react";
 import ListItemText from "@mui/material/ListItemText";
 import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
 import { type DeletedItems } from "../../../stores/definitions/Search";
 import SearchContext from "../../../stores/contexts/Search";
 
-type StatusFilterArgs = {|
-  anchorEl: ?HTMLElement,
-  current: DeletedItems,
-  onClose: (DeletedItems) => void,
-|};
+type StatusFilterArgs = {
+  anchorEl: HTMLElement | null;
+  current: DeletedItems;
+  onClose: (newStatus: DeletedItems) => void;
+};
 
 export default function StatusFilter({
   anchorEl,
   onClose,
   current,
-}: StatusFilterArgs): Node {
+}: StatusFilterArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
   return (
     <div data-test-id="statusDropdown">
