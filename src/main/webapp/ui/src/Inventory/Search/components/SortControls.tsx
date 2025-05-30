@@ -1,11 +1,4 @@
-// @flow
-
-import React, {
-  useContext,
-  useState,
-  type Node,
-  type ComponentType,
-} from "react";
+import React, { useContext, useState } from "react";
 import ListItemText from "@mui/material/ListItemText";
 import { match, toTitleCase } from "../../../util/Util";
 import SvgIcon from "@mui/material/SvgIcon";
@@ -18,12 +11,14 @@ import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
 import DropdownButton from "../../../components/DropdownButton";
 import { type SortProperty } from "../../components/Tables/SortableProperty";
 
-const useStyles = makeStyles()((theme, { disabled }) => ({
-  icon: {
-    borderRadius: theme.spacing(1),
-    color: disabled ? "inherit" : theme.palette.standardIcon.main,
-  },
-}));
+const useStyles = makeStyles<{ disabled: boolean }>()(
+  (theme, { disabled }) => ({
+    icon: {
+      borderRadius: theme.spacing(1),
+      color: disabled ? "inherit" : theme.palette.standardIcon.main,
+    },
+  })
+);
 
 const SortAZIcon = ({ className }: { className?: string }) => (
   <SvgIcon
@@ -43,12 +38,12 @@ const SortAZIcon = ({ className }: { className?: string }) => (
   </SvgIcon>
 );
 
-function SortControls(): Node {
+function SortControls(): React.ReactNode {
   const { search } = useContext(SearchContext);
 
-  const [anchorEl, setAnchorEl] = useState<?HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const handleClick = (event: { currentTarget: HTMLElement, ... }) => {
+  const handleClick = (event: { currentTarget: HTMLElement }) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -68,8 +63,8 @@ function SortControls(): Node {
   };
 
   const menuItemLabel = (key: string, label: AdjustableTableRowLabel) =>
-    `${label} ${match([
-      [(k: string) => !search.fetcher.isCurrentSort(k), ""],
+    `${label} ${match<string, string>([
+      [(k) => !search.fetcher.isCurrentSort(k), ""],
       [
         (k) => search.fetcher.isCurrentSort(k) && search.fetcher.isOrderDesc,
         "(A-Z)",
@@ -125,4 +120,4 @@ function SortControls(): Node {
   );
 }
 
-export default (observer(SortControls): ComponentType<{||}>);
+export default observer(SortControls);
