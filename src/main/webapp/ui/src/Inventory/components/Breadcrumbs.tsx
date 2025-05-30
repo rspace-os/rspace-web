@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 import { RecordLink, TopLink, CurrentRecord, InTrash } from "./RecordLink";
@@ -8,20 +6,20 @@ import * as ArrayUtils from "../../util/ArrayUtils";
 import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { hasLocation } from "../../stores/models/HasLocation";
 
-type BreadcrumbsArgs = {|
-  record: InventoryRecord,
-  showCurrent?: boolean,
-|};
+type BreadcrumbsArgs = {
+  record: InventoryRecord;
+  showCurrent?: boolean;
+};
 
 const _Breadcrumbs = ({
   record,
   showCurrent = false,
-}: BreadcrumbsArgs): Node => {
+}: BreadcrumbsArgs): React.ReactNode => {
   const showTopLink = record.showTopLinkInBreadcrumbs();
 
   const parents = hasLocation(record)
     .map((r) => ArrayUtils.reverse(r.allParentContainers))
-    .orElse(([]: Array<InventoryRecord>));
+    .orElse([]);
 
   return (
     <MuiBreadcrumbs aria-label="breadcrumb">
@@ -35,5 +33,5 @@ const _Breadcrumbs = ({
   );
 };
 
-const Breadcrumbs: ComponentType<BreadcrumbsArgs> = observer(_Breadcrumbs);
+const Breadcrumbs = observer(_Breadcrumbs);
 export default Breadcrumbs;
