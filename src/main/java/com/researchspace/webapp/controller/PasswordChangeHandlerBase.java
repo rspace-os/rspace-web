@@ -52,7 +52,7 @@ public abstract class PasswordChangeHandlerBase {
     }
 
     encryptAndSavePassword(user, newpass);
-    SECURITY_LOG.info("[{}] successfully reset their password", user.getUsername());
+    SECURITY_LOG.info("User [{}] successfully reset their password", user.getUsername());
     return "Password changed successfully";
   }
 
