@@ -1,26 +1,23 @@
-//@flow
-
-import React, { type ComponentType } from "react";
+import React from "react";
 import Box from "@mui/material/Box";
 import { withStyles } from "Styles";
 import Typography from "@mui/material/Typography";
-// $FlowExpectedError[cannot-resolve-module] An .svg, not a JS module
 import NoResultsSvg from "/src/assets/graphics/NoResults.svg";
 import Divider from "@mui/material/Divider";
 import docLinks from "../../../assets/DocLinks";
 
-type NoResultsArgs = {|
-  query: ?string,
-|};
+type NoResultsArgs = {
+  query: string | null;
+};
 
-const NoResults: ComponentType<NoResultsArgs> = withStyles<
+const NoResults = withStyles<
   NoResultsArgs,
   {
-    root: string,
-    noresults: string,
-    help: string,
-    divider: string,
-    image: string,
+    root: string;
+    noresults: string;
+    help: string;
+    divider: string;
+    image: string;
   }
 >((theme) => ({
   root: {
