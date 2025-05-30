@@ -146,6 +146,78 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     inventoryIdentifierApiMgr.registerBulkIdentifiers(3, user);
   }
 
+  public void testFindIdentifiersByQuery() throws InvalidNameException {
+    // GIVEN
+    User anotherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api_another"));
+    initialiseContentWithEmptyContent(anotherUser);
+    ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
+    int initialDbSize = doiDao.getAll().size();
+
+    inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
+    inventoryIdentifierApiMgr.registerBulkIdentifiers(2, user);
+    inventoryIdentifierApiMgr.registerBulkIdentifiers(2, anotherUser);
+
+    // WHEN we search for any "valid" DOI --> THEN assert the result
+    List<ApiInventoryDOI> userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, DUMMY_VALID_DOI, user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft", true, "https://doi.org/" + DUMMY_VALID_DOI, user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft", true, "doi.org/" + DUMMY_VALID_DOI, user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft", true, DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3), user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft",
+            true,
+            "https://doi.org/" + DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3),
+            user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft",
+            true,
+            "doi.org/" + DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3),
+            user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+
+    // WHEN we search for any "NON valid" DOI --> THEN assert the result
+    List<ApiInventoryDOI> userNotExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, "NOT_" + DUMMY_VALID_DOI, user);
+    assertTrue(userNotExistingDoiAssociatedAndDraft.isEmpty());
+
+    assertEquals(initialDbSize + 5, doiDao.getAll().size());
+
+    // delete associated identifiers
+    assertTrue(
+        inventoryIdentifierApiMgr
+            .deleteAssociatedIdentifier(createdSample.getOid(), user)
+            .getIdentifiers()
+            .isEmpty());
+    // delete Unassociated identifiers
+    List<ApiInventoryDOI> anotherUserNotAssociated =
+        inventoryIdentifierApiMgr.findIdentifiers(null, false, null, anotherUser);
+    List<ApiInventoryDOI> userNotAssociated =
+        inventoryIdentifierApiMgr.findIdentifiers(null, false, null, user);
+    assertTrue(
+        inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(userNotAssociated.get(0), user));
+    assertTrue(
+        inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(userNotAssociated.get(1), user));
+    assertTrue(
+        inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
+            anotherUserNotAssociated.get(0), user));
+    assertTrue(
+        inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
+            anotherUserNotAssociated.get(1), user));
+  }
+
   @Test
   public void testFindIdentifiersByStateAndCreator() throws InvalidNameException {
     // GIVEN
@@ -165,11 +237,6 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         inventoryIdentifierApiMgr.findIdentifiers(null, true, null, user);
     List<ApiInventoryDOI> userAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers("draft", true, null, user);
-    List<ApiInventoryDOI> userExistingDoiAssociatedAndDraft =
-        inventoryIdentifierApiMgr.findIdentifiers("draft", true, DUMMY_VALID_DOI, user);
-    List<ApiInventoryDOI> userNotExistingDoiAssociatedAndDraft =
-        inventoryIdentifierApiMgr.findIdentifiers("draft", true, "NOT_" + DUMMY_VALID_DOI, user);
-
     List<ApiInventoryDOI> userAssociatedAndRegistered =
         inventoryIdentifierApiMgr.findIdentifiers("registered", true, null, user);
     List<ApiInventoryDOI> userNotAssociated =
@@ -191,8 +258,6 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     assertEquals(1, userAssociated.size());
     assertEquals(user, userAssociated.get(0).getOwner());
     assertEquals(1, userAssociatedAndDraft.size());
-    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
-    assertTrue(userNotExistingDoiAssociatedAndDraft.isEmpty());
     assertTrue(userAssociatedAndRegistered.isEmpty());
 
     assertEquals(2, userNotAssociated.size());
