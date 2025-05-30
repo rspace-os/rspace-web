@@ -112,6 +112,7 @@ export interface CoreFetcher {
   performInitialSearch(?CoreFetcherArgs): Promise<void>;
   reperformCurrentSearch(): Promise<void>;
   generateParams(?CoreFetcherArgs | {}): CoreFetcherArgs;
+  applySearchParams(CoreFetcherArgs): CoreFetcherArgs;
 
   results: Array<InventoryRecord>;
   count: number;

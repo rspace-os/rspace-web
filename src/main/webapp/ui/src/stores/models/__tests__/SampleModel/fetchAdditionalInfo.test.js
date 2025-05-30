@@ -48,7 +48,7 @@ describe("fetchAdditionalInfo", () => {
     );
 
     let firstCallDone = false;
-    await sample.fetchAdditionalInfo().then(() => {
+    void sample.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
     });
 

@@ -12,6 +12,7 @@ import Result, { ResultEditableFields, ResultUneditableFields } from "./Result";
 import { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
 import { Optional } from "../../util/optional";
+import { computed, makeObservable, observable, override } from "mobx";
 
 /*
  * Some samples/subsamples don't have a quantity; these functions just provide
@@ -34,6 +35,15 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Result>(
 
     constructor(...args: any[]) {
       super(...args);
+      makeObservable(this, {
+        quantity: observable,
+        quantityCategory: computed,
+        quantityUnitId: computed,
+        quantityValue: computed,
+        quantityLabel: computed,
+        quantityUnitLabel: computed,
+        fieldValues: override,
+      });
       const [, params] = args as [factory: Factory, params: object];
       this.quantity = Parsers.getValueWithKey("quantity")(
         params

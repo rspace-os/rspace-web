@@ -1,0 +1,8 @@
+//@flow
+
+import { type Node } from "react";
+import { type Editable } from "../../stores/definitions/Editable";
+
+declare export default function CommonEditActions({|
+  editableObject: Editable,
+|}): Node;

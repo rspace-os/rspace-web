@@ -683,18 +683,13 @@ export default class ContainerModel
       this.setLoading(false);
       throw new Error("Can't fetch details of bench");
     }
-    let data;
     if (this.fetchingAdditionalInfo) {
-      data = (await this.fetchingAdditionalInfo).data;
+      await this.fetchingAdditionalInfo;
     } else {
       runInAction(() => {
         this.initializedLocations = false;
       });
-      this.fetchingAdditionalInfo = super.fetchAdditionalInfo(
-        silent,
-        queryParameters
-      );
-      data = (await this.fetchingAdditionalInfo).data;
+      await super.fetchAdditionalInfo(silent, queryParameters);
     }
     this.setLoading(true);
 
@@ -706,7 +701,7 @@ export default class ContainerModel
     }
 
     this.setLoading(false);
-    return { data };
+    return;
   }
 
   findLocation(col: number, row: number): Location | undefined {

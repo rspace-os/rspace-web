@@ -1,0 +1,12 @@
+// @flow
+
+import { type Node } from "react";
+
+declare export default function Layout2x1Dialog({|
+  open: boolean,
+  onClose: () => void,
+  colLeft: Node,
+  colRight: Node,
+  actions: Node,
+  dialogTitle: Node,
+|}): Node;

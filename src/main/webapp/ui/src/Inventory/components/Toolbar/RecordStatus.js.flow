@@ -1,0 +1,9 @@
+//@flow
+
+import { type Node } from "react";
+import { type State } from "../../../stores/definitions/InventoryRecord";
+
+declare export default function RecordStatus({|
+  recordState: State,
+  deleted: boolean,
+|}): Node;
