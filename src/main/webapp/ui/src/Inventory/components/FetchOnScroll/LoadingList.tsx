@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import Grid from "@mui/material/Grid";
 import BatchGridContainer from "./BatchGridContainer";
@@ -8,13 +6,13 @@ import { sleep } from "../../../util/Util";
 import { take, incrementForever } from "../../../util/iterators";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
-type LoadingListArgs = {|
-  onVisible: () => void,
-  count: number,
-  pageNumber: number,
-  loading: boolean,
-  placeholder: Node,
-|};
+type LoadingListArgs = {
+  onVisible: () => void;
+  count: number;
+  pageNumber: number;
+  loading: boolean;
+  placeholder: React.ReactNode;
+};
 
 function LoadingList({
   onVisible,
@@ -22,8 +20,8 @@ function LoadingList({
   placeholder,
   pageNumber,
   loading,
-}: LoadingListArgs): Node {
-  const ref = React.useRef<any>(null);
+}: LoadingListArgs): React.ReactNode {
+  const ref = React.useRef(null);
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const [intObs] = React.useState(
     new IntersectionObserver(([{ isIntersecting }]) => {
@@ -56,4 +54,4 @@ function LoadingList({
   );
 }
 
-export default (observer(LoadingList): ComponentType<LoadingListArgs>);
+export default observer(LoadingList);
