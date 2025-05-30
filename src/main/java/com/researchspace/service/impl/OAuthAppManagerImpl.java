@@ -75,9 +75,6 @@ public class OAuthAppManagerImpl implements OAuthAppManager {
         .collect(Collectors.toList());
   }
 
-  /**
-   * @param clientId identifier for the OAuth app requesting the token
-   */
   @Override
   public TemporalAmount getOAuthTokenExpiryTimeInSeconds() {
     return DEFAULT_EXPIRY_TIME;

@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.model.record.TestFactory.createOAuthToken;
+import static com.researchspace.model.record.TestFactory.createOAuthTokenForUI;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -166,7 +166,7 @@ public class UserProfileControllerTest {
   public void getConnectedApps() {
     // given
     when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sessionUser);
-    OAuthToken token = createOAuthToken(sessionUser);
+    OAuthToken token = createOAuthTokenForUI(sessionUser);
     when(oAuthTokenManager.getTokensForUser(sessionUser)).thenReturn(toList(token));
     PublicOAuthAppInfo appInfo = createAnyPublicOauthAppInfo(token.getClientId());
     when(oAuthAppManager.getApp(token.getClientId())).thenReturn(Optional.of(appInfo));
@@ -185,7 +185,7 @@ public class UserProfileControllerTest {
   public void disconnectOAuthConnectedAppSuccess() {
     // given
     ServiceOperationResult<OAuthToken> result =
-        new ServiceOperationResult<>(createOAuthToken(sessionUser), true, "succeeded");
+        new ServiceOperationResult<>(createOAuthTokenForUI(sessionUser), true, "succeeded");
     when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sessionUser);
     when(oAuthTokenManager.removeToken(sessionUser, "id")).thenReturn(result);
 

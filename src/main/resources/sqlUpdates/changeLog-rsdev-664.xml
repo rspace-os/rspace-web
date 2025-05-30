@@ -1,0 +1,38 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2025-05-26-oauth1" author="matthias" context="run">
+        <comment>Remove oauth tokens created pre RSpace 2.11</comment>
+        <delete tableName="OAuthToken" />
+    </changeSet>
+
+    <changeSet id="2025-05-26-oauth2" author="matthias" context="run">
+        <comment>Update OAuthToken table: remove column 'scope', add columns 'created' and 'tokenType', update unique constraint</comment>
+        <dropColumn tableName="OAuthToken" columnName="scope" />
+        <addColumn tableName="OAuthToken">
+            <column name="created" type="datetime">
+                <constraints nullable="false" />
+            </column>
+            <column name="tokenType" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2025-05-26-oauth3" author="matthias" context="run">
+        <comment>Recreate OAuthToken table uniqueness constraint</comment>
+        <dropForeignKeyConstraint baseTableName="OAuthToken" constraintName="FK_6rts1nhknixdema78tidkk7ds" />
+        <dropUniqueConstraint tableName="OAuthToken" constraintName="user_id" />
+        <addForeignKeyConstraint
+          baseTableName="OAuthToken" baseColumnNames="user_id"
+          constraintName="FK_6rts1nhknixdema78tidkk7dx"
+          referencedTableName="User" referencedColumnNames="id"
+          onUpdate="NO ACTION" onDelete="NO ACTION"/>
+        <addUniqueConstraint tableName="OAuthToken" constraintName="userIdClientIdTokenTypeUNIQUE"
+          columnNames="user_id,clientId,tokenType"/>
+    </changeSet>
+
+</databaseChangeLog>

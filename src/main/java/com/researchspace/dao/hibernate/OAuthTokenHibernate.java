@@ -3,6 +3,7 @@ package com.researchspace.dao.hibernate;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.OAuthTokenDao;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.query.Query;
@@ -50,14 +51,16 @@ public class OAuthTokenHibernate extends GenericDaoHibernate<OAuthToken, Long>
   }
 
   @Override
-  public Optional<OAuthToken> getToken(String clientId, Long userId) {
+  public Optional<OAuthToken> getToken(String clientId, Long userId, OAuthTokenType tokenType) {
     Query<OAuthToken> q =
         getSession()
             .createQuery(
-                "from OAuthToken token where token.user.id=:userId and clientId=:clientId",
+                "from OAuthToken token where token.user.id=:userId and clientId=:clientId "
+                    + "and tokenType=:tokenType",
                 OAuthToken.class);
     q.setParameter("userId", userId);
     q.setParameter("clientId", clientId);
+    q.setParameter("tokenType", tokenType);
     return q.uniqueResultOptional();
   }
 
