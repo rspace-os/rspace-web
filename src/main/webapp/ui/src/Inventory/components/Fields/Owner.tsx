@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { type HasUneditableFields } from "../../../stores/definitions/Editable";
 import UserDetails from "../UserDetails";
 import { type Person } from "../../../stores/definitions/Person";
@@ -9,13 +7,12 @@ import FormField from "../../../components/Inputs/FormField";
 import Box from "@mui/material/Box";
 
 export default function Owner<
-  Fields: {
-    owner: ?Person,
-    ...
+  Fields extends {
+    owner: Person | null;
   },
-  FieldOwner: HasUneditableFields<Fields>
->({ fieldOwner }: {| fieldOwner: FieldOwner |}): Node {
-  const owner: ?Person = fieldOwner.fieldValues.owner;
+  FieldOwner extends HasUneditableFields<Fields>
+>({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
+  const owner: Person | null = fieldOwner.fieldValues.owner;
 
   const Content = () => {
     if (!owner)
