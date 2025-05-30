@@ -684,7 +684,7 @@ const IdentifiersCard = observer((): Node => {
             variant="outlined"
             onClick={doNotAwait(() => activeResult.addIdentifier())}
           >
-            Mint new IGSN ID
+            Create new IGSN ID
           </Button>
           <Button
             color="primary"
