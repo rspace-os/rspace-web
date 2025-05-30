@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../__mocks__/matchMedia";
 import React from "react";
@@ -30,12 +29,12 @@ jest.mock("../../../stores/stores/RootStore", () => () => ({
 }));
 
 jest.mock("../../../common/InvApiService", () => ({
-  get: (resource) => {
+  get: (resource: string) => {
     if (resource === "/fieldmark/notebooks")
       return Promise.resolve({ data: mockFieldmarkNotebooksJson });
     throw new Error("Unknown resource");
   },
-  post: (resource) => {
+  post: (resource: string) => {
     if (resource === "/import/fieldmark/notebook")
       return Promise.resolve({ data: mockFieldmarkImportJson });
     throw new Error("Unknown resource");
@@ -98,7 +97,6 @@ describe("FieldmarkImportDialog", () => {
       expect(screen.getByRole("radio")).toBeInTheDocument();
     });
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(baseElement)).toHaveNoViolations();
   });
 });
