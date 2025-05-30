@@ -1,11 +1,9 @@
-// @flow
-
+import React from "react";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import DnsOutlinedIcon from "@mui/icons-material/DnsOutlined";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListOutlinedIcon from "@mui/icons-material/ListOutlined";
-import React, { type Node } from "react";
 import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
 import { makeStyles } from "tss-react/mui";
 import AppsOutlinedIcon from "@mui/icons-material/AppsOutlined";
@@ -34,21 +32,21 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type ToggleViewArgs = {|
-  onChange: (SearchView) => Promise<void>,
-  currentView: SearchView,
-  views: Array<SearchView>,
-|};
+type ToggleViewArgs = {
+  onChange: (newView: SearchView) => Promise<void>;
+  currentView: SearchView;
+  views: Array<SearchView>;
+};
 
 export default function ToggleView({
   onChange,
   currentView,
   views,
-}: ToggleViewArgs): Node {
-  const [anchorEl, setAnchorEl] = React.useState<?HTMLElement>(null);
+}: ToggleViewArgs): React.ReactNode {
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const { classes } = useStyles();
 
-  const handleClick = (event: { currentTarget: HTMLElement, ... }) => {
+  const handleClick = (event: { currentTarget: HTMLElement }) => {
     setAnchorEl(event.currentTarget);
   };
 
