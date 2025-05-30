@@ -24,7 +24,7 @@ public class IPWhitelistLoginAuthorizer extends AbstractLoginAuthorizer implemen
 
     if (!ipOk) {
       SECURITY_LOG.warn(
-          "Attempt by [{}]  to login as sysadmin from invalid IP address {}",
+          "Attempt by [{}] to login as sysadmin from invalid IP address {}",
           user.getUsername(),
           getRemoteAddress(WebUtils.toHttp(request)));
       logoutAndRedirect(request, response, REDIRECT_FOR_IP_FAILURE);

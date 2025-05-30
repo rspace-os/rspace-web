@@ -94,7 +94,7 @@ public class RecordApiManagerImpl implements RecordApiManager {
       }
     } catch (AuthorizationException ae) {
       SECURITY_LOG.warn(
-          "Unauthorised API call by user {} to create resource in {}",
+          "Unauthorised API call by user [{}] to create resource inside [{}]",
           user.getUsername(),
           targetFolderId);
       throw new IllegalArgumentException(createNotFoundMessage("Folder", targetFolderId));
