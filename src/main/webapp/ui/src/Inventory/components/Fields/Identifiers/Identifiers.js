@@ -613,7 +613,7 @@ const AssignDialog = observer(
                   state: "draft",
                 }}
               />
-              <Alert severity="warning" variant="outlined">
+              <Alert severity="warning">
                 <strong>This action cannot be undone!</strong> Once an IGSN ID
                 has been associated with an item, it cannot be later
                 re-associated with a different Inventory item; a new IGSN ID
