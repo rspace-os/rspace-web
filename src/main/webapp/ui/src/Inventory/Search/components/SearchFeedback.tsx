@@ -1,20 +1,16 @@
-// @flow
-
 import Alert from "@mui/material/Alert";
 import LinearProgress from "@mui/material/LinearProgress";
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext } from "react";
 import useStores from "../../../stores/use-stores";
 import { makeStyles } from "tss-react/mui";
 import { match } from "../../../util/Util";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
 import SaveSearch from "./SaveSearch";
-import NavigateContext, {
-  type UseLocation,
-} from "../../../stores/contexts/Navigate";
+import NavigateContext from "../../../stores/contexts/Navigate";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles<{ singleColumn: boolean }>()((theme) => ({
   progress: {
     position: "absolute",
     borderBottomLeftRadius: theme.spacing(0.5),
@@ -40,7 +36,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-function SearchFeedback(): Node {
+function SearchFeedback(): React.ReactNode {
   const { searchStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
@@ -48,7 +44,7 @@ function SearchFeedback(): Node {
   const { useLocation } = useContext(NavigateContext);
 
   function useSearchParams() {
-    return new URLSearchParams((useLocation(): UseLocation).search);
+    return new URLSearchParams(useLocation().search);
   }
   const searchParams = useSearchParams();
   const currentBasket = searchStore.savedBaskets.find(
@@ -125,4 +121,4 @@ function SearchFeedback(): Node {
   );
 }
 
-export default (observer(SearchFeedback): ComponentType<{||}>);
+export default observer(SearchFeedback);
