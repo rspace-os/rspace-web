@@ -1,5 +1,4 @@
-// @flow
-
+import React, { useContext } from "react";
 import styled from "@emotion/styled";
 import IconButton from "@mui/material/IconButton";
 import CustomTooltip from "../../../components/CustomTooltip";
@@ -7,7 +6,6 @@ import InputBase from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType, useContext } from "react";
 import SearchContext from "../../../stores/contexts/Search";
 import CloseIcon from "@mui/icons-material/Close";
 import useIsTextWiderThanField from "../../../util/useIsTextWiderThanField";
@@ -64,9 +62,9 @@ const SearchBar = styled.div`
   }
 `;
 
-type FormArgs = {|
-  handleSearch: (string) => void,
-|};
+type FormArgs = {
+  handleSearch: (query: string) => void;
+};
 
 const Form = observer(({ handleSearch }: FormArgs) => {
   const { search } = useContext(SearchContext);
@@ -74,8 +72,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
   const handleChange = ({
     target: { value },
   }: {
-    target: { value: string, ... },
-    ...
+    target: { value: string };
   }) => {
     runInAction(() => {
       search.fetcher.query = value;
@@ -102,7 +99,6 @@ const Form = observer(({ handleSearch }: FormArgs) => {
           e.preventDefault();
           onSearch();
         }}
-        type="search"
         style={{ width: "100%" }}
       >
         <IconButton
@@ -115,7 +111,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
         <InputBase
           data-test-id="s-search-input-normal"
           placeholder="Search"
-          inputProps={{ "aria-label": "Search" }}
+          inputProps={{ "aria-label": "Search", type: "search" }}
           value={search.fetcher.query ?? ""}
           onChange={handleChange}
           inputRef={inputRef}
@@ -132,9 +128,9 @@ const Form = observer(({ handleSearch }: FormArgs) => {
   );
 });
 
-type ClearSearchArgs = {|
-  handleReset: () => void,
-|};
+type ClearSearchArgs = {
+  handleReset: () => void;
+};
 
 const ClearSearch = ({ handleReset }: ClearSearchArgs) => (
   <CustomTooltip title="Clear search">
@@ -150,11 +146,11 @@ const ClearSearch = ({ handleReset }: ClearSearchArgs) => (
   </CustomTooltip>
 );
 
-type SearchbarArgs = {|
-  handleSearch: (string) => void,
-|};
+type SearchbarArgs = {
+  handleSearch: (query: string) => void;
+};
 
-function Searchbar({ handleSearch }: SearchbarArgs): Node {
+function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
   return (
     <div style={{ flexGrow: 1 }}>
       <SearchBar>
@@ -166,4 +162,4 @@ function Searchbar({ handleSearch }: SearchbarArgs): Node {
   );
 }
 
-export default (observer(Searchbar): ComponentType<SearchbarArgs>);
+export default observer(Searchbar);

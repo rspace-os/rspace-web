@@ -10,7 +10,7 @@ import {
   screen,
   fireEvent,
   within,
-  act
+  act,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SearchContext from "../../../../stores/contexts/Search";
@@ -46,7 +46,7 @@ describe("Searchbar", () => {
       </ThemeProvider>
     );
 
-    fireEvent.change(screen.getByRole("textbox", { name: "Search" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search" }), {
       target: { value: "this is a really long piece of text" },
     });
 
@@ -82,7 +82,6 @@ describe("Searchbar", () => {
       });
     });
 
-    expect(screen.getByRole("textbox")).toHaveValue("foo");
-
+    expect(screen.getByRole("searchbox")).toHaveValue("foo");
   });
 });
