@@ -9,9 +9,6 @@ Reusable tag for incorporating a notifications section into a page.
 <axt:paginate paginationList="${paginationList}" />
 <input type="hidden" id="timeOfListing" value="${timeOfListing}" />
 <div id=notificationListContents>
-	<a
-			style="position: relative; right: 10px;" id="deleteAllReadLink"
-			href="#">Delete all read</a>
 	<c:choose>
 		<c:when test="${empty notificationList}">
 			There are no new notifications.

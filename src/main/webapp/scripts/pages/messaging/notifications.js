@@ -112,18 +112,6 @@ $(document).ready(function() {
 		});
 	});
 
-	// deletes all records from page
-	$('body').on("click", '#deleteAllReadLink', function(event) {
-
-		$.post(createURL('/dashboard/ajax/delete'), function (xhr) {
-
-		}).fail(function() {
-			RS.ajaxFailed("Marking notifications as read", false, jxqr);
-		});
-	});
-
-
-
 	// deletes ALL notifications for user
 	$('body').on("click", '#deleteAllLink', function(event) {
 		var contentDiv$ = $(this).closest('.notificationList');
