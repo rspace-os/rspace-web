@@ -517,12 +517,7 @@ function Sidebar({ id }: SidebarArgs): Node {
           <SampleNavItem />
           <SubsampleNavItem />
           <TemplateNavItem />
-          {/*
-            * The IGSN Management page code is merged in, to avoid a long-lived
-            * branch, but is not available for researchers to use until we have
-            * other UIs for utilising the unassigned IGSNs.
-            <IgsnNavItem />
-          */}
+          <IgsnNavItem />
         </List>
         <List component="nav" aria-label="Other places and action">
           <ExportNavItem />
