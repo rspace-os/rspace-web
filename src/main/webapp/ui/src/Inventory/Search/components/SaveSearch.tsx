@@ -1,12 +1,5 @@
-// @flow
-
 import BookmarkBorderOutlinedIcon from "@mui/icons-material/BookmarkBorderOutlined";
-import React, {
-  useContext,
-  type Node,
-  type ComponentType,
-  useState,
-} from "react";
+import React, { useContext, useState } from "react";
 import useStores from "../../../stores/use-stores";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
@@ -21,7 +14,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-function SaveSearch(): Node {
+function SaveSearch(): React.ReactNode {
   const { search } = useContext(SearchContext);
   const { searchStore } = useStores();
   const { classes } = useStyles();
@@ -66,4 +59,4 @@ function SaveSearch(): Node {
   );
 }
 
-export default (observer(SaveSearch): ComponentType<{||}>);
+export default observer(SaveSearch);
