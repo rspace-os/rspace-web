@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import "leaflet/dist/leaflet.css";
 import {
   boxComplete,
@@ -24,11 +22,11 @@ import {
   type PolygonPoint,
 } from "../../../../stores/definitions/GeoLocation";
 
-type MapViewerArgs = {|
-  point: PolygonPoint,
-  box: GeoLocationBox,
-  polygon: GeoLocationPolygon,
-|};
+type MapViewerArgs = {
+  point: PolygonPoint;
+  box: GeoLocationBox;
+  polygon: GeoLocationPolygon;
+};
 
 /**
  * Displays a map with markers and regions for the point, box, and polygon geo location data.
@@ -50,7 +48,7 @@ export default function MapViewer({
   point,
   box,
   polygon,
-}: MapViewerArgs): Node {
+}: MapViewerArgs): React.ReactNode {
   const theme = useTheme();
 
   const [showPoint, setShowPoint] = useState<boolean>(pointComplete(point));
@@ -147,7 +145,10 @@ export default function MapViewer({
         />
         {showPoint && (
           <Circle
-            center={[point.pointLatitude, point.pointLongitude]}
+            center={[
+              parseFloat(point.pointLatitude),
+              parseFloat(point.pointLongitude),
+            ]}
             pathOptions={{
               fillColor: theme.palette.primary.main,
               fillOpacity: 1.0,
@@ -164,8 +165,8 @@ export default function MapViewer({
               stroke: false,
             }}
             bounds={boxToPolygon.map(({ latitude, longitude }) => [
-              latitude,
-              longitude,
+              parseFloat(latitude),
+              parseFloat(longitude),
             ])}
           />
         )}
@@ -183,7 +184,10 @@ export default function MapViewer({
               stroke: false,
             }}
             positions={polygon.mapPoints(
-              ({ pointLatitude: lat, pointLongitude: long }) => [lat, long]
+              ({ pointLatitude: lat, pointLongitude: long }) => [
+                parseFloat(lat),
+                parseFloat(long),
+              ]
             )}
           />
         )}

@@ -71,6 +71,7 @@ declare module "@mui/material/styles/createPalette" {
     placeholderText?: string;
   }
   interface Palette {
+    tertiary: PaletteColor;
     callToAction: PaletteColor;
     standardIcon: PaletteColor;
     lightestGrey: string;
@@ -159,6 +160,11 @@ declare module "@mui/material/IconButton" {
 declare module "@mui/material/Badge" {
   interface BadgePropsColorOverrides {
     callToAction: true;
+  }
+}
+declare module "@mui/material/Switch" {
+  interface SwitchPropsColorOverrides {
+    tertiary: true;
   }
 }
 
