@@ -6,12 +6,13 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
 import { type ResultType } from "../../../stores/definitions/Search";
-import TemplateIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/Template";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { faCircle } from "@fortawesome/free-regular-svg-icons";
 import { match } from "../../../util/Util";
+import RecordTypeIcon from "../../../components/RecordTypeIcon";
 library.add(faCircle);
+import { useTheme } from "@mui/material/styles";
 
 type TypeFilterArgs = {|
   anchorEl: ?HTMLElement,
@@ -25,6 +26,8 @@ export default function TypeFilter({
   current,
 }: TypeFilterArgs): Node {
   const { search } = useContext(SearchContext);
+  const theme = useTheme();
+
   return (
     <div data-test-id="typeDropdown">
       <StyledMenu
@@ -65,7 +68,13 @@ export default function TypeFilter({
           data-test-id="containerType"
         >
           <ListItemIcon>
-            <FontAwesomeIcon icon="container" />
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "Container",
+                iconName: "container",
+              }}
+              color={theme.palette.standardIcon}
+            />
           </ListItemIcon>
           <ListItemText primary="Containers" />
         </StyledMenuItem>
@@ -79,7 +88,13 @@ export default function TypeFilter({
           data-test-id="sampleType"
         >
           <ListItemIcon>
-            <FontAwesomeIcon icon="sample" />
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "Sample",
+                iconName: "sample",
+              }}
+              color={theme.palette.standardIcon}
+            />
           </ListItemIcon>
           <ListItemText
             primary="Samples"
@@ -103,7 +118,13 @@ export default function TypeFilter({
           data-test-id="subsampleType"
         >
           <ListItemIcon>
-            <FontAwesomeIcon icon="subsample" />
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "Subsample",
+                iconName: "subsample",
+              }}
+              color={theme.palette.standardIcon}
+            />
           </ListItemIcon>
           <ListItemText primary="Subsamples" />
         </StyledMenuItem>
@@ -117,10 +138,15 @@ export default function TypeFilter({
           data-test-id="templateType"
         >
           <ListItemIcon>
-            <TemplateIcon
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "Template",
+                iconName: "template",
+              }}
+              color={theme.palette.standardIcon}
               style={{
-                height: 20,
-                width: 20,
+                height: 18,
+                width: 18,
               }}
             />
           </ListItemIcon>
