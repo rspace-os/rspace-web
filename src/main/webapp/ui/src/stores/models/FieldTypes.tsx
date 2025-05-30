@@ -10,12 +10,6 @@ import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
 import { listToObject } from "../../util/Util";
 import NumberIcon from "../../components/NumberIcon";
 
-/*
- * Flowjs just straight up doesn't support Symbols which makes
- * this file a bit of a mess, unfortunately. See this GitHub
- * issue https://github.com/facebook/flow/issues/3258
- */
-
 export const FieldTypes: { [fieldName: string]: symbol } = {
   choice: Symbol.for("choice"),
   date: Symbol.for("date"),
