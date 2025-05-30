@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
@@ -8,17 +6,17 @@ import CustomTooltip from "../../../../components/CustomTooltip";
 import FormControl from "../../../../components/Inputs/FormControl";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 
-type NewFieldArgs = {|
-  record: InventoryRecord,
-|};
+type NewFieldArgs = {
+  record: InventoryRecord;
+};
 
-function NewField({ record }: NewFieldArgs): Node {
+function NewField({ record }: NewFieldArgs): React.ReactNode {
   const EMPTY_FIELD = {
     id: null,
     globalId: null,
     name: "",
     lastModified: null,
-    type: "text",
+    type: "text" as const,
     content: "",
     parentGlobalId: record.globalId,
     editing: true,
@@ -49,4 +47,4 @@ function NewField({ record }: NewFieldArgs): Node {
   );
 }
 
-export default (observer(NewField): ComponentType<NewFieldArgs>);
+export default observer(NewField);
