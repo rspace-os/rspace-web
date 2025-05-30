@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -22,8 +21,10 @@ describe("ToggleView", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <ToggleView
-          currentView={Object.keys(TYPE_LABEL)[0]}
-          views={Object.keys(TYPE_LABEL)}
+          currentView={
+            (Object.keys(TYPE_LABEL) as Array<keyof typeof TYPE_LABEL>)[0]
+          }
+          views={Object.keys(TYPE_LABEL) as Array<keyof typeof TYPE_LABEL>}
           onChange={() => Promise.resolve()}
         />
       </ThemeProvider>
@@ -33,7 +34,9 @@ describe("ToggleView", () => {
 
     expect(
       screen.getByRole("menuitem", {
-        name: TYPE_LABEL[Object.keys(TYPE_LABEL)[0]],
+        name: TYPE_LABEL[
+          (Object.keys(TYPE_LABEL) as Array<keyof typeof TYPE_LABEL>)[0]
+        ],
       })
     ).toHaveAttribute("aria-current", "true");
   });
