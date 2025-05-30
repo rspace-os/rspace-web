@@ -1,11 +1,9 @@
-// @flow
-
-import { type ElementProps } from "react";
+import React from "react";
 import TableCell from "@mui/material/TableCell";
 import { withStyles } from "Styles";
 
-const StyledTableCell: typeof TableCell = withStyles<
-  ElementProps<typeof TableCell>,
+const StyledTableCell = withStyles<
+  React.ComponentProps<typeof TableCell>,
   { root: string }
 >(() => ({
   root: {
