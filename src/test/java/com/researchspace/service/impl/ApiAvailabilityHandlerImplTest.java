@@ -6,6 +6,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummyError;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,13 +33,14 @@ class ApiAvailabilityHandlerImplTest {
     httpRequest = new MockHttpServletRequest();
     handler = new ApiAvailabilityHandlerImpl();
     handler.setSystemPropertyManager(mockSysPropMgr);
+    handler.setDataCiteConnector(new DataCiteConnectorDummy());
   }
 
   @Test
   @DisplayName("Case 1: api enabled, inventory enabled, Inventory api request")
   void isAvailableCase1() {
-    enableApi(SystemPropertyName.API_AVAILABLE, Boolean.TRUE);
-    enableApi(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
+    setSystemProperty(SystemPropertyName.API_AVAILABLE, Boolean.TRUE);
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
     httpRequest.setRequestURI(API_INVENTORY_V_1_WORKBENCHES);
     assertApiEnabled();
   }
@@ -45,8 +48,8 @@ class ApiAvailabilityHandlerImplTest {
   @Test
   @DisplayName("Case 2: api enabled, inventory disabled, Inventory api request")
   void isAvailableCase2() {
-    enableApi(SystemPropertyName.API_AVAILABLE, Boolean.TRUE);
-    enableApi(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.FALSE);
+    setSystemProperty(SystemPropertyName.API_AVAILABLE, Boolean.TRUE);
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.FALSE);
     httpRequest.setRequestURI(API_INVENTORY_V_1_WORKBENCHES);
     assertApiDisabled();
   }
@@ -54,7 +57,7 @@ class ApiAvailabilityHandlerImplTest {
   @Test
   @DisplayName("Case 3: api enabled, ELN api request")
   void isAvailableCase3() {
-    enableApi(SystemPropertyName.API_AVAILABLE, Boolean.TRUE);
+    setSystemProperty(SystemPropertyName.API_AVAILABLE, Boolean.TRUE);
     httpRequest.setRequestURI(API_V_1_DOCUMENTS);
     assertApiEnabled();
   }
@@ -62,7 +65,7 @@ class ApiAvailabilityHandlerImplTest {
   @Test
   @DisplayName("Case 4: api disabled, eln api request")
   void isAvailableCase4() {
-    enableApi(SystemPropertyName.API_AVAILABLE, Boolean.FALSE);
+    setSystemProperty(SystemPropertyName.API_AVAILABLE, Boolean.FALSE);
     httpRequest.setRequestURI(API_V_1_DOCUMENTS);
     assertApiDisabled();
   }
@@ -70,16 +73,51 @@ class ApiAvailabilityHandlerImplTest {
   @Test
   @DisplayName("Case 4b: api disabled, inv api request")
   void isAvailableCase4b() {
-    enableApi(SystemPropertyName.API_AVAILABLE, Boolean.FALSE);
+    setSystemProperty(SystemPropertyName.API_AVAILABLE, Boolean.FALSE);
     httpRequest.setRequestURI(API_INVENTORY_V_1_WORKBENCHES);
     assertApiDisabled();
+  }
+
+  @Test
+  void testInventoryAndDataciteEnabled() {
+    setSystemProperty(SystemPropertyName.DATACITE_ENABLED, Boolean.TRUE);
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
+    assertTrue(handler.isInventoryAndDataciteEnabled(anyUser));
+    handler.assertInventoryAndDataciteEnabled(anyUser);
+  }
+
+  @Test
+  void testDataciteDisabled() {
+    handler.setDataCiteConnector(new DataCiteConnectorDummyError());
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
+    assertFalse(handler.isInventoryAndDataciteEnabled(anyUser));
+
+    Exception exception =
+        assertThrows(
+            UnsupportedOperationException.class,
+            () -> handler.assertInventoryAndDataciteEnabled(anyUser));
+    assertEquals(
+        "IGSN integration is not enabled on this RSpace instance.", exception.getMessage());
+  }
+
+  @Test
+  void testInventoryAndDataciteDisabled() {
+    handler.setDataCiteConnector(new DataCiteConnectorDummyError());
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.FALSE);
+    assertFalse(handler.isInventoryAndDataciteEnabled(anyUser));
+
+    Exception exception =
+        assertThrows(
+            UnsupportedOperationException.class,
+            () -> handler.assertInventoryAndDataciteEnabled(anyUser));
+    assertEquals("Inventory is not enabled on this RSpace instance.", exception.getMessage());
   }
 
   private void assertApiDisabled() {
     assertFalse(handler.isAvailable(anyUser, httpRequest).isSucceeded());
   }
 
-  private void enableApi(SystemPropertyName apiAvailable, Boolean aTrue) {
+  private void setSystemProperty(SystemPropertyName apiAvailable, Boolean aTrue) {
     Mockito.lenient()
         .when(mockSysPropMgr.isPropertyAllowed(anyUser, apiAvailable))
         .thenReturn(aTrue);

@@ -28,4 +28,12 @@ public interface ApiAvailabilityHandler {
   boolean isApiAvailableForUser(User user);
 
   boolean isOAuthAccessAllowed(User user);
+
+  void assertInventoryAndDataciteEnabled(User user);
+
+  boolean isInventoryAndDataciteEnabled(User user);
+
+  boolean isDataCiteConnectorEnabled();
+
+  boolean isInventoryAvailable(User user);
 }

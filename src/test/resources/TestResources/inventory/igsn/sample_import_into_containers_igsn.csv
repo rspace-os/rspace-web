@@ -1,0 +1,5 @@
+﻿Name,Description,Import identifier,Parent container,Igsn
+Sample1,with subsample on workbench, s1,,10.82316/s8w8-h434
+Sample2,with subsample inside container1, s2, cont1,https://doi.org/10.82316/x5j9-zc79
+Sample3,with subsample inside container5,,cont5,doi.org/10.82316/vrab-bw65
+Sample4,with subsample on workbench,,,10.82316/fgyr-4z65

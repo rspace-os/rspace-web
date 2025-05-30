@@ -18,6 +18,7 @@ import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSubSampleImportResult;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -32,6 +33,7 @@ import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.InventoryImportManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -49,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -77,6 +80,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
   @Autowired private CsvContainerImporter containerCsvImporter;
   @Autowired private CsvSampleImporter sampleCsvImporter;
   @Autowired private CsvSubSampleImporter subSampleCsvImporter;
+  @Autowired private InventoryIdentifierApiManager inventoryIdentifierManager;
 
   @Override
   public ApiInventoryImportSampleParseResult parseSamplesCsvFile(
@@ -87,13 +91,13 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
   @Override
   public ApiInventoryImportParseResult parseContainersCsvFile(
       InputStream inputStream, User createdBy) throws IOException {
-    return containerCsvImporter.readCsvIntoParseResults(inputStream);
+    return containerCsvImporter.readCsvIntoParseResults(inputStream, createdBy);
   }
 
   @Override
   public ApiInventoryImportParseResult parseSubSamplesCsvFile(
       InputStream inputStream, User createdBy) throws IOException {
-    return subSampleCsvImporter.readCsvIntoParseResults(inputStream);
+    return subSampleCsvImporter.readCsvIntoParseResults(inputStream, createdBy);
   }
 
   @Override
@@ -115,7 +119,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       csvResult.setSampleResult(createSampleResultWithRequestedTemplate(templateInfo, user));
     }
 
-    readCsvFiles(csvResult, importPostFull);
+    readCsvFiles(csvResult, importPostFull, user);
 
     if (csvResult.hasPrevalidationError()) {
       throw new InventoryImportPrevalidationException(csvResult);
@@ -184,7 +188,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
   }
 
   private void readCsvFiles(
-      ApiInventoryImportResult csvResult, ApiInventoryImportPostFull importPostFull)
+      ApiInventoryImportResult csvResult, ApiInventoryImportPostFull importPostFull, User user)
       throws IOException {
 
     ApiInventoryImportSettingsPost importSettings = importPostFull.getImportSettings();
@@ -210,7 +214,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         Map<String, String> fieldMappings = containerSettings.getFieldMappings();
         log.info("container fieldMappings: {} ", fieldMappings);
 
-        containerCsvImporter.readCsvIntoImportResult(containersIS, fieldMappings, csvResult);
+        containerCsvImporter.readCsvIntoImportResult(containersIS, fieldMappings, csvResult, user);
         prevalidateContainers(csvResult);
       }
 
@@ -222,7 +226,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
 
         boolean templateRetrieved = csvResult.getSampleResult().getTemplate().getRecord() != null;
         if (templateRetrieved) {
-          sampleCsvImporter.readCsvIntoImportResult(samplesIS, fieldMappings, csvResult);
+          sampleCsvImporter.readCsvIntoImportResult(samplesIS, fieldMappings, csvResult, user);
 
           boolean validTemplate = csvResult.getSampleResult().getTemplate().getRecord() != null;
           if (validTemplate) {
@@ -238,7 +242,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         log.info("subSample fieldMappings: {} ", subSampleFieldMappings);
 
         subSampleCsvImporter.readCsvIntoImportResult(
-            subSamplesIS, subSampleFieldMappings, csvResult);
+            subSamplesIS, subSampleFieldMappings, csvResult, user);
         prevalidateSubSamples(csvResult);
       }
     }
@@ -549,8 +553,8 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         ApiContainer importedContainer =
             containersController.createNewContainer(
                 containerToImport, errors, importResult.getCurrentUser());
+        assignIdentifier(importResult.getCurrentUser(), containerToImport, importedContainer);
         containerImportResult.addSuccessResult(importedContainer);
-
       } catch (Exception e) {
         log.warn("Error on saving container from line: " + (containerCount + 1), e);
         ApiError error = bulkOperationHandler.convertExceptionToApiError(e);
@@ -659,7 +663,20 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         ApiSampleWithFullSubSamples importedSample =
             samplesController.createNewSample(
                 sampleToImport, errors, importResult.getCurrentUser());
+        assignIdentifier(importResult.getCurrentUser(), sampleToImport, importedSample);
         sampleImportResult.addSuccessResult(importedSample);
+        if (importedSample.getSubSamplesCount() > 0) {
+          for (ApiSubSample importedSubSample : importedSample.getSubSamples()) {
+            Optional<ApiSubSample> currentSubSampleToAssignIdentifier =
+                sampleToImport.getSubSamples().stream()
+                    .filter(ss -> ss.getName().equals(importedSubSample.getName()))
+                    .findFirst();
+            if (currentSubSampleToAssignIdentifier.isPresent()) {
+              ApiSubSample subSampleToImport = currentSubSampleToAssignIdentifier.get();
+              assignIdentifier(importResult.getCurrentUser(), subSampleToImport, importedSubSample);
+            }
+          }
+        }
       } catch (Exception e) {
         log.warn("Error on saving sample from line: " + (sampleCount + 1), e);
         ApiError error = bulkOperationHandler.convertExceptionToApiError(e);
@@ -782,7 +799,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
     List<ApiInventoryBulkOperationRecordResult> csvSubSamples = subSampleCsvResult.getResults();
     for (int resultCount = 0; resultCount < csvSubSamples.size(); resultCount++) {
       ApiInventoryBulkOperationRecordResult csvResult = csvSubSamples.get(resultCount);
-      ApiSubSample subSample = (ApiSubSample) csvResult.getRecord();
+      ApiSubSample subSampleToImport = (ApiSubSample) csvResult.getRecord();
       GlobalIdentifier parentSampleGlobalId =
           subSampleCsvResult.getParentSampleGlobalIdForResultNumber(resultCount);
       if (parentSampleGlobalId == null) {
@@ -794,9 +811,9 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       try {
         ApiSubSample importedSubSample =
             subSampleManager.addNewApiSubSampleToSample(
-                subSample, parentSampleGlobalId.getDbId(), importResult.getCurrentUser());
+                subSampleToImport, parentSampleGlobalId.getDbId(), importResult.getCurrentUser());
+        assignIdentifier(importResult.getCurrentUser(), subSampleToImport, importedSubSample);
         currentResult.setRecord(importedSubSample);
-
       } catch (Exception e) {
         log.warn("Error on saving subsample from line: " + (resultCount + 1), e);
         ApiError error = bulkOperationHandler.convertExceptionToApiError(e);
@@ -899,6 +916,21 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         result.setRecord(
             containerManager.getApiContainerById(containerId, importResult.getCurrentUser()));
       }
+    }
+  }
+
+  private void assignIdentifier(
+      User user,
+      ApiInventoryRecordInfo csvInventoryItemToImport,
+      ApiInventoryRecordInfo existingInventoryItem) {
+    if (!csvInventoryItemToImport.getIdentifiers().isEmpty()) {
+      existingInventoryItem.setIdentifiers(
+          inventoryIdentifierManager
+              .assignIdentifier(
+                  new GlobalIdentifier(existingInventoryItem.getGlobalId()),
+                  csvInventoryItemToImport.getIdentifiers().get(0).getId(),
+                  user)
+              .getIdentifiers());
     }
   }
 }

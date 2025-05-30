@@ -19,7 +19,11 @@ public interface InventoryIdentifierApiManager {
   ApiInventoryRecordInfo findPublishedItemVersionByPublicLink(String publicLink);
 
   List<ApiInventoryDOI> findIdentifiers(
-      String state, Boolean isAssociated, String identifier, User owner)
+      String state,
+      Boolean isAssociated,
+      String identifier,
+      boolean allowSubstringIdentifier,
+      User owner)
       throws InvalidNameException;
 
   ApiInventoryRecordInfo registerNewIdentifier(GlobalIdentifier invRecOid, User user);

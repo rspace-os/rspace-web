@@ -9,6 +9,7 @@ import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
@@ -149,5 +150,31 @@ public class InventoryImportSampleFieldCreatorTest {
     assertNull(helper.getCommonQuantityUnit(values));
     values = List.of("200g", "dummy"); // wrong syntax
     assertNull(helper.getCommonQuantityUnit(values));
+  }
+
+  @Test
+  public void testFieldMappingsForIdentifier() {
+    List<String> values = new ArrayList<>();
+    values.add("doi.org/10.12345/asdf-fdsa1");
+    values.add("https://doi.org/10.12345/asdf-fdsa2");
+    values.add("10.12345/asdf-fdsa3");
+    values.add("10.1234/asdf-fdsa4");
+    values.add("");
+    values.add(" ");
+    values.add(null);
+    Map<String, String> fieldMappings = helper.getFieldMappingForIdentifier("testIgsn", values);
+    assertEquals("identifier", fieldMappings.get("testIgsn"));
+
+    // very long values -> text
+    values.clear();
+    values.add("doi.org/10.12345/asdf-fdsa1");
+    values.add("https://doi.org/10.12345/asdf-fdsa2");
+    values.add("10.12345/asdf-fdsa3");
+    values.add("10.1234/asdf-fdsa4");
+    values.add("");
+    values.add("NOT_AN_IDENTIFIER");
+    values.add(null);
+    fieldMappings = helper.getFieldMappingForIdentifier("testIgsn", values);
+    assertNull(fieldMappings.get("testIgsn"));
   }
 }

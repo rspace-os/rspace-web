@@ -4,6 +4,7 @@ import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSubSampleImportResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
+import javax.naming.InvalidNameException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -32,10 +34,12 @@ public class CsvSubSampleImporter extends InventoryItemCsvImporter {
     setCsvLinesLimit(csvSubSamplesLinesLimit);
   }
 
+  @Override
   public void readCsvIntoImportResult(
       InputStream subSamplesIS,
       Map<String, String> csvColumnToFieldMapping,
-      ApiInventoryImportResult importResult)
+      ApiInventoryImportResult importResult,
+      User user)
       throws IOException {
 
     // read lines from csv
@@ -55,14 +59,19 @@ public class CsvSubSampleImporter extends InventoryItemCsvImporter {
     // convert csv lines to subsamples and prevalidate
     List<String[]> csvSubSampleLines = lines.subList(1, lines.size());
     convertLinesToSubSamples(
-        csvProcessingResult, csvSubSampleLines, columnIndexToDefaultFieldMap, columnNames.size());
+        csvProcessingResult,
+        csvSubSampleLines,
+        columnIndexToDefaultFieldMap,
+        columnNames.size(),
+        user);
   }
 
   public void convertLinesToSubSamples(
       ApiInventoryImportSubSampleImportResult csvProcessingResult,
       List<String[]> csvSubSampleLines,
       Map<Integer, String> columnIndexToDefaultFieldMap,
-      int expectedColumnsNumber) {
+      int expectedColumnsNumber,
+      User user) {
 
     int resultCount = 0;
     for (String[] line : csvSubSampleLines) {
@@ -104,13 +113,13 @@ public class CsvSubSampleImporter extends InventoryItemCsvImporter {
                     resultCount, new GlobalIdentifier(value));
               }
             } else {
-              setDefaultFieldFromMappedColumn(apiSubSample, fieldName, value);
+              setDefaultFieldFromMappedColumn(apiSubSample, fieldName, value, user);
             }
           }
         }
         csvProcessingResult.addSuccessResult(apiSubSample);
 
-      } catch (RuntimeException iae) {
+      } catch (RuntimeException | InvalidNameException iae) {
         csvProcessingResult.addError(getBadRequestIllegalArgumentApiError(iae.getMessage()));
       }
 
