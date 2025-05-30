@@ -1,12 +1,10 @@
-//@flow
-
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import useStores from "../../../stores/use-stores";
 import Stepper from "./Stepper";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
-import React, { type ComponentType } from "react";
+import React from "react";
 import TopLevelButton from "./TopLevelButton";
 import { type Panel } from "../../../util/types";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
@@ -15,10 +13,10 @@ const MoveSubmitButton = observer(
   ({
     handleSubmit,
     isInvalid,
-  }: {|
-    handleSubmit: () => void,
-    isInvalid: boolean,
-  |}) => {
+  }: {
+    handleSubmit: () => void;
+    isInvalid: boolean;
+  }) => {
     const { moveStore } = useStores();
     return (
       <SubmitSpinner
@@ -31,7 +29,7 @@ const MoveSubmitButton = observer(
   }
 );
 
-const CancelButton = observer(({ onClick }: {| onClick: () => void |}) => {
+const CancelButton = observer(({ onClick }: { onClick: () => void }) => {
   const { moveStore } = useStores();
   return (
     <Button onClick={onClick} disabled={moveStore.submitting !== "NO"}>
@@ -39,13 +37,13 @@ const CancelButton = observer(({ onClick }: {| onClick: () => void |}) => {
     </Button>
   );
 });
-type ActionsArgs = {|
-  handleClose: () => void,
-  handleMove: () => void,
-  handleBack: () => void,
-  handleNext: () => void,
-  activeStep: Panel,
-|};
+type ActionsArgs = {
+  handleClose: () => void;
+  handleMove: () => void;
+  handleBack: () => void;
+  handleNext: () => void;
+  activeStep: Panel;
+};
 
 function Actions({
   handleClose,
@@ -53,7 +51,7 @@ function Actions({
   handleBack,
   handleNext,
   activeStep,
-}: ActionsArgs) {
+}: ActionsArgs): React.ReactNode {
   const { moveStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const isSelectionValid = () => {
@@ -107,4 +105,4 @@ function Actions({
     </Grid>
   );
 }
-export default (observer(Actions): ComponentType<ActionsArgs>);
+export default observer(Actions);
