@@ -34,7 +34,7 @@ import CacheFetcher from "./Fetcher/CacheFetcher";
 import CoreFetcher from "./Fetcher/CoreFetcher";
 import DynamicFetcher from "./Fetcher/DynamicFetcher";
 import { type Username, type Person } from "../definitions/Person";
-import Result from "./Result";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import SampleModel from "./SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
@@ -77,7 +77,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import { type Quantity } from "../definitions/HasQuantity";
 import * as Parsers from "../../util/parsers";
-import UtilResult from "../../util/result";
+import Result from "../../util/result";
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
@@ -368,7 +368,7 @@ export default class Search implements SearchInterface {
     | { type: "container"; records: RsSet<ContainerModel> }
     | { type: "sample"; records: RsSet<SampleModel> }
     | { type: "subSample"; records: RsSet<SubSampleModel> }
-    | { type: "mixed"; records: RsSet<Result> } {
+    | { type: "mixed"; records: RsSet<InventoryBaseRecord> } {
     if (!this.batchEditingRecords) return null;
     const records: RsSet<InventoryRecord> = this.batchEditingRecords;
     if (records.every((r) => r instanceof ContainerModel)) {
@@ -388,7 +388,7 @@ export default class Search implements SearchInterface {
     }
     return {
       type: "mixed",
-      records: records.filterClass(Result),
+      records: records.filterClass(InventoryBaseRecord),
     };
   }
 
@@ -405,7 +405,7 @@ export default class Search implements SearchInterface {
     await this.cleanBatchEditing();
     await this.cleanUpActiveResult({ releaseLock: !force });
 
-    const assignment = action(async (r: Result | null) => {
+    const assignment = action(async (r: InventoryBaseRecord | null) => {
       if (r) {
         if (!r.infoLoaded && r.id) {
           r.setLoading(true); // don't give react a chance to render without loading being true
@@ -414,14 +414,14 @@ export default class Search implements SearchInterface {
         if (!r.infoLoaded && r.id) await r.fetchAdditionalInfo();
         this.callbacks?.setActiveResult?.(r);
       } else if (this.filteredResults.length > 0 && defaultToFirstResult) {
-        if (this.filteredResults[0] instanceof Result)
+        if (this.filteredResults[0] instanceof InventoryBaseRecord)
           await assignment(this.filteredResults[0]);
       } else {
         this.activeResult = null;
         this.callbacks?.setActiveResult?.(null);
       }
     });
-    if (result instanceof Result || result === null) await assignment(result);
+    if (result instanceof InventoryBaseRecord || result === null) await assignment(result);
   }
 
   /*
@@ -900,7 +900,7 @@ export default class Search implements SearchInterface {
     await Promise.all(promises);
   }
 
-  replaceResult(result: Result) {
+  replaceResult(result: InventoryBaseRecord): void {
     this.fetcher.replaceResult(result);
   }
 
@@ -1058,7 +1058,7 @@ export default class Search implements SearchInterface {
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
             .flatMap((errors) =>
-              UtilResult.all(...errors.map(Parsers.isString)).map((titles) =>
+              Result.all(...errors.map(Parsers.isString)).map((titles) =>
                 titles.map((title) => ({
                   title,
                   variant: "error" as const,
@@ -1123,7 +1123,7 @@ export default class Search implements SearchInterface {
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
             .flatMap((errors) =>
-              UtilResult.all(...errors.map(Parsers.isString)).map((titles) =>
+              Result.all(...errors.map(Parsers.isString)).map((titles) =>
                 titles.map((title) => ({
                   title,
                   variant: "error" as const,

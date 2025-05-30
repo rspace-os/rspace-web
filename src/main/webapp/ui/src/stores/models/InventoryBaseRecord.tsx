@@ -86,10 +86,10 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
 import * as Parsers from "../../util/parsers";
-import UtilResult from "../../util/result";
+import Result from "../../util/result";
 import { AxiosProgressEvent } from "@/common/axios";
 
-export type ResultEditableFields = {
+export type InventoryBaseRecordEditableFields = {
   /*
    * As far as the database is concerned, the description can be null, and the
    * records pre-populated in the databases of the development servers have a
@@ -110,7 +110,7 @@ export type ResultEditableFields = {
   identifiers: Array<Identifier>;
 };
 
-export type ResultUneditableFields = {
+export type InventoryBaseRecordUneditableFields = {
   owner: Person | null;
 };
 
@@ -140,11 +140,11 @@ type LockOwner = {
 };
 
 export class RecordLockedError extends Error {
-  record: Result; //eslint-disable-line
+  record: InventoryBaseRecord; //eslint-disable-line
   lockOwner: LockOwner;
 
   //eslint-disable-next-line
-  constructor(record: Result, lockOwner: LockOwner) {
+  constructor(record: InventoryBaseRecord, lockOwner: LockOwner) {
     super();
     this.name = "RecordLockedError";
     this.record = record;
@@ -212,14 +212,17 @@ type ResultAttrs = {
  *
  * NOTE: This class is abstract and should not itself be instantiated. Derive
  * subclasses from it, implement the various unimplemented methods, and
- * instantiate those classes instead.
+ * instantiate those classes instead. It is a shame that we can't have
+ * TypeScript enforce this for us with the "abstract" keyword but doing do would
+ * deprive us of the ability to use mixins because mixin factory functions
+ * cannot return abstract classes.
  */
-export default class Result
+export default class InventoryBaseRecord
   implements
     InventoryRecord,
     AdjustableTableRow<string>,
-    HasEditableFields<ResultEditableFields>,
-    HasUneditableFields<ResultUneditableFields>
+    HasEditableFields<InventoryBaseRecordEditableFields>,
+    HasUneditableFields<InventoryBaseRecordUneditableFields>
 {
   loading: boolean = false;
   editing: boolean = false;
@@ -227,8 +230,8 @@ export default class Result
   globalId: GlobalId | null = null;
   // @ts-expect-error type is initialised by populateFromJson
   type: ApiRecordType;
-  name: ResultEditableFields["name"] = "";
-  description: ResultEditableFields["description"] = "";
+  name: InventoryBaseRecordEditableFields["name"] = "";
+  description: InventoryBaseRecordEditableFields["description"] = "";
   selected: boolean = false; // whether its checkbox is selected
   infoLoaded: boolean = false; // whether the full information is fetched
   extraFields: Array<ExtraField> = [];
@@ -236,9 +239,9 @@ export default class Result
   currentlyVisibleFields: Set<string>;
   // @ts-expect-error currentlyEditableFields is initialised by populateFromJson
   currentlyEditableFields: Set<string>;
-  image: ResultEditableFields["image"] = null;
+  image: InventoryBaseRecordEditableFields["image"] = null;
   thumbnail: Thumbnail = null;
-  tags: ResultEditableFields["tags"] = [];
+  tags: InventoryBaseRecordEditableFields["tags"] = [];
   // @ts-expect-error created is initialised by populateFromJson
   created: string;
   // @ts-expect-error lastModified is initialised by populateFromJson
@@ -260,7 +263,7 @@ export default class Result
   expiryCheckInterval: NodeJS.Timeout | undefined;
   // @ts-expect-error permittedActions is initialised by populateFromJson
   permittedActions: Set<Action>;
-  newBase64Image: ResultEditableFields["newBase64Image"] = null;
+  newBase64Image: InventoryBaseRecordEditableFields["newBase64Image"] = null;
   attachments: Array<Attachment> = [];
   identifiers: Array<Identifier> = [];
   iconId: number | null = null;
@@ -982,7 +985,7 @@ export default class Result
      * than comparing IDs.
      */
     const parentLocation = locations.find(
-      ({ content }) => (content as Result | null) === this
+      ({ content }) => (content as InventoryBaseRecord | null) === this
     );
 
     // this check is necessary to avoid stack overflow
@@ -1116,12 +1119,12 @@ export default class Result
           const newAlert = mkAlert({
             message: "Please correct the invalid fields and try again.",
             variant: "error",
-            details: UtilResult.any(
+            details: Result.any(
               ...validationErrors.map((e) =>
                 Parsers.isObject(e)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) =>
-                    UtilResult.lift2<
+                    Result.lift2<
                       string,
                       string,
                       { title: string; help: string; variant: "error" }
@@ -1238,12 +1241,12 @@ export default class Result
           const newAlert = mkAlert({
             message: "Please correct the invalid fields and try again.",
             variant: "error",
-            details: UtilResult.any(
+            details: Result.any(
               ...validationErrors.map((e) =>
                 Parsers.isObject(e)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) =>
-                    UtilResult.lift2<
+                    Result.lift2<
                       string,
                       string,
                       { title: string; help: string; variant: "error" }
@@ -1732,7 +1735,8 @@ export default class Result
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
-  get fieldValues(): ResultEditableFields & ResultUneditableFields {
+  get fieldValues(): InventoryBaseRecordEditableFields &
+    InventoryBaseRecordUneditableFields {
     return {
       name: this.name,
       description: this.description,
@@ -1752,8 +1756,10 @@ export default class Result
   }
 
   //eslint-disable-next-line no-unused-vars
-  get noValueLabel(): { [key in keyof ResultEditableFields]: string | null } & {
-    [key in keyof ResultUneditableFields]: string | null;
+  get noValueLabel(): {
+    [key in keyof InventoryBaseRecordEditableFields]: string | null;
+  } & {
+    [key in keyof InventoryBaseRecordUneditableFields]: string | null;
   } {
     return {
       name: null,

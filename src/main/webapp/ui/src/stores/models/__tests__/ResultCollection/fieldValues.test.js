@@ -3,7 +3,7 @@
  */
 //@flow
 /* eslint-env jest */
-import ResultCollection from "../../ResultCollection";
+import InventoryBaseRecordCollection from "../../InventoryBaseRecordCollection";
 import { PersistedBarcode } from "../../Barcode";
 import { makeMockContainer } from "../ContainerModel/mocking";
 import RsSet from "../../../../util/set";
@@ -25,7 +25,7 @@ describe("Computed: fieldValues", () => {
         }),
       ]);
 
-      const collection = new ResultCollection(containers);
+      const collection = new InventoryBaseRecordCollection(containers);
 
       const barcode = new PersistedBarcode({
         data: "foo",
@@ -74,7 +74,7 @@ describe("Computed: fieldValues", () => {
         }),
       ]);
 
-      const collection = new ResultCollection(containers);
+      const collection = new InventoryBaseRecordCollection(containers);
 
       expect(collection.fieldValues.barcodes).toEqual([]);
     });

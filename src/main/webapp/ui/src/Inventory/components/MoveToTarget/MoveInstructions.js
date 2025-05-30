@@ -12,7 +12,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-import Result from "../../../stores/models/Result";
+import InventoryBaseRecord from "../../../stores/models/InventoryBaseRecord";
 import SearchContext from "../../../stores/contexts/Search";
 import Stack from "@mui/material/Stack";
 import ContainerModel from "../../../stores/models/ContainerModel";
@@ -170,7 +170,7 @@ function MoveInstructions(): Node {
     }
   }, [container.id]);
 
-  const nextSelection = (): ?Result => {
+  const nextSelection = (): ?InventoryBaseRecord => {
     if (!moveStore.activeResult?.selectedLocations)
       throw new Error("Destination container's locations must be known.");
     const destinationSelectedLocations =

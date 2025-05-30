@@ -17,13 +17,13 @@ import TextField from "../../../../components/Inputs/TextField";
 import TimeField from "../../../../components/Inputs/TimeField";
 import UriField from "../../../../components/Inputs/UriField";
 import { type Field } from "../../../../stores/definitions/Field";
-import Result from "../../../../stores/models/Result";
+import InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
 import { type GalleryFile } from "../../../../eln/gallery/useGalleryListing";
 
 type FieldsArgs = {|
   onErrorStateChange: (string, boolean) => void,
-  // The Sample type is to get the `fields`, the Result type is for AttachmentField's `fieldOwner` prop
-  sample: Sample & Result,
+  // The Sample type is to get the `fields`, the InventoryBaseRecord type is for AttachmentField's `fieldOwner` prop
+  sample: Sample & InventoryBaseRecord,
 |};
 
 function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {

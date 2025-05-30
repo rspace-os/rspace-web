@@ -1,7 +1,7 @@
 import { type PersonId, type PersonAttrs } from "../../definitions/Person";
 import { type GlobalId } from "../../definitions/BaseRecord";
 import PersonModel from "../PersonModel";
-import Result from "../Result";
+import InventoryBaseRecord from "../InventoryBaseRecord";
 import AlwaysNewFactory from "./AlwaysNewFactory";
 import { type Factory } from "../../definitions/Factory";
 import { type DocumentAttrs, type Document } from "../../definitions/Document";
@@ -37,14 +37,14 @@ export default class MemoisedFactory extends AlwaysNewFactory {
   newRecord(
     params: Record<string, unknown> & { globalId: GlobalId }
   ): InventoryRecord {
-    if (params instanceof Result)
-      throw new Error("Cannot instantiate Record from Result");
+    if (params instanceof InventoryBaseRecord)
+      throw new Error("Cannot instantiate Record from InventoryBaseRecord");
     const globalId = params.globalId;
     const existingRecord = this.recordCache.get(globalId);
     if (existingRecord) return existingRecord;
-    const newResult = super.newRecord(params);
-    this.recordCache.set(globalId, newResult);
-    return newResult;
+    const newRecord = super.newRecord(params);
+    this.recordCache.set(globalId, newRecord);
+    return newRecord;
   }
 
   /*

@@ -34,7 +34,7 @@ import CacheFetcher from "./Fetcher/CacheFetcher";
 import CoreFetcher from "./Fetcher/CoreFetcher";
 import DynamicFetcher from "./Fetcher/DynamicFetcher";
 import { type Username, type Person } from "../definitions/Person";
-import Result from "./Result";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
 import SampleModel from "./SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
@@ -82,7 +82,7 @@ type SearchArgs = {|
   treeArgs?: TreeAttrs,
   uiConfig?: Partial<UiConfig>,
   callbacks?: {|
-    setActiveResult?: (?Result) => void,
+    setActiveResult?: (?InventoryBaseRecord) => void,
   |},
   factory: Factory,
 |};
@@ -98,7 +98,7 @@ declare export default class Search implements SearchInterface {
   cacheFetcher: CacheFetcherInterface;
   alwaysFilterOut: (InventoryRecord) => boolean;
   callbacks: ?{|
-    setActiveResult?: (?Result) => void,
+    setActiveResult?: (?InventoryBaseRecord) => void,
   |};
 
   overrideSearchOnFilter: ?(CoreFetcherArgs) => void;
@@ -149,7 +149,7 @@ declare export default class Search implements SearchInterface {
     | {| type: "container", records: RsSet<ContainerModel> |}
     | {| type: "sample", records: RsSet<SampleModel> |}
     | {| type: "subSample", records: RsSet<SubSampleModel> |}
-    | {| type: "mixed", records: RsSet<Result> |};
+    | {| type: "mixed", records: RsSet<InventoryBaseRecord> |};
 
   setActiveResult(
     result?: ?InventoryRecord,
@@ -177,7 +177,7 @@ declare export default class Search implements SearchInterface {
 
   updateStateAfterSplit(subsample: InventoryRecord): void;
 
-  replaceResult(result: Result): void;
+  replaceResult(result: InventoryBaseRecord): void;
 
   transferRecords(
     username: Username,

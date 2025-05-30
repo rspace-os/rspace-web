@@ -19,7 +19,7 @@ import {
 } from "../../util/alerts";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
 import Search from "../models/Search";
-import Result from "../models/Result";
+import InventoryBaseRecord from "../models/InventoryBaseRecord";
 import { type GlobalId, getSavedGlobalId } from "../definitions/BaseRecord";
 import { type Container, type Location } from "../definitions/Container";
 import {
@@ -317,7 +317,7 @@ export default class MoveStore {
     return new Set(this.selectedResults.map(getSavedGlobalId));
   }
 
-  isRecordMoving(record: Result): boolean {
+  isRecordMoving(record: InventoryBaseRecord): boolean {
     if (!record.globalId) return false;
     return this.globalIdsOfSelectedResults.has(record.globalId);
   }

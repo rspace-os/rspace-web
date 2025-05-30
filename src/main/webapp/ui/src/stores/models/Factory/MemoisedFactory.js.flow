@@ -3,19 +3,19 @@
 import { type PersonId, type PersonAttrs } from "../../definitions/Person";
 import { type GlobalId } from "../../definitions/BaseRecord";
 import PersonModel from "../PersonModel";
-import Result from "../Result";
+import InventoryBaseRecord from "../InventoryBaseRecord";
 import AlwaysNewFactory from "./AlwaysNewFactory";
 import { type Factory } from "../../definitions/Factory";
 import { type DocumentAttrs, type Document } from "../../definitions/Document";
 
 declare export default class MemoisedFactory extends AlwaysNewFactory {
-  recordCache: Map<GlobalId, Result>;
+  recordCache: Map<GlobalId, InventoryBaseRecord>;
   personCache: Map<PersonId, PersonModel>;
   documentCache: Map<GlobalId, Document>;
 
   constructor(): MemoisedFactory;
 
-  newRecord(params: any): Result;
+  newRecord(params: any): InventoryBaseRecord;
 
   newPerson(attrs: PersonAttrs): PersonModel;
 

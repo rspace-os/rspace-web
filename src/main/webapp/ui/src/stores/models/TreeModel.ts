@@ -1,6 +1,6 @@
 import { action, observable, computed, makeObservable } from "mobx";
 import Search from "./Search";
-import Result from "./Result";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import getRootStore from "../stores/RootStore";
 import { type GlobalId } from "../definitions/BaseRecord";
 import {
@@ -51,7 +51,7 @@ export default class TreeModel implements HasChildren, TreeView {
     Object.assign(this, attrs);
   }
 
-  get selectedNode(): Result | null {
+  get selectedNode(): InventoryBaseRecord | null {
     return findNode(this.selected, this);
   }
 
@@ -90,9 +90,9 @@ export default class TreeModel implements HasChildren, TreeView {
 const findNode = (
   globalId: GlobalId | null,
   node: HasChildren
-): Result | null => {
-  if (node instanceof Result && node.globalId === globalId) return node;
-  return node.children.reduce<Result | null>(
+): InventoryBaseRecord | null => {
+  if (node instanceof InventoryBaseRecord && node.globalId === globalId) return node;
+  return node.children.reduce<InventoryBaseRecord | null>(
     (acc, result) => acc ?? findNode(globalId, result),
     null
   );
