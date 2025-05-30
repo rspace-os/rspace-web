@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.csvimport;
 
 import com.researchspace.model.inventory.field.InventoryDateField;
+import com.researchspace.model.inventory.field.InventoryIdentifierField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
@@ -44,6 +45,11 @@ public class InventoryImportSampleFieldCreator {
     // default field type (string) if only empty/blank values
     if (valueSet.isEmpty()) {
       return new InventoryStringField(name);
+    }
+
+    // identifier
+    if (isSuggestedFieldForValues(valueSet, new InventoryIdentifierField())) {
+      return new InventoryIdentifierField(name);
     }
 
     // text

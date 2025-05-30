@@ -14,6 +14,7 @@ import lombok.Data;
 @JsonPropertyOrder({"columnNames", "columnsWithoutBlankValue", "rowsCount"})
 public class ApiInventoryImportParseResult {
 
+  // csvColumnNames
   @JsonProperty("columnNames")
   private List<String> columnNames;
 
