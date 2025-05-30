@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -15,9 +13,9 @@ import SubmitSpinner from "../../../components/SubmitSpinnerButton";
  * A generic dialog for renaming various records in the Inventory interface.
  */
 
-export type NameDialogArgs = {|
-  open: boolean,
-  setOpen: (boolean) => void,
+export type NameDialogArgs = {
+  open: boolean;
+  setOpen: (newOpen: boolean) => void;
 
   /*
    * This dialog does not maintain its own state. The textfield within derives
@@ -28,8 +26,8 @@ export type NameDialogArgs = {|
    * does not maintain its own state and instead violates the principle of
    * information hiding.
    */
-  name: string,
-  setName: (string) => void,
+  name: string;
+  setName: (newName: string) => void;
 
   /*
    * If naming a new record then `index` should be undefined. If renaming an
@@ -37,8 +35,8 @@ export type NameDialogArgs = {|
    * into the `existingNames` array so that the existing name can be removed
    * and wont trigger an error.
    */
-  index?: number,
-  existingNames: Array<string>,
+  index?: number;
+  existingNames: Array<string>;
 
   /*
    * When the user closes the dialog by submitting the change, this event
@@ -46,8 +44,8 @@ export type NameDialogArgs = {|
    * already has it as `setName` will have been called with the submitted value
    * when the last edit was made.
    */
-  onChange: () => void,
-|};
+  onChange: () => void;
+};
 
 const NameDialog = ({
   open,
@@ -57,7 +55,7 @@ const NameDialog = ({
   index,
   existingNames,
   onChange,
-}: NameDialogArgs): Node => {
+}: NameDialogArgs): React.ReactNode => {
   const [error, setError] = useState<boolean>(false);
 
   const noDuplicates = (): boolean => {
