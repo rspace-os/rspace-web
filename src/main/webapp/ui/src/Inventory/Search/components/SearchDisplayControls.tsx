@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import SortControls from "./SortControls";
 import ToggleView from "./ToggleView";
@@ -9,11 +7,13 @@ import Box from "@mui/material/Box";
 import { type SearchView } from "../../../stores/definitions/Search";
 import Grid from "@mui/material/Grid";
 
-type SearchDisplayControlsArgs = {|
-  TABS: Array<SearchView>,
-|};
+type SearchDisplayControlsArgs = {
+  TABS: Array<SearchView>;
+};
 
-function SearchDisplayControls({ TABS }: SearchDisplayControlsArgs): Node {
+function SearchDisplayControls({
+  TABS,
+}: SearchDisplayControlsArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
 
   return (
@@ -36,6 +36,4 @@ function SearchDisplayControls({ TABS }: SearchDisplayControlsArgs): Node {
   );
 }
 
-export default (observer(
-  SearchDisplayControls
-): ComponentType<SearchDisplayControlsArgs>);
+export default observer(SearchDisplayControls);
