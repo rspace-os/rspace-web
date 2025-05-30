@@ -1,5 +1,4 @@
-// @flow
-import React, { useState, useEffect, type Node } from "react";
+import React, { useState, useEffect } from "react";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
@@ -11,19 +10,19 @@ import { type ExtraField } from "../../../../stores/definitions/ExtraField";
 import { pick } from "../../../../util/unsafeUtils";
 import FormField from "../../../../components/Inputs/FormField";
 
-type UpdateFieldArgs = {|
-  extraField: ExtraField,
-  index: number,
-  record: InventoryRecord,
-|};
+type UpdateFieldArgs = {
+  extraField: ExtraField;
+  index: number;
+  record: InventoryRecord;
+};
 
 export default function UpdateField({
   extraField,
   index,
   record,
-}: UpdateFieldArgs): Node {
+}: UpdateFieldArgs): React.ReactNode {
   const [fieldState, setFieldState] = useState({ name: "", type: "" });
-  const [errorMessage, setErrorMessage] = useState<?string>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (extraField) {
@@ -43,15 +42,14 @@ export default function UpdateField({
   const handleNameChange = ({
     target: { value },
   }: {
-    target: { value: string, ... },
-    ...
+    target: { value: string };
   }) => {
     setFieldState({
       ...fieldState,
       name: value,
     });
     setErrorMessage(
-      match<void, ?string>([
+      match<void, string | null>([
         [() => value === "", "Name should not be empty."],
         [
           () => value.length > 255,
@@ -75,8 +73,7 @@ export default function UpdateField({
   const handleTypeChange = ({
     target: { value },
   }: {
-    target: { value: "Text" | "Number", ... },
-    ...
+    target: { value: string };
   }) => {
     setFieldState({
       ...fieldState,
@@ -89,7 +86,13 @@ export default function UpdateField({
   };
 
   const discardChanges = () => {
-    record.updateExtraField(extraField.name, pick("name", "type")(extraField));
+    record.updateExtraField(
+      extraField.name,
+      pick("name", "type")(extraField) as {
+        name: typeof extraField.name;
+        type: typeof extraField.type;
+      }
+    );
   };
 
   return (
