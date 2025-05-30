@@ -69,7 +69,7 @@ public class BaseShiroFormAuthFilterExt extends FormAuthenticationFilter {
     try {
       maintenanceLoginAuthorizer.isLoginPermitted(request, response, null);
     } catch (IOException e) {
-      log.warn("exception on checking maintenanceLoginAuthorizer", e);
+      log.warn("Exception on checking maintenanceLoginAuthorizer", e);
     }
     return false;
   }
