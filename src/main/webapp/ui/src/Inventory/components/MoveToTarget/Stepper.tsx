@@ -1,22 +1,20 @@
-// @flow
-
-import React, { type Node } from "react";
+import React from "react";
 import MobileStepper from "@mui/material/MobileStepper";
 import Button from "@mui/material/Button";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 
-type StepperArgs = {|
-  handleBack: () => void,
-  handleNext: () => void,
-  handleCancel: () => void,
-  activeStep: number,
-  onMove: () => void,
-  stepsCount: number,
-  disabled: boolean,
-  loading: boolean,
-|};
+type StepperArgs = {
+  handleBack: () => void;
+  handleNext: () => void;
+  handleCancel: () => void;
+  activeStep: number;
+  onMove: () => void;
+  stepsCount: number;
+  disabled: boolean;
+  loading: boolean;
+};
 
 export default function Stepper({
   handleBack,
@@ -27,7 +25,7 @@ export default function Stepper({
   stepsCount,
   disabled,
   loading,
-}: StepperArgs): Node {
+}: StepperArgs): React.ReactNode {
   const prevButton = () =>
     activeStep === 0 ? (
       <Button onClick={handleCancel}>Cancel</Button>
