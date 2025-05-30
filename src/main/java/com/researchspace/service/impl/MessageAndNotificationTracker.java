@@ -27,7 +27,10 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
 
   private void sendNotificationUpdate(Long userId) {
     NotificationMessage notification =
-        new NotificationMessage(getNotificationCountFor(userId), getMessageCountFor(userId));
+        new NotificationMessage(
+            getNotificationCountFor(userId),
+            getMessageCountFor(userId),
+            getSpecialMessageCountFor(userId));
     notificationController.sendNotificationUpdate(userId, notification);
   }
 
