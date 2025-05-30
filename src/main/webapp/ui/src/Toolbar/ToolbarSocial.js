@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from "react";
 import axios from "@/common/axios";
 import styled from "@emotion/styled";
 import Tooltip from "@mui/material/Tooltip";
@@ -12,10 +12,6 @@ import {
   faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
 import { faSlack } from "@fortawesome/free-brands-svg-icons";
-import { webSocketService } from '../services/WebSocketService';
-import useStores from '../stores/use-stores';
-import { observer } from 'mobx-react-lite';
-
 library.add(faBell, faEnvelope, faPaperPlane, faSlack);
 
 const SocialActionsWrapper = styled.div`
@@ -23,30 +19,24 @@ const SocialActionsWrapper = styled.div`
 `;
 
 export default function ToolbarSocial(props) {
-  const { peopleStore, authStore } = useStores();
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [messageCount, setMessageCount] = useState(0);
+  const [notificationCount, setNotificationCount] = React.useState(0);
+  const [messageCount, setMessageCount] = React.useState(0);
 
   useEffect(() => {
-    void (async () => {
-      await authStore.synchronizeWithSessionStorage();
-      if (!authStore.isAuthenticated) {
-      } else {
-        const currentUser = await peopleStore.fetchCurrentUser();
-        if (currentUser) {
-          webSocketService.connect(currentUser.id.toString());
-          const subscriberId = webSocketService.addSubscriber((notification) => {
-            setNotificationCount(notification.notificationCount);
-            setMessageCount(notification.messageCount);
-          });
-
-          return () => {
-            webSocketService.removeSubscriber(subscriberId);
-            webSocketService.disconnect();
-          };
-        }
+    const getNotifications = async () => {
+      try {
+        const response = await axios.get("/dashboard/ajax/poll");
+        setNotificationCount(response.data.data.notificationCount);
+        setMessageCount(response.data.data.messageCount);
+      } catch (e) {
+        console.log(e);
       }
-    })();
+    };
+    getNotifications();
+    // update notifications and messages every 10s
+    setInterval(() => {
+      getNotifications();
+    }, 10 * 1000);
   }, []);
 
   return (

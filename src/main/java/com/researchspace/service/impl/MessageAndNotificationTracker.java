@@ -7,7 +7,6 @@ import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.service.IMessageAndNotificationTracker;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -20,10 +19,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class MessageAndNotificationTracker implements IMessageAndNotificationTracker {
 
-  @Autowired private NotificationController notificationController;
+  private final NotificationController notificationController;
   private Map<Long, Integer> userToNotification = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToMessage = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToSpecialMessage = new ConcurrentHashMap<>();
+
+  public MessageAndNotificationTracker(NotificationController notificationController){
+    this.notificationController = notificationController;
+  }
 
   private void sendNotificationUpdate(Long userId) {
     NotificationMessage notification =
