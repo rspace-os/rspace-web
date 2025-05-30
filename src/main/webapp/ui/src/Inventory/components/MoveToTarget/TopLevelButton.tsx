@@ -1,23 +1,23 @@
-//@flow
-
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { hasLocation } from "../../../stores/models/HasLocation";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
-import React, { type ComponentType } from "react";
+import React from "react";
 
-type TopLevelButtonArgs = {|
-  onClose: () => void,
-|};
+type TopLevelButtonArgs = {
+  onClose: () => void;
+};
 
-function TopLevelButton({ onClose }: TopLevelButtonArgs) {
+function TopLevelButton({ onClose }: TopLevelButtonArgs): React.ReactNode {
   const { moveStore, uiStore } = useStores();
   const allContainers = moveStore.selectedResults.every(
     (r) => r instanceof ContainerModel
   );
   const allTopLevel = moveStore.selectedResults.every((r) =>
-    hasLocation(r).map(r => r.immediateParentContainer === null).orElse(false)
+    hasLocation(r)
+      .map((r) => r.immediateParentContainer === null)
+      .orElse(false)
   );
   return (
     <SubmitSpinner
@@ -35,4 +35,5 @@ function TopLevelButton({ onClose }: TopLevelButtonArgs) {
     />
   );
 }
-export default (observer(TopLevelButton): ComponentType<TopLevelButtonArgs>);
+
+export default observer(TopLevelButton);
