@@ -11,7 +11,8 @@ declare export default class Result<T> {
     map<U>((T) => U): Result<U>;
     flatMap<U>((T) => Result<U>): Result<U>;
     flatMapDiscarding<U>((T) => Result<U>): Result<T>;
-    do((T) => void): Result<T>;
+    do((T) => void): void;
+    doAsync((T) => Promise<void>): Promise<void>;
     orElse<U>(U): T | U;
     orElseGet<U>(($ReadOnlyArray<Error>) => U): T | U;
     orElseTry<U>(($ReadOnlyArray<Error>) => Result<U>): Result<T | U>;

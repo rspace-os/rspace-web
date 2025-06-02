@@ -19,17 +19,16 @@ const StyledButton = styled(Button)(({ theme: t }) => {
     },
     "& span.label": {
       paddingLeft: theme.spacing(1.5),
-      background: theme.palette.primary.background,
-      color: theme.palette.primary.contrastText,
       maxHeight: "100%",
-      paddingRight: theme.spacing(2),
       paddingTop: theme.spacing(0.5),
       paddingBottom: theme.spacing(0.25),
     },
     "& span.state": {
-      paddingLeft: theme.spacing(1.5),
-      paddingTop: theme.spacing(0.5),
-      paddingBottom: theme.spacing(0.25),
+      textTransform: "capitalize",
+      fontWeight: 400,
+      paddingLeft: theme.spacing(1),
+      paddingTop: theme.spacing(1),
+      paddingBottom: theme.spacing(0.625),
     },
   };
 });
@@ -53,10 +52,12 @@ export default function MenuWithSelectedState({
   label,
   currentState,
   children,
+  defaultState,
 }: {
   label: string;
   currentState: string;
   children: ReadonlyArray<React.ReactElement<typeof AccentMenuItem>>;
+  defaultState: string;
 }) {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   return (
@@ -64,12 +65,13 @@ export default function MenuWithSelectedState({
       <StyledButton
         endIcon={<KeyboardArrowDownIcon />}
         size="small"
-        color="standardIcon"
+        color="primary"
         onClick={(event) => {
           setAnchorEl(event.currentTarget);
         }}
+        variant={currentState !== defaultState ? "contained" : "outlined"}
       >
-        <span className="label">{label}</span>
+        <span className="label">{label}:</span>
         <span className="state">{currentState}</span>
       </StyledButton>
       <StyledMenu

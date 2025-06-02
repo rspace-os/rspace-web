@@ -44,6 +44,7 @@ import PrintDialog from "./PrintDialog";
 import PrintIcon from "@mui/icons-material/Print";
 import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 import IgsnTable from "./IgsnTable";
+import RsSet from "../../../util/set";
 
 /**
  * The IGSN Management page allows users to view, bulk register, print, and
@@ -53,8 +54,8 @@ export default function IgsnManagementPage({
   selectedIgsns,
   setSelectedIgsns,
 }: {|
-  selectedIgsns: $ReadOnlyArray<Identifier>,
-  setSelectedIgsns: ($ReadOnlyArray<Identifier>) => void,
+  selectedIgsns: RsSet<Identifier>,
+  setSelectedIgsns: (RsSet<Identifier>) => void,
 |}): Node {
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
@@ -182,7 +183,7 @@ export default function IgsnManagementPage({
                   aria-haspopup="menu"
                   aria-expanded={false}
                   id="actions-menu"
-                  disabled={selectedIgsns.length === 0}
+                  disabled={selectedIgsns.size === 0}
                   onClick={(event) => {
                     setActionsAnchorEl(event.currentTarget);
                   }}
@@ -213,7 +214,7 @@ export default function IgsnManagementPage({
                       setPrintDialogOpen(false);
                       setActionsAnchorEl(null);
                     }}
-                    itemsToPrint={selectedIgsns}
+                    itemsToPrint={[...selectedIgsns]}
                   />
                   <AccentMenuItem
                     title="Delete"
@@ -221,7 +222,7 @@ export default function IgsnManagementPage({
                     onClick={() => {
                       void deleteIdentifiers(selectedIgsns).then(() => {
                         if (refreshListing) void refreshListing();
-                        setSelectedIgsns([]);
+                        setSelectedIgsns(new RsSet([]));
                       });
                       setActionsAnchorEl(null);
                     }}

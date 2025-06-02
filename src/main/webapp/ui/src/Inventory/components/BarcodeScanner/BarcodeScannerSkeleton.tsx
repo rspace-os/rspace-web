@@ -12,7 +12,7 @@ import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
 import StringField from "../../../components/Inputs/StringField";
 import { barcodeFormatAsString, type Barcode } from "../../../util/barcode";
-import InputWrapper from "../../../components/Inputs/InputWrapper";
+import FormField from "../../../components/Inputs/FormField";
 
 export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
 
@@ -157,18 +157,22 @@ export default function BarcodeScannerSkeleton({
           </Grid>
           <Grid item style={{ alignSelf: "flex-start" }}>
             <Box m={1}>
-              <InputWrapper label="Alternatively, enter the data encoded in the barcode">
-                <StringField
-                  value={barcode?.rawValue ?? ""}
-                  variant="standard"
-                  onChange={({ target: { value } }) => {
-                    setBarcode({
-                      rawValue: value,
-                      format: "Unknown",
-                    });
-                  }}
-                />
-              </InputWrapper>
+              <FormField
+                label="Alternatively, enter the data encoded in the barcode"
+                renderInput={(props) => (
+                  <StringField
+                    {...props}
+                    variant="standard"
+                    onChange={({ target: { value } }) => {
+                      setBarcode({
+                        rawValue: value,
+                        format: "Unknown",
+                      });
+                    }}
+                  />
+                )}
+                value={barcode?.rawValue ?? ""}
+              />
             </Box>
           </Grid>
         </>

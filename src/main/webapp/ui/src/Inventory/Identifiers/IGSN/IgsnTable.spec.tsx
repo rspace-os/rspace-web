@@ -2,13 +2,20 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import { Download } from "playwright-core";
 import React from "react";
 import identifiersJson from "../../__tests__/identifiers.json";
-import IgsnTableStory from "./IgsnTable.story";
+import {
+  SimpleIgsnTable,
+  SingularSelectionIgsnTable,
+  IgsnTableWithControlDefaults,
+} from "./IgsnTable.story";
 import fs from "fs/promises";
 import * as Jwt from "jsonwebtoken";
 
 const feature = test.extend<{
   Given: {
     "the researcher is viewing the IGSN table": () => Promise<void>;
+    "the researcher is viewing the IGSN table with singular selection": () => Promise<void>;
+    "the researcher is viewing the IGSN table with control defaults": () => Promise<void>;
+    "the researcher is viewing the IGSN table with no results": () => Promise<void>;
   };
   Once: {
     "the table has loaded": () => Promise<void>;
@@ -23,6 +30,13 @@ const feature = test.extend<{
     }: {
       count: number;
     }) => Promise<void>;
+    "the researcher types 'test' in the search box": () => Promise<void>;
+    "the researcher clicks the Scan QR Code button": () => Promise<void>;
+    "a QR code is scanned with value {value}": ({
+      value,
+    }: {
+      value: string;
+    }) => Promise<void>;
   };
   Then: {
     "a table should be shown": () => Promise<void>;
@@ -30,6 +44,7 @@ const feature = test.extend<{
     "there should be four rows": () => Promise<void>;
     "there should be a menu for changing column visibility": () => Promise<void>;
     "there should be a menu for exporting the IGSN table to CSV": () => Promise<void>;
+    "a 'No IGSN IDs' message should be displayed": () => Promise<void>;
     "{CSV} should have {count} rows": ({
       csv,
       count,
@@ -41,13 +56,38 @@ const feature = test.extend<{
     "there should be a network request with isAssociated set to 'false'": () => void;
     "the IGSN with DOI '10.82316/khma-em96' is added to the selection state": () => Promise<void>;
     "the Linked Item column should contains links": () => Promise<void>;
+    "a search box should be shown in the toolbar": () => Promise<void>;
+    "there should be a network request with searchTerm set to 'test'": () => void;
+    "the toolbar controls should be in the order: search, scan, then filters": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
-  Given: async ({ mount }, use) => {
+  Given: async ({ mount, page }, use) => {
     await use({
       "the researcher is viewing the IGSN table": async () => {
-        await mount(<IgsnTableStory />);
+        await mount(<SimpleIgsnTable />);
+      },
+      "the researcher is viewing the IGSN table with singular selection":
+        async () => {
+          await mount(<SingularSelectionIgsnTable />);
+        },
+      "the researcher is viewing the IGSN table with control defaults":
+        async () => {
+          await mount(<IgsnTableWithControlDefaults />);
+        },
+      "the researcher is viewing the IGSN table with no results": async () => {
+        // Intercept API requests and return an empty array
+        await page.route(
+          (url) => url.pathname === "/api/inventory/v1/identifiers",
+          async (route) => {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify([]),
+            });
+          }
+        );
+        await mount(<SimpleIgsnTable />);
       },
     });
   },
@@ -56,7 +96,9 @@ const feature = test.extend<{
       "the table has loaded": async () => {
         await page.waitForFunction(() => {
           const rows = document.querySelectorAll('[role="row"]').length;
-          return rows > 1; // (1 is for the header row)
+          const noIgsnMessage =
+            document.body.textContent?.includes("No IGSN IDs");
+          return rows > 1 || noIgsnMessage; // (1 is for the header row) or empty state message
         });
       },
     });
@@ -75,6 +117,9 @@ const feature = test.extend<{
         ]);
         return download;
       },
+      "the researcher clicks the Scan QR Code button": async () => {
+        await page.getByRole("button", { name: "Scan" }).click();
+      },
       "the researcher selects 'Draft' from the state menu": async () => {
         await page.getByRole("button", { name: /State/ }).click();
         await page.getByRole("menuitem", { name: /Draft/ }).click();
@@ -84,12 +129,32 @@ const feature = test.extend<{
           await page.getByRole("button", { name: /Linked Item/ }).click();
           await page.getByRole("menuitem", { name: /No Linked Item/ }).click();
         },
+      "the researcher types 'test' in the search box": async () => {
+        await page.getByPlaceholder("Search IGSNs...").fill("test");
+        await page.waitForTimeout(500);
+      },
+      "a QR code is scanned with value {value}": async ({ value }) => {
+        // Since we can't easily mock the camera API in tests,
+        // we'll simulate manual entry which is an alternative in the UI
+        await page
+          .getByRole("textbox", {
+            name: "Alternatively, enter the data encoded in the barcode",
+          })
+          .fill(value);
+        await page.getByRole("button", { name: /Search for IGSN/ }).click();
+      },
       "the researcher selects the IGSN with DOI '10.82316/khma-em96'":
         async () => {
           const row = page
             .getByRole("row", { name: /10.82316\/khma-em96/ })
             .first();
-          await row.getByRole("checkbox").first().click();
+          const checkbox = row.getByRole("checkbox").first();
+          const checkboxCount = await checkbox.count();
+          if (checkboxCount > 0) {
+            await checkbox.click();
+          } else {
+            await row.getByRole("radio").first().click();
+          }
         },
       "the researcher selects {count} IGSNs": async ({
         count,
@@ -136,6 +201,10 @@ const feature = test.extend<{
           const menu = page.getByRole("tooltip");
           await expect(menu).toBeVisible();
         },
+      "a search box should be shown in the toolbar": async () => {
+        const searchBox = page.getByPlaceholder("Search IGSNs...");
+        await expect(searchBox).toBeVisible();
+      },
       "{CSV} should have {count} rows": async ({ csv, count }) => {
         const path = await csv.path();
         const fileContents = await fs.readFile(path, "utf8");
@@ -157,6 +226,17 @@ const feature = test.extend<{
               ?.searchParams.get("isAssociated")
           ).toBe("false");
         },
+      "there should be a network request with searchTerm set to 'test'": () => {
+        expect(
+          networkRequests
+            .find(
+              (url) =>
+                url.searchParams.has("identifier") &&
+                url.searchParams.get("identifier") === "test"
+            )
+            ?.searchParams.get("identifier")
+        ).toBe("test");
+      },
       "the IGSN with DOI '10.82316/khma-em96' is added to the selection state":
         async () => {
           /*
@@ -167,6 +247,15 @@ const feature = test.extend<{
           await expect(
             page.getByLabel("selected IGSNs").getByText("10.82316/khma-em96")
           ).toBeVisible();
+
+          const row = page
+            .getByRole("row", { name: /10.82316\/khma-em96/ })
+            .first();
+          let widget = row.getByRole("checkbox").first();
+          if ((await widget.count()) === 0) {
+            widget = row.getByRole("radio").first();
+          }
+          await expect(widget).toBeChecked();
         },
       "the Linked Item column should contains links": async () => {
         const table = page.getByRole("grid");
@@ -203,6 +292,100 @@ const feature = test.extend<{
           expect(await link.count()).toBeGreaterThan(0);
         }
       },
+      "a 'No IGSN IDs' message should be displayed": async () => {
+        // Verify the overlay message is displayed
+        await expect(
+          page.getByRole("grid").getByText("No IGSN IDs")
+        ).toBeVisible();
+
+        // Verify the grid has a header row but no data rows
+        const headerRow = page
+          .getByRole("row")
+          .filter({ has: page.getByRole("columnheader") });
+        await expect(headerRow).toBeVisible();
+
+        // Count should be 1 (just the header row)
+        const rowCount = await page.getByRole("row").count();
+        expect(rowCount).toBe(1);
+      },
+      "the toolbar controls should be in the order: search, scan, then filters":
+        async () => {
+          const searchControl = page.getByPlaceholder("Search IGSNs...");
+          const scanButton = page.getByRole("button", { name: "Scan" });
+          const stateFilter = page.getByRole("button", { name: "State" });
+          const linkedItemFilter = page.getByRole("button", {
+            name: "Linked Item",
+          });
+
+          const searchControlHandle = await searchControl.evaluateHandle((x) =>
+            Promise.resolve(x)
+          );
+          const scanButtonHandle = await scanButton.evaluateHandle((x) =>
+            Promise.resolve(x)
+          );
+          const stateFilterHandle = await stateFilter.evaluateHandle((x) =>
+            Promise.resolve(x)
+          );
+          const linkedItemFilterHandle = await linkedItemFilter.evaluateHandle(
+            (x) => Promise.resolve(x)
+          );
+
+          await expect(searchControl).toBeVisible();
+          await expect(scanButton).toBeVisible();
+          await expect(stateFilter).toBeVisible();
+          await expect(linkedItemFilter).toBeVisible();
+
+          const orderResults = await page.evaluate(
+            ({ search, scan, state, linkedItem }) => {
+              if (!search || !scan || !state || !linkedItem) {
+                return { error: "Failed to find all elements" };
+              }
+
+              const searchBeforeScan = Boolean(
+                search.compareDocumentPosition(scan) &
+                  Node.DOCUMENT_POSITION_FOLLOWING
+              );
+              const scanBeforeState = Boolean(
+                scan.compareDocumentPosition(state) &
+                  Node.DOCUMENT_POSITION_FOLLOWING
+              );
+              const stateBeforeLinkedItem = Boolean(
+                state.compareDocumentPosition(linkedItem) &
+                  Node.DOCUMENT_POSITION_FOLLOWING
+              );
+
+              return {
+                searchBeforeScan,
+                scanBeforeState,
+                stateBeforeLinkedItem,
+              };
+            },
+            {
+              search: searchControlHandle,
+              scan: scanButtonHandle,
+              state: stateFilterHandle,
+              linkedItem: linkedItemFilterHandle,
+            }
+          );
+
+          // Check for evaluate errors
+          if ("error" in orderResults) {
+            throw new Error(orderResults.error);
+          }
+
+          expect(
+            orderResults.searchBeforeScan,
+            "Search textfield should be before scan button"
+          ).toBe(true);
+          expect(
+            orderResults.scanBeforeState,
+            "Scan button should be before state filter control"
+          ).toBe(true);
+          expect(
+            orderResults.stateBeforeLinkedItem,
+            "State filter controlshould be before linked item filter control"
+          ).toBe(true);
+        },
     });
   },
   networkRequests: async ({}, use) => {
@@ -233,9 +416,33 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     (route) => {
       const url = new URL(route.request().url());
       const state = url.searchParams.get("state");
-      const filteredIdentifiers = state
-        ? identifiersJson.filter((identifier) => identifier.state === state)
-        : identifiersJson;
+      const isAssociated = url.searchParams.get("isAssociated");
+      const searchTerm = url.searchParams.get("searchTerm");
+
+      let filteredIdentifiers = identifiersJson;
+
+      if (state) {
+        filteredIdentifiers = filteredIdentifiers.filter(
+          (identifier) => identifier.state === state
+        );
+      }
+
+      if (searchTerm) {
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) =>
+          identifier.doi.includes(searchTerm)
+        );
+      }
+
+      if (isAssociated === "true") {
+        filteredIdentifiers = filteredIdentifiers.filter(
+          (identifier) => identifier.associatedGlobalId !== null
+        );
+      } else if (isAssociated === "false") {
+        filteredIdentifiers = filteredIdentifiers.filter(
+          (identifier) => identifier.associatedGlobalId === null
+        );
+      }
+
       return route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -278,6 +485,25 @@ test.describe("IGSN Table", () => {
       await Given["the researcher is viewing the IGSN table"]();
       await Once["the table has loaded"]();
       await Then["there should be four rows"]();
+    }
+  );
+
+  feature(
+    "The toolbar should contain a search box",
+    async ({ Given, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Then["a search box should be shown in the toolbar"]();
+    }
+  );
+
+  feature(
+    "Searching makes API call with searchTerm parameter",
+    async ({ Given, When, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await When["the researcher types 'test' in the search box"]();
+      void Then[
+        "there should be a network request with searchTerm set to 'test'"
+      ]();
     }
   );
 
@@ -348,6 +574,37 @@ test.describe("IGSN Table", () => {
   );
 
   feature(
+    "When a researcher selects an identifier in singluar selection mode, the selection state is updated",
+    async ({ Given, Once, When, Then }) => {
+      await Given[
+        "the researcher is viewing the IGSN table with singular selection"
+      ]();
+      await Once["the table has loaded"]();
+      await When[
+        "the researcher selects the IGSN with DOI '10.82316/khma-em96'"
+      ]();
+      await Then[
+        "the IGSN with DOI '10.82316/khma-em96' is added to the selection state"
+      ]();
+    }
+  );
+
+  feature(
+    "Control defaults are applied to the table when provided",
+    async ({ Given, Once, Then }) => {
+      await Given[
+        "the researcher is viewing the IGSN table with control defaults"
+      ]();
+      await Once["the table has loaded"]();
+      Then["there should be a network request with state set to 'draft'"]();
+      Then[
+        "there should be a network request with isAssociated set to 'false'"
+      ]();
+      Then["there should be a network request with searchTerm set to 'test'"]();
+    }
+  );
+
+  feature(
     "When some IGSNs are selected, CSV exports should include just those rows",
     async ({ Given, Once, When, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
@@ -364,6 +621,41 @@ test.describe("IGSN Table", () => {
       await Given["the researcher is viewing the IGSN table"]();
       await Once["the table has loaded"]();
       await Then["the Linked Item column should contains links"]();
+    }
+  );
+
+  feature(
+    "When there are no results, a 'No IGSN IDs' message is displayed",
+    async ({ Given, Once, Then }) => {
+      await Given["the researcher is viewing the IGSN table with no results"]();
+      await Once["the table has loaded"]();
+      await Then["a 'No IGSN IDs' message should be displayed"]();
+    }
+  );
+
+  feature(
+    "Scanning a QR code updates the search term",
+    async ({ Given, When, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await When["the researcher clicks the Scan QR Code button"]();
+      await When["a QR code is scanned with value {value}"]({
+        value: "test",
+      });
+      Then["there should be a network request with searchTerm set to 'test'"]();
+    }
+  );
+
+  feature(
+    "The toolbar controls should be in the order: search, scan, then filters",
+    async ({ Given, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Then[
+        "the toolbar controls should be in the order: search, scan, then filters"
+      ]();
+      /*
+       * This is so that the controls are in a consistent order across the whole
+       * product.
+       */
     }
   );
 });

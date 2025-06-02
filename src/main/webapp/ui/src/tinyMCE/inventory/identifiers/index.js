@@ -19,6 +19,7 @@ import axios from "@/common/axios";
 import { toTitleCase } from "../../../util/Util";
 import { type Identifier } from "../../../Inventory/useIdentifiers";
 import Typography from "@mui/material/Typography";
+import RsSet from "../../../util/set";
 
 type Editor = {
   ui: {
@@ -48,9 +49,9 @@ function IdentifiersDialog({
   onClose: () => void,
   editor: Editor,
 |}) {
-  const [selectedIgsns, setSelectedIgsns] = React.useState<
-    $ReadOnlyArray<Identifier>
-  >([]);
+  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
+    new RsSet([])
+  );
   const { getToken } = useOauthToken();
 
   const getBase64 = (file: File): Promise<string> =>
