@@ -4,18 +4,23 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.researchspace.messaging.NotificationController;
+import com.researchspace.messaging.NotificationMessage;
 import com.researchspace.model.comms.MessageType;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class MessageAndNotificationTrackerTest {
-  MessageAndNotificationTracker tracker = null;
 
-  @Before
-  public void setUp() throws Exception {
-    tracker = new MessageAndNotificationTracker();
-  }
+  @Mock NotificationController notificationController;
+
+  @InjectMocks MessageAndNotificationTracker tracker;
 
   @After
   public void tearDown() throws Exception {}
@@ -59,5 +64,14 @@ public class MessageAndNotificationTrackerTest {
   public void testClearUserNotificationCount() {
     // check ok to call this if there is no count associated with user yet
     tracker.clearUserNotificationCount(3L);
+  }
+
+  @Test
+  public void testNotificationControllerCallOnNewNotification() {
+    Long userId = 1L;
+    tracker.changeUserNotificationCount(userId, 1);
+
+    Mockito.verify(notificationController)
+        .sendNotificationUpdate(userId, new NotificationMessage(1, 0, 0));
   }
 }
