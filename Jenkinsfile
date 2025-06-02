@@ -196,6 +196,7 @@ pipeline {
             }
             steps {
                 echo 'Running Jest tests'
+                sh 'git fetch origin main:main || true'
                 dir('src/main/webapp/ui') {
                     sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2 --changedSince=main'
                 }
