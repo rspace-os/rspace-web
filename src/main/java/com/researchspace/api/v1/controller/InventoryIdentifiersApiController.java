@@ -160,8 +160,8 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   }
 
   private void assertInventoryAndDataciteEnabled(User user){
-    assertDataCiteConnectorEnabled();
     assertInventoryAvailable(user);
+    assertDataCiteConnectorEnabled();
   }
 
   private void assertDataCiteConnectorEnabled() {
