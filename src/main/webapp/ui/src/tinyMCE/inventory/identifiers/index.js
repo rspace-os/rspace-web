@@ -20,6 +20,8 @@ import { toTitleCase } from "../../../util/Util";
 import { type Identifier } from "../../../Inventory/useIdentifiers";
 import Typography from "@mui/material/Typography";
 import RsSet from "../../../util/set";
+import Alerts from "../../../components/Alerts/Alerts";
+import { IdentifiersRefreshProvider } from "../../../Inventory/useIdentifiers";
 
 type Editor = {
   ui: {
@@ -96,10 +98,12 @@ function IdentifiersDialog({
           Select from newly registered IGSN IDs or those already with linked
           items, and insert a table into your document, each with a QR code.
         </Typography>
-        <IgsnManagementPage
-          selectedIgsns={selectedIgsns}
-          setSelectedIgsns={setSelectedIgsns}
-        />
+        <IdentifiersRefreshProvider>
+          <IgsnManagementPage
+            selectedIgsns={selectedIgsns}
+            setSelectedIgsns={setSelectedIgsns}
+          />
+        </IdentifiersRefreshProvider>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
@@ -153,12 +157,14 @@ class IdentifiersPlugin {
         root.render(
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <IdentifiersDialog
-                editor={editor}
-                open={false}
-                onClose={() => {}}
-                {...newProps}
-              />
+              <Alerts>
+                <IdentifiersDialog
+                  editor={editor}
+                  open={false}
+                  onClose={() => {}}
+                  {...newProps}
+                />
+              </Alerts>
             </ThemeProvider>
           </StyledEngineProvider>
         );
