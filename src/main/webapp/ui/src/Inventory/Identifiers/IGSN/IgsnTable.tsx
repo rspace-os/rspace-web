@@ -178,7 +178,11 @@ function Toolbar({
           buttonPrefix="Search for IGSN"
         />
       </Panel>
-      <MenuWithSelectedState label="State" currentState={state ?? "All"}>
+      <MenuWithSelectedState
+        label="State"
+        currentState={state ?? "All"}
+        defaultState="All"
+      >
         <AccentMenuItem
           title="All"
           subheader="Show all IGSN IDs"
@@ -215,6 +219,7 @@ function Toolbar({
       <MenuWithSelectedState
         label="Linked Item"
         currentState={linkedItemStateLabel}
+        defaultState="All"
       >
         <AccentMenuItem
           title="All Identifiers"

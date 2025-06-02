@@ -7,4 +7,5 @@ declare export default function MenuWithSelectedState({|
   label: string;
   currentState: string;
   children: $ReadOnlyArray<Element<typeof AccentMenuItem>>;
+  defaultState: string;
 |}): Node;

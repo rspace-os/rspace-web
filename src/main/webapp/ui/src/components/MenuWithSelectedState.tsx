@@ -6,7 +6,9 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Menu from "@mui/material/Menu";
 import Theme from "../theme";
 
-const StyledButton = styled(Button)(({ theme: t }) => {
+const StyledButton = styled(Button)<
+  React.ComponentProps<typeof Button> & { active: boolean }
+>(({ theme: t, active }) => {
   const theme = t as typeof Theme;
   return {
     padding: theme.spacing(0, 1.5, 0, 0),
@@ -19,17 +21,17 @@ const StyledButton = styled(Button)(({ theme: t }) => {
     },
     "& span.label": {
       paddingLeft: theme.spacing(1.5),
-      background: theme.palette.primary.background,
+      background: active ? theme.palette.primary.background : undefined,
       color: theme.palette.primary.contrastText,
       maxHeight: "100%",
-      paddingRight: theme.spacing(2),
+      paddingRight: theme.spacing(active ? 2 : 0),
       paddingTop: theme.spacing(0.5),
       paddingBottom: theme.spacing(0.25),
     },
     "& span.state": {
       paddingLeft: theme.spacing(1.5),
-      paddingTop: theme.spacing(0.5),
-      paddingBottom: theme.spacing(0.25),
+      paddingTop: theme.spacing(1),
+      paddingBottom: theme.spacing(0.5),
     },
   };
 });
@@ -53,10 +55,12 @@ export default function MenuWithSelectedState({
   label,
   currentState,
   children,
+  defaultState,
 }: {
   label: string;
   currentState: string;
   children: ReadonlyArray<React.ReactElement<typeof AccentMenuItem>>;
+  defaultState: string;
 }) {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   return (
@@ -68,6 +72,7 @@ export default function MenuWithSelectedState({
         onClick={(event) => {
           setAnchorEl(event.currentTarget);
         }}
+        active={currentState !== defaultState}
       >
         <span className="label">{label}</span>
         <span className="state">{currentState}</span>
