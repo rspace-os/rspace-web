@@ -207,7 +207,7 @@
           <failOnError>false</failOnError>
           <excludeFilterFile>build-resources/findbugs_exclude_rs.xml</excludeFilterFile>
         </configuration>
-        <version>4.2.0</version>
+        <version>4.3.0</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
