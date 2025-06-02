@@ -359,6 +359,7 @@ const TemplateNavItem = observer(() => {
 // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 const IgsnNavItem = observer(() => {
   const { useNavigate } = React.useContext(NavigateContext);
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const navigate = useNavigate();
 
   return (
@@ -369,6 +370,7 @@ const IgsnNavItem = observer(() => {
       badge={0}
       onClick={(e: Event) => {
         e.stopPropagation();
+        trackEvent("user:navigate:igsnManagementPage:InventorySidebar");
         navigate("/inventory/identifiers/igsn");
       }}
     />
