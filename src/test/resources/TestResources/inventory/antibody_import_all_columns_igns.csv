@@ -1,0 +1,6 @@
+﻿Name,Alternative name,"Clonality (monoclonal,polyclonal)",Internal id,Dummy Data,Creation Date,Creation Time,Best Before,Sample Source,Manufacturer Page,Quantity,Igsn
+Sample1,Protein phosphatase 1 ,monoclonal,124,asdf,22/12/2020,14:00,22/12/2030,VENDOR_SUPPLIED,https://researchspace.com,5 mg,https://doi.org/11.82316/pqv5-0v92
+Sample2,"very long alternative name - the one that should trigger text field column mapping, if everything works fine",monoclonal,125,,,, 2031-12-23,OTHER,, 200 g,https://doi.org/10.82316/k8xy-6y85
+Sample3,-,polyclonal,,,,,,VENDOR_SUPPLIED,,1kg,https://doi.org/10.82316/hm02-fz20
+Sample4,-,polyclonal,,,22/12/2020,15:00,04/01/2030,,,1.25 μg,https://doi.org/10.82316/n34p-1v4
+Sample5,-,polyclonal,126,,,,,LAB_CREATED,,,
