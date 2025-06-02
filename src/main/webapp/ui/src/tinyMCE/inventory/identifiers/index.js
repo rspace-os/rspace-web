@@ -20,6 +20,7 @@ import { toTitleCase } from "../../../util/Util";
 import { type Identifier } from "../../../Inventory/useIdentifiers";
 import Typography from "@mui/material/Typography";
 import RsSet from "../../../util/set";
+import Alerts from "../../../components/Alerts/Alerts";
 
 type Editor = {
   ui: {
@@ -153,12 +154,14 @@ class IdentifiersPlugin {
         root.render(
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <IdentifiersDialog
-                editor={editor}
-                open={false}
-                onClose={() => {}}
-                {...newProps}
-              />
+              <Alerts>
+                <IdentifiersDialog
+                  editor={editor}
+                  open={false}
+                  onClose={() => {}}
+                  {...newProps}
+                />
+              </Alerts>
             </ThemeProvider>
           </StyledEngineProvider>
         );
