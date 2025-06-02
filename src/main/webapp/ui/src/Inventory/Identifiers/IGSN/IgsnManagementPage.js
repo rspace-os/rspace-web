@@ -151,10 +151,13 @@ export default function IgsnManagementPage({
                   <SubmitSpinnerButton
                     onClick={doNotAwait(async () => {
                       setRegisteringInProgress(true);
-                      await bulkRegister({ count: numberOfNewIdentifiers });
-                      if (refreshListing) void refreshListing();
-                      setRegisteringInProgress(false);
-                      setBulkRegisterDialogOpen(false);
+                      try {
+                        await bulkRegister({ count: numberOfNewIdentifiers });
+                        if (refreshListing) void refreshListing();
+                        setBulkRegisterDialogOpen(false);
+                      } finally {
+                        setRegisteringInProgress(false);
+                      }
                     })}
                     disabled={registeringInProgress}
                     loading={registeringInProgress}
