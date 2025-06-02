@@ -82,7 +82,7 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 
-export type ResultEditableFields = {
+export type InventoryBaseRecordEditableFields = {
   description: ?string,
   name: string,
   tags: Array<Tag>,
@@ -95,7 +95,7 @@ export type ResultEditableFields = {
   ...
 };
 
-export type ResultUneditableFields = {
+export type InventoryBaseRecordUneditableFields = {
   owner: ?Person,
   ...
 };
@@ -111,10 +111,10 @@ type LockOwner = {|
 |};
 
 declare export class RecordLockedError extends Error {
-  record: Result;
+  record: InventoryBaseRecord;
   lockOwner: LockOwner;
 
-  constructor(record: Result, lockOwner: LockOwner): RecordLockedError;
+  constructor(record: InventoryBaseRecord, lockOwner: LockOwner): RecordLockedError;
 }
 
 declare const FIELDS: Set<string>;
@@ -124,28 +124,28 @@ export { defaultVisibleFields as defaultVisibleResultFields };
 declare const defaultEditableFields: Set<string>;
 export { defaultEditableFields as defaultEditableResultFields };
 
-declare export default class Result
+declare export default class InventoryBaseRecord
   implements
     InventoryRecord,
     AdjustableTableRow<string>,
-    HasEditableFields<ResultEditableFields>,
-    HasUneditableFields<ResultUneditableFields>
+    HasEditableFields<InventoryBaseRecordEditableFields>,
+    HasUneditableFields<InventoryBaseRecordUneditableFields>
 {
   loading: boolean;
   editing: boolean;
   id: ?Id;
   globalId: ?GlobalId;
   type: ApiRecordType;
-  name: ResultEditableFields["name"];
-  description: ResultEditableFields["description"];
+  name: InventoryBaseRecordEditableFields["name"];
+  description: InventoryBaseRecordEditableFields["description"];
   selected: boolean;
   infoLoaded: boolean;
   extraFields: Array<ExtraField>;
   currentlyVisibleFields: Set<string>;
   currentlyEditableFields: Set<string>;
-  image: ResultEditableFields["image"];
+  image: InventoryBaseRecordEditableFields["image"];
   thumbnail: Thumbnail;
-  tags: ResultEditableFields["tags"];
+  tags: InventoryBaseRecordEditableFields["tags"];
   scopedToasts: Array<Alert>;
   created: string;
   lastModified: string;
@@ -159,7 +159,7 @@ declare export default class Result
   lockExpired: boolean;
   expiryCheckInterval: IntervalID;
   permittedActions: Set<Action>;
-  newBase64Image: ResultEditableFields["newBase64Image"];
+  newBase64Image: InventoryBaseRecordEditableFields["newBase64Image"];
   attachments: Array<Attachment>;
   identifiers: Array<Identifier>;
   iconId: ?number;
@@ -169,7 +169,7 @@ declare export default class Result
   sharingMode: SharingMode;
   sharedWith: ?Array<SharedWithGroup>;
 
-  constructor(factory: Factory, params: { ... }): Result;
+  constructor(factory: Factory, params: { ... }): InventoryBaseRecord;
   get canChooseWhichToEdit(): boolean;
   populateFromJson(
     factory: Factory,
@@ -270,9 +270,9 @@ declare export default class Result
   get canNavigateToChildren(): boolean;
   get illustration(): Node;
   cancel(): Promise<void>;
-  get fieldValues(): ResultEditableFields & ResultUneditableFields;
+  get fieldValues(): InventoryBaseRecordEditableFields & InventoryBaseRecordUneditableFields;
   get supportsBatchEditing(): boolean;
-  get noValueLabel(): {[key in keyof ResultEditableFields]: ?string} & {[key in keyof ResultUneditableFields]: ?string};
+  get noValueLabel(): {[key in keyof InventoryBaseRecordEditableFields]: ?string} & {[key in keyof InventoryBaseRecordUneditableFields]: ?string};
   refreshAssociatedSearch(): void;
   updateBecauseRecordsChanged(recordIds: Set<GlobalId>): void;
   showTopLinkInBreadcrumbs(): boolean;

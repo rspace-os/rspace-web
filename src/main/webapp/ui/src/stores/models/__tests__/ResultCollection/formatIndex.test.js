@@ -1,7 +1,7 @@
 //@flow
 /* eslint-env jest */
 import fc from "fast-check";
-import { formatIndex } from "../../ResultCollection";
+import { formatIndex } from "../../InventoryBaseRecordCollection";
 import { take, incrementForever } from "../../../../util/iterators";
 import RsSet from "../../../../util/set";
 

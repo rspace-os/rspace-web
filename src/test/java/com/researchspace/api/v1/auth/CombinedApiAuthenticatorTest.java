@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.model.User;
+import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.ApiAvailabilityHandler;
 import org.junit.Rule;
@@ -37,13 +38,19 @@ public class CombinedApiAuthenticatorTest {
     when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
     when(oAuthAuthenticator.authenticate(mockRequest)).thenReturn(user);
 
+    /* run authenticator code with User not marked as authenticated by oauth token */
     setAuthorizationHeader();
     User authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
     assertEquals(user, authenticatedUser);
-
     verifyNoInteractions(apiKeyAuthenticator);
-    /* currently no event on oauth token usage, only on generation */
     verifyNoInteractions(analyticsManager);
+
+    /* try again, with user's authentication method marked as API_OAUTH_TOKEN */
+    user.setAuthenticatedBy(UserAuthenticationMethod.API_OAUTH_TOKEN);
+    authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
+    assertEquals(user, authenticatedUser);
+    verifyNoInteractions(apiKeyAuthenticator);
+    verify(analyticsManager, times(1)).publicApiUsed(eq(user), eq(mockRequest));
   }
 
   @Test
@@ -59,7 +66,7 @@ public class CombinedApiAuthenticatorTest {
     assertEquals(user, authenticatedUser);
 
     verifyNoInteractions(oAuthAuthenticator);
-    verify(analyticsManager, times(1)).apiAccessed(eq(user), eq(true), eq(mockRequest));
+    verify(analyticsManager, times(1)).publicApiUsed(eq(user), eq(mockRequest));
   }
 
   private void setApiKeyHeader() {

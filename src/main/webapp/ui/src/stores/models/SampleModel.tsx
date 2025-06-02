@@ -19,17 +19,17 @@ import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import getRootStore from "../stores/RootStore";
 import { mkAlert } from "../contexts/Alert";
 import Search from "./Search";
-import Result, {
+import InventoryBaseRecord, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
-  ResultEditableFields,
-  ResultUneditableFields,
-} from "./Result";
+  InventoryBaseRecordEditableFields,
+  InventoryBaseRecordUneditableFields,
+} from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
-} from "./ResultCollection";
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
+} from "./InventoryBaseRecordCollection";
 import RsSet from "../../util/set";
 import { blobToBase64 } from "../../util/files";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
@@ -80,14 +80,14 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
-import UtilResult from "../../util/result";
+import Result from "../../util/result";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getErrorMessage } from "@/util/error";
 import { SubSample } from "../definitions/SubSample";
 import { HasQuantityMixin } from "../models/HasQuantity";
 
 type SampleEditableFields = HasQuantityEditableFields &
-  ResultEditableFields & {
+  InventoryBaseRecordEditableFields & {
     expiryDate: string | null;
     sampleSource: SampleSource;
     storageTempMin: Temperature | null;
@@ -96,7 +96,7 @@ type SampleEditableFields = HasQuantityEditableFields &
   };
 
 type SampleUneditableFields = HasQuantityUneditableFields &
-  ResultUneditableFields;
+  InventoryBaseRecordUneditableFields;
 
 export type SubSampleTargetLocation = {
   containerId: Id;
@@ -201,7 +201,7 @@ const defaultEditableFields: Set<string> = new Set([
 export { defaultEditableFields as defaultEditableSampleFields };
 
 export default class SampleModel
-  extends HasQuantityMixin(Result)
+  extends HasQuantityMixin(InventoryBaseRecord)
   implements
     Sample,
     HasEditableFields<SampleEditableFields>,
@@ -696,8 +696,8 @@ export default class SampleModel
     };
 
     const validateExpiryDate = () => {
-      return UtilResult.first(
-        !this.expiryDate ? UtilResult.Ok(null) : UtilResult.Error<null>([]),
+      return Result.first(
+        !this.expiryDate ? Result.Ok(null) : Result.Error<null>([]),
         Parsers.isNotBottom(this.expiryDate)
           .flatMap(Parsers.parseDate)
           .mapError(() => new Error("Invalid expiry date."))
@@ -1063,7 +1063,7 @@ export default class SampleModel
   }
 }
 
-type BatchSampleEditableFields = ResultCollectionEditableFields &
+type BatchSampleEditableFields = InventoryBaseRecordCollectionEditableFields &
   Omit<SampleEditableFields, "name" | "identifiers">;
 
 /*
@@ -1071,7 +1071,7 @@ type BatchSampleEditableFields = ResultCollectionEditableFields &
  * batch operations e.g. editing.
  */
 export class SampleCollection
-  extends ResultCollection<SampleModel>
+  extends InventoryBaseRecordCollection<SampleModel>
   implements HasEditableFields<BatchSampleEditableFields>
 {
   constructor(samples: RsSet<SampleModel>) {

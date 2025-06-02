@@ -200,60 +200,67 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     return !query.list().isEmpty();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public int markAllNotificationsAsRead(String subjectUserName, Date before) {
-    Criteria criteria = createNotificationCriteria(getSession());
-    criteria.add(Restrictions.eq("recipient.username", subjectUserName));
-    criteria.add(Restrictions.le("communication.creationTime", before));
-    List<Notification> res = criteria.list();
-    int size = 0;
-    for (Notification not : res) {
-      for (CommunicationTarget ct : not.getRecipients()) {
-        if (ct.getRecipient().getUsername().equals(subjectUserName)) {
-          size++;
-          ct.setStatus(CommunicationStatus.COMPLETED);
-          ct.setLastStatusUpdate(new Date());
-        }
-      }
+    String jpql =
+        "UPDATE CommunicationTarget ct SET ct.status = :status, ct.lastStatusUpdate ="
+            + " :lastStatusUpdate WHERE ct.status <> :completedStatus AND ct.id IN (SELECT ct.id"
+            + " FROM CommunicationTarget ct JOIN ct.recipient r JOIN ct.communication c WHERE"
+            + " r.username = :subjectUserName AND c.creationTime <= :before AND TYPE(c) ="
+            + " :notificationType)";
+
+    return getSession()
+        .createQuery(jpql)
+        .setParameter("status", CommunicationStatus.COMPLETED)
+        .setParameter("lastStatusUpdate", new Date())
+        .setParameter("subjectUserName", subjectUserName)
+        .setParameter("before", before)
+        .setParameter("notificationType", Notification.class)
+        .setParameter("completedStatus", CommunicationStatus.COMPLETED)
+        .executeUpdate();
+  }
+
+  public int deleteReadNotificationsOlderThanDate(Date olderThan) {
+    List<Long> notificationIds = findNotificationsForDeletion(olderThan);
+
+    if (notificationIds.isEmpty()) {
+      return 0;
     }
-    return size;
+
+    // delete all CommunicationTargets associated with deletable Notifications
+    String deleteTargetsJpql =
+        "DELETE FROM CommunicationTarget ct WHERE ct.communication.id IN :notificationIds";
+    getSession()
+        .createQuery(deleteTargetsJpql)
+        .setParameter("notificationIds", notificationIds)
+        .executeUpdate();
+
+    // delete the Notifications themselves
+    String deleteNotificationsJpql = "DELETE FROM Notification n WHERE n.id IN :notificationIds";
+    return getSession()
+        .createQuery(deleteNotificationsJpql)
+        .setParameter("notificationIds", notificationIds)
+        .executeUpdate();
   }
 
   @SuppressWarnings("unchecked")
-  public int deleteReadNotificationsOlderThanDate(Date olderThan) {
-    Session session = getSession();
-    Criteria query =
-        session
-            .createCriteria(Notification.class, "communication")
-            .createAlias("communication.recipients", COMMUNICATION_TARGET_ALIAS);
-    query.add(Restrictions.eq("ct.status", CommunicationStatus.COMPLETED));
-    query.add(Restrictions.lt("ct.lastStatusUpdate", olderThan));
-    List<Notification> nots = query.list();
+  private List<Long> findNotificationsForDeletion(Date olderThan) {
+    // notifications can be deleted when all recipients (CommunicationTargets) have marked as read
+    String jpql =
+        "SELECT n.id FROM Notification n "
+            + "WHERE NOT EXISTS (SELECT ct FROM CommunicationTarget ct "
+            + "                 WHERE ct.communication = n "
+            + "                 AND ct.status <> :completedStatus) "
+            + "AND EXISTS (SELECT ct FROM CommunicationTarget ct "
+            + "           WHERE ct.communication = n "
+            + "           AND ct.status = :completedStatus "
+            + "           AND ct.lastStatusUpdate < :olderThan)";
 
-    Set<Notification> commsToDelete = new HashSet<>();
-    for (Notification not : nots) {
-      boolean allDeleted = true;
-      for (CommunicationTarget ct : not.getRecipients()) {
-        if (!CommunicationStatus.COMPLETED.equals(ct.getStatus())) {
-          allDeleted = false;
-          break;
-        }
-      }
-      if (allDeleted) {
-        commsToDelete.add(not);
-      }
-    }
-    if (commsToDelete.size() == 0) {
-      return 0;
-    }
-    // deleting through regular session propagates deletes and hooks into envers
-    // at expense of possible inefficiency compared to batch delete. but htis method should
-    // only be run occasionally as a scheduled cleanup op anyway.
-    for (Notification not : commsToDelete) {
-      session.delete(not);
-    }
-    return commsToDelete.size();
+    return getSession()
+        .createQuery(jpql)
+        .setParameter("completedStatus", CommunicationStatus.COMPLETED)
+        .setParameter("olderThan", olderThan)
+        .getResultList();
   }
 
   @SuppressWarnings({"unchecked"})

@@ -43,7 +43,7 @@ public class LogoutController extends BaseController {
     }
 
     SecurityUtils.getSubject().logout();
-    SECURITY_LOG.info("[{}] logged out", principal.getName());
+    SECURITY_LOG.info("User [{}] logged out", principal.getName());
 
     // Needed for clearing RS Inventory session storage on log out
     ModelAndView mav = new ModelAndView();
@@ -76,7 +76,7 @@ public class LogoutController extends BaseController {
       getCurrentActiveUsers().removeUser(principal.getName(), session);
       updateSessionUser(previousAdminUser, session);
       SECURITY_LOG.info(
-          "[{}] no longer running as [{}]", prev.getPrimaryPrincipal(), principal.getName());
+          "User [{}] no longer running as [{}]", prev.getPrimaryPrincipal(), principal.getName());
     }
   }
 }

@@ -44,17 +44,17 @@ import { type AttachmentJson } from "./AttachmentModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import LocationModel, { type LocationAttrs } from "./LocationModel";
 import { type PersonAttrs } from "../definitions/Person";
-import Result, {
+import InventoryBaseRecord, {
   defaultVisibleResultFields,
   defaultEditableResultFields,
   RESULT_FIELDS,
-  type ResultEditableFields,
-  type ResultUneditableFields,
-} from "./Result";
+  type InventoryBaseRecordEditableFields,
+  type InventoryBaseRecordUneditableFields,
+} from "./InventoryBaseRecord";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
-} from "./ResultCollection";
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
+} from "./InventoryBaseRecordCollection";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import {
@@ -87,9 +87,9 @@ import { type HasLocation, type HasLocationEditableFields, type HasLocationUnedi
 import { type Quantity } from "../definitions/HasQuantity";
 import { type UnitCategory } from "../stores/UnitStore";
 
-type ContainerEditableFields = ResultEditableFields & HasLocationEditableFields;
+type ContainerEditableFields = InventoryBaseRecordEditableFields & HasLocationEditableFields;
 
-type ContainerUneditableFields = ResultUneditableFields & HasLocationUneditableFields;
+type ContainerUneditableFields = InventoryBaseRecordUneditableFields & HasLocationUneditableFields;
 
 export type ContainerInContainerParams = {
   parentContainers?: Array<{ id: Id }>,
@@ -135,7 +135,7 @@ export type ContainerAttrs = {|
 |};
 
 declare export default class ContainerModel
-  extends Result
+  extends InventoryBaseRecord
   implements
     Container,
     HasEditableFields<ContainerEditableFields>,
@@ -279,12 +279,12 @@ declare export default class ContainerModel
 }
 
 type BatchContainerEditableFields = {
-  ...ResultCollectionEditableFields,
+  ...InventoryBaseRecordCollectionEditableFields,
   ...
 };
 
 declare export class ContainerCollection
-  extends ResultCollection<ContainerModel>
+  extends InventoryBaseRecordCollection<ContainerModel>
   implements HasEditableFields<BatchContainerEditableFields>
 {
   constructor(containers: RsSet<ContainerModel>): ContainerCollection;

@@ -18,7 +18,7 @@ public class AccountReviewRequiredAuthorizer extends AbstractLoginAuthorizer
     if (user.isAccountLockedAwaitingAuthorisation()) {
       // known user, but account is locked
       SECURITY_LOG.warn(
-          "Attempt by [{}]  to login before account activated ( from {})",
+          "Attempt by [{}] to login before account activated, from {}",
           user.getUsername(),
           getRemoteAddress(WebUtils.toHttp(request)));
       // make sure they can't access any resources

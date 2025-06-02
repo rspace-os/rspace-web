@@ -7,6 +7,7 @@ import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
 import com.researchspace.auth.AccountEnabledAuthorizer;
 import com.researchspace.auth.LoginHelper;
+import com.researchspace.core.util.RequestUtil;
 import com.researchspace.googleauth.ExternalAuthTokenVerifier;
 import com.researchspace.googleauth.ExternalProfile;
 import com.researchspace.model.ProductType;
@@ -110,9 +111,12 @@ public class ExternalAuthController extends BaseController {
       // we have no account, reject
       List<User> existingUser = userManager.getUserByEmail(newUser.getEmail());
       if (existingUser.isEmpty()) {
+        SECURITY_LOG.warn(
+            "Login attempt for unknown email [{}] from {}",
+            newUser.getEmail(),
+            RequestUtil.remoteAddr(request));
         String message =
-            String.format("No account found for email %s, please sign up", newUser.getEmail());
-        SECURITY_LOG.warn(message);
+            String.format("No account found for email [%s], please sign up", newUser.getEmail());
         throw new IllegalStateException(message);
       }
       User toLogin = existingUser.get(0);

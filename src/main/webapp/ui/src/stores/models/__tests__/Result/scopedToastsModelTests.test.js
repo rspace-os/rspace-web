@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
-import Result from "../../Result";
+import InventoryBaseRecord from "../../InventoryBaseRecord";
 import fc, { type Command } from "fast-check";
 import { mkAlert } from "../../../contexts/Alert";
 import { AddScopedToastCommand } from "./addScopedToast";
@@ -25,20 +25,20 @@ describe("Scoped Toasts Model Tests", () => {
     const allCommands = [
       fc
         .string()
-        .map<Command<{| count: number |}, Result>>(
+        .map<Command<{| count: number |}, InventoryBaseRecord>>(
           (message: string) => new AddScopedToastCommand(mkAlert({ message }))
         ),
-      fc.constant<Command<{| count: number |}, Result>>(
+      fc.constant<Command<{| count: number |}, InventoryBaseRecord>>(
         new ClearAllScopedToastsCommand()
       ),
     ];
     await fc.assert(
       fc.asyncProperty(
-        fc.commands<{| count: number |}, Result>(allCommands),
+        fc.commands<{| count: number |}, InventoryBaseRecord>(allCommands),
         async (cmds) => {
           const s = () => ({
             model: { count: 0 },
-            real: new Result(mockFactory(), {}),
+            real: new InventoryBaseRecord(mockFactory(), {}),
           });
           await fc.asyncModelRun(s, cmds);
         }

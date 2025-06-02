@@ -15,6 +15,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.Subject;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 
+@Slf4j
 public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
 
   @Autowired private IUserAccountLockoutPolicy lockoutPolicy;
@@ -65,8 +67,10 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
           && u.getLoginFailure() != null
           && !lockoutPolicy.isAfterLockoutTime(u)) {
         setFailureAttribute(request, new AuthenticationException());
-        SECURITY_LOG.info(
-            "Attempt to log in as '" + username + "', but account is temporarily locked");
+        SECURITY_LOG.warn(
+            "Attempt to log in as [{}], from {}, but the account is temporarily locked",
+            username,
+            RequestUtil.remoteAddr(WebUtils.toHttp(request)));
         return true; /* true as the request should continue, failureAttribute will take it back to login page */
       }
     } catch (DataAccessException re) {
@@ -117,7 +121,7 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
     if (token.getPrincipal() != null) {
       String failureDetails =
           String.format(
-              "Login failure by %s from %s",
+              "Login failure by [%s] from %s",
               token.getPrincipal().toString(), RequestUtil.remoteAddr(WebUtils.toHttp(request)));
       if (properties.isSSO()) {
         failureDetails += " (SSO user [" + getRemoteUserFromRequest(request) + "])";
@@ -136,7 +140,10 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
           lockoutPolicy.handleLockoutOnFailure(u);
           userMgr.save(u);
         } catch (DataAccessException re) {
-          SECURITY_LOG.warn("User [" + username + "] can't be found in RSpace");
+          SECURITY_LOG.warn(
+              "Login attempt for username [{}] who cannot be found in RSpace, from {}",
+              username,
+              RequestUtil.remoteAddr(WebUtils.toHttp(request)));
         }
       }
     }
@@ -151,7 +158,7 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
             Collections.singletonMap("loginException", loginException);
         WebUtils.issueRedirect(request, response, ADMIN_LOGIN_URL, failureReason);
       } catch (IOException ioe) {
-        SECURITY_LOG.warn("Exception on attempt to redirect to admin login: " + ioe.getMessage());
+        log.warn("Exception on attempt to redirect to admin login", ioe);
       }
     }
 

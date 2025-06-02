@@ -1,4 +1,6 @@
-import Result, { type ResultEditableFields } from "./Result";
+import InventoryBaseRecord, {
+  type InventoryBaseRecordEditableFields,
+} from "./InventoryBaseRecord";
 import { action, observable, makeObservable, computed, override } from "mobx";
 import { match } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -27,18 +29,20 @@ export const formatIndex = (index: number, numOfRecords: number): string => {
   return (index + 1).toString().padStart(widthWithPadding, "0");
 };
 
-export type ResultCollectionEditableFields = Omit<
-  ResultEditableFields,
+export type InventoryBaseRecordCollectionEditableFields = Omit<
+  InventoryBaseRecordEditableFields,
   "name" | "identifiers"
 > & {
   name: BatchName;
 };
 
 /*
- * This is a wrapper around a set of Results, making it easier to perform batch
+ * This is a wrapper around a set of InventoryBaseRecord, making it easier to perform batch
  * operations e.g. editing.
  */
-export default class ResultCollection<ResultSubtype extends Result> {
+export default class InventoryBaseRecordCollection<
+  ResultSubtype extends InventoryBaseRecord
+> {
   records: RsSet<ResultSubtype>;
   name: BatchName;
   sharedWith: Array<SharedWithGroup>;
@@ -66,7 +70,7 @@ export default class ResultCollection<ResultSubtype extends Result> {
     return this.records.size;
   }
 
-  get fieldValues(): ResultCollectionEditableFields {
+  get fieldValues(): InventoryBaseRecordCollectionEditableFields {
     const currentDescriptions = new RsSet(
       this.records.map((r) => r.description)
     );
@@ -138,7 +142,7 @@ export default class ResultCollection<ResultSubtype extends Result> {
   }
 
   get noValueLabel(): {
-    [key in keyof ResultCollectionEditableFields]: string | null;
+    [key in keyof InventoryBaseRecordCollectionEditableFields]: string | null;
   } {
     const currentNames = new RsSet(this.records.map((r) => r.name));
     const currentDescriptions = new RsSet(
@@ -250,11 +254,11 @@ export default class ResultCollection<ResultSubtype extends Result> {
   }
 }
 
-export class MixedResultCollection
-  extends ResultCollection<Result>
-  implements HasEditableFields<ResultCollectionEditableFields>
+export class MixedInventoryBaseRecordCollection
+  extends InventoryBaseRecordCollection<InventoryBaseRecord>
+  implements HasEditableFields<InventoryBaseRecordCollectionEditableFields>
 {
-  constructor(records: RsSet<Result>) {
+  constructor(records: RsSet<InventoryBaseRecord>) {
     super(records);
     makeObservable(this, {
       setFieldsDirty: override,
@@ -262,12 +266,12 @@ export class MixedResultCollection
     });
   }
 
-  get fieldValues(): ResultCollectionEditableFields {
+  get fieldValues(): InventoryBaseRecordCollectionEditableFields {
     return super.fieldValues;
   }
 
   get noValueLabel(): {
-    [key in keyof ResultCollectionEditableFields]: string | null;
+    [key in keyof InventoryBaseRecordCollectionEditableFields]: string | null;
   } {
     return super.noValueLabel;
   }

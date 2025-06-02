@@ -97,16 +97,14 @@ public class CommunityManualUserSignupPolicy extends AbstractUserSignupPolicy
         analyticsManager.userSignedUp(userFromForm, true, request);
         userFromForm.setToken(providedToken);
       } else {
-        SECURITY_LOG.info(
-            "Signup attempt with expired verification token for existing email: {} "
-                + "from:  {} . New verification token will be sent.",
+        SECURITY_LOG.warn(
+            "Signup attempt with expired verification token for email [{}], from {}",
             userFromForm.getEmail(),
             RequestUtil.remoteAddr(request));
       }
     } else {
-      SECURITY_LOG.info(
-          "Signup attempt without verification token for existing email: {} "
-              + " from: {}. New verification token will be sent.",
+      SECURITY_LOG.warn(
+          "Signup attempt without verification token for email [{}], from {}",
           userFromForm.getEmail(),
           RequestUtil.remoteAddr(request));
     }

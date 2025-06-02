@@ -14,7 +14,10 @@ import {
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
 import { GlobalId } from "../definitions/BaseRecord";
-import Result, { ResultEditableFields, ResultUneditableFields } from "./Result";
+import InventoryBaseRecord, {
+  InventoryBaseRecordEditableFields,
+  InventoryBaseRecordUneditableFields,
+} from "./InventoryBaseRecord";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -22,9 +25,9 @@ import Result, { ResultEditableFields, ResultUneditableFields } from "./Result";
  * class provides the state and methods common to all of these Inventory
  * records.
  */
-export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
-  Base: TBase
-) {
+export function HasLocationMixin<
+  TBase extends new (...args: any[]) => InventoryBaseRecord
+>(Base: TBase) {
   return class extends Base implements HasLocation {
     [HasLocationMarker] = true as const;
 
@@ -91,8 +94,8 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
       )(params).elseThrow() as Container | null;
     }
 
-    get fieldValues(): ResultEditableFields &
-      ResultUneditableFields &
+    get fieldValues(): InventoryBaseRecordEditableFields &
+      InventoryBaseRecordUneditableFields &
       HasLocationEditableFields &
       HasLocationUneditableFields {
       return {
@@ -106,9 +109,9 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Result>(
     } & {
       [key in keyof HasLocationUneditableFields]: string | null;
     } & {
-      [key in keyof ResultEditableFields]: string | null;
+      [key in keyof InventoryBaseRecordEditableFields]: string | null;
     } & {
-      [key in keyof ResultUneditableFields]: string | null;
+      [key in keyof InventoryBaseRecordUneditableFields]: string | null;
     } {
       return {
         ...super.noValueLabel,

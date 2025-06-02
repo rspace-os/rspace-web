@@ -8,7 +8,7 @@ import {
   type CoreFetcher,
   type ResultType,
 } from "../definitions/Search";
-import Result from "../models/Result";
+import InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
 import { type Basket, type BasketAttrs } from "../definitions/Basket";
@@ -290,7 +290,7 @@ export default class SearchStore {
     }
   }
 
-  async createNewHelper(newRecord: Result): Promise<void> {
+  async createNewHelper(newRecord: InventoryBaseRecord): Promise<void> {
     await this.search.setActiveResult(newRecord);
     this.rootStore.uiStore.setVisiblePanel("right");
   }
@@ -370,7 +370,7 @@ export default class SearchStore {
     return template;
   }
 
-  createNew(type: "sample" | "container" | "template"): Promise<Result> {
+  createNew(type: "sample" | "container" | "template"): Promise<InventoryBaseRecord> {
     if (type === "sample") return this.createNewSample();
     if (type === "container") return this.createNewContainer();
     return this.createNewTemplate();

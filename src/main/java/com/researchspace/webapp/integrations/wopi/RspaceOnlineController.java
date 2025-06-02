@@ -42,16 +42,18 @@ public abstract class RspaceOnlineController extends BaseController {
     GlobalIdentifier globalId = new GlobalIdentifier(fileId);
     BaseRecord baseRecord = recordManager.get(globalId.getDbId());
     assertAuthorisation(user, baseRecord, PermissionType.READ);
-    assertIsMediaRecord(fileId, baseRecord);
+    assertIsMediaRecord(fileId, baseRecord, user);
 
     return (EcatMediaFile) baseRecord;
   }
 
-  private void assertIsMediaRecord(String fileId, BaseRecord baseRecord) {
+  private void assertIsMediaRecord(String fileId, BaseRecord baseRecord, User user) {
     if (!baseRecord.isMediaRecord()) {
-      String msg = String.format("Provided file id %s is not for media record", fileId);
-      SECURITY_LOG.warn(msg);
-      throw new IllegalStateException(msg);
+      SECURITY_LOG.warn(
+          "User [{}] tries accessing media file id [{}], but it's not a media file",
+          user.getUsername(),
+          fileId);
+      throw new IllegalStateException("Provided file id " + fileId + "is not for media record");
     }
   }
 

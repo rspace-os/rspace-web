@@ -211,7 +211,7 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
   }
 
   @Override
-  public void apiAccessed(User user, boolean apiKeyUsage, HttpServletRequest req) {
+  public void publicApiUsed(User user, HttpServletRequest req) {
     String userId = returnIfUserNull(user, "ignoring api used event");
     if (userId == null) {
       return;
@@ -220,8 +220,11 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
     Map<String, Object> props = new HashMap<>();
     props.put(AnalyticsProperty.API_METHOD.getLabel(), req.getMethod());
     props.put(AnalyticsProperty.API_URI.getLabel(), requestURI);
-    AnalyticsEvent event =
-        apiKeyUsage ? AnalyticsEvent.API_KEY_USAGE : AnalyticsEvent.API_OAUTH_TOKEN_GENERATION;
+    props.put(AnalyticsProperty.RSPACE_URL.getLabel(), properties.getServerUrl());
+    props.put(
+        AnalyticsProperty.API_AUTHENTICATED_BY.getLabel(),
+        user.getAuthenticatedBy() != null ? user.getAuthenticatedBy().toString() : null);
+    AnalyticsEvent event = AnalyticsEvent.PUBLIC_API_USED;
     track(userId, event.getLabel(), props);
   }
 

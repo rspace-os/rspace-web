@@ -14,7 +14,7 @@ import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import SearchContext from "../../../stores/contexts/Search";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
-import { sortProperties } from "../../../stores/models/Result";
+import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
 import DropdownButton from "../../../components/DropdownButton";
 import { type SortProperty } from "../../components/Tables/SortableProperty";
 

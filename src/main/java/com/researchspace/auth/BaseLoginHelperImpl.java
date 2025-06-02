@@ -40,11 +40,14 @@ public abstract class BaseLoginHelperImpl implements LoginHelper {
 
   public HttpSession login(User toLogin, String originalPwd, HttpServletRequest request) {
     if (toLogin.isLoginDisabled()) {
+      SECURITY_LOG.warn(
+          "Login attempt stopped for disabled user [{}], from {}",
+          toLogin.getUsername(),
+          RequestUtil.remoteAddr(request));
       String msg =
           String.format(
-              "Login for User %s is blocked. Locked? %s. Enabled? %s ",
+              "Login for User [%s] is blocked. Locked? %s. Enabled? %s ",
               toLogin.getUsername(), toLogin.isAccountLocked(), toLogin.isEnabled());
-      SECURITY_LOG.warn(msg);
       throw new IllegalStateException(msg);
     }
     doLogin(toLogin, originalPwd);
@@ -87,7 +90,7 @@ public abstract class BaseLoginHelperImpl implements LoginHelper {
     timezoneUtils.setUserTimezoneInSession(request, sssn);
     updateUserLoginHistory(loggedIn);
     SECURITY_LOG.info(
-        "Successful login by [{}] from {}",
+        "Successful login by [{}], from {}",
         loggedIn.getUsername(),
         RequestUtil.remoteAddr(request));
 

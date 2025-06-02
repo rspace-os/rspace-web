@@ -21,16 +21,16 @@ import getRootStore from "../stores/RootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import Result from "./Result";
+import InventoryBaseRecord from "./InventoryBaseRecord";
 import {
   getValue,
   getUnitId,
 } from "./HasQuantity";
 import { type PersonId, type PersonAttrs } from "../definitions/Person";
 import { type Factory } from "../definitions/Factory";
-import ResultCollection, {
-  type ResultCollectionEditableFields,
-} from "./ResultCollection";
+import InventoryBaseRecordCollection, {
+  type InventoryBaseRecordCollectionEditableFields,
+} from "./InventoryBaseRecordCollection";
 import SampleModel, { type SampleAttrs } from "./SampleModel";
 import {
   action,
@@ -45,9 +45,9 @@ import {
   RESULT_FIELDS,
   defaultVisibleResultFields,
   defaultEditableResultFields,
-  type ResultEditableFields,
-  type ResultUneditableFields
-} from "./Result";
+  type InventoryBaseRecordEditableFields,
+  type InventoryBaseRecordUneditableFields
+} from "./InventoryBaseRecord";
 import React, { type Node } from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
 import { type SubSample } from "../definitions/SubSample";
@@ -69,9 +69,9 @@ import {
 } from "../definitions/HasQuantity";
 import { type UnitCategory } from "../stores/UnitStore";
 
-type SubSampleEditableFields = HasQuantityEditableFields & ResultEditableFields & HasLocationEditableFields;
+type SubSampleEditableFields = HasQuantityEditableFields & InventoryBaseRecordEditableFields & HasLocationEditableFields;
 
-type SubSampleUneditableFields = HasQuantityUneditableFields & ResultUneditableFields & HasLocationUneditableFields & {
+type SubSampleUneditableFields = HasQuantityUneditableFields & InventoryBaseRecordUneditableFields & HasLocationUneditableFields & {
   sample: Sample,
 };
 
@@ -117,7 +117,7 @@ export type SubSampleAttrs = {|
 |};
 
 declare export default class SubSampleModel
-  extends Result
+  extends InventoryBaseRecord
   implements
     SubSample,
     HasEditableFields<SubSampleEditableFields>,
@@ -179,11 +179,11 @@ declare export default class SubSampleModel
   +quantityUnitLabel: string;
 }
 
-type BatchSubSampleEditableFields = ResultCollectionEditableFields &
+type BatchSubSampleEditableFields = InventoryBaseRecordCollectionEditableFields &
   $Diff<SubSampleEditableFields, {| name: mixed |}>;
 
 declare export class SubSampleCollection
-  extends ResultCollection<SubSampleModel>
+  extends InventoryBaseRecordCollection<SubSampleModel>
   implements HasEditableFields<BatchSubSampleEditableFields>
 {
   constructor(subsamples: RsSet<SubSampleModel>): SubSampleCollection;
