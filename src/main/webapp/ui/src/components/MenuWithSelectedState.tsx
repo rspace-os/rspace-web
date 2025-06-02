@@ -6,9 +6,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Menu from "@mui/material/Menu";
 import Theme from "../theme";
 
-const StyledButton = styled(Button)<
-  React.ComponentProps<typeof Button> & { active: boolean }
->(({ theme: t, active }) => {
+const StyledButton = styled(Button)(({ theme: t }) => {
   const theme = t as typeof Theme;
   return {
     padding: theme.spacing(0, 1.5, 0, 0),
@@ -21,17 +19,16 @@ const StyledButton = styled(Button)<
     },
     "& span.label": {
       paddingLeft: theme.spacing(1.5),
-      background: active ? theme.palette.primary.background : undefined,
-      color: theme.palette.primary.contrastText,
       maxHeight: "100%",
-      paddingRight: theme.spacing(active ? 2 : 0),
       paddingTop: theme.spacing(0.5),
       paddingBottom: theme.spacing(0.25),
     },
     "& span.state": {
-      paddingLeft: theme.spacing(1.5),
+      textTransform: "capitalize",
+      fontWeight: 400,
+      paddingLeft: theme.spacing(1),
       paddingTop: theme.spacing(1),
-      paddingBottom: theme.spacing(0.5),
+      paddingBottom: theme.spacing(0.625),
     },
   };
 });
@@ -68,13 +65,13 @@ export default function MenuWithSelectedState({
       <StyledButton
         endIcon={<KeyboardArrowDownIcon />}
         size="small"
-        color="standardIcon"
+        color="primary"
         onClick={(event) => {
           setAnchorEl(event.currentTarget);
         }}
-        active={currentState !== defaultState}
+        variant={currentState !== defaultState ? "contained" : "outlined"}
       >
-        <span className="label">{label}</span>
+        <span className="label">{label}:</span>
         <span className="state">{currentState}</span>
       </StyledButton>
       <StyledMenu
