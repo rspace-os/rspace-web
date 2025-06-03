@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import BaseFormField, {
   type FormFieldArgs as BaseFormFieldArgs,
 } from "./FormField";
@@ -30,18 +28,16 @@ import { Heading } from "../../../components/DynamicHeadingLevel";
  * value. This adds more complexity that isn't necessary elsewhere.
  */
 
-type FormFieldArgs<T> = {|
-  /**
-   * When not disabled, all of the behaviour of the more generic form field
-   * component is preserved.
-   */
-  ...BaseFormFieldArgs<T>,
-
+/**
+ * When not disabled, all of the behaviour of the more generic form field
+ * component is preserved.
+ */
+export type FormFieldArgs<T> = BaseFormFieldArgs<T> & {
   /**
    * Whilst disabled is included from BaseFormFieldArgs, it is required here as
    * it used by the checkbox when batch editing.
    */
-  disabled: boolean,
+  disabled: boolean;
 
   /**
    * If `value` is falsey and `disabled` is true then a nominal value is
@@ -55,7 +51,7 @@ type FormFieldArgs<T> = {|
    * render the noValueLabel under the same conditions i.e. it will never be
    * executed there.
    */
-  noValueLabel?: ?string,
+  noValueLabel?: string | null;
 
   /**
    * These form fields are designed to support both singular editing and batch
@@ -70,9 +66,9 @@ type FormFieldArgs<T> = {|
    *   - `setDisabled` is the event handler of when the user has tapped the
    *     checkbox. It MUST then set the `disabled` prop to passed value.
    */
-  canChooseWhichToEdit?: boolean,
-  setDisabled?: (boolean) => void,
-|};
+  canChooseWhichToEdit?: boolean;
+  setDisabled?: (value: boolean) => void;
+};
 
 /**
  * Do note that when Inventory form fields are disabled they are shown in
@@ -102,7 +98,7 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-export default function FormField<T>(props: FormFieldArgs<T>): Node {
+export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
   const {
     disabled,
     renderInput,
