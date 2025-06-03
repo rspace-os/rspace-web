@@ -247,8 +247,30 @@ pipeline {
                 }
             }
         }
-        stage('Playwright Component Tests') {
+        stage('Playwright Component Tests (feature branch)') {
         		when {
+                not {
+                    branch 'main'
+                }
+            		anyOf {
+                		expression { return params.FRONTEND_TESTS }
+                		changeset '**/*.ts'
+                		changeset '**/*.tsx'
+                		changeset '**/*.css'
+                		changeset '**/*.json'
+            		}
+            }
+            steps {
+                echo 'Running Playwright tests'
+                dir('src/main/webapp/ui') {
+                    sh 'npx playwright install'
+                    sh 'npm run test-ct -- --only-changed=main'
+                }
+            }
+        }
+        stage('Playwright Component Tests (main branch)') {
+        		when {
+                branch 'main'
             		anyOf {
                 		expression { return params.FRONTEND_TESTS }
                 		changeset '**/*.ts'
