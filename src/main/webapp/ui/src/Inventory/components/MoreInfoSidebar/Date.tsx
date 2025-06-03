@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
@@ -8,12 +6,12 @@ import FormLabel from "@mui/material/FormLabel";
 import { isoToLocale } from "../../../util/Util";
 import Grid from "@mui/material/Grid";
 
-type DateArgs = {|
-  date: string,
-  label: string,
-|};
+type DateArgs = {
+  date: string;
+  label: string;
+};
 
-function Date({ date, label }: DateArgs): Node {
+function Date({ date, label }: DateArgs): React.ReactNode {
   return (
     <Grid item>
       <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
@@ -24,4 +22,4 @@ function Date({ date, label }: DateArgs): Node {
   );
 }
 
-export default (observer(Date): ComponentType<DateArgs>);
+export default observer(Date);
