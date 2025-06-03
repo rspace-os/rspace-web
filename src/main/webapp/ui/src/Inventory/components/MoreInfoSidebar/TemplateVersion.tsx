@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
@@ -9,11 +7,11 @@ import TemplateModel from "../../../stores/models/TemplateModel";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import Grid from "@mui/material/Grid";
 
-type TemplateVersionArgs = {|
-  record: InventoryRecord,
-|};
+type TemplateVersionArgs = {
+  record: InventoryRecord;
+};
 
-function TemplateVersion({ record }: TemplateVersionArgs): Node {
+function TemplateVersion({ record }: TemplateVersionArgs): React.ReactNode {
   if (!(record instanceof TemplateModel)) return null;
 
   return (
@@ -26,4 +24,4 @@ function TemplateVersion({ record }: TemplateVersionArgs): Node {
   );
 }
 
-export default (observer(TemplateVersion): ComponentType<TemplateVersionArgs>);
+export default observer(TemplateVersion);
