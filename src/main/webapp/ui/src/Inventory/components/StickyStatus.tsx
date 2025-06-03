@@ -1,7 +1,5 @@
-//@flow
-
 import RecordStatus from "./Toolbar/RecordStatus";
-import React, { type Node } from "react";
+import React from "react";
 import { makeStyles } from "tss-react/mui";
 import { type State } from "../../stores/definitions/InventoryRecord";
 
@@ -16,10 +14,10 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type StickyStatusArgs = {|
-  recordState: State,
-  deleted: boolean,
-|};
+type StickyStatusArgs = {
+  recordState: State;
+  deleted: boolean;
+};
 
 /*
  * RecordStatus, with the additional styles to position it absolutely
@@ -27,7 +25,7 @@ type StickyStatusArgs = {|
 export default function StickyStatus({
   recordState,
   deleted,
-}: StickyStatusArgs): Node {
+}: StickyStatusArgs): React.ReactNode {
   const { classes } = useStyles();
 
   return ["create", "edit"].includes(recordState) || deleted ? (
