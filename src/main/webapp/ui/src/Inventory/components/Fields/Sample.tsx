@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { type HasUneditableFields } from "../../../stores/definitions/Editable";
 import { type Sample } from "../../../stores/definitions/Sample";
 import { RecordLink } from "../RecordLink";
@@ -11,19 +9,18 @@ import Typography from "@mui/material/Typography";
 import NavigateContext from "../../../stores/contexts/Navigate";
 
 export default function SampleField<
-  Fields: {
-    sample: Sample,
-    ...
+  Fields extends {
+    sample: Sample;
   },
-  FieldOwner: HasUneditableFields<Fields>
->({ fieldOwner }: {| fieldOwner: FieldOwner |}): Node {
+  FieldOwner extends HasUneditableFields<Fields>
+>({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
   const sample = fieldOwner.fieldValues.sample;
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
 
   return (
     <FormField
-      value={void 0}
+      value={undefined}
       label="Parent Sample"
       disabled
       renderInput={() => (
