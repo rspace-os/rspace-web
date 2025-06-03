@@ -1,13 +1,4 @@
-//@flow
-
-import React, {
-  useEffect,
-  useState,
-  type Node,
-  type ComponentType,
-  type ElementProps,
-  useContext,
-} from "react";
+import React, { useEffect, useState, useContext, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RsSet, { unionWith, nullishToSingleton } from "../../../util/set";
@@ -24,8 +15,8 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 library.add(faSpinner, faHandHolding);
 
 const CustomAutocomplete = withStyles<
-  ElementProps<typeof Autocomplete>,
-  { root: string, option: string }
+  React.ComponentProps<typeof Autocomplete<PersonModel>>,
+  { root: string; option: string }
 >(() => ({
   root: {
     maxWidth: 500,
@@ -33,18 +24,20 @@ const CustomAutocomplete = withStyles<
   option: {
     cursor: "default",
   },
-}))(Autocomplete);
+}))(Autocomplete<PersonModel>);
+
+type RecipientTextFieldArgs = {
+  InputProps: { endAdornment: React.ReactNode };
+  loading: boolean;
+  label: string;
+} & React.ComponentProps<typeof TextField>;
 
 const RecipientTextField = ({
   InputProps,
   loading,
   label,
   ...rest
-}: {
-  InputProps: { endAdornment: Node },
-  loading: boolean,
-  label: string,
-}) => (
+}: RecipientTextFieldArgs) => (
   <TextField
     {...rest}
     variant="outlined"
@@ -64,13 +57,16 @@ const RecipientTextField = ({
   />
 );
 
-type PeopleFieldArgs = {|
-  onSelection: (?Person, ?boolean) => Promise<void> | void,
-  label: string,
-  outsideGroup?: boolean,
-  recipient: ?Person,
-  excludedUsernames?: RsSet<Username>,
-|};
+type PeopleFieldArgs = {
+  onSelection: (
+    person: Person | null,
+    doSearch?: boolean | null
+  ) => Promise<void> | void;
+  label: string;
+  outsideGroup?: boolean;
+  recipient: PersonModel | null;
+  excludedUsernames?: RsSet<Username>;
+};
 
 /*
  * Autocomplete input field for searching for and selecting a user.
@@ -81,7 +77,7 @@ function PeopleField({
   outsideGroup = true,
   recipient,
   excludedUsernames,
-}: PeopleFieldArgs): Node {
+}: PeopleFieldArgs): ReactNode {
   const {
     peopleStore,
     searchStore: { search },
@@ -89,10 +85,10 @@ function PeopleField({
   const { addAlert } = useContext(AlertContext);
 
   const [searchResults, setSearchResults] = useState<RsSet<PersonModel>>(
-    new RsSet()
+    new RsSet<PersonModel>()
   );
 
-  const handleUserChange = (user: ?Person, doSearch?: boolean) => {
+  const handleUserChange = (user: Person | null, doSearch?: boolean) => {
     void onSelection(user, doSearch);
   };
 
@@ -110,17 +106,19 @@ function PeopleField({
           const shouldSetOwner = members && ownedBy && !owner;
           if (isMounted && shouldSetOwner) {
             const ownerToSet = [...members].find((p) => p.username === ownedBy);
-            handleUserChange(ownerToSet, false);
+            handleUserChange(ownerToSet || null, false);
           }
         })
         .catch((e) => {
-          addAlert(
-            mkAlert({
-              title: "Could not get members of your groups",
-              message: e.message,
-              variant: "error",
-            })
-          );
+          if (e instanceof Error) {
+            addAlert(
+              mkAlert({
+                title: "Could not get members of your groups",
+                message: e.message,
+                variant: "error",
+              })
+            );
+          }
         });
     }
     return () => {
@@ -144,37 +142,44 @@ function PeopleField({
   const loading = peopleStore.groupMembers === null;
   const allUsers = sortPeople(
     [
-      ...unionWith(
-        (x) => x.username,
+      ...unionWith<PersonModel, string>(
+        (x: PersonModel) => x.username,
         [
-          peopleStore.groupMembers ?? new RsSet(),
+          peopleStore.groupMembers ?? new RsSet<PersonModel>(),
           searchResults,
           nullishToSingleton(peopleStore.currentUser),
         ]
-      ).filter((u) => !(excludedUsernames ?? new RsSet()).has(u.username)),
+      ).filter(
+        (u: PersonModel) =>
+          !(excludedUsernames ?? new RsSet<Username>()).has(u.username)
+      ),
     ],
     { placeCurrentFirst: true }
   );
 
   return (
     <CustomAutocomplete
-      loading={loading}
       options={allUsers}
-      groupBy={(u) => u.groupByLabel}
-      getOptionLabel={(u) => u.label}
+      groupBy={(u: PersonModel) => u.groupByLabel}
+      getOptionLabel={(u: Person) => u.label}
       renderInput={(props) => (
         <RecipientTextField {...props} loading={loading} label={label} />
       )}
       size="small"
       value={recipient}
-      onChange={(_, user) => handleUserChange(user)}
-      onInputChange={(_, searchTerm) => searchPeople(searchTerm)}
-      isOptionEqualToValue={(option, value) =>
+      onChange={(_: React.SyntheticEvent, user: Person | null) =>
+        handleUserChange(user)
+      }
+      onInputChange={(_: React.SyntheticEvent, searchTerm: string) =>
+        searchPeople(searchTerm)
+      }
+      isOptionEqualToValue={(option: Person, value: Person) =>
         option.username === value.username
       }
       openOnFocus
+      loading={loading}
     />
   );
 }
 
-export default (observer(PeopleField): ComponentType<PeopleFieldArgs>);
+export default observer(PeopleField);
