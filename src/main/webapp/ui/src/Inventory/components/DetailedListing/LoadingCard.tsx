@@ -1,11 +1,9 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import Skeleton from "@mui/material/Skeleton";
 import CardStructure from "./CardStructure";
 
-function LoadingCard(): Node {
+function LoadingCard(): React.ReactNode {
   return (
     <CardStructure
       image={<Skeleton variant="rectangular" width="100%" height="100%" />}
@@ -22,4 +20,4 @@ function LoadingCard(): Node {
   );
 }
 
-export default (observer(LoadingCard): ComponentType<{||}>);
+export default observer(LoadingCard);
