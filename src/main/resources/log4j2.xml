@@ -13,7 +13,7 @@
       <DefaultRolloverStrategy max="100000"/>
     </RollingFile>
 
-    <RollingFile name="ApiRequestLogger" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${ApiRequests.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${ApiRequests.log.file}.%i">
+    <RollingFile name="ApiRequestLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${ApiRequests.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${ApiRequests.log.file}.%i">
       <PatternLayout>
         <Pattern>%d{DATE} - %m%n</Pattern>
       </PatternLayout>
