@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType, type ElementProps } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -12,13 +10,13 @@ import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
 
 const Header = withStyles<
-  {| strikeThroughTitle: boolean, ...ElementProps<typeof CardHeader> |},
+  { strikeThroughTitle: boolean } & React.ComponentProps<typeof CardHeader>,
   {
-    root: string,
-    title: string,
-    subheader: string,
-    avatar: string,
-    action: string,
+    root: string;
+    title: string;
+    subheader: string;
+    avatar: string;
+    action: string;
   }
 >((theme, { strikeThroughTitle }) => ({
   root: {
@@ -40,22 +38,24 @@ const Header = withStyles<
     alignSelf: "unset",
     margin: 0,
   },
-}))(({ strikeThroughTitle, ...rest }) => <CardHeader {...rest} />); //eslint-disable-line no-unused-vars
+}))(({ strikeThroughTitle: _strikeThroughTitle, ...rest }) => (
+  <CardHeader {...rest} />
+));
 
-type CardStructureArgs = {|
-  content: Node,
-  contentFooter?: Node,
-  headerAction?: Node,
-  headerAvatar?: Node,
-  image: Node,
-  subheader: Node | string,
-  title: Node,
-  onClick?: () => void,
-  className?: string,
-  deleted?: boolean,
-|};
+type CardStructureArgs = {
+  content: React.ReactNode;
+  contentFooter?: React.ReactNode;
+  headerAction?: React.ReactNode;
+  headerAvatar?: React.ReactNode;
+  image: React.ReactNode;
+  subheader: React.ReactNode | string;
+  title: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+  deleted?: boolean;
+};
 
-const useStyles = makeStyles()((theme, { deleted }) => ({
+const useStyles = makeStyles<{ deleted: boolean }>()((theme, { deleted }) => ({
   root: {
     "&:hover": {
       backgroundColor: theme.palette.background.default,
@@ -92,7 +92,7 @@ function CardStructure({
   onClick,
   className,
   deleted = false,
-}: CardStructureArgs): Node {
+}: CardStructureArgs): React.ReactNode {
   const { classes } = useStyles({ deleted });
 
   return (
@@ -133,4 +133,4 @@ function CardStructure({
   );
 }
 
-export default (observer(CardStructure): ComponentType<CardStructureArgs>);
+export default observer(CardStructure);
