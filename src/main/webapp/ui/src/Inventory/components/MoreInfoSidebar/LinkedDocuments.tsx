@@ -1,11 +1,4 @@
-// @flow
-
-import React, {
-  type Node,
-  type ComponentType,
-  useState,
-  useEffect,
-} from "react";
+import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
@@ -39,14 +32,14 @@ import docLinks from "../../../assets/DocLinks";
 import Box from "@mui/material/Box";
 
 type State =
-  | {| state: "init" |}
-  | {| state: "loading" |}
-  | {| state: "success", documents: RsSet<Document> |}
-  | {| state: "fail", error: Error |};
+  | { state: "init" }
+  | { state: "loading" }
+  | { state: "success"; documents: RsSet<Document> }
+  | { state: "fail"; error: Error };
 
-function DialogContents({ state }: { state: State }): Node {
+function DialogContents({ state }: { state: State }): React.ReactNode {
   if (state.state === "loading")
-    return <Skeleton variant="rect" width={210} height={118} />;
+    return <Skeleton variant="rectangular" width={210} height={118} />;
   if (state.state === "fail")
     return <Alert severity="error">{state.error.message}</Alert>;
   if (state.state === "success") {
@@ -56,8 +49,8 @@ function DialogContents({ state }: { state: State }): Node {
         <>
           <NoValue label="None" />
           <Box mt={1}>
-            <Typography variant="body">
-              Adding this item to a document’s{" "}
+            <Typography variant="body1">
+              Adding this item to a document&apos;s{" "}
               <a
                 href={docLinks.listOfMaterials}
                 rel="noreferrer"
@@ -106,14 +99,17 @@ function DialogContents({ state }: { state: State }): Node {
   return null;
 }
 
-type LinkedDocumentsArgs = {|
-  globalId: GlobalId,
-  factory: ?Factory,
-|};
+type LinkedDocumentsArgs = {
+  globalId: GlobalId;
+  factory: Factory | null;
+};
 
-function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): Node {
+function LinkedDocuments({
+  globalId,
+  factory,
+}: LinkedDocumentsArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState({ state: "init" });
+  const [state, setState] = useState<State>({ state: "init" });
 
   useEffect(() => {
     if (open) {
@@ -122,7 +118,6 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): Node {
       void (async () => {
         try {
           const { data } = await ApiService.get<
-            void,
             Array<{ elnDocument: DocumentAttrs }>
           >(`listOfMaterials/forInventoryItem/${globalId}`);
 
@@ -137,7 +132,11 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): Node {
             documents: unionWith(
               ({ id }: Document) => id,
               data.map(
-                ({ elnDocument: { globalId: docGlobalId, name, id, owner } }) =>
+                ({
+                  elnDocument: { globalId: docGlobalId, name, id, owner },
+                }: {
+                  elnDocument: DocumentAttrs;
+                }) =>
                   new RsSet([
                     newFactory.newDocument({
                       globalId: docGlobalId,
@@ -150,7 +149,7 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): Node {
             ),
           });
         } catch (e) {
-          setState({ state: "fail", error: e });
+          setState({ state: "fail", error: e as Error });
         }
       })();
     }
@@ -186,4 +185,4 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): Node {
   );
 }
 
-export default (observer(LinkedDocuments): ComponentType<LinkedDocumentsArgs>);
+export default observer(LinkedDocuments);
