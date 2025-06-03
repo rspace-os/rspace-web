@@ -1,8 +1,9 @@
-// @flow
+import React from "react";
 import {
   type Identifier,
   type IdentifierAttrs,
 } from "../../../../../stores/definitions/Identifier";
+import { type Alert } from "../../../../../stores/contexts/Alert";
 
 type TestRecordType = "sample" | "container"; // render for subSample like for sample
 
@@ -94,14 +95,28 @@ export const mockIGSNIdentifier = (recordType: TestRecordType): Identifier => {
     isValid: true, // computed based on Identifier data
     anyRecommendedGiven: true, // computed based on Identifier data
     requiredFields: [],
-    fixedFields: [],
     recommendedFields: [],
-    hasChanged: false,
     customFieldsOnPublicPage: false,
 
-    publish: async (): Promise<void> => {},
-    retract: async (): Promise<void> => {},
-    republish: async (): Promise<void> => {},
+    publish: async ({ confirm, addAlert }: { 
+      confirm: (
+        title: React.ReactNode,
+        body: React.ReactNode,
+        confirmLabel: string,
+        cancelLabel: string
+      ) => Promise<boolean>;
+      addAlert: (alert: Alert) => void;
+    }): Promise<void> => {},
+    retract: async ({ confirm, addAlert }: {
+      confirm: (
+        title: React.ReactNode,
+        body: React.ReactNode,
+        confirmLabel: string,
+        cancelLabel: string
+      ) => Promise<boolean>;
+      addAlert: (alert: Alert) => void;
+    }): Promise<void> => {},
+    republish: async ({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void> => {},
 
     toJson() {
       return {};
