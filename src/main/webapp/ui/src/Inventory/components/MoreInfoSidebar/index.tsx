@@ -1,12 +1,10 @@
-//@flow
-
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import { makeStyles } from "tss-react/mui";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType } from "react";
+import React, { type ComponentType } from "react";
 import useStores from "../../../stores/use-stores";
 import GlobalId from "./GlobalId";
 import Date from "./Date";
@@ -31,11 +29,11 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type SidebarArgs = {|
-  factory: ?Factory,
-|};
+type SidebarArgs = {
+  factory: Factory | null;
+};
 
-function Sidebar({ factory }: SidebarArgs): Node {
+function Sidebar({ factory }: SidebarArgs): React.ReactNode {
   const {
     uiStore,
     searchStore: { activeResult },
@@ -88,4 +86,4 @@ function Sidebar({ factory }: SidebarArgs): Node {
   );
 }
 
-export default (observer(Sidebar): ComponentType<SidebarArgs>);
+export default observer(Sidebar);
