@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  useState,
-  type Node,
-  type ComponentType,
-  type ElementProps,
-} from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
@@ -20,8 +13,8 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 library.add(faSpinner, faHandHolding);
 
 const CustomAutocomplete = withStyles<
-  ElementProps<typeof Autocomplete>,
-  { root: string, option: string }
+  React.ComponentProps<typeof Autocomplete<Group>>,
+  { root: string; option: string }
 >(() => ({
   root: {
     maxWidth: 500,
@@ -29,7 +22,7 @@ const CustomAutocomplete = withStyles<
   option: {
     cursor: "default",
   },
-}))(Autocomplete);
+}))(Autocomplete<Group>);
 
 const RecipientTextField = ({
   InputProps,
@@ -37,9 +30,9 @@ const RecipientTextField = ({
   label,
   ...rest
 }: {
-  InputProps: { endAdornment: Node },
-  loading: boolean,
-  label: string,
+  InputProps: { endAdornment: React.ReactNode };
+  loading: boolean;
+  label: string;
 }) => (
   <TextField
     {...rest}
@@ -60,11 +53,11 @@ const RecipientTextField = ({
   />
 );
 
-type GroupsFieldArgs = {|
-  onSelection: (Group) => Promise<void> | void,
-  label: string,
-  getOptionDisabled: (Group) => boolean,
-|};
+type GroupsFieldArgs = {
+  onSelection: (selectedGroup: Group) => Promise<void> | void;
+  label: string;
+  getOptionDisabled: (group: Group) => boolean;
+};
 
 /*
  * Autocomplete input field for searching for and selecting a group.
@@ -73,7 +66,7 @@ function GroupsField({
   onSelection,
   label,
   getOptionDisabled,
-}: GroupsFieldArgs): Node {
+}: GroupsFieldArgs): React.ReactNode {
   const { peopleStore } = useStores();
 
   const [searchResults, setSearchResults] = useState<Set<Group>>(new RsSet());
@@ -97,8 +90,7 @@ function GroupsField({
     <CustomAutocomplete
       loading={false}
       options={[...searchResults]}
-      groupBy={(u) => u.groupByLabel}
-      getOptionLabel={(u) => u.name}
+      getOptionLabel={(g) => g.name}
       getOptionDisabled={getOptionDisabled}
       renderInput={(props) => (
         <RecipientTextField {...props} loading={false} label={label} />
@@ -106,15 +98,14 @@ function GroupsField({
       size="small"
       value={null}
       onChange={(_, group) => {
-        handleGroupChange(group);
+        handleGroupChange(group as Group);
       }}
       onInputChange={(_, searchTerm) => {
         searchGroups(searchTerm);
       }}
-      getOptionSelected={(a, b) => a.id === b.id}
       openOnFocus
     />
   );
 }
 
-export default (observer(GroupsField): ComponentType<GroupsFieldArgs>);
+export default observer(GroupsField);
