@@ -44,10 +44,6 @@ type OptionsWrapperArgs = {|
   exportType: ExportType,
 |};
 
-export function ExportOptionsWrapper(args: OptionsWrapperArgs): Node {
-  return null;
-}
+declare export function ExportOptionsWrapper(args: OptionsWrapperArgs): Node;
 
-export default function ExportDialog(args: ExportDialogArgs): Node {
-  return null;
-}
+declare export default function ExportDialog(args: ExportDialogArgs): Node;

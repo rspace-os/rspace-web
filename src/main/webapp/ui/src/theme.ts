@@ -92,6 +92,12 @@ declare module "@mui/material/styles/createPalette" {
       tableRow: string;
       iconButton: string;
     };
+    sidebar: {
+      selected: {
+        bg: string;
+        badge: string;
+      };
+    };
   }
   interface PaletteOptions {
     callToAction: PaletteColorOptions;

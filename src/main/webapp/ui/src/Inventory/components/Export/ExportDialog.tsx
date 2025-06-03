@@ -30,7 +30,7 @@ import Alert from "@mui/material/Alert";
 export type ExportType = "userData" | "contextMenu" | "listOfMaterials";
 
 export function defaultExportOptions(
-  selectedResults: Array<InventoryRecord> | undefined,
+  selectedResults: Array<InventoryRecord> | null,
   exportType: ExportType
 ): ExportOptions {
   const exportedRecordTypes = new Set(selectedResults?.map(({ type }) => type));
@@ -48,7 +48,7 @@ export function defaultExportOptions(
 
 const useStyles = makeStyles()((theme) => ({
   optionModuleWrapper: {
-    border: `1px solid ${theme.palette.divider}`,
+    border: `1px solid ${theme.palette.sidebar.selected.bg}`,
     borderRadius: theme.spacing(0.5),
     padding: theme.spacing(1),
     marginBottom: theme.spacing(2),
@@ -157,7 +157,7 @@ export const ExportOptionsWrapper = ({
             <FormLabel id="samples-options-label">Samples</FormLabel>
             <RadioField
               name={"Export Samples Options"}
-              value={exportOptions.includeSubsamplesInSample}
+              value={exportOptions.includeSubsamplesInSample ?? null}
               onChange={({ target }) => {
                 if (target.value)
                   setExportOptions({
@@ -178,7 +178,7 @@ export const ExportOptionsWrapper = ({
             <FormLabel id="containers-options-label">Containers</FormLabel>
             <RadioField
               name={"Export Containers Options"}
-              value={exportOptions.includeContainerContent}
+              value={exportOptions.includeContainerContent ?? null}
               onChange={({ target }) => {
                 if (target.value)
                   setExportOptions({
@@ -204,7 +204,7 @@ export const ExportOptionsWrapper = ({
           <FormLabel id="export-mode-radiogroup-label">File Type</FormLabel>
           <RadioField
             name={"Export File Type Options"}
-            value={exportOptions.resultFileType}
+            value={exportOptions.resultFileType ?? null}
             onChange={({ target }) => {
               if (target.value)
                 setExportOptions({
@@ -238,7 +238,7 @@ export default function ExportDialog({
   selectedResults,
 }: ExportDialogArgs): React.ReactNode {
   const [exportOptions, setExportOptions] = useState<ExportOptions>(
-    defaultExportOptions(selectedResults, exportType)
+    defaultExportOptions(selectedResults ?? null, exportType)
   );
 
   const handleClose = () => {
