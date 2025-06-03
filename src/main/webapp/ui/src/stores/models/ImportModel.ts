@@ -979,6 +979,10 @@ export default class Import {
       mappings,
       Fields.parent_sample_import_id
     );
+    const identifierMapping = this.findParsedColumnName(
+      mappings,
+      Fields.identifier
+    );
 
     const result = {
       [name]: "name",
@@ -1000,6 +1004,7 @@ export default class Import {
       ...(pSampleImportId
         ? { [pSampleImportId]: "parent sample import id" }
         : {}),
+      ...(identifierMapping ? { [identifierMapping]: "identifier" } : {}),
 
       ...Object.fromEntries(
         mappings
