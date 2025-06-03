@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useContext } from "react";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import AddTag from "../../../components/Tags/AddTag";
@@ -15,12 +13,11 @@ const MAX_TOTAL = 8000;
 const MIN_EACH = 2;
 
 function Tags<
-  Fields: {
-    tags: Array<Tag>,
-    ...
+  Fields extends {
+    tags: Array<Tag>;
   },
-  FieldOwner: HasEditableFields<Fields>
->({ fieldOwner }: {| fieldOwner: FieldOwner |}): Node {
+  FieldOwner extends HasEditableFields<Fields>
+>({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
 
@@ -44,7 +41,7 @@ function Tags<
        * is used. If we left it as an array then `!value` would always be
        * false. Additionally `maxLength` now takes into account the commas.
        */
-      value={fieldOwner.fieldValues.tags.join(",")}
+      value={fieldOwner.fieldValues.tags.map((t) => t.value).join(",")}
       error={Boolean(errorMessage())}
       disabled={!fieldOwner.isFieldEditable("tags")}
       maxLength={MAX_TOTAL}
@@ -78,15 +75,15 @@ function Tags<
             !disabled && (
               <Grid item>
                 <AddTag
-                  onSelection={(tag: Tag) => {
-                    if (fieldOwner.fieldValues.tags.includes(tag)) {
+                  onSelection={(tag) => {
+                    if (fieldOwner.fieldValues.tags.includes(tag as Tag)) {
                       console.warn(
                         "Preventing the same tag from being added twice"
                       );
                       return;
                     }
                     fieldOwner.setFieldsDirty({
-                      tags: [...fieldOwner.fieldValues.tags, tag],
+                      tags: [...fieldOwner.fieldValues.tags, tag as Tag],
                     });
                   }}
                   value={fieldOwner.fieldValues.tags}
@@ -100,4 +97,4 @@ function Tags<
   );
 }
 
-export default (observer(Tags): typeof Tags);
+export default observer(Tags);
