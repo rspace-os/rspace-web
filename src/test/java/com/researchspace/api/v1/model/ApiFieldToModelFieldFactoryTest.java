@@ -19,6 +19,7 @@ public class ApiFieldToModelFieldFactoryTest {
     for (ApiFieldType type :
         EnumSet.complementOf(
             EnumSet.of(
+                ApiFieldType.IDENTIFIER,
                 ApiFieldType.CHOICE,
                 ApiFieldType.URI,
                 ApiFieldType.RADIO,

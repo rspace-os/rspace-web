@@ -39,6 +39,7 @@ public abstract class InventoryItemCsvImporter {
   private final ApiInventoryRecordType recordType;
 
   @Autowired protected InventoryBulkOperationHandler bulkOperationHandler;
+  @Autowired protected InventoryImportSampleFieldCreator importedFieldCreator;
 
   private final Set<String> reservedSampleFieldNames = (new Sample()).getReservedFieldNames();
 
@@ -68,6 +69,14 @@ public abstract class InventoryItemCsvImporter {
 
     result.convertRowsToFieldNameToValuesMap();
     result.populateResultWithNonBlankColumns();
+    Map<String, String> fieldMapping = null;
+    for (String columnName : result.getColumnNames()) {
+      List<String> fieldValues = result.getColumnNameToValuesMap().get(columnName);
+      fieldMapping = importedFieldCreator.getFieldMappingForIdentifier(columnName, fieldValues);
+      if (!fieldMapping.isEmpty()) {
+        result.getFieldMappings().putAll(fieldMapping);
+      }
+    }
 
     return result;
   }
