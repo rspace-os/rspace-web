@@ -1,18 +1,18 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { type Identifier } from "../../../../stores/definitions/Identifier";
 import SubmitSpinnerButton from "../../../../components/SubmitSpinnerButton";
 import { doNotAwait } from "../../../../util/Util";
 import useStores from "../../../../stores/use-stores";
 
+type PublishButtonArgs = {
+  identifier: Identifier;
+  disabled?: boolean;
+};
+
 export default function PublishButton({
   identifier,
   disabled,
-}: {|
-  identifier: Identifier,
-  disabled?: boolean,
-|}): Node {
+}: PublishButtonArgs): React.ReactNode {
   const [publishing, setPublishing] = React.useState(false);
   const { uiStore } = useStores();
 
