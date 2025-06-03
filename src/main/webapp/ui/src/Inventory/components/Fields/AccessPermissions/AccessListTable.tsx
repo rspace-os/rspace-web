@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import Table from "@mui/material/Table";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
@@ -17,20 +15,20 @@ import {
 import Popover from "@mui/material/Popover";
 import GroupsField from "../../Inputs/GroupsField";
 
-type AccessListTableArgs = {|
-  sharedWith: Array<SharedWithGroup>,
-  disabled: boolean,
-  onCheckboxClick: (Group) => void,
-  onAdditionalGroup: (Group) => void,
-|};
+type AccessListTableArgs = {
+  sharedWith: Array<SharedWithGroup>;
+  disabled: boolean;
+  onCheckboxClick: (group: Group) => void;
+  onAdditionalGroup: (group: Group) => void;
+};
 
 export default function AccessListTable({
   sharedWith,
   disabled,
   onCheckboxClick,
   onAdditionalGroup,
-}: AccessListTableArgs): Node {
-  const [addButton, setAddButton] = useState<?EventTarget>(null);
+}: AccessListTableArgs): React.ReactNode {
+  const [addButton, setAddButton] = useState<HTMLElement | null>(null);
 
   return (
     <Table size="small" stickyHeader>
@@ -50,7 +48,7 @@ export default function AccessListTable({
                   title="Add a group"
                   icon={<AddIcon />}
                   onClick={(event) => {
-                    setAddButton(event.target);
+                    setAddButton(event.currentTarget);
                   }}
                   size="small"
                   disabled={disabled}
