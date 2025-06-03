@@ -1,27 +1,25 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import ListItemText from "@mui/material/ListItemText";
 import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
 import RemoveButton from "../../../components/RemoveButton";
 
-export type DeleteOption = {|
-  value: boolean,
-  label: string,
-|};
+export type DeleteOption = {
+  value: boolean;
+  label: string;
+};
 
-type RemoveMenuArgs = {|
-  deleteOptions: Array<DeleteOption>,
-  onClick: (optionalAction: boolean) => void,
-  tooltipTitle?: string,
-|};
+type RemoveMenuArgs = {
+  deleteOptions: Array<DeleteOption>;
+  onClick: (optionalAction: boolean) => void;
+  tooltipTitle?: string;
+};
 
 const RemoveMenu = ({
   deleteOptions,
   onClick,
   tooltipTitle,
-}: RemoveMenuArgs): Node => {
-  const [anchorEl, setAnchorEl] = useState<?HTMLElement>(null);
+}: RemoveMenuArgs): React.ReactNode => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const handleClose = () => {
     setAnchorEl(null);
@@ -30,7 +28,9 @@ const RemoveMenu = ({
   return (
     <div>
       <RemoveButton
-        onClick={(e) => setAnchorEl(e?.currentTarget)}
+        onClick={(event) => {
+          setAnchorEl(event.currentTarget);
+        }}
         title={tooltipTitle}
       />
       <StyledMenu

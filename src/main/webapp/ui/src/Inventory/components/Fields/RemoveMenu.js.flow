@@ -1,0 +1,14 @@
+//@flow
+
+import { type Node } from "react";
+
+export type DeleteOption = {|
+  value: boolean,
+  label: string,
+|};
+
+declare export default function RemoveMenu({|
+  deleteOptions: Array<DeleteOption>,
+  onClick: (optionalAction: boolean) => void,
+  tooltipTitle?: string,
+|}): Node;
