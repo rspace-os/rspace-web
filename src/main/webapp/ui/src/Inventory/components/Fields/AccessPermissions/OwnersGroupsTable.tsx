@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Table from "@mui/material/Table";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
@@ -8,13 +6,13 @@ import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
 import { type Group } from "../../../../stores/definitions/Group";
 
-type OwnersGroupsTableArgs = {|
-  groups: Array<Group>,
-|};
+type OwnersGroupsTableArgs = {
+  groups: Array<Group>;
+};
 
 export default function OwnersGroupsTable({
   groups,
-}: OwnersGroupsTableArgs): Node {
+}: OwnersGroupsTableArgs): React.ReactNode {
   const groupData = groups.map(({ name, id }) => {
     if (!id) throw new Error("Group id is missing");
     return { name, id };
