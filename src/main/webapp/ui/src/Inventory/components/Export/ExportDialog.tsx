@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useState, type Node } from "react";
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
@@ -32,7 +30,7 @@ import Alert from "@mui/material/Alert";
 export type ExportType = "userData" | "contextMenu" | "listOfMaterials";
 
 export function defaultExportOptions(
-  selectedResults: ?Array<InventoryRecord>,
+  selectedResults: Array<InventoryRecord> | undefined,
   exportType: ExportType
 ): ExportOptions {
   const exportedRecordTypes = new Set(selectedResults?.map(({ type }) => type));
@@ -50,36 +48,36 @@ export function defaultExportOptions(
 
 const useStyles = makeStyles()((theme) => ({
   optionModuleWrapper: {
-    border: `1px solid ${theme.palette.sidebar.selected.bg}`,
+    border: `1px solid ${theme.palette.divider}`,
     borderRadius: theme.spacing(0.5),
     padding: theme.spacing(1),
     marginBottom: theme.spacing(2),
   },
 }));
 
-type ExportDialogArgs = {|
-  openExportDialog: boolean,
-  setOpenExportDialog: (boolean) => void,
-  onExport: (ExportOptions) => Promise<void> | void,
-  exportType: ExportType,
+type ExportDialogArgs = {
+  openExportDialog: boolean;
+  setOpenExportDialog: (value: boolean) => void;
+  onExport: (options: ExportOptions) => Promise<void> | void;
+  exportType: ExportType;
   /* n/a for user's data export case */
-  closeMenu?: () => void,
-  selectedResults?: Array<InventoryRecord>,
-|};
+  closeMenu?: () => void;
+  selectedResults?: Array<InventoryRecord>;
+};
 
-type OptionsWrapperArgs = {|
-  exportOptions: ExportOptions,
-  setExportOptions: (ExportOptions) => void,
-  selectedResults?: Array<InventoryRecord>,
-  exportType: ExportType,
-|};
+type OptionsWrapperArgs = {
+  exportOptions: ExportOptions;
+  setExportOptions: (options: ExportOptions) => void;
+  selectedResults?: Array<InventoryRecord>;
+  exportType: ExportType;
+};
 
 export const ExportOptionsWrapper = ({
   exportOptions,
   setExportOptions,
   selectedResults,
   exportType,
-}: OptionsWrapperArgs): Node => {
+}: OptionsWrapperArgs): React.ReactNode => {
   const { classes } = useStyles();
 
   const exportModeOptions: Array<RadioOption<ExportMode>> = [
@@ -147,7 +145,6 @@ export const ExportOptionsWrapper = ({
             labelPlacement="bottom"
             row
             smallText={true}
-            // aria-labelledby="export-mode-radiogroup-label"
           />
           <Alert severity="info">
             {`All data, ${
@@ -173,7 +170,6 @@ export const ExportOptionsWrapper = ({
               labelPlacement="bottom"
               row
               smallText={true}
-              // aria-labelledby="samples-options-label"
             />
           </Box>
         )}
@@ -195,7 +191,6 @@ export const ExportOptionsWrapper = ({
               labelPlacement="bottom"
               row
               smallText={true}
-              // aria-labelledby="containers-options-label"
             />
             <Alert severity="info">
               {exportOptions.includeContainerContent === "INCLUDE"
@@ -222,7 +217,6 @@ export const ExportOptionsWrapper = ({
             labelPlacement="bottom"
             row
             smallText={true}
-            // aria-labelledby="export-filetype-radiogroup-label"
           />
           <Alert severity="info">
             {exportOptions.resultFileType === "ZIP"
@@ -242,7 +236,7 @@ export default function ExportDialog({
   exportType,
   closeMenu,
   selectedResults,
-}: ExportDialogArgs): Node {
+}: ExportDialogArgs): React.ReactNode {
   const [exportOptions, setExportOptions] = useState<ExportOptions>(
     defaultExportOptions(selectedResults, exportType)
   );
