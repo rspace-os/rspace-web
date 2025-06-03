@@ -37,6 +37,18 @@
       </Policies>
       <DefaultRolloverStrategy max="100000"/>
     </RollingFile>
+
+    <RollingFile name="ApiRequestLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${ApiRequests.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${ApiRequests.log.file}.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
+
   </Appenders>
 
   <Loggers>
@@ -64,6 +76,10 @@
 
     <Logger name="com.researchspace.webapp.controller.LoggingInterceptor" level="INFO">
       <AppenderRef ref="HttpRequestLogger"/>
+    </Logger>
+
+    <Logger name="com.researchspace.api.v1.service.impl.ApiRequestLogger" level="INFO">
+      <AppenderRef ref="ApiRequestLogAppender"/>
     </Logger>
 
     <Logger name="com.researchspace.webapp.controller.PerformanceLoggingInterceptor" level="INFO">
