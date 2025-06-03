@@ -4,6 +4,7 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryImportPartialResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +35,8 @@ public class CsvContainerImporter extends InventoryItemCsvImporter {
   public void readCsvIntoImportResult(
       InputStream inputStream,
       Map<String, String> csvColumnToFieldMapping,
-      ApiInventoryImportResult importResult)
+      ApiInventoryImportResult importResult,
+      User user)
       throws IOException {
 
     // read lines from csv

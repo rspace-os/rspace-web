@@ -115,7 +115,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       csvResult.setSampleResult(createSampleResultWithRequestedTemplate(templateInfo, user));
     }
 
-    readCsvFiles(csvResult, importPostFull);
+    readCsvFiles(csvResult, importPostFull, user);
 
     if (csvResult.hasPrevalidationError()) {
       throw new InventoryImportPrevalidationException(csvResult);
@@ -184,7 +184,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
   }
 
   private void readCsvFiles(
-      ApiInventoryImportResult csvResult, ApiInventoryImportPostFull importPostFull)
+      ApiInventoryImportResult csvResult, ApiInventoryImportPostFull importPostFull, User user)
       throws IOException {
 
     ApiInventoryImportSettingsPost importSettings = importPostFull.getImportSettings();
@@ -210,7 +210,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         Map<String, String> fieldMappings = containerSettings.getFieldMappings();
         log.info("container fieldMappings: {} ", fieldMappings);
 
-        containerCsvImporter.readCsvIntoImportResult(containersIS, fieldMappings, csvResult);
+        containerCsvImporter.readCsvIntoImportResult(containersIS, fieldMappings, csvResult, user);
         prevalidateContainers(csvResult);
       }
 
@@ -222,7 +222,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
 
         boolean templateRetrieved = csvResult.getSampleResult().getTemplate().getRecord() != null;
         if (templateRetrieved) {
-          sampleCsvImporter.readCsvIntoImportResult(samplesIS, fieldMappings, csvResult);
+          sampleCsvImporter.readCsvIntoImportResult(samplesIS, fieldMappings, csvResult, user);
 
           boolean validTemplate = csvResult.getSampleResult().getTemplate().getRecord() != null;
           if (validTemplate) {
@@ -238,7 +238,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         log.info("subSample fieldMappings: {} ", subSampleFieldMappings);
 
         subSampleCsvImporter.readCsvIntoImportResult(
-            subSamplesIS, subSampleFieldMappings, csvResult);
+            subSamplesIS, subSampleFieldMappings, csvResult, null);
         prevalidateSubSamples(csvResult);
       }
     }

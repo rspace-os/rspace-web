@@ -11,11 +11,13 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import java.io.IOException;
@@ -40,6 +42,7 @@ public abstract class InventoryItemCsvImporter {
 
   @Autowired protected InventoryBulkOperationHandler bulkOperationHandler;
   @Autowired protected InventoryImportSampleFieldCreator importedFieldCreator;
+  @Autowired protected InventoryIdentifierApiManager inventoryIdentifierManager;
 
   private final Set<String> reservedSampleFieldNames = (new Sample()).getReservedFieldNames();
 
@@ -84,7 +87,8 @@ public abstract class InventoryItemCsvImporter {
   public abstract void readCsvIntoImportResult(
       InputStream inputStream,
       Map<String, String> csvColumnToFieldMapping,
-      ApiInventoryImportResult importResult)
+      ApiInventoryImportResult importResult,
+      User user)
       throws IOException;
 
   protected void assertNumberOfCsvLinesAcceptable(int size) {
@@ -213,6 +217,21 @@ public abstract class InventoryItemCsvImporter {
       case "quantity":
         apiInvRec.setQuantity(new ApiQuantityInfo(QuantityInfo.of(value)));
         break;
+        //      case "identifier":
+        //        // TODO[nik]: implememnt logic
+        //        List<ApiInventoryDOI> identifierList =
+        // inventoryIdentifierManager.findIdentifiers("draft",
+        //            false, value, user);
+        //        // check if the idengtifier value is findable and associable --> otherwise error
+        //        if (identifierList.size() != 1) {
+        //          throw new IllegalArgumentException(
+        //              "identifier for " + fieldName + " is not unique: " + value);
+        //        } else {
+        //          // set the idcentifier but you need to associate after you create the Inventory
+        // record
+        //          apiInvRec.setIdentifiers(identifierList);
+        //        }
+        //        break;
       default:
         throw new IllegalArgumentException("unrecognized field mapping: " + fieldName);
     }

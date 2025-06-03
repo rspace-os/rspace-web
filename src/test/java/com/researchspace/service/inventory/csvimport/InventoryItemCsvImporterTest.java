@@ -39,7 +39,7 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
             IllegalArgumentException.class,
             () ->
                 sampleCsvImporter.readCsvIntoImportResult(
-                    IOUtils.toInputStream(" "), nameColumnMapping, processingResult));
+                    IOUtils.toInputStream(" "), nameColumnMapping, processingResult, null));
     assertTrue(iae.getMessage().contains("CSV file seems to be empty"), iae.getMessage());
 
     // invalid mapping for csv file ('Name' column not found)
@@ -49,7 +49,7 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
             IllegalArgumentException.class,
             () ->
                 sampleCsvImporter.readCsvIntoImportResult(
-                    oneSampleCsvIS, nameColumnMapping, processingResult));
+                    oneSampleCsvIS, nameColumnMapping, processingResult, null));
     assertTrue(
         iae.getMessage().contains("Couldn't find 'Name' among columns in CSV file"),
         iae.getMessage());
@@ -61,14 +61,14 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
             IllegalArgumentException.class,
             () ->
                 sampleCsvImporter.readCsvIntoImportResult(
-                    duplicateColumnNamesIS, nameColumnMapping, processingResult));
+                    duplicateColumnNamesIS, nameColumnMapping, processingResult, null));
     assertTrue(iae.getMessage().contains("CSV file has repeating column names"), iae.getMessage());
 
     // verify happy case works
     InputStream anotherThreeSampleCsvIS =
         IOUtils.toInputStream("Name\nTestSample\nTestSample2\nTestSample3");
     sampleCsvImporter.readCsvIntoImportResult(
-        anotherThreeSampleCsvIS, nameColumnMapping, processingResult);
+        anotherThreeSampleCsvIS, nameColumnMapping, processingResult, null);
     assertEquals(3, sampleProcessingResult.getSuccessCount());
   }
 
@@ -91,7 +91,7 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
               IllegalArgumentException.class,
               () ->
                   sampleCsvImporter.readCsvIntoImportResult(
-                      threeSampleCsvIS, nameColumnMapping, processingResult));
+                      threeSampleCsvIS, nameColumnMapping, processingResult, null));
       assertTrue(
           iae.getMessage().contains("CSV file is too long, import limit is set to 2 samples."),
           iae.getMessage());
@@ -110,7 +110,7 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
               IllegalArgumentException.class,
               () ->
                   subSampleCsvImporter.readCsvIntoImportResult(
-                      threeSampleCsvIS, nameColumnMapping, processingResult));
+                      threeSampleCsvIS, nameColumnMapping, processingResult, null));
       assertTrue(
           iae.getMessage().contains("CSV file is too long, import limit is set to 2 subsamples."),
           iae.getMessage());
@@ -129,7 +129,7 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
               IllegalArgumentException.class,
               () ->
                   containerCsvImporter.readCsvIntoImportResult(
-                      threeSampleCsvIS, nameColumnMapping, processingResult));
+                      threeSampleCsvIS, nameColumnMapping, processingResult, null));
       assertTrue(
           iae.getMessage().contains("CSV file is too long, import limit is set to 2 containers."),
           iae.getMessage());
@@ -147,14 +147,15 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
 
     // confirm simplest import works
     InputStream containerIS = IOUtils.toInputStream("Name\nTestContainer");
-    containerCsvImporter.readCsvIntoImportResult(containerIS, nameColumnMapping, processingResult);
+    containerCsvImporter.readCsvIntoImportResult(
+        containerIS, nameColumnMapping, processingResult, null);
     assertEquals(1, processingResult.getContainerResult().getSuccessCount());
 
     // try with comments
     InputStream containerWithCommentIS =
         IOUtils.toInputStream("#Test Comment\n#Another\nName\n#Test Comment\nTestContainer");
     containerCsvImporter.readCsvIntoImportResult(
-        containerWithCommentIS, nameColumnMapping, processingResult);
+        containerWithCommentIS, nameColumnMapping, processingResult, null);
     assertEquals(2, processingResult.getContainerResult().getSuccessCount());
   }
 }

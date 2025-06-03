@@ -122,7 +122,8 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
   public void readCsvIntoImportResult(
       InputStream samplesIS,
       Map<String, String> csvColumnToFieldMapping,
-      ApiInventoryImportResult importResult)
+      ApiInventoryImportResult importResult,
+      User user)
       throws IOException {
 
     // already present and store the template
@@ -145,7 +146,11 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
     if (isTemplateCompatible) {
       List<String[]> csvSampleLines = lines.subList(1, lines.size());
       convertLinesToSamples(
-          sampleProcessingResult, csvSampleLines, columnIndexToDefaultFieldMap, columnNames.size());
+          sampleProcessingResult,
+          csvSampleLines,
+          columnIndexToDefaultFieldMap,
+          columnNames.size(),
+          user);
     }
   }
 
@@ -185,7 +190,8 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
       ApiInventoryImportSampleImportResult csvProcessingResult,
       List<String[]> linesToImport,
       Map<Integer, String> columnIndexToDefaultFieldMap,
-      int expectedColumnsNumber) {
+      int expectedColumnsNumber,
+      User user) {
 
     ApiSampleTemplate template = (ApiSampleTemplate) csvProcessingResult.getTemplate().getRecord();
 
