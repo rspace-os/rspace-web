@@ -1,16 +1,16 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 
 import { type Attachment } from "../../Attachment";
+import { type GlobalId } from "../../BaseRecord";
 
 export const mockAttachment = ({
   setImageLink,
-}: {|
-  setImageLink?: () => Promise<void>,
-|}): Attachment => {
+}: {
+  setImageLink?: () => Promise<void>;
+}): Attachment => {
   return {
     id: 1,
     name: "",
@@ -26,9 +26,8 @@ export const mockAttachment = ({
     loadingImage: false,
     loadingString: false,
     chemicalString: "",
-    file: null,
     removed: false,
-    getFile: () => Promise.reject<File>(),
+    getFile: () => Promise.reject<File>(new Error("Not implemented")),
     remove: () => {},
     download: () => Promise.resolve(),
     createChemicalPreview: () => Promise.resolve(),
@@ -38,6 +37,6 @@ export const mockAttachment = ({
     isChemicalFile: true,
     chemistrySupported: true,
     previewSupported: true,
-    save: () => Promise.resolve(),
+    save: (_parentGlobalId: GlobalId) => Promise.resolve(),
   };
 };
