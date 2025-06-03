@@ -1,5 +1,3 @@
-//@flow
-
 import React, { type ComponentType } from "react";
 import { withStyles } from "Styles";
 import NumberField, {
@@ -35,3 +33,4 @@ const AmberNumberField: ComponentType<NumberFieldArgs> = withStyles<
 ));
 
 export default AmberNumberField;
+
