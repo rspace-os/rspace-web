@@ -1,10 +1,10 @@
-//@flow
-
-import React, { type Node, type ElementProps } from "react";
+import React from "react";
 import { withStyles } from "Styles";
 import FormControl from "../../../../components/Inputs/FormControl";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControlLabel, {
+  FormControlLabelProps,
+} from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -27,7 +27,7 @@ import {
 } from "../../../../components/Inputs/RadioField";
 
 const CustomFormControlLabel = withStyles<
-  ElementProps<typeof FormControlLabel>,
+  React.ComponentProps<typeof FormControlLabel>,
   { root: string }
 >(() => ({
   root: {
@@ -35,22 +35,22 @@ const CustomFormControlLabel = withStyles<
   },
 }))(FormControlLabel);
 
-function AccessPermissions<
-  Fields: {
-    sharingMode: SharingMode,
-    sharedWith: ?Array<SharedWithGroup>,
-    ...
-  },
-  FieldOwner: HasEditableFields<Fields>
->({
+type Fields = {
+  sharingMode: SharingMode;
+  sharedWith: Array<SharedWithGroup> | null;
+};
+
+type AccessPermissionsArgs<FieldOwner extends HasEditableFields<Fields>> = {
+  fieldOwner: FieldOwner;
+  hideOwnersGroups?: boolean;
+  additionalExplanation?: string;
+};
+
+function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
   fieldOwner,
   hideOwnersGroups = false,
   additionalExplanation,
-}: {|
-  fieldOwner: FieldOwner,
-  hideOwnersGroups?: boolean,
-  additionalExplanation?: string,
-|}): Node {
+}: AccessPermissionsArgs<FieldOwner>): React.ReactNode {
   const onCheckboxClick = (checkedGroup: Group) => {
     if (!fieldOwner.fieldValues.sharedWith)
       throw new Error("sharedWith must be set");
@@ -237,4 +237,4 @@ function AccessPermissions<
   );
 }
 
-export default (observer(AccessPermissions): typeof AccessPermissions);
+export default observer(AccessPermissions) as typeof AccessPermissions;
