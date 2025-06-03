@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import StringField from "../../../components/Inputs/StringField";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
@@ -15,27 +13,25 @@ const MIN = 2;
 const MAX = 255;
 
 function Name<
-  Fields: {
-    name: string,
-    ...
+  Fields extends {
+    name: string;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   fieldOwner,
   record,
   onErrorStateChange,
-}: {|
-  fieldOwner: FieldOwner,
-  record?: Record,
-  onErrorStateChange: (boolean) => void,
-|}): Node {
+}: {
+  fieldOwner: FieldOwner;
+  record?: Record;
+  onErrorStateChange: (isError: boolean) => void;
+}): React.ReactNode {
   const [initial, setInitial] = useState(true);
 
   const handleChange = ({
     target: { value: name },
   }: {
-    target: { value: string, ... },
-    ...
+    target: { value: string };
   }) => {
     fieldOwner.setFieldsDirty({ name });
     setInitial(false);
@@ -102,4 +98,4 @@ function Name<
   );
 }
 
-export default (observer(Name): typeof Name);
+export default observer(Name);

@@ -1,0 +1,17 @@
+// @flow
+
+import { type Node } from "react";
+import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import { type Record } from "../../../stores/definitions/Record";
+
+declare export default function Name<
+  Fields: {
+    name: string,
+    ...
+  },
+  FieldOwner: HasEditableFields<Fields>
+>({
+  fieldOwner: FieldOwner,
+  record?: Record,
+  onErrorStateChange: (boolean) => void,
+}): Node;
