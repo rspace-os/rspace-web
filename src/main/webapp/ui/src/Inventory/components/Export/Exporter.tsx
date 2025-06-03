@@ -1,13 +1,11 @@
-//@flow
-
-import React, { type Node, type ComponentType, type ElementProps } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import CardHeader from "@mui/material/CardHeader";
-import { withStyles } from "Styles";
+import { withStyles } from "../../../util/styles";
 import Box from "@mui/material/Box";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { type ExportOptions } from "../../../stores/definitions/Search";
@@ -15,7 +13,7 @@ import Alert from "@mui/material/Alert";
 import { ExportOptionsWrapper } from "./ExportDialog";
 
 const MaxSizeCard = withStyles<
-  {| children: Node, elevation: number, testId?: string |},
+  { children: React.ReactNode; elevation: number; testId?: string },
   { root: string }
 >(() => ({
   root: {
@@ -31,7 +29,7 @@ const MaxSizeCard = withStyles<
 ));
 
 const FullHeightCardContent = withStyles<
-  {| paddingless: boolean, ...ElementProps<typeof CardContent> |},
+  { paddingless: boolean } & React.ComponentProps<typeof CardContent>,
   { root: string }
 >((theme, { paddingless }) => ({
   root: {
@@ -43,29 +41,30 @@ const FullHeightCardContent = withStyles<
     paddingTop: "0 !important",
     overflowX: "hidden",
   },
-}))(({ paddingless, ...props }) => <CardContent {...props} />); //eslint-disable-line no-unused-vars
+}))(({ paddingless: _, ...props }) => <CardContent {...props} />);
 
-const CustomCardHeader = withStyles<{| title?: Node |}, { root: string }>(
-  () => ({
-    root: {
-      flexWrap: "nowrap",
-    },
-  })
-)(({ title, classes }) => <CardHeader title={title} classes={classes} />);
+const CustomCardHeader = withStyles<
+  { title?: React.ReactNode },
+  { root: string }
+>(() => ({
+  root: {
+    flexWrap: "nowrap",
+  },
+}))(({ title, classes }) => <CardHeader title={title} classes={classes} />);
 
-type ExporterArgs = {|
-  elevation?: number,
-  header?: Node,
-  selectionHelpText?: ?string,
-  testId?: string,
-  paddingless?: boolean,
-  showActions?: boolean,
-  setOpenExporter: (boolean) => void,
-  selectedResults: Array<InventoryRecord>,
-  onExport: () => void,
-  exportOptions: ExportOptions,
-  setExportOptions: (ExportOptions) => void,
-|};
+type ExporterArgs = {
+  elevation?: number;
+  header?: React.ReactNode;
+  selectionHelpText?: string | null;
+  testId?: string;
+  paddingless?: boolean;
+  showActions?: boolean;
+  setOpenExporter: (open: boolean) => void;
+  selectedResults: Array<InventoryRecord>;
+  onExport: () => void;
+  exportOptions: ExportOptions;
+  setExportOptions: (options: ExportOptions) => void;
+};
 
 function Exporter({
   elevation = 0,
@@ -79,7 +78,7 @@ function Exporter({
   setOpenExporter,
   exportOptions,
   setExportOptions,
-}: ExporterArgs): Node {
+}: ExporterArgs): React.ReactNode {
   return (
     <MaxSizeCard elevation={elevation} testId={testId}>
       {Boolean(header) && <CustomCardHeader title={header} />}
@@ -105,8 +104,8 @@ function Exporter({
               variant="contained"
               color="primary"
               disableElevation
-              onClick={async () => {
-                await onExport();
+              onClick={() => {
+                void onExport();
               }}
               disabled={selectedResults.length === 0}
             >
@@ -126,4 +125,4 @@ function Exporter({
   );
 }
 
-export default (observer(Exporter): ComponentType<ExporterArgs>);
+export default observer(Exporter);
