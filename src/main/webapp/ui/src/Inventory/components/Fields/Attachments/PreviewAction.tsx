@@ -1,10 +1,10 @@
-//@flow
-
 import React, { type ComponentType, useState } from "react";
 import { observer } from "mobx-react-lite";
 import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
 import PreviewIcon from "@mui/icons-material/Visibility";
-import ImagePreview from "../../../../components/ImagePreview";
+import ImagePreview, {
+  type PreviewSize,
+} from "../../../../components/ImagePreview";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -14,15 +14,15 @@ import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip"
 import useStores from "../../../../stores/use-stores";
 import { mkAlert } from "../../../../stores/contexts/Alert";
 
-type PreviewArgs = {|
-  attachment: Attachment,
-|};
+type PreviewArgs = {
+  attachment: Attachment;
+};
 
 function Preview({ attachment }: PreviewArgs) {
   const { uiStore } = useStores();
 
   const [showPreview, setShowPreview] = useState(false);
-  const [size, setSize] = useState<?{| width: number, height: number |}>(null);
+  const [size, setSize] = useState<PreviewSize | null>(null);
 
   const loadingImage = attachment.loadingImage;
   const imageLink = attachment.imageLink;
@@ -32,7 +32,7 @@ function Preview({ attachment }: PreviewArgs) {
     attachment
       .setImageLink()
       .then(() => setShowPreview(true))
-      .catch((e) => {
+      .catch((e: Error) => {
         uiStore.addAlert(
           mkAlert({
             title: "Could not fetch image",
@@ -88,4 +88,4 @@ function Preview({ attachment }: PreviewArgs) {
   );
 }
 
-export default (observer(Preview): ComponentType<PreviewArgs>);
+export default observer(Preview);
