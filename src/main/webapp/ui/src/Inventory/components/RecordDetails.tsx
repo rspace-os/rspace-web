@@ -1,5 +1,3 @@
-// @flow
-
 import DescriptionList from "../../components/DescriptionList";
 import DOMPurify from "dompurify";
 import TableCellBlank from "../../components/TableCellBlank";
@@ -15,7 +13,7 @@ import Avatar from "@mui/material/Avatar";
 import Grid from "@mui/material/Grid";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType, useContext } from "react";
+import React, { type ReactNode, useContext } from "react";
 import TagListing from "../../components/Tags/TagListing";
 import NavigateContext from "../../stores/contexts/Navigate";
 
@@ -37,12 +35,15 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type RecordDetailsArgs = {|
-  record: Record,
-  hideName?: boolean,
-|};
+type RecordDetailsArgs = {
+  record: Record;
+  hideName?: boolean;
+};
 
-function RecordDetails({ record, hideName = false }: RecordDetailsArgs): Node {
+function RecordDetails({
+  record,
+  hideName = false,
+}: RecordDetailsArgs): ReactNode {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();
@@ -231,4 +232,4 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): Node {
   );
 }
 
-export default (observer(RecordDetails): ComponentType<RecordDetailsArgs>);
+export default observer(RecordDetails);
