@@ -358,6 +358,7 @@ const TemplateNavItem = observer(() => {
 
 // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 const IgsnNavItem = observer(() => {
+  const { uiStore } = useStores();
   const { useNavigate } = React.useContext(NavigateContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const navigate = useNavigate();
@@ -372,6 +373,7 @@ const IgsnNavItem = observer(() => {
         e.stopPropagation();
         trackEvent("user:navigate:igsnManagementPage:InventorySidebar");
         navigate("/inventory/identifiers/igsn");
+        if (uiStore.isVerySmall) uiStore.toggleSidebar(false);
       }}
     />
   );
