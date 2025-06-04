@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import { type Temperature, CELSIUS } from "../../../stores/definitions/Units";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
@@ -9,25 +7,27 @@ import SpecifiedStorageTemperature from "./SpecifiedStorageTemperature";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
 function StorageTemperature<
-  Fields: {
-    storageTempMin: ?Temperature,
-    storageTempMax: ?Temperature,
-    ...
+  Fields extends {
+    storageTempMin: Temperature | null;
+    storageTempMax: Temperature | null;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   fieldOwner,
   onErrorStateChange,
-}: {|
-  fieldOwner: FieldOwner,
-  onErrorStateChange: (boolean) => void,
-|}): Node {
+}: {
+  fieldOwner: FieldOwner;
+  onErrorStateChange: (value: boolean) => void;
+}): React.ReactNode {
   const disabled =
     !fieldOwner.isFieldEditable("storageTempMin") &&
     !fieldOwner.isFieldEditable("storageTempMax");
 
-  const storageTempMin: ?Temperature = fieldOwner.fieldValues.storageTempMin;
-  const storageTempMax: ?Temperature = fieldOwner.fieldValues.storageTempMax;
+  const storageTempMin: Temperature | null =
+    fieldOwner.fieldValues.storageTempMin;
+
+  const storageTempMax: Temperature | null =
+    fieldOwner.fieldValues.storageTempMax;
 
   return (
     <>
@@ -49,7 +49,6 @@ function StorageTemperature<
               : "The storage temperature for this item is currently not specified."
           }
           renderInput={() => (
-            // id prop is ignored because there is no HTMLInputElement to attach it to
             <Button
               color="primary"
               variant="outlined"
@@ -84,4 +83,4 @@ function StorageTemperature<
   );
 }
 
-export default (observer(StorageTemperature): typeof StorageTemperature);
+export default observer(StorageTemperature);
