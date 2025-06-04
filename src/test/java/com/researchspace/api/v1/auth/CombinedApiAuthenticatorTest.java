@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -12,6 +13,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.ApiAvailabilityHandler;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -49,14 +51,13 @@ public class CombinedApiAuthenticatorTest {
     /* try again, with request being authenticated by external API oauth token, but
      * also with system setting not allowing external oauth connections  */
     user.setAuthenticatedBy(UserAuthenticationMethod.API_OAUTH_TOKEN);
-    when(apiAvailabilityHandler.isOAuthAccessAllowed(null)).thenReturn(false);
-    authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
-    assertEquals(user, authenticatedUser);
+    when(apiAvailabilityHandler.isOAuthAccessAllowed(user)).thenReturn(false);
+    assertThrows(ApiAuthenticationException.class, () -> combinedApiAuthenticator.authenticate(mockRequest));
     verifyNoInteractions(apiKeyAuthenticator);
     verifyNoInteractions(analyticsManager);
 
     /* try again, now with system setting allowing external oauth connections */
-    when(apiAvailabilityHandler.isOAuthAccessAllowed(null)).thenReturn(true);
+    when(apiAvailabilityHandler.isOAuthAccessAllowed(user)).thenReturn(true);
     authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
     assertEquals(user, authenticatedUser);
     verifyNoInteractions(apiKeyAuthenticator);
