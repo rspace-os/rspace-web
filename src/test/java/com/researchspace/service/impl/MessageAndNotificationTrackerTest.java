@@ -4,9 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.researchspace.messaging.NotificationController;
-import com.researchspace.messaging.NotificationMessage;
 import com.researchspace.model.comms.MessageType;
+import com.researchspace.webapp.messaging.NotificationController;
+import com.researchspace.webapp.messaging.NotificationMessage;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;

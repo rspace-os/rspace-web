@@ -1,10 +1,10 @@
 package com.researchspace.service.impl;
 
-import com.researchspace.messaging.NotificationController;
-import com.researchspace.messaging.NotificationMessage;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.service.IMessageAndNotificationTracker;
+import com.researchspace.webapp.messaging.NotificationController;
+import com.researchspace.webapp.messaging.NotificationMessage;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
