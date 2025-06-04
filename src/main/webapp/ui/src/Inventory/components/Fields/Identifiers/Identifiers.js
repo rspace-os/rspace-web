@@ -63,6 +63,8 @@ import {
   useIdentifiers,
 } from "../../../useIdentifiers";
 import AlertTitle from "@mui/material/AlertTitle";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 const useStyles = makeStyles()((theme) => ({
   primary: {
@@ -587,6 +589,9 @@ const AssignDialog = observer(
     const [selectedIgsns, setSelectedIgsns] = React.useState<
       RsSet<IdentifierInTable>
     >(new RsSet([]));
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+
     return (
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Dialog
@@ -597,6 +602,7 @@ const AssignDialog = observer(
           }}
           fullWidth
           maxWidth="lg"
+          fullScreen={fullScreen}
         >
           <DialogTitle>Link existing IGSN ID</DialogTitle>
           <DialogContent>
