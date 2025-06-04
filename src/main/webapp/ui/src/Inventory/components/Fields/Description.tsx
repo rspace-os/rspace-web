@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import TextField from "../../../components/Inputs/TextField";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
@@ -24,22 +22,18 @@ const MAX_LENGTH = 250;
  * prepopulated with records or when records are created directly from the API.
  */
 function Description<
-  Fields: {
-    description: ?string,
-    ...
+  Fields extends {
+    description: string | null;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   fieldOwner,
   onErrorStateChange,
-}: {|
-  fieldOwner: FieldOwner,
-  onErrorStateChange: (boolean) => void,
-|}): Node {
-  const handleChange = (e: {
-    target: { name: string, value: string, ... },
-    ...
-  }) => {
+}: {
+  fieldOwner: FieldOwner;
+  onErrorStateChange: (hasError: boolean) => void;
+}): React.ReactNode {
+  const handleChange = (e: { target: { name: string; value: string } }) => {
     fieldOwner.setFieldsDirty({
       description: e.target.value,
     });
@@ -74,4 +68,4 @@ function Description<
   );
 }
 
-export default (observer(Description): typeof Description);
+export default observer(Description);
