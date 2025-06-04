@@ -1,7 +1,5 @@
-// @flow
-
 import ImageField from "../../../components/Inputs/ImageField";
-import React, { type Node, useContext } from "react";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import { doNotAwait } from "../../../util/Util";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
@@ -15,16 +13,21 @@ const CANVAS_ID = "previewCanvas";
 const MAX = 25;
 
 function Image<
-  Fields: {
-    image: ?BlobUrl,
-    newBase64Image: ?string,
-    ...
+  Fields extends {
+    image: BlobUrl | null;
+    newBase64Image: string | null;
   },
-  FieldOwner: HasEditableFields<Fields>
->({ fieldOwner, alt }: {| fieldOwner: FieldOwner, alt: string |}): Node {
+  FieldOwner extends HasEditableFields<Fields>
+>({
+  fieldOwner,
+  alt,
+}: {
+  fieldOwner: FieldOwner;
+  alt: string;
+}): React.ReactNode {
   const { search } = useContext(SearchContext);
   const isFieldEditable = fieldOwner.isFieldEditable("image");
-  let tooManytoBatchThis: boolean = false;
+  let tooManytoBatchThis = false;
   if (search && search.batchEditingRecords) {
     tooManytoBatchThis = search.batchEditingRecords.size > MAX;
   }
@@ -79,4 +82,4 @@ function Image<
   );
 }
 
-export default (observer(Image): typeof Image);
+export default observer(Image);
