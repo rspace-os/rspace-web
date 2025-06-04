@@ -102,8 +102,10 @@ export default function IgsnManagementPage({
               <Typography>
                 You can register and associate an IGSN ID with an existing item
                 in Inventory by selecting{" "}
-                <strong>Create a new Identifier</strong> under its{" "}
-                <strong>Identifiers</strong> heading.
+                <Typography variant="button" component="kbd">
+                  Create new IGSN ID
+                </Typography>{" "}
+                under its <cite>Identifiers</cite> heading.
               </Typography>
               <Typography>
                 You can also bulk-register IGSN IDs to be used at a later date,
@@ -171,7 +173,7 @@ export default function IgsnManagementPage({
             <Stack spacing={0.5} alignItems="flex-start">
               <Typography>
                 To access actions such as editing metadata and publishing,
-                please use the <strong>Identifiers</strong> section of the{" "}
+                please use the <cite>Identifiers</cite> section of the{" "}
                 <strong>Linked Item</strong>.
               </Typography>
               <Box height={12}></Box>
