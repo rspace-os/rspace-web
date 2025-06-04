@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  useState,
-  useEffect,
-  type Node,
-  type ElementProps,
-} from "react";
+import React, { useState, useEffect, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import FileField from "../../../../components/Inputs/FileField";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
@@ -29,10 +22,10 @@ import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import TableCell from "@mui/material/TableCell";
 import { withStyles } from "Styles";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { type Attachment } from "../../../../stores/definitions/Attachment";
@@ -43,18 +36,17 @@ import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import UploadIcon from "@mui/icons-material/Publish";
 import Result from "../../../../util/result";
-import axios from "@/common/axios";
 import { useDeploymentProperty } from "../../../../eln/useDeploymentProperty";
 import * as FetchingData from "../../../../util/fetchingData";
 import * as Parser from "../../../../util/parsers";
 
-const GalleryPicker = React.lazy(() =>
-  import("../../../../eln/gallery/picker")
+const GalleryPicker = React.lazy(
+  () => import("../../../../eln/gallery/picker")
 );
 
 const CustomCardHeader = withStyles<
-  ElementProps<typeof CardHeader>,
-  { root: string, action: string }
+  React.ComponentProps<typeof CardHeader>,
+  { root: string; action: string }
 >((theme) => ({
   root: {
     padding: theme.spacing(0.5, 1.5, 0.25, 2),
@@ -65,21 +57,20 @@ const CustomCardHeader = withStyles<
 }))(CardHeader);
 
 const CollapseContents = <
-  Fields: {
-    image: ?BlobUrl,
-    newBase64Image: ?string,
-    ...
+  Fields extends {
+    image: BlobUrl | null;
+    newBase64Image: string | null;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   attachments,
   fieldOwner,
   editable,
 }: {
-  attachments: Array<Attachment>,
-  fieldOwner?: FieldOwner,
-  editable: boolean,
-}): Node => {
+  attachments: Array<Attachment>;
+  fieldOwner?: FieldOwner;
+  editable: boolean;
+}): ReactNode => {
   const chemistryProvider = FetchingData.getSuccessValue(
     useDeploymentProperty("chemistry.provider")
   )
@@ -117,10 +108,10 @@ const ToggleButton = ({
   open,
   setOpen,
 }: {
-  attachmentCount: number,
-  open: boolean,
-  setOpen: (boolean) => void,
-}): Node => (
+  attachmentCount: number;
+  open: boolean;
+  setOpen: (value: boolean) => void;
+}): ReactNode => (
   <CustomTooltip
     title={match<void, string>([
       [() => attachmentCount === 0, "No current attachments"],
@@ -141,10 +132,10 @@ const FileSelector = ({
   setOpen,
   editable,
 }: {
-  activeResult: InventoryRecord,
-  setOpen: (boolean) => void,
-  editable: boolean,
-}): Node => {
+  activeResult: InventoryRecord;
+  setOpen: (value: boolean) => void;
+  editable: boolean;
+}): ReactNode => {
   const { trackingStore } = useStores();
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
 
@@ -245,17 +236,16 @@ const FileSelector = ({
 
 const FilesCard = observer(
   <
-    Fields: {
-      image: ?BlobUrl,
-      newBase64Image: ?string,
-      ...
+    Fields extends {
+      image: BlobUrl | null;
+      newBase64Image: string | null;
     },
-    FieldOwner: HasEditableFields<Fields>
+    FieldOwner extends HasEditableFields<Fields>
   >({
     fieldOwner,
   }: {
-    fieldOwner?: FieldOwner,
-  }): Node => {
+    fieldOwner?: FieldOwner;
+  }): ReactNode => {
     const [open, setOpen] = useState(false);
 
     const {
@@ -267,6 +257,7 @@ const FilesCard = observer(
 
     useEffect(() => {
       setOpen(attachments.length > 0);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [attachments]);
 
     return (
@@ -306,13 +297,12 @@ const FilesCard = observer(
 );
 
 function Attachments<
-  Fields: {
-    image: ?BlobUrl,
-    newBase64Image: ?string,
-    ...
+  Fields extends {
+    image: BlobUrl | null;
+    newBase64Image: string | null;
   },
-  FieldOwner: HasEditableFields<Fields>
->({ fieldOwner }: { fieldOwner?: FieldOwner }): Node {
+  FieldOwner extends HasEditableFields<Fields>
+>({ fieldOwner }: { fieldOwner?: FieldOwner }): ReactNode {
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -339,4 +329,4 @@ function Attachments<
   );
 }
 
-export default (observer(Attachments): typeof Attachments);
+export default observer(Attachments);
