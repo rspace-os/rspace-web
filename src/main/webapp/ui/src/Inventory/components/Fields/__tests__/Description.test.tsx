@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../../__mocks__/matchMedia";
 import React, { useState } from "react";
@@ -32,7 +31,7 @@ jest.mock("@tinymce/tinymce-react", () => ({
 
 function renderDescriptionField(
   initialValue: string,
-  onErrorStateChange: (boolean) => void
+  onErrorStateChange: (isError: boolean) => void
 ) {
   const Wrapper = () => {
     const [description, setDescription] = useState(initialValue);
@@ -47,7 +46,7 @@ function renderDescriptionField(
             setFieldsDirty: ({
               description: newDescription,
             }: {
-              description: string,
+              description: string;
             }) => {
               setDescription(newDescription);
             },
@@ -70,7 +69,7 @@ describe("Description", () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
         cleanup();
-        const onErrorStateChange = jest.fn<[boolean], void>();
+        const onErrorStateChange = jest.fn();
         const { container } = renderDescriptionField("foo", onErrorStateChange);
 
         fireEvent.change(screen.getByRole("textbox"), {
@@ -89,7 +88,7 @@ describe("Description", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 251 }), (generatedDescription) => {
         cleanup();
-        const onErrorStateChange = jest.fn<[boolean], void>();
+        const onErrorStateChange = jest.fn();
         const { container } = renderDescriptionField("", onErrorStateChange);
 
         fireEvent.change(screen.getByRole("textbox"), {
@@ -108,7 +107,7 @@ describe("Description", () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
         cleanup();
-        const onErrorStateChange = jest.fn<[boolean], void>();
+        const onErrorStateChange = jest.fn();
         const { container } = renderDescriptionField("", onErrorStateChange);
 
         fireEvent.change(screen.getByRole("textbox"), {
