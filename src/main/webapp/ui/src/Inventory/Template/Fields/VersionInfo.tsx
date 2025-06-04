@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
 import GlobalId from "../../../components/GlobalId";
@@ -9,13 +7,17 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import { type Template } from "../../../stores/definitions/Template";
 
-type VersionInfoArgs = {|
-  template: Template,
-  onUpdate?: () => void,
-  disabled?: boolean,
-|};
+type VersionInfoArgs = {
+  template: Template;
+  onUpdate?: () => void;
+  disabled?: boolean;
+};
 
-function VersionInfo({ template, onUpdate, disabled }: VersionInfoArgs): Node {
+function VersionInfo({
+  template,
+  onUpdate,
+  disabled,
+}: VersionInfoArgs): React.ReactNode {
   React.useEffect(() => {
     template.getLatest();
   }, []);
@@ -51,4 +53,4 @@ function VersionInfo({ template, onUpdate, disabled }: VersionInfoArgs): Node {
   ) : null;
 }
 
-export default (observer(VersionInfo): ComponentType<VersionInfoArgs>);
+export default observer(VersionInfo);
