@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
@@ -43,8 +41,8 @@ function pluralise(option: DefaultAliasOption): string {
 }
 
 type AliasSelection =
-  | {| source: "radio", option: DefaultAliasOption |}
-  | {| source: "custom", alias: string, plural: string |};
+  | { source: "radio"; option: DefaultAliasOption }
+  | { source: "custom"; alias: string; plural: string };
 
 function convert(a: Alias): AliasSelection {
   // use of find is to make Flow happy; includes doens't do the trick
@@ -77,19 +75,19 @@ const radioButtons: Array<RadioOption<DefaultAliasOption | "custom">> = [
   { value: "custom", label: "Custom" },
 ];
 
-function SubSampleAlias<
-  Fields: {
-    subSampleAlias: Alias,
-    ...
-  },
-  FieldOwner: HasEditableFields<Fields>
->({
+type Fields = {
+  subSampleAlias: Alias;
+};
+
+type SubSampleAliasArgs<FieldOwner extends HasEditableFields<Fields>> = {
+  fieldOwner: FieldOwner;
+  onErrorStateChange: (hasError: boolean) => void;
+};
+
+function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
   fieldOwner,
   onErrorStateChange,
-}: {|
-  fieldOwner: FieldOwner,
-  onErrorStateChange: (boolean) => void,
-|}): Node {
+}: SubSampleAliasArgs<FieldOwner>): React.ReactNode {
   const emptyAlias: Alias = { alias: "", plural: "" };
   const min = 2;
   const max = 30;
@@ -121,7 +119,7 @@ function SubSampleAlias<
     if (aliasDisabled) setValue(convert(aliasValue));
   }, [aliasValue]);
 
-  const handleRadioChoice = (option: ?(DefaultAliasOption | "custom")) => {
+  const handleRadioChoice = (option: DefaultAliasOption | "custom" | null) => {
     if (!option) return;
     if (option === "custom") {
       setValue({ source: "custom", ...emptyAlias });
@@ -202,6 +200,7 @@ function SubSampleAlias<
                 error={error(aliasValue.alias)}
                 helperText={error(aliasValue.alias) ? helperText : ""}
                 disabled={aliasDisabled || !customSelected}
+                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus={customSelected}
                 InputProps={{
                   classes: {
@@ -251,4 +250,4 @@ function SubSampleAlias<
   );
 }
 
-export default (observer(SubSampleAlias): typeof SubSampleAlias);
+export default observer(SubSampleAlias);
