@@ -128,7 +128,8 @@ function Toolbar({
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
       <TextField
-        placeholder="Search IGSNs..."
+        type="search"
+        placeholder="Search IGSN IDs..."
         value={localSearchTerm}
         onChange={handleSearchChange}
         size="small"
@@ -154,7 +155,9 @@ function Toolbar({
             </InputAdornment>
           ) : null,
         }}
-        sx={{ width: 200 }}
+        sx={{
+          width: 230, // wide enough to show the whole placeholder text
+        }}
       />
       <Button
         color="primary"
