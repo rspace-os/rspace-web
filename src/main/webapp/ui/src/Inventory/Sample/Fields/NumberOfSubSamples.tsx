@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState, type ComponentType } from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import NumberField from "../../../components/Inputs/NumberField";
 import SampleModel, {
@@ -14,7 +12,7 @@ import RadioField, {
 import { styled } from "@mui/material/styles";
 import { textFieldClasses } from "@mui/material/TextField";
 
-const NestedFormField = styled(FormField)(({ theme }) => ({
+const NestedFormField = styled(FormField<string>)(({ theme }) => ({
   marginTop: "0 !important",
   marginLeft: `${theme.spacing(4)} !important`,
   [`& .${textFieldClasses.root}`]: {
@@ -25,15 +23,15 @@ const NestedFormField = styled(FormField)(({ theme }) => ({
 const MIN = 2;
 const MAX = 100;
 
-type NumberOfSubSamplesArgs = {|
-  onErrorStateChange: (boolean) => void,
-  sample: SampleModel,
-|};
+type NumberOfSubSamplesArgs = {
+  onErrorStateChange: (value: boolean) => void;
+  sample: SampleModel;
+};
 
 function NumberOfSubSamples({
   onErrorStateChange,
   sample,
-}: NumberOfSubSamplesArgs): Node {
+}: NumberOfSubSamplesArgs): React.ReactNode {
   /*
    * When tapping the "Create" context button for a container, the user has the
    * option to create a sample with respect to the container. The user can
@@ -56,8 +54,7 @@ function NumberOfSubSamples({
   const handleChange = ({
     target,
   }: {
-    target: { value: string, checkValidity: () => boolean, ... },
-    ...
+    target: { value: string; checkValidity: () => boolean };
   }) => {
     setCount(target.value);
     if (!target.checkValidity() || target.value === "") {
@@ -164,6 +161,4 @@ function NumberOfSubSamples({
   );
 }
 
-export default (observer(
-  NumberOfSubSamples
-): ComponentType<NumberOfSubSamplesArgs>);
+export default observer(NumberOfSubSamples);
