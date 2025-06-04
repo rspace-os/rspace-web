@@ -1,5 +1,3 @@
-//@flow
-
 import NoValue from "../../components/NoValue";
 import TemplateModel from "../../stores/models/TemplateModel";
 import GlobalId from "../../components/GlobalId";
@@ -13,16 +11,20 @@ import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
 import ListItemText from "@mui/material/ListItemText";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Box from "@mui/material/Box";
 
-type OneItemListArgs = {|
-  avatar: Node,
-  text: string,
-  action?: Node,
-|};
+type OneItemListArgs = {
+  avatar: React.ReactNode;
+  text: string;
+  action?: React.ReactNode;
+};
 
-const OneItemList = ({ avatar, text, action }: OneItemListArgs): Node => (
+const OneItemList = ({
+  avatar,
+  text,
+  action,
+}: OneItemListArgs): React.ReactNode => (
   <List dense disablePadding>
     <ListItem>
       <ListItemAvatar>{avatar}</ListItemAvatar>
@@ -35,11 +37,11 @@ const OneItemList = ({ avatar, text, action }: OneItemListArgs): Node => (
   </List>
 );
 
-type SummaryInfoArgs = {|
-  template: ?TemplateModel,
-  loading?: boolean,
-  paddingless?: boolean,
-|};
+type SummaryInfoArgs = {
+  template: TemplateModel | null;
+  loading?: boolean;
+  paddingless?: boolean;
+};
 
 /*
  * Shows basic information about a template, for placing inline within a form.
@@ -48,11 +50,11 @@ function SummaryInfo({
   template,
   loading,
   paddingless,
-}: SummaryInfoArgs): Node {
+}: SummaryInfoArgs): React.ReactNode {
   if (template) {
     return (
       <OneItemList
-        avatar={<img src={template.icon} width={32} height={32} />}
+        avatar={<img src={template.icon || undefined} width={32} height={32} />}
         text={template.name}
         action={<GlobalId record={template} />}
       />
@@ -76,4 +78,4 @@ function SummaryInfo({
   );
 }
 
-export default (observer(SummaryInfo): ComponentType<SummaryInfoArgs>);
+export default observer(SummaryInfo);
