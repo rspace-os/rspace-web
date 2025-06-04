@@ -633,13 +633,15 @@ const AssignDialog = observer(
             </Button>
             <ValidatingSubmitButton
               loading={false}
-              validationResult={
-                selectedIgsns.some((igsn) => igsn.associatedGlobalId !== null)
-                  ? IsInvalid(
-                      "The selected IGSN ID is already assigned to another item."
-                    )
-                  : IsValid()
-              }
+              validationResult={selectedIgsns.only
+                .map((igsn) =>
+                  igsn.associatedGlobalId !== null
+                    ? IsInvalid(
+                        "The selected IGSN ID is already assigned to another item."
+                      )
+                    : IsValid()
+                )
+                .orElse(IsInvalid("No IGSN ID selected."))}
               onClick={doNotAwait(async () => {
                 await selectedIgsns.only
                   .toResult(
