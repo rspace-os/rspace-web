@@ -1,12 +1,10 @@
-//@flow
-
 import useStores from "../../../stores/use-stores";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import FormControl from "../../../components/Inputs/FormControl";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
-import React, { useEffect, type Node, type ComponentType } from "react";
+import React, { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import RadioField, {
   type RadioOption,
@@ -14,14 +12,15 @@ import RadioField, {
 import { withStyles } from "Styles";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import { type UseState } from "../../../util/types";
+import { type UnitCategory } from "../../../stores/stores/UnitStore";
 
 const FormBoxWithLabel = withStyles<
-  {| children: Node, label: string |},
-  { formLabel?: string, formControl?: string }
+  { children: React.ReactNode; label: string },
+  { formLabel?: string; formControl?: string }
 >((theme) => ({
   formLabel: {
     top: -27,
-    left: -1 * theme.spacing(1),
+    left: `-${theme.spacing(1)}`,
     padding: theme.spacing(0, 0.5),
     position: "absolute",
     fontSize: "0.9em",
@@ -38,7 +37,7 @@ const FormBoxWithLabel = withStyles<
   </Paper>
 ));
 
-function QuantityUnits(): Node {
+function QuantityUnits(): React.ReactNode {
   const {
     searchStore: { activeResult },
     unitStore,
@@ -66,7 +65,7 @@ function QuantityUnits(): Node {
     )
       throw new Error("Unknown category");
     if (unit) setCategory(unit.category);
-  }, [activeResult.defaultUnitId]);
+  }, [activeResult.defaultUnitId, unitStore]);
 
   const quantityCategories: Array<
     RadioOption<"mass" | "volume" | "dimensionless">
@@ -88,7 +87,7 @@ function QuantityUnits(): Node {
   const handleChange = ({
     target: { value },
   }: {
-    target: { value: ?string, name: string },
+    target: { value: string | null; name: string };
   }) => {
     if (value) {
       activeResult.setAttributesDirty({
@@ -100,9 +99,9 @@ function QuantityUnits(): Node {
   const handleCategoryChange = ({
     target: { value },
   }: {
-    target: { value: ?("mass" | "volume" | "dimensionless"), name: string },
+    target: { value: UnitCategory | null; name: string };
   }) => {
-    if (value) {
+    if (value === "mass" || value === "volume" || value === "dimensionless") {
       setCategory(value);
       activeResult.setAttributesDirty({
         defaultUnitId: unitStore.unitsOfCategory([value])[0].id,
@@ -145,4 +144,4 @@ function QuantityUnits(): Node {
   );
 }
 
-export default (observer(QuantityUnits): ComponentType<{||}>);
+export default observer(QuantityUnits);
