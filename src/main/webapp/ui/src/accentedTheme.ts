@@ -806,6 +806,13 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 color: "inherit",
                 fontWeight: 700,
               },
+              "& kbd": {
+                fontWeight: 700,
+              },
+              "& cite": {
+                fontWeight: 700,
+                fontStyle: "normal",
+              },
             },
             h1: {
               color: backgroundContrastTextColor,
