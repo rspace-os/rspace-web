@@ -1,6 +1,4 @@
-// @flow
-
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RecordDetails from "../RecordDetails";
@@ -12,18 +10,18 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-import InventoryBaseRecord from "../../../stores/models/InventoryBaseRecord";
 import SearchContext from "../../../stores/contexts/Search";
 import Stack from "@mui/material/Stack";
 import ContainerModel from "../../../stores/models/ContainerModel";
+import { type Record } from "../../../stores/definitions/Record";
 
-function MoveInstructions(): Node {
+function MoveInstructions(): React.ReactNode {
   const { scopedResult } = useContext(SearchContext);
   if (!(scopedResult && scopedResult instanceof ContainerModel))
     throw new Error("Search context's scopedResult must be a ContainerModel");
   const container: ContainerModel = scopedResult;
   const { moveStore } = useStores();
-  const [expand, setExpand] = React.useState(false);
+  const [expand, setExpand] = useState(false);
 
   const instruction = () => {
     const numOfSelectedResults = moveStore.selectedResults.length;
@@ -42,11 +40,11 @@ function MoveInstructions(): Node {
       action = false,
     } = match<
       void,
-      {|
-        message: string,
-        severity: "success" | "info" | "warning" | "error",
-        action?: boolean,
-      |}
+      {
+        message: string;
+        severity: "success" | "info" | "warning" | "error";
+        action?: boolean;
+      }
     >([
       [
         () => moveStore.loading || container.loading,
@@ -164,13 +162,13 @@ function MoveInstructions(): Node {
   };
 
   // close next item if not needed
-  React.useEffect(() => {
+  useEffect(() => {
     if (!["GRID", "IMAGE"].includes(container.cType)) {
       setExpand(false);
     }
-  }, [container.id]);
+  }, [container.id, container.cType]);
 
-  const nextSelection = (): ?InventoryBaseRecord => {
+  const nextSelection = (): Record | undefined => {
     if (!moveStore.activeResult?.selectedLocations)
       throw new Error("Destination container's locations must be known.");
     const destinationSelectedLocations =
@@ -185,18 +183,19 @@ function MoveInstructions(): Node {
     return firstNotPlaced;
   };
 
-  const nextDetails = () =>
-    nextSelection() ? (
+  const nextDetails = () => {
+    const nextRecord = nextSelection();
+    return nextRecord ? (
       <Card variant="outlined">
         <CardContent style={{ paddingBottom: 0 }}>
           <Typography variant="h6" gutterBottom>
             Next item to be placed:
           </Typography>
-          {/* $FlowExpectedError[incompatible-type] nextSelection() is a Result */}
-          <RecordDetails record={nextSelection()} />
+          <RecordDetails record={nextRecord} />
         </CardContent>
       </Card>
     ) : null;
+  };
 
   const { action } = instruction();
 
@@ -225,4 +224,4 @@ function MoveInstructions(): Node {
   );
 }
 
-export default (observer(MoveInstructions): ComponentType<{||}>);
+export default observer(MoveInstructions);
