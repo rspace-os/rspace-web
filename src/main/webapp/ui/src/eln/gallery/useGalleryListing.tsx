@@ -648,6 +648,7 @@ class RemoteFile implements GalleryFile {
   logicPath: string;
   remotePath: string;
   private cachedDownloadHref?: UrlType;
+  readonly extension: string | null;
 
   constructor({
     nfsId,
@@ -702,6 +703,9 @@ class RemoteFile implements GalleryFile {
         this.cachedDownloadHref = url;
         return url;
       };
+      this.extension = justFilenameExtension(this.name);
+    } else {
+      this.extension = null;
     }
   }
 
@@ -715,10 +719,6 @@ class RemoteFile implements GalleryFile {
 
   get key(): string {
     return this.logicPath;
-  }
-
-  get extension(): string | null {
-    return null;
   }
 
   get thumbnailUrl(): string {
@@ -746,7 +746,7 @@ class RemoteFile implements GalleryFile {
   }
 
   get isImage(): boolean {
-    return false;
+    return this.extension === "png" || this.extension === "jpg";
   }
 
   get isSnippet(): boolean {
