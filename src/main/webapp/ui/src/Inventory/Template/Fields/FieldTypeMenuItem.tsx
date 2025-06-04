@@ -1,13 +1,10 @@
-//@flow
-
-import React, { forwardRef, type ComponentType } from "react";
+import React, { forwardRef } from "react";
 import Avatar from "@mui/material/Avatar";
 import Grid from "@mui/material/Grid";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
-import useStores from "../../../stores/use-stores";
 import { FIELD_DATA, type FieldType } from "../../../stores/models/FieldTypes";
 import { makeStyles } from "tss-react/mui";
 import { Observer } from "mobx-react-lite";
@@ -26,20 +23,15 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type FieldTypeMenuItemProps = {
-  field: FieldType,
-  onClick: (Event) => void,
-  inMenu?: boolean,
+type FieldTypeMenuItemArgs = {
+  field: FieldType;
+  onClick: (event: React.MouseEvent) => void;
+  inMenu?: boolean;
 };
 
-const FieldTypeMenuItem: ComponentType<FieldTypeMenuItemProps> = forwardRef<
-  FieldTypeMenuItemProps,
-  {}
->(
-  // eslint-disable-next-line react/prop-types
-  ({ field, onClick, inMenu = false }: FieldTypeMenuItemProps, ref) => {
-    const { uiStore } = useStores();
-    const { classes } = useStyles({ isVerySmall: uiStore.isVerySmall });
+const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
+  ({ field, onClick, inMenu = false }, ref) => {
+    const { classes } = useStyles();
 
     const _fieldData = FIELD_DATA[field];
     const menuItem = (
@@ -76,7 +68,7 @@ const FieldTypeMenuItem: ComponentType<FieldTypeMenuItemProps> = forwardRef<
             menuItem
           ) : (
             <div className={classes.outOfMenuWrapper}>
-              <Paper className={classes.outOfMenuPaper}>{menuItem}</Paper>
+              <Paper>{menuItem}</Paper>
             </div>
           )
         }
