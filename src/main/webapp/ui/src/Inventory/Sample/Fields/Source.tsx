@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React, { type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import RadioField, {
   type RadioOption,
@@ -26,20 +24,18 @@ const OPTIONS: Array<RadioOption<"LAB_CREATED" | "VENDOR_SUPPLIED" | "OTHER">> =
   ];
 
 function Source<
-  Fields: {
-    sampleSource: SampleSource,
+  Fields extends {
+    sampleSource: SampleSource;
   },
-  FieldOwner: HasEditableFields<Fields>
->({ fieldOwner }: {| fieldOwner: FieldOwner |}): Node {
+  FieldOwner extends HasEditableFields<Fields>
+>({ fieldOwner }: { fieldOwner: FieldOwner }): ReactNode {
   const handleChange = ({
     target: { value },
   }: {
     target: {
-      name: string,
-      value: ?("LAB_CREATED" | "VENDOR_SUPPLIED" | "OTHER"),
-      ...
-    },
-    ...
+      name: string;
+      value: "LAB_CREATED" | "VENDOR_SUPPLIED" | "OTHER" | null;
+    };
   }) => {
     if (value) {
       fieldOwner.setFieldsDirty({
@@ -72,4 +68,4 @@ function Source<
   );
 }
 
-export default (observer(Source): typeof Source);
+export default observer(Source);
