@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React, { type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../stores/use-stores";
 import { makeStyles } from "tss-react/mui";
@@ -36,42 +34,41 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-export type AttachmentFieldArgs<FieldOwner> = {|
-  attachment: ?Attachment,
-  onAttachmentChange: (File | GalleryFile) => void,
-  onChange: ({| target: HTMLInputElement |}) => void,
-  value: string, // for description
+export type AttachmentFieldArgs<FieldOwner> = {
+  attachment: Attachment | null;
+  onAttachmentChange: (file: File | GalleryFile) => void;
+  onChange: React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
+  value: string; // for description
 
   /**
    * This is used for setting the preview image, if the attachment can be
    * displayed as an image.
    */
-  fieldOwner: FieldOwner,
+  fieldOwner: FieldOwner;
 
-  disabled?: boolean,
+  disabled?: boolean;
 
   /*
    * There are times when we want to allow the user to provide a description of
    * an attachment whilst not being able to attach any actual files, for
    * example on templates. That is when this prop should be true.
    */
-  disableFileUpload?: boolean,
+  disableFileUpload?: boolean;
 
-  error?: boolean,
-  helperText?: string,
-  noValueLabel?: ?string,
-|};
+  error?: boolean;
+  helperText?: string;
+  noValueLabel?: string | null;
+};
 
 /*
  * Lets you select, attach, save, preview and download a single file.
  */
 function AttachmentField<
-  Fields: {
-    image: ?BlobUrl,
-    newBase64Image: ?string,
-    ...
+  Fields extends {
+    image: BlobUrl | null;
+    newBase64Image: string | null;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   attachment,
   disableFileUpload,
@@ -83,7 +80,7 @@ function AttachmentField<
   onChange,
   value,
   fieldOwner,
-}: AttachmentFieldArgs<FieldOwner>): Node {
+}: AttachmentFieldArgs<FieldOwner>): ReactNode {
   const { classes } = useStyles();
   const { trackingStore } = useStores();
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
@@ -244,4 +241,4 @@ function AttachmentField<
   );
 }
 
-export default (observer(AttachmentField): typeof AttachmentField);
+export default observer(AttachmentField);
