@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useId, useState } from "react";
+import React, { type ReactNode, useId, useState } from "react";
 import { observer } from "mobx-react-lite";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
@@ -27,8 +25,12 @@ import KetcherDialog from "../../../../components/Ketcher/KetcherDialog";
 
 const ChemicalPreview = observer(
   ({ attachment }: { attachment: Attachment }) => {
-    const { loadingString, chemicalString, isChemicalFile, chemistrySupported } =
-      attachment;
+    const {
+      loadingString,
+      chemicalString,
+      isChemicalFile,
+      chemistrySupported,
+    } = attachment;
 
     const [showPreview, setShowPreview] = useState(true);
 
@@ -95,25 +97,24 @@ const Download = ({ attachment }: { attachment: Attachment }) => (
 );
 
 const SetAsPreviewImage = <
-  Fields: {
-    image: ?BlobUrl,
-    newBase64Image: ?string,
-    ...
+  Fields extends {
+    image: BlobUrl | null;
+    newBase64Image: string | null;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   attachment,
   disabled,
   fieldOwner,
 }: {
-  attachment: Attachment,
-  disabled: boolean,
-  fieldOwner?: FieldOwner,
-}): Node => {
+  attachment: Attachment;
+  disabled: boolean;
+  fieldOwner?: FieldOwner;
+}): ReactNode => {
   const { uiStore } = useStores();
   const canvasId = useId();
 
-  const storeImage = async (dataURL: ?string, file: ?Blob) => {
+  const storeImage = async (dataURL: string | null, file: Blob | null) => {
     if (!fieldOwner)
       throw new Error(
         "The preview image cannot be set as the item is not available."
@@ -142,7 +143,7 @@ const SetAsPreviewImage = <
       uiStore.addAlert(
         mkAlert({
           title: "Could not fetch image",
-          message: e.message,
+          message: (e as Error).message,
           variant: "error",
         })
       );
@@ -170,23 +171,22 @@ const SetAsPreviewImage = <
 };
 
 function AttachmentTableRow<
-  Fields: {
-    image: ?BlobUrl,
-    newBase64Image: ?string,
-    ...
+  Fields extends {
+    image: BlobUrl | null;
+    newBase64Image: string | null;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   attachment,
   fieldOwner,
   editable,
-  chemistryProvider = "",
-}: {|
-  attachment: Attachment,
-  fieldOwner?: FieldOwner,
-  editable: boolean,
-  chemistryProvider: string,
-|}): Node {
+  chemistryProvider: _ = "",
+}: {
+  attachment: Attachment;
+  fieldOwner?: FieldOwner;
+  editable: boolean;
+  chemistryProvider: string;
+}): ReactNode {
   return (
     <TableRow>
       <TableCell>
@@ -227,4 +227,4 @@ function AttachmentTableRow<
   );
 }
 
-export default (observer(AttachmentTableRow): typeof AttachmentTableRow);
+export default observer(AttachmentTableRow);
