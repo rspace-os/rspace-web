@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  useState,
-  useEffect,
-  type ComponentType,
-} from "react";
+import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Box from "@mui/material/Box";
 import {
@@ -20,10 +13,10 @@ import {
   validateTemperature,
 } from "../../../stores/definitions/Units";
 import Grid from "@mui/material/Grid";
-import Select from "@mui/material/Select";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
-import { withStyles } from "Styles";
+import { styled } from "@mui/material/styles";
 import NumberField from "../../../components/Inputs/NumberField";
 import InputAdornment from "@mui/material/InputAdornment";
 import { FormLabel } from "@mui/material";
@@ -31,15 +24,13 @@ import BatchFormField from "../../components/Inputs/BatchFormField";
 
 const DECIMAL = 10; // for parseInt/parseFloat
 
-const Label = ({
-  min,
-  max,
-  unitId,
-}: {|
-  min: number,
-  max: number,
-  unitId: number,
-|}) => {
+type LabelArgs = {
+  min: number;
+  max: number;
+  unitId: TemperatureScale;
+};
+
+const Label = ({ min, max, unitId }: LabelArgs): React.ReactNode => {
   // prettier-ignore
   const render = (x: number) =>
     unitId === CELSIUS ?  `${x}°C`:
@@ -62,42 +53,40 @@ const Label = ({
   );
 };
 
-const TemperatureButton = withStyles<
-  {|
-    onClick: () => void,
-    wide?: boolean,
-    label: string,
-  |},
-  { root: string }
->(() => ({
-  root: {
-    width: "100%",
-  },
-}))(({ label, classes, onClick, wide }) => (
-  <Grid item xs={wide ? 12 : 6}>
+type TemperatureButtonArgs = {
+  onClick: () => void;
+  wide?: boolean;
+  label: string;
+};
+
+const TemperatureButton = (props: TemperatureButtonArgs) => (
+  <Grid item xs={props.wide ? 12 : 6}>
     <Button
-      className={classes.root}
-      onClick={onClick}
+      sx={{ width: "100%" }}
+      onClick={props.onClick}
       variant="outlined"
       color="primary"
     >
-      {label}
+      {props.label}
     </Button>
   </Grid>
-));
+);
 
-type SpecifiedStorageTemperatureArgs = {|
+type SpecifiedStorageTemperatureArgs = {
   setTemperatures: ({
-    storageTempMin: Temperature,
-    storageTempMax: Temperature,
-  }) => void,
-  setFieldEditable: (boolean) => void,
-  storageTempMin: Temperature,
-  storageTempMax: Temperature,
-  disabled: boolean,
-  canChooseWhichToEdit: boolean,
-  onErrorStateChange: (boolean) => void,
-|};
+    storageTempMin,
+    storageTempMax,
+  }: {
+    storageTempMin: Temperature;
+    storageTempMax: Temperature;
+  }) => void;
+  setFieldEditable: (value: boolean) => void;
+  storageTempMin: Temperature;
+  storageTempMax: Temperature;
+  disabled: boolean;
+  canChooseWhichToEdit: boolean;
+  onErrorStateChange: (value: boolean) => void;
+};
 
 function SpecifiedStorageTemperature({
   setTemperatures,
@@ -107,12 +96,12 @@ function SpecifiedStorageTemperature({
   canChooseWhichToEdit,
   setFieldEditable,
   onErrorStateChange,
-}: SpecifiedStorageTemperatureArgs): Node {
+}: SpecifiedStorageTemperatureArgs): React.ReactNode {
   if (storageTempMin.unitId !== storageTempMax.unitId)
     throw new Error(
       "Unit IDs of storageTempMin and storageTempMax are not the same."
     );
-  const unitId: number = storageTempMin.unitId;
+  const unitId: TemperatureScale = storageTempMin.unitId;
   const minValue: number = storageTempMin.numericValue;
   const maxValue: number = storageTempMax.numericValue;
 
@@ -132,10 +121,7 @@ function SpecifiedStorageTemperature({
       setMaxField(`${storageTempMax.numericValue}`);
   }, [storageTempMin, storageTempMax]);
 
-  const handleButtonPressed = (
-    newMin: typeof NaN | number,
-    newMax: typeof NaN | number
-  ): void => {
+  const handleButtonPressed = (newMin: number, newMax: number): void => {
     setMin(newMin);
     setMax(newMax);
     setMinField(`${newMin}`);
@@ -146,12 +132,8 @@ function SpecifiedStorageTemperature({
     });
   };
 
-  const handleUnitIdChange = ({
-    target: { value: newUnitId },
-  }: {
-    target: { value: TemperatureScale, ... },
-    ...
-  }) => {
+  const handleUnitIdChange = (event: SelectChangeEvent<number>) => {
+    const newUnitId = event.target.value as TemperatureScale;
     const minValueInNewUnit = temperatureFromTo(unitId, newUnitId, min);
     const maxValueInNewUnit = temperatureFromTo(unitId, newUnitId, max);
     setMin(minValueInNewUnit);
@@ -170,8 +152,8 @@ function SpecifiedStorageTemperature({
     const newMax = !Number.isNaN(newMin) && newMin > max ? newMin : max;
     setMin(newMin);
     setMax(newMax);
-    const newMinTemp = { numericValue: newMin, unitId };
-    const newMaxTemp = { numericValue: newMax, unitId };
+    const newMinTemp: Temperature = { numericValue: newMin, unitId };
+    const newMaxTemp: Temperature = { numericValue: newMax, unitId };
     setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
     onErrorStateChange(
       !validateTemperature(newMinTemp).isError ||
@@ -185,8 +167,8 @@ function SpecifiedStorageTemperature({
     const newMin = !Number.isNaN(newMax) && newMax < min ? newMax : min;
     setMax(newMax);
     setMin(newMin);
-    const newMinTemp = { numericValue: newMin, unitId };
-    const newMaxTemp = { numericValue: newMax, unitId };
+    const newMinTemp: Temperature = { numericValue: newMin, unitId };
+    const newMaxTemp: Temperature = { numericValue: newMax, unitId };
     setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
     onErrorStateChange(
       !validateTemperature(newMinTemp).isError ||
@@ -212,7 +194,7 @@ function SpecifiedStorageTemperature({
             <Box mt={2}>
               <Grid container direction="column" spacing={1}>
                 <Grid item>
-                  <FormLabel sx={{ pr: 1 }} for={unitSelectId}>
+                  <FormLabel sx={{ pr: 1 }} htmlFor={unitSelectId}>
                     Unit
                   </FormLabel>
                   <Select
@@ -236,8 +218,8 @@ function SpecifiedStorageTemperature({
                         <Grid item xs={6}>
                           <NumberField
                             value={minField}
-                            onChange={({ target: { value: newValue } }) => {
-                              handleMinFieldChange(newValue);
+                            onChange={(e) => {
+                              handleMinFieldChange(e.target.value);
                             }}
                             variant="outlined"
                             size="small"
@@ -258,8 +240,8 @@ function SpecifiedStorageTemperature({
                         <Grid item xs={6}>
                           <NumberField
                             value={maxField}
-                            onChange={({ target: { value } }) => {
-                              handleMaxFieldChange(value);
+                            onChange={(e) => {
+                              handleMaxFieldChange(e.target.value);
                             }}
                             variant="outlined"
                             size="small"
@@ -348,6 +330,4 @@ function SpecifiedStorageTemperature({
   );
 }
 
-export default (observer(
-  SpecifiedStorageTemperature
-): ComponentType<SpecifiedStorageTemperatureArgs>);
+export default observer(SpecifiedStorageTemperature);

@@ -1,26 +1,27 @@
-// @flow
-
 import FieldTypeMenuItem from "./FieldTypeMenuItem";
 import Menu from "@mui/material/Menu";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import {
   SUPPORTED_TYPES,
   type FieldType,
 } from "../../../stores/models/FieldTypes";
 
-type FieldTypeMenuArgs = {|
-  fieldType: FieldType,
-  onChange: (FieldType) => void,
-|};
+type FieldTypeMenuArgs = {
+  fieldType: FieldType;
+  onChange: (fieldType: FieldType) => void;
+};
 
-function FieldTypeMenu({ fieldType, onChange }: FieldTypeMenuArgs): Node {
-  const [anchorEl, setAnchorEl] = React.useState<?EventTarget>(null);
+function FieldTypeMenu({
+  fieldType,
+  onChange,
+}: FieldTypeMenuArgs): React.ReactNode {
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   return (
     <>
       <FieldTypeMenuItem
         field={fieldType}
-        onClick={(e) => setAnchorEl(e.currentTarget)}
+        onClick={(e) => setAnchorEl(e.currentTarget as HTMLElement)}
       />
       <Menu
         id="fieldTypeMenu"
@@ -45,4 +46,4 @@ function FieldTypeMenu({ fieldType, onChange }: FieldTypeMenuArgs): Node {
   );
 }
 
-export default (observer(FieldTypeMenu): ComponentType<FieldTypeMenuArgs>);
+export default observer(FieldTypeMenu);

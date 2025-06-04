@@ -1,12 +1,11 @@
-//@flow
-
-import React, { useState, type Node, type ComponentType } from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import InputAdornment from "@mui/material/InputAdornment";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
 import StringField from "../../../components/Inputs/StringField";
 import NumberField from "../../../components/Inputs/NumberField";
+import { SelectChangeEvent } from "@mui/material/Select";
 import SampleModel from "../../../stores/models/SampleModel";
 import FormField from "../../components/Inputs/FormField";
 import NavigateContext from "../../../stores/contexts/Navigate";
@@ -15,28 +14,28 @@ import { Optional } from "../../../util/optional";
 import { styled } from "@mui/material/styles";
 import { textFieldClasses } from "@mui/material/TextField";
 
-const CustomFormField = styled(FormField)(() => ({
+const CustomFormField = styled(FormField<string | number>)(() => ({
   [`& .${textFieldClasses.root}`]: {
     maxWidth: "264px",
   },
 }));
 
-type QuantityArgs = {|
-  onErrorStateChange: (boolean) => void,
-  sample: SampleModel,
-|};
+type QuantityArgs = {
+  onErrorStateChange: (value: boolean) => void;
+  sample: SampleModel;
+};
 
-function Quantity({ onErrorStateChange, sample }: QuantityArgs): Node {
+function Quantity({
+  onErrorStateChange,
+  sample,
+}: QuantityArgs): React.ReactNode {
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
   const { unitStore } = useStores();
   const [valid, setValid] = useState(true);
-  const [amount, setAmount] = useState<number>(sample.quantityValue);
+  const [amount, setAmount] = useState<string | number>(sample.quantityValue);
 
-  const handleChangeUnitAmount = (e: {
-    target: { value: string, checkValidity: () => boolean, ... },
-    ...
-  }) => {
+  const handleChangeUnitAmount = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
       setAmount(e.target.value);
       const unit = sample.quantityUnitId;
@@ -62,14 +61,11 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): Node {
     }
   };
 
-  const handleChangeQuantityUnit = (e: {
-    target: { value: number, ... },
-    ...
-  }) => {
+  const handleChangeQuantityUnit = (e: SelectChangeEvent<number>) => {
     const quantity = sample.quantityValue;
     sample.setAttributesDirty({
       quantity: {
-        unitId: e.target.value,
+        unitId: e.target.value as number,
         numericValue: quantity,
       },
     });
@@ -131,7 +127,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): Node {
           value={amount}
           error={!valid}
           helperText={errorMessage()}
-          renderInput={(props) => (
+          renderInput={({ ...props }) => (
             <NumberField
               {...props}
               onChange={handleChangeUnitAmount}
@@ -206,4 +202,4 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): Node {
   );
 }
 
-export default (observer(Quantity): ComponentType<QuantityArgs>);
+export default observer(Quantity);

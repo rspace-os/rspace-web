@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
@@ -20,11 +18,11 @@ const EMPTY_FIELD: FieldModelAttrs = {
   mandatory: false,
 };
 
-type NewFieldArgs = {|
-  record: TemplateModel,
-|};
+type NewFieldArgs = {
+  record: TemplateModel;
+};
 
-function NewField({ record }: NewFieldArgs): Node {
+function NewField({ record }: NewFieldArgs): React.ReactNode {
   return (
     <FormControl inline>
       <CustomTooltip title="Add field">
@@ -41,4 +39,4 @@ function NewField({ record }: NewFieldArgs): Node {
   );
 }
 
-export default (observer(NewField): ComponentType<NewFieldArgs>);
+export default observer(NewField);

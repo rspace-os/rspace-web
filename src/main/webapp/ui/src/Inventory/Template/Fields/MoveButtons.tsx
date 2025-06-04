@@ -1,7 +1,5 @@
-//@flow
-
 import { makeStyles } from "tss-react/mui";
-import React, { type Node } from "react";
+import React, { type ReactNode } from "react";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom";
@@ -11,10 +9,10 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import ToggleButton from "@mui/material/ToggleButton";
 import Tooltip from "@mui/material/Tooltip";
 
-type MoveButtonsArgs = {|
-  index: number,
-  onClick: (number) => void,
-|};
+type MoveButtonsArgs = {
+  index: number;
+  onClick: (number: number) => void;
+};
 
 const useStyles = makeStyles()((theme) => ({
   moveButtonGroup: {
@@ -26,11 +24,11 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type CustomButtonArgs = {|
-  label: string,
-  onClick: () => void,
-  icon: Node,
-|};
+type CustomButtonArgs = {
+  label: string;
+  onClick: () => void;
+  icon: ReactNode;
+};
 
 function CustomButton({ label, onClick, icon }: CustomButtonArgs) {
   const { classes } = useStyles();
@@ -47,7 +45,10 @@ function CustomButton({ label, onClick, icon }: CustomButtonArgs) {
   );
 }
 
-export default function MoveButtons({ index, onClick }: MoveButtonsArgs): Node {
+export default function MoveButtons({
+  index,
+  onClick,
+}: MoveButtonsArgs): ReactNode {
   const { classes } = useStyles();
 
   return (

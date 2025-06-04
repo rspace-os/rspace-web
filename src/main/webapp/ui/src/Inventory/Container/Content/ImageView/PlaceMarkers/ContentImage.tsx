@@ -1,16 +1,8 @@
-//@flow
-
 import NumberedLocation from "../NumberedLocation";
 import LocationModel from "../../../../../stores/models/LocationModel";
 import Draggable from "../../../../../components/Draggable";
 import Grid from "@mui/material/Grid";
-import React, {
-  useLayoutEffect,
-  useState,
-  useRef,
-  type Node,
-  type ComponentType,
-} from "react";
+import React, { useLayoutEffect, useState, useRef } from "react";
 import useStores from "../../../../../stores/use-stores";
 import { makeStyles } from "tss-react/mui";
 import { clamp } from "../../../../../util/Util";
@@ -20,14 +12,14 @@ import ContainerModel from "../../../../../stores/models/ContainerModel";
 import { type Location } from "../../../../../stores/definitions/Container";
 import { pick } from "../../../../../util/unsafeUtils";
 
-export type TappedLocationData = {|
-  location: Location,
-  number: number,
-  point: {|
-    left: number,
-    top: number,
-  |},
-|};
+export type TappedLocationData = {
+  location: Location;
+  number: number;
+  point: {
+    left: number;
+    top: number;
+  };
+};
 
 // the stored location point should be rendered as the bottom middle of the icon
 // therefore, we need to shift the icon to the left and up.
@@ -47,14 +39,14 @@ const LocationMarker = ({
   editable,
   selected,
 }: {
-  number: number,
-  location: Location,
-  point: Point,
-  onChange: (Point) => void,
-  img: HTMLElement,
-  onClick: (TappedLocationData) => void,
-  editable: boolean,
-  selected: boolean,
+  number: number;
+  location: Location;
+  point: Point;
+  onChange: (point: Point) => void;
+  img: HTMLElement;
+  onClick: (data: TappedLocationData) => void;
+  editable: boolean;
+  selected: boolean;
 }) => {
   const [dragging, setDragging] = useState(false);
   return (
@@ -90,52 +82,59 @@ const LocationMarker = ({
   );
 };
 
-const useStyles = makeStyles()((theme, { editable }) => ({
-  rounded: {
-    padding: 0,
-    width: "auto",
-    height: "auto",
-    maxWidth: "100%",
-    userSelect: "none",
-  },
-  imageContainer: {
-    position: "relative",
-    marginTop: 15,
-    cursor: editable ? "crosshair" : "default",
-  },
-  detailsPopupContent: {
-    padding: "0 !important",
-  },
-}));
+const useStyles = makeStyles<{ editable: boolean }>()(
+  (theme, { editable }) => ({
+    rounded: {
+      padding: 0,
+      width: "auto",
+      height: "auto",
+      maxWidth: "100%",
+      userSelect: "none",
+    },
+    imageContainer: {
+      position: "relative",
+      marginTop: 15,
+      cursor: editable ? "crosshair" : "default",
+    },
+    detailsPopupContent: {
+      padding: "0 !important",
+    },
+  })
+);
 
-type ContentImageArgs = {|
-  editable?: boolean,
-  onLocationTap?: (TappedLocationData) => void,
-  onClearSelection?: () => void,
-  selected?: ?TappedLocationData,
-|};
+type ContentImageArgs = {
+  editable?: boolean;
+  onLocationTap?: (data: TappedLocationData) => void;
+  onClearSelection?: () => void;
+  selected?: TappedLocationData | null;
+};
 
 function ContentImage({
   editable = false,
   onLocationTap = () => {},
   onClearSelection = () => {},
   selected = null,
-}: ContentImageArgs): Node {
+}: ContentImageArgs): React.ReactNode {
   const { searchStore } = useStores();
   const activeResult = searchStore.activeResult;
   if (!activeResult || !(activeResult instanceof ContainerModel))
     throw new Error("ActiveResult must be a Container");
   const { classes } = useStyles({ editable });
-  const [img, setImg] = useState(null);
-  const [tappedLocation, setTappedLocation]: UseState<?TappedLocationData> =
-    useState(null);
+  const [img, setImg] = useState<HTMLElement | null>(null);
+  const [tappedLocation, setTappedLocation] =
+    useState<TappedLocationData | null>(null);
 
   useLayoutEffect(() => {
     setTappedLocation(selected);
   }, [selected]);
 
   // Observe changes to the size of the image
-  const [imageDimensions, setImageDimensions] = useState(null);
+  const [imageDimensions, setImageDimensions] = useState<{
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+  } | null>(null);
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
       setImageDimensions(
@@ -148,23 +147,21 @@ function ContentImage({
       );
     })
   );
-  const imgRef = useRef<?HTMLElement>(null);
+  const imgRef = useRef<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
-    if (imgRef.current) {
-      resizeObserver.current.observe(imgRef.current);
+    const currentImgRef = imgRef.current;
+    const currentResizeObserver = resizeObserver.current;
+
+    if (currentImgRef) {
+      currentResizeObserver.observe(currentImgRef);
     }
     return () => {
-      if (imgRef.current) resizeObserver.current.unobserve(imgRef.current);
+      if (currentImgRef) currentResizeObserver.unobserve(currentImgRef);
     };
-  }, [img, resizeObserver]);
+  }, [img]);
 
-  const newMarker = (event: {
-    target: HTMLElement,
-    clientX: number,
-    clientY: number,
-    ...
-  }) => {
+  const newMarker = (event: React.MouseEvent<HTMLImageElement>) => {
     if (!editable) {
       return;
     }
@@ -178,7 +175,7 @@ function ContentImage({
     const imgTopLeftCornerRelativeToViewport = pick(
       "x",
       "y"
-    )(event.target.getBoundingClientRect());
+    )((event.target as HTMLElement).getBoundingClientRect());
     const tappedLocationRelativeToViewport = {
       x: event.clientX,
       y: event.clientY,
@@ -216,7 +213,8 @@ function ContentImage({
 
   const locationMoved = (indexInSorted: number, { x, y }: Point) => {
     if (editable) {
-      if (activeResult.sortedLocations == null) throw new Error("activeResult does not have locations");
+      if (activeResult.sortedLocations == null)
+        throw new Error("activeResult does not have locations");
       const locations = activeResult.sortedLocations;
       const location = locations[indexInSorted];
       if (!imageDimensions) throw new Error("Image dimensions are not known");
@@ -239,7 +237,7 @@ function ContentImage({
     {
       width: imageWidth,
       height: imageHeight,
-    }: {| width: number, height: number |},
+    }: { width: number; height: number },
     location: Location
   ) => {
     return {
@@ -256,11 +254,11 @@ function ContentImage({
       <Grid container justifyContent="center" alignItems="center">
         <Grid item className={classes.imageContainer}>
           <img
-            src={activeResult.locationsImage}
+            src={activeResult.locationsImage || ""}
             className={classes.rounded}
-            onLoad={({ target }) => setImg(target)}
+            onLoad={({ target }) => setImg(target as HTMLElement)}
             onClick={newMarker}
-            ref={imgRef}
+            ref={imgRef as React.RefObject<HTMLImageElement>}
           />
           {img &&
             imageDimensions &&
@@ -272,10 +270,10 @@ function ContentImage({
                   {
                     location,
                     point,
-                  }: {|
-                    location: Location,
-                    point: {| x: number, y: number |},
-                  |},
+                  }: {
+                    location: Location;
+                    point: { x: number; y: number };
+                  },
                   index: number
                 ) => (
                   <LocationMarker
@@ -300,4 +298,4 @@ function ContentImage({
   );
 }
 
-export default (observer(ContentImage): ComponentType<ContentImageArgs>);
+export default observer(ContentImage);
