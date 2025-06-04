@@ -159,7 +159,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     return dataCiteConnector.testDataCiteConnection();
   }
 
-  private void assertInventoryAndDataciteEnabled(User user){
+  private void assertInventoryAndDataciteEnabled(User user) {
     assertInventoryAvailable(user);
     assertDataCiteConnectorEnabled();
   }
@@ -172,9 +172,8 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   }
 
   private void assertInventoryAvailable(User user) {
-    if(!systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.INVENTORY_AVAILABLE)){
-      throw new UnsupportedOperationException(
-          "Inventory is not enabled on this RSpace instance.");
+    if (!systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.INVENTORY_AVAILABLE)) {
+      throw new UnsupportedOperationException("Inventory is not enabled on this RSpace instance.");
     }
   }
 
@@ -186,6 +185,4 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     assertUserCanEditInventoryRecord(invRec.getOid(), user);
     return invRec;
   }
-
-
 }

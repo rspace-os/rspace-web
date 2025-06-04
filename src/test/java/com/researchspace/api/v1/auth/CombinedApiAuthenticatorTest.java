@@ -32,21 +32,31 @@ public class CombinedApiAuthenticatorTest {
   MockHttpServletRequest mockRequest;
 
   @Test
-  public void testOauthAuthoriseOK() {
+  public void testOAuthAuthoriseOK() {
     mockRequest = new MockHttpServletRequest();
+    setMockRequestAuthorizationHeader();
     User user = TestFactory.createAnyUser("testOauthUser");
     when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
     when(oAuthAuthenticator.authenticate(mockRequest)).thenReturn(user);
 
-    /* run authenticator code with User not marked as authenticated by oauth token */
-    setAuthorizationHeader();
+    /* run authenticator code with request using internal UI token */
+    user.setAuthenticatedBy(UserAuthenticationMethod.UI_OAUTH_TOKEN);
     User authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
     assertEquals(user, authenticatedUser);
     verifyNoInteractions(apiKeyAuthenticator);
     verifyNoInteractions(analyticsManager);
 
-    /* try again, with user's authentication method marked as API_OAUTH_TOKEN */
+    /* try again, with request being authenticated by external API oauth token, but
+     * also with system setting not allowing external oauth connections  */
     user.setAuthenticatedBy(UserAuthenticationMethod.API_OAUTH_TOKEN);
+    when(apiAvailabilityHandler.isOAuthAccessAllowed(null)).thenReturn(false);
+    authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
+    assertEquals(user, authenticatedUser);
+    verifyNoInteractions(apiKeyAuthenticator);
+    verifyNoInteractions(analyticsManager);
+
+    /* try again, now with system setting allowing external oauth connections */
+    when(apiAvailabilityHandler.isOAuthAccessAllowed(null)).thenReturn(true);
     authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
     assertEquals(user, authenticatedUser);
     verifyNoInteractions(apiKeyAuthenticator);
@@ -56,12 +66,12 @@ public class CombinedApiAuthenticatorTest {
   @Test
   public void testApiKeyAuthoriseOK() {
     mockRequest = new MockHttpServletRequest();
+    setMockRequestApiKeyHeader();
     User user = TestFactory.createAnyUser("testApiKeyUser");
     when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
     when(apiAvailabilityHandler.isApiAvailableForUser(user)).thenReturn(true);
     when(apiKeyAuthenticator.authenticate(mockRequest)).thenReturn(user);
 
-    setApiKeyHeader();
     User authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
     assertEquals(user, authenticatedUser);
 
@@ -69,11 +79,11 @@ public class CombinedApiAuthenticatorTest {
     verify(analyticsManager, times(1)).publicApiUsed(eq(user), eq(mockRequest));
   }
 
-  private void setApiKeyHeader() {
+  private void setMockRequestApiKeyHeader() {
     mockRequest.addHeader("apiKey", "12345");
   }
 
-  private void setAuthorizationHeader() {
+  private void setMockRequestAuthorizationHeader() {
     mockRequest.addHeader("Authorization", "Bearer 54321");
   }
 }
