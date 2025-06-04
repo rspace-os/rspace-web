@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
@@ -17,8 +16,8 @@ window.fetch = jest.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
-    json: () => Promise.resolve(),
-  })
+    json: () => Promise.resolve({}),
+  } as Response)
 );
 
 beforeEach(() => {
