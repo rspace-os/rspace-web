@@ -1,0 +1,11 @@
+// @flow
+
+import { type Node, type ComponentType } from "react";
+import SampleModel from "../../../stores/models/SampleModel";
+
+type QuantityArgs = {|
+  onErrorStateChange: (boolean) => void,
+  sample: SampleModel,
+|};
+
+declare export default ComponentType<QuantityArgs>;
