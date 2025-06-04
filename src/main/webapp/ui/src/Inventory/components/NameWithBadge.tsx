@@ -1,24 +1,22 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import InfoBadge from "./InfoBadge";
 import InfoCard from "./InfoCard";
 import { makeStyles } from "tss-react/mui";
 import { type Record } from "../../stores/definitions/Record";
 import { observer } from "mobx-react-lite";
 
-type NameWithBadgeArgs = {|
-  record: Record,
-|};
+type NameWithBadgeArgs = {
+  record: Record;
+};
 
-const useStyles = makeStyles()((theme, { deleted }) => ({
+const useStyles = makeStyles<{ deleted: boolean }>()((theme, { deleted }) => ({
   name: {
     textDecorationLine: deleted ? "line-through" : "none",
     wordBreak: "break-all",
   },
 }));
 
-function NameWithBadge({ record }: NameWithBadgeArgs): Node {
+function NameWithBadge({ record }: NameWithBadgeArgs): React.ReactNode {
   const { classes } = useStyles({ deleted: record.deleted });
   return (
     <>
@@ -30,4 +28,4 @@ function NameWithBadge({ record }: NameWithBadgeArgs): Node {
   );
 }
 
-export default (observer(NameWithBadge): ComponentType<NameWithBadgeArgs>);
+export default observer(NameWithBadge);
