@@ -1,10 +1,9 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import DeleteButton from "../DeleteButton";
 import { ThemeProvider } from "@mui/material/styles";
@@ -18,9 +17,10 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("DeleteButton", () => {
-  function renderDeleteButton(
-    props: ?{| disabled?: boolean, onClick?: () => void |}
-  ) {
+  function renderDeleteButton(props?: {
+    disabled?: boolean;
+    onClick?: () => void;
+  }) {
     return render(
       <ThemeProvider theme={materialTheme}>
         <DeleteButton
