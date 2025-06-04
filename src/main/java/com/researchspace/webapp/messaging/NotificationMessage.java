@@ -1,4 +1,4 @@
-package com.researchspace.messaging;
+package com.researchspace.webapp.messaging;
 
 import lombok.Data;
 
