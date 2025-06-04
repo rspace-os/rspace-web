@@ -1,11 +1,4 @@
-// @flow
-
-import React, {
-  type Node,
-  type ComponentType,
-  useContext,
-  type ElementProps,
-} from "react";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -26,30 +19,24 @@ import { doNotAwait } from "../../util/Util";
 import NavigateContext from "../../stores/contexts/Navigate";
 
 const OpenButton = withStyles<
-  {| icon: Node, ...ElementProps<typeof Button> |},
+  React.ComponentProps<typeof Button> & { icon?: React.ReactNode },
   { root: string }
 >(() => ({
   root: {
     cursor: "default",
   },
 }))(({ icon, ...rest }) => (
-  <Button
-    color="primary"
-    variant="text"
-    disableElevation
-    component="a"
-    {...rest}
-  >
+  <Button color="primary" variant="text" disableElevation {...rest}>
     {icon}
     Open
   </Button>
 ));
 
-type InfoPopoverArgs = {|
-  record: Record,
-|};
+type InfoCardArgs = {
+  record: Record;
+};
 
-function InfoPopover({ record }: InfoPopoverArgs): Node {
+function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
   const { moveStore, uiStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -58,7 +45,9 @@ function InfoPopover({ record }: InfoPopoverArgs): Node {
     <>
       {!r.isWorkbench && (
         <OpenButton
-          href={r.permalinkURL}
+          href={r.permalinkURL || undefined}
+          // @ts-expect-error for some reason comppnent="a" is not recognised
+          component="a"
           target="_blank"
           icon={
             <FontAwesomeIcon
@@ -127,8 +116,9 @@ function InfoPopover({ record }: InfoPopoverArgs): Node {
             moveActions(record)
           ) : (
             <OpenButton
+              icon={undefined}
               onClick={() => {
-                navigate(record.permalinkURL);
+                navigate(record.permalinkURL || "");
                 /*
                  * If we're already on the permalink page then navigate will do
                  * nothing and wont automatically call setVisiblePanel,
@@ -145,4 +135,4 @@ function InfoPopover({ record }: InfoPopoverArgs): Node {
   );
 }
 
-export default (observer(InfoPopover): ComponentType<InfoPopoverArgs>);
+export default observer(InfoPopover);
