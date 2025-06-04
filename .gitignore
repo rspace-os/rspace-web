@@ -8,6 +8,7 @@
 /emailErrors.txt
 /error.log*
 /httpRequests.log
+/ApiRequests.txt
 /FTsearchIndices/
 /LuceneFTsearchIndices/
 /Users/

@@ -4,6 +4,7 @@ import static org.apache.commons.lang.StringUtils.abbreviate;
 
 import com.researchspace.auth.ApiKeyAuthenticationToken;
 import com.researchspace.model.User;
+import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.permissions.IUserPermissionUtils;
 import com.researchspace.session.SessionAttributeUtils;
 import java.util.Optional;
@@ -48,21 +49,22 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
     User targetUser = userOpt.get();
     assertLoginAllowed(targetUser);
 
-    // Requests for inventory from the browser come with JSESSIONID cookies. Hence
-    // we have access to the current session. We reuse the session when possible.
-    // Session reuse happens to solve RSINV-254.
+    /* Requests for inventory from the browser come with JSESSIONID cookies, hence we have access
+    to the current session. We reuse the session when possible, for requests originating
+    from RSpace UI, to solve RSINV-254. */
     try {
       Subject shiroSubject = SecurityUtils.getSubject();
 
-      // In some tests shiroSubject exists, but principal is null
-      if (shiroSubject.getPrincipal() != null) {
+      /* In some tests shiroSubject exists, but principal is null. Also, we only want to reuse
+      session for API calls originating from RSpace UI, not for external API requests */
+      if (shiroSubject.getPrincipal() != null && !isExternalApiCall(targetUser)) {
+
         Session session = shiroSubject.getSession();
         User subject = (User) session.getAttribute(SessionAttributeUtils.USER);
         Boolean isRunAs = (Boolean) session.getAttribute(SessionAttributeUtils.IS_RUN_AS);
 
         // Some tests break without this check
         boolean isContextNonNull = subject != null && userPermissionUtils != null;
-
         boolean shouldReuseSession =
             isContextNonNull
                 && ((isRunAs != null && isRunAs)
@@ -82,6 +84,11 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
 
     doLogin(accessToken, targetUser);
     return targetUser;
+  }
+
+  private boolean isExternalApiCall(User targetUser) {
+    return UserAuthenticationMethod.API_OAUTH_TOKEN.equals(targetUser.getAuthenticatedBy())
+        || UserAuthenticationMethod.API_KEY.equals(targetUser.getAuthenticatedBy());
   }
 
   /*

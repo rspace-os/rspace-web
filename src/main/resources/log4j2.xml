@@ -13,6 +13,17 @@
       <DefaultRolloverStrategy max="100000"/>
     </RollingFile>
 
+    <RollingFile name="ApiRequestLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${ApiRequests.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${ApiRequests.log.file}.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <!--      keep 100_000 files so that logs aren't removed by default-->
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
     <RollingFile name="auditTrailLogger" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${RSRequest.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${RSRequest.log.file}.%i">
       <PatternLayout>
         <Pattern>%d{DATE} - %m%n</Pattern>
@@ -109,6 +120,10 @@
     <Logger additivity="false" name="com.researchspace.model.permissions.SecurityLogger"
       level="INFO">
       <AppenderRef ref="SecurityEventLogAppender"/>
+    </Logger>
+
+    <Logger name="com.researchspace.api.v1.service.impl.ApiRequestLogger" level="INFO">
+      <AppenderRef ref="ApiRequestLogAppender"/>
     </Logger>
 
     <Logger name="com.researchspace.model.audittrail.AuditTrailService" level="INFO">

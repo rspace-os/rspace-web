@@ -207,7 +207,7 @@
           <failOnError>false</failOnError>
           <excludeFilterFile>build-resources/findbugs_exclude_rs.xml</excludeFilterFile>
         </configuration>
-        <version>4.2.0</version>
+        <version>4.3.0</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -2972,6 +2972,7 @@
     <!-- Location of security log -->
     <RSSecurityEvent.log.file>SecurityEvents.txt</RSSecurityEvent.log.file>
     <RSfailedEmails.log.file>emailErrors.txt</RSfailedEmails.log.file>
+    <ApiRequests.log.file>ApiRequests.txt</ApiRequests.log.file>
     <!-- choice of deployment.properties file - must be name of subfolder in 'deployments' -->
     <deployment>dev</deployment>
     <!-- default location of external properties file is actually the classpath one! -->

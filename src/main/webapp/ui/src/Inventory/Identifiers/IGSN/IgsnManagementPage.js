@@ -44,6 +44,7 @@ import PrintDialog from "./PrintDialog";
 import PrintIcon from "@mui/icons-material/Print";
 import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 import IgsnTable from "./IgsnTable";
+import RsSet from "../../../util/set";
 
 /**
  * The IGSN Management page allows users to view, bulk register, print, and
@@ -53,8 +54,8 @@ export default function IgsnManagementPage({
   selectedIgsns,
   setSelectedIgsns,
 }: {|
-  selectedIgsns: $ReadOnlyArray<Identifier>,
-  setSelectedIgsns: ($ReadOnlyArray<Identifier>) => void,
+  selectedIgsns: RsSet<Identifier>,
+  setSelectedIgsns: (RsSet<Identifier>) => void,
 |}): Node {
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
@@ -101,8 +102,10 @@ export default function IgsnManagementPage({
               <Typography>
                 You can register and associate an IGSN ID with an existing item
                 in Inventory by selecting{" "}
-                <strong>Create a new Identifier</strong> under its{" "}
-                <strong>Identifiers</strong> heading.
+                <Typography variant="button" component="kbd">
+                  Create new IGSN ID
+                </Typography>{" "}
+                under its <cite>Identifiers</cite> heading.
               </Typography>
               <Typography>
                 You can also bulk-register IGSN IDs to be used at a later date,
@@ -150,10 +153,13 @@ export default function IgsnManagementPage({
                   <SubmitSpinnerButton
                     onClick={doNotAwait(async () => {
                       setRegisteringInProgress(true);
-                      await bulkRegister({ count: numberOfNewIdentifiers });
-                      if (refreshListing) void refreshListing();
-                      setRegisteringInProgress(false);
-                      setBulkRegisterDialogOpen(false);
+                      try {
+                        await bulkRegister({ count: numberOfNewIdentifiers });
+                        if (refreshListing) void refreshListing();
+                        setBulkRegisterDialogOpen(false);
+                      } finally {
+                        setRegisteringInProgress(false);
+                      }
                     })}
                     disabled={registeringInProgress}
                     loading={registeringInProgress}
@@ -167,7 +173,7 @@ export default function IgsnManagementPage({
             <Stack spacing={0.5} alignItems="flex-start">
               <Typography>
                 To access actions such as editing metadata and publishing,
-                please use the <strong>Identifiers</strong> section of the{" "}
+                please use the <cite>Identifiers</cite> section of the{" "}
                 <strong>Linked Item</strong>.
               </Typography>
               <Box height={12}></Box>
@@ -182,7 +188,7 @@ export default function IgsnManagementPage({
                   aria-haspopup="menu"
                   aria-expanded={false}
                   id="actions-menu"
-                  disabled={selectedIgsns.length === 0}
+                  disabled={selectedIgsns.size === 0}
                   onClick={(event) => {
                     setActionsAnchorEl(event.currentTarget);
                   }}
@@ -213,7 +219,7 @@ export default function IgsnManagementPage({
                       setPrintDialogOpen(false);
                       setActionsAnchorEl(null);
                     }}
-                    itemsToPrint={selectedIgsns}
+                    itemsToPrint={[...selectedIgsns]}
                   />
                   <AccentMenuItem
                     title="Delete"
@@ -221,7 +227,7 @@ export default function IgsnManagementPage({
                     onClick={() => {
                       void deleteIdentifiers(selectedIgsns).then(() => {
                         if (refreshListing) void refreshListing();
-                        setSelectedIgsns([]);
+                        setSelectedIgsns(new RsSet([]));
                       });
                       setActionsAnchorEl(null);
                     }}
