@@ -1,12 +1,10 @@
-//@flow
-
-import React, { type Node, useContext } from "react";
+import React, { type ReactNode, useContext } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";
 
-type NavigationContextArgs = {|
-  children: Node,
-|};
+type NavigationContextArgs = {
+  children: ReactNode;
+};
 
 /*
  * This a component that provides a wrapper around the entire Identifiers UI,
@@ -16,7 +14,7 @@ type NavigationContextArgs = {|
  */
 export default function NavigationContext({
   children,
-}: NavigationContextArgs): Node {
+}: NavigationContextArgs): ReactNode {
   const { useNavigate, useLocation } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();
