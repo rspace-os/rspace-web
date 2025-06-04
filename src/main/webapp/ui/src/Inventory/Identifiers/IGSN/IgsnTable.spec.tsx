@@ -59,6 +59,7 @@ const feature = test.extend<{
     "a search box should be shown in the toolbar": () => Promise<void>;
     "there should be a network request with searchTerm set to 'test'": () => void;
     "the toolbar controls should be in the order: search, scan, then filters": () => Promise<void>;
+    "the search box should have the placeholder 'Search IGSN IDs...'": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -130,7 +131,7 @@ const feature = test.extend<{
           await page.getByRole("menuitem", { name: /No Linked Item/ }).click();
         },
       "the researcher types 'test' in the search box": async () => {
-        await page.getByPlaceholder("Search IGSNs...").fill("test");
+        await page.getByRole("searchbox").fill("test");
         await page.waitForTimeout(500);
       },
       "a QR code is scanned with value {value}": async ({ value }) => {
@@ -202,7 +203,7 @@ const feature = test.extend<{
           await expect(menu).toBeVisible();
         },
       "a search box should be shown in the toolbar": async () => {
-        const searchBox = page.getByPlaceholder("Search IGSNs...");
+        const searchBox = page.getByRole("searchbox");
         await expect(searchBox).toBeVisible();
       },
       "{CSV} should have {count} rows": async ({ csv, count }) => {
@@ -310,7 +311,7 @@ const feature = test.extend<{
       },
       "the toolbar controls should be in the order: search, scan, then filters":
         async () => {
-          const searchControl = page.getByPlaceholder("Search IGSNs...");
+          const searchControl = page.getByRole("searchbox");
           const scanButton = page.getByRole("button", { name: "Scan" });
           const stateFilter = page.getByRole("button", { name: "State" });
           const linkedItemFilter = page.getByRole("button", {
@@ -385,6 +386,14 @@ const feature = test.extend<{
             orderResults.stateBeforeLinkedItem,
             "State filter controlshould be before linked item filter control"
           ).toBe(true);
+        },
+      "the search box should have the placeholder 'Search IGSN IDs...'":
+        async () => {
+          const searchBox = page.getByRole("searchbox");
+          await expect(searchBox).toHaveAttribute(
+            "placeholder",
+            "Search IGSN IDs..."
+          );
         },
     });
   },
@@ -493,6 +502,20 @@ test.describe("IGSN Table", () => {
     async ({ Given, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
       await Then["a search box should be shown in the toolbar"]();
+    }
+  );
+
+  feature(
+    "The toolbar's search box should have the correct placeholder text",
+    async ({ Given, Then }) => {
+      await Given["the researcher is viewing the IGSN table"]();
+      await Then[
+        "the search box should have the placeholder 'Search IGSN IDs...'"
+      ]();
+      /*
+       * International Generic Sample Number (IGSN), confusingly, refers to the
+       * organsiation and the IDs themselves are referred to as IGSN IDs.
+       */
     }
   );
 
