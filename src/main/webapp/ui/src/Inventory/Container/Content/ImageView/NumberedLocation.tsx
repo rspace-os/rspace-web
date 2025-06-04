@@ -1,14 +1,15 @@
-// @flow
-
 import Badge from "@mui/material/Badge";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import SvgIcon from "@mui/material/SvgIcon";
 import clsx from "clsx";
 
-const useStyles = makeStyles()((theme, { selected, shadow }) => ({
+const useStyles = makeStyles<{
+  selected?: boolean;
+  shadow?: boolean;
+}>()((theme, { selected, shadow }) => ({
   largeIcon: {
     fontSize: "3rem",
     filter: shadow ? "drop-shadow(3px 5px 1px rgba(0,0,0,0.2))" : "",
@@ -30,12 +31,11 @@ const useStyles = makeStyles()((theme, { selected, shadow }) => ({
 }));
 
 const StyledBadge = withStyles<
-  {|
-    inline: boolean,
-    selected: boolean,
-    ...typeof Badge,
-  |},
-  { badge: string, root: string }
+  {
+    inline: boolean;
+    selected: boolean;
+  } & React.ComponentProps<typeof Badge>,
+  { badge: string; root: string }
 >((theme, { inline, selected }) => ({
   badge: {
     right: inline ? 17 : 24,
@@ -65,31 +65,30 @@ const StyledBadge = withStyles<
     selected: _selected,
     ...rest
   }: {
-    inline: boolean,
-    selected: boolean,
+    inline: boolean;
+    selected: boolean;
   }) => <Badge {...rest} />
 );
 
-type NumberedLocationArgs = {|
-  number: number,
-  inline?: boolean,
-  shadow?: boolean,
-  selected?: boolean,
-|};
+type NumberedLocationArgs = {
+  number: number;
+  inline?: boolean;
+  shadow?: boolean;
+  selected?: boolean;
+};
 
 function NumberedLocation({
   number,
   inline = false,
   shadow = false,
   selected = false,
-}: NumberedLocationArgs): Node {
+}: NumberedLocationArgs): React.ReactNode {
   const { classes } = useStyles({ shadow, selected });
 
   return (
     <StyledBadge
       badgeContent={number}
       showZero
-      className={inline ? classes.inlineBadge : ""}
       inline={inline}
       selected={selected}
     >
@@ -105,6 +104,4 @@ function NumberedLocation({
   );
 }
 
-export default (observer(
-  NumberedLocation
-): ComponentType<NumberedLocationArgs>);
+export default observer(NumberedLocation);
