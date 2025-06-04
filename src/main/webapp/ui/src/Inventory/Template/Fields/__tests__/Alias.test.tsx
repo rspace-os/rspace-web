@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import {
@@ -63,7 +62,9 @@ describe("Alias", () => {
 
     // ...should not select the unit radio button
     expect(
-      screen.getAllByRole("radio").filter((radio) => radio.value === "unit")[0]
+      screen
+        .getAllByRole("radio")
+        .filter((radio) => (radio as HTMLInputElement).value === "unit")[0]
     ).not.toBeChecked();
   });
 });
