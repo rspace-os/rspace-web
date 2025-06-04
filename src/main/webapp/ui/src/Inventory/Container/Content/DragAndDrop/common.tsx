@@ -1,4 +1,3 @@
-//@flow
 import { useDndContext } from "@dnd-kit/core";
 import {
   type Location,
@@ -11,16 +10,16 @@ import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
  * A string is used so that we can encode both the x and y coordinates within
  * the Dndkit Droppable id.
  */
-export opaque type DroppableId = string;
+export type DroppableId = string;
 
 export function mkDroppableId(location: Location): DroppableId {
   return `${location.coordX},${location.coordY}`;
 }
 
-function getCoordsOfDroppableId(droppableId: DroppableId): {|
-  coordX: number,
-  coordY: number,
-|} {
+function getCoordsOfDroppableId(droppableId: DroppableId): {
+  coordX: number;
+  coordY: number;
+} {
   const regexResult = droppableId.match(/(\d+),(\d+)/);
   if (!regexResult) throw new Error("Should never happen.");
   const [, x, y] = regexResult;
@@ -34,15 +33,15 @@ function getCoordsOfDroppableId(droppableId: DroppableId): {|
  * These are helper functions for each of the parts of the Grid and Image view
  * DragAndDrop system.
  */
-export function useHelpers(): {|
+export function useHelpers(): {
   /**
    * Quite simply, is the user currently drag-and-dropping an item. This could
    * be because the pointer is held down or because the keyboard-driven
    * drag-and-drop mode has been entered.
    */
-  dragAndDropInProgress: boolean,
+  dragAndDropInProgress: boolean;
 
-  numberOfItemsBeingDragged: number,
+  numberOfItemsBeingDragged: number;
 
   /**
    * When dragging-and-dropping multiple items in grid view, the draggable that
@@ -54,7 +53,7 @@ export function useHelpers(): {|
    * that origin as we must render it differently to all of the other content
    * being moved.
    */
-  thisLocationIsTheOrigin: (Location) => boolean,
+  thisLocationIsTheOrigin: (location: Location) => boolean;
 
   /**
    * if `location`'s globalId is in `relativeCoords` then that means the
@@ -65,7 +64,7 @@ export function useHelpers(): {|
    * the rest move down one. All of the locations within the list will be
    * within `relativeCoords` and are thus allowed drop zones.
    */
-  anItemIsBeingMoveOutOfLocation: (Location) => boolean,
+  anItemIsBeingMoveOutOfLocation: (location: Location) => boolean;
 
   /**
    * Is the user choosing this location? If they're using a pointer then the
@@ -78,14 +77,14 @@ export function useHelpers(): {|
    * should the user tap enter then it will be passed to the onDragEnd event
    * handler and have one of the items being moved dropped into it.
    */
-  isChoosing: (Location) => boolean,
-|} {
+  isChoosing: (location: Location) => boolean;
+} {
   const dndContext = useDndContext();
-  const relativeCoords: null | $ReadOnlyArray<{|
-    x: number,
-    y: number,
-    globalId: ?GlobalId,
-  |}> = dndContext.active?.data.current?.relativeCoords;
+  const relativeCoords: null | ReadonlyArray<{
+    x: number;
+    y: number;
+    globalId: GlobalId | null;
+  }> = dndContext.active?.data.current?.relativeCoords ?? null;
 
   return {
     dragAndDropInProgress: (relativeCoords ?? []).length > 0,
@@ -106,7 +105,11 @@ export function useHelpers(): {|
     isChoosing: (location) => {
       const id = dndContext.over?.id;
       if (!id) return false;
-      const [, col, row] = id.match(/(\d+),(\d+)/);
+      const [, col, row] = (id as string).match(/(\d+),(\d+)/) as [
+        unknown,
+        string,
+        string
+      ];
       const overCol = parseInt(col, 10);
       const overRow = parseInt(row, 10);
       if (!relativeCoords) return false;
@@ -122,45 +125,41 @@ export function useHelpers(): {|
  * These are helper functions for each of the parts of the Grid and Image view
  * DragAndDrop system that are paramaterised by that Grid/Image container.
  */
-export function useContainerHelpers(container: Container): {|
+export function useContainerHelpers(container: Container): {
   /**
    * Given a source location, find the associated destination location such
    * that when the move operation completes the source location's content is
    * moved to the destination location.
    */
   getDestinationLocationForSourceLocation: (
-    {
+    dnd: {
       active: null | {
         data: {
           current: null | {
-            relativeCoords: $ReadOnlyArray<{|
-              x: number,
-              y: number,
-              globalId: ?GlobalId,
-            |}>,
-            ...
-          },
-          ...
-        },
-        ...
-      },
-      over: null | { id: DroppableId },
-      ...
+            relativeCoords: ReadonlyArray<{
+              x: number;
+              y: number;
+              globalId: GlobalId | null;
+            }>;
+          };
+        };
+      };
+      over: null | { id: DroppableId };
     },
-    Location
-  ) => Location,
-|} {
+    location: Location
+  ) => Location;
+} {
   return {
     getDestinationLocationForSourceLocation: (event, sourceLocation) => {
-      const relativeCoords: ?$ReadOnlyArray<{|
-        x: number,
-        y: number,
-        globalId: ?GlobalId,
-      |}> = event.active?.data.current?.relativeCoords;
-      let overLocation: ?Location = null;
+      const relativeCoords: ReadonlyArray<{
+        x: number;
+        y: number;
+        globalId: GlobalId | null;
+      }> | null = event.active?.data.current?.relativeCoords ?? null;
+      let overLocation: Location | null = null;
       if (event.over?.id) {
         const { coordX, coordY } = getCoordsOfDroppableId(event.over.id);
-        overLocation = container.findLocation(coordX, coordY);
+        overLocation = container.findLocation(coordX, coordY) ?? null;
       }
       /*
        * Whilst this function does potentially throw a lot of exceptions, they
