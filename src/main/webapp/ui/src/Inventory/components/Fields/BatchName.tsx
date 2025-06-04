@@ -1,11 +1,9 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import StringField from "../../../components/Inputs/StringField";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import InputAdornment from "@mui/material/InputAdornment";
-import Select from "@mui/material/Select";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import { type BatchName } from "../../../stores/models/InventoryBaseRecordCollection";
 import BatchFormField from "../Inputs/BatchFormField";
@@ -14,17 +12,17 @@ const MIN = 2;
 const MAX = 255;
 
 function Name<
-  Fields: { name: BatchName, ... },
-  FieldOwner: HasEditableFields<Fields>
+  Fields extends { name: BatchName },
+  FieldOwner extends HasEditableFields<Fields>
 >({
   fieldOwner,
   allowAlphabeticalSuffix,
   onErrorStateChange,
-}: {|
-  fieldOwner: FieldOwner,
-  allowAlphabeticalSuffix: boolean, // has to be disabled if there are more than 26 items selected
-  onErrorStateChange: (boolean) => void,
-|}): Node {
+}: {
+  fieldOwner: FieldOwner;
+  allowAlphabeticalSuffix: boolean; // has to be disabled if there are more than 26 items selected
+  onErrorStateChange: (isError: boolean) => void;
+}): React.ReactNode {
   const [initial, setInitial] = useState(true);
 
   const lengthOfSuffix = {
@@ -37,8 +35,7 @@ function Name<
   const handleChange = ({
     target: { value },
   }: {
-    target: { value: string, ... },
-    ...
+    target: { value: string };
   }) => {
     const suffix = fieldOwner.fieldValues.name.suffix;
     fieldOwner.setFieldsDirty({ name: { common: value, suffix } });
@@ -50,15 +47,12 @@ function Name<
     );
   };
 
-  const handleChangeSuffix = ({
-    target: { value },
-  }: {
-    target: {
-      value: "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED",
-      ...
-    },
-    ...
-  }) => {
+  const handleChangeSuffix = (
+    event: SelectChangeEvent<
+      "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED"
+    >
+  ) => {
+    const value = event.target.value;
     const common = fieldOwner.fieldValues.name.common;
     fieldOwner.setFieldsDirty({ name: { common, suffix: value } });
     setInitial(false);
@@ -133,4 +127,4 @@ function Name<
   );
 }
 
-export default (observer(Name): typeof Name);
+export default observer(Name);
