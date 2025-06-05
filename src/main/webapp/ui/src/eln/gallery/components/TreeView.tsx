@@ -215,6 +215,17 @@ const CustomTreeItem = observer(
   }) => {
     const { uploadFiles } = useGalleryActions();
     const { trackEvent } = React.useContext(AnalyticsContext);
+
+    /*
+     * Here we setup the drag-and-drop handlers for files that are being
+     * dragged around the folder tree. Note that file.id can be null, such as
+     * when the file is coming from an external file store. In those cases we
+     * happen to not support drag-and-drop anyway, so we disable them. If we
+     * want to support drag-and-drop for remote files in the future, or we
+     * find there are other cases where file.id is null, then we would need
+     * to create a new property that abstracts over file.id, file.logicPath, or
+     * whatever other property uniquely identifies a user's file.
+     */
     const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
       useFileImportDropZone({
         onDrop: doNotAwait(async (files) => {
@@ -224,10 +235,9 @@ const CustomTreeItem = observer(
         }),
         disabled: !file.isFolder,
       });
-    if (!file.id) throw new Error("File ID is missing");
     const { setNodeRef: setDropRef, isOver } = useDroppable({
-      id: file.id,
-      disabled: disableDragAndDrop || !file.isFolder,
+      id: file.id ?? -1,
+      disabled: disableDragAndDrop || !file.isFolder || file.id === null,
       data: {
         path: file.path,
         destination: folderDestination(file),
@@ -238,8 +248,8 @@ const CustomTreeItem = observer(
       listeners,
       setNodeRef: setDragRef,
     } = useDraggable({
-      disabled: disableDragAndDrop,
-      id: file.id,
+      disabled: disableDragAndDrop || file.id === null,
+      id: file.id ?? -1,
       data: {
         fileBeingMoved: file,
       },

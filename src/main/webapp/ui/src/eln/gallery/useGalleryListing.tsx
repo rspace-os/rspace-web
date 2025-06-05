@@ -841,9 +841,9 @@ class RemoteFile implements GalleryFile {
 
   get treeViewItemId(): string {
     const filestoreId = this.path[0].id;
-    return `REMOTE_FILE_${idToString(filestoreId).elseThrow()}_${idToString(
-      this.id
-    ).elseThrow()}`;
+    return `REMOTE_FILE_${idToString(filestoreId).elseThrow()}_${
+      this.logicPath
+    }`;
   }
 }
 
