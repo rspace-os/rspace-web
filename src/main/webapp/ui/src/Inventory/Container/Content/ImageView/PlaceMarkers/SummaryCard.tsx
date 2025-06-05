@@ -1,5 +1,3 @@
-//@flow
-
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -8,7 +6,7 @@ import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import Grid from "@mui/material/Grid";
 import NumberedLocation from "../NumberedLocation";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Typography from "@mui/material/Typography";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
@@ -48,15 +46,17 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
+type ActionButtonArgs = {
+  children: React.ReactNode;
+  onClick: (event: React.MouseEvent) => void;
+  disabled?: boolean;
+};
+
 const ActionButton = ({
   children,
   onClick,
   disabled = false,
-}: {
-  children: Node,
-  onClick: (Event) => void,
-  disabled?: boolean,
-}) => (
+}: ActionButtonArgs) => (
   <Button
     color="primary"
     disabled={disabled}
@@ -68,15 +68,15 @@ const ActionButton = ({
   </Button>
 );
 
-type SummaryCardArgs = {|
-  editable?: boolean,
-  fullWidth: boolean,
-  location: Location,
-  number: number,
-  onClick?: () => void,
-  onRemove: () => void,
-  selected?: number,
-|};
+type SummaryCardArgs = {
+  editable?: boolean;
+  fullWidth: boolean;
+  location: Location;
+  number: number;
+  onClick?: () => void;
+  onRemove: () => void;
+  selected?: number;
+};
 
 function SummaryCard({
   editable = false,
@@ -86,7 +86,7 @@ function SummaryCard({
   selected,
   onClick,
   fullWidth = false,
-}: SummaryCardArgs): Node {
+}: SummaryCardArgs): React.ReactNode {
   const { classes } = useStyles();
   const { navigateToRecord } = useNavigateHelpers();
 
@@ -95,7 +95,8 @@ function SummaryCard({
     : "This location can be chosen as the destination in a move operation.";
 
   const hasImage =
-    location.content instanceof InventoryBaseRecord && Boolean(location.content.image);
+    location.content instanceof InventoryBaseRecord &&
+    Boolean(location.content.image);
 
   return (
     <Card
@@ -136,7 +137,7 @@ function SummaryCard({
                 {!editable && location.content && (
                   <ActionButton
                     disabled={!location.hasContent}
-                    onClick={(event: Event) => {
+                    onClick={(event: React.MouseEvent) => {
                       event.stopPropagation();
                       if (location.content)
                         void navigateToRecord(location.content);
@@ -167,4 +168,4 @@ function SummaryCard({
   );
 }
 
-export default (observer(SummaryCard): ComponentType<SummaryCardArgs>);
+export default observer(SummaryCard);
