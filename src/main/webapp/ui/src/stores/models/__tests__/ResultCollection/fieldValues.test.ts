@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import InventoryBaseRecordCollection from "../../InventoryBaseRecordCollection";
 import { PersistedBarcode } from "../../Barcode";
