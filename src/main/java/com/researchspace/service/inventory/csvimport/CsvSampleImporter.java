@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
+import javax.naming.InvalidNameException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -241,7 +242,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
                     resultCount, new GlobalIdentifier(value));
               }
             } else {
-              setDefaultFieldFromMappedColumn(apiSample, fieldName, value);
+              setDefaultFieldFromMappedColumn(apiSample, fieldName, value, user);
             }
           } else {
             ApiSampleField sampleField = new ApiSampleField();
@@ -259,7 +260,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
           }
         }
         csvProcessingResult.addSuccessResult(apiSample);
-      } catch (RuntimeException iae) {
+      } catch (RuntimeException | InvalidNameException iae) {
         csvProcessingResult.addError(getBadRequestIllegalArgumentApiError(iae.getMessage()));
       }
 

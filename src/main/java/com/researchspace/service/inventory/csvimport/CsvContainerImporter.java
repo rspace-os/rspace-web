@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
+import javax.naming.InvalidNameException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -56,14 +57,19 @@ public class CsvContainerImporter extends InventoryItemCsvImporter {
     // convert csv lines to containers and prevalidate
     List<String[]> csvContainerLines = lines.subList(1, lines.size());
     convertLinesToContainers(
-        csvProcessingResult, csvContainerLines, columnIndexToDefaultFieldMap, columnNames.size());
+        csvProcessingResult,
+        csvContainerLines,
+        columnIndexToDefaultFieldMap,
+        columnNames.size(),
+        user);
   }
 
   public void convertLinesToContainers(
       ApiInventoryImportPartialResult csvProcessingResult,
       List<String[]> csvContainerLines,
       Map<Integer, String> columnIndexToDefaultFieldMap,
-      int expectedColumnsNumber) {
+      int expectedColumnsNumber,
+      User user) {
 
     int resultCount = 0;
     for (String[] line : csvContainerLines) {
@@ -107,13 +113,13 @@ public class CsvContainerImporter extends InventoryItemCsvImporter {
                     resultCount, new GlobalIdentifier(value));
               }
             } else {
-              setDefaultFieldFromMappedColumn(apiContainer, fieldName, value);
+              setDefaultFieldFromMappedColumn(apiContainer, fieldName, value, user);
             }
           }
         }
         csvProcessingResult.addSuccessResult(apiContainer);
 
-      } catch (RuntimeException iae) {
+      } catch (RuntimeException | InvalidNameException iae) {
         csvProcessingResult.addError(getBadRequestIllegalArgumentApiError(iae.getMessage()));
       }
 

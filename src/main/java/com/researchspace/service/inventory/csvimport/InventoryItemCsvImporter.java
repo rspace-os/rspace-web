@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.csvimport;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
+import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryImportParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.naming.InvalidNameException;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
@@ -190,7 +192,8 @@ public abstract class InventoryItemCsvImporter {
   }
 
   protected void setDefaultFieldFromMappedColumn(
-      ApiInventoryRecordInfo apiInvRec, String fieldName, String value) {
+      ApiInventoryRecordInfo apiInvRec, String fieldName, String value, User user)
+      throws InvalidNameException {
     if (StringUtils.isBlank(fieldName)) {
       return; // column mapping target set to empty means column should be ignored
     }
@@ -217,21 +220,18 @@ public abstract class InventoryItemCsvImporter {
       case "quantity":
         apiInvRec.setQuantity(new ApiQuantityInfo(QuantityInfo.of(value)));
         break;
-        //      case "identifier":
-        //        // TODO[nik]: implememnt logic
-        //        List<ApiInventoryDOI> identifierList =
-        // inventoryIdentifierManager.findIdentifiers("draft",
-        //            false, value, user);
-        //        // check if the idengtifier value is findable and associable --> otherwise error
-        //        if (identifierList.size() != 1) {
-        //          throw new IllegalArgumentException(
-        //              "identifier for " + fieldName + " is not unique: " + value);
-        //        } else {
-        //          // set the idcentifier but you need to associate after you create the Inventory
-        // record
-        //          apiInvRec.setIdentifiers(identifierList);
-        //        }
-        //        break;
+      case "identifier":
+        List<ApiInventoryDOI> identifierList =
+            inventoryIdentifierManager.findIdentifiers("draft", false, value, user);
+        // check if the identifier value is findable and assignable --> otherwise error
+        if (identifierList.size() != 1) {
+          throw new IllegalArgumentException(
+              "identifier for " + fieldName + " is not unique: " + value);
+        } else {
+          // set the identifier, still to be assigned after creating the Inventory item
+          apiInvRec.setIdentifiers(identifierList);
+        }
+        break;
       default:
         throw new IllegalArgumentException("unrecognized field mapping: " + fieldName);
     }

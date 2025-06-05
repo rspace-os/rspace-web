@@ -1,6 +1,0 @@
-﻿Name,Alternative name,Import identifier,Parent container,Igsn
-Container1,Protein phosphatase 1,cont1,,10.82316/n34p-165n
-Container2,"very long alternative name - the one that should trigger text field column mapping, if everything works fine",,cont1,https://doi.org/10.82316/etya-1v4
-Container3,-,,cont5,doi.org/10.82316/d0ms-1ee
-Container4,-,,cont5,10.82316/p0rc0-d10
-Container5,-,cont5,,

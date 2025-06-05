@@ -786,7 +786,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         subSampleResult,
         csvSubSampleLines,
         colIndexToDefaultFieldMapping,
-        csvSubSampleLines.get(0).length);
+        csvSubSampleLines.get(0).length,
+        new User("ANYUSER"));
     assertEquals(4, subSampleResult.getSuccessCount());
     assertEquals(
         ApiInventoryRecordInfo.ApiInventoryRecordType.SUBSAMPLE,
@@ -1106,7 +1107,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         processingResult,
         csvContainerLines,
         colIndexToDefaultFieldMapping,
-        csvContainerLines.get(0).length);
+        csvContainerLines.get(0).length,
+        new User("anyuser"));
     assertEquals(5, processingResult.getSuccessCount());
     assertEquals(
         ApiInventoryRecordType.CONTAINER,
