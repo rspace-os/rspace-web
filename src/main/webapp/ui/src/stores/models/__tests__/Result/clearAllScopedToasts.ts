@@ -1,14 +1,15 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
 import { type Command } from "fast-check";
 import { type Model } from "./common";
 
-export class ClearAllScopedToastsCommand implements Command<Model, InventoryBaseRecord> {
+export class ClearAllScopedToastsCommand
+  implements Command<Model, InventoryBaseRecord>
+{
   constructor() {}
 
   check(): boolean {

@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
@@ -10,6 +9,7 @@ import { mkAlert } from "../../../contexts/Alert";
 import { AddScopedToastCommand } from "./addScopedToast";
 import { ClearAllScopedToastsCommand } from "./clearAllScopedToasts";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
+import { type Factory } from "../../../definitions/Factory";
 import { type Model } from "./common";
 
 jest.mock("../../../../common/InvApiService", () => {});
@@ -25,22 +25,22 @@ describe("Scoped Toasts Model Tests", () => {
     const allCommands = [
       fc
         .string()
-        .map<Command<{| count: number |}, InventoryBaseRecord>>(
+        .map<Command<Model, InventoryBaseRecord>>(
           (message: string) => new AddScopedToastCommand(mkAlert({ message }))
         ),
-      fc.constant<Command<{| count: number |}, InventoryBaseRecord>>(
+      fc.constant<Command<Model, InventoryBaseRecord>>(
         new ClearAllScopedToastsCommand()
       ),
     ];
     await fc.assert(
       fc.asyncProperty(
-        fc.commands<{| count: number |}, InventoryBaseRecord>(allCommands),
+        fc.commands<Model, InventoryBaseRecord>(allCommands),
         async (cmds) => {
           const s = () => ({
             model: { count: 0 },
-            real: new InventoryBaseRecord(mockFactory(), {}),
+            real: new InventoryBaseRecord(mockFactory() as Factory, {}),
           });
-          await fc.asyncModelRun(s, cmds);
+          fc.modelRun(s, cmds);
         }
       )
     );
