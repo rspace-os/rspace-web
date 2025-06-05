@@ -1,8 +1,4 @@
-/*
- * @jest-environment jsdom
- */
 //@flow
-/* eslint-env jest */
 
 import { type Factory } from "../../../definitions/Factory";
 import PersonModel from "../../../models/PersonModel";
@@ -27,9 +23,7 @@ type FactoryOverrides = {|
   newFactory?: () => Factory,
 |};
 
-export const mockFactory: (?FactoryOverrides) => Factory = (
-  overrides: ?FactoryOverrides
-) => {
+export const mockFactory: (?FactoryOverrides) => Factory = (overrides) => {
   const f: () => Factory = () => ({
     newRecord: jest.fn<[any], InventoryRecord>(),
     newPerson: jest.fn<[PersonAttrs], PersonModel>(),
