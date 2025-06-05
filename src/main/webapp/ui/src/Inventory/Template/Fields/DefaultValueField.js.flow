@@ -1,0 +1,11 @@
+//@flow
+
+import { type Node, type ComponentType } from "react";
+import FieldModel from "../../../stores/models/FieldModel";
+
+type DefaultValueFieldArgs = {|
+  field: FieldModel,
+  editing: boolean,
+|};
+
+declare export default ComponentType<DefaultValueFieldArgs>;
