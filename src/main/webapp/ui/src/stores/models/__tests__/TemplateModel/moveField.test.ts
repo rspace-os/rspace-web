@@ -1,11 +1,11 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import fc from "fast-check";
 import { makeMockTemplate } from "./mocking";
 import { arrayOfSameElements } from "../../../../util/__tests__/helpers";
+import { type FieldModelAttrs } from "../../FieldModel";
 
 jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
 jest.mock("../../../../stores/stores/RootStore", () => () => ({
@@ -14,7 +14,7 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
   },
 }));
 
-const fieldData = [
+const fieldData: Array<FieldModelAttrs> = [
   {
     id: 19,
     globalId: "SF19",
@@ -80,7 +80,7 @@ const fieldData = [
     globalId: "SF24",
     name: "My reference",
     type: "reference",
-    content: null,
+    content: "",
     columnIndex: 6,
     definition: null,
     selectedOptions: null,
@@ -92,7 +92,7 @@ const fieldData = [
     globalId: "SF25",
     name: "MyAttachment",
     type: "attachment",
-    content: null,
+    content: "",
     columnIndex: 7,
     definition: null,
     selectedOptions: null,
@@ -104,12 +104,12 @@ const fieldData = [
     globalId: "SF26",
     name: "radioField",
     type: "radio",
-    content: null,
+    content: "",
     columnIndex: 8,
     definition: {
       options: ["option1", "option2"],
     },
-    selectedOptions: ([]: Array<string>),
+    selectedOptions: [] as Array<string>,
     attachment: null,
     mandatory: false,
   },
@@ -118,12 +118,12 @@ const fieldData = [
     globalId: "SF27",
     name: "choiceField",
     type: "choice",
-    content: null,
+    content: "",
     columnIndex: 9,
     definition: {
       options: ["optionA", "optionB"],
     },
-    selectedOptions: ([]: Array<string>),
+    selectedOptions: [] as Array<string>,
     attachment: null,
     mandatory: false,
   },
@@ -173,7 +173,7 @@ describe("action: moveField", () => {
             const template = makeMockTemplate({
               fields: fieldData,
             });
-            for (let [fieldIndex, positionIndex] of changes) {
+            for (const [fieldIndex, positionIndex] of changes) {
               const field = template.fields[fieldIndex];
               template.moveField(field, positionIndex);
             }
