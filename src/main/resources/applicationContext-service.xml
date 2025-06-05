@@ -17,7 +17,7 @@
     <context:component-scan base-package="com.axiope.webapp,com.axiope,com.researchspace">
         <context:exclude-filter type="assignable" expression="com.researchspace.webapp.config.WebConfig"/>
         <context:exclude-filter type="assignable" expression="com.researchspace.webapp.config.WebConfigForMethodValidation"/>
-        <context:exclude-filter type="assignable" expression="com.researchspace.webapp.messaging.WebSocketConfig"/>
+<!--        <context:exclude-filter type="assignable" expression="com.axiope.service.cfg.WebSocketConfig"/>-->
     </context:component-scan>
 
   <!-- =================================================================== -->

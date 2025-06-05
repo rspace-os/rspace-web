@@ -3,7 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.service.IMessageAndNotificationTracker;
-import com.researchspace.webapp.messaging.NotificationController;
+import com.researchspace.service.NotificationService;
 import com.researchspace.webapp.messaging.NotificationMessage;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class MessageAndNotificationTracker implements IMessageAndNotificationTracker {
 
-  @Autowired private NotificationController notificationController;
+  @Autowired private NotificationService notificationService;
   private Map<Long, Integer> userToNotification = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToMessage = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToSpecialMessage = new ConcurrentHashMap<>();
@@ -31,7 +31,7 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
             getNotificationCountFor(userId),
             getMessageCountFor(userId),
             getSpecialMessageCountFor(userId));
-    notificationController.sendNotificationUpdate(userId, notification);
+    notificationService.sendNotificationUpdate(userId, notification);
   }
 
   public int changeUserNotificationCount(Long userId, Integer incrementAmount) {

@@ -5,7 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.comms.MessageType;
-import com.researchspace.webapp.messaging.NotificationController;
+import com.researchspace.service.NotificationService;
 import com.researchspace.webapp.messaging.NotificationMessage;
 import org.junit.After;
 import org.junit.Test;
@@ -18,7 +18,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class MessageAndNotificationTrackerTest {
 
-  @Mock NotificationController notificationController;
+  @Mock NotificationService notificationService;
 
   @InjectMocks MessageAndNotificationTracker tracker;
 
@@ -71,7 +71,7 @@ public class MessageAndNotificationTrackerTest {
     Long userId = 1L;
     tracker.changeUserNotificationCount(userId, 1);
 
-    Mockito.verify(notificationController)
+    Mockito.verify(notificationService)
         .sendNotificationUpdate(userId, new NotificationMessage(1, 0, 0));
   }
 }

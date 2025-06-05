@@ -1,4 +1,4 @@
-package com.researchspace.webapp.messaging;
+package com.axiope.service.cfg;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
