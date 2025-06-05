@@ -1,4 +1,3 @@
-//@flow
 import TemplateModel, { type TemplateAttrs } from "../../TemplateModel";
 import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
 
