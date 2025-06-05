@@ -1,14 +1,11 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import LocationModel from "../../LocationModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
 import each from "jest-each";
-import getRootStore from "../../../stores/RootStore";
-import { type Search } from "../../../definitions/Search";
 
 describe("method: isGreyedOut", () => {
   /*
@@ -55,13 +52,13 @@ describe("method: isGreyedOut", () => {
       inSearchResults,
       hasContent,
       isGreyedOut,
-    }: {|
-      alwaysFilterOut: boolean,
-      performingSearch: boolean,
-      inSearchResults: ?boolean,
-      hasContent: boolean,
-      isGreyedOut: (Search) => boolean,
-    |}) => {
+    }: {
+      alwaysFilterOut: boolean;
+      performingSearch: boolean;
+      inSearchResults: boolean | null;
+      hasContent: boolean;
+      isGreyedOut: boolean;
+    }) => {
       const content = hasContent ? makeMockContainer() : null;
       const parentContainer = makeMockContainer();
       if (performingSearch) {
