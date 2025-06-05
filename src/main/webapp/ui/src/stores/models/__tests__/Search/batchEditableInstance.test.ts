@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
@@ -9,7 +8,7 @@ import Search from "../../Search";
 import RsSet from "../../../../util/set";
 import { makeMockContainer } from "../ContainerModel/mocking";
 
-jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
+jest.mock("../../../../common/InvApiService", () => ({})); // break import cycle
 jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
 
 describe("batchEditableInstance", () => {
