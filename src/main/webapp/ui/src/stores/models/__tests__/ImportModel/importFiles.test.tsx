@@ -1,15 +1,18 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import InvApiService from "../../../../common/InvApiService";
 import getRootStore from "../../../stores/RootStore";
 import ImportModel from "../../ImportModel";
 import "@testing-library/jest-dom";
 import { templateAttrs } from "../TemplateModel/mocking";
-import { type Alert } from "../../../contexts/Alert";
 import { runInAction } from "mobx";
+import {
+  AxiosResponse,
+  AxiosRequestHeaders,
+  InternalAxiosRequestConfig,
+} from "@/common/axios";
 
 jest.mock("../../../../common/InvApiService", () => ({
   post: jest.fn(),
@@ -25,41 +28,50 @@ const mockErrorMsg =
 describe("method: importFile", () => {
   describe("When the server responds with some errors,", () => {
     beforeEach(() => {
-      jest.spyOn(InvApiService, "post").mockImplementation(() =>
-        Promise.resolve({
-          data: {
-            sampleResults: {
-              errorCount: 3,
-              results: [
-                { error: null, record: {} },
-                { error: { errors: [mockErrorMsg] }, record: null },
-                { error: { errors: [mockErrorMsg] }, record: null },
-              ],
-              status: "PREVALIDATION_ERROR",
-              successCount: 0,
-              successCountBeforeFirstError: 1,
-              templateResult: {
-                error: null,
-                record: templateAttrs(),
+      jest
+        .spyOn(InvApiService, "post")
+        .mockImplementation((_resource: string, _params: object | FormData) => {
+          const mockResponse: AxiosResponse = {
+            data: {
+              sampleResults: {
+                errorCount: 3,
+                results: [
+                  { error: null, record: {} },
+                  { error: { errors: [mockErrorMsg] }, record: null },
+                  { error: { errors: [mockErrorMsg] }, record: null },
+                ],
+                status: "PREVALIDATION_ERROR",
+                successCount: 0,
+                successCountBeforeFirstError: 1,
+                templateResult: {
+                  error: null,
+                  record: templateAttrs(),
+                },
+                type: "SAMPLE",
               },
-              type: "SAMPLE",
+              containerResults: null,
             },
-            containerResults: null,
-          },
-        })
-      );
+            status: 200,
+            statusText: "OK",
+            headers: {} as AxiosRequestHeaders,
+            config: {
+              headers: {} as AxiosRequestHeaders,
+            } as InternalAxiosRequestConfig,
+          };
+          return Promise.resolve(mockResponse);
+        });
       jest
         .spyOn(ImportModel.prototype, "transformTemplateInfoForSubmission")
-        .mockImplementation(() => null);
+        .mockImplementation(() => ({ fields: [], name: "Template" }));
       jest
         .spyOn(ImportModel.prototype, "makeMappingsObject")
-        .mockImplementation(() => null);
+        .mockImplementation(() => ({}));
     });
 
     test("they should have the correct index.", async () => {
       const uploadModel = new ImportModel("SAMPLES");
 
-      const addAlertSpy = jest.fn<[Alert], void>();
+      const addAlertSpy = jest.fn();
       runInAction(() => {
         getRootStore().uiStore.addAlert = addAlertSpy;
       });

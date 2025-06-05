@@ -1,4 +1,3 @@
-//@flow
 import ImportModel from "../../ImportModel";
 import { makeMockTemplate } from "../TemplateModel/mocking";
 
