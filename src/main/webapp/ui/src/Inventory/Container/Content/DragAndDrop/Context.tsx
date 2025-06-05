@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import {
   DndContext,
   useSensors,
@@ -17,31 +15,32 @@ import {
   type Container,
   type Location,
 } from "../../../../stores/definitions/Container";
-import { type SubSample } from "../../../../stores/definitions/SubSample";
 import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import { runInAction } from "mobx";
 import useStores from "../../../../stores/use-stores";
-import { useContainerHelpers } from "./common";
+import { useContainerHelpers, type DroppableId } from "./common";
 import { type HasLocation } from "../../../../stores/definitions/HasLocation";
+
+type ContextArgs = {
+  children: React.ReactNode;
+  container: Container;
+
+  /**
+   * Note that keyboard support relies on each Dragger and Dropzone being
+   * rendering inside of HTMLTableCellElements
+   */
+  supportKeyboard?: boolean;
+
+  supportMultiple?: boolean;
+};
 
 export function Context({
   children,
   container,
   supportKeyboard,
   supportMultiple,
-}: {|
-  children: Node,
-  container: Container,
-
-  /**
-   * Note that keyboard support relies on each Dragger and Dropzone being
-   * rendering inside of HTMLTableCellElements
-   */
-  supportKeyboard?: boolean,
-
-  supportMultiple?: boolean,
-|}): Node {
+}: ContextArgs): React.ReactNode {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getDestinationLocationForSourceLocation } =
     useContainerHelpers(container);
@@ -65,8 +64,10 @@ export function Context({
      * HTMLTableCell that is being hovered over. This way, only a single tap is
      * required to move by a whole column/row.
      */
-    coordinateGetter: (e, { currentCoordinates }) => {
-      const { width, height } = e.target.closest("td").getBoundingClientRect();
+    coordinateGetter: (e: KeyboardEvent, { currentCoordinates }) => {
+      const { width, height } = (e.target as HTMLElement)
+        .closest("td")!
+        .getBoundingClientRect();
       switch (e.code) {
         case "ArrowRight":
           return {
@@ -103,14 +104,17 @@ export function Context({
    * to the displayed alert, we can remove it when the use releases the mouse
    * button.
    */
-  const [multipleAlert, setMultipleAlert] = React.useState<?Alert>(null);
+  const [multipleAlert, setMultipleAlert] = React.useState<Alert | null>(null);
 
   return (
     <DndContext
       sensors={sensors}
       onDragStart={(event) => {
-        if (container.selectedLocations?.length === 0) {
-          event.active.data.current.location.toggleSelected(true);
+        if (
+          container.selectedLocations?.length === 0 &&
+          event.active.data.current
+        ) {
+          (event.active.data.current as any).location.toggleSelected(true);
         }
         if (
           !supportMultiple &&
@@ -126,7 +130,7 @@ export function Context({
           addAlert(alert);
         }
       }}
-      onDragEnd={async (event) => {
+      onDragEnd={(event) => {
         if (multipleAlert) removeAlert(multipleAlert);
         setMultipleAlert(null);
 
@@ -136,20 +140,24 @@ export function Context({
         if (!supportMultiple && (container.selectedLocations ?? []).length > 1)
           return;
 
-        const [, col, row] = event.over.id.match(/(\d+),(\d+)/);
+        const [, col, row] = (event.over.id as string).match(/(\d+),(\d+)/)!;
         const destinationLocation = container.findLocation(
           parseInt(col, 10),
           parseInt(row, 10)
         );
         if (!destinationLocation)
           throw new Error("Cannot find destination location.");
-        const sourceLocation = event.active.data.current.location;
+        const sourceLocation = (event.active.data.current as any)?.location;
+        if (!sourceLocation) throw new Error("Source location is undefined");
 
         if (!container.selectedLocations)
           throw new Error("Container must have some selected locations");
         const selectedLocations = container.selectedLocations;
         const sourceLocations: {
-          [GlobalId]: {| content: InventoryRecord & HasLocation, loc: Location |},
+          [key: GlobalId]: {
+            content: InventoryRecord & HasLocation;
+            loc: Location;
+          };
         } = Object.fromEntries(
           selectedLocations.map((l) => {
             if (!l.content)
@@ -162,7 +170,10 @@ export function Context({
           })
         );
         const destinationLocations: {
-          [GlobalId]: {| content: null | (InventoryRecord & HasLocation), loc: Location |},
+          [key: GlobalId]: {
+            content: null | (InventoryRecord & HasLocation);
+            loc: Location;
+          };
         } = Object.fromEntries(
           selectedLocations.map((l) => {
             if (!l.content)
@@ -172,7 +183,25 @@ export function Context({
                 "Content of selected location must have a Global ID when moving."
               );
             const globalId = l.content.globalId;
-            const dest = getDestinationLocationForSourceLocation(event, l);
+            const compatibleEvent = {
+              active: event.active
+                ? {
+                    data: {
+                      current: event.active.data.current
+                        ? {
+                            relativeCoords:
+                              event.active.data.current.relativeCoords || [],
+                          }
+                        : null,
+                    },
+                  }
+                : null,
+              over: event.over ? { id: event.over.id as DroppableId } : null,
+            };
+            const dest = getDestinationLocationForSourceLocation(
+              compatibleEvent,
+              l
+            );
             return [globalId, { content: dest.content, loc: dest }];
           })
         );
@@ -187,7 +216,9 @@ export function Context({
         if (
           Object.values(destinationLocations)
             .filter(
-              (l) => !Object.keys(sourceLocations).includes(l.content?.globalId)
+              (l) =>
+                l.content?.globalId &&
+                !Object.keys(sourceLocations).includes(l.content.globalId)
             )
             .some((l) => l.content)
         )
@@ -239,7 +270,7 @@ export function Context({
                 loc.content = null;
               });
             });
-            await moveStore.moveRecords(moveOperationParameters);
+            void moveStore.moveRecords(moveOperationParameters);
             /*
              * After successfully moving, we clear all selections. This is
              * because empty locations will otherwise be left selected,
