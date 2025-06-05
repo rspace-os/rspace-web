@@ -1,11 +1,11 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import fc from "fast-check";
 import { makeMockTemplate } from "./mocking";
 import { arrayOfSameElements } from "../../../../util/__tests__/helpers";
+import { type FieldType } from "../../../../stores/definitions/Field";
 
 jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
 jest.mock("../../../../stores/stores/RootStore", () => () => ({
@@ -19,7 +19,7 @@ const fieldData = [
     id: 19,
     globalId: "SF19",
     name: "MyNumber",
-    type: "number",
+    type: "number" as const,
     content: "23",
     columnIndex: 1,
     definition: null,
@@ -31,7 +31,7 @@ const fieldData = [
     id: 20,
     globalId: "SF20",
     name: "MyDate",
-    type: "date",
+    type: "date" as const,
     content: "2020-10-01",
     columnIndex: 2,
     definition: null,
@@ -43,7 +43,7 @@ const fieldData = [
     id: 21,
     globalId: "SF21",
     name: "MyString",
-    type: "string",
+    type: "string" as const,
     content: "Default string value",
     columnIndex: 3,
     definition: null,
@@ -55,7 +55,7 @@ const fieldData = [
     id: 22,
     globalId: "SF22",
     name: "MyText",
-    type: "text",
+    type: "text" as const,
     content: "Default text value",
     columnIndex: 4,
     definition: null,
@@ -67,7 +67,7 @@ const fieldData = [
     id: 23,
     globalId: "SF23",
     name: "MyURL",
-    type: "uri",
+    type: "uri" as const,
     content: "https://www.google.com",
     columnIndex: 5,
     definition: null,
@@ -79,7 +79,7 @@ const fieldData = [
     id: 24,
     globalId: "SF24",
     name: "My reference",
-    type: "reference",
+    type: "reference" as const,
     content: null,
     columnIndex: 6,
     definition: null,
@@ -91,7 +91,7 @@ const fieldData = [
     id: 25,
     globalId: "SF25",
     name: "MyAttachment",
-    type: "attachment",
+    type: "attachment" as const,
     content: null,
     columnIndex: 7,
     definition: null,
@@ -103,13 +103,13 @@ const fieldData = [
     id: 26,
     globalId: "SF26",
     name: "radioField",
-    type: "radio",
+    type: "radio" as const,
     content: null,
     columnIndex: 8,
     definition: {
       options: ["option1", "option2"],
     },
-    selectedOptions: ([]: Array<string>),
+    selectedOptions: [] as string[],
     attachment: null,
     mandatory: false,
   },
@@ -117,13 +117,13 @@ const fieldData = [
     id: 27,
     globalId: "SF27",
     name: "choiceField",
-    type: "choice",
+    type: "choice" as const,
     content: null,
     columnIndex: 9,
     definition: {
       options: ["optionA", "optionB"],
     },
-    selectedOptions: ([]: Array<string>),
+    selectedOptions: [] as Array<string>,
     attachment: null,
     mandatory: false,
   },
@@ -173,7 +173,7 @@ describe("action: moveField", () => {
             const template = makeMockTemplate({
               fields: fieldData,
             });
-            for (let [fieldIndex, positionIndex] of changes) {
+            for (const [fieldIndex, positionIndex] of changes) {
               const field = template.fields[fieldIndex];
               template.moveField(field, positionIndex);
             }
