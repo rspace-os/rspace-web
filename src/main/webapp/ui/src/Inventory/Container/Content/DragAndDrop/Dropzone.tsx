@@ -1,7 +1,5 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
-import { styled } from "@mui/material/styles";
+import React, { type ReactNode, forwardRef } from "react";
+import { styled, type Theme } from "@mui/material/styles";
 import TickIcon from "@mui/icons-material/Done";
 import CrossIcon from "@mui/icons-material/Clear";
 import Box from "@mui/material/Box";
@@ -14,16 +12,23 @@ const allowedColor = (
   allowed: boolean,
   theme: {
     palette: {
-      success: { light: string, ... },
-      error: { light: string, ... },
-      ...
-    },
+      success: { light: string };
+      error: { light: string };
+    };
   }
 ) => theme.palette[allowed ? "success" : "error"].light;
 
 const WrapperDiv = styled(
   //eslint-disable-next-line react/display-name
-  React.forwardRef(
+  forwardRef<
+    HTMLDivElement,
+    {
+      children: ReactNode;
+      dragAndDropInProgress: boolean;
+      isChoosing: boolean;
+      allowed: boolean;
+    } & React.HTMLAttributes<HTMLDivElement>
+  >(
     (
       {
         children,
@@ -31,12 +36,7 @@ const WrapperDiv = styled(
         isChoosing: _isChoosing,
         allowed: _allowed,
         ...props
-      }: {|
-        children: Node,
-        dragAndDropInProgress: boolean,
-        isChoosing: boolean,
-        allowed: boolean,
-      |},
+      },
       ref
     ) => (
       <div {...props} ref={ref}>
@@ -56,9 +56,11 @@ const WrapperDiv = styled(
   })(),
 }));
 
-const AllowedIcon = styled(({ allowed, className }) => (
-  <Box className={className}>{allowed ? <TickIcon /> : <CrossIcon />}</Box>
-))(({ theme, allowed }) => ({
+const AllowedIcon = styled(
+  ({ allowed, className }: { allowed: boolean; className?: string }) => (
+    <Box className={className}>{allowed ? <TickIcon /> : <CrossIcon />}</Box>
+  )
+)(({ theme, allowed }: { theme: Theme; allowed: boolean }) => ({
   color: allowedColor(allowed, theme),
   position: "absolute",
   fontSize: "1.1rem",
@@ -67,18 +69,18 @@ const AllowedIcon = styled(({ allowed, className }) => (
   transform: "scale(1.5)",
 }));
 
-type DropzoneProps = {|
-  children: Node,
+type DropzoneArgs = {
+  children: ReactNode;
 
   /**
    * The location of the visual or grid container whose content is to be set by
    * dropping an item in this dropzone. For
    */
-  location: Location,
-|};
+  location: Location;
+};
 
-export const Dropzone: ComponentType<DropzoneProps> = observer(
-  ({ children, location }: DropzoneProps): Node => {
+export const Dropzone = observer(
+  ({ children, location }: DropzoneArgs): ReactNode => {
     const {
       thisLocationIsTheOrigin,
       dragAndDropInProgress,
@@ -148,9 +150,7 @@ export const Dropzone: ComponentType<DropzoneProps> = observer(
         dragAndDropInProgress={dragAndDropInProgress}
         isChoosing={isChoosing(location)}
         allowed={allowed}
-        ref={(node) => {
-          setNodeRef(node);
-        }}
+        ref={setNodeRef}
       >
         {renderContent()}
         {dragAndDropInProgress && isChoosing(location) && (

@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React, { type ReactNode } from "react";
 import useStores from "../../../../stores/use-stores";
 import { useDraggable } from "@dnd-kit/core";
 import Badge from "@mui/material/Badge";
@@ -29,9 +27,9 @@ import { useHelpers } from "./common";
 function calculateRelativeCoords(
   container: Container,
   location: Location
-): $ReadOnlyArray<{| x: number, y: number, globalId: ?GlobalId |}> {
+): ReadonlyArray<{ x: number; y: number; globalId: GlobalId | null }> {
   return (container.selectedLocations ?? []).map((l) => ({
-    globalId: l.content?.globalId,
+    globalId: l.content?.globalId ?? null,
     x: l.coordX - location.coordX,
     y: l.coordY - location.coordY,
   }));
@@ -50,30 +48,25 @@ function areAnyOfTheSelectedLocationsEmpty(container: Container): boolean {
   return !container.selectedLocations.every((l) => Boolean(l.content));
 }
 
-/**
- * This component defines a region that the user can drag and thereby instigate
- * a drag-and-drop operation. It is used to wrap the rendering of a location's
- * content so that the user may move that content to a different location.
- */
-export function Draggable({
+type DraggableProps = {
   /**
    * The grid or visual container within which items are being
    * dragged-and-dropped.
    */
-  container,
+  container: Container;
 
   /**
    * This Location from which its content can be dragged. This location MUST
    * have a content, i.e. it cannot be empty.
    */
-  location,
+  location: Location;
 
   /**
    * The InventoryRecord that can be dragged from this `location` to a new
    * location i.e. `location.content`. We pass it separately from `location` to
    * convince Flow that we've checked that the content is not null.
    */
-  content,
+  content: InventoryRecord;
 
   /**
    * The value of the HTML tabIndex attribute that is to be set on the
@@ -81,7 +74,7 @@ export function Draggable({
    * work, this MUST be set to 0 when tapping Tab is intended to bring focus to
    * the location, where thereafter Space can start the drag-and-drop.
    */
-  tabIndex,
+  tabIndex?: number;
 
   /**
    * Should the current element have focus? The browser provides some default
@@ -96,22 +89,29 @@ export function Draggable({
    * focus when necessary so that the keyboard-driven drag-and-drop mode works
    * correctly.
    */
-  hasFocus,
+  hasFocus: boolean;
 
   /**
    * The Node that renders the `content`. It will be wrapped in Badge when
    * dragging to indicate the total number of items that are being
    * simultaneously moved.
    */
+  children: ReactNode;
+};
+
+/**
+ * This component defines a region that the user can drag and thereby instigate
+ * a drag-and-drop operation. It is used to wrap the rendering of a location's
+ * content so that the user may move that content to a different location.
+ */
+export function Draggable({
+  container,
+  location,
+  content,
+  tabIndex,
+  hasFocus,
   children,
-}: {|
-  container: Container,
-  content: InventoryRecord,
-  location: Location,
-  children: Node,
-  tabIndex?: number,
-  hasFocus: boolean,
-|}): Node {
+}: DraggableProps): ReactNode {
   const { moveStore } = useStores();
   const {
     thisLocationIsTheOrigin,
@@ -136,7 +136,7 @@ export function Draggable({
 
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     disabled,
-    id: content.globalId,
+    id: content.globalId || '',
     data: {
       location,
       content,
@@ -147,7 +147,7 @@ export function Draggable({
     ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.5)`,
         zIndex: 1, // just needs to be rendered above Nodes later in the DOM
-        position: "relative",
+        position: "relative" as const,
         boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
       }
     : {};
@@ -166,7 +166,7 @@ export function Draggable({
    * draggable within the table cell (which is a requirement of the Dndkit
    * library).
    */
-  const ref = React.useRef<?HTMLElement>();
+  const ref = React.useRef<HTMLElement | null>(null);
   React.useEffect(() => {
     if (hasFocus) ref.current?.focus();
   }, [hasFocus]);
