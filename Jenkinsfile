@@ -178,8 +178,45 @@ pipeline {
                 }
             }
         }
-        stage('Jest Tests') {
+        stage('Jest Tests (feature branch)') {
             when {
+                not {
+                    branch 'main'
+                }
+                anyOf {
+                    expression { return params.FRONTEND_TESTS }
+                    changeset '**/*.js'
+                    changeset '**/*.js.flow'
+                    changeset '**/*.ts'
+                    changeset '**/*.tsx'
+                    changeset '**/*.jsp'
+                    changeset '**/*.css'
+                    changeset '**/*.json'
+                }
+            }
+            steps {
+                echo 'Running Jest tests'
+                sh 'git fetch origin main:main || true'
+                dir('src/main/webapp/ui') {
+                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2 --changedSince=main'
+                }
+            }
+            post {
+                failure {
+                    notify currentBuild.result
+                    notifySlack('FAILURE', "Jest tests failed: ${currentBuild.result}")
+                }
+                fixed {
+                    notify currentBuild.result
+                }
+                success {
+                    junit checksName: 'Jest Tests', testResults: '**/ui/junit.xml'
+                }
+            }
+        }
+        stage('Jest Tests (main branch)') {
+            when {
+                branch 'main'
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
@@ -210,8 +247,30 @@ pipeline {
                 }
             }
         }
-        stage('Playwright Component Tests') {
+        stage('Playwright Component Tests (feature branch)') {
         		when {
+                not {
+                    branch 'main'
+                }
+            		anyOf {
+                		expression { return params.FRONTEND_TESTS }
+                		changeset '**/*.ts'
+                		changeset '**/*.tsx'
+                		changeset '**/*.css'
+                		changeset '**/*.json'
+            		}
+            }
+            steps {
+                echo 'Running Playwright tests'
+                dir('src/main/webapp/ui') {
+                    sh 'npx playwright install'
+                    sh 'npm run test-ct -- --only-changed=main'
+                }
+            }
+        }
+        stage('Playwright Component Tests (main branch)') {
+        		when {
+                branch 'main'
             		anyOf {
                 		expression { return params.FRONTEND_TESTS }
                 		changeset '**/*.ts'
