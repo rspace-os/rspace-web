@@ -347,7 +347,7 @@ export interface InventoryRecord
    * using checkboxes.
    */
   selected: boolean;
-  toggleSelected(value: boolean | null): void;
+  toggleSelected(value?: boolean | null): void;
 
   /*
    * this method is for exposing a collection of properties that may be

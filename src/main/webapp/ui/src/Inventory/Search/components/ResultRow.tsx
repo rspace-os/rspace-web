@@ -1,6 +1,4 @@
-// @flow
-
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext } from "react";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
@@ -19,10 +17,10 @@ import { type InventoryRecord } from "../../../stores/definitions/InventoryRecor
 import { UserCancelledAction } from "../../../util/error";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 
-type ResultRowArgs = {|
-  result: InventoryRecord,
-  adjustableColumns: Array<AdjustableTableRowLabel>,
-|};
+type ResultRowArgs = {
+  result: InventoryRecord;
+  adjustableColumns: Array<AdjustableTableRowLabel>;
+};
 
 const useStyles = makeStyles()((theme) => ({
   tableRow: {
@@ -42,7 +40,10 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-function ResultRow({ result, adjustableColumns }: ResultRowArgs): Node {
+function ResultRow({
+  result,
+  adjustableColumns,
+}: ResultRowArgs): React.ReactNode {
   const {
     isChild,
     differentSearchForSettingActiveResult,
@@ -111,11 +112,11 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): Node {
         [() => Boolean(isChild), navigateToResult],
         [() => true, activateResult],
       ])()}
-      selected={
+      selected={Boolean(
         search.activeResult &&
-        result.globalId === search.activeResult.globalId &&
-        search.uiConfig.highlightActiveResult
-      }
+          result.globalId === search.activeResult.globalId &&
+          search.uiConfig.highlightActiveResult
+      )}
     >
       {multiselect && (
         <TableCell scope="row" align="left" className={classes.checkbox}>
@@ -153,4 +154,4 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): Node {
   );
 }
 
-export default (observer(ResultRow): ComponentType<ResultRowArgs>);
+export default observer(ResultRow);
