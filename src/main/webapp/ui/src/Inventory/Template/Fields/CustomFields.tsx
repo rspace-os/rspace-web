@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React, { type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import FieldModel from "../../../stores/models/FieldModel";
 import useStores from "../../../stores/use-stores";
@@ -19,11 +17,11 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type FieldsArgs = {|
-  onErrorStateChange: (string, boolean) => void,
-|};
+type FieldsArgs = {
+  onErrorStateChange: (fieldIdentifier: string, errorState: boolean) => void;
+};
 
-function Fields({ onErrorStateChange }: FieldsArgs): Node {
+function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
   const {
     searchStore: { activeResult },
     uiStore,
@@ -35,7 +33,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): Node {
   const TemplateFields = observer(({ editable }: { editable: boolean }) => {
     const removeCustomField =
       (field: FieldModel) =>
-      (deleteFromSamples?: boolean = false) => {
+      (deleteFromSamples = false) => {
         activeResult.removeCustomField(
           field.id,
           activeResult.fields.indexOf(field),
@@ -45,8 +43,8 @@ function Fields({ onErrorStateChange }: FieldsArgs): Node {
 
     return (
       <Grid container direction="column" spacing={2}>
-        {ArrayUtils.filterClass(FieldModel, activeResult.fields)
-          .map((field: FieldModel, i: number) => (
+        {ArrayUtils.filterClass(FieldModel, activeResult.fields).map(
+          (field: FieldModel, i: number) => (
             <CustomField
               field={field}
               i={i}
@@ -59,7 +57,8 @@ function Fields({ onErrorStateChange }: FieldsArgs): Node {
               forceColumnLayout={!uiStore.isLarge}
               onMove={(index) => activeResult.moveField(field, index)}
             />
-          ))}
+          )
+        )}
       </Grid>
     );
   });
@@ -80,4 +79,4 @@ function Fields({ onErrorStateChange }: FieldsArgs): Node {
   );
 }
 
-export default (observer(Fields): ComponentType<FieldsArgs>);
+export default observer(Fields);
