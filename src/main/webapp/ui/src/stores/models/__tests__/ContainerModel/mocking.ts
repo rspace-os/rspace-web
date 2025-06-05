@@ -1,10 +1,9 @@
-//@flow
 import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
 import { personAttrs } from "../PersonModel/mocking";
 
 export const containerAttrs = (
-  attrs?: $ReadOnly<Partial<ContainerAttrs>>
+  attrs?: Readonly<Partial<ContainerAttrs>>
 ): ContainerAttrs => ({
   id: 1,
   type: "CONTAINER",
@@ -44,14 +43,14 @@ export const containerAttrs = (
 });
 
 export const makeMockContainer = (
-  attrs?: $ReadOnly<Partial<ContainerAttrs>>
+  attrs?: Readonly<Partial<ContainerAttrs>>
 ): ContainerModel =>
   new ContainerModel(new AlwaysNewFactory(), containerAttrs(attrs));
 
 export const benchAttrs = ({
   owner,
   ...attrs
-}: $ReadOnly<Partial<ContainerAttrs>>): ContainerAttrs => ({
+}: Readonly<Partial<ContainerAttrs>>): ContainerAttrs => ({
   id: 1,
   type: "CONTAINER",
   globalId: "BE1",
