@@ -1,9 +1,7 @@
-//@flow
-
 import { type PersonAttrs } from "../../../definitions/Person";
 
 export const personAttrs = (
-  attrs?: $ReadOnly<Partial<PersonAttrs>>
+  attrs?: Readonly<Partial<PersonAttrs>>
 ): PersonAttrs => ({
   id: 1,
   username: "user1a",
