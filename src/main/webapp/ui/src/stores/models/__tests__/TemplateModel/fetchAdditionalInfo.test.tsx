@@ -1,11 +1,11 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { makeMockTemplate, templateAttrs } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
+import { AxiosResponse } from "@/common/axios";
 
 jest.mock("../../../../common/InvApiService", () => ({
   get: () => ({}),
@@ -24,7 +24,11 @@ describe("fetchAdditionalInfo", () => {
     jest.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve({
         data: templateAttrs(),
-      })
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse)
     );
 
     let firstCallDone = false;

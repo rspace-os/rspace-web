@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import {
@@ -29,7 +28,7 @@ afterEach(cleanup);
 
 describe("Searchbar", () => {
   test("If lots of text is entered then the expanded field dialog it available.", () => {
-    const handleSearch = jest.fn<[string], void>();
+    const handleSearch = jest.fn<void, [string]>();
     const search = new Search({
       factory: mockFactory(),
     });
