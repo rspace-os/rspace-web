@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType, useId } from "react";
+import React, { useId } from "react";
 import { observer } from "mobx-react-lite";
 import FieldModel from "../../../stores/models/FieldModel";
 import {
@@ -69,11 +67,7 @@ const FieldTypeLabel = ({ field }: { field: FieldModel }) => {
   );
 };
 
-const FieldTypeSelector = observer(function FieldTypeSelector({
-  field,
-}: {
-  field: FieldModel,
-}) {
+const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
   return (
     <InputWrapper label="Type">
       <FieldTypeMenu
@@ -81,7 +75,7 @@ const FieldTypeSelector = observer(function FieldTypeSelector({
         onChange={(fieldType) => {
           field.setAttributesDirty({
             type: fieldTypeToApiString(fieldType),
-            content: match<FieldType, string | number | Array<mixed>>([
+            content: match<FieldType, string | number | Array<unknown>>([
               [(f) => f === FieldTypes.radio, []],
               [(f) => f === FieldTypes.choice, []],
               [(f) => f === FieldTypes.number, 0],
@@ -94,33 +88,29 @@ const FieldTypeSelector = observer(function FieldTypeSelector({
   );
 });
 
-const Mandatory = observer(function Mandatory({
-  field,
-  editing,
-}: {
-  field: FieldModel,
-  editing: boolean,
-}) {
-  return (
-    <InputWrapper label="Mandatory">
-      {editing ? (
-        <>
-          <Switch
-            checked={field.mandatory}
-            onChange={({ target: { checked } }) => {
-              field.setAttributesDirty({
-                mandatory: checked,
-              });
-            }}
-            edge="start"
-          />
-        </>
-      ) : (
-        toYesNo(field.mandatory)
-      )}
-    </InputWrapper>
-  );
-});
+const Mandatory = observer(
+  ({ field, editing }: { field: FieldModel; editing: boolean }) => {
+    return (
+      <InputWrapper label="Mandatory">
+        {editing ? (
+          <>
+            <Switch
+              checked={field.mandatory}
+              onChange={({ target: { checked } }) => {
+                field.setAttributesDirty({
+                  mandatory: checked,
+                });
+              }}
+              edge="start"
+            />
+          </>
+        ) : (
+          toYesNo(field.mandatory)
+        )}
+      </InputWrapper>
+    );
+  }
+);
 
 const DeletionRecap = ({ field }: { field: FieldModel }) => {
   return (
@@ -139,15 +129,15 @@ const DeletionRecap = ({ field }: { field: FieldModel }) => {
   );
 };
 
-type CustomFieldArgs = {|
-  field: FieldModel,
-  i: number,
-  editable: boolean,
-  onErrorStateChange: (boolean) => void,
-  onRemove: (b?: boolean) => void,
-  forceColumnLayout: boolean,
-  onMove: (number) => void,
-|};
+type CustomFieldArgs = {
+  field: FieldModel;
+  i: number;
+  editable: boolean;
+  onErrorStateChange: (value: boolean) => void;
+  onRemove: (b?: boolean) => void;
+  forceColumnLayout: boolean;
+  onMove: (index: number) => void;
+};
 
 function CustomField({
   field,
@@ -157,7 +147,7 @@ function CustomField({
   onRemove,
   forceColumnLayout,
   onMove,
-}: CustomFieldArgs): Node {
+}: CustomFieldArgs): React.ReactNode {
   const nameFieldId = useId();
   const { classes } = useStyles();
 
@@ -230,4 +220,4 @@ function CustomField({
   );
 }
 
-export default (observer(CustomField): ComponentType<CustomFieldArgs>);
+export default observer(CustomField);

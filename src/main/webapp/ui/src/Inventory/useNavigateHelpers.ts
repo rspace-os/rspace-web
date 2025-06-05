@@ -1,5 +1,3 @@
-//@flow
-
 import { type CoreFetcherArgs } from "../stores/definitions/Search";
 import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
 import useStores from "../stores/use-stores";
@@ -7,10 +5,10 @@ import React from "react";
 import NavigateContext from "../stores/contexts/Navigate";
 import { UserCancelledAction } from "../util/error";
 
-export default function useNavigateHelpers(): {|
-  navigateToSearch: (CoreFetcherArgs) => void,
-  navigateToRecord: (InventoryRecord) => Promise<void>,
-|} {
+export default function useNavigateHelpers(): {
+  navigateToSearch: (destination: CoreFetcherArgs) => void;
+  navigateToRecord: (destination: InventoryRecord) => Promise<void>;
+} {
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
   const { searchStore, uiStore } = useStores();

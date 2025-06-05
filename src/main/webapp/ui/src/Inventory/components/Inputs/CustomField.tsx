@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import { dropProperty } from "../../../util/Util";
 import InputWrapper, {
@@ -40,7 +38,7 @@ import UriField, {
   type UriFieldArgs,
 } from "../../../components/Inputs/UriField";
 
-/*
+/**
  * These type aliases must be inexact objects so that all of the props
  * necessary to render different field types can all be passed in at the same
  * time. Otherwise, at compile time, the code could only render one field OR
@@ -50,20 +48,20 @@ import UriField, {
  * As such, be aware that Flow will not warn about small errors in the props
  * passed to this component such as typos and unused props.
  */
-type FieldArgs<T: string> =
-  | {| type: "Attachment", ...AttachmentFieldArgs<any> |}
-  | {| type: "Choice", ...ChoiceFieldArgs<T> |}
-  | {| type: "Date", ...DateFieldArgs |}
-  | {| type: "File", ...FileFieldArgs |}
-  | {| type: "Number", ...NumberFieldArgs |}
-  | {| type: "Radio", ...RadioFieldArgs<T> |}
-  | {| type: "Reference", ...ReferenceFieldArgs |}
-  | {| type: "String", ...StringFieldArgs |}
-  | {| type: "Text", ...TextFieldArgs |}
-  | {| type: "Time", ...TimeFieldArgs |}
-  | {| type: "Uri", ...UriFieldArgs |};
+type FieldArgs<T extends string> =
+  | ({ type: "Attachment" } & AttachmentFieldArgs<any>)
+  | ({ type: "Choice" } & ChoiceFieldArgs<T>)
+  | ({ type: "Date" } & DateFieldArgs)
+  | ({ type: "File" } & FileFieldArgs)
+  | ({ type: "Number" } & NumberFieldArgs)
+  | ({ type: "Radio" } & RadioFieldArgs<T>)
+  | ({ type: "Reference" } & ReferenceFieldArgs)
+  | ({ type: "String" } & StringFieldArgs)
+  | ({ type: "Text" } & TextFieldArgs)
+  | ({ type: "Time" } & TimeFieldArgs)
+  | ({ type: "Uri" } & UriFieldArgs);
 
-type CustomFieldArgs<T: string> = {|
+type CustomFieldArgs<T extends string> = {
   type:
     | "Attachment"
     | "Choice"
@@ -75,26 +73,27 @@ type CustomFieldArgs<T: string> = {|
     | "String"
     | "Text"
     | "Time"
-    | "Uri",
-  ...FieldArgs<T>,
-  label?: string,
-  value?: any,
-  error?: boolean,
-  helperText?: ?string,
-  maxLength?: number,
-  disabled?: boolean,
-  actions?: Node,
-  inline?: boolean,
-  explanation?: ?Node,
-  required?: boolean,
-|};
+    | "Uri";
+  label?: string;
+  value?: any;
+  error?: boolean;
+  helperText?: string | null;
+  maxLength?: number;
+  disabled?: boolean;
+  actions?: React.ReactNode;
+  inline?: boolean;
+  explanation?: React.ReactNode;
+  required?: boolean;
+} & FieldArgs<T>;
 
 /*
  * Component that can render any of the field types, based on the value of the
  * `type` prop, wrapped in an InputWrapper.
  */
-function CustomField<T: string>(props: CustomFieldArgs<T>): Node {
-  const wrapperProps: $Diff<InputWrapperArgs, {| children: mixed |}> = {
+function CustomField<T extends string>(
+  props: CustomFieldArgs<T>
+): React.ReactNode {
+  const wrapperProps: Omit<InputWrapperArgs, "children"> = {
     label: props.label,
     value: props.value,
     error: props.error,
@@ -107,7 +106,7 @@ function CustomField<T: string>(props: CustomFieldArgs<T>): Node {
     required: props.required,
   };
 
-  const fieldProps: any = dropProperty((props: any), "type");
+  const fieldProps: Record<string, unknown> = dropProperty(props, "type");
   delete fieldProps.label;
   delete fieldProps.helperText;
   delete fieldProps.required;
@@ -134,32 +133,30 @@ function CustomField<T: string>(props: CustomFieldArgs<T>): Node {
 
   let field;
   if (props.type === "Attachment") {
-    field = <AttachmentField {...fieldProps} />;
+    field = <AttachmentField {...(fieldProps as AttachmentFieldArgs<any>)} />;
   } else if (props.type === "Choice") {
-    field = <ChoiceField {...fieldProps} />;
+    field = <ChoiceField {...(fieldProps as ChoiceFieldArgs<T>)} />;
   } else if (props.type === "Date") {
-    field = <DateField {...fieldProps} />;
+    field = <DateField {...(fieldProps as DateFieldArgs)} />;
   } else if (props.type === "File") {
-    field = <FileField {...fieldProps} />;
+    field = <FileField {...(fieldProps as FileFieldArgs)} />;
   } else if (props.type === "Number") {
-    field = <NumberField {...fieldProps} />;
+    field = <NumberField {...(fieldProps as NumberFieldArgs)} />;
   } else if (props.type === "Radio") {
-    field = <RadioField {...fieldProps} />;
+    field = <RadioField {...(fieldProps as RadioFieldArgs<T>)} />;
   } else if (props.type === "Reference") {
-    field = <ReferenceField {...fieldProps} />;
+    field = <ReferenceField {...(fieldProps as ReferenceFieldArgs)} />;
   } else if (props.type === "String") {
-    field = <StringField {...fieldProps} />;
+    field = <StringField {...(fieldProps as StringFieldArgs)} />;
   } else if (props.type === "Text") {
-    field = <TextField {...fieldProps} />;
+    field = <TextField {...(fieldProps as TextFieldArgs)} />;
   } else if (props.type === "Time") {
-    field = <TimeField {...fieldProps} />;
+    field = <TimeField {...(fieldProps as TimeFieldArgs)} />;
   } else if (props.type === "Uri") {
-    field = <UriField {...fieldProps} />;
-  } else {
-    throw new Error(`Unknown field type "${props.type}"`);
+    field = <UriField {...(fieldProps as UriFieldArgs)} />;
   }
 
   return <InputWrapper {...wrapperProps}>{field}</InputWrapper>;
 }
 
-export default (observer(CustomField): typeof CustomField);
+export default observer(CustomField);
