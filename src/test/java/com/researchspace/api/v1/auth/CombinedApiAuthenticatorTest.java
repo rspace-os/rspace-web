@@ -13,6 +13,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.ApiAvailabilityHandler;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -51,8 +52,7 @@ public class CombinedApiAuthenticatorTest {
      * also with system setting not allowing external oauth connections  */
     user.setAuthenticatedBy(UserAuthenticationMethod.API_OAUTH_TOKEN);
     when(apiAvailabilityHandler.isOAuthAccessAllowed(user)).thenReturn(false);
-    assertThrows(
-        ApiAuthenticationException.class, () -> combinedApiAuthenticator.authenticate(mockRequest));
+    assertThrows(ApiAuthenticationException.class, () -> combinedApiAuthenticator.authenticate(mockRequest));
     verifyNoInteractions(apiKeyAuthenticator);
     verifyNoInteractions(analyticsManager);
 
