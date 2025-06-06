@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import { take, incrementForever } from "../../iterators";
 import fc from "fast-check";
@@ -22,7 +21,6 @@ describe("take", () => {
     ]);
 
     // Or a string
-    // $FlowExpectedError[incompatible-type] Flow doesn't like us treating strings as iterables, but this does work
     expect([...take("foo", 2)]).toEqual(["f", "o"]);
 
     // Or even an infinite generator

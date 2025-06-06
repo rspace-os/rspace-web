@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import fc from "fast-check";
 import { incrementForever } from "../../iterators";
@@ -16,7 +15,7 @@ describe("incrementForever", () => {
           ),
         ([count, indexAssertion]) => {
           // create list from generator
-          const list = [];
+          const list: number[] = [];
           let i = 0;
           for (const x of incrementForever()) {
             if (i > count) break;
