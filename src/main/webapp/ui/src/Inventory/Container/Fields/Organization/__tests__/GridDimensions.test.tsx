@@ -1,14 +1,12 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import {
   render,
   cleanup,
   screen,
-  act,
   within,
   fireEvent,
 } from "@testing-library/react";
@@ -27,10 +25,10 @@ import ContainerModel from "../../../../../stores/models/ContainerModel";
 import * as ArrayUtils from "../../../../../util/ArrayUtils";
 import userEvent from "@testing-library/user-event";
 
-function makeRootStoreWithGridContainer(): {|
-  rootStore: StoreContainer,
-  gridContainer: ContainerModel,
-|} {
+function makeRootStoreWithGridContainer(): {
+  rootStore: StoreContainer;
+  gridContainer: ContainerModel;
+} {
   const activeResult = makeMockContainer({
     id: null,
     cType: "GRID",
@@ -71,7 +69,7 @@ describe("GridDimensions", () => {
     fireEvent.mouseDown(screen.getByRole("combobox"));
     const menuOptions = within(screen.getByRole("listbox"))
       .getAllByRole("option")
-      .map((o) => o.textContent);
+      .map((o) => o.textContent || "");
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "Custom",
@@ -88,14 +86,19 @@ describe("GridDimensions", () => {
       );
 
       const rows = parseInteger(
-        screen.getByRole("spinbutton", { name: "rows" }).value
+        (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+          .value
       ).orElse(null);
       expect(rows).not.toBeNull();
       expect(rows).toBeGreaterThanOrEqual(2);
       expect(rows).toBeLessThanOrEqual(24);
 
       const columns = parseInteger(
-        screen.getByRole("spinbutton", { name: "columns" }).value
+        (
+          screen.getByRole("spinbutton", {
+            name: "columns",
+          }) as HTMLInputElement
+        ).value
       ).orElse(null);
       expect(columns).not.toBeNull();
       expect(columns).toBeGreaterThanOrEqual(2);
@@ -120,7 +123,7 @@ describe("GridDimensions", () => {
       ArrayUtils.head(
         within(screen.getByRole("listbox"))
           .getAllByRole("option")
-          .map((o) => o.textContent)
+          .map((o) => o.textContent || "")
           .filter((o) => o !== "Custom")
       ).orElse(null)
     );
@@ -132,11 +135,13 @@ describe("GridDimensions", () => {
       })
     );
     const rowsBefore = parseInteger(
-      screen.getByRole("spinbutton", { name: "rows" }).value
+      (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+        .value
     ).orElse(null);
     expect(rowsBefore).not.toBeNull();
     const columnsBefore = parseInteger(
-      screen.getByRole("spinbutton", { name: "columns" }).value
+      (screen.getByRole("spinbutton", { name: "columns" }) as HTMLInputElement)
+        .value
     ).orElse(null);
     expect(columnsBefore).not.toBeNull();
 
@@ -150,11 +155,13 @@ describe("GridDimensions", () => {
 
     // assert that the values have not changed
     const rowsAfter = parseInteger(
-      screen.getByRole("spinbutton", { name: "rows" }).value
+      (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+        .value
     ).orElse(null);
     expect(rowsAfter).not.toBeNull();
     const columnsAfter = parseInteger(
-      screen.getByRole("spinbutton", { name: "columns" }).value
+      (screen.getByRole("spinbutton", { name: "columns" }) as HTMLInputElement)
+        .value
     ).orElse(null);
     expect(columnsAfter).not.toBeNull();
     expect(rowsAfter).toEqual(rowsBefore);
@@ -178,7 +185,7 @@ describe("GridDimensions", () => {
       ArrayUtils.head(
         within(screen.getByRole("listbox"))
           .getAllByRole("option")
-          .map((o) => o.textContent)
+          .map((o) => o.textContent || "")
           .filter((o) => o !== "Custom")
       ).orElse(null)
     );
@@ -191,7 +198,8 @@ describe("GridDimensions", () => {
 
     // change the rows
     const rowsBefore = parseInteger(
-      screen.getByRole("spinbutton", { name: "rows" }).value
+      (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+        .value
     ).orElse(null);
     const newRows = (assertNotNull(rowsBefore) + 1) % 24;
     fireEvent.input(screen.getByRole("spinbutton", { name: "rows" }), {
@@ -232,7 +240,8 @@ describe("GridDimensions", () => {
 
     // change the columns
     const columnsBefore = parseInteger(
-      screen.getByRole("spinbutton", { name: "columns" }).value
+      (screen.getByRole("spinbutton", { name: "columns" }) as HTMLInputElement)
+        .value
     ).orElse(null);
     // expect(columnsBefore).not.toBeNull();
     const newColumns = (assertNotNull(columnsBefore) + 1) % 24;
@@ -259,7 +268,7 @@ describe("GridDimensions", () => {
     fireEvent.mouseDown(screen.getByRole("combobox"));
     const menuOptions = within(screen.getByRole("listbox"))
       .getAllByRole("option")
-      .map((o) => o.textContent)
+      .map((o) => o.textContent || "")
       .filter((o) => o !== "Custom");
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
@@ -277,10 +286,15 @@ describe("GridDimensions", () => {
       );
 
       const rows = parseInteger(
-        screen.getByRole("spinbutton", { name: "rows" }).value
+        (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+          .value
       ).orElse(null);
       const columns = parseInteger(
-        screen.getByRole("spinbutton", { name: "columns" }).value
+        (
+          screen.getByRole("spinbutton", {
+            name: "columns",
+          }) as HTMLInputElement
+        ).value
       ).orElse(null);
 
       expect(option).toMatch(
@@ -303,7 +317,7 @@ describe("GridDimensions", () => {
     const menuOption = ArrayUtils.head(
       within(screen.getByRole("listbox"))
         .getAllByRole("option")
-        .map((o) => o.textContent)
+        .map((o) => o.textContent || "")
     ).orElse(null);
     expect(assertNotNull(menuOption)).toMatch(/96 well plate/);
   });
@@ -351,16 +365,16 @@ describe("GridDimensions", () => {
         fireEvent.mouseDown(screen.getByRole("combobox"));
         const menuOptions = within(screen.getByRole("listbox"))
           .getAllByRole("option")
-          .map((o) => o.textContent)
+          .map((o) => o.textContent || "")
           .filter((o) => o !== "Custom");
 
         const option = menuOptions[unboundedIndex % menuOptions.length];
 
-        let gridLayout;
+        let gridLayout: any;
         jest
           .spyOn(gridContainer, "setAttributesDirty")
-          .mockImplementation(({ gridLayout: newGridLayout }) => {
-            gridLayout = newGridLayout;
+          .mockImplementation((args: any) => {
+            gridLayout = args.gridLayout;
           });
 
         await user.click(
@@ -370,11 +384,16 @@ describe("GridDimensions", () => {
         );
 
         const rows = parseInteger(
-          screen.getByRole("spinbutton", { name: "rows" }).value
+          (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+            .value
         ).orElse(null);
         expect(rows).not.toBeNull();
         const columns = parseInteger(
-          screen.getByRole("spinbutton", { name: "columns" }).value
+          (
+            screen.getByRole("spinbutton", {
+              name: "columns",
+            }) as HTMLInputElement
+          ).value
         ).orElse(null);
         expect(columns).not.toBeNull();
 
