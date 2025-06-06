@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import BorderInnerIcon from "@mui/icons-material/BorderInner";
@@ -32,12 +30,12 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type DraggerArgs = {|
-  container: ContainerModel,
-  parentRef: {| current: ?HTMLElement |},
-|};
+type DraggerArgs = {
+  container: ContainerModel;
+  parentRef: { current: HTMLElement | null };
+};
 
-function Dragger({ container, parentRef }: DraggerArgs): Node {
+function Dragger({ container, parentRef }: DraggerArgs): React.ReactNode {
   const { classes } = useStyles();
   if (!container.locations)
     throw new Error("Locations of container must be known.");
@@ -121,4 +119,4 @@ function Dragger({ container, parentRef }: DraggerArgs): Node {
   );
 }
 
-export default (observer(Dragger): ComponentType<DraggerArgs>);
+export default observer(Dragger);
