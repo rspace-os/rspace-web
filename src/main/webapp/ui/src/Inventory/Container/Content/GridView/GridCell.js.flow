@@ -1,0 +1,39 @@
+// @flow
+
+import React, {
+  type Node,
+  type ComponentType,
+  type ElementRef,
+} from "react";
+import TableContainer from "@mui/material/TableContainer";
+import { type Location } from "../../../../stores/definitions/Container";
+
+export type GridCellArgs = {|
+  children: Node,
+
+  /**
+   * When the table cell is resized (typically because the viewport dimensions
+   * have changed), this component will invoke the `setPosition` and
+   * `setDimensions` methods on this `Location`
+   */
+  location: Location,
+  /**
+   * This reference to the parent TableContainer component is used to calculate
+   * this new position and dimension.
+   */
+  parentRef: ElementRef<typeof TableContainer>,
+
+  /**
+   * CSS property of the rendered HTMPTableCellElement.
+   *
+   * To ensure every cell in the row has the same width, provide a value like
+   * `calc(100% / ${X})` where `X` is the number cells in the row.
+   */
+  width: string,
+
+  columnsUnderHover: Set<number>,
+  columnIndex: number,
+  hoverEffect: boolean,
+|};
+
+declare export default ComponentType<GridCellArgs>;

@@ -1,44 +1,52 @@
-//@flow
-
-import React, {
-  useRef,
-  useEffect,
-  type Node,
-  type ComponentType,
-  type ElementRef,
-} from "react";
+import React, { useRef, useEffect, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import TableCell from "@mui/material/TableCell";
 import useResizeObserver from "../../../components/ResizeObserver";
-import TableContainer from "@mui/material/TableContainer";
 import { type Location } from "../../../../stores/definitions/Container";
 import { styled } from "@mui/material/styles";
 import * as DragAndDrop from "../DragAndDrop";
 import { runInAction } from "mobx";
 
+interface StyledCellProps {
+  width: string;
+  hoverEffect: boolean;
+}
+
 const StyledCell = styled(
-  React.forwardRef(
-    ({ width: _width, hoverEffect: _hoverEffect, ...rest }, ref) => (
-      <TableCell {...rest} ref={ref} />
-    )
-  )
-)(({ theme, width, hoverEffect }) => ({
-  color: "grey",
-  borderBottom: "none",
-  "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
-  "&:active": {},
-  /*
-   * This padding is chosen so that a 96-well plate can be shown, without
-   * scrolling, on a typical desktop monitor.
-   */
-  padding: "3px !important",
-  width,
-  background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",
-}));
+  // eslint-disable-next-line react/display-name
+  React.forwardRef<
+    HTMLTableCellElement,
+    StyledCellProps & React.ComponentProps<typeof TableCell> & { theme?: any }
+  >(({ width: _width, hoverEffect: _hoverEffect, ...rest }, ref) => (
+    <TableCell {...rest} ref={ref} />
+  ))
+)(
+  ({
+    theme,
+    width,
+    hoverEffect,
+  }: {
+    theme: { palette: { grey: Record<number, string> } };
+    width: string;
+    hoverEffect: boolean;
+  }) => ({
+    color: "grey",
+    borderBottom: "none",
+    "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
+    "&:active": {},
+    /*
+     * This padding is chosen so that a 96-well plate can be shown, without
+     * scrolling, on a typical desktop monitor.
+     */
+    padding: "3px !important",
+    width,
+    background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",
+  })
+);
 
 const calculateLocationGeometry = (
-  tableCellRef: {| current: ?HTMLElement |},
-  parentRef: {| current: ?HTMLElement |},
+  tableCellRef: React.RefObject<HTMLTableCellElement>,
+  parentRef: React.RefObject<HTMLElement>,
   location: Location
 ) => {
   const rect = tableCellRef.current?.getBoundingClientRect();
@@ -52,20 +60,20 @@ const calculateLocationGeometry = (
   }
 };
 
-export type GridCellArgs = {|
-  children: Node,
+export type GridCellArgs = {
+  children: ReactNode;
 
   /**
    * When the table cell is resized (typically because the viewport dimensions
    * have changed), this component will invoke the `setPosition` and
    * `setDimensions` methods on this `Location`
    */
-  location: Location,
+  location: Location;
   /**
    * This reference to the parent TableContainer component is used to calculate
    * this new position and dimension.
    */
-  parentRef: ElementRef<typeof TableContainer>,
+  parentRef: React.RefObject<HTMLElement>;
 
   /**
    * CSS property of the rendered HTMPTableCellElement.
@@ -73,12 +81,12 @@ export type GridCellArgs = {|
    * To ensure every cell in the row has the same width, provide a value like
    * `calc(100% / ${X})` where `X` is the number cells in the row.
    */
-  width: string,
+  width: string;
 
-  columnsUnderHover: Set<number>,
-  columnIndex: number,
-  hoverEffect: boolean,
-|};
+  columnsUnderHover: Set<number>;
+  columnIndex: number;
+  hoverEffect: boolean;
+};
 
 function GridCell({
   location,
@@ -88,8 +96,8 @@ function GridCell({
   columnsUnderHover,
   columnIndex,
   hoverEffect,
-}: GridCellArgs): Node {
-  const cellRef = useRef<?HTMLElement>(null);
+}: GridCellArgs): ReactNode {
+  const cellRef = useRef<HTMLTableCellElement>(null);
 
   const resizeObserver = useRef(
     new ResizeObserver(() => {
@@ -115,7 +123,7 @@ function GridCell({
       aria-selected={location.selected}
       ref={cellRef}
       align="center"
-      onMouseDown={(e) => {
+      onMouseDown={(e: React.MouseEvent) => {
         e.preventDefault();
       }}
       width={width}
@@ -141,4 +149,4 @@ function GridCell({
   );
 }
 
-export default (observer(GridCell): ComponentType<GridCellArgs>);
+export default observer(GridCell);
