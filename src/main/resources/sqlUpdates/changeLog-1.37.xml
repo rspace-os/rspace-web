@@ -281,20 +281,8 @@
 	</loadData>
 	
 	</changeSet>
-	
-		
-	<changeSet id="16-7-18g-pre-TestData" author="richard" context="liquibase-update-test">
-	<!-- required for liquibase update to 3.5 -->
-	<validCheckSum>7:4b1a6a97be9d038bd4fd8f63f28f4b10</validCheckSum>	
-	<comment>Need to reset all property values for liquibase tests</comment>
-	<delete tableName="SystemPropertyValue"></delete>
-	<loadData file="sqlUpdates/data/SystemPropertyTestData_1-37/SystemPropertyValues.csv" tableName="SystemPropertyValue">
-	        <column name="value" type="STRING"/>
-			<column name="property_id" type="NUMERIC"/>
-	</loadData>
-	</changeSet>
-	
-	<changeSet id="16-7-18g-pre-TestData2" author="richard" context="liquibase-update-test,run">
+
+	<changeSet id="16-7-18g-pre-TestData2" author="richard" context="run">
 	<comment>Need to reset all property descriptor values for liquibase tests and production</comment>
 	<update tableName="SystemProperty">
 	     <column name="descriptor_id" valueComputed="id"/>

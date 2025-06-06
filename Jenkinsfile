@@ -400,7 +400,7 @@ pipeline {
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Dlog4j2.configurationFile=log4j2-dev.xml \
                   -Djdbc.url=jdbc:mysql://localhost:3306/testLiquibaseUpdate \
-                  -Dliquibase.context=liquibase-update-test,run \
+                  -Dliquibase.context=run \
                   -Dmaven.test.failure.ignore=false   -Denvironment=keepdbintact  \
                   -DRS.devlogLevel=INFO -DRS_FILE_BASE=/var/lib/jenkins/userContent/RS_FileRepoLiquibase"
             }
