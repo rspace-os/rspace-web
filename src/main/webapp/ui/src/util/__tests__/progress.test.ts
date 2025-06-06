@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import { calculateProgress, asPercentageString } from "../progress";
 import fc from "fast-check";
