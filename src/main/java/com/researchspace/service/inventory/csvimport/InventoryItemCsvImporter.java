@@ -223,12 +223,10 @@ public abstract class InventoryItemCsvImporter {
       case "identifier":
         List<ApiInventoryDOI> identifierList =
             inventoryIdentifierManager.findIdentifiers("draft", false, value, user);
-        // check if the identifier value is findable and assignable --> otherwise error
         if (identifierList.size() != 1) {
           throw new IllegalArgumentException(
               "identifier for " + fieldName + " is not unique: " + value);
         } else {
-          // set the identifier, still to be assigned after creating the Inventory item
           apiInvRec.setIdentifiers(identifierList);
         }
         break;
