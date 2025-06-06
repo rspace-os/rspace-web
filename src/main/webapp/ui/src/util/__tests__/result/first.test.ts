@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import Result from "../../result";
 
@@ -11,7 +10,7 @@ describe("first", () => {
     });
   });
   test("A single Error, should return itself.", () => {
-    const actual = Result.first(Result.Error<mixed>([new Error("foo")]));
+    const actual = Result.first(Result.Error<unknown>([new Error("foo")]));
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
       expect(errors.map((e) => e.message)).toEqual(["foo"]);
@@ -26,8 +25,8 @@ describe("first", () => {
   });
   test("Multiple Errors, should return Error.", () => {
     const actual = Result.first(
-      Result.Error<mixed>([new Error("foo")]),
-      Result.Error<mixed>([new Error("bar")])
+      Result.Error<unknown>([new Error("foo")]),
+      Result.Error<unknown>([new Error("bar")])
     );
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
