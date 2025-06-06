@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import FieldModel from "../../FieldModel";
@@ -22,10 +21,10 @@ describe("hasContent", () => {
       ({
         value,
         boolValue,
-      }: {|
-        value: string | number,
-        boolValue: boolean,
-      |}) => {
+      }: {
+        value: string | number;
+        boolValue: boolean;
+      }) => {
         const field = new FieldModel(
           {
             type: "number",
