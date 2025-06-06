@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { containerAttrs } from "../ContainerModel/mocking";
@@ -30,14 +29,14 @@ describe("isValid", () => {
   describe("Name is checked", () => {
     test("Name of length 255 is valid", () => {
       const mat = generateListOfMaterials({
-        name: new Array<" ">(255).fill(" ").join(""),
+        name: new Array<string>(255).fill(" ").join(""),
       });
 
       expect(mat.isValid).toBe(true);
     });
     test("Name of length 256 is invalid", () => {
       const mat = generateListOfMaterials({
-        name: new Array<" ">(256).fill(" ").join(""),
+        name: new Array<string>(256).fill(" ").join(""),
       });
 
       expect(mat.isValid).toBe(false);
@@ -46,14 +45,14 @@ describe("isValid", () => {
   describe("Description is checked", () => {
     test("Description of length 255 is valid", () => {
       const mat = generateListOfMaterials({
-        description: new Array<" ">(255).fill(" ").join(""),
+        description: new Array<string>(255).fill(" ").join(""),
       });
 
       expect(mat.isValid).toBe(true);
     });
     test("Description of length 256 is invalid", () => {
       const mat = generateListOfMaterials({
-        description: new Array<" ">(256).fill(" ").join(""),
+        description: new Array<string>(256).fill(" ").join(""),
       });
 
       expect(mat.isValid).toBe(false);
