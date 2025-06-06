@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import Avatar from "@mui/material/Avatar";
 import InfoBadge from "../../components/InfoBadge";
@@ -83,11 +81,11 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type Class = mixed;
+type Class = string | undefined;
 
 const selectionStyle = (
   location: Location,
-  classes: { [string]: string },
+  classes: Record<string, string>,
   search: Search
 ): Class => {
   if (location.isShallowUnselected(search)) {
@@ -101,13 +99,13 @@ const selectionStyle = (
   if (location.selected) {
     return classes.selected;
   }
-  return "";
+  return undefined;
 };
 
-const wrapperClasses = (
+const useWrapperClasses = (
   location: Location,
-  classes: { [string]: string },
-  globalClasses: { greyOut: string, ... }
+  classes: Record<string, string>,
+  globalClasses: { greyOut: string } & Record<string, string>
 ): string => {
   const { search } = React.useContext(SearchContext);
   const ret = new Set([
@@ -117,23 +115,32 @@ const wrapperClasses = (
   if (location.parentContainer.cType === "GRID") ret.add(classes.gridCell);
   if (location.parentContainer.cType === "IMAGE") ret.add(classes.imageCell);
   if (location.isGreyedOut(search)) ret.add(globalClasses.greyOut);
-  return [...ret].join(" ");
+  return [...ret].filter(Boolean).join(" ");
 };
 
-type LocationContentArgs = {|
-  location: Location,
-  container: Container,
-  tabIndex?: number,
-  hasFocus: boolean,
-|};
+type LocationContentArgs = {
+  location: Location;
+  container: Container;
+  tabIndex?: number;
+  hasFocus: boolean;
+};
+
+type ActualLocationContentProps = {
+  content: InventoryRecord & {
+    image?: string | null;
+    thumbnail?: string | null;
+  };
+  location: Location;
+  classes: { avatar: string };
+};
 
 const ActualLocationContent = withStyles<
-  {|
-    content: InventoryRecord,
-    location: Location,
-  |},
   {
-    avatar: string,
+    content: InventoryRecord & { image?: string | null };
+    location: Location;
+  },
+  {
+    avatar: string;
   }
 >((theme, { content }) => ({
   avatar: {
@@ -157,48 +164,44 @@ const ActualLocationContent = withStyles<
       pointerEvents: "none",
     },
   },
-}))(
-  ({
-    content,
-    classes,
-    location,
-  }: {|
-    content: InventoryRecord,
-    classes: { avatar: string },
-    location: Location,
-  |}) => {
-    return (
-      <Observer>
-        {() => (
-          <>
-            <Avatar
-              className={classes.avatar}
-              variant="rounded"
-              src={content.thumbnail}
-              onMouseMove={(e) => e.preventDefault()}
-              style={{
-                /*
-                 * This is here rather than in the styles above because it needs
-                 * to be inside the Observer so that when the user
-                 * selects/deselect the location the sibling border
-                 * appears/disappears
-                 */
-                border: `${
-                  location.isSiblingSelected ? location.uniqueColor : "white"
-                } 3px solid`,
-              }}
-            >
-              {content.thumbnail ?? <RecordTypeIcon record={content} />}
-            </Avatar>
-            <InfoBadge record={content}>
-              <InfoCard record={content} />
-            </InfoBadge>
-          </>
-        )}
-      </Observer>
-    );
-  }
-);
+}))(({ content, classes, location }: ActualLocationContentProps) => {
+  return (
+    <Observer>
+      {() => (
+        <>
+          <Avatar
+            className={classes.avatar}
+            variant="rounded"
+            src={content.thumbnail || undefined}
+            onMouseMove={(e: React.MouseEvent) => e.preventDefault()}
+            style={{
+              /*
+               * This is here rather than in the styles above because it needs
+               * to be inside the Observer so that when the user
+               * selects/deselect the location the sibling border
+               * appears/disappears
+               */
+              border: `${
+                location.isSiblingSelected ? location.uniqueColor : "white"
+              } 3px solid`,
+            }}
+          >
+            {content.thumbnail ?? <RecordTypeIcon record={content} />}
+          </Avatar>
+          <InfoBadge record={content}>
+            <InfoCard record={content} />
+          </InfoBadge>
+        </>
+      )}
+    </Observer>
+  );
+});
+
+type EmptyLocationContentProps = {
+  location: Location;
+  tabIndex?: number;
+  hasFocus: boolean;
+};
 
 const EmptyLocationContent = ({
   location,
@@ -209,11 +212,7 @@ const EmptyLocationContent = ({
    * its default thing with tabIndex
    */
   hasFocus: _hasFocus,
-}: {
-  location: Location,
-  tabIndex?: number,
-  hasFocus: boolean,
-}) => {
+}: EmptyLocationContentProps) => {
   const { classes } = useStyles();
   if (location.parentContainer.cType === "GRID") {
     const gridIndex = () =>
@@ -242,17 +241,21 @@ const EmptyLocationContent = ({
   return <></>;
 };
 
+/**
+ * Component that renders the content of a location
+ */
 function LocationContent({
   location,
   container,
   tabIndex,
   hasFocus,
-}: LocationContentArgs): Node {
+}: LocationContentArgs): React.ReactNode {
   const { classes } = useStyles();
   const { classes: globalClasses } = globalStyles();
+  const wrapperClassName = useWrapperClasses(location, classes, globalClasses);
 
   return (
-    <div className={wrapperClasses(location, classes, globalClasses)}>
+    <div className={wrapperClassName}>
       <RelativeBox className={classes.locationContentBox}>
         {location.content ? (
           <DragAndDrop.Draggable
@@ -279,4 +282,4 @@ function LocationContent({
   );
 }
 
-export default (observer(LocationContent): ComponentType<LocationContentArgs>);
+export default observer(LocationContent);
