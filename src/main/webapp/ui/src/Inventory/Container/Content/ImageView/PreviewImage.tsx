@@ -1,9 +1,4 @@
-import React, {
-  useContext,
-  useRef,
-  useState,
-  useLayoutEffect,
-} from "react";
+import React, { useContext, useRef, useState, useLayoutEffect } from "react";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../../stores/contexts/Search";
@@ -73,7 +68,7 @@ function PreviewImage(): React.ReactNode {
    * releasing the tap then drag selection should instead start.
    */
   const [mouseDownPoint, setMouseDownPoint] = React.useState<{
-    event: MouseEvent;
+    event: React.MouseEvent;
     clickTimeout: ReturnType<typeof setTimeout>;
   } | null>(null);
 
@@ -84,7 +79,7 @@ function PreviewImage(): React.ReactNode {
         onMouseDown={(e: React.MouseEvent) => {
           if (noSelection) return;
           setMouseDownPoint({
-            event: { ...e } as unknown as MouseEvent,
+            event: { ...e },
             clickTimeout: setTimeout(() => {
               // if after 300ms the click is still being held
               // then cancel it because drag-and-drop is starting
@@ -109,7 +104,7 @@ function PreviewImage(): React.ReactNode {
             container.startSelection(mouseDownPoint.event);
             setMouseDownPoint(null);
           }
-          container.moveSelection(e as unknown as MouseEvent);
+          container.moveSelection(e);
         }}
       >
         <img

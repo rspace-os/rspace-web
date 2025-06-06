@@ -90,7 +90,8 @@ import {
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
 
-type ContainerEditableFields = InventoryBaseRecordEditableFields & HasLocationEditableFields;
+type ContainerEditableFields = InventoryBaseRecordEditableFields &
+  HasLocationEditableFields;
 
 type ContainerUneditableFields = InventoryBaseRecordUneditableFields &
   HasLocationUneditableFields;
@@ -737,7 +738,7 @@ export default class ContainerModel
   }
 
   startSelection(
-    event: MouseEvent,
+    event: React.MouseEvent,
     padding: {
       left: number;
       top: number;
@@ -760,7 +761,7 @@ export default class ContainerModel
   }
 
   moveSelection(
-    event: MouseEvent,
+    event: React.MouseEvent,
     padding: {
       left: number;
       top: number;
