@@ -1,17 +1,15 @@
-//@flow
-
 import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import NumberField from "../../../../components/Inputs/NumberField";
-import React, { type Node, useState, type ComponentType } from "react";
+import React, { useState } from "react";
 import useStores from "../../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import FormHelperText from "@mui/material/FormHelperText";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
@@ -23,14 +21,14 @@ const maxGridSize = 24;
 const errorMessage = `Must be at least ${minGridSize}, and not more than ${maxGridSize}.`;
 
 type CommonSizeIndex = string;
-type CommonSize = {|
-  rows: ?number,
-  cols: ?number,
-  name: string,
-|};
+type CommonSize = {
+  rows: number | null;
+  cols: number | null;
+  name: string;
+};
 
 // the order of these key/value pairs is significant
-const commonSizes: { [CommonSizeIndex]: CommonSize } = {
+const commonSizes: Record<CommonSizeIndex, CommonSize> = {
   custom: { rows: null, cols: null, name: "Custom" },
   "64-place-freezer-box": { rows: 8, cols: 8, name: "64 place freezer box" },
   "81-place-freezer-box": { rows: 9, cols: 9, name: "81 place freezer box" },
@@ -55,14 +53,14 @@ const commonSizes: { [CommonSizeIndex]: CommonSize } = {
   "96-well-plate": { rows: 8, cols: 12, name: "96 well plate" },
 };
 
-function GridDimensions(): Node {
+function GridDimensions(): React.ReactNode {
   const {
     searchStore: { activeResult },
   } = useStores();
 
   const [validColumns, setValidColumns] = useState(true);
   const [validRows, setValidRows] = useState(true);
-  const [commonSize, setCommonSize] = useState("custom");
+  const [commonSize, setCommonSize] = useState<CommonSizeIndex>("custom");
 
   if (!activeResult || !(activeResult instanceof ContainerModel))
     throw new Error("ActiveResult must be a Container");
@@ -75,7 +73,7 @@ function GridDimensions(): Node {
   const handleChangeColumns = ({
     target,
   }: {
-    target: { value: string, checkValidity: () => boolean },
+    target: { value: string; checkValidity: () => boolean };
   }) => {
     setCommonSize("custom");
     setColumnsNumber(parseInt(target.value, 10));
@@ -101,7 +99,7 @@ function GridDimensions(): Node {
   const handleChangeRows = ({
     target,
   }: {
-    target: { value: string, checkValidity: () => boolean, ... },
+    target: { value: string; checkValidity: () => boolean };
   }) => {
     setCommonSize("custom");
     setRowsNumber(parseInt(target.value, 10));
@@ -122,11 +120,10 @@ function GridDimensions(): Node {
     }
   };
 
-  const handleChooseCommonSize = ({
-    target: { value },
-  }: {
-    target: { value: CommonSizeIndex },
-  }) => {
+  const handleChooseCommonSize = (
+    event: SelectChangeEvent<CommonSizeIndex>
+  ) => {
+    const value = event.target.value;
     const size = commonSizes[value];
     setCommonSize(value);
     setValidColumns(true);
@@ -228,4 +225,4 @@ function GridDimensions(): Node {
   );
 }
 
-export default (observer(GridDimensions): ComponentType<{||}>);
+export default observer(GridDimensions);
