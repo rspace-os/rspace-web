@@ -1,15 +1,11 @@
-//@flow
 import React, {
   useContext,
   useRef,
   useState,
   useLayoutEffect,
-  type Node,
-  type ComponentType,
 } from "react";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
-import { type UseState } from "../../../../util/types";
 import SearchContext from "../../../../stores/contexts/Search";
 import Dragger from "../Dragger";
 import RelativeBox from "../../../../components/RelativeBox";
@@ -31,7 +27,7 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-function PreviewImage(): Node {
+function PreviewImage(): React.ReactNode {
   const { scopedResult, search } = useContext(SearchContext);
   const { classes } = useStyles();
 
@@ -42,12 +38,12 @@ function PreviewImage(): Node {
   if (!container.locations)
     throw new Error("Container locations must be known.");
 
-  const [img, setImg] = useState(null);
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
   // Observe changes to the size of the image
-  const [imageDimensions, setImageDimensions]: UseState<?{|
-    width: number,
-    height: number,
-  |}> = useState(null);
+  const [imageDimensions, setImageDimensions] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
       setImageDimensions(
@@ -55,16 +51,18 @@ function PreviewImage(): Node {
       );
     })
   );
-  const imgRef = useRef<?HTMLElement>();
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useLayoutEffect(() => {
-    if (imgRef.current) {
-      resizeObserver.current.observe(imgRef.current);
+    const currentImgRef = imgRef.current;
+    const currentResizeObserver = resizeObserver.current;
+    if (currentImgRef) {
+      currentResizeObserver.observe(currentImgRef);
     }
     return () => {
-      if (imgRef.current) resizeObserver.current.unobserve(imgRef.current);
+      if (currentImgRef) currentResizeObserver.unobserve(currentImgRef);
     };
-  }, [img, resizeObserver]);
+  }, [img]);
 
   /*
    * When the user taps anywhere inside the image, initially we want to do
@@ -74,20 +72,19 @@ function PreviewImage(): Node {
    * tapped location should be selected. If they move the cursor without
    * releasing the tap then drag selection should instead start.
    */
-  const [mouseDownPoint, setMouseDownPoint] = React.useState<{|
-    event: MouseEvent,
-    clickTimeout: TimeoutID,
-  |} | null>(null);
+  const [mouseDownPoint, setMouseDownPoint] = React.useState<{
+    event: MouseEvent;
+    clickTimeout: ReturnType<typeof setTimeout>;
+  } | null>(null);
 
   return (
     <DragAndDrop.Context container={container}>
       <RelativeBox
         m={1}
-        onMouseDown={(e: MouseEvent) => {
+        onMouseDown={(e: React.MouseEvent) => {
           if (noSelection) return;
-          // $FlowExpectedError[incompatible-call]
           setMouseDownPoint({
-            event: { ...e },
+            event: { ...e } as unknown as MouseEvent,
             clickTimeout: setTimeout(() => {
               // if after 300ms the click is still being held
               // then cancel it because drag-and-drop is starting
@@ -105,21 +102,22 @@ function PreviewImage(): Node {
           }
           container.stopSelection(search);
         }}
-        onMouseMove={(e: MouseEvent) => {
+        onMouseMove={(e: React.MouseEvent) => {
           if (noSelection) return;
           if (mouseDownPoint) {
             clearTimeout(mouseDownPoint.clickTimeout);
             container.startSelection(mouseDownPoint.event);
             setMouseDownPoint(null);
           }
-          container.moveSelection(e);
+          container.moveSelection(e as unknown as MouseEvent);
         }}
       >
         <img
-          src={container.locationsImage}
+          src={container.locationsImage || undefined}
+          alt="Container preview"
           className={classes.rounded}
           onLoad={({ target }) => {
-            setImg(target);
+            setImg(target as HTMLImageElement);
           }}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -165,4 +163,4 @@ function PreviewImage(): Node {
   );
 }
 
-export default (observer(PreviewImage): ComponentType<{||}>);
+export default observer(PreviewImage);
