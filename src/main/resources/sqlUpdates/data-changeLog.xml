@@ -31,25 +31,7 @@
 		</addColumn>
 	</changeSet>
 
-
-	<changeSet id="2-2-15b" author="radams" runAlways="true"
-		context="liquibase-update-test">
-		<comment>Removes checksum for password hint for liquibase test</comment>
-		<update tableName="DATABASECHANGELOG">
-			<column name="MD5SUM" value="NULL"></column>
-			<where>ID="3" and author='radams'</where>
-		</update>
-		<update tableName="DATABASECHANGELOG">
-			<column name="MD5SUM" value="NULL"></column>
-			<where>ID="4" and author='radams'</where>
-		</update>
-		<update tableName="DATABASECHANGELOG">
-			<column name="MD5SUM" value="NULL"></column>
-			<where>ID="8_4-3-2014" and author='radams'</where>
-		</update>
-	</changeSet>
-
-	<changeSet id="3" author="radams" context="dev-test,liquibase-update-test">
+	<changeSet id="3" author="radams" context="dev-test">
 		<validCheckSum>7:0bdaedb4be732e5ad5ce275acf2b5dc1</validCheckSum>
 		<validCheckSum>7:e0ae39271657d50ecda9415eecf80225</validCheckSum>
 		<!-- only add if roles table is empty, implies this is a new, empty DB 
@@ -98,14 +80,7 @@
 			<where>ID="25-08-14a" and AUTHOR='radams'</where>
 		</update>
 	</changeSet>
-	<changeSet id="16-09-15d" author="radams" runAlways="true" context="liquibase-update-test">
-		<comment>Removes checksum for problematic SQL statement</comment>
-		<update tableName="DATABASECHANGELOG">
-			<column name="MD5SUM" value="NULL"></column>
-			<where>ID="2016-07-08" and AUTHOR='richard'</where>
-		</update>
-	</changeSet>
-	
+
     <!-- this is 1.44 change but is added to this file rather than changeLog-1.44.xml
          so the liquibase java updates operating on Group entity can pass. -->
     <changeSet id="17-05-17-rspac-1232" author="matthias" context="run">
