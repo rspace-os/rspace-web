@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";
@@ -38,10 +37,10 @@ describe("unionWith", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA]) => {
         expect(
-          unionWith(mapFn, [setA, new RsSet<{ id: mixed }>()]).isSame(setA)
+          unionWith(mapFn, [setA, new RsSet<{ id: unknown }>()]).isSame(setA)
         ).toBe(true);
         expect(
-          unionWith(mapFn, [new RsSet<{ id: mixed }>(), setA]).isSame(setA)
+          unionWith(mapFn, [new RsSet<{ id: unknown }>(), setA]).isSame(setA)
         ).toBe(true);
       })
     );

@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";

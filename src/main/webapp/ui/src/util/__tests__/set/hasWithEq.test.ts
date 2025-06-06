@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import RsSet from "../../set";
 import fc from "fast-check";
@@ -27,7 +26,7 @@ describe("hasWithEq", () => {
     fc.assert(
       fc.property(
         fc.tuple(fc.array(fc.anything()), fc.anything()),
-        (contents, checkingValue) => {
+        ([contents, checkingValue]) => {
           expect(
             new RsSet(contents).hasWithEq(checkingValue, () => false)
           ).toBe(false);

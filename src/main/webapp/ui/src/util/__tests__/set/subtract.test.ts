@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";
@@ -28,7 +27,7 @@ describe("subtract", () => {
   test("Subtracting anything from the empty set gives the empty set", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
-        expect(new RsSet<mixed>().subtract(set).isSame(new RsSet())).toBe(true);
+        expect(new RsSet<unknown>().subtract(set).isSame(new RsSet())).toBe(true);
       })
     );
   });

@@ -1,19 +1,20 @@
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
 import RsSet from "../../set";
 
-describe("union", () => {
+describe("intersection", () => {
   test("Idempotence", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
         ([setA, setB]) => {
-          expect(setA.union(setB).isSame(setA.union(setB).union(setB))).toBe(
-            true
-          );
+          expect(
+            setA
+              .intersection(setB)
+              .isSame(setA.intersection(setB).intersection(setB))
+          ).toBe(true);
         }
       )
     );
@@ -23,7 +24,9 @@ describe("union", () => {
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
         ([setA, setB]) => {
-          expect(setA.union(setB).isSame(setB.union(setA))).toBe(true);
+          expect(setA.intersection(setB).isSame(setB.intersection(setA))).toBe(
+            true
+          );
         }
       )
     );
@@ -39,15 +42,15 @@ describe("union", () => {
         ([setA, setB, setC]) => {
           expect(
             setA
-              .union(setB)
-              .union(setC)
-              .isSame(setA.union(setB.union(setC)))
+              .intersection(setB)
+              .intersection(setC)
+              .isSame(setA.intersection(setB.intersection(setC)))
           ).toBe(true);
         }
       )
     );
   });
-  test("Distributes over intersection", () => {
+  test("Distributes over union", () => {
     fc.assert(
       fc.property(
         fc.tuple(
@@ -58,27 +61,27 @@ describe("union", () => {
         ([setA, setB, setC]) => {
           expect(
             setA
-              .union(setB.intersection(setC))
-              .isSame(setA.union(setB).intersection(setA.union(setC)))
+              .intersection(setB.union(setC))
+              .isSame(setA.intersection(setB).union(setA.intersection(setC)))
           ).toBe(true);
         }
       )
     );
   });
-  test("The empty set is the identity element", () => {
+  test("The empty set is the absorbing element", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
-        expect(set.union(new RsSet()).isSame(set)).toBe(true);
+        expect(set.intersection(new RsSet()).isSame(new RsSet())).toBe(true);
       })
     );
   });
-  test("isSuperset of either input", () => {
+  test("isSubset of either input", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
         ([setA, setB]) => {
-          expect(setA.union(setB).isSupersetOf(setA)).toBe(true);
-          expect(setA.union(setB).isSupersetOf(setB)).toBe(true);
+          expect(setA.intersection(setB).isSubsetOf(setA)).toBe(true);
+          expect(setA.intersection(setB).isSubsetOf(setB)).toBe(true);
         }
       )
     );

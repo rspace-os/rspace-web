@@ -1,22 +1,21 @@
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";
 import { arbRsSet, arbSubsetOf } from "./helpers";
 import RsSet from "../../set";
 
-describe("isSubsetOf", () => {
+describe("isSupersetOf", () => {
   test("Works with fc.subarray", () => {
     fc.assert(
       fc.property(
         arbRsSet(fc.anything()).chain((set) =>
-          fc.tuple<RsSet<mixed>, RsSet<mixed>>(
+          fc.tuple(
             fc.constant(set),
             arbSubsetOf(set)
           )
         ),
-        ([set, subset]) => {
-          expect(subset.isSubsetOf(set)).toBe(true);
+        ([set, subset]: [RsSet<unknown>, RsSet<unknown>]) => {
+          expect(set.isSupersetOf(subset)).toBe(true);
         }
       )
     );
@@ -27,13 +26,13 @@ describe("isSubsetOf", () => {
         arbRsSet(fc.anything())
           .chain((setA) => fc.tuple(fc.constant(setA), arbSubsetOf(setA)))
           .chain(([setA, setB]) =>
-            fc.tuple<RsSet<mixed>, RsSet<mixed>>(
+            fc.tuple(
               fc.constant(setA),
               arbSubsetOf(setB)
             )
           ),
-        ([setA, setC]) => {
-          expect(setC.isSubsetOf(setA)).toBe(true);
+        ([setA, setC]: [RsSet<unknown>, RsSet<unknown>]) => {
+          expect(setA.isSupersetOf(setC)).toBe(true);
         }
       )
     );
@@ -41,7 +40,7 @@ describe("isSubsetOf", () => {
   test("Reflexivity", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
-        expect(set.isSubsetOf(set)).toBe(true);
+        expect(set.isSupersetOf(set)).toBe(true);
       })
     );
   });

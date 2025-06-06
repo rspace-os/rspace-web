@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import RsSet from "../../set";
@@ -7,7 +6,7 @@ import { arbRsSet } from "./helpers";
 
 describe("constructor", () => {
   describe("Should behave just like native set", () => {
-    const expectSameSizeAsNativeSet = (data: ?Iterable<mixed>) => {
+    const expectSameSizeAsNativeSet = (data?: Iterable<unknown> | null) => {
       expect(new RsSet(data).size).toEqual(new Set(data).size);
     };
 
@@ -27,7 +26,7 @@ describe("constructor", () => {
     test("set", () => {
       fc.assert(
         fc.property(
-          fc.array(fc.anything()).map<Set<mixed>>((array) => new Set(array)),
+          fc.array(fc.anything()).map((array) => new Set(array)),
           (set) => {
             expectSameSizeAsNativeSet(set);
           }

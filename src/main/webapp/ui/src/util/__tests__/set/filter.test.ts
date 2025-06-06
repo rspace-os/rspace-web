@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";
@@ -8,10 +7,7 @@ describe("filter", () => {
   test("Set before is superset of set after filter i.e. size is less than or equal after", () => {
     fc.assert(
       fc.property(
-        fc.tuple(
-          arbRsSet(fc.anything()),
-          fc.func<mixed, boolean>(fc.boolean())
-        ),
+        fc.tuple(arbRsSet(fc.anything()), fc.func(fc.boolean())),
         ([set, func]) => {
           expect(set.isSupersetOf(set.filter((x) => func(x)))).toBe(true);
         }
@@ -21,10 +17,7 @@ describe("filter", () => {
   test("Idempotence", () => {
     fc.assert(
       fc.property(
-        fc.tuple(
-          arbRsSet(fc.anything()),
-          fc.func<mixed, boolean>(fc.boolean())
-        ),
+        fc.tuple(arbRsSet(fc.anything()), fc.func(fc.boolean())),
         ([set, func]) => {
           expect(
             set

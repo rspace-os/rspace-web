@@ -1,5 +1,3 @@
-//@flow
-
 import fc, { type Arbitrary } from "fast-check";
 import RsSet from "../../set";
 
@@ -9,13 +7,13 @@ import RsSet from "../../set";
  */
 export function arbRsSet<T>(
   arb: Arbitrary<T>,
-  options: ?{|
+  options?: {
     minSize?: number,
     maxSize?: number,
-  |}
+  }
 ): Arbitrary<RsSet<T>> {
   const { minSize, maxSize } = options ?? {};
-  const uniqueArrayOptions: {| minLength?: number, maxLength?: number |} = {};
+  const uniqueArrayOptions: { minLength?: number, maxLength?: number } = {};
   if (typeof minSize !== "undefined") uniqueArrayOptions.minLength = minSize;
   if (typeof maxSize !== "undefined") uniqueArrayOptions.maxLength = maxSize;
   return fc
@@ -35,8 +33,8 @@ export function arbSubsetOf<T>(arbSet: RsSet<T>): Arbitrary<RsSet<T>> {
  * A function for unwrapping objects with an id attribute, and a few sets of
  * those objects for testing.
  */
-export type ArbitraryMappableSets<A, B: { id: A }> = [
-  (B) => A,
+export type ArbitraryMappableSets<A, B extends { id: A }> = [
+  (arg: B) => A,
   RsSet<B>,
   RsSet<B>,
   RsSet<B>
@@ -49,20 +47,20 @@ export type ArbitraryMappableSets<A, B: { id: A }> = [
  * several sets of arbitrary contents.
  */
 export const arbitraryMappableSets: Arbitrary<
-  ArbitraryMappableSets<mixed, { id: mixed }>
+  [
+    (arg: { id: unknown }) => unknown,
+    RsSet<{ id: unknown }>,
+    RsSet<{ id: unknown }>,
+    RsSet<{ id: unknown }>
+  ]
 > = fc.uniqueArray(fc.anything()).chain((ids) => {
   function makeSetOfObjectsWithId() {
     return fc
       .shuffledSubarray(ids)
       .map((someIds) => new RsSet(someIds).map((id) => ({ id })));
   }
-  return fc.tuple<
-    ({ id: mixed }) => mixed,
-    RsSet<{ id: mixed }>,
-    RsSet<{ id: mixed }>,
-    RsSet<{ id: mixed }>
-  >(
-    fc.constant(({ id }) => id),
+  return fc.tuple(
+    fc.constant((arg: { id: unknown }) => arg.id),
     makeSetOfObjectsWithId(),
     makeSetOfObjectsWithId(),
     makeSetOfObjectsWithId()
@@ -78,7 +76,7 @@ export const arbitraryMappableSets: Arbitrary<
  * that no set will be empty. This useful because intersection does not produce
  * interesting results if there is no overlap amongst the inputs.
  */
-export const arbSetOfSetsWithHighOverlap: Arbitrary<RsSet<RsSet<mixed>>> = fc
+export const arbSetOfSetsWithHighOverlap: Arbitrary<RsSet<RsSet<unknown>>> = fc
   .uniqueArray(fc.anything(), { minLength: 5, maxLength: 5 })
   .chain((list) =>
     arbRsSet(

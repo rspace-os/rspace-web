@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import RsSet, { flattenWithIntersectionWithEq } from "../../set";
 
