@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React, { useState, useEffect } from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -10,6 +9,7 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { type Validator, mkValidator } from "../Validator";
 import { runInAction, observable } from "mobx";
+import { doNotAwait } from "../Util";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -54,9 +54,9 @@ function ParentComponent() {
       {activePane === 0 && <Child1 validator={panel1Validator} />}
       {activePane === 1 && <Child2 />}
       <Button
-        onClick={async () => {
+        onClick={doNotAwait(async () => {
           if (await panel1Validator.isValid()) setActivePane(activePane + 1);
-        }}
+        })}
       >
         Next
       </Button>
