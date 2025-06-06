@@ -1,4 +1,3 @@
-//@flow
 import { Material, type MaterialAttrs } from "../../MaterialsModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
 
