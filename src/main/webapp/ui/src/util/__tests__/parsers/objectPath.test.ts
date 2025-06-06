@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import { objectPath } from "../../parsers";
 import Result from "../../result";
@@ -17,7 +16,7 @@ describe("objectPath", () => {
     objectPath(["foo", "bar"], { foo: {} })
       .orElseTry(([error]) => {
         expect(error.message).toBe("key 'bar' is missing");
-        return Result.Error<mixed>([error]);
+        return Result.Error<unknown>([error]);
       })
       .do(() => {
         throw new Error("Should fail");
@@ -27,7 +26,7 @@ describe("objectPath", () => {
     objectPath(["foo", "bar"], { foo: null })
       .orElseTry(([error]) => {
         expect(error.message).toBe("Is null");
-        return Result.Error<mixed>([error]);
+        return Result.Error<unknown>([error]);
       })
       .do(() => {
         throw new Error("Should fail");
@@ -37,7 +36,7 @@ describe("objectPath", () => {
     objectPath(["foo", "bar"], { foo: 3 })
       .orElseTry(([error]) => {
         expect(error.message).toBe("Not an object");
-        return Result.Error<mixed>([error]);
+        return Result.Error<unknown>([error]);
       })
       .do(() => {
         throw new Error("Should fail");
