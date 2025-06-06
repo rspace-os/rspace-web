@@ -1,13 +1,17 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
+
 /* eslint-env jest */
 import { makeMockTemplate } from "./mocking";
 import { sampleAttrs } from "../SampleModel/mocking";
 
 import getRootStore from "../../../stores/RootStore";
 import InvApiService from "../../../../common/InvApiService";
+import {
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from "@/common/axios";
 
 /*
  * We define the root store here so that every call to getRootStore gets a
@@ -36,27 +40,32 @@ beforeEach(() => {
 describe("action: updateSampleToLatest", () => {
   describe("When there are two samples, of which only one can be updated, there should", () => {
     beforeEach(() => {
-      jest.spyOn(InvApiService, "post").mockImplementation(() =>
-        Promise.resolve({
-          data: {
-            errorCount: 1,
-            status: "COMPLETED",
-            successCount: 1,
-            successCountBeforeFirstError: 1,
-            results: [
-              {
-                error: null,
-                record: sampleAttrs(),
-              },
-              {
-                error: {
-                  errors: ["There was an error."],
+      jest.spyOn(InvApiService, "post").mockImplementation(
+        (): Promise<AxiosResponse<unknown>> =>
+          Promise.resolve({
+            data: {
+              errorCount: 1,
+              status: "COMPLETED",
+              successCount: 1,
+              successCountBeforeFirstError: 1,
+              results: [
+                {
+                  error: null,
+                  record: sampleAttrs(),
                 },
-                record: null,
-              },
-            ],
-          },
-        })
+                {
+                  error: {
+                    errors: ["There was an error."],
+                  },
+                  record: null,
+                },
+              ],
+            },
+            status: 200,
+            statusText: "OK",
+            headers: {},
+            config: {} as InternalAxiosRequestConfig,
+          })
       );
     });
     test("Be two toasts, detailing the error and the success.", async () => {
