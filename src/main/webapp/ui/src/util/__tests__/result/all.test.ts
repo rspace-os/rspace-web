@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import Result from "../../result";
 
@@ -11,7 +10,7 @@ describe("all", () => {
     });
   });
   test("A single Error, should return itself.", () => {
-    const actual = Result.all(Result.Error<mixed>([new Error("foo")]));
+    const actual = Result.all(Result.Error<unknown>([new Error("foo")]));
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
       expect(errors.map((e) => e.message)).toEqual(["foo"]);
@@ -26,8 +25,8 @@ describe("all", () => {
   });
   test("Multiple Errors, should return Error.", () => {
     const actual = Result.all(
-      Result.Error<mixed>([new Error("foo")]),
-      Result.Error<mixed>([new Error("bar")])
+      Result.Error<unknown>([new Error("foo")]),
+      Result.Error<unknown>([new Error("bar")])
     );
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
@@ -77,7 +76,7 @@ describe("all", () => {
     });
   });
   test("Empty array in, empty array out", () => {
-    const input: $ReadOnlyArray<Result<mixed>> = [];
+    const input: ReadonlyArray<Result<unknown>> = [];
     const actual = Result.all(...input);
     expect(actual.isOk).toBe(true);
     actual.do((output) => {
