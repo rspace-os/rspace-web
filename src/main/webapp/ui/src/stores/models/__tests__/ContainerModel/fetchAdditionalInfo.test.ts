@@ -1,11 +1,11 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { makeMockContainer, containerAttrs } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
+import { type AxiosResponse, type AxiosRequestConfig } from "@/common/axios";
 
 jest.mock("../../../../common/InvApiService", () => ({
   query: jest.fn(() => {}),
@@ -24,7 +24,11 @@ describe("fetchAdditionalInfo", () => {
     jest.spyOn(InvApiService, "query").mockImplementation(() =>
       Promise.resolve({
         data: containerAttrs(),
-      })
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {} as AxiosRequestConfig,
+      } as AxiosResponse)
     );
 
     let firstCallDone = false;
