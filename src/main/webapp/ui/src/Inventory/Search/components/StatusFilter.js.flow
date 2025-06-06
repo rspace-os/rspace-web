@@ -1,0 +1,10 @@
+//@flow
+
+import { type Node } from "react";
+import { type DeletedItems } from "../../../stores/definitions/Search";
+
+declare export default function StatusFilter({|
+  anchorEl: ?HTMLElement,
+  current: DeletedItems,
+  onClose: (DeletedItems) => void,
+|}): Node;

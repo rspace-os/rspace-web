@@ -1,0 +1,8 @@
+//@flow
+
+import { type Node } from "react";
+import { type SearchView } from "../../../stores/definitions/Search";
+
+declare export default function SearchDisplayControls({|
+  TABS: Array<SearchView>,
+|}): Node;

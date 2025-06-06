@@ -1,0 +1,17 @@
+//@flow
+
+import { type Node } from "react";
+import { type Alias } from "../../../stores/definitions/Sample";
+import { type HasEditableFields } from "../../../stores/definitions/Editable";
+
+declare function SubSampleAlias<
+  Fields: {
+    subSampleAlias: Alias,
+    ...
+  }
+>({|
+  fieldOwner: HasEditableFields<Fields>,
+  onErrorStateChange: (boolean) => void,
+|}): Node;
+
+declare export default typeof SubSampleAlias;

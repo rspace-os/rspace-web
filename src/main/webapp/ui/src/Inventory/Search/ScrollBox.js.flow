@@ -1,0 +1,23 @@
+//@flow
+
+import { type Node } from "react";
+import { type Sx } from "../../util/styles";
+
+type ScrollOptions =
+  | "auto"
+  | "clip"
+  | "hidden"
+  | "inherit"
+  | "initial"
+  | "overlay"
+  | "revert"
+  | "scroll"
+  | "unset"
+  | "visible";
+
+declare export default function ScrollBox({|
+  children: Node,
+  sx?: Sx,
+  overflowY?: ScrollOptions,
+  overflowX?: ScrollOptions,
+|}): Node;

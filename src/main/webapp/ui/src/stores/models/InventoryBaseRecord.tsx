@@ -963,7 +963,7 @@ export default class InventoryBaseRecord
    * that a selection made in list view is maintained which switching to image
    * or grid view.
    */
-  toggleSelected(value: boolean | null) {
+  toggleSelected(value?: boolean | null) {
     value = value ?? !this.selected;
     this.selected = value;
 

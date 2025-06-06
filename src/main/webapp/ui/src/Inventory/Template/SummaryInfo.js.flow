@@ -1,0 +1,18 @@
+// @flow
+
+import { type ComponentType } from "react";
+import TemplateModel from "../../stores/models/TemplateModel";
+
+export type OneItemListArgs = {|
+  avatar: Node,
+  text: string,
+  action?: Node,
+|};
+
+export type SummaryInfoArgs = {|
+  template: ?TemplateModel,
+  loading?: boolean,
+  paddingless?: boolean,
+|};
+
+declare export default ComponentType<SummaryInfoArgs>;

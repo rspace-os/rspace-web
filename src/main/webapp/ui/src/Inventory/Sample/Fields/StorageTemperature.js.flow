@@ -1,0 +1,17 @@
+// @flow
+
+import React, { type Node } from "react";
+import { type Temperature } from "../../../stores/definitions/Units";
+import { type HasEditableFields } from "../../../stores/definitions/Editable";
+
+declare export default function StorageTemperature<
+  Fields: {
+    storageTempMin: ?Temperature,
+    storageTempMax: ?Temperature,
+    ...
+  },
+  FieldOwner: HasEditableFields<Fields>
+>(props: {|
+  fieldOwner: FieldOwner,
+  onErrorStateChange: (boolean) => void,
+|}): Node;

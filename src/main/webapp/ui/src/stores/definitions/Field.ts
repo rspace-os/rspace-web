@@ -30,7 +30,7 @@ export interface Field extends BaseRecord {
   columnIndex: number;
   type: FieldType;
   error: boolean;
-  content: string | number;
+  content: string | number | Date;
   selectedOptions: Array<string> | null;
   options: Array<Option>;
 

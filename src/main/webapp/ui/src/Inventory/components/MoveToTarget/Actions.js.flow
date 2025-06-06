@@ -1,0 +1,12 @@
+//@flow
+
+import { type Node } from "react";
+import { type Panel } from "../../../util/types";
+
+declare export default function Actions({|
+  handleClose: () => void,
+  handleMove: () => void,
+  handleBack: () => void,
+  handleNext: () => void,
+  activeStep: Panel,
+|}): Node;

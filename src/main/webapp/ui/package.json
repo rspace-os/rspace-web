@@ -40,6 +40,7 @@
     "@types/jest-axe": "^3.5.9",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.13.9",
+    "@types/react-leaflet": "^2.8.3",
     "@types/react-timeago": "^4.1.7",
     "axios-mock-adapter": "^1.20.0",
     "babel-loader": "=9.1.2",

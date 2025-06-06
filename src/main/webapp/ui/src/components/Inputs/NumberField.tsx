@@ -43,7 +43,7 @@ export type NumberFieldArgs = {
      * storable in state variables. Examples include the empty string and
      * strings ending in the letter "e".
      */
-    event: React.FormEvent<HTMLDivElement>
+    event: React.ChangeEvent<HTMLInputElement>
   ) => void;
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
   onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
@@ -91,7 +91,7 @@ export default function NumberField({
       }}
       {...props}
       variant={props.variant ?? "standard"}
-      onInput={(e: React.FormEvent<HTMLDivElement>) => {
+      onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
         /*
          * onChange only fires if the field is in a valid state and so it would
          * be impossible to show an error state if the user inputted an invalid

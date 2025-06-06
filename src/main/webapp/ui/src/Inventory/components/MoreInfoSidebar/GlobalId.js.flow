@@ -1,0 +1,10 @@
+// @flow
+
+import { type Node, type ComponentType } from "react";
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+
+type GlobalIdArgs = {|
+  record: InventoryRecord,
+|};
+
+declare export default ComponentType<GlobalIdArgs>;

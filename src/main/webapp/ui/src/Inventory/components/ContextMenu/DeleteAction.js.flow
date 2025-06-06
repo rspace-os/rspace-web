@@ -1,0 +1,14 @@
+//@flow
+
+import { type Node } from "react";
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import ContextMenuAction, {
+  type ContextMenuRenderOptions,
+} from "./ContextMenuAction";
+
+declare export default function DeleteAction({|
+  as: ContextMenuRenderOptions,
+  closeMenu: () => void,
+  disabled: string,
+  selectedResults: Array<InventoryRecord>,
+|}): Node;

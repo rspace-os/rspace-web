@@ -1,0 +1,11 @@
+// @flow
+
+import React, {
+  type Node,
+  type ComponentType,
+} from "react";
+
+/**
+ * Grid view of container contents
+ */
+declare export default ComponentType<{||}>;

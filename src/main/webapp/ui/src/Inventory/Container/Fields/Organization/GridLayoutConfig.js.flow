@@ -1,0 +1,10 @@
+// @flow
+
+import { type Node, type ComponentType } from "react";
+import { type Container } from "../../../../stores/definitions/Container";
+
+type GridLayoutConfigArgs = {|
+  container: Container,
+|};
+
+declare export default ComponentType<GridLayoutConfigArgs>;

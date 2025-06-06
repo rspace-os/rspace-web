@@ -1,0 +1,12 @@
+// @flow
+
+import React, { type ComponentType } from "react";
+import { type FieldType } from "../../../stores/models/FieldTypes";
+
+type FieldTypeMenuItemProps = {|
+  field: FieldType,
+  onClick: (Event) => void,
+  inMenu?: boolean,
+|};
+
+declare export default ComponentType<FieldTypeMenuItemProps>;

@@ -1,0 +1,40 @@
+//@flow
+
+import { type Location, type Container } from "../../../../stores/definitions/Container";
+import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
+
+export opaque type DroppableId = string;
+
+declare export function mkDroppableId(location: Location): DroppableId
+
+declare export function useHelpers(): {|
+  dragAndDropInProgress: boolean,
+  numberOfItemsBeingDragged: number,
+  thisLocationIsTheOrigin: (Location) => boolean,
+  anItemIsBeingMoveOutOfLocation: (Location) => boolean,
+  isChoosing: (Location) => boolean,
+|};
+
+declare export function useContainerHelpers(container: Container): {|
+  getDestinationLocationForSourceLocation: (
+    {
+      active: null | {
+        data: {
+          current: null | {
+            relativeCoords: $ReadOnlyArray<{|
+              x: number,
+              y: number,
+              globalId: ?GlobalId,
+            |}>,
+            ...
+          },
+          ...
+        },
+        ...
+      },
+      over: null | { id: DroppableId },
+      ...
+    },
+    Location
+  ) => Location,
+|};

@@ -1,0 +1,10 @@
+// @flow
+
+import { type Node, type ComponentType } from "react";
+
+type DateArgs = {|
+  date: string,
+  label: string,
+|};
+
+declare export default ComponentType<DateArgs>;

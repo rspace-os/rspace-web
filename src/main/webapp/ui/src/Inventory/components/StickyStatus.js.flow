@@ -1,0 +1,11 @@
+//@flow
+
+import React, { type Node } from "react";
+import { type State } from "../../stores/definitions/InventoryRecord";
+
+type StickyStatusArgs = {|
+  recordState: State,
+  deleted: boolean,
+|};
+
+declare export default function StickyStatus(props: StickyStatusArgs): Node;

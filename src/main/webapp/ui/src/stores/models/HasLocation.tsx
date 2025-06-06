@@ -259,19 +259,21 @@ export function HasLocationMixin<
 /**
  * Checks if a given object has a location.
  */
-export function hasLocation(input: object): Optional<HasLocation> {
-  return HasLocationMarker in input
-    ? Optional.present(input as HasLocation)
+export function hasLocation<T extends object>(
+  input: T
+): Optional<HasLocation & T> {
+  return input.hasOwnProperty(HasLocationMarker)
+    ? Optional.present(input as HasLocation & T)
     : Optional.empty();
 }
 
 /**
  * Filters an iterable collection for those with locations
  */
-export function* filterForThoseWithLocations<T>(
+export function* filterForThoseWithLocations<T extends object>(
   input: Iterable<T>
 ): Iterable<HasLocation & T> {
   for (const val of input) {
-    if (HasLocationMarker in (val as object)) yield val as HasLocation & T;
+    if (val.hasOwnProperty(HasLocationMarker)) yield val as HasLocation & T;
   }
 }

@@ -1,0 +1,6 @@
+// @flow
+
+import { type Node, type ElementProps } from "react";
+import TableCell from "@mui/material/TableCell";
+
+declare export default function CustomTableCell(props: ElementProps<typeof TableCell>): Node;

@@ -1,0 +1,15 @@
+// @flow
+
+import { type ComponentType } from "react";
+import { type ContextMenuRenderOptions } from "./ContextMenuAction";
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import { type Person } from "../../../stores/definitions/Person";
+
+type TransferActionArgs = {|
+  as: ContextMenuRenderOptions,
+  selectedResults: Array<InventoryRecord>,
+  disabled: string,
+  closeMenu: () => void,
+|};
+
+declare export default ComponentType<TransferActionArgs>;

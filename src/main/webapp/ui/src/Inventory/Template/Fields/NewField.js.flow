@@ -1,0 +1,11 @@
+// @flow
+
+import { type Node, type ComponentType } from "react";
+import TemplateModel from "../../../stores/models/TemplateModel";
+import { type FieldModelAttrs } from "../../../stores/models/FieldModel";
+
+type NewFieldArgs = {|
+  record: TemplateModel,
+|};
+
+declare export default ComponentType<NewFieldArgs>;

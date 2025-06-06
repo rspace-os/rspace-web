@@ -1,0 +1,22 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import {
+  type Temperature,
+  type TemperatureScale,
+} from "../../../stores/definitions/Units";
+
+type SpecifiedStorageTemperatureArgs = {|
+  setTemperatures: ({
+    storageTempMin: Temperature,
+    storageTempMax: Temperature,
+  }) => void,
+  setFieldEditable: (boolean) => void,
+  storageTempMin: Temperature,
+  storageTempMax: Temperature,
+  disabled: boolean,
+  canChooseWhichToEdit: boolean,
+  onErrorStateChange: (boolean) => void,
+|};
+
+declare export default ComponentType<SpecifiedStorageTemperatureArgs>;

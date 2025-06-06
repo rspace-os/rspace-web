@@ -1,0 +1,14 @@
+// @flow
+
+import * as React from "react";
+import { type ComponentType } from "react";
+import {
+  type FieldType,
+} from "../../../stores/models/FieldTypes";
+
+type FieldTypeMenuArgs = {|
+  fieldType: FieldType,
+  onChange: (FieldType) => void,
+|};
+
+declare export default ComponentType<FieldTypeMenuArgs>;

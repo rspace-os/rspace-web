@@ -1,0 +1,18 @@
+// @flow
+
+import { type Node } from "react";
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import { type Attachment } from "../../../../stores/definitions/Attachment";
+import { type HasEditableFields } from "../../../../stores/definitions/Editable";
+import { type BlobUrl } from "../../../../util/types";
+
+declare function Attachments<
+  Fields: {
+    image: ?BlobUrl,
+    newBase64Image: ?string,
+    ...
+  },
+  FieldOwner: HasEditableFields<Fields>
+>(props: { fieldOwner?: FieldOwner }): Node;
+
+export default Attachments;

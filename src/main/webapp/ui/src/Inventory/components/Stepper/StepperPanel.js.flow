@@ -1,0 +1,20 @@
+// @flow
+
+import { type Node } from "react";
+import {
+  StepperPanelHeader,
+  type FormSectionError,
+} from "./StepperPanelHeader";
+import FormSectionsContext, {
+  type AllowedFormTypes,
+} from "../../../stores/contexts/FormSections";
+
+declare export default function StepperPanel({|
+  title: Node,
+  sectionName: string,
+  children: Node,
+  formSectionError?: FormSectionError,
+  recordType: AllowedFormTypes,
+  icon?: string,
+  thickBorder?: boolean,
+|}): Node;
