@@ -1,10 +1,10 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
+import { type ContainerAttrs } from "../../ContainerModel";
 
 jest.mock("../../../use-stores", () => () => {});
 jest.mock("../../../stores/RootStore", () => () => ({}));
@@ -89,7 +89,7 @@ describe("computed: paramsForBackend", () => {
       const parent = makeMockContainer({
         id: 2,
         globalId: "IC2",
-      }).paramsForBackend;
+      }).paramsForBackend as unknown as ContainerAttrs;
       parent.parentContainers = [];
       parent.parentLocation = null;
       parent.lastNonWorkbenchParent = null;

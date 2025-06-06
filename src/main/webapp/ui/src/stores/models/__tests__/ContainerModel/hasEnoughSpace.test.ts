@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
