@@ -1,19 +1,17 @@
-// @flow
-
-import React, { useEffect, type Node, type ComponentType } from "react";
+import React, { useEffect } from "react";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import { type Location } from "../../../../stores/definitions/Container";
 import * as DragAndDrop from "../DragAndDrop";
 
-type LocationWrapperArgs = {|
-  children: Node,
+type LocationWrapperArgs = {
+  children: React.ReactNode;
   parentRect: {
-    width: number,
-    height: number,
-  },
-  location: Location,
-|};
+    width: number;
+    height: number;
+  };
+  location: Location;
+};
 
 const useStyles = makeStyles()((theme) => ({
   container: {
@@ -49,9 +47,9 @@ function LocationWrapper({
   children,
   parentRect,
   location,
-}: LocationWrapperArgs): Node {
+}: LocationWrapperArgs): React.ReactNode {
   const { classes } = useStyles();
-  const cellRef = React.useRef<?HTMLDivElement>(null);
+  const cellRef = React.useRef<HTMLDivElement | null>(null);
 
   const positionX = () =>
     Math.round((location.coordX / 1000) * parentRect.width) -
@@ -81,4 +79,4 @@ function LocationWrapper({
   );
 }
 
-export default (observer(LocationWrapper): ComponentType<LocationWrapperArgs>);
+export default observer(LocationWrapper);
