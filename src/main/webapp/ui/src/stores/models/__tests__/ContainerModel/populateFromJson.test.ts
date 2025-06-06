@@ -1,11 +1,10 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
-import ContainerModel from "../../ContainerModel";
+import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import { containerAttrs } from "./mocking";
 
 jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
@@ -17,9 +16,11 @@ describe("action: populateFromJson", () => {
       const factory = mockFactory();
       const newRecordSpy = jest
         .spyOn(factory, "newRecord")
-        .mockImplementation((attrs) => new ContainerModel(factory, attrs));
+        .mockImplementation(
+          (attrs) => new ContainerModel(factory, attrs as ContainerAttrs)
+        );
 
-      const attrs = () => ({
+      const attrs = (): ContainerAttrs => ({
         ...containerAttrs(),
         locations: [
           {
@@ -36,7 +37,7 @@ describe("action: populateFromJson", () => {
 
       newRecordSpy.mockClear();
 
-      container.populateFromJson(mockFactory(), attrs());
+      container.populateFromJson(mockFactory(), attrs(), undefined);
 
       expect(newRecordSpy).not.toHaveBeenCalled();
     });
