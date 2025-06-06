@@ -143,7 +143,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         sampleProcessingResult,
         csvSampleLines,
         colIndexToDefaultFieldMapping,
-        csvSampleLines.get(0).length);
+        csvSampleLines.get(0).length,
+        null);
     assertEquals(2, sampleProcessingResult.getSuccessCount());
 
     // run import
@@ -224,7 +225,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         sampleProcessingResult,
         csvSampleLines,
         colIndexToDefaultFieldMapping,
-        csvSampleLines.get(0).length);
+        csvSampleLines.get(0).length,
+        null);
     assertEquals(2, sampleProcessingResult.getSuccessCount());
     importMgr.importSamples(
         importResult, new ApiInventoryImportResult(null, sampleProcessingResult, null, testUser));
@@ -364,7 +366,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     ApiInventoryImportResult processingResult = new ApiInventoryImportResult(testUser);
     processingResult.setSampleResult(sampleProcessingResult);
     sampleCsvImporter.readCsvIntoImportResult(
-        new ByteArrayInputStream(oneSampleCsvBytes), nameColumnMapping, processingResult);
+        new ByteArrayInputStream(oneSampleCsvBytes), nameColumnMapping, processingResult, null);
     assertNotNull(sampleProcessingResult);
 
     // result should be success, with a template and a sample being created
@@ -414,7 +416,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
 
     // try importing
     sampleCsvImporter.readCsvIntoImportResult(
-        samplesCsvIS, nameDescriptionMapping, processingResult);
+        samplesCsvIS, nameDescriptionMapping, processingResult, null);
     importMgr.prevalidateSamples(processingResult);
 
     assertNotNull(sampleResult);
@@ -473,7 +475,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     processingResult.setSampleResult(sampleResult);
 
     // try importing
-    sampleCsvImporter.readCsvIntoImportResult(samplesCsvIS, nameMapping, processingResult);
+    sampleCsvImporter.readCsvIntoImportResult(samplesCsvIS, nameMapping, processingResult, null);
     importMgr.prevalidateSamples(processingResult);
 
     // result object should list all errors
@@ -543,7 +545,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         new ApiInventoryImportResult(null, sampleResult, null, testUser);
 
     sampleCsvImporter.readCsvIntoImportResult(
-        samplesCsvIS, nameDescriptionMapping, processingResult);
+        samplesCsvIS, nameDescriptionMapping, processingResult, null);
 
     ApiInventoryImportResult importResult = new ApiInventoryImportResult(testUser);
     InventoryImportException iie =
@@ -596,7 +598,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     processingResult.setSampleResult(sampleResult);
 
     sampleCsvImporter.readCsvIntoImportResult(
-        samplesCsvIS, nameDescriptionMapping, processingResult);
+        samplesCsvIS, nameDescriptionMapping, processingResult, null);
     assertNotNull(sampleResult);
 
     // result object should list used template and created samples
@@ -660,7 +662,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     ApiInventoryImportResult processingResult = new ApiInventoryImportResult(testUser);
     processingResult.setSampleResult(sampleResult);
 
-    sampleCsvImporter.readCsvIntoImportResult(samplesCsvIS, nameMapping, processingResult);
+    sampleCsvImporter.readCsvIntoImportResult(samplesCsvIS, nameMapping, processingResult, null);
     assertNotNull(sampleResult);
 
     // result object should list all errors
@@ -705,7 +707,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         new ApiInventoryImportResult(null, sampleResult, null, testUser);
 
     sampleCsvImporter.readCsvIntoImportResult(
-        samplesCsvIS, nameDescriptionMapping, processingResult);
+        samplesCsvIS, nameDescriptionMapping, processingResult, null);
     assertNotNull(sampleResult);
 
     ApiInventoryImportResult importResult = new ApiInventoryImportResult(testUser);
@@ -784,7 +786,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         subSampleResult,
         csvSubSampleLines,
         colIndexToDefaultFieldMapping,
-        csvSubSampleLines.get(0).length);
+        csvSubSampleLines.get(0).length,
+        new User("ANYUSER"));
     assertEquals(4, subSampleResult.getSuccessCount());
     assertEquals(
         ApiInventoryRecordInfo.ApiInventoryRecordType.SUBSAMPLE,
@@ -853,7 +856,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     sampleResult.addCreatedTemplateResult(templateInfo);
     processingResult.setSampleResult(sampleResult);
 
-    sampleCsvImporter.readCsvIntoImportResult(samplesCsvIS, sampleMapping, processingResult);
+    sampleCsvImporter.readCsvIntoImportResult(samplesCsvIS, sampleMapping, processingResult, null);
     assertNotNull(processingResult.getSampleResult());
 
     // csv file with 4 subsamples pointing to two of the samples and containers
@@ -870,7 +873,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     subSampleMapping.put("Parent Container", "parent container import id");
 
     subSampleCsvImporter.readCsvIntoImportResult(
-        subSamplesCsvIS, subSampleMapping, processingResult);
+        subSamplesCsvIS, subSampleMapping, processingResult, null);
     ApiInventoryImportSubSampleImportResult subSampleProcessingResult =
         processingResult.getSubSampleResult();
     assertNotNull(subSampleProcessingResult);
@@ -981,7 +984,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     ApiInventoryImportSampleImportResult sampleResult = new ApiInventoryImportSampleImportResult();
     sampleResult.addCreatedTemplateResult(templateInfo);
     processingResult.setSampleResult(sampleResult);
-    sampleCsvImporter.readCsvIntoImportResult(samplesCsvIS, sampleMapping, processingResult);
+    sampleCsvImporter.readCsvIntoImportResult(samplesCsvIS, sampleMapping, processingResult, null);
 
     // csv input with various subsamples subsamples (1st and 7th fine, other with various problems)
     InputStream subSamplesCsvIS =
@@ -1018,7 +1021,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
 
     // run subsample processing and validation
     subSampleCsvImporter.readCsvIntoImportResult(
-        subSamplesCsvIS, subSampleMapping, processingResult);
+        subSamplesCsvIS, subSampleMapping, processingResult, null);
     ApiInventoryImportSubSampleImportResult subSampleResult = processingResult.getSubSampleResult();
     importMgr.prevalidateSubSamples(processingResult);
     assertNotNull(subSampleResult);
@@ -1104,7 +1107,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         processingResult,
         csvContainerLines,
         colIndexToDefaultFieldMapping,
-        csvContainerLines.get(0).length);
+        csvContainerLines.get(0).length,
+        new User("anyuser"));
     assertEquals(5, processingResult.getSuccessCount());
     assertEquals(
         ApiInventoryRecordType.CONTAINER,
@@ -1187,7 +1191,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     fieldMappings.put("Parent Global Id", "parent container global id");
 
     ApiInventoryImportResult importResult = new ApiInventoryImportResult(testUser);
-    containerCsvImporter.readCsvIntoImportResult(containersCsvIS, fieldMappings, importResult);
+    containerCsvImporter.readCsvIntoImportResult(
+        containersCsvIS, fieldMappings, importResult, null);
     ApiInventoryImportPartialResult partialResult = importResult.getContainerResult();
     importMgr.prevalidateContainers(importResult);
     assertNotNull(partialResult);
@@ -1233,7 +1238,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     fieldMappings.put("Import Id", "import identifier");
     fieldMappings.put("Parent Global Id", "parent container global id");
     ApiInventoryImportResult csvProcessingResult = new ApiInventoryImportResult();
-    containerCsvImporter.readCsvIntoImportResult(containersIS, fieldMappings, csvProcessingResult);
+    containerCsvImporter.readCsvIntoImportResult(
+        containersIS, fieldMappings, csvProcessingResult, null);
 
     // attempt to import into grid container
     ApiInventoryImportResult importResult = new ApiInventoryImportResult(testUser);
@@ -1256,7 +1262,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
                 + "c1, TestContainer1, "
                 + otherUserWorkbench.getGlobalId());
     ApiInventoryImportResult csvProcessingResult2 = new ApiInventoryImportResult();
-    containerCsvImporter.readCsvIntoImportResult(containersIS, fieldMappings, csvProcessingResult2);
+    containerCsvImporter.readCsvIntoImportResult(
+        containersIS, fieldMappings, csvProcessingResult2, null);
 
     // attempt to import into other user's bench
     ApiInventoryImportResult importResult2 = new ApiInventoryImportResult(testUser);
@@ -1286,7 +1293,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     fieldMappings.put("Name", "name");
     fieldMappings.put("Parent Sample Global Id", "parent sample global id");
     ApiInventoryImportResult csvProcessingResult = new ApiInventoryImportResult();
-    subSampleCsvImporter.readCsvIntoImportResult(subSampleIS, fieldMappings, csvProcessingResult);
+    subSampleCsvImporter.readCsvIntoImportResult(
+        subSampleIS, fieldMappings, csvProcessingResult, null);
 
     // attempt to import into other user's bench
     ApiInventoryImportResult importResult = new ApiInventoryImportResult(testUser);

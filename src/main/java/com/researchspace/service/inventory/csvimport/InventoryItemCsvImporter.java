@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.csvimport;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
+import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryImportParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
@@ -11,11 +12,13 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import java.io.IOException;
@@ -26,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.naming.InvalidNameException;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
@@ -39,6 +43,8 @@ public abstract class InventoryItemCsvImporter {
   private final ApiInventoryRecordType recordType;
 
   @Autowired protected InventoryBulkOperationHandler bulkOperationHandler;
+  @Autowired protected InventoryImportSampleFieldCreator importedFieldCreator;
+  @Autowired protected InventoryIdentifierApiManager inventoryIdentifierManager;
 
   private final Set<String> reservedSampleFieldNames = (new Sample()).getReservedFieldNames();
 
@@ -68,6 +74,14 @@ public abstract class InventoryItemCsvImporter {
 
     result.convertRowsToFieldNameToValuesMap();
     result.populateResultWithNonBlankColumns();
+    Map<String, String> fieldMapping = null;
+    for (String columnName : result.getColumnNames()) {
+      List<String> fieldValues = result.getColumnNameToValuesMap().get(columnName);
+      fieldMapping = importedFieldCreator.getFieldMappingForIdentifier(columnName, fieldValues);
+      if (!fieldMapping.isEmpty()) {
+        result.getFieldMappings().putAll(fieldMapping);
+      }
+    }
 
     return result;
   }
@@ -75,7 +89,8 @@ public abstract class InventoryItemCsvImporter {
   public abstract void readCsvIntoImportResult(
       InputStream inputStream,
       Map<String, String> csvColumnToFieldMapping,
-      ApiInventoryImportResult importResult)
+      ApiInventoryImportResult importResult,
+      User user)
       throws IOException;
 
   protected void assertNumberOfCsvLinesAcceptable(int size) {
@@ -177,7 +192,8 @@ public abstract class InventoryItemCsvImporter {
   }
 
   protected void setDefaultFieldFromMappedColumn(
-      ApiInventoryRecordInfo apiInvRec, String fieldName, String value) {
+      ApiInventoryRecordInfo apiInvRec, String fieldName, String value, User user)
+      throws InvalidNameException {
     if (StringUtils.isBlank(fieldName)) {
       return; // column mapping target set to empty means column should be ignored
     }
@@ -203,6 +219,16 @@ public abstract class InventoryItemCsvImporter {
         break;
       case "quantity":
         apiInvRec.setQuantity(new ApiQuantityInfo(QuantityInfo.of(value)));
+        break;
+      case "identifier":
+        List<ApiInventoryDOI> identifierList =
+            inventoryIdentifierManager.findIdentifiers("draft", false, value, user);
+        if (identifierList.size() != 1) {
+          throw new IllegalArgumentException(
+              "identifier for " + fieldName + " is not unique: " + value);
+        } else {
+          apiInvRec.setIdentifiers(identifierList);
+        }
         break;
       default:
         throw new IllegalArgumentException("unrecognized field mapping: " + fieldName);

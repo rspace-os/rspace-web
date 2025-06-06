@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
+import javax.naming.InvalidNameException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -122,7 +123,8 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
   public void readCsvIntoImportResult(
       InputStream samplesIS,
       Map<String, String> csvColumnToFieldMapping,
-      ApiInventoryImportResult importResult)
+      ApiInventoryImportResult importResult,
+      User user)
       throws IOException {
 
     // already present and store the template
@@ -145,7 +147,11 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
     if (isTemplateCompatible) {
       List<String[]> csvSampleLines = lines.subList(1, lines.size());
       convertLinesToSamples(
-          sampleProcessingResult, csvSampleLines, columnIndexToDefaultFieldMap, columnNames.size());
+          sampleProcessingResult,
+          csvSampleLines,
+          columnIndexToDefaultFieldMap,
+          columnNames.size(),
+          user);
     }
   }
 
@@ -185,7 +191,8 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
       ApiInventoryImportSampleImportResult csvProcessingResult,
       List<String[]> linesToImport,
       Map<Integer, String> columnIndexToDefaultFieldMap,
-      int expectedColumnsNumber) {
+      int expectedColumnsNumber,
+      User user) {
 
     ApiSampleTemplate template = (ApiSampleTemplate) csvProcessingResult.getTemplate().getRecord();
 
@@ -235,7 +242,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
                     resultCount, new GlobalIdentifier(value));
               }
             } else {
-              setDefaultFieldFromMappedColumn(apiSample, fieldName, value);
+              setDefaultFieldFromMappedColumn(apiSample, fieldName, value, user);
             }
           } else {
             ApiSampleField sampleField = new ApiSampleField();
@@ -253,7 +260,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
           }
         }
         csvProcessingResult.addSuccessResult(apiSample);
-      } catch (RuntimeException iae) {
+      } catch (RuntimeException | InvalidNameException iae) {
         csvProcessingResult.addError(getBadRequestIllegalArgumentApiError(iae.getMessage()));
       }
 

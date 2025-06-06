@@ -17,11 +17,17 @@ public class ApiInventoryImportParseResult {
   @JsonProperty("columnNames")
   private List<String> columnNames;
 
+  @JsonProperty("fieldNameForColumnName")
+  private Map<String, String> fieldNameForColumnName = new HashMap<>();
+
   @JsonProperty("rowsCount")
   private Integer rowsCount;
 
   @JsonProperty("columnsWithoutBlankValue")
   private List<String> columnsWithoutBlankValue = new ArrayList<>();
+
+  @JsonProperty("fieldMappings")
+  private Map<String, String> fieldMappings = new HashMap<>();
 
   // for internal result processing
   @JsonIgnore private List<String[]> rows;
