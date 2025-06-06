@@ -86,16 +86,12 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       String state, Boolean isAssociated, String identifier, User owner)
       throws InvalidNameException {
     String finalIdentifier;
-    if (isNotBlank(identifier) && !isValidDOI(identifier)) {
-      throw new IllegalArgumentException(
-          "Identifier [" + identifier + "] it is not recognized as valid DOI");
+    if (isNotBlank(identifier)
+        && (isValidURL(identifier) || isValidURL("https://" + identifier))
+        && isValidDOI(identifier)) {
+      finalIdentifier = getIdentifierSuffix(identifier);
     } else {
-      if (isNotBlank(identifier)
-          && (isValidURL(identifier) || isValidURL("https://" + identifier))) {
-        finalIdentifier = getIdentifierSuffix(identifier);
-      } else {
-        finalIdentifier = identifier;
-      }
+      finalIdentifier = identifier;
     }
 
     return doiDao.getActiveIdentifiersByOwner(owner).stream()
