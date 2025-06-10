@@ -4,6 +4,22 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.11.0 2025-06-06
+
+### ELN Features
+
+- RSDEV-653 new System Setting for enabling/disabling OAuth authentication for RSpace API
+- RSDEV-664 extended logging around usage of RSpace API, including new 'ApiEvents' file that tracks RSpace API interactions
+
+### ELN Bugfix
+
+- RSDEV-649 fix problem with 'delete notifications' action being very slow in some scenarios
+
+### Inventory Features
+
+- RSDEV-687 new "Identifiers" page for managing IGSN IDs, openable with button on Inventory sidebar
+- RSDEV-676 clearly marking "Name" as a required field when creating a new Sample
+
 # 2.10.0 2025-05-13
 
 ### ELN Features
@@ -19,7 +35,6 @@ You can find official changelog at https://documentation.researchspace.com/artic
 ### Inventory Features
 
 - RSDEV-636 allow printing two copies of each barcode (raffle-book style) with a label printer
-- RSDEV-570 new interface for managing IGSN IDs (requires Datacite integration)
 
 # 2.9.0 2025-04-10
 

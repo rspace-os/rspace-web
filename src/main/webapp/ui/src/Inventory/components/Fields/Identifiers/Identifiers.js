@@ -65,6 +65,7 @@ import {
 import AlertTitle from "@mui/material/AlertTitle";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
+import AnalyticsContext from "../../../../stores/contexts/Analytics";
 
 const useStyles = makeStyles()((theme) => ({
   primary: {
@@ -591,6 +592,7 @@ const AssignDialog = observer(
     >(new RsSet([]));
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+    const { trackEvent } = useContext(AnalyticsContext);
 
     return (
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -660,6 +662,7 @@ const AssignDialog = observer(
                 await recordToAssignTo.fetchAdditionalInfo();
                 setSelectedIgsns(new RsSet([]));
                 onClose();
+                trackEvent("user:assign-existing-igsn");
               })}
             >
               Link
@@ -678,6 +681,8 @@ const IdentifiersCard = observer((): Node => {
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   const identifiers = activeResult.identifiers ?? [];
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const { trackEvent } = useContext(AnalyticsContext);
+
   return (
     <>
       {activeResult.state === "create" && (
@@ -699,6 +704,7 @@ const IdentifiersCard = observer((): Node => {
             variant="outlined"
             onClick={() => {
               setAssignDialogOpen(true);
+              trackEvent("user:open:assign-existing-igsn-dialog");
             }}
           >
             Link existing IGSN ID

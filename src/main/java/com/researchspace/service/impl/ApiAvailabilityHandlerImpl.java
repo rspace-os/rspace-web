@@ -44,6 +44,12 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
     return systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.API_AVAILABLE);
   }
 
+  @Override
+  public boolean isOAuthAccessAllowed(User user) {
+    return systemPropertyManager.isPropertyAllowed(
+        user, SystemPropertyName.API_OAUTH_AUTHENTICATION);
+  }
+
   private boolean isInventoryAvailable(User user) {
     return systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.INVENTORY_AVAILABLE);
   }

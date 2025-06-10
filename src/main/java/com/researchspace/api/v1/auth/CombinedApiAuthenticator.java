@@ -58,6 +58,12 @@ public class CombinedApiAuthenticator implements ApiAuthenticator {
     if (StringUtils.isNotEmpty(request.getHeader("Authorization"))) {
       User user = oAuthAuthenticator.authenticate(request);
       if (UserAuthenticationMethod.API_OAUTH_TOKEN.equals(user.getAuthenticatedBy())) {
+        if (!apiHandler.isOAuthAccessAllowed(user)) {
+          throw new ApiAuthenticationException(
+              String.format(
+                  "Access through OAuth tokens has been disabled for user '%s'",
+                  user.getUsername()));
+        }
         logExternalApiRequest(request, user);
       }
       return user;

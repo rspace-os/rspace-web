@@ -26,4 +26,6 @@ public interface ApiAvailabilityHandler {
    * @return A {@link ServiceOperationResult} with optional message if result is <code>false</code>
    */
   boolean isApiAvailableForUser(User user);
+
+  boolean isOAuthAccessAllowed(User user);
 }
