@@ -13,8 +13,6 @@ public class NotificationServiceImpl implements NotificationService {
 
   @Override
   public void sendNotificationUpdate(Long userId, NotificationMessage notification) {
-    if (messagingTemplate != null) {
-      messagingTemplate.convertAndSend("/topic/notifications/" + userId, notification);
-    }
+    messagingTemplate.convertAndSend("/topic/notifications/" + userId, notification);
   }
 }

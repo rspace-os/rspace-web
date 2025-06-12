@@ -67,7 +67,7 @@ public class MessageAndNotificationTrackerTest {
   }
 
   @Test
-  public void testNotificationControllerCallOnNewNotification() {
+  public void testNotificationServiceCalledOnNewNotification() {
     Long userId = 1L;
     tracker.changeUserNotificationCount(userId, 1);
 
