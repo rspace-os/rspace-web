@@ -2,7 +2,8 @@ package com.researchspace.service;
 
 import com.researchspace.webapp.messaging.NotificationMessage;
 
-/** Service for sending notifications to users via WebSocket */
+
+
 public interface NotificationService {
 
   /**

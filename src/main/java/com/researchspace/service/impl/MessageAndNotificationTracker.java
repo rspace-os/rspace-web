@@ -11,9 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Class holding status for users as to whether that user has new notifications or not. <br>
- * This is is to hold in memory information so that polling from client does not have to do DB
- * lookups.
+ * Tracks message and notification counts for users.
+ * When new notifications or messages are generated within the system, this service publishes the updated counts via
+ * {@link NotificationService}.
  *
  * @see IMessageAndNotificationTracker
  */

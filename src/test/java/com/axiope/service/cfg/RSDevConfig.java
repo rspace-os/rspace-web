@@ -265,13 +265,13 @@ public class RSDevConfig extends BaseConfig {
         paramname, file.getName(), "unknown", FileUtils.readFileToByteArray(file));
   }
 
-  /** Mock NotificationService for tests to avoid WebSocket configuration dependency */
+  // Mock NotificationService beans for test context, since WebSocket configuration is excluded from test context
   @Bean
   public NotificationService notificationService() {
     return Mockito.mock(NotificationService.class);
   }
 
-  /** Mock SimpMessagingTemplate for tests to avoid WebSocket configuration dependency */
+  // Mock NotificationService beans for test context, since WebSocket configuration is excluded from test context
   @Bean
   public SimpMessagingTemplate simpMessagingTemplate() {
     return Mockito.mock(SimpMessagingTemplate.class);
