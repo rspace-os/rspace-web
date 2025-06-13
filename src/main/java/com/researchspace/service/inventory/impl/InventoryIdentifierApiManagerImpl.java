@@ -1,5 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
+import static com.researchspace.model.inventory.field.InventoryIdentifierField.DOI_URL_PREFIX;
+import static com.researchspace.model.inventory.field.InventoryIdentifierField.isValidDOI;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -54,8 +56,6 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
 
   private DataCiteConnector dataCiteConnector;
 
-  private String dataCitePublicUrlPrefix = "https://doi.org/";
-
   @Override
   public InventoryRecord getInventoryRecordByIdentifierId(Long doiId) {
     Optional<DigitalObjectIdentifier> doiOptional = doiDao.getSafeNull(doiId);
@@ -83,36 +83,37 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
 
   @Override
   public List<ApiInventoryDOI> findIdentifiers(
-      String state, Boolean isAssociated, String identifier, User owner)
+      String state, Boolean isAssociated, String identifier, boolean allowSubstring, User owner)
       throws InvalidNameException {
     String finalIdentifier;
     if (isNotBlank(identifier)
         && (isValidURL(identifier) || isValidURL("https://" + identifier))
-        && isValidIdentifier(identifier)) {
+        && isValidDOI(identifier)) {
       finalIdentifier = getIdentifierSuffix(identifier);
     } else {
       finalIdentifier = identifier;
     }
+
     return doiDao.getActiveIdentifiersByOwner(owner).stream()
-        .filter(r -> isBlank(finalIdentifier) || r.getIdentifier().contains(finalIdentifier))
+        .filter(
+            r -> isBlank(finalIdentifier) || matchIdentifier(r, finalIdentifier, allowSubstring))
         .filter(r -> (isAssociated == null) || isAssociated.equals(r.isAssociated()))
         .filter(r -> isBlank(state) || state.equals(r.getState()))
         .map(ApiInventoryDOI::new)
         .collect(Collectors.toList());
   }
 
-  private String getIdentifierSuffix(String identifierUrl) throws InvalidNameException {
-    return "10." + identifierUrl.split("/10.")[1];
+  private static boolean matchIdentifier(
+      DigitalObjectIdentifier r, String finalIdentifier, boolean allowSubstringIdentifier) {
+    if (allowSubstringIdentifier) {
+      return r.getIdentifier().contains(finalIdentifier);
+    } else {
+      return r.getIdentifier().equals(finalIdentifier);
+    }
   }
 
-  private boolean isValidIdentifier(String identifier) throws InvalidNameException {
-    // DOI always starts with "10."
-    // as per specs on https://www.doi.org/#:~:text=TRY%20RESOLVING%20A%20DOI
-    if (!identifier.contains("10.")) {
-      throw new IllegalArgumentException(
-          "Identifier [" + identifier + "] it is not recognized as valid DOI");
-    }
-    return true;
+  private String getIdentifierSuffix(String identifierUrl) throws InvalidNameException {
+    return "10." + identifierUrl.split("/10.")[1];
   }
 
   private boolean isValidURL(String url) {
@@ -360,7 +361,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     publishDoi.setId(invRec.getActiveIdentifiers().get(0).getId());
     publishDoi.setState(publishResult.getAttributes().getState());
     publishDoi.setUrl(publishResult.getAttributes().getUrl());
-    publishDoi.setPublicUrl(dataCitePublicUrlPrefix + doi.getIdentifier());
+    publishDoi.setPublicUrl(DOI_URL_PREFIX + doi.getIdentifier());
     publishDoi.setCreatorAffiliation(rorAffiliationName);
     publishDoi.setCreatorAffiliationIdentifier(rorAffiliationID);
     return publishDoi;

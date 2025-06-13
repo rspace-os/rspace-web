@@ -23,6 +23,7 @@ public class ApiFieldToModelFieldFactory {
       case ATTACHMENT:
       case REFERENCE:
       case URI:
+      case IDENTIFIER:
         toAdd = SampleField.fromFieldTypeString(field.getType().toString());
         break;
       case CHOICE:
