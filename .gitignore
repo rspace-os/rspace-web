@@ -1,5 +1,6 @@
 /target/
 *.DS_Store
+/ApiRequests.txt
 /RSLogs.txt
 /RSLogs.txt*
 /SecurityEvents.txt

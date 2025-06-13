@@ -22,6 +22,7 @@ import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.LicenseService;
+import com.researchspace.service.NotificationService;
 import com.researchspace.service.impl.CommunicationManagerImpl;
 import com.researchspace.service.impl.DevBroadCaster;
 import com.researchspace.service.impl.DevEmailSenderImpl;
@@ -48,6 +49,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.annotation.EnableAsync;
 
@@ -261,5 +263,18 @@ public class RSDevConfig extends BaseConfig {
   private MockMultipartFile fileToMultipartfile(String paramname, File file) throws IOException {
     return new MockMultipartFile(
         paramname, file.getName(), "unknown", FileUtils.readFileToByteArray(file));
+  }
+
+  // WebSocket configuration is not loaded in test context, so we need to mock the beans
+  @Bean
+  public NotificationService notificationService() {
+    return Mockito.mock(NotificationService.class);
+  }
+
+  // Mock NotificationService beans for test context, since WebSocket configuration is excluded from
+  // test context
+  @Bean
+  public SimpMessagingTemplate simpMessagingTemplate() {
+    return Mockito.mock(SimpMessagingTemplate.class);
   }
 }

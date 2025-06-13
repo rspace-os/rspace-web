@@ -3,28 +3,46 @@ package com.researchspace.service.impl;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.service.IMessageAndNotificationTracker;
+import com.researchspace.service.NotificationService;
+import com.researchspace.webapp.messaging.NotificationMessage;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
- * Class holding status for users as to whether that user has new notifications or not. <br>
- * This is is to hold in memory information so that polling from client does not have to do DB
- * lookups.
+ * Tracks message and notification counts for users. When new notifications or messages are
+ * generated within the system, this service publishes the updated counts via {@link
+ * NotificationService}.
  *
  * @see IMessageAndNotificationTracker
  */
+@Service
 public class MessageAndNotificationTracker implements IMessageAndNotificationTracker {
 
+  @Autowired private NotificationService notificationService;
   private Map<Long, Integer> userToNotification = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToMessage = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToSpecialMessage = new ConcurrentHashMap<>();
 
+  private void sendNotificationUpdate(Long userId) {
+    NotificationMessage notification =
+        new NotificationMessage(
+            getNotificationCountFor(userId),
+            getMessageCountFor(userId),
+            getSpecialMessageCountFor(userId));
+    notificationService.sendNotificationUpdate(userId, notification);
+  }
+
   public int changeUserNotificationCount(Long userId, Integer incrementAmount) {
-    return doChangeCount(userId, incrementAmount, userToNotification);
+    int newCount = doChangeCount(userId, incrementAmount, userToNotification);
+    sendNotificationUpdate(userId);
+    return newCount;
   }
 
   public void clearUserNotificationCount(Long userId) {
     userToNotification.put(userId, 0);
+    sendNotificationUpdate(userId);
   }
 
   public Boolean userHasNewNotifications(Long userId) {
@@ -62,11 +80,15 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
   }
 
   private int changeUserSpecialMsgCount(Long userId, Integer incrementAmount) {
-    return doChangeCount(userId, incrementAmount, userToSpecialMessage);
+    int newCount = doChangeCount(userId, incrementAmount, userToSpecialMessage);
+    sendNotificationUpdate(userId);
+    return newCount;
   }
 
   private int changeUserMessageCount(Long userId, int incrementAmount) {
-    return doChangeCount(userId, incrementAmount, userToMessage);
+    int newCount = doChangeCount(userId, incrementAmount, userToMessage);
+    sendNotificationUpdate(userId);
+    return newCount;
   }
 
   private int doChangeCount(Long userId, int incrementAmount, Map<Long, Integer> userToCount) {
@@ -104,5 +126,6 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
     userToNotification.put(userId, notificationStatus.getNotificationCount());
     userToMessage.put(userId, notificationStatus.getMessageCount());
     userToSpecialMessage.put(userId, notificationStatus.getSpecialMessageCount());
+    sendNotificationUpdate(userId);
   }
 }
