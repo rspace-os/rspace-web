@@ -2,8 +2,6 @@ package com.researchspace.service;
 
 import com.researchspace.webapp.messaging.NotificationMessage;
 
-
-
 public interface NotificationService {
 
   /**

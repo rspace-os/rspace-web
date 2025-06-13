@@ -11,9 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Tracks message and notification counts for users.
- * When new notifications or messages are generated within the system, this service publishes the updated counts via
- * {@link NotificationService}.
+ * Tracks message and notification counts for users. When new notifications or messages are
+ * generated within the system, this service publishes the updated counts via {@link
+ * NotificationService}.
  *
  * @see IMessageAndNotificationTracker
  */

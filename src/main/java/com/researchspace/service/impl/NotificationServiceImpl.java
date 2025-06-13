@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import com.researchspace.service.NotificationService;
 import com.researchspace.webapp.messaging.NotificationMessage;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
