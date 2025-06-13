@@ -265,8 +265,7 @@ public class RSDevConfig extends BaseConfig {
         paramname, file.getName(), "unknown", FileUtils.readFileToByteArray(file));
   }
 
-  // Mock NotificationService beans for test context, since WebSocket configuration is excluded from
-  // test context
+  // WebSocket configuration is not loaded in test context, so we need to mock the beans
   @Bean
   public NotificationService notificationService() {
     return Mockito.mock(NotificationService.class);
