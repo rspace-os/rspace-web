@@ -22,7 +22,6 @@ import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.LicenseService;
-import com.researchspace.service.NotificationService;
 import com.researchspace.service.impl.CommunicationManagerImpl;
 import com.researchspace.service.impl.DevBroadCaster;
 import com.researchspace.service.impl.DevEmailSenderImpl;
@@ -265,14 +264,8 @@ public class RSDevConfig extends BaseConfig {
         paramname, file.getName(), "unknown", FileUtils.readFileToByteArray(file));
   }
 
-  // WebSocket configuration is not loaded in test context, so we need to mock the beans
-  @Bean
-  public NotificationService notificationService() {
-    return Mockito.mock(NotificationService.class);
-  }
-
-  // Mock NotificationService beans for test context, since WebSocket configuration is excluded from
-  // test context
+  // Mock websocket messaging bean for test context as WebSocket configuration is excluded from test
+  // context
   @Bean
   public SimpMessagingTemplate simpMessagingTemplate() {
     return Mockito.mock(SimpMessagingTemplate.class);

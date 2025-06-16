@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.comms.MessageType;
-import com.researchspace.service.NotificationService;
 import com.researchspace.webapp.messaging.NotificationMessage;
 import org.junit.After;
 import org.junit.Test;
@@ -14,11 +13,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MessageAndNotificationTrackerTest {
 
-  @Mock NotificationService notificationService;
+  @Mock SimpMessagingTemplate messagingTemplate;
 
   @InjectMocks MessageAndNotificationTracker tracker;
 
@@ -71,7 +71,7 @@ public class MessageAndNotificationTrackerTest {
     Long userId = 1L;
     tracker.changeUserNotificationCount(userId, 1);
 
-    Mockito.verify(notificationService)
-        .sendNotificationUpdate(userId, new NotificationMessage(1, 0, 0));
+    Mockito.verify(messagingTemplate)
+        .convertAndSend("/topic/notifications/1", new NotificationMessage(1, 0, 0));
   }
 }

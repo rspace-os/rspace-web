@@ -3,24 +3,23 @@ package com.researchspace.service.impl;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.service.IMessageAndNotificationTracker;
-import com.researchspace.service.NotificationService;
 import com.researchspace.webapp.messaging.NotificationMessage;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.stereotype.Service;
 
 /**
  * Tracks message and notification counts for users. When new notifications or messages are
- * generated within the system, this service publishes the updated counts via {@link
- * NotificationService}.
- *
- * @see IMessageAndNotificationTracker
+ * generated within the system, this service publishes the updated counts to a topic for each user.
  */
 @Service
 public class MessageAndNotificationTracker implements IMessageAndNotificationTracker {
 
-  @Autowired private NotificationService notificationService;
+  @Autowired private SimpMessagingTemplate messagingTemplate;
+
   private Map<Long, Integer> userToNotification = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToMessage = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToSpecialMessage = new ConcurrentHashMap<>();
@@ -31,7 +30,7 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
             getNotificationCountFor(userId),
             getMessageCountFor(userId),
             getSpecialMessageCountFor(userId));
-    notificationService.sendNotificationUpdate(userId, notification);
+    sendNotificationUpdate(userId, notification);
   }
 
   public int changeUserNotificationCount(Long userId, Integer incrementAmount) {
@@ -127,5 +126,20 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
     userToMessage.put(userId, notificationStatus.getMessageCount());
     userToSpecialMessage.put(userId, notificationStatus.getSpecialMessageCount());
     sendNotificationUpdate(userId);
+  }
+
+  public void sendNotificationUpdate(Long userId, NotificationMessage notification) {
+    messagingTemplate.convertAndSend("/topic/notifications/" + userId, notification);
+  }
+
+  /*
+   * This method is called when a user subscribes to the notifications topic and sends the current notification count
+   */
+  @SubscribeMapping("/topic/notifications/{userId}")
+  public NotificationMessage sendInitialNotificationCount(Long userId) {
+    return new NotificationMessage(
+        getNotificationCountFor(userId),
+        getMessageCountFor(userId),
+        getSpecialMessageCountFor(userId));
   }
 }
