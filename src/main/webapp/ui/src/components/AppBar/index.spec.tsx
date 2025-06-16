@@ -24,6 +24,11 @@ const feature = test.extend<{
       title: string;
     }) => Promise<void>;
     "the profile and logout options should be visible": () => Promise<void>;
+    "the Inventory link should be hidden": () => Promise<void>;
+    "the MyRSpace link should point to /groups/viewPIGroup": () => Promise<void>;
+    "the MyRSpace link should point to /userform": () => Promise<void>;
+    "the System link should be hidden": () => Promise<void>;
+    "the Published menuitem should be hidden": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -74,6 +79,40 @@ const feature = test.extend<{
         const logoutOption = page.getByRole("menuitem", { name: /log out/i });
         await expect(logoutOption).toBeVisible();
       },
+      "the Inventory link should be hidden": async () => {
+        await expect(
+          page.getByRole("link", { name: /inventory/i })
+        ).not.toBeVisible();
+      },
+      "the System link should be hidden": async () => {
+        await expect(
+          page.getByRole("link", { name: /system/i })
+        ).not.toBeVisible();
+      },
+      "the Published menuitem should be hidden": async () => {
+        const accontMenuButton = page.getByRole("button", {
+          name: "Account Menu",
+        });
+        await accontMenuButton.click();
+        await expect(
+          page.getByRole("menuitem", { name: /published/i })
+        ).not.toBeVisible();
+      },
+      "the MyRSpace link should point to /groups/viewPIGroup": async () => {
+        const myRSpaceLink = page.getByRole("link", {
+          name: /my rspace/i,
+        });
+        await expect(myRSpaceLink).toHaveAttribute(
+          "href",
+          "/groups/viewPIGroup"
+        );
+      },
+      "the MyRSpace link should point to /userform": async () => {
+        const myRSpaceLink = page.getByRole("link", {
+          name: /my rspace/i,
+        });
+        await expect(myRSpaceLink).toHaveAttribute("href", "/userform");
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -107,8 +146,8 @@ feature.beforeEach(async ({ router }) => {
         visibleTabs: {
           inventory: true,
           myLabGroups: true,
-          published: false,
-          system: false,
+          published: true,
+          system: true,
         },
         userDetails: {
           username: "user1a",
@@ -176,4 +215,225 @@ test.describe("App Bar", () => {
       await Then["the profile and logout options should be visible"]();
     }
   );
+
+  /*
+   * The /uiNavigationData endpoint provides the visibleTabs object, which
+   * determines which navigation opions are available in the app bar and the
+   * behaviour of the ones that are visible. These options are determined based
+   * on the user's permissions and the server * configuration.
+   */
+  feature.describe("visibleTabs", () => {
+    feature(
+      "When visibleTabs.inventory is false, the link should be hidden",
+      async ({ Given, Then, page }) => {
+        await page.route(
+          "/api/v1/userDetails/uiNavigationData",
+          async (route) => {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                bannerImgSrc: "/public/banner",
+                visibleTabs: {
+                  inventory: false,
+                  myLabGroups: true,
+                  published: false,
+                  system: false,
+                },
+                userDetails: {
+                  username: "user1a",
+                  fullName: "user user",
+                  email: "",
+                  orcidId: null,
+                  orcidAvailable: false,
+                  profileImgSrc: null,
+                  lastSession: "2025-03-25T15:45:57.000Z",
+                },
+                operatedAs: false,
+                nextMaintenance: null,
+              }),
+            });
+          }
+        );
+        await Given["the app bar is being shown"]({
+          variant: "page",
+        });
+        await Then["the Inventory link should be hidden"]();
+        /*
+         * This is when the sysadmin has disallowed Inventory entirely.
+         */
+      }
+    );
+    feature(
+      "When visibleTabs.myLabGroups is true, the link should point to /groups/viewPIGroup",
+      async ({ Given, Then, page }) => {
+        await page.route(
+          "/api/v1/userDetails/uiNavigationData",
+          async (route) => {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                bannerImgSrc: "/public/banner",
+                visibleTabs: {
+                  inventory: false,
+                  myLabGroups: true,
+                  published: false,
+                  system: false,
+                },
+                userDetails: {
+                  username: "user1a",
+                  fullName: "user user",
+                  email: "",
+                  orcidId: null,
+                  orcidAvailable: false,
+                  profileImgSrc: null,
+                  lastSession: "2025-03-25T15:45:57.000Z",
+                },
+                operatedAs: false,
+                nextMaintenance: null,
+              }),
+            });
+          }
+        );
+        await Given["the app bar is being shown"]({
+          variant: "page",
+        });
+        await Then["the MyRSpace link should point to /groups/viewPIGroup"]();
+        /*
+         * For PIs, the MyRSpace link points to the group page for which the
+         * user is the PI, which is more helpful to them than their personal
+         * page.
+         */
+      }
+    );
+    feature(
+      "When visibleTabs.myLabGroups is false, the link should point to /userform",
+      async ({ Given, Then, page }) => {
+        await page.route(
+          "/api/v1/userDetails/uiNavigationData",
+          async (route) => {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                bannerImgSrc: "/public/banner",
+                visibleTabs: {
+                  inventory: false,
+                  myLabGroups: false,
+                  published: false,
+                  system: false,
+                },
+                userDetails: {
+                  username: "user1a",
+                  fullName: "user user",
+                  email: "",
+                  orcidId: null,
+                  orcidAvailable: false,
+                  profileImgSrc: null,
+                  lastSession: "2025-03-25T15:45:57.000Z",
+                },
+                operatedAs: false,
+                nextMaintenance: null,
+              }),
+            });
+          }
+        );
+        await Given["the app bar is being shown"]({
+          variant: "page",
+        });
+        await Then["the MyRSpace link should point to /userform"]();
+        /*
+         * For non-PIs, the MyRSpace link points to their account page,
+         * which is more helpful to them than the group page.
+         */
+      }
+    );
+    feature(
+      "When visibleTabs.system is false, the link should be hidden",
+      async ({ Given, Then, page }) => {
+        await page.route(
+          "/api/v1/userDetails/uiNavigationData",
+          async (route) => {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                bannerImgSrc: "/public/banner",
+                visibleTabs: {
+                  inventory: false,
+                  myLabGroups: true,
+                  published: false,
+                  system: false,
+                },
+                userDetails: {
+                  username: "user1a",
+                  fullName: "user user",
+                  email: "",
+                  orcidId: null,
+                  orcidAvailable: false,
+                  profileImgSrc: null,
+                  lastSession: "2025-03-25T15:45:57.000Z",
+                },
+                operatedAs: false,
+                nextMaintenance: null,
+              }),
+            });
+          }
+        );
+        await Given["the app bar is being shown"]({
+          variant: "page",
+        });
+        await Then["the System link should be hidden"]();
+        /*
+         * The System page is only available to sysadmins, so if the user
+         * does not have the permissions to view it, it should not be
+         * shown.
+         */
+      }
+    );
+    feature(
+      "When visibleTabs.published is false, the menuitem should be hidden",
+      async ({ Given, Then, page }) => {
+        await page.route(
+          "/api/v1/userDetails/uiNavigationData",
+          async (route) => {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                bannerImgSrc: "/public/banner",
+                visibleTabs: {
+                  inventory: false,
+                  myLabGroups: true,
+                  published: false,
+                  system: false,
+                },
+                userDetails: {
+                  username: "user1a",
+                  fullName: "user user",
+                  email: "",
+                  orcidId: null,
+                  orcidAvailable: false,
+                  profileImgSrc: null,
+                  lastSession: "2025-03-25T15:45:57.000Z",
+                },
+                operatedAs: false,
+                nextMaintenance: null,
+              }),
+            });
+          }
+        );
+        await Given["the app bar is being shown"]({
+          variant: "page",
+        });
+        await Then["the Published menuitem should be hidden"]();
+        /*
+         * The published page is another piece of functionality that the
+         * sysadmin can disable for all users, so if it has not been
+         * enabled then the menuitem should not be shown.
+         */
+      }
+    );
+  });
 });
