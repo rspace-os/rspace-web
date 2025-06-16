@@ -84,18 +84,23 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
     setErrorMessage(null);
   };
 
+  const [isValid, setIsValid] = useState(IsValid());
   const validate = (ketcher) => {
-    if(!ketcher){
-      return IsValid();
+    if (!ketcher) {
+      setIsValid(IsValid());
+      return;
     }
     ketcher.getKet().then((ketData) => {
-      const molecules = Object.keys(JSON.parse(ketData)).filter(key => key.startsWith('mol'));
-      console.log("molecules: " + molecules.length)
-      if(molecules.length > 1){
-        return IsInvalid("Please select only 1 molecule")
+      const molecules = Object.keys(JSON.parse(ketData)).filter((key) =>
+        key.startsWith("mol")
+      );
+      if (molecules.length > 1) {
+        setIsValid(IsInvalid("Please select only 1 molecule"));
+        return;
       }
-      return IsValid();
-  })};
+      setIsValid(IsValid());
+    });
+  };
 
   const handleInsert = (ketcher) => {
     setShowKetcherDialog(false);
@@ -104,7 +109,7 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
       fetchData(0, smiles);
       void window.ketcher.setMolecule("");
     });
-  }
+  };
 
   const columns = [
     DataGridColumn.newColumnWithValueGetter(
@@ -172,7 +177,10 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         actionBtnText="Search"
         handleClose={closeAndReset}
         existingChem={searchSmiles}
-        validationResult={validate(window.ketcher)}
+        validationResult={isValid}
+        onChange={() => {
+          validate(window.ketcher);
+        }}
         additionalControls={
           <FormControl>
             <FormLabel id="search-type">Search Type</FormLabel>

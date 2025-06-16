@@ -12,7 +12,11 @@ import { styled } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { Ketcher } from "ketcher-core";
-import ValidatingSubmitButton, { IsValid, IsInvalid, ValidationResult } from "../ValidatingSubmitButton";
+import ValidatingSubmitButton, {
+  IsValid,
+  IsInvalid,
+  ValidationResult,
+} from "../ValidatingSubmitButton";
 
 declare global {
   interface Window {
@@ -32,6 +36,7 @@ type KetcherDialogArgs = {
   readOnly?: boolean;
   additionalControls?: React.ReactNode;
   validationResult?: ValidationResult;
+  onChange: () => void;
 };
 
 const StyledDialog = styled(Dialog)(() => ({
@@ -49,7 +54,8 @@ const KetcherDialog = ({
   actionBtnText = "",
   readOnly = false,
   additionalControls = null,
-  validationResult = IsValid()
+  validationResult = IsValid(),
+  onChange,
 }: KetcherDialogArgs): React.ReactNode => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [hasError, setHasError] = useState(false);
@@ -83,6 +89,9 @@ const KetcherDialog = ({
               }}
               structServiceProvider={structServiceProvider}
               onInit={(ketcher) => {
+                ketcher.editor.subscribe("change", () => {
+                  onChange?.();
+                });
                 window.ketcher = ketcher;
                 void ketcher.setMolecule(existingChem);
                 if (readOnly) {
