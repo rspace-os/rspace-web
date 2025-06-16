@@ -17,6 +17,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../../util/table";
 import Link from "@mui/material/Link";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import { IsValid, IsInvalid } from "../../../components/ValidatingSubmitButton";
 
 const ChemicalSearcher = ({ isOpen, onClose }) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -83,13 +84,24 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
     setErrorMessage(null);
   };
 
+  const validate = (ketcher) => {
+    ketcher.getKet().then((ketData) => {
+      const molecules = Object.keys(JSON.parse(ketData)).filter(key => key.startsWith('mol'));
+      console.log(molecules.length)
+      if(molecules.length > 1){
+        return IsInvalid("Please select only 1 molecule")
+      }
+      return IsValid();
+  })};
+
   const handleInsert = (ketcher) => {
     setShowKetcherDialog(false);
     ketcher.getSmiles().then((smiles) => {
       setSearchSmiles(smiles);
       fetchData(0, smiles);
+      void window.ketcher.setMolecule("");
     });
-  };
+  }
 
   const columns = [
     DataGridColumn.newColumnWithValueGetter(
@@ -157,6 +169,7 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         actionBtnText="Search"
         handleClose={closeAndReset}
         existingChem={searchSmiles}
+        validationResult={validate}
         additionalControls={
           <FormControl>
             <FormLabel id="search-type">Search Type</FormLabel>

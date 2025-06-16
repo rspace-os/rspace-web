@@ -113,10 +113,11 @@ export const KetcherTinyMce = () => {
   const handleInsert = (ketcher) => {
     ketcherObj = ketcher;
     ketcherObj.getKet().then(
-      (chemical) => {
+      (chemical) => { 
         saveChemicalAndInsert(chemical);
         setDialogIsOpen(false);
         setExistingChemical("");
+        void window.ketcher.setMolecule("");
       },
       () => {}
     );

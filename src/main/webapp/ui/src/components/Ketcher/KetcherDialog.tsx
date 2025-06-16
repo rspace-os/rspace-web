@@ -12,6 +12,7 @@ import { styled } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { Ketcher } from "ketcher-core";
+import ValidatingSubmitButton, { IsValid, IsInvalid, ValidationResult } from "../ValidatingSubmitButton";
 
 declare global {
   interface Window {
@@ -30,6 +31,7 @@ type KetcherDialogArgs = {
   actionBtnText?: string;
   readOnly?: boolean;
   additionalControls?: React.ReactNode;
+  validationResult?: ValidationResult;
 };
 
 const StyledDialog = styled(Dialog)(() => ({
@@ -47,6 +49,7 @@ const KetcherDialog = ({
   actionBtnText = "",
   readOnly = false,
   additionalControls = null,
+  validationResult = IsValid()
 }: KetcherDialogArgs): React.ReactNode => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [hasError, setHasError] = useState(false);
@@ -58,7 +61,6 @@ const KetcherDialog = ({
 
   const onInsertClick = () => {
     handleInsert(window.ketcher);
-    void window.ketcher.setMolecule("");
   };
 
   const closeAndReset = () => {
@@ -103,9 +105,13 @@ const KetcherDialog = ({
         <DialogActions>
           <Button onClick={closeAndReset}>Cancel</Button>
           {actionBtnText && (
-            <Button onClick={onInsertClick} type="submit">
+            <ValidatingSubmitButton
+              loading={false}
+              validationResult={validationResult}
+              onClick={onInsertClick}
+            >
               {actionBtnText}
-            </Button>
+            </ValidatingSubmitButton>
           )}
         </DialogActions>
       </StyledDialog>
