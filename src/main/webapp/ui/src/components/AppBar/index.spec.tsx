@@ -13,7 +13,9 @@ const feature = test.extend<{
     ) => Promise<void>;
   };
   Once: {};
-  When: {};
+  When: {
+    "the user clicks the avatar": () => Promise<void>;
+  };
   Then: {
     "a visually hidden heading with {title} should be shown": (props: {
       title: string;
@@ -21,6 +23,7 @@ const feature = test.extend<{
     "a dialog heading with {title} should be shown": (props: {
       title: string;
     }) => Promise<void>;
+    "the profile and logout options should be visible": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -38,7 +41,13 @@ const feature = test.extend<{
     await use({});
   },
   When: async ({ page }, use) => {
-    await use({});
+    await use({
+      "the user clicks the avatar": async () => {
+        const avatar = page.getByRole("button", { name: "Account Menu" });
+        await expect(avatar).toBeVisible();
+        await avatar.click();
+      },
+    });
   },
   Then: async ({ page }, use) => {
     await use({
@@ -56,6 +65,14 @@ const feature = test.extend<{
       "a dialog heading with {title} should be shown": async ({ title }) => {
         const heading = page.getByRole("heading", { level: 2 });
         await expect(heading).toHaveText(title);
+      },
+      "the profile and logout options should be visible": async () => {
+        const accountMenu = page.getByRole("menu", {
+          name: /account menu/i,
+        });
+        await expect(accountMenu).toHaveText(/user user/i);
+        const logoutOption = page.getByRole("menuitem", { name: /log out/i });
+        await expect(logoutOption).toBeVisible();
       },
     });
   },
@@ -145,6 +162,18 @@ test.describe("App Bar", () => {
       await Then["a dialog heading with {title} should be shown"]({
         title: "Test Page",
       });
+    }
+  );
+
+  feature(
+    "When the user avatar is clicked, a menu should appear with profile and logout options",
+    async ({ Given, When, Then }) => {
+      await Given["the app bar is being shown"]({
+        variant: "page",
+        currentPage: "Test Page",
+      });
+      await When["the user clicks the avatar"]();
+      await Then["the profile and logout options should be visible"]();
     }
   );
 });
