@@ -22,7 +22,7 @@ insert into user_role select distinct user_id, roles.id  from UserGroup,roles wh
 </sql>
 </changeSet>
 
-<changeSet id="7-3-2014-1" author="radams" context="dev-test,liquibase-update-test">
+<changeSet id="7-3-2014-1" author="radams" context="dev-test">
 <comment>Set some test users to have PI role</comment>
 <sql>
  insert into user_role select User.id, roles.id from User,roles where username='user1a' and name='ROLE_PI';
@@ -177,14 +177,6 @@ insert into user_role select distinct user_id, roles.id  from UserGroup,roles wh
 <rollback>
     <sql>delete from community_admin where community_id=-1</sql>
 </rollback>
-</changeSet>
-<changeSet id="08-04-14d" author="radams" context="dev-test,liquibase-update-test,sso-ed">
- <comment>Alter username of developer test account</comment>
- <update tableName="User">
-     <column name="username" >v1gyang</column>
-     <where>username='sunny';</where>
- </update>
-    
 </changeSet>
 <changeSet author="radams (generated)" id="1396998485977-1" context="run">
     <comment>Add profile text to community table</comment>
