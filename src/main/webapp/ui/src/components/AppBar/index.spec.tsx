@@ -9,7 +9,7 @@ import { SimplePageWithAppBar } from "./index.story";
 const feature = test.extend<{
   Given: {
     "the app bar is being shown": (
-      props: React.ComponentProps<typeof SimplePageWithAppBar>
+      props?: React.ComponentProps<typeof SimplePageWithAppBar>
     ) => Promise<void>;
   };
   Once: {};
@@ -29,6 +29,7 @@ const feature = test.extend<{
     "the MyRSpace link should point to /userform": () => Promise<void>;
     "the System link should be hidden": () => Promise<void>;
     "the Published menuitem should be hidden": () => Promise<void>;
+    "the icon menu buttons should be in the order: account, then help": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -113,6 +114,51 @@ const feature = test.extend<{
         });
         await expect(myRSpaceLink).toHaveAttribute("href", "/userform");
       },
+      "the icon menu buttons should be in the order: account, then help":
+        async () => {
+          const accountMenuButton = page.getByRole("button", {
+            name: "Account Menu",
+          });
+          await expect(accountMenuButton).toBeVisible();
+          const accountMenuButtonHandle =
+            await accountMenuButton.evaluateHandle((x) => Promise.resolve(x));
+
+          const helpMenuButton = page.getByRole("button", {
+            name: "Open Help",
+          });
+          await expect(helpMenuButton).toBeVisible();
+          const helpMenuButtonHandle = await helpMenuButton.evaluateHandle(
+            (x) => Promise.resolve(x)
+          );
+
+          const orderResults = await page.evaluate(
+            ({ accountButton, helpButton }) => {
+              if (!accountButton || !helpButton) {
+                return { error: "Failed to find all elements" };
+              }
+              const accountBeforeHelp = Boolean(
+                accountButton.compareDocumentPosition(helpButton) &
+                  Node.DOCUMENT_POSITION_FOLLOWING
+              );
+              return {
+                accountBeforeHelp,
+              };
+            },
+            {
+              accountButton: accountMenuButtonHandle,
+              helpButton: helpMenuButtonHandle,
+            }
+          );
+
+          if ("error" in orderResults) {
+            throw new Error(orderResults.error);
+          }
+
+          expect(
+            orderResults.accountBeforeHelp,
+            "Account button should be before Help button"
+          ).toBe(true);
+        },
     });
   },
   networkRequests: async ({}, use) => {
@@ -436,4 +482,19 @@ test.describe("App Bar", () => {
       }
     );
   });
+
+  feature(
+    "On page variant, the icons on the right should be in the correct order",
+    async ({ Given, Then }) => {
+      await Given["the app bar is being shown"]({ variant: "page" });
+      await Then[
+        "the icon menu buttons should be in the order: account, then help"
+      ]();
+      /*
+       * This is so that across the different variants the help button remains
+       * in a consistent location -- the furthest right -- as having help be in
+       * a consistent location across the entire product is an a11y requirement.
+       */
+    }
+  );
 });
