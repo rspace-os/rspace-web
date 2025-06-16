@@ -58,6 +58,7 @@ import IconButton from "@mui/material/IconButton";
 import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
 import useSessionStorage from "../../util/useSessionStorage";
+import useWebSocketNotifications from "../../util/useWebSocketNotifications";
 
 declare global {
   interface Window {
@@ -301,6 +302,8 @@ function GalleryAppBar({
   const leftClipId = React.useId();
   const rightClipId = React.useId();
 
+  const { notificationCount } = useWebSocketNotifications("-1");
+
   const [brandingHref, setBrandingHref] = useSessionStorage<string | null>(
     "brandingHref",
     null
@@ -417,7 +420,7 @@ function GalleryAppBar({
         )}
         {variant === "page" && (
           <VisuallyHiddenHeading variant="h1">
-            {currentPage}
+            {notificationCount}
           </VisuallyHiddenHeading>
         )}
         {variant === "dialog" && (
