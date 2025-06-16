@@ -85,9 +85,12 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
   };
 
   const validate = (ketcher) => {
+    if(!ketcher){
+      return IsValid();
+    }
     ketcher.getKet().then((ketData) => {
       const molecules = Object.keys(JSON.parse(ketData)).filter(key => key.startsWith('mol'));
-      console.log(molecules.length)
+      console.log("molecules: " + molecules.length)
       if(molecules.length > 1){
         return IsInvalid("Please select only 1 molecule")
       }
@@ -169,7 +172,7 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         actionBtnText="Search"
         handleClose={closeAndReset}
         existingChem={searchSmiles}
-        validationResult={validate}
+        validationResult={validate(window.ketcher)}
         additionalControls={
           <FormControl>
             <FormLabel id="search-type">Search Type</FormLabel>
