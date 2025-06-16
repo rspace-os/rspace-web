@@ -622,25 +622,6 @@ function GalleryAppBar({
             <IncomingMaintenancePopup key="maintenance" startDate={startDate} />
           ))
           .orElse(null)}
-        <Box ml={1}>
-          {helpPage ? (
-            <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-              <HelpLinkIcon title={helpPage.title} link={helpPage.docLink} />
-            </Box>
-          ) : (
-            <HelpDocs
-              Action={({ onClick, disabled }) => (
-                <IconButtonWithTooltip
-                  size="small"
-                  onClick={onClick}
-                  icon={<HelpIcon />}
-                  title="Open Help"
-                  disabled={disabled}
-                />
-              )}
-            />
-          )}
-        </Box>
         {variant === "page" && (
           <Box ml={1}>
             <IconButtonWithTooltip
@@ -904,10 +885,29 @@ function GalleryAppBar({
           </Box>
         )}
         {variant === "dialog" && (
-          <Box sx={{ ml: 0.5 }}>
+          <Box sx={{ ml: 1 }}>
             <AccessibilityTipsIconButton {...(accessibilityTips ?? {})} />
           </Box>
         )}
+        <Box ml={1}>
+          {helpPage ? (
+            <Box sx={{ transform: "translateY(2px)" }}>
+              <HelpLinkIcon title={helpPage.title} link={helpPage.docLink} />
+            </Box>
+          ) : (
+            <HelpDocs
+              Action={({ onClick, disabled }) => (
+                <IconButtonWithTooltip
+                  size="small"
+                  onClick={onClick}
+                  icon={<HelpIcon />}
+                  title="Open Help"
+                  disabled={disabled}
+                />
+              )}
+            />
+          )}
+        </Box>
       </Toolbar>
     </AppBar>
   );
