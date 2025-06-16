@@ -30,6 +30,7 @@ const feature = test.extend<{
     "the System link should be hidden": () => Promise<void>;
     "the Published menuitem should be hidden": () => Promise<void>;
     "the icon menu buttons should be in the order: account, then help": () => Promise<void>;
+    "the icon menu buttons should be in the order: accessibility tips, then help": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -157,6 +158,54 @@ const feature = test.extend<{
           expect(
             orderResults.accountBeforeHelp,
             "Account button should be before Help button"
+          ).toBe(true);
+        },
+      "the icon menu buttons should be in the order: accessibility tips, then help":
+        async () => {
+          const accessibilityTipsButton = page.getByRole("button", {
+            name: "Accessibility Tips",
+          });
+          await expect(accessibilityTipsButton).toBeVisible();
+          const accessibilityTipsButtonHandle =
+            await accessibilityTipsButton.evaluateHandle((x) =>
+              Promise.resolve(x)
+            );
+
+          const helpMenuButton = page.getByRole("button", {
+            name: "Open Help",
+          });
+          await expect(helpMenuButton).toBeVisible();
+          const helpMenuButtonHandle = await helpMenuButton.evaluateHandle(
+            (x) => Promise.resolve(x)
+          );
+
+          const orderResults = await page.evaluate(
+            ({ accessibilityTipsButtonDomNode, helpButtonDomNode }) => {
+              if (!accessibilityTipsButtonDomNode || !helpButtonDomNode) {
+                return { error: "Failed to find all elements" };
+              }
+              const accessibilityTipsBeforeHelp = Boolean(
+                accessibilityTipsButtonDomNode.compareDocumentPosition(
+                  helpButtonDomNode
+                ) & Node.DOCUMENT_POSITION_FOLLOWING
+              );
+              return {
+                accessibilityTipsBeforeHelp,
+              };
+            },
+            {
+              accessibilityTipsButtonDomNode: accessibilityTipsButtonHandle,
+              helpButtonDomNode: helpMenuButtonHandle,
+            }
+          );
+
+          if ("error" in orderResults) {
+            throw new Error(orderResults.error);
+          }
+
+          expect(
+            orderResults.accessibilityTipsBeforeHelp,
+            "Accessibility Tips button should be before Help button"
           ).toBe(true);
         },
     });
@@ -486,9 +535,30 @@ test.describe("App Bar", () => {
   feature(
     "On page variant, the icons on the right should be in the correct order",
     async ({ Given, Then }) => {
-      await Given["the app bar is being shown"]({ variant: "page" });
+      await Given["the app bar is being shown"]({
+        variant: "page",
+        accessibilityTips: { supportsHighContrastMode: true },
+      });
       await Then[
         "the icon menu buttons should be in the order: account, then help"
+      ]();
+      /*
+       * This is so that across the different variants the help button remains
+       * in a consistent location -- the furthest right -- as having help be in
+       * a consistent location across the entire product is an a11y requirement.
+       */
+    }
+  );
+
+  feature(
+    "On dialog variant, the icons on the right should be in the correct order",
+    async ({ Given, Then }) => {
+      await Given["the app bar is being shown"]({
+        variant: "dialog",
+        accessibilityTips: { supportsHighContrastMode: true },
+      });
+      await Then[
+        "the icon menu buttons should be in the order: accessibility tips, then help"
       ]();
       /*
        * This is so that across the different variants the help button remains
