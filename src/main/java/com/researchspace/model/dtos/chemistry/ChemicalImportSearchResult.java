@@ -9,11 +9,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ChemicalImportSearchResults {
+public class ChemicalImportSearchResult {
   private String name;
   private String previewImage;
   private String smiles;
   private String formula;
   private String cas;
-  private String cid;
+  private String pubchemId;
+  private String pubchemUrl;
 }

@@ -11,11 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ChemicalImportRequest {
+public class ChemicalSearchRequest {
 
   @NotNull(message = "Search type is required")
-  @Pattern(regexp = "cas|name|smiles", message = "Search type must be one of: cas, name, smiles")
-  private String searchType;
+  private ChemicalImportSearchType searchType;
 
   @NotNull(message = "Search term is required")
   private String searchTerm;

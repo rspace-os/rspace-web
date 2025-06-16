@@ -1,9 +1,11 @@
 package com.researchspace.service;
 
-import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResults;
+import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
+import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
+
 import java.util.List;
 
-/** Service interface for importing chemical data from external sources. */
+/** Import chemical data from external sources. */
 public interface ChemicalImporter {
 
   /**
@@ -14,6 +16,14 @@ public interface ChemicalImporter {
    * @return a list of chemical search results
    * @throws ChemicalImportException if the import operation fails
    */
-  List<ChemicalImportSearchResults> importChemicals(String searchType, String searchTerm)
+  List<ChemicalImportSearchResult> searchChemicals(ChemicalImportSearchType searchType, String searchTerm)
       throws ChemicalImportException;
+
+  /**
+   * Imports chemical compounds by CAS number(s).
+   *
+   * @param casNumbers the CAS number(s) of the chemical(s) to import
+   * @throws ChemicalImportException if the import operation fails
+   */
+  void importChemicals(List<String> casNumbers) throws ChemicalImportException;
 }
