@@ -63,6 +63,6 @@ public class PropertyHolderTest {
   public void testGetGalaxyProperties() {
     holder.setGalaxyBaseUrl("https://base.galaxy.com");
 
-    assertEquals("https://base.galaxy.com", holder.setGalaxyBaseUrl());
+    assertEquals("https://base.galaxy.com", holder.getGalaxyBaseUrl());
   }
 }

@@ -68,6 +68,9 @@
     <c:if test="${inventoryAvailable eq 'true'}">
          <div class="invMaterialsListing" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
     </c:if>
+    <c:if test="${galaxyEnabled eq 'true'}">
+      <div class="galaxy-textfield" data-field-id="${field.id}" data-document-id=${structuredDocument.id}>GALAXY</div>
+    </c:if>
   </div>
   </td>
 </tr>

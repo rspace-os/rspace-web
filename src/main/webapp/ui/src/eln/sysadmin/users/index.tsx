@@ -1523,7 +1523,7 @@ export const UsersPage = (): React.ReactNode => {
       "fullName",
       (fullName) => fullName,
       {
-        headerName: "Full Name",
+        headerName: "Full Name22XXX",
         flex: 1,
         renderCell: (params: {
           value?: string;
