@@ -7,27 +7,15 @@ import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import docLinks from "../../../assets/DocLinks";
 import Button from "@mui/material/Button";
-import {
-  DataGrid,
-  useGridApiContext,
-  GridToolbarContainer,
-  GridToolbarColumnsButton,
-  GridToolbarExportContainer,
-} from "@mui/x-data-grid";
-import { DataGridColumn } from "../../../util/table";
 import ChecklistIcon from "@mui/icons-material/Checklist";
-import GlobalId from "../../../components/GlobalId";
-import MenuItem from "@mui/material/MenuItem";
 import Box from "@mui/material/Box";
 import Main from "../../Main";
 import {
   useIdentifiers,
-  useIdentifiersListing,
   useIdentifiersRefresh,
-  type Identifier,
 } from "../../useIdentifiers";
-import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
-import { toTitleCase, doNotAwait } from "../../../util/Util";
+import { type Identifier } from "../../useIdentifiers";
+import { doNotAwait } from "../../../util/Util";
 import Menu from "@mui/material/Menu";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { ThemeProvider, useTheme, lighten, darken } from "@mui/material/styles";
@@ -42,7 +30,6 @@ import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import PrintDialog from "./PrintDialog";
 import PrintIcon from "@mui/icons-material/Print";
-import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 import IgsnTable from "./IgsnTable";
 import RsSet from "../../../util/set";
 
@@ -57,14 +44,6 @@ export default function IgsnManagementPage({
   selectedIgsns: RsSet<Identifier>,
   setSelectedIgsns: (RsSet<Identifier>) => void,
 |}): Node {
-  const [state, setState] = React.useState<
-    "draft" | "findable" | "registered" | null
-  >(null);
-  const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const { identifiers, loading } = useIdentifiersListing({
-    state,
-    isAssociated,
-  });
   const { refreshListing } = useIdentifiersRefresh();
   const { bulkRegister, deleteIdentifiers } = useIdentifiers();
   const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] =
