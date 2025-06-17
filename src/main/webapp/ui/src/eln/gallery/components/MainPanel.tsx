@@ -368,7 +368,12 @@ const Path = observer(
           onClick={doNotAwait(async () => {
             try {
               await navigator.clipboard.writeText(
-                `${window.location.origin}/gallery${ArrayUtils.last(path)
+                `${window.location.origin}/gallery${ArrayUtils.last(
+                  selection
+                    .asSet()
+                    .only.map((f) => f.path)
+                    .orElse(path)
+                )
                   .map(({ id }) => `/${idToString(id).elseThrow()}`)
                   .orElse(`?mediaType=${section}`)}`
               );
