@@ -15,7 +15,6 @@ import AnalyticsContext from "../../stores/contexts/Analytics";
 import { Ketcher } from "ketcher-core";
 import ValidatingSubmitButton, {
   IsValid,
-  IsInvalid,
   ValidationResult,
 } from "../ValidatingSubmitButton";
 
