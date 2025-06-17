@@ -1,5 +1,6 @@
 scripts/externalTinymcePlugins/box/plugin.min.js
 scripts/externalTinymcePlugins/clustermarket/plugin.min.js
+scripts/externalTinymcePlugins/galaxy/plugin.min.js
 scripts/externalTinymcePlugins/comments/plugin.js
 scripts/externalTinymcePlugins/crudops/plugin.min.js
 scripts/externalTinymcePlugins/contexttoolbars/plugin.min.js
@@ -130,6 +131,7 @@ ui/dist/inventoryRecordIdentifierPublicPage.js
 ui/dist/ketcherViewer.js
 ui/dist/labgroupsTable.js
 ui/dist/materialsListing.js
+ui/dist/galaxyWorkFlows.js
 ui/dist/memberAutoshareStatusWrapper.js
 ui/dist/myLabGroups.js
 ui/dist/newLabGroup.js
@@ -143,6 +145,7 @@ ui/dist/structuredDocumentToolbar.js
 ui/dist/sysadminUsers.js
 ui/dist/tinymceClustermarket.js
 ui/dist/tinymceIdentifiers.js
+ui/dist/tinymceGalaxy.js
 ui/dist/tinymceJove.js
 ui/dist/tinymceKetcher.js
 ui/dist/tinymceOmero.js

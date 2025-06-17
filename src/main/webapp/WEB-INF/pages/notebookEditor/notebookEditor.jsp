@@ -63,4 +63,5 @@
   <script src="<c:url value='/ui/dist/fileTreeToolbar.js'/>"></script>
   <script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
   <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
+  <script src="<c:url value='/ui/dist/galaxyWorkFlows.js'/>"></script>
   <!--End React Scripts -->

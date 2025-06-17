@@ -29,6 +29,7 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.RenameAuditEvent;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.dto.UserPublicInfo;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.field.ErrorList;
@@ -54,6 +55,7 @@ import com.researchspace.service.DocumentHTMLPreviewHandler;
 import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.FieldManager;
+import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordSigningManager;
@@ -624,7 +626,12 @@ public class StructuredDocumentController extends BaseController {
     auditService.notify(new GenericEvent(user, structuredDocument, AuditAction.READ));
 
     boolean inventoryEnabled = systemPropertyMgr.isPropertyAllowed(user, "inventory.available");
+    IntegrationInfo galaxyInfo =
+        integrationsHandler.getIntegration(user, IntegrationsHandler.GALAXY_APP_NAME);
+    boolean galaxyEnabled =
+        galaxyInfo != null && galaxyInfo.isEnabled() && galaxyInfo.isAvailable();
     model.addAttribute("dmpEnabled", isDMPEnabled(user));
+    model.addAttribute("galaxyEnabled", galaxyEnabled);
     model.addAttribute("inventoryAvailable", inventoryEnabled);
     model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));
