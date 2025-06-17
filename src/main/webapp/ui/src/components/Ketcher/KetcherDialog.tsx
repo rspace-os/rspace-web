@@ -36,7 +36,7 @@ type KetcherDialogArgs = {
   readOnly?: boolean;
   additionalControls?: React.ReactNode;
   validationResult?: ValidationResult;
-  onChange: () => void;
+  onChange?: () => void;
   instructionText?: string;
 };
 
@@ -83,7 +83,7 @@ const KetcherDialog = ({
         <DialogContent style={{ minHeight: "0" }}>
           <Stack sx={{ height: "100%" }}>
             {instructionText && (
-                <Typography variant="body2" style={{ paddingBottom: "1em"}}>{instructionText}</Typography>
+                <Typography variant="body2" sx={{ pb: 2 }}>{instructionText}</Typography>
             )}
             {additionalControls}
             {/* @ts-expect-error doesn't appear that staticResourcesUrl is in fact required */}

@@ -1,6 +1,7 @@
 //@flow
 
 import { type Node } from "react";
+import { type ValidationResult } from "../ValidatingSubmitButton";
 
 declare export default function KetcherDialog({|
   isOpen?: boolean,
@@ -11,4 +12,7 @@ declare export default function KetcherDialog({|
   actionBtnText?: string,
   readOnly?: boolean,
   additionalControls?: Node,
+  validationResult?: ValidationResult;
+  onChange?: () => void;
+  instructionText?: string;
 |}): Node;
