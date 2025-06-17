@@ -354,6 +354,7 @@ const CustomTreeItem = observer(
               listeners.onKeyDown as React.KeyboardEventHandler<HTMLLIElement>,
           })}
           {...attributes}
+          role="treeitem"
           style={{
             ...dropStyle,
             ...fileUploadDropping,
@@ -487,7 +488,6 @@ const TreeView = ({
 
   return (
     <SimpleTreeView
-      role="region"
       aria-label="tree view of files"
       expandedItems={expandedItems}
       onExpandedItemsChange={(_event, nodeIds) => {

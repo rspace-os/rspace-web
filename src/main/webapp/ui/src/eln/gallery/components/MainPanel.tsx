@@ -383,7 +383,8 @@ const Path = observer(
                   variant: "success",
                 })
               );
-            } catch {
+            } catch (e) {
+              console.error(e);
               addAlert(
                 mkAlert({
                   message:
