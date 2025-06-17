@@ -182,7 +182,7 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         handleClose={closeAndReset}
         existingChem={searchSmiles}
         validationResult={isValid}
-        instructionText="Draw a single molecule above to search"
+        instructionText="Draw a single molecule below to search"
         onChange={() => {
           validate(window.ketcher);
         }}

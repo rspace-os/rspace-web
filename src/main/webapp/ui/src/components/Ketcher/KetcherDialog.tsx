@@ -82,6 +82,9 @@ const KetcherDialog = ({
         <DialogTitle>{title}</DialogTitle>
         <DialogContent style={{ minHeight: "0" }}>
           <Stack sx={{ height: "100%" }}>
+            {instructionText && (
+                <Typography variant="body2" style={{ paddingBottom: "1em"}}>{instructionText}</Typography>
+            )}
             {additionalControls}
             {/* @ts-expect-error doesn't appear that staticResourcesUrl is in fact required */}
             <Editor
@@ -113,9 +116,6 @@ const KetcherDialog = ({
             )}
           </Stack>
         </DialogContent>
-        {instructionText && (
-          <Typography sx={{ px: 4, py: 1 }}>{instructionText}</Typography>
-        )}
         <DialogActions>
           <Button onClick={closeAndReset}>Cancel</Button>
           {actionBtnText && (
