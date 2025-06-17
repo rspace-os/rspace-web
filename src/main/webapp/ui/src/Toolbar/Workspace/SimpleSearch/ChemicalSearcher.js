@@ -95,7 +95,11 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         key.startsWith("mol")
       );
       if (molecules.length > 1) {
-        setIsValid(IsInvalid("Please select only 1 molecule"));
+        setIsValid(
+          IsInvalid(
+            "Chemical search currently requires a single molecule. Please remove extra molecules from the canvas or create separate searches."
+          )
+        );
         return;
       }
       setIsValid(IsValid());
@@ -178,6 +182,7 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         handleClose={closeAndReset}
         existingChem={searchSmiles}
         validationResult={isValid}
+        instructionText="Draw a single molecule above to search"
         onChange={() => {
           validate(window.ketcher);
         }}

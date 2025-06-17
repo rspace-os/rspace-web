@@ -6,6 +6,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { Editor, InfoModal } from "ketcher-react";
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
 import { styled } from "@mui/material/styles";
@@ -37,6 +38,7 @@ type KetcherDialogArgs = {
   additionalControls?: React.ReactNode;
   validationResult?: ValidationResult;
   onChange: () => void;
+  instructionText?: string;
 };
 
 const StyledDialog = styled(Dialog)(() => ({
@@ -56,6 +58,7 @@ const KetcherDialog = ({
   additionalControls = null,
   validationResult = IsValid(),
   onChange,
+  instructionText,
 }: KetcherDialogArgs): React.ReactNode => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [hasError, setHasError] = useState(false);
@@ -111,6 +114,9 @@ const KetcherDialog = ({
             )}
           </Stack>
         </DialogContent>
+        {instructionText && (
+          <Typography sx={{ px: 4, py: 1 }}>{instructionText}</Typography>
+        )}
         <DialogActions>
           <Button onClick={closeAndReset}>Cancel</Button>
           {actionBtnText && (
