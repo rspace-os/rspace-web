@@ -115,19 +115,21 @@ export function HasQuantityMixin<
 /**
  * Checks if a given object has a quantity.
  */
-export function hasQuantity(input: object): Optional<HasQuantity> {
-  return HasQuantityMarker in input
-    ? Optional.present(input as HasQuantity)
+export function hasQuantity<T extends object>(
+  input: T
+): Optional<HasQuantity & T> {
+  return input.hasOwnProperty(HasQuantityMarker)
+    ? Optional.present(input as HasQuantity & T)
     : Optional.empty();
 }
 
 /**
  * Filters an iterable collection for those with quantities.
  */
-export function* filterForThoseWithQuantities<T>(
+export function* filterForThoseWithQuantities<T extends object>(
   input: Iterable<T>
 ): Iterable<HasQuantity & T> {
   for (const val of input) {
-    if (HasQuantityMarker in (val as object)) yield val as HasQuantity & T;
+    if (val.hasOwnProperty(HasQuantityMarker)) yield val as HasQuantity & T;
   }
 }

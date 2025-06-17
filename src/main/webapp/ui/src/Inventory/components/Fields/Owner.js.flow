@@ -1,0 +1,13 @@
+//@flow
+
+import { type Node } from "react";
+import { type HasUneditableFields } from "../../../stores/definitions/Editable";
+import { type Person } from "../../../stores/definitions/Person";
+
+declare export default function Owner<
+  Fields: {
+    owner: ?Person,
+    ...
+  },
+  FieldOwner: HasUneditableFields<Fields>
+>({| fieldOwner: FieldOwner |}): Node;

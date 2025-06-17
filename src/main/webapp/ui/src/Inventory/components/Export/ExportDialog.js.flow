@@ -1,0 +1,49 @@
+// @flow
+
+import { type Node } from "react";
+import {
+  type InventoryRecord,
+  type ApiRecordType,
+} from "../../../stores/definitions/InventoryRecord";
+import {
+  type ExportOptions,
+  type ExportMode,
+  type OptionalContent,
+  type ExportFileType,
+} from "../../../stores/definitions/Search";
+import { type RadioOption } from "../../../components/Inputs/RadioField";
+
+export type ExportType = "userData" | "contextMenu" | "listOfMaterials";
+
+export function defaultExportOptions(
+  selectedResults: ?Array<InventoryRecord>,
+  exportType: ExportType
+): ExportOptions {
+  return {
+    exportMode: "FULL",
+    includeSubsamplesInSample: null,
+    includeContainerContent: null,
+    resultFileType: "ZIP",
+  };
+}
+
+type ExportDialogArgs = {|
+  openExportDialog: boolean,
+  setOpenExportDialog: (boolean) => void,
+  onExport: (ExportOptions) => Promise<void> | void,
+  exportType: ExportType,
+  /* n/a for user's data export case */
+  closeMenu?: () => void,
+  selectedResults?: Array<InventoryRecord>,
+|};
+
+type OptionsWrapperArgs = {|
+  exportOptions: ExportOptions,
+  setExportOptions: (ExportOptions) => void,
+  selectedResults?: Array<InventoryRecord>,
+  exportType: ExportType,
+|};
+
+declare export function ExportOptionsWrapper(args: OptionsWrapperArgs): Node;
+
+declare export default function ExportDialog(args: ExportDialogArgs): Node;

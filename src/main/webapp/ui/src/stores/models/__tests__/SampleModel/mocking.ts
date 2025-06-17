@@ -1,0 +1,48 @@
+import SampleModel, { type SampleAttrs } from "../../SampleModel";
+import { makeMockSubSample } from "../SubSampleModel/mocking";
+import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
+
+export const sampleAttrs = (
+  attrs?: Readonly<Partial<SampleAttrs>>
+): SampleAttrs => ({
+  id: 1,
+  type: "SAMPLE",
+  globalId: "SA1",
+  name: "A sample",
+  permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"],
+  templateId: null,
+  templateVersion: null,
+  subSampleAlias: { alias: "subsample", plural: "subsamples" },
+  subSamplesCount: 0,
+  subSamples: [],
+  quantity: { numericValue: 1, unitId: 3 },
+  storageTempMin: null,
+  storageTempMax: null,
+  fields: [],
+  extraFields: [],
+  description: "",
+  tags: null,
+  sampleSource: "LAB_CREATED",
+  expiryDate: null,
+  iconId: null,
+  owner: null,
+  created: null,
+  deleted: false,
+  lastModified: null,
+  modifiedByFullName: null,
+  attachments: [],
+  barcodes: [],
+  identifiers: [],
+  sharingMode: "OWNER_GROUPS",
+  sharedWith: [],
+  _links: [],
+  ...attrs,
+});
+
+export const makeMockSample = (
+  attrs?: Readonly<Partial<SampleAttrs>>
+): SampleModel => new SampleModel(new AlwaysNewFactory(), sampleAttrs(attrs));
+
+export const makeMockSampleWithASubsample = (): SampleModel => {
+  return makeMockSubSample().sample;
+};

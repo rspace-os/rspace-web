@@ -1,0 +1,39 @@
+// @flow
+
+import NumberedLocation from "../NumberedLocation";
+import LocationModel from "../../../../../stores/models/LocationModel";
+import Draggable from "../../../../../components/Draggable";
+import Grid from "@mui/material/Grid";
+import React, {
+  useLayoutEffect,
+  useState,
+  useRef,
+  type Node,
+  type ComponentType,
+} from "react";
+import useStores from "../../../../../stores/use-stores";
+import { makeStyles } from "tss-react/mui";
+import { clamp } from "../../../../../util/Util";
+import { observer } from "mobx-react-lite";
+import { type UseState, type Point } from "../../../../../util/types";
+import ContainerModel from "../../../../../stores/models/ContainerModel";
+import { type Location } from "../../../../../stores/definitions/Container";
+import { pick } from "../../../../../util/unsafeUtils";
+
+export type TappedLocationData = {|
+  location: Location,
+  number: number,
+  point: {|
+    left: number,
+    top: number,
+  |},
+|};
+
+type ContentImageArgs = {|
+  editable?: boolean,
+  onLocationTap?: (TappedLocationData) => void,
+  onClearSelection?: () => void,
+  selected?: ?TappedLocationData,
+|};
+
+declare export default ComponentType<ContentImageArgs>;

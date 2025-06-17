@@ -1,0 +1,21 @@
+// @flow
+
+import * as React from "react";
+import { type Node, type ComponentType } from "react";
+import FieldModel from "../../../stores/models/FieldModel";
+import useStores from "../../../stores/use-stores";
+import NewField from "./NewField";
+import Grid from "@mui/material/Grid";
+import { makeStyles } from "tss-react/mui";
+import NoValue from "../../../components/NoValue";
+import TemplateModel from "../../../stores/models/TemplateModel";
+import CustomField from "./CustomField";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+
+type FieldsArgs = {|
+  onErrorStateChange: (string, boolean) => void,
+|};
+
+declare function Fields(props: FieldsArgs): Node;
+
+declare export default ComponentType<FieldsArgs>;

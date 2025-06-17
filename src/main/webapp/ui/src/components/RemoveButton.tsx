@@ -4,7 +4,7 @@ import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import ClearIcon from "@mui/icons-material/Clear";
 
 type RemoveButtonArgs = {
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   title?: string;
   disabled?: boolean;
 };

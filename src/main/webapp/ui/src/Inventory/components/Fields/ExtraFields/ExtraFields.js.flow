@@ -1,0 +1,9 @@
+//@flow
+
+import { type Node } from "react";
+import Result from "../../../../stores/models/InventoryBaseRecord";
+
+declare export default function ExtraFields({|
+  onErrorStateChange: (string, boolean) => void,
+  result: Result,
+|}): Node;

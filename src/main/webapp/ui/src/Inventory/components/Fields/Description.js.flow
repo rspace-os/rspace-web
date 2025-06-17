@@ -1,0 +1,17 @@
+// @flow
+
+import { type Node } from "react";
+import { type HasEditableFields } from "../../../stores/definitions/Editable";
+
+declare function Description<
+  Fields: {
+    description: ?string,
+    ...
+  },
+  FieldOwner: HasEditableFields<Fields>
+>(props: {|
+  fieldOwner: FieldOwner,
+  onErrorStateChange: (boolean) => void,
+|}): Node;
+
+declare export default typeof Description;
