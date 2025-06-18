@@ -1,6 +1,6 @@
 ﻿Name,Parent sample,Parent container,Igsn
-SubSample1,s1,cont1,10.82316/x0a1-z681
-SubSample2,s1,cont1,https://doi.org/10.82316/jr88-1r03
-SubSample3,s2,cont5,10.82316/c37q-jj30
-SubSample4,s1,cont5,10.82316/tt9s-c890
-SubSample5,s2,,10.82316/8mxk-w436
+SubSample1,s1,cont1,[check src/test/resources/TestResources/inventory/igsn/README.md]
+SubSample2,s1,cont1,[check src/test/resources/TestResources/inventory/igsn/README.md]
+SubSample3,s2,cont5,[check src/test/resources/TestResources/inventory/igsn/README.md]
+SubSample4,s1,cont5,[check src/test/resources/TestResources/inventory/igsn/README.md]
+SubSample5,s2,,[check src/test/resources/TestResources/inventory/igsn/README.md]

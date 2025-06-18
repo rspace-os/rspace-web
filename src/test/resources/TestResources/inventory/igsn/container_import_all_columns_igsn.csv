@@ -1,6 +1,6 @@
 ﻿Name,Alternative name,Import identifier,Parent container,Igsn
-Container1,Protein phosphatase 1,cont1,,10.82316/wx40-sa52
-Container2,"very long alternative name - the one that should trigger text field column mapping, if everything works fine",,cont1,https://doi.org/10.82316/5gvs-7068
-Container3,-,,cont5,doi.org/10.82316/dg98-md29
-Container4,-,,cont5,10.82316/30mr-5n63
-Container5,-,cont5,,10.82316/2rkv-0404
+Container1,Protein phosphatase 1,cont1,,[check src/test/resources/TestResources/inventory/igsn/README.md]
+Container2,"very long alternative name - the one that should trigger text field column mapping, if everything works fine",,cont1,[check src/test/resources/TestResources/inventory/igsn/README.md]
+Container3,-,,cont5,[check src/test/resources/TestResources/inventory/igsn/README.md]
+Container4,-,,cont5,[check src/test/resources/TestResources/inventory/igsn/README.md]
+Container5,-,cont5,,[check src/test/resources/TestResources/inventory/igsn/README.md]
