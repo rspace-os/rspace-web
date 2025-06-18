@@ -97,7 +97,7 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
       if (molecules.length > 1) {
         setIsValid(
           IsInvalid(
-            "Chemical search currently requires a single molecule. Please remove extra molecules from the canvas or create separate searches."
+            "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas."
           )
         );
         return;
