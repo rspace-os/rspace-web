@@ -18,6 +18,8 @@ type RemainingIconButtonProps = {
   "aria-expanded"?: "true";
   id?: string;
   tabIndex?: number;
+  component?: React.ElementType;
+  href?: string;
 };
 
 type IconButtonWithTooltipArgs = {
