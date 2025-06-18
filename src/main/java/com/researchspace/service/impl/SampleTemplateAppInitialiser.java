@@ -28,6 +28,7 @@ public class SampleTemplateAppInitialiser extends AbstractAppInitializor {
       return;
     }
 
+    log.info("creating default inventory templates...");
     final Subject subject = getSubject();
     try {
       GlobalInitSysadminAuthenticationToken sysAdminToken =
@@ -46,6 +47,7 @@ public class SampleTemplateAppInitialiser extends AbstractAppInitializor {
     } finally {
       subject.logout();
     }
+    log.info("default inventory templates creation complete");
   }
 
   Subject getSubject() {

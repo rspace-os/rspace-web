@@ -134,11 +134,6 @@ public class RSDevConfig extends BaseConfig {
     return new SyncTaskExecutor(); // sync for testing
   }
 
-  @Bean(name = "asyncDbMigrationExecutor")
-  TaskExecutor asyncDbMigrationExecutor() {
-    return new SyncTaskExecutor(); // sync for testing
-  }
-
   /**
    * Sets audit trail to be inactive during test runs. Also wraps the service as Mockito spy so
    * integration tests can trace its usage.

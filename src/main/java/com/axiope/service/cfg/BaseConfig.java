@@ -18,7 +18,6 @@ import com.researchspace.auth.PostOAuthLoginHelperImpl;
 import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.auth.WhiteListIPCheckerImpl;
 import com.researchspace.core.util.ResponseUtil;
-import com.researchspace.dao.customliquibaseupdates.LiveLiqUpdater;
 import com.researchspace.dcd.rspaceadapter.DigitalCommonsDataRepository;
 import com.researchspace.document.importer.DocumentImporterFromWord2HTML;
 import com.researchspace.document.importer.EvernoteEnexImporter;
@@ -896,12 +895,6 @@ public abstract class BaseConfig {
   @Bean
   public UserContentUpdater userContentUpdater() {
     return new UserContentUpdaterImpl();
-  }
-
-  @Bean
-  LiveLiqUpdater liveLiqUpdater() {
-    LiveLiqUpdater updater = new LiveLiqUpdater("sqlUpdates/liquibase-live-master.xml");
-    return updater;
   }
 
   @Bean()
