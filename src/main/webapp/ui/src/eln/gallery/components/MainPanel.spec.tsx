@@ -66,12 +66,18 @@ const feature = test.extend<{
       },
     });
   },
-  When: async ({ page, context }, use) => {
+  When: async ({ page, context, browserName }, use) => {
     await use({
       "the user taps the paths's copy-to-clipboard button": async () => {
-        await context.grantPermissions(["clipboard-read", "clipboard-write"], {
-          origin: page.url(),
-        });
+        // Chrome supports the clipboard API, but only after opting in
+        if (browserName === "chromium") {
+          await context.grantPermissions(
+            ["clipboard-read", "clipboard-write"],
+            {
+              origin: page.url(),
+            }
+          );
+        }
         await page.getByRole("button", { name: "Copy to clipboard" }).click();
       },
     });
@@ -221,6 +227,10 @@ feature.afterEach(({}) => {});
 
 test.describe("MainPanel", () => {
   test.describe("Copy-to-clipboard button and tree-view", () => {
+    test.skip(
+      ({ browserName }) => browserName === "webkit",
+      "Safari does not support clipboard API"
+    );
     feature("Nothing is selected.", async ({ Given, When, Once, Then }) => {
       await Given["the main panel is shown"]();
       await Given["tree view is being shown"]();
