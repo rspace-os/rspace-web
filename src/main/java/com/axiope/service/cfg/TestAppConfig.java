@@ -114,12 +114,6 @@ public class TestAppConfig extends BaseConfig {
     return createNewExecutor(2, 5, 10);
   }
 
-  @Bean(name = "asyncDbMigrationExecutor")
-  TaskExecutor asyncDbMigrationExecutor() {
-    SimpleAsyncTaskExecutor exe = new SimpleAsyncTaskExecutor();
-    return exe;
-  }
-
   @Bean
   public IApplicationInitialisor licenseServerChecker() {
     return new LicenseServerChecker();
