@@ -18,6 +18,8 @@ public class IntegrationsHandlerInitialisor extends AbstractAppInitializor {
 
   @Override
   public void onAppStartup(ApplicationContext applicationContext) {
+    log.info("running IntegrationsHandlerInitialisor...");
     handler.init();
+    log.info("IntegrationsHandlerInitialisor onAppStartup complete");
   }
 }

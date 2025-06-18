@@ -46,6 +46,7 @@ public class ChemistrySearchIndexInitialisor implements IApplicationInitialisor 
   public void onAppStartup(ApplicationContext applicationContext) {
 
     if (!indexOnStartup) {
+      log.info("'chemistry.service.indexOnStartup' set to false, reindexing skipped");
       return;
     }
 

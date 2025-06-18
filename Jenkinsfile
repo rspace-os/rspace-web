@@ -451,7 +451,6 @@ pipeline {
         stage('Liquibase tests') {
             when {
                 expression { return params.LIQUIBASE }
-                branch 'main'
             }
             steps {
                 echo 'Running liquibase tests on main branch...'
