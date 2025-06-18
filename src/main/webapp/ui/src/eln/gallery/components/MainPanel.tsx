@@ -338,6 +338,7 @@ const Path = observer(
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
+          aria-label="Breadcrumbs"
         >
           <BreadcrumbLink
             section={section}
