@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.stereotype.Service;
 
 /**
@@ -24,7 +23,7 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
   private Map<Long, Integer> userToMessage = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToSpecialMessage = new ConcurrentHashMap<>();
 
-  private void sendNotificationUpdate(Long userId) {
+  public void sendNotificationUpdate(Long userId) {
     NotificationMessage notification =
         new NotificationMessage(
             getNotificationCountFor(userId),
@@ -130,16 +129,5 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
 
   public void sendNotificationUpdate(Long userId, NotificationMessage notification) {
     messagingTemplate.convertAndSend("/topic/notifications/" + userId, notification);
-  }
-
-  /*
-   * This method is called when a user subscribes to the notifications topic and sends the current notification count
-   */
-  @SubscribeMapping("/topic/notifications/{userId}")
-  public NotificationMessage sendInitialNotificationCount(Long userId) {
-    return new NotificationMessage(
-        getNotificationCountFor(userId),
-        getMessageCountFor(userId),
-        getSpecialMessageCountFor(userId));
   }
 }
