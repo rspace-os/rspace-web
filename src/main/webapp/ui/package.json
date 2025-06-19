@@ -162,6 +162,9 @@
       "tsx",
       "json"
     ],
+    "setupFiles": [
+      "<rootDir>/__tests__/setup.js"
+    ],
     "transform": {
       "^.+\\.(js|jsx)$": "babel-jest",
       "^.+\\.(ts|tsx)$": [
