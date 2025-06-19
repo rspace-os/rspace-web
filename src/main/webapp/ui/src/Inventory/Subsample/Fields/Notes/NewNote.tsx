@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  useState,
-  useEffect,
-  type Node,
-  type ComponentType,
-} from "react";
+import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -18,22 +11,21 @@ const emptyNote = {
   content: "",
 };
 
-type NewNoteArgs = {|
-  record: SubSampleModel,
-  onErrorStateChange: (boolean) => void,
-|};
+type NewNoteArgs = {
+  record: SubSampleModel;
+  onErrorStateChange: (hasError: boolean) => void;
+};
 
-function NewNote({ record, onErrorStateChange }: NewNoteArgs): Node {
+function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
   const [note, setNote] = useState(emptyNote);
   const [initial, setInitial] = useState(true);
   const [error, setError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<?string>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleChange = ({
     target: { value },
   }: {
-    target: { name: string, value: string, ... },
-    ...
+    target: { name: string; value: string };
   }) => {
     setNote({
       ...note,
@@ -70,7 +62,7 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): Node {
       setErrorMessage(null);
       onErrorStateChange(false);
     }
-  }, [note.content]);
+  }, [note.content, initial, onErrorStateChange]);
 
   useEffect(() => {
     setError(false);
@@ -121,4 +113,4 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): Node {
   );
 }
 
-export default (observer(NewNote): ComponentType<NewNoteArgs>);
+export default observer(NewNote);
