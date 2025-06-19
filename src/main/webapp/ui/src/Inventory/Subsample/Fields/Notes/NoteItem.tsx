@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import UserDetails from "../../../components/UserDetails";
@@ -12,9 +10,9 @@ import Typography from "@mui/material/Typography";
 import { styled, darken } from "@mui/material/styles";
 import { chipClasses } from "@mui/material/Chip";
 
-type NoteItemArgs = {|
-  note: Note,
-|};
+type NoteItemArgs = {
+  note: Note;
+};
 
 const CustomListItem = styled(ListItem)(({ theme }) => ({
   borderLeft: `4px solid ${theme.palette.record.subSample.bg}`,
@@ -34,7 +32,7 @@ const CustomListItem = styled(ListItem)(({ theme }) => ({
   },
 }));
 
-export default function NoteItem({ note }: NoteItemArgs): Node {
+export default function NoteItem({ note }: NoteItemArgs): React.ReactNode {
   return (
     <CustomListItem alignItems="flex-start">
       <ListItemText
