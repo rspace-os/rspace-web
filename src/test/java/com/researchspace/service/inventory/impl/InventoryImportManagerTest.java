@@ -1127,17 +1127,18 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     String workbenchGlobalId = getWorkbenchForUser(testUser).getGlobalId();
 
     List<String[]> csvContainerLines = new ArrayList<>();
-    csvContainerLines.add(new String[] {"testContent1", "testContainer1", "1", "", ""});
-    csvContainerLines.add(new String[] {"testContent2", "testContainer2", "", "1", ""});
-    csvContainerLines.add(new String[] {"testContent3", "testContainer3", "", "4", ""});
-    csvContainerLines.add(new String[] {"testContent4", "testContainer4", "4", "1", ""});
+    csvContainerLines.add(new String[] {"testContent1", "testContainer1", "1", "", "", "tag1"});
+    csvContainerLines.add(new String[] {"testContent2", "testContainer2", "", "1", "", ""});
+    csvContainerLines.add(new String[] {"testContent3", "testContainer3", "", "4", "", ""});
+    csvContainerLines.add(new String[] {"testContent4", "testContainer4", "4", "1", "", ""});
     csvContainerLines.add(
-        new String[] {"testContent4", "testContainer5", "", "", workbenchGlobalId});
+        new String[] {"testContent4", "testContainer5", "", "", workbenchGlobalId, ""});
     Map<Integer, String> colIndexToDefaultFieldMapping = new HashMap<>();
     colIndexToDefaultFieldMapping.put(1, "name");
     colIndexToDefaultFieldMapping.put(2, "import identifier");
     colIndexToDefaultFieldMapping.put(3, "parent container import id");
     colIndexToDefaultFieldMapping.put(4, "parent container global id");
+    colIndexToDefaultFieldMapping.put(5, "tags");
 
     // test lines conversion
     ApiInventoryImportPartialResult processingResult = new ApiInventoryImportSampleImportResult();
@@ -1178,6 +1179,11 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertEquals("testContainer1", containerImportResult.getResults().get(0).getRecord().getName());
     assertNotNull(
         containerImportResult.getResults().get(0).getRecord().getId()); // should be set now
+    assertFalse(
+        containerImportResult.getResults().get(0).getRecord().getTags().isEmpty(),
+        "Tags have not being correctly set");
+    assertEquals(
+        "tag1", containerImportResult.getResults().get(0).getRecord().getTags().get(0).getValue());
     assertEquals(
         defaultImportContainerName,
         containerImportResult.getResults().get(0).getRecord().getParentContainer().getName());
