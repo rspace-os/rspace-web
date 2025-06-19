@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
 import StringField from "../../../components/Inputs/StringField";
@@ -14,32 +12,31 @@ import {
 } from "../../../stores/models/HasQuantity";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 import Typography from "@mui/material/Typography";
-import type { Sample } from "../../../stores/definitions/Sample";
+import { type Sample } from "../../../stores/definitions/Sample";
 import Link from "@mui/material/Link";
 import NavigateContext from "../../../stores/contexts/Navigate";
 
 function QuantityField<
-  Fields: {
-    quantity: Quantity | null,
+  Fields extends {
+    quantity: Quantity | null;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   fieldOwner,
   quantityCategory,
   onErrorStateChange,
   parentSample,
-}: {|
-  fieldOwner: FieldOwner,
-  quantityCategory: string,
-  onErrorStateChange: (boolean) => void,
-
+}: {
+  fieldOwner: FieldOwner;
+  quantityCategory: string;
+  onErrorStateChange: (hasError: boolean) => void;
   /**
    * If provided, a link is rendered beneath the field that navigates to the
    * parentGlobalId search for the parent sample. This is so that a user may
    * quickly find the rest of the quantity of the whole sample.
    */
-  parentSample?: Sample,
-|}): Node {
+  parentSample?: Sample;
+}): React.ReactNode {
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
   const quantityValue = getValue(fieldOwner.fieldValues.quantity);
@@ -48,17 +45,14 @@ function QuantityField<
   const editable = fieldOwner.isFieldEditable("quantity");
 
   const [valid, setValid] = useState(true);
-  const [amount, setAmount] = useState(quantityValue);
+  const [amount, setAmount] = useState<string | number>(quantityValue);
 
   useEffect(() => {
     setValid(true);
     setAmount(quantityValue);
   }, [editable]);
 
-  const handleChangeQuantity = (e: {
-    target: { value: string, checkValidity: () => boolean, ... },
-    ...
-  }) => {
+  const handleChangeQuantity = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
       setAmount(e.target.value);
       const unitId = quantityUnitId;
@@ -84,15 +78,13 @@ function QuantityField<
     }
   };
 
-  const handleChangeQuantityUnit = ({
-    target,
-  }: {
-    target: { value: number, ... },
-    ...
-  }) => {
+  const handleChangeQuantityUnit = (e: { target: { value: unknown } }) => {
     const quantity = quantityValue;
     fieldOwner.setFieldsDirty({
-      quantity: { unitId: parseInt(target.value, 10), numericValue: quantity },
+      quantity: {
+        unitId: parseInt(e.target.value as string, 10),
+        numericValue: quantity,
+      },
     });
   };
 
@@ -187,4 +179,4 @@ function QuantityField<
   );
 }
 
-export default (observer(QuantityField): typeof QuantityField);
+export default observer(QuantityField);
