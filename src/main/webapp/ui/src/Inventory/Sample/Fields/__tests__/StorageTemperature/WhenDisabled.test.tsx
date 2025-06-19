@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
@@ -23,30 +22,37 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const mockFieldOwner = (mockedParts: {|
+const mockFieldOwner = (mockedParts: {
   fieldValues: {
-    storageTempMin: ?Temperature,
-    storageTempMax: ?Temperature,
-    ...
-  },
-  isFieldEditable: () => boolean,
+    storageTempMin: Temperature | null;
+    storageTempMax: Temperature | null;
+  };
+  isFieldEditable: () => boolean;
   noValueLabel: {
-    storageTempMin: ?string,
-    storageTempMax: ?string,
-    ...
-  },
-|}) => ({
-  isFieldEditable: jest.fn<[string], boolean>(),
-  fieldValues: {},
-  setFieldsDirty: jest.fn<
-    [{ storageTempMin: ?Temperature, storageTempMax: ?Temperature }],
-    void
-  >(),
-  canChooseWhichToEdit: false,
-  setFieldEditable: jest.fn<[string, boolean], void>(),
-  noValueLabel: {},
-  ...mockedParts,
-});
+    storageTempMin: string | null;
+    storageTempMax: string | null;
+  };
+}) => {
+  const defaults = {
+    isFieldEditable: jest.fn().mockImplementation(() => false),
+    fieldValues: {
+      storageTempMin: null,
+      storageTempMax: null,
+    },
+    setFieldsDirty: jest.fn(),
+    canChooseWhichToEdit: false,
+    setFieldEditable: jest.fn(),
+    noValueLabel: {
+      storageTempMin: null,
+      storageTempMax: null,
+    },
+  };
+
+  return {
+    ...defaults,
+    ...mockedParts,
+  };
+};
 
 describe("StorageTemperature", () => {
   describe("When disabled, the component should,", () => {
