@@ -230,7 +230,7 @@ public abstract class InventoryItemCsvImporter {
             inventoryIdentifierApiManager.findIdentifiers("draft", false, value, false, user);
         if (identifierList.isEmpty()) {
           throw new IllegalArgumentException(
-              "Unable to find an existing assignable identifier for " + fieldName + ": " + value);
+              "Unable to find an existing assignable identifier: " + value);
         } else {
           apiInvRec.setIdentifiers(identifierList);
         }

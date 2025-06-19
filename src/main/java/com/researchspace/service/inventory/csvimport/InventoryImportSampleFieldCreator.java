@@ -50,10 +50,6 @@ public class InventoryImportSampleFieldCreator {
       return new InventoryStringField(name);
     }
 
-    // uri
-    if (isSuggestedFieldForValues(valueSet, new InventoryUriField())) {
-      return new InventoryUriField(name);
-    }
     // text
     String longestValue = Collections.max(valueSet, Comparator.comparing(String::length));
     if (longestValue.length() > MAX_NON_TEXT_LENGTH) {
@@ -66,6 +62,10 @@ public class InventoryImportSampleFieldCreator {
     // date
     if (isSuggestedFieldForValues(valueSet, new InventoryDateField())) {
       return new InventoryDateField(name);
+    }
+    // uri
+    if (isSuggestedFieldForValues(valueSet, new InventoryUriField())) {
+      return new InventoryUriField(name);
     }
     // time
     if (isSuggestedFieldForValues(valueSet, new InventoryTimeField())) {
