@@ -1,6 +1,14 @@
 package com.axiope.service.cfg;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.researchspace.service.IMessageAndNotificationTracker;
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -12,23 +20,12 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 
-import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class WebSocketEventListenerTest {
 
-  @Mock
-  private IMessageAndNotificationTracker tracker;
+  @Mock private IMessageAndNotificationTracker tracker;
 
-  @InjectMocks
-  private WebSocketEventListener listener;
+  @InjectMocks private WebSocketEventListener listener;
 
   @ParameterizedTest
   @ValueSource(strings = {"123", "-456"})
@@ -41,13 +38,12 @@ class WebSocketEventListenerTest {
     when(message.getHeaders()).thenReturn(messageHeaders);
     Principal principal = mock(Principal.class);
 
-
-    SessionSubscribeEvent event = new SessionSubscribeEvent(this, message,  principal);
+    SessionSubscribeEvent event = new SessionSubscribeEvent(this, message, principal);
 
     listener.handleSubscribeEvent(event);
 
     ArgumentCaptor<Long> captor = ArgumentCaptor.forClass(Long.class);
     verify(tracker, times(1)).sendNotificationUpdate(captor.capture());
-    assert(captor.getValue().equals(Long.valueOf(userId)));
+    assert (captor.getValue().equals(Long.valueOf(userId)));
   }
 }
