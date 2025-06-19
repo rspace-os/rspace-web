@@ -58,10 +58,12 @@ import IconButton from "@mui/material/IconButton";
 import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
 import useSessionStorage from "../../util/useSessionStorage";
-import useWebSocketNotifications from "../../util/useWebSocketNotifications";
+import useWebSocketNotifications from "../../api/useWebSocketNotifications";
 import Badge from "@mui/material/Badge";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import useWhoAmI from "@/api/useWhoAmI";
+import { Person } from "@/stores/definitions/Person";
 
 declare global {
   interface Window {
@@ -74,6 +76,48 @@ declare global {
     };
   }
 }
+
+const AdjustedBadge = styled(Badge)({
+  "& .MuiBadge-badge": {
+    transform: "translate(17%, -19%)",
+  },
+});
+
+const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
+  const { notificationCount, messageCount, specialMessageCount } =
+    useWebSocketNotifications(`${currentUser.id}`);
+  return (
+    <Box
+      ml={1}
+      role="status"
+      aria-live="polite"
+      aria-relevant="text"
+      aria-label="notifications and messages"
+    >
+      <AdjustedBadge
+        badgeContent={notificationCount + messageCount + specialMessageCount}
+        color="error"
+      >
+        <IconButtonWithTooltip
+          size="small"
+          href="/dashboard"
+          component="a"
+          sx={{
+            cursor: "pointer",
+          }}
+          icon={
+            notificationCount + messageCount + specialMessageCount > 0 ? (
+              <NotificationsIcon />
+            ) : (
+              <NotificationsNoneIcon />
+            )
+          }
+          title="Notifications"
+        />
+      </AdjustedBadge>
+    </Box>
+  );
+};
 
 const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -284,12 +328,6 @@ type GalleryAppBarArgs = {
   };
 };
 
-const AdjustedBadge = styled(Badge)({
-  "& .MuiBadge-badge": {
-    transform: "translate(17%, -19%)",
-  },
-});
-
 // eslint-disable-next-line complexity -- yep, there's quite a lot of conditional logic here
 function GalleryAppBar({
   variant,
@@ -311,8 +349,7 @@ function GalleryAppBar({
   const leftClipId = React.useId();
   const rightClipId = React.useId();
 
-  const { notificationCount, messageCount, specialMessageCount } =
-    useWebSocketNotifications("-1");
+  const fetchedCurrentUser = useWhoAmI();
 
   const [brandingHref, setBrandingHref] = useSessionStorage<string | null>(
     "brandingHref",
@@ -637,38 +674,14 @@ function GalleryAppBar({
           .orElse(null)}
         {variant === "page" && (
           <>
-            <Box
-              ml={1}
-              role="status"
-              aria-live="polite"
-              aria-relevant="text"
-              aria-label="notifications and messages"
-            >
-              <AdjustedBadge
-                badgeContent={
-                  notificationCount + messageCount + specialMessageCount
-                }
-                color="error"
-              >
-                <IconButtonWithTooltip
-                  size="small"
-                  href="/dashboard"
-                  component="a"
-                  sx={{
-                    cursor: "pointer",
-                  }}
-                  icon={
-                    notificationCount + messageCount + specialMessageCount >
-                    0 ? (
-                      <NotificationsIcon />
-                    ) : (
-                      <NotificationsNoneIcon />
-                    )
-                  }
-                  title="Notifications"
+            {FetchingData.getSuccessValue(fetchedCurrentUser)
+              .map((currentUser) => (
+                <NotificationCounter
+                  key="notification counter"
+                  currentUser={currentUser}
                 />
-              </AdjustedBadge>
-            </Box>
+              ))
+              .orElse(null)}
             <Box ml={1}>
               <IconButtonWithTooltip
                 size="small"
