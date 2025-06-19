@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import NotesList from "./NotesList";
 import NewNote from "./NewNote";
@@ -8,17 +6,17 @@ import FormControl from "../../../../components/Inputs/FormControl";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import FormLabel from "@mui/material/FormLabel";
 
-type NotesArgs = {|
-  record: SubSampleModel,
-  onErrorStateChange: (boolean) => void,
-  hideLabel?: boolean,
-|};
+type NotesArgs = {
+  record: SubSampleModel;
+  onErrorStateChange: (hasError: boolean) => void;
+  hideLabel?: boolean;
+};
 
 function Notes({
   record,
   onErrorStateChange,
   hideLabel = false,
-}: NotesArgs): Node {
+}: NotesArgs): React.ReactNode {
   return (
     <FormControl>
       {!hideLabel && <FormLabel>Notes</FormLabel>}
@@ -30,4 +28,4 @@ function Notes({
   );
 }
 
-export default (observer(Notes): ComponentType<NotesArgs>);
+export default observer(Notes);
