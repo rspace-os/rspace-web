@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useState, type Node, useId, type ElementProps } from "react";
+import React, { useState, useId } from "react";
 import GridDimensions from "./GridDimensions";
 import GridLayoutConfig from "./GridLayoutConfig";
 import { withStyles } from "Styles";
@@ -11,11 +9,16 @@ import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
-import ContainerModel from "../../../../stores/models/ContainerModel";
+import { type Container } from "../../../../stores/definitions/Container";
 
 const CustomHeader = withStyles<
-  ElementProps<typeof CardHeader>,
-  { root: string, action: string }
+  React.ComponentProps<typeof CardHeader> & {
+    open: boolean;
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    id: string;
+    controls: string;
+  },
+  { root: string; action: string }
 >(() => ({
   root: {
     height: 48,
@@ -47,7 +50,7 @@ const CustomHeader = withStyles<
 ));
 
 const CustomContent = withStyles<
-  ElementProps<typeof CardContent>,
+  React.ComponentProps<typeof CardContent>,
   { root: string }
 >((theme) => ({
   root: {
@@ -55,13 +58,13 @@ const CustomContent = withStyles<
   },
 }))(CardContent);
 
-type GridDimensionsAndLayoutArgs = {|
-  container: ContainerModel,
-|};
+type GridDimensionsAndLayoutArgs = {
+  container: Container;
+};
 
 export default function GridDimensionsAndLayout({
   container,
-}: GridDimensionsAndLayoutArgs): Node {
+}: GridDimensionsAndLayoutArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
   const headingId = useId();
   const contentId = useId();
