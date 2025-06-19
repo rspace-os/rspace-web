@@ -1,0 +1,10 @@
+// @flow
+
+import { type Node } from "react";
+
+type MainArgs = {|
+  children: Node,
+  sx?: { ... },
+|};
+
+declare export default function Main(props: MainArgs): Node;

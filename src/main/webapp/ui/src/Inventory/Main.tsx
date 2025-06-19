@@ -1,7 +1,5 @@
-// @flow
-
 import { makeStyles } from "tss-react/mui";
-import React, { type Node } from "react";
+import * as React from "react";
 import clsx from "clsx";
 import styled from "@mui/system/styled";
 
@@ -16,15 +14,19 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type MainArgs = {|
-  children: Node,
-  sx?: { ... },
-|};
+type MainArgs = {
+  children: React.ReactNode;
+  sx?: Record<string, unknown>;
+};
 
-const StyledMain = styled('main')``;
+const StyledMain = styled("main")``;
 
-export default function Main({ children, sx }: MainArgs): Node {
+export default function Main({ children, sx }: MainArgs): React.ReactNode {
   const { classes } = useStyles();
 
-  return <StyledMain className={clsx(classes.main)} sx={sx}>{children}</StyledMain>;
+  return (
+    <StyledMain className={clsx(classes.main)} sx={sx}>
+      {children}
+    </StyledMain>
+  );
 }
