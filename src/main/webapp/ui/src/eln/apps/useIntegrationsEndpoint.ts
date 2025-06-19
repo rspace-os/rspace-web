@@ -60,7 +60,9 @@ export type IntegrationState<Credentials> = {
  */
 export type IntegrationStates = {
   ARGOS: IntegrationState<emptyObject>;
-  ASCENSCIA: IntegrationState<null>;
+  ASCENSCIA: IntegrationState<{
+    ASCENSCIA_USER_TOKEN: Optional<string>;
+  }>;
   BOX: IntegrationState<{
     BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">;
     "box.api.enabled": Optional<boolean>;
@@ -228,6 +230,17 @@ function decodeArgos(data: FetchedState): IntegrationStates["ARGOS"] {
   return { mode: parseState(data), credentials: {} };
 }
 
+function decodeAscenscia(data: FetchedState): IntegrationStates["ASCENSCIA"] {
+  return {
+    mode: parseState(data),
+    credentials: {
+      ASCENSCIA_USER_TOKEN: parseCredentialString(
+        data.options,
+        "ASCENSCIA_USER_TOKEN"
+      ),
+    },
+  };
+}
 function decodeBox(data: FetchedState): IntegrationStates["BOX"] {
   return {
     mode: parseState(data),
@@ -659,10 +672,7 @@ function decodeIntegrationStates(data: {
 }): IntegrationStates {
   return {
     ARGOS: decodeArgos(data.ARGOS),
-    ASCENSCIA: {
-      mode: "EXTERNAL",
-      credentials: null,
-    },
+    ASCENSCIA: decodeAscenscia(data.ASCENSCIA),
     BOX: decodeBox(data.BOX),
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),
@@ -702,6 +712,23 @@ const encodeIntegrationState = <I extends Integration>(
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {},
+    };
+  }
+  if (integration === "ASCENSCIA") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["ASCENSCIA"]["credentials"] =
+      data.credentials;
+    return {
+      name: "ASCENSCIA",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: {
+        ...creds.ASCENSCIA_USER_TOKEN.map((token) => ({
+          ASCENSCIA_USER_TOKEN: token,
+        })).orElse({
+          ASCENSCIA_USER_TOKEN: "",
+        }),
+      },
     };
   }
   if (integration === "BOX") {
@@ -1213,6 +1240,8 @@ export function useIntegrationsEndpoint(): {
           switch (integration) {
             case "ARGOS":
               return decodeArgos(responseData.data) as IntegrationStates[I];
+            case "ASCENSCIA":
+              return decodeAscenscia(responseData.data) as IntegrationStates[I];
             case "BOX":
               return decodeBox(responseData.data) as IntegrationStates[I];
             case "CHEMISTRY":
