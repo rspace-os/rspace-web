@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
@@ -14,30 +13,36 @@ import {
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import userEvent from "@testing-library/user-event";
+import { type HasEditableFields } from "../../../../../stores/definitions/Editable";
 
-const mockFieldOwner = (mockedParts: {|
+type MockFields = {
+  storageTempMin: Temperature | null;
+  storageTempMax: Temperature | null;
+};
+
+type MockFieldOwnerProps = {
   fieldValues: {
-    storageTempMin: ?Temperature,
-    storageTempMax: ?Temperature,
-    ...
-  },
-  isFieldEditable: () => boolean,
+    storageTempMin: Temperature | null;
+    storageTempMax: Temperature | null;
+  };
+  isFieldEditable: () => boolean;
   noValueLabel: {
-    storageTempMin: ?string,
-    storageTempMax: ?string,
-    ...
-  },
-|}) => ({
-  isFieldEditable: jest.fn<[string], boolean>(),
-  fieldValues: {},
-  setFieldsDirty: jest.fn<
-    [{ storageTempMin: ?Temperature, storageTempMax: ?Temperature }],
-    void
-  >(),
+    storageTempMin: string | null;
+    storageTempMax: string | null;
+  };
+};
+
+const mockFieldOwner = (
+  mockedParts: MockFieldOwnerProps
+): HasEditableFields<MockFields> => ({
+  isFieldEditable: jest
+    .fn()
+    .mockImplementation((_field: string) => mockedParts.isFieldEditable()),
+  fieldValues: mockedParts.fieldValues,
+  setFieldsDirty: jest.fn(),
   canChooseWhichToEdit: false,
-  setFieldEditable: jest.fn<[string, boolean], void>(),
-  noValueLabel: {},
-  ...mockedParts,
+  setFieldEditable: jest.fn(),
+  noValueLabel: mockedParts.noValueLabel,
 });
 
 beforeEach(() => {
