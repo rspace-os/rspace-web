@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import ChoiceField, {
@@ -12,21 +10,22 @@ import {
   orElseIfNoAccess,
 } from "../../../stores/definitions/PermissionedData";
 
-type CanStoreArgs = {|
-  onErrorStateChange: (boolean) => void,
-  container: ContainerModel,
-|};
+type CanStoreArgs = {
+  onErrorStateChange: (hasSelection: boolean) => void;
+  container: ContainerModel;
+};
 
-function CanStore({ onErrorStateChange, container }: CanStoreArgs): Node {
+function CanStore({
+  onErrorStateChange,
+  container,
+}: CanStoreArgs): React.ReactNode {
   const handleChange = ({
     target: { value },
   }: {
     target: {
-      name: string,
-      value: $ReadOnlyArray<"sample" | "container">,
-      ...
-    },
-    ...
+      name: string;
+      value: ReadonlyArray<"sample" | "container">;
+    };
   }) => {
     container.setAttributesDirty({
       canStoreContainers: value.includes("container"),
@@ -67,9 +66,9 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): Node {
     },
   ];
 
-  const value = [
-    ...(container.canStoreContainers ? ["container"] : []),
-    ...(container.canStoreSamples ? ["sample"] : []),
+  const value: ReadonlyArray<"sample" | "container"> = [
+    ...(container.canStoreContainers ? ["container" as const] : []),
+    ...(container.canStoreSamples ? ["sample" as const] : []),
   ];
 
   const valid = value.length > 0;
@@ -97,4 +96,4 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): Node {
   );
 }
 
-export default (observer(CanStore): ComponentType<CanStoreArgs>);
+export default observer(CanStore);

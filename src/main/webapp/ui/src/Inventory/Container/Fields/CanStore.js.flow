@@ -1,0 +1,13 @@
+// @flow
+
+import { type Node, type ComponentType } from "react";
+import ContainerModel from "../../../stores/models/ContainerModel";
+
+type CanStoreArgs = {|
+  onErrorStateChange: (boolean) => void,
+  container: ContainerModel,
+|};
+
+declare function CanStore(props: CanStoreArgs): Node;
+
+declare export default ComponentType<CanStoreArgs>;
