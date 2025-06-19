@@ -1,8 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
-/* eslint-env jest */
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
@@ -12,7 +10,7 @@ import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/
 import { storesContext } from "../../../../stores/stores-context";
 import fc from "fast-check";
 
-jest.mock("../../../../common/InvApiService", () => {});
+jest.mock("../../../../common/InvApiService", () => ({}));
 jest.mock("../../../../stores/stores/RootStore", () => () => ({
   unitStore: {
     getUnit: () => ({
