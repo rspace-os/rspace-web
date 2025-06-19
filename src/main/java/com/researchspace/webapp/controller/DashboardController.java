@@ -52,6 +52,7 @@ public class DashboardController extends BaseController {
     PaginationCriteria<CommunicationTarget> pgCrit =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
     doNotificationListingAndPrepareView(model, principal, pgCrit);
+    doMessageListingAndPrepareView(model, principal, pgCrit);
     User user = getUserByUsername(principal.getName());
     setPublicationAllowed(model, user);
     return "dashboard/dashboard";
