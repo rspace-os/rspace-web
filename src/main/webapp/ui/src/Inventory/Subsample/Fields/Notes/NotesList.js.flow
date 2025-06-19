@@ -1,0 +1,10 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import SubSampleModel from "../../../../stores/models/SubSampleModel";
+
+type NotesListArgs = {|
+  record: SubSampleModel,
+|};
+
+declare export default ComponentType<NotesListArgs>;

@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import NoteItem from "./NoteItem";
 import List from "@mui/material/List";
@@ -9,11 +7,11 @@ import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
 
-type NotesListArgs = {|
-  record: SubSampleModel,
-|};
+type NotesListArgs = {
+  record: SubSampleModel;
+};
 
-function NotesList({ record }: NotesListArgs): Node {
+function NotesList({ record }: NotesListArgs): React.ReactNode {
   const [firstNote, secondNote, ...restOfNotes] = record.notes.toReversed();
   const [open, setOpen] = React.useState(false);
 
@@ -45,4 +43,4 @@ function NotesList({ record }: NotesListArgs): Node {
   );
 }
 
-export default (observer(NotesList): ComponentType<NotesListArgs>);
+export default observer(NotesList);
