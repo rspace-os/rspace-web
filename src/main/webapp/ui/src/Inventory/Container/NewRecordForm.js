@@ -23,7 +23,9 @@ import {
   setFormSectionError,
 } from "../components/Stepper/StepperPanelHeader";
 import { observer } from "mobx-react-lite";
-import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import SynchroniseFormSections, {
+  UnsynchroniseFormSections,
+} from "../components/Stepper/SynchroniseFormSections";
 
 const OverviewSection = observer(
   ({ activeResult }: { activeResult: ContainerModel }) => {
@@ -31,6 +33,16 @@ const OverviewSection = observer(
       editing: activeResult.editing,
       globalId: activeResult.globalId,
     });
+
+    /*
+     * Name is a required field so it effectively starts in an error state.
+     */
+    React.useEffect(() => {
+      setFormSectionError(formSectionError, "name", true);
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - formSectionError will not meaningfully change
+       */
+    }, []);
 
     return (
       <StepperPanel
@@ -130,7 +142,9 @@ export default function NewRecordForm(): Node {
         titleText={`New ${inventoryRecordTypeLabels.container}`}
         resetScrollPosition={Symbol("always reset scroll")}
       >
-        <OverviewSection activeResult={activeResult} />
+        <UnsynchroniseFormSections>
+          <OverviewSection activeResult={activeResult} />
+        </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
         <StepperPanel
           title="Barcodes"

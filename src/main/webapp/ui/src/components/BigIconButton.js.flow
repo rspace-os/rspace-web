@@ -1,0 +1,11 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function BigIconButton({|
+  label: string,
+  icon: Node,
+  explanatoryText: string,
+  onClick?: () => void,
+  component?: string,
+|}): Node;

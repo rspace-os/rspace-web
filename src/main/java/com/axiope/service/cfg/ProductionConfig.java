@@ -128,11 +128,6 @@ public class ProductionConfig extends BaseConfig {
         taskExecutorConfig.defaultTaskExecutorQueue);
   }
 
-  @Bean(name = "asyncDbMigrationExecutor")
-  TaskExecutor asyncDbMigrationExecutor() {
-    return new SimpleAsyncTaskExecutor();
-  }
-
   /** Limits number of concurrent document conversions to */
   @Bean(name = "docConverter")
   TaskExecutor docConverter() {

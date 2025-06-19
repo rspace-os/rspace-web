@@ -1,0 +1,281 @@
+// @flow
+
+import { type URL as URLType } from "../../util/types";
+import ApiService from "../../common/InvApiService";
+import { sameKeysAndValues, match, isoToLocale } from "../../util/Util";
+import {
+  globalIdPatterns,
+  type GlobalId,
+  type Id,
+} from "../definitions/BaseRecord";
+import {
+  type RecordDetails,
+  type Thumbnail,
+  type ReadAccessLevel,
+} from "../definitions/Record";
+import {
+  type Action,
+  type RecordType,
+  type InventoryRecord,
+  type LockStatus,
+  type State,
+  type ApiRecordType,
+  type SharingMode,
+  type CreateOption,
+} from "../definitions/InventoryRecord";
+import {
+  type AdjustableTableRow,
+  type AdjustableTableRowOptions,
+} from "../definitions/Tables";
+import { type BlobUrl } from "../../util/types";
+import getRootStore from "../stores/RootStore";
+import { mkAlert, type Alert } from "../contexts/Alert";
+import { newExistingAttachment } from "./AttachmentModel";
+import ExtraFieldModel from "./ExtraFieldModel";
+import {
+  type ExtraFieldAttrs,
+  type ExtraField,
+} from "../definitions/ExtraField";
+import { type CoreFetcherArgs } from "../definitions/Search";
+import { type Person } from "../definitions/Person";
+import {
+  action,
+  computed,
+  observable,
+  makeObservable,
+  runInAction,
+} from "mobx";
+import React, { type Node } from "react";
+import {
+  type HasEditableFields,
+  type HasUneditableFields,
+} from "../definitions/Editable";
+import { type Factory } from "../definitions/Factory";
+import { type Attachment } from "../definitions/Attachment";
+import { type BarcodeRecord } from "../definitions/Barcode";
+import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
+import { type SharedWithGroup } from "../definitions/Group";
+import { type ContainerInContainerParams } from "../models/ContainerModel";
+import { type SampleInContainerParams } from "../models/SampleModel";
+import {
+  calculateProgress,
+  noProgress,
+  type Progress,
+} from "../../util/progress";
+import { type SortProperty } from "../../Inventory/components/Tables/SortableProperty";
+import {
+  type Identifier,
+  type IdentifierAttrs,
+} from "../definitions/Identifier";
+import IdentifierModel from "./IdentifierModel";
+import { type Tag } from "../definitions/Tag";
+import { Optional } from "../../util/optional";
+import {
+  encodeTagString,
+  decodeTagString,
+} from "../../components/Tags/ParseEncodedTagStrings";
+import { pick } from "../../util/unsafeUtils";
+import {
+  IsValid,
+  IsInvalid,
+  allAreValid,
+  type ValidationResult,
+} from "../../components/ValidatingSubmitButton";
+
+export type InventoryBaseRecordEditableFields = {
+  description: ?string,
+  name: string,
+  tags: Array<Tag>,
+  image: ?BlobUrl,
+  newBase64Image: ?string,
+  barcodes: Array<BarcodeRecord>,
+  sharingMode: SharingMode,
+  sharedWith: ?Array<SharedWithGroup>,
+  identifiers: Array<Identifier>,
+  ...
+};
+
+export type InventoryBaseRecordUneditableFields = {
+  owner: ?Person,
+  ...
+};
+
+declare export const sortProperties: Array<SortProperty>;
+
+declare export const isSortable: (propKey: string) => boolean;
+
+type LockOwner = {|
+  firstName: string,
+  lastName: string,
+  username: string,
+|};
+
+declare export class RecordLockedError extends Error {
+  record: InventoryBaseRecord;
+  lockOwner: LockOwner;
+
+  constructor(record: InventoryBaseRecord, lockOwner: LockOwner): RecordLockedError;
+}
+
+declare const FIELDS: Set<string>;
+export { FIELDS as RESULT_FIELDS };
+declare const defaultVisibleFields: Set<string>;
+export { defaultVisibleFields as defaultVisibleResultFields };
+declare const defaultEditableFields: Set<string>;
+export { defaultEditableFields as defaultEditableResultFields };
+
+declare export default class InventoryBaseRecord
+  implements
+    InventoryRecord,
+    AdjustableTableRow<string>,
+    HasEditableFields<InventoryBaseRecordEditableFields>,
+    HasUneditableFields<InventoryBaseRecordUneditableFields>
+{
+  loading: boolean;
+  editing: boolean;
+  id: ?Id;
+  globalId: ?GlobalId;
+  type: ApiRecordType;
+  name: InventoryBaseRecordEditableFields["name"];
+  description: InventoryBaseRecordEditableFields["description"];
+  selected: boolean;
+  infoLoaded: boolean;
+  extraFields: Array<ExtraField>;
+  currentlyVisibleFields: Set<string>;
+  currentlyEditableFields: Set<string>;
+  image: InventoryBaseRecordEditableFields["image"];
+  thumbnail: Thumbnail;
+  tags: InventoryBaseRecordEditableFields["tags"];
+  scopedToasts: Array<Alert>;
+  created: string;
+  lastModified: string;
+  modifiedByFullName: string;
+  owner: ?Person;
+  deleted: boolean;
+  _links: { [string]: URLType };
+  uploadProgress: Progress;
+  lastEditInput: Date;
+  lockExpiry: Date;
+  lockExpired: boolean;
+  expiryCheckInterval: IntervalID;
+  permittedActions: Set<Action>;
+  newBase64Image: InventoryBaseRecordEditableFields["newBase64Image"];
+  attachments: Array<Attachment>;
+  identifiers: Array<Identifier>;
+  iconId: ?number;
+  barcodes: Array<BarcodeRecord>;
+  factory: Factory;
+  fetchingAdditionalInfo: ?Promise<mixed>;
+  sharingMode: SharingMode;
+  sharedWith: ?Array<SharedWithGroup>;
+
+  constructor(factory: Factory, params: { ... }): InventoryBaseRecord;
+  get canChooseWhichToEdit(): boolean;
+  populateFromJson(
+    factory: Factory,
+    params: any,
+    defaultParams: ?any
+  ): void;
+  processLinks(_links: [{| link: URLType, rel: string |}]): void;
+  setLoading(value: boolean): void;
+  setFieldsDirty(newFieldValues: {}): void;
+  setDirtyFlag(): void;
+  setAttributesDirty(params: {}): void;
+  unsetDirtyFlag(): void;
+  setAttributes(params: {}): void;
+  get visibleExtraFields(): Array<ExtraField>;
+  get hasUnsavedExtraField(): boolean;
+  get recordType(): RecordType;
+  get state(): State;
+  get paramsForBackend(): any;
+  validate(): ValidationResult;
+  get submittable(): ValidationResult;
+  get canRead(): boolean;
+  get canEdit(): boolean;
+  get canTransfer(): boolean;
+  get readAccessLevel(): ReadAccessLevel;
+  expiryCheck(): Promise<void>;
+  handleLockExpiry(remainingSeconds: number): void;
+  autoExtendLock(): void;
+  releaseLock(silent: boolean): Promise<?boolean>;
+  checkLock(silent: boolean): Promise<{|
+    status: LockStatus,
+    remainingTimeInSeconds: number,
+    lockOwner: LockOwner,
+  |}>;
+  setEditing(
+    value: boolean,
+    refresh: ?boolean,
+    silent: ?boolean
+  ): Promise<LockStatus>;
+  updateFieldsState(): void;
+  setFieldsStateForBatchEditing(): void;
+  get usableInLoM(): boolean;
+  get beingCreatedInContainer(): boolean;
+  get inContainerParams(): ?ContainerInContainerParams | ?SampleInContainerParams;
+  toggleSelected(value: ?boolean): void;
+  fetchAdditionalInfo(
+    silent?: boolean,
+    queryParameters?: URLSearchParams
+  ): Promise<void>;
+  create(): Promise<void>;
+  get dataAttachedToRecordCreatedAnaylticsEvent(): {};
+  update(refresh?: boolean): Promise<void>;
+  saveAttachments(newRecord?: InventoryRecord): Promise<void>;
+  isFieldVisible(field: string): boolean;
+  isFieldEditable(field: string): boolean;
+  setVisible(fields: Set<string>, value: boolean): void;
+  setEditable(fields: Set<string>, value: boolean): void;
+  setFieldEditable(fieldName: string, value: boolean): void;
+  setEditableExtraFields(extraFields: Array<ExtraField>, value: boolean): void;
+  addExtraField(extraFieldParams: ExtraFieldAttrs): void;
+  removeExtraField(id: ?number, index: number): void;
+  updateExtraField(
+    oldFieldName: string,
+    updatedField: { name: string, type: string }
+  ): void;
+  addIdentifier(): Promise<void>;
+  removeIdentifier(id: Id): Promise<void>;
+  updateIdentifiers(): void;
+  fetchImage(
+    name: "image" | "locationsImage" | "thumbnail"
+  ): Promise<?BlobUrl>;
+  setImage(
+    imageName: "image" | "locationsImage",
+    canvasId: string
+  ): ({ dataURL: string, file: Blob }) => Promise<void>;
+  addScopedToast(toast: Alert): void;
+  clearAllScopedToasts(): void;
+  get cardTypeLabel(): string;
+  get recordTypeLabel(): string;
+  contextMenuDisabled(): ?string;
+  get permalinkURL(): ?URLType;
+  get ownerLabel(): ?string;
+  get currentUserIsOwner(): ?boolean;
+  get isNewItem(): boolean;
+  get isWorkbench(): boolean;
+  get isTemplate(): boolean;
+  get fieldNamesInUse(): Array<string>;
+  adjustableTableOptions(): AdjustableTableRowOptions<string>;
+  get recordLinkLabel(): string;
+  get showRecordOnNavigate(): boolean;
+  get noFullDetails(): boolean;
+  get hasSubSamples(): boolean;
+  submitAttachmentChanges(): Promise<void>;
+  get iconName(): string;
+  get showNewlyCreatedRecordSearchParams(): CoreFetcherArgs;
+  get children(): Array<InventoryRecord>;
+  loadChildren(): void;
+  get recordDetails(): RecordDetails;
+  get canNavigateToChildren(): boolean;
+  get illustration(): Node;
+  cancel(): Promise<void>;
+  get fieldValues(): InventoryBaseRecordEditableFields & InventoryBaseRecordUneditableFields;
+  get supportsBatchEditing(): boolean;
+  get noValueLabel(): {[key in keyof InventoryBaseRecordEditableFields]: ?string} & {[key in keyof InventoryBaseRecordUneditableFields]: ?string};
+  refreshAssociatedSearch(): void;
+  updateBecauseRecordsChanged(recordIds: Set<GlobalId>): void;
+  showTopLinkInBreadcrumbs(): boolean;
+  get showBarcode(): boolean;
+  get createOptions(): $ReadOnlyArray<CreateOption>;
+}

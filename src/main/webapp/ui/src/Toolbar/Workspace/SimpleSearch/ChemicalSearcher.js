@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import KetcherDialog from "../../../components/Ketcher/KetcherDialog.js";
+import KetcherDialog from "../../../components/Ketcher/KetcherDialog";
 import axios from "@/common/axios";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -17,6 +17,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../../util/table";
 import Link from "@mui/material/Link";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import { IsValid, IsInvalid } from "../../../components/ValidatingSubmitButton";
 
 const ChemicalSearcher = ({ isOpen, onClose }) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -83,11 +84,34 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
     setErrorMessage(null);
   };
 
+  const [isValid, setIsValid] = useState(IsValid());
+  const validate = (ketcher) => {
+    if (!ketcher) {
+      setIsValid(IsValid());
+      return;
+    }
+    ketcher.getKet().then((ketData) => {
+      const molecules = Object.keys(JSON.parse(ketData)).filter((key) =>
+        key.startsWith("mol")
+      );
+      if (molecules.length > 1) {
+        setIsValid(
+          IsInvalid(
+            "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas."
+          )
+        );
+        return;
+      }
+      setIsValid(IsValid());
+    });
+  };
+
   const handleInsert = (ketcher) => {
     setShowKetcherDialog(false);
     ketcher.getSmiles().then((smiles) => {
       setSearchSmiles(smiles);
       fetchData(0, smiles);
+      void window.ketcher.setMolecule("");
     });
   };
 
@@ -157,6 +181,11 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         actionBtnText="Search"
         handleClose={closeAndReset}
         existingChem={searchSmiles}
+        validationResult={isValid}
+        instructionText="Draw a single molecule below to search"
+        onChange={() => {
+          validate(window.ketcher);
+        }}
         additionalControls={
           <FormControl>
             <FormLabel id="search-type">Search Type</FormLabel>

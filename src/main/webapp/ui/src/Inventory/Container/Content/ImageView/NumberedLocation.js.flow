@@ -1,0 +1,13 @@
+// @flow
+
+import Badge from "@mui/material/Badge";
+import React, { type Node, type ComponentType } from "react";
+
+type NumberedLocationArgs = {|
+  number: number,
+  inline?: boolean,
+  shadow?: boolean,
+  selected?: boolean,
+|};
+
+declare export default ComponentType<NumberedLocationArgs>;

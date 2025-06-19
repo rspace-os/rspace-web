@@ -6,6 +6,8 @@ import { blobToBase64 } from "../../util/files";
 import axios from "@/common/axios";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import Analytics from "../../components/Analytics";
+import { ThemeProvider } from "@mui/material/styles";
+import theme from "../../theme";
 
 export const KetcherTinyMce = () => {
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -113,10 +115,11 @@ export const KetcherTinyMce = () => {
   const handleInsert = (ketcher) => {
     ketcherObj = ketcher;
     ketcherObj.getKet().then(
-      (chemical) => {
+      (chemical) => { 
         saveChemicalAndInsert(chemical);
         setDialogIsOpen(false);
         setExistingChemical("");
+        void window.ketcher.setMolecule("");
       },
       () => {}
     );
@@ -148,9 +151,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (wrapperDiv) {
       const root = createRoot(wrapperDiv);
       root.render(
-        <Analytics>
-          <KetcherTinyMce />
-        </Analytics>
+        <ThemeProvider theme={theme}>
+          <Analytics>
+            <KetcherTinyMce />
+          </Analytics>
+        </ThemeProvider>
       );
     }
   });

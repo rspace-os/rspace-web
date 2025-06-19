@@ -1,0 +1,9 @@
+// @flow
+
+import { type ComponentType, type Node } from "react";
+import ContainerModel from "../../../stores/models/ContainerModel";
+import InventoryBaseRecord from "../../../stores/models/InventoryBaseRecord";
+
+declare function MoveInstructions(): Node;
+
+export default (MoveInstructions: ComponentType<{||}>);

@@ -338,6 +338,7 @@ const Path = observer(
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
+          aria-label="Breadcrumbs"
         >
           <BreadcrumbLink
             section={section}
@@ -368,7 +369,12 @@ const Path = observer(
           onClick={doNotAwait(async () => {
             try {
               await navigator.clipboard.writeText(
-                `${window.location.origin}/gallery${ArrayUtils.last(path)
+                `${window.location.origin}/gallery${ArrayUtils.last(
+                  selection
+                    .asSet()
+                    .only.map((f) => f.path)
+                    .orElse(path)
+                )
                   .map(({ id }) => `/${idToString(id).elseThrow()}`)
                   .orElse(`?mediaType=${section}`)}`
               );
@@ -378,7 +384,8 @@ const Path = observer(
                   variant: "success",
                 })
               );
-            } catch {
+            } catch (e) {
+              console.error(e);
               addAlert(
                 mkAlert({
                   message:
@@ -477,28 +484,33 @@ const FileCard = styled(
             disabled: !file.isFolder,
           });
 
-        if (!file.id) throw new Error("File ID is null");
+        /*
+         * When file.id can be null (some external filestores), we happen to
+         * not support drag-and-drop. If want to support drag-and-drop there
+         * in the future then we will need to combine id and pathAsString to
+         * create a unique id for every file.
+         */
         const { setNodeRef: setDropRef, isOver } = useDroppable({
-          id: file.id,
+          id: file.id ?? -1,
           disabled:
             !file.isFolder ||
             isBeingMoved(
               file,
               dndContext.active?.data.current?.fileBeingMoved as GalleryFile
-            ),
+            ) ||
+            file.id === null,
           data: {
             path: file.path,
             destination: folderDestination(file),
           },
         });
-        if (file.id === null) throw new Error("File ID is null");
         const {
           attributes,
           listeners,
           setNodeRef: setDragRef,
         } = useDraggable({
-          disabled: false,
-          id: file.id,
+          disabled: file.id === null,
+          id: file.id ?? -1,
           data: {
             fileBeingMoved: file,
           },
@@ -1372,10 +1384,17 @@ function GalleryMainPanel({
   const viewportDimensions = useViewportDimensions();
   const { uploadFiles } = useGalleryActions();
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { addAlert } = React.useContext(AlertContext);
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
       onDrop: doNotAwait(async (files) => {
         const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(() => {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              message: "Cannot drop files to upload here.",
+            })
+          );
           throw new Error("Unknown folder id");
         });
         await uploadFiles(fId, files);

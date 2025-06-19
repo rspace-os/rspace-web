@@ -39,11 +39,11 @@
     {
       "files": ["**/*.ts", "**/*.tsx"],
       "parserOptions": {
-          "project": "./tsconfig.json",
+          "project": "./tsconfig.json"
       },
       "extends": [
           "plugin:@typescript-eslint/recommended",
-          "plugin:@typescript-eslint/recommended-requiring-type-checking",
+          "plugin:@typescript-eslint/recommended-requiring-type-checking"
       ],
       "rules": {
         "react/prop-types": "off"
@@ -102,6 +102,7 @@
     "no-empty-pattern": "off",
 
     "no-eval": "error",
+    "no-global-assign": "error",
     "no-implicit-coercion": "error",
     "no-implied-eval": "error",
     "no-invalid-this": "warn",
@@ -114,8 +115,13 @@
     "no-return-await": "warn",
     "no-self-compare": "error",
     "no-shadow": "warn",
+    "no-shadow-restricted-names": "error",
     "no-throw-literal": "warn",
-    "no-undefined": "warn",
+
+    // we use no-global-assign and no-shadow-restricted-names to prevent
+    // accidental overwriting of global variables `undefined`.
+    "no-undefined": "off",
+
     "no-unneeded-ternary": "warn",
     "no-unused-expressions": "warn",
 

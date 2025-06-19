@@ -23,12 +23,12 @@ import Link from "@mui/material/Link";
 import AppBar from "../../components/AppBar";
 import docLinks from "../../assets/DocLinks";
 import Stack from "@mui/material/Stack";
-import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
+import { GridRowId } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
-import Radio from "@mui/material/Radio";
 import DOMPurify from "dompurify";
 import { mapNullable } from "../../util/Util";
 import { ACCENT_COLOR } from "../../assets/branding/dmptool";
+import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 
 const CustomDialog = withStyles<
   { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
@@ -220,25 +220,8 @@ function DMPDialogContent({
             <ScopeField getDMPs={getDMPs} />
           </Grid>
           <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
-            <DataGrid
+            <DataGridWithRadioSelection
               columns={[
-                {
-                  field: "radio",
-                  headerName: "Select",
-                  renderCell: (params: { row: Plan }) => (
-                    <Radio
-                      color="primary"
-                      value={selectedPlan?.id === params.row.id}
-                      checked={selectedPlan?.id === params.row.id}
-                      inputProps={{ "aria-label": "Plan selection" }}
-                    />
-                  ),
-                  hideable: false,
-                  width: 70,
-                  flex: 0,
-                  disableColumnMenu: true,
-                  sortable: false,
-                },
                 DataGridColumn.newColumnWithFieldName<"title", Plan>("title", {
                   headerName: "Title",
                   flex: 1,
@@ -292,6 +275,11 @@ function DMPDialogContent({
                 ),
               ]}
               rows={fetching ? [] : DMPs}
+              selectedRowId={selectedPlan?.id}
+              onSelectionChange={(newSelectionId: GridRowId) => {
+                setSelectedPlan(DMPs.find((d) => d.id === newSelectionId));
+              }}
+              selectRadioAriaLabelFunc={(row) => `Select plan: ${row.title}`}
               initialState={{
                 columns: {
                   columnVisibilityModel: {
@@ -313,13 +301,6 @@ function DMPDialogContent({
               }}
               loading={fetching}
               getRowId={(row) => row.id}
-              onRowSelectionModelChange={(
-                newSelection: GridRowSelectionModel
-              ) => {
-                if (newSelection[0]) {
-                  setSelectedPlan(DMPs.find((d) => d.id === newSelection[0]));
-                }
-              }}
               getRowHeight={() => "auto"}
               onCellKeyDown={({ id }, e) => {
                 if (e.key === " " || e.key === "Enter") {

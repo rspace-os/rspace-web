@@ -1,0 +1,6 @@
+// @flow
+import { type Node } from "react";
+
+export type ReferenceFieldArgs = {||};
+
+declare export default function ReferenceField(): Node;

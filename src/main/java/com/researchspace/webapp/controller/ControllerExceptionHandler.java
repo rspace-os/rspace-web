@@ -63,8 +63,9 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
     String errorId = LoggingUtils.generateLogId();
 
     if (isSecurityException(e)) {
-      SECURITY_LOG.error(
-          "errorId-[{}] by user [{}]: to [{}] - {}",
+      log.warn("Handling security-related exception {}: {}", errorId, e.getMessage());
+      SECURITY_LOG.warn(
+          "Security-related exception [{}] by user [{}] to [{}]: {}",
           errorId,
           SecurityUtils.getSubject().getPrincipal(),
           request.getRequestURI(),

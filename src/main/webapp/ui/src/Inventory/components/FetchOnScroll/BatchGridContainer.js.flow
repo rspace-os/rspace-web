@@ -1,0 +1,8 @@
+// @flow
+
+import { type Node } from "react";
+
+declare export default function BatchGridContainer({|
+  children: Array<Node>,
+  style: { ... },
+|}): Node;

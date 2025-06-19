@@ -54,7 +54,7 @@ public class LuceneSearchIndexInitialisor implements IApplicationInitialisor {
           e.getMessage());
     }
 
-    log.info("Deleting all indices from Lucene FileStore index!");
+    log.info("Deleting all indices from Lucene FileStore index");
     try {
       indexer.init(true);
     } catch (IOException e) {
@@ -64,7 +64,7 @@ public class LuceneSearchIndexInitialisor implements IApplicationInitialisor {
       return;
     }
 
-    log.info("Re-indexing File Store!");
+    log.info("Re-indexing File Store");
     try {
       indexer.indexFileStore(false);
     } catch (Exception e) {
@@ -74,6 +74,7 @@ public class LuceneSearchIndexInitialisor implements IApplicationInitialisor {
       // classes as well
       log.error("Tika ParserImplementation class not found - " + noClass.getMessage(), noClass);
     }
+    log.info("Lucene re-indexing complete");
   }
 
   /*

@@ -1,0 +1,100 @@
+// @flow
+
+import { action, observable, computed, makeObservable } from "mobx";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import {
+  type AttachmentJson,
+  newAttachment,
+  newGalleryAttachment,
+  newExistingAttachment,
+} from "./AttachmentModel";
+import {
+  apiStringToFieldType,
+  type FieldType as FieldTypeSymbol,
+} from "./FieldTypes";
+import InventoryBaseRecord from "./InventoryBaseRecord";
+import { type Id, type GlobalId } from "../definitions/BaseRecord";
+import { type URL as URLType } from "../../util/types";
+import { type Sample } from "../definitions/Sample";
+import { type Attachment } from "../definitions/Attachment";
+import { UnparsableString } from "../../util/error";
+import {
+  type Field,
+  type FieldType,
+  type OptionValue,
+  type Option,
+} from "../definitions/Field";
+import { pick } from "../../util/unsafeUtils";
+import {
+  IsInvalid,
+  IsValid,
+  type ValidationResult,
+} from "../../components/ValidatingSubmitButton";
+import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
+
+declare export function hasOptions(type: FieldType): boolean;
+
+export type FieldModelAttrs = {|
+  id?: number,
+  globalId?: GlobalId,
+  name?: string,
+  type: FieldType,
+  content?: ?string,
+  selectedOptions: ?Array<OptionValue>,
+  definition?: ?{
+    options: Array<OptionValue>,
+  },
+  initial?: boolean,
+  editing?: boolean,
+  columnIndex: ?number,
+  attachment: ?AttachmentJson,
+  mandatory: boolean,
+|};
+
+declare export default class FieldModel implements Field {
+  id: Id;
+  globalId: ?GlobalId;
+  type: FieldType;
+  name: string;
+  content: string | number;
+  selectedOptions: ?Array<string>;
+  definition: {};
+  initial: boolean;
+  editing: boolean;
+  deleteFieldRequest: boolean;
+  deleteFieldOnSampleUpdate: boolean;
+  options: Array<Option>;
+  owner: Sample;
+  columnIndex: number;
+  attachment: ?Attachment;
+  originalAttachment: ?Attachment;
+  mandatory: boolean;
+  error: boolean;
+
+  constructor(_params: FieldModelAttrs, owner: InventoryBaseRecord): FieldModel;
+
+  setAttributesDirty(attrs: {}): void;
+
+  setAttributes(attrs: {}): void;
+
+  setEditing(editing: boolean): void;
+
+  setError(error: boolean): void;
+
+  get fieldType(): FieldTypeSymbol;
+
+  get optionsAreUnique(): boolean;
+
+  validate(): ValidationResult;
+
+  get hasContent(): boolean;
+
+  get renderContentAsString(): string;
+
+  setAttachment(file: File | GalleryFile): void;
+
+  get permalinkURL(): ?URLType;
+
+  get paramsForBackend(): { ... };
+}
+

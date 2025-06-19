@@ -1,0 +1,53 @@
+//@flow
+
+import InventoryBaseRecord, { type InventoryBaseRecordEditableFields } from "./InventoryBaseRecord";
+import { action, observable, makeObservable, computed, override } from "mobx";
+import { match } from "../../util/Util";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
+import { truncateIsoTimestamp } from "../definitions/Units";
+import {
+  type HasEditableFields,
+} from "../definitions/Editable";
+import { PersistedBarcode } from "./Barcode";
+import { type SharedWithGroup } from "../definitions/Group";
+import { areSameTag } from "../definitions/Tag";
+
+export type BatchName = {|
+  common: string,
+  suffix: "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED",
+|};
+
+declare export const formatIndex: (index: number, numOfRecords: number) => string;
+
+export type InventoryBaseRecordCollectionEditableFields = {
+  ...$Diff<InventoryBaseRecordEditableFields, {| name: string |}>,
+  name: BatchName,
+  ...
+};
+
+declare export default class InventoryBaseRecordCollection<ResultSubtype: InventoryBaseRecord> {
+  records: RsSet<ResultSubtype>;
+  name: BatchName;
+  sharedWith: Array<SharedWithGroup>;
+
+  constructor(records: RsSet<ResultSubtype>): InventoryBaseRecordCollection<ResultSubtype>;
+
+  get size(): number;
+  get fieldValues(): { ...InventoryBaseRecordCollectionEditableFields };
+  get canChooseWhichToEdit(): boolean;
+  isFieldEditable(fieldName: string): boolean;
+  get noValueLabel(): {[key in keyof InventoryBaseRecordCollectionEditableFields]: ?string};
+  setFieldsDirty(newFieldValues: {}): void;
+}
+
+declare export class MixedInventoryBaseRecordCollection
+  extends InventoryBaseRecordCollection<InventoryBaseRecord>
+  implements HasEditableFields<InventoryBaseRecordCollectionEditableFields>
+{
+  constructor(records: RsSet<InventoryBaseRecord>): MixedInventoryBaseRecordCollection;
+  get fieldValues(): { ...InventoryBaseRecordCollectionEditableFields };
+  get noValueLabel(): {[key in keyof InventoryBaseRecordCollectionEditableFields]: ?string};
+  setFieldsDirty(newFieldValues: {}): void;
+  setFieldEditable(fieldName: string, value: boolean): void;
+}

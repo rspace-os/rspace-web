@@ -116,7 +116,7 @@ describe("useGalleryListing", () => {
     });
 
     const getUploadedFilesCalls = mockAxios.history.get.filter(({ url }) =>
-      /getUploadedFiles/.test(url)
+      /getUploadedFiles/.test(url ?? "")
     );
     expect(getUploadedFilesCalls.length).toBe(2);
     expect(getUploadedFilesCalls[0].params.get("pageNumber")).toBe("0");

@@ -1,0 +1,169 @@
+//@flow
+
+import { type Id, type GlobalId } from "./BaseRecord";
+import { type Record, type ReadAccessLevel } from "./Record";
+import { type BlobUrl } from "../../util/types";
+import { type Editable } from "./Editable";
+import { type HasChildren } from "./HasChildren";
+import { type Factory } from "./Factory";
+import { type Attachment } from "./Attachment";
+import { type Identifier } from "./Identifier";
+import { type Node } from "react";
+import { type ExtraField, type ExtraFieldAttrs } from "./ExtraField";
+import { type BarcodeRecord } from "./Barcode";
+import { type AdjustableTableRowOptions } from "./Tables";
+import { type CoreFetcherArgs } from "./Search";
+import { type Tag } from "./Tag";
+import { type Alert } from "../contexts/Alert";
+import { type Container } from "./Container";
+
+export type State = "create" | "edit" | "preview";
+export type Action = "LIMITED_READ" | "READ" | "UPDATE" | "CHANGE_OWNER";
+export type SharingMode = "OWNER_GROUPS" | "WHITELIST" | "OWNER_ONLY";
+
+export type LockStatus =
+  | "LOCKED_OK"
+  | "WAS_ALREADY_LOCKED"
+  | "UNLOCKED_OK"
+  | "CANNOT_LOCK";
+
+export type RecordType =
+  | "sample"
+  | "container"
+  | "subSample"
+  | "sampleTemplate";
+
+export type ApiRecordType =
+  | "SAMPLE"
+  | "CONTAINER"
+  | "SUBSAMPLE"
+  | "SAMPLE_TEMPLATE";
+
+declare export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType;
+
+export type CreateOptionParameter = {|
+  label: string,
+  explanation: string,
+  state:
+    | {| key: "split", copies: number |}
+    | {| key: "name", value: string |}
+    | {| key: "location", container: Container |}
+    | {|
+        key: "fields",
+        copyFieldContent: $ReadOnlyArray<{|
+          id: Id,
+          name: string,
+          content: string,
+          hasContent: boolean,
+          selected: boolean,
+        |}>,
+      |}
+    | {| key: "newSubsamplesCount", count: number |}
+    | {|
+        key: "newSubsamplesQuantity",
+        quantity: number | "",
+        quantityLabel: string,
+      |},
+  validState: () => boolean,
+|};
+
+export type CreateOption = {|
+  label: string,
+  disabled?: boolean,
+  explanation: string,
+  parameters?: $ReadOnlyArray<CreateOptionParameter>,
+  onReset: () => void,
+  onSubmit: () => Promise<void>,
+|};
+
+export interface CreateFrom {
+  +createOptions: $ReadOnlyArray<CreateOption>;
+}
+
+export interface InventoryRecord
+  extends Record,
+    Editable,
+    HasChildren,
+    CreateFrom {
+  description: ?string;
+  tags: Array<Tag>;
+  permittedActions: Set<Action>;
+  type: ApiRecordType;
+  attachments: Array<Attachment>;
+  identifiers: Array<Identifier>;
+  barcodes: Array<BarcodeRecord>;
+  created: string;
+  lastModified: string;
+  modifiedByFullName: string;
+  +illustration: Node;
+
+  image: ?BlobUrl;
+  fetchImage("image" | "locationsImage" | "thumbnail"): Promise<?BlobUrl>;
+
+  loading: boolean;
+  infoLoaded: boolean;
+  +noFullDetails: boolean;
+
+  +canRead: boolean;
+  +canEdit: boolean;
+  +canTransfer: boolean;
+  +readAccessLevel: ReadAccessLevel;
+
+  populateFromJson(Factory, any, ?any): void;
+
+  updateBecauseRecordsChanged(Set<GlobalId>): void;
+
+  +state: State;
+  create(): Promise<void>;
+  setEditing(boolean, ?boolean, ?boolean): Promise<LockStatus>;
+  editing: boolean;
+  isFieldEditable(string): boolean;
+  setFieldsStateForBatchEditing(): void;
+  +supportsBatchEditing: boolean;
+  currentlyEditableFields: Set<string>;
+
+  addIdentifier(): Promise<void>;
+  removeIdentifier(Id): Promise<void>;
+  updateIdentifiers(): void;
+
+  +showNewlyCreatedRecordSearchParams: CoreFetcherArgs;
+
+  +recordType: RecordType;
+
+  +ownerLabel: ?string;
+  +recordLinkLabel: string;
+  +showRecordOnNavigate: boolean;
+
+  fetchAdditionalInfo(): Promise<void>;
+
+  +paramsForBackend: any;
+
+  +hasSubSamples: boolean;
+
+  setAttributesDirty({}): void;
+
+  addScopedToast(Alert): void;
+  clearAllScopedToasts(): void;
+
+  selected: boolean;
+  toggleSelected(?boolean): void;
+
+  adjustableTableOptions(): AdjustableTableRowOptions<string>;
+
+  extraFields: Array<ExtraField>;
+  addExtraField(ExtraFieldAttrs): void;
+  updateExtraField(string, { name: string, type: string }): void;
+  removeExtraField(?number, number): void;
+  +visibleExtraFields: Array<ExtraField>;
+  +hasUnsavedExtraField: boolean;
+  +fieldNamesInUse: Array<string>;
+
+  contextMenuDisabled(): ?string;
+
+  refreshAssociatedSearch(): void;
+
+  showTopLinkInBreadcrumbs(): boolean;
+
+  +usableInLoM: boolean;
+  +beingCreatedInContainer: boolean;
+}

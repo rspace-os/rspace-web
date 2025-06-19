@@ -1,6 +1,8 @@
 package com.researchspace.service.inventory;
 
+import static com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy.DUMMY_VALID_DOI;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,12 +18,14 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummyError;
 import java.util.List;
+import javax.naming.InvalidNameException;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -142,8 +146,80 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     inventoryIdentifierApiMgr.registerBulkIdentifiers(3, user);
   }
 
+  public void testFindIdentifiersByQuery() throws InvalidNameException {
+    // GIVEN
+    User anotherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api_another"));
+    initialiseContentWithEmptyContent(anotherUser);
+    ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
+    int initialDbSize = doiDao.getAll().size();
+
+    inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
+    inventoryIdentifierApiMgr.registerBulkIdentifiers(2, user);
+    inventoryIdentifierApiMgr.registerBulkIdentifiers(2, anotherUser);
+
+    // WHEN we search for any "valid" DOI --> THEN assert the result
+    List<ApiInventoryDOI> userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, DUMMY_VALID_DOI, user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft", true, "https://doi.org/" + DUMMY_VALID_DOI, user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft", true, "doi.org/" + DUMMY_VALID_DOI, user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft", true, DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3), user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft",
+            true,
+            "https://doi.org/" + DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3),
+            user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    userExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers(
+            "draft",
+            true,
+            "doi.org/" + DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3),
+            user);
+    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+
+    // WHEN we search for any "NON valid" DOI --> THEN assert the result
+    List<ApiInventoryDOI> userNotExistingDoiAssociatedAndDraft =
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, "NOT_" + DUMMY_VALID_DOI, user);
+    assertTrue(userNotExistingDoiAssociatedAndDraft.isEmpty());
+
+    assertEquals(initialDbSize + 5, doiDao.getAll().size());
+
+    // delete associated identifiers
+    assertTrue(
+        inventoryIdentifierApiMgr
+            .deleteAssociatedIdentifier(createdSample.getOid(), user)
+            .getIdentifiers()
+            .isEmpty());
+    // delete Unassociated identifiers
+    List<ApiInventoryDOI> anotherUserNotAssociated =
+        inventoryIdentifierApiMgr.findIdentifiers(null, false, null, anotherUser);
+    List<ApiInventoryDOI> userNotAssociated =
+        inventoryIdentifierApiMgr.findIdentifiers(null, false, null, user);
+    assertTrue(
+        inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(userNotAssociated.get(0), user));
+    assertTrue(
+        inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(userNotAssociated.get(1), user));
+    assertTrue(
+        inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
+            anotherUserNotAssociated.get(0), user));
+    assertTrue(
+        inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
+            anotherUserNotAssociated.get(1), user));
+  }
+
   @Test
-  public void testFindIdentifiersByStateAndCreator() {
+  public void testFindIdentifiersByStateAndCreator() throws InvalidNameException {
     // GIVEN
     User anotherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api_another"));
     initialiseContentWithEmptyContent(anotherUser);
@@ -156,27 +232,26 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
 
     // WHEN
     List<ApiInventoryDOI> userAll =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, user, null);
+        inventoryIdentifierApiMgr.findIdentifiers(null, null, null, user);
     List<ApiInventoryDOI> userAssociated =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, user, true);
+        inventoryIdentifierApiMgr.findIdentifiers(null, true, null, user);
     List<ApiInventoryDOI> userAssociatedAndDraft =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner("draft", user, true);
+        inventoryIdentifierApiMgr.findIdentifiers("draft", true, null, user);
     List<ApiInventoryDOI> userAssociatedAndRegistered =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner("registered", user, true);
-
+        inventoryIdentifierApiMgr.findIdentifiers("registered", true, null, user);
     List<ApiInventoryDOI> userNotAssociated =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, user, false);
+        inventoryIdentifierApiMgr.findIdentifiers(null, false, null, user);
     List<ApiInventoryDOI> userNotAssociatedAndDraft =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner("draft", user, false);
+        inventoryIdentifierApiMgr.findIdentifiers("draft", false, null, user);
     List<ApiInventoryDOI> userNotAssociatedAndRegisterd =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner("registered", user, false);
+        inventoryIdentifierApiMgr.findIdentifiers("registered", false, null, user);
 
     List<ApiInventoryDOI> anotherUserAll =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, anotherUser, null);
+        inventoryIdentifierApiMgr.findIdentifiers(null, null, null, anotherUser);
     List<ApiInventoryDOI> anotherUserAssociated =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, anotherUser, true);
+        inventoryIdentifierApiMgr.findIdentifiers(null, true, null, anotherUser);
     List<ApiInventoryDOI> anotherUserNotAssociated =
-        inventoryIdentifierApiMgr.findIdentifiersByStateAndOwner(null, anotherUser, false);
+        inventoryIdentifierApiMgr.findIdentifiers(null, false, null, anotherUser);
 
     // THEN
     assertEquals(3, userAll.size());
@@ -216,6 +291,92 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     assertTrue(
         inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
             anotherUserNotAssociated.get(1), user));
+  }
+
+  @Test
+  public void testAssignIdentifier() {
+    List<ApiInventoryDOI> bulkCreateResult =
+        inventoryIdentifierApiMgr.registerBulkIdentifiers(1, user);
+    assertEquals(1, bulkCreateResult.size());
+    assertFalse(bulkCreateResult.get(0).isAssociated());
+    assertNull(bulkCreateResult.get(0).getAssociatedGlobalId());
+    assertNull(bulkCreateResult.get(0).getTitle());
+
+    ApiContainer createdContainer = createBasicContainerForUser(user);
+    assertEquals(0, createdContainer.getIdentifiers().size());
+
+    ApiInventoryRecordInfo assignIdentifierResult =
+        inventoryIdentifierApiMgr.assignIdentifier(
+            createdContainer.getOid(), bulkCreateResult.get(0).getId(), user);
+    assertEquals(1, assignIdentifierResult.getIdentifiers().size());
+    assertEquals(
+        createdContainer.getOid().getIdString(),
+        assignIdentifierResult.getIdentifiers().get(0).getAssociatedGlobalId());
+    assertEquals(
+        createdContainer.getName(), assignIdentifierResult.getIdentifiers().get(0).getTitle());
+
+    Container refreshedContainer = containerApiMgr.getContainerById(createdContainer.getId(), user);
+    assertEquals(1, refreshedContainer.getActiveIdentifiers().size());
+    assertEquals(
+        bulkCreateResult.get(0).getDoi(),
+        refreshedContainer.getActiveIdentifiers().get(0).getIdentifier());
+
+    // cleanup identifiers
+    ApiInventoryRecordInfo updatedContainer =
+        inventoryIdentifierApiMgr.deleteAssociatedIdentifier(refreshedContainer.getOid(), user);
+    assertEquals(0, updatedContainer.getIdentifiers().size());
+  }
+
+  @Test
+  public void testAssignIdentifierToAnInventoryItemThatGotAlreadyAnIdentifierThrowsErrors() {
+    ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
+    ApiInventoryRecordInfo registeredIdentifier =
+        inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
+
+    ApiInventoryDOI unassignedIdentifier =
+        inventoryIdentifierApiMgr.registerBulkIdentifiers(1, user).get(0);
+
+    boolean exceptionHappened = false;
+    try {
+      inventoryIdentifierApiMgr.assignIdentifier(
+          createdSample.getOid(), unassignedIdentifier.getId(), user);
+    } catch (IllegalArgumentException e) {
+      exceptionHappened = true;
+      assertEquals(
+          "Inventory Item ["
+              + registeredIdentifier.getOid().getIdString()
+              + "] has got already an identifier",
+          e.getMessage());
+    } finally {
+      assertTrue(exceptionHappened, "The exception didn't happen");
+      // cleanup
+      inventoryIdentifierApiMgr.deleteAssociatedIdentifier(createdSample.getOid(), user);
+      inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(unassignedIdentifier, user);
+    }
+  }
+
+  @Test
+  public void testAssignIdentifierThatWasAlreadyAssociatedThrowsErrors() {
+    ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
+    ApiInventoryRecordInfo registeredIdentifier =
+        inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
+
+    ApiContainer createdContainer = createBasicContainerForUser(user);
+    assertEquals(0, createdContainer.getIdentifiers().size());
+
+    boolean exceptionHappened = false;
+    try {
+      inventoryIdentifierApiMgr.assignIdentifier(
+          createdContainer.getOid(), registeredIdentifier.getIdentifiers().get(0).getId(), user);
+    } catch (IllegalArgumentException e) {
+      exceptionHappened = true;
+      assertEquals(
+          "You can only assign an active unassigned identifier in \"draft\" state", e.getMessage());
+    } finally {
+      assertTrue(exceptionHappened, "The exception didn't happen");
+      // cleanup
+      inventoryIdentifierApiMgr.deleteAssociatedIdentifier(createdSample.getOid(), user);
+    }
   }
 
   private void addOptionalPropertiesToIncomingDoi(ApiInventoryDOI doiUpdate) {
@@ -294,12 +455,16 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     updatedSubSample = inventoryIdentifierApiMgr.publishIdentifier(createdSubSample.getOid(), user);
     assertEquals(1, updatedSubSample.getIdentifiers().size());
     assertNotNull(updatedSubSample.getIdentifiers().get(0).getUrl());
-    assertEquals("https://doi.org/null", updatedSubSample.getIdentifiers().get(0).getPublicUrl());
+    assertEquals(
+        "https://doi.org/" + DUMMY_VALID_DOI,
+        updatedSubSample.getIdentifiers().get(0).getPublicUrl());
     // retract
     updatedSubSample = inventoryIdentifierApiMgr.retractIdentifier(createdSubSample.getOid(), user);
     assertEquals(1, updatedSubSample.getIdentifiers().size());
     assertNotNull(updatedSubSample.getIdentifiers().get(0).getUrl());
-    assertEquals("https://doi.org/null", updatedSubSample.getIdentifiers().get(0).getPublicUrl());
+    assertEquals(
+        "https://doi.org/" + DUMMY_VALID_DOI,
+        updatedSubSample.getIdentifiers().get(0).getPublicUrl());
   }
 
   @Test

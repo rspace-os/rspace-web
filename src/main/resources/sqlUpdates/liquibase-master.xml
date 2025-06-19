@@ -143,6 +143,8 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-435.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-607.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-638.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-365.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-664.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-575.xml"/>
 
 

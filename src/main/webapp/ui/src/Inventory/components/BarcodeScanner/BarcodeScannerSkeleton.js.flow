@@ -1,0 +1,21 @@
+//@flow
+
+import { type Node, type ElementRef } from "react";
+
+export type BarcodeInput =
+  | Barcode
+  | {| rawValue: BarcodeValue, format: "Unknown" |};
+
+declare export default function BarcodeScannerSkeleton({|
+  onClose: () => void,
+  onScan: (BarcodeInput) => void,
+  buttonPrefix: string,
+  beforeScanHelpText: string,
+  barcode: ?BarcodeInput,
+  setBarcode: (?BarcodeInput) => void,
+  loading: boolean,
+  warning?: Node,
+  videoElem: {| current: ?ElementRef<"video"> |},
+  error: boolean,
+|}): Node;
+

@@ -1,0 +1,192 @@
+// @flow
+
+import InvApiService from "../../common/InvApiService";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import { toCommonUnit, fromCommonUnit } from "../definitions/Units";
+import RsSet from "../../util/set";
+import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
+import SubSampleModel, { type SubSampleAttrs } from "../models/SubSampleModel";
+import { type SampleAttrs } from "../models/SampleModel";
+import getRootStore from "../stores/RootStore";
+import MemoisedFactory from "./Factory/MemoisedFactory";
+import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
+import { mkAlert } from "../contexts/Alert";
+import Search from "./Search";
+import {
+  action,
+  observable,
+  computed,
+  makeObservable,
+  runInAction,
+} from "mobx";
+import React from "react";
+import { type InventoryRecord } from "../definitions/InventoryRecord";
+import { type Id } from "../definitions/BaseRecord";
+import { type ExportOptions } from "../definitions/Search";
+import { type UnitCategory } from "../stores/UnitStore";
+import { showToastWhilstPending } from "../../util/alerts";
+
+export type ListOfMaterialsId = ?number;
+export type ElnFieldId = number;
+export type ElnDocumentId = number;
+
+export type Quantity = {
+  unitId: number,
+  numericValue: number,
+};
+
+export type MaterialAttrs = {
+  invRec: InventoryRecord,
+  usedQuantity: ?Quantity,
+};
+
+type MaterialBackendParams = {
+  invRec: {
+    id: ?number,
+    type: string,
+  },
+  usedQuantity: ?Quantity,
+  updateInventoryQuantity: ?boolean,
+};
+
+declare export class Material {
+  invRec: InventoryRecord;
+  usedQuantity: ?Quantity;
+  updateInventoryQuantity: ?boolean;
+  editing: boolean;
+  originalUsedValue: number;
+  originalUsedId: number;
+  originalInventoryValue: number;
+  originalInventoryId: number;
+  usedQuantityDelta: number;
+  selected: boolean;
+
+  constructor(attrs: MaterialAttrs): Material;
+
+  clone(): Material;
+
+  isEqual(other: Material): boolean;
+
+  get paramsForBackend(): MaterialBackendParams;
+
+  updateQuantityEstimate(): void;
+
+  cancelChange(): void;
+
+  setEditing(value: boolean, cancel?: boolean): void;
+
+  setOriginalValues(
+    usedValue: number,
+    usedId: number,
+    invValue: number,
+    invId: number
+  ): void;
+
+  updateDelta(additionalValue: number, id: number): void;
+
+  setUsedQuantity(additionalValue: number, unitId: number): void;
+
+  get enoughInventoryQuantity(): boolean;
+
+  get enoughLeft(): boolean;
+
+  toggleSelected(): void;
+
+  toggleUpdateInventoryRecord(): void;
+
+  get usedQuantityChanged(): boolean;
+
+  quantityUnitLabel(unitId: ?number): string;
+
+  get usedQuantityLabel(): string;
+
+  get inventoryQuantityLabel(): string;
+
+  get canEditQuantity(): boolean;
+}
+
+export type ListOfMaterialsAttrs = {
+  id: ?number,
+  name: string,
+  description: string,
+  elnFieldId: number,
+  materials: Array<{|
+    invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs,
+    usedQuantity: ?Quantity,
+  |}>,
+};
+
+type ListOfMaterialsBackendParams = {
+  id: ListOfMaterialsId,
+  name: string,
+  description: string,
+  elnFieldId: ElnFieldId,
+  materials: Array<MaterialBackendParams>,
+};
+
+declare export class ListOfMaterials {
+  id: ListOfMaterialsId;
+  name: string;
+  description: string;
+  elnFieldId: ElnFieldId;
+  materials: Array<Material>;
+  loading: boolean;
+  canEdit: boolean;
+  editingMode: boolean;
+  pickerSearch: Search;
+  additionalQuantity: ?Quantity;
+
+  constructor(attrs: ListOfMaterialsAttrs): ListOfMaterials;
+
+  setLoading(value: boolean): void;
+
+  setEditingMode(value: boolean): void;
+
+  updatePickerSearch(): void;
+
+  clone(): ListOfMaterials;
+
+  isEqual(other: ListOfMaterials): boolean;
+
+  setName(name: string): void;
+
+  setDescription(description: string): void;
+
+  setMetadata(name: string, description: string): void;
+
+  setAdditionalQuantity(additionalQuantity: ?Quantity): void;
+
+  addMaterials(records: Array<InventoryRecord>): void;
+
+  removeMaterial(material: Material): void;
+
+  get paramsForBackend(): ListOfMaterialsBackendParams;
+
+  get canEditQuantities(): boolean;
+
+  get isValid(): boolean;
+
+  get validAdditionalAmount(): boolean;
+
+  get enoughLeft(): boolean;
+
+  get selectedMaterials(): Array<Material>;
+
+  get selectedCategories(): Set<UnitCategory>;
+
+  get mixedSelectedCategories(): boolean;
+
+  trackInventoryRecordsUpdate(): void;
+
+  create(): Promise<void>;
+
+  resetUsedQuantityChanges(): void;
+
+  update(): Promise<void>;
+
+  delete(): Promise<boolean>;
+
+  export(exportOptions: ExportOptions): Promise<void>;
+
+  moveAllToBench(): Promise<void>;
+}

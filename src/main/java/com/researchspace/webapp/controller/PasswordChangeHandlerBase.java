@@ -47,24 +47,19 @@ public abstract class PasswordChangeHandlerBase {
     String checkPasswordResult =
         validator.validatePasswords(newPassword, confirmPassword, user.getUsername());
     if (!UserValidator.FIELD_OK.equals(checkPasswordResult)) {
-      SECURITY_LOG.warn(
-          "{} - [{}] unsuccessfully attempted to  reset password.",
-          user.getFullName(),
-          user.getId());
+      logAuthenticationFailure(request, user);
       return checkPasswordResult;
     }
 
     encryptAndSavePassword(user, newpass);
-    SECURITY_LOG.info("{} [{}] successfully  reset password", user.getFullName(), user.getId());
+    SECURITY_LOG.info("User [{}] successfully reset their password", user.getUsername());
     return "Password changed successfully";
   }
 
   private void logAuthenticationFailure(HttpServletRequest request, User user) {
     SECURITY_LOG.warn(
-        " {}  [{}] unsuccessfully attempted to  reset password but did not authenticate from remote"
-            + " address [{}]",
-        user.getFullName(),
-        user.getId(),
+        "Unsuccessfully attempted to reset password for [{}], from {}",
+        user.getUsername(),
         RequestUtil.remoteAddr(request));
   }
 

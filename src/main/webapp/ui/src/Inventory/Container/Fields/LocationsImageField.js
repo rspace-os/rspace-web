@@ -44,7 +44,6 @@ function LocationsImageField(): Node {
 
     if (toast) {
       uiStore.removeAlert(toast);
-      activeResult.removeScopedToast(toast);
     }
     const newToast = mkAlert({
       message: "Set preview image too?",

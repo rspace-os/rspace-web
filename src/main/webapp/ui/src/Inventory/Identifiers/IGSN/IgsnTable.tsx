@@ -7,7 +7,13 @@ import {
   GridToolbarColumnsButton,
   GridToolbarExportContainer,
   GridSlotProps,
+  GridRowId,
 } from "@mui/x-data-grid";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import {
   type Identifier,
   useIdentifiersListing,
@@ -21,6 +27,13 @@ import Box from "@mui/material/Box";
 import MenuItem from "@mui/material/MenuItem";
 import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 import AccentMenuItem from "../../../components/AccentMenuItem";
+import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
+import RsSet from "../../../util/set";
+import useDebounce from "../../../util/useDebounce";
+import Popover from "@mui/material/Popover";
+import Button from "@mui/material/Button";
+import BarcodeScanner from "../../components/BarcodeScanner/AllBarcodeScanner";
+import SearchBarcodeIcon from "../../../assets/graphics/SearchBarcode";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
@@ -29,15 +42,51 @@ declare module "@mui/x-data-grid" {
     setState: (newState: "draft" | "findable" | "registered" | null) => void;
     isAssociated: boolean | null;
     setIsAssociated: (newIsAssociated: boolean | null) => void;
+    searchTerm: string;
+    setSearchTerm: (newSearchTerm: string) => void;
   }
 }
 
+const Panel = ({
+  anchorEl,
+  children,
+  onClose,
+}: {
+  anchorEl: HTMLElement | null;
+  children: React.ReactNode;
+  onClose: () => void;
+}) => (
+  <Popover
+    open={Boolean(anchorEl)}
+    anchorEl={anchorEl}
+    onClose={onClose}
+    anchorOrigin={{
+      vertical: "bottom",
+      horizontal: "center",
+    }}
+    transformOrigin={{
+      vertical: "top",
+      horizontal: "center",
+    }}
+    PaperProps={{
+      variant: "outlined",
+      elevation: 0,
+      style: {
+        minWidth: 300,
+      },
+    }}
+  >
+    {Boolean(anchorEl) && children}
+  </Popover>
+);
 function Toolbar({
   setColumnsMenuAnchorEl,
   state,
   setState,
   isAssociated,
   setIsAssociated,
+  searchTerm,
+  setSearchTerm,
 }: GridSlotProps["toolbar"]): React.ReactNode {
   const apiRef = useGridApiContext();
 
@@ -61,9 +110,82 @@ function Toolbar({
     return "No";
   })();
 
+  const [localSearchTerm, setLocalSearchTerm] = React.useState(searchTerm);
+  const debouncedCallback = React.useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
+  const debouncedSetSearchTerm = useDebounce<string>(debouncedCallback, 300);
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setLocalSearchTerm(value);
+    debouncedSetSearchTerm(value);
+  };
+
+  const [scannerAnchorEl, setScannerAnchorEl] =
+    React.useState<null | HTMLElement>(null);
+
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
-      <MenuWithSelectedState label="State" currentState={state ?? "All"}>
+      <TextField
+        type="search"
+        placeholder="Search IGSN IDs..."
+        value={localSearchTerm}
+        onChange={handleSearchChange}
+        size="small"
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon fontSize="small" />
+            </InputAdornment>
+          ),
+          endAdornment: localSearchTerm ? (
+            <InputAdornment position="end">
+              <IconButton
+                aria-label="clear search"
+                onClick={() => {
+                  setLocalSearchTerm("");
+                  setSearchTerm("");
+                }}
+                edge="end"
+                size="small"
+              >
+                <ClearIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : null,
+        }}
+        sx={{
+          width: 230, // wide enough to show the whole placeholder text
+        }}
+      />
+      <Button
+        color="primary"
+        onClick={(event) => {
+          setScannerAnchorEl(event.currentTarget);
+        }}
+        startIcon={<SearchBarcodeIcon />}
+      >
+        Scan
+      </Button>
+      <Panel
+        anchorEl={scannerAnchorEl}
+        onClose={() => setScannerAnchorEl(null)}
+      >
+        <BarcodeScanner
+          onScan={(result) => {
+            setLocalSearchTerm(result.rawValue);
+            setSearchTerm(result.rawValue);
+          }}
+          onClose={() => setScannerAnchorEl(null)}
+          buttonPrefix="Search for IGSN"
+        />
+      </Panel>
+      <MenuWithSelectedState
+        label="State"
+        currentState={state ?? "All"}
+        defaultState="All"
+      >
         <AccentMenuItem
           title="All"
           subheader="Show all IGSN IDs"
@@ -100,6 +222,7 @@ function Toolbar({
       <MenuWithSelectedState
         label="Linked Item"
         currentState={linkedItemStateLabel}
+        defaultState="All"
       >
         <AccentMenuItem
           title="All Identifiers"
@@ -168,17 +291,53 @@ function Toolbar({
 export default function IgsnTable({
   selectedIgsns,
   setSelectedIgsns,
+  disableMultipleRowSelection = false,
+  controlDefaults,
 }: {
-  selectedIgsns: ReadonlyArray<Identifier>;
-  setSelectedIgsns: (newlySelectedIgsns: ReadonlyArray<Identifier>) => void;
+  /**
+   * Whether multiple row selection is disabled. If true, only one identifier
+   * can be selected at a time and instead of checkboxes a radio button will be
+   * used in the selection column.
+   */
+  disableMultipleRowSelection?: boolean;
+
+  /**
+   * The selected identifiers. The order of the array is not significant. If
+   * `disableMultipleRowSelection` is true, only the first identifier in the array
+   * will be used.
+   */
+  selectedIgsns: RsSet<Identifier>;
+
+  /**
+   * Callback to update the selected identifiers. If `disableMultipleRowSelection`
+   * is true, the passed array will either be empty or contain only one
+   * identifier.
+   */
+  setSelectedIgsns: (newlySelectedIgsns: RsSet<Identifier>) => void;
+
+  /**
+   * Default values for the table controls. If not provided, the controls will
+   * be initialized to their default values.
+   */
+  controlDefaults?: {
+    state?: "draft" | "findable" | "registered" | null;
+    isAssociated?: boolean | null;
+    searchTerm?: string | null;
+  };
 }): React.ReactNode {
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
-  >(null);
-  const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
+  >(controlDefaults?.state ?? null);
+  const [isAssociated, setIsAssociated] = React.useState<boolean | null>(
+    controlDefaults?.isAssociated ?? null
+  );
+  const [searchTerm, setSearchTerm] = React.useState<string>(
+    controlDefaults?.searchTerm ?? ""
+  );
   const { identifiers, loading, refreshListing } = useIdentifiersListing({
     state,
     isAssociated,
+    searchTerm,
   });
   const { setRefreshListing } = useIdentifiersRefresh();
   React.useEffect(() => {
@@ -189,81 +348,102 @@ export default function IgsnTable({
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
 
+  const common = {
+    rows: identifiers,
+    columns: [
+      DataGridColumn.newColumnWithFieldName<"doi", Identifier>("doi", {
+        headerName: "DOI",
+        flex: 1,
+        sortable: false,
+        resizable: true,
+      }),
+      DataGridColumn.newColumnWithFieldName<"state", Identifier>("state", {
+        headerName: "State",
+        flex: 1,
+        resizable: true,
+        sortable: false,
+        renderCell: ({ row }) => toTitleCase(row.state),
+      }),
+      DataGridColumn.newColumnWithFieldName<"associatedGlobalId", Identifier>(
+        "associatedGlobalId",
+        {
+          headerName: "Linked Item",
+          flex: 1,
+          resizable: true,
+          sortable: false,
+          renderCell: ({ row }) => {
+            if (row.associatedGlobalId === null) {
+              return "None";
+            }
+            return (
+              <GlobalId
+                record={new LinkableRecordFromGlobalId(row.associatedGlobalId)}
+                onClick={() => {}}
+              />
+            );
+          },
+        }
+      ),
+    ],
+    loading,
+    initialState: {
+      columns: {},
+    },
+    density: "compact" as const,
+    disableColumnFilter: true,
+    hideFooter: true,
+    autoHeight: true,
+    slots: {
+      pagination: null,
+      toolbar: Toolbar,
+    },
+    slotProps: {
+      toolbar: {
+        setColumnsMenuAnchorEl,
+        state,
+        setState,
+        isAssociated,
+        setIsAssociated,
+        searchTerm,
+        setSearchTerm,
+      },
+      panel: {
+        anchorEl: columnsMenuAnchorEl,
+      },
+    },
+    localeText: {
+      noRowsLabel: "No IGSN IDs",
+    },
+  };
+
+  if (disableMultipleRowSelection)
+    return (
+      <DataGridWithRadioSelection
+        {...common}
+        getRowId={(row) => row.doi}
+        selectRadioAriaLabelFunc={() => "Select IGSN"}
+        onSelectionChange={(doi: GridRowId) => {
+          const selectedIdentifier = identifiers.find((id) => id.doi === doi);
+          if (selectedIdentifier) {
+            setSelectedIgsns(new RsSet([selectedIdentifier]));
+          } else {
+            throw new Error("Selected identifier not found");
+          }
+        }}
+        selectedRowId={selectedIgsns.only.map(({ doi }) => doi).orElse(null)}
+      />
+    );
   return (
     <DataGrid
-      rows={identifiers}
-      columns={[
-        DataGridColumn.newColumnWithFieldName<"doi", Identifier>("doi", {
-          headerName: "DOI",
-          flex: 1,
-          sortable: false,
-          resizable: true,
-        }),
-        DataGridColumn.newColumnWithFieldName<"state", Identifier>("state", {
-          headerName: "State",
-          flex: 1,
-          resizable: true,
-          sortable: false,
-          renderCell: ({ row }) => toTitleCase(row.state),
-        }),
-        DataGridColumn.newColumnWithFieldName<"associatedGlobalId", Identifier>(
-          "associatedGlobalId",
-          {
-            headerName: "Linked Item",
-            flex: 1,
-            resizable: true,
-            sortable: false,
-            renderCell: ({ row }) => {
-              if (row.associatedGlobalId === null) {
-                return "None";
-              }
-              return (
-                <GlobalId
-                  record={
-                    new LinkableRecordFromGlobalId(row.associatedGlobalId)
-                  }
-                  onClick={() => {}}
-                />
-              );
-            },
-          }
-        ),
-      ]}
-      loading={loading}
-      checkboxSelection
-      rowSelectionModel={selectedIgsns.map((id) => id.doi)}
+      {...common}
+      getRowId={(row) => row.doi}
+      checkboxSelection={true}
+      rowSelectionModel={selectedIgsns.map((id) => id.doi).toArray()}
       onRowSelectionModelChange={(ids: GridRowSelectionModel) => {
         const selectedIdentifiers = identifiers.filter((id) =>
           ids.includes(id.doi)
         );
-        setSelectedIgsns(selectedIdentifiers);
-      }}
-      getRowId={(row) => row.doi}
-      initialState={{
-        columns: {},
-      }}
-      density="compact"
-      disableColumnFilter
-      hideFooter
-      autoHeight
-      slots={{
-        pagination: null,
-        toolbar: Toolbar,
-      }}
-      slotProps={{
-        toolbar: {
-          setColumnsMenuAnchorEl,
-          state,
-          setState,
-          isAssociated,
-          setIsAssociated,
-        },
-        panel: {
-          anchorEl: columnsMenuAnchorEl,
-        },
-      }}
-      localeText={{
-        noRowsLabel: "No IGSN IDs",
+        setSelectedIgsns(new RsSet(selectedIdentifiers));
       }}
     />
   );

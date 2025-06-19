@@ -7,9 +7,12 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.util.List;
+import javax.naming.InvalidNameException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import lombok.Data;
@@ -29,9 +32,12 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
 
   @Autowired private DataCiteConnector dataCiteConnector;
 
+  private @Autowired SystemPropertyPermissionManager systemPropertyManager;
+
   @Data
   @NoArgsConstructor
   public static class ApiInventoryIdentifierPost {
+
     @JsonProperty("parentGlobalId")
     private String parentGlobalId;
   }
@@ -40,8 +46,12 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   public List<ApiInventoryDOI> getUserIdentifiers(
       @RequestParam(value = "state", required = false) String state,
       @RequestParam(value = "isAssociated", required = false) Boolean isAssociated,
-      @RequestAttribute(name = "user") User user) {
-    return identifierMgr.findIdentifiersByStateAndOwner(state, user, isAssociated);
+      @RequestParam(value = "identifier", required = false) String identifier,
+      @RequestAttribute(name = "user") User user)
+      throws InvalidNameException {
+    assertInventoryAndDataciteEnabled(user);
+
+    return identifierMgr.findIdentifiers(state, isAssociated, identifier, user);
   }
 
   @Override
@@ -49,7 +59,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
       @RequestBody ApiInventoryIdentifierPost registerPost,
       @RequestAttribute(name = "user") User user) {
 
-    assertDataCiteConnectorEnabled();
+    assertInventoryAndDataciteEnabled(user);
     String globalId = registerPost.getParentGlobalId();
     Validate.isTrue(GlobalIdentifier.isValid(globalId), "not a valid global id: " + globalId);
     GlobalIdentifier oid = new GlobalIdentifier(globalId);
@@ -62,7 +72,8 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public List<ApiInventoryDOI> bulkAllocateIdentifiers(
       @PathVariable Integer count, @RequestAttribute(name = "user") User user) {
-    assertDataCiteConnectorEnabled();
+    assertInventoryAndDataciteEnabled(user);
+
     Validate.isTrue(
         count > 0,
         "not a valid number to IGSN to allocate: \""
@@ -85,10 +96,29 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   }
 
   @Override
+  public ApiInventoryDOI assignIdentifier(
+      @PathVariable Long identifierId,
+      @RequestBody ApiInventoryIdentifierPost inventoryItem,
+      @RequestAttribute(name = "user") User user) {
+    assertInventoryAndDataciteEnabled(user);
+
+    String globalId = inventoryItem.getParentGlobalId();
+    Validate.isTrue(GlobalIdentifier.isValid(globalId), "not a valid global id: " + globalId);
+    Validate.isTrue(identifierId != null, "identifier must not be null");
+    GlobalIdentifier inventoryOid = new GlobalIdentifier(globalId);
+    assertUserCanEditInventoryRecord(inventoryOid, user);
+
+    ApiInventoryRecordInfo result =
+        identifierMgr.assignIdentifier(inventoryOid, identifierId, user);
+    return result.getIdentifiers().get(0);
+  }
+
+  @Override
   public boolean deleteIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
+    assertInventoryAndDataciteEnabled(user);
+
     boolean result = false;
-    assertDataCiteConnectorEnabled();
     ApiInventoryDOI identifier = identifierMgr.getIdentifierById(identifierId);
     Validate.isTrue(
         identifier.getState().equals("draft"),
@@ -109,8 +139,8 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public ApiInventoryDOI publishIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
+    assertInventoryAndDataciteEnabled(user);
 
-    assertDataCiteConnectorEnabled();
     InventoryRecord invRec = retrieveInvRecByIdentifierId(identifierId, user);
     return identifierMgr.publishIdentifier(invRec.getOid(), user).getIdentifiers().get(0);
   }
@@ -118,8 +148,8 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public ApiInventoryDOI retractIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
+    assertInventoryAndDataciteEnabled(user);
 
-    assertDataCiteConnectorEnabled();
     InventoryRecord invRec = retrieveInvRecByIdentifierId(identifierId, user);
     return identifierMgr.retractIdentifier(invRec.getOid(), user).getIdentifiers().get(0);
   }
@@ -129,10 +159,21 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     return dataCiteConnector.testDataCiteConnection();
   }
 
+  private void assertInventoryAndDataciteEnabled(User user) {
+    assertInventoryAvailable(user);
+    assertDataCiteConnectorEnabled();
+  }
+
   private void assertDataCiteConnectorEnabled() {
     if (dataCiteConnector == null || !dataCiteConnector.isDataCiteConfiguredAndEnabled()) {
       throw new UnsupportedOperationException(
           "IGSN integration is not enabled on this RSpace instance.");
+    }
+  }
+
+  private void assertInventoryAvailable(User user) {
+    if (!systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.INVENTORY_AVAILABLE)) {
+      throw new UnsupportedOperationException("Inventory is not enabled on this RSpace instance.");
     }
   }
 

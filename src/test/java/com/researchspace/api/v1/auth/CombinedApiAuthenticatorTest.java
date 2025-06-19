@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.model.User;
+import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.ApiAvailabilityHandler;
 import org.junit.Rule;
@@ -31,42 +33,58 @@ public class CombinedApiAuthenticatorTest {
   MockHttpServletRequest mockRequest;
 
   @Test
-  public void testOauthAuthoriseOK() {
+  public void testOAuthAuthoriseOK() {
     mockRequest = new MockHttpServletRequest();
+    setMockRequestAuthorizationHeader();
     User user = TestFactory.createAnyUser("testOauthUser");
     when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
     when(oAuthAuthenticator.authenticate(mockRequest)).thenReturn(user);
 
-    setAuthorizationHeader();
+    /* run authenticator code with request using internal UI token */
+    user.setAuthenticatedBy(UserAuthenticationMethod.UI_OAUTH_TOKEN);
     User authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
     assertEquals(user, authenticatedUser);
-
     verifyNoInteractions(apiKeyAuthenticator);
-    /* currently no event on oauth token usage, only on generation */
     verifyNoInteractions(analyticsManager);
+
+    /* try again, with request being authenticated by external API oauth token, but
+     * also with system setting not allowing external oauth connections  */
+    user.setAuthenticatedBy(UserAuthenticationMethod.API_OAUTH_TOKEN);
+    when(apiAvailabilityHandler.isOAuthAccessAllowed(user)).thenReturn(false);
+    assertThrows(
+        ApiAuthenticationException.class, () -> combinedApiAuthenticator.authenticate(mockRequest));
+    verifyNoInteractions(apiKeyAuthenticator);
+    verifyNoInteractions(analyticsManager);
+
+    /* try again, now with system setting allowing external oauth connections */
+    when(apiAvailabilityHandler.isOAuthAccessAllowed(user)).thenReturn(true);
+    authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
+    assertEquals(user, authenticatedUser);
+    verifyNoInteractions(apiKeyAuthenticator);
+    verify(analyticsManager, times(1)).publicApiUsed(eq(user), eq(mockRequest));
   }
 
   @Test
   public void testApiKeyAuthoriseOK() {
     mockRequest = new MockHttpServletRequest();
+    setMockRequestApiKeyHeader();
     User user = TestFactory.createAnyUser("testApiKeyUser");
     when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
     when(apiAvailabilityHandler.isApiAvailableForUser(user)).thenReturn(true);
     when(apiKeyAuthenticator.authenticate(mockRequest)).thenReturn(user);
 
-    setApiKeyHeader();
     User authenticatedUser = combinedApiAuthenticator.authenticate(mockRequest);
     assertEquals(user, authenticatedUser);
 
     verifyNoInteractions(oAuthAuthenticator);
-    verify(analyticsManager, times(1)).apiAccessed(eq(user), eq(true), eq(mockRequest));
+    verify(analyticsManager, times(1)).publicApiUsed(eq(user), eq(mockRequest));
   }
 
-  private void setApiKeyHeader() {
+  private void setMockRequestApiKeyHeader() {
     mockRequest.addHeader("apiKey", "12345");
   }
 
-  private void setAuthorizationHeader() {
+  private void setMockRequestAuthorizationHeader() {
     mockRequest.addHeader("Authorization", "Bearer 54321");
   }
 }

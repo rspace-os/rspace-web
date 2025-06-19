@@ -1,0 +1,8 @@
+// @flow
+
+import ApiServiceBase from "./ApiServiceBase";
+
+declare const ElnApiService: ApiServiceBase;
+
+export default ElnApiService;
+

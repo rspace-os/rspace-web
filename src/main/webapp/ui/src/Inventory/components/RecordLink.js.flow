@@ -1,0 +1,21 @@
+//@flow
+
+import { type Node } from "react";
+import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
+
+declare export function RecordLink({|
+  record: InventoryRecord,
+  overflow?: boolean,
+  newTab?: boolean,
+|}): Node;
+
+declare export function TopLink({|
+  overflow?: boolean,
+|}): Node;
+
+declare export function CurrentRecord({|
+  record: InventoryRecord,
+  overflow?: boolean,
+|}): Node;
+
+declare export function InTrash(): Node;

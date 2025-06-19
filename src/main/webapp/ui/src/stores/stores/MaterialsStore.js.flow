@@ -1,0 +1,79 @@
+// @flow
+
+import InvApiService from "../../common/InvApiService";
+import { mkAlert } from "../contexts/Alert";
+import {
+  ListOfMaterials,
+  type ListOfMaterialsAttrs,
+  type ListOfMaterialsId,
+  type ElnFieldId,
+  type ElnDocumentId,
+} from "../models/MaterialsModel";
+import type { RootStore } from "./RootStore";
+import {
+  action,
+  computed,
+  observable,
+  makeObservable,
+  runInAction,
+} from "mobx";
+import RsSet, { unionWith } from "../../util/set";
+import { type InventoryRecord } from "../definitions/InventoryRecord";
+import {
+  IsInvalid,
+  IsValid,
+  type ValidationResult,
+} from "../../components/ValidatingSubmitButton";
+
+type FieldLists = Map<ElnFieldId, Array<ListOfMaterials>>;
+type DocumentLists = Map<ElnDocumentId, Array<ListOfMaterials>>;
+
+declare export default class MaterialsStore {
+  rootStore: RootStore;
+  loading: boolean;
+  originalList: ?ListOfMaterials;
+  currentList: ?ListOfMaterials;
+  fieldLists: FieldLists;
+  documentLists: DocumentLists;
+  setupPromise: ?Promise<void>;
+  canEdit: ?boolean;
+
+  constructor(rootStore: RootStore): void;
+
+  setup(): Promise<void>;
+
+  setLoading(value: boolean): void;
+
+  getDocumentMaterialsListings(documentId: ElnDocumentId): Promise<void>;
+
+  getFieldMaterialsListings(fieldId: ElnFieldId): Promise<void>;
+
+  getMaterialsListing(id: ListOfMaterialsId): Promise<ListOfMaterials>;
+
+  newListOfMaterials(elnFieldId: ElnFieldId): void;
+
+  replaceListInField(list: ListOfMaterials, fieldId: ElnFieldId): void;
+
+  setCurrentList(list: ?ListOfMaterials): void;
+
+  get isListValid(): boolean;
+
+  get isListEditing(): boolean;
+
+  get isListNew(): boolean;
+
+  get isListExisting(): boolean;
+
+  get hasListChanged(): boolean;
+
+  get hasListEnoughLeft(): boolean;
+
+  fetchCanEdit(lomId: ListOfMaterialsId): Promise<boolean>;
+
+  get isCurrentListUnchanged(): boolean;
+
+  get cantSaveCurrentList(): ValidationResult;
+
+  get allInvRecordsFromAllDocumentLists(): RsSet<InventoryRecord>;
+}
+

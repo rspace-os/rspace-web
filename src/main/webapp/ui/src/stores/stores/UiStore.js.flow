@@ -1,0 +1,80 @@
+// @flow
+
+import { action, observable, computed, makeObservable } from "mobx";
+import { isMobile } from "react-device-detect";
+import { type Alert } from "../contexts/Alert";
+import type { RootStore } from "./RootStore";
+import { match } from "../../util/Util";
+import theme from "../../theme";
+import type { Node } from "react";
+import { type Panel } from "../../util/types";
+import { pick } from "../../util/unsafeUtils";
+
+type ConfirmationDialogProps = {
+  title: Node,
+  message: Node,
+  yesLabel: string,
+  noLabel: string,
+  yes: () => void,
+  no: () => void,
+  confirmationSpinner: boolean,
+};
+
+declare const breakpoints: { [string]: symbol };
+
+declare export default class UiStore {
+  rootStore: RootStore;
+  sidebarOpen: boolean;
+  visiblePanel: "left" | "right";
+  infoVisible: boolean;
+  dialogVisiblePanel: "left" | "right";
+  confirmPageNavigation: boolean;
+  confirmationDialogProps: ?ConfirmationDialogProps;
+  viewportSize: $Values<typeof breakpoints>;
+  dirty: boolean;
+  discardChangesCallback: () => Promise<void>;
+  addAlert: (Alert) => void;
+  removeAlert: (Alert) => void;
+  recentBatchEditExpiryCheck: ?boolean;
+
+  constructor(rootStore: RootStore): UiStore;
+
+  updateViewportSize(): void;
+
+  get isVerySmall(): boolean;
+
+  get isLarge(): boolean;
+
+  get isTouchDevice(): boolean;
+
+  get isSmall(): boolean;
+
+  get alwaysVisibleSidebar(): boolean;
+
+  toggleSidebar(isOpen?: boolean): void;
+
+  setVisiblePanel(panel: Panel): void;
+
+  setDialogVisiblePanel(panel: Panel): void;
+
+  toggleInfo(value?: boolean): void;
+
+  setPageNavigationConfirmation(value: boolean): void;
+
+  confirm(
+    title: Node,
+    message: Node,
+    yesLabel: string,
+    noLabel: string,
+    onConfirm?: () => Promise<void>
+  ): Promise<boolean>;
+
+  setDirty(discardChangesCallback: () => Promise<void>): void;
+
+  unsetDirty(): void;
+
+  confirmDiscardAnyChanges(): Promise<boolean>;
+
+  closeConfirmationDialog(): void;
+}
+

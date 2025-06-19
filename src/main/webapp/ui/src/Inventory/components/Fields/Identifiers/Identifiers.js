@@ -2,15 +2,12 @@
 
 import React, {
   useState,
-  useEffect,
   type Node,
   type ComponentType,
-  type ElementProps,
   useContext,
 } from "react";
 import { observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
-import { withStyles } from "Styles";
 import useStores from "../../../../stores/use-stores";
 import {
   match,
@@ -19,21 +16,15 @@ import {
 } from "../../../../util/Util";
 import docLinks from "../../../../assets/DocLinks";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
-import AddButton from "../../../../components/AddButton";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import Alert from "@mui/material/Alert";
-import Badge from "@mui/material/Badge";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import CardHeader from "@mui/material/CardHeader";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
-import {
-  type InventoryRecord,
-  type State,
-} from "../../../../stores/definitions/InventoryRecord";
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import {
   type Identifier,
@@ -53,6 +44,28 @@ import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import PublishButton from "./PublishButton";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
+import Stack from "@mui/material/Stack";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import { ThemeProvider } from "@mui/material/styles";
+import createAccentedTheme from "../../../../accentedTheme";
+import { ACCENT_COLOR } from "../../../../assets/branding/rspace/inventory";
+import ValidatingSubmitButton, {
+  IsValid,
+  IsInvalid,
+} from "../../../../components/ValidatingSubmitButton";
+import IgsnTable from "../../../Identifiers/IGSN/IgsnTable";
+import RsSet from "../../../../util/set";
+import {
+  type Identifier as IdentifierInTable,
+  useIdentifiers,
+} from "../../../useIdentifiers";
+import AlertTitle from "@mui/material/AlertTitle";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
+import AnalyticsContext from "../../../../stores/contexts/Analytics";
 
 const useStyles = makeStyles()((theme) => ({
   primary: {
@@ -64,46 +77,6 @@ const useStyles = makeStyles()((theme) => ({
   bottomSpaced: { marginBottom: theme.spacing(1) },
   highlight: { color: theme.palette.modifiedHighlight },
 }));
-
-const CustomCardHeader = withStyles<
-  ElementProps<typeof CardHeader>,
-  { root: string, action: string }
->((theme) => ({
-  root: {
-    padding: theme.spacing(0, 0, 0, 1.5),
-  },
-  action: {
-    margin: 0,
-  },
-}))(CardHeader);
-
-const ToggleButton = ({
-  identifierCount,
-  open,
-  setOpen,
-}: {
-  identifierCount?: number,
-  open: boolean,
-  setOpen: (boolean) => void,
-}): Node => (
-  <CustomTooltip
-    title={match<void, string>([
-      [() => identifierCount === 0, "No current identifiers"],
-      [() => open, "Hide identifiers listing"],
-      [() => true, "Show identifiers listing"],
-    ])()}
-  >
-    <IconButton
-      onClick={() => setOpen(!open)}
-      disabled={identifierCount === 0}
-      aria-label="Toggle identifiers section"
-    >
-      <Badge color="primary" badgeContent={identifierCount}>
-        <ExpandCollapseIcon open={open} />
-      </Badge>
-    </IconButton>
-  </CustomTooltip>
-);
 
 const IdentifierWrapper = observer(
   ({
@@ -603,32 +576,102 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
   }
 );
 
-const AddButtonWrapper = ({
-  label,
-  disabled,
-  state,
-  onClick,
-}: {
-  label: string,
-  disabled: boolean,
-  state: State,
-  onClick: () => void,
-}): Node => (
-  <label>
-    <AddButton
-      disabled={disabled}
-      title={
-        state === "create"
-          ? "You cannot add an Identifier to an item that has not been created yet. Please save the item first"
-          : disabled
-          ? "You cannot add another Identifier to this item (one already exists)"
-          : "Press to add an IGSN Identifier"
-      }
-      onClick={onClick}
-      datatestid="identifier-add-button"
-    />
-    {label}
-  </label>
+const AssignDialog = observer(
+  ({
+    open,
+    onClose,
+    recordToAssignTo,
+  }: {|
+    open: boolean,
+    onClose: () => void,
+    recordToAssignTo: InventoryRecord,
+  |}): Node => {
+    const { assignIdentifier } = useIdentifiers();
+    const [selectedIgsns, setSelectedIgsns] = React.useState<
+      RsSet<IdentifierInTable>
+    >(new RsSet([]));
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+    const { trackEvent } = useContext(AnalyticsContext);
+
+    return (
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+        <Dialog
+          open={open}
+          onClose={() => {
+            setSelectedIgsns(new RsSet([]));
+            onClose();
+          }}
+          fullWidth
+          maxWidth="lg"
+          fullScreen={fullScreen}
+        >
+          <DialogTitle>Link existing IGSN ID</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2}>
+              <Typography>
+                Select an existing IGSN ID to link to this item.
+              </Typography>
+              <IgsnTable
+                selectedIgsns={selectedIgsns}
+                setSelectedIgsns={setSelectedIgsns}
+                disableMultipleRowSelection
+                controlDefaults={{
+                  isAssociated: false,
+                  state: "draft",
+                }}
+              />
+              <Alert severity="warning">
+                <strong>This action cannot be undone!</strong> Once an IGSN ID
+                has been associated with an item, it cannot be later
+                re-associated with a different Inventory item; a new IGSN ID
+                will have to be created instead.
+              </Alert>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setSelectedIgsns(new RsSet([]));
+                onClose();
+              }}
+              color="primary"
+            >
+              Cancel
+            </Button>
+            <ValidatingSubmitButton
+              loading={false}
+              validationResult={selectedIgsns.only
+                .map((igsn) =>
+                  igsn.associatedGlobalId !== null
+                    ? IsInvalid(
+                        "The selected IGSN ID is already assigned to another item."
+                      )
+                    : IsValid()
+                )
+                .orElse(IsInvalid("No IGSN ID selected."))}
+              onClick={doNotAwait(async () => {
+                await selectedIgsns.only
+                  .toResult(
+                    () =>
+                      new Error(
+                        "Invalid state: zero or many identifiers are selected"
+                      )
+                  )
+                  .doAsync((igsn) => assignIdentifier(igsn, recordToAssignTo));
+                await recordToAssignTo.fetchAdditionalInfo();
+                setSelectedIgsns(new RsSet([]));
+                onClose();
+                trackEvent("user:assign-existing-igsn");
+              })}
+            >
+              Link
+            </ValidatingSubmitButton>
+          </DialogActions>
+        </Dialog>
+      </ThemeProvider>
+    );
+  }
 );
 
 const IdentifiersCard = observer((): Node => {
@@ -637,42 +680,48 @@ const IdentifiersCard = observer((): Node => {
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   const identifiers = activeResult.identifiers ?? [];
-  const [open, setOpen] = useState(identifiers.length > 0);
-  useEffect(() => {
-    setOpen(identifiers.length > 0);
-  }, [identifiers.length]);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const { trackEvent } = useContext(AnalyticsContext);
+
   return (
-    <Card variant="outlined">
-      <AddButtonWrapper
-        /*
-         * may have more than one in the future, but only one now
-         * if no id, button is disabled (prevent mint and cancel)
-         * if no permission, section is not rendered
-         */
-        label="Create a new Identifier"
-        disabled={activeResult.state === "create" || identifiers.length > 0}
-        state={activeResult.state}
-        onClick={doNotAwait(() => activeResult.addIdentifier())}
-      />
-      <CustomCardHeader
-        subheader={`${
-          open ? "Hide" : "Show"
-        } all Identifiers associated with this item.`}
-        subheaderTypographyProps={{ variant: "body2" }}
-        action={
-          <>
-            <ToggleButton
-              identifierCount={identifiers.length}
-              open={open}
-              setOpen={setOpen}
-            />
-          </>
-        }
-      />
-      <Collapse in={open}>
-        <IdentifiersList activeResult={activeResult} />
-      </Collapse>
-    </Card>
+    <>
+      {activeResult.state === "create" && (
+        <Alert severity="info">
+          This item has not been created yet. Please save the item first.
+        </Alert>
+      )}
+      {activeResult.state !== "create" && identifiers.length === 0 && (
+        <Stack direction="row" spacing={1}>
+          <Button
+            color="primary"
+            variant="outlined"
+            onClick={doNotAwait(() => activeResult.addIdentifier())}
+          >
+            Create new IGSN ID
+          </Button>
+          <Button
+            color="primary"
+            variant="outlined"
+            onClick={() => {
+              setAssignDialogOpen(true);
+              trackEvent("user:open:assign-existing-igsn-dialog");
+            }}
+          >
+            Link existing IGSN ID
+          </Button>
+          <AssignDialog
+            recordToAssignTo={activeResult}
+            open={assignDialogOpen}
+            onClose={() => setAssignDialogOpen(false)}
+          />
+        </Stack>
+      )}
+      {identifiers.length > 0 && (
+        <Card variant="outlined">
+          <IdentifiersList activeResult={activeResult} />
+        </Card>
+      )}
+    </>
   );
 });
 

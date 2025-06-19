@@ -1,0 +1,15 @@
+//@flow
+
+import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
+
+declare export const containerAttrs: (
+  attrs?: $ReadOnly<Partial<ContainerAttrs>>
+) => ContainerAttrs;
+
+declare export const makeMockContainer: (
+  attrs?: $ReadOnly<Partial<ContainerAttrs>>
+) => ContainerModel;
+
+declare export const benchAttrs: ($ReadOnly<Partial<ContainerAttrs>>) => ContainerAttrs;
+
+declare export const makeMockBench: (attrs: Partial<ContainerAttrs>) => ContainerModel;

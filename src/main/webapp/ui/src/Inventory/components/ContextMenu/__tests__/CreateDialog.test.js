@@ -17,6 +17,7 @@ import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
 import userEvent from "@testing-library/user-event";
+import AlertContext, { type Alert } from "../../../../stores/contexts/Alert";
 
 jest.mock("../../../../stores/stores/RootStore", () => () => ({
   unitStore: {
@@ -27,7 +28,16 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
     createNewContainer: () => {},
     createNewSample: () => {},
   },
+  uiStore: {
+    addAlert: () => {},
+  },
+  authStore: {
+    isSynchronizing: false,
+  },
 }));
+
+// Mock AlertContext
+const mockAddAlert = jest.fn<[Alert], void>();
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -40,6 +50,7 @@ describe("CreateDialog", () => {
     test("Subsamples", async () => {
       const user = userEvent.setup();
       const subsample = makeMockSubSample({});
+      jest.spyOn(subsample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <CreateDialog
@@ -51,7 +62,7 @@ describe("CreateDialog", () => {
       );
 
       await user.click(
-        screen.getByRole("radio", { name: /Subsample, by splitting/ })
+        await screen.findByRole("radio", { name: /Subsample, by splitting/ })
       );
 
       expect(
@@ -62,18 +73,21 @@ describe("CreateDialog", () => {
     test("Subsamples, with too many copies", async () => {
       const user = userEvent.setup();
       const subsample = makeMockSubSample({});
+      jest.spyOn(subsample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={subsample}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={subsample}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       await user.click(
-        screen.getByRole("radio", { name: /Subsample, by splitting/ })
+        await screen.findByRole("radio", { name: /Subsample, by splitting/ })
       );
 
       await user.type(
@@ -86,6 +100,7 @@ describe("CreateDialog", () => {
     test("Samples, when there is one subsample", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
+      jest.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <CreateDialog
@@ -97,7 +112,7 @@ describe("CreateDialog", () => {
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
         })
       ).toBeEnabled();
@@ -116,18 +131,21 @@ describe("CreateDialog", () => {
     test("Samples, with too many copies", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
+      jest.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={sample}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={sample}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       await user.click(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
         })
       );
@@ -139,22 +157,25 @@ describe("CreateDialog", () => {
 
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
-    test("Samples, when there are multiple subsamples", () => {
+    test("Samples, when there are multiple subsamples", async () => {
       const sample = makeMockSample({
         subSamples: [subsampleAttrs(), subsampleAttrs()],
       });
+      jest.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={sample}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={sample}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
         })
       ).toBeDisabled();
@@ -167,20 +188,21 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
-      // $FlowExpectedError[cannot-write]
-      container.fetchAdditionalInfo = jest.fn();
+      jest.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={container}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={container}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Container/,
         })
       ).toBeEnabled();
@@ -203,23 +225,26 @@ describe("CreateDialog", () => {
      * near enough impossible due to the need for extensive mocking and
      * accessibility issues
      */
-    test("Cannot store containers", () => {
+    test("Cannot store containers", async () => {
       const container = makeMockContainer({
         canStoreContainers: false,
         canStoreSamples: true,
       });
+      jest.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={container}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={container}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Container/,
         })
       ).toBeDisabled();
@@ -232,20 +257,21 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
-      // $FlowExpectedError[cannot-write]
-      container.fetchAdditionalInfo = jest.fn();
+      jest.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={container}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: jest.fn(),removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={container}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Sample/,
         })
       ).toBeEnabled();
@@ -267,23 +293,26 @@ describe("CreateDialog", () => {
      * near enough impossible due to the need for extensive mocking and
      * accessibility issues
      */
-    test("Cannot store samples", () => {
+    test("Cannot store samples", async () => {
       const container = makeMockContainer({
         canStoreContainers: true,
         canStoreSamples: false,
       });
+      jest.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={container}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={container}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Sample/,
         })
       ).toBeDisabled();
@@ -293,18 +322,21 @@ describe("CreateDialog", () => {
     test("Success case", async () => {
       const user = userEvent.setup();
       const template = makeMockTemplate({});
+      jest.spyOn(template, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={template}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={template}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Sample/,
         })
       ).toBeEnabled();
@@ -320,18 +352,21 @@ describe("CreateDialog", () => {
     test("No fields", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
+      jest.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={sample}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={sample}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Template/,
         })
       ).toBeEnabled();
@@ -354,18 +389,21 @@ describe("CreateDialog", () => {
     test("Name that's too short", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
+      jest.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={sample}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={sample}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Template/,
         })
       ).toBeEnabled();
@@ -385,18 +423,21 @@ describe("CreateDialog", () => {
     test("Success case", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
+      jest.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={sample}
-            open={true}
-            onClose={() => {}}
-          />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert,removeAlert: jest.fn() }}>
+            <CreateDialog
+              existingRecord={sample}
+              open={true}
+              onClose={() => {}}
+            />
+          </AlertContext.Provider>
         </ThemeProvider>
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Subsamples, by creating new ones/,
         })
       ).toBeEnabled();
@@ -434,6 +475,7 @@ describe("CreateDialog", () => {
     test("Clearing the quantity field disables the submit button", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
+      jest.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <CreateDialog
@@ -445,7 +487,7 @@ describe("CreateDialog", () => {
       );
 
       expect(
-        screen.getByRole("radio", {
+        await screen.findByRole("radio", {
           name: /Subsamples, by creating new ones/,
         })
       ).toBeEnabled();

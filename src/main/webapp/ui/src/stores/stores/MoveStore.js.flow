@@ -1,0 +1,91 @@
+// @flow
+
+import {
+  action,
+  observable,
+  computed,
+  makeObservable,
+  runInAction,
+} from "mobx";
+import ApiService, {
+  type BulkEndpointRecordSerialisation,
+} from "../../common/InvApiService";
+import type { RootStore } from "./RootStore";
+import ContainerModel from "../models/ContainerModel";
+import SubSampleModel from "../models/SubSampleModel";
+import SampleModel from "../models/SampleModel";
+import { mkAlert } from "../contexts/Alert";
+import {
+  handleDetailedErrors,
+  handleDetailedSuccesses,
+} from "../../util/alerts";
+import MemoisedFactory from "../models/Factory/MemoisedFactory";
+import Search from "../models/Search";
+import InventoryBaseRecord from "../models/InventoryBaseRecord";
+import { type GlobalId, getSavedGlobalId } from "../definitions/BaseRecord";
+import { type Container, type Location } from "../definitions/Container";
+import {
+  type InventoryRecord,
+  recordTypeToApiRecordType,
+} from "../definitions/InventoryRecord";
+import { type Panel } from "../../util/types";
+import { Optional } from "../../util/optional";
+
+type SerialisedRecord =
+  | {|
+      ...$Exact<BulkEndpointRecordSerialisation>,
+      globalId: ?GlobalId,
+      removeFromParentContainerRequest: true,
+    |}
+  | {|
+      ...$Exact<BulkEndpointRecordSerialisation>,
+      globalId: ?GlobalId,
+      parentContainers: $ReadOnlyArray<{ ... }>,
+      parentLocation?: { ... },
+    |};
+
+declare export default class MoveStore {
+  rootStore: RootStore;
+  loading: boolean;
+  isMoving: boolean;
+  submitting: "NO" | "MAKE-TOP" | "TO-OTHER";
+  selectedResults: Array<ContainerModel | SubSampleModel>;
+  search: ?Search;
+
+  constructor(rootStore: RootStore): MoveStore;
+
+  get results(): ?Array<InventoryRecord>;
+
+  get activeResult(): ?Container;
+
+  get targetLocations(): ?Array<Location>;
+
+  get selectedResultsIncludesContainers(): boolean;
+
+  get selectedResultsIncludesSubSamples(): boolean;
+
+  setIsMoving(val: boolean): Promise<void>;
+
+  setTargetContainer(c: ?Container): Promise<void>;
+
+  clearLocationsWithContentBeingMovedOut(container: Container): void;
+
+  setSelectedResults(records: Array<InventoryRecord>): void;
+
+  moveSelected(removeParentContainers?: boolean): Promise<void>;
+
+  moveRecords(records: $ReadOnlyArray<SerialisedRecord>): Promise<void>;
+
+  resetGrid(): void;
+
+  get globalIdsOfSelectedResults(): Set<GlobalId>;
+
+  isRecordMoving(record: InventoryBaseRecord): boolean;
+
+  refreshAfterMove(): Promise<void>;
+
+  setActivePane(panel: Panel): void;
+
+  get sourceIsAlsoDestination(): boolean;
+}
+

@@ -59,6 +59,7 @@ import {
 import { menuIDs } from "../../../util/menuIDs";
 import Search from "../../../stores/models/Search";
 import Collapse from "@mui/material/Collapse";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 /*
  * The create dialog allows users to create new Inventory records with respect
@@ -475,6 +476,35 @@ function CreateDialog({
   const [activeStep, setActiveStep] = React.useState<number>(0);
   const [submitting, setSubmitting] = React.useState(false);
   const firstStepId = React.useId();
+  const [loading, setLoading] = React.useState(true);
+  const { addAlert } = React.useContext(AlertContext);
+
+  /*
+   * When the dialog opens, we fetch additional information about the existing
+   * record, including most importantly in the case of samples, the fields. This
+   * is necessary because the fields are not fetched by default when the record
+   * is initially loaded and the create dialog needs them to copy them to the
+   * new template.
+   */
+  React.useEffect(() => {
+    if (open) {
+      setLoading(true);
+      existingRecord
+        .fetchAdditionalInfo()
+        .catch((error) => {
+          addAlert(
+            mkAlert({
+              message: `Failed to load additional information: ${error.message}`,
+              variant: "error",
+            })
+          );
+          onClose();
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [open, existingRecord]);
 
   const handleSubmit = () => {
     void (async () => {
@@ -514,133 +544,141 @@ function CreateDialog({
           />
         </DialogTitle>
         <DialogContent>
-          <Stepper activeStep={activeStep} orientation="vertical">
-            <Step>
-              <StepLabel
-                optional={
-                  selectedCreateOptionIndex !== null && (
-                    <Button
-                      variant="outlined"
-                      sx={{ mt: 0.5 }}
-                      onClick={() => {
-                        setSelectedCreateOptionIndex(null);
-                        setActiveStep(0);
+          {loading ? (
+            <Box sx={{ textAlign: "center", p: 2 }}>
+              <Typography variant="body1">Loading...</Typography>
+            </Box>
+          ) : (
+            <Stepper activeStep={activeStep} orientation="vertical">
+              <Step>
+                <StepLabel
+                  optional={
+                    selectedCreateOptionIndex !== null && (
+                      <Button
+                        variant="outlined"
+                        sx={{ mt: 0.5 }}
+                        onClick={() => {
+                          setSelectedCreateOptionIndex(null);
+                          setActiveStep(0);
+                        }}
+                      >
+                        Change
+                      </Button>
+                    )
+                  }
+                >
+                  <label
+                    htmlFor={firstStepId}
+                    style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}
+                  >
+                    Type of item to create
+                    {selectedCreateOptionIndex !== null && (
+                      <Typography variant="body2">
+                        {
+                          existingRecord.createOptions[
+                            selectedCreateOptionIndex
+                          ].label
+                        }
+                      </Typography>
+                    )}
+                  </label>
+                </StepLabel>
+                {/*
+                 * We disable the animation here when going back to the first
+                 * step otherwise the UI is pretty janky when the user taps the
+                 * "Back" or "Change" buttons: the parameter steps below
+                 * immediately unmount but the slower animation of this step
+                 * showing caused the content to jump up and down. By disabling
+                 * the animation we avoid this jankiness.
+                 *
+                 * Various attempts were made to animate the parameters step
+                 * closing but due to the way that the Stepper component works
+                 * this was difficult. Keeping them in the DOM and hiding/showing
+                 * them with Collapse instead of using conditional rendering
+                 * resulted in the step numbers incrementing across the various
+                 * options so that if the first option had two parameters the
+                 * parameter for the second option would be displayed with a
+                 * number 3.
+                 */}
+                <StepContent
+                  transitionDuration={selectedCreateOptionIndex ? 300 : 0}
+                >
+                  <FormControl>
+                    <RadioGroup
+                      id={firstStepId}
+                      value={selectedCreateOptionIndex}
+                      onChange={(_event, index) => {
+                        setSelectedCreateOptionIndex(index);
+                        setActiveStep(1);
                       }}
                     >
-                      Change
-                    </Button>
-                  )
-                }
-              >
-                <label
-                  htmlFor={firstStepId}
-                  style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}
-                >
-                  Type of item to create
-                  {selectedCreateOptionIndex !== null && (
-                    <Typography variant="body2">
-                      {
-                        existingRecord.createOptions[selectedCreateOptionIndex]
-                          .label
+                      {existingRecord.createOptions.length === 0 && (
+                        <NoValue label="No options available." />
+                      )}
+                      {existingRecord.createOptions.map(
+                        ({ label, explanation, disabled }, index) => (
+                          <FormControlLabel
+                            key={index}
+                            value={index}
+                            control={
+                              <Radio
+                                sx={{
+                                  // align radio button with option heading
+                                  mb: "auto",
+                                  p: 0.5,
+                                  mr: 0.5,
+                                }}
+                              />
+                            }
+                            disabled={disabled}
+                            label={
+                              <>
+                                <OptionHeading>{label}</OptionHeading>
+                                <OptionExplanation>
+                                  {explanation}
+                                </OptionExplanation>
+                              </>
+                            }
+                            sx={{ mt: 2 }}
+                          />
+                        )
+                      )}
+                    </RadioGroup>
+                  </FormControl>
+                </StepContent>
+              </Step>
+              {selectedCreateOptionIndex !== null &&
+                existingRecord.createOptions[selectedCreateOptionIndex]
+                  .parameters &&
+                existingRecord.createOptions[
+                  selectedCreateOptionIndex
+                ].parameters.map(
+                  ({ label, explanation, state, validState }, index) => (
+                    <ParameterField
+                      label={label}
+                      explanation={explanation}
+                      state={state}
+                      validState={validState}
+                      activeStep={activeStep}
+                      setActiveStep={(s) => {
+                        setActiveStep(s);
+                        if (s === 0) setSelectedCreateOptionIndex(null);
+                      }}
+                      showNextButton={
+                        index <
+                        (
+                          existingRecord.createOptions[
+                            selectedCreateOptionIndex
+                          ].parameters ?? []
+                        ).length -
+                          1
                       }
-                    </Typography>
-                  )}
-                </label>
-              </StepLabel>
-              {/*
-               * We disable the animation here when going back to the first
-               * step otherwise the UI is pretty janky when the user taps the
-               * "Back" or "Change" buttons: the parameter steps below
-               * immediately unmount but the slower animation of this step
-               * showing caused the content to jump up and down. By disabling
-               * the animation we avoid this jankiness.
-               *
-               * Various attempts were made to animate the parameters step
-               * closing but due to the way that the Stepper component works
-               * this was difficult. Keeping them in the DOM and hiding/showing
-               * them with Collapse instead of using conditional rendering
-               * resulted in the step numbers incrementing across the various
-               * options so that if the first option had two parameters the
-               * parameter for the second option would be displayed with a
-               * number 3.
-               */}
-              <StepContent
-                transitionDuration={selectedCreateOptionIndex ? 300 : 0}
-              >
-                <FormControl>
-                  <RadioGroup
-                    id={firstStepId}
-                    value={selectedCreateOptionIndex}
-                    onChange={(_event, index) => {
-                      setSelectedCreateOptionIndex(index);
-                      setActiveStep(1);
-                    }}
-                  >
-                    {existingRecord.createOptions.length === 0 && (
-                      <NoValue label="No options available." />
-                    )}
-                    {existingRecord.createOptions.map(
-                      ({ label, explanation, disabled }, index) => (
-                        <FormControlLabel
-                          key={index}
-                          value={index}
-                          control={
-                            <Radio
-                              sx={{
-                                // align radio button with option heading
-                                mb: "auto",
-                                p: 0.5,
-                                mr: 0.5,
-                              }}
-                            />
-                          }
-                          disabled={disabled}
-                          label={
-                            <>
-                              <OptionHeading>{label}</OptionHeading>
-                              <OptionExplanation>
-                                {explanation}
-                              </OptionExplanation>
-                            </>
-                          }
-                          sx={{ mt: 2 }}
-                        />
-                      )
-                    )}
-                  </RadioGroup>
-                </FormControl>
-              </StepContent>
-            </Step>
-            {selectedCreateOptionIndex !== null &&
-              existingRecord.createOptions[selectedCreateOptionIndex]
-                .parameters &&
-              existingRecord.createOptions[
-                selectedCreateOptionIndex
-              ].parameters.map(
-                ({ label, explanation, state, validState }, index) => (
-                  <ParameterField
-                    label={label}
-                    explanation={explanation}
-                    state={state}
-                    validState={validState}
-                    activeStep={activeStep}
-                    setActiveStep={(s) => {
-                      setActiveStep(s);
-                      if (s === 0) setSelectedCreateOptionIndex(null);
-                    }}
-                    showNextButton={
-                      index <
-                      (
-                        existingRecord.createOptions[selectedCreateOptionIndex]
-                          .parameters ?? []
-                      ).length -
-                        1
-                    }
-                    key={index}
-                  />
-                )
-              )}
-          </Stepper>
+                      key={index}
+                    />
+                  )
+                )}
+            </Stepper>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>

@@ -33,6 +33,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
 
     // let's disable API on the server
     disableGlobalApiAccess();
+    disableApiOAuthAuthentication();
 
     // missing parameters (grant_type) are reported first
     mockMvc
@@ -60,8 +61,27 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
                     "Access to API has been disabled by RSpace administrator.",
                     result.getResolvedException().getMessage()));
 
-    // next, report invalid value for parameter grant_type
+    // re-enable global API access
     enableGlobalApiAccess();
+
+    // disabled OAuth authentication is reported next
+    mockMvc
+        .perform(
+            post("/oauth/token")
+                .param("client_id", clientId)
+                .param("client_secret", clientSecret)
+                .param("grant_type", "invalid"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(
+            result ->
+                assertEquals(
+                    "OAuth authentication has been disabled by RSpace administrator.",
+                    result.getResolvedException().getMessage()));
+
+    // re-enable OAuth authentication
+    enableApiOAuthAuthentication();
+
+    // next, report invalid value for parameter grant_type
     mockMvc
         .perform(
             post("/oauth/token")
@@ -188,6 +208,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
 
     OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
     enableGlobalApiAccess();
+    enableApiOAuthAuthentication();
 
     MvcResult result =
         mockMvc
@@ -221,8 +242,23 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
             .andReturn();
     jsonResponse = result.getResponse().getContentAsString();
     response = parseOAuthTokenResponse(jsonResponse);
-
     assertNotEquals(oldAccessToken, response.getAccessToken());
     assertNotEquals(oldRefreshToken, response.getRefreshToken());
+
+    // confirm that refresh token request won't work after disabling oauth authentication
+    disableApiOAuthAuthentication();
+    mockMvc
+        .perform(
+            post("/oauth/token")
+                .param("client_id", app.getClientId())
+                .param("client_secret", app.getUnhashedClientSecret())
+                .param("grant_type", "refresh_token")
+                .param("refresh_token", response.getRefreshToken()))
+        .andExpect(status().isUnauthorized())
+        .andExpect(
+            res ->
+                assertEquals(
+                    "OAuth authentication has been disabled by RSpace administrator.",
+                    res.getResolvedException().getMessage()));
   }
 }

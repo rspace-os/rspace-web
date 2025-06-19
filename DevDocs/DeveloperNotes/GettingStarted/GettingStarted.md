@@ -97,7 +97,7 @@ ResearchSpace dev team (check 'Build prodRelease-like package' stage script).
 
 #### MariaDB/MySQL initialisation
 
-Take these steps if you do not have MariaDB/MySQL or have a fresh installation of MariaDB/MySQL.
+Take these steps if you do not have MariaDB/MySQL or have a fresh installation of MariaDB/MySQL and ***are using standalone DB instead of docker image***.
 
 ```bash
 # These steps are specific to Linux and MySQL5.7, adapt as needed
@@ -144,7 +144,7 @@ as mysqladmin.
 
 After adding/updating the file and restarting mysql confirm that `SELECT @@sql_mode;` no longer contains the 'ONLY_FULL_GROUP_BY' option.
 
-#### RSpace table setup
+#### RSpace table setup (***for standalone install - ignore this if using docker***)
 
 1.  Make sure MariaDB/MySQL is installed and running on your machine.
 2.  Set up an 'rspacedbuser' user and 'rspace' database on your MariaDB/MySQL using this command:
@@ -157,8 +157,9 @@ mysql -u "root" -p"password" -e "
 "
 ```
 **NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands
-from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`.
+from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`. (Or you may need to just use `'rspacedbuser'` with no host)
 You will know if running the tests/app gets you db authentication error for user `'rspacedbuser'@'localhost'`
+or you see `'Access denied for user 'rspacedbuser'@'%' to database 'rspace'`
 
 **NOTE:** if you subsequently drop the rspace DB, the rspacedbuser user will stay; do not try to recreate the user.
 
@@ -166,8 +167,10 @@ You will know if running the tests/app gets you db authentication error for user
 i.e. do not have `-Dmaven.test.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true`
 in your launch config
 
-At the end of this, you should be able to connect to the rspace database from
+At the end of this, you should be able to connect to a standalone mysql rspace database from
 your command line. with `bash mysql -urspacedbuser -prspacedbpwd rspace`.
+For Mariadb use
+`mariadb -urspacedbuser -prspacedbpwd rspace` (if using docker you need to run this after `docker exec -it rspace-db bash`)
 
 'rspace' database is used for running acceptance tests and the application on localhost.
 
@@ -195,7 +198,11 @@ This just runs plain Junit tests and is much faster to run:
 
 ### Launch RSpace with Maven and Jetty
 
-When starting RSpace for the first time use the following command:
+When starting RSpace for the first time use the following command: 
+
+***(note - you may need to increase memory for NODE when doing `generateReactDist`
+step below : set and export the environmental variable NODE_OPTIONS:
+`export NODE_OPTIONS="--max-old-space-size=8192"`  in .zshrc file for OSX, or .bash_profile for linux)***
 
 ```bash
 mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \

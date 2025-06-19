@@ -218,7 +218,12 @@ const GeoLocationField = ({
               disabled={false}
               value={geoLocationPlace}
               onChange={({ target: { value } }) => {
-                handleUpdateValue(i, "geoLocationPlace", value);
+                runInAction(() => {
+                  geoLocation.geoLocationPlace = value;
+                });
+              }}
+              onBlur={() => {
+                doUpdateIdentifiers();
               }}
               error={false}
               helperText={""}

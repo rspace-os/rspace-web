@@ -1,0 +1,21 @@
+//@flow
+
+import { type PersonAttrs, type Person } from "./Person";
+import { type PersistedBarcodeAttrs, type BarcodeRecord } from "./Barcode";
+import { type InventoryRecord } from "./InventoryRecord";
+import { type DocumentAttrs, type Document } from "./Document";
+import { type IdentifierAttrs, type Identifier } from "./Identifier";
+import { type GlobalId } from "./BaseRecord";
+import InvApiService from "../../common/InvApiService";
+
+export interface Factory {
+  newRecord(any): InventoryRecord;
+
+  newPerson(PersonAttrs): Person;
+  newBarcode(PersistedBarcodeAttrs): BarcodeRecord;
+  newIdentifier(IdentifierAttrs, GlobalId, typeof InvApiService): Identifier;
+  newDocument(DocumentAttrs): Document;
+
+  newFactory(): Factory;
+}
+

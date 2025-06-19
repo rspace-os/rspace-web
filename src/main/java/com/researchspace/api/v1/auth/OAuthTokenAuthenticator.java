@@ -1,7 +1,9 @@
 package com.researchspace.api.v1.auth;
 
 import com.researchspace.model.User;
+import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.OAuthTokenManager;
 import java.util.Optional;
@@ -21,7 +23,13 @@ public class OAuthTokenAuthenticator extends AbstractApiAuthenticator {
       ServiceOperationResult<OAuthToken> subjectRetrieval = tokenManager.authenticate(accessToken);
       User user = null;
       if (subjectRetrieval.isSucceeded()) {
-        user = subjectRetrieval.getEntity().getUser();
+        OAuthToken token = subjectRetrieval.getEntity();
+        boolean isUiToken = OAuthTokenType.UI_TOKEN.equals(token.getTokenType());
+        user = token.getUser();
+        user.setAuthenticatedBy(
+            isUiToken
+                ? UserAuthenticationMethod.UI_OAUTH_TOKEN
+                : UserAuthenticationMethod.API_OAUTH_TOKEN);
       }
       return Optional.ofNullable(user);
     };
