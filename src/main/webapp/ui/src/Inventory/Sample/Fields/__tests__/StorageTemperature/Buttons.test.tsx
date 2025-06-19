@@ -1,8 +1,8 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
+/// <reference types="jest" />
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
@@ -17,28 +17,27 @@ import materialTheme from "../../../../../theme";
 
 jest.mock("@mui/material/Button", () => jest.fn(() => <></>));
 
-const mockFieldOwner = (mockedParts: {|
+const mockFieldOwner = (mockedParts: {
   fieldValues: {
-    storageTempMin: ?Temperature,
-    storageTempMax: ?Temperature,
-    ...
-  },
-  isFieldEditable: () => boolean,
-|}) => ({
-  isFieldEditable: jest.fn<[string], boolean>(),
-  fieldValues: {},
-  setFieldsDirty: jest.fn<
-    [{ storageTempMin: ?Temperature, storageTempMax: ?Temperature }],
-    void
-  >(),
-  canChooseWhichToEdit: false,
-  setFieldEditable: jest.fn<[string, boolean], void>(),
-  noValueLabel: {
-    storageTempMin: null,
-    storageTempMax: null,
-  },
-  ...mockedParts,
-});
+    storageTempMin: Temperature | null;
+    storageTempMax: Temperature | null;
+  };
+  isFieldEditable: () => boolean;
+}) => {
+  const defaults = {
+    isFieldEditable: jest.fn(() => false),
+    fieldValues: {},
+    setFieldsDirty: jest.fn(),
+    canChooseWhichToEdit: false,
+    setFieldEditable: jest.fn(),
+    noValueLabel: {
+      storageTempMin: null,
+      storageTempMax: null,
+    },
+  };
+
+  return { ...defaults, ...mockedParts };
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
