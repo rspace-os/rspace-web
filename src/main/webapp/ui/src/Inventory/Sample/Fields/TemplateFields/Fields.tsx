@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import { type Sample } from "../../../../stores/definitions/Sample";
 import Box from "@mui/material/Box";
@@ -20,13 +18,13 @@ import { type Field } from "../../../../stores/definitions/Field";
 import InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
 import { type GalleryFile } from "../../../../eln/gallery/useGalleryListing";
 
-type FieldsArgs = {|
-  onErrorStateChange: (string, boolean) => void,
+type FieldsArgs = {
+  onErrorStateChange: (fieldName: string, hasError: boolean) => void;
   // The Sample type is to get the `fields`, the InventoryBaseRecord type is for AttachmentField's `fieldOwner` prop
-  sample: Sample & InventoryBaseRecord,
-|};
+  sample: Sample & InventoryBaseRecord;
+};
 
-function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
+function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
   return (sample.fields ?? []).map((field: Field) => {
     const commonProps = {
       disabled: !sample.isFieldEditable("fields"),
@@ -43,7 +41,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
     if (field.type === "attachment") {
       if (typeof field.content === "number")
         throw new Error("Invalid content type");
-      const description: string = field.content;
+      const description = String(field.content);
       return (
         <FormField
           {...commonProps}
@@ -117,7 +115,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
     if (field.type === "date") {
       if (typeof field.content === "number")
         throw new Error("Invalid content type");
-      const value = field.content;
+      const value = String(field.content);
       return (
         <FormField
           {...commonProps}
@@ -150,7 +148,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
         <FormField
           {...commonProps}
           key={field.name}
-          value={field.content}
+          value={field.content as string | number}
           renderInput={(props) => (
             <NumberField
               {...props}
@@ -223,7 +221,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
         <FormField
           {...commonProps}
           key={field.name}
-          value={field.content}
+          value={String(field.content)}
           renderInput={(props) => (
             <StringField
               {...props}
@@ -249,7 +247,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
         <FormField
           {...commonProps}
           key={field.name}
-          value={field.content}
+          value={String(field.content)}
           // ID is not used because TinyMCE does not expose an HTMLInputElement to attach it to
           doNotAttachIdToLabel
           renderInput={({ error: _error, id: _id, ...props }) => (
@@ -277,7 +275,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
         <FormField
           {...commonProps}
           key={field.name}
-          value={field.content}
+          value={String(field.content)}
           renderInput={({ error: _error, ...props }) => (
             <TimeField
               {...props}
@@ -285,7 +283,9 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
                 field.setAttributesDirty({
                   content: target.value,
                 });
-                field.setError(isNaN(target.value));
+                field.setError(
+                  target.value ? Number.isNaN(Number(target.value)) : false
+                );
                 onErrorStateChange(
                   `template_${field.name}`,
                   (field.mandatory && !field.hasContent) || field.error
@@ -304,7 +304,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
         <FormField
           {...commonProps}
           key={field.name}
-          value={field.content}
+          value={String(field.content)}
           renderInput={({ error: _error, ...props }) => (
             <UriField
               {...props}
@@ -312,7 +312,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
                 field.setAttributesDirty({
                   content: target.value,
                 });
-                field.setError(isNaN(target.value));
+                field.setError(false); // URIs are strings, so isNaN is not the right validation
                 onErrorStateChange(
                   `template_${field.name}`,
                   (field.mandatory && !field.hasContent) || field.error
@@ -328,4 +328,4 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
   });
 }
 
-export default (observer(Fields): ComponentType<FieldsArgs>);
+export default observer(Fields);
