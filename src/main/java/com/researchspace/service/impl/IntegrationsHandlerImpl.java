@@ -196,7 +196,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         setSingleUserToken(info, user, DMPONLINE_APP_NAME, DMPONLINE_USER_TOKEN);
         return;
       case ASCENSCIA_APP_NAME:
-        // do nothing
+        setSingleUserToken(info, user, ASCENSCIA_APP_NAME, ASCENSCIA_USER_TOKEN);
         return;
       default:
     }
@@ -394,23 +394,34 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   private void saveConfigOptionsForAppsWithSingleOptionSet(User user, IntegrationInfo newInfo) {
-    if (EGNYTE_APP_NAME.equals(newInfo.getName())) {
-      saveAppConfigWithSingleOptionSet(user, newInfo, EGNYTE_APP_NAME, EGNYTE_DOMAIN_SETTING);
-    } else if (ZENODO_APP_NAME.equals(newInfo.getName())) {
-      saveNewUserConnectionForSingleOptionApp(
-          newInfo.getOptions().get(ZENODO_USER_TOKEN).toString(), user, ZENODO_APP_NAME);
-    } else if (FIELDMARK_APP_NAME.equals(newInfo.getName())) {
-      saveNewUserConnectionForSingleOptionApp(
-          newInfo.getOptions().get(FIELDMARK_USER_TOKEN).toString(), user, FIELDMARK_APP_NAME);
-    } else if (GALAXY_APP_NAME.equals(newInfo.getName())) {
-      saveNewUserConnectionForSingleOptionApp(
-          newInfo.getOptions().get(GALAXY_API_KEY).toString(), user, GALAXY_APP_NAME);
-    } else if (JOVE_APP_NAME.equals(newInfo.getName())) {
-      /**
-       * Jove doesnt currently fit well into our existing integration handler, so we just get the
-       * global api key from properties file
-       */
-      saveNewUserConnectionForSingleOptionApp(propertyHolder.getJoveApiKey(), user, JOVE_APP_NAME);
+    switch (newInfo.getName()) {
+      case EGNYTE_APP_NAME:
+        saveAppConfigWithSingleOptionSet(user, newInfo, EGNYTE_APP_NAME, EGNYTE_DOMAIN_SETTING);
+        break;
+      case ZENODO_APP_NAME:
+        saveNewUserConnectionForSingleOptionApp(
+            newInfo.getOptions().get(ZENODO_USER_TOKEN).toString(), user, ZENODO_APP_NAME);
+        break;
+      case FIELDMARK_APP_NAME:
+        saveNewUserConnectionForSingleOptionApp(
+            newInfo.getOptions().get(FIELDMARK_USER_TOKEN).toString(), user, FIELDMARK_APP_NAME);
+        break;
+      case GALAXY_APP_NAME:
+        saveNewUserConnectionForSingleOptionApp(
+            newInfo.getOptions().get(GALAXY_API_KEY).toString(), user, GALAXY_APP_NAME);
+        break;
+      case JOVE_APP_NAME:
+        // Jove doesn't currently fit well into our existing integration handler, so we just get the
+        // global api key from properties file
+        saveNewUserConnectionForSingleOptionApp(
+            propertyHolder.getJoveApiKey(), user, JOVE_APP_NAME);
+        break;
+      case ASCENSCIA_APP_NAME:
+        saveNewUserConnectionForSingleOptionApp(
+            newInfo.getOptions().get(ASCENSCIA_USER_TOKEN).toString(), user, ASCENSCIA_APP_NAME);
+        break;
+      default:
+        break;
     }
   }
 
