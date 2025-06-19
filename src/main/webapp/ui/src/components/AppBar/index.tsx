@@ -637,7 +637,13 @@ function GalleryAppBar({
           .orElse(null)}
         {variant === "page" && (
           <>
-            <Box ml={1}>
+            <Box
+              ml={1}
+              role="status"
+              aria-live="polite"
+              aria-relevant="text"
+              aria-label="notifications and messages"
+            >
               <AdjustedBadge
                 badgeContent={
                   notificationCount + messageCount + specialMessageCount
