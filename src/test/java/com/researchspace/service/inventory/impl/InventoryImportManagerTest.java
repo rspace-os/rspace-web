@@ -1127,10 +1127,10 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     String workbenchGlobalId = getWorkbenchForUser(testUser).getGlobalId();
 
     List<String[]> csvContainerLines = new ArrayList<>();
-    csvContainerLines.add(new String[] {"testContent1", "testContainer1", "1", "", ""});
-    csvContainerLines.add(new String[] {"testContent2", "testContainer2", "", "1", ""});
-    csvContainerLines.add(new String[] {"testContent3", "testContainer3", "", "4", ""});
-    csvContainerLines.add(new String[] {"testContent4", "testContainer4", "4", "1", ""});
+    csvContainerLines.add(new String[] {"testContent1", "testContainer1", "1", "", "", "tag1"});
+    csvContainerLines.add(new String[] {"testContent2", "testContainer2", "", "1", "", ""});
+    csvContainerLines.add(new String[] {"testContent3", "testContainer3", "", "4", "", ""});
+    csvContainerLines.add(new String[] {"testContent4", "testContainer4", "4", "1", "", ""});
     csvContainerLines.add(
         new String[] {"testContent4", "testContainer5", "", "", workbenchGlobalId, ""});
     Map<Integer, String> colIndexToDefaultFieldMapping = new HashMap<>();
