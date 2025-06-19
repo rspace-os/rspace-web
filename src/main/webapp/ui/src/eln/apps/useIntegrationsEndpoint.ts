@@ -228,11 +228,6 @@ function decodeArgos(data: FetchedState): IntegrationStates["ARGOS"] {
   return { mode: parseState(data), credentials: {} };
 }
 
-function decodeAscenscia(data: FetchedState): IntegrationStates["ASCENSCIA"] {
-  const mode = parseState(data);
-  return { mode: mode === "ENABLED" ? "EXTERNAL" : mode, credentials: null };
-}
-
 function decodeBox(data: FetchedState): IntegrationStates["BOX"] {
   return {
     mode: parseState(data),
@@ -664,7 +659,10 @@ function decodeIntegrationStates(data: {
 }): IntegrationStates {
   return {
     ARGOS: decodeArgos(data.ARGOS),
-    ASCENSCIA: decodeAscenscia(data.ASCENSCIA),
+    ASCENSCIA: {
+      mode: "EXTERNAL",
+      credentials: null,
+    },
     BOX: decodeBox(data.BOX),
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),
@@ -701,14 +699,6 @@ const encodeIntegrationState = <I extends Integration>(
   if (integration === "ARGOS") {
     return {
       name: "ARGOS",
-      available: data.mode !== "UNAVAILABLE",
-      enabled: data.mode === "ENABLED",
-      options: {},
-    };
-  }
-  if (integration === "ASCENSCIA") {
-    return {
-      name: "ASCENSCIA",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {},
