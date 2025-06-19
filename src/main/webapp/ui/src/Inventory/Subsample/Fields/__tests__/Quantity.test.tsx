@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, fireEvent, screen } from "@testing-library/react";
@@ -32,7 +31,7 @@ describe("Quantity", () => {
   test("Should support scientific notation.", () => {
     const INITIAL_VALUE = 0;
 
-    const setFieldsDirty = jest.fn<[{ quantity: ?QuantityType }], void>();
+    const setFieldsDirty = jest.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
