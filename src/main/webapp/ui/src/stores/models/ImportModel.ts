@@ -1171,7 +1171,7 @@ export default class Import {
       return { matches: false, reason: "Template has not been selected" };
     const template = this.template;
 
-    const customFields = this.mappingsByRecordType.filter(
+    const customFields = this.samplesMappings.filter(
       ({ field, selected }) => field === Fields.custom && selected
     );
     if (customFields.length !== template.fields.length)
