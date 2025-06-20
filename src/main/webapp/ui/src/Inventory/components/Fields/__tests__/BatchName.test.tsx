@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React, { useState } from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -28,7 +27,7 @@ afterEach(cleanup);
 
 function renderWithJustFieldValue(
   initialValue: BatchNameType,
-  onErrorStateChange?: (boolean) => void
+  onErrorStateChange?: (errorState: boolean) => void
 ) {
   const Wrapper = () => {
     const [name, setName] = useState(initialValue);
@@ -77,7 +76,7 @@ describe("BatchName", () => {
           .filter((name) => /\S+/.test(name)),
         (name) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix: "NONE" },
             onErrorStateChange
@@ -105,11 +104,15 @@ describe("BatchName", () => {
       fc.property(
         fc.tuple(
           fc.string({ minLength: 1, maxLength: 1 }),
-          fc.constantFrom("INDEX_NUMBER", "INDEX_LETTER", "CREATED")
+          fc.constantFrom<"INDEX_NUMBER" | "INDEX_LETTER" | "CREATED">(
+            "INDEX_NUMBER",
+            "INDEX_LETTER",
+            "CREATED"
+          )
         ),
         ([common, suffix]) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix },
             onErrorStateChange
@@ -135,7 +138,7 @@ describe("BatchName", () => {
           fc.string({ minLength: 256 - lengthOfSuffix("NONE") }),
           (common) => {
             cleanup();
-            const onErrorStateChange = jest.fn<[boolean], void>();
+            const onErrorStateChange = jest.fn();
             const { container } = renderWithJustFieldValue(
               { common: "", suffix: "NONE" },
               onErrorStateChange
@@ -160,7 +163,7 @@ describe("BatchName", () => {
           fc.string({ minLength: 256 - lengthOfSuffix("INDEX_NUMBER") }),
           (common) => {
             cleanup();
-            const onErrorStateChange = jest.fn<[boolean], void>();
+            const onErrorStateChange = jest.fn();
             const { container } = renderWithJustFieldValue(
               { common: "", suffix: "INDEX_NUMBER" },
               onErrorStateChange
@@ -185,7 +188,7 @@ describe("BatchName", () => {
           fc.string({ minLength: 256 - lengthOfSuffix("INDEX_LETTER") }),
           (common) => {
             cleanup();
-            const onErrorStateChange = jest.fn<[boolean], void>();
+            const onErrorStateChange = jest.fn();
             const { container } = renderWithJustFieldValue(
               { common: "", suffix: "INDEX_LETTER" },
               onErrorStateChange
@@ -210,7 +213,7 @@ describe("BatchName", () => {
           fc.string({ minLength: 256 - lengthOfSuffix("CREATED") }),
           (common) => {
             cleanup();
-            const onErrorStateChange = jest.fn<[boolean], void>();
+            const onErrorStateChange = jest.fn();
             const { container } = renderWithJustFieldValue(
               { common: "", suffix: "CREATED" },
               onErrorStateChange
@@ -247,7 +250,7 @@ describe("BatchName", () => {
         ),
         ([firstValidValue, secondInvalidValue]) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix: "NONE" },
             onErrorStateChange
@@ -283,7 +286,7 @@ describe("BatchName", () => {
           .filter((name) => /^\s+$/.test(name)),
         (name) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix: "NONE" },
             onErrorStateChange
@@ -307,11 +310,15 @@ describe("BatchName", () => {
       fc.property(
         fc.tuple(
           fc.string({ minLength: 3, maxLength: 255 }),
-          fc.constantFrom("INDEX_NUMBER", "INDEX_LETTER", "CREATED")
+          fc.constantFrom<"INDEX_NUMBER" | "INDEX_LETTER" | "CREATED">(
+            "INDEX_NUMBER",
+            "INDEX_LETTER",
+            "CREATED"
+          )
         ),
         ([generatedName, suffix]) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix },
             onErrorStateChange

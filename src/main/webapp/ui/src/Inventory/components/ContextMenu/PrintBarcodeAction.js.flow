@@ -1,0 +1,14 @@
+// @flow
+
+import { type ComponentType } from "react";
+import { type ContextMenuRenderOptions } from "./ContextMenuAction";
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+
+type PrintBarcodeActionArgs = {|
+  as: ContextMenuRenderOptions,
+  closeMenu: () => void,
+  disabled: string,
+  selectedResults: Array<InventoryRecord>,
+|};
+
+declare export default ComponentType<PrintBarcodeActionArgs>;
