@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import fc from "fast-check";
 import { makeMockSample } from "../SampleModel/mocking";
