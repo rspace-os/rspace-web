@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import MenuOpenOutlinedIcon from "@mui/icons-material/MenuOpenOutlined";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import useStores from "../../../stores/use-stores";
@@ -9,9 +7,9 @@ import { makeStyles } from "tss-react/mui";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import useNavigateHelpers from "../../useNavigateHelpers";
 
-type NavigateToNodeArgs = {|
-  node: InventoryRecord,
-|};
+type NavigateToNodeArgs = {
+  node: InventoryRecord;
+};
 
 const useStyles = makeStyles()(() => ({
   icon: {
@@ -19,7 +17,7 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-function NavigateToNode({ node }: NavigateToNodeArgs): Node {
+function NavigateToNode({ node }: NavigateToNodeArgs): React.ReactNode {
   const { moveStore } = useStores();
   const { classes } = useStyles();
   const { navigateToSearch } = useNavigateHelpers();
@@ -30,7 +28,7 @@ function NavigateToNode({ node }: NavigateToNodeArgs): Node {
       className={classes.icon}
       title="Navigate to container"
       icon={<MenuOpenOutlinedIcon />}
-      onClick={(e: Event) => {
+      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
         navigateToSearch({ parentGlobalId: node.globalId });
       }}
@@ -38,4 +36,4 @@ function NavigateToNode({ node }: NavigateToNodeArgs): Node {
   );
 }
 
-export default (observer(NavigateToNode): ComponentType<NavigateToNodeArgs>);
+export default observer(NavigateToNode);
