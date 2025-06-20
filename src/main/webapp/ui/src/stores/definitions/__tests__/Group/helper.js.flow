@@ -1,0 +1,8 @@
+//@flow
+
+import fc, { type Arbitrary } from "fast-check";
+import { arbitraryId, arbitraryGlobalId } from "../Record/helper";
+import { type Group, type SharedWithGroup } from "../../Group";
+
+declare export const arbitraryGroup: Arbitrary<Group>;
+declare export const arbitrarySharedWithGroup: Arbitrary<SharedWithGroup>;

@@ -1,5 +1,3 @@
-//@flow
-
 import fc, { type Arbitrary } from "fast-check";
 import { arbitraryId, arbitraryGlobalId } from "../Record/helper";
 import { type Group, type SharedWithGroup } from "../../Group";
