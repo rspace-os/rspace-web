@@ -1,9 +1,9 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
 import IntegrationCard from "../IntegrationCard";
-import ApiIcon from "../../../assets/graphics/ApiIcon";
+import ApiIcon from "../../../assets/branding/rspace/api/logo.svg";
 import { observer } from "mobx-react-lite";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/other";
+import { LOGO_COLOR } from "../../../assets/branding/rspace/api";
 import Typography from "@mui/material/Typography";
 
 function ApiDirect(): React.ReactNode {
@@ -13,7 +13,7 @@ function ApiDirect(): React.ReactNode {
         name="API Direct Access"
         explanatoryText="Directly interact with the RSpace API using scripts and custom applications."
         image={ApiIcon}
-        color={ACCENT_COLOR.main}
+        color={LOGO_COLOR}
         usageText="Access RSpace programmatically using Python, R, or any language with HTTP capabilities to automate tasks and integrate with your own tools."
         helpLinkText="API documentation"
         website="/public/apiDocs"
