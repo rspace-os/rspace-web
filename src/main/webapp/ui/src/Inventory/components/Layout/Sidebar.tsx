@@ -1,11 +1,4 @@
-// @flow
-
-import React, {
-  type Node,
-  type ComponentType,
-  useState,
-  type ElementProps,
-} from "react";
+import React, { useState } from "react";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import CreateNew from "../CreateNew";
@@ -22,11 +15,11 @@ import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
 import Badge from "@mui/material/Badge";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
-import ExportDialog from "../../components/Export/ExportDialog";
+import ExportDialog from "../Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
 import { mapNullable } from "../../../util/Util";
 import { InvalidState } from "../../../util/error";
-import { type Theme } from "../../../theme";
+import Theme from "../../../theme";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import { useTheme, ThemeProvider } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
@@ -43,14 +36,14 @@ function isSearchListing() {
 const drawerWidth = 200;
 
 const CustomDrawer = withStyles<
-  {| children: Node, drawerWidth?: number, id: string |},
+  { children: React.ReactNode; drawerWidth?: number; id: string },
   {
-    drawer: string,
-    drawerPaper: string,
-    floatingDrawerPaper: string,
-    drawerOpen: string,
-    drawerClose: string,
-    drawerCloseParent: string,
+    drawer: string;
+    drawerPaper: string;
+    floatingDrawerPaper: string;
+    drawerOpen: string;
+    drawerClose: string;
+    drawerCloseParent: string;
   }
 >((theme) => ({
   drawer: {
@@ -134,8 +127,10 @@ const CustomDrawer = withStyles<
 );
 
 const NavButtonBadge = withStyles<
-  {| sidebarOpen?: boolean, selected: boolean, ...ElementProps<typeof Badge> |},
-  { root: string, badge: string }
+  { sidebarOpen?: boolean; selected: boolean } & React.ComponentProps<
+    typeof Badge
+  >,
+  { root: string; badge: string }
 >((theme, { sidebarOpen, selected }) => ({
   root: {
     alignItems: "center",
@@ -167,15 +162,14 @@ const NavButtonBadge = withStyles<
 });
 
 const NavItem = withStyles<
-  {|
-    label: string,
-    datatestid: string,
-    badge: Node,
-    icon: Node,
-    ...ElementProps<typeof ListItem>,
-  |},
-  { button: string, listIcon: string }
->((theme: Theme) => ({
+  {
+    label: string;
+    datatestid?: string;
+    badge: React.ReactNode;
+    icon: React.ReactNode;
+  } & React.ComponentProps<typeof ListItem>,
+  { button: string; listIcon: string }
+>((theme: typeof Theme) => ({
   button: {
     paddingLeft: theme.spacing(2.5),
     borderTopRightRadius: theme.spacing(3),
@@ -189,6 +183,7 @@ const NavItem = withStyles<
   observer(({ classes, icon, datatestid, badge, label, ...args }) => {
     const { uiStore } = useStores();
     return (
+      // @ts-expect-error component prop is supported
       <ListItemButton
         {...args}
         component="a"
@@ -198,7 +193,7 @@ const NavItem = withStyles<
         <NavButtonBadge
           badgeContent={badge}
           color="primary"
-          selected={args.selected}
+          selected={args.selected ?? false}
           max={999}
           sidebarOpen={uiStore.sidebarOpen}
         >
@@ -217,27 +212,29 @@ const MyBenchNavItem = observer(() => {
   const { navigateToSearch } = useNavigateHelpers();
   const currentUser = peopleStore.currentUser;
   const benchContentSummary = peopleStore.currentUser?.bench?.contentSummary;
-  const benchContentCount: ?number = mapNullable((summary) => {
-    if (!summary.isAccessible)
-      throw new InvalidState(
-        "A user should always be able to access a summary of the contents of their own bench."
-      );
-    return summary.value.totalCount;
-  }, benchContentSummary);
+  const benchContentCount: number | null =
+    mapNullable((summary) => {
+      if (!summary.isAccessible)
+        throw new InvalidState(
+          "A user should always be able to access a summary of the contents of their own bench."
+        );
+      return summary.value.totalCount;
+    }, benchContentSummary) ?? null;
 
   return (
     <NavItem
       label="My Bench"
       datatestid="MyBenchNavFilter"
       selected={
-        isSearchListing() &&
-        currentUser &&
-        searchStore.search.onUsersBench(currentUser)
+        (isSearchListing() &&
+          currentUser &&
+          searchStore.search.onUsersBench(currentUser)) ??
+        false
       }
       icon={<MyBenchIcon />}
       disabled={!currentUser}
       badge={Math.min(benchContentCount ?? 0, largestFittingCount)}
-      onClick={(e: Event) => {
+      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
         e.stopPropagation();
         navigateToSearch(
           currentUser ? { parentGlobalId: `BE${currentUser.workbenchId}` } : {}
@@ -269,11 +266,11 @@ const ContainersNavItem = observer(() => {
             recordTypeLabel: "",
           }}
           style={{ width: "24px" }}
-          color={theme.palette.standardIcon}
+          color={theme.palette.standardIcon.main}
         />
       }
       badge={0}
-      onClick={(e: Event) => {
+      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
         e.stopPropagation();
         navigateToSearch({
           resultType: "CONTAINER",
@@ -306,11 +303,11 @@ const SampleNavItem = observer(() => {
             recordTypeLabel: "",
           }}
           style={{ width: "24px" }}
-          color={theme.palette.standardIcon}
+          color={theme.palette.standardIcon.main}
         />
       }
       badge={0}
-      onClick={(e: Event) => {
+      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
         e.stopPropagation();
         navigateToSearch({
           resultType: "SAMPLE",
@@ -342,11 +339,11 @@ const TemplateNavItem = observer(() => {
             recordTypeLabel: "",
           }}
           style={{ width: "28px", height: "18px" }}
-          color={theme.palette.standardIcon}
+          color={theme.palette.standardIcon.main}
         />
       }
       badge={0}
-      onClick={(e: Event) => {
+      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
         e.stopPropagation();
         navigateToSearch({
           resultType: "TEMPLATE",
@@ -356,7 +353,6 @@ const TemplateNavItem = observer(() => {
   );
 });
 
-// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 const IgsnNavItem = observer(() => {
   const { uiStore } = useStores();
   const { useNavigate } = React.useContext(NavigateContext);
@@ -369,7 +365,7 @@ const IgsnNavItem = observer(() => {
       selected={/identifiers\/igsn/.test(window.location.pathname)}
       icon={<IgsnIcon style={{ width: "28px", height: "18px" }} />}
       badge={0}
-      onClick={(e: Event) => {
+      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
         e.stopPropagation();
         trackEvent("user:navigate:igsnManagementPage:InventorySidebar");
         navigate("/inventory/identifiers/igsn");
@@ -401,11 +397,11 @@ const SubsampleNavItem = observer(() => {
             recordTypeLabel: "",
           }}
           style={{ width: "24px" }}
-          color={theme.palette.standardIcon}
+          color={theme.palette.standardIcon.main}
         />
       }
       badge={0}
-      onClick={(e: Event) => {
+      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
         e.stopPropagation();
         navigateToSearch({
           resultType: "SUBSAMPLE",
@@ -489,11 +485,11 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type SidebarArgs = {|
-  id: string,
-|};
+type SidebarArgs = {
+  id: string;
+};
 
-function Sidebar({ id }: SidebarArgs): Node {
+function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const { classes } = useStyles();
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
@@ -539,4 +535,4 @@ function Sidebar({ id }: SidebarArgs): Node {
  * more space for the main content, and on small viewports it is hidden behind
  * a hamburger menu.
  */
-export default (observer(Sidebar): ComponentType<SidebarArgs>);
+export default observer(Sidebar);
