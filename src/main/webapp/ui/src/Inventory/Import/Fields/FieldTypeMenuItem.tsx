@@ -1,5 +1,3 @@
-//@flow
-
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -11,7 +9,7 @@ import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
-import React, { type ComponentType, useState, forwardRef } from "react";
+import React, { useState, forwardRef } from "react";
 import Typography from "@mui/material/Typography";
 import useStores from "../../../stores/use-stores";
 import {
@@ -23,85 +21,83 @@ import { makeStyles } from "tss-react/mui";
 import { preventEventBubbling } from "../../../util/Util";
 import { Observer } from "mobx-react-lite";
 
-const useStyles = makeStyles()((theme, { open, isVerySmall }) => ({
-  menuItem: {
-    padding: theme.spacing(1, 2),
-    backgroundColor: "initial !important",
-    opacity: "1 !important",
-    overflow: open ? "initial" : "hidden",
-  },
-  text: {
-    flexGrow: 1,
-  },
-  openButton: {
-    backgroundColor: "transparent",
-    pointerEvents: "auto",
-  },
-  openPanel: {
-    height: open ? 110 : 0,
-    transition: "all 0.2s ease 0s",
-    transitionDelay: open ? "0.05s" : "0s",
-  },
-  floatingOptionsHeading: {
-    position: "absolute",
-    top: theme.spacing(6),
-    backgroundColor: "white",
-    right: theme.spacing(8),
-    padding: theme.spacing(0, 1),
-    color: "rgba(0, 0, 0, 0.42)",
-    fontSize: "0.7rem",
-    opacity: open ? 1.0 : 0.0,
-    transition: "opacity 0.2s ease 0s",
-  },
-  floatingOptionsHeadingText: {
-    fontSize: "0.9rem",
-  },
-  optionsScrollPanel: {
-    height: 89,
-    overflowY: "auto",
-    overflowX: "hidden",
-    pointerEvents: "auto",
-  },
-  outOfMenuWrapper: {
-    height: 72,
-  },
-  outOfMenuPaper: {
-    transition: "transform 0.2s ease 0s, width 0.2s ease 0s",
-    transform: open ? `translate(${isVerySmall ? 0 : -20}px, -110px)` : "none",
-    zIndex: open ? 2001 : 1,
-    position: "absolute",
-    transitionDelay: open ? "0s" : "0.05s",
-    width: "100%",
-  },
-  backdrop: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    position: "fixed",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-    opacity: open ? 0.5 : 0.0,
-    zIndex: 2000,
-    transition: "all 0.4s ease 0s",
-    pointerEvents: open ? "auto" : "none",
-  },
-}));
+const useStyles = makeStyles<{ open: boolean; isVerySmall: boolean }>()(
+  (theme, { open, isVerySmall }) => ({
+    menuItem: {
+      padding: theme.spacing(1, 2),
+      backgroundColor: "initial !important",
+      opacity: "1 !important",
+      overflow: open ? "initial" : "hidden",
+    },
+    text: {
+      flexGrow: 1,
+    },
+    openButton: {
+      backgroundColor: "transparent",
+      pointerEvents: "auto",
+    },
+    openPanel: {
+      height: open ? 110 : 0,
+      transition: "all 0.2s ease 0s",
+      transitionDelay: open ? "0.05s" : "0s",
+    },
+    floatingOptionsHeading: {
+      position: "absolute",
+      top: theme.spacing(6),
+      backgroundColor: "white",
+      right: theme.spacing(8),
+      padding: theme.spacing(0, 1),
+      color: "rgba(0, 0, 0, 0.42)",
+      fontSize: "0.7rem",
+      opacity: open ? 1.0 : 0.0,
+      transition: "opacity 0.2s ease 0s",
+    },
+    floatingOptionsHeadingText: {
+      fontSize: "0.9rem",
+    },
+    optionsScrollPanel: {
+      height: 89,
+      overflowY: "auto",
+      overflowX: "hidden",
+      pointerEvents: "auto",
+    },
+    outOfMenuWrapper: {
+      height: 72,
+    },
+    outOfMenuPaper: {
+      transition: "transform 0.2s ease 0s, width 0.2s ease 0s",
+      transform: open
+        ? `translate(${isVerySmall ? 0 : -20}px, -110px)`
+        : "none",
+      zIndex: open ? 2001 : 1,
+      position: "absolute",
+      transitionDelay: open ? "0s" : "0.05s",
+      width: "100%",
+    },
+    backdrop: {
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      position: "fixed",
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      opacity: open ? 0.5 : 0.0,
+      zIndex: 2000,
+      transition: "all 0.4s ease 0s",
+      pointerEvents: open ? "auto" : "none",
+    },
+  })
+);
 
-type FieldTypeMenuItemProps = {
-  field: FieldType,
-  onClick: (Event) => void,
-  inMenu?: boolean,
-  options?: ?Array<string>,
+type FieldTypeMenuItemArgs = {
+  field: FieldType;
+  onClick: (event: React.MouseEvent<HTMLLIElement>) => void;
+  inMenu?: boolean;
+  options?: string[] | null;
 };
 
-const FieldTypeMenuItem: ComponentType<FieldTypeMenuItemProps> = forwardRef<
-  FieldTypeMenuItemProps,
-  {}
->(
-  (
-    { field, onClick, inMenu = false, options = null }: FieldTypeMenuItemProps,
-    ref
-  ) => {
+const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
+  ({ field, onClick, inMenu = false, options = null }, ref) => {
     const _fieldData = FIELD_DATA[field];
     const [open, setOpen] = useState(false);
     const { uiStore } = useStores();
@@ -130,7 +126,9 @@ const FieldTypeMenuItem: ComponentType<FieldTypeMenuItemProps> = forwardRef<
               {!inMenu && hasOptions(field) && (
                 <Grid item>
                   <IconButton
-                    onClick={preventEventBubbling(() => setOpen(!open))}
+                    onClick={preventEventBubbling<
+                      React.MouseEvent<HTMLButtonElement>
+                    >(() => setOpen(!open))}
                     className={classes.openButton}
                   >
                     <FieldTypeMenuItemOpenIcon open={open} />
@@ -182,6 +180,11 @@ const FieldTypeMenuItem: ComponentType<FieldTypeMenuItemProps> = forwardRef<
               <div
                 className={classes.backdrop}
                 onClick={() => setOpen(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setOpen(false);
+                }}
+                role="button"
+                tabIndex={0}
               />
             </div>
           )
