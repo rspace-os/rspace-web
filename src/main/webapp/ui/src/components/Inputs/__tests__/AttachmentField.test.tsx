@@ -1,11 +1,10 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 import React from "react";
-import { render, cleanup, type Element } from "@testing-library/react";
+import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AttachmentField from "../AttachmentField";
 import TextField from "@mui/material/TextField";
@@ -17,7 +16,7 @@ import materialTheme from "../../../theme";
 import { containerAttrs } from "../../../stores/models/__tests__/ContainerModel/mocking";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
-import { type Attachment } from "../../../stores/definitions/Attachment";
+import type { Attachment } from "../../../stores/definitions/Attachment";
 
 jest.mock("@mui/material/TextField", () => jest.fn(() => <div></div>));
 jest.mock("../FileField", () => jest.fn(() => <div></div>));
@@ -29,7 +28,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const expectLabel = (text: string) => (container: Element) =>
+const expectLabel = (text: string) => (container: HTMLElement) =>
   expect(container).toHaveTextContent(text);
 
 const expectTextField = (value: string) => () =>
@@ -43,7 +42,7 @@ const activeResult = new ContainerModel(new MemoisedFactory(), {
   cType: "LIST",
 });
 
-const makeAttachment = (attrs: ?{| name: string |}) =>
+const makeAttachment = (attrs?: { name: string }) =>
   new ExistingAttachment(
     {
       id: 0,
@@ -81,12 +80,12 @@ describe("AttachmentField", () => {
         value,
         noValueLabel,
         expectFn,
-      }: {|
-        disabled: typeof undefined | boolean,
-        value: string,
-        noValueLabel: typeof undefined | string,
-        expectFn: (container: Element) => void,
-      |}) => {
+      }: {
+        disabled: undefined | boolean;
+        value: string;
+        noValueLabel: undefined | string;
+        expectFn: (container: HTMLElement) => void;
+      }) => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
@@ -147,10 +146,10 @@ describe("AttachmentField", () => {
       disableFileUpload | attachment          | showFileField | showNoAttachmentLabel
       ${true}           | ${null}             | ${false}      | ${false}
       ${true}           | ${makeAttachment()} | ${false}      | ${false}
-      ${false}          | ${null}             | ${true}      | ${true}
-      ${false}          | ${makeAttachment()} | ${true}      | ${false}
-      ${undefined}      | ${null}             | ${true}      | ${true}
-      ${undefined}      | ${makeAttachment()} | ${true}      | ${false}
+      ${false}          | ${null}             | ${true}       | ${true}
+      ${false}          | ${makeAttachment()} | ${true}       | ${false}
+      ${undefined}      | ${null}             | ${true}       | ${true}
+      ${undefined}      | ${makeAttachment()} | ${true}       | ${false}
     `.describe(
       "$# {disableFileUpload = $disableFileUpload, attachment }",
       ({
@@ -158,14 +157,14 @@ describe("AttachmentField", () => {
         attachment,
         showFileField,
         showNoAttachmentLabel,
-      }: {|
-        disableFileUpload: typeof undefined | boolean,
-        attachment: ?Attachment,
-        showFileField: boolean,
-        showNoAttachmentLabel: boolean,
-      |}) => {
-        let textContent;
-        function renderAttachmentField() {
+      }: {
+        disableFileUpload: undefined | boolean;
+        attachment: Attachment | null;
+        showFileField: boolean;
+        showNoAttachmentLabel: boolean;
+      }) => {
+        let textContent: string | null;
+        function renderAttachmentField(): void {
           const { container } = render(
             <ThemeProvider theme={materialTheme}>
               <AttachmentField
