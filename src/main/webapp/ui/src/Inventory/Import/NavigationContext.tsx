@@ -1,14 +1,13 @@
-//@flow
-
-import React, { type Node, useContext } from "react";
+import React, { useContext } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";
+import { type URL } from "../../util/types";
 
-type NavigationContextArgs = {|
-  children: Node,
-|};
+type NavigationContextArgs = {
+  children: React.ReactNode;
+};
 
-/*
+/**
  * This a component that provides a wrapper around the entire Upload UI,
  * encasing it in a NavigateContext, with custom navigation logic. Any
  * NavigateContext that wraps this component is used to perform the navigation,
@@ -16,11 +15,11 @@ type NavigationContextArgs = {|
  */
 export default function NavigationContext({
   children,
-}: NavigationContextArgs): Node {
+}: NavigationContextArgs): React.ReactNode {
   const { useNavigate, useLocation } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();
-  const newUseNavigate = () => (url: string) => {
+  const newUseNavigate = () => (url: URL) => {
     if (/^\/inventory\/import/.test(url)) {
       navigate(url);
     } else {
