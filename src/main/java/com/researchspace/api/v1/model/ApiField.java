@@ -65,7 +65,10 @@ public abstract class ApiField extends IdentifiableNameableApiObject {
     REFERENCE("reference"),
 
     @JsonProperty("uri")
-    URI("uri");
+    URI("uri"),
+
+    @JsonProperty("identifier")
+    IDENTIFIER("identifier");
 
     private String value;
 
