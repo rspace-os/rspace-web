@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
@@ -12,24 +10,23 @@ import DateField from "../../../components/Inputs/DateField";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
 function ExpiryDate<
-  Fields: {
-    expiryDate: ?string,
+  Fields extends {
+    expiryDate: string | null;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   fieldOwner,
   onErrorStateChange,
-}: {|
-  fieldOwner: FieldOwner,
-  onErrorStateChange: (boolean) => void,
-|}): Node {
+}: {
+  fieldOwner: FieldOwner;
+  onErrorStateChange: (value: boolean) => void;
+}): React.ReactNode {
   const handleChange = ({
     target: { value },
   }: {
-    target: { value: ?Date, ... },
-    ...
+    target: { value: Date | null };
   }) => {
-    onErrorStateChange(isNaN(value));
+    onErrorStateChange(value ? isNaN(value.getTime()) : false);
     fieldOwner.setFieldsDirty({
       // Yes, other code is dependent on "NaN-NaN-NaN".
       // Any falsey value, including the empty string, is acceptable as the expiry date is optional data.
@@ -71,4 +68,4 @@ function ExpiryDate<
   );
 }
 
-export default (observer(ExpiryDate): typeof ExpiryDate);
+export default observer(ExpiryDate);
