@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 
@@ -11,7 +10,6 @@ import { sampleAttrs } from "./mocking";
 import { subsampleAttrs } from "../SubSampleModel/mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../definitions/Factory";
-import { type InventoryRecord } from "../../../definitions/InventoryRecord";
 
 jest.mock("../../../stores/RootStore", () => () => ({
   peopleStore: {},
@@ -46,20 +44,31 @@ describe("constructor", () => {
    */
   describe("Factory argument", () => {
     test("should be used in the instantiation of all child records.", () => {
-      let factory: Factory;
+      // Create a recursive factory reference
+      // We need to declare factory before we use it in mockNewRecord
+      // but initialize it after we create the mockFactory
+      let factoryRef!: Factory;
+
+      // Create mock implementation that returns either SampleModel or SubSampleModel
       const mockNewRecord = jest
-        .fn<[any], InventoryRecord>()
-        .mockImplementation((attrs) =>
+        .fn()
+        .mockImplementation((attrs: any) =>
           /^SA\d+/.test(attrs.globalId)
-            ? new SampleModel(factory, attrs)
-            : new SubSampleModel(factory, attrs)
+            ? new SampleModel(factoryRef, attrs)
+            : new SubSampleModel(factoryRef, attrs)
         );
-      const f: () => Factory = () =>
+
+      // Create factory function
+      const createFactory = (): Factory =>
         mockFactory({
           newRecord: mockNewRecord,
-          newFactory: jest.fn<[], Factory>().mockImplementation(f),
+          newFactory: jest.fn().mockImplementation(createFactory),
         });
-      factory = f();
+
+      // Initialize factory
+      const factory = createFactory();
+      factoryRef = factory;
+
       mockSampleWithTwoSubsamples(factory);
 
       expect(mockNewRecord).toHaveBeenCalledTimes(3);
