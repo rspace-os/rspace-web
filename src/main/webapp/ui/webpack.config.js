@@ -12,7 +12,7 @@ module.exports = {
      */
     inventoryEntry: "./src/App.js",
     inventoryRecordIdentifierPublicPage:
-      "./src/components/PublicPages/IdentifierPublicPage.js",
+      "./src/components/PublicPages/IdentifierPublicPage.tsx",
 
     /*
      * Some of the ELN pages are Single Page Applications too. These JS bundles

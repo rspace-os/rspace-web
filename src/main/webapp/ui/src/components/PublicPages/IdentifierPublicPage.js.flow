@@ -1,0 +1,57 @@
+// @flow
+
+import React, {
+  type Node,
+  type ComponentType,
+  type Element,
+} from "react";
+import {
+  type Identifier,
+} from "../../stores/definitions/Identifier";
+import { type Tag } from "../../stores/definitions/Tag";
+
+type PolygonPoint = {
+  pointLatitude: string,
+  pointLongitude: string,
+};
+
+type GeoLocationBox = {
+  eastBoundLongitude: string,
+  northBoundLatitude: string,
+  southBoundLatitude: string,
+  westBoundLongitude: string,
+};
+
+type DividedPairArgs = {|
+  children: [Element<"dt">, Element<"dd">, Element<"dt">, Element<"dd">],
+|};
+
+export const INSTITUTION_LOGO_ADDRESS: string = "/public/banner";
+
+type IdentifierDataGridArgs = {|
+  identifier: Identifier,
+  record: {
+    description: ?string,
+    tags: Array<Tag>,
+    fields?: Array<{
+      name: string,
+      type: string,
+      id: number,
+      content: ?string,
+      selectedOptions: ?Array<string>,
+    }>,
+    extraFields?: Array<{
+      name: string,
+      id: ?number,
+      content: string,
+    }>,
+  },
+|};
+
+export const IdentifierDataGrid: (args: IdentifierDataGridArgs) => Node = function() {};
+
+type IdentifierPublicPageArgs = {|
+  publicId: string,
+|};
+
+declare export default ComponentType<IdentifierPublicPageArgs>;

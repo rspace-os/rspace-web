@@ -1,5 +1,3 @@
-// @flow
-
 /*
  * ====  A POINT ABOUT THE IMPORTS  ===========================================
  *
@@ -15,9 +13,9 @@
 import React, {
   useState,
   useEffect,
-  type Node,
+  type ReactNode,
   type ComponentType,
-  type Element,
+  type ReactElement,
 } from "react";
 import { createRoot } from "react-dom/client";
 import { observer } from "mobx-react-lite";
@@ -115,11 +113,16 @@ const useStyles = makeStyles()((theme) => ({
   bottomSpaced: { marginBottom: theme.spacing(1) },
 }));
 
-function DividedPair({
-  children,
-}: {|
-  children: [Element<"dt">, Element<"dd">, Element<"dt">, Element<"dd">],
-|}) {
+type DividedPairArgs = {
+  children: [
+    ReactElement<"dt">,
+    ReactElement<"dd">,
+    ReactElement<"dt">,
+    ReactElement<"dd">
+  ];
+};
+
+function DividedPair({ children }: DividedPairArgs) {
   return (
     <Grid container direction="row" spacing={1} sx={{ mb: 1 }}>
       <Grid item xs={1}></Grid>
@@ -152,7 +155,7 @@ const IGSN_BASE_URL = `https://www.igsn.org/`;
  * so we replicate some functionality and logic
  *
  */
-const RECOMMENDED_FIELDS_LABELS = {
+const RECOMMENDED_FIELDS_LABELS: Record<string, string> = {
   type: "Type",
   freeType: "Type",
   subjectScheme: "Subject Scheme",
@@ -160,23 +163,24 @@ const RECOMMENDED_FIELDS_LABELS = {
   valueURI: "Value URI",
   classificationCode: "Classification Code",
 };
-const subFields = (fValue: any): Array<{ key: string, value: string }> =>
+
+const subFields = (fValue: any): Array<{ key: string; value: string }> =>
   Object.entries(fValue)
     .filter((item) => item[0] !== "value" && item[0] !== "type")
     .map((item) => {
-      return { key: item[0], value: item[1] };
+      return { key: item[0], value: String(item[1]) };
     });
 
 type PolygonPoint = {
-  pointLatitude: string,
-  pointLongitude: string,
+  pointLatitude: string;
+  pointLongitude: string;
 };
 
 type GeoLocationBox = {
-  eastBoundLongitude: string,
-  northBoundLatitude: string,
-  southBoundLatitude: string,
-  westBoundLongitude: string,
+  eastBoundLongitude: string;
+  northBoundLatitude: string;
+  southBoundLatitude: string;
+  westBoundLongitude: string;
 };
 
 const glPointComplete = (point: PolygonPoint): boolean => {
@@ -187,30 +191,30 @@ const glBoxComplete = (box: GeoLocationBox): boolean => {
   return Object.values(box).every((v) => v !== "");
 };
 
-type IdentifierDataGridArgs = {|
-  identifier: Identifier,
+type IdentifierDataGridArgs = {
+  identifier: Identifier;
   record: {
-    description: ?string,
-    tags: Array<Tag>,
+    description: string | null;
+    tags: Array<Tag>;
     fields?: Array<{
-      name: string,
-      type: string,
-      id: number,
-      content: ?string,
-      selectedOptions: ?Array<string>,
-    }>,
+      name: string;
+      type: string;
+      id: number;
+      content: string | null;
+      selectedOptions: Array<string> | null;
+    }>;
     extraFields?: Array<{
-      name: string,
-      id: ?number,
-      content: string,
-    }>,
-  },
-|};
+      name: string;
+      id: number | null;
+      content: string;
+    }>;
+  };
+};
 
 export const IdentifierDataGrid = ({
   record,
   identifier,
-}: IdentifierDataGridArgs): Node => {
+}: IdentifierDataGridArgs): ReactNode => {
   const { classes } = useStyles();
 
   const institutionName: string = identifier.publisher.split(" (")[0];
@@ -261,7 +265,7 @@ export const IdentifierDataGrid = ({
             <Grid item>
               <Typography variant="body1">
                 {identifier.publicUrl ? (
-                  <a href={identifier.publicUrl} name="Item landing page">
+                  <a href={identifier.publicUrl} title="Item landing page">
                     {identifier.doi}
                   </a>
                 ) : (
@@ -281,7 +285,7 @@ export const IdentifierDataGrid = ({
             <Grid item>
               <a
                 href={IGSN_BASE_URL}
-                name="IGSN Homepage"
+                title="IGSN Homepage"
                 target="_blank"
                 rel="noreferrer"
               >
@@ -320,7 +324,7 @@ export const IdentifierDataGrid = ({
         </Grid>
         <Grid item data-testid="identifier-public-url">
           {identifier.publicUrl ? (
-            <a href={identifier.publicUrl} name="DOI - address">
+            <a href={identifier.publicUrl} title="DOI - address">
               {identifier.publicUrl}
             </a>
           ) : (
@@ -413,10 +417,7 @@ export const IdentifierDataGrid = ({
                           key={sf.key}
                         >
                           <Grid item className={classes.key}>
-                            {
-                              // $FlowExpectedError[invalid-computed-prop]
-                              RECOMMENDED_FIELDS_LABELS[sf.key]
-                            }
+                            {RECOMMENDED_FIELDS_LABELS[sf.key]}
                           </Grid>
                           <Grid item>
                             {sf.value ? (
@@ -494,10 +495,7 @@ export const IdentifierDataGrid = ({
                           key={sf.key}
                         >
                           <Grid item className={classes.key}>
-                            {
-                              // $FlowExpectedError[invalid-computed-prop]
-                              RECOMMENDED_FIELDS_LABELS[sf.key]
-                            }
+                            {RECOMMENDED_FIELDS_LABELS[sf.key]}
                           </Grid>
                           <Grid item>
                             {sf.value ? <>{sf.value}</> : <em>None</em>}
@@ -636,7 +634,7 @@ export const IdentifierDataGrid = ({
                               </Typography>
                               <dl className={classes.styledDescriptionList}>
                                 {gl.geoLocationPolygon.mapPoints(
-                                  (point, index) => (
+                                  (point: PolygonPoint, index: number) => (
                                     <DividedPair key={index}>
                                       <dt>Point {index + 1} Latitude</dt>
                                       <dd>{point.pointLatitude}˚</dd>
@@ -709,7 +707,7 @@ export const IdentifierDataGrid = ({
                   setFieldsDirty: () => {},
                   canChooseWhichToEdit: false,
                   setFieldEditable: () => {},
-                  noValueLabel: "",
+                  noValueLabel: { description: "" },
                 }}
                 onErrorStateChange={() => {}}
               />
@@ -724,7 +722,7 @@ export const IdentifierDataGrid = ({
                   setFieldsDirty: () => {},
                   canChooseWhichToEdit: false,
                   setFieldEditable: () => {},
-                  noValueLabel: "",
+                  noValueLabel: { tags: "" },
                 }}
               />
             </Grid>
@@ -833,31 +831,31 @@ export const IdentifierDataGrid = ({
   );
 };
 
-type IdentifierPublicPageArgs = {|
-  publicId: string,
-|};
+type IdentifierPublicPageArgs = {
+  publicId: string;
+};
 
-const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): Node => {
+const IdentifierPublicPage = ({
+  publicId,
+}: IdentifierPublicPageArgs): ReactNode => {
   const [fetching, setFetching] = useState(false);
-  const [publicData, setPublicData] = useState<?{
-    identifiers: Array<Identifier>,
-    description: ?string,
-    tags: Array<Tag>,
+  const [publicData, setPublicData] = useState<{
+    identifiers: Array<Identifier>;
+    description: string | null;
+    tags: Array<Tag>;
     fields?: Array<{
-      id: number,
-      name: string,
-      type: string,
-      content: ?string,
-      selectedOptions: ?Array<string>,
-      ...
-    }>,
+      id: number;
+      name: string;
+      type: string;
+      content: string | null;
+      selectedOptions: Array<string> | null;
+    }>;
     extraFields?: Array<{
-      id: ?number,
-      name: string,
-      content: string,
-    }>,
-    ...
-  }>();
+      id: number | null;
+      name: string;
+      content: string;
+    }>;
+  } | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -866,22 +864,21 @@ const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): Node => {
         setFetching(true);
         // anonymous call
         const { data } = await axios.get<{
-          identifiers: Array<IdentifierAttrs>,
-          description: ?string,
-          tags: Array<{|
-            value: string,
-            ontologyName: string,
-            uri: string,
-            ontologyVersion: string,
-          |}>,
+          identifiers: Array<IdentifierAttrs>;
+          description: string | null;
+          tags: Array<{
+            value: string;
+            ontologyName: string;
+            uri: string;
+            ontologyVersion: string;
+          }>;
           fields?: Array<{
-            id: number,
-            type: string,
-            name: string,
-            content: ?string,
-            selectedOptions: ?Array<string>,
-          }>,
-          ...
+            id: number;
+            type: string;
+            name: string;
+            content: string | null;
+            selectedOptions: Array<string> | null;
+          }>;
         }>(`/api/inventory/v1/public/view/${publicId}`);
         setPublicData({
           ...data,
@@ -904,7 +901,7 @@ const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): Node => {
                 : Optional.present(decodeTagString(tag.ontologyVersion)),
           })),
         });
-      } catch (e) {
+      } catch (e: any) {
         setErrorMessage(e.response.data.message);
         throw new Error(e);
       } finally {
@@ -912,7 +909,7 @@ const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): Node => {
       }
     }
     void fetchPublicData();
-  }, []);
+  }, [publicId]);
 
   if (fetching) return null;
   if (!publicData)
@@ -950,6 +947,4 @@ window.addEventListener("load", (_e) => {
   }
 });
 
-export default (observer(
-  IdentifierPublicPage
-): ComponentType<IdentifierPublicPageArgs>);
+export default observer(IdentifierPublicPage);
