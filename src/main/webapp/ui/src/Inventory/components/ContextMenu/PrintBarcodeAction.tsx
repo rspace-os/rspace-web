@@ -1,5 +1,3 @@
-//@flow
-
 import React, { type ComponentType, forwardRef, useState } from "react";
 import useStores from "../../../stores/use-stores";
 import ContextMenuAction, {
@@ -11,12 +9,12 @@ import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import PrintDialog from "../Print/PrintDialog";
 
-type PrintBarcodeActionArgs = {|
-  as: ContextMenuRenderOptions,
-  closeMenu: () => void,
-  disabled: string,
-  selectedResults: Array<InventoryRecord>,
-|};
+type PrintBarcodeActionArgs = {
+  as: ContextMenuRenderOptions;
+  closeMenu: () => void;
+  disabled: string;
+  selectedResults: Array<InventoryRecord>;
+};
 
 const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef(
   (
