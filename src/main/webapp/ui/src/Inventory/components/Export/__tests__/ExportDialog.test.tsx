@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 
 import "@testing-library/jest-dom";
@@ -37,8 +36,8 @@ describe("Export Tests", () => {
     selectedResults = [],
     exportType,
   }: {
-    selectedResults?: Array<InventoryRecord>,
-    exportType: ExportType,
+    selectedResults?: Array<InventoryRecord>;
+    exportType: ExportType;
   }) => {
     return (
       <ThemeProvider theme={materialTheme}>
