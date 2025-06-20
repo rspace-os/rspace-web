@@ -1,10 +1,9 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
+import { render, cleanup, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import TransferAction from "../TransferAction";
 import Dialog from "@mui/material/Dialog";
