@@ -1,10 +1,4 @@
-// @flow
-
-import React, {
-  useContext,
-  type Node as ReactNode,
-  type ComponentType,
-} from "react";
+import React, { useContext, type SyntheticEvent } from "react";
 import { makeStyles } from "tss-react/mui";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { observer } from "mobx-react-lite";
@@ -42,19 +36,18 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const tappedToggleIcon = (event: Event) =>
-  // $FlowExpectedError[prop-missing] This is a hack
-  !event.target.closest(".MuiTreeItem-label");
+const tappedToggleIcon = (event: SyntheticEvent) =>
+  !(event.target as HTMLElement).closest(".MuiTreeItem-label");
 
-function RecordTree(): ReactNode {
+function RecordTree(): React.ReactNode {
   const { search } = useContext(SearchContext);
   const { classes } = useStyles();
 
-  const handleToggle = (_: mixed, nodeIds: Array<GlobalId>) => {
+  const handleToggle = (_: SyntheticEvent, nodeIds: Array<GlobalId>) => {
     search.tree.setExpanded(nodeIds);
   };
 
-  const handleSelect = (event: Event, nodeIds: GlobalId) => {
+  const handleSelect = (event: SyntheticEvent, nodeIds: string | null) => {
     if (!tappedToggleIcon(event) && nodeIds !== search.tree.selected) {
       search.tree.setSelected(nodeIds);
     }
@@ -64,7 +57,7 @@ function RecordTree(): ReactNode {
     <SimpleTreeView
       className={classes.root}
       expandedItems={search.tree.expanded}
-      selectedItems={[search.tree.selected]}
+      selectedItems={search.tree.selected}
       onExpandedItemsChange={handleToggle}
       onSelectedItemsChange={handleSelect}
     >
@@ -75,4 +68,4 @@ function RecordTree(): ReactNode {
   );
 }
 
-export default (observer(RecordTree): ComponentType<{||}>);
+export default observer(RecordTree);

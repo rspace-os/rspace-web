@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useState, useRef, type Node, type ComponentType } from "react";
+import React, { useState, useRef, Fragment, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -70,11 +68,11 @@ export type PrintOptions = {
    * All records have a global ID, but some also have an IGSN. The print dialog
    * should support printing either, where possible.
    */
-  printIdentifierType?: "GLOBAL ID" | "IGSN",
+  printIdentifierType?: "GLOBAL ID" | "IGSN";
 
-  printerType: PrinterType,
-  printLayout: PrintLayout,
-  printSize: PrintSize,
+  printerType: PrinterType;
+  printLayout: PrintLayout;
+  printSize: PrintSize;
 
   /*
    * Each label can be printed multiple times (e.g. for raffle books).
@@ -83,30 +81,30 @@ export type PrintOptions = {
    *   where necessary.
    * - Any other numberical value is invalid.
    */
-  printCopies?: "1" | "2",
+  printCopies?: "1" | "2";
 };
 
-type PrintDialogArgs = {|
-  showPrintDialog: boolean,
-  onClose: () => void,
-  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
-  printerType?: PrinterType,
-  printSize?: PrintSize,
+type PrintDialogArgs = {
+  showPrintDialog: boolean;
+  onClose: () => void;
+  itemsToPrint: ReadonlyArray<InventoryRecord>;
+  printerType?: PrinterType;
+  printSize?: PrintSize;
   /* n/a for non-contextMenu cases */
-  closeMenu?: () => void,
-|};
+  closeMenu?: () => void;
+};
 
-type OptionsWrapperArgs = {|
-  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
-  printOptions: PrintOptions,
-  setPrintOptions: (PrintOptions) => void,
-|};
+type OptionsWrapperArgs = {
+  itemsToPrint: ReadonlyArray<InventoryRecord>;
+  printOptions: PrintOptions;
+  setPrintOptions: (options: PrintOptions) => void;
+};
 
 export const PrintOptionsWrapper = ({
   itemsToPrint,
   printOptions,
   setPrintOptions,
-}: OptionsWrapperArgs): Node => {
+}: OptionsWrapperArgs): ReactNode => {
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { classes } = useStyles();
 
@@ -127,7 +125,7 @@ export const PrintOptionsWrapper = ({
               if (target.value)
                 setPrintOptions({
                   ...printOptions,
-                  printIdentifierType: target.value,
+                  printIdentifierType: target.value as "GLOBAL ID" | "IGSN",
                 });
             }}
             row
@@ -159,7 +157,7 @@ export const PrintOptionsWrapper = ({
               if (target.value)
                 setPrintOptions({
                   ...printOptions,
-                  printerType: target.value,
+                  printerType: target.value as PrinterType,
                 });
             }}
             row
@@ -194,7 +192,7 @@ export const PrintOptionsWrapper = ({
               if (target.value)
                 setPrintOptions({
                   ...printOptions,
-                  printLayout: target.value,
+                  printLayout: target.value as PrintLayout,
                 });
             }}
             row
@@ -236,7 +234,7 @@ export const PrintOptionsWrapper = ({
               if (target.value)
                 setPrintOptions({
                   ...printOptions,
-                  printCopies: target.value,
+                  printCopies: target.value as "1" | "2",
                 });
             }}
           >
@@ -263,7 +261,7 @@ export const PrintOptionsWrapper = ({
                   if (target.value)
                     setPrintOptions({
                       ...printOptions,
-                      printSize: target.value,
+                      printSize: target.value as PrintSize,
                     });
                 }}
                 row
@@ -302,11 +300,11 @@ function PrintDialog({
   printerType,
   printSize,
   closeMenu,
-}: PrintDialogArgs): Node {
+}: PrintDialogArgs): ReactNode {
   const { classes } = useStyles();
   const { uiStore, trackingStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
-  const componentToPrint = useRef<mixed>();
+  const componentToPrint = useRef<HTMLDivElement>(null);
 
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
     printIdentifierType: "GLOBAL ID",
@@ -329,9 +327,7 @@ function PrintDialog({
     </>
   );
 
-  const [imageLinks, setImageLinks] = React.useState<$ReadOnlyArray<string>>(
-    []
-  );
+  const [imageLinks, setImageLinks] = React.useState<ReadonlyArray<string>>([]);
   React.useEffect(() => {
     if (
       printOptions.printIdentifierType === "IGSN" &&
@@ -350,7 +346,7 @@ function PrintDialog({
 
     const getImageUrl = async (record: InventoryRecord) => {
       if (printOptions.printIdentifierType === "IGSN") {
-        const { data } = await ApiService.query<{||}, Blob>(
+        const { data } = await ApiService.query<Blob>(
           "/barcodes",
           new URLSearchParams({
             content: `https://doi.org/${record.identifiers[0].doi}`,
@@ -378,7 +374,7 @@ function PrintDialog({
           })
         );
       });
-  }, [itemsToPrint, printOptions]);
+  }, [itemsToPrint, printOptions, uiStore, imageLinks]);
 
   return (
     <ContextDialog
@@ -459,7 +455,9 @@ function PrintDialog({
                           record instanceof SubSampleModel
                             ? record.immediateParentContainer?.globalId ?? "-"
                             : "-",
-                        identifier: ArrayUtils.getAt(0, record.identifiers).map((identifier) => ({ doi: identifier.doi })),
+                        identifier: ArrayUtils.getAt(0, record.identifiers).map(
+                          (identifier) => ({ doi: identifier.doi })
+                        ),
                         globalId: Optional.fromNullable(record.globalId),
                         barcodeUrl,
                       })
@@ -510,11 +508,11 @@ function PrintDialog({
               printCopies: printOptions.printCopies,
             });
           }}
-          onPrintError={(e) => {
+          onPrintError={(e: Error | string) => {
             uiStore.addAlert(
               mkAlert({
                 title: "Print error.",
-                message: e.message || "",
+                message: typeof e === "string" ? e : (e as Error).message || "",
                 variant: "error",
                 isInfinite: true,
               })
@@ -526,4 +524,4 @@ function PrintDialog({
   );
 }
 
-export default (observer(PrintDialog): ComponentType<PrintDialogArgs>);
+export default observer(PrintDialog);

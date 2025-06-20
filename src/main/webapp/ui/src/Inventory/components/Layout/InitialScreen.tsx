@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -18,7 +16,7 @@ import Main from "../../Main";
 import { useTheme } from "@mui/material/styles";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 
-function InitialScreen(): Node {
+function InitialScreen(): React.ReactNode {
   const theme = useTheme();
   const { peopleStore } = useStores();
   const { navigateToSearch } = useNavigateHelpers();
@@ -26,7 +24,7 @@ function InitialScreen(): Node {
   const navFilters = [
     {
       label: "My Bench",
-      onClick: (e: Event) => {
+      onClick: (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         navigateToSearch(
           peopleStore.currentUser
@@ -40,7 +38,7 @@ function InitialScreen(): Node {
     },
     {
       label: "Containers",
-      onClick: (e: Event) => {
+      onClick: (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         navigateToSearch({ resultType: "CONTAINER" });
       },
@@ -51,13 +49,13 @@ function InitialScreen(): Node {
             recordTypeLabel: "",
           }}
           style={{ width: "24px" }}
-          color={theme.palette.standardIcon}
+          color={theme.palette.standardIcon.main}
         />
       ),
     },
     {
       label: "Samples",
-      onClick: (e: Event) => {
+      onClick: (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         navigateToSearch({ resultType: "SAMPLE" });
       },
@@ -68,14 +66,18 @@ function InitialScreen(): Node {
             recordTypeLabel: "",
           }}
           style={{ width: "24px" }}
-          color={theme.palette.standardIcon}
+          color={theme.palette.standardIcon.main}
         />
       ),
     },
   ];
 
   const navButtons = (
-    buttons: Array<{| label: string, icon: Node, onClick: (Event) => void |}>
+    buttons: Array<{
+      label: string;
+      icon: React.ReactNode;
+      onClick: (e: React.MouseEvent<HTMLElement>) => void;
+    }>
   ) => {
     return buttons.map((args) => (
       <ListItem key={args.label} button {...args}>
@@ -108,4 +110,4 @@ function InitialScreen(): Node {
   );
 }
 
-export default (observer(InitialScreen): ComponentType<{||}>);
+export default observer(InitialScreen);

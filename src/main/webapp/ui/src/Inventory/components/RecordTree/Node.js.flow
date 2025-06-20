@@ -1,0 +1,10 @@
+// @flow
+
+import { type Element } from "react";
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+
+type TreeNodeArgs = {|
+  node: InventoryRecord,
+|};
+
+declare export default function TreeNode(props: TreeNodeArgs): Element<any>;

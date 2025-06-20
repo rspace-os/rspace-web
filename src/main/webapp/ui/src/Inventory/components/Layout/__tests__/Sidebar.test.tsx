@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
@@ -14,7 +13,7 @@ import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore
 import { storesContext } from "../../../../stores/stores-context";
 import { axe, toHaveNoViolations } from "jest-axe";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 
 expect.extend(toHaveNoViolations);
 
@@ -50,7 +49,6 @@ describe("Sidebar", () => {
       </ThemeProvider>
     );
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(container)).toHaveNoViolations();
   });
 });

@@ -1,15 +1,7 @@
-//@flow
-
-import React, {
-  useEffect,
-  useContext,
-  type Node,
-  type ElementProps,
-} from "react";
+import React, { useEffect, useContext } from "react";
 import { Observer } from "mobx-react-lite";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import Avatar from "@mui/material/Avatar";
 import CardHeader from "@mui/material/CardHeader";
@@ -21,19 +13,13 @@ import { globalStyles } from "../../../theme";
 import clsx from "clsx";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 
-const CustomTreeItem = withStyles<
-  ElementProps<typeof TreeItem>,
-  { root: string, content: string }
->((theme) => ({
-  root: {
+const useStyles = makeStyles()((theme) => ({
+  treeItem: {
     transition: theme.transitions.filterToggle,
   },
-  content: {
+  treeItemContent: {
     cursor: "default",
   },
-}))(TreeItem);
-
-const useStyles = makeStyles()((theme) => ({
   avatar: {
     backgroundColor: "white",
     color: "black",
@@ -51,11 +37,11 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type TreeNodeArgs = {|
-  node: InventoryRecord,
-|};
+type TreeNodeArgs = {
+  node: InventoryRecord;
+};
 
-export default function TreeNode({ node }: TreeNodeArgs): Node {
+export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
   const { classes } = useStyles();
   const { classes: globalClasses } = globalStyles();
@@ -75,10 +61,15 @@ export default function TreeNode({ node }: TreeNodeArgs): Node {
   };
 
   const nodeAvatar = () =>
-    match<void, Node>([
+    match<void, React.ReactNode>([
       [
         () => Boolean(node.thumbnail),
-        <img className={classes.image} src={node.thumbnail} key={2} />,
+        <img
+          className={classes.image}
+          src={node.thumbnail || ""}
+          alt="Record thumbnail"
+          key={2}
+        />,
       ],
       [() => true, <RecordTypeIcon record={node} key={3} />],
     ])();
@@ -86,8 +77,12 @@ export default function TreeNode({ node }: TreeNodeArgs): Node {
   return (
     <Observer>
       {() => (
-        <CustomTreeItem
-          itemId={node.globalId}
+        <TreeItem
+          className={classes.treeItem}
+          classes={{
+            content: classes.treeItemContent,
+          }}
+          itemId={node.globalId || ""}
           label={
             <CardHeader
               action={
@@ -108,7 +103,7 @@ export default function TreeNode({ node }: TreeNodeArgs): Node {
           }
         >
           {children()}
-        </CustomTreeItem>
+        </TreeItem>
       )}
     </Observer>
   );

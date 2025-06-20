@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
@@ -51,6 +50,7 @@ describe("MoveInstructions", () => {
     const scopedResult = makeMockContainer({});
     jest.spyOn(scopedResult, "fetchImage").mockImplementation((name) => {
       if (name === "locationsImage") scopedResult.locationsImage = null;
+      return Promise.resolve(null);
     });
     await scopedResult.fetchAdditionalInfo();
 
@@ -79,6 +79,7 @@ describe("MoveInstructions", () => {
     const scopedResult = makeMockContainer({});
     jest.spyOn(scopedResult, "fetchImage").mockImplementation((name) => {
       if (name === "locationsImage") scopedResult.locationsImage = "foo";
+      return Promise.resolve("foo");
     });
 
     /*
