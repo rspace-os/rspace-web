@@ -1,21 +1,38 @@
 import Grid from "@mui/material/Grid";
-import React from "react";
+import React, { useState } from "react";
 import IntegrationCard from "../IntegrationCard";
+import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import TextField from "@mui/material/TextField";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardActions from "@mui/material/CardActions";
+import Button from "@mui/material/Button";
 import AscensciaIcon from "../../../assets/branding/ascenscia/logo.svg";
 import { observer } from "mobx-react-lite";
-import docLinks from "../../../assets/DocLinks";
-import Link from "@mui/material/Link";
 import { LOGO_COLOR } from "../../../assets/branding/ascenscia";
+import { Optional } from "../../../util/optional";
+
+type AscensciaArgs = {
+  integrationState: IntegrationStates["ASCENSCIA"];
+  update: (newIntegrationState: IntegrationStates["ASCENSCIA"]) => void;
+};
 
 /*
  * The integration is actually on Ascenscia's end; the user passes their RSpace
  * API key to Ascenscia.
  */
-function Ascenscia(): React.ReactNode {
+function Ascenscia({
+  integrationState,
+  update,
+}: AscensciaArgs): React.ReactNode {
+  const [apiKey, setApiKey] = useState(
+    integrationState.credentials.ASCENSCIA_USER_TOKEN.orElse("")
+  );
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
         name="Ascenscia"
+        integrationState={integrationState}
         explanatoryText="A highly specialized voice assistant mobile application for scientific labs."
         image={AscensciaIcon}
         color={LOGO_COLOR}
@@ -24,24 +41,49 @@ function Ascenscia(): React.ReactNode {
         website="ascenscia.ai"
         docLink="ascenscia"
         setupSection={
-          <ol>
-            <li>In My RSpace → My Profile, generate an API key.</li>
-            <li>
-              Enter your API key on the RSpace login page in the Ascenscia app.
-            </li>
-            <li>
-              See{" "}
-              <Link href={docLinks.ascenscia} target="_blank" rel="noreferrer">
-                usage documentation
-              </Link>{" "}
-              on how to use Ascenscia with RSpace.
-            </li>
-          </ol>
+          <>
+            <ol>
+              <li>
+                TODO: Provide instructions for setting up Ascenscia integration.
+              </li>
+            </ol>
+            <Card variant="outlined" sx={{ mt: 2 }}>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void update({
+                    mode: integrationState.mode,
+                    credentials: {
+                      ASCENSCIA_USER_TOKEN: Optional.present(apiKey),
+                    },
+                  });
+                }}
+              >
+                <CardContent>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    label="API Key"
+                    type="password"
+                    size="small"
+                    value={apiKey}
+                    onChange={({ target: { value } }) => {
+                      setApiKey(value);
+                    }}
+                  />
+                </CardContent>
+                <CardActions>
+                  <Button type="submit">Save</Button>
+                </CardActions>
+              </form>
+            </Card>
+          </>
         }
-        update={() => {}}
-        integrationState={{
-          mode: "EXTERNAL",
-          credentials: null,
+        update={(newMode) => {
+          update({
+            mode: newMode,
+            credentials: integrationState.credentials,
+          });
         }}
       />
     </Grid>
