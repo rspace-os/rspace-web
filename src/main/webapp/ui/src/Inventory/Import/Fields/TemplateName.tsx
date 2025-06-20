@@ -1,15 +1,13 @@
-// @flow
-
 import useStores from "../../../stores/use-stores";
 import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType } from "react";
+import React, { type ReactNode } from "react";
 
-type TemplateNameArgs = {|
-  disabled?: boolean,
-|};
+type TemplateNameArgs = {
+  disabled?: boolean;
+};
 
-function TemplateName({ disabled }: TemplateNameArgs): Node {
+function TemplateName({ disabled }: TemplateNameArgs): ReactNode {
   const { importStore } = useStores();
   const error =
     importStore.importData?.createNewTemplate &&
@@ -40,4 +38,4 @@ function TemplateName({ disabled }: TemplateNameArgs): Node {
   );
 }
 
-export default (observer(TemplateName): ComponentType<TemplateNameArgs>);
+export default observer(TemplateName);
