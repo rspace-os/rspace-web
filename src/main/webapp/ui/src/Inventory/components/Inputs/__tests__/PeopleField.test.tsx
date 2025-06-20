@@ -1,16 +1,9 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
-import {
-  render,
-  cleanup,
-  screen,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import PeopleField from "../PeopleField";
 import Alerts from "../../Alerts";
@@ -26,7 +19,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 jest.mock("../../../../common/ElnApiService", () => ({
-  get: (endpoint) => {
+  get: (_endpoint: string) => {
     return Promise.resolve({
       data: {
         status: "INTERNAL_SERVER_ERROR",
