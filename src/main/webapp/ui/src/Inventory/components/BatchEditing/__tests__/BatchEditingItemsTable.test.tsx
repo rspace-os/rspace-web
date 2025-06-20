@@ -1,10 +1,9 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import fc from "fast-check";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";
@@ -23,7 +22,7 @@ afterEach(cleanup);
 
 describe("BatchEditingItemsTable", () => {
   test("Table body should have as many rows as records that are passed.", () => {
-    fc.assert(
+    void fc.assert(
       fc.asyncProperty(
         fc.tuple(arbRsSet(arbitraryRecord), fc.string()),
         async ([records, label]) => {
