@@ -1,19 +1,17 @@
-//@flow
-
 import Box from "@mui/material/Box";
 import FieldTypeMenuItem from "./FieldTypeMenuItem";
 import UploadFormControl from "./FormControl";
 import Menu from "@mui/material/Menu";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import { ColumnFieldMap } from "../../../stores/models/ImportModel";
 
-type FieldTypeMenuArgs = {|
-  columnFieldMap: ColumnFieldMap,
-|};
+type FieldTypeMenuArgs = {
+  columnFieldMap: ColumnFieldMap;
+};
 
-function FieldTypeMenu({ columnFieldMap }: FieldTypeMenuArgs): Node {
-  const [anchorEl, setAnchorEl] = React.useState<?EventTarget>(null);
+function FieldTypeMenu({ columnFieldMap }: FieldTypeMenuArgs): React.ReactNode {
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   return (
     <Box p={1}>
       <UploadFormControl label="Custom Field Type">
@@ -46,4 +44,4 @@ function FieldTypeMenu({ columnFieldMap }: FieldTypeMenuArgs): Node {
   );
 }
 
-export default (observer(FieldTypeMenu): ComponentType<FieldTypeMenuArgs>);
+export default observer(FieldTypeMenu);
