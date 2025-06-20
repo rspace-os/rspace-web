@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import { makeMockSubSample } from "./mocking";
 import ApiService from "../../../../common/InvApiService";
@@ -54,7 +53,7 @@ describe("action: createNote", () => {
     test("append to notes observable.", () => {
       const subSample = makeMockSubSample();
       subSample.editing = true;
-      subSample.lastEditInput = new Date();
+      (subSample as any).lastEditInput = new Date();
       const setAttributesDirtySpy = jest.spyOn(subSample, "setAttributesDirty");
       void subSample.createNote({ content: "A new note" });
       expect(setAttributesDirtySpy).toHaveBeenCalledWith({
