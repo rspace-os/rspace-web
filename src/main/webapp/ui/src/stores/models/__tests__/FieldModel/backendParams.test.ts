@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import { makeMockField } from "./mocking";
 
