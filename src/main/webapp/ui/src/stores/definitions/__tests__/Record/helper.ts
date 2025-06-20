@@ -1,5 +1,3 @@
-//@flow
-
 import fc, { type Arbitrary } from "fast-check";
 import { type Id, type GlobalId, type GlobalIdPrefix } from "../../BaseRecord";
 import { type Record as Foo } from "../../Record";
@@ -7,7 +5,7 @@ import { arbitraryPerson } from "../Person/helper";
 
 export const arbitraryId: Arbitrary<Id> = fc
   .integer({ min: 1 })
-  .map((n) => (n: ?number));
+  .map((n) => n as number | null);
 
 export const arbitraryGlobalId = (
   prefix: GlobalIdPrefix
@@ -18,7 +16,7 @@ export const arbitraryGlobalId = (
   });
 
 export const arbitraryRecord: Arbitrary<Foo> = fc
-  .record<any>({
+  .record<Partial<Foo>>({
     id: arbitraryId,
 
     /*
@@ -34,9 +32,7 @@ export const arbitraryRecord: Arbitrary<Foo> = fc
     owner: arbitraryPerson,
     deleted: fc.boolean(),
     cardTypeLabel: fc.string(),
-    permalink: fc.option(fc.string()),
+    permalinkURL: fc.option(fc.string()),
     recordDetails: fc.constant({}),
   })
-  .map((arbs) => ({
-    ...arbs,
-  }));
+  .map((arbs) => arbs as Foo);
