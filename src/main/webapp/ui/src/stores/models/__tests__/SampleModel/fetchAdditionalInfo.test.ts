@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { makeMockSample, sampleAttrs } from "./mocking";
@@ -19,7 +18,7 @@ const mockRootStore = {
     setDirty: () => {},
   },
   searchStore: {
-    getTemplate: jest.fn(() => Promise.reject()),
+    getTemplate: jest.fn().mockRejectedValue(new Error("Test error")),
   },
 };
 
@@ -38,6 +37,7 @@ describe("fetchAdditionalInfo", () => {
     const sample = makeMockSample({
       templateId: 1,
     });
+    // @ts-expect-error Mock implementation return type incompatibility
     jest.spyOn(InvApiService, "query").mockImplementation(() =>
       Promise.resolve({
         data: {
@@ -66,6 +66,7 @@ describe("fetchAdditionalInfo", () => {
   });
   test("Calls made on a sample without a template should resolve.", async () => {
     const sample = makeMockSample();
+    // @ts-expect-error Mock implementation return type incompatibility
     jest.spyOn(InvApiService, "query").mockImplementation(() =>
       Promise.resolve({
         data: sampleAttrs(),
