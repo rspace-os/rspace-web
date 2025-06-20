@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -13,6 +12,7 @@ import InnerSearchNavigationContext from "../InnerSearchNavigationContext";
 import Search from "../../../stores/models/Search";
 import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
 import ApiServiceBase from "../../../common/ApiServiceBase";
+import { AxiosResponse } from "axios";
 import "../../../__tests__/assertUrlSearchParams";
 
 beforeEach(() => {
@@ -21,11 +21,13 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+type TriggersSearchNavigateArgs = {
+  skipToParentContext?: boolean;
+};
+
 const TriggersSearchNavigate = ({
   skipToParentContext,
-}: {|
-  skipToParentContext?: boolean,
-|}) => {
+}: TriggersSearchNavigateArgs) => {
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
 
@@ -55,7 +57,15 @@ describe("InnerSearchNavigationContext", () => {
   test("navigate calls should update the search parameters.", () => {
     const querySpy = jest
       .spyOn(ApiServiceBase.prototype, "query")
-      .mockImplementation(() => Promise.resolve({ data: { records: [] } }));
+      .mockImplementation(() =>
+        Promise.resolve({
+          data: { records: [] },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse)
+      );
 
     const search = new Search({
       factory: new AlwaysNewFactory(),
@@ -78,14 +88,13 @@ describe("InnerSearchNavigationContext", () => {
 
     expect(querySpy).toHaveBeenLastCalledWith(
       "search",
-      // $FlowExpectedError[prop-missing]
       expect.urlSearchParamContaining({ query: "foo" })
     );
   });
 
   describe("when the parent context is AlwaysNewWindowNavigationContext", () => {
     test("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", () => {
-      const openSpy = jest.spyOn(window, "open").mockImplementation(() => ({}));
+      const openSpy = jest.spyOn(window, "open").mockImplementation(() => null);
 
       const search = new Search({
         factory: new AlwaysNewFactory(),
@@ -111,7 +120,7 @@ describe("InnerSearchNavigationContext", () => {
       expect(openSpy).toHaveBeenCalled();
     });
     test("navigate calls to permalink pages should always open in a new window.", () => {
-      const openSpy = jest.spyOn(window, "open").mockImplementation(() => ({}));
+      const openSpy = jest.spyOn(window, "open").mockImplementation(() => null);
 
       const search = new Search({
         factory: new AlwaysNewFactory(),
@@ -141,7 +150,15 @@ describe("InnerSearchNavigationContext", () => {
   test("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", () => {
     const querySpy = jest
       .spyOn(ApiServiceBase.prototype, "query")
-      .mockImplementation(() => Promise.resolve({ data: { records: [] } }));
+      .mockImplementation(() =>
+        Promise.resolve({
+          data: { records: [] },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse)
+      );
 
     const search = new Search({
       factory: new AlwaysNewFactory(),
@@ -167,7 +184,6 @@ describe("InnerSearchNavigationContext", () => {
 
     expect(querySpy).toHaveBeenLastCalledWith(
       "search",
-      // $FlowExpectedError[prop-missing]
       expect.urlSearchParamContaining({ query: "foo", parentGlobalId: "SA1" })
     );
   });
