@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { makeMockSubSample, subsampleAttrs } from "./mocking";
@@ -9,7 +8,7 @@ import { sampleAttrs } from "../SampleModel/mocking";
 import InvApiService from "../../../../common/InvApiService";
 
 jest.mock("../../../../common/InvApiService", () => ({
-  query: () => ({}),
+  query: jest.fn(() => ({})),
 }));
 jest.mock("../../../../stores/stores/RootStore", () => () => ({
   uiStore: {
@@ -28,13 +27,14 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const subsample = makeMockSubSample();
-    jest.spyOn(InvApiService, "query").mockImplementation(() =>
-      Promise.resolve({
-        data: {
-          sample: sampleAttrs(),
-          ...subsampleAttrs(),
-        },
-      })
+    (jest.spyOn(InvApiService, "query") as jest.SpyInstance).mockImplementation(
+      () =>
+        Promise.resolve({
+          data: {
+            sample: sampleAttrs(),
+            ...subsampleAttrs(),
+          },
+        } as any)
     );
 
     let firstCallDone = false;
