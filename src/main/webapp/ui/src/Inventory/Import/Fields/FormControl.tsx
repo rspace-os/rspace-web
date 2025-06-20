@@ -1,8 +1,6 @@
-//@flow
-
-import React, { type ComponentType, type Node } from "react";
+import React, { type ComponentType } from "react";
 import FormControl from "../../../components/Inputs/FormControl";
-import { withStyles } from "Styles";
+import { withStyles } from "../../../util/styles";
 
 /*
  * Because the Upload page is only a single column layout, we limit the width
@@ -10,22 +8,24 @@ import { withStyles } from "Styles";
  * wide monitors.
  */
 
-type UploadFormControlArgs = {|
-  label: string,
-  children: Node,
-
-  error?: boolean,
-  helperText?: string,
-|};
+export type UploadFormControlArgs = {
+  label: string;
+  children: React.ReactNode;
+  error?: boolean;
+  helperText?: string;
+};
 
 const UploadFormControl: ComponentType<UploadFormControlArgs> = withStyles<
   UploadFormControlArgs,
-  { formControl?: string, formLabel?: string }
+  { formControl?: string; formLabel?: string }
 >(() => ({
   formControl: {
     maxWidth: 660,
   },
-}))(({ classes, ...props }) => <FormControl classes={classes} {...props} />);
+}))((props) => {
+  const { classes, ...rest } = props;
+  return <FormControl classes={classes} {...rest} />;
+});
 
 UploadFormControl.displayName = "UploadFormControl";
 export default UploadFormControl;
