@@ -1,13 +1,26 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import Search from "../../Search";
 import ApiServiceBase from "../../../../common/ApiServiceBase";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import "../../../../__tests__/assertUrlSearchParams";
+
+// Add type definition for the custom matcher
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace jest {
+    interface Matchers<R> {
+      urlSearchParamContaining: (expected: Record<string, string>) => R;
+    }
+    interface Expect {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      urlSearchParamContaining: (expected: Record<string, string>) => any;
+    }
+  }
+}
 
 jest.mock("../../../stores/RootStore", () => () => ({
   authStore: {
@@ -28,14 +41,20 @@ describe("action: setOwner", () => {
       const querySpy = jest
         .spyOn(ApiServiceBase.prototype, "query")
         .mockImplementation(() =>
-          Promise.resolve({ data: { containers: [] } })
+          Promise.resolve({
+            data: { containers: [] },
+            status: 200,
+            statusText: "OK",
+            headers: {},
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+            config: {} as any,
+          })
         );
 
       void search.setPage(1);
       expect(querySpy).toHaveBeenCalledTimes(1);
       expect(querySpy).toHaveBeenCalledWith(
         "containers",
-        // $FlowExpectedError[prop-missing]
         expect.urlSearchParamContaining({ pageNumber: "1" })
       );
 
@@ -43,7 +62,6 @@ describe("action: setOwner", () => {
       expect(querySpy).toHaveBeenCalledTimes(2);
       expect(querySpy).toHaveBeenCalledWith(
         "containers",
-        // $FlowExpectedError[prop-missing]
         expect.urlSearchParamContaining({ pageNumber: "0" })
       );
     });
