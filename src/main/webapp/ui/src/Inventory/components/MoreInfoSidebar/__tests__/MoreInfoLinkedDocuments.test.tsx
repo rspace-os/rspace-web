@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { cleanup, screen, fireEvent } from "@testing-library/react";
@@ -9,6 +8,7 @@ import "@testing-library/jest-dom";
 import LinkedDocuments from "../LinkedDocuments";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import InvApiService from "../../../../common/InvApiService";
+import { type AxiosResponse } from "axios";
 import { newDocument } from "../../../../stores/models/Document";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
@@ -55,7 +55,11 @@ describe("LinkedDocuments", () => {
           { elnDocument: { globalId: "SD1", id: 1, name: "Foo", owner: null } },
           { elnDocument: { globalId: "SD2", id: 2, name: "Bar", owner: null } },
         ],
-      });
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse);
     });
     render(
       <ThemeProvider theme={materialTheme}>
@@ -75,12 +79,14 @@ describe("LinkedDocuments", () => {
     ).toHaveLength(3);
 
     expect(
+      // @ts-ignore findTableCell exists in the customized within function
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 0,
       })
     ).toHaveTextContent("Foo");
     expect(
+      // @ts-ignore findTableCell exists in the customized within function
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 1,
@@ -95,7 +101,11 @@ describe("LinkedDocuments", () => {
           { elnDocument: { globalId: "SD1", id: 1, name: "Foo", owner: null } },
           { elnDocument: { globalId: "SD1", id: 1, name: "Foo", owner: null } },
         ],
-      });
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse);
     });
     render(
       <ThemeProvider theme={materialTheme}>
@@ -112,7 +122,9 @@ describe("LinkedDocuments", () => {
     );
     const rows = within(await screen.findByRole("table")).getAllByRole("row");
     expect(rows).toHaveLength(2);
+
     expect(
+      // @ts-ignore findTableCell exists in the customized within function
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 0,
