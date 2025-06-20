@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 
@@ -10,6 +9,7 @@ import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../../definitions/Factory";
 import InvApiService from "../../../../../common/InvApiService";
 import "../../../../../__tests__/assertUrlSearchParams";
+import { AxiosResponse } from "axios";
 
 jest.mock("../../../../stores/RootStore", () => () => ({
   uiStore: {
@@ -19,12 +19,16 @@ jest.mock("../../../../stores/RootStore", () => () => ({
 jest.mock("../../../../../common/InvApiService", () => ({
   query: jest.fn(
     () =>
-      new Promise((resolve) =>
+      new Promise<AxiosResponse>((resolve) =>
         resolve({
           data: {
             containers: [],
             totalHits: 0,
           },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {} as any,
         })
       )
   ),
@@ -33,7 +37,7 @@ jest.mock("../../../../../common/InvApiService", () => ({
 describe("search", () => {
   describe("When a new search is performed,", () => {
     test("a new factory should be created.", async () => {
-      const mockNewFactory = jest.fn<[], Factory>();
+      const mockNewFactory = jest.fn<any, any>().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });
@@ -46,10 +50,16 @@ describe("search", () => {
       const querySpy = jest
         .spyOn(InvApiService, "query")
         .mockImplementation(() =>
-          Promise.resolve({ data: { containers: [] } })
+          Promise.resolve({
+            data: { containers: [] },
+            status: 200,
+            statusText: "OK",
+            headers: {},
+            config: {} as any,
+          })
         );
 
-      const mockNewFactory = jest.fn<[], Factory>();
+      const mockNewFactory = jest.fn<any, any>().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });
@@ -58,7 +68,6 @@ describe("search", () => {
       await fetcher.search({}, () => {});
       expect(querySpy).toHaveBeenCalledWith(
         "containers",
-        // $FlowExpectedError[prop-missing]
         expect.urlSearchParamContaining({ pageSize: "10" })
       );
     });

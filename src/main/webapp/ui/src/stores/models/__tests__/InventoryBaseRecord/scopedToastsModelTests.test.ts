@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
@@ -25,24 +24,19 @@ describe("Scoped Toasts Model Tests", () => {
     const allCommands = [
       fc
         .string()
-        .map<Command<{| count: number |}, InventoryBaseRecord>>(
+        .map(
           (message: string) => new AddScopedToastCommand(mkAlert({ message }))
         ),
-      fc.constant<Command<{| count: number |}, InventoryBaseRecord>>(
-        new ClearAllScopedToastsCommand()
-      ),
+      fc.constant(new ClearAllScopedToastsCommand()),
     ];
     await fc.assert(
-      fc.asyncProperty(
-        fc.commands<{| count: number |}, InventoryBaseRecord>(allCommands),
-        async (cmds) => {
-          const s = () => ({
-            model: { count: 0 },
-            real: new InventoryBaseRecord(mockFactory(), {}),
-          });
-          await fc.asyncModelRun(s, cmds);
-        }
-      )
+      fc.asyncProperty(fc.commands(allCommands), async (cmds) => {
+        const s = () => ({
+          model: { count: 0 },
+          real: new InventoryBaseRecord(mockFactory(), {}),
+        });
+        await fc.modelRun(s, cmds);
+      })
     );
   });
 });

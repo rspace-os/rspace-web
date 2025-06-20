@@ -1,12 +1,11 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
-import SampleModel from "../../SampleModel";
-import SubSampleModel from "../../SubSampleModel";
+import SampleModel, { type SampleAttrs } from "../../SampleModel";
+import SubSampleModel, { type SubSampleAttrs } from "../../SubSampleModel";
 import { sampleAttrs } from "./mocking";
 import { subsampleAttrs } from "../SubSampleModel/mocking";
 
@@ -23,10 +22,10 @@ describe("action: populateFromJson", () => {
       const factory = mockFactory();
       const newRecordSpy = jest
         .spyOn(factory, "newRecord")
-        .mockImplementation((attrs) =>
+        .mockImplementation((attrs: any) =>
           attrs.type === "SAMPLE"
-            ? new SampleModel(factory, attrs)
-            : new SubSampleModel(factory, attrs)
+            ? new SampleModel(factory, attrs as SampleAttrs)
+            : new SubSampleModel(factory, attrs as SubSampleAttrs)
         );
 
       const attrs = () => ({
@@ -39,13 +38,13 @@ describe("action: populateFromJson", () => {
 
       newRecordSpy.mockClear();
       const factory2 = mockFactory();
-      jest.spyOn(factory2, "newRecord").mockImplementation((a) => {
+      jest.spyOn(factory2, "newRecord").mockImplementation((a: any) => {
         return a.type === "SAMPLE"
-          ? new SampleModel(factory, a)
-          : new SubSampleModel(factory, a);
+          ? new SampleModel(factory, a as SampleAttrs)
+          : new SubSampleModel(factory, a as SubSampleAttrs);
       });
 
-      sample.populateFromJson(factory2, attrs());
+      sample.populateFromJson(factory2, attrs(), {});
 
       expect(newRecordSpy).not.toHaveBeenCalled();
     });
