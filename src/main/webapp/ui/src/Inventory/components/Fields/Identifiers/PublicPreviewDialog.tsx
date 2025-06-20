@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType, Suspense, lazy } from "react";
+import React, { Suspense, lazy } from "react";
 import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import useStores from "../../../../stores/use-stores";
@@ -20,12 +18,12 @@ import PublishButton from "./PublishButton";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import AlwaysNewWindowNavigationContext from "../../../../components/AlwaysNewWindowNavigationContext";
 
-const IdentifierPublicPage = lazy(() =>
-  import("../../../../components/PublicPages/IdentifierPublicPage")
+const IdentifierPublicPage = lazy(
+  () => import("../../../../components/PublicPages/IdentifierPublicPage")
 );
 const IdentifierDataGrid = lazy(() =>
   import("../../../../components/PublicPages/IdentifierPublicPage").then(
-    ({ IdentifierDataGrid }) => ({ default: IdentifierDataGrid })
+    ({ IdentifierDataGrid: DataGrid }) => ({ default: DataGrid })
   )
 );
 
@@ -41,23 +39,37 @@ const useStyles = makeStyles()((theme) => ({
 const missingDataAlert: string =
   "Some required details are missing. To enable publishing, please fill them in.";
 
-export const MissingDataAlert = (): Node => {
-  return <Alert severity="warning">{missingDataAlert}</Alert>;
+/**
+ * Alert to display when required identifier data is missing
+ */
+export const MissingDataAlert = ({
+  className,
+}: {
+  className?: string;
+}): React.ReactNode => {
+  return (
+    <Alert severity="warning" className={className}>
+      {missingDataAlert}
+    </Alert>
+  );
 };
 
-type PreviewDialogArgs = {|
-  open: boolean,
-  onClose: () => void,
-  id: Identifier,
-  record: InventoryRecord,
-|};
+type PreviewDialogArgs = {
+  open: boolean;
+  onClose: () => void;
+  id: Identifier;
+  record: InventoryRecord;
+};
 
+/**
+ * Dialog to preview public page for an identifier
+ */
 const PublicPreviewDialog = ({
   open,
   onClose,
   id,
   record,
-}: PreviewDialogArgs): Node => {
+}: PreviewDialogArgs): React.ReactNode => {
   const { classes } = useStyles();
   const { uiStore } = useStores();
   if (!id.rsPublicId) return null;
@@ -115,7 +127,7 @@ const PublicPreviewDialog = ({
                   record={{
                     description: record.description,
                     tags: record.tags,
-                    // $FlowExpectedError[prop-missing] If sample or template
+                    // @ts-expect-error - fields exists at runtime but is not in the interface
                     fields: record.fields,
                     extraFields: record.extraFields.map((eF) => ({
                       name: eF.name,
@@ -138,6 +150,4 @@ const PublicPreviewDialog = ({
   );
 };
 
-export default (observer(
-  PublicPreviewDialog
-): ComponentType<PreviewDialogArgs>);
+export default observer(PublicPreviewDialog);

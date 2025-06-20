@@ -1,0 +1,19 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import { type Identifier } from "../../../../stores/definitions/Identifier";
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+
+export const MissingDataAlert = (): Node => {
+  return null;
+};
+
+type PreviewDialogArgs = {|
+  open: boolean,
+  onClose: () => void,
+  id: Identifier,
+  record: InventoryRecord,
+|};
+
+declare var PublicPreviewDialog: ComponentType<PreviewDialogArgs>;
+export default PublicPreviewDialog;
