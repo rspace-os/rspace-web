@@ -42,6 +42,7 @@ const docLinks: { [name: string]: URL } = {
   pyratCors: mkDocLink("9kkeooveia", "cors"),
   panelAdjuster: mkDocLink("bt6kx098eq", "panel_adjuster"),
   appsIntroduction: mkDocLink("08ky7o0l1y"),
+  apiDirect: mkDocLink("v0dxtfvj7u"),
   argos: mkDocLink("vkd8mt2ffb"),
   clustermarket: mkDocLink("e6pb7y8ak1"),
   dataverse: mkDocLink("h14qd5tvjj"),
