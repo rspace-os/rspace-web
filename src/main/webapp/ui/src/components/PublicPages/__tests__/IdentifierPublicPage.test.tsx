@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../__mocks__/matchMedia";
 import React from "react";
@@ -10,12 +9,13 @@ import "@testing-library/jest-dom";
 import IdentifierPublicPage from "../IdentifierPublicPage";
 import { mockIGSNAttrs } from "../../../Inventory/components/Fields/Identifiers/__tests__/mocking";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 
-jest.mock(
-  "../../../Inventory/components/Fields/Identifiers/MapViewer",
-  () => () => <></>
-);
+jest.mock("../../../Inventory/components/Fields/Identifiers/MapViewer", () => {
+  const MockMapViewer = () => <></>;
+  MockMapViewer.displayName = "MockMapViewer";
+  return MockMapViewer;
+});
 
 const mockAxios = new MockAdapter(axios);
 
