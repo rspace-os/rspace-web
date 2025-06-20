@@ -1,22 +1,20 @@
-// @flow
-
 import FileField from "../../../components/Inputs/FileField";
 import UploadFormControl from "./FormControl";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
-import { withStyles } from "Styles";
+import { withStyles } from "../../../util/styles";
 
-type FileArgs = {|
-  loadedFile?: ?File,
-|};
+type FileArgs = {
+  loadedFile?: File | null;
+};
 
-function FileForImport({ loadedFile }: FileArgs): Node {
+function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
   const { importStore } = useStores();
 
   const ErrorDetails = withStyles<
-    {| errorMessage: ?string |},
-    { details: string, detailsLabel: string, message: string }
+    { errorMessage: string | null | undefined },
+    { details: string; detailsLabel: string; message: string }
   >((theme) => ({
     details: {
       display: "flex",
@@ -53,7 +51,7 @@ function FileForImport({ loadedFile }: FileArgs): Node {
           accept=".csv"
           buttonLabel={`${
             fileByRecordTypeLoaded ? "Replace" : "Select"
-          } ${labelByRecordType} CSV File`}
+          } ${String(labelByRecordType)} CSV File`}
           name="file"
           datatestid="csvFile"
           onChange={({ file }) => importStore.importData?.setFile(file)}
@@ -71,4 +69,4 @@ function FileForImport({ loadedFile }: FileArgs): Node {
   );
 }
 
-export default (observer(FileForImport): ComponentType<FileArgs>);
+export default observer(FileForImport);
