@@ -1,16 +1,14 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import TextField from "@mui/material/TextField";
 import { ColumnFieldMap } from "../../../stores/models/ImportModel";
 
-type FieldNameStringFieldArgs = {|
-  columnFieldMap: ColumnFieldMap,
-|};
+type FieldNameStringFieldArgs = {
+  columnFieldMap: ColumnFieldMap;
+};
 
 export default function FieldNameStringField({
   columnFieldMap,
-}: FieldNameStringFieldArgs): Node {
+}: FieldNameStringFieldArgs): React.ReactNode {
   const error = !columnFieldMap.validFieldName;
   return (
     <TextField
