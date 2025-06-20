@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React, { useContext } from "react";
 import { render, cleanup, screen, waitFor } from "@testing-library/react";
@@ -19,7 +18,11 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const NavigateTo = ({ url }: { url: string }) => {
+type NavigateToProps = {
+  url: string;
+};
+
+const NavigateTo = ({ url }: NavigateToProps) => {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   return (
@@ -52,12 +55,12 @@ describe("NavigationContext", () => {
         areChanges,
         userDiscards,
         expectToNavigate,
-      }: {|
-        url: string,
-        areChanges: boolean,
-        userDiscards: boolean,
-        expectToNavigate: boolean,
-      |}) => {
+      }: {
+        url: string;
+        areChanges: boolean;
+        userDiscards: boolean;
+        expectToNavigate: boolean;
+      }) => {
         const user = userEvent.setup();
         const dummyUseLocation = {
           hash: "",
@@ -66,13 +69,7 @@ describe("NavigationContext", () => {
           state: {},
           key: "",
         };
-        const navFn = jest.fn<
-          [
-            string,
-            ?{| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
-          ],
-          void
-        >();
+        const navFn = jest.fn();
         render(
           <storesContext.Provider
             value={makeMockRootStore({
@@ -95,7 +92,7 @@ describe("NavigationContext", () => {
             </NavigateContext.Provider>
           </storesContext.Provider>
         );
-        user.click(screen.getByText("Click me"));
+        await user.click(screen.getByText("Click me"));
         await waitFor(() => {
           if (expectToNavigate) {
             expect(navFn).toHaveBeenCalled();
