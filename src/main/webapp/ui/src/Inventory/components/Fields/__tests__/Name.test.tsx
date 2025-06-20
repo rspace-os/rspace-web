@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React, { useState } from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -20,7 +19,7 @@ afterEach(cleanup);
 
 function renderNameField(
   initialValue: string,
-  onErrorStateChange: (boolean) => void
+  onErrorStateChange: (value: boolean) => void
 ) {
   const Wrapper = () => {
     const [name, setName] = useState(initialValue);
@@ -69,7 +68,7 @@ describe("Name", () => {
           .filter((name) => /\S/.test(name)),
         (name) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.input(screen.getByRole("textbox"), {
@@ -91,7 +90,7 @@ describe("Name", () => {
         fc.string({ minLength: 3, maxLength: 255 }),
         (generatedName) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.change(screen.getByRole("textbox"), {
@@ -114,7 +113,7 @@ describe("Name", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 256 }), (name) => {
         cleanup();
-        const onErrorStateChange = jest.fn<[boolean], void>();
+        const onErrorStateChange = jest.fn();
         const { container } = renderNameField("", onErrorStateChange);
 
         fireEvent.change(screen.getByRole("textbox"), {
@@ -137,7 +136,7 @@ describe("Name", () => {
           .filter((name) => /^\s+$/.test(name)),
         (name) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.change(screen.getByRole("textbox"), {
@@ -167,7 +166,7 @@ describe("Name", () => {
         ),
         ([firstValidValue, secondInvalidValue]) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.change(screen.getByRole("textbox"), {
@@ -198,7 +197,7 @@ describe("Name", () => {
         fc.string({ minLength: 3, maxLength: 255 }),
         (generatedName) => {
           cleanup();
-          const onErrorStateChange = jest.fn<[boolean], void>();
+          const onErrorStateChange = jest.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.change(screen.getByRole("textbox"), {
