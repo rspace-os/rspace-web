@@ -1,5 +1,3 @@
-// @flow
-
 import SearchContext from "../../stores/contexts/Search";
 import { DEFAULT_SEARCH } from "../../stores/models/Fetcher/CoreFetcher";
 import LoadingList from "../components/FetchOnScroll/LoadingList";
@@ -8,10 +6,10 @@ import RecordTree from "../components/RecordTree/RecordTree";
 import ScrollBox from "./ScrollBox";
 import { observer } from "mobx-react-lite";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import React, { type Node, type ComponentType, useContext } from "react";
+import React, { useContext } from "react";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 
-function ResultsTree(): Node {
+function ResultsTree(): React.ReactNode {
   const { search } = useContext(SearchContext);
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
@@ -47,4 +45,4 @@ function ResultsTree(): Node {
   );
 }
 
-export default (observer(ResultsTree): ComponentType<{||}>);
+export default observer(ResultsTree);
