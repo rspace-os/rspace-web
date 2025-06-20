@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 
 /*
@@ -10,8 +9,20 @@
  * that `expect` from jest has been extended.
  */
 
-expect.extend({
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      urlSearchParamContaining(expected: { [key: string]: string }): R;
+      urlSearchParamHasKey(expectedKey: string): R;
+    }
+    interface Expect {
+      urlSearchParamContaining(expected: { [key: string]: string }): any;
+      urlSearchParamHasKey(expectedKey: string): any;
+    }
+  }
+}
 
+expect.extend({
   /**
    * Custom assert function for checking that a URLSearchParams object has keys
    * and values resembling that of a passed object.
@@ -24,18 +35,20 @@ expect.extend({
    *    );
    *  expect(querySpy).toHaveBeenCalledWith(
    *    "containers",
-   *    // $FlowExpectedError[prop-missing]
    *    expect.urlSearchParamContaining({ pageNumber: "1" }),
    *  );
    */
-  urlSearchParamContaining(actual: URLSearchParams, expected: {[string]: string}) {
-    for(let [k,v] of Object.entries(expected)) {
-      if(!actual.has(k)) return { pass: false, message: () => "" };
-      if(actual.get(k) !== v) return { pass: false, message: () => "" };
+  urlSearchParamContaining(
+    actual: URLSearchParams,
+    expected: { [key: string]: string }
+  ) {
+    for (const [k, v] of Object.entries(expected)) {
+      if (!actual.has(k)) return { pass: false, message: () => "" };
+      if (actual.get(k) !== v) return { pass: false, message: () => "" };
     }
     return {
       pass: true,
-      message: ""
+      message: () => "",
     };
   },
 
@@ -51,13 +64,13 @@ expect.extend({
    *    );
    *  expect(querySpy).toHaveBeenCalledWith(
    *    "containers",
-   *    // $FlowExpectedError[prop-missing]
    *    expect.urlSearchParamHasKey("pageNumber")
    *  );
    */
   urlSearchParamHasKey(actual: URLSearchParams, expectedKey: string) {
-    if(actual.has(expectedKey)) return { pass: true, message: "" };
-    return { pass: false, message: "" };
-  }
+    if (actual.has(expectedKey)) return { pass: true, message: () => "" };
+    return { pass: false, message: () => "" };
+  },
 });
 
+export {};
