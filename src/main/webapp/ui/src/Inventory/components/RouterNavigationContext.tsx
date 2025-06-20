@@ -1,13 +1,13 @@
-//@flow
-import React, { type Node } from "react";
+import React, { type ReactNode } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
 import * as ReactRouter from "react-router";
 import { useLocation } from "react-router-dom";
 import useStores from "../../stores/use-stores";
+import { type URL } from "../../util/types";
 
-type RouterNavigationContextArgs = {|
-  children: Node,
-|};
+type RouterNavigationContextArgs = {
+  children: ReactNode;
+};
 
 /*
  * This NavigationContext encompasses all of the pages under this React app.
@@ -17,15 +17,15 @@ type RouterNavigationContextArgs = {|
  */
 export default function RouterNavigationContext({
   children,
-}: RouterNavigationContextArgs): Node {
+}: RouterNavigationContextArgs): ReactNode {
   const navigate = ReactRouter.useNavigate();
   const { uiStore } = useStores();
 
   const useNavigate =
     () =>
     (
-      url: string,
-      opts: ?{| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+      url: URL,
+      opts?: { skipToParentContext?: boolean; modifyVisiblePanel?: boolean }
     ) => {
       const { modifyVisiblePanel = true } = opts ?? {
         skipToParentContext: false,
