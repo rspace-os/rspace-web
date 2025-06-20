@@ -1,12 +1,11 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { makeMockSubSample } from "./mocking";
 
-jest.mock("../../../../common/InvApiService", () => {});
+jest.mock("../../../../common/InvApiService", () => ({}));
 
 describe("isFieldEditable", () => {
   describe("When the Subsample is deleted, isFieldEditable should", () => {
