@@ -1,26 +1,19 @@
-//@flow
-
-import React, { forwardRef, type ComponentType } from "react";
+import React, { forwardRef, Fragment } from "react";
 import { type PrintOptions } from "./PrintDialog";
 import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { toTitleCase } from "../../../util/Util";
 import clsx from "clsx";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import ContainerModel from "../../../stores/models/ContainerModel";
-import SubSampleModel from "../../../stores/models/SubSampleModel";
 import { Optional } from "../../../util/optional";
-import { type Identifier } from "../../../stores/definitions/Identifier";
 import { type GlobalId } from "../../../stores/definitions/BaseRecord";
 
-export type PrintLabelContents = {|
-  itemLabel: string,
-  locationLabel: string,
-  identifier: Optional<{ doi: string }>,
-  globalId: Optional<GlobalId>,
-  barcodeUrl: string,
-|};
+export type PrintLabelContents = {
+  itemLabel: string;
+  locationLabel: string;
+  identifier: Optional<{ doi: string }>;
+  globalId: Optional<GlobalId>;
+  barcodeUrl: string;
+};
 
 const itemPxWidth = {
   small: "110px",
@@ -119,36 +112,36 @@ const useStyles = makeStyles()((theme) => ({
  */
 type Target = "screen" | "multiplePrint" | "singlePrint";
 
-type PrintContentsArgs = {|
-  printOptions: PrintOptions,
-  itemsToPrint: $ReadOnlyArray<PrintLabelContents>,
-  imageLinks?: $ReadOnlyArray<string>,
-  target: Target,
-|};
+type PrintContentsArgs = {
+  printOptions: PrintOptions;
+  itemsToPrint: ReadonlyArray<PrintLabelContents>;
+  imageLinks?: ReadonlyArray<string>;
+  target: Target;
+};
 
-type PreviewPrintItemArgs = {|
-  index: number,
-  printOptions: PrintOptions,
+type PreviewPrintItemArgs = {
+  index: number;
+  printOptions: PrintOptions;
 
   /*
    * If `printOptions.printIdentifierType` is "IGSN", then `printLabelContents`
    * SHOULD have a present identifier. If it does not then nothing will be
    * rendered.
    */
-  printLabelContents: PrintLabelContents,
+  printLabelContents: PrintLabelContents;
 
-  imageLinks?: $ReadOnlyArray<string>,
-  forPrint?: boolean, // false for screen preview
-  target: Target,
-|};
+  imageLinks?: ReadonlyArray<string>;
+  forPrint?: boolean; // false for screen preview
+  target: Target;
+};
 
-export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
+export const PreviewPrintItem = ({
   index,
   printOptions,
   printLabelContents,
   imageLinks,
   target,
-}) => {
+}: PreviewPrintItemArgs) => {
   const { printerType, printLayout, printSize } = printOptions;
 
   const now = new Date();
@@ -179,18 +172,18 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
   const getHeader = () => {
     return printOptions.printIdentifierType === "GLOBAL ID"
       ? printLabelContents.globalId.map((globalId) => (
-          <>
+          <Fragment key={globalId}>
             <strong style={{ fontSize: "0.8em" }}>RSPACE GLOBAL ID</strong>
             <br />
             {globalId}
-          </>
+          </Fragment>
         ))
       : printLabelContents.identifier.map(({ doi }) => (
-          <>
+          <Fragment key={doi}>
             <strong style={{ fontSize: "0.8em" }}>IGSN ID</strong>
             <br />
             {doi}
-          </>
+          </Fragment>
         ));
   };
 
@@ -201,93 +194,89 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
   }
 
   return (
-      <>
-        <div className={clsx(classes.printItemWrapper, sizeClass())}>
-          <Grid
-            container
-            direction={printOptions.printCopies === "2" ? "row" : "column"}
-            flexWrap="nowrap"
-            className={classes.wrappingText}
-          >
-            {imageLinks && (
-              <Grid item>
-                <img
-                  src={imageLinks[index]}
-                  title="Barcode Image"
-                  {...(printOptions.printCopies === "1"
-                    ? { width: "75%" }
-                    : { height: "80%" })}
-                />
-              </Grid>
-            )}
+    <>
+      <div className={clsx(classes.printItemWrapper, sizeClass())}>
+        <Grid
+          container
+          direction={printOptions.printCopies === "2" ? "row" : "column"}
+          flexWrap="nowrap"
+          className={classes.wrappingText}
+        >
+          {imageLinks && (
             <Grid item>
-              <Grid
-                container
-                direction="column"
-                spacing={0.5}
-                className={clsx(classes.smallText)}
-                sx={{
-                  lineHeight: "1.2",
-                  p: 1,
-                }}
-              >
-                <Grid item className={clsx(classes.bottomSpaced)}>
-                  {target === "singlePrint" ? (
-                    header
-                  ) : (
-                    <Typography
-                      variant={"h6"}
-                      sx={{
-                        lineHeight: "1.1",
-                      }}
-                    >
-                      {header}
-                    </Typography>
-                  )}
-                </Grid>
-                {printLayout === "FULL" && (
-                  <>
-                    {printLabelContents.globalId.map((globalId) => (
-                      <Grid
-                        item
-                      >{`${window.location.origin}/globalId/${globalId}`}</Grid>
-                    )).orElse(null)}
-                    <Grid item>
-                      <strong>Item:</strong>{" "}
-                      {printOptions.printCopies === "1" && <br />}
-                      {printLabelContents.itemLabel}
-                    </Grid>
-                    <Grid item>
-                      <strong>Location:</strong>{" "}
-                      {printLabelContents.locationLabel}
-                    </Grid>
-                    <Grid item>
-                      <strong>Printed:</strong>{" "}
-                      {printOptions.printCopies === "1" && <br />}
-                      {now.toLocaleString()}
-                    </Grid>
-                  </>
+              <img
+                src={imageLinks[index]}
+                title="Barcode Image"
+                alt="Barcode"
+                {...(printOptions.printCopies === "1"
+                  ? { width: "75%" }
+                  : { height: "80%" })}
+              />
+            </Grid>
+          )}
+          <Grid item>
+            <Grid
+              container
+              direction="column"
+              spacing={0.5}
+              className={clsx(classes.smallText)}
+              sx={{
+                lineHeight: "1.2",
+                p: 1,
+              }}
+            >
+              <Grid item className={clsx(classes.bottomSpaced)}>
+                {target === "singlePrint" ? (
+                  header
+                ) : (
+                  <Typography
+                    variant={"h6"}
+                    sx={{
+                      lineHeight: "1.1",
+                    }}
+                  >
+                    {header}
+                  </Typography>
                 )}
               </Grid>
+              {printLayout === "FULL" && (
+                <>
+                  {printLabelContents.globalId
+                    .map((globalId) => (
+                      <Grid
+                        key={`global-id-${globalId}`}
+                        item
+                      >{`${window.location.origin}/globalId/${globalId}`}</Grid>
+                    ))
+                    .orElse(null)}
+                  <Grid item>
+                    <strong>Item:</strong>{" "}
+                    {printOptions.printCopies === "1" && <br />}
+                    {printLabelContents.itemLabel}
+                  </Grid>
+                  <Grid item>
+                    <strong>Location:</strong>{" "}
+                    {printLabelContents.locationLabel}
+                  </Grid>
+                  <Grid item>
+                    <strong>Printed:</strong>{" "}
+                    {printOptions.printCopies === "1" && <br />}
+                    {now.toLocaleString()}
+                  </Grid>
+                </>
+              )}
             </Grid>
           </Grid>
-        </div>
-        {/* force page break after item (when wrapper in display block) */}
-        {printerType === "LABEL" && <div className={classes.pageBreak}></div>}
-      </>
+        </Grid>
+      </div>
+      {/* force page break after item (when wrapper in display block) */}
+      {printerType === "LABEL" && <div className={classes.pageBreak}></div>}
+    </>
   );
 };
 
-const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
-  (
-    {
-      printOptions,
-      itemsToPrint,
-      imageLinks,
-      target,
-    }: PrintContentsArgs,
-    ref
-  ) => {
+const PrintContents = forwardRef<HTMLDivElement, PrintContentsArgs>(
+  ({ printOptions, itemsToPrint, imageLinks, target }, ref) => {
     const { classes } = useStyles();
     return (
       <Grid
@@ -301,7 +290,7 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
         )}
       >
         {itemsToPrint.map((itemToPrint, i) => (
-          <>
+          <Fragment key={`item-${i}`}>
             <Grid
               item
               key={`${i}.1`}
@@ -333,7 +322,7 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
                 <Grid item sx={{ width: "100%" }}></Grid>
               </>
             )}
-          </>
+          </Fragment>
         ))}
         ;
       </Grid>

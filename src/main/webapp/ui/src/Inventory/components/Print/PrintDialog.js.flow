@@ -1,0 +1,49 @@
+//@flow
+
+import { type Node, type ComponentType } from "react";
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+
+export type PrinterType = "GENERIC" | "LABEL";
+export type PrintLayout = "BASIC" | "FULL";
+export type PrintSize = "SMALL" | "LARGE";
+
+export type PrintOptions = {
+  /*
+   * All records have a global ID, but some also have an IGSN. The print dialog
+   * should support printing either, where possible.
+   */
+  printIdentifierType?: "GLOBAL ID" | "IGSN",
+
+  printerType: PrinterType,
+  printLayout: PrintLayout,
+  printSize: PrintSize,
+
+  /*
+   * Each label can be printed multiple times (e.g. for raffle books).
+   * - If the number is 1 then the labels are printed in a grid layout. and if
+   * - If the number is 2 then each label is printed on its own row, wrapping
+   *   where necessary.
+   * - Any other numberical value is invalid.
+   */
+  printCopies?: "1" | "2",
+};
+
+type PrintDialogArgs = {|
+  showPrintDialog: boolean,
+  onClose: () => void,
+  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
+  printerType?: PrinterType,
+  printSize?: PrintSize,
+  /* n/a for non-contextMenu cases */
+  closeMenu?: () => void,
+|};
+
+type OptionsWrapperArgs = {|
+  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
+  printOptions: PrintOptions,
+  setPrintOptions: (PrintOptions) => void,
+|};
+
+declare export var PrintOptionsWrapper: ComponentType<OptionsWrapperArgs>;
+
+declare export default ComponentType<PrintDialogArgs>;
