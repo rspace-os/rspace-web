@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Checkbox from "@mui/material/Checkbox";
 import Grid from "@mui/material/Grid";
 import HelpTextAlert from "../../../components/HelpTextAlert";
@@ -16,12 +14,18 @@ import { observer } from "mobx-react-lite";
 import { withStyles } from "Styles";
 import OverlayLoadingSpinner from "../../components/OverlayLoadingSpinner";
 import RelativeBox from "../../../components/RelativeBox";
-import ImportModel from "../../../stores/models/ImportModel";
+import ImportModel, {
+  ColumnFieldMap,
+} from "../../../stores/models/ImportModel";
 import { type ImportRecordType } from "../../../stores/stores/ImportStore";
 import { type URL } from "../../../util/types";
 import { Link } from "react-router-dom";
 
-const MatchTemplateAlert = ({ importData }: {| importData: ImportModel |}) => {
+type MatchTemplateAlertArgs = {
+  importData: ImportModel;
+};
+
+const MatchTemplateAlert = ({ importData }: MatchTemplateAlertArgs) => {
   const matchExistingTemplate = importData.importMatchesExistingTemplate;
   return (
     <HelpTextAlert
@@ -42,14 +46,15 @@ const MatchTemplateAlert = ({ importData }: {| importData: ImportModel |}) => {
   );
 };
 
-const NameMappingAlert = ({
-  importData,
-  rowCount,
-}: {|
-  importData: ImportModel,
-  rowCount: number,
-|}) => {
+type NameMappingAlertArgs = {
+  importData: ImportModel;
+  rowCount: number;
+};
+
+const NameMappingAlert = ({ importData, rowCount }: NameMappingAlertArgs) => {
   const labelByRecordType = importData.byRecordType("label") || "records";
+  const label =
+    typeof labelByRecordType === "string" ? labelByRecordType : "records";
   return (
     <HelpTextAlert
       severity="info"
@@ -58,20 +63,26 @@ const NameMappingAlert = ({
         rowCount > 0 &&
         !importData.nameFieldIsSelected
       }
-      text={`You must select one column to convert to the Name of the ${labelByRecordType}.`}
+      text={`You must select one column to convert to the Name of the ${label}.`}
     />
   );
 };
 
+type QuantityConversionAlertArgs = {
+  importData: ImportModel;
+};
+
 const QuantityConversionAlert = ({
   importData,
-}: {|
-  importData: ImportModel,
-|}) => {
+}: QuantityConversionAlertArgs) => {
   const { unitStore } = useStores();
-  const mappingsByRecordType = importData.byRecordType("mappings");
-  const rowCount: ?number = mappingsByRecordType?.length;
+  const mappingsByRecordType = importData.byRecordType("mappings") as
+    | ColumnFieldMap[]
+    | undefined;
+  const rowCount: number | undefined = mappingsByRecordType?.length;
   const labelByRecordType = importData.byRecordType("label") || "records";
+  const label =
+    typeof labelByRecordType === "string" ? labelByRecordType : "records";
   const unitLabel = unitStore.getUnit(
     importData.templateInfo?.defaultUnitId || 3
   )?.label;
@@ -85,20 +96,22 @@ const QuantityConversionAlert = ({
         importData.isSamplesImport &&
         !importData.quantityFieldIsSelected
       }
-      text={`Quantity conversion is not set. All imported ${labelByRecordType} will have a total quantity of 1 ${
+      text={`Quantity conversion is not set. All imported ${label} will have a total quantity of 1 ${
         unitLabel || "ml"
       }.`}
     />
   );
 };
 
+type WithoutConversionAlertArgs = {
+  importData: ImportModel;
+  rowCount: number;
+};
+
 const WithoutConversionAlert = ({
   importData,
   rowCount,
-}: {|
-  importData: ImportModel,
-  rowCount: number,
-|}) => {
+}: WithoutConversionAlertArgs) => {
   return (
     <HelpTextAlert
       severity="info"
@@ -112,13 +125,15 @@ const WithoutConversionAlert = ({
   );
 };
 
+type SampleReferenceAlertArgs = {
+  importData: ImportModel;
+  rowCount: number;
+};
+
 const SampleReferenceAlert = ({
   importData,
   rowCount,
-}: {|
-  importData: ImportModel,
-  rowCount: number,
-|}) => {
+}: SampleReferenceAlertArgs) => {
   return (
     <HelpTextAlert
       severity="info"
@@ -133,16 +148,20 @@ const SampleReferenceAlert = ({
   );
 };
 
+type ParentSampleAlertArgs = {
+  importData: ImportModel;
+  rowCount: number;
+  onTypeSelect: (type: ImportRecordType) => URL;
+};
+
 const ParentSampleAlert = ({
   importData,
   rowCount,
   onTypeSelect,
-}: {|
-  importData: ImportModel,
-  rowCount: number,
-  onTypeSelect: (ImportRecordType) => URL,
-|}) => {
+}: ParentSampleAlertArgs) => {
   const labelByRecordType = importData.byRecordType("label") || "records";
+  const label =
+    typeof labelByRecordType === "string" ? labelByRecordType : "records";
   return (
     <HelpTextAlert
       severity="info"
@@ -154,8 +173,8 @@ const ParentSampleAlert = ({
       }
       text={
         <>
-          RSpace cannot find Parent Sample Import IDs for {labelByRecordType}.
-          Please ensure you are importing a{" "}
+          RSpace cannot find Parent Sample Import IDs for {label}. Please ensure
+          you are importing a{" "}
           <Link to={onTypeSelect("SAMPLES")}>Samples CSV</Link> with mapped
           &quot;Import ID&quot;.
         </>
@@ -164,16 +183,20 @@ const ParentSampleAlert = ({
   );
 };
 
+type ParentContainerAlertArgs = {
+  importData: ImportModel;
+  rowCount: number;
+  onTypeSelect: (type: ImportRecordType) => URL;
+};
+
 const ParentContainerAlert = ({
   importData,
   rowCount,
   onTypeSelect,
-}: {|
-  importData: ImportModel,
-  rowCount: number,
-  onTypeSelect: (ImportRecordType) => URL,
-|}) => {
+}: ParentContainerAlertArgs) => {
   const labelByRecordType = importData.byRecordType("label") || "records";
+  const label =
+    typeof labelByRecordType === "string" ? labelByRecordType : "records";
   return (
     <HelpTextAlert
       severity="info"
@@ -184,8 +207,8 @@ const ParentContainerAlert = ({
       }
       text={
         <>
-          RSpace cannot find Parent Containers Import IDs for{" "}
-          {labelByRecordType}. Please ensure you are importing a{" "}
+          RSpace cannot find Parent Containers Import IDs for {label}. Please
+          ensure you are importing a{" "}
           <Link to={onTypeSelect("CONTAINERS")}>Containers CSV</Link> with
           mapped &quot;Import ID&quot;, or unselect the &quot;Parent Container
           Import ID&quot; conversion.
@@ -195,8 +218,13 @@ const ParentContainerAlert = ({
   );
 };
 
+type SimpleBottomHeadCellArgs = React.ComponentProps<typeof TableCell> & {
+  children: React.ReactNode;
+  colSpan?: number;
+};
+
 const SimpleBottomHeadCell = withStyles<
-  {| children: Node, colSpan?: number |},
+  SimpleBottomHeadCellArgs,
   { root: string }
 >({
   root: {
@@ -207,28 +235,26 @@ const SimpleBottomHeadCell = withStyles<
     children,
     classes,
     colSpan,
-  }: {
-    children: Node,
-    classes: {},
-    colSpan?: number,
-  }) => (
+    ...rest
+  }: SimpleBottomHeadCellArgs & { classes: { root: string } }) => (
     <TableCell
       padding="none"
       align="left"
       variant="head"
       classes={classes}
       colSpan={colSpan}
+      {...rest}
     >
       {children}
     </TableCell>
   )
 );
 
-type MappingArgs = {|
-  onTypeSelect: (ImportRecordType) => URL,
-|};
+type MappingArgs = {
+  onTypeSelect: (type: ImportRecordType) => URL;
+};
 
-function ColumnFieldMapping({ onTypeSelect }: MappingArgs): Node {
+function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
   const { importStore } = useStores();
 
   const importData = importStore.importData;
@@ -236,13 +262,15 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): Node {
 
   const labelByRecordType = importData.byRecordType("label") || "records";
 
-  const mappingsByRecordType = importData.byRecordType("mappings");
+  const mappingsByRecordType = importData.byRecordType("mappings") as
+    | ColumnFieldMap[]
+    | undefined;
 
-  const numSelected: ?number = mappingsByRecordType?.filter(
-    (m) => m.selected
+  const numSelected: number | undefined = mappingsByRecordType?.filter(
+    (m: ColumnFieldMap) => m.selected
   ).length;
 
-  const rowCount: number = mappingsByRecordType.length;
+  const rowCount: number = mappingsByRecordType?.length ?? 0;
 
   return (
     <Grid container direction="column" spacing={1}>
@@ -286,7 +314,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): Node {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {mappingsByRecordType?.map((m, i) => (
+                {mappingsByRecordType?.map((m: ColumnFieldMap, i: number) => (
                   <Row
                     key={i}
                     columnFieldMap={m}
@@ -316,10 +344,12 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): Node {
           !importData.nameFieldIsSelected &&
           importStore.isCurrentImportState("nameRequired")
         }
-        text={`It is required that a column be mapped to 'Name', as all ${labelByRecordType} must have a name.`}
+        text={`It is required that a column be mapped to 'Name', as all ${
+          typeof labelByRecordType === "string" ? labelByRecordType : "records"
+        } must have a name.`}
       />
     </Grid>
   );
 }
 
-export default (observer(ColumnFieldMapping): ComponentType<MappingArgs>);
+export default observer(ColumnFieldMapping);
