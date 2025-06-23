@@ -1,10 +1,9 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
@@ -17,7 +16,7 @@ import materialTheme from "../../../../theme";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 
-jest.mock("../../../../common/InvApiService", () => {});
+jest.mock("../../../../common/InvApiService", () => ({}));
 jest.mock("../../../../stores/stores/RootStore", () => () => ({
   searchStore: {
     search: null,
@@ -31,8 +30,20 @@ window.fetch = jest.fn(() =>
     status: 200,
     ok: true,
     json: () => Promise.resolve(),
-  })
-);
+    headers: new Headers(),
+    redirected: false,
+    statusText: "OK",
+    type: "basic",
+    url: "",
+    clone: () => ({} as Response),
+    body: null,
+    bodyUsed: false,
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    blob: () => Promise.resolve(new Blob()),
+    formData: () => Promise.resolve(new FormData()),
+    text: () => Promise.resolve(""),
+  } as Response)
+) as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
