@@ -1,9 +1,8 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
-import React from "react";
+import * as React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SearchContext from "../../../../stores/contexts/Search";
@@ -23,7 +22,9 @@ import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { take, incrementForever } from "../../../../util/iterators";
 import fc from "fast-check";
 
-jest.mock("@mui/material/Chip", () => jest.fn(() => <div></div>));
+jest.mock("@mui/material/Chip", () =>
+  jest.fn(() => React.createElement("div"))
+);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -59,17 +60,21 @@ describe("ContentContextMenu", () => {
         factory: mockFactory(),
       });
       render(
-        <ThemeProvider theme={materialTheme}>
-          <SearchContext.Provider
-            value={{
-              search,
-              differentSearchForSettingActiveResult: search,
-              scopedResult: container,
-            }}
-          >
-            <ContentContextMenu />
-          </SearchContext.Provider>
-        </ThemeProvider>
+        React.createElement(
+          ThemeProvider,
+          { theme: materialTheme },
+          React.createElement(
+            SearchContext.Provider,
+            {
+              value: {
+                search,
+                differentSearchForSettingActiveResult: search,
+                scopedResult: container,
+              },
+            },
+            React.createElement(ContentContextMenu)
+          )
+        )
       );
 
       expect(Chip).toHaveBeenCalledWith(
@@ -123,17 +128,21 @@ describe("ContentContextMenu", () => {
             factory: mockFactory(),
           });
           render(
-            <ThemeProvider theme={materialTheme}>
-              <SearchContext.Provider
-                value={{
-                  search,
-                  differentSearchForSettingActiveResult: search,
-                  scopedResult: container,
-                }}
-              >
-                <ContentContextMenu />
-              </SearchContext.Provider>
-            </ThemeProvider>
+            React.createElement(
+              ThemeProvider,
+              { theme: materialTheme },
+              React.createElement(
+                SearchContext.Provider,
+                {
+                  value: {
+                    search,
+                    differentSearchForSettingActiveResult: search,
+                    scopedResult: container,
+                  },
+                },
+                React.createElement(ContentContextMenu)
+              )
+            )
           );
 
           expect(screen.getByText(`${width * height}`)).toBeVisible();
