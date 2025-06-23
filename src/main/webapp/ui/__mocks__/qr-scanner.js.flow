@@ -1,4 +1,4 @@
-//@flow
+// @flow
 
 export default class QrScanner {
   onScan: ({ data: string }) => void;
@@ -6,13 +6,8 @@ export default class QrScanner {
   constructor(
     videoElement: HTMLVideoElement,
     onScan: ({ data: string }) => void
-  ) {
-    this.onScan = onScan;
-  }
+  ) {}
 
-  start() {
-    this.onScan({ data: "foo" });
-  }
-
-  stop() {}
+  start(): void {}
+  stop(): void {}
 }
