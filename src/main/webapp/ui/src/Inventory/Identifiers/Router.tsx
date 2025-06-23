@@ -1,5 +1,3 @@
-// @flow
-
 import React from "react";
 import { Routes, Route } from "react-router";
 import { Navigate } from "react-router-dom";
@@ -12,7 +10,7 @@ import NavigationContext from "./NavigationContext";
  * Inventory, where users may manage the identifiers that they have minted,
  * registered, and/or reserved.
  */
-export default function Router(): React.Node {
+export default function Router(): React.ReactNode {
   /*
    * Currently we only support IGSNs, but we may support more in the future so
    * this configuration leaves open that possibility.
