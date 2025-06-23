@@ -1,4 +1,4 @@
-//@flow
+import type { Barcode, BarcodeFormat } from "../src/util/barcode";
 
 class BarcodeDetector {
   constructor() {}
