@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, act, screen } from "@testing-library/react";
@@ -21,9 +20,11 @@ afterEach(cleanup);
 describe("AllBarcodeScanner", () => {
   test("Should scan correctly.", async () => {
     const user = userEvent.setup();
-    jest.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() => {});
+    jest
+      .spyOn(HTMLVideoElement.prototype, "play")
+      .mockImplementation(() => Promise.resolve());
 
-    const onScan = jest.fn<[BarcodeInput], void>();
+    const onScan = jest.fn() as jest.Mock<void, [BarcodeInput]>;
 
     render(
       <AllBarcodeScanner
