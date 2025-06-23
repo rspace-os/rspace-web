@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  useState,
-  useEffect,
-  type ComponentType,
-} from "react";
+import React, { useState, useEffect } from "react";
 import useStores from "../../stores/use-stores";
 import RsSet from "../../util/set";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
@@ -30,13 +23,12 @@ import {
 } from "../components/Stepper/StepperPanelHeader";
 import AccessPermissions from "../components/Fields/AccessPermissions";
 
-function OverviewSection({
-  collection,
-  recordsCount,
-}: {
-  collection: SampleCollection,
-  recordsCount: number,
-}) {
+type OverviewSectionArgs = {
+  collection: SampleCollection;
+  recordsCount: number;
+};
+
+function OverviewSection({ collection, recordsCount }: OverviewSectionArgs) {
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
@@ -73,7 +65,11 @@ function OverviewSection({
   );
 }
 
-function DetailsSection({ collection }: { collection: SampleCollection }) {
+type DetailsSectionArgs = {
+  collection: SampleCollection;
+};
+
+function DetailsSection({ collection }: DetailsSectionArgs) {
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
@@ -111,11 +107,11 @@ function DetailsSection({ collection }: { collection: SampleCollection }) {
   );
 }
 
-type BatchFormArgs = {|
-  records: RsSet<SampleModel>,
-|};
+type BatchFormArgs = {
+  records: RsSet<SampleModel>;
+};
 
-function BatchForm({ records }: BatchFormArgs): Node {
+function BatchForm({ records }: BatchFormArgs): React.ReactNode {
   const { searchStore } = useStores();
 
   const [collection, setCollection] = useState(new SampleCollection(records));
@@ -169,4 +165,4 @@ function BatchForm({ records }: BatchFormArgs): Node {
   );
 }
 
-export default (observer(BatchForm): ComponentType<BatchFormArgs>);
+export default observer(BatchForm);
