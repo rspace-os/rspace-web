@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useState, useRef, type Node, type ComponentType } from "react";
+import React, { useState, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -65,9 +63,9 @@ export type PrintLayout = "BASIC" | "FULL";
 export type PrintSize = "SMALL" | "LARGE";
 
 export type PrintOptions = {
-  printerType: PrinterType,
-  printLayout: PrintLayout,
-  printSize: PrintSize,
+  printerType: PrinterType;
+  printLayout: PrintLayout;
+  printSize: PrintSize;
 
   /*
    * Each label can be printed multiple times (e.g. for raffle books).
@@ -76,28 +74,29 @@ export type PrintOptions = {
    *   where necessary.
    * - Any other numberical value is invalid.
    */
-  printCopies?: "1" | "2",
+  printCopies?: "1" | "2";
+  printIdentifierType?: "IGSN";
 };
 
-type PrintDialogArgs = {|
-  showPrintDialog: boolean,
-  onClose: () => void,
-  itemsToPrint: $ReadOnlyArray<Identifier>,
-  printerType?: PrinterType,
-  printSize?: PrintSize,
+type PrintDialogArgs = {
+  showPrintDialog: boolean;
+  onClose: () => void;
+  itemsToPrint: ReadonlyArray<Identifier>;
+  printerType?: PrinterType;
+  printSize?: PrintSize;
   /* n/a for non-contextMenu cases */
-  closeMenu?: () => void,
-|};
+  closeMenu?: () => void;
+};
 
-type OptionsWrapperArgs = {|
-  printOptions: PrintOptions,
-  setPrintOptions: (PrintOptions) => void,
-|};
+type OptionsWrapperArgs = {
+  printOptions: PrintOptions;
+  setPrintOptions: (options: PrintOptions) => void;
+};
 
 export const PrintOptionsWrapper = ({
   printOptions,
   setPrintOptions,
-}: OptionsWrapperArgs): Node => {
+}: OptionsWrapperArgs): React.ReactNode => {
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { classes } = useStyles();
 
@@ -116,7 +115,7 @@ export const PrintOptionsWrapper = ({
               if (target.value)
                 setPrintOptions({
                   ...printOptions,
-                  printerType: target.value,
+                  printerType: target.value as PrinterType,
                 });
             }}
             row
@@ -151,7 +150,7 @@ export const PrintOptionsWrapper = ({
               if (target.value)
                 setPrintOptions({
                   ...printOptions,
-                  printLayout: target.value,
+                  printLayout: target.value as PrintLayout,
                 });
             }}
             row
@@ -194,7 +193,7 @@ export const PrintOptionsWrapper = ({
                 if (target.value)
                   setPrintOptions({
                     ...printOptions,
-                    printCopies: target.value,
+                    printCopies: target.value as "1" | "2",
                   });
               }}
             >
@@ -227,7 +226,7 @@ export const PrintOptionsWrapper = ({
                   if (target.value)
                     setPrintOptions({
                       ...printOptions,
-                      printSize: target.value,
+                      printSize: target.value as PrintSize,
                     });
                 }}
                 row
@@ -266,11 +265,11 @@ function PrintDialog({
   printerType,
   printSize,
   closeMenu,
-}: PrintDialogArgs): Node {
+}: PrintDialogArgs): React.ReactNode {
   const { classes } = useStyles();
   const { uiStore, trackingStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
-  const componentToPrint = useRef<mixed>();
+  const componentToPrint = useRef<HTMLDivElement | null>(null);
 
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
     printerType: printerType ?? "GENERIC",
@@ -292,14 +291,12 @@ function PrintDialog({
     </>
   );
 
-  const [imageLinks, setImageLinks] = React.useState<$ReadOnlyArray<string>>(
-    []
-  );
+  const [imageLinks, setImageLinks] = React.useState<ReadonlyArray<string>>([]);
   React.useEffect(() => {
     imageLinks.forEach((img) => URL.revokeObjectURL(img));
 
     const getImageUrl = async (identifier: Identifier) => {
-      const { data } = await ApiService.query<{||}, Blob>(
+      const { data } = await ApiService.query<Blob>(
         "/barcodes",
         new URLSearchParams({
           content: `https://doi.org/${identifier.doi}`,
@@ -307,7 +304,7 @@ function PrintDialog({
         }),
         true
       );
-      const file = new File([data], "", { type: "image/png" });
+      const file = new File([data as BlobPart], "", { type: "image/png" });
       return URL.createObjectURL(file);
     };
 
@@ -325,7 +322,7 @@ function PrintDialog({
           })
         );
       });
-  }, [itemsToPrint]);
+  }, [itemsToPrint, uiStore]);
 
   return (
     <ContextDialog
@@ -437,11 +434,11 @@ function PrintDialog({
               printCopies: printOptions.printCopies,
             });
           }}
-          onPrintError={(e) => {
+          onPrintError={(e: Error | string) => {
             uiStore.addAlert(
               mkAlert({
                 title: "Print error.",
-                message: e.message || "",
+                message: typeof e === "object" ? e.message || "" : String(e),
                 variant: "error",
                 isInfinite: true,
               })
@@ -453,4 +450,4 @@ function PrintDialog({
   );
 }
 
-export default (observer(PrintDialog): ComponentType<PrintDialogArgs>);
+export default observer(PrintDialog);

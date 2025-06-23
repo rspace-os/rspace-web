@@ -1,10 +1,9 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, act, waitFor } from "@testing-library/react";
+import { render, cleanup, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import InvApiService from "../../../../common/InvApiService";
 import TemplatePicker from "../TemplatePicker";
@@ -16,6 +15,7 @@ import { storesContext } from "../../../../stores/stores-context";
 import "__mocks__/resizeObserver";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
+import { type AxiosResponse } from "@/common/axios";
 
 jest.mock("../../../../common/InvApiService", () => ({
   get: () => ({}),
@@ -41,12 +41,24 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
   },
 }));
 
-window.fetch = jest.fn(() =>
+(window.fetch as jest.Mock) = jest.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
     json: () => Promise.resolve(),
-  })
+    headers: new Headers(),
+    redirected: false,
+    statusText: "OK",
+    type: "basic",
+    url: "",
+    clone: () => new Response(),
+    body: null,
+    bodyUsed: false,
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    blob: () => Promise.resolve(new Blob()),
+    formData: () => Promise.resolve(new FormData()),
+    text: () => Promise.resolve(""),
+  } as Response)
 );
 
 beforeEach(() => {
@@ -77,14 +89,22 @@ describe("TemplatePicker", () => {
               ],
               totalHits: 2,
             },
-          });
+            status: 200,
+            statusText: "OK",
+            headers: {},
+            config: {},
+          } as AxiosResponse);
         if (endpoint === "search")
           return Promise.resolve({
             data: {
               records: [templateAttrs({ name: "foo", id: 1, globalId: "IT1" })],
               totalHits: 1,
             },
-          });
+            status: 200,
+            statusText: "OK",
+            headers: {},
+            config: {},
+          } as AxiosResponse);
         throw new Error(`Endpoint not supported: ${endpoint}`);
       });
 

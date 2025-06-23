@@ -1,0 +1,11 @@
+//@flow
+
+import { type Node, type ComponentType } from "react";
+import TemplateModel from "../../../stores/models/TemplateModel";
+
+type TemplatePickerArgs = {|
+  setTemplate: (TemplateModel) => void,
+  disabled?: boolean,
+|};
+
+declare export default ComponentType<TemplatePickerArgs>;

@@ -18,6 +18,6 @@ class BarcodeDetector {
 }
 
 Object.defineProperty(window, "BarcodeDetector", {
-  writeable: false,
+  writable: false,
   value: BarcodeDetector,
 });
