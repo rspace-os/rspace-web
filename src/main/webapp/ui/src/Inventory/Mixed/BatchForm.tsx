@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  type ComponentType,
-  useState,
-  useEffect,
-} from "react";
+import React, { useState, useEffect } from "react";
 import useStores from "../../stores/use-stores";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
 import FormWrapper from "../components/BatchEditing/FormWrapper";
@@ -33,8 +26,8 @@ function OverviewSection({
   collection,
   recordsCount,
 }: {
-  collection: MixedInventoryBaseRecordCollection,
-  recordsCount: number,
+  collection: MixedInventoryBaseRecordCollection;
+  recordsCount: number;
 }) {
   const formSectionError = useFormSectionError({
     editing: true,
@@ -68,7 +61,11 @@ function OverviewSection({
   );
 }
 
-function DetailsSection({ collection }: { collection: MixedInventoryBaseRecordCollection }) {
+function DetailsSection({
+  collection,
+}: {
+  collection: MixedInventoryBaseRecordCollection;
+}) {
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
@@ -92,11 +89,11 @@ function DetailsSection({ collection }: { collection: MixedInventoryBaseRecordCo
   );
 }
 
-type BatchFormArgs = {|
-  records: RsSet<InventoryBaseRecord>,
-|};
+type BatchFormArgs = {
+  records: RsSet<InventoryBaseRecord>;
+};
 
-function BatchForm({ records }: BatchFormArgs): Node {
+function BatchForm({ records }: BatchFormArgs): React.ReactNode {
   const { searchStore } = useStores();
 
   const [collection, setCollection] = useState(
@@ -140,4 +137,4 @@ function BatchForm({ records }: BatchFormArgs): Node {
   );
 }
 
-export default (observer(BatchForm): ComponentType<BatchFormArgs>);
+export default observer(BatchForm);
