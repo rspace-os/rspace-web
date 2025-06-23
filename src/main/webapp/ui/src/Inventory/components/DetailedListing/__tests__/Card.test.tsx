@@ -1,9 +1,8 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
-import React from "react";
+import * as React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import materialTheme from "../../../../theme";
@@ -47,8 +46,9 @@ describe("Card", () => {
       );
 
       const titleText = screen.getByText("A list container");
-      const decorationLineStyle =
-        window.getComputedStyle(titleText)["text-decoration-line"];
+      const decorationLineStyle = window
+        .getComputedStyle(titleText)
+        .getPropertyValue("text-decoration-line");
       expect(decorationLineStyle).toEqual("line-through");
     });
   });
