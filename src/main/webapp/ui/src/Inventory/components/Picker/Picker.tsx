@@ -1,16 +1,9 @@
-//@flow
-
-import React, {
-  useEffect,
-  type Node,
-  type ComponentType,
-  type ElementProps,
-} from "react";
+import React, { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Button from "@mui/material/Button";
 import Search from "../../../stores/models/Search";
 import SearchContext from "../../../stores/contexts/Search";
-import SearchView from "../../Search/SearchView";
+import SearchViewComponent from "../../Search/SearchView";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
@@ -21,14 +14,17 @@ import { menuIDs } from "../../../util/menuIDs";
 import RsSet from "../../../util/set";
 import Box from "@mui/material/Box";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import { type CoreFetcherArgs } from "../../../stores/definitions/Search";
+import {
+  type CoreFetcherArgs,
+  type SearchView as SearchViewType,
+} from "../../../stores/definitions/Search";
 import Alert from "@mui/material/Alert";
 import InnerSearchNavigationContext from "../InnerSearchNavigationContext";
 
-const TABS = ["LIST", "TREE"];
+const TABS: Array<SearchViewType> = ["LIST", "TREE"];
 
 const MaxSizeCard = withStyles<
-  {| elevation: number, testId?: string, children: Node |},
+  { elevation: number; testId?: string; children: React.ReactNode },
   { root: string }
 >(() => ({
   root: {
@@ -44,7 +40,7 @@ const MaxSizeCard = withStyles<
 ));
 
 const FullHeightCardContent = withStyles<
-  {| paddingless: boolean, ...ElementProps<typeof CardContent> |},
+  { paddingless: boolean } & React.ComponentProps<typeof CardContent>,
   { root: string }
 >((theme, { paddingless }) => ({
   root: {
@@ -56,28 +52,29 @@ const FullHeightCardContent = withStyles<
     paddingTop: "0 !important",
     overflowX: "hidden",
   },
-}))(({ paddingless, ...props }) => <CardContent {...props} />); //eslint-disable-line no-unused-vars
+}))(({ paddingless, ...props }) => <CardContent {...props} />);
 
-const CustomCardHeader = withStyles<{| title: Node |}, { root: string }>(
-  () => ({
-    root: {
-      flexWrap: "nowrap",
-    },
-  })
-)(({ title, classes }) => (
+const CustomCardHeader = withStyles<
+  { title: React.ReactNode },
+  { root: string }
+>(() => ({
+  root: {
+    flexWrap: "nowrap",
+  },
+}))(({ title, classes }) => (
   <CardHeader title={title} classes={classes} sx={{ py: 1 }} />
 ));
 
-type InventoryPickerArgs = {|
-  onAddition: (Array<InventoryRecord>) => void,
-  elevation?: number,
-  search: Search,
-  header?: Node,
-  selectionHelpText?: ?string,
-  testId?: string,
-  paddingless?: boolean,
-  showActions?: boolean,
-|};
+type InventoryPickerArgs = {
+  onAddition: (records: Array<InventoryRecord>) => void;
+  elevation?: number;
+  search: Search;
+  header?: React.ReactNode;
+  selectionHelpText?: string | null;
+  testId?: string;
+  paddingless?: boolean;
+  showActions?: boolean;
+};
 
 function InventoryPicker({
   onAddition,
@@ -88,7 +85,7 @@ function InventoryPicker({
   testId,
   paddingless = false,
   showActions = false,
-}: InventoryPickerArgs): Node {
+}: InventoryPickerArgs): React.ReactNode {
   const handleSearch = (props: CoreFetcherArgs) => {
     void search.fetcher.performInitialSearch(props);
   };
@@ -98,7 +95,7 @@ function InventoryPicker({
     if (singularSelection && search.activeResult) {
       onAddition([search.activeResult]);
     }
-  }, [search.activeResult]);
+  }, [search.activeResult, onAddition, search.uiConfig.selectionMode]);
 
   const selectedRecords =
     search.searchView === "LIST" ? [...search.selectedResults] : [];
@@ -141,7 +138,7 @@ function InventoryPicker({
                 <Alert severity="info">{selectionHelpText}</Alert>
               </Box>
             )}
-            <SearchView contextMenuId={menuIDs.PICKER} />
+            <SearchViewComponent contextMenuId={menuIDs.PICKER} />
           </FullHeightCardContent>
         </InnerSearchNavigationContext>
       </SearchContext.Provider>
@@ -175,4 +172,4 @@ function InventoryPicker({
   );
 }
 
-export default (observer(InventoryPicker): ComponentType<InventoryPickerArgs>);
+export default observer(InventoryPicker);

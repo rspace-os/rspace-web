@@ -1,0 +1,19 @@
+// @flow
+
+import type { Node, ComponentType } from "react";
+import Search from "../../../stores/models/Search";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { CoreFetcherArgs } from "../../../stores/definitions/Search";
+
+type InventoryPickerArgs = {|
+  onAddition: (Array<InventoryRecord>) => void,
+  elevation?: number,
+  search: Search,
+  header?: Node,
+  selectionHelpText?: ?string,
+  testId?: string,
+  paddingless?: boolean,
+  showActions?: boolean,
+|};
+
+declare export default ComponentType<InventoryPickerArgs>;
