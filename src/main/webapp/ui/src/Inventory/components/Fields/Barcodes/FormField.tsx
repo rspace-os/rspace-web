@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node } from "react";
+import React, { type ReactNode } from "react";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { observer } from "mobx-react-lite";
 import FieldCard from "./FieldCard";
@@ -11,20 +9,19 @@ import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
 import BatchFormField from "../../Inputs/BatchFormField";
 
 function BarcodesFromField<
-  Fields: {
-    barcodes: Array<BarcodeRecord>,
-    ...
+  Fields extends {
+    barcodes: Array<BarcodeRecord>;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   fieldOwner,
   factory,
   connectedItem,
-}: {|
-  fieldOwner: FieldOwner,
-  connectedItem?: InventoryRecord,
-  factory: Factory,
-|}): Node {
+}: {
+  fieldOwner: FieldOwner;
+  connectedItem?: InventoryRecord;
+  factory: Factory;
+}): ReactNode {
   return (
     <BatchFormField
       /*
@@ -60,4 +57,4 @@ function BarcodesFromField<
   );
 }
 
-export default (observer(BarcodesFromField): typeof BarcodesFromField);
+export default observer(BarcodesFromField);
