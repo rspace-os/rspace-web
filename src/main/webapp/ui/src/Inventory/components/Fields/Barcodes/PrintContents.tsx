@@ -1,6 +1,4 @@
-//@flow
-
-import React, { forwardRef, type ComponentType } from "react";
+import React, { forwardRef } from "react";
 import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
 import { type PrintOptions } from "./PrintDialog";
 import { makeStyles } from "tss-react/mui";
@@ -94,31 +92,31 @@ const useStyles = makeStyles()((theme) => ({
 
 type Target = "screen" | "multiplePrint" | "singlePrint";
 
-type PrintContentsArgs = {|
-  printOptions: PrintOptions,
-  itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>, // LoM ...
-  imageLinks?: Array<string>,
-  target: Target,
-|};
+type PrintContentsArgs = {
+  printOptions: PrintOptions;
+  itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>; // LoM ...
+  imageLinks?: Array<string>;
+  target: Target;
+};
 
-type PreviewPrintItemArgs = {|
-  index: number,
-  printOptions: PrintOptions,
-  item: BarcodeRecord, // LoM ...
-  itemOwner: InventoryRecord,
-  imageLinks?: Array<string>,
-  forPrint?: boolean, // false for screen preview
-  target: Target,
-|};
+type PreviewPrintItemArgs = {
+  index: number;
+  printOptions: PrintOptions;
+  item: BarcodeRecord; // LoM ...
+  itemOwner: InventoryRecord;
+  imageLinks?: Array<string>;
+  forPrint?: boolean; // false for screen preview
+  target: Target;
+};
 
-export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
+export const PreviewPrintItem = ({
   index,
   printOptions,
   item,
   itemOwner,
   imageLinks,
   target,
-}) => {
+}: PreviewPrintItemArgs) => {
   const { printerType, printLayout, printSize } = printOptions;
 
   const recordString = `${toTitleCase(itemOwner.type)} - ${itemOwner.name}`;
@@ -137,79 +135,75 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
       ? classes.largeMm
       : classes.singlePc; // no small and large for singlePrint case
   return (
-      <>
-        <div className={clsx(classes.printItemWrapper, sizePerTarget())}>
-          <Grid
-            container
-            direction="column"
-            spacing={1}
-            className={classes.wrappingText}
-          >
-            {imageLinks && (
-              <>
-                <img
-                  className={classes.centeredSelf}
-                  src={imageLinks[index]}
-                  title="Barcode Image"
-                  width="75%"
-                />
-                <Grid
-                  item
-                  className={clsx(classes.centeredText, classes.bottomSpaced)}
-                >
-                  {target === "singlePrint" ? (
-                    itemOwner.globalId
-                  ) : (
-                    <Typography variant={"h6"}>{itemOwner.globalId}</Typography>
-                  )}
+    <>
+      <div className={clsx(classes.printItemWrapper, sizePerTarget())}>
+        <Grid
+          container
+          direction="column"
+          spacing={1}
+          className={classes.wrappingText}
+        >
+          {imageLinks && (
+            <>
+              <img
+                className={classes.centeredSelf}
+                src={imageLinks[index]}
+                title="Barcode Image"
+                alt="Barcode"
+                width="75%"
+              />
+              <Grid
+                item
+                className={clsx(classes.centeredText, classes.bottomSpaced)}
+              >
+                {target === "singlePrint" ? (
+                  itemOwner.globalId
+                ) : (
+                  <Typography variant={"h6"}>{itemOwner.globalId}</Typography>
+                )}
+              </Grid>
+            </>
+          )}
+          {printLayout === "FULL" && (
+            <Grid item>
+              <Grid
+                container
+                direction="column"
+                spacing={1}
+                className={clsx(classes.centeredText, classes.smallText)}
+              >
+                <Grid item>{item.description.split("//")[1]}</Grid>
+                <Grid item>
+                  <strong>Item:</strong>
+                  <br />
+                  {recordString}
                 </Grid>
-              </>
-            )}
-            {printLayout === "FULL" && (
-              <Grid item>
-                <Grid
-                  container
-                  direction="column"
-                  spacing={1}
-                  className={clsx(classes.centeredText, classes.smallText)}
-                >
-                  <Grid item>{item.description.split("//")[1]}</Grid>
-                  <Grid item>
-                    <strong>Item:</strong>
-                    <br />
-                    {recordString}
-                  </Grid>
-                  <Grid item>
-                    <strong>Location:</strong>{" "}
-                    {itemOwner instanceof ContainerModel ||
-                    itemOwner instanceof SubSampleModel
-                      ? itemOwner.immediateParentContainer?.globalId ?? "-"
-                      : "-"}
-                  </Grid>
-                  <Grid item>
-                    <strong>Printed:</strong>
-                    <br />
-                    {now.toLocaleString()}
-                  </Grid>
+                <Grid item>
+                  <strong>Location:</strong>{" "}
+                  {itemOwner instanceof ContainerModel ||
+                  itemOwner instanceof SubSampleModel
+                    ? itemOwner.immediateParentContainer?.globalId ?? "-"
+                    : "-"}
+                </Grid>
+                <Grid item>
+                  <strong>Printed:</strong>
+                  <br />
+                  {now.toLocaleString()}
                 </Grid>
               </Grid>
-            )}
-          </Grid>
-        </div>
-        {/* force page break after item (when wrapper in display block) */}
-        {printerType === "LABEL" && <div className={classes.pageBreak}></div>}
-      </>
+            </Grid>
+          )}
+        </Grid>
+      </div>
+      {/* force page break after item (when wrapper in display block) */}
+      {printerType === "LABEL" && <div className={classes.pageBreak}></div>}
+    </>
   );
 };
 
-const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
+const PrintContents = forwardRef<HTMLDivElement, PrintContentsArgs>(
   (
-    {
-      printOptions,
-      itemsToPrint,
-      imageLinks,
-      target,
-    }: PrintContentsArgs,
+    { printOptions, itemsToPrint, imageLinks, target }: PrintContentsArgs,
     ref
   ) => {
     const { classes } = useStyles();
