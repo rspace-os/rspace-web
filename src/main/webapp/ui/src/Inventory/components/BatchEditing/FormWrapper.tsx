@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React, { type ReactNode } from "react";
 import Toolbar from "../Toolbar/Toolbar";
 import CommonEditActions from "../CommonEditActions";
 import { type Editable } from "../../../stores/definitions/Editable";
@@ -8,12 +6,12 @@ import { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import Box from "@mui/material/Box";
 
-type FormWrapperArgs = {|
-  titleText: string,
-  recordType: AllowedFormTypes,
-  children: Node,
-  editableObject: Editable,
-|};
+type FormWrapperArgs = {
+  titleText: string;
+  recordType: AllowedFormTypes;
+  children: ReactNode;
+  editableObject: Editable;
+};
 
 /**
  * A wrapper for batch editing forms that provides the floating toolbar and the
@@ -24,7 +22,7 @@ export default function FormWrapper({
   recordType,
   children,
   editableObject,
-}: FormWrapperArgs): Node {
+}: FormWrapperArgs): ReactNode {
   return (
     <>
       <Toolbar title={titleText} recordType={recordType} batch />
