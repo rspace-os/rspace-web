@@ -1,14 +1,12 @@
-//@flow
-
-import React, { type Node, useEffect, useContext } from "react";
+import React, { useEffect, useContext } from "react";
 import AnalyticsContext from "../stores/contexts/Analytics";
 import useStores from "../stores/use-stores";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import { runInAction } from "mobx";
 
-type AnalyticsArgs = {|
-  children: Node,
-|};
+type AnalyticsArgs = {
+  children: React.ReactNode;
+};
 
 /**
  * This component sits with the context of another AnalyticsContext
@@ -19,7 +17,7 @@ type AnalyticsArgs = {|
  * compatible with the TrackingStore system which remains in use across the
  * Inventory code.
  */
-function Analytics({ children }: AnalyticsArgs): Node {
+function Analytics({ children }: AnalyticsArgs): React.ReactNode {
   const analyticsContext = useContext(AnalyticsContext);
   const { trackingStore } = useStores();
 
@@ -35,17 +33,17 @@ function Analytics({ children }: AnalyticsArgs): Node {
    *     property of `source: "inventory"` to tracking call.
    */
 
-  const value = useLocalObservable<{|
-    isAvailable: ?boolean,
-    trackEvent: (string, properties?: { ... }) => void,
-  |}>(() => ({
+  const value = useLocalObservable<{
+    isAvailable: boolean | null;
+    trackEvent: (event: string, properties?: Record<string, unknown>) => void;
+  }>(() => ({
     isAvailable: null,
     trackEvent: () => {},
   }));
 
   const trackInventoryEvent =
-    (trackEvent: (event: string, properties?: { ... }) => void) =>
-    (event: string, properties?: { ... }) => {
+    (trackEvent: (event: string, properties?: Record<string, unknown>) => void) =>
+    (event: string, properties?: Record<string, unknown>) => {
       trackEvent(event, {
         ...(properties ?? {}),
         source: "inventory",
@@ -78,4 +76,4 @@ function Analytics({ children }: AnalyticsArgs): Node {
   );
 }
 
-export default (observer(Analytics): typeof Analytics);
+export default observer(Analytics);

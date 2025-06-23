@@ -1,0 +1,9 @@
+//@flow
+
+import { type Node } from "react";
+
+type AnalyticsArgs = {|
+  children: Node,
+|};
+
+declare export default function Analytics(args: AnalyticsArgs): Node;
