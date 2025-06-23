@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { Routes, Route } from "react-router";
 import useStores from "../../stores/use-stores";
 import { observer } from "mobx-react-lite";
@@ -24,23 +22,25 @@ import NavigateContext from "../../stores/contexts/Navigate";
 import { hasLocation } from "../../stores/models/HasLocation";
 import * as Parsers from "../../util/parsers";
 
-const useStyles = makeStyles()((theme, { alwaysVisibleSidebar }) => ({
-  grid: {
-    height: "100%",
-    padding: alwaysVisibleSidebar ? theme.spacing(1) : theme.spacing(0),
-  },
-  searchbarWrapper: {
-    width: "100%",
-  },
-  listWrapper: {
-    overflow: "hidden",
-    display: "flex",
-    flexDirection: "column",
-    flexGrow: 1,
-  },
-}));
+const useStyles = makeStyles()(
+  (theme, { alwaysVisibleSidebar }: { alwaysVisibleSidebar: boolean }) => ({
+    grid: {
+      height: "100%",
+      padding: alwaysVisibleSidebar ? theme.spacing(1) : theme.spacing(0),
+    },
+    searchbarWrapper: {
+      width: "100%",
+    },
+    listWrapper: {
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
+      flexGrow: 1,
+    },
+  })
+);
 
-function LeftPanelView(): Node {
+function LeftPanelView(): React.ReactNode {
   const { searchStore, uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { useNavigate } = React.useContext(NavigateContext);
@@ -51,7 +51,9 @@ function LeftPanelView(): Node {
 
   const results = searchStore.search.filteredResults.map(getSavedGlobalId);
 
-  const [isActiveIncluded, setIsActiveIncluded] = React.useState<?boolean>();
+  const [isActiveIncluded, setIsActiveIncluded] = React.useState<
+    boolean | undefined
+  >();
   React.useEffect(() => {
     const active = searchStore.search.activeResult?.globalId;
     const activeIncluded = results.includes(active);
@@ -59,7 +61,7 @@ function LeftPanelView(): Node {
   }, [searchStore.search.filteredResults, searchStore.search.activeResult]);
 
   const [isParentContainerIncluded, setIsParentContainerIncluded] =
-    React.useState<?boolean>();
+    React.useState<boolean | undefined>();
   React.useEffect(() => {
     setIsParentContainerIncluded(
       Parsers.isNotNull(searchStore.search.activeResult)
@@ -74,8 +76,9 @@ function LeftPanelView(): Node {
     );
   }, [searchStore.search.filteredResults, searchStore.search.activeResult]);
 
-  const [inContainerSearch, setInContainerSearch] =
-    React.useState<?boolean>(false);
+  const [inContainerSearch, setInContainerSearch] = React.useState<
+    boolean | undefined
+  >(false);
   React.useEffect(() => {
     const inContainer =
       typeof searchStore.search.fetcher.parentGlobalId === "string"
@@ -89,8 +92,9 @@ function LeftPanelView(): Node {
     searchStore.search.fetcher.parentGlobalId,
   ]);
 
-  const [isParentSampleIncluded, setIsParentSampleIncluded] =
-    React.useState<?boolean>();
+  const [isParentSampleIncluded, setIsParentSampleIncluded] = React.useState<
+    boolean | undefined
+  >();
   React.useEffect(() => {
     if (!(searchStore.activeResult instanceof SubSampleModel)) return;
     const parentSampleGlobalId = searchStore.activeResult.sample.globalId;
@@ -165,4 +169,4 @@ function LeftPanelView(): Node {
   );
 }
 
-export default (observer(LeftPanelView): ComponentType<{||}>);
+export default observer(LeftPanelView);
