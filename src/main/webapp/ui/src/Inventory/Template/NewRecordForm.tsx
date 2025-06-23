@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node } from "react";
+import React from "react";
 import useStores from "../../stores/use-stores";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
@@ -138,7 +136,7 @@ const FieldsSection = observer(
   }
 );
 
-export default function NewRecordForm(): Node {
+export default function NewRecordForm(): React.ReactNode {
   const {
     searchStore: { activeResult },
   } = useStores();
