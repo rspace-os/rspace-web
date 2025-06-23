@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
 import Grid from "@mui/material/Grid";
@@ -53,7 +51,11 @@ const CustomStepper = styled(MobileStepper)(({ theme }) => ({
   },
 }));
 
-const Wrapper = ({ children }: {| children: Node |}) => {
+type WrapperArgs = {
+  children: React.ReactNode;
+};
+
+const Wrapper = ({ children }: WrapperArgs) => {
   const [sectionOpen, setSectionOpen] = React.useState(true);
   return (
     <Grid container direction="row" flexWrap="nowrap" spacing={1}>
@@ -74,9 +76,9 @@ const Wrapper = ({ children }: {| children: Node |}) => {
   );
 };
 
-type SubsampleDetailsArgs = {|
-  search: Search,
-|};
+type SubsampleDetailsArgs = {
+  search: Search;
+};
 
 function SubsampleDetails({ search }: SubsampleDetailsArgs) {
   const theme = useTheme();
@@ -107,7 +109,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
      * not the last result of that previous page which is what they intend.
      */
     if (!processingCardNav) void search.setActiveResult();
-  }, [search.filteredResults]);
+  }, [search.filteredResults, processingCardNav, search]);
 
   const subsample = search.activeResult;
   if (subsample === null || typeof subsample === "undefined")
@@ -135,7 +137,6 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
         >
           <AppBar
             position="relative"
-            open={true}
             sx={{
               backgroundColor: theme.palette.record.subSample.bg,
               boxShadow: "none",
@@ -185,7 +186,10 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
           </CardContent>
           <CardActions>
             <Typography align="center" sx={{ width: "100%" }}>
-              <Link component={ReactRouterLink} to={subsample.permalinkURL}>
+              <Link
+                component={ReactRouterLink}
+                to={subsample.permalinkURL || ""}
+              >
                 See full details of <strong>{subsample.name}</strong>
               </Link>
             </Typography>
@@ -258,6 +262,4 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
   );
 }
 
-export default (observer(
-  SubsampleDetails
-): ComponentType<SubsampleDetailsArgs>);
+export default observer(SubsampleDetails);
