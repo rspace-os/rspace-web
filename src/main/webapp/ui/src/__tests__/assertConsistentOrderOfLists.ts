@@ -1,19 +1,18 @@
-//@flow
 /* eslint-env jest */
 
-type Assertion = {|
-  pass: boolean,
-  message?: string | (() => string),
-|};
+type Assertion = {
+  pass: boolean;
+  message: (() => string) | undefined;
+};
 
 type ListName = string;
 
-type OrderedPairOfElementsInList = {|
-  list: Array<string>, // the array from which the pair came
-  name: ListName,
-  index1: number, // index of the first element in the pair
-  index2: number, // index of the second element in the pair
-|};
+type OrderedPairOfElementsInList = {
+  list: Array<string>; // the array from which the pair came
+  name: ListName;
+  index1: number; // index of the first element in the pair
+  index2: number; // index of the second element in the pair
+};
 
 const formatListOfOutput = ({
   list,
@@ -40,8 +39,8 @@ const formatListOfOutput = ({
 const formatErrorMessage = (
   expectLists: Array<OrderedPairOfElementsInList>,
   receivedList: OrderedPairOfElementsInList,
-  printExpected: (string) => string,
-  printReceived: (string) => string
+  printExpected: (val: string) => string,
+  printReceived: (val: string) => string
 ) =>
   [
     `Expected:`,
@@ -69,10 +68,10 @@ const formatErrorMessage = (
  * can be considered as isomorphic to a check for whether there exists a
  * topological sorting.
  */
-// $FlowExpectedError[missing-this-annot] This is a custom jest assertion so has an explicit this context
 export function toHaveConsistentOrdering(
+  this: jest.MatcherUtils & Readonly<jest.MatcherState>,
   mapOfListsOfNumbers: Map<ListName, Array<string>>
-): Assertion {
+): jest.CustomMatcherResult {
   /*
    * This Map map pairs of strings (x,y) to the list in which they are found
    * in a given order.
@@ -82,7 +81,7 @@ export function toHaveConsistentOrdering(
    */
   const seenPairs = new Map<string, Array<OrderedPairOfElementsInList>>();
 
-  for (let [name, list] of mapOfListsOfNumbers) {
+  for (const [name, list] of mapOfListsOfNumbers) {
     for (let i = 0; i < list.length; i++) {
       const first = list[i];
       for (let j = i + 1; j < list.length; j++) {
@@ -130,7 +129,18 @@ export function toHaveConsistentOrdering(
   }
 
   // no message is returned here because the assertion is never called before a .not
-  return { pass: true };
+  return {
+    pass: true,
+    message: () => "",
+  };
+}
+
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toHaveConsistentOrdering(): R;
+    }
+  }
 }
 
 expect.extend({
@@ -140,6 +150,5 @@ expect.extend({
 export function assertConsistentOrderOfLists(
   lists: Map<ListName, Array<string>>
 ): void {
-  // $FlowExpectedError[incompatible-call]
   expect(lists).toHaveConsistentOrdering();
 }
