@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Stack from "@mui/material/Stack";
 import TitledBox from "../../components/TitledBox";
 import Typography from "@mui/material/Typography";
@@ -10,10 +8,7 @@ import Button from "@mui/material/Button";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import Box from "@mui/material/Box";
 import Main from "../../Main";
-import {
-  useIdentifiers,
-  useIdentifiersRefresh,
-} from "../../useIdentifiers";
+import { useIdentifiers, useIdentifiersRefresh } from "../../useIdentifiers";
 import { type Identifier } from "../../useIdentifiers";
 import { doNotAwait } from "../../../util/Util";
 import Menu from "@mui/material/Menu";
@@ -40,10 +35,10 @@ import RsSet from "../../../util/set";
 export default function IgsnManagementPage({
   selectedIgsns,
   setSelectedIgsns,
-}: {|
-  selectedIgsns: RsSet<Identifier>,
-  setSelectedIgsns: (RsSet<Identifier>) => void,
-|}): Node {
+}: {
+  selectedIgsns: RsSet<Identifier>;
+  setSelectedIgsns: (newSelectedIgsns: RsSet<Identifier>) => void;
+}): React.ReactNode {
   const { refreshListing } = useIdentifiersRefresh();
   const { bulkRegister, deleteIdentifiers } = useIdentifiers();
   const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] =
@@ -114,7 +109,7 @@ export default function IgsnManagementPage({
                       inputProps={{ min: 1, max: 100 }}
                       value={numberOfNewIdentifiers}
                       onChange={(e) =>
-                        setNumberOfNewIdentifiers(e.target.value)
+                        setNumberOfNewIdentifiers(Number(e.target.value))
                       }
                       fullWidth
                       sx={{ mt: 1 }}
@@ -156,7 +151,7 @@ export default function IgsnManagementPage({
                 <strong>Linked Item</strong>.
               </Typography>
               <Box height={12}></Box>
-              <Stack orientation="horizontal">
+              <Stack direction="row">
                 <Button
                   variant="contained"
                   color="callToAction"
