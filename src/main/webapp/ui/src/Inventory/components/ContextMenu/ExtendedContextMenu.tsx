@@ -1,16 +1,14 @@
-// @flow
-
 import ContextMenu, { type ContextMenuArgs } from "./ContextMenu";
 import ContextMenuButton from "./ContextMenuButton";
-import ContextMenuSplitButton from "./ContextMenuSplitButton";
+import ContextMenuSplitButton, {
+  type SplitButtonOption,
+} from "./ContextMenuSplitButton";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import GridItem from "./ContextMenuGridItem";
 import { makeStyles } from "tss-react/mui";
-import InventoryBaseRecord from "../../../stores/models/InventoryBaseRecord";
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 
 const useStyles = makeStyles()(() => ({
@@ -25,39 +23,36 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type ExtendedContextMenuArgs = {|
+type ExtendedContextMenuArgs = {
   prefixActions: Array<
-    | {|
-        disabledHelp: string,
-        icon: Node,
-        key: string,
-        options: Array<SplitButtonOption>,
-      |}
-    | {|
-        disabledHelp: string,
-        icon: Node,
-        key: string,
-        label: string,
-        variant?: string,
-        onClick?: (Event) => void,
-        active?: boolean,
-      |}
-  >,
-  selectedResults: Array<InventoryRecord>,
-  onSelectOptions?: Array<SplitButtonOption>,
-  menuID: string,
-  basketSearch?: boolean,
-  ...$Rest<
-    ContextMenuArgs,
-    {|
-      selectedResults: Array<InventoryRecord>,
-      menuID: string,
-      onSelectOptions?: Array<SplitButtonOption>,
-      basketSearch: boolean,
-      paddingTop: boolean,
-    |}
-  >,
-|};
+    | {
+        disabledHelp: string;
+        icon: React.ReactElement;
+        key: string;
+        options: Array<SplitButtonOption>;
+      }
+    | {
+        disabledHelp: string;
+        icon: React.ReactElement;
+        key: string;
+        label: string;
+        variant?: "default" | "filled";
+        onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+        active?: boolean;
+      }
+  >;
+  selectedResults: Array<InventoryRecord>;
+  onSelectOptions?: Array<SplitButtonOption>;
+  menuID: string;
+  basketSearch?: boolean;
+} & Omit<
+  ContextMenuArgs,
+  | "selectedResults"
+  | "menuID"
+  | "onSelectOptions"
+  | "basketSearch"
+  | "paddingTop"
+>;
 
 function ExtendedContextMenu({
   prefixActions,
@@ -66,7 +61,7 @@ function ExtendedContextMenu({
   menuID,
   basketSearch,
   ...rest
-}: ExtendedContextMenuArgs): Node {
+}: ExtendedContextMenuArgs): React.ReactNode {
   const { classes } = useStyles();
   return (
     <Grid container className={classes.mainContainer}>
@@ -76,26 +71,33 @@ function ExtendedContextMenu({
           {prefixActions.map(
             (
               action:
-                | {|
-                    disabledHelp: string,
-                    icon: Node,
-                    key: string,
-                    options: Array<SplitButtonOption>,
-                  |}
-                | {|
-                    disabledHelp: string,
-                    icon: Node,
-                    key: string,
-                    label: string,
-                    variant?: string,
-                    onClick?: (Event) => void,
-                    active?: boolean,
-                  |}
+                | {
+                    disabledHelp: string;
+                    icon: React.ReactElement;
+                    key: string;
+                    options: Array<SplitButtonOption>;
+                  }
+                | {
+                    disabledHelp: string;
+                    icon: React.ReactElement;
+                    key: string;
+                    label: string;
+                    variant?: "default" | "filled";
+                    onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+                    active?: boolean;
+                  }
             ) => (
               <GridItem key={action.key}>
                 {/* conditional rendering based on: options or onClick */}
-                {action.options ? (
-                  <ContextMenuSplitButton {...action} />
+                {"options" in action ? (
+                  <ContextMenuSplitButton
+                    {...(action as {
+                      disabledHelp: string;
+                      icon: React.ReactElement;
+                      key: string;
+                      options: Array<SplitButtonOption>;
+                    })}
+                  />
                 ) : (
                   <ContextMenuButton {...action} />
                 )}
@@ -126,6 +128,4 @@ function ExtendedContextMenu({
   );
 }
 
-export default (observer(
-  ExtendedContextMenu
-): ComponentType<ExtendedContextMenuArgs>);
+export default observer(ExtendedContextMenu);

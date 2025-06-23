@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type MixedElement } from "react";
+import React, { type ReactElement } from "react";
 import { menuIDs } from "../../../util/menuIDs";
 import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import { type ContextMenuRenderOptions } from "./ContextMenuAction";
@@ -18,20 +16,20 @@ import RemoveFromBasketAction from "./RemoveFromBasketAction";
 import ExportAction from "./ExportAction";
 import PrintBarcodeAction from "./PrintBarcodeAction";
 
-type ContextActionsArgs = {|
-  selectedResults: Array<InventoryRecord>,
-  mixedSelectedStatus?: boolean,
-  forceDisabled?: string,
-  closeMenu: () => void,
-  onSelectOptions?: Array<SplitButtonOption>,
-  menuID: $Values<typeof menuIDs>,
-  basketSearch: boolean,
-|};
+type ContextActionsArgs = {
+  selectedResults: Array<InventoryRecord>;
+  mixedSelectedStatus?: boolean;
+  forceDisabled?: string;
+  closeMenu: () => void;
+  onSelectOptions?: Array<SplitButtonOption>;
+  menuID: (typeof menuIDs)[keyof typeof menuIDs];
+  basketSearch: boolean;
+};
 
-type ContextAction = {|
-  component: MixedElement,
-  hidden: boolean,
-|};
+type ContextAction = {
+  component: ReactElement;
+  hidden: boolean;
+};
 
 const contextActions = ({
   selectedResults,
@@ -41,20 +39,24 @@ const contextActions = ({
   closeMenu,
   menuID,
   basketSearch,
-}: ContextActionsArgs): ((ContextMenuRenderOptions) => Array<ContextAction>) => {
+}: ContextActionsArgs): ((
+  as: ContextMenuRenderOptions
+) => Array<ContextAction>) => {
   const contextActionsGenerator = (as: ContextMenuRenderOptions) => {
     const allSelectedAvailable: boolean = selectedResults.every(
-      (r) => !r.deleted
+      (r: InventoryRecord) => !r.deleted
     );
-    const allSelectedDeleted: boolean = selectedResults.every((r) => r.deleted);
+    const allSelectedDeleted: boolean = selectedResults.every(
+      (r: InventoryRecord) => r.deleted
+    );
 
     const reasonsToDisableContextMenu = selectedResults
-      .map((r) => r.contextMenuDisabled())
+      .map((r: InventoryRecord) => r.contextMenuDisabled())
       .filter(Boolean);
-    const disableAllActions =
+    const disableAllActions: string =
       forceDisabled ||
       (reasonsToDisableContextMenu.length > 0
-        ? reasonsToDisableContextMenu[0]
+        ? reasonsToDisableContextMenu[0] || ""
         : "");
 
     const hideInPickerAndWhenNotAllCurrent =
@@ -64,7 +66,7 @@ const contextActions = ({
       {
         component: (
           <SelectAction
-            key={"select"}
+            key="select"
             selectedResults={selectedResults}
             onSelectOptions={onSelectOptions}
             as={as}
@@ -78,7 +80,7 @@ const contextActions = ({
       {
         component: (
           <EditAction
-            key={"edit"}
+            key="edit"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -90,7 +92,7 @@ const contextActions = ({
       {
         component: (
           <CreateAction
-            key={"create"}
+            key="create"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -102,7 +104,7 @@ const contextActions = ({
       {
         component: (
           <DuplicateAction
-            key={"duplicate"}
+            key="duplicate"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -114,7 +116,7 @@ const contextActions = ({
       {
         component: (
           <MoveAction
-            key={"move"}
+            key="move"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -126,7 +128,7 @@ const contextActions = ({
       {
         component: (
           <TransferAction
-            key={"transfer"}
+            key="transfer"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -138,7 +140,7 @@ const contextActions = ({
       {
         component: (
           <RestoreAction
-            key={"restore"}
+            key="restore"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -153,7 +155,7 @@ const contextActions = ({
       {
         component: (
           <AddToBasketAction
-            key={"add to basket"}
+            key="add to basket"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -165,7 +167,7 @@ const contextActions = ({
       {
         component: (
           <RemoveFromBasketAction
-            key={"remove from basket"}
+            key="remove from basket"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -177,7 +179,7 @@ const contextActions = ({
       {
         component: (
           <ExportAction
-            key={"export"}
+            key="export"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -189,7 +191,7 @@ const contextActions = ({
       {
         component: (
           <PrintBarcodeAction
-            key={"print barcode"}
+            key="print barcode"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}
@@ -201,7 +203,7 @@ const contextActions = ({
       {
         component: (
           <DeleteAction
-            key={"delete"}
+            key="delete"
             selectedResults={selectedResults}
             as={as}
             disabled={disableAllActions}

@@ -1,11 +1,4 @@
-// @flow
-
-import React, {
-  useContext,
-  useState,
-  type Node,
-  type ComponentType,
-} from "react";
+import React, { useContext, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { useTheme } from "@mui/material/styles";
@@ -14,7 +7,7 @@ import { makeStyles } from "tss-react/mui";
 import CardMedia from "@mui/material/CardMedia";
 import IconButton from "@mui/material/IconButton";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import { preventEventBubbling, match } from "../../../util/Util";
+import { preventEventBubbling } from "../../../util/Util";
 import DescriptionList from "../../../components/DescriptionList";
 import { RecordLink } from "../RecordLink";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
@@ -26,7 +19,7 @@ import PhotoIcon from "@mui/icons-material/Photo";
 import ContentsChips from "../../Container/Content/ContentsChips";
 import SearchContext from "../../../stores/contexts/Search";
 import useStores from "../../../stores/use-stores";
-import { globalStyles, type Theme } from "../../../theme";
+import { globalStyles } from "../../../theme";
 import clsx from "clsx";
 import ImagePreview from "../../../components/ImagePreview";
 import { StyledMenu } from "../../../components/StyledMenu";
@@ -37,22 +30,22 @@ import UserDetails from "../UserDetails";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SampleModel from "../../../stores/models/SampleModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
-import { type BlobUrl } from "../../../util/types";
+import { emptyObject, type BlobUrl } from "../../../util/types";
 
 const CustomCardStructure = withStyles<
-  {|
-    navigateOnClick: boolean,
-    greyOut: boolean,
-    title: string,
-    subheader: string,
-    image: Node,
-    content: Node,
-    onClick: () => void,
-    headerAvatar: Node,
-    headerAction: Node,
-    contentFooter: Node,
-    deleted: boolean,
-  |},
+  {
+    navigateOnClick: boolean;
+    greyOut: boolean;
+    title: string;
+    subheader: string;
+    image: React.ReactNode;
+    content: React.ReactNode;
+    onClick: () => void;
+    headerAvatar: React.ReactNode;
+    headerAction: React.ReactNode;
+    contentFooter: React.ReactNode;
+    deleted: boolean;
+  },
   { card: string }
 >((theme, { navigateOnClick }) => ({
   card: {
@@ -70,8 +63,8 @@ const CustomCardStructure = withStyles<
   );
 });
 
-const Details = withStyles<{| record: InventoryRecord |}, { location: string }>(
-  (theme: Theme) => ({
+const Details = withStyles<{ record: InventoryRecord }, { location: string }>(
+  (theme) => ({
     location: {
       marginTop: theme.spacing(0.5),
     },
@@ -150,16 +143,15 @@ const Details = withStyles<{| record: InventoryRecord |}, { location: string }>(
   />
 ));
 
-const Modified = withStyles<
-  {| record: InventoryRecord |},
-  { container: string }
->((theme) => ({
-  container: {
-    margin: theme.spacing(0, 1, 1, 1),
-    color: theme.palette.text.secondary,
-    fontSize: "0.8em",
-  },
-}))(({ record, classes }) => (
+const Modified = withStyles<{ record: InventoryRecord }, { container: string }>(
+  (theme) => ({
+    container: {
+      margin: theme.spacing(0, 1, 1, 1),
+      color: theme.palette.text.secondary,
+      fontSize: "0.8em",
+    },
+  })
+)(({ record, classes }) => (
   <div className={classes.container}>
     <span>Modified </span>
     <TimeAgoCustom
@@ -171,42 +163,45 @@ const Modified = withStyles<
   </div>
 ));
 
-const ImagePlaceholder = withStyles<{||}, { media: string, icon: string }>(
-  (theme) => ({
-    media: {
-      display: "flex",
-      backgroundColor: theme.palette.primary.saturated,
-      opacity: "0.3",
-      height: "100%",
-    },
-    icon: {
-      color: "white",
-      margin: "auto auto",
-      fontSize: "5em",
-    },
-  })
-)(({ classes }) => (
+const ImagePlaceholder = withStyles<
+  emptyObject,
+  { media: string; icon: string }
+>((theme) => ({
+  media: {
+    display: "flex",
+    backgroundColor: theme.palette.primary.saturated,
+    opacity: "0.3",
+    height: "100%",
+  },
+  icon: {
+    color: "white",
+    margin: "auto auto",
+    fontSize: "5em",
+  },
+}))(({ classes }) => (
   <CardMedia className={classes.media}>
     <PhotoIcon className={classes.icon} />
   </CardMedia>
 ));
 
-const useStyles = makeStyles()((theme) => ({
-  menuButton: {
-    padding: theme.spacing(1),
-  },
-  preview: {
-    height: "100%",
-    cursor: (fetching) => (fetching ? "progress" : "zoom-in"),
-    backgroundSize: "contain",
-  },
-}));
+const useStyles = makeStyles<{ fetching: boolean }>()(
+  (theme, { fetching }) => ({
+    menuButton: {
+      padding: theme.spacing(1),
+    },
+    preview: {
+      height: "100%",
+      cursor: fetching ? "progress" : "zoom-in",
+      backgroundSize: "contain",
+    },
+  })
+);
 
-type CardArgs = {|
-  record: InventoryRecord,
-|};
+type CardArgs = {
+  record: InventoryRecord;
+};
 
-function RecordCard({ record }: CardArgs): Node {
+function RecordCard({ record }: CardArgs): React.ReactNode {
   const {
     search,
     disabled,
@@ -243,35 +238,38 @@ function RecordCard({ record }: CardArgs): Node {
     activateResult(r);
   };
 
-  const [link, setLink] = useState<?BlobUrl>(null);
-  const [size, setSize] = useState<?{| width: number, height: number |}>(null);
+  const [link, setLink] = useState<BlobUrl | null>(null);
+  const [size, setSize] = useState<{ width: number; height: number } | null>(
+    null
+  );
 
   const [fetching, setFetching] = useState(false);
 
-  const [anchorEl, setAnchorEl] = useState<?HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const openPreview = async () => {
+  const openPreview = () => {
     setFetching(true);
-    await record.fetchImage("image");
-    if (record.image) {
-      setLink(record.image);
-    }
-    setFetching(false);
+    void record.fetchImage("image").then(() => {
+      if (record.image) {
+        setLink(record.image);
+      }
+      setFetching(false);
+    });
   };
 
   const closePreview = () => {
     setLink(null);
   };
 
-  const { classes } = useStyles(fetching);
+  const { classes } = useStyles({ fetching });
 
-  const actions = contextActions({
+  const menuItems = contextActions({
     selectedResults: [record],
     menuID: menuIDs.CARD,
     closeMenu: () => setAnchorEl(null),
     forceDisabled: search.processingContextActions ? "Action in Progress" : "",
     basketSearch: search.fetcher.basketSearch,
-  });
+  })("menuitem");
 
   return (
     <>
@@ -303,7 +301,7 @@ function RecordCard({ record }: CardArgs): Node {
         headerAvatar={
           <RecordTypeIcon
             record={record}
-            color={record.deleted ? theme.palette.deletedGrey : null}
+            color={record.deleted ? theme.palette.deletedGrey : undefined}
           />
         }
         title={record.name}
@@ -312,13 +310,16 @@ function RecordCard({ record }: CardArgs): Node {
           <>
             <IconButton
               className={classes.menuButton}
-              onClick={preventEventBubbling(({ currentTarget }) => {
-                if (currentTarget instanceof HTMLElement) {
-                  setAnchorEl(currentTarget);
+              onClick={preventEventBubbling(
+                (e: React.MouseEvent<HTMLButtonElement>) => {
+                  const { currentTarget } = e;
+                  if (currentTarget instanceof HTMLElement) {
+                    setAnchorEl(currentTarget);
+                  }
                 }
-              })}
+              )}
             >
-              <MoreHorizIcon size="small" />
+              <MoreHorizIcon fontSize="small" />
             </IconButton>
             <StyledMenu
               anchorEl={anchorEl}
@@ -326,25 +327,39 @@ function RecordCard({ record }: CardArgs): Node {
               onClose={() => setAnchorEl(null)}
               disableAutoFocusItem={true}
             >
-              {actions("menuitem")
+              {menuItems
                 .filter(({ hidden }) => !hidden)
-                .map(({ component }) => component)}
+                .map(
+                  ({
+                    component,
+                  }: {
+                    hidden: boolean;
+                    component: React.ReactNode;
+                  }) => component
+                )}
             </StyledMenu>
           </>
         }
         content={<Details record={record} />}
         contentFooter={
-          record.readAccessLevel === "full" && <Modified record={record} />
+          record.readAccessLevel === "full" ? (
+            <Modified record={record} />
+          ) : null
         }
-        onClick={match<void, () => void>([
-          [() => disabled || Boolean(anchorEl), () => {}],
-          [() => isChild ?? false, () => navigateToResult(record)],
-          [() => true, () => activateResult(record)],
-        ])()}
+        onClick={() => {
+          if (disabled || Boolean(anchorEl)) {
+            return;
+          }
+          if (isChild ?? false) {
+            navigateToResult(record);
+          } else {
+            activateResult(record);
+          }
+        }}
         navigateOnClick={!disabled && !anchorEl && Boolean(isChild)}
       />
     </>
   );
 }
 
-export default (observer(RecordCard): ComponentType<CardArgs>);
+export default observer(RecordCard);

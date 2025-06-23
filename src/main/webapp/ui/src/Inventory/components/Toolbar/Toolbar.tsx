@@ -1,9 +1,7 @@
-//@flow
-
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import useStores from "../../../stores/use-stores";
 import GlobalId from "../../../components/GlobalId";
-import Alert from "@mui/material/Alert";
+import type Alert from "@mui/material/Alert";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -13,7 +11,7 @@ import Typography from "@mui/material/Typography";
 import { makeStyles } from "tss-react/mui";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import { observer } from "mobx-react-lite";
-import React, { type Element, type Node, type ComponentType } from "react";
+import React from "react";
 import { UserCancelledAction } from "../../../util/error";
 import { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
 import RelativeBox from "../../../components/RelativeBox";
@@ -21,11 +19,14 @@ import StickyMenu from "../Stepper/StickyMenu";
 import StickyStatus from "../StickyStatus";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
-const useStyles = makeStyles()((theme, { recordType }) => ({
+const useStyles = makeStyles<{
+  recordType?: AllowedFormTypes;
+}>()((theme, { recordType }) => ({
   appBar: {
-    backgroundColor: recordType
-      ? theme.palette.record[recordType].bg
-      : "white !important",
+    backgroundColor:
+      recordType && theme.palette.record[recordType]
+        ? theme.palette.record[recordType].bg
+        : "white !important",
     color: recordType ? "white" : `${theme.palette.text.primary} !important`,
     border: recordType ? "none" : theme.borders.section,
   },
@@ -66,15 +67,15 @@ const useStyles = makeStyles()((theme, { recordType }) => ({
   },
 }));
 
-type CustomToolbarArgs = {|
-  title: Node,
-  record?: InventoryRecord,
-  recordType: AllowedFormTypes,
-  batch?: boolean,
-  stickyAlert?: ?Element<typeof Alert>,
-|};
+type CustomToolbarArgs = {
+  title: React.ReactNode;
+  record?: InventoryRecord;
+  recordType: AllowedFormTypes;
+  batch?: boolean;
+  stickyAlert?: React.ReactElement<typeof Alert> | null;
+};
 
-/*
+/**
  * The top-most section of the right-hand side panel of the main Inventory UI,
  * which displays the name of the current record alongside visual elements.
  */
@@ -84,13 +85,26 @@ function CustomToolbar({
   recordType,
   batch,
   stickyAlert,
-}: CustomToolbarArgs): Node {
+}: CustomToolbarArgs): React.ReactNode {
   const { classes } = useStyles({ recordType });
   const {
     uiStore,
     searchStore: { search, activeResult },
   } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
+
+  const handleBackClick = () => {
+    try {
+      // Using void to handle the promise without awaiting it
+      void (async () => {
+        await search.setActiveResult();
+        uiStore.setVisiblePanel("left");
+      })();
+    } catch (e) {
+      if (e instanceof UserCancelledAction) return;
+      throw e;
+    }
+  };
 
   return (
     <AppBar position="sticky" className={classes.appBar} elevation={0}>
@@ -103,15 +117,7 @@ function CustomToolbar({
         >
           {isSingleColumnLayout && (
             <IconButton
-              onClick={async () => {
-                try {
-                  await search.setActiveResult();
-                  uiStore.setVisiblePanel("left");
-                } catch (e) {
-                  if (e instanceof UserCancelledAction) return;
-                  throw e;
-                }
-              }}
+              onClick={handleBackClick}
               className={classes.backButton}
             >
               <ArrowBackIosIcon
@@ -146,7 +152,7 @@ function CustomToolbar({
       </Toolbar>
       {activeResult && <StickyMenu stickyAlert={stickyAlert} />}
       <Box pb={0.25} />
-      {(record ?? batch) && (
+      {(record !== undefined || batch === true) && (
         <RelativeBox>
           <StickyStatus
             recordState={record?.state || "edit"}
@@ -158,4 +164,4 @@ function CustomToolbar({
   );
 }
 
-export default (observer(CustomToolbar): ComponentType<CustomToolbarArgs>);
+export default observer(CustomToolbar);

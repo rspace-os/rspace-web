@@ -1,0 +1,14 @@
+// @flow
+
+import { type Node, type Element } from "react";
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
+import Alert from "@mui/material/Alert";
+
+declare export default function Toolbar({|
+  title: Node,
+  record?: InventoryRecord,
+  recordType: AllowedFormTypes,
+  batch?: boolean,
+  stickyAlert?: ?Element<typeof Alert>,
+|}): Node;

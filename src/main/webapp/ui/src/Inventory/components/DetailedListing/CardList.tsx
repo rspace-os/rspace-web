@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import Card from "./Card";
 import Grid from "@mui/material/Grid";
@@ -9,16 +7,17 @@ import Box from "@mui/material/Box";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
-const GridContainer = withStyles<{| children: Node |}, { root: string }>(
-  (theme) => ({
-    root: {
-      width: "100%",
-      marginLeft: theme.spacing(-0.25),
-      marginBottom: theme.spacing(1),
-      alignItems: "stretch",
-    },
-  })
-)(({ children, classes }) => (
+const GridContainer = withStyles<
+  { children: React.ReactNode },
+  { root: string }
+>((theme) => ({
+  root: {
+    width: "100%",
+    marginLeft: theme.spacing(-0.25),
+    marginBottom: theme.spacing(1),
+    alignItems: "stretch",
+  },
+}))(({ children, classes }) => (
   <Grid
     container
     spacing={2}
@@ -31,11 +30,11 @@ const GridContainer = withStyles<{| children: Node |}, { root: string }>(
   </Grid>
 ));
 
-type CardListArgs = {|
-  records: Array<InventoryRecord>,
-|};
+type CardListArgs = {
+  records: Array<InventoryRecord>;
+};
 
-function CardList({ records }: CardListArgs): Node {
+function CardList({ records }: CardListArgs): React.ReactNode {
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
@@ -58,4 +57,4 @@ function CardList({ records }: CardListArgs): Node {
   );
 }
 
-export default (observer(CardList): ComponentType<CardListArgs>);
+export default observer(CardList);

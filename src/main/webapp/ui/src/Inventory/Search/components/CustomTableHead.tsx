@@ -1,6 +1,4 @@
-// @flow
-
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import TableHead from "@mui/material/TableHead";
@@ -16,7 +14,10 @@ import SortableProperty, {
   type SortProperty,
 } from "../../components/Tables/SortableProperty";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
-import { sortProperties, isSortable } from "../../../stores/models/InventoryBaseRecord";
+import {
+  sortProperties,
+  isSortable,
+} from "../../../stores/models/InventoryBaseRecord";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
@@ -35,19 +36,19 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type TableHeadArgs = {|
-  selectedCount: number,
-  onSelectOptions: Array<SplitButtonOption>,
-  toggleAll: () => void,
-  contextMenuId: $Values<typeof menuIDs>,
-|};
+type TableHeadArgs = {
+  selectedCount: number;
+  onSelectOptions: Array<SplitButtonOption>;
+  toggleAll: () => void;
+  contextMenuId: (typeof menuIDs)[keyof typeof menuIDs];
+};
 
 function CustomTableHead({
   selectedCount,
   onSelectOptions,
   toggleAll,
   contextMenuId,
-}: TableHeadArgs): Node {
+}: TableHeadArgs): React.ReactNode {
   const { isViewportSmall, isViewportLarge } = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
@@ -142,4 +143,4 @@ function CustomTableHead({
   );
 }
 
-export default (observer(CustomTableHead): ComponentType<TableHeadArgs>);
+export default observer(CustomTableHead);

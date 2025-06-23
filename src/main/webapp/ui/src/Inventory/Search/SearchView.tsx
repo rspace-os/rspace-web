@@ -1,6 +1,4 @@
-// @flow
-
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext } from "react";
 import ResultsTable from "./ResultsTable";
 import ResultsTree from "./ResultsTree";
 import ResultsCards from "./ResultsCards";
@@ -12,11 +10,11 @@ import { menuIDs } from "../../util/menuIDs";
 import NoResults from "./components/NoResults";
 import EmptyListing from "./components/EmptyListing";
 
-type SearchViewArgs = {|
-  contextMenuId: $Values<typeof menuIDs>,
-|};
+type SearchViewArgs = {
+  contextMenuId: (typeof menuIDs)[keyof typeof menuIDs];
+};
 
-function SearchView({ contextMenuId }: SearchViewArgs): Node {
+function SearchView({ contextMenuId }: SearchViewArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
 
   if (search.searchView === "IMAGE") return <ImageView />;
@@ -37,4 +35,4 @@ function SearchView({ contextMenuId }: SearchViewArgs): Node {
   return null;
 }
 
-export default (observer(SearchView): ComponentType<SearchViewArgs>);
+export default observer(SearchView);

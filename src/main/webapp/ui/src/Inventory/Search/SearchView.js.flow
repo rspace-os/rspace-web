@@ -1,0 +1,8 @@
+// @flow
+
+import { type Node } from "react";
+import { menuIDs } from "../../util/menuIDs";
+
+declare export default function SearchView({|
+  contextMenuId: $Values<typeof menuIDs>,
+|}): Node;

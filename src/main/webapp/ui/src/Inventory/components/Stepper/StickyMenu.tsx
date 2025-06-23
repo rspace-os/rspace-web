@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Element, type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import { withStyles } from "Styles";
@@ -9,13 +7,18 @@ import Box from "@mui/material/Box";
 import ExtendedContextMenu from "../ContextMenu/ExtendedContextMenu";
 import Alert from "@mui/material/Alert";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
+import theme, { RecordPalette } from "../../../theme";
 
 const MenuWrapper = withStyles<
-  {| children: Node, recordType: string, isSingleColumnLayout: boolean |},
+  {
+    children: React.ReactNode;
+    recordType: keyof typeof theme.palette.record;
+    isSingleColumnLayout: boolean;
+  },
   { root: string }
 >((theme, { recordType, isSingleColumnLayout }) => ({
   root: {
-    backgroundColor: theme.palette.record[recordType].bg,
+    backgroundColor: (theme.palette.record[recordType] as RecordPalette).bg,
     borderBottomLeftRadius: isSingleColumnLayout ? 0 : theme.spacing(1),
     borderBottomRightRadius: 0,
     borderBottom: theme.borders.section,
@@ -24,7 +27,7 @@ const MenuWrapper = withStyles<
 }))(({ children, classes }) => <div className={classes.root}>{children}</div>);
 
 const RoundedWhiteContainer = withStyles<
-  {| children: Node, isSingleColumnLayout: boolean |},
+  { children: React.ReactNode; isSingleColumnLayout: boolean },
   { root: string }
 >((theme, { isSingleColumnLayout }) => ({
   root: {
@@ -35,11 +38,11 @@ const RoundedWhiteContainer = withStyles<
   },
 }))(({ children, classes }) => <div className={classes.root}>{children}</div>);
 
-type StickyMenuArgs = {|
-  stickyAlert?: ?Element<typeof Alert>,
-|};
+type StickyMenuArgs = {
+  stickyAlert?: React.ReactElement<typeof Alert> | null;
+};
 
-function StickyMenu({ stickyAlert }: StickyMenuArgs): Node {
+function StickyMenu({ stickyAlert }: StickyMenuArgs): React.ReactNode {
   const {
     searchStore: { activeResult, search },
     uiStore,
@@ -85,4 +88,4 @@ function StickyMenu({ stickyAlert }: StickyMenuArgs): Node {
   );
 }
 
-export default (observer(StickyMenu): ComponentType<StickyMenuArgs>);
+export default observer(StickyMenu);

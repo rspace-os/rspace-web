@@ -1,11 +1,7 @@
-// @flow
-
 import React, {
   useState,
   useLayoutEffect,
   useRef,
-  type Node,
-  type ComponentType,
   type RefObject,
 } from "react";
 import { observer } from "mobx-react-lite";
@@ -21,7 +17,9 @@ import { StyledMenu } from "../../../components/StyledMenu";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 
-const useStyles = makeStyles()((theme, { paddingTop }) => ({
+const useStyles = makeStyles<{
+  paddingTop: boolean;
+}>()((theme, { paddingTop }) => ({
   spaceForButtons: {
     overflowY: "hidden",
     maxHeight: theme.spacing(4 + (paddingTop ? 1 : 0)),
@@ -46,18 +44,23 @@ const useStyles = makeStyles()((theme, { paddingTop }) => ({
 }));
 
 type Buttons = Array<{
-  inOverflow: boolean,
-  ref: RefObject<?HTMLElement>,
+  inOverflow: boolean;
+  ref: RefObject<HTMLElement>;
 }>;
 
-export type ContextMenuArgs = {|
-  selectedResults: Array<InventoryRecord>,
-  forceDisabled?: string,
-  onSelectOptions?: Array<SplitButtonOption>,
-  menuID: string,
-  paddingTop: boolean,
-  basketSearch: boolean,
-|};
+type ContextAction = {
+  hidden?: boolean;
+  component: React.ReactNode;
+};
+
+export type ContextMenuArgs = {
+  selectedResults: Array<InventoryRecord>;
+  forceDisabled?: string;
+  onSelectOptions?: Array<SplitButtonOption>;
+  menuID: string;
+  paddingTop: boolean;
+  basketSearch: boolean;
+};
 
 function ContextMenu({
   selectedResults = [],
@@ -66,7 +69,7 @@ function ContextMenu({
   menuID,
   paddingTop,
   basketSearch,
-}: ContextMenuArgs): Node {
+}: ContextMenuArgs): React.ReactNode {
   const { classes } = useStyles({ paddingTop });
   const MENU_PADDING = 3;
 
@@ -75,9 +78,11 @@ function ContextMenu({
     selectedResults.some((r) => r.deleted) &&
     selectedResults.some((r) => !r.deleted);
 
-  const [anchorEl, setAnchorEl] = useState<?EventTarget>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const actions = contextActions({
+  type ContextActionsFn = (type: "button" | "menuitem") => ContextAction[];
+
+  const actions: ContextActionsFn = contextActions({
     selectedResults,
     mixedSelectedStatus,
     forceDisabled,
@@ -87,17 +92,17 @@ function ContextMenu({
     basketSearch,
   });
 
-  const spaceForButtons: { current: ?HTMLElement } = useRef();
+  const spaceForButtons = useRef<HTMLElement | null>(null);
 
-  const initialButtons = actions("button").map(() => ({
+  const initialButtons: Buttons = actions("button").map(() => ({
     inOverflow: false,
-    ref: useRef<?HTMLElement>(),
+    ref: React.createRef<HTMLElement>(),
   }));
   const [buttons, setButtons] = useState<Buttons>(initialButtons);
 
-  const moreButton: { current: ?HTMLElement } = useRef();
+  const moreButton = useRef<HTMLElement | null>(null);
 
-  const widthOfRef = (ref: { current: ?HTMLElement }): number =>
+  const widthOfRef = (ref: { current: HTMLElement | null }): number =>
     ref.current?.offsetWidth ?? 0;
 
   const calculateWhatIsInOverflowMenu = () => {
@@ -135,14 +140,18 @@ function ContextMenu({
   );
 
   useLayoutEffect(() => {
-    if (spaceForButtons.current) {
-      containerObserver.current.observe(spaceForButtons.current);
+    const currentSpaceForButtons = spaceForButtons.current;
+    const currentObserver = containerObserver.current;
+
+    if (currentSpaceForButtons) {
+      currentObserver.observe(currentSpaceForButtons);
     }
     return () => {
-      if (spaceForButtons.current)
-        containerObserver.current.unobserve(spaceForButtons.current);
+      if (currentSpaceForButtons) {
+        currentObserver.unobserve(currentSpaceForButtons);
+      }
     };
-  }, [spaceForButtons, containerObserver, selectedResults]);
+  }, [selectedResults]);
 
   /* making this variable as more cases could be added */
   const showMenuAlert = mixedSelectedStatus;
@@ -160,13 +169,20 @@ function ContextMenu({
     <div>
       {anySelected && (
         <Grid container wrap="nowrap">
-          <Grid item ref={spaceForButtons} className={classes.spaceForButtons}>
+          <Grid
+            item
+            ref={spaceForButtons as React.RefObject<HTMLDivElement>}
+            className={classes.spaceForButtons}
+          >
             <Grid container>
-              {actions("button").map((action, i) =>
+              {actions("button").map((action: ContextAction, i) =>
                 !action.hidden ? (
-                  // $FlowExpectedError[prop-missing]
-                  <GridItem key={action.component.key}>
-                    <Box ref={buttons[i].ref}>{action.component}</Box>
+                  <GridItem key={i}>
+                    <Box
+                      ref={buttons[i].ref as React.RefObject<HTMLDivElement>}
+                    >
+                      {action.component}
+                    </Box>
                   </GridItem>
                 ) : null
               )}
@@ -174,14 +190,14 @@ function ContextMenu({
           </Grid>
           <Grid item className={classes.spacer}></Grid>
           <GridItem className={classes.moreButtonWrapper}>
-            <Box ref={moreButton}>
+            <Box ref={moreButton as React.RefObject<HTMLDivElement>}>
               <IconButtonWithTooltip
                 title="More actions"
                 icon={<MoreHorizIcon />}
                 aria-haspopup="menu"
                 className={classes.moreButton}
                 size="medium"
-                onClick={({ currentTarget }) => setAnchorEl(currentTarget)}
+                onClick={(event) => setAnchorEl(event.currentTarget)}
                 disabled={buttons.every((b) => !b.inOverflow)}
               />
             </Box>
@@ -191,8 +207,8 @@ function ContextMenu({
               onClose={() => setAnchorEl(null)}
               disableAutoFocusItem={true}
             >
-              {actions("menuitem").map((action, i) =>
-                !action.hidden && buttons[i].inOverflow
+              {actions("menuitem").map((action: ContextAction, i) =>
+                !action.hidden && buttons[i]?.inOverflow
                   ? action.component
                   : null
               )}
@@ -205,4 +221,4 @@ function ContextMenu({
   );
 }
 
-export default (observer(ContextMenu): ComponentType<ContextMenuArgs>);
+export default observer(ContextMenu);

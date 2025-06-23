@@ -1,0 +1,8 @@
+// @flow
+
+import { type Node, type Element } from "react";
+import Alert from "@mui/material/Alert";
+
+declare export default function ResultsTable({|
+  stickyAlert?: ?Element<typeof Alert>,
+|}): Node;

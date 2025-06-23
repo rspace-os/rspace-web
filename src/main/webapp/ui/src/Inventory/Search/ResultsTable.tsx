@@ -1,11 +1,4 @@
-// @flow
-
-import React, {
-  useContext,
-  type Node,
-  type ComponentType,
-  type ElementProps,
-} from "react";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../stores/contexts/Search";
 import { paginationOptions } from "../../util/table";
@@ -42,7 +35,7 @@ const ResultRowSkeleton = () => {
 };
 
 const CustomTablePagination = withStyles<
-  ElementProps<typeof TablePagination>,
+  React.ComponentProps<typeof TablePagination>,
   { root: string }
 >(() => ({
   root: {
@@ -54,20 +47,14 @@ const CustomTablePagination = withStyles<
   </nav>
 ));
 
-type ResultsTableArgs = {|
-  contextMenuId: $Values<typeof menuIDs>,
-|};
+type ResultsTableArgs = {
+  contextMenuId: (typeof menuIDs)[keyof typeof menuIDs];
+};
 
-function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
+function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
-  const isSingleColumnLayout = useIsSingleColumnLayout();
 
-  const handleChangePageSize = ({
-    target: { value },
-  }: {
-    target: { value: number, ... },
-    ...
-  }) => {
+  const handleChangePageSize = (value: number) => {
     search.setPageSize(value);
   };
 
@@ -80,32 +67,32 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
       (r) => !search.alwaysFilterOut(r)
     );
     const selected = search.filteredResults.some((r) => r.selected === false);
-    results.map((r) => r.toggleSelected(selected));
+    results.forEach((r) => r.toggleSelected(selected));
   };
 
   const onSelectOptions: Array<SplitButtonOption> = [
     {
       text: "All",
       selection: () => {
-        search.filteredResults.map((r) => r.toggleSelected(true));
+        search.filteredResults.forEach((r) => r.toggleSelected(true));
       },
     },
     {
       text: "None",
       selection: () => {
-        search.filteredResults.map((r) => r.toggleSelected(false));
+        search.filteredResults.forEach((r) => r.toggleSelected(false));
       },
     },
     {
       text: "Invert",
       selection: () => {
-        search.filteredResults.map((r) => r.toggleSelected());
+        search.filteredResults.forEach((r) => r.toggleSelected());
       },
     },
     {
       text: "Mine",
       selection: () => {
-        search.filteredResults.map((r) =>
+        search.filteredResults.forEach((r) =>
           r.toggleSelected(r.currentUserIsOwner ?? false)
         );
       },
@@ -113,7 +100,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
     {
       text: "Not Mine",
       selection: () => {
-        search.filteredResults.map(
+        search.filteredResults.forEach(
           (r) => r.toggleSelected(r.currentUserIsOwner === false) // if currentUserIsOwner cannot be determined then don't select
         );
       },
@@ -121,13 +108,13 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
     {
       text: "Current",
       selection: () => {
-        search.filteredResults.map((r) => r.toggleSelected(!r.deleted));
+        search.filteredResults.forEach((r) => r.toggleSelected(!r.deleted));
       },
     },
     {
       text: "In Trash",
       selection: () => {
-        search.filteredResults.map((r) => r.toggleSelected(r.deleted));
+        search.filteredResults.forEach((r) => r.toggleSelected(r.deleted));
       },
     },
   ];
@@ -147,7 +134,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
           />
           <TableBody>
             {search.fetcher.loading
-              ? new Array<mixed>(search.fetcher.pageSize)
+              ? new Array<unknown>(search.fetcher.pageSize)
                   .fill(null)
                   .map((_, i) => <ResultRowSkeleton key={i} />)
               : search.filteredResults.map((result) => (
@@ -164,18 +151,21 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
         count={count}
         rowsPerPageOptions={rowsPerPageOptions}
         labelRowsPerPage=""
-        component="div"
         rowsPerPage={Math.min(search.fetcher.pageSize, count)}
         SelectProps={{
-          renderValue: (value: number) =>
-            value < count ? value : `${value} (All)`,
+          renderValue: (value: unknown) =>
+            typeof value === "number" && value < count
+              ? value
+              : `${String(value)} (All)`,
         }}
-        page={parseInt(search.fetcher.pageNumber) || 0}
-        onPageChange={(_event: mixed, page: number) => handleChangePage(page)}
-        onRowsPerPageChange={handleChangePageSize}
+        page={Number(search.fetcher.pageNumber) || 0}
+        onPageChange={(_event: unknown, page: number) => handleChangePage(page)}
+        onRowsPerPageChange={(e) =>
+          handleChangePageSize(Number(e.target.value))
+        }
       />
     </>
   );
 }
 
-export default (observer(ResultsTable): ComponentType<ResultsTableArgs>);
+export default observer(ResultsTable);

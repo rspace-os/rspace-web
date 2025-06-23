@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import {
   type CreateFrom,
   type CreateOptionParameter,
@@ -79,288 +77,311 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
  * record.
  */
 
-type CreateDialogProps = {|
-  existingRecord: CreateFrom & InventoryRecord,
-  open: boolean,
-  onClose: () => void,
-|};
+type CreateDialogProps = {
+  existingRecord: CreateFrom & InventoryRecord;
+  open: boolean;
+  onClose: () => void;
+};
 
-const Name: ComponentType<{|
-  id: string,
-  state: { value: string },
-|}> = observer(({ id, state }): Node => {
-  return (
-    <StringField
-      id={id}
-      value={state.value}
-      onChange={({ target }) => {
-        runInAction(() => {
-          state.value = target.value;
-        });
-      }}
-      variant="outlined"
-    />
-  );
-});
+const Name = observer(
+  ({
+    id,
+    state,
+  }: {
+    id: string;
+    state: { value: string };
+  }): React.ReactNode => {
+    return (
+      <StringField
+        id={id}
+        value={state.value}
+        onChange={({ target }) => {
+          runInAction(() => {
+            state.value = target.value;
+          });
+        }}
+        variant="outlined"
+      />
+    );
+  }
+);
 
-const Fields: ComponentType<{|
-  id: string,
-  state: {
-    copyFieldContent: $ReadOnlyArray<{|
-      id: Id,
-      name: string,
-      content: string,
-      hasContent: boolean,
-      selected: boolean,
-    |}>,
-  },
-|}> = observer(({ id: _id, state }): Node => {
-  if (state.copyFieldContent.length === 0)
-    return <NoValue label="No fields." />;
-  return (
-    <TableContainer>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell variant="head" padding="checkbox">
-              <Checkbox
-                indeterminate={
-                  state.copyFieldContent.some(({ selected }) => selected) &&
-                  !state.copyFieldContent.every(({ selected }) => selected)
-                }
-                checked={state.copyFieldContent.every(
-                  ({ selected }) => selected
-                )}
-                onChange={({ target: { checked } }) => {
-                  runInAction(() => {
-                    state.copyFieldContent.forEach((f) => {
-                      f.selected = checked && f.hasContent;
-                    });
-                  });
-                }}
-              />
-            </TableCell>
-            <TableCell width="70%">Field</TableCell>
-            <TableCell width="30%">Default Value</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {state.copyFieldContent.map((f) => (
-            <TableRow key={f.id}>
+const Fields = observer(
+  ({
+    id: _id,
+    state,
+  }: {
+    id: string;
+    state: {
+      copyFieldContent: ReadonlyArray<{
+        id: Id;
+        name: string;
+        content: string;
+        hasContent: boolean;
+        selected: boolean;
+      }>;
+    };
+  }): React.ReactNode => {
+    if (state.copyFieldContent.length === 0)
+      return <NoValue label="No fields." />;
+    return (
+      <TableContainer>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
               <TableCell variant="head" padding="checkbox">
                 <Checkbox
-                  checked={f.selected}
+                  indeterminate={
+                    state.copyFieldContent.some(({ selected }) => selected) &&
+                    !state.copyFieldContent.every(({ selected }) => selected)
+                  }
+                  checked={state.copyFieldContent.every(
+                    ({ selected }) => selected
+                  )}
                   onChange={({ target: { checked } }) => {
                     runInAction(() => {
-                      f.selected = checked;
+                      state.copyFieldContent.forEach((f) => {
+                        f.selected = checked && f.hasContent;
+                      });
                     });
                   }}
-                  disabled={!f.hasContent}
                 />
               </TableCell>
-              <TableCell>{f.name}</TableCell>
-              <TableCell
-                style={{
-                  opacity: f.selected ? 1.0 : 0.3,
-                }}
-              >
-                {f.content}
-              </TableCell>
+              <TableCell width="70%">Field</TableCell>
+              <TableCell width="30%">Default Value</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-});
+          </TableHead>
+          <TableBody>
+            {state.copyFieldContent.map((f) => (
+              <TableRow key={f.id}>
+                <TableCell variant="head" padding="checkbox">
+                  <Checkbox
+                    checked={f.selected}
+                    onChange={({ target: { checked } }) => {
+                      runInAction(() => {
+                        f.selected = checked;
+                      });
+                    }}
+                    disabled={!f.hasContent}
+                  />
+                </TableCell>
+                <TableCell>{f.name}</TableCell>
+                <TableCell
+                  style={{
+                    opacity: f.selected ? 1.0 : 0.3,
+                  }}
+                >
+                  {f.content}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  }
+);
 
-const SplitCount: ComponentType<{|
-  id: string,
-  state: { copies: number, ... },
-|}> = observer(({ id, state }): Node => {
-  const MIN = 2;
-  const MAX = 100;
+const SplitCount = observer(
+  ({
+    id,
+    state,
+  }: {
+    id: string;
+    state: { copies: number };
+  }): React.ReactNode => {
+    const MIN = 2;
+    const MAX = 100;
 
-  return (
-    <Box>
-      <FormControl>
-        <NumberField
-          id={id}
-          name="copies"
-          autoFocus
-          value={state.copies}
-          onChange={({ target }) => {
-            runInAction(() => {
-              state.copies = parseInt(target.value, 10);
-            });
-          }}
-          variant="outlined"
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">Copies</InputAdornment>
-            ),
-          }}
-          inputProps={{
-            min: MIN,
-            max: MAX,
-            step: 1,
-          }}
-        />
-      </FormControl>
-    </Box>
-  );
-});
+    return (
+      <Box>
+        <FormControl>
+          <NumberField
+            id={id}
+            name="copies"
+            autoFocus
+            value={state.copies}
+            onChange={({ target }) => {
+              runInAction(() => {
+                state.copies = parseInt(target.value, 10);
+              });
+            }}
+            variant="outlined"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">Copies</InputAdornment>
+              ),
+            }}
+            inputProps={{
+              min: MIN,
+              max: MAX,
+              step: 1,
+            }}
+          />
+        </FormControl>
+      </Box>
+    );
+  }
+);
 
-const LocationPicker: ComponentType<{|
-  id: string,
-  state: { container: Container },
-|}> = observer(({ id: _id, state }): Node => {
-  const search = React.useMemo(() => {
-    const s = new Search({
-      fetcherParams: {
-        parentGlobalId: state.container.globalId,
-      },
-      uiConfig: {
-        allowedSearchModules: (new Set([]): AllowedSearchModules),
-        allowedTypeFilters: (new Set([]): AllowedTypeFilters),
-        hideContentsOfChip: true,
-        selectionLimit: 1,
-        onlyAllowSelectingEmptyLocations: true,
-      },
-      factory: new AlwaysNewFactory(),
-    });
-    void s.setSearchView(cTypeToDefaultSearchView(state.container.cType));
-    runInAction(() => {
-      s.alwaysFilterOut = () => true;
-    });
-    return s;
+const LocationPicker = observer(
+  ({ id: _id, state }: { id: string; state: { container: Container } }) => {
+    const search = React.useMemo(() => {
+      const s = new Search({
+        fetcherParams: {
+          parentGlobalId: state.container.globalId,
+        },
+        uiConfig: {
+          allowedSearchModules: new Set([]) as AllowedSearchModules,
+          allowedTypeFilters: new Set([]) as AllowedTypeFilters,
+          hideContentsOfChip: true,
+          selectionLimit: 1,
+          onlyAllowSelectingEmptyLocations: true,
+        },
+        factory: new AlwaysNewFactory(),
+      });
+      void s.setSearchView(cTypeToDefaultSearchView(state.container.cType));
+      runInAction(() => {
+        s.alwaysFilterOut = () => true;
+      });
+      return s;
+      /*
+       * You might think that this useMemo should run whenever `state.container`
+       * changes, after all `state` is an observable value and when it changes so
+       * should the UI. However, the only way to change `state.container` is to
+       * close the create dialog and open it again with a different container
+       * selected. Not only will this unmount the whole dialog including this form
+       * field but even just changing the selected option (i.e. choosing to create
+       * a sample inside the container instead of another container) will result in
+       * an unmounting and remounting.
+       */
+    }, []);
+
     /*
-     * You might think that this useMemo should run whenever `state.container`
-     * changes, after all `state` is an observable value and when it changes so
-     * should the UI. However, the only way to change `state.container` is to
-     * close the create dialog and open it again with a different container
-     * selected. Not only will this unmount the whole dialog including this form
-     * field but even just changing the selected option (i.e. choosing to create
-     * a sample inside the container instead of another container) will result in
-     * an unmounting and remounting.
+     * If the container has locations but the details have not been fetched,
+     * then fetch them before rendering otherwise the container will show as
+     * empty.
      */
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    React.useEffect(() => {
+      if (
+        state.container.locationsCount > 0 &&
+        state.container.locations?.length === 0
+      )
+        void state.container.fetchAdditionalInfo();
+    }, [state.container]);
 
-  /*
-   * If the container has locations but the details have not been fetched,
-   * then fetch them before rendering otherwise the container will show as
-   * empty.
-   */
-  React.useEffect(() => {
+    if (state.container.cType === "LIST") return null;
     if (
       state.container.locationsCount > 0 &&
       state.container.locations?.length === 0
     )
-      void state.container.fetchAdditionalInfo();
-  }, [state.container]);
+      return null;
+    return (
+      <SearchContext.Provider
+        value={{
+          search,
+          scopedResult: state.container,
+          differentSearchForSettingActiveResult: search,
+        }}
+      >
+        <AlwaysNewWindowNavigationContext>
+          <SearchView contextMenuId={menuIDs.NONE} />
+        </AlwaysNewWindowNavigationContext>
+      </SearchContext.Provider>
+    );
+  }
+);
 
-  if (state.container.cType === "LIST") return null;
-  if (
-    state.container.locationsCount > 0 &&
-    state.container.locations?.length === 0
-  )
-    return null;
-  return (
-    <SearchContext.Provider
-      value={{
-        search,
-        scopedResult: state.container,
-        differentSearchForSettingActiveResult: search,
-      }}
-    >
-      <AlwaysNewWindowNavigationContext>
-        <SearchView contextMenuId={menuIDs.NONE} />
-      </AlwaysNewWindowNavigationContext>
-    </SearchContext.Provider>
-  );
-});
+const NewSubsampleCount = observer(
+  ({
+    id,
+    state,
+  }: {
+    id: string;
+    state: { count: number };
+  }): React.ReactNode => {
+    return (
+      <Box>
+        <FormControl>
+          <NumberField
+            id={id}
+            name="count"
+            autoFocus
+            value={state.count}
+            onChange={({ target }) => {
+              runInAction(() => {
+                state.count = parseInt(target.value, 10);
+              });
+            }}
+            variant="outlined"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">Count</InputAdornment>
+              ),
+            }}
+            inputProps={{
+              min: 1,
+              max: 100,
+              step: 1,
+            }}
+          />
+        </FormControl>
+      </Box>
+    );
+  }
+);
 
-const NewSubsampleCount: ComponentType<{|
-  id: string,
-  state: { count: number },
-|}> = observer(({ id, state }): Node => {
-  return (
-    <Box>
-      <FormControl>
-        <NumberField
-          id={id}
-          name="count"
-          autoFocus
-          value={state.count}
-          onChange={({ target }) => {
-            runInAction(() => {
-              state.count = parseInt(target.value, 10);
-            });
-          }}
-          variant="outlined"
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">Count</InputAdornment>
-            ),
-          }}
-          inputProps={{
-            min: 1,
-            max: 100,
-            step: 1,
-          }}
-        />
-      </FormControl>
-    </Box>
-  );
-});
-
-const NewSubsampleQuantity: ComponentType<{|
-  id: string,
-  state: { quantity: number | "", quantityLabel: string },
-|}> = observer(({ id, state }): Node => {
-  return (
-    <Box>
-      <FormControl>
-        <NumberField
-          id={id}
-          name="quantity"
-          autoFocus
-          value={state.quantity}
-          error={state.quantity === ""}
-          onChange={({ target }) => {
-            runInAction(() => {
-              /*
-               * The saved value can be either a number or an empty string,
-               * which is just to allow for the field to be temporarily cleared
-               * whilst entering a different number. The should should be
-               * prohibited from submitting if the field is empty.
-               */
-              const newValue = parseFloat(target.value);
-              if (target.checkValidity())
-                state.quantity = isNaN(newValue) ? "" : newValue;
-            });
-          }}
-          variant="outlined"
-          size="small"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                {state.quantityLabel}
-              </InputAdornment>
-            ),
-          }}
-          inputProps={{
-            min: 0,
-            step: 0.001,
-          }}
-        />
-      </FormControl>
-    </Box>
-  );
-});
+const NewSubsampleQuantity = observer(
+  ({
+    id,
+    state,
+  }: {
+    id: string;
+    state: { quantity: number | ""; quantityLabel: string };
+  }) => {
+    return (
+      <Box>
+        <FormControl>
+          <NumberField
+            id={id}
+            name="quantity"
+            autoFocus
+            value={state.quantity}
+            error={state.quantity === ""}
+            onChange={({ target }) => {
+              runInAction(() => {
+                /*
+                 * The saved value can be either a number or an empty string,
+                 * which is just to allow for the field to be temporarily cleared
+                 * whilst entering a different number. The should should be
+                 * prohibited from submitting if the field is empty.
+                 */
+                const newValue = parseFloat(target.value);
+                if (target.checkValidity())
+                  state.quantity = isNaN(newValue) ? "" : newValue;
+              });
+            }}
+            variant="outlined"
+            size="small"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  {state.quantityLabel}
+                </InputAdornment>
+              ),
+            }}
+            inputProps={{
+              min: 0,
+              step: 0.001,
+            }}
+          />
+        </FormControl>
+      </Box>
+    );
+  }
+);
 
 const ParameterField = observer(
   ({
@@ -372,12 +393,11 @@ const ParameterField = observer(
     setActiveStep,
     showNextButton,
     ...rest
-  }: {|
-    ...CreateOptionParameter,
-    activeStep: number,
-    setActiveStep: (number) => void,
-    showNextButton: boolean,
-  |}) => {
+  }: CreateOptionParameter & {
+    activeStep: number;
+    setActiveStep: (step: number) => void;
+    showNextButton: boolean;
+  }) => {
     const fieldId = React.useId();
     return (
       <>
@@ -470,7 +490,7 @@ function CreateDialog({
   existingRecord,
   open,
   onClose,
-}: CreateDialogProps): Node {
+}: CreateDialogProps): React.ReactNode {
   const [selectedCreateOptionIndex, setSelectedCreateOptionIndex] =
     React.useState<null | number>(null);
   const [activeStep, setActiveStep] = React.useState<number>(0);
@@ -494,7 +514,9 @@ function CreateDialog({
         .catch((error) => {
           addAlert(
             mkAlert({
-              message: `Failed to load additional information: ${error.message}`,
+              message: `Failed to load additional information: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
               variant: "error",
             })
           );
@@ -508,7 +530,7 @@ function CreateDialog({
 
   const handleSubmit = () => {
     void (async () => {
-      if (!selectedCreateOptionIndex)
+      if (selectedCreateOptionIndex === null)
         throw new Error("Cannot submit until an option is chosen");
       setSubmitting(true);
       try {
@@ -523,7 +545,7 @@ function CreateDialog({
   };
 
   const handleClose = () => {
-    if (selectedCreateOptionIndex)
+    if (selectedCreateOptionIndex !== null)
       existingRecord.createOptions[selectedCreateOptionIndex].onReset();
     onClose();
   };
@@ -601,14 +623,16 @@ function CreateDialog({
                  * number 3.
                  */}
                 <StepContent
-                  transitionDuration={selectedCreateOptionIndex ? 300 : 0}
+                  transitionDuration={
+                    selectedCreateOptionIndex === null ? 0 : 300
+                  }
                 >
                   <FormControl>
                     <RadioGroup
                       id={firstStepId}
                       value={selectedCreateOptionIndex}
                       onChange={(_event, index) => {
-                        setSelectedCreateOptionIndex(index);
+                        setSelectedCreateOptionIndex(parseInt(index, 10));
                         setActiveStep(1);
                       }}
                     >
@@ -687,7 +711,7 @@ function CreateDialog({
             onClick={handleSubmit}
             disabled={
               submitting ||
-              !selectedCreateOptionIndex ||
+              selectedCreateOptionIndex === null ||
               activeStep <
                 (
                   existingRecord.createOptions[selectedCreateOptionIndex]
@@ -706,4 +730,4 @@ function CreateDialog({
   );
 }
 
-export default (observer(CreateDialog): typeof CreateDialog);
+export default observer(CreateDialog);
