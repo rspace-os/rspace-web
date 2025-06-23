@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  useState,
-  useContext,
-  type ComponentType,
-} from "react";
+import React, { useState, useContext } from "react";
 import useStores from "../../../stores/use-stores";
 import SearchContext from "../../../stores/contexts/Search";
 import { observer } from "mobx-react-lite";
@@ -29,15 +22,13 @@ import TagsCombobox from "../../../components/Tags/TagsCombobox";
 import RsSet from "../../../util/set";
 import { type Tag } from "../../../stores/definitions/Tag";
 
-const Panel = ({
-  anchorEl,
-  children,
-  onClose,
-}: {
-  anchorEl: ?HTMLElement,
-  children: Node,
-  onClose: () => void,
-}) => (
+type PanelProps = {
+  anchorEl: HTMLElement | null;
+  children: React.ReactNode;
+  onClose: () => void;
+};
+
+const Panel = ({ anchorEl, children, onClose }: PanelProps) => (
   <Popover
     open={Boolean(anchorEl)}
     anchorEl={anchorEl}
@@ -64,29 +55,31 @@ const Panel = ({
 
 export type SavedItem = SavedSearch | BasketModel;
 
-function SearchParameterControls(): Node {
+function SearchParameterControls(): React.ReactNode {
   const { searchStore } = useStores();
   const { search } = useContext(SearchContext);
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
 
-  const [typeDropdown, setTypeDropdown] = useState<?HTMLElement>(null);
-  const [statusDropdown, setStatusDropdown] = useState<?HTMLElement>(null);
-  const [ownerDropdown, setOwnerDropdown] = useState<?HTMLElement>(null);
-  const [benchDropdown, setBenchDropdown] = useState<?HTMLElement>(null);
-  const [scanDropdown, setScanDropdown] = useState<?HTMLElement>(null);
+  const [typeDropdown, setTypeDropdown] = useState<HTMLElement | null>(null);
+  const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(
+    null
+  );
+  const [ownerDropdown, setOwnerDropdown] = useState<HTMLElement | null>(null);
+  const [benchDropdown, setBenchDropdown] = useState<HTMLElement | null>(null);
+  const [scanDropdown, setScanDropdown] = useState<HTMLElement | null>(null);
   const [savedSearchesDropdown, setSavedSearchesDropdown] =
-    useState<?HTMLElement>(null);
+    useState<HTMLElement | null>(null);
   const [savedBasketsDropdown, setSavedBasketsDropdown] =
-    useState<?HTMLElement>(null);
-  const [tagsDropdown, setTagsDropdown] = useState<?HTMLElement>(null);
+    useState<HTMLElement | null>(null);
+  const [tagsDropdown, setTagsDropdown] = useState<HTMLElement | null>(null);
 
   return (
     <Grid container direction="row" spacing={1}>
       <DropdownButton
         name="Type"
         onClick={({ target }) => {
-          setTypeDropdown(target);
+          setTypeDropdown(target as HTMLElement);
         }}
         disabled={!search.showTypeFilter}
       >
@@ -103,7 +96,7 @@ function SearchParameterControls(): Node {
       <DropdownButton
         name="Owner"
         onClick={({ target }) => {
-          setOwnerDropdown(target);
+          setOwnerDropdown(target as HTMLElement);
         }}
         disabled={!search.showOwnershipFilter}
       >
@@ -111,9 +104,9 @@ function SearchParameterControls(): Node {
           <PeopleField
             onSelection={(user, doSearch) => {
               setOwnerDropdown(null);
-              search.setOwner(user, doSearch);
+              search.setOwner(user, doSearch as boolean | undefined);
             }}
-            recipient={search.fetcher.owner}
+            recipient={search.fetcher.owner as any}
             outsideGroup={false}
             label=""
           />
@@ -122,7 +115,7 @@ function SearchParameterControls(): Node {
       <DropdownButton
         name="Bench"
         onClick={({ target }) => {
-          setBenchDropdown(target);
+          setBenchDropdown(target as HTMLElement);
         }}
         disabled={!search.showBenchFilter}
       >
@@ -130,12 +123,16 @@ function SearchParameterControls(): Node {
           <PeopleField
             onSelection={(user, doSearch) => {
               setBenchDropdown(null);
-              if (["SAMPLE", "TEMPLATE"].includes(search.fetcher.resultType)) {
+              if (
+                ["SAMPLE", "TEMPLATE"].includes(
+                  search.fetcher.resultType as string
+                )
+              ) {
                 search.setTypeFilter("ALL");
               }
-              search.setBench(user, doSearch);
+              search.setBench(user, doSearch as boolean | undefined);
             }}
-            recipient={search.fetcher.benchOwner}
+            recipient={search.fetcher.benchOwner as any}
             outsideGroup={false}
             label=""
           />
@@ -144,7 +141,7 @@ function SearchParameterControls(): Node {
       <DropdownButton
         name="Status"
         onClick={({ target }) => {
-          setStatusDropdown(target);
+          setStatusDropdown(target as HTMLElement);
         }}
         disabled={!search.showStatusFilter}
       >
@@ -162,7 +159,7 @@ function SearchParameterControls(): Node {
         name="Barcode"
         disabled={!search.showBarcodeScan}
         onClick={({ target }) => {
-          setScanDropdown(target);
+          setScanDropdown(target as HTMLElement);
         }}
       >
         <Panel anchorEl={scanDropdown} onClose={() => setScanDropdown(null)}>
@@ -170,7 +167,7 @@ function SearchParameterControls(): Node {
             onClose={() => setScanDropdown(null)}
             onScan={(barcode) => {
               if (isInventoryPermalink(barcode.rawValue)) {
-                window.location = barcode.rawValue;
+                window.location.href = barcode.rawValue;
               } else {
                 const params = search.fetcher.generateNewQuery({
                   query: barcode.rawValue,
@@ -192,16 +189,16 @@ function SearchParameterControls(): Node {
            * after it closes, and thus the popup does not close. Therefore, we
            * manually blur the focus to ensure the popup closes correctly.
            */
-          e.target.blur();
+          (e.target as HTMLElement).blur();
 
-          setTagsDropdown(e.target);
+          setTagsDropdown(e.target as HTMLElement);
         }}
         disabled={!search.showTagsFilter}
       >
         <TagsCombobox
           enforceOntologies={false}
           value={new RsSet<Tag>([])}
-          onSelection={(tag: Tag) => {
+          onSelection={(tag) => {
             navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
           }}
           onClose={() => {
@@ -214,14 +211,14 @@ function SearchParameterControls(): Node {
         name="Saved Searches"
         disabled={!search.showSavedSearches}
         onClick={({ target }) => {
-          setSavedSearchesDropdown(target);
+          setSavedSearchesDropdown(target as HTMLElement);
         }}
       >
         <SavedList
           anchorEl={savedSearchesDropdown}
           itemType="searches"
           items={searchStore.savedSearches}
-          onSelect={(savedSearch: ?SavedSearch) => {
+          onSelect={(savedSearch: SavedSearch | null) => {
             setSavedSearchesDropdown(null);
             if (savedSearch) {
               /*
@@ -232,7 +229,6 @@ function SearchParameterControls(): Node {
                * faciliating scoped navigation e.g. with the picker.
                */
               const params = search.fetcher.generateNewQuery(
-                // $FlowExpectedError[cannot-spread-indexer] Flow doesn't like indexing SearchParams
                 dropProperty(savedSearch, "name")
               );
               navigate(`/inventory/search?${params.toString()}`);
@@ -251,14 +247,14 @@ function SearchParameterControls(): Node {
         disabled={!search.showSavedBaskets}
         onClick={doNotAwait(async ({ target }) => {
           await searchStore.getBaskets();
-          setSavedBasketsDropdown(target);
+          setSavedBasketsDropdown(target as HTMLElement);
         })}
       >
         <SavedList
           anchorEl={savedBasketsDropdown}
           itemType="baskets"
           items={searchStore.savedBaskets}
-          onSelect={(savedBasket: ?BasketModel) => {
+          onSelect={(savedBasket: BasketModel | null) => {
             setSavedBasketsDropdown(null);
             if (savedBasket) {
               const params = search.fetcher.generateNewQuery({
@@ -274,4 +270,4 @@ function SearchParameterControls(): Node {
   );
 }
 
-export default (observer(SearchParameterControls): ComponentType<{||}>);
+export default observer(SearchParameterControls);

@@ -1,0 +1,21 @@
+//@flow
+
+import React, { type Node } from "react";
+import { type SavedSearch } from "../../../stores/stores/SearchStore";
+import BasketModel from "../../../stores/models/Basket";
+
+export type SavedItem = SavedSearch | BasketModel;
+
+export type ItemType = "searches" | "baskets";
+
+export type SavedListArgs<T: SavedItem> = {|
+  anchorEl: ?HTMLElement,
+  itemType: ItemType,
+  items: Array<T>,
+  onSelect: (?T) => void,
+  isDisabled?: (T) => boolean,
+|};
+
+declare function SavedList<T: SavedItem>(args: SavedListArgs<T>): Node;
+
+declare export default typeof SavedList;
