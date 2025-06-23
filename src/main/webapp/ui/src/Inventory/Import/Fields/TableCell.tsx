@@ -3,7 +3,7 @@ import React from "react";
 import { withStyles } from "Styles";
 
 type TableCellArgs = React.ComponentProps<typeof CustomTableCell> & {
-  nopadding: boolean;
+  nopadding?: boolean;
   borderless?: boolean;
 };
 

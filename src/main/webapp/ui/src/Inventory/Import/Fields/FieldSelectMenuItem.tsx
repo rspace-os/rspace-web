@@ -10,6 +10,7 @@ type FieldSelectMenuItemArgs = {
   currentField: (typeof Fields)[keyof typeof Fields];
   typeIsCompatibleWithField: boolean;
   onClick?: () => void; // this isn't passed in from anywhere, but if it is removed everything breaks
+  value?: string | null; // unused here, but required by the parent MUI Select component
 };
 
 const label = (field: (typeof Fields)[keyof typeof Fields]): string =>

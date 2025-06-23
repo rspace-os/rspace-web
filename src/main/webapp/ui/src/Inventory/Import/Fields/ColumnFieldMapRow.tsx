@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useState, type ComponentType, type ElementProps } from "react";
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Collapse from "@mui/material/Collapse";
@@ -12,19 +10,20 @@ import FieldTypeMenu from "./FieldTypeMenu";
 import UploadFormControl from "./FormControl";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TableCell from "./TableCell";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import {
   Fields,
-  getTypeOfField,
   ColumnFieldMap,
+  getTypeOfField,
 } from "../../../stores/models/ImportModel";
 import { FIELD_DATA } from "../../../stores/models/FieldTypes";
 import { toTitleCase, match } from "../../../util/Util";
 import { observer } from "mobx-react-lite";
-import { withStyles } from "Styles";
+import { withStyles } from "../../../util/styles";
 import { makeStyles } from "tss-react/mui";
 import Badge from "@mui/material/Badge";
 
@@ -45,7 +44,7 @@ const useStyles = makeStyles()(() => ({
 }));
 
 const CustomTableRow = withStyles<
-  ElementProps<typeof TableRow>,
+  React.ComponentProps<typeof TableRow> & { open: boolean },
   { root: string }
 >((theme, { open }) => ({
   root: {
@@ -55,14 +54,14 @@ const CustomTableRow = withStyles<
   },
 }))(TableRow);
 
-type ColumnFieldMapRowProps = {
-  columnFieldMap: ColumnFieldMap,
-  existingTemplate: boolean,
+type ColumnFieldMapRowArgs = {
+  columnFieldMap: ColumnFieldMap;
+  existingTemplate: boolean;
 };
 
-function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowProps) {
+function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
   const [open, setOpen] = useState(false);
-  const { classes } = useStyles({ open });
+  const { classes } = useStyles();
 
   const renderClosedFieldSelectLabel = (fieldSymbolKey: string) =>
     match<string, string>([
@@ -73,15 +72,12 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowProps) {
       [() => true, toTitleCase(fieldSymbolKey)],
     ])(fieldSymbolKey);
 
-  const FieldSymbols: Array<$Values<typeof Fields>> = ((Object.values(
-    columnFieldMap.fieldsByRecordType
-  ): any): Array<$Values<typeof Fields>>);
+  const FieldSymbols = Object.values(columnFieldMap.fieldsByRecordType);
 
   const onTypeChange = ({
     target: { value },
   }: {
-    target: { value: string, ... },
-    ...
+    target: { value: string };
   }) => {
     const field = Symbol.for(value);
     columnFieldMap.updateField(field);
@@ -98,7 +94,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowProps) {
 
   return (
     <>
-      <CustomTableRow className={classes.tableRow} open={open}>
+      <CustomTableRow open={open}>
         <TableCell padding="checkbox">
           <Checkbox
             checked={columnFieldMap.selected}
@@ -108,7 +104,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowProps) {
             data-test-id={columnFieldMap.fieldName}
           />
         </TableCell>
-        <TableCell padding="none" align="left" width="70%">
+        <TableCell nopadding={true} padding="none" align="left" width="70%">
           {columnFieldMap.fieldName}
           {columnFieldMap.columnName !== columnFieldMap.fieldName && (
             <Typography
@@ -126,7 +122,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowProps) {
             {FIELD_DATA[columnFieldMap.chosenFieldType].icon}
           </IconButton>
         </TableCell>
-        <TableCell padding="none" align="left" width="30%">
+        <TableCell nopadding={true} padding="none" align="left" width="30%">
           <Select
             variant="standard"
             className={classes.fieldSelect}
@@ -135,7 +131,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowProps) {
             onChange={onTypeChange}
             renderValue={renderClosedFieldSelectLabel}
           >
-            {FieldSymbols.map((f: $Values<typeof Fields>, i: number) => (
+            {FieldSymbols.map((f, i: number) => (
               <FieldMenuItem
                 key={i}
                 value={Symbol.keyFor(f)}
@@ -148,7 +144,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowProps) {
             ))}
           </Select>
         </TableCell>
-        <TableCell padding="none" align="left" width={1}>
+        <TableCell nopadding={true} padding="none" align="left" width={1}>
           <CustomTooltip title="Custom details">
             <IconButton
               onClick={() => setOpen(!open)}
@@ -195,4 +191,4 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowProps) {
   );
 }
 
-export default (observer(Row): ComponentType<ColumnFieldMapRowProps>);
+export default observer(Row);
