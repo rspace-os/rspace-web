@@ -1,11 +1,10 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import CustomField from "../CustomField";
@@ -40,7 +39,7 @@ describe("CustomField", () => {
         },
         selectedOptions: ["foo"],
       });
-      const onRemove = jest.fn<[?boolean], void>();
+      const onRemove = jest.fn();
 
       render(
         <ThemeProvider theme={materialTheme}>
@@ -71,7 +70,7 @@ describe("CustomField", () => {
         },
         selectedOptions: ["foo"],
       });
-      const onRemove = jest.fn<[?boolean], void>();
+      const onRemove = jest.fn();
 
       render(
         <ThemeProvider theme={materialTheme}>
