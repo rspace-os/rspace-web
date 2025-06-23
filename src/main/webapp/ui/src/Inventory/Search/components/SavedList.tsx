@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  useContext,
-  useState,
-  type ElementProps,
-} from "react";
+import React, { useContext, useState } from "react";
 import { observer } from "mobx-react-lite";
 import Badge from "@mui/material/Badge";
 import ListItemText from "@mui/material/ListItemText";
@@ -37,18 +30,18 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type ItemType = "searches" | "baskets";
+export type ItemType = "searches" | "baskets";
 
-type SavedListArgs<T: SavedItem> = {|
-  anchorEl: ?HTMLElement,
-  itemType: ItemType,
-  items: Array<T>,
-  onSelect: (?T) => void,
-  isDisabled?: (T) => boolean,
-|};
+export type SavedListArgs<T extends SavedItem> = {
+  anchorEl: HTMLElement | null;
+  itemType: ItemType;
+  items: Array<T>;
+  onSelect: (item: T | null) => void;
+  isDisabled?: (item: T) => boolean;
+};
 
 const DeleteSavedItemIcon = withStyles<
-  ElementProps<typeof DeleteIcon>,
+  React.ComponentProps<typeof DeleteIcon>,
   { root: string }
 >((theme) => ({
   root: {
@@ -57,7 +50,7 @@ const DeleteSavedItemIcon = withStyles<
 }))(DeleteIcon);
 
 const EditSavedItemIcon = withStyles<
-  ElementProps<typeof EditIcon>,
+  React.ComponentProps<typeof EditIcon>,
   { root: string }
 >((theme) => ({
   root: {
@@ -66,7 +59,7 @@ const EditSavedItemIcon = withStyles<
 }))(EditIcon);
 
 const Action = withStyles<
-  ElementProps<typeof ListItemSecondaryAction>,
+  React.ComponentProps<typeof ListItemSecondaryAction>,
   { root: string }
 >((theme) => ({
   root: {
@@ -82,18 +75,18 @@ const Action = withStyles<
   },
 }))(ListItemSecondaryAction);
 
-const helpText = {
+const helpText: Record<ItemType, string> = {
   baskets: `There are no Baskets yet. To create one: select some results and then 'Add to Basket'.`,
   searches: `There are no Saved Searches yet.`,
 };
 
-function SavedList<T: SavedItem>({
+function SavedList<T extends SavedItem>({
   anchorEl,
   itemType,
   items,
   onSelect,
   isDisabled,
-}: SavedListArgs<T>): Node {
+}: SavedListArgs<T>): React.ReactNode {
   const { classes } = useStyles();
   const { searchStore, peopleStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
@@ -144,14 +137,15 @@ function SavedList<T: SavedItem>({
                 {itemType === "baskets" && (
                   <Badge
                     className={classes.sideSpaced}
-                    badgeContent={item.itemCount || "0"}
+                    badgeContent={(item as BasketModel).itemCount || "0"}
                     color="primary"
                   />
                 )}
-                <CustomTooltip title={`Edit name`}>
+                <CustomTooltip title="Edit name">
                   <IconButton
                     aria-label="edit saved item"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setIndex(i);
                       setName(item.name);
                       setOpen(true);
@@ -168,7 +162,10 @@ function SavedList<T: SavedItem>({
                   <IconButton
                     edge="end"
                     aria-label="delete saved item"
-                    onClick={() => handleDelete(item)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(item);
+                    }}
                   >
                     <DeleteSavedItemIcon />
                   </IconButton>
@@ -209,4 +206,4 @@ function SavedList<T: SavedItem>({
   );
 }
 
-export default (observer(SavedList): typeof SavedList);
+export default observer(SavedList);

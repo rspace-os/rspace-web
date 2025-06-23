@@ -1,5 +1,3 @@
-// @flow
-
 import { type URL } from "../../../util/types";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import RelativeBox from "../../../components/RelativeBox";
@@ -13,14 +11,7 @@ import { makeStyles } from "tss-react/mui";
 import Alert from "@mui/material/Alert";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import React, {
-  useEffect,
-  useState,
-  useContext,
-  type Node,
-  type ComponentType,
-  type Element,
-} from "react";
+import React, { useEffect, useState, useContext, type ReactNode } from "react";
 import { type Factory } from "../../../stores/definitions/Factory";
 import clsx from "clsx";
 import NavigateContext from "../../../stores/contexts/Navigate";
@@ -44,33 +35,37 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const Wrapper = React.forwardRef<{| children: Node |}, mixed>(
-  ({ children }: { children: Node }, ref) => <div ref={ref}>{children}</div>
+type WrapperProps = {
+  children: ReactNode;
+};
+
+const Wrapper = React.forwardRef<HTMLDivElement, WrapperProps>(
+  ({ children }, ref) => <div ref={ref}>{children}</div>
 );
 Wrapper.displayName = "Wrapper";
 
-type StepperArgs = {|
+type StepperArgs = {
   // The title string to be displayed in the top left corner of the form.
-  titleText: string,
+  titleText: string;
 
   // Beside the title is an optional help link, shown as a question mark icon.
-  helpLink?: {|
-    link: URL,
-    title: string,
-  |},
+  helpLink?: {
+    link: URL;
+    title: string;
+  };
 
   // An optional alert that is pinned to the top as the user scrolls, just
   // below the contextMenu.
-  stickyAlert?: ?Element<typeof Alert>,
+  stickyAlert?: React.ReactElement<typeof Alert> | null;
 
   // A list of StepperPanels, or components that return StepperPanels
-  children: Node,
+  children: ReactNode;
 
   // Whenever this value changes, the scroll position is reset to 0.
-  resetScrollPosition: mixed,
+  resetScrollPosition: unknown;
 
-  factory?: Factory,
-|};
+  factory?: Factory;
+};
 
 /*
  * A wrapper component for forms that appear on the right side of the main
@@ -85,7 +80,7 @@ function _Stepper({
   children,
   resetScrollPosition,
   factory,
-}: StepperArgs): Node {
+}: StepperArgs): ReactNode {
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -139,7 +134,7 @@ function _Stepper({
     return () => {
       window.removeEventListener("scroll", onScroll);
     };
-  }, []);
+  }, [onScroll]);
 
   const Title = (
     <>
@@ -158,7 +153,7 @@ function _Stepper({
           link={helpLink.link}
           title={helpLink.title}
           size="small"
-          color="white"
+          color="primary"
         />
       )}
     </>
@@ -199,11 +194,11 @@ function _Stepper({
       <RelativeBox className={classes.relativeBox}>
         <HeadingContext level={3}>{children}</HeadingContext>
         <FooterActions />
-        {state === "preview" && <MoreInfoSidebar factory={factory} />}
+        {state === "preview" && <MoreInfoSidebar factory={factory || null} />}
       </RelativeBox>
     </>
   );
 }
 
-const Stepper: ComponentType<StepperArgs> = observer(_Stepper);
+const Stepper = observer(_Stepper);
 export default Stepper;

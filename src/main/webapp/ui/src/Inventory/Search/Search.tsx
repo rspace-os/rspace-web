@@ -1,7 +1,5 @@
-//@flow
-
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Searchbar from "./components/Searchbar";
 import SearchFeedback from "./components/SearchFeedback";
 import { type SearchView } from "../../stores/definitions/Search";
@@ -14,12 +12,12 @@ import SearchParameterChips from "./components/SearchParameterChips";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import docLinks from "../../assets/DocLinks";
 
-type MainSearchArgs = {|
-  size?: "small" | "default",
-  TABS?: Array<SearchView>,
-  handleSearch: (string) => void,
-  searchbarAdornment?: Node,
-|};
+type MainSearchArgs = {
+  size?: "small" | "default";
+  TABS?: Array<SearchView>;
+  handleSearch: (query: string) => void;
+  searchbarAdornment?: React.ReactNode;
+};
 
 const useStyles = makeStyles()((theme) => ({
   middleSection: {
@@ -41,7 +39,7 @@ function MainSearch({
   handleSearch,
   TABS = ["LIST", "TREE", "CARD"],
   searchbarAdornment,
-}: MainSearchArgs): Node {
+}: MainSearchArgs): React.ReactNode {
   const { classes } = useStyles();
 
   return (
@@ -100,4 +98,4 @@ function MainSearch({
   );
 }
 
-export default (observer(MainSearch): ComponentType<MainSearchArgs>);
+export default observer(MainSearch);

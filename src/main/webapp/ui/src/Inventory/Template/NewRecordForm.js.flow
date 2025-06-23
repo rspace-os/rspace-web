@@ -1,0 +1,6 @@
+// @flow
+
+import React, { type Node } from "react";
+import TemplateModel from "../../stores/models/TemplateModel";
+
+declare export default function NewRecordForm(): Node;

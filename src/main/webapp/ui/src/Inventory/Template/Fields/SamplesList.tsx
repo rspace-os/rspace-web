@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import SearchContext from "../../../stores/contexts/Search";
@@ -10,10 +8,11 @@ import { menuIDs } from "../../../util/menuIDs";
 import Grid from "@mui/material/Grid";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
+import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
 
-const TABS = ["LIST", "TREE", "CARD"];
+const TABS: SearchViewType[] = ["LIST", "TREE", "CARD"];
 
-function SamplesList(): Node {
+function SamplesList(): React.ReactNode {
   const {
     searchStore: { activeResult, search },
   } = useStores();
@@ -23,7 +22,7 @@ function SamplesList(): Node {
   const samplesSearch = () => activeResult.search;
 
   const handleSearch = (query: string) => {
-    samplesSearch().fetcher.performInitialSearch({
+    void samplesSearch().fetcher.performInitialSearch({
       query,
       parentGlobalId: activeResult.globalId,
     });
@@ -52,4 +51,4 @@ function SamplesList(): Node {
   );
 }
 
-export default (observer(SamplesList): ComponentType<{||}>);
+export default observer(SamplesList);

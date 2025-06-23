@@ -1,0 +1,31 @@
+// @flow
+
+import { type URL } from "../../../util/types";
+import React, { type Node, type ComponentType, type Element } from "react";
+import { type Factory } from "../../../stores/definitions/Factory";
+import Alert from "@mui/material/Alert";
+
+type StepperArgs = {|
+  // The title string to be displayed in the top left corner of the form.
+  titleText: string,
+
+  // Beside the title is an optional help link, shown as a question mark icon.
+  helpLink?: {|
+    link: URL,
+    title: string,
+  |},
+
+  // An optional alert that is pinned to the top as the user scrolls, just
+  // below the contextMenu.
+  stickyAlert?: ?Element<typeof Alert>,
+
+  // A list of StepperPanels, or components that return StepperPanels
+  children: Node,
+
+  // Whenever this value changes, the scroll position is reset to 0.
+  resetScrollPosition: mixed,
+
+  factory?: Factory,
+|};
+
+declare export default ComponentType<StepperArgs>;

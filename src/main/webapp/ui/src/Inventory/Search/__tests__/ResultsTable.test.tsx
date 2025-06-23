@@ -1,9 +1,8 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
-import React from "react";
+import * as React from "react";
 import {
   render,
   cleanup,
@@ -38,43 +37,44 @@ describe("Results Table", () => {
         factory: new MemoisedFactory(),
       });
 
-      jest.spyOn(ApiServiceBase.prototype, "query").mockImplementation(() =>
-        Promise.resolve({
-          data: {
-            containers: [
-              containerAttrs({
-                globalId: "IC0",
-                id: 0,
-                owner: personAttrs(),
-              }),
-              containerAttrs({
-                globalId: "IC1",
-                id: 1,
-                owner: personAttrs(),
-              }),
-              containerAttrs({
-                globalId: "IC2",
-                id: 2,
-                owner: personAttrs(),
-              }),
-              containerAttrs({
-                globalId: "IC3",
-                id: 3,
-                owner: personAttrs(),
-              }),
-              containerAttrs({
-                globalId: "IC4",
-                id: 4,
-                owner: personAttrs(),
-              }),
-              containerAttrs({
-                globalId: "IC5",
-                id: 5,
-                owner: personAttrs(),
-              }),
-            ],
-          },
-        })
+      jest.spyOn(ApiServiceBase.prototype, "query").mockImplementation(
+        () =>
+          Promise.resolve({
+            data: {
+              containers: [
+                containerAttrs({
+                  globalId: "IC0",
+                  id: 0,
+                  owner: personAttrs(),
+                }),
+                containerAttrs({
+                  globalId: "IC1",
+                  id: 1,
+                  owner: personAttrs(),
+                }),
+                containerAttrs({
+                  globalId: "IC2",
+                  id: 2,
+                  owner: personAttrs(),
+                }),
+                containerAttrs({
+                  globalId: "IC3",
+                  id: 3,
+                  owner: personAttrs(),
+                }),
+                containerAttrs({
+                  globalId: "IC4",
+                  id: 4,
+                  owner: personAttrs(),
+                }),
+                containerAttrs({
+                  globalId: "IC5",
+                  id: 5,
+                  owner: personAttrs(),
+                }),
+              ],
+            },
+          }) as ReturnType<typeof ApiServiceBase.prototype.query>
       );
       await waitFor(() => {
         void search.setupAndPerformInitialSearch({});

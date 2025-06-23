@@ -1,0 +1,34 @@
+//@flow
+
+import { type Node, type ComponentType } from "react";
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
+
+export type PrinterType = "GENERIC" | "LABEL";
+export type PrintLayout = "BASIC" | "FULL";
+export type PrintSize = "SMALL" | "LARGE";
+
+export type PrintOptions = {|
+  printerType: PrinterType,
+  printLayout: PrintLayout,
+  printSize: PrintSize,
+|};
+
+type PrintDialogArgs = {|
+  showPrintDialog: boolean,
+  onClose: () => void,
+  imageLinks: Array<string>,
+  itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>, // LoM ...
+  printerType?: PrinterType,
+  printSize?: PrintSize,
+  /* n/a for non-contextMenu cases */
+  closeMenu?: () => void,
+|};
+
+type OptionsWrapperArgs = {|
+  printOptions: PrintOptions,
+  setPrintOptions: (PrintOptions) => void,
+|};
+
+export const PrintOptionsWrapper = (props: OptionsWrapperArgs): Node => {};
+declare export default ComponentType<PrintDialogArgs>;

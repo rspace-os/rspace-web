@@ -1,11 +1,4 @@
-// @flow
-
-import React, {
-  useState,
-  useEffect,
-  type ElementProps,
-  type Node,
-} from "react";
+import React, { useState, useEffect, type ReactNode } from "react";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { observer } from "mobx-react-lite";
 import AddButton from "../../../../components/AddButton";
@@ -48,8 +41,8 @@ import { type InventoryRecord } from "../../../../stores/definitions/InventoryRe
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 
 const CustomCardHeader = withStyles<
-  ElementProps<typeof CardHeader>,
-  { root: string, action: string }
+  React.ComponentProps<typeof CardHeader>,
+  { root: string; action: string }
 >((theme) => ({
   root: {
     padding: theme.spacing(0, 0, 0, 1.5),
@@ -60,7 +53,7 @@ const CustomCardHeader = withStyles<
 }))(CardHeader);
 
 const DescriptionWrapper = withStyles<
-  {| children: Node, isDeleted: boolean |},
+  { children: ReactNode; isDeleted: boolean },
   { root: string }
 >((theme, { isDeleted }) => ({
   root: {
@@ -73,20 +66,19 @@ const DescriptionWrapper = withStyles<
 
 const CollapseContents = observer(
   <
-    Fields: {
-      barcodes: Array<BarcodeRecord>,
-      ...
+    Fields extends {
+      barcodes: Array<BarcodeRecord>;
     },
-    FieldOwner: HasEditableFields<Fields>
+    FieldOwner extends HasEditableFields<Fields>
   >({
     fieldOwner,
     editable,
     connectedItem,
   }: {
-    fieldOwner: FieldOwner,
-    editable: boolean,
-    connectedItem?: InventoryRecord,
-  }): Node => {
+    fieldOwner: FieldOwner;
+    editable: boolean;
+    connectedItem?: InventoryRecord;
+  }): ReactNode => {
     const { uiStore } = useStores();
     const barcodes = fieldOwner.fieldValues.barcodes;
     const imgUrlsAvailable =
@@ -108,12 +100,13 @@ const CollapseContents = observer(
       fieldOwner.setFieldsDirty({});
     };
 
-    const [size, setSize] =
-      useState<?{| width: number, height: number |}>(null);
+    const [size, setSize] = useState<{ width: number; height: number } | null>(
+      null
+    );
     const [showPreview, setShowPreview] = useState(false);
     const [itemsToPrint, setItemsToPrint] = useState<
       Array<[BarcodeRecord, InventoryRecord]>
-    >([]); // LoM...
+    >([]);
     const [previewImages, setPreviewImages] = useState<Array<string>>([]);
     const [showPrintDialog, setShowPrintDialog] = useState(false);
 
@@ -125,11 +118,11 @@ const CollapseContents = observer(
           const image = await barcode.fetchImage();
           if (image) setPreviewImages([URL.createObjectURL(image)]);
         }
-      } catch (e) {
+      } catch (e: Error | unknown) {
         uiStore.addAlert(
           mkAlert({
             title: "Unable to retrieve barcode image.",
-            message: e.message || "",
+            message: e instanceof Error ? e.message : String(e),
             variant: "error",
             isInfinite: true,
           })
@@ -148,11 +141,11 @@ const CollapseContents = observer(
           const imageUrls = images.map((img) => URL.createObjectURL(img));
           setPreviewImages(imageUrls);
         }
-      } catch (e) {
+      } catch (e: Error | unknown) {
         uiStore.addAlert(
           mkAlert({
             title: "Unable to retrieve barcode images.",
-            message: e.message || "",
+            message: e instanceof Error ? e.message : String(e),
             variant: "error",
             isInfinite: true,
           })
@@ -168,11 +161,11 @@ const CollapseContents = observer(
           const image = await barcode.fetchImage();
           setPreviewImages([URL.createObjectURL(image)]);
           setShowPreview(true);
-        } catch (e) {
+        } catch (e: Error | unknown) {
           uiStore.addAlert(
             mkAlert({
               title: "Unable to retrieve barcode image.",
-              message: e.message ?? "",
+              message: e instanceof Error ? e.message : String(e),
               variant: "error",
             })
           );
@@ -344,9 +337,9 @@ const ToggleButton = ({
   open,
   setOpen,
 }: {
-  barcodeCount: number,
-  open: boolean,
-  setOpen: (boolean) => void,
+  barcodeCount: number;
+  open: boolean;
+  setOpen: (value: boolean) => void;
 }) => (
   <CustomTooltip
     title={match<void, string>([
@@ -364,22 +357,21 @@ const ToggleButton = ({
 );
 
 function FieldCard<
-  Fields: {
-    barcodes: Array<BarcodeRecord>,
-    ...
+  Fields extends {
+    barcodes: Array<BarcodeRecord>;
   },
-  FieldOwner: HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>
 >({
   fieldOwner,
   factory,
   connectedItem,
-}: {|
-  fieldOwner: FieldOwner,
-  factory: Factory,
-  connectedItem?: InventoryRecord,
-|}): Node {
+}: {
+  fieldOwner: FieldOwner;
+  factory: Factory;
+  connectedItem?: InventoryRecord;
+}): ReactNode {
   const [open, setOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<?EventTarget>(null);
+  const [anchorEl, setAnchorEl] = useState<EventTarget | null>(null);
   const { uiStore } = useStores();
 
   const editable = fieldOwner.isFieldEditable("barcodes");
@@ -408,7 +400,7 @@ function FieldCard<
               />
               <Popover
                 open={Boolean(anchorEl)}
-                anchorEl={anchorEl}
+                anchorEl={anchorEl as HTMLElement}
                 onClose={() => setAnchorEl(null)}
                 anchorOrigin={{
                   vertical: "center",
@@ -476,4 +468,4 @@ function FieldCard<
   );
 }
 
-export default (observer(FieldCard): typeof FieldCard);
+export default FieldCard;

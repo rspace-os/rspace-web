@@ -1,0 +1,6 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import { type CoreFetcherArgs } from "../../stores/definitions/Search";
+
+declare export default ComponentType<{||}>;

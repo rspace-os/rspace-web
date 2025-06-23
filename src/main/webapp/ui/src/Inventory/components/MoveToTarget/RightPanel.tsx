@@ -1,5 +1,3 @@
-//@flow
-
 import SearchContext from "../../../stores/contexts/Search";
 import useStores from "../../../stores/use-stores";
 import { menuIDs } from "../../../util/menuIDs";
@@ -7,18 +5,19 @@ import SearchView from "../../Search/SearchView";
 import NameWithBadge from "../NameWithBadge";
 import MoveInstructions from "./MoveInstructions";
 import { observer } from "mobx-react-lite";
-import React, { type ComponentType } from "react";
+import React from "react";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 
-const Title = observer(function Title() {
+const Title = observer(() => {
   const { moveStore, peopleStore } = useStores();
   const activeResult = moveStore.activeResult;
   if (moveStore.loading || !activeResult) {
     return "Loading...";
-  } else if (
+  }
+  if (
     activeResult.isWorkbench &&
     activeResult.ownerLabel &&
     peopleStore.currentUser?.bench?.globalId
@@ -28,12 +27,11 @@ const Title = observer(function Title() {
         ? "My"
         : `${activeResult.ownerLabel}'s`;
     return ownerPrefix + " Bench";
-  } else {
-    return <NameWithBadge record={activeResult} />;
   }
+  return <NameWithBadge record={activeResult} />;
 });
 
-const Content = observer(function Content() {
+const Content = observer(() => {
   const { moveStore } = useStores();
   const activeResult = moveStore.activeResult;
   return activeResult ? (
@@ -56,7 +54,7 @@ const Content = observer(function Content() {
   ) : null;
 });
 
-type RightPanelArgs = {||};
+type RightPanelArgs = Record<string, never>;
 
 function RightPanel() {
   return (
@@ -80,4 +78,4 @@ function RightPanel() {
   );
 }
 
-export default (observer(RightPanel): ComponentType<RightPanelArgs>);
+export default observer(RightPanel);

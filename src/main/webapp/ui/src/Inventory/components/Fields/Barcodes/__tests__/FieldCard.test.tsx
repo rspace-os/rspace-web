@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
@@ -9,7 +8,6 @@ import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory/mocking";
 import FieldCard from "../FieldCard";
-import { type BarcodeRecord } from "../../../../../stores/definitions/Barcode";
 import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../../common/InvApiService", () => {});
@@ -25,10 +23,7 @@ describe("FieldCard", () => {
   describe("Has a delete button", () => {
     test("That behaves correctly when tapped when deletedCopy returns an object.", async () => {
       const user = userEvent.setup();
-      const setFieldsDirty = jest.fn<
-        [{ barcodes: Array<BarcodeRecord> }],
-        void
-      >(() => {});
+      const setFieldsDirty = jest.fn();
       render(
         <FieldCard
           fieldOwner={{
@@ -36,9 +31,8 @@ describe("FieldCard", () => {
             fieldValues: {
               barcodes: [
                 {
-                  id: 1,
                   data: "foo",
-                  format: "qr_code",
+                  format: "qr_code" as const,
                   description: "",
                   isDeleted: false,
                   generated: false,
@@ -50,9 +44,8 @@ describe("FieldCard", () => {
                     throw new Error("not implemented");
                   },
                   deletedCopy: () => ({
-                    id: 1,
                     data: "foo",
-                    format: "qr_code",
+                    format: "qr_code" as const,
                     description: "",
                     deleted: true,
                     deletedCopy: () => {
@@ -87,15 +80,12 @@ describe("FieldCard", () => {
       await user.click(screen.getByRole("button", { name: "Remove" }));
 
       expect(setFieldsDirty).toHaveBeenCalledWith({
-        barcodes: [expect.objectContaining({ id: 1, deleted: true })],
+        barcodes: [expect.objectContaining({ deleted: true })],
       });
     });
     test("That behaves correctly when tapped when deletedCopy returns null.", async () => {
       const user = userEvent.setup();
-      const setFieldsDirty = jest.fn<
-        [{ barcodes: Array<BarcodeRecord> }],
-        void
-      >(() => {});
+      const setFieldsDirty = jest.fn();
       render(
         <FieldCard
           fieldOwner={{
@@ -103,9 +93,8 @@ describe("FieldCard", () => {
             fieldValues: {
               barcodes: [
                 {
-                  id: 1,
                   data: "foo",
-                  format: "qr_code",
+                  format: "qr_code" as const,
                   description: "",
                   isDeleted: false,
                   generated: false,
@@ -147,9 +136,8 @@ describe("FieldCard", () => {
             fieldValues: {
               barcodes: [
                 {
-                  id: 1,
                   data: "foo",
-                  format: "qr_code",
+                  format: "qr_code" as const,
                   description: "",
                   isDeleted: false,
                   generated: false,

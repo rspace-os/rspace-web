@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useState, useRef, type Node, type ComponentType } from "react";
+import React, { useState, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -61,31 +59,31 @@ export type PrintLayout = "BASIC" | "FULL";
 export type PrintSize = "SMALL" | "LARGE";
 
 export type PrintOptions = {
-  printerType: PrinterType,
-  printLayout: PrintLayout,
-  printSize: PrintSize,
+  printerType: PrinterType;
+  printLayout: PrintLayout;
+  printSize: PrintSize;
 };
 
-type PrintDialogArgs = {|
-  showPrintDialog: boolean,
-  onClose: () => void,
-  imageLinks: Array<string>,
-  itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>, // LoM ...
-  printerType?: PrinterType,
-  printSize?: PrintSize,
+type PrintDialogArgs = {
+  showPrintDialog: boolean;
+  onClose: () => void;
+  imageLinks: Array<string>;
+  itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>; // LoM ...
+  printerType?: PrinterType;
+  printSize?: PrintSize;
   /* n/a for non-contextMenu cases */
-  closeMenu?: () => void,
-|};
+  closeMenu?: () => void;
+};
 
-type OptionsWrapperArgs = {|
-  printOptions: PrintOptions,
-  setPrintOptions: (PrintOptions) => void,
-|};
+type OptionsWrapperArgs = {
+  printOptions: PrintOptions;
+  setPrintOptions: (options: PrintOptions) => void;
+};
 
 export const PrintOptionsWrapper = ({
   printOptions,
   setPrintOptions,
-}: OptionsWrapperArgs): Node => {
+}: OptionsWrapperArgs) => {
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { classes } = useStyles();
 
@@ -104,7 +102,7 @@ export const PrintOptionsWrapper = ({
               if (target.value)
                 setPrintOptions({
                   ...printOptions,
-                  printerType: target.value,
+                  printerType: target.value as PrinterType,
                 });
             }}
             row
@@ -139,7 +137,7 @@ export const PrintOptionsWrapper = ({
               if (target.value)
                 setPrintOptions({
                   ...printOptions,
-                  printLayout: target.value,
+                  printLayout: target.value as PrintLayout,
                 });
             }}
             row
@@ -180,7 +178,7 @@ export const PrintOptionsWrapper = ({
                 if (target.value)
                   setPrintOptions({
                     ...printOptions,
-                    printSize: target.value,
+                    printSize: target.value as PrintSize,
                   });
               }}
               row
@@ -218,11 +216,11 @@ function PrintDialog({
   printerType,
   printSize,
   closeMenu,
-}: PrintDialogArgs): Node {
+}: PrintDialogArgs) {
   const { classes } = useStyles();
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
-  const componentToPrint = useRef<mixed>();
+  const componentToPrint = useRef<HTMLDivElement>(null);
 
   const [item, itemOwner] = itemsToPrint[0];
 
@@ -240,9 +238,7 @@ function PrintDialog({
   const HelperText = () => (
     <>
       <Typography variant="body2" className={classes.centered}>
-        <strong>
-          Preview Barcode Label Layout
-        </strong>
+        <strong>Preview Barcode Label Layout</strong>
       </Typography>
     </>
   );
@@ -318,11 +314,11 @@ function PrintDialog({
           onAfterPrint={() => {
             handleClose();
           }}
-          onPrintError={(e) => {
+          onPrintError={(errorLocation, error) => {
             uiStore.addAlert(
               mkAlert({
                 title: "Print error.",
-                message: e.message || "",
+                message: error.message || "",
                 variant: "error",
                 isInfinite: true,
               })
@@ -334,4 +330,4 @@ function PrintDialog({
   );
 }
 
-export default (observer(PrintDialog): ComponentType<PrintDialogArgs>);
+export default observer(PrintDialog);

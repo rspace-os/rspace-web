@@ -1,8 +1,6 @@
-// @flow
-
 import ExtendedContextMenu from "../../components/ContextMenu/ExtendedContextMenu";
 import SelectAllIcon from "@mui/icons-material/SelectAll";
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
 import OpenInBrowserIcon from "@mui/icons-material/OpenInBrowser";
@@ -12,7 +10,7 @@ import { match } from "../../../util/Util";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import Badge from "@mui/material/Badge";
 
-function ContentContextMenu(): Node {
+function ContentContextMenu(): React.ReactNode {
   const { navigateToRecord } = useNavigateHelpers();
   const { search, scopedResult } = useContext(SearchContext);
   if (!(scopedResult && scopedResult instanceof ContainerModel))
@@ -55,7 +53,7 @@ function ContentContextMenu(): Node {
     {
       text: "Invert",
       selection: () => {
-        locations.map((l) => l.toggleSelected());
+        locations.map((l) => l.toggleSelected(null));
       },
     },
     {
@@ -79,7 +77,7 @@ function ContentContextMenu(): Node {
   const prefixActions = [
     {
       key: "open",
-      onClick: (event: Event) => {
+      onClick: (event: React.MouseEvent<HTMLDivElement>) => {
         event.stopPropagation();
         void navigateToRecord(selectedResults[0]);
       },
@@ -90,7 +88,7 @@ function ContentContextMenu(): Node {
         [() => selectedResults.length > 1, "More than 1 item selected."],
         [() => true, ""],
       ])(),
-      variant: "filled",
+      variant: "filled" as const,
     },
     {
       key: "select",
@@ -120,4 +118,4 @@ function ContentContextMenu(): Node {
   );
 }
 
-export default (observer(ContentContextMenu): ComponentType<{||}>);
+export default observer(ContentContextMenu);
