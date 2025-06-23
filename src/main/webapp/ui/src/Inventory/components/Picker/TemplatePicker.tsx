@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  type ComponentType,
-  useState,
-  useEffect,
-} from "react";
+import React, { type ReactNode, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import Search from "../../../stores/models/Search";
@@ -14,12 +7,15 @@ import InventoryPicker from "./Picker";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 
-type TemplatePickerArgs = {|
-  setTemplate: (TemplateModel) => void,
-  disabled?: boolean,
-|};
+type TemplatePickerArgs = {
+  setTemplate: (template: TemplateModel) => void;
+  disabled?: boolean;
+};
 
-function TemplatePicker({ setTemplate, disabled }: TemplatePickerArgs): Node {
+function TemplatePicker({
+  setTemplate,
+  disabled,
+}: TemplatePickerArgs): ReactNode {
   const [search] = useState(
     new Search({
       factory: new AlwaysNewFactory(),
@@ -51,7 +47,7 @@ function TemplatePicker({ setTemplate, disabled }: TemplatePickerArgs): Node {
   );
 
   useEffect(() => {
-    if (!disabled) void search.fetcher.performInitialSearch();
+    if (!disabled) void search.fetcher.performInitialSearch(null);
   }, []);
 
   const handleOnAddition = ([t]: Array<InventoryRecord>) => {
@@ -77,4 +73,4 @@ function TemplatePicker({ setTemplate, disabled }: TemplatePickerArgs): Node {
   );
 }
 
-export default (observer(TemplatePicker): ComponentType<TemplatePickerArgs>);
+export default observer(TemplatePicker);
