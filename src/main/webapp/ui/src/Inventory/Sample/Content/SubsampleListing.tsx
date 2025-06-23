@@ -1,9 +1,8 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
 import SearchContext from "../../../stores/contexts/Search";
-import SearchView from "../../Search/SearchView";
+import SearchViewComponent from "../../Search/SearchView";
 import Search from "../../Search/Search";
 import { menuIDs } from "../../../util/menuIDs";
 import Grid from "@mui/material/Grid";
@@ -13,11 +12,11 @@ import Collapse from "@mui/material/Collapse";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButton from "@mui/material/IconButton";
 
-const TABS = ["LIST", "TREE", "CARD"];
+const TABS: SearchViewType[] = ["LIST", "TREE", "CARD"];
 
-type SubsampleListingArgs = {|
-  sample: SampleModel,
-|};
+type SubsampleListingArgs = {
+  sample: SampleModel;
+};
 
 /**
  * This is an inner search for the sample form which provides a mechanism for
@@ -26,20 +25,18 @@ type SubsampleListingArgs = {|
  * efficient identification of subsamples given that each sample can have up to
  * 100 subsamples.
  */
-function SubsampleListing({ sample }: SubsampleListingArgs): Node {
-  const { search } = React.useContext(SearchContext);
-  const [searchOpen, setSearchOpen] = React.useState(
-    sample.subSamples.length > 1
-  );
+function SubsampleListing({ sample }: SubsampleListingArgs): React.ReactNode {
+  const { search: _ } = useContext(SearchContext);
+  const [searchOpen, setSearchOpen] = useState(sample.subSamples.length > 1);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setSearchOpen(sample.subSamples.length > 1);
   }, [sample.subSamples]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!sample.search.activeResult && sample.search.filteredResults.length > 0)
       void sample.search.setActiveResult();
-  }, [sample.search.filteredResults]);
+  }, [sample.search.filteredResults, sample.search]);
 
   const handleSearch = (query: string) => {
     void sample.search.fetcher.performInitialSearch({
@@ -81,7 +78,7 @@ function SubsampleListing({ sample }: SubsampleListingArgs): Node {
                   />
                 </Grid>
                 <Grid item>
-                  <SearchView contextMenuId={menuIDs.RESULTS} />
+                  <SearchViewComponent contextMenuId={menuIDs.RESULTS} />
                 </Grid>
               </Grid>
             </InnerSearchNavigationContext>
@@ -92,6 +89,4 @@ function SubsampleListing({ sample }: SubsampleListingArgs): Node {
   );
 }
 
-export default (observer(
-  SubsampleListing
-): ComponentType<SubsampleListingArgs>);
+export default observer(SubsampleListing);
