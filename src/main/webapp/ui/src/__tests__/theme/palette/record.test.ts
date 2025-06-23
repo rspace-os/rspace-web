@@ -1,17 +1,16 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 
 import theme from "../../../theme";
 import { mapObject } from "../../../util/Util";
 
-type RGB = {|
-  red: number,
-  green: number,
-  blue: number,
-|};
+type RGB = {
+  red: number;
+  green: number;
+  blue: number;
+};
 
 const getColor = (hex: string): RGB => {
   const rgb = hex.match("#(..)(..)(..)");
@@ -39,10 +38,10 @@ const luminosity = (color: RGB): Luminosity => {
 const relativeLuminosity = ({
   lighter,
   darker,
-}: {|
-  lighter: RGB,
-  darker: RGB,
-|}) => {
+}: {
+  lighter: RGB;
+  darker: RGB;
+}) => {
   return (luminosity(lighter) + 0.05) / (luminosity(darker) + 0.05);
 };
 
