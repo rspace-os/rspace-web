@@ -1,3 +1,5 @@
+// @flow
+
 const ErrorReason = {
   None: -1,
   NetworkError: 0,
