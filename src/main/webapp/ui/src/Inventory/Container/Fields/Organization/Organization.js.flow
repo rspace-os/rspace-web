@@ -1,0 +1,11 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import ContainerModel from "../../../../stores/models/ContainerModel";
+import { type ContainerType } from "../../../../stores/definitions/Container";
+
+type OrganizationArgs = {|
+  container: ContainerModel,
+|};
+
+declare export default ComponentType<OrganizationArgs>;

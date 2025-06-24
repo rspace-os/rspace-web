@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import LocationsImageField from "../LocationsImageField";
 import GridDimensionsAndLayout from "./GridDimensionsAndLayout";
@@ -10,7 +8,7 @@ import RadioField, {
   OptionHeading,
   OptionExplanation,
 } from "../../../../components/Inputs/RadioField";
-import type { ContainerType } from "../../../../stores/definitions/Container";
+import { type ContainerType } from "../../../../stores/definitions/Container";
 import FormField from "../../../../components/Inputs/FormField";
 
 const OPTIONS: Array<RadioOption<ContainerType>> = [
@@ -49,16 +47,15 @@ const OPTIONS: Array<RadioOption<ContainerType>> = [
   },
 ];
 
-type OrganizationArgs = {|
-  container: ContainerModel,
-|};
+type OrganizationArgs = {
+  container: ContainerModel;
+};
 
-function Organization({ container }: OrganizationArgs): Node {
+function Organization({ container }: OrganizationArgs): React.ReactNode {
   const handleChange = ({
     target: { value },
   }: {
-    target: { name: string, value: ?ContainerType, ... },
-    ...
+    target: { name: string; value: ContainerType | null };
   }) => {
     if (container && value) {
       container.setOrganization(value);
@@ -91,4 +88,4 @@ function Organization({ container }: OrganizationArgs): Node {
   );
 }
 
-export default (observer(Organization): ComponentType<OrganizationArgs>);
+export default observer(Organization);
