@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 
@@ -9,6 +8,7 @@ import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../__tests__/PersonModel/mocking";
 import MemoisedFactory from "../MemoisedFactory";
 import ContainerModel from "../../ContainerModel";
+import { GlobalId } from "@/stores/definitions/BaseRecord";
 
 jest.mock("../../../stores/RootStore", () => () => ({
   peopleStore: {},
@@ -18,8 +18,12 @@ describe("MemoisedFactory", () => {
   describe("When called with the same Global ID, newRecord should", () => {
     test("return the same object.", () => {
       const factory = new MemoisedFactory();
-      const container1 = factory.newRecord(containerAttrs());
-      const container2 = factory.newRecord(containerAttrs());
+      const container1 = factory.newRecord(
+        containerAttrs() as { globalId: GlobalId }
+      );
+      const container2 = factory.newRecord(
+        containerAttrs() as { globalId: GlobalId }
+      );
 
       expect(container1).toBe(container2);
     });
@@ -39,22 +43,23 @@ describe("MemoisedFactory", () => {
     test("not update the existing record with the new data.", () => {
       const factory = new MemoisedFactory();
 
-      // $FlowExpectedError[incompatible-type] we know its going to be a container
-      const containerWithLastParent: ContainerModel = factory.newRecord(
+      const containerWithLastParent = factory.newRecord(
         containerAttrs({
           lastNonWorkbenchParent: containerAttrs({
             id: 2,
             globalId: "IC2",
             permittedActions: [],
           }),
-        })
-      );
-      const container2: ContainerModel =
-        // $FlowExpectedError[incompatible-type] we know its going to be not null
-        containerWithLastParent.lastNonWorkbenchParent;
+        }) as { globalId: GlobalId }
+      ) as ContainerModel;
+      const container2 =
+        // @ts-expect-error Yes we're fiddling with private properties here
+        containerWithLastParent.lastNonWorkbenchParent as ContainerModel;
       expect([...container2.permittedActions].length).toBe(0);
 
-      factory.newRecord(containerAttrs({ id: 2, globalId: "IC2" }));
+      factory.newRecord(
+        containerAttrs({ id: 2, globalId: "IC2" }) as { globalId: GlobalId }
+      );
       expect([...container2.permittedActions].length).toBe(0);
     });
   });
