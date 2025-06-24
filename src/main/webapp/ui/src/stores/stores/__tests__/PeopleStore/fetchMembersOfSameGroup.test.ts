@@ -1,10 +1,7 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
-import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import getRootStore from "../../RootStore";
 import * as PersonMocking from "../../../models/__tests__/PersonModel/mocking";
@@ -15,10 +12,8 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-afterEach(cleanup);
-
 jest.mock("../../../../common/ElnApiService", () => ({
-  get: (endpoint) => {
+  get: () => {
     return Promise.resolve({
       data: {
         status: "INTERNAL_SERVER_ERROR",
@@ -45,7 +40,7 @@ describe("fetchMembersOfSameGroup", () => {
       // $FlowExpectedError[cannot-resolve-name] Global variable
       fail("Shouldn't have resolved.");
     } catch (e) {
-      expect(e.message).toEqual("some error message");
+      expect((e as Error).message).toEqual("some error message");
     }
   });
 });
