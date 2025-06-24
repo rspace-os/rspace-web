@@ -1,0 +1,7 @@
+// @flow
+
+import { type ComponentType } from "react";
+
+type LeftPanelArgs = {||};
+
+declare export default ComponentType<LeftPanelArgs>;

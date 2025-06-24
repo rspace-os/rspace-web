@@ -1,16 +1,14 @@
-//@flow
-
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import useStores from "../../../stores/use-stores";
 import InventoryPicker from "../Picker/Picker";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import React, { type ComponentType } from "react";
+import React from "react";
 import docLinks from "../../../assets/DocLinks";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
-type LeftPanelArgs = {||};
+type LeftPanelArgs = Record<string, never>;
 
 function LeftPanel(_: LeftPanelArgs) {
   const { moveStore } = useStores();
@@ -61,4 +59,4 @@ function LeftPanel(_: LeftPanelArgs) {
   );
 }
 
-export default (observer(LeftPanel): ComponentType<LeftPanelArgs>);
+export default observer(LeftPanel);
