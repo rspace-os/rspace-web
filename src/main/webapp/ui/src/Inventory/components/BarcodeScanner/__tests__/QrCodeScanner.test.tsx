@@ -1,10 +1,9 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
-import React from "react";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import * as React from "react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import "../../../../../__mocks__/barcode-detection-api";
 import QrCodeScanner from "../QrCodeScanner";
@@ -22,7 +21,7 @@ afterEach(cleanup);
 describe("QrCodeScanner", () => {
   test("Should scan correctly.", async () => {
     const user = userEvent.setup();
-    const onScan = jest.fn<[BarcodeInput], void>();
+    const onScan = jest.fn() as jest.Mock<void, [BarcodeInput]>;
 
     render(
       <QrCodeScanner onClose={() => {}} onScan={onScan} buttonPrefix="Scan" />
