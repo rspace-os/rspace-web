@@ -1,11 +1,4 @@
-//@flow
-
-import React, {
-  type Node,
-  type ComponentType,
-  useState,
-  useEffect,
-} from "react";
+import React, { type ReactNode, useState, useEffect } from "react";
 import useStores from "../../stores/use-stores";
 import RsSet from "../../util/set";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
@@ -33,8 +26,8 @@ function OverviewSection({
   collection,
   recordsCount,
 }: {
-  collection: ContainerCollection,
-  recordsCount: number,
+  collection: ContainerCollection;
+  recordsCount: number;
 }) {
   const formSectionError = useFormSectionError({
     editing: true,
@@ -95,11 +88,11 @@ function DetailsSection({ collection }: { collection: ContainerCollection }) {
   );
 }
 
-type BatchFormArgs = {|
-  records: RsSet<ContainerModel>,
-|};
+type BatchFormArgs = {
+  records: RsSet<ContainerModel>;
+};
 
-function BatchForm({ records }: BatchFormArgs): Node {
+function BatchForm({ records }: BatchFormArgs): ReactNode {
   const { searchStore } = useStores();
 
   const [collection, setCollection] = useState(
@@ -148,4 +141,4 @@ function BatchForm({ records }: BatchFormArgs): Node {
   );
 }
 
-export default (observer(BatchForm): ComponentType<BatchFormArgs>);
+export default observer(BatchForm);
