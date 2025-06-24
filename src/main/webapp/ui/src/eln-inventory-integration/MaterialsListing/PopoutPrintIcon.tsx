@@ -1,7 +1,6 @@
-//@flow
-import React, { type Node } from "react";
+import React from "react";
 
-export default function PopoutPrintIcon(): Node {
+export default function PopoutPrintIcon(): React.ReactNode {
   return (
     <svg
       version="1.1"
@@ -30,7 +29,7 @@ export default function PopoutPrintIcon(): Node {
           />
           <polygon
             fill="#00ADEF"
-            points="11.322,29.66 14.152,32.49 33.813,12.83 33.813,20 37.813,20 37.813,6 23.813,6 23.813,10 
+            points="11.322,29.66 14.152,32.49 33.813,12.83 33.813,20 37.813,20 37.813,6 23.813,6 23.813,10
 			30.982,10 		"
           />
         </g>
