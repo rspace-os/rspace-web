@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { Routes, Route } from "react-router";
 import SearchRouter from "./Search/SearchRouter";
 import ImportRouter from "./Import/ImportRouter";
@@ -30,7 +28,7 @@ const RedirectToBench = () => {
   );
 };
 
-function InventoryRouter(): Node {
+function InventoryRouter(): React.ReactNode {
   const { uiStore } = useStores();
 
   return (
@@ -40,7 +38,6 @@ function InventoryRouter(): Node {
           <Box height="100%">
             <Routes>
               <Route
-                exact
                 path="/"
                 element={
                   !uiStore.isVerySmall ? <RedirectToBench /> : <InitialScreen />
@@ -75,4 +72,4 @@ function InventoryRouter(): Node {
   );
 }
 
-export default (observer(InventoryRouter): ComponentType<{||}>);
+export default observer(InventoryRouter);

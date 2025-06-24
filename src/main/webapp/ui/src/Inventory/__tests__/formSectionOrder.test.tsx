@@ -1,11 +1,10 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../__mocks__/createObjectURL";
 import "../../../__mocks__/matchMedia";
-import React, { type Node } from "react";
+import React from "react";
 import { render, cleanup, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import RsSet from "../../util/set";
@@ -35,9 +34,9 @@ import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 import { IsValid } from "../../components/ValidatingSubmitButton";
 
 class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
 }
 
 jest.mock("../Sample/Content/SubsampleListing", () =>
@@ -82,13 +81,26 @@ jest.mock("../../components/Ketcher/KetcherDialog", () =>
   jest.fn(() => <div></div>)
 );
 
+// Cast to any to avoid TypeScript errors with the mock implementation
 window.fetch = jest.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
     json: () => Promise.resolve(),
-  })
-);
+    headers: new Headers(),
+    redirected: false,
+    statusText: "OK",
+    type: "basic",
+    url: "",
+    clone: () => ({} as Response),
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    blob: () => Promise.resolve(new Blob()),
+    formData: () => Promise.resolve(new FormData()),
+    text: () => Promise.resolve(""),
+    body: null,
+    bodyUsed: false,
+  } as Response)
+) as any;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -96,10 +108,10 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-type MakeRootStoreArgs = {|
-  activeResult: ?InventoryRecord,
-  batchEditingRecords?: Array<InventoryRecord>,
-|};
+type MakeRootStoreArgs = {
+  activeResult: InventoryRecord | null;
+  batchEditingRecords?: Array<InventoryRecord>;
+};
 
 function makeRootStore({
   activeResult,
@@ -134,7 +146,7 @@ function makeRootStore({
 }
 
 function getSectionNames(
-  reactComponent: Node,
+  reactComponent: React.ReactNode,
   rootStore: MakeRootStoreArgs
 ): Array<string> {
   render(
@@ -146,15 +158,18 @@ function getSectionNames(
   );
   const sectionNames = screen
     .getAllByRole("region")
-    .map((r) => within(r).getByRole("heading", { level: 3 }).textContent);
+    .map(
+      (r) => within(r).getByRole("heading", { level: 3 }).textContent as string
+    );
   cleanup();
   return sectionNames;
 }
 
 describe("Form Section Order", () => {
   test("Across all of the forms, all of the sections should be in a consistent order.", () => {
-    window.ResizeObserver = ResizeObserver;
-    window.scrollTo = () => {};
+    window.ResizeObserver =
+      ResizeObserver as unknown as typeof global.ResizeObserver;
+    window.scrollTo = jest.fn() as any;
 
     assertConsistentOrderOfLists(
       new Map([

@@ -1,12 +1,12 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import { makeMockContainer } from "../../../models/__tests__/ContainerModel/mocking";
 import MoveStore from "../../MoveStore";
 import Search from "../../../models/Search";
+import type { RootStore } from "../../RootStore";
 
 jest.mock("../../../../common/InvApiService", () => ({
   query: jest.fn(),
@@ -24,7 +24,6 @@ describe("action: setTargetContainer", () => {
      */
     test("cause clearLocationsWithContentBeingMovedOut to be called.", async () => {
       const container = makeMockContainer();
-      // $FlowExpectedError[incompatible-call]
       const moveStore = new MoveStore({
         peopleStore: {
           currentUser: {
@@ -34,16 +33,18 @@ describe("action: setTargetContainer", () => {
         uiStore: {
           setDialogVisiblePanel: () => {},
         },
-      });
+      } as unknown as RootStore);
       const clearLocationsSpy = jest.spyOn(
         moveStore,
         "clearLocationsWithContentBeingMovedOut"
       );
       jest
         .spyOn(Search.prototype, "setSearchView")
-        .mockImplementation(() => {});
+        .mockImplementation(() => Promise.resolve());
       await moveStore.setIsMoving(true);
-      jest.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => {});
+      jest
+        .spyOn(container, "fetchAdditionalInfo")
+        .mockImplementation(() => Promise.resolve());
       jest
         .spyOn(container.contentSearch.fetcher, "performInitialSearch")
         .mockImplementation(() => Promise.resolve());

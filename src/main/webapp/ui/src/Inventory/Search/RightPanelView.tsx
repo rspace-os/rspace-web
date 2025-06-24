@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React, { type ReactNode } from "react";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import useStores from "../../stores/use-stores";
 import { observer } from "mobx-react-lite";
@@ -11,7 +9,7 @@ import ContainerForm from "../Container/Form";
 import ContainerNewRecordForm from "../Container/NewRecordForm";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
-import { withStyles } from "Styles";
+import { withStyles } from "../../util/styles";
 import clsx from "clsx";
 import NoActiveResultPlaceholder from "./components/NoActiveResultPlaceholder";
 import ContainerBatchForm from "../Container/BatchForm";
@@ -20,7 +18,7 @@ import SubSampleBatchForm from "../Subsample/BatchForm";
 import MixedBatchForm from "../Mixed/BatchForm";
 import LoadingCircular from "../../components/LoadingCircular";
 import { type RecordType } from "../../stores/definitions/InventoryRecord";
-import { type Theme } from "../../theme";
+import { type Theme } from "@mui/material/styles";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 import { UserCancelledAction } from "../../util/error";
@@ -28,7 +26,7 @@ import { UserCancelledAction } from "../../util/error";
 const border = (
   theme: Theme,
   isMobile: boolean,
-  recordType: ?RecordType | "mixed"
+  recordType: RecordType | "mixed" | null
 ): string => {
   const width = 4 + (isMobile ? 2 : 0);
   const color =
@@ -39,8 +37,8 @@ const border = (
 };
 
 const BorderContainer = withStyles<
-  {| recordType: ?RecordType | "mixed", children: Node |},
-  { root: string, notMobile: string, mobile: string }
+  { recordType: RecordType | "mixed" | null; children: ReactNode },
+  { root: string; notMobile: string; mobile: string }
 >((theme, { recordType }) => ({
   root: {
     backgroundColor: theme.palette.background.alt,
@@ -66,8 +64,8 @@ const BorderContainer = withStyles<
     classes,
     children,
   }: {
-    classes: { root: string, notMobile: string, mobile: string },
-    children: Node,
+    classes: { root: string; notMobile: string; mobile: string };
+    children: ReactNode;
   }) => {
     const isSingleColumnLayout = useIsSingleColumnLayout();
     return (
@@ -84,7 +82,7 @@ const BorderContainer = withStyles<
   }
 );
 
-function RightPanelView(): Node {
+function RightPanelView(): ReactNode {
   const { searchStore, uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
@@ -176,7 +174,8 @@ function RightPanelView(): Node {
       <BorderContainer
         recordType={
           searchStore.activeResult?.recordType ??
-          searchStore.search.batchEditingRecordsByType?.type
+          searchStore.search.batchEditingRecordsByType?.type ??
+          null
         }
       >
         <SynchroniseFormSections>{form()}</SynchroniseFormSections>
@@ -185,4 +184,4 @@ function RightPanelView(): Node {
   );
 }
 
-export default (observer(RightPanelView): ComponentType<{||}>);
+export default observer(RightPanelView);

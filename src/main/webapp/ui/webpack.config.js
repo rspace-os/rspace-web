@@ -71,7 +71,7 @@ module.exports = {
     materialsListing:
       "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.js",
     associatedInventoryRecords:
-      "./src/eln-inventory-integration/AssociatedInventoryRecords/index.js",
+      "./src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
     sysadminUsers: "./src/eln/sysadmin/users/index.tsx",
   },
   output: {

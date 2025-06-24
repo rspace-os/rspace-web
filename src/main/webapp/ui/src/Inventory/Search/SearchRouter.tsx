@@ -1,11 +1,4 @@
-// @flow
-
-import React, {
-  useEffect,
-  type Node,
-  type ComponentType,
-  useContext,
-} from "react";
+import React, { useEffect, useContext } from "react";
 import useStores from "../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import Layout from "../components/Layout/Layout2x1";
@@ -20,15 +13,15 @@ import NavigateContext, {
   type UseLocation,
 } from "../../stores/contexts/Navigate";
 import { mkAlert } from "../../stores/contexts/Alert";
-import { UserCancelledAction } from "../../util/error";
+import { getErrorMessage, UserCancelledAction } from "../../util/error";
 import MainSearchNavigationContext from "./MainSearchNavigationContext";
 import { UiPreferences } from "../../util/useUiPreference";
 import LeftPanelView from "./LeftPanelView";
 import Box from "@mui/material/Box";
 
-type SearchRouterArgs = {|
-  paramsOverride?: CoreFetcherArgs,
-|};
+type SearchRouterArgs = {
+  paramsOverride?: CoreFetcherArgs;
+};
 
 const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   const { searchStore, uiStore } = useStores();
@@ -51,10 +44,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
         uiStore.addAlert(
           mkAlert({
             title: "Search failed.",
-            message:
-              error.response?.data.message ??
-              error.message ??
-              "Unknown reason.",
+            message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
             isInfinite: true,
           })
@@ -71,7 +61,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
         }
       }
     })();
-  }, [paramsOverride]);
+  }, [paramsOverride, location.search, search, uiStore]);
 
   useEffect(() => {
     search.overrideSearchOnFilter = (args: CoreFetcherArgs) => {
@@ -80,7 +70,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
         `/inventory/search?${search.fetcher.generateQuery(args).toString()}`
       );
     };
-  }, [search]);
+  }, [search, navigate]);
 
   const sidebarId = React.useId();
 
@@ -103,7 +93,9 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
  * Search Context and Navigate Context (via MainSearchNavigationContext) in
  * this wrapper component, SearchRouter may use them.
  */
-function SearchRouterWrapper({ paramsOverride }: SearchRouterArgs): Node {
+function SearchRouterWrapper({
+  paramsOverride,
+}: SearchRouterArgs): React.ReactNode {
   const { searchStore } = useStores();
   return (
     <UiPreferences>
@@ -121,4 +113,4 @@ function SearchRouterWrapper({ paramsOverride }: SearchRouterArgs): Node {
   );
 }
 
-export default (observer(SearchRouterWrapper): ComponentType<SearchRouterArgs>);
+export default observer(SearchRouterWrapper);

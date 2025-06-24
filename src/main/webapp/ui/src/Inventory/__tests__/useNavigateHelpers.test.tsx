@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
@@ -57,7 +56,7 @@ describe("useNavigateHelpers", () => {
   describe("navigateToSearch should", () => {
     test("not call setActiveResult", async () => {
       const user = userEvent.setup();
-      const mockSearchParams = { query: "foo" };
+      const mockSearchParams = { query: "foo" } as const;
       const FunctionComponent = () => {
         const { navigateToSearch } = useNavigateHelpers();
         return (
@@ -79,9 +78,7 @@ describe("useNavigateHelpers", () => {
       render(
         <NavigateContext.Provider
           value={{
-            useNavigate: jest
-              .fn<[], () => void>()
-              .mockImplementation(() => () => {}),
+            useNavigate: jest.fn().mockImplementation(() => () => {}),
             useLocation: jest.fn(),
           }}
         >

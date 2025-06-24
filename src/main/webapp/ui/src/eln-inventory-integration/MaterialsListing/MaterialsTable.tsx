@@ -2,12 +2,7 @@
 
 import GlobalId from "../../components/GlobalId";
 import NameWithBadge from "../../Inventory/components/NameWithBadge";
-import React, {
-  type Node,
-  type ComponentType,
-  useState,
-  useEffect,
-} from "react";
+import React, { useState, useEffect } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -35,8 +30,8 @@ import SubSampleModel from "../../stores/models/SubSampleModel";
 import { hasQuantity } from "../../stores/models/HasQuantity";
 
 const NameCell = withStyles<
-  {| material: Material |},
-  { withBadge: string, withoutBadge: string }
+  { material: Material },
+  { withBadge: string; withoutBadge: string }
 >(() => ({
   withBadge: {
     "@media print": {
@@ -133,30 +128,30 @@ const colorCodedQuantity = (material: Material, list: ListOfMaterials) => {
       ? classes.modifiedHighlight
       : material.editing
       ? classes.primary
-      : classes.black
+      : ""
   );
 };
 
-type BodyRowArgs = {|
-  material: Material,
-|};
+type BodyRowArgs = {
+  material: Material;
+};
 
-type TableArgs = {|
-  list: ListOfMaterials,
-  isSingleColumn: boolean,
-  onRemove?: (Material) => void,
-  canEdit: boolean,
-|};
+type TableArgs = {
+  list: ListOfMaterials;
+  isSingleColumn: boolean;
+  onRemove?: (material: Material) => void;
+  canEdit: boolean;
+};
 
 const TableSubCell = withStyles<
-  {|
-    flex: number,
-    className?: string,
-    children: Node,
-    datatestid?: string,
-  |},
   {
-    root: string,
+    flex: number;
+    className?: string;
+    children: React.ReactNode;
+    datatestid?: string;
+  },
+  {
+    root: string;
   }
 >(() => ({
   root: {
@@ -179,7 +174,7 @@ function MaterialsTable({
   isSingleColumn,
   onRemove,
   canEdit,
-}: TableArgs): Node {
+}: TableArgs): React.ReactNode {
   const { classes } = useStyles();
   const editingMode = list.editingMode;
   const materials = list.materials;
@@ -335,7 +330,13 @@ function MaterialsTable({
   });
 
   const CustomTableCell = observer(
-    ({ className, children }: { className?: string, children: Node }) => {
+    ({
+      className,
+      children,
+    }: {
+      className?: string;
+      children: React.ReactNode;
+    }) => {
       return (
         <TableCell
           className={clsx(
@@ -431,7 +432,7 @@ function MaterialsTable({
                   material.updateQuantityEstimate();
                 }}
                 value={material.updateInventoryQuantity}
-                checked={material.updateInventoryQuantity}
+                checked={material.updateInventoryQuantity ?? undefined}
                 disabled={!material.selected || list.mixedSelectedCategories}
                 inputProps={{ "aria-label": "Linked quantities" }}
               />
@@ -490,4 +491,4 @@ function MaterialsTable({
   );
 }
 
-export default (observer(MaterialsTable): ComponentType<TableArgs>);
+export default observer(MaterialsTable);

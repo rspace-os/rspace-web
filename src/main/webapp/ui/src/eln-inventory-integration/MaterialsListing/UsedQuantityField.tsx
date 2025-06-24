@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import {
   Material,
@@ -10,12 +8,15 @@ import NumberField from "../../components/Inputs/NumberField";
 import UnitSelect from "../../components/Inputs/UnitSelect";
 import { hasQuantity } from "../../stores/models/HasQuantity";
 
-type UsedQuantityFieldArgs = {|
-  material: Material,
-  list: ListOfMaterials,
-|};
+type UsedQuantityFieldArgs = {
+  material: Material;
+  list: ListOfMaterials;
+};
 
-function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): Node {
+function UsedQuantityField({
+  material,
+  list,
+}: UsedQuantityFieldArgs): React.ReactNode {
   const globalId = material.invRec.globalId;
   if (!globalId) throw new Error("Item Global ID must be known");
 
@@ -33,7 +34,7 @@ function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): Node {
 
   const getNumericValue = () => {
     if (material.selected && mixedSelectedCategories) return "0";
-    if (isNaN(list.additionalQuantity?.numericValue)) return "";
+    if (isNaN(Number(list.additionalQuantity?.numericValue))) return "";
     if (material.selected && list.additionalQuantity)
       return list.additionalQuantity.numericValue;
     return "0";
@@ -85,6 +86,7 @@ function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): Node {
       datatestid={`material-additional-quantity-${globalId}`}
       disabled={!material.selected || mixedSelectedCategories}
       value={getNumericValue()}
+      // eslint-disable-next-line jsx-a11y/no-autofocus
       autoFocus
       onChange={({ target }) => {
         onChangeValue(parseFloat(target.value));
@@ -106,7 +108,7 @@ function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): Node {
               .orElse([])}
             value={getUnitId()}
             handleChange={({ target }) => {
-              onChangeUnitId(parseInt(target.value, 10));
+              onChangeUnitId(parseInt(String(target.value), 10));
             }}
           />
         ),
@@ -115,6 +117,4 @@ function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): Node {
   );
 }
 
-export default (observer(
-  UsedQuantityField
-): ComponentType<UsedQuantityFieldArgs>);
+export default observer(UsedQuantityField);
