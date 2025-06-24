@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
@@ -22,6 +21,7 @@ import ApiService from "../../../../../common/InvApiService";
 import { sleep } from "../../../../../util/Util";
 import "__mocks__/resizeObserver";
 import userEvent from "@testing-library/user-event";
+import { type AxiosResponse } from "@/common/axios";
 
 jest.mock("../../../../../common/InvApiService", () => ({
   query: jest.fn(() => {}),
@@ -55,11 +55,12 @@ jest.mock("../../../../Container/Content/ImageView/PreviewImage", () =>
   jest.fn(() => <></>)
 );
 
-window.fetch = jest.fn(() =>
+// Mock fetch
+window.fetch = jest.fn().mockImplementation(() =>
   Promise.resolve({
     status: 200,
     ok: true,
-    json: () => Promise.resolve(),
+    json: () => Promise.resolve({}),
   })
 );
 
@@ -118,9 +119,19 @@ describe("Template", () => {
               templates: [templateAttrs()],
               totalHits: 1,
             },
-          });
+            status: 200,
+            statusText: "OK",
+            headers: {},
+            config: {},
+          } as AxiosResponse);
         }
-        return Promise.resolve();
+        return Promise.resolve({
+          data: undefined,
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse);
       });
       jest.spyOn(ApiService, "get").mockImplementation(async (endpoint) => {
         if (endpoint === "sampleTemplates") {
@@ -135,8 +146,19 @@ describe("Template", () => {
                 }),
               ],
             },
-          };
+            status: 200,
+            statusText: "OK",
+            headers: {},
+            config: {},
+          } as AxiosResponse;
         }
+        return {
+          data: undefined,
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse;
       });
 
       const sample = makeMockSample({
@@ -178,7 +200,7 @@ describe("Template", () => {
       await waitFor(() => {
         expect(screen.getByText("A template")).toBeVisible();
       });
-      user.click(screen.getByText("A template"));
+      await user.click(screen.getByText("A template"));
 
       await waitFor(() => {
         expect(sample.fields.length).toBe(1);
