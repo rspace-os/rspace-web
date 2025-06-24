@@ -69,7 +69,7 @@ module.exports = {
     confirmationDialog: "./src/components/ConfirmationDialog.js",
     imageEditor: "./src/Gallery/imageEditorDialog.js",
     materialsListing:
-      "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.js",
+      "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
     associatedInventoryRecords:
       "./src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
     sysadminUsers: "./src/eln/sysadmin/users/index.tsx",

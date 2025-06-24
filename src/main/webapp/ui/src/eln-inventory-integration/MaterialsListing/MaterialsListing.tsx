@@ -1,14 +1,7 @@
-// @flow
-
 import useStores from "../../stores/use-stores";
 import Fab from "@mui/material/Fab";
 import MaterialsDialog from "./MaterialsDialog";
-import React, {
-  useState,
-  useEffect,
-  type ElementProps,
-  type Node,
-} from "react";
+import React, { useState, useEffect } from "react";
 import materialTheme from "../../theme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ThemeProvider } from "@mui/material/styles";
@@ -34,7 +27,7 @@ import { createRoot } from "react-dom/client";
 const FAB_SIZE = 48;
 
 const WrappingMenuItem = withStyles<
-  ElementProps<typeof MenuItem>,
+  React.ComponentProps<typeof MenuItem>,
   { root: string }
 >(() => ({
   root: {
@@ -43,48 +36,51 @@ const WrappingMenuItem = withStyles<
   },
 }))((props) => <MenuItem {...props} />);
 
-const NewLoMButtonWrapper = withStyles<{| children: Node |}, { root: string }>(
-  () => ({
-    root: {
-      "@media print": {
-        display: "none",
-      },
-    },
-  })
-)(({ children, classes }) => <div className={classes.root}>{children}</div>);
-
-const useStyles = makeStyles()((theme, { fabRightPadding }) => ({
-  launcherWrapper: {
-    position: "absolute",
-    top: FAB_SIZE,
-    right: fabRightPadding,
-    bottom: FAB_SIZE,
-    pointerEvents: "none",
+const NewLoMButtonWrapper = withStyles<
+  { children: React.ReactNode },
+  { root: string }
+>(() => ({
+  root: {
     "@media print": {
       display: "none",
     },
   },
-  growTransform: { transformOrigin: "center right" },
-  primary: { color: theme.palette.primary.main },
-  popper: {
-    zIndex: 1, // so it appears above the TinyMCE Editor
-    pointerEvents: "auto",
-  },
-  itemName: { fontWeight: "bold" },
-  itemText: {
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    width: "240px",
-  },
-  fab: {
-    zIndex: "initial",
-  },
-}));
+}))(({ children, classes }) => <div className={classes.root}>{children}</div>);
+
+const useStyles = makeStyles<{ fabRightPadding: number }>()(
+  (theme, { fabRightPadding }) => ({
+    launcherWrapper: {
+      position: "absolute",
+      top: FAB_SIZE,
+      right: fabRightPadding,
+      bottom: FAB_SIZE,
+      pointerEvents: "none",
+      "@media print": {
+        display: "none",
+      },
+    },
+    growTransform: { transformOrigin: "center right" },
+    primary: { color: theme.palette.primary.main },
+    popper: {
+      zIndex: 1, // so it appears above the TinyMCE Editor
+      pointerEvents: "auto",
+    },
+    itemName: { fontWeight: "bold" },
+    itemText: {
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      width: "240px",
+    },
+    fab: {
+      zIndex: "initial",
+    },
+  })
+);
 
 const CustomBadge = withStyles<
-  {| children: Node, count: number |},
-  { root: string, badge: string }
+  { children: React.ReactNode; count: number },
+  { root: string; badge: string }
 >(() => ({
   root: {
     position: "sticky",
@@ -106,14 +102,14 @@ const MaterialsLauncher = observer(
     elnFieldId,
     fabRightPadding,
   }: {
-    elnFieldId: ElnFieldId,
-    fabRightPadding: number,
+    elnFieldId: ElnFieldId;
+    fabRightPadding: number;
   }) => {
     const { materialsStore } = useStores();
 
     const [showMenu, setShowMenu] = useState(false);
     const [showDialog, _setShowDialog] = useState(false);
-    const [anchorEl, setAnchorEl] = useState(null);
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const { classes } = useStyles({ fabRightPadding });
 
     const setShowDialog = (value: boolean) => {
@@ -201,11 +197,11 @@ const MaterialsLauncher = observer(
   }
 );
 
-type MaterialsListingArgs = {|
-  elnFieldId: string,
-  canEdit: ?boolean,
-  fabRightPadding: number,
-|};
+type MaterialsListingArgs = {
+  elnFieldId: string;
+  canEdit: boolean | null;
+  fabRightPadding: number;
+};
 
 const MaterialsListing = observer(
   ({ elnFieldId, canEdit, fabRightPadding }: MaterialsListingArgs) => {
@@ -255,9 +251,9 @@ const MaterialsListing = observer(
   }
 );
 
-type NewMaterialsListingArgs = {|
-  elnFieldId: string,
-|};
+type NewMaterialsListingArgs = {
+  elnFieldId: string;
+};
 
 const NewMaterialsListing = observer(
   ({ elnFieldId }: NewMaterialsListingArgs) => {
@@ -279,9 +275,9 @@ const NewMaterialsListing = observer(
                     float: "right",
                     marginRight: "8px",
                   }}
-                  onClick={({ target }) => {
+                  onClick={({ currentTarget }) => {
                     setShowDialog(true);
-                    target.blur();
+                    currentTarget.blur();
                     materialsStore.newListOfMaterials(parseInt(elnFieldId, 10));
                   }}
                 >
@@ -301,16 +297,16 @@ function initListOfMaterials({
   makeWrapperRelative,
   fabRightPadding,
 }: {
-  makeWrapperRelative: boolean,
-  fabRightPadding: number,
+  makeWrapperRelative: boolean;
+  fabRightPadding: number;
 }) {
   let canEdit;
   try {
-    // $FlowFixMe[cannot-resolve-name] canBeEditable is defined globally on ELN structured document page
+    // @ts-expect-error eslint does not recognise the global variable
     canEdit = canBeEditable(); //eslint-disable-line no-undef
   } catch {
     try {
-      // $FlowFixMe[cannot-resolve-name] isEditable is defined globally on ELN notebook page
+      // @ts-expect-error eslint does not recognise the global variable
       canEdit = isEditable; //eslint-disable-line no-undef
     } catch {
       canEdit = null;
@@ -322,18 +318,22 @@ function initListOfMaterials({
       const root = createRoot(wrapperDiv);
       root.render(
         <MaterialsListing
+          // @ts-expect-error dataset does exist on HTMLDivElement
           elnFieldId={wrapperDiv.dataset.fieldId}
           canEdit={canEdit}
           fabRightPadding={fabRightPadding}
         />
       );
+      // @ts-expect-error style does exist on HTMLDivElement
       if (makeWrapperRelative) wrapperDiv.style.position = "relative";
 
       const newButtonWrapper = document.querySelector(
+        // @ts-expect-error dataset does exist on HTMLDivElement
         `.invMaterialsListing_new[data-field-id="${wrapperDiv.dataset.fieldId}"][data-document-id="${wrapperDiv.dataset.documentId}"]`
       );
       if (newButtonWrapper) {
         createRoot(newButtonWrapper).render(
+          // @ts-expect-error dataset does exist on HTMLDivElement
           <NewMaterialsListing elnFieldId={wrapperDiv.dataset.fieldId} />
         );
       }
