@@ -1,0 +1,5 @@
+// @flow
+
+import { type ComponentType, type Node } from "react";
+
+declare export default ComponentType<{||}>;

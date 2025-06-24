@@ -1,5 +1,3 @@
-// @flow
-
 import useStores from "../../../stores/use-stores";
 import * as Parsers from "../../../util/parsers";
 import SummaryInfo from "../../Template/SummaryInfo";
@@ -13,10 +11,10 @@ import FormGroup from "@mui/material/FormGroup";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType } from "react";
+import React, { type ReactNode } from "react";
 import TemplatePicker from "../../components/Picker/TemplatePicker";
 
-function TemplateDetails(): Node {
+function TemplateDetails(): ReactNode {
   const { importStore } = useStores();
 
   return (
@@ -26,9 +24,9 @@ function TemplateDetails(): Node {
       onChange={(event, value) => {
         if (event.target.name === "newOrExisting") {
           importStore.importData?.setCreateNewTemplate(
-            Parsers.parseBoolean(value).elseThrow()
+            Parsers.parseBoolean(value as "true" | "false").elseThrow()
           );
-          if (Parsers.parseBoolean(value).elseThrow()) {
+          if (Parsers.parseBoolean(value as "true" | "false").elseThrow()) {
             importStore.importData?.setTemplate(null);
             importStore.importData?.setDefaultUnitId();
           }
@@ -55,7 +53,7 @@ function TemplateDetails(): Node {
         label="Choose existing template."
       />
       <Box ml={4}>
-        <SummaryInfo template={importStore.importData?.template} />
+        <SummaryInfo template={importStore.importData?.template ?? null} />
         <Box mb={1}>
           <Divider />
         </Box>
@@ -79,4 +77,4 @@ function TemplateDetails(): Node {
   );
 }
 
-export default (observer(TemplateDetails): ComponentType<{||}>);
+export default observer(TemplateDetails);
