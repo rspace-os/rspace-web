@@ -1,19 +1,16 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import MoveToIrods from "../../eln/gallery/components/MoveToIrods";
 
-export default function IrodsWrapper(): Node {
+export default function IrodsWrapper(): React.ReactNode {
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [selectedIds, setSelectedIds] = React.useState<$ReadOnlyArray<string>>(
+  const [selectedIds, setSelectedIds] = React.useState<ReadonlyArray<string>>(
     []
   );
 
   React.useEffect(() => {
-    const handler = (
-      event: Event & { detail: { ids: Array<string>, ... }, ... }
-    ) => {
-      setSelectedIds(event.detail.ids);
+    const handler = (event: Event) => {
+      // @ts-expect-error the event will have this detail
+      setSelectedIds(event.detail.ids as Array<string>);
       setDialogOpen(true);
     };
     window.addEventListener("OPEN_IRODS_DIALOG", handler);
@@ -29,6 +26,7 @@ export default function IrodsWrapper(): Node {
       setDialogOpen={(newState) => {
         setDialogOpen(newState);
         // eslint-disable-next-line no-undef
+        // @ts-expect-error TS can't find the global gallery function
         if (!newState) gallery();
       }}
     />
