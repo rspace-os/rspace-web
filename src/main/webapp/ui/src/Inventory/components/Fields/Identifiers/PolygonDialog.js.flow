@@ -1,0 +1,14 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import { type GeoLocation } from "../../../../stores/definitions/GeoLocation";
+
+type PolygonDialogArgs = {|
+  open: boolean,
+  setOpen: (boolean) => void,
+  editable: boolean,
+  geoLocation: GeoLocation,
+  doUpdateIdentifiers: () => void,
+|};
+
+declare export default ComponentType<PolygonDialogArgs>;

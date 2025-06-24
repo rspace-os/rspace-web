@@ -1,8 +1,6 @@
-//@flow
-
 import React, {
   useState,
-  type Node,
+  type ReactNode,
   type ComponentType,
   useContext,
 } from "react";
@@ -84,10 +82,10 @@ const IdentifierWrapper = observer(
     id,
     editable,
   }: {
-    activeResult: InventoryRecord,
-    id: Identifier,
-    editable: boolean,
-  }): Node => {
+    activeResult: InventoryRecord;
+    id: Identifier;
+    editable: boolean;
+  }): ReactNode => {
     const isRadio = (field: IdentifierField): boolean =>
       Boolean(field.radioOptions);
 
@@ -126,10 +124,8 @@ const IdentifierWrapper = observer(
                   {editable && isRadio(f) ? (
                     <RadioField
                       name={`field-${f.key}`}
-                      // $FlowFixMe[incompatible-type]
-                      value={f.value}
-                      // $FlowExpectedError[incompatible-type] as isRadio(f), we know options are defined
-                      options={f.radioOptions}
+                      value={f.value as string}
+                      options={f.radioOptions!}
                       onChange={({ target: { value } }) => {
                         if (value) handleUpdate(f, value);
                       }}
@@ -153,12 +149,12 @@ const IdentifierWrapper = observer(
                         error={
                           editable &&
                           (f.value === "" ||
-                            !(f.isValid ?? ((_) => true))(f.value))
+                            !(f.isValid ?? ((_: any) => true))(f.value))
                         }
                         helperText={
                           editable &&
                           (f.value === "" ||
-                            !(f.isValid ?? ((_) => true))(f.value))
+                            !(f.isValid ?? ((_: any) => true))(f.value))
                             ? "In order to publish the identifier, a valid value is required."
                             : null
                         }
@@ -232,7 +228,7 @@ const IdentifierWrapper = observer(
             Inventory Fields
           </Typography>
           <Alert severity="info">
-            You can include Inventory fields in the item’s landing page, to
+            You can include Inventory fields in the item's landing page, to
             openly share domain-specific metadata outside the IGSN schema.{" "}
             <strong>
               Before publishing the IGSN ID, please ensure the fields do not
@@ -266,9 +262,7 @@ const IdentifierWrapper = observer(
                 <li>
                   Custom Fields
                   <ul>
-                    {/* $FlowExpectedError[prop-missing] for samples */}
-                    {/* $FlowExpectedError[unnecessary-optional-chain] for samples */}
-                    {activeResult.fields?.map((f) => (
+                    {(activeResult as any).fields?.map((f: any) => (
                       <li key={f.id}>{f.name}</li>
                     ))}
                   </ul>
@@ -290,7 +284,7 @@ const IdentifierWrapper = observer(
   }
 );
 
-type IdentifiersListArgs = {| activeResult: InventoryRecord |};
+type IdentifiersListArgs = { activeResult: InventoryRecord };
 
 export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
   ({ activeResult }: IdentifiersListArgs) => {
@@ -303,9 +297,9 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
       identifierState,
       identifierUrl,
     }: {
-      identifierState: IGSNPublishingState,
-      identifierUrl: ?string,
-    }): Node => {
+      identifierState: IGSNPublishingState;
+      identifierUrl: string | null | undefined;
+    }): ReactNode => {
       if (identifierState === "draft")
         return (
           <>
@@ -318,7 +312,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
           <>
             This IGSN ID is Findable. The IGSN ID is a citable URL that
             redirects to the{" "}
-            <a href={identifierUrl} target="_blank" rel="noreferrer">
+            <a href={identifierUrl || ""} target="_blank" rel="noreferrer">
               RSpace landing page
             </a>
             . The metadata is publicly available through the landing page,
@@ -330,7 +324,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
           <>
             This IGSN ID is Registered. The metadata is not publicly available
             through the{" "}
-            <a href={identifierUrl} target="_blank" rel="noreferrer">
+            <a href={identifierUrl || ""} target="_blank" rel="noreferrer">
               RSpace landing page
             </a>
             , DataCite Commons or the Public API, but is available through the
@@ -340,14 +334,16 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
       throw new Error("Invalid state");
     };
 
-    const [selectedIdentifier, setSelectedIdentifier] = useState<?Identifier>();
+    const [selectedIdentifier, setSelectedIdentifier] = useState<
+      Identifier | undefined
+    >();
     const [openPreviewDialog, setOpenPreviewDialog] = useState(false);
 
     /*
      *Published IGSNs will have any RoR data set by back end code.
      *IGSNs in other states have no RoR data set by back end code.
      */
-    const fetchAndSetRoRData = async (id: Identifier): Promise<> => {
+    const fetchAndSetRoRData = async (id: Identifier): Promise<void> => {
       if (id.state !== "findable") {
         try {
           const idResponse: { data: string } = await axios.get(
@@ -442,7 +438,11 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                   {id.state === "draft" ? (
                     id.doi
                   ) : (
-                    <a href={id.publicUrl} target="_blank" rel="noreferrer">
+                    <a
+                      href={id.publicUrl || ""}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       {id.publicUrl}
                     </a>
                   )}
@@ -453,7 +453,9 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                 <Grid
                   item
                   xs={2}
-                  className={id.state === "findable" ? classes.highlight : null}
+                  className={
+                    id.state === "findable" ? classes.highlight : undefined
+                  }
                   data-testid="identifier-state"
                 >
                   {capitaliseJustFirstChar(id.state)}
@@ -581,11 +583,11 @@ const AssignDialog = observer(
     open,
     onClose,
     recordToAssignTo,
-  }: {|
-    open: boolean,
-    onClose: () => void,
-    recordToAssignTo: InventoryRecord,
-  |}): Node => {
+  }: {
+    open: boolean;
+    onClose: () => void;
+    recordToAssignTo: InventoryRecord;
+  }): ReactNode => {
     const { assignIdentifier } = useIdentifiers();
     const [selectedIgsns, setSelectedIgsns] = React.useState<
       RsSet<IdentifierInTable>
@@ -674,7 +676,7 @@ const AssignDialog = observer(
   }
 );
 
-const IdentifiersCard = observer((): Node => {
+const IdentifiersCard = observer((): ReactNode => {
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -726,12 +728,11 @@ const IdentifiersCard = observer((): Node => {
 });
 
 function Identifiers<
-  Fields: {
-    identifiers: Array<Identifier>,
-    ...
+  Fields extends {
+    identifiers: Array<Identifier>;
   },
-  FieldOwner: HasEditableFields<Fields>
->({ fieldOwner }: {| fieldOwner: FieldOwner |}): Node {
+  FieldOwner extends HasEditableFields<Fields>
+>({ fieldOwner }: { fieldOwner: FieldOwner }): ReactNode {
   return (
     <InputWrapper
       label=""
@@ -753,4 +754,4 @@ function Identifiers<
   );
 }
 
-export default (observer(Identifiers): typeof Identifiers);
+export default observer(Identifiers);

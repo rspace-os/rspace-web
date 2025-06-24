@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React, { type ReactNode, type ComponentType } from "react";
 import { observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
 import Box from "@mui/material/Box";
@@ -20,6 +18,7 @@ import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import AmberNumberField from "./AmberNumberField";
 import AddButton from "../../../../components/AddButton";
 import RemoveButton from "../../../../components/RemoveButton";
+
 import { isEmpty } from "./MultipleInputHandler";
 import {
   COORD_RANGE_X,
@@ -43,11 +42,11 @@ const PolygonEditor = observer(
     geoLocation,
     editable,
     doUpdateIdentifiers,
-  }: {|
-    geoLocation: GeoLocation,
-    editable: boolean,
-    doUpdateIdentifiers: () => void,
-  |}): Node => {
+  }: {
+    geoLocation: GeoLocation;
+    editable: boolean;
+    doUpdateIdentifiers: () => void;
+  }): ReactNode => {
     const { geoLocationPolygon, polygonEmpty }: GeoLocation = geoLocation;
 
     /* in some cases points cannot be removed, or added */
@@ -94,6 +93,7 @@ const PolygonEditor = observer(
                 size="small"
                 variant="standard"
                 fullWidth
+                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                 datatestid={`Polygon-point-${i}-latitude`}
                 disabled={false}
                 value={point.pointLatitude ?? ""}
@@ -124,6 +124,7 @@ const PolygonEditor = observer(
                 size="small"
                 variant="standard"
                 fullWidth
+                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                 datatestid={`Polygon-point-${i + 1}-longitude`}
                 disabled={false}
                 value={point.pointLongitude ?? ""}
@@ -173,18 +174,18 @@ const PolygonEditor = observer(
   }
 );
 
-type PolygonCardArgs = {|
-  editable: boolean,
-  geoLocation: GeoLocation,
-  doUpdateIdentifiers: () => void,
-|};
+type PolygonCardArgs = {
+  editable: boolean;
+  geoLocation: GeoLocation;
+  doUpdateIdentifiers: () => void;
+};
 
 function PolygonCard({
   editable,
   geoLocation,
   doUpdateIdentifiers,
-}: PolygonCardArgs): Node {
-  const InPolygonPointEditor = observer((): Node => {
+}: PolygonCardArgs): ReactNode {
+  const InPolygonPointEditor = observer((): ReactNode => {
     const { geoLocationInPolygonPoint, inPolygonPointIncomplete }: GeoLocation =
       geoLocation;
     return (
@@ -205,6 +206,7 @@ function PolygonCard({
                 size="small"
                 variant="standard"
                 fullWidth
+                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                 datatestid={`In-polygon-point-latitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLatitude}
@@ -246,6 +248,7 @@ function PolygonCard({
                 size="small"
                 variant="standard"
                 fullWidth
+                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                 datatestid={`In-polygon-point-longitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLongitude ?? ""}
@@ -327,4 +330,4 @@ function PolygonCard({
   );
 }
 
-export default (observer(PolygonCard): ComponentType<PolygonCardArgs>);
+export default observer(PolygonCard) as ComponentType<PolygonCardArgs>;

@@ -1,0 +1,35 @@
+// @flow
+
+import React, {
+  type ComponentType,
+  type Node,
+} from "react";
+import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
+import { type GeoLocation } from "../../../../stores/definitions/GeoLocation";
+
+export type PolygonMessages = {|
+  empty: string,
+  incomplete: string,
+  complete: string,
+|};
+
+export const COORD_RANGE_X: {| min: number, max: number |} = { min: -180, max: 180 };
+export const isOutOfRangeX = (v: number): boolean => v < COORD_RANGE_X.min || v > COORD_RANGE_X.max;
+export const COORD_RANGE_Y: {| min: number, max: number |} = { min: -90, max: 90 };
+export const isOutOfRangeY = (v: number): boolean => v < COORD_RANGE_Y.min || v > COORD_RANGE_Y.max;
+
+export const PolygonStateAlert: ComponentType<{|
+  polygonEmpty: boolean,
+  polygonComplete: boolean,
+  textMessages: PolygonMessages,
+|}> = (props) => null;
+
+type GeoLocationFieldArgs = {|
+  geoLocation: GeoLocationModel,
+  i: number,
+  editable: boolean,
+  handleUpdateValue: (index: number, key: string, value: string | Date) => void,
+  doUpdateIdentifiers: () => void,
+|};
+
+declare export default ComponentType<GeoLocationFieldArgs>;

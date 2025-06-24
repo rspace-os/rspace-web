@@ -1,0 +1,15 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import { type IdentifierField } from "../../../../stores/definitions/Identifier";
+
+export const isEmpty = (v: string): boolean => v === "";
+
+type MultipleInputArgs = {|
+  field: IdentifierField,
+  activeResult: InventoryRecord,
+  editable: boolean,
+|};
+
+declare export default ComponentType<MultipleInputArgs>;

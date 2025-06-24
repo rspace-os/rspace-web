@@ -1,8 +1,6 @@
-// @flow
-
 import React, {
   type ComponentType,
-  type Node,
+  type ReactNode,
   useState,
   Suspense,
   lazy,
@@ -36,7 +34,7 @@ import { runInAction } from "mobx";
  */
 const LazyMapViewer = lazy(() => import("./MapViewer"));
 
-const CustomFieldset = withStyles<{| children: Node |}, { root: string }>(
+const CustomFieldset = withStyles<{ children: ReactNode }, { root: string }>(
   (theme) => ({
     root: {
       border: theme.borders.card,
@@ -61,9 +59,9 @@ export const isOutOfRangeY = (v: number): boolean =>
   v < COORD_RANGE_Y.min || v > COORD_RANGE_Y.max;
 
 export type PolygonMessages = {
-  empty: string,
-  incomplete: string,
-  complete: string,
+  empty: string;
+  incomplete: string;
+  complete: string;
 };
 
 const POLYGON_FIELD_MESSAGES: PolygonMessages = {
@@ -77,23 +75,23 @@ export const PolygonStateAlert = ({
   polygonComplete,
   textMessages,
 }: {
-  polygonEmpty: boolean,
-  polygonComplete: boolean,
-  textMessages: PolygonMessages,
-}): Node => {
+  polygonEmpty: boolean;
+  polygonComplete: boolean;
+  textMessages: PolygonMessages;
+}): ReactNode => {
   if (polygonEmpty) return <Alert severity="info">{textMessages.empty}</Alert>;
   if (polygonComplete)
     return <Alert severity="info">{textMessages.complete}</Alert>;
   return <Alert severity="warning">{textMessages.incomplete}</Alert>;
 };
 
-type GeoLocationFieldArgs = {|
-  geoLocation: GeoLocationModel,
-  i: number,
-  editable: boolean,
-  handleUpdateValue: (number, string, string | Date) => void,
-  doUpdateIdentifiers: () => void,
-|};
+type GeoLocationFieldArgs = {
+  geoLocation: GeoLocationModel;
+  i: number;
+  editable: boolean;
+  handleUpdateValue: (index: number, key: string, value: string | Date) => void;
+  doUpdateIdentifiers: () => void;
+};
 
 const GeoLocationField = ({
   geoLocation,
@@ -102,8 +100,8 @@ const GeoLocationField = ({
   handleUpdateValue,
   doUpdateIdentifiers,
 }: GeoLocationFieldArgs) => {
-  const PointLatitudeEditor = observer((): Node => {
-    const { geoLocationPoint }: GeoLocationModel = geoLocation;
+  const PointLatitudeEditor = observer((): ReactNode => {
+    const { geoLocationPoint } = geoLocation;
     return (
       <InputWrapper label="Latitude">
         <AmberNumberField
@@ -114,6 +112,7 @@ const GeoLocationField = ({
           size="small"
           variant="standard"
           fullWidth
+          // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
           datatestid={`IdentifierRecommendedField-${"geolocation-point-latitude"}-${i}`}
           disabled={false}
           value={geoLocationPoint.pointLatitude}
@@ -143,8 +142,8 @@ const GeoLocationField = ({
     );
   });
 
-  const PointLongitudeEditor = observer((): Node => {
-    const { geoLocationPoint }: GeoLocationModel = geoLocation;
+  const PointLongitudeEditor = observer((): ReactNode => {
+    const { geoLocationPoint } = geoLocation;
     return (
       <InputWrapper label="Longitude">
         <AmberNumberField
@@ -155,6 +154,7 @@ const GeoLocationField = ({
           size="small"
           variant="standard"
           fullWidth
+          // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
           datatestid={`IdentifierRecommendedField-${"geolocation-point-longitude"}-${i}`}
           disabled={false}
           value={geoLocationPoint.pointLongitude}
@@ -184,7 +184,7 @@ const GeoLocationField = ({
     );
   });
 
-  const PointEditor = observer((): Node => {
+  const PointEditor = observer((): ReactNode => {
     return (
       <Grid item>
         <CustomFieldset>
@@ -202,8 +202,8 @@ const GeoLocationField = ({
     );
   });
 
-  const PlaceEditor = observer((): Node => {
-    const { geoLocationPlace }: GeoLocationModel = geoLocation;
+  const PlaceEditor = observer((): ReactNode => {
+    const { geoLocationPlace } = geoLocation;
     return (
       <Grid item>
         <CustomFieldset>
@@ -214,6 +214,7 @@ const GeoLocationField = ({
               placeholder="e.g. Royal Observatory, Greenwich"
               variant="standard"
               fullWidth
+              // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
               datatestid={`IdentifierRecommendedField-${"geolocation-place"}-${i}`}
               disabled={false}
               value={geoLocationPlace}
@@ -234,8 +235,8 @@ const GeoLocationField = ({
     );
   });
 
-  const BoxEditor = observer((): Node => {
-    const { geoLocationBox }: GeoLocationModel = geoLocation;
+  const BoxEditor = observer((): ReactNode => {
+    const { geoLocationBox } = geoLocation;
     return (
       <Grid item>
         <CustomFieldset>
@@ -247,6 +248,7 @@ const GeoLocationField = ({
                   inputProps={COORD_RANGE_Y}
                   size="small"
                   variant="standard"
+                  // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                   datatestid={`IdentifierRecommendedField-${"geolocation-box-northbound"}-${i}`}
                   value={geoLocationBox.northBoundLatitude}
                   onChange={({ target: { value } }) => {
@@ -279,6 +281,7 @@ const GeoLocationField = ({
                   inputProps={COORD_RANGE_X}
                   size="small"
                   variant="standard"
+                  // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                   datatestid={`IdentifierRecommendedField-${"geolocation-box-westbound"}-${i}`}
                   value={geoLocationBox.westBoundLongitude}
                   onChange={({ target: { value } }) => {
@@ -311,6 +314,7 @@ const GeoLocationField = ({
                   inputProps={COORD_RANGE_Y}
                   size="small"
                   variant="standard"
+                  // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                   datatestid={`IdentifierRecommendedField-${"geolocation-box-southbound"}-${i}`}
                   value={geoLocationBox.southBoundLatitude}
                   onChange={({ target: { value } }) => {
@@ -343,6 +347,7 @@ const GeoLocationField = ({
                   inputProps={COORD_RANGE_X}
                   size="small"
                   variant="standard"
+                  // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                   datatestid={`IdentifierRecommendedField-${"geolocation-box-eastbound"}-${i}`}
                   value={geoLocationBox.eastBoundLongitude}
                   onChange={({ target: { value } }) => {
@@ -379,9 +384,9 @@ const GeoLocationField = ({
     ({
       setOpenPolygonDialog,
     }: {
-      setOpenPolygonDialog: (boolean) => void,
-    }): Node => {
-      const { polygonEmpty }: GeoLocationModel = geoLocation;
+      setOpenPolygonDialog: (open: boolean) => void;
+    }): ReactNode => {
+      const { polygonEmpty } = geoLocation;
       return (
         <Grid item onClick={() => setOpenPolygonDialog(true)}>
           <CustomFieldset>
@@ -412,8 +417,8 @@ const GeoLocationField = ({
     ({
       setOpenPolygonDialog,
     }: {
-      setOpenPolygonDialog: (boolean) => void,
-    }): Node => {
+      setOpenPolygonDialog: (open: boolean) => void;
+    }): ReactNode => {
       return (
         <Card variant="outlined">
           <CardContent>
@@ -440,14 +445,14 @@ const GeoLocationField = ({
     ({
       setOpenPolygonDialog,
     }: {
-      setOpenPolygonDialog: (boolean) => void,
-    }): Node => {
+      setOpenPolygonDialog: (open: boolean) => void;
+    }): ReactNode => {
       const {
         geoLocationPoint,
         geoLocationPlace,
         geoLocationBox,
         polygonEmpty,
-      }: GeoLocationModel = geoLocation;
+      } = geoLocation;
       return (
         <Card variant="outlined">
           <CardMedia>
@@ -617,6 +622,6 @@ const GeoLocationField = ({
   );
 };
 
-export default (observer(
+export default observer(
   GeoLocationField
-): ComponentType<GeoLocationFieldArgs>);
+) as ComponentType<GeoLocationFieldArgs>;

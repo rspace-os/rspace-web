@@ -1,8 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
-/* eslint-env jest */
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
