@@ -5,13 +5,13 @@ import Confirm from "./components/Confirm";
 import StandaloneListOfMaterialsPage from "./eln-inventory-integration/MaterialsListing/StandalonePage";
 import CssBaseline from "@mui/material/CssBaseline";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Routes, Route } from "react-router";
 import { BrowserRouter } from "react-router-dom";
 import RouterNavigationContext from "./Inventory/components/RouterNavigationContext";
 import useStores from "./stores/use-stores";
 
-function Router(): Node {
+function Router(): React.ReactNode {
   const { authStore } = useStores();
 
   useEffect(() => {
@@ -41,4 +41,4 @@ function Router(): Node {
   );
 }
 
-export default (observer(Router): ComponentType<{||}>);
+export default observer(Router);
