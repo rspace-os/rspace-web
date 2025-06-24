@@ -10,7 +10,7 @@ module.exports = {
      * bundle, with some additional JavaScript assets for other standalone
      * pages.
      */
-    inventoryEntry: "./src/App.js",
+    inventoryEntry: "./src/App.tsx",
     inventoryRecordIdentifierPublicPage:
       "./src/components/PublicPages/IdentifierPublicPage.tsx",
 

@@ -1,14 +1,7 @@
-// @flow
-
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { observer } from "mobx-react-lite";
-import React, {
-  useEffect,
-  type Node,
-  useState,
-  type ComponentType,
-} from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Router from "./Router";
 import useStores from "./stores/use-stores";
@@ -18,7 +11,7 @@ import Analytics from "./components/Analytics";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
 
-function App(): Node {
+function App(): React.ReactNode {
   const { authStore, peopleStore, unitStore } = useStores();
   const [loadingDone, setLoadingDone] = useState(false);
 
@@ -76,4 +69,4 @@ window.addEventListener("load", () => {
   }
 });
 
-export default (observer(App): ComponentType<{||}>);
+export default observer(App);
