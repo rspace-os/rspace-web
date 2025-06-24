@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../stores/use-stores";
 import Stepper from "../components/Stepper/Stepper";
@@ -161,9 +159,9 @@ const SubSamplesStepperPanel = observer(
     children,
     formSectionError,
   }: {
-    activeResult: SampleModel,
-    children: Node,
-    formSectionError: FormSectionError,
+    activeResult: SampleModel;
+    children: React.ReactNode;
+    formSectionError: FormSectionError;
   }) => {
     return (
       <StepperPanel
@@ -208,7 +206,7 @@ const SubSamplesSection = observer(
   }
 );
 
-function NewRecordForm(): Node {
+function NewRecordForm(): React.ReactNode {
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -275,4 +273,4 @@ function NewRecordForm(): Node {
   );
 }
 
-export default (observer(NewRecordForm): ComponentType<{||}>);
+export default observer(NewRecordForm);

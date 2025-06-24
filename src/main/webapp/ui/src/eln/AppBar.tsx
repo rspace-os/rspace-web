@@ -1,6 +1,4 @@
-//@flow
-
-import React from "react";
+import * as React from "react";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../components/ErrorBoundary";
 import AppBar from "../components/AppBar";
@@ -11,12 +9,11 @@ import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../assets/branding/rspace/gallery";
-import { ACCENT_COLOR as INVENTORY_COLOR } from "../assets/branding/rspace/inventory";
 import { ACCENT_COLOR as WORKSPACE_COLOR } from "../assets/branding/rspace/workspace";
 import { ACCENT_COLOR as OTHER_COLOR } from "../assets/branding/rspace/other";
 
-function currentPage() {
-  const pages = {
+function currentPage(): string {
+  const pages: Record<string, string> = {
     workspace: "Workspace",
     notebookEditor: "Workspace",
     dashboard: "Other",

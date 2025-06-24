@@ -31,7 +31,7 @@ module.exports = {
      * Without a single React component that defines the whole application,
      * each island of React must be defined as a separate JS asset.
      */
-    appBar: "./src/eln/AppBar.js",
+    appBar: "./src/eln/AppBar.tsx",
     memberAutoshareStatusWrapper:
       "./src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.js",
     createGroup: "./src/CreateGroup/CreateGroup.js",

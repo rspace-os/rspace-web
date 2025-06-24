@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType, useState } from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../../stores/use-stores";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
@@ -18,8 +16,9 @@ import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import Collapse from "@mui/material/Collapse";
 import Alert from "@mui/material/Alert";
+import { getErrorMessage } from "../../../../util/error";
 
-function Template(): Node {
+function Template(): React.ReactNode {
   const {
     searchStore: { activeResult },
     uiStore,
@@ -30,12 +29,11 @@ function Template(): Node {
   const [open, setOpen] = useState(true);
 
   const setTemplate = (t: TemplateModel) => {
-    activeResult.setTemplate(t).catch((error: any) => {
+    activeResult.setTemplate(t).catch((error) => {
       uiStore.addAlert(
         mkAlert({
           title: "Could not fetch template details.",
-          message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+          message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
         })
       );
@@ -44,7 +42,8 @@ function Template(): Node {
   };
 
   const template = activeResult.template;
-  if (!(template === null || template instanceof TemplateModel)) throw new Error("Template is not a TemplateModel");
+  if (!(template === null || template instanceof TemplateModel))
+    throw new Error("Template is not a TemplateModel");
   return (
     <>
       <InputWrapper
@@ -101,7 +100,7 @@ function Template(): Node {
             <VersionInfo
               template={template}
               onUpdate={() => {
-                activeResult.updateToLatestTemplate();
+                void activeResult.updateToLatestTemplate();
               }}
               disabled={activeResult.deleted || activeResult.editing}
             />
@@ -132,4 +131,4 @@ function Template(): Node {
   );
 }
 
-export default (observer(Template): ComponentType<{||}>);
+export default observer(Template);
