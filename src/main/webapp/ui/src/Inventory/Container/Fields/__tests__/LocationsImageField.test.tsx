@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
@@ -23,7 +22,7 @@ import ImageField from "../../../../components/Inputs/ImageField";
 import LocationsImageMarkersDialog from "../LocationsImageMarkersDialog";
 import userEvent from "@testing-library/user-event";
 
-let storeImageFunction;
+let storeImageFunction: (arg: { dataUrl: string; file: Blob }) => void;
 
 jest.mock("../../../../stores/stores/RootStore", () => jest.fn(() => ({})));
 jest.mock("../../../../components/Inputs/ImageField", () =>
@@ -43,10 +42,10 @@ jest.mock("../LocationsImageMarkersDialog", () =>
 );
 
 class ResizeObserver {
-  observe() {}
-  unobserve() {}
+  observe(): void {}
+  unobserve(): void {}
 }
-window.ResizeObserver = ResizeObserver;
+window.ResizeObserver = ResizeObserver as any;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -55,7 +54,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const mockRootStore = (
-  mockedStores: ?MockStores
+  mockedStores?: MockStores
 ): [StoreContainer, ContainerModel] => {
   const activeResult = makeMockContainer({
     cType: "IMAGE",
@@ -132,7 +131,7 @@ describe("LocationImageField", () => {
     test("be a call to setImage.", () => {
       const rootStore = mockRootStore()[0];
       const setImageSpy = jest.spyOn(
-        rootStore.searchStore.activeResult,
+        rootStore.searchStore.activeResult! as any,
         "setImage"
       );
 
@@ -165,15 +164,15 @@ describe("LocationImageField", () => {
     test("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
       const rootStore = mockRootStore()[0];
       const addScopedToastSpy = jest.spyOn(
-        rootStore.searchStore.activeResult,
+        rootStore.searchStore.activeResult! as any,
         "addScopedToast"
       );
       const setImageSpy = jest.spyOn(
-        rootStore.searchStore.activeResult,
+        rootStore.searchStore.activeResult! as any,
         "setImage"
       );
 
-      let setPreviewImageFunction;
+      let setPreviewImageFunction: () => void;
       const addAlertMock = jest
         .spyOn(rootStore.uiStore, "addAlert")
         .mockImplementation(({ onActionClick }) => {
@@ -204,7 +203,7 @@ describe("LocationImageField", () => {
     test("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();
       const addScopedToastSpy = jest.spyOn(
-        rootStore.searchStore.activeResult,
+        rootStore.searchStore.activeResult! as any,
         "addScopedToast"
       );
       container.image = "theBlobUrlOfSomeImage";
@@ -266,7 +265,7 @@ describe("LocationImageField", () => {
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
           warningAlert:
-            "Click on ‘Edit Locations’ to add locations and start using the visual container.",
+            "Click on 'Edit Locations' to add locations and start using the visual container.",
         }),
         expect.anything()
       );

@@ -1,5 +1,3 @@
-// @flow
-
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -9,14 +7,7 @@ import ContentImage, {
 import DialogContentText from "@mui/material/DialogContentText";
 import Grid from "@mui/material/Grid";
 import LocationsTable from "../Content/ImageView/PlaceMarkers/LocationsTable";
-import React, {
-  useEffect,
-  createRef,
-  useRef,
-  type Node,
-  type ComponentType,
-  type ElementRef,
-} from "react";
+import React, { useEffect, createRef, useRef } from "react";
 import SummaryCard from "../Content/ImageView/PlaceMarkers/SummaryCard";
 import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
 import ViewHeadlineIcon from "@mui/icons-material/ViewHeadline";
@@ -30,14 +21,16 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Layout2x1Dialog from "../../components/Layout/Layout2x1Dialog";
 import TitledBox from "../../components/TitledBox";
-import { type UseState } from "../../../util/types";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { type Location } from "../../../stores/definitions/Container";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 
 export const COMPACT_VIEW = 0;
+
 export const DETAILED_VIEW = 1;
+
 export const IMAGE_VIEW = 2;
+
 export const LOCATION_TAPPED_EVENT = "locationTapped";
 
 const useStyles = makeStyles()(() => ({
@@ -74,32 +67,39 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type LocationsImageMarkersDialogArgs = {|
-  open: boolean,
-  close: () => void,
-|};
+type LocationsImageMarkersDialogArgs = {
+  open: boolean;
+  close: () => void;
+};
 
 function LocationsImageMarkersDialog({
   open,
   close,
-}: LocationsImageMarkersDialogArgs): Node {
+}: LocationsImageMarkersDialogArgs): React.ReactNode {
   const { classes } = useStyles();
   const { searchStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const activeResult = searchStore.activeResult;
   if (!activeResult || !(activeResult instanceof ContainerModel))
     throw new Error("ActiveResult must be a Container");
-  const [selected, setSelected]: UseState<?TappedLocationData> =
-    React.useState(null);
-  const [rightView, setRightView] = React.useState(
+  const [selected, setSelected] = React.useState<TappedLocationData | null>(
+    null
+  );
+  const [rightView, setRightView] = React.useState<number>(
     isSingleColumnLayout ? IMAGE_VIEW : COMPACT_VIEW
   );
-  const cardParent = useRef<?HTMLElement>();
-  const tableParent = useRef<?HTMLElement>();
+  const cardParent = useRef<HTMLDivElement | null>(null);
+  const tableParent = useRef<HTMLElement | null>(null);
+
+  type CustomEvent = {
+    detail: { number: number };
+  };
 
   const listener =
-    (num: number, cardRef: ElementRef<typeof ListItem>) =>
-    ({ detail: { number: tappedNum } }: { detail: { number: number } }) => {
+    (num: number, cardRef: React.RefObject<HTMLLIElement>) =>
+    (event: Event) => {
+      const customEvent = event as unknown as CustomEvent;
+      const tappedNum = customEvent.detail.number;
       if (tappedNum === num && rightView === DETAILED_VIEW && cardRef.current) {
         cardRef.current.scrollIntoView({
           behavior: "smooth",
@@ -131,7 +131,7 @@ function LocationsImageMarkersDialog({
     }
   };
 
-  const deleteLocation = ({ number }: { number: number, ... }) => {
+  const deleteLocation = ({ number }: { number: number }) => {
     setSelected(null);
     activeResult.deleteSortedLocation(number - 1);
   };
@@ -140,21 +140,20 @@ function LocationsImageMarkersDialog({
     location,
     number,
   }: {
-    location: Location,
-    number: number,
+    location: Location;
+    number: number;
   }) => {
-    const cardRef = createRef<?HTMLElement>();
+    const cardRef = createRef<HTMLLIElement>();
     const l = listener(number, cardRef);
     const mark = { location, number, point: { left: 0, top: 0 } }; // point is unused, but necessary for type
 
     useEffect(() => {
       const c = cardParent.current;
       if (c) {
-        // $FlowExpectedError[incompatible-call] Invented new event type
-        c.addEventListener(LOCATION_TAPPED_EVENT, l);
+        c.addEventListener(LOCATION_TAPPED_EVENT, l as EventListener);
       }
-      // $FlowExpectedError[incompatible-call] Invented new event type
-      return () => c?.removeEventListener(LOCATION_TAPPED_EVENT, l);
+      return () =>
+        c?.removeEventListener(LOCATION_TAPPED_EVENT, l as EventListener);
     });
 
     return (
@@ -174,7 +173,7 @@ function LocationsImageMarkersDialog({
 
   const colRight = () => (
     <TitledBox>
-      <Grid container directon="column">
+      <Grid container direction="column">
         <Grid item>
           <DialogContentText>
             Tap on the image to add a location marker.
@@ -201,7 +200,7 @@ function LocationsImageMarkersDialog({
         <TitledBox>
           <Tabs
             value={rightView}
-            onChange={(_, v) => setRightView(v)}
+            onChange={(_, v: number) => setRightView(v)}
             indicatorColor="primary"
             textColor="primary"
           >
@@ -242,7 +241,7 @@ function LocationsImageMarkersDialog({
           {rightView === DETAILED_VIEW && (
             <Box pr={1}>
               <List
-                direction="column"
+                component="div"
                 ref={cardParent}
                 className={classes.cardContainer}
               >
@@ -271,6 +270,4 @@ function LocationsImageMarkersDialog({
   );
 }
 
-export default (observer(
-  LocationsImageMarkersDialog
-): ComponentType<LocationsImageMarkersDialogArgs>);
+export default observer(LocationsImageMarkersDialog);

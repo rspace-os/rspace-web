@@ -180,6 +180,7 @@ export interface CoreFetcher {
   performInitialSearch(params: CoreFetcherArgs | null): Promise<void>;
   reperformCurrentSearch(): Promise<void>;
   generateParams(editedParams: object): CoreFetcherArgs;
+  applySearchParams(editedParam: CoreFetcherArgs): CoreFetcherArgs;
 
   /*
    * The results as returned by the API call. The results can also be edited,
