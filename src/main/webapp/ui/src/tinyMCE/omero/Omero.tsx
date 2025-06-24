@@ -1,5 +1,4 @@
-// @flow
-import React, { useState, useEffect, useMemo, useRef, type Node } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   getOmeroData,
   getImages,
@@ -14,7 +13,7 @@ import Grid from "@mui/material/Grid";
 import { FormControlLabel, Stack } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import materialTheme from "../../theme";
-import { ErrorReason, Order } from "./Enums";
+import { ErrorReason, type ErrorReasonType, Order } from "./Enums";
 import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
 import useLocalStorage from "../../util/useLocalStorage";
@@ -34,7 +33,7 @@ const TABLE_HEADER_CELLS: Array<Cell<string>> = [
 
 let SELECTED_ITEMS: Array<OmeroItem> = [];
 
-let VISIBLE_HEADER_CELLS = TABLE_HEADER_CELLS;
+const VISIBLE_HEADER_CELLS = TABLE_HEADER_CELLS;
 
 export const getSelectedItems = (): Array<OmeroItem> => SELECTED_ITEMS;
 export const getHeaders = (): typeof TABLE_HEADER_CELLS => VISIBLE_HEADER_CELLS;
@@ -46,10 +45,12 @@ export const getOrder = (): string =>
   (localStorage.getItem(ORDER_KEY) || DEFAULT_ORDER).replace(/['"]+/g, "");
 export const getOrderBy = (): string =>
   (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
-function Omero({ omero_web_url }: OmeroArgs): Node {
+function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   const [items, setItems] = useState<Array<OmeroItem>>([]);
   const [fetchDone, setFetchDone] = useState(false);
-  const [errorReason, setErrorReason] = useState(ErrorReason.None);
+  const [errorReason, setErrorReason] = useState<ErrorReasonType>(
+    ErrorReason.None
+  );
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedItemIds, setSelectedItemIds] = useState<Array<string>>([]);
   const [order, setOrder] = useLocalStorage(ORDER_KEY, DEFAULT_ORDER);
@@ -61,13 +62,14 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
     "omeroDataTypeChoice",
     "Projects And Screens"
   );
-  const [latestGridOfThumbnails, setLatestGridOfThumbnails] =
-    useState<?OmeroItem["imageGridDetails"]>(null);
+  const [latestGridOfThumbnails, setLatestGridOfThumbnails] = useState<
+    OmeroItem["imageGridDetails"] | null
+  >(null);
   const [latestPlateAcquisition, setLatestPlateAcquisition] =
-    useState<?OmeroItem>(null);
+    useState<OmeroItem | null>(null);
   const [newItems, setNewItems] = useState<Array<OmeroItem>>([]);
 
-  const scrollRef = useRef<any>({ current: null });
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const useStyles = makeStyles()(() => ({
     firstDescription: {
       fontStyle: "italic",
@@ -96,9 +98,8 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
     }
   }, [latestPlateAcquisition]);
   function handleRequestError(error: {
-    message: string,
-    response: ?{ status: number, data: string, ... },
-    ...
+    message: string;
+    response?: { status: number; data: string };
   }) {
     if (error.message === "Network Error") {
       setErrorReason(ErrorReason.NetworkError);
@@ -131,13 +132,18 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
       }
       setFetchDone(true);
     } catch (error) {
-      handleRequestError(error);
+      handleRequestError(
+        error as {
+          message: string;
+          response?: { status: number; data: string };
+        }
+      );
     }
   };
 
   const hideChildren = (
     item: OmeroItem,
-    onlyImageGridDetails: ?boolean = false
+    onlyImageGridDetails: boolean = false
   ) => {
     showHideChildren(item, false, onlyImageGridDetails);
   };
@@ -169,14 +175,14 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
   };
 
   const addManyToSelectedItems = (itemsToAdd: Array<string>) => {
-    let newSelected = [...selectedItemIds, ...itemsToAdd];
+    const newSelected = [...selectedItemIds, ...itemsToAdd];
     setSelectedItemIds(newSelected);
   };
 
   const showHideChildren = (
     item: OmeroItem,
     show: boolean,
-    onlyImageGridDetails: ?boolean = false
+    onlyImageGridDetails: boolean = false
   ) => {
     if (onlyImageGridDetails) {
       item.gridShown = show;
@@ -191,7 +197,7 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
       itemsToToggleSelection: Array<string>,
       directChildOfToggledElement: boolean = true
     ) => {
-      let children = parent.children;
+      const children = parent.children;
       children.map((child) => {
         if (directChildOfToggledElement) {
           child.hide = !show;
@@ -224,12 +230,10 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
           item.selected = true;
           itemsToToggleSelection.push(item.type + "_" + item.id);
         }
-      } else {
-        if (item.selected) {
-          itemsToToggleSelection.push(item.type + "_" + item.id);
-          item.selected = false;
-          item.deselectedByHiding = true;
-        }
+      } else if (item.selected) {
+        itemsToToggleSelection.push(item.type + "_" + item.id);
+        item.selected = false;
+        item.deselectedByHiding = true;
       }
     } else {
       toggleChildDisplay(item, show, itemsToToggleSelection);
@@ -273,7 +277,7 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
     item.showingChildren = true;
     item.children.unshift(gridItem);
     if (!item.addedChildren) {
-      item.addedChildren = ([]: Array<OmeroItem>);
+      item.addedChildren = [];
     }
     item.addedChildren.unshift(gridItem);
     setItemDataOnChildren(item, item.children);
@@ -285,26 +289,28 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
     );
     setNewItems([...newItems]);
     await addDetailsToItem(image);
-    const observer = new MutationObserver(function (mutations, me) {
-      const scrollTarget = scrollRef.current?.querySelector(
-        "#" + `${image.type}_name_display_${image.id}`
-      );
-      if (scrollTarget) {
-        scrollRef.current
-          ?.querySelector("#" + `${image.type}_name_display_${image.id}`)
-          .scrollIntoView({
+    const observer = new MutationObserver((mutations, me) => {
+      if (scrollRef.current) {
+        const scrollTarget = scrollRef.current.querySelector(
+          "#" + `${image.type}_name_display_${image.id}`
+        );
+        if (scrollTarget) {
+          scrollTarget.scrollIntoView({
             block: "center",
             inline: "end",
             behavior: "smooth",
           });
-        me.disconnect();
+          me.disconnect();
+        }
       }
     });
 
-    observer.observe(scrollRef.current, {
-      childList: true,
-      subtree: true,
-    });
+    if (scrollRef.current) {
+      observer.observe(scrollRef.current, {
+        childList: true,
+        subtree: true,
+      });
+    }
     await setNewItems([...newItems]);
   };
 
@@ -388,7 +394,6 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
         item.imageGridDetails = [];
       }
       if (!item.imageGridDetails[gridIndex]) {
-        // $FlowExpectedError[incompatible-type]
         item.imageGridDetails[gridIndex] = [];
       }
       item.gridOfImages = images;
@@ -430,7 +435,7 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
             "opacity: 1; border: 4px solid blue;padding:0px";
           clickInProgress = false;
         };
-        let thumbnail = makeThumbNail(
+        const thumbnail = makeThumbNail(
           underlyingImage,
           item.omeroConnectionKey,
           onClick
@@ -510,7 +515,7 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
     displayList: Array<OmeroItem>,
     type: string
   ) => {
-    let newDisplayList = [...displayList];
+    const newDisplayList = [...displayList];
     const parentItem = newDisplayList.filter(
       (item) => item.type === type && item.id === parentID
     )[0];
@@ -531,10 +536,10 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
   const addDataToDisplayList = (
     items: Array<OmeroItem>,
     parentPaths: Array<string> = [],
-    parent: ?OmeroItem,
+    parent?: OmeroItem,
     shouldSort: boolean = true
   ): Array<OmeroItem> => {
-    let displayData = [];
+    let displayData: Array<OmeroItem> = [];
     const omeroConnectionKey = items[0].omeroConnectionKey;
     formatDataForDisplay(
       items,
@@ -557,7 +562,7 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
     dataList: Array<OmeroItem>,
     thisparentPaths: Array<string>,
     omeroConnectionKey: string,
-    parent: ?OmeroItem,
+    parent?: OmeroItem,
     shouldSort: boolean = true
   ) => {
     if (shouldSort) {
@@ -589,7 +594,7 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
   const makeListEntries = (
     annotations: Array<string>,
     item: OmeroItem
-  ): Array<React$MixedElement> => {
+  ): Array<React.ReactElement> => {
     return annotations.map((annotation, index) => {
       annotation = annotation.replaceAll(
         "Screen Description",
@@ -662,8 +667,8 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
   const makeThumbNail = (
     data: OmeroItem,
     omeroConnectionKey: string,
-    onClick?: (any) => Promise<void>
-  ): React$Element<"img"> => {
+    onClick?: (event: any) => Promise<void>
+  ): React.ReactElement<"img"> => {
     const image = (
       <img
         id={`${data.type}_img_${data.id}`}
@@ -702,7 +707,7 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
         }
       } else if (
         value &&
-        value.indexOf &&
+        typeof value === "string" &&
         value.toLowerCase().indexOf(term.toLowerCase()) !== -1
       ) {
         doesHaveMatch = true;
@@ -715,11 +720,11 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
     setItems([...items]);
   };
   //filters the data by a text term and also deselects any items that end up hidden
-  const filterDataAndDeselectHidden = (event: any) => {
+  const filterDataAndDeselectHidden = (event: React.KeyboardEvent) => {
     if (event.key === "Enter") {
-      const filterTerm = event.target.value;
+      const filterTerm = (event.target as HTMLInputElement).value;
       const newData = [...items];
-      const itemsToUnSelect = [];
+      const itemsToUnSelect: Array<string> = [];
       newData.map((item) => {
         item.hide = !doesItemHaveMatchingValue(item, filterTerm);
         if (item.hide) {
@@ -753,7 +758,7 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
   if (errorReason !== ErrorReason.None) {
     return <ErrorView errorReason={errorReason} errorMessage={errorMessage} />;
   }
-  const handleDataTypeChange = (e: any) => {
+  const handleDataTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const datatype = e.target.value;
     setDataTypeChoice(datatype);
   };
@@ -806,15 +811,18 @@ function Omero({ omero_web_url }: OmeroArgs): Node {
               setSelectedItemIds={setSelectedItemIds}
               order={order}
               orderBy={orderBy}
-              setOrder={setOrder}
+              setOrder={(orderValue) =>
+                setOrder(orderValue as typeof DEFAULT_ORDER)
+              }
               setOrderBy={setOrderBy}
               refreshItems={refreshItems}
               addDetailsToItem={addDetailsToItem}
               addGridOfThumbnailsToItem={addGridOfThumbnailsToItem}
+              // @ts-ignore - The component uses forwardRef but TypeScript isn't recognizing it
               ref={scrollRef}
             />
           </Grid>
-          <Grid item xs={12} align="center">
+          <Grid item xs={12} sx={{ textAlign: "center" }}>
             {!fetchDone && (
               <Stack
                 alignItems="center"
