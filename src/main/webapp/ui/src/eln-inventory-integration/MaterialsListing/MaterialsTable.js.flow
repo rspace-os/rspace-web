@@ -1,0 +1,14 @@
+// @flow
+
+import { type Node } from 'react';
+import {
+  Material,
+  type ListOfMaterials,
+} from "../../stores/models/MaterialsModel";
+
+declare export default function MaterialsTable({|
+  list: ListOfMaterials,
+  isSingleColumn: boolean,
+  onRemove?: (Material) => void,
+  canEdit: boolean,
+|}): Node;
