@@ -1,14 +1,7 @@
-// @flow
-
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import NumberedLocation from "../NumberedLocation";
-import React, {
-  type Node,
-  type ComponentType,
-  type ElementRef,
-  type ElementProps,
-} from "react";
+import React, { type MouseEvent } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -17,23 +10,28 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { preventEventBubbling } from "../../../../../util/Util";
 import { observer } from "mobx-react-lite";
-import { withStyles } from "Styles";
+import { styled } from "@mui/material/styles";
 import InfoBadge from "../../../../components/InfoBadge";
 import InfoCard from "../../../../components/InfoCard";
 import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
 import { LOCATION_TAPPED_EVENT } from "../../../Fields/LocationsImageMarkersDialog";
 import { type TappedLocationData } from "./ContentImage";
-import Box from "@mui/material/Box";
 import { type Location } from "../../../../../stores/definitions/Container";
 
-type LocationsTableArgs = {|
-  locations: Array<Location>,
-  onRemove: ({ location: Location, number: number }) => void,
-  isCompactView: boolean,
-  parentRef: ElementRef<typeof Box>,
-  selected: ?number,
-  onClick: (TappedLocationData) => void,
-|};
+type LocationsTableArgs = {
+  locations: Array<Location>;
+  onRemove: ({
+    location,
+    number,
+  }: {
+    location: Location;
+    number: number;
+  }) => void;
+  isCompactView: boolean;
+  parentRef: React.RefObject<HTMLElement>;
+  selected?: number;
+  onClick: (data: TappedLocationData) => void;
+};
 
 function LocationsTable({
   locations,
@@ -42,52 +40,34 @@ function LocationsTable({
   parentRef,
   selected,
   onClick,
-}: LocationsTableArgs): Node {
+}: LocationsTableArgs): React.ReactNode {
   const tableBody = React.useRef(null);
 
-  const CompactTableCell = withStyles<
-    ElementProps<typeof TableCell>,
-    {},
-    { root: string }
-  >(() => ({
-    root: {
-      padding: 10,
-    },
-  }))(TableCell);
+  const CompactTableCell = styled(TableCell)({
+    padding: 10,
+  });
 
-  const MinColumnWidthHeadCell = withStyles<
-    ElementProps<typeof TableCell>,
-    {},
-    { root: string }
-  >(() => ({
-    root: {
-      width: 1,
-    },
-  }))(CompactTableCell);
+  const MinColumnWidthHeadCell = styled(TableCell)({
+    width: 1,
+  });
 
-  const NumberedLocationTableCell = withStyles<
-    ElementProps<typeof TableCell>,
-    {},
-    { root: string }
-  >(() => ({
-    root: {
-      padding: 0,
-    },
-  }))(CompactTableCell);
+  const NumberedLocationTableCell = styled(TableCell)({
+    padding: 0,
+  });
 
-  const ActionsTableCell = withStyles<
-    ElementProps<typeof TableCell>,
-    {},
-    { root: string }
-  >(() => ({
-    root: {
-      paddingRight: 0,
-    },
-  }))(CompactTableCell);
+  const ActionsTableCell = styled(TableCell)({
+    paddingRight: 0,
+  });
+
+  type CustomEvent = {
+    detail: { number: number };
+  };
 
   const listener =
-    (num: number, rowRef: ElementRef<typeof TableRow>) =>
-    ({ detail: { number: tappedNum } }: { detail: { number: number } }) => {
+    (num: number, rowRef: React.RefObject<HTMLTableRowElement>) =>
+    (event: Event) => {
+      const customEvent = event as unknown as CustomEvent;
+      const tappedNum = customEvent.detail.number;
       if (tappedNum === num && isCompactView && rowRef.current) {
         rowRef.current.scrollIntoView({
           behavior: "smooth",
@@ -99,17 +79,20 @@ function LocationsTable({
     location,
     number,
   }: {
-    location: Location,
-    number: number,
+    location: Location;
+    number: number;
   }) => {
-    const rowRef = React.createRef<typeof TableRow>();
+    const rowRef = React.createRef<HTMLTableRowElement>();
     const l = listener(number, rowRef);
     const mark = { location, number, point: { left: 0, top: 0 } }; // point is unused, but necessary for type
 
     React.useEffect(() => {
       const tb = parentRef.current;
-      tb.addEventListener(LOCATION_TAPPED_EVENT, l);
-      return () => tb.removeEventListener(LOCATION_TAPPED_EVENT, l);
+      if (tb) {
+        tb.addEventListener(LOCATION_TAPPED_EVENT, l);
+        return () => tb.removeEventListener(LOCATION_TAPPED_EVENT, l);
+      }
+      return undefined;
     });
 
     return (
@@ -132,7 +115,11 @@ function LocationsTable({
         <ActionsTableCell>
           <ButtonGroup color="primary" size="small">
             {!location.hasContent && (
-              <Button onClick={preventEventBubbling(() => onRemove(mark))}>
+              <Button
+                onClick={(e: MouseEvent<HTMLButtonElement>) =>
+                  preventEventBubbling(() => onRemove(mark))(e)
+                }
+              >
                 Remove
               </Button>
             )}
@@ -149,7 +136,7 @@ function LocationsTable({
           <TableRow>
             <CompactTableCell>Location</CompactTableCell>
             <CompactTableCell>Content</CompactTableCell>
-            <MinColumnWidthHeadCell align="right">
+            <MinColumnWidthHeadCell align="right" component="th">
               Actions
             </MinColumnWidthHeadCell>
           </TableRow>
@@ -168,4 +155,4 @@ function LocationsTable({
   );
 }
 
-export default (observer(LocationsTable): ComponentType<LocationsTableArgs>);
+export default observer(LocationsTable);
