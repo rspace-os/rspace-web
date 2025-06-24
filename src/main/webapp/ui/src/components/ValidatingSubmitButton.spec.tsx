@@ -1,8 +1,6 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { ProgressExample, SimpleExample } from "./ValidatingSubmitButton.story";
-import { ThemeProvider } from "@mui/material/styles";
-import theme from "../theme";
 import AxeBuilder from "@axe-core/playwright";
 
 const createOnClickSpy = () => {
@@ -57,20 +55,12 @@ const feature = test.extend<{
     await use({
       "the ValidatingSubmitButton is rendered": async () => {
         const onClickSpy = createOnClickSpy();
-        await mount(
-          <ThemeProvider theme={theme}>
-            <SimpleExample onClick={onClickSpy.handler} />
-          </ThemeProvider>
-        );
+        await mount(<SimpleExample onClick={onClickSpy.handler} />);
         return { onClickSpy };
       },
       "the ValidatingSubmitButton with progress is rendered": async () => {
         const onClickSpy = createOnClickSpy();
-        await mount(
-          <ThemeProvider theme={theme}>
-            <ProgressExample onClick={onClickSpy.handler} />
-          </ThemeProvider>
-        );
+        await mount(<ProgressExample onClick={onClickSpy.handler} />);
         return { onClickSpy };
       },
     });
@@ -172,7 +162,7 @@ test.describe("ValidatingSubmitButton", () => {
     await Then["the button should have the label 'Submit'"]();
   });
 
-  feature("Should have no axe violations", async ({ Given, Then }) => {
+  feature("The button should have type 'submit'", async ({ Given, Then }) => {
     await Given["the ValidatingSubmitButton with progress is rendered"]();
     await Then["the button should have type 'submit'"]();
   });

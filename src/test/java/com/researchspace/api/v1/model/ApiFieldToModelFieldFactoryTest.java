@@ -19,6 +19,7 @@ public class ApiFieldToModelFieldFactoryTest {
     for (ApiFieldType type :
         EnumSet.complementOf(
             EnumSet.of(
+                ApiFieldType.IDENTIFIER,
                 ApiFieldType.CHOICE,
                 ApiFieldType.URI,
                 ApiFieldType.RADIO,
@@ -89,6 +90,11 @@ public class ApiFieldToModelFieldFactoryTest {
   public void dateField() {
     // date field should be in pattern yyyy-MM-dd
     assertValues("2024-08-19", "24/08/19", ApiFieldType.DATE);
+  }
+
+  @Test
+  public void identifierField() {
+    assertValues("10.12345/sdfg-kooo", "11.12345/sdfg-kooo", ApiFieldType.IDENTIFIER);
   }
 
   private void assertValues(String valid, String invalid, ApiFieldType type) {

@@ -1,0 +1,7 @@
+//@flow
+
+import { type PersonAttrs } from "../../../definitions/Person";
+
+declare export function personAttrs(
+  attrs?: $ReadOnly<Partial<PersonAttrs>>
+): PersonAttrs;

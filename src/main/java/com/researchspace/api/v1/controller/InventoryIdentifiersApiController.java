@@ -7,8 +7,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.service.SystemPropertyName;
-import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.util.List;
@@ -29,10 +28,8 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     implements InventoryIdentifiersApi {
 
   @Autowired private InventoryIdentifierApiManager identifierMgr;
-
   @Autowired private DataCiteConnector dataCiteConnector;
-
-  private @Autowired SystemPropertyPermissionManager systemPropertyManager;
+  @Autowired private ApiAvailabilityHandler apiHandler;
 
   @Data
   @NoArgsConstructor
@@ -49,17 +46,15 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
       @RequestParam(value = "identifier", required = false) String identifier,
       @RequestAttribute(name = "user") User user)
       throws InvalidNameException {
-    assertInventoryAndDataciteEnabled(user);
-
-    return identifierMgr.findIdentifiers(state, isAssociated, identifier, user);
+    apiHandler.assertInventoryAndDataciteEnabled(user);
+    return identifierMgr.findIdentifiers(state, isAssociated, identifier, true, user);
   }
 
   @Override
   public ApiInventoryDOI registerNewIdentifier(
       @RequestBody ApiInventoryIdentifierPost registerPost,
       @RequestAttribute(name = "user") User user) {
-
-    assertInventoryAndDataciteEnabled(user);
+    apiHandler.assertInventoryAndDataciteEnabled(user);
     String globalId = registerPost.getParentGlobalId();
     Validate.isTrue(GlobalIdentifier.isValid(globalId), "not a valid global id: " + globalId);
     GlobalIdentifier oid = new GlobalIdentifier(globalId);
@@ -72,7 +67,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public List<ApiInventoryDOI> bulkAllocateIdentifiers(
       @PathVariable Integer count, @RequestAttribute(name = "user") User user) {
-    assertInventoryAndDataciteEnabled(user);
+    apiHandler.assertInventoryAndDataciteEnabled(user);
 
     Validate.isTrue(
         count > 0,
@@ -100,7 +95,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
       @PathVariable Long identifierId,
       @RequestBody ApiInventoryIdentifierPost inventoryItem,
       @RequestAttribute(name = "user") User user) {
-    assertInventoryAndDataciteEnabled(user);
+    apiHandler.assertInventoryAndDataciteEnabled(user);
 
     String globalId = inventoryItem.getParentGlobalId();
     Validate.isTrue(GlobalIdentifier.isValid(globalId), "not a valid global id: " + globalId);
@@ -116,7 +111,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public boolean deleteIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
-    assertInventoryAndDataciteEnabled(user);
+    apiHandler.assertInventoryAndDataciteEnabled(user);
 
     boolean result = false;
     ApiInventoryDOI identifier = identifierMgr.getIdentifierById(identifierId);
@@ -139,7 +134,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public ApiInventoryDOI publishIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
-    assertInventoryAndDataciteEnabled(user);
+    apiHandler.assertInventoryAndDataciteEnabled(user);
 
     InventoryRecord invRec = retrieveInvRecByIdentifierId(identifierId, user);
     return identifierMgr.publishIdentifier(invRec.getOid(), user).getIdentifiers().get(0);
@@ -148,7 +143,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public ApiInventoryDOI retractIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
-    assertInventoryAndDataciteEnabled(user);
+    apiHandler.assertInventoryAndDataciteEnabled(user);
 
     InventoryRecord invRec = retrieveInvRecByIdentifierId(identifierId, user);
     return identifierMgr.retractIdentifier(invRec.getOid(), user).getIdentifiers().get(0);
@@ -157,24 +152,6 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public boolean testDataCiteConnection(User user) {
     return dataCiteConnector.testDataCiteConnection();
-  }
-
-  private void assertInventoryAndDataciteEnabled(User user) {
-    assertInventoryAvailable(user);
-    assertDataCiteConnectorEnabled();
-  }
-
-  private void assertDataCiteConnectorEnabled() {
-    if (dataCiteConnector == null || !dataCiteConnector.isDataCiteConfiguredAndEnabled()) {
-      throw new UnsupportedOperationException(
-          "IGSN integration is not enabled on this RSpace instance.");
-    }
-  }
-
-  private void assertInventoryAvailable(User user) {
-    if (!systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.INVENTORY_AVAILABLE)) {
-      throw new UnsupportedOperationException("Inventory is not enabled on this RSpace instance.");
-    }
   }
 
   private InventoryRecord retrieveInvRecByIdentifierId(Long identifierId, User user) {

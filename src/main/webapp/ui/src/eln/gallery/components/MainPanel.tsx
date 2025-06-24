@@ -338,6 +338,7 @@ const Path = observer(
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
+          aria-label="Breadcrumbs"
         >
           <BreadcrumbLink
             section={section}
@@ -368,7 +369,12 @@ const Path = observer(
           onClick={doNotAwait(async () => {
             try {
               await navigator.clipboard.writeText(
-                `${window.location.origin}/gallery${ArrayUtils.last(path)
+                `${window.location.origin}/gallery${ArrayUtils.last(
+                  selection
+                    .asSet()
+                    .only.map((f) => f.path)
+                    .orElse(path)
+                )
                   .map(({ id }) => `/${idToString(id).elseThrow()}`)
                   .orElse(`?mediaType=${section}`)}`
               );
@@ -378,7 +384,8 @@ const Path = observer(
                   variant: "success",
                 })
               );
-            } catch {
+            } catch (e) {
+              console.error(e);
               addAlert(
                 mkAlert({
                   message:

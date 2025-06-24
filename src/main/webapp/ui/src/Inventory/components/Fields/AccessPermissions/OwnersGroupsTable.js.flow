@@ -1,0 +1,12 @@
+// @flow
+
+import { type Node } from "react";
+import { type Group } from "../../../../stores/definitions/Group";
+
+type OwnersGroupsTableArgs = {|
+  groups: Array<Group>,
+|};
+
+declare export default function OwnersGroupsTable(
+  props: OwnersGroupsTableArgs
+): Node;

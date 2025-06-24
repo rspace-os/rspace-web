@@ -1,0 +1,11 @@
+//@flow
+
+import React, { type Node } from "react";
+import { type Identifier } from "../../../../stores/definitions/Identifier";
+
+type Props = {|
+  identifier: Identifier,
+  disabled?: boolean,
+|};
+
+declare export default function PublishButton(props: Props): Node;

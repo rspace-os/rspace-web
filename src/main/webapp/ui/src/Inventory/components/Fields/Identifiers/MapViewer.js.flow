@@ -1,0 +1,14 @@
+//@flow
+
+import { type Node } from "react";
+import {
+  type GeoLocationBox,
+  type GeoLocationPolygon,
+  type PolygonPoint,
+} from "../../../../stores/definitions/GeoLocation";
+
+declare export default function MapViewer({|
+  point: PolygonPoint,
+  box: GeoLocationBox,
+  polygon: GeoLocationPolygon,
+|}): Node;

@@ -1,0 +1,16 @@
+// @flow
+
+import { type Node } from "react";
+import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import { type BlobUrl } from "../../../util/types";
+
+declare function Image<
+  Fields: {
+    image: ?BlobUrl,
+    newBase64Image: ?string,
+    ...
+  },
+  FieldOwner: HasEditableFields<Fields>
+>({ fieldOwner: FieldOwner, alt: string }): Node;
+
+declare export default typeof Image;

@@ -6,12 +6,17 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { Editor, InfoModal } from "ketcher-react";
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
 import { styled } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { Ketcher } from "ketcher-core";
+import ValidatingSubmitButton, {
+  IsValid,
+  ValidationResult,
+} from "../ValidatingSubmitButton";
 
 declare global {
   interface Window {
@@ -30,6 +35,9 @@ type KetcherDialogArgs = {
   actionBtnText?: string;
   readOnly?: boolean;
   additionalControls?: React.ReactNode;
+  validationResult?: ValidationResult;
+  onChange?: () => void;
+  instructionText?: string;
 };
 
 const StyledDialog = styled(Dialog)(() => ({
@@ -47,6 +55,9 @@ const KetcherDialog = ({
   actionBtnText = "",
   readOnly = false,
   additionalControls = null,
+  validationResult = IsValid(),
+  onChange,
+  instructionText,
 }: KetcherDialogArgs): React.ReactNode => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [hasError, setHasError] = useState(false);
@@ -58,7 +69,6 @@ const KetcherDialog = ({
 
   const onInsertClick = () => {
     handleInsert(window.ketcher);
-    void window.ketcher.setMolecule("");
   };
 
   const closeAndReset = () => {
@@ -72,6 +82,9 @@ const KetcherDialog = ({
         <DialogTitle>{title}</DialogTitle>
         <DialogContent style={{ minHeight: "0" }}>
           <Stack sx={{ height: "100%" }}>
+            {instructionText && (
+                <Typography variant="body2" sx={{ pb: 2 }}>{instructionText}</Typography>
+            )}
             {additionalControls}
             {/* @ts-expect-error doesn't appear that staticResourcesUrl is in fact required */}
             <Editor
@@ -81,6 +94,9 @@ const KetcherDialog = ({
               }}
               structServiceProvider={structServiceProvider}
               onInit={(ketcher) => {
+                ketcher.editor.subscribe("change", () => {
+                  onChange?.();
+                });
                 window.ketcher = ketcher;
                 void ketcher.setMolecule(existingChem);
                 if (readOnly) {
@@ -103,9 +119,13 @@ const KetcherDialog = ({
         <DialogActions>
           <Button onClick={closeAndReset}>Cancel</Button>
           {actionBtnText && (
-            <Button onClick={onInsertClick} type="submit">
+            <ValidatingSubmitButton
+              loading={false}
+              validationResult={validationResult}
+              onClick={onInsertClick}
+            >
               {actionBtnText}
-            </Button>
+            </ValidatingSubmitButton>
           )}
         </DialogActions>
       </StyledDialog>

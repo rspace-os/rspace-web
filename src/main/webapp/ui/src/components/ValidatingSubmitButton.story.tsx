@@ -4,6 +4,8 @@ import ValidatingSubmitButton, {
   IsInvalid,
   ValidationResult,
 } from "./ValidatingSubmitButton";
+import { ThemeProvider } from "@mui/material/styles";
+import theme from "../theme";
 
 /**
  * A simple example of how to use ValidatingSubmitButton
@@ -23,29 +25,31 @@ export const SimpleExample = ({
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h3>Validating Submit Button</h3>
-      <div style={{ marginBottom: "10px" }}>
-        <button onClick={() => setValidationResult(IsValid())}>
-          Set Valid
-        </button>
-        <button
-          onClick={() => setValidationResult(IsInvalid("Validation failed."))}
+    <ThemeProvider theme={theme}>
+      <div style={{ padding: "20px" }}>
+        <h3>Validating Submit Button</h3>
+        <div style={{ marginBottom: "10px" }}>
+          <button onClick={() => setValidationResult(IsValid())}>
+            Set Valid
+          </button>
+          <button
+            onClick={() => setValidationResult(IsInvalid("Validation failed."))}
+          >
+            Set Invalid
+          </button>
+          <button onClick={() => setLoading(!loading)}>
+            Toggle Loading ({loading ? "Off" : "On"})
+          </button>
+        </div>
+        <ValidatingSubmitButton
+          validationResult={validationResult}
+          loading={loading}
+          onClick={handleClick}
         >
-          Set Invalid
-        </button>
-        <button onClick={() => setLoading(!loading)}>
-          Toggle Loading ({loading ? "Off" : "On"})
-        </button>
+          Submit
+        </ValidatingSubmitButton>
       </div>
-      <ValidatingSubmitButton
-        validationResult={validationResult}
-        loading={loading}
-        onClick={handleClick}
-      >
-        Submit
-      </ValidatingSubmitButton>
-    </div>
+    </ThemeProvider>
   );
 };
 
@@ -78,29 +82,31 @@ export const ProgressExample = ({
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h3>Validating Submit Button with Progress</h3>
-      <div style={{ marginBottom: "10px" }}>
-        <button onClick={() => setValidationResult(IsValid())}>
-          Set Valid
-        </button>
-        <button
-          onClick={() => setValidationResult(IsInvalid("Validation failed."))}
+    <ThemeProvider theme={theme}>
+      <div style={{ padding: "20px" }}>
+        <h3>Validating Submit Button with Progress</h3>
+        <div style={{ marginBottom: "10px" }}>
+          <button onClick={() => setValidationResult(IsValid())}>
+            Set Valid
+          </button>
+          <button
+            onClick={() => setValidationResult(IsInvalid("Validation failed."))}
+          >
+            Set Invalid
+          </button>
+          <button onClick={() => setLoading(!loading)}>
+            Toggle Loading ({loading ? "Off" : "On"})
+          </button>
+        </div>
+        <ValidatingSubmitButton
+          validationResult={validationResult}
+          loading={loading}
+          progress={progress}
+          onClick={handleClick}
         >
-          Set Invalid
-        </button>
-        <button onClick={() => setLoading(!loading)}>
-          Toggle Loading ({loading ? "Off" : "On"})
-        </button>
+          Submit
+        </ValidatingSubmitButton>
       </div>
-      <ValidatingSubmitButton
-        validationResult={validationResult}
-        loading={loading}
-        progress={progress}
-        onClick={handleClick}
-      >
-        Submit
-      </ValidatingSubmitButton>
-    </div>
+    </ThemeProvider>
   );
 };

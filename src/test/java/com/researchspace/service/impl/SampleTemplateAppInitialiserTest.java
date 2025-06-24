@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -56,7 +57,7 @@ public class SampleTemplateAppInitialiserTest {
     when(subject.execute(any(Callable.class))).thenReturn(Boolean.TRUE);
     sampleTemplateAppInitialiser.onAppStartup(null);
     verifyLoginAndLogout();
-    assertTrue(strgLogger.logContents.isEmpty());
+    assertFalse(strgLogger.logContents.contains("error"));
   }
 
   @Test

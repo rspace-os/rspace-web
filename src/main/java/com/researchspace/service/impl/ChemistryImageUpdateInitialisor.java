@@ -69,6 +69,7 @@ public class ChemistryImageUpdateInitialisor implements IApplicationInitialisor 
   @Override
   public void onAppStartup(ApplicationContext applicationContext) {
     if (!reGenerateImages) {
+      log.info("'chemistry.service.reGenerateOpenSourceImages' set to false, regeneration skipped");
       return;
     }
     log.info("running chemistry image update initialisor");

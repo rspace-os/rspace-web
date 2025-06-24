@@ -1,0 +1,5 @@
+//@flow
+import ImportModel from "../../ImportModel";
+import { makeMockTemplate } from "../TemplateModel/mocking";
+
+declare export function makeMockImportDataUsingExistingTemplate(): ImportModel;
