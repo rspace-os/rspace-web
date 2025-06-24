@@ -1,0 +1,27 @@
+// @flow
+
+import React, { type Node } from "react";
+import SubSampleModel from "../../stores/models/SubSampleModel";
+import { type Person } from "../../stores/definitions/Person";
+
+type OverviewSectionArgs = {
+  activeResult: SubSampleModel,
+};
+
+type DetailsSectionArgs = {
+  activeResult: SubSampleModel,
+};
+
+type SampleFieldsSectionArgs = {
+  activeResult: SubSampleModel,
+};
+
+type ExtaFieldSectionArgs = {
+  activeResult: SubSampleModel,
+};
+
+type NotesSectionArgs = {
+  activeResult: SubSampleModel,
+};
+
+declare export default function SubSampleForm(): Node;

@@ -1,5 +1,3 @@
-//@flow
-
 import useStores from "../../stores/use-stores";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";
 import IdentifiersField from "../components/Fields/Identifiers/Identifiers";
@@ -13,7 +11,7 @@ import StepperPanel from "../components/Stepper/StepperPanel";
 import Notes from "./Fields/Notes/Notes";
 import Quantity from "./Fields/Quantity";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType } from "react";
+import React, { type ReactNode } from "react";
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import BarcodesField from "../components/Fields/Barcodes/FormField";
 import OwnerField from "../components/Fields/Owner";
@@ -34,80 +32,88 @@ import { Heading, HeadingContext } from "../../components/DynamicHeadingLevel";
 import Fields from "../Sample/Fields/TemplateFields/Fields";
 import { useTheme } from "@mui/material/styles";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
-import type { Person } from "../../stores/definitions/Person";
+import { type Person } from "../../stores/definitions/Person";
 
-const OverviewSection = observer(
-  ({ activeResult }: { activeResult: SubSampleModel }) => {
-    const formSectionError = useFormSectionError({
-      editing: activeResult.editing,
-      globalId: activeResult.globalId,
-    });
+type OverviewSectionArgs = {
+  activeResult: SubSampleModel;
+};
 
-    return (
-      <StepperPanel
-        icon="subsample"
-        title="Overview"
-        sectionName="overview"
-        formSectionError={formSectionError}
-        recordType="subSample"
-      >
-        <NameField
-          fieldOwner={activeResult}
-          record={activeResult}
-          onErrorStateChange={(e) => {
-            setFormSectionError(formSectionError, "name", e);
-          }}
-        />
-        <OwnerField fieldOwner={activeResult} />
-        {activeResult.readAccessLevel !== "public" && (
-          <>
-            <SampleField fieldOwner={activeResult} />
-            <LocationField fieldOwner={activeResult} />
-            <ImageField
-              fieldOwner={activeResult}
-              alt="What the subsample looks like"
-            />
-          </>
-        )}
-      </StepperPanel>
-    );
-  }
-);
+const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
+  const formSectionError = useFormSectionError({
+    editing: activeResult.editing,
+    globalId: activeResult.globalId,
+  });
 
-const DetailsSection = observer(
-  ({ activeResult }: { activeResult: SubSampleModel }) => {
-    const formSectionError = useFormSectionError({
-      editing: activeResult.editing,
-      globalId: activeResult.globalId,
-    });
+  return (
+    <StepperPanel
+      icon="subsample"
+      title="Overview"
+      sectionName="overview"
+      formSectionError={formSectionError}
+      recordType="subSample"
+    >
+      <NameField
+        fieldOwner={activeResult}
+        record={activeResult}
+        onErrorStateChange={(e) => {
+          setFormSectionError(formSectionError, "name", e);
+        }}
+      />
+      <OwnerField fieldOwner={activeResult} />
+      {activeResult.readAccessLevel !== "public" && (
+        <>
+          <SampleField fieldOwner={activeResult} />
+          <LocationField fieldOwner={activeResult} />
+          <ImageField
+            fieldOwner={activeResult}
+            alt="What the subsample looks like"
+          />
+        </>
+      )}
+    </StepperPanel>
+  );
+});
 
-    return (
-      <StepperPanel
-        icon="subsample"
-        title="Details"
-        sectionName="details"
-        formSectionError={formSectionError}
-        recordType="subSample"
-      >
-        <Quantity
-          fieldOwner={activeResult}
-          quantityCategory={activeResult.quantityCategory}
-          onErrorStateChange={(value) =>
-            setFormSectionError(formSectionError, "quantity", value)
-          }
-          parentSample={activeResult.sample}
-        />
-        <DescriptionField
-          fieldOwner={activeResult}
-          onErrorStateChange={(e) =>
-            setFormSectionError(formSectionError, "description", e)
-          }
-        />
-        <TagsField fieldOwner={activeResult} />
-      </StepperPanel>
-    );
-  }
-);
+type DetailsSectionArgs = {
+  activeResult: SubSampleModel;
+};
+
+const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
+  const formSectionError = useFormSectionError({
+    editing: activeResult.editing,
+    globalId: activeResult.globalId,
+  });
+
+  return (
+    <StepperPanel
+      icon="subsample"
+      title="Details"
+      sectionName="details"
+      formSectionError={formSectionError}
+      recordType="subSample"
+    >
+      <Quantity
+        fieldOwner={activeResult}
+        quantityCategory={activeResult.quantityCategory}
+        onErrorStateChange={(value) =>
+          setFormSectionError(formSectionError, "quantity", value)
+        }
+        parentSample={activeResult.sample}
+      />
+      <DescriptionField
+        fieldOwner={activeResult}
+        onErrorStateChange={(e) =>
+          setFormSectionError(formSectionError, "description", e)
+        }
+      />
+      <TagsField fieldOwner={activeResult} />
+    </StepperPanel>
+  );
+});
+
+type SampleFieldsSectionArgs = {
+  activeResult: SubSampleModel;
+};
 
 /**
  * The fields of the parent sample are shown in read-only view in both preview
@@ -117,7 +123,7 @@ const DetailsSection = observer(
  * (`activeResult`) into edit mode has no effect on its `sample` property.
  */
 const SampleFieldsSection = observer(
-  ({ activeResult }: {| activeResult: SubSampleModel |}) => {
+  ({ activeResult }: SampleFieldsSectionArgs) => {
     const theme = useTheme();
     return (
       <StepperPanel
@@ -227,60 +233,64 @@ const SampleFieldsSection = observer(
   }
 );
 
-const ExtaFieldSection = observer(
-  ({ activeResult }: { activeResult: SubSampleModel }) => {
-    const formSectionError = useFormSectionError({
-      editing: activeResult.editing,
-      globalId: activeResult.globalId,
-    });
+type ExtaFieldSectionArgs = {
+  activeResult: SubSampleModel;
+};
 
-    return (
-      <StepperPanel
-        icon="subsample"
-        title="Custom Fields"
-        sectionName="customFields"
-        formSectionError={formSectionError}
-        recordType="subSample"
-      >
-        <ExtraFields
-          onErrorStateChange={(field, value) =>
-            setFormSectionError(formSectionError, field, value)
-          }
-          result={activeResult}
-        />
-      </StepperPanel>
-    );
-  }
-);
+const ExtaFieldSection = observer(({ activeResult }: ExtaFieldSectionArgs) => {
+  const formSectionError = useFormSectionError({
+    editing: activeResult.editing,
+    globalId: activeResult.globalId,
+  });
 
-const NotesSection = observer(
-  ({ activeResult }: { activeResult: SubSampleModel }) => {
-    const formSectionError = useFormSectionError({
-      editing: activeResult.editing,
-      globalId: activeResult.globalId,
-    });
+  return (
+    <StepperPanel
+      icon="subsample"
+      title="Custom Fields"
+      sectionName="customFields"
+      formSectionError={formSectionError}
+      recordType="subSample"
+    >
+      <ExtraFields
+        onErrorStateChange={(field, value) =>
+          setFormSectionError(formSectionError, field, value)
+        }
+        result={activeResult}
+      />
+    </StepperPanel>
+  );
+});
 
-    return (
-      <StepperPanel
-        icon="subsample"
-        title="Notes"
-        sectionName="notes"
-        formSectionError={formSectionError}
-        recordType="subSample"
-      >
-        <Notes
-          record={activeResult}
-          onErrorStateChange={(value) =>
-            setFormSectionError(formSectionError, "notes", value)
-          }
-          hideLabel
-        />
-      </StepperPanel>
-    );
-  }
-);
+type NotesSectionArgs = {
+  activeResult: SubSampleModel;
+};
 
-function SubSampleForm(): Node {
+const NotesSection = observer(({ activeResult }: NotesSectionArgs) => {
+  const formSectionError = useFormSectionError({
+    editing: activeResult.editing,
+    globalId: activeResult.globalId,
+  });
+
+  return (
+    <StepperPanel
+      icon="subsample"
+      title="Notes"
+      sectionName="notes"
+      formSectionError={formSectionError}
+      recordType="subSample"
+    >
+      <Notes
+        record={activeResult}
+        onErrorStateChange={(value) =>
+          setFormSectionError(formSectionError, "notes", value)
+        }
+        hideLabel
+      />
+    </StepperPanel>
+  );
+});
+
+function SubSampleForm(): ReactNode {
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -347,4 +357,4 @@ function SubSampleForm(): Node {
   );
 }
 
-export default (observer(SubSampleForm): ComponentType<{||}>);
+export default observer(SubSampleForm);
