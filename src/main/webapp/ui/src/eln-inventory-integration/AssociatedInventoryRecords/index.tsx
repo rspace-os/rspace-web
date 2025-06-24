@@ -1,5 +1,3 @@
-//@flow
-
 import React, { useState, useEffect } from "react";
 import useStores from "../../stores/use-stores";
 import { createRoot } from "react-dom/client";
@@ -10,26 +8,29 @@ import NoValue from "../../components/NoValue";
 import RsSet from "../../util/set";
 import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
 
-function ListingContents({
-  setOfRecords,
-  loading,
-}: {
-  setOfRecords: RsSet<InventoryRecord>,
-  loading: boolean,
-}) {
+type ListingContentsProps = {
+  setOfRecords: RsSet<InventoryRecord>;
+  loading: boolean;
+};
+
+function ListingContents({ setOfRecords, loading }: ListingContentsProps) {
   if (loading) return <NoValue label="Loading" />;
   if (setOfRecords.size === 0)
-    return "The document has no connected Inventory items.";
-  return setOfRecords.map(({ name, globalId, permalinkURL }) => (
-    <li key={globalId}>
-      <a href={permalinkURL}>{name}</a>
-    </li>
-  ));
+    return <>The document has no connected Inventory items.</>;
+  return (
+    <>
+      {setOfRecords.map(({ name, globalId, permalinkURL }) => (
+        <li key={globalId}>
+          <a href={permalinkURL || ""}>{name}</a>
+        </li>
+      ))}
+    </>
+  );
 }
 
-type AssociatedInventoryRecordsArgs = {|
-  elnDocumentId: ElnDocumentId,
-|};
+type AssociatedInventoryRecordsArgs = {
+  elnDocumentId: ElnDocumentId;
+};
 
 const AssociatedInventoryRecords = observer(
   function AssociatedInventoryRecords({
@@ -42,15 +43,29 @@ const AssociatedInventoryRecords = observer(
       if (open) {
         void materialsStore.getDocumentMaterialsListings(elnDocumentId);
       }
-    }, [open]);
+    }, [open, elnDocumentId, materialsStore]);
 
-    window.addEventListener("listOfMaterialsOpened", () => {
-      /*
-       * Close the listing so that the data has to be fetched in case there
-       * have been changes to the inventory records included in the list of materials
-       */
-      setOpen(false);
-    });
+    useEffect(() => {
+      const handleListOfMaterialsOpened = () => {
+        /*
+         * Close the listing so that the data has to be fetched in case there
+         * have been changes to the inventory records included in the list of materials
+         */
+        setOpen(false);
+      };
+
+      window.addEventListener(
+        "listOfMaterialsOpened",
+        handleListOfMaterialsOpened
+      );
+
+      return () => {
+        window.removeEventListener(
+          "listOfMaterialsOpened",
+          handleListOfMaterialsOpened
+        );
+      };
+    }, []);
 
     if (isNaN(elnDocumentId)) return null;
     return (
@@ -81,7 +96,9 @@ if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
     <AssociatedInventoryRecords
-      elnDocumentId={parseInt(wrapperDiv.dataset.documentid, 10)}
+      elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)}
     />
   );
 }
+
+export default AssociatedInventoryRecords;
