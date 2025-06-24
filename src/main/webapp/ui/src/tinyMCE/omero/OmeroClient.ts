@@ -1,35 +1,31 @@
-// @flow
 import axios, { type AxiosPromise } from "@/common/axios";
 import type { OmeroDataList, OmeroDataTypes, OmeroItem } from "./OmeroTypes";
 
 const getOmeroDataList = (
   dataTypeChoice: string
-): AxiosPromise<mixed, OmeroDataList> => {
+): AxiosPromise<OmeroDataList> => {
   if (dataTypeChoice === "Projects And Screens") {
     return axios.get("/apps/omero/projects");
-  } else {
-    return axios.get("/apps/omero/projects/?dataType=" + dataTypeChoice);
   }
+  return axios.get("/apps/omero/projects/?dataType=" + dataTypeChoice);
 };
 
 const getImagesList = (
   id: number,
   fetchLarge: boolean
-): AxiosPromise<mixed, OmeroDataList> => {
+): AxiosPromise<OmeroDataList> => {
   return axios.get(
     "/apps/omero/images/" + id + "/?fetchLarge=" + String(fetchLarge)
   );
 };
 
-const getDataSetsList = (id: number): AxiosPromise<mixed, OmeroDataList> =>
+const getDataSetsList = (id: number): AxiosPromise<OmeroDataList> =>
   axios.get("/apps/omero/datasets/" + id);
 
-const getPlatesList = (id: number): AxiosPromise<mixed, OmeroDataList> =>
+const getPlatesList = (id: number): AxiosPromise<OmeroDataList> =>
   axios.get("/apps/omero/plates/" + id);
 
-const getPlateAcquisitionsList = (
-  id: number
-): AxiosPromise<mixed, OmeroDataList> =>
+const getPlateAcquisitionsList = (id: number): AxiosPromise<OmeroDataList> =>
   axios.get("/apps/omero/plateAcquisitions/" + id);
 
 const getWellsList = (
@@ -37,7 +33,7 @@ const getWellsList = (
   parentid: number,
   fetchLarge: boolean,
   wellIndex: number
-): AxiosPromise<mixed, OmeroDataList> => {
+): AxiosPromise<OmeroDataList> => {
   return axios.get(
     "/apps/omero/wells/" +
       parentid +
@@ -53,14 +49,14 @@ const getWellsList = (
 const getAnnotationsList = (
   id: number,
   type: OmeroDataTypes
-): AxiosPromise<mixed, Array<string>> =>
+): AxiosPromise<Array<string>> =>
   axios.get("/apps/omero/annotations/" + id + "?type=" + type);
 
 const getFullImage = (
   id: number,
   parentID: number,
   fetchLarge: boolean
-): AxiosPromise<mixed, OmeroItem> =>
+): AxiosPromise<OmeroItem> =>
   axios.get(
     "/apps/omero/image/" +
       parentID +
