@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, useEffect, useContext } from "react";
+import React, { useEffect, useContext } from "react";
 import RecordsImport from "./RecordsImport";
 import { Navigate } from "react-router-dom";
 import NavigateContext from "../../stores/contexts/Navigate";
@@ -11,8 +9,8 @@ import NavigationContext from "./NavigationContext";
 import Main from "../Main";
 import Box from "@mui/material/Box";
 
-export default function ImportRouter(): Node {
-  const { uiStore, importStore } = useStores();
+export default function ImportRouter(): React.ReactNode {
+  const { importStore } = useStores();
   const { useLocation } = useContext(NavigateContext);
   const location = useLocation();
 
