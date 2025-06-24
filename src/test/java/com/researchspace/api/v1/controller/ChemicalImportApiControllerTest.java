@@ -2,12 +2,10 @@ package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequest;
@@ -16,7 +14,6 @@ import com.researchspace.service.ChemicalImporter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,7 +34,8 @@ class ChemicalImportApiControllerTest {
 
   @Test
   void whenValidSearchRequest_thenReturnSuccessfulResponse() throws Exception {
-    ChemicalSearchRequest request = new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
+    ChemicalSearchRequest request =
+        new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
     BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
 
     List<ChemicalImportSearchResult> mockResults =
@@ -47,10 +45,12 @@ class ChemicalImportApiControllerTest {
                 .name("aspirin")
                 .formula("C9H8O4")
                 .smiles("CC(=O)OC1=CC=CC=C1C(=O)O")
-                .cas("50-78-2")
+                .pngImage("https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l")
+                .pubchemUrl("https://pubchem.ncbi.nlm.nih.gov/compound/2244")
                 .build());
 
-    when(chemicalImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin")).thenReturn(mockResults);
+    when(chemicalImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin"))
+        .thenReturn(mockResults);
 
     ResponseEntity<?> response = controller.searchChemicals(request, bindingResult);
 
@@ -63,24 +63,26 @@ class ChemicalImportApiControllerTest {
     assertEquals(1, responseBody.size());
     assertEquals("2244", responseBody.get(0).getPubchemId());
     assertEquals("aspirin", responseBody.get(0).getName());
+    assertEquals(
+        "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
+        responseBody.get(0).getPngImage());
+    assertEquals(
+        "https://pubchem.ncbi.nlm.nih.gov/compound/2244", responseBody.get(0).getPubchemUrl());
   }
 
   @Test
-  void whenValidationErrors_thenThrowBindException() throws Exception {
+  void whenValidationErrors_thenThrowBindException() {
     ChemicalSearchRequest request = new ChemicalSearchRequest(null, "aspirin");
     BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
-    bindingResult.rejectValue(
-        "searchType", "invalid", "Search type must be one of: cas, name, smiles");
+    bindingResult.rejectValue("searchType", "invalid", "Search type must be one of: name, smiles");
 
-    ResponseEntity<?> response = controller.searchChemicals(request, bindingResult);
-
-    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    assertNotNull(response.getBody());
+    assertThrows(BindException.class, () -> controller.searchChemicals(request, bindingResult));
   }
 
   @Test
   void whenRateLimitExceeded_thenReturnTooManyRequests() throws Exception {
-    ChemicalSearchRequest request = new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
+    ChemicalSearchRequest request =
+        new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
     BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
 
     when(chemicalImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin"))
@@ -93,7 +95,8 @@ class ChemicalImportApiControllerTest {
 
   @Test
   void whenTimeoutError_thenReturnBadGateway() throws Exception {
-    ChemicalSearchRequest request = new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
+    ChemicalSearchRequest request =
+        new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
     BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
 
     when(chemicalImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin"))
@@ -106,7 +109,8 @@ class ChemicalImportApiControllerTest {
 
   @Test
   void whenUnexpectedError_thenReturnInternalServerError() throws Exception {
-    ChemicalSearchRequest request = new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
+    ChemicalSearchRequest request =
+        new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
     BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
 
     when(chemicalImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin"))
@@ -119,7 +123,8 @@ class ChemicalImportApiControllerTest {
 
   @Test
   void whenRuntimeException_thenReturnInternalServerError() throws Exception {
-    ChemicalSearchRequest request = new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
+    ChemicalSearchRequest request =
+        new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
     BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
 
     when(chemicalImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin"))
@@ -132,7 +137,8 @@ class ChemicalImportApiControllerTest {
 
   @Test
   void whenNoResultsFound_thenReturnEmptyList() throws Exception {
-    ChemicalSearchRequest request = new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "nonexistent");
+    ChemicalSearchRequest request =
+        new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "nonexistent");
     BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
 
     when(chemicalImporter.searchChemicals(ChemicalImportSearchType.NAME, "nonexistent"))
@@ -151,14 +157,20 @@ class ChemicalImportApiControllerTest {
 
   @Test
   void whenValidCasSearch_thenReturnResults() throws Exception {
-    ChemicalSearchRequest request = new ChemicalSearchRequest(ChemicalImportSearchType.CAS, "50-78-2");
+    ChemicalSearchRequest request =
+        new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "50-78-2");
     BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
 
     List<ChemicalImportSearchResult> mockResults =
         Arrays.asList(
-            ChemicalImportSearchResult.builder().pubchemId("2244").cas("50-78-2").build());
+            ChemicalImportSearchResult.builder()
+                .pubchemId("2244")
+                .pngImage("https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l")
+                .pubchemUrl("https://pubchem.ncbi.nlm.nih.gov/compound/2244")
+                .build());
 
-    when(chemicalImporter.searchChemicals(ChemicalImportSearchType.CAS, "50-78-2")).thenReturn(mockResults);
+    when(chemicalImporter.searchChemicals(ChemicalImportSearchType.NAME, "50-78-2"))
+        .thenReturn(mockResults);
 
     ResponseEntity<?> response = controller.searchChemicals(request, bindingResult);
 
@@ -168,12 +180,15 @@ class ChemicalImportApiControllerTest {
     List<ChemicalImportSearchResult> responseBody =
         (List<ChemicalImportSearchResult>) response.getBody();
     assertEquals(1, responseBody.size());
-    assertEquals("50-78-2", responseBody.get(0).getCas());
+    assertEquals("2244", responseBody.get(0).getPubchemId());
+    assertEquals(
+        "https://pubchem.ncbi.nlm.nih.gov/compound/2244", responseBody.get(0).getPubchemUrl());
   }
 
   @Test
   void whenValidSmilesSearch_thenReturnResults() throws Exception {
-    ChemicalSearchRequest request = new ChemicalSearchRequest(ChemicalImportSearchType.SMILES, "CC(=O)OC1=CC=CC=C1C(=O)O");
+    ChemicalSearchRequest request =
+        new ChemicalSearchRequest(ChemicalImportSearchType.SMILES, "CC(=O)OC1=CC=CC=C1C(=O)O");
     BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
 
     List<ChemicalImportSearchResult> mockResults =
@@ -181,9 +196,12 @@ class ChemicalImportApiControllerTest {
             ChemicalImportSearchResult.builder()
                 .pubchemId("2244")
                 .smiles("CC(=O)OC1=CC=CC=C1C(=O)O")
+                .pngImage("https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l")
+                .pubchemUrl("https://pubchem.ncbi.nlm.nih.gov/compound/2244")
                 .build());
 
-    when(chemicalImporter.searchChemicals(ChemicalImportSearchType.SMILES, "CC(=O)OC1=CC=CC=C1C(=O)O"))
+    when(chemicalImporter.searchChemicals(
+            ChemicalImportSearchType.SMILES, "CC(=O)OC1=CC=CC=C1C(=O)O"))
         .thenReturn(mockResults);
 
     ResponseEntity<?> response = controller.searchChemicals(request, bindingResult);
@@ -199,109 +217,109 @@ class ChemicalImportApiControllerTest {
 
   // Import tests
   @Test
-  void whenValidCasNumberImport_thenReturnCreated() throws Exception {
-    List<String> casNumbers = List.of("50-78-2");
-    BindingResult bindingResult = new BeanPropertyBindingResult(casNumbers, "request");
-    doNothing().when(chemicalImporter).importChemicals(casNumbers);
+  void whenValidCidImport_thenReturnCreated() throws Exception {
+    List<String> cids = List.of("2244");
+    BindingResult bindingResult = new BeanPropertyBindingResult(cids, "request");
+    doNothing().when(chemicalImporter).importChemicals(cids);
 
-    ResponseEntity<?> response = controller.importChemicals(casNumbers, bindingResult);
-
-    assertEquals(HttpStatus.CREATED, response.getStatusCode());
-    assertNull(response.getBody());
-  }
-
-  @Test
-  void whenValidMultipleCasNumbersImport_thenReturnCreated() throws Exception {
-    List<String> casNumbers = List.of("50-78-2", "64-17-5", "57-55-6");
-    BindingResult bindingResult = new BeanPropertyBindingResult(casNumbers, "request");
-    doNothing().when(chemicalImporter).importChemicals(casNumbers);
-
-    ResponseEntity<?> response = controller.importChemicals(casNumbers, bindingResult);
+    ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
 
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
     assertNull(response.getBody());
   }
 
   @Test
-  void whenEmptyCasNumbersList_thenReturnBadRequest() throws Exception{
-    List<String> casNumbers = Collections.emptyList();
-    BindingResult bindingResult = new BeanPropertyBindingResult(casNumbers, "request");
-    ResponseEntity<?> response = controller.importChemicals(casNumbers, bindingResult);
+  void whenValidMultipleCidsImport_thenReturnCreated() throws Exception {
+    List<String> cids = List.of("2244", "702", "5957");
+    BindingResult bindingResult = new BeanPropertyBindingResult(cids, "request");
+    doNothing().when(chemicalImporter).importChemicals(cids);
+
+    ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
+
+    assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    assertNull(response.getBody());
+  }
+
+  @Test
+  void whenEmptyCidsList_thenReturnBadRequest() throws Exception {
+    List<String> cids = Collections.emptyList();
+    BindingResult bindingResult = new BeanPropertyBindingResult(cids, "request");
+    ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
 
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    assertEquals("At least one CAS number is required", response.getBody());
+    assertEquals("At least one PubChem CID is required", response.getBody());
   }
 
   @Test
-  void whenNullCasNumbersList_thenReturnBadRequest() throws Exception {
+  void whenNullCidsList_thenReturnBadRequest() throws Exception {
     BindingResult bindingResult = new BeanPropertyBindingResult(null, "request");
     ResponseEntity<?> response = controller.importChemicals(null, bindingResult);
 
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    assertEquals("At least one CAS number is required", response.getBody());
+    assertEquals("At least one PubChem CID is required", response.getBody());
   }
 
   @Test
   void whenImportRateLimitExceeded_thenReturnTooManyRequests() throws Exception {
-    List<String> casNumbers = List.of("50-78-2");
-    BindingResult bindingResult = new BeanPropertyBindingResult(casNumbers, "request");
+    List<String> cids = List.of("2244");
+    BindingResult bindingResult = new BeanPropertyBindingResult(cids, "request");
     doThrow(new ChemicalImportException("Rate limit exceeded"))
         .when(chemicalImporter)
         .importChemicals(anyList());
 
-    ResponseEntity<?> response = controller.importChemicals(casNumbers, bindingResult);
+    ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
 
     assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
   }
 
   @Test
   void whenImportTimeoutError_thenReturnBadGateway() throws Exception {
-    List<String> casNumbers = List.of("50-78-2");
-    BindingResult bindingResult = new BeanPropertyBindingResult(casNumbers, "request");
+    List<String> cids = List.of("2244");
+    BindingResult bindingResult = new BeanPropertyBindingResult(cids, "request");
     doThrow(new ChemicalImportException("Connection timeout"))
         .when(chemicalImporter)
         .importChemicals(anyList());
 
-    ResponseEntity<?> response = controller.importChemicals(casNumbers, bindingResult);
+    ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
 
     assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
   }
 
   @Test
   void whenImportUnexpectedError_thenReturnInternalServerError() throws Exception {
-    List<String> casNumbers = List.of("50-78-2");
-    BindingResult bindingResult = new BeanPropertyBindingResult(casNumbers, "request");
+    List<String> cids = List.of("2244");
+    BindingResult bindingResult = new BeanPropertyBindingResult(cids, "request");
     doThrow(new ChemicalImportException("Unexpected error"))
         .when(chemicalImporter)
         .importChemicals(anyList());
 
-    ResponseEntity<?> response = controller.importChemicals(casNumbers, bindingResult);
+    ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
 
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
   }
 
   @Test
   void whenImportRuntimeException_thenReturnInternalServerError() throws Exception {
-    List<String> casNumbers = List.of("50-78-2");
-    BindingResult bindingResult = new BeanPropertyBindingResult(casNumbers, "request");
+    List<String> cids = List.of("2244");
+    BindingResult bindingResult = new BeanPropertyBindingResult(cids, "request");
     doThrow(new RuntimeException("Unexpected runtime error"))
         .when(chemicalImporter)
         .importChemicals(anyList());
 
-    ResponseEntity<?> response = controller.importChemicals(casNumbers, bindingResult);
+    ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
 
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
   }
 
   @Test
   void whenChemicalNotFound_thenReturnInternalServerError() throws Exception {
-    List<String> casNumbers = List.of("invalid-cas");
-    BindingResult bindingResult = new BeanPropertyBindingResult(casNumbers, "request");
-    doThrow(new ChemicalImportException("No chemical found for CAS number: invalid-cas"))
+    List<String> cids = List.of("invalid-cid");
+    BindingResult bindingResult = new BeanPropertyBindingResult(cids, "request");
+    doThrow(new ChemicalImportException("No chemical found for PubChem CID: invalid-cid"))
         .when(chemicalImporter)
         .importChemicals(anyList());
 
-    ResponseEntity<?> response = controller.importChemicals(casNumbers, bindingResult);
+    ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
 
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
   }

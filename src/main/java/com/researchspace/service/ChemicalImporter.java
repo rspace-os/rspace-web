@@ -2,7 +2,6 @@ package com.researchspace.service;
 
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
-
 import java.util.List;
 
 /** Import chemical data from external sources. */
@@ -16,14 +15,14 @@ public interface ChemicalImporter {
    * @return a list of chemical search results
    * @throws ChemicalImportException if the import operation fails
    */
-  List<ChemicalImportSearchResult> searchChemicals(ChemicalImportSearchType searchType, String searchTerm)
-      throws ChemicalImportException;
+  List<ChemicalImportSearchResult> searchChemicals(
+      ChemicalImportSearchType searchType, String searchTerm) throws ChemicalImportException;
 
   /**
-   * Imports chemical compounds by CAS number(s).
+   * Imports chemical compounds by PubChem Compound ID(s).
    *
-   * @param casNumbers the CAS number(s) of the chemical(s) to import
+   * @param cids the PubChem Compound ID(s) of the chemical(s) to import
    * @throws ChemicalImportException if the import operation fails
    */
-  void importChemicals(List<String> casNumbers) throws ChemicalImportException;
+  void importChemicals(List<String> cids) throws ChemicalImportException;
 }

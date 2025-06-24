@@ -11,10 +11,9 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ChemicalImportSearchResult {
   private String name;
-  private String previewImage;
+  private String pngImage;
   private String smiles;
   private String formula;
-  private String cas;
   private String pubchemId;
   private String pubchemUrl;
 }

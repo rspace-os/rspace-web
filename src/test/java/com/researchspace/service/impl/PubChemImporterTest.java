@@ -42,7 +42,8 @@ class PubChemImporterTest {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(VALID_PUBCHEM_RESPONSE, HttpStatus.OK));
 
-    List<ChemicalImportSearchResult> results = pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin");
+    List<ChemicalImportSearchResult> results =
+        pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin");
 
     assertNotNull(results);
     assertEquals(1, results.size());
@@ -52,7 +53,9 @@ class PubChemImporterTest {
     assertEquals("2-acetoxybenzoic acid", result.getName());
     assertEquals("C9H8O4", result.getFormula());
     assertEquals("CC(=O)OC1=CC=CC=C1C(=O)O", result.getSmiles());
-    assertEquals("50-78-2", result.getCas());
+    assertEquals(
+        "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l", result.getPngImage());
+    assertEquals("https://pubchem.ncbi.nlm.nih.gov/compound/2244", result.getPubchemUrl());
   }
 
   @Test
@@ -72,7 +75,8 @@ class PubChemImporterTest {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
-    List<ChemicalImportSearchResult> results = pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "notfound");
+    List<ChemicalImportSearchResult> results =
+        pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "notfound");
 
     assertNotNull(results);
     assertTrue(results.isEmpty());
@@ -95,8 +99,7 @@ class PubChemImporterTest {
   void whenNullSearchType_thenThrowException() {
     ChemicalImportException exception =
         assertThrows(
-            ChemicalImportException.class,
-            () -> pubChemImporter.searchChemicals(null, "aspirin"));
+            ChemicalImportException.class, () -> pubChemImporter.searchChemicals(null, "aspirin"));
 
     assertTrue(exception.getMessage().contains("Unknown search type: " + null));
   }
@@ -105,7 +108,8 @@ class PubChemImporterTest {
   void whenNullSearchTerm_thenThrowException() {
     ChemicalImportException exception =
         assertThrows(
-            ChemicalImportException.class, () -> pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, null));
+            ChemicalImportException.class,
+            () -> pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, null));
 
     assertTrue(exception.getMessage().contains("Search type and term are required"));
   }
@@ -114,7 +118,8 @@ class PubChemImporterTest {
   void whenEmptySearchTerm_thenThrowException() {
     ChemicalImportException exception =
         assertThrows(
-            ChemicalImportException.class, () -> pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, ""));
+            ChemicalImportException.class,
+            () -> pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, ""));
 
     assertTrue(exception.getMessage().contains("Search type and term are required"));
   }
@@ -160,17 +165,17 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenValidCasSearch_thenCorrectUrlBuilt() throws ChemicalImportException {
+  void whenValidCasSearchUsingName_thenCorrectUrlBuilt() throws ChemicalImportException {
     // Arrange
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(EMPTY_PUBCHEM_RESPONSE, HttpStatus.OK));
 
     // Act
-    pubChemImporter.searchChemicals(ChemicalImportSearchType.CAS, "50-78-2");
+    pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "50-78-2");
 
-    // Assert - verify the URL would be built correctly for CAS search
+    // Assert - verify the URL would be built correctly for CAS search using NAME type
     // Note: In a more sophisticated test, we could capture the URL argument
-    // For now, we just verify no exception is thrown for valid CAS search
+    // For now, we just verify no exception is thrown for valid CAS search using NAME
     // The actual URL verification would require argument captors
   }
 
@@ -188,24 +193,23 @@ class PubChemImporterTest {
 
   // Import tests
   @Test
-  void whenValidCasImport_thenImportSuccessfully() {
+  void whenValidCidImport_thenImportSuccessfully() {
     // Arrange
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(VALID_PUBCHEM_RESPONSE, HttpStatus.OK));
 
     // Act & Assert - should not throw exception
-    assertDoesNotThrow(() -> pubChemImporter.importChemicals(List.of("50-78-2")));
+    assertDoesNotThrow(() -> pubChemImporter.importChemicals(List.of("2244")));
   }
 
   @Test
-  void whenValidMultipleCasImport_thenImportAllSuccessfully() {
+  void whenValidMultipleCidImport_thenImportAllSuccessfully() {
     // Arrange
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(VALID_PUBCHEM_RESPONSE, HttpStatus.OK));
 
-    // Act & Assert - should not throw exception for multiple CAS numbers
-    assertDoesNotThrow(
-        () -> pubChemImporter.importChemicals(List.of("50-78-2", "64-17-5", "57-55-6")));
+    // Act & Assert - should not throw exception for multiple CIDs
+    assertDoesNotThrow(() -> pubChemImporter.importChemicals(List.of("2244", "702", "5957")));
   }
 
   @Test
@@ -218,9 +222,9 @@ class PubChemImporterTest {
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class,
-            () -> pubChemImporter.importChemicals(List.of("invalid-cas")));
+            () -> pubChemImporter.importChemicals(List.of("invalid-cid")));
 
-    assertTrue(exception.getMessage().contains("No chemical found for CAS number"));
+    assertTrue(exception.getMessage().contains("No chemical found for PubChem CID"));
   }
 
   @Test
@@ -232,39 +236,38 @@ class PubChemImporterTest {
     // Act & Assert
     ChemicalImportException exception =
         assertThrows(
-            ChemicalImportException.class,
-            () -> pubChemImporter.importChemicals(List.of("50-78-2")));
+            ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of("2244")));
 
-    assertTrue(exception.getMessage().contains("No chemical found for CAS number"));
+    assertTrue(exception.getMessage().contains("No chemical found for PubChem CID"));
   }
 
   @Test
-  void whenImportNullCasNumbers_thenThrowException() {
+  void whenImportNullCids_thenThrowException() {
     // Act & Assert
     ChemicalImportException exception =
         assertThrows(ChemicalImportException.class, () -> pubChemImporter.importChemicals(null));
 
-    assertTrue(exception.getMessage().contains("At least one CAS number is required"));
+    assertTrue(exception.getMessage().contains("At least one PubChem CID is required"));
   }
 
   @Test
-  void whenImportEmptyCasNumbersList_thenThrowException() {
+  void whenImportEmptyCidsList_thenThrowException() {
     // Act & Assert
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of()));
 
-    assertTrue(exception.getMessage().contains("At least one CAS number is required"));
+    assertTrue(exception.getMessage().contains("At least one PubChem CID is required"));
   }
 
   @Test
-  void whenImportBlankCasNumber_thenThrowException() {
+  void whenImportBlankCid_thenThrowException() {
     // Act & Assert
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of("   ")));
 
-    assertTrue(exception.getMessage().contains("CAS number cannot be blank"));
+    assertTrue(exception.getMessage().contains("PubChem CID cannot be blank"));
   }
 
   @Test
@@ -276,8 +279,7 @@ class PubChemImporterTest {
     // Act & Assert
     ChemicalImportException exception =
         assertThrows(
-            ChemicalImportException.class,
-            () -> pubChemImporter.importChemicals(List.of("50-78-2")));
+            ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of("2244")));
 
     assertTrue(exception.getMessage().contains("Rate limit exceeded"));
   }
@@ -291,8 +293,7 @@ class PubChemImporterTest {
     // Act & Assert
     ChemicalImportException exception =
         assertThrows(
-            ChemicalImportException.class,
-            () -> pubChemImporter.importChemicals(List.of("50-78-2")));
+            ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of("2244")));
 
     assertTrue(exception.getMessage().contains("timeout or connection error"));
   }

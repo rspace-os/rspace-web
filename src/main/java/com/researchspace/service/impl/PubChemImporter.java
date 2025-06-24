@@ -39,44 +39,71 @@ public class PubChemImporter implements ChemicalImporter {
 
   @Override
   @Cacheable(value = "pubchemResults", key = "#searchType + ':' + #searchTerm")
-  public List<ChemicalImportSearchResult> searchChemicals(ChemicalImportSearchType searchType, String searchTerm)
-      throws ChemicalImportException {
+  public List<ChemicalImportSearchResult> searchChemicals(
+      ChemicalImportSearchType searchType, String searchTerm) throws ChemicalImportException {
+    validateSearchParameters(searchType, searchTerm);
     String url = buildPubChemUrl(searchType, searchTerm);
     return makeApiRequestAndParseResponse(url, searchTerm);
   }
 
   @Override
-  public void importChemicals(List<String> casNumbers) throws ChemicalImportException {
-    if (casNumbers == null || casNumbers.isEmpty()) {
-      throw new ChemicalImportException("At least one CAS number is required");
+  public void importChemicals(List<String> cids) throws ChemicalImportException {
+    if (cids == null || cids.isEmpty()) {
+      throw new ChemicalImportException("At least one PubChem CID is required");
     }
 
-    for (String casNumber : casNumbers) {
-      if (isBlank(casNumber)) {
-        throw new ChemicalImportException("CAS number cannot be blank");
+    for (String cid : cids) {
+      if (isBlank(cid)) {
+        throw new ChemicalImportException("PubChem CID cannot be blank");
       }
 
       try {
-        String url = buildPubChemUrl(ChemicalImportSearchType.CAS, casNumber.trim());
-        List<ChemicalImportSearchResult> results = makeApiRequestAndParseResponse(url, casNumber);
+        String url = buildPubChemUrlByCid(cid.trim());
+        List<ChemicalImportSearchResult> results = makeApiRequestAndParseResponse(url, cid);
 
         if (results.isEmpty()) {
           throw new ChemicalImportException(
-              String.format("No chemical found for CAS number: %s", casNumber));
+              String.format("No chemical found for PubChem CID: %s", cid));
         }
 
-        // import into
-        log.info("Successfully imported chemical with CAS number: {}", casNumber);
+        // import into system
+        log.info("Successfully imported chemical with PubChem CID: {}", cid);
       } catch (ChemicalImportException e) {
-        log.error("Failed to import chemical with CAS number {}: {}", casNumber, e.getMessage());
+        log.error("Failed to import chemical with PubChem CID {}: {}", cid, e.getMessage());
         throw e;
       }
+    }
+  }
+
+  private void validateSearchParameters(ChemicalImportSearchType searchType, String searchTerm)
+      throws ChemicalImportException {
+    if (searchType == null) {
+      throw new ChemicalImportException("Unknown search type: " + null);
+    }
+    if (isBlank(searchTerm)) {
+      throw new ChemicalImportException("Search type and term are required");
     }
   }
 
   private String buildPubChemUrl(ChemicalImportSearchType searchType, String searchTerm)
       throws ChemicalImportException {
     return String.format("%s/%s/%s/json", PUBCHEM_BASE_URL, searchType.name(), searchTerm);
+  }
+
+  private String buildPubChemUrlByCid(String cid) throws ChemicalImportException {
+    return String.format("%s/cid/%s/json", PUBCHEM_BASE_URL, cid);
+  }
+
+  private String generatePngImageUrl(String cid) {
+    // PubChem image service URL for PNG format
+    // Format: https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid={CID}&t=l
+    // t=l means large size, other options: s=small, m=medium
+    return String.format("https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=%s&t=l", cid);
+  }
+
+  private String generatePubChemUrl(String cid) {
+    // PubChem compound URL format
+    return String.format("https://pubchem.ncbi.nlm.nih.gov/compound/%s", cid);
   }
 
   private List<ChemicalImportSearchResult> parseResponseToResults(String responseBody)
@@ -114,6 +141,14 @@ public class PubChemImporter implements ChemicalImporter {
 
       ChemicalImportSearchResult.ChemicalImportSearchResultBuilder builder =
           ChemicalImportSearchResult.builder().pubchemId(cid);
+
+      // Generate PNG image URL using PubChem's image service
+      String pngImageUrl = generatePngImageUrl(cid);
+      builder.pngImage(pngImageUrl);
+
+      // Generate PubChem compound URL
+      String pubchemUrl = generatePubChemUrl(cid);
+      builder.pubchemUrl(pubchemUrl);
 
       // Extract properties from the compound data
       JsonNode propsNode = compoundNode.path("props");
@@ -154,11 +189,6 @@ public class PubChemImporter implements ChemicalImporter {
       case "Canonical SMILES":
         if (valueNode.path("sval").isTextual()) {
           builder.smiles(valueNode.path("sval").asText());
-        }
-        break;
-      case "CAS":
-        if (valueNode.path("sval").isTextual()) {
-          builder.cas(valueNode.path("sval").asText());
         }
         break;
     }

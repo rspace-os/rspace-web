@@ -2624,6 +2624,117 @@ paths:
             application/json:
               message: OK
               rspaceVersion: 1.69.1
+  /chemical/import:
+    post:
+      summary: Import chemicals by PubChem Compound IDs
+      description: >
+        Imports chemical data from external sources (currently PubChem) using PubChem Compound IDs (CIDs).
+        This endpoint accepts a list of CIDs and imports the corresponding
+        chemical information into the system.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Chemical Import
+      parameters:
+        - name: cids
+          in: body
+          required: true
+          description: List of PubChem Compound IDs to import
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["2244", "702"]
+      responses:
+        '201':
+          description: Chemicals imported successfully
+        '400':
+          description: Bad request - invalid or missing CIDs
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "At least one PubChem CID is required"
+        '429':
+          description: Rate limit exceeded
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Rate limit exceeded. Please try again later."
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Error importing chemical data."
+        '502':
+          description: External service temporarily unavailable
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "External service temporarily unavailable."
+  /chemical/search:
+    post:
+      summary: Search for chemicals
+      description: >
+        Searches for chemical data from external sources (currently only PubChem) using various
+        search criteria such as chemical name (including CAS numbers) or SMILES notation.
+        Note: CAS numbers should be searched using the NAME search type.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Chemical Import
+      parameters:
+        - name: searchRequest
+          in: body
+          required: true
+          description: Chemical search request
+          schema:
+            $ref: '#/definitions/ChemicalSearchRequest'
+      responses:
+        '200':
+          description: Search completed successfully
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ChemicalImportSearchResult'
+        '400':
+          description: Bad request - invalid search parameters
+        '429':
+          description: Rate limit exceeded
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Rate limit exceeded. Please try again later."
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Error importing chemical data."
+        '502':
+          description: External service temporarily unavailable
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "External service temporarily unavailable."
 parameters:
   docIdParam:
     name: docId
@@ -2909,6 +3020,50 @@ parameters:
 
 
 definitions:
+  ChemicalSearchRequest:
+    description: Request object for searching chemicals
+    required:
+      - searchType
+      - searchTerm
+    properties:
+      searchType:
+        type: string
+        description: The type of search to perform. Use NAME for both chemical names and CAS numbers.
+        enum:
+          - NAME
+          - SMILES
+        example: "NAME"
+      searchTerm:
+        type: string
+        description: The search term to use (chemical name, CAS number, or SMILES notation)
+        example: "aspirin"
+  ChemicalImportSearchResult:
+    description: Chemical search result from external sources
+    properties:
+      name:
+        type: string
+        description: IUPAC or common name of the chemical
+        example: "2-acetoxybenzoic acid"
+      pngImage:
+        type: string
+        description: URL to PNG image of the chemical structure from PubChem
+        example: "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l"
+      smiles:
+        type: string
+        description: SMILES notation of the chemical structure
+        example: "CC(=O)OC1=CC=CC=C1C(=O)O"
+      formula:
+        type: string
+        description: Molecular formula of the chemical
+        example: "C9H8O4"
+      pubchemId:
+        type: string
+        description: PubChem Compound ID
+        example: "2244"
+      pubchemUrl:
+        type: string
+        description: URL to PubChem compound page
+        example: "https://pubchem.ncbi.nlm.nih.gov/compound/2244"
   Field:
     description: |
       A field in a Document, with a list of attached Files and 'listOfMaterials' that store inventory items connected to the document.

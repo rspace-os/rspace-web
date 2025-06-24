@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import com.researchspace.api.v1.ChemicalImportApi;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequest;
 import com.researchspace.service.ChemicalImportException;
@@ -13,15 +14,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @ApiController
-@RequestMapping("/api/v1")
-public class ChemicalImportApiController extends BaseApiController {
+public class ChemicalImportApiController extends BaseApiController implements ChemicalImportApi {
 
   private final ChemicalImporter chemicalImporter;
 
@@ -30,17 +27,18 @@ public class ChemicalImportApiController extends BaseApiController {
     this.chemicalImporter = chemicalImporter;
   }
 
-  @PostMapping("/chemical/import")
-  public ResponseEntity<?> importChemicals(@Valid @RequestBody List<String> casNumbers, BindingResult bindingResult) throws BindException {
+  @Override
+  public ResponseEntity<?> importChemicals(
+      @Valid @RequestBody List<String> cids, BindingResult bindingResult) throws BindException {
     throwBindExceptionIfErrors(bindingResult);
 
-    if (casNumbers == null || casNumbers.isEmpty()) {
-      return ResponseEntity.badRequest().body("At least one CAS number is required");
+    if (cids == null || cids.isEmpty()) {
+      return ResponseEntity.badRequest().body("At least one PubChem CID is required");
     }
 
     try {
-      chemicalImporter.importChemicals(casNumbers);
-      log.info("Successfully imported {} chemical(s)", casNumbers.size());
+      chemicalImporter.importChemicals(cids);
+      log.info("Successfully imported {} chemical(s)", cids.size());
       return ResponseEntity.status(HttpStatus.CREATED).build();
     } catch (ChemicalImportException e) {
       log.error("Error importing chemicals: {}", e.getMessage(), e);
@@ -52,9 +50,10 @@ public class ChemicalImportApiController extends BaseApiController {
     }
   }
 
-  @PostMapping("/chemical/search")
+  @Override
   public ResponseEntity<?> searchChemicals(
-      @Valid @RequestBody ChemicalSearchRequest request, BindingResult bindingResult) throws BindException {
+      @Valid @RequestBody ChemicalSearchRequest request, BindingResult bindingResult)
+      throws BindException {
     throwBindExceptionIfErrors(bindingResult);
 
     try {

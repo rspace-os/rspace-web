@@ -109,7 +109,6 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
   const handleInsert = (ketcher) => {
     setShowKetcherDialog(false);
     ketcher.getSmiles().then((smiles) => {
-      console.log("smiles", smiles);
       setSearchSmiles(smiles);
       fetchData(0, smiles);
       void window.ketcher.setMolecule("");
