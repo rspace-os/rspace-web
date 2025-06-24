@@ -1,7 +1,5 @@
-//@flow
-
 import { ListOfMaterials } from "../../stores/models/MaterialsModel";
-import React, { type Node } from "react";
+import React from "react";
 import MaterialsTable from "./MaterialsTable";
 import Box from "@mui/material/Box";
 import { makeStyles } from "tss-react/mui";
@@ -15,9 +13,9 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type PrintedMaterialsListingArgs = {|
-  listsOfMaterials: ?Array<ListOfMaterials>,
-|};
+type PrintedMaterialsListingArgs = {
+  listsOfMaterials: Array<ListOfMaterials> | null;
+};
 
 /*
  * When a structured document is printed, this component is used to render the
@@ -26,7 +24,7 @@ type PrintedMaterialsListingArgs = {|
  */
 export default function PrintedMaterialsListing({
   listsOfMaterials,
-}: PrintedMaterialsListingArgs): Node {
+}: PrintedMaterialsListingArgs): React.ReactNode {
   const { classes } = useStyles();
   return listsOfMaterials ? (
     <div className={classes.wrapper}>
