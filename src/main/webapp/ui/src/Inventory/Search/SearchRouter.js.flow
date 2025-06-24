@@ -1,0 +1,13 @@
+// @flow
+
+import React, {
+  type Node,
+  type ComponentType,
+} from "react";
+import { type CoreFetcherArgs } from "../../stores/definitions/Search";
+
+type SearchRouterArgs = {|
+  paramsOverride?: CoreFetcherArgs,
+|};
+
+declare export default ComponentType<SearchRouterArgs>;
