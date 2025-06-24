@@ -1,5 +1,3 @@
-// @flow
-
 import InventoryPicker from "../../Inventory/components/Picker/Picker";
 import Alerts from "../../Inventory/components/Alerts";
 import Confirm from "../../components/Confirm";
@@ -30,14 +28,7 @@ import { makeStyles } from "tss-react/mui";
 import PrintIcon from "@mui/icons-material/Print";
 import clsx from "clsx";
 import { observer, Observer } from "mobx-react-lite";
-import React, {
-  useState,
-  forwardRef,
-  useEffect,
-  type Node,
-  type ComponentType,
-  type ElementProps,
-} from "react";
+import React, { useState, forwardRef, useEffect } from "react";
 import docLinks from "../../assets/DocLinks";
 import { type ListOfMaterials } from "../../stores/models/MaterialsModel";
 import WarningBar from "../../components/WarningBar";
@@ -50,7 +41,11 @@ import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layou
 import getRootStore from "../../stores/stores/RootStore";
 import { hasLocation } from "../../stores/models/HasLocation";
 
-const EmptyListText = ({ currentList }: { currentList: ?ListOfMaterials }) =>
+const EmptyListText = ({
+  currentList,
+}: {
+  currentList: ListOfMaterials | null | undefined;
+}) =>
   currentList && currentList.materials.length === 0 ? (
     <Typography
       component="div"
@@ -62,9 +57,15 @@ const EmptyListText = ({ currentList }: { currentList: ?ListOfMaterials }) =>
     </Typography>
   ) : null;
 
-type CardWrapperInternalsArgs = {| children: Node, classes: { root: string } |};
+type CardWrapperInternalsArgs = {
+  children: React.ReactNode;
+  classes: { root: string };
+};
 
-const CardWrapperInternals = forwardRef<CardWrapperInternalsArgs, mixed>(
+const CardWrapperInternals = forwardRef<
+  React.ElementRef<typeof Grid>,
+  CardWrapperInternalsArgs
+>(
   // eslint-disable-next-line react/prop-types
   ({ children, classes }: CardWrapperInternalsArgs, ref) => {
     const isSingleColumnLayout = useIsSingleColumnLayout();
@@ -88,7 +89,7 @@ const CardWrapperInternals = forwardRef<CardWrapperInternalsArgs, mixed>(
 
 CardWrapperInternals.displayName = "CardWrapperInternals";
 const CardWrapper = withStyles<
-  $Diff<CardWrapperInternalsArgs, { classes: mixed }>,
+  Omit<React.ComponentProps<typeof CardWrapperInternals>, "classes">,
   { root: string }
 >(() => ({
   root: {
@@ -102,8 +103,8 @@ const CardWrapper = withStyles<
 }))(CardWrapperInternals);
 
 const CustomDialog = withStyles<
-  ElementProps<typeof Dialog>,
-  {| paper?: string |}
+  React.ComponentProps<typeof Dialog>,
+  { paper?: string }
 >((theme, { fullScreen }) => ({
   paper: {
     overflow: "hidden",
@@ -116,7 +117,10 @@ const CustomDialog = withStyles<
   },
 }))(Dialog);
 
-const useStyles = makeStyles()((theme, { openSlide, isSingleColumn }) => ({
+const useStyles = makeStyles<{
+  openSlide?: boolean;
+  isSingleColumn?: boolean;
+}>()((theme, { openSlide, isSingleColumn }) => ({
   contentWrapper: {
     overscrollBehavior: "contain",
     WebkitOverflowScrolling: "unset",
@@ -170,7 +174,7 @@ const useStyles = makeStyles()((theme, { openSlide, isSingleColumn }) => ({
 }));
 
 const BigButton = withStyles<
-  {| onClick: () => void, icon: Node |},
+  { onClick: () => void; icon: React.ReactNode },
   { root: string }
 >((theme) => ({
   root: {
@@ -199,11 +203,11 @@ const MetadataBar = observer(
     currentList,
     canEdit,
     isSingleColumn,
-  }: {|
-    currentList: ?ListOfMaterials,
-    canEdit: boolean,
-    isSingleColumn: boolean,
-  |}) => {
+  }: {
+    currentList: ListOfMaterials | null | undefined;
+    canEdit: boolean;
+    isSingleColumn: boolean;
+  }) => {
     const { classes } = useStyles({ isSingleColumn });
     return (
       <div className={clsx(classes.barWrapper, classes.bottomSpaced)}>
@@ -255,13 +259,13 @@ const ActionsBar = observer(
     standalonePage,
     onOpenStandalone,
     canEdit,
-  }: {|
-    setOpenPicker: (boolean) => void,
-    currentList: ?ListOfMaterials,
-    standalonePage: boolean,
-    onOpenStandalone: () => void,
-    canEdit: boolean,
-  |}) => {
+  }: {
+    setOpenPicker: (open: boolean) => void;
+    currentList: ListOfMaterials | null | undefined;
+    standalonePage: boolean;
+    onOpenStandalone: () => void;
+    canEdit: boolean;
+  }) => {
     const { classes } = useStyles({});
     const { moveStore, materialsStore } = useStores();
     const anyDataInList = (currentList?.materials.length ?? -1) > 0;
@@ -301,9 +305,11 @@ const ActionsBar = observer(
             color="primary"
             variant="contained"
             disableElevation
-            onClick={preventEventBubbling(() => {
-              setOpenPicker(true);
-            })}
+            onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(
+              () => {
+                setOpenPicker(true);
+              }
+            )}
             disabled={!canEdit}
           >
             Add items
@@ -314,9 +320,11 @@ const ActionsBar = observer(
             color="primary"
             variant="contained"
             disableElevation
-            onClick={preventEventBubbling(() => {
-              currentList?.setEditingMode(!editingMode);
-            })}
+            onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(
+              () => {
+                currentList?.setEditingMode(!editingMode);
+              }
+            )}
             disabled={!canEditQuantities}
           >
             {editingMode ? "Close Quantity Editor" : "Edit Quantities"}
@@ -368,17 +376,17 @@ const ActionsBar = observer(
   }
 );
 
-type DialogArgs = {|
-  open: boolean,
-  setOpen: (boolean) => void,
-  standalonePage?: boolean,
-|};
+type DialogArgs = {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  standalonePage?: boolean;
+};
 
 function MaterialsDialog({
   open,
   setOpen,
   standalonePage = false,
-}: DialogArgs): Node {
+}: DialogArgs): React.ReactNode {
   const { materialsStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const isSingleColumn = isSingleColumnLayout;
@@ -423,8 +431,8 @@ function MaterialsDialog({
       const deletionConfirmed = await currentList.delete();
 
       if (deletionConfirmed) {
-        materialsStore.setCurrentList(null);
-        await refetch();
+        materialsStore.setCurrentList(undefined);
+        refetch();
         // if inside pop-out window, tell parent that delete occurred
         if (window.opener) window.opener.postMessage("deleted", window.origin);
         setOpen(false);
@@ -449,7 +457,7 @@ function MaterialsDialog({
             break;
           case "deleted":
             setOpen(false);
-            materialsStore.setCurrentList(null);
+            materialsStore.setCurrentList(undefined);
             refetch();
             break;
         }
@@ -477,7 +485,7 @@ function MaterialsDialog({
               }}
             >
               <DialogTitle className={classes.dialogTitle}>
-                {!parseInt(currentList?.id) && "New "} List of Materials
+                {currentList?.id === undefined && "New "} List of Materials
                 (Inventory)&nbsp;
                 <HelpLinkIcon
                   link={docLinks.listOfMaterials}
@@ -578,7 +586,9 @@ function MaterialsDialog({
                     color="primary"
                     variant="contained"
                     disableElevation
-                    onClick={preventEventBubbling(
+                    onClick={preventEventBubbling<
+                      React.MouseEvent<HTMLButtonElement>
+                    >(
                       doNotAwait(async () => {
                         if (currentList) {
                           const changed = materialsStore.hasListChanged;
@@ -588,7 +598,7 @@ function MaterialsDialog({
                               currentList.update()
                             );
                             materialsStore.setCurrentList(currentList);
-                            await refetch();
+                            refetch();
                           }
                           setOpenExporter(true);
                         }
@@ -642,7 +652,7 @@ function MaterialsDialog({
                               );
                           }
                           materialsStore.setCurrentList(currentList);
-                          await refetch();
+                          refetch();
                         }
                       })}
                       loading={isListLoading}
@@ -662,4 +672,4 @@ function MaterialsDialog({
   );
 }
 
-export default (observer(MaterialsDialog): ComponentType<DialogArgs>);
+export default observer(MaterialsDialog);
