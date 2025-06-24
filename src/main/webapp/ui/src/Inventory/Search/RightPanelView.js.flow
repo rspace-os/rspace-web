@@ -1,0 +1,9 @@
+//@flow
+
+import type { Node, ComponentType } from "react";
+import { type RecordType } from "../../stores/definitions/InventoryRecord";
+import { type Theme } from "../../theme";
+
+declare function RightPanelView(): Node;
+
+export default (RightPanelView: ComponentType<{||}>);
