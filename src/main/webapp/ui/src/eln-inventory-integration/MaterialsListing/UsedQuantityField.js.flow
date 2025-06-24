@@ -1,0 +1,14 @@
+// @flow
+
+import { type Node, type ComponentType } from "react";
+import {
+  Material,
+  type ListOfMaterials,
+} from "../../stores/models/MaterialsModel";
+
+type UsedQuantityFieldArgs = {|
+  material: Material,
+  list: ListOfMaterials,
+|};
+
+declare export default ComponentType<UsedQuantityFieldArgs>;
