@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType, useContext } from "react";
+import React, { useContext } from "react";
 import TitledBox from "../components/TitledBox";
 import { observer } from "mobx-react-lite";
 import FileForImport from "./Fields/File";
@@ -85,7 +83,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-function RecordsImport(): Node {
+function RecordsImport(): React.ReactNode {
   const { importStore } = useStores();
   const importData = importStore.importData;
 
@@ -96,7 +94,10 @@ function RecordsImport(): Node {
   const recordType = importData?.recordType;
   const isSamplesImport = importData?.isSamplesImport;
 
-  const loadedFileByRecordType = importData?.byRecordType("file");
+  const loadedFileByRecordType = importData?.byRecordType("file") as
+    | File
+    | null
+    | undefined;
   const fileLoaded = importData?.byRecordType("fileLoaded");
   const submitting = importStore.isCurrentImportState("submitting");
 
@@ -108,7 +109,7 @@ function RecordsImport(): Node {
     Boolean(importData?.subSamplesFile && !importData.subSamplesSubmittable);
 
   const notImportable = () => {
-    const types = [];
+    const types: string[] = [];
     if (importData?.containersFile && !importData.containersSubmittable)
       types.push("Containers");
     if (importData?.samplesFile && !importData.samplesSubmittable)
@@ -126,7 +127,7 @@ function RecordsImport(): Node {
 
   const { classes } = useStyles();
 
-  function ImportTabs(_: {||}) {
+  function ImportTabs(_: Record<string, never>) {
     const importRecordTypes = ["CONTAINERS", "SAMPLES", "SUBSAMPLES"];
     const { useNavigate } = useContext(NavigateContext);
     const navigate = useNavigate();
@@ -136,7 +137,7 @@ function RecordsImport(): Node {
         <Box className={clsx(classes.mr, classes.bold)}>IMPORT</Box>
         <Tabs
           value={recordType}
-          onChange={(_event, newRecordType) => {
+          onChange={(_event, newRecordType: ImportRecordType) => {
             navigate(onTypeSelect(newRecordType));
           }}
           textColor="inherit"
@@ -202,8 +203,11 @@ function RecordsImport(): Node {
                   <span key={i}>
                     {i > 0 && <>, </>}
                     {t.toUpperCase() !== recordType ? (
-                      // $FlowExpectedError[incompatible-call] string should in fact be compatible with expected type
-                      <Link to={onTypeSelect(t.toUpperCase())}>{t}</Link>
+                      <Link
+                        to={onTypeSelect(t.toUpperCase() as ImportRecordType)}
+                      >
+                        {t}
+                      </Link>
                     ) : (
                       t
                     )}
@@ -227,4 +231,4 @@ function RecordsImport(): Node {
   );
 }
 
-export default (observer(RecordsImport): ComponentType<{||}>);
+export default observer(RecordsImport);
