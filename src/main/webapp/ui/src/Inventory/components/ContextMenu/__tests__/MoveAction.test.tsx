@@ -1,10 +1,9 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import { action, observable } from "mobx";
 import "@testing-library/jest-dom";
 import { storesContext } from "../../../../stores/stores-context";
@@ -22,7 +21,7 @@ import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../Search/SearchView", () => jest.fn(() => <></>));
 jest.mock("@mui/material/Dialog", () =>
-  jest.fn(({ children }) => <>{children}</>)
+  jest.fn(({ children }: { children: React.ReactNode }) => <>{children}</>)
 );
 
 // this is because the Search component renders hidden "Cancel" buttons
@@ -37,8 +36,7 @@ afterEach(cleanup);
 describe("MoveAction", () => {
   test("After the dialog is closed, the overflow context menu should have been closed.", async () => {
     const user = userEvent.setup();
-    let rootStore: StoreContainer;
-    rootStore = makeMockRootStore(
+    const rootStore: StoreContainer = makeMockRootStore(
       observable({
         moveStore: {
           isMoving: false,

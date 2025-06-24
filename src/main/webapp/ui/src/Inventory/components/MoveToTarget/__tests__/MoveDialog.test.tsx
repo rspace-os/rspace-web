@@ -1,16 +1,9 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
-import {
-  cleanup,
-  screen,
-  waitFor,
-  act,
-  fireEvent,
-} from "@testing-library/react";
+import { cleanup, screen, waitFor, fireEvent } from "@testing-library/react";
 import { action, observable } from "mobx";
 import "@testing-library/jest-dom";
 import { storesContext } from "../../../../stores/stores-context";
@@ -26,12 +19,12 @@ import {
   makeMockSubSample,
   subSampleAttrsArbitrary,
 } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
-import { render, within } from "../../../../__tests__/customQueries";
 import fc from "fast-check";
 import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import userEvent from "@testing-library/user-event";
+import { render, within } from "../../../../__tests__/customQueries";
 
 jest.mock("../../../Search/SearchView", () => jest.fn(() => <></>));
 jest.mock("@mui/material/Dialog", () =>
@@ -52,8 +45,7 @@ afterEach(cleanup);
 describe("MoveDialog", () => {
   test("When cancel is pressed, the dialog should close.", async () => {
     const user = userEvent.setup();
-    let rootStore: StoreContainer;
-    rootStore = makeMockRootStore(
+    const rootStore: StoreContainer = makeMockRootStore(
       observable({
         moveStore: {
           isMoving: true,
@@ -115,8 +107,7 @@ describe("MoveDialog", () => {
               ArrayUtils.allAreUnique(selectedResults.map((r) => r.globalId))
             );
 
-            let rootStore: StoreContainer;
-            rootStore = makeMockRootStore(
+            const rootStore: StoreContainer = makeMockRootStore(
               observable({
                 moveStore: {
                   isMoving: true,
@@ -159,8 +150,11 @@ describe("MoveDialog", () => {
 
             const table = screen.getByRole("table");
             const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
+
             const indexOfNameColumn =
+              // @ts-expect-error TS does not recognise the jest.extend
               within(headerRow).getIndexOfTableCell("Name");
+
             const allNameCells = bodyRows.map(
               (row) => within(row).getAllByRole("cell")[indexOfNameColumn]
             );
