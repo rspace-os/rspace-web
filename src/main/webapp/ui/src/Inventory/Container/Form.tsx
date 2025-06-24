@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
+import React, { type ReactNode } from "react";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
 import useStores from "../../stores/use-stores";
@@ -25,7 +23,7 @@ import {
   setFormSectionError,
 } from "../components/Stepper/StepperPanelHeader";
 import LimitedAccessAlert from "../components/LimitedAccessAlert";
-import type { Person } from "../../stores/definitions/Person";
+import { type Person } from "../../stores/definitions/Person";
 
 const OverviewSection = observer(
   ({ activeResult }: { activeResult: ContainerModel }) => {
@@ -121,7 +119,7 @@ const ExtaFieldSection = observer(
   }
 );
 
-function Form(): Node {
+function Form(): ReactNode {
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -197,4 +195,4 @@ function Form(): Node {
   );
 }
 
-export default (observer(Form): ComponentType<{||}>);
+export default observer(Form);
