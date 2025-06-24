@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 
@@ -22,7 +21,7 @@ import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import "../../../../../__mocks__/createObjectURL";
 import "../../../../../__mocks__/revokeObjectURL";
 
-const mockRootStore = (mockedStores: ?MockStores): StoreContainer => {
+const mockRootStore = (mockedStores?: MockStores): StoreContainer => {
   return makeMockRootStore({
     ...mockedStores,
     uiStore: {
@@ -43,7 +42,7 @@ if (mockContainer.globalId) {
 }
 
 describe("Print Tests", () => {
-  let openDialog = true; // if false, then dialog is null
+  const openDialog = true; // if false, then dialog is null
 
   const modalRoot = document.createElement("div");
   modalRoot.setAttribute("id", "modal-root");
