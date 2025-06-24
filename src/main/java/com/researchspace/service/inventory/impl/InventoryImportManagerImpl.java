@@ -592,6 +592,9 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         ApiContainer moveRequest = new ApiContainer();
         moveRequest.setId(importedRecord.getId());
         moveRequest.setParentContainer(targetParent);
+        /* needed for backward compatibility as explained on the method
+        ApiInventoryRecordInfo.applyChangesToDatabaseInventoryRecord(...) */
+        moveRequest.setTags(null);
         ApiContainer updatedContainer =
             containerManager.updateApiContainer(moveRequest, importResult.getCurrentUser());
         importedRecordResult.setRecord(updatedContainer);
