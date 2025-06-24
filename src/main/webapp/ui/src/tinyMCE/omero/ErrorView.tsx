@@ -1,10 +1,17 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import { ErrorReason } from "./Enums";
+import { ErrorReason, type ErrorReasonType } from "./Enums";
 import React from "react";
-import PropTypes from "prop-types";
 
-export default function ErrorView({ errorReason, errorMessage }) {
+type ErrorViewProps = {
+  errorReason: ErrorReasonType;
+  errorMessage: string;
+};
+
+export default function ErrorView({
+  errorReason,
+  errorMessage,
+}: ErrorViewProps) {
   return (
     <Alert severity="error">
       <AlertTitle>Error</AlertTitle>
@@ -12,12 +19,14 @@ export default function ErrorView({ errorReason, errorMessage }) {
         <>
           The Omero server at{" "}
           <a
-            href={parent.tinymce.activeEditor.settings.omero_url}
+            // @ts-expect-error -- tinymce is defined in the parent window
+            href={parent.tinymce?.activeEditor?.settings?.omero_url}
             target="_blank"
             rel="noreferrer"
           >
             {" "}
-            {parent.tinymce.activeEditor.settings.omero_url}
+            {/* @ts-expect-error -- tinymce is defined in the parent window */}
+            {parent.tinymce?.activeEditor?.settings?.omero_url}
           </a>{" "}
           is down, or CORS for this server has not been configured properly. If
           you are responsible for setting up the Omero integration, open
@@ -48,7 +57,3 @@ export default function ErrorView({ errorReason, errorMessage }) {
     </Alert>
   );
 }
-ErrorView.propTypes = {
-  errorReason: PropTypes.string,
-  errorMessage: PropTypes.string,
-};
