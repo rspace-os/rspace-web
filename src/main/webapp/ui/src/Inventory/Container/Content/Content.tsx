@@ -1,12 +1,12 @@
-//@flow
-
-import React, { type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
+import { type Theme } from "@mui/material/styles";
+import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
 import ContentContextMenu from "./ContentContextMenu";
 import useStores from "../../../stores/use-stores";
 import SearchContext from "../../../stores/contexts/Search";
-import SearchView from "../../Search/SearchView";
+import SearchViewComponent from "../../Search/SearchView";
 import Search from "../../Search/Search";
 import { menuIDs } from "../../../util/menuIDs";
 import Alert from "@mui/material/Alert";
@@ -17,16 +17,19 @@ import docLinks from "../../../assets/DocLinks";
 import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 
-const useStyles = makeStyles()((theme) => ({
-  alert: {
-    marginBottom: theme.spacing(1),
-  },
-  searchViewWrapper: {
-    overflowX: "auto !important",
-    overflow: "hidden",
-    width: "100%",
-  },
-}));
+const useStyles = makeStyles<void>()(
+  // @ts-expect-error !important isn't recognised
+  (theme: Theme) => ({
+    alert: {
+      marginBottom: theme.spacing(1),
+    },
+    searchViewWrapper: {
+      overflowX: "auto !important",
+      overflow: "hidden",
+      width: "100%",
+    },
+  })
+);
 
 function ImageContainerZoomHelpText() {
   const { uiStore } = useStores();
@@ -43,7 +46,7 @@ function ImageContainerZoomHelpText() {
   try {
     // isMac relies on a deprecated browser API so the call may fail
     if (isMac()) zoomText = "Tip: Use Command and the - key";
-  } catch (e) {
+  } catch (_) {
     return null;
   }
   zoomText = zoomText + " to zoom the page out to view more of the image.";
@@ -70,8 +73,9 @@ function _Content() {
     throw new Error("ActiveResult must be a Container");
   const search = activeResult.contentSearch;
   const fromCType = activeResult.cType.toUpperCase();
-  const TABS = ["LIST", "TREE", "CARD"];
-  if (fromCType === "IMAGE" || fromCType === "GRID") TABS.unshift(fromCType);
+  const TABS: SearchViewType[] = ["LIST", "TREE", "CARD"];
+  if (fromCType === "IMAGE" || fromCType === "GRID")
+    TABS.unshift(fromCType as SearchViewType);
 
   const handleSearch = (query: string) => {
     const params = {
@@ -81,7 +85,7 @@ function _Content() {
     search.staticFetcher.applySearchParams(params);
     search.dynamicFetcher.applySearchParams(params);
     search.cacheFetcher.applySearchParams(params);
-    search.fetcher.performInitialSearch(params);
+    void search.fetcher.performInitialSearch(params);
   };
 
   const locationsAlert =
@@ -116,7 +120,7 @@ function _Content() {
               </Grid>
             )}
             <Grid item className={classes.searchViewWrapper}>
-              <SearchView contextMenuId={menuIDs.RESULTS} />
+              <SearchViewComponent contextMenuId={menuIDs.RESULTS} />
             </Grid>
           </Grid>
         </InnerSearchNavigationContext>
@@ -126,5 +130,5 @@ function _Content() {
   );
 }
 
-const Content: ComponentType<{||}> = observer(_Content);
+const Content = observer(_Content);
 export default Content;
