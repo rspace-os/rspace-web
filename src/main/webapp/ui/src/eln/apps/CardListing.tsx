@@ -73,6 +73,16 @@ function CardListing({
     [update]
   );
 
+  const ascensciaUpdate = React.useCallback(
+    (newState: IntegrationStates["ASCENSCIA"]) => {
+      void runInAction(async () => {
+        integrationStates.ASCENSCIA = await update("ASCENSCIA", newState);
+      });
+    },
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [update]
+  );
+
   const boxUpdate = React.useCallback(
     (newState: IntegrationStates["BOX"]) => {
       void runInAction(async () => {
@@ -350,7 +360,12 @@ function CardListing({
           update={argosUpdate}
         />
       )}
-      {integrationStates.ASCENSCIA.mode === mode && <Ascenscia />}
+      {integrationStates.ASCENSCIA.mode === mode && (
+        <Ascenscia
+          integrationState={integrationStates.ASCENSCIA}
+          update={ascensciaUpdate}
+        />
+      )}
       {integrationStates.BOX.mode === mode && (
         <Box integrationState={integrationStates.BOX} update={boxUpdate} />
       )}
