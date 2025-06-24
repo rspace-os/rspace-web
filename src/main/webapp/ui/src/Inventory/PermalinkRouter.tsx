@@ -1,40 +1,38 @@
-//@flow
-
 import SearchRouter from "./Search/SearchRouter";
 import { observer } from "mobx-react-lite";
 import { useParams, Navigate } from "react-router-dom";
-import React, { type Node, type ComponentType, useContext } from "react";
+import React, { useContext } from "react";
 import { type PermalinkType } from "../stores/definitions/Search";
-import NavigateContext, { type UseLocation } from "../stores/contexts/Navigate";
+import NavigateContext from "../stores/contexts/Navigate";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
-import { inventoryRecordTypeLabels } from "../stores/definitions/BaseRecord";
-import { globalIdPatterns } from "../stores/definitions/BaseRecord";
+import {
+  inventoryRecordTypeLabels,
+  globalIdPatterns,
+} from "../stores/definitions/BaseRecord";
 import { match } from "../util/Util";
 
-type PermalinkRouterArgs = {|
-  type: PermalinkType,
-|};
+type PermalinkRouterArgs = {
+  type: PermalinkType;
+};
 
-function PermalinkRouter({ type }: PermalinkRouterArgs): Node {
+function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
   const { id } = useParams();
   const { useLocation } = useContext(NavigateContext);
-  const urlSearchParams = new URLSearchParams(
-    (useLocation(): UseLocation).search
-  );
+  const urlSearchParams = new URLSearchParams(useLocation().search);
   const { addAlert } = useContext(AlertContext);
 
   if (!id) return <Navigate to="/inventory" replace={true} />;
 
   let version = null;
   if (urlSearchParams.has("version")) {
-    version = parseInt(urlSearchParams.get("version"), 10);
+    version = parseInt(urlSearchParams.get("version")!, 10);
     if (isNaN(version)) return <h1>Invalid version parameter</h1>;
   }
 
   if (isNaN(parseInt(id, 10))) {
     const recordType = match<
       PermalinkType,
-      $Keys<typeof inventoryRecordTypeLabels> & $Keys<typeof globalIdPatterns>
+      keyof typeof inventoryRecordTypeLabels
     >([
       [(t) => t === "sample", "sample"],
       [(t) => t === "container", "container"],
@@ -78,4 +76,4 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): Node {
   );
 }
 
-export default (observer(PermalinkRouter): ComponentType<PermalinkRouterArgs>);
+export default observer(PermalinkRouter);
