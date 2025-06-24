@@ -29,13 +29,10 @@ class PubChemImporterTest {
   @InjectMocks private PubChemImporter pubChemImporter;
 
   private static final String VALID_PUBCHEM_RESPONSE =
-      "{\"PC_Compounds\":[{\"id\":{\"id\":{\"cid\":2244}},\"props\":[{\"urn\":{\"label\":\"IUPAC"
-          + " Name\"},\"value\":{\"sval\":\"2-acetoxybenzoic"
-          + " acid\"}},{\"urn\":{\"label\":\"Molecular"
-          + " Formula\"},\"value\":{\"sval\":\"C9H8O4\"}},{\"urn\":{\"label\":\"Canonical"
-          + " SMILES\"},\"value\":{\"sval\":\"CC(=O)OC1=CC=CC=C1C(=O)O\"}},{\"urn\":{\"label\":\"CAS\"},\"value\":{\"sval\":\"50-78-2\"}}]}]}";
+      "{\"PropertyTable\":{\"Properties\":[{\"CID\":2244,\"MolecularFormula\":\"C9H8O4\",\"SMILES\":\"CC(=O)OC1=CC=CC=C1C(=O)O\",\"Title\":\"2-acetoxybenzoic"
+          + " acid\"}]}}";
 
-  private static final String EMPTY_PUBCHEM_RESPONSE = "{\"PC_Compounds\":[]}";
+  private static final String EMPTY_PUBCHEM_RESPONSE = "{\"PropertyTable\":{\"Properties\":[]}}";
 
   @Test
   void whenValidSearchRequest_thenReturnParsedResults() throws ChemicalImportException {

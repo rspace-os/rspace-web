@@ -15,9 +15,7 @@ import org.junit.Test;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
-/**
- * Sanity tests to verify connection to PubChem and response format.
- */
+/** Sanity tests to verify connection to PubChem and response format. */
 @WebAppConfiguration
 public class ChemicalImportApiControllerMVCIT extends API_MVC_TestBase {
 
@@ -45,7 +43,7 @@ public class ChemicalImportApiControllerMVCIT extends API_MVC_TestBase {
     List<ChemicalImportSearchResult> expected =
         List.of(
             new ChemicalImportSearchResult(
-                "2-acetoxybenzoic acid",
+                "Aspirin",
                 "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
                 "CC(=O)OC1=CC=CC=C1C(=O)O",
                 "C9H8O4",

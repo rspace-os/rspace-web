@@ -2,10 +2,10 @@ package com.researchspace.service.impl;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
+import com.researchspace.model.dtos.chemistry.PubChemPropertyResponse;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalImporter;
 import java.util.ArrayList;
@@ -85,19 +85,21 @@ public class PubChemImporter implements ChemicalImporter {
     }
   }
 
-  private String buildPubChemUrl(ChemicalImportSearchType searchType, String searchTerm)
-      throws ChemicalImportException {
-    return String.format("%s/%s/%s/json", PUBCHEM_BASE_URL, searchType.name(), searchTerm);
+  private String buildPubChemUrl(ChemicalImportSearchType searchType, String searchTerm) {
+    return String.format(
+        "%s/%s/%s/property/Title,SMILES,MolecularFormula/json",
+        PUBCHEM_BASE_URL, searchType.name(), searchTerm);
   }
 
-  private String buildPubChemUrlByCid(String cid) throws ChemicalImportException {
-    return String.format("%s/cid/%s/json", PUBCHEM_BASE_URL, cid);
+  private String buildPubChemUrlByCid(String cid) {
+    return String.format(
+        "%s/cid/%s/property/Title,SMILES,MolecularFormula/json", PUBCHEM_BASE_URL, cid);
   }
 
   private String generatePngImageUrl(String cid) {
     // PubChem image service URL for PNG format
     // Format: https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid={CID}&t=l
-    // t=l means large size, other options: s=small, m=medium
+    // t=l means large size
     return String.format("https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=%s&t=l", cid);
   }
 
@@ -109,14 +111,16 @@ public class PubChemImporter implements ChemicalImporter {
   private List<ChemicalImportSearchResult> parseResponseToResults(String responseBody)
       throws ChemicalImportException {
     try {
-      JsonNode rootNode = objectMapper.readTree(responseBody);
-      JsonNode compoundsNode = rootNode.path("PC_Compounds");
+      PubChemPropertyResponse response =
+          objectMapper.readValue(responseBody, PubChemPropertyResponse.class);
 
       List<ChemicalImportSearchResult> results = new ArrayList<>();
 
-      if (compoundsNode.isArray()) {
-        for (JsonNode compoundNode : compoundsNode) {
-          ChemicalImportSearchResult result = extractCompoundData(compoundNode);
+      if (response.getPropertyTable() != null
+          && response.getPropertyTable().getProperties() != null) {
+        for (PubChemPropertyResponse.ChemicalProperty property :
+            response.getPropertyTable().getProperties()) {
+          ChemicalImportSearchResult result = convertToSearchResult(property);
           if (result != null) {
             results.add(result);
           }
@@ -130,67 +134,27 @@ public class PubChemImporter implements ChemicalImporter {
     }
   }
 
-  private ChemicalImportSearchResult extractCompoundData(JsonNode compoundNode) {
+  private ChemicalImportSearchResult convertToSearchResult(
+      PubChemPropertyResponse.ChemicalProperty property) {
     try {
-      JsonNode idNode = compoundNode.path("id").path("id").path("cid");
-      String cid = idNode.isNumber() ? String.valueOf(idNode.asLong()) : null;
-
-      if (cid == null) {
+      if (property.getCid() == null) {
         return null;
       }
 
-      ChemicalImportSearchResult.ChemicalImportSearchResultBuilder builder =
-          ChemicalImportSearchResult.builder().pubchemId(cid);
+      String cid = String.valueOf(property.getCid());
 
-      // Generate PNG image URL using PubChem's image service
-      String pngImageUrl = generatePngImageUrl(cid);
-      builder.pngImage(pngImageUrl);
-
-      // Generate PubChem compound URL
-      String pubchemUrl = generatePubChemUrl(cid);
-      builder.pubchemUrl(pubchemUrl);
-
-      // Extract properties from the compound data
-      JsonNode propsNode = compoundNode.path("props");
-      if (propsNode.isArray()) {
-        for (JsonNode propNode : propsNode) {
-          extractProperty(propNode, builder);
-        }
-      }
-
-      return builder.build();
+      return ChemicalImportSearchResult.builder()
+          .pubchemId(cid)
+          .name(property.getTitle())
+          .formula(property.getMolecularFormula())
+          .smiles(property.getSmiles())
+          .pngImage(generatePngImageUrl(cid))
+          .pubchemUrl(generatePubChemUrl(cid))
+          .build();
 
     } catch (Exception e) {
-      log.warn("Error extracting compound data: {}", e.getMessage());
+      log.warn("Error converting property to search result: {}", e.getMessage());
       return null;
-    }
-  }
-
-  private void extractProperty(
-      JsonNode propNode, ChemicalImportSearchResult.ChemicalImportSearchResultBuilder builder) {
-
-    JsonNode urnNode = propNode.path("urn");
-    String label = urnNode.path("label").asText();
-
-    JsonNode valueNode = propNode.path("value");
-
-    switch (label) {
-      case "IUPAC Name":
-        if (valueNode.path("sval").isTextual()) {
-          builder.name(valueNode.path("sval").asText());
-        }
-        break;
-      case "Molecular Formula":
-        if (valueNode.path("sval").isTextual()) {
-          builder.formula(valueNode.path("sval").asText());
-        }
-        break;
-      case "SMILES":
-      case "Canonical SMILES":
-        if (valueNode.path("sval").isTextual()) {
-          builder.smiles(valueNode.path("sval").asText());
-        }
-        break;
     }
   }
 
