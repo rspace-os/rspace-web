@@ -471,7 +471,14 @@ function IntegrationCard<Credentials>({
             <Typography variant="body2">{usageText}</Typography>
             {typeof website === "string" ? (
               <Typography variant="body2">
-                See <Link href={`https://${website}`}>{website}</Link>
+                See{" "}
+                <Link
+                  href={
+                    website.startsWith("/") ? website : `https://${website}`
+                  }
+                >
+                  {website}
+                </Link>
                 {" and our "}
                 <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
               </Typography>
