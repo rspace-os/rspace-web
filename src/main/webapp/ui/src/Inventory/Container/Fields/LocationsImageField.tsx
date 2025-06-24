@@ -1,5 +1,3 @@
-// @flow
-
 import Button from "@mui/material/Button";
 import ContentImage from "../Content/ImageView/PlaceMarkers/ContentImage";
 import ImageField, {
@@ -7,7 +5,7 @@ import ImageField, {
 } from "../../../components/Inputs/ImageField";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LocationsImageMarkersDialog from "./LocationsImageMarkersDialog";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import useStores from "../../../stores/use-stores";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
@@ -29,17 +27,17 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-function LocationsImageField(): Node {
+function LocationsImageField(): React.ReactNode {
   const { searchStore, trackingStore, uiStore } = useStores();
   const activeResult = searchStore.activeResult;
   if (!activeResult || !(activeResult instanceof ContainerModel))
     throw new Error("ActiveResult must be a Container");
   const [editMarkers, setEditMarkers] = React.useState(false);
-  const [toast, setToast] = React.useState<?Alert>(null);
+  const [toast, setToast] = React.useState<Alert | null>(null);
   const { classes } = useStyles();
 
   const storeImage = (newImageData: ImageData) => {
-    activeResult.setImage("locationsImage", CANVAS_ID)(newImageData);
+    void activeResult.setImage("locationsImage", CANVAS_ID)(newImageData);
     if (activeResult.image) return;
 
     if (toast) {
@@ -109,10 +107,10 @@ function LocationsImageField(): Node {
                   : !locationsImage
                   ? "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one."
                   : !activeResult.locationsCount
-                  ? "Click on ‘Edit Locations’ to add locations and start using the visual container."
+                  ? "Click on 'Edit Locations' to add locations and start using the visual container."
                   : ""
               }
-              alt={"The marked locations of ${activeResult.name}"}
+              alt={`The marked locations of ${activeResult.name}`}
             />
             <canvas id={CANVAS_ID} style={{ display: "none" }}></canvas>
           </>
@@ -129,4 +127,4 @@ function LocationsImageField(): Node {
   );
 }
 
-export default (observer(LocationsImageField): ComponentType<{||}>);
+export default observer(LocationsImageField);
