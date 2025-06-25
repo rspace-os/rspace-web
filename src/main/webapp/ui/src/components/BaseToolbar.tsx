@@ -20,7 +20,7 @@ const ToolbarContent = styled.div`
   }
 `;
 
-export default function BaseToolbar(props) {
+export default function BaseToolbar(props: { content: React.ReactNode }) {
   return (
     <AppBar position="relative" elevation={0}>
       <Toolbar style={{ padding: "0px 0px", position: "relative" }}>
