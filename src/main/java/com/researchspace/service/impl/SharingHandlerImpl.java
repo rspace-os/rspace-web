@@ -105,6 +105,19 @@ public class SharingHandlerImpl implements SharingHandler {
   }
 
   @Override
+  public ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
+      shareIntoSharedNotebook(User user, Notebook sharedNotebook, Long recordId) {
+    Group sharedGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedNotebook);
+    ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "read");
+    shareConfigElement.setGroupFolderId(sharedNotebook.getId());
+    shareConfigElement.setAllowedOps(List.of("read", "write"));
+    ShareConfigCommand shareConfig =
+        new ShareConfigCommand(
+            new Long[] {recordId}, new ShareConfigElement[] {shareConfigElement});
+    return this.shareRecords(shareConfig, user);
+  }
+
+  @Override
   public ServiceOperationResult<RecordGroupSharing> unshare(Long recordGroupShareId, User subject) {
     RecordGroupSharing rgs = sharingManager.get(recordGroupShareId);
     return doUnshare(rgs, subject, true);

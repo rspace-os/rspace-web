@@ -2,13 +2,24 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.model.core.RecordType.*;
 
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.DetailedRecordInformation;
 import com.researchspace.model.record.Folder;
+import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordManager;
+import com.researchspace.session.UserSessionTracker;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.servlet.ServletContext;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
@@ -22,6 +33,10 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
   private FolderManager fMger;
 
   private RecordManager recMgr;
+
+  @Getter @Setter private @Autowired DetailedRecordInformationProvider infoProvider;
+
+  @Getter @Setter private @Autowired GroupManager grpMgr;
 
   @Autowired
   public void setRecMgr(RecordManager recMgr) {
@@ -39,7 +54,8 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
       Model model,
       Collection<? extends BaseRecord> records,
       Long previousFolderId,
-      boolean isSearch) {
+      boolean isSearch,
+      ServletContext servletContext) {
 
     boolean createRecord =
         (parentFolder.isSharedFolder() && !parentFolder.hasType(INDIVIDUAL_SHARED_FOLDER_ROOT))
@@ -92,7 +108,27 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     // override if it is notebook
     if (parentFolder.isNotebook()) {
-      // dto.setCreateRecord(false);
+      UserSessionTracker currentActiveUsers =
+          (UserSessionTracker) servletContext.getAttribute(UserSessionTracker.USERS_KEY);
+      // TODO[nik]: implementcheck EDIT permission with the user group
+      DetailedRecordInformation detailedInfo =
+          infoProvider.getDetailedRecordInformation(
+              parentFolder.getId(), currentActiveUsers, usr, null, null);
+      Map<String, String> permissionsByGroupName = detailedInfo.getSharedGroupsAndAccess();
+      Set<String> currentUserGroups =
+          grpMgr.listGroupsForUser().stream()
+              .map(Group::getDisplayName)
+              .collect(Collectors.toSet());
+      boolean hasEditPermissions = false;
+      Set<String> commonGroups = permissionsByGroupName.keySet();
+      commonGroups.retainAll(currentUserGroups);
+      for (String commonGroup : commonGroups) {
+        if (permissionsByGroupName.get(commonGroup).equals("EDIT")) {
+          hasEditPermissions = true;
+          break;
+        }
+      }
+      dto.setCreateRecord(createRecord || (isParentFolderInSharedTree && hasEditPermissions));
       dto.setCreateFolder(false);
     }
 
@@ -122,6 +158,8 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     model.addAttribute("movetargetRoot", movetargetRoot);
     model.addAttribute("isNotebook", parentFolder.isNotebook());
+    model.addAttribute("allowCreateEntry", parentFolder.isNotebook() && parentFolder.isShared());
+
     model.addAttribute("createPermission", dto);
     model.addAttribute("allowThirdPartyImport", !parentFolder.isSharedFolder());
     model.addAttribute("allowCreateForm", !parentFolder.isSharedFolder());

@@ -4,6 +4,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import java.util.Collection;
+import javax.servlet.ServletContext;
 import org.springframework.ui.Model;
 
 public interface IWorkspacePermissionsDTOBuilder {
@@ -25,5 +26,6 @@ public interface IWorkspacePermissionsDTOBuilder {
       Model model,
       Collection<? extends BaseRecord> records,
       Long previousFolderId,
-      boolean isSearch);
+      boolean isSearch,
+      ServletContext servletContext);
 }

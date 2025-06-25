@@ -1151,7 +1151,13 @@ public class WorkspaceController extends BaseController {
       preWorkspaceViewRecordStatusManager.setStatuses(records.getResults(), subject);
 
       permDTObuilder.addCreateAndOptionsMenuPermissions(
-          parentFolder, subject, model, records.getResults(), previousFolderId, false);
+          parentFolder,
+          subject,
+          model,
+          records.getResults(),
+          previousFolderId,
+          false,
+          servletContext);
     }
   }
 
@@ -1181,7 +1187,7 @@ public class WorkspaceController extends BaseController {
       preWorkspaceViewRecordStatusManager.setStatuses(resultEntries, subject);
 
       permDTObuilder.addCreateAndOptionsMenuPermissions(
-          parentFolder, subject, model, resultEntries, null, true);
+          parentFolder, subject, model, resultEntries, null, true, servletContext);
     }
   }
 
