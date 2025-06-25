@@ -114,6 +114,19 @@ public class PubChemImporterTest {
   }
 
   @Test
+  public void whenSearchBadRequest_thenThrowException() {
+    when(restTemplate.getForEntity(anyString(), any()))
+        .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
+
+    ChemicalImportException exception =
+        assertThrows(
+            ChemicalImportException.class,
+            () -> pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "invalid-search"));
+
+    assertTrue(exception.getMessage().contains("Invalid request to PubChem API"));
+  }
+
+  @Test
   public void whenNullSearchType_thenThrowException() {
     ChemicalImportException exception =
         assertThrows(
@@ -268,6 +281,19 @@ public class PubChemImporterTest {
             ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of("2244")));
 
     assertTrue(exception.getMessage().contains("Rate limit exceeded"));
+  }
+
+  @Test
+  public void whenImportBadRequest_thenThrowAppropriateException() {
+    when(restTemplate.getForEntity(anyString(), any()))
+        .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
+
+    ChemicalImportException exception =
+        assertThrows(
+            ChemicalImportException.class,
+            () -> pubChemImporter.importChemicals(List.of("invalid-cid")));
+
+    assertTrue(exception.getMessage().contains("Invalid request to PubChem API"));
   }
 
   @Test

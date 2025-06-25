@@ -146,6 +146,9 @@ public class PubChemImporter implements ChemicalImporter {
         return new ArrayList<>();
       } else if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
         throw new ChemicalImportException("Rate limit exceeded. Please try again later.");
+      } else if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+        throw new ChemicalImportException(
+            String.format("Invalid request to PubChem API: %s", e.getMessage()), e);
       }
       throw new ChemicalImportException(String.format("PubChem API error: %s", e.getMessage()), e);
     } catch (ResourceAccessException e) {

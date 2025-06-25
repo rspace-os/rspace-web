@@ -81,6 +81,9 @@ public class ChemicalImportApiController extends BaseApiController implements Ch
     } else if (e.getMessage().contains("timeout") || e.getMessage().contains("connection")) {
       return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
           .body("External service temporarily unavailable.");
+    } else if (e.getMessage().contains("Invalid request to PubChem API")) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body("Invalid request to PubChem API. Please check your input.");
     } else {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body("Error importing chemical data.");

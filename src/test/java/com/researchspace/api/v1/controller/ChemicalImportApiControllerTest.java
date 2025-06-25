@@ -89,6 +89,20 @@ public class ChemicalImportApiControllerTest {
   }
 
   @Test
+  public void whenBadRequest_thenReturnBadRequest() throws Exception {
+    ChemicalSearchRequest request =
+        new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "invalid-search");
+    BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
+
+    when(chemicalImporter.searchChemicals(ChemicalImportSearchType.NAME, "invalid-search"))
+        .thenThrow(new ChemicalImportException("Invalid request to PubChem API"));
+
+    ResponseEntity<?> response = controller.searchChemicals(request, bindingResult);
+
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+  }
+
+  @Test
   public void whenTimeoutError_thenReturnBadGateway() throws Exception {
     ChemicalSearchRequest request =
         new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
@@ -246,6 +260,19 @@ public class ChemicalImportApiControllerTest {
     ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
 
     assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
+  }
+
+  @Test
+  public void whenImportBadRequest_thenReturnBadRequest() throws Exception {
+    List<String> cids = List.of("invalid-cid");
+    BindingResult bindingResult = new BeanPropertyBindingResult(cids, "request");
+    doThrow(new ChemicalImportException("Invalid request to PubChem API"))
+        .when(chemicalImporter)
+        .importChemicals(anyList());
+
+    ResponseEntity<?> response = controller.importChemicals(cids, bindingResult);
+
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
   }
 
   @Test
