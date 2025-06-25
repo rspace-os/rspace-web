@@ -1,5 +1,3 @@
-// @flow
-
 import React from "react";
 import Jove, { getSelectedResults, getOrder, getOrderBy } from "./Jove";
 import { getArticle, type Article } from "./JoveClient";
@@ -14,10 +12,11 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-parent.tinymce.activeEditor.on("jove-insert", function () {
+parent.tinymce.activeEditor?.on("jove-insert", function () {
   if (parent && parent.tinymce) {
-    let selectedResults = stableSort(
+    let selectedResults = stableSort<Article>(
       getSelectedResults(),
+      // @ts-expect-error TS doesn't like indexing by ""
       getSorting(getOrder(), getOrderBy())
     );
     if (selectedResults.length > 0) {
@@ -33,9 +32,11 @@ parent.tinymce.activeEditor.on("jove-insert", function () {
           return index.data;
         });
         let joveContentToInsert = createJoveContent(articles);
+        // @ts-expect-error global
         RS.tinymceInsertContent(joveContentToInsert.outerHTML, ed); //eslint-disable-line
-        ed.windowManager.close();
+        ed?.windowManager.close();
       });
+      // @ts-expect-error global
       RS.trackEvent("JoveContentInserted", { selectedResults }); //eslint-disable-line
     }
   }

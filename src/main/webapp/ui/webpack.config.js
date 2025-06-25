@@ -61,7 +61,7 @@ module.exports = {
     tinymcePyrat: "./src/tinyMCE/pyrat/Pyrat.js",
     tinymceClustermarket: "./src/tinyMCE/clustermarket/index.js",
     tinymceOmero: "./src/tinyMCE/omero/index.js",
-    tinymceJove: "./src/tinyMCE/jove/index.js",
+    tinymceJove: "./src/tinyMCE/jove/index.tsx",
     tinymceKetcher: "./src/tinyMCE/ketcher/KetcherTinyMce.js",
     ketcherViewer: "./src/tinyMCE/ketcher/KetcherViewer.tsx",
     tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.tsx",
