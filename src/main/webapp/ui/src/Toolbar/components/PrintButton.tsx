@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -8,11 +6,13 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { faPrint } from "@fortawesome/free-solid-svg-icons";
 library.add(faPrint);
 
-type PrintButtonArgs = {|
-  dataTestId: string,
-|};
+type PrintButtonArgs = {
+  dataTestId: string;
+};
 
-export default function PrintButton({ dataTestId }: PrintButtonArgs): Node {
+export default function PrintButton({
+  dataTestId,
+}: PrintButtonArgs): React.ReactNode {
   return (
     <Tooltip title="Print" enterDelay={300}>
       <IconButton
