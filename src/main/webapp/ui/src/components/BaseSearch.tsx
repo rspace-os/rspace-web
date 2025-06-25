@@ -7,7 +7,6 @@ import InputBase from "@mui/material/InputBase";
 import { makeStyles } from "tss-react/mui";
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
-import PropTypes from "prop-types";
 import { createRoot } from "react-dom/client";
 
 const useStyles = makeStyles()((theme) => ({
@@ -26,23 +25,29 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-function BaseSearch(props) {
+function BaseSearch(props: {
+  onSubmit: string | (() => void);
+  variant: "elevation" | "outlined";
+  elId: string;
+  placeholder: string;
+}) {
   const { classes } = useStyles();
   const [search, setSearch] = React.useState("");
 
-  const submitSearch = (e) => {
+  const submitSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (props.onSubmit) {
       if (typeof props.onSubmit === "function") {
         props.onSubmit();
       } else if (typeof props.onSubmit === "string") {
-        window.parent[props.onSubmit]();
+        // @ts-expect-error yes, this is a bit hacky
+        (window.parent[props.onSubmit] as () => void)();
       }
     }
   };
 
-  const handleChange = (event) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value);
   };
 
@@ -75,8 +80,6 @@ function BaseSearch(props) {
         <IconButton
           id={`${props.elId}-submit`}
           type="submit"
-          onClick={submitSearch}
-          className={classes.submit}
           aria-label="Search"
           data-test-id="base-search-submit"
         >
@@ -91,7 +94,9 @@ function BaseSearch(props) {
  * This is necessary because as of MUI v5 useStyles cannot be used in the same
  * component as the root MuiThemeProvider
  */
-export default function WrappedBaseSearch(props) {
+export default function WrappedBaseSearch(
+  props: React.ComponentProps<typeof BaseSearch>
+) {
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
@@ -109,9 +114,13 @@ function renderElements() {
         const root = createRoot(container);
         root.render(
           <WrappedBaseSearch
+            // @ts-expect-error the container will have data attributes
             placeholder={container.dataset.placeholder}
+            // @ts-expect-error the container will have data attributes
             onSubmit={container.dataset.onsubmit}
+            // @ts-expect-error the container will have data attributes
             elId={container.dataset.elid}
+            // @ts-expect-error the container will have data attributes
             variant={container.dataset.variant}
           />
         );
@@ -121,10 +130,3 @@ function renderElements() {
 }
 
 renderElements();
-
-BaseSearch.propTypes = {
-  onSubmit: PropTypes.oneOfType([PropTypes.func, PropTypes.string]),
-  variant: PropTypes.string,
-  elId: PropTypes.string,
-  placeholder: PropTypes.string,
-};

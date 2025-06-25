@@ -1,0 +1,10 @@
+//@flow
+
+import { type Node } from 'react';
+
+declare export default function WrappedBaseSearch({
+    onSubmit: string | () => void,
+    variant?: "elevation" | "outlined",
+    elId: string,
+    placeholder: string,
+}): Node;

@@ -65,7 +65,7 @@ module.exports = {
     tinymceKetcher: "./src/tinyMCE/ketcher/KetcherTinyMce.js",
     ketcherViewer: "./src/tinyMCE/ketcher/KetcherViewer.js",
     tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.js",
-    baseSearch: "./src/components/BaseSearch.js",
+    baseSearch: "./src/components/BaseSearch.tsx",
     confirmationDialog: "./src/components/ConfirmationDialog.js",
     imageEditor: "./src/Gallery/imageEditorDialog.js",
     materialsListing:
