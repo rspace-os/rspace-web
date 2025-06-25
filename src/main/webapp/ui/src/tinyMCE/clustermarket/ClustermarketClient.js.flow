@@ -1,0 +1,29 @@
+//@flow
+
+import type {
+  BOOKING_TYPE,
+  BookingDetails,
+  EquipmentDetails,
+  BookingsList,
+} from "./ClustermarketData";
+
+declare export const getRelevantBookings: (
+  bookingType: $Values<BOOKING_TYPE>,
+  bookingsList: BookingsList
+) => BookingsList;
+
+declare export const getBookings: (
+  bookingType: $Values<BOOKING_TYPE>
+) => Promise<BookingsList>;
+
+declare export const getAllBookingDetails: (
+  bookingsList: BookingsList
+) => Promise<Array<BookingDetails>>;
+
+declare export const getUniqueEquipmentIdsFromBookings: (
+  bookingsList: BookingsList
+) => Array<string>;
+
+declare export const getAllEquipmentDetails: (
+  bookingsList: BookingsList
+) => Promise<Array<EquipmentDetails>>;

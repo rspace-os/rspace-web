@@ -1,4 +1,3 @@
-// @flow
 import axios, { type AxiosPromise } from "@/common/axios";
 import { BookingType } from "./Enums";
 import type {
@@ -9,14 +8,14 @@ import type {
 } from "./ClustermarketData";
 
 // eslint-disable-next-line require-await
-const getBookingsList = async (): AxiosPromise<mixed, BookingsList> => {
-  return axios.get("/apps/clustermarket/bookings");
+const getBookingsList = async (): AxiosPromise<BookingsList> => {
+  return axios.get<BookingsList>("/apps/clustermarket/bookings");
 };
 
 const getBookingDetails = async (
   bookingIDs: string
   // eslint-disable-next-line require-await
-): AxiosPromise<mixed, Array<BookingDetails>> => {
+): AxiosPromise<Array<BookingDetails>> => {
   return axios.put("/apps/clustermarket/bookings/details", {
     bookingIDs,
   });
@@ -25,12 +24,12 @@ const getBookingDetails = async (
 const getEquipmentDetails = async (
   equipmentIDs: string
   // eslint-disable-next-line require-await
-): AxiosPromise<mixed, Array<EquipmentDetails>> => {
+): AxiosPromise<Array<EquipmentDetails>> => {
   return axios.put("/apps/clustermarket/equipment/details", { equipmentIDs });
 };
 
 export const getRelevantBookings = (
-  bookingType: $Values<BOOKING_TYPE>,
+  bookingType: (typeof BookingType)[keyof typeof BookingType],
   bookingsList: BookingsList
 ): BookingsList => {
   let relevantBookings: BookingsList;
@@ -47,9 +46,9 @@ export const getRelevantBookings = (
 };
 
 export const getBookings = async (
-  bookingType: $Values<BOOKING_TYPE>
+  bookingType: (typeof BookingType)[keyof typeof BookingType]
 ): Promise<BookingsList> => {
-  const bookingsList = ((await getBookingsList()).data: BookingsList);
+  const bookingsList = (await getBookingsList()).data;
   if (bookingsList) {
     return getRelevantBookings(bookingType, bookingsList);
   }
@@ -66,9 +65,9 @@ export const getAllBookingDetails = async (
 export const getUniqueEquipmentIdsFromBookings = (
   bookingsList: BookingsList
 ): Array<string> => {
-  const equipmentIDsMap = new Map<string, mixed>();
-  bookingsList.map((booking) => equipmentIDsMap.set(booking.equipment_id));
-  return Array.from(equipmentIDsMap.keys());
+  const equipmentIDsMap = new Set<string>();
+  bookingsList.map((booking) => equipmentIDsMap.add(booking.equipment_id));
+  return Array.from(equipmentIDsMap);
 };
 
 export const getAllEquipmentDetails = async (
