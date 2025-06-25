@@ -43,7 +43,7 @@ module.exports = {
     notebookToolbar: "./src/Toolbar/Notebook/Toolbar.js",
     structuredDocumentToolbar: "./src/Toolbar/StructuredDocument/Toolbar.js",
     fileTreeToolbar: "./src/Toolbar/FileTreeToolbar.js",
-    galleryToolbar: "./src/Toolbar/Gallery/Toolbar.js",
+    galleryToolbar: "./src/Toolbar/Gallery/Toolbar.tsx",
     newLabGroup: "./src/system-groups/NewLabGroup.js",
     tinymceSidebarInfo: "./src/tinyMCE/sidebarInfo.js",
     previewInfo: "./src/tinyMCE/previewInfo.js",

@@ -26,8 +26,8 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 function BaseSearch(props: {
-  onSubmit: string | (() => void);
-  variant: "elevation" | "outlined";
+  onSubmit?: string | (() => void);
+  variant?: "elevation" | "outlined";
   elId: string;
   placeholder: string;
 }) {

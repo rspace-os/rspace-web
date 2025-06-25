@@ -1,6 +1,4 @@
-// @flow
-
-import React, { useState, useEffect, type Node } from "react";
+import React, { useState, useEffect } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
@@ -8,7 +6,7 @@ import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import styled from "@emotion/styled";
-import { createRoot } from "react-dom/client";
+import { createRoot, Root } from "react-dom/client";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import BaseSearch from "../../components/BaseSearch";
@@ -30,10 +28,10 @@ const ButtonWrapper = styled.div`
 
 const domContainer = document.getElementById("toolbar2");
 
-export default function GalleryToolbar(): Node {
-  const [galleryMenu, setGalleryMenu] = useState<?EventTarget>(null);
+export default function GalleryToolbar(): React.ReactNode {
+  const [galleryMenu, setGalleryMenu] = useState<HTMLElement | null>(null);
 
-  function openGalleryMenu({ currentTarget }: Event) {
+  function openGalleryMenu({ currentTarget }: React.MouseEvent<HTMLElement>) {
     setGalleryMenu(currentTarget);
   }
 
@@ -41,9 +39,9 @@ export default function GalleryToolbar(): Node {
     setGalleryMenu(null);
   }
 
-  const [importMenu, setImportMenu] = useState<?EventTarget>(null);
+  const [importMenu, setImportMenu] = useState<HTMLElement | null>(null);
 
-  function openImportMenu({ currentTarget }: Event) {
+  function openImportMenu({ currentTarget }: React.MouseEvent<HTMLElement>) {
     setImportMenu(currentTarget);
   }
 
@@ -218,30 +216,15 @@ export default function GalleryToolbar(): Node {
   );
 }
 
-let rootNode;
-
-/*
- * We remember the last props so that renderToolbar only needs to be passed the
- * props that have changed
- */
-let prevProps = { conditionalRender: {}, eventHandlers: {} };
+let rootNode: Root;
 
 if (/^\/oldGallery/.test(window.location.pathname))
-  window.renderToolbar = (newProps) => {
+  // @ts-expect-error TS can't find this global
+  window.renderToolbar = () => {
     if (!rootNode && domContainer) {
       rootNode = createRoot(domContainer);
     }
-    prevProps = {
-      conditionalRender: {
-        ...prevProps.conditionalRender,
-        ...(newProps?.conditionalRender ?? {}),
-      },
-      eventHandlers: {
-        ...prevProps.eventHandlers,
-        ...(newProps?.eventHandlers ?? {}),
-      },
-    };
-    rootNode.render(<GalleryToolbar {...prevProps} />);
+    rootNode.render(<GalleryToolbar />);
   };
 
 /*
@@ -250,5 +233,6 @@ if (/^\/oldGallery/.test(window.location.pathname))
  * dispatched above.
  */
 window.addEventListener("load", () => {
+  // @ts-expect-error TS can't find this global
   window.renderToolbar();
 });
