@@ -414,9 +414,9 @@ public class WorkspaceController extends BaseController {
     Long newNotebookId = createNotebook(targetFolderId, notebookName, principal);
 
     if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
-      ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
-          recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newNotebookId);
-      sharedWithGroup = sharingResult.getResults();
+      sharedWithGroup =
+          recordShareHandler.shareIntoSharedFolderOrNotebook(
+              user, originalParentFolder, newNotebookId);
     }
 
     return getNotebookRedirectUrl(newNotebookId, sharedWithGroup);

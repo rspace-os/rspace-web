@@ -628,6 +628,52 @@ public class SDocControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void createIntoSharedNotebook() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User u = group.u1();
+    initUser(u);
+    RSpaceTestUtils.login(u.getUsername(), TESTPASSWD);
+    RSForm form = createAnyForm(u);
+
+    openTransaction();
+    Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
+    commitTransaction();
+    Long rootFolderId = folderMgr.getRootRecordForUser(u, u).getId();
+    final int initialRecordsCount = (int) getRecordCountInFolderForUser(rootFolderId);
+    MvcResult resultUrl =
+        this.mockMvc
+            .perform(
+                post("/workspace/create_notebook/{recordid}", sharedFolderId + "")
+                    .param("notebookNameField", "sharedNotebook")
+                    .principal(new MockPrincipal(u.getUsername())))
+            .andExpect(status().is3xxRedirection())
+            .andReturn();
+    String redirectUrl = resultUrl.getResponse().getHeader("Location");
+    String notebookId = redirectUrl.split("/")[2].split("\\?")[0];
+
+    assertEquals(initialRecordsCount + 1, getRecordCountInFolderForUser(rootFolderId));
+    assertEquals(1, getRecordCountInFolderForUser(sharedFolderId));
+    assertTrue(redirectUrl.contains("sharedWithGroup=" + group.getGroup().getDisplayName()));
+
+    resultUrl =
+        this.mockMvc
+            .perform(
+                post(
+                        StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
+                            + "/create/{recordId}",
+                        notebookId)
+                    .param("template", form.getId() + "")
+                    .principal(new MockPrincipal(u.getUsername())))
+            .andExpect(status().is3xxRedirection())
+            .andReturn();
+
+    redirectUrl = resultUrl.getResponse().getHeader("Location");
+
+    assertEquals(1, getRecordCountInFolderForUser(Long.valueOf(notebookId)));
+    assertTrue(redirectUrl.contains("fromNotebook=" + notebookId));
+  }
+
+  @Test
   public void createEntry() throws Exception {
     User u = createInitAndLoginAnyUser();
 

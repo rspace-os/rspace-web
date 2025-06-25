@@ -645,4 +645,6 @@ public interface RecordManager {
    * @return whether the move/permission change action was successful
    */
   boolean forceMoveDocumentToOwnerWorkspace(StructuredDocument userDoc);
+
+  boolean isSharedFolderOrSharedNotebookWithoutCreatePermssison(User user, Folder parentFolder);
 }
