@@ -1,7 +1,7 @@
 import React from "react";
 import { TableContainer } from "@mui/material";
 import Table from "@mui/material/Table";
-import EnhancedTableHead from "../../components/EnhancedTableHead";
+import EnhancedTableHead, { Cell } from "../../components/EnhancedTableHead";
 import TableBody from "@mui/material/TableBody";
 import { getSorting, stableSort } from "../../util/table";
 import TableRow from "@mui/material/TableRow";
@@ -11,6 +11,7 @@ import { makeStyles } from "tss-react/mui";
 import Typography from "@mui/material/Typography";
 import { BookingType, Order } from "./Enums";
 import PropTypes from "prop-types";
+import { BookingAndEquipmentDetails } from "./ClustermarketData";
 
 const useStyles = makeStyles()(() => ({
   tableContainer: {
@@ -43,6 +44,17 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
+type HeaderCellId =
+  | "bookingID"
+  | "equipmentName"
+  | "manufacturer"
+  | "model"
+  | "requesterName"
+  | "start_time"
+  | "duration"
+  | "bookingType"
+  | "status";
+
 export default function ResultsTable({
   clustermarket_web_url,
   visibleHeaderCells,
@@ -54,12 +66,28 @@ export default function ResultsTable({
   selectedBookingIds,
   setSelectedBookingIds,
   bookingType,
+}: {
+  clustermarket_web_url: string;
+  visibleHeaderCells: Array<Cell<HeaderCellId>>;
+  results: Array<BookingAndEquipmentDetails>;
+  order: (typeof Order)[keyof typeof Order];
+  setOrder: (newOrder: (typeof Order)[keyof typeof Order]) => void;
+  orderBy: string;
+  setOrderBy: (newOrderBy: string) => void;
+  selectedBookingIds: Array<string>;
+  setSelectedBookingIds: (
+    newSelection: Array<BookingAndEquipmentDetails["bookingID"]>
+  ) => void;
+  bookingType: string;
 }) {
   const { classes } = useStyles();
 
-  function onRowClick(event, item_id) {
+  function onRowClick(
+    event: unknown,
+    item_id: BookingAndEquipmentDetails["bookingID"]
+  ) {
     const selectedIndex = selectedBookingIds.indexOf(item_id);
-    let newSelected = [];
+    let newSelected: Array<BookingAndEquipmentDetails["bookingID"]> = [];
 
     if (selectedIndex === -1) {
       newSelected = newSelected.concat(selectedBookingIds, item_id);
@@ -77,13 +105,16 @@ export default function ResultsTable({
     setSelectedBookingIds(newSelected);
   }
 
-  function handleRequestSort(event, property) {
+  function handleRequestSort(
+    event: React.MouseEvent<HTMLSpanElement>,
+    property: string
+  ) {
     const isDesc = orderBy === property && order === Order.desc;
     setOrder(isDesc ? Order.asc : Order.desc);
     setOrderBy(property);
   }
 
-  const getBookingOrEquipmentID = (booking) => {
+  const getBookingOrEquipmentID = (booking: BookingAndEquipmentDetails) => {
     if (bookingType === BookingType.EQUIPMENT) {
       return booking.equipmentID;
     }
@@ -106,6 +137,7 @@ export default function ResultsTable({
                 const newSelected = results.map((booking) =>
                   getBookingOrEquipmentID(booking)
                 );
+                // @ts-expect-error looks like a mix up of id types
                 return setSelectedBookingIds(newSelected);
               }
               setSelectedBookingIds([]);
@@ -118,6 +150,7 @@ export default function ResultsTable({
               (booking, index) => {
                 const isItemSelected =
                   selectedBookingIds.indexOf(
+                    // @ts-expect-error looks like a mix up of id types
                     getBookingOrEquipmentID(booking)
                   ) !== -1;
                 const labelId = `booking-search-results-checkbox-${index}`;
@@ -130,6 +163,7 @@ export default function ResultsTable({
                     tabIndex={-1}
                     role="checkbox"
                     onClick={(event) =>
+                      // @ts-expect-error looks like a mix up of id types
                       onRowClick(event, getBookingOrEquipmentID(booking))
                     }
                     aria-checked={isItemSelected}
@@ -177,7 +211,7 @@ export default function ResultsTable({
                             {booking[cell.id]}
                           </a>
                         ) : (
-                          booking[cell.id]
+                          (booking[cell.id] as React.ReactNode)
                         )}
                       </TableCell>
                     ))}

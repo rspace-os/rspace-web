@@ -44,7 +44,7 @@ export type BookingAndEquipmentDetails = {
   equipmentName: string,
   manufacturer: string,
   model: string,
-  equipmentID: number,
+  equipmentID: string,
   labID: number,
 };
 

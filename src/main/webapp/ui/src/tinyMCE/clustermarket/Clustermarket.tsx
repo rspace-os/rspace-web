@@ -1,5 +1,5 @@
 // @flow
-import React, { useState, useEffect, useMemo, type Node } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   getAllBookingDetails,
   getAllEquipmentDetails,
@@ -29,15 +29,15 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ThemeProvider } from "@mui/material/styles";
 
 const TABLE_HEADER_CELLS = [
-  { id: "bookingID", numeric: false, label: "Booking ID" },
-  { id: "equipmentName", numeric: false, label: "Equipment Name" },
-  { id: "manufacturer", numeric: false, label: "Manufacturer" },
-  { id: "model", numeric: false, label: "Model" },
-  { id: "requesterName", numeric: false, label: "Booked by" },
-  { id: "start_time", numeric: false, label: "Start Time" },
-  { id: "duration", numeric: false, label: "Duration (mins)" },
-  { id: "bookingType", numeric: false, label: "Booking Type" },
-  { id: "status", numeric: false, label: "Status" },
+  { id: "bookingID" as const, numeric: false, label: "Booking ID" },
+  { id: "equipmentName" as const, numeric: false, label: "Equipment Name" },
+  { id: "manufacturer" as const, numeric: false, label: "Manufacturer" },
+  { id: "model" as const, numeric: false, label: "Model" },
+  { id: "requesterName" as const, numeric: false, label: "Booked by" },
+  { id: "start_time" as const, numeric: false, label: "Start Time" },
+  { id: "duration" as const, numeric: false, label: "Duration (mins)" },
+  { id: "bookingType" as const, numeric: false, label: "Booking Type" },
+  { id: "status" as const, numeric: false, label: "Status" },
 ];
 // Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
 // therefore its OK to just cache notes in the DB along with the other booking details
@@ -48,27 +48,27 @@ const maintenanceNotes = {
 };
 
 const EQUIPMENT_TABLE_HEADER_CELLS = [
-  { id: "equipmentID", numeric: false, label: "Equipment ID" },
-  { id: "equipmentName", numeric: false, label: "Equipment Name" },
-  { id: "manufacturer", numeric: false, label: "Manufacturer" },
-  { id: "model", numeric: false, label: "Model" },
-  { id: "bookingType", numeric: false, label: "Booking Type" },
-  { id: "bookingID", numeric: false, label: "Last use" },
-  { id: "start_time", numeric: false, label: "On date" },
-  { id: "requesterName", numeric: false, label: "Booked by" },
+  { id: "equipmentID" as const, numeric: false, label: "Equipment ID" },
+  { id: "equipmentName" as const, numeric: false, label: "Equipment Name" },
+  { id: "manufacturer" as const, numeric: false, label: "Manufacturer" },
+  { id: "model" as const, numeric: false, label: "Model" },
+  { id: "bookingType" as const, numeric: false, label: "Booking Type" },
+  { id: "bookingID" as const, numeric: false, label: "Last use" },
+  { id: "start_time" as const, numeric: false, label: "On date" },
+  { id: "requesterName" as const, numeric: false, label: "Booked by" },
 ];
-type ClustermarketArgs = {|
-  defaultBookingType: $Values<BOOKING_TYPE>,
-  clustermarket_web_url: string,
-|};
+type ClustermarketArgs = {
+  defaultBookingType: BOOKING_TYPE[keyof BOOKING_TYPE];
+  clustermarket_web_url: string;
+};
 
 let VISIBLE_HEADER_CELLS:
   | typeof TABLE_HEADER_CELLS
   | typeof EQUIPMENT_TABLE_HEADER_CELLS = TABLE_HEADER_CELLS;
-let SELECTED_BOOKINGS: $ReadOnlyArray<
+let SELECTED_BOOKINGS: ReadonlyArray<
   BookingAndEquipmentDetails | EquipmentWithBookingDetails
 > = [];
-export const getSelectedBookings = (): $ReadOnlyArray<
+export const getSelectedBookings = (): ReadonlyArray<
   BookingAndEquipmentDetails | EquipmentWithBookingDetails
 > => SELECTED_BOOKINGS;
 export const getHeaders = (): typeof VISIBLE_HEADER_CELLS =>
@@ -84,22 +84,25 @@ export const getOrderBy = (): string =>
 function Clustermarket({
   defaultBookingType = BookingType.BOOKED,
   clustermarket_web_url,
-}: ClustermarketArgs): Node {
+}: ClustermarketArgs): React.ReactNode {
   const [bookings, setBookings]: UseState<Array<BookingAndEquipmentDetails>> =
-    useState([]);
+    useState([] as Array<BookingAndEquipmentDetails>);
   const [equipment, setEquipment]: UseState<
     Array<EquipmentWithBookingDetails>
-  > = useState([]);
+  > = useState([] as Array<EquipmentWithBookingDetails>);
   const [fetchDone, setFetchDone] = useState(false);
-  const [errorReason, setErrorReason] = useState<$Values<typeof ErrorReason>>(
-    ErrorReason.None
-  );
+  const [errorReason, setErrorReason] = useState<
+    (typeof ErrorReason)[keyof typeof ErrorReason]
+  >(ErrorReason.None);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [selectedBookingIds, setSelectedBookingIds] = useState<Array<string>>(
     []
   );
-  const [order, setOrder] = useLocalStorage(ORDER_KEY, DEFAULT_ORDER);
+  const [order, setOrder] = useLocalStorage<(typeof Order)[keyof typeof Order]>(
+    ORDER_KEY,
+    DEFAULT_ORDER
+  );
   const [bookingType, setBookingType] = useLocalStorage(
     "clustermarketBookingType",
     defaultBookingType
@@ -112,6 +115,7 @@ function Clustermarket({
 
   const addMaintanceNotesToHeaders = (headers: typeof VISIBLE_HEADER_CELLS) => {
     if (!headers.find((header) => header.id === maintenanceNotes.id)) {
+      // @ts-expect-error type mismatch
       headers.splice(4, 0, maintenanceNotes);
     }
     return headers;
@@ -127,7 +131,7 @@ function Clustermarket({
   };
 
   const setHeadersByBookingType = (
-    newBookingType: $Values<BOOKING_TYPE>,
+    newBookingType: BOOKING_TYPE[keyof BOOKING_TYPE],
     newIsMaintenance: boolean
   ) => {
     if (newBookingType === BookingType.EQUIPMENT) {
@@ -142,9 +146,8 @@ function Clustermarket({
   };
 
   function handleRequestError(error: {
-    message: string,
-    response: ?{ status: number, data: string, ... },
-    ...
+    message: string;
+    response: { status: number; data: string } | null;
   }) {
     if (error.message === "Network Error") {
       setErrorReason(ErrorReason.NetworkError);
@@ -187,6 +190,7 @@ function Clustermarket({
             );
           setEquipment(equipmentTableRows);
           // eslint-disable-next-line no-undef
+          // @ts-expect-error global
           RS.trackEvent("FetchClustermarketEquipmentData", {
             count: equipmentTableRows.length,
             bookingType: bookingType,
@@ -202,6 +206,7 @@ function Clustermarket({
             );
           setBookings(bookingTableRows);
           // eslint-disable-next-line no-undef
+          // @ts-expect-error global
           RS.trackEvent("FetchClustermarketBookingData", {
             count: bookingTableRows.length,
             bookingType: bookingType,
@@ -211,15 +216,15 @@ function Clustermarket({
       }
       setFetchDone(true);
     } catch (error) {
+      // @ts-expect-error error type mismatch
       handleRequestError(error);
     }
   };
 
-  const handleBookingTypeChange = (event: {
-    target: { value: $Values<BOOKING_TYPE>, ... },
-    ...
-  }) => {
-    const newBookingType: $Values<BOOKING_TYPE> = event.target.value;
+  const handleBookingTypeChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const newBookingType = event.target.value;
     setBookingType(newBookingType);
     setHeadersByBookingType(newBookingType, isMaintenance);
   };
@@ -233,7 +238,7 @@ function Clustermarket({
   }, [bookingType, isMaintenance]);
 
   SELECTED_BOOKINGS = useMemo(() => {
-    const selected_bookings: $ReadOnlyArray<
+    const selected_bookings: ReadonlyArray<
       BookingAndEquipmentDetails | EquipmentWithBookingDetails
     > =
       bookingType === BookingType.EQUIPMENT
@@ -302,7 +307,9 @@ function Clustermarket({
           <Grid item xs={12}>
             <ResultsTable
               clustermarket_web_url={clustermarket_web_url}
+              // @ts-expect-error type mismatch
               visibleHeaderCells={VISIBLE_HEADER_CELLS}
+              // @ts-expect-error type mismatch
               results={
                 bookingType === BookingType.EQUIPMENT ? equipment : bookings
               }
@@ -315,7 +322,7 @@ function Clustermarket({
               bookingType={bookingType}
             />
           </Grid>
-          <Grid item xs={12} align="center">
+          <Grid item xs={12} sx={{ align: "center" }}>
             {!fetchDone && <CircularProgress />}
           </Grid>
         </Grid>
