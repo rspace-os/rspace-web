@@ -1,0 +1,25 @@
+//@flow
+
+declare const ErrorReason: {
+  None: -1,
+  NetworkError: 0,
+  APIVersion: 1,
+  NotFound: 2,
+  Unauthorized: 3,
+  Timeout: 4,
+  BadRequest: 5,
+  UNKNOWN: 6,
+};
+
+declare const Order: {
+  asc: "asc",
+  desc: "desc",
+};
+
+declare const SearchParam: {
+  queryString: "Query String",
+  author: "Author",
+  institution: "Institution",
+};
+
+export { ErrorReason, Order, SearchParam };

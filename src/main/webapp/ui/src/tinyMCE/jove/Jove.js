@@ -60,12 +60,19 @@ export default function Jove(): Node {
   const [searchResults, setSearchResults] = useState<Array<Article>>([]);
   const [searchDone, setSearchDone] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchParam, setSearchParam] = useState(SearchParam.queryString);
-  const [errorReason, setErrorReason] = useState(ErrorReason.None);
+  const [searchParam, setSearchParam] = useState<$Values<typeof SearchParam>>(
+    SearchParam.queryString
+  );
+  const [errorReason, setErrorReason] = useState<$Values<typeof ErrorReason>>(
+    ErrorReason.None
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   const [selectedJoveIds, setSelectedJoveIds] = useState<Array<ArticleId>>([]);
-  const [order, setOrder] = useLocalStorage("joveSearchOrder", Order.asc);
+  const [order, setOrder] = useLocalStorage<OrderType>(
+    "joveSearchOrder",
+    Order.asc
+  );
   const [orderBy, setOrderBy] = useLocalStorage("joveSearchOrderBy", "");
 
   const [page, setPage] = useState(0);
