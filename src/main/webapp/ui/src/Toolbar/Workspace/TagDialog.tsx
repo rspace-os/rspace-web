@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Portal from "@mui/material/Portal";
 import Typography from "@mui/material/Typography";
 import ErrorBoundary from "../../components/ErrorBoundary";
@@ -30,7 +28,7 @@ import AlertContext, {
 import { Optional } from "../../util/optional";
 import docLinks from "../../assets/DocLinks";
 
-export default function Wrapper(): Node {
+export default function Wrapper(): React.ReactNode {
   return (
     <ErrorBoundary topOfViewport>
       <Portal>
@@ -44,7 +42,7 @@ export default function Wrapper(): Node {
   );
 }
 
-function TagDialog(): Node {
+function TagDialog(): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
   const [saving, setSaving] = React.useState(false);
   const [enforcedOntologies, setEnforcedOntologies] = React.useState<
@@ -60,9 +58,9 @@ function TagDialog(): Node {
   );
 
   // a mapping of record ID to tags, as is currently saved on the server
-  const [savedTagsMap, setSavedTagsMap] = React.useState<{
-    [number]: Array<Tag>,
-  }>({});
+  const [savedTagsMap, setSavedTagsMap] = React.useState<
+    Record<number, Array<Tag>>
+  >({});
 
   // the set of tags that all of the records have in common
   const [commonTags, setCommonTags] = React.useState<RsSet<Tag>>(new RsSet());
@@ -82,27 +80,25 @@ function TagDialog(): Node {
   }, [commonTags, addedTags, deletedTags]);
 
   React.useEffect(() => {
-    const handler = async (
-      event: Event & { detail: { ids: Array<string>, ... }, ... }
-    ) => {
-      setSelectedIds(event.detail.ids.map((x) => parseInt(x, 10)));
+    const handler = doNotAwait(async (event: Event) => {
+      // @ts-expect-error there will be a detail
+      const ids: Array<string> = event.detail.ids;
+      setSelectedIds(ids.map((x) => parseInt(x, 10)));
       setSavedTagsMap({});
       setCommonTags(new RsSet([]));
       setAddedTags([]);
       setDeletedTags([]);
       try {
         const response = await axios.get<
-          Array<{| recordId: number, tagMetaData: string | null |}>
+          Array<{ recordId: number; tagMetaData: string | null }>
         >("/workspace/getTagsForRecords", {
-          params: new URLSearchParams([
-            ["recordIds", event.detail.ids.join(",")],
-          ]),
+          params: new URLSearchParams([["recordIds", ids.join(",")]]),
         });
-        const newlyFetchedTags: { [number]: Array<Tag> } = Object.fromEntries(
+        const newlyFetchedTags: Record<number, Array<Tag>> = Object.fromEntries(
           response.data.map(({ recordId, tagMetaData }) => [
             recordId,
             tagMetaData === null || tagMetaData === ""
-              ? ([]: Array<Tag>)
+              ? ([] as Array<Tag>)
               : parseEncodedTags(tagMetaData.split(",")),
           ])
         );
@@ -115,16 +111,18 @@ function TagDialog(): Node {
         );
         setCommonTags(newCommonTags);
       } catch (error) {
-        console.error(error);
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Could not get tags.",
-            message: error.message,
-          })
-        );
+        if (error instanceof Error) {
+          console.error(error);
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not get tags.",
+              message: error.message,
+            })
+          );
+        }
       }
-    };
+    });
     window.addEventListener("OPEN_TAG_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_TAG_DIALOG", handler);
@@ -146,16 +144,14 @@ function TagDialog(): Node {
       ).orElseGet(() => {
         throw new Error("Some tags are invalid");
       });
-      await axios.post<
-        Array<{| recordId: string, tagMetaData: string |}>,
-        mixed
-      >("/workspace/saveTagsForRecords", postData);
+      await axios.post<unknown>("/workspace/saveTagsForRecords", postData);
     } catch (e) {
-      if (Array.isArray(e.response?.data.errorMessages)) {
-        if (e.response.data.errorMessages.length === 1)
-          throw new Error(e.response.data.errorMessages[0]);
+      const error = e as any;
+      if (Array.isArray(error.response?.data.errorMessages)) {
+        if (error.response.data.errorMessages.length === 1)
+          throw new Error(error.response.data.errorMessages[0]);
         throw new AggregateError(
-          e.response.data.errorMessages.map((msg) => new Error(msg))
+          error.response.data.errorMessages.map((msg: string) => new Error(msg))
         );
       }
       throw e;
@@ -165,23 +161,25 @@ function TagDialog(): Node {
   };
 
   React.useEffect(() => {
-    const handler = async () => {
+    const handler = doNotAwait(async () => {
       try {
         const { data } = await axios.get<boolean>(
           "/userform/ajax/enforcedOntologies"
         );
         setEnforcedOntologies(data);
       } catch (e) {
-        console.error("Could not determine if ontologies are enforced or not.");
-        addAlert(
-          mkAlert({
-            title: "Could not determine if ontologies are enforced or not.",
-            message: e.message,
-            variant: "error",
-          })
-        );
+        if (e instanceof Error) {
+          console.error(e);
+          addAlert(
+            mkAlert({
+              title: "Could not determine if ontologies are enforced or not.",
+              message: e.message,
+              variant: "error",
+            })
+          );
+        }
       }
-    };
+    });
     window.addEventListener("OPEN_TAG_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_TAG_DIALOG", handler);
@@ -234,16 +232,16 @@ function TagDialog(): Node {
               endAdornment={
                 <Grid item>
                   <AddTag
-                    enforceOntologies={enforcedOntologies}
+                    enforceOntologies={enforcedOntologies ?? undefined}
                     onSelection={(
                       tag:
                         | Tag
-                        | {|
-                            value: string,
-                            vocabulary: string,
-                            uri: string,
-                            version: string,
-                          |}
+                        | {
+                            value: string;
+                            vocabulary: string;
+                            uri: string;
+                            version: string;
+                          }
                     ) => {
                       /*
                        * If ontologies are being enforced then it is guarateed that a
@@ -282,7 +280,7 @@ function TagDialog(): Node {
                       }
                     }}
                     value={
-                      savedTagsMap === null ? ([]: Array<Tag>) : visibleTags
+                      savedTagsMap === null ? ([] as Array<Tag>) : visibleTags
                     }
                     disabled={
                       Object.keys(savedTagsMap).length === 0 ||
@@ -311,8 +309,14 @@ function TagDialog(): Node {
                   message: "Successfully saved tags.",
                 })
               );
-            } catch (error) {
+            } catch (e) {
+              let error: Error;
               let details: Array<AlertDetails> = [];
+              if (!(e instanceof Error)) {
+                error = new Error("An unknown error occurred.");
+              } else {
+                error = e;
+              }
               let message = error.message;
               if (error instanceof AggregateError) {
                 details = ArrayUtils.filterClass(Error, [...error.errors]).map(
