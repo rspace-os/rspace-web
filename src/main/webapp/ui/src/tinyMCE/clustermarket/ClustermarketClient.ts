@@ -64,8 +64,8 @@ export const getAllBookingDetails = async (
 
 export const getUniqueEquipmentIdsFromBookings = (
   bookingsList: BookingsList
-): Array<string> => {
-  const equipmentIDsMap = new Set<string>();
+): Array<number> => {
+  const equipmentIDsMap = new Set<number>();
   bookingsList.map((booking) => equipmentIDsMap.add(booking.equipment_id));
   return Array.from(equipmentIDsMap);
 };

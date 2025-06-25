@@ -5,12 +5,12 @@ import * as ArrayUtils from "../../util/ArrayUtils";
 export type BOOKING_TYPE = typeof BookingType;
 export type Requester = { name: string };
 export type Equipment = { name: string; id: number };
-export type RequesterLab = { id: number; name: String };
+export type RequesterLab = { id: number; name?: string };
 export type BookingsList = Array<{
-  id: number;
+  id: string;
   start_time: string;
   end_time: string;
-  equipment_id: string;
+  equipment_id: number;
   status: string;
 }>;
 
@@ -30,7 +30,7 @@ export type BookingDetails = {
 
 export type EquipmentDetails = {
   name: string;
-  manufacturer: string;
+  manufacturer: string | null;
   model: string;
   id: number;
 };
@@ -48,7 +48,7 @@ export type BookingAndEquipmentDetails = {
   duration: number;
   status: string;
   equipmentName: string;
-  manufacturer: string;
+  manufacturer: string | null;
   model: string;
   equipmentID: number;
   labID: number;
@@ -60,7 +60,7 @@ export type BookingAndEquipmentDetails = {
 export type EquipmentWithBookingDetails = {
   equipmentID: string;
   equipmentName: string;
-  manufacturer: string;
+  manufacturer: string | null;
   model: string;
   maintenance_notes?: string;
   bookingID: string;
@@ -110,7 +110,6 @@ const formatDate = (date: string) => {
 };
 
 const getBookingSummary = (id: string, bookingsList: BookingsList) => {
-  // @ts-expect-error Looks like a bug found by the migration to TypeScript
   return ArrayUtils.find((item) => item.id === id, bookingsList).orElseGet(
     () => {
       throw new Error(`There is no booking with the id ${id}.`);
