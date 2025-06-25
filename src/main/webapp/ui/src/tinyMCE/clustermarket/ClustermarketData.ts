@@ -1,39 +1,38 @@
-// @flow
 //booking centric view
 import { BookingType } from "./Enums";
 import * as ArrayUtils from "../../util/ArrayUtils";
 
 export type BOOKING_TYPE = typeof BookingType;
 export type Requester = { name: string };
-export type Equipment = { name: string, id: number };
-export type RequesterLab = { id: number, name: String };
+export type Equipment = { name: string; id: number };
+export type RequesterLab = { id: number; name: String };
 export type BookingsList = Array<{
-  id: number,
-  start_time: string,
-  end_time: string,
-  equipment_id: string,
-  status: string,
+  id: number;
+  start_time: string;
+  end_time: string;
+  equipment_id: string;
+  status: string;
 }>;
 
 export type Note = {
-  message: string,
+  message: string;
 };
 
 export type BookingDetails = {
-  id: string,
-  requester: Requester,
-  equipment: Equipment,
-  booking_type: string,
-  duration: number,
-  requester_lab: RequesterLab,
-  last_public_note: Note | null,
+  id: string;
+  requester: Requester;
+  equipment: Equipment;
+  booking_type: string;
+  duration: number;
+  requester_lab: RequesterLab;
+  last_public_note: Note | null;
 };
 
 export type EquipmentDetails = {
-  name: string,
-  manufacturer: string,
-  model: string,
-  id: number,
+  name: string;
+  manufacturer: string;
+  model: string;
+  id: number;
 };
 const EquipmentDetailsNotFound: EquipmentDetails = {
   name: "",
@@ -43,31 +42,38 @@ const EquipmentDetailsNotFound: EquipmentDetails = {
 };
 
 export type BookingAndEquipmentDetails = {
-  bookingID: string,
-  requesterName: string,
-  bookingType: string,
-  duration: number,
-  status: string,
-  equipmentName: string,
-  manufacturer: string,
-  model: string,
-  equipmentID: number,
-  labID: number,
+  bookingID: string;
+  requesterName: string;
+  bookingType: string;
+  duration: number;
+  status: string;
+  equipmentName: string;
+  manufacturer: string;
+  model: string;
+  equipmentID: number;
+  labID: number;
+  start_time: unknown;
+  end_time: unknown;
+  maintenance_notes: unknown;
 };
 
 export type EquipmentWithBookingDetails = {
-  equipmentID: string,
-  equipmentName: string,
-  manufacturer: string,
-  model: string,
-  maintenance_notes?: string,
-  bookingID: string,
-  start_time: string,
+  equipmentID: string;
+  equipmentName: string;
+  manufacturer: string;
+  model: string;
+  maintenance_notes?: string;
+  bookingID: string;
+  start_time: string;
+  bookingType: unknown;
+  requesterName: unknown;
+  labID: unknown;
 };
 
-export const replaceNullWithEmptyString = (data: { ... }): void => {
+export const replaceNullWithEmptyString = (data: object): void => {
   for (const [key] of Object.entries(data)) {
-    if (data[key] === null) {
+    if (data[key as keyof typeof data] === null) {
+      // @ts-expect-error TS gets confused by the dynamic key access and mutation
       data[key] = "";
     }
   }
@@ -104,6 +110,7 @@ const formatDate = (date: string) => {
 };
 
 const getBookingSummary = (id: string, bookingsList: BookingsList) => {
+  // @ts-expect-error Looks like a bug found by the migration to TypeScript
   return ArrayUtils.find((item) => item.id === id, bookingsList).orElseGet(
     () => {
       throw new Error(`There is no booking with the id ${id}.`);
@@ -127,7 +134,7 @@ export const getMostRecentCompletedBooking = (
   relevantBookings: Array<BookingDetails>,
   bookingList: BookingsList,
   equipmentID: number
-): ?BookingDetails => {
+): BookingDetails | null => {
   const matching = relevantBookings
     .filter(
       (bookingDetail: BookingDetails) =>
@@ -149,16 +156,17 @@ export const getMostRecentCompletedBooking = (
       }
       return -1;
     })[0];
-  } else if (matching.length > 0) {
+  }
+  if (matching.length > 0) {
     return matching[0];
   }
   return null;
 };
 
 const getALabID = (bookingDetails: Array<BookingDetails>): number => {
+  // @ts-expect-error Possibly a bug found by the migration to TypeScript
   return bookingDetails.find(
     (booking: BookingDetails) => typeof booking.requester_lab.id !== "undefined"
-    // $FlowExpectedError[incompatible-use] `find` is certain to find a match
   ).requester_lab.id;
 };
 
