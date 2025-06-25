@@ -1,25 +1,24 @@
-//@flow
-import React, { type Node } from "react";
+import React from "react";
 import Input from "@mui/material/Input";
 import useIsTextWiderThanField from "../../../util/useIsTextWiderThanField";
 import SearchDialog from "../../../components/SearchDialog";
 
-type SearchboxArgs = {|
-  idx: number,
+type SearchboxArgs = {
+  idx: number;
   query: {
-    error: ?string,
-    term: string,
-  },
-  onChange: ({ target: { value: string } }) => void,
-  onSubmit: () => void,
-|};
+    error: string | null;
+    term: string;
+  };
+  onChange: (event: { target: { value: string } }) => void;
+  onSubmit: () => void;
+};
 
 export default function Searchbox({
   idx,
   query,
   onChange,
   onSubmit,
-}: SearchboxArgs): Node {
+}: SearchboxArgs): React.ReactNode {
   const { inputRef, textTooWide } = useIsTextWiderThanField();
   return (
     <Input
