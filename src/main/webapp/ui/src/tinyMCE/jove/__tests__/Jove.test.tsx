@@ -1,22 +1,21 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import Jove from "../Jove";
 import React from "react";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { render, screen, act, within } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
 import JoveSearchResult from "./joveSearchResult.json";
 const mockAxios = new MockAdapter(axios);
 const localStorageMock = {
-  getItem: jest.fn<[], void>(),
-  setItem: jest.fn<[], void>(),
+  getItem: jest.fn(),
+  setItem: jest.fn(),
 };
 const rsMock = {
-  trackEvent: jest.fn<[], void>(),
+  trackEvent: jest.fn(),
 };
 Object.defineProperty(window, "localStorage", { value: localStorageMock });
 Object.defineProperty(window, "RS", { value: rsMock });
