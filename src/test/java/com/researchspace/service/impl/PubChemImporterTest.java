@@ -119,7 +119,7 @@ public class PubChemImporterTest {
         assertThrows(
             ChemicalImportException.class, () -> pubChemImporter.searchChemicals(null, "aspirin"));
 
-    assertTrue(exception.getMessage().contains("Unknown search type: " + null));
+    assertTrue(exception.getMessage().contains("Search type and term are required"));
   }
 
   @ParameterizedTest

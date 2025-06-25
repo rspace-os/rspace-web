@@ -74,10 +74,7 @@ public class PubChemImporter implements ChemicalImporter {
 
   private void validateSearchParameters(ChemicalImportSearchType searchType, String searchTerm)
       throws ChemicalImportException {
-    if (searchType == null) {
-      throw new ChemicalImportException("Unknown search type: " + null);
-    }
-    if (isBlank(searchTerm)) {
+    if (searchType == null || isBlank(searchTerm)) {
       throw new ChemicalImportException("Search type and term are required");
     }
   }
