@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
+import com.researchspace.model.dtos.chemistry.PubChemResponse;
 import com.researchspace.service.ChemicalImportException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -30,16 +31,34 @@ public class PubChemImporterTest {
 
   @InjectMocks private PubChemImporter pubChemImporter;
 
-  private static final String VALID_PUBCHEM_RESPONSE =
-      "{\"PropertyTable\":{\"Properties\":[{\"CID\":2244,\"MolecularFormula\":\"C9H8O4\",\"SMILES\":\"CC(=O)OC1=CC=CC=C1C(=O)O\",\"Title\":\"2-acetoxybenzoic"
-          + " acid\"}]}}";
+  private static PubChemResponse createValidPubChemResponse() {
+    PubChemResponse.ChemicalProperty property = new PubChemResponse.ChemicalProperty();
+    property.setCid(2244L);
+    property.setTitle("2-acetoxybenzoic acid");
+    property.setMolecularFormula("C9H8O4");
+    property.setSmiles("CC(=O)OC1=CC=CC=C1C(=O)O");
 
-  private static final String EMPTY_PUBCHEM_RESPONSE = "{\"PropertyTable\":{\"Properties\":[]}}";
+    PubChemResponse.PropertyTable propertyTable = new PubChemResponse.PropertyTable();
+    propertyTable.setProperties(List.of(property));
+
+    PubChemResponse response = new PubChemResponse();
+    response.setPropertyTable(propertyTable);
+    return response;
+  }
+
+  private static PubChemResponse createEmptyPubChemResponse() {
+    PubChemResponse.PropertyTable propertyTable = new PubChemResponse.PropertyTable();
+    propertyTable.setProperties(List.of());
+
+    PubChemResponse response = new PubChemResponse();
+    response.setPropertyTable(propertyTable);
+    return response;
+  }
 
   @Test
   public void whenValidSearchRequest_thenReturnParsedResults() throws Exception {
     when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(VALID_PUBCHEM_RESPONSE, HttpStatus.OK));
+        .thenReturn(new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK));
 
     List<ChemicalImportSearchResult> results =
         pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin");
@@ -60,7 +79,7 @@ public class PubChemImporterTest {
   @Test
   public void whenSearchEmptyResponse_thenReturnEmptyList() throws Exception {
     when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(EMPTY_PUBCHEM_RESPONSE, HttpStatus.OK));
+        .thenReturn(new ResponseEntity<>(createEmptyPubChemResponse(), HttpStatus.OK));
 
     List<ChemicalImportSearchResult> results =
         pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "nonexistent");
@@ -156,7 +175,7 @@ public class PubChemImporterTest {
   @Test
   public void whenValidCasSearch_thenCorrectUrlBuilt() throws Exception {
     when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(EMPTY_PUBCHEM_RESPONSE, HttpStatus.OK));
+        .thenReturn(new ResponseEntity<>(createEmptyPubChemResponse(), HttpStatus.OK));
 
     pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "50-78-2");
   }
@@ -164,7 +183,7 @@ public class PubChemImporterTest {
   @Test
   public void whenValidSmilesSearch_thenCorrectUrlBuilt() {
     when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(EMPTY_PUBCHEM_RESPONSE, HttpStatus.OK));
+        .thenReturn(new ResponseEntity<>(createEmptyPubChemResponse(), HttpStatus.OK));
 
     assertDoesNotThrow(
         () ->
@@ -175,7 +194,7 @@ public class PubChemImporterTest {
   @Test
   public void whenValidCidImport_thenImportSuccessfully() {
     when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(VALID_PUBCHEM_RESPONSE, HttpStatus.OK));
+        .thenReturn(new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK));
 
     assertDoesNotThrow(() -> pubChemImporter.importChemicals(List.of("2244")));
   }
@@ -183,7 +202,7 @@ public class PubChemImporterTest {
   @Test
   public void whenValidMultipleCidImport_thenImportAllSuccessfully() {
     when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(VALID_PUBCHEM_RESPONSE, HttpStatus.OK));
+        .thenReturn(new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK));
 
     assertDoesNotThrow(() -> pubChemImporter.importChemicals(List.of("2244", "702", "5957")));
   }
@@ -204,7 +223,7 @@ public class PubChemImporterTest {
   @Test
   public void whenImportEmptyResponse_thenThrowException() {
     when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(EMPTY_PUBCHEM_RESPONSE, HttpStatus.OK));
+        .thenReturn(new ResponseEntity<>(createEmptyPubChemResponse(), HttpStatus.OK));
 
     ChemicalImportException exception =
         assertThrows(

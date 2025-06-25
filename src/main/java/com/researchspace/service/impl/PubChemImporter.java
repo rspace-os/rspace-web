@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.PubChemResponse;
@@ -29,12 +28,10 @@ public class PubChemImporter implements ChemicalImporter {
       "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound";
 
   private final RestTemplate restTemplate;
-  private final ObjectMapper objectMapper;
 
   @Autowired
   public PubChemImporter(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
-    this.objectMapper = new ObjectMapper();
   }
 
   @Override
@@ -85,11 +82,9 @@ public class PubChemImporter implements ChemicalImporter {
     }
   }
 
-  private List<ChemicalImportSearchResult> parseResponseToResults(String responseBody)
+  private List<ChemicalImportSearchResult> parseResponseToResults(PubChemResponse response)
       throws ChemicalImportException {
     try {
-      PubChemResponse response = objectMapper.readValue(responseBody, PubChemResponse.class);
-
       List<ChemicalImportSearchResult> results = new ArrayList<>();
 
       if (response.getPropertyTable() != null
@@ -138,7 +133,8 @@ public class PubChemImporter implements ChemicalImporter {
       String url, String searchTerm) throws ChemicalImportException {
     try {
       log.info("Making PubChem API request to: {}", url);
-      ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+      ResponseEntity<PubChemResponse> response =
+          restTemplate.getForEntity(url, PubChemResponse.class);
 
       if (!response.getStatusCode().is2xxSuccessful()) {
         throw new ChemicalImportException(
