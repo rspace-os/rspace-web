@@ -30,7 +30,7 @@ const getEquipmentDetails = async (
 };
 
 export const getRelevantBookings = (
-  bookingType: BOOKING_TYPE,
+  bookingType: $Values<BOOKING_TYPE>,
   bookingsList: BookingsList
 ): BookingsList => {
   let relevantBookings: BookingsList;
@@ -47,7 +47,7 @@ export const getRelevantBookings = (
 };
 
 export const getBookings = async (
-  bookingType: BOOKING_TYPE
+  bookingType: $Values<BOOKING_TYPE>
 ): Promise<BookingsList> => {
   const bookingsList = ((await getBookingsList()).data: BookingsList);
   if (bookingsList) {

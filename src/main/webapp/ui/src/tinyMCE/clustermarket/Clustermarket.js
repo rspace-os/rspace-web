@@ -58,7 +58,7 @@ const EQUIPMENT_TABLE_HEADER_CELLS = [
   { id: "requesterName", numeric: false, label: "Booked by" },
 ];
 type ClustermarketArgs = {|
-  defaultBookingType: BOOKING_TYPE,
+  defaultBookingType: $Values<BOOKING_TYPE>,
   clustermarket_web_url: string,
 |};
 
@@ -91,7 +91,9 @@ function Clustermarket({
     Array<EquipmentWithBookingDetails>
   > = useState([]);
   const [fetchDone, setFetchDone] = useState(false);
-  const [errorReason, setErrorReason] = useState(ErrorReason.None);
+  const [errorReason, setErrorReason] = useState<$Values<typeof ErrorReason>>(
+    ErrorReason.None
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   const [selectedBookingIds, setSelectedBookingIds] = useState<Array<string>>(
@@ -125,7 +127,7 @@ function Clustermarket({
   };
 
   const setHeadersByBookingType = (
-    newBookingType: BOOKING_TYPE,
+    newBookingType: $Values<BOOKING_TYPE>,
     newIsMaintenance: boolean
   ) => {
     if (newBookingType === BookingType.EQUIPMENT) {
@@ -214,10 +216,10 @@ function Clustermarket({
   };
 
   const handleBookingTypeChange = (event: {
-    target: { value: BOOKING_TYPE, ... },
+    target: { value: $Values<BOOKING_TYPE>, ... },
     ...
   }) => {
-    const newBookingType: BOOKING_TYPE = event.target.value;
+    const newBookingType: $Values<BOOKING_TYPE> = event.target.value;
     setBookingType(newBookingType);
     setHeadersByBookingType(newBookingType, isMaintenance);
   };

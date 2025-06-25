@@ -18,8 +18,8 @@ const BookingType = {
 Object.freeze(BookingType);
 
 const Order = {
-  asc: "asc",
-  desc: "desc",
+  asc: "asc" as const,
+  desc: "desc" as const,
 };
 Object.freeze(Order);
 
