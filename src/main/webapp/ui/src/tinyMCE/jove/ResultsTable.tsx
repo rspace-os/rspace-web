@@ -1,6 +1,4 @@
-// @flow
-
-import React, { useEffect, type Node } from "react";
+import React, { useEffect } from "react";
 import { TableContainer } from "@mui/material";
 import Table from "@mui/material/Table";
 import EnhancedTableHead, {
@@ -51,22 +49,22 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type ResultsTableArgs = {|
-  page: number,
-  visibleHeaderCells: Array<Cell<"" | "thumbnail" | "title" | "section">>,
-  searchResults: Array<Article>,
-  setSearchResults: (Array<Article>) => void,
-  order: $Values<typeof Order>,
-  setOrder: ($Values<typeof Order>) => void,
-  orderBy: "" | "thumbnail" | "title" | "section",
-  setOrderBy: ("" | "thumbnail" | "title" | "section") => void,
-  selectedJoveIds: Array<ArticleId>,
-  setSelectedJoveIds: (Array<ArticleId>) => void,
-  onRowsPerPageChange: (number) => void,
-  onPageChange: (number) => void,
-  rowsPerPage: number,
-  count: number,
-|};
+type ResultsTableArgs = {
+  page: number;
+  visibleHeaderCells: Array<Cell<"" | "thumbnail" | "title" | "section">>;
+  searchResults: Array<Article>;
+  setSearchResults: (results: Array<Article>) => void;
+  order: (typeof Order)[keyof typeof Order];
+  setOrder: (newOrder: (typeof Order)[keyof typeof Order]) => void;
+  orderBy: "" | "thumbnail" | "title" | "section";
+  setOrderBy: (newOrderBy: "" | "thumbnail" | "title" | "section") => void;
+  selectedJoveIds: Array<ArticleId>;
+  setSelectedJoveIds: (selected: Array<ArticleId>) => void;
+  onRowsPerPageChange: (newRows: number) => void;
+  onPageChange: (newPage: number) => void;
+  rowsPerPage: number;
+  count: number;
+};
 
 export default function ResultsTable({
   page,
@@ -83,10 +81,10 @@ export default function ResultsTable({
   onPageChange,
   rowsPerPage,
   count,
-}: ResultsTableArgs): Node {
+}: ResultsTableArgs): React.ReactNode {
   const { classes } = useStyles();
 
-  function onRowClick(event: mixed, id: ArticleId) {
+  function onRowClick(event: unknown, id: ArticleId) {
     const selectedIndex = selectedJoveIds.indexOf(id);
     let newSelected: Array<ArticleId> = [];
 
@@ -107,7 +105,7 @@ export default function ResultsTable({
   }
 
   function handleRequestSort(
-    event: mixed,
+    event: unknown,
     property: "" | "thumbnail" | "title" | "section"
   ) {
     const isDesc = orderBy === property && order === Order.desc;
@@ -115,20 +113,20 @@ export default function ResultsTable({
     setOrderBy(property);
   }
 
-  function handleChangePage(_: mixed, newPage: number) {
+  function handleChangePage(_: unknown, newPage: number) {
     onPageChange(newPage);
   }
 
-  function handleChangeRowsPerPage(event: {
-    target: { value: number, ... },
-    ...
-  }) {
+  function handleChangeRowsPerPage(event: React.ChangeEvent<HTMLInputElement>) {
     const num = parseInt(event.target.value, 10);
     onRowsPerPageChange(num);
   }
 
   useEffect(() => {
-    setSearchResults(stableSort(searchResults, getSorting(order, orderBy)));
+    setSearchResults(
+      // @ts-expect-error -- TS doesn't like indexing Article by ""
+      stableSort<Article>(searchResults, getSorting(order, orderBy))
+    );
   }, [order, orderBy, page]);
 
   return (
