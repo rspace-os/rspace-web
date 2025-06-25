@@ -2,9 +2,14 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import { ErrorReason } from "./Enums";
 import React from "react";
-import PropTypes from "prop-types";
 
-export default function ErrorView({ errorReason, errorMessage }) {
+export default function ErrorView({
+  errorReason,
+  errorMessage,
+}: {
+  errorReason: (typeof ErrorReason)[keyof typeof ErrorReason];
+  errorMessage: string;
+}): React.ReactNode {
   return (
     <Alert severity="error">
       <AlertTitle>Error</AlertTitle>
@@ -12,11 +17,13 @@ export default function ErrorView({ errorReason, errorMessage }) {
         <>
           The Clustermarket server at{" "}
           <a
+            // @ts-expect-error -- tinymce is defined in the parent window
             href={parent.tinymce.activeEditor.settings.clustermarket_url}
             target="_blank"
             rel="noreferrer"
           >
             {" "}
+            {/* @ts-expect-error -- tinymce is defined in the parent window */}
             {parent.tinymce.activeEditor.settings.clustermarket_url}
           </a>{" "}
           is down, or CORS for this server has not been configured properly. If
@@ -52,7 +59,3 @@ export default function ErrorView({ errorReason, errorMessage }) {
     </Alert>
   );
 }
-ErrorView.propTypes = {
-  errorReason: PropTypes.string,
-  errorMessage: PropTypes.string,
-};
