@@ -16,6 +16,9 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
+import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
@@ -389,5 +392,32 @@ class GalleryIrodsApiControllerTest {
     assertEquals(1, exception.getAllErrors().size());
     assertEquals("nfsClient", exception.getAllErrors().get(0).getObjectName());
     assertEquals("User is not logged in", exception.getAllErrors().get(0).getDefaultMessage());
+  }
+
+  @Test
+  void testGettingAbsoluteTargetFilestorePath() {
+    NfsFileSystem nfsFileSystem = new NfsFileSystem();
+    nfsFileSystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice");
+
+    NfsFileStore testFilestore = new NfsFileStore();
+    testFilestore.setFileSystem(nfsFileSystem);
+
+    // relative path saved with filestore
+    testFilestore.setPath("/testFolder/testFolder");
+    assertEquals(
+        "/tempZone/home/alice/testFolder/testFolder",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // absolute path saved with filestore
+    testFilestore.setPath("/tempZone/home/alice/testFolder/testFolder2");
+    assertEquals(
+        "/tempZone/home/alice/testFolder/testFolder2",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // with trailing slash in filesystem path
+    nfsFileSystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice");
+    assertEquals(
+        "/tempZone/home/alice/testFolder/testFolder2",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
   }
 }

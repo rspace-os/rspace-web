@@ -198,7 +198,8 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
 
   @Override
   public ApiExternalStorageOperationResult uploadFilesToNfs(
-      String pathToFiles, Map<Long, File> mapRecordIdToFile) throws UnsupportedOperationException {
+      String absoluteDestinationPath, Map<Long, File> mapRecordIdToFile)
+      throws UnsupportedOperationException {
     IRODSFileSystem iRodsFileSystem = null;
 
     ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
@@ -215,7 +216,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
       for (Map.Entry<Long, File> recordFileEntry : mapRecordIdToFile.entrySet()) {
         currentRecordId = recordFileEntry.getKey();
         currentFile = recordFileEntry.getValue();
-        iRODSAbsolutePathFilename = pathToFiles + '/' + currentFile.getName();
+        iRODSAbsolutePathFilename = absoluteDestinationPath + '/' + currentFile.getName();
         try {
           iRodsFile = irodsFileFactory.instanceIRODSFile(iRODSAbsolutePathFilename);
           dtoIRODS.putOperation(currentFile, iRodsFile, null, null);
@@ -228,7 +229,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
             log.info(
                 "File [{}] successfully copied into IRODS path [{}]",
                 currentFile.getName(),
-                pathToFiles);
+                absoluteDestinationPath);
           } else {
             result.add(
                 new ApiExternalStorageOperationInfo(
@@ -239,7 +240,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
             log.error(
                 "File [{}] failed to be copied into IRODS path [{}]",
                 currentFile.getName(),
-                pathToFiles);
+                absoluteDestinationPath);
           }
         } catch (JargonException ex) {
           result.add(
@@ -248,7 +249,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
           log.error(
               "File [{}] failed to be copied into IRODS path [{}]",
               currentFile.getName(),
-              pathToFiles,
+              absoluteDestinationPath,
               ex);
         }
       }

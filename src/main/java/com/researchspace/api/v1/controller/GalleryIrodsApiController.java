@@ -12,6 +12,7 @@ import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.properties.IPropertyHolder;
@@ -175,6 +176,8 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
     throwBindExceptionIfErrors(errors);
     ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
     NfsFileStore nfsFileStore = validateInputAndGetFilestore(recordIds, filestorePathId, errors);
+    String absoluteFilestorePath = getAbsoluteFilestorePathForIrods(nfsFileStore);
+
     NfsClient nfsClient =
         credentialsStore.validateCredentialsAndLoginNfs(
             credentials, errors, user, nfsFileStore.getFileSystem());
@@ -190,7 +193,7 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
     try {
       // store the files to the IRODS server
       result =
-          nfsManager.uploadFilesToNfs(mediaFileMapById.values(), nfsFileStore.getPath(), nfsClient);
+          nfsManager.uploadFilesToNfs(mediaFileMapById.values(), absoluteFilestorePath, nfsClient);
 
       ExternalStorageLocation externalLocation;
       for (ApiExternalStorageOperationInfo resultInfo : result.getFileInfoDetails()) {
@@ -211,6 +214,25 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
       throwBindExceptionIfErrors(errors);
     }
     return result;
+  }
+
+  protected String getAbsoluteFilestorePathForIrods(NfsFileStore nfsFileStore) {
+    String irodsHomePath =
+        nfsFileStore.getFileSystem().getClientOption(NfsFileSystemOption.IRODS_HOME_DIR);
+    String filestorePath = nfsFileStore.getPath();
+    if (StringUtils.isEmpty(irodsHomePath)) {
+      return filestorePath;
+    }
+    if (StringUtils.isEmpty(filestorePath)) {
+      return irodsHomePath;
+    }
+    if (filestorePath.startsWith(irodsHomePath)) {
+      return filestorePath;
+    }
+    if (StringUtils.endsWith(irodsHomePath, "/") && StringUtils.startsWith(filestorePath, "/")) {
+      return StringUtils.stripEnd(irodsHomePath, "/") + filestorePath;
+    }
+    return irodsHomePath + filestorePath;
   }
 
   private ApiExternalStorageOperationResult performMoveToIRODS(
