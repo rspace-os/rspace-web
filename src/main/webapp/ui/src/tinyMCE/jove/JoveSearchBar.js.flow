@@ -1,0 +1,11 @@
+// @flow
+
+import { type Node } from 'react';
+
+type JoveSearchBarArgs = {|
+  searchQuery: string,
+  handleSearchQueryChange: ({ target: { value: string } }) => void,
+  submitSearch: () => void,
+|};
+
+declare export default function JoveSearchBar(JoveSearchBarArgs): Node;

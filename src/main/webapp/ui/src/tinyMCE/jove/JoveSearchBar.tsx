@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node } from "react";
+import React from "react";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import OutlinedInput from "@mui/material/OutlinedInput";
@@ -9,17 +7,17 @@ import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
 import SearchIcon from "@mui/icons-material/Search";
 
-type JoveSearchBarArgs = {|
-  searchQuery: string,
-  handleSearchQueryChange: ({ target: { value: string } }) => void,
-  submitSearch: () => void,
-|};
+type JoveSearchBarArgs = {
+  searchQuery: string;
+  handleSearchQueryChange: (event: { target: { value: string } }) => void;
+  submitSearch: () => void;
+};
 
 export default function JoveSearchBar({
   searchQuery,
   handleSearchQueryChange,
   submitSearch,
-}: JoveSearchBarArgs): Node {
+}: JoveSearchBarArgs): React.ReactNode {
   return (
     <>
       <Grid container style={{ gap: 8 }}>
