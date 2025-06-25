@@ -1,6 +1,4 @@
-// @flow
-
-import React, { useState, useEffect, useMemo, type Node } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Grid, CircularProgress } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -24,7 +22,7 @@ const TABLE_HEADER_CELLS: Array<Cell<"" | "thumbnail" | "title" | "section">> =
   ];
 
 const VISIBLE_HEADER_CELLS = TABLE_HEADER_CELLS;
-let SELECTED_RESULTS = ([]: Array<Article>);
+let SELECTED_RESULTS = [] as Array<Article>;
 export const getSelectedResults = (): Array<Article> => SELECTED_RESULTS;
 export const getHeaders = (): typeof TABLE_HEADER_CELLS => VISIBLE_HEADER_CELLS;
 export const getOrder = (): OrderType => {
@@ -36,10 +34,10 @@ export const getOrder = (): OrderType => {
     );
   return order;
 };
-export const getOrderBy = (): $Keys<Article> | "" => {
+export const getOrderBy = (): keyof Article | "" => {
   const localStorageContents = localStorage.getItem("joveSearchOrderBy");
   const orderBy = mapNullable(JSON.parse, localStorageContents);
-  const validKeys: Set<$Keys<Article> | ""> = new Set([
+  const validKeys: Set<keyof Article | ""> = new Set([
     "id",
     "hasvideo",
     "section",
@@ -56,16 +54,16 @@ export const getOrderBy = (): $Keys<Article> | "" => {
   );
 };
 
-export default function Jove(): Node {
+export default function Jove(): React.ReactNode {
   const [searchResults, setSearchResults] = useState<Array<Article>>([]);
   const [searchDone, setSearchDone] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchParam, setSearchParam] = useState<$Values<typeof SearchParam>>(
-    SearchParam.queryString
-  );
-  const [errorReason, setErrorReason] = useState<$Values<typeof ErrorReason>>(
-    ErrorReason.None
-  );
+  const [searchParam, setSearchParam] = useState<
+    (typeof SearchParam)[keyof typeof SearchParam]
+  >(SearchParam.queryString);
+  const [errorReason, setErrorReason] = useState<
+    (typeof ErrorReason)[keyof typeof ErrorReason]
+  >(ErrorReason.None);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [selectedJoveIds, setSelectedJoveIds] = useState<Array<ArticleId>>([]);
@@ -73,7 +71,9 @@ export default function Jove(): Node {
     "joveSearchOrder",
     Order.asc
   );
-  const [orderBy, setOrderBy] = useLocalStorage("joveSearchOrderBy", "");
+  const [orderBy, setOrderBy] = useLocalStorage<
+    "" | "thumbnail" | "title" | "section"
+  >("joveSearchOrderBy", "");
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useLocalStorage("joveRowsPerPage", 20);
@@ -99,13 +99,13 @@ export default function Jove(): Node {
 
   /**
    * This search function calls JoveClient.js to make apis calls to Jove and set the results.
-   * @param {SearchParam} searchParam this param is currently not used but can change what the search query is for, i.e query string, author or institution default is query string.
-   * @param {*} searchQuery the query string entered by the user
-   * @param {*} page current page
-   * @param {*} rowsPerPage number of rows per page
+   * @param searchParam this param is currently not used but can change what the search query is for, i.e query string, author or institution default is query string.
+   * @param searchQuery the query string entered by the user
+   * @param page current page
+   * @param rowsPerPage number of rows per page
    */
   const searchJove = async (
-    searchParam: $Values<typeof SearchParam>,
+    searchParam: (typeof SearchParam)[keyof typeof SearchParam],
     searchQuery: string,
     page: number,
     rowsPerPage: number
@@ -132,22 +132,18 @@ export default function Jove(): Node {
       }
     } catch (error) {
       console.log("Error: ", error);
-      handleRequestError(error);
+      handleRequestError(error as Error);
     } finally {
       setSearchDone(true);
     }
   };
 
-  const handleSearchQueryChange = (event: {
-    target: { value: string, ... },
-    ...
-  }) => {
+  const handleSearchQueryChange = (event: { target: { value: string } }) => {
     setSearchQuery(event.target.value);
   };
 
   const handleSearchParamChange = (event: {
-    target: { value: $Values<typeof SearchParam>, ... },
-    ...
+    target: { value: (typeof SearchParam)[keyof typeof SearchParam] };
   }) => {
     setSearchParam(event.target.value);
     setPage(0);
@@ -175,7 +171,7 @@ export default function Jove(): Node {
     return selected_searchResults;
   }, [selectedJoveIds]);
 
-  function handleRequestError(error: { message: string, ... }) {
+  function handleRequestError(error: { message: string }) {
     if (error.message.slice(error.message.length - 3) === "408") {
       setErrorReason(ErrorReason.Timeout);
     } else if (error.message.slice(error.message.length - 3) === "404") {
@@ -228,7 +224,7 @@ export default function Jove(): Node {
               />
             )}
           </Grid>
-          <Grid item xs={12} align="center">
+          <Grid item xs={12} sx={{ align: "center" }}>
             {!searchDone && <CircularProgress />}
           </Grid>
         </Grid>
