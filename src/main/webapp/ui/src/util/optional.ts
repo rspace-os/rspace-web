@@ -287,7 +287,7 @@ export function lift4<A, B, C, D, E>(
 export function getByKey<T extends object, K extends keyof T>(
   key: K,
   obj: T
-): Optional<T[K]> {
+): Optional<Required<T>[K]> {
   if (key in obj) {
     return Optional.present(obj[key]);
   }

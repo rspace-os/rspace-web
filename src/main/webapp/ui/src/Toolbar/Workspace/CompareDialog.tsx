@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Portal from "@mui/material/Portal";
 import Alerts from "../../components/Alerts/Alerts";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
@@ -17,7 +15,9 @@ import {
   GridToolbarContainer,
   GridToolbarExportContainer,
   GridToolbarColumnsButton,
+  type GridRenderCellParams,
   useGridApiContext,
+  GridRowSelectionModel,
 } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import createAccentedTheme from "../../accentedTheme";
@@ -35,6 +35,7 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
 import Analytics from "../../components/Analytics";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import { GlobalId } from "@/stores/definitions/BaseRecord";
 
 /**
  * This module provides a  dialog allows the user to compare the contents of
@@ -50,28 +51,26 @@ import AnalyticsContext from "../../stores/contexts/Analytics";
  */
 
 type Document = {
-  id: number,
-  name: string,
+  id: number;
+  name: string;
+  globalId: GlobalId;
   form: {
-    id: number,
-    ...
-  },
-  fields: $ReadOnlyArray<{
-    name: string,
-    content: string,
-    ...
-  }>,
+    id: number;
+  };
+  fields: ReadonlyArray<{
+    name: string;
+    content: string;
+  }>;
   owner: {
-    firstName: string,
-    lastName: string,
-    id: number,
-    username: string,
-    ...
-  },
-  created: string,
-  lastModified: string,
-  signed: boolean,
-  ...
+    firstName: string;
+    lastName: string;
+    id: number;
+    username: string;
+  };
+  created: string;
+  lastModified: string;
+  signed: boolean;
+  tags: string;
 };
 
 const StyledGridOverlay = styled("div")(({ theme }) => ({
@@ -112,10 +111,10 @@ function CircularProgressWithLabel(props: { value: number }) {
 function CustomLoadingOverlay({
   loadedCount,
   documentCount,
-}: {|
-  loadedCount: number,
-  documentCount: number,
-|}) {
+}: {
+  loadedCount: number;
+  documentCount: number;
+}) {
   return (
     <StyledGridOverlay>
       <CircularProgressWithLabel value={(loadedCount / documentCount) * 100} />
@@ -128,10 +127,11 @@ const ExportMenuItem = ({
   onClick,
   children,
   ...rest
-}: {|
-  onClick: () => Promise<void>,
-  children: Node,
-|}) => (
+}: {
+  onClick: () => Promise<void>;
+  children: React.ReactNode;
+  hideMenu?: () => void;
+}) => (
   <MenuItem
     onClick={doNotAwait(async () => {
       await onClick();
@@ -142,9 +142,11 @@ const ExportMenuItem = ({
        * However, if we add `hideMenu` to the type of the `ExportMenuItem`
        * props then Flow will complain we're not passing it in at the call site
        */
-      getByKey<"hideMenu", () => void>("hideMenu", rest).do((hideMenu) => {
-        hideMenu();
-      });
+      getByKey<{ hideMenu?: () => void }, "hideMenu">("hideMenu", rest).do(
+        (hideMenu) => {
+          hideMenu();
+        }
+      );
     })}
   >
     {children}
@@ -154,10 +156,10 @@ const ExportMenuItem = ({
 const Toolbar = ({
   rowSelectionModel,
   setColumnsMenuAnchorEl,
-}: {|
-  rowSelectionModel: $ReadOnlyArray<number>,
-  setColumnsMenuAnchorEl: (HTMLElement) => void,
-|}) => {
+}: {
+  rowSelectionModel: ReadonlyArray<number>;
+  setColumnsMenuAnchorEl: (anchorEl: HTMLElement) => void;
+}) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const apiRef = useGridApiContext();
 
@@ -170,7 +172,7 @@ const Toolbar = ({
    * than having to hook into the logic that triggers the opening of the
    * columns menu in both places, we just set the `anchorEl` pre-emptively.
    */
-  const columnMenuRef = React.useRef();
+  const columnMenuRef = React.useRef<HTMLElement>();
   React.useEffect(() => {
     if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
   }, [setColumnsMenuAnchorEl]);
@@ -185,12 +187,11 @@ const Toolbar = ({
     <GridToolbarContainer sx={{ width: "100%" }}>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
-        variant="outlined"
         ref={(node) => {
           if (node) columnMenuRef.current = node;
         }}
       />
-      <GridToolbarExportContainer variant="outlined">
+      <GridToolbarExportContainer>
         <ExportMenuItem
           onClick={() => {
             exportVisibleRows();
@@ -205,27 +206,24 @@ const Toolbar = ({
   );
 };
 
-function CompareDialog(): Node {
+function CompareDialog(): React.ReactNode {
   const analytics = React.useContext(AnalyticsContext);
   const { addAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
-  const [documents, setDocuments] = React.useState<$ReadOnlyArray<Document>>(
-    []
-  );
+  const [documents, setDocuments] = React.useState<ReadonlyArray<Document>>([]);
   const [paginationModel, setPaginationModel] = React.useState({
     page: 0,
     pageSize: 100,
   });
-  const [rowSelectionModel, setRowSelectionModel] = React.useState<
-    $ReadOnlyArray<number>
-  >([]);
+  const [rowSelectionModel, setRowSelectionModel] =
+    React.useState<GridRowSelectionModel>([]);
   const [documentCount, setDocumentCount] = React.useState(0);
   const [loadedCount, setLoadedCount] = React.useState(0);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
-    React.useState<?HTMLElement>(null);
+    React.useState<HTMLElement | null>(null);
 
-  const fieldColumns: $ReadOnlyArray<[number, string]> = React.useMemo(() => {
-    const cols = [];
+  const fieldColumns: ReadonlyArray<[number, string]> = React.useMemo(() => {
+    const cols: Array<[number, string]> = [];
     for (const doc of documents) {
       for (const field of doc.fields) {
         if (
@@ -242,13 +240,13 @@ function CompareDialog(): Node {
   }, [documents]);
 
   React.useEffect(() => {
-    async function handler(
-      event: Event & { detail: { ids: $ReadOnlyArray<string> } }
-    ) {
+    const handler = doNotAwait(async (event: Event) => {
+      // @ts-expect-error the event will have this detail
+      const ids = event.detail.ids as Array<string>;
       analytics.trackEvent("Dialog comparing ELN documents opened", {
-        numberOfDocuments: event.detail.ids.length,
+        numberOfDocuments: ids.length,
       });
-      setDocumentCount(event.detail.ids.length);
+      setDocumentCount(ids.length);
       setLoadedCount(0);
       try {
         const token = await getToken();
@@ -261,9 +259,9 @@ function CompareDialog(): Node {
          * endpoint.
          */
         const docs = await Promise.all(
-          event.detail.ids.map(async (id) => {
+          ids.map(async (id) => {
             const { data } = await axios.get<
-              Document | { errors: $ReadOnlyArray<string>, ... }
+              Document | { errors: ReadonlyArray<string> }
             >(`/api/v1/documents/${id}`, {
               headers: {
                 Authorization: "Bearer " + token,
@@ -275,12 +273,11 @@ function CompareDialog(): Node {
                 throw errors[0];
               });
             setLoadedCount((x) => x + 1);
-            return data;
+            return data as Document;
           })
         );
-        //$FlowExpectedError[incompatible-call] Given that none of the `data`s contain `errors` lets just assume they're all `Document`s
         setDocuments(docs);
-      } catch (e: mixed) {
+      } catch (e) {
         setDocumentCount(0);
         setLoadedCount(0);
         const message = Parsers.objectPath(["response", "data", "message"], e)
@@ -295,7 +292,7 @@ function CompareDialog(): Node {
           })
         );
       }
-    }
+    });
     window.addEventListener("OPEN_COMPARE_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_COMPARE_DIALOG", handler);
@@ -303,31 +300,35 @@ function CompareDialog(): Node {
   }, []);
 
   const columns = [
-    DataGridColumn.newColumnWithFieldName<_, Document>("name", {
+    DataGridColumn.newColumnWithFieldName<"name", Document>("name", {
       headerName: "Name",
       flex: 1,
       sortable: false,
     }),
-    DataGridColumn.newColumnWithFieldName<_, Document>("globalId", {
+    DataGridColumn.newColumnWithFieldName<"globalId", Document>("globalId", {
       headerName: "Global ID",
       flex: 1,
       sortable: false,
     }),
-    DataGridColumn.newColumnWithFieldName<_, Document>("owner", {
-      headerName: "Owner",
-      flex: 1,
-      sortable: false,
-      // for CSVs
-      valueFormatter: (owner) => owner.username,
-      renderCell: ({ row }: { row: Document }) => (
-        <UserDetails
-          userId={row.owner.id}
-          fullName={`${row.owner.firstName} ${row.owner.lastName}`}
-          position={["bottom", "right"]}
-        />
-      ),
-    }),
-    DataGridColumn.newColumnWithFieldName<_, Document>("created", {
+    DataGridColumn.newColumnWithValueGetter<"owner", Document, string>(
+      "owner",
+      (doc) => {
+        return doc.owner.username;
+      },
+      {
+        headerName: "Owner",
+        flex: 1,
+        sortable: false,
+        renderCell: ({ row }: { row: Document }) => (
+          <UserDetails
+            userId={row.owner.id}
+            fullName={`${row.owner.firstName} ${row.owner.lastName}`}
+            position={["bottom", "right"]}
+          />
+        ),
+      }
+    ),
+    DataGridColumn.newColumnWithFieldName<"created", Document>("created", {
       headerName: "Created Date",
       flex: 1,
       valueFormatter: (value: string) =>
@@ -335,28 +336,31 @@ function CompareDialog(): Node {
           .map((l) => l.toLocaleString())
           .orElse("—"),
     }),
-    DataGridColumn.newColumnWithFieldName<_, Document>("lastModified", {
-      headerName: "Modified Date",
-      flex: 1,
-      valueFormatter: (value: string) =>
-        Parsers.parseDate(value)
-          .map((l) => l.toLocaleString())
-          .orElse("—"),
-    }),
-    DataGridColumn.newColumnWithFieldName<_, Document>("signed", {
+    DataGridColumn.newColumnWithFieldName<"lastModified", Document>(
+      "lastModified",
+      {
+        headerName: "Modified Date",
+        flex: 1,
+        valueFormatter: (value: string) =>
+          Parsers.parseDate(value)
+            .map((l) => l.toLocaleString())
+            .orElse("—"),
+      }
+    ),
+    DataGridColumn.newColumnWithFieldName<"signed", Document>("signed", {
       headerName: "Signed",
       flex: 1,
       sortable: false,
       // for CSVs
       valueFormatter: (signed) => (signed ? "true" : "false"),
-      renderCell: ({ value }: { value: boolean, ... }) =>
+      renderCell: ({ value }: GridRenderCellParams) =>
         value ? (
           <TickIcon color="success" aria-label="Signed" aria-hidden="false" />
         ) : (
           <CrossIcon color="error" aria-label="Unsigned" aria-hidden="false" />
         ),
     }),
-    DataGridColumn.newColumnWithFieldName<_, Document>("tags", {
+    DataGridColumn.newColumnWithFieldName<"tags", Document>("tags", {
       headerName: "Tags",
       flex: 1,
       sortable: false,
@@ -364,7 +368,11 @@ function CompareDialog(): Node {
   ];
   for (const [formId, fieldName] of fieldColumns) {
     columns.push(
-      DataGridColumn.newColumnWithValueGetter<_, Document>(
+      DataGridColumn.newColumnWithValueGetter<
+        `${typeof formId}:${typeof fieldName}`,
+        Document,
+        string
+      >(
         `${formId}:${fieldName}`,
         (doc: Document) => {
           if (doc.form.id !== formId) return "";
@@ -429,14 +437,15 @@ function CompareDialog(): Node {
               }}
               rowSelectionModel={rowSelectionModel}
               onRowSelectionModelChange={(
-                newRowSelectionModel: $ReadOnlyArray<number>,
-                _details
+                newRowSelectionModel: GridRowSelectionModel
               ) => {
                 setRowSelectionModel(newRowSelectionModel);
               }}
               loading={loadedCount < documentCount}
               slots={{
+                // @ts-expect-error The type of toolbar does not account for the slotProps that also get passed
                 toolbar: Toolbar,
+                // @ts-expect-error The type of loadingOverlay does not account for the slotProps that also get passed
                 loadingOverlay: CustomLoadingOverlay,
               }}
               slotProps={{
@@ -445,6 +454,7 @@ function CompareDialog(): Node {
                   setColumnsMenuAnchorEl,
                 },
                 loadingOverlay: {
+                  // @ts-expect-error The type of loadingOverlay does not account for the slotProps that also get passed
                   loadedCount,
                   documentCount,
                 },
@@ -457,9 +467,13 @@ function CompareDialog(): Node {
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => {
-          setDocumentCount(0);
-        }}>Close</Button>
+        <Button
+          onClick={() => {
+            setDocumentCount(0);
+          }}
+        >
+          Close
+        </Button>
       </DialogActions>
     </Dialog>
   );
@@ -498,7 +512,7 @@ const COLOR = {
   },
 };
 
-export default function Wrapper(): Node {
+export default function Wrapper(): React.ReactNode {
   return (
     <ErrorBoundary topOfViewport>
       <Analytics>

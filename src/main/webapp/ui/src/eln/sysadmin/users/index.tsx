@@ -1464,7 +1464,6 @@ const Toolbar = ({
       </Panel>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
-        //variant="outlined"
         ref={(node) => {
           if (node) columnMenuRef.current = node;
         }}
