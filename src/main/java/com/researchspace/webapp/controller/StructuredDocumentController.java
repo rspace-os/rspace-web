@@ -311,19 +311,21 @@ public class StructuredDocumentController extends BaseController {
       }
       Folder originalParentFolder = folderManager.getFolder(parentRecordId, user);
       if (originalParentFolder.isSharedFolder()
-          || (originalParentFolder.isShared() && originalParentFolder.isShared())) {
+          || (originalParentFolder.isNotebook()
+              && originalParentFolder.isShared()
+              && !permissionUtils.isPermitted(originalParentFolder, PermissionType.CREATE, user))) {
         ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult;
-//        if (originalParentFolder.isNotebook()) {
-//          // shareDocument into the current parent sharedNotebook
-//          sharingResult =
-//              recordShareHandler.shareIntoSharedNotebook(
-//                  user, (Notebook) originalParentFolder, newRecord.getId());
-//        } else {
+        if (originalParentFolder.isNotebook()) {
+          // shareDocument into the current parent sharedNotebook
+          sharingResult =
+              recordShareHandler.shareIntoSharedNotebook(
+                  user, (Notebook) originalParentFolder, newRecord.getId());
+        } else {
           // shareDocument into the current parentFolder
           sharingResult =
               recordShareHandler.shareIntoSharedFolder(
                   user, originalParentFolder, newRecord.getId());
-//        }
+        }
         sharedWithGroup = sharingResult.getResults();
       }
     } catch (AuthorizationException ae) {

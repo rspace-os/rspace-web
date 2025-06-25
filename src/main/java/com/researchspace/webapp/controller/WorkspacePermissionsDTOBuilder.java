@@ -1,22 +1,18 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.model.core.RecordType.*;
+import static com.researchspace.model.core.RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT;
+import static com.researchspace.model.core.RecordType.SHARED_FOLDER;
+import static com.researchspace.model.core.RecordType.SHARED_GROUP_FOLDER_ROOT;
+import static com.researchspace.model.core.RecordType.TEMPLATE;
 
-import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.DetailedRecordInformation;
 import com.researchspace.model.record.Folder;
-import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.FolderManager;
-import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordManager;
-import com.researchspace.session.UserSessionTracker;
 import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.servlet.ServletContext;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,12 +27,9 @@ import org.springframework.ui.Model;
 public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOBuilder {
 
   private FolderManager fMger;
-
   private RecordManager recMgr;
 
-  @Getter @Setter private @Autowired DetailedRecordInformationProvider infoProvider;
-
-  @Getter @Setter private @Autowired GroupManager grpMgr;
+  @Getter @Setter private @Autowired IPermissionUtils permissionUtils;
 
   @Autowired
   public void setRecMgr(RecordManager recMgr) {
@@ -108,26 +101,9 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     // override if it is notebook
     if (parentFolder.isNotebook()) {
-      UserSessionTracker currentActiveUsers =
-          (UserSessionTracker) servletContext.getAttribute(UserSessionTracker.USERS_KEY);
-      // TODO[nik]: implementcheck EDIT permission with the user group
-      DetailedRecordInformation detailedInfo =
-          infoProvider.getDetailedRecordInformation(
-              parentFolder.getId(), currentActiveUsers, usr, null, null);
-      Map<String, String> permissionsByGroupName = detailedInfo.getSharedGroupsAndAccess();
-      Set<String> currentUserGroups =
-          grpMgr.listGroupsForUser().stream()
-              .map(Group::getDisplayName)
-              .collect(Collectors.toSet());
-      boolean hasEditPermissions = false;
-      Set<String> commonGroups = permissionsByGroupName.keySet();
-      commonGroups.retainAll(currentUserGroups);
-      for (String commonGroup : commonGroups) {
-        if (permissionsByGroupName.get(commonGroup).equals("EDIT")) {
-          hasEditPermissions = true;
-          break;
-        }
-      }
+      // TODO[nik]: implement check EDIT permission with the user group
+      boolean hasEditPermissions =
+          permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr);
       dto.setCreateRecord(createRecord || (isParentFolderInSharedTree && hasEditPermissions));
       dto.setCreateFolder(false);
     }
@@ -158,7 +134,8 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     model.addAttribute("movetargetRoot", movetargetRoot);
     model.addAttribute("isNotebook", parentFolder.isNotebook());
-    model.addAttribute("allowCreateEntry", parentFolder.isNotebook() && parentFolder.isShared());
+    boolean canCreateEntry = permissionUtils.isPermitted(parentFolder, PermissionType.CREATE, usr);
+    model.addAttribute("allowCreateEntry", canCreateEntry);
 
     model.addAttribute("createPermission", dto);
     model.addAttribute("allowThirdPartyImport", !parentFolder.isSharedFolder());
