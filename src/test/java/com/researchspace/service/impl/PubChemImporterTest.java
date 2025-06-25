@@ -11,6 +11,8 @@ import com.researchspace.service.ChemicalImportException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,7 +24,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
-class PubChemImporterTest {
+public class PubChemImporterTest {
 
   @Mock private RestTemplate restTemplate;
 
@@ -35,7 +37,7 @@ class PubChemImporterTest {
   private static final String EMPTY_PUBCHEM_RESPONSE = "{\"PropertyTable\":{\"Properties\":[]}}";
 
   @Test
-  void whenValidSearchRequest_thenReturnParsedResults() throws ChemicalImportException {
+  public void whenValidSearchRequest_thenReturnParsedResults() throws Exception {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(VALID_PUBCHEM_RESPONSE, HttpStatus.OK));
 
@@ -56,7 +58,7 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenEmptyResponse_thenReturnEmptyList() throws ChemicalImportException {
+  public void whenSearchEmptyResponse_thenReturnEmptyList() throws Exception {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(EMPTY_PUBCHEM_RESPONSE, HttpStatus.OK));
 
@@ -68,7 +70,7 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenNotFoundResponse_thenReturnEmptyList() throws ChemicalImportException {
+  public void whenSearchNotFoundResponse_thenReturnEmptyList() throws Exception {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
@@ -80,7 +82,7 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenRateLimitExceeded_thenThrowAppropriateException() {
+  public void whenSearchRateLimitExceeded_thenThrowException() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenThrow(new HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS));
 
@@ -93,7 +95,7 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenNullSearchType_thenThrowException() {
+  public void whenNullSearchType_thenThrowException() {
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class, () -> pubChemImporter.searchChemicals(null, "aspirin"));
@@ -101,28 +103,19 @@ class PubChemImporterTest {
     assertTrue(exception.getMessage().contains("Unknown search type: " + null));
   }
 
-  @Test
-  void whenNullSearchTerm_thenThrowException() {
+  @ParameterizedTest
+  @NullAndEmptySource
+  public void whenNullOrEmptySearchTerm_thenThrowException(String searchTerm) {
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class,
-            () -> pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, null));
+            () -> pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, searchTerm));
 
     assertTrue(exception.getMessage().contains("Search type and term are required"));
   }
 
   @Test
-  void whenEmptySearchTerm_thenThrowException() {
-    ChemicalImportException exception =
-        assertThrows(
-            ChemicalImportException.class,
-            () -> pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, ""));
-
-    assertTrue(exception.getMessage().contains("Search type and term are required"));
-  }
-
-  @Test
-  void whenTimeoutOccurs_thenThrowAppropriateException() {
+  public void whenSearchTimeoutOccurs_thenThrowException() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenThrow(new ResourceAccessException("Timeout"));
 
@@ -135,7 +128,7 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenGenericRestClientException_thenThrowAppropriateException() {
+  public void whenSearchRestClientException_thenThrowException() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenThrow(new RestClientException("Network error"));
 
@@ -148,11 +141,10 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenUnexpectedError_thenThrowAppropriateException() {
+  public void whenSearchUnexpectedError_thenThrowException() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenThrow(new RuntimeException("Unexpected error"));
 
-    // Act & Assert
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class,
@@ -162,60 +154,45 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenValidCasSearchUsingName_thenCorrectUrlBuilt() throws ChemicalImportException {
-    // Arrange
+  public void whenValidCasSearch_thenCorrectUrlBuilt() throws Exception {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(EMPTY_PUBCHEM_RESPONSE, HttpStatus.OK));
 
-    // Act
     pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "50-78-2");
-
-    // Assert - verify the URL would be built correctly for CAS search using NAME type
-    // Note: In a more sophisticated test, we could capture the URL argument
-    // For now, we just verify no exception is thrown for valid CAS search using NAME
-    // The actual URL verification would require argument captors
   }
 
   @Test
-  void whenValidSmilesSearch_thenCorrectUrlBuilt() throws ChemicalImportException {
-    // Arrange
+  public void whenValidSmilesSearch_thenCorrectUrlBuilt() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(EMPTY_PUBCHEM_RESPONSE, HttpStatus.OK));
 
-    // Act
-    pubChemImporter.searchChemicals(ChemicalImportSearchType.SMILES, "CC(=O)OC1=CC=CC=C1C(=O)O");
-
-    // Assert - verify no exception is thrown for valid SMILES search
+    assertDoesNotThrow(
+        () ->
+            pubChemImporter.searchChemicals(
+                ChemicalImportSearchType.SMILES, "CC(=O)OC1=CC=CC=C1C(=O)O"));
   }
 
-  // Import tests
   @Test
-  void whenValidCidImport_thenImportSuccessfully() {
-    // Arrange
+  public void whenValidCidImport_thenImportSuccessfully() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(VALID_PUBCHEM_RESPONSE, HttpStatus.OK));
 
-    // Act & Assert - should not throw exception
     assertDoesNotThrow(() -> pubChemImporter.importChemicals(List.of("2244")));
   }
 
   @Test
-  void whenValidMultipleCidImport_thenImportAllSuccessfully() {
-    // Arrange
+  public void whenValidMultipleCidImport_thenImportAllSuccessfully() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(VALID_PUBCHEM_RESPONSE, HttpStatus.OK));
 
-    // Act & Assert - should not throw exception for multiple CIDs
     assertDoesNotThrow(() -> pubChemImporter.importChemicals(List.of("2244", "702", "5957")));
   }
 
   @Test
-  void whenImportNotFound_thenThrowException() {
-    // Arrange
+  public void whenImportNotFound_thenThrowException() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
-    // Act & Assert
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class,
@@ -225,12 +202,10 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenImportEmptyResponse_thenThrowException() {
-    // Arrange
+  public void whenImportEmptyResponse_thenThrowException() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenReturn(new ResponseEntity<>(EMPTY_PUBCHEM_RESPONSE, HttpStatus.OK));
 
-    // Act & Assert
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of("2244")));
@@ -239,8 +214,7 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenImportNullCids_thenThrowException() {
-    // Act & Assert
+  public void whenImportNullCids_thenThrowException() {
     ChemicalImportException exception =
         assertThrows(ChemicalImportException.class, () -> pubChemImporter.importChemicals(null));
 
@@ -248,8 +222,7 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenImportEmptyCidsList_thenThrowException() {
-    // Act & Assert
+  public void whenImportEmptyCidsList_thenThrowException() {
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of()));
@@ -258,8 +231,7 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenImportBlankCid_thenThrowException() {
-    // Act & Assert
+  public void whenImportBlankCid_thenThrowException() {
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of("   ")));
@@ -268,12 +240,10 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenImportRateLimitExceeded_thenThrowAppropriateException() {
-    // Arrange
+  public void whenImportRateLimitExceeded_thenThrowAppropriateException() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenThrow(new HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS));
 
-    // Act & Assert
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of("2244")));
@@ -282,12 +252,10 @@ class PubChemImporterTest {
   }
 
   @Test
-  void whenImportTimeoutOccurs_thenThrowAppropriateException() {
-    // Arrange
+  public void whenImportTimeoutOccurs_thenThrowAppropriateException() {
     when(restTemplate.getForEntity(anyString(), any()))
         .thenThrow(new ResourceAccessException("Timeout"));
 
-    // Act & Assert
     ChemicalImportException exception =
         assertThrows(
             ChemicalImportException.class, () -> pubChemImporter.importChemicals(List.of("2244")));

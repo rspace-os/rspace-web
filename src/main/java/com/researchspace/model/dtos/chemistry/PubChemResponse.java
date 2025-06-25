@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PubChemPropertyResponse {
+public class PubChemResponse {
 
   @JsonProperty("PropertyTable")
   private PropertyTable propertyTable;

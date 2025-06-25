@@ -2597,40 +2597,65 @@ paths:
       responses:
         '200':
           description:  A sum of two provided quantiies
-
-  /status:
-    get:
-      summary: Get API status
-      description: Simple API call to check that API service is available.
+  /chemical/search:
+    post:
+      summary: Search for chemicals
+      description: >
+        Searches for chemical data from external sources (currently only PubChem) using either chemical name 
+        CAS numbers or SMILES notation. Note: CAS numbers should be searched using the NAME search type, as they're
+        synonyms of name on pubchem rather than a distinct type.
+      consumes:
+        - application/json
       produces:
         - application/json
       tags:
-        - Miscellaneous
+        - Chemical Import
+      parameters:
+        - name: searchRequest
+          in: body
+          required: true
+          description: Chemical search request
+          schema:
+            $ref: '#/definitions/ChemicalSearchRequest'
       responses:
         '200':
-          description: >-
-            A simple object with a status message and metadata about the RSpace
-            server.
+          description: Search completed successfully
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ChemicalImportSearchResult'
+        '400':
+          description: Bad request - invalid search parameters
+        '429':
+          description: Rate limit exceeded
           schema:
             type: object
             properties:
               message:
                 type: string
-                description: Short status message.
-              rspaceVersion:
+                example: "Rate limit exceeded. Please try again later."
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              message:
                 type: string
-                description: RSpace application version
-          examples:
-            application/json:
-              message: OK
-              rspaceVersion: 1.69.1
+                example: "Error importing chemical data."
+        '502':
+          description: External service temporarily unavailable
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "External service temporarily unavailable."
   /chemical/import:
     post:
       summary: Import chemicals by PubChem Compound IDs
       description: >
         Imports chemical data from external sources (currently PubChem) using PubChem Compound IDs (CIDs).
-        This endpoint accepts a list of CIDs and imports the corresponding
-        chemical information into the system.
+        This endpoint accepts a list of CIDs and imports the chemical information.
       consumes:
         - application/json
       produces:
@@ -2682,59 +2707,32 @@ paths:
               message:
                 type: string
                 example: "External service temporarily unavailable."
-  /chemical/search:
-    post:
-      summary: Search for chemicals
-      description: >
-        Searches for chemical data from external sources (currently only PubChem) using various
-        search criteria such as chemical name (including CAS numbers) or SMILES notation.
-        Note: CAS numbers should be searched using the NAME search type.
-      consumes:
-        - application/json
+  /status:
+    get:
+      summary: Get API status
+      description: Simple API call to check that API service is available.
       produces:
         - application/json
       tags:
-        - Chemical Import
-      parameters:
-        - name: searchRequest
-          in: body
-          required: true
-          description: Chemical search request
-          schema:
-            $ref: '#/definitions/ChemicalSearchRequest'
+        - Miscellaneous
       responses:
         '200':
-          description: Search completed successfully
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/ChemicalImportSearchResult'
-        '400':
-          description: Bad request - invalid search parameters
-        '429':
-          description: Rate limit exceeded
+          description: >-
+            A simple object with a status message and metadata about the RSpace
+            server.
           schema:
             type: object
             properties:
               message:
                 type: string
-                example: "Rate limit exceeded. Please try again later."
-        '500':
-          description: Internal server error
-          schema:
-            type: object
-            properties:
-              message:
+                description: Short status message.
+              rspaceVersion:
                 type: string
-                example: "Error importing chemical data."
-        '502':
-          description: External service temporarily unavailable
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "External service temporarily unavailable."
+                description: RSpace application version
+          examples:
+            application/json:
+              message: OK
+              rspaceVersion: 1.69.1
 parameters:
   docIdParam:
     name: docId

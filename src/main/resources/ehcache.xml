@@ -49,7 +49,6 @@
 	<cache name="com.researchspace.model.User" maxElementsInMemory="1000"
 		timeToLiveSeconds="3600" overflowToDisk="false" />
 
-	<!-- PubChem API response cache - 1 hour TTL -->
 	<cache name="pubchemResults" maxElementsInMemory="500"
 		timeToLiveSeconds="3600" timeToIdleSeconds="1800" overflowToDisk="false" />
 

@@ -8,7 +8,6 @@ import com.researchspace.service.ChemicalImporter;
 import java.util.List;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,29 +24,6 @@ public class ChemicalImportApiController extends BaseApiController implements Ch
   @Autowired
   public ChemicalImportApiController(ChemicalImporter chemicalImporter) {
     this.chemicalImporter = chemicalImporter;
-  }
-
-  @Override
-  public ResponseEntity<?> importChemicals(
-      @Valid @RequestBody List<String> cids, BindingResult bindingResult) throws BindException {
-    throwBindExceptionIfErrors(bindingResult);
-
-    if (cids == null || cids.isEmpty()) {
-      return ResponseEntity.badRequest().body("At least one PubChem CID is required");
-    }
-
-    try {
-      chemicalImporter.importChemicals(cids);
-      log.info("Successfully imported {} chemical(s)", cids.size());
-      return ResponseEntity.status(HttpStatus.CREATED).build();
-    } catch (ChemicalImportException e) {
-      log.error("Error importing chemicals: {}", e.getMessage(), e);
-      return handleChemImportException(e);
-    } catch (Exception e) {
-      log.error("Unexpected error during chemical import", e);
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("An unexpected error occurred.");
-    }
   }
 
   @Override
@@ -75,7 +51,29 @@ public class ChemicalImportApiController extends BaseApiController implements Ch
     }
   }
 
-  @NotNull
+  @Override
+  public ResponseEntity<?> importChemicals(
+      @RequestBody List<String> cids, BindingResult bindingResult) throws BindException {
+    throwBindExceptionIfErrors(bindingResult);
+
+    if (cids == null || cids.isEmpty()) {
+      return ResponseEntity.badRequest().body("At least one PubChem CID is required");
+    }
+
+    try {
+      chemicalImporter.importChemicals(cids);
+      log.info("Successfully imported {} chemical(s)", cids.size());
+      return ResponseEntity.status(HttpStatus.CREATED).build();
+    } catch (ChemicalImportException e) {
+      log.error("Error importing chemicals: {}", e.getMessage(), e);
+      return handleChemImportException(e);
+    } catch (Exception e) {
+      log.error("Unexpected error during chemical import", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("An unexpected error occurred.");
+    }
+  }
+
   private static ResponseEntity<String> handleChemImportException(ChemicalImportException e) {
     if (e.getMessage().contains("Rate limit exceeded")) {
       return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)

@@ -5,7 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
-import com.researchspace.model.dtos.chemistry.PubChemPropertyResponse;
+import com.researchspace.model.dtos.chemistry.PubChemResponse;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalImporter;
 import java.util.ArrayList;
@@ -42,7 +42,10 @@ public class PubChemImporter implements ChemicalImporter {
   public List<ChemicalImportSearchResult> searchChemicals(
       ChemicalImportSearchType searchType, String searchTerm) throws ChemicalImportException {
     validateSearchParameters(searchType, searchTerm);
-    String url = buildPubChemUrl(searchType, searchTerm);
+    String url =
+        String.format(
+            "%s/%s/%s/property/Title,SMILES,MolecularFormula/json",
+            PUBCHEM_BASE_URL, searchType.name(), searchTerm);
     return makeApiRequestAndParseResponse(url, searchTerm);
   }
 
@@ -57,21 +60,18 @@ public class PubChemImporter implements ChemicalImporter {
         throw new ChemicalImportException("PubChem CID cannot be blank");
       }
 
-      try {
-        String url = buildPubChemUrlByCid(cid.trim());
-        List<ChemicalImportSearchResult> results = makeApiRequestAndParseResponse(url, cid);
+      String url =
+          String.format(
+              "%s/cid/%s/property/Title,SMILES,MolecularFormula/json", PUBCHEM_BASE_URL, cid);
+      List<ChemicalImportSearchResult> results = makeApiRequestAndParseResponse(url, cid);
 
-        if (results.isEmpty()) {
-          throw new ChemicalImportException(
-              String.format("No chemical found for PubChem CID: %s", cid));
-        }
-
-        // import into system
-        log.info("Successfully imported chemical with PubChem CID: {}", cid);
-      } catch (ChemicalImportException e) {
-        log.error("Failed to import chemical with PubChem CID {}: {}", cid, e.getMessage());
-        throw e;
+      if (results.isEmpty()) {
+        throw new ChemicalImportException(
+            String.format("No chemical found for PubChem CID: %s", cid));
       }
+
+      log.info("Successfully imported chemical with PubChem CID: {}", cid);
+      // todo: import via RSChemService
     }
   }
 
@@ -85,40 +85,16 @@ public class PubChemImporter implements ChemicalImporter {
     }
   }
 
-  private String buildPubChemUrl(ChemicalImportSearchType searchType, String searchTerm) {
-    return String.format(
-        "%s/%s/%s/property/Title,SMILES,MolecularFormula/json",
-        PUBCHEM_BASE_URL, searchType.name(), searchTerm);
-  }
-
-  private String buildPubChemUrlByCid(String cid) {
-    return String.format(
-        "%s/cid/%s/property/Title,SMILES,MolecularFormula/json", PUBCHEM_BASE_URL, cid);
-  }
-
-  private String generatePngImageUrl(String cid) {
-    // PubChem image service URL for PNG format
-    // Format: https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid={CID}&t=l
-    // t=l means large size
-    return String.format("https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=%s&t=l", cid);
-  }
-
-  private String generatePubChemUrl(String cid) {
-    // PubChem compound URL format
-    return String.format("https://pubchem.ncbi.nlm.nih.gov/compound/%s", cid);
-  }
-
   private List<ChemicalImportSearchResult> parseResponseToResults(String responseBody)
       throws ChemicalImportException {
     try {
-      PubChemPropertyResponse response =
-          objectMapper.readValue(responseBody, PubChemPropertyResponse.class);
+      PubChemResponse response = objectMapper.readValue(responseBody, PubChemResponse.class);
 
       List<ChemicalImportSearchResult> results = new ArrayList<>();
 
       if (response.getPropertyTable() != null
           && response.getPropertyTable().getProperties() != null) {
-        for (PubChemPropertyResponse.ChemicalProperty property :
+        for (PubChemResponse.ChemicalProperty property :
             response.getPropertyTable().getProperties()) {
           ChemicalImportSearchResult result = convertToSearchResult(property);
           if (result != null) {
@@ -126,7 +102,6 @@ public class PubChemImporter implements ChemicalImporter {
           }
         }
       }
-
       return results;
 
     } catch (Exception e) {
@@ -135,7 +110,7 @@ public class PubChemImporter implements ChemicalImporter {
   }
 
   private ChemicalImportSearchResult convertToSearchResult(
-      PubChemPropertyResponse.ChemicalProperty property) {
+      PubChemResponse.ChemicalProperty property) {
     try {
       if (property.getCid() == null) {
         return null;
@@ -148,8 +123,9 @@ public class PubChemImporter implements ChemicalImporter {
           .name(property.getTitle())
           .formula(property.getMolecularFormula())
           .smiles(property.getSmiles())
-          .pngImage(generatePngImageUrl(cid))
-          .pubchemUrl(generatePubChemUrl(cid))
+          .pngImage(
+              String.format("https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=%s&t=l", cid))
+          .pubchemUrl(String.format("https://pubchem.ncbi.nlm.nih.gov/compound/%s", cid))
           .build();
 
     } catch (Exception e) {
