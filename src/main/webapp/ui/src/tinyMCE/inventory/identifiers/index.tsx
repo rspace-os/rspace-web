@@ -1,5 +1,3 @@
-// @flow
-
 import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import { createRoot } from "react-dom/client";
@@ -17,40 +15,43 @@ import Button from "@mui/material/Button";
 import useOauthToken from "../../../common/useOauthToken";
 import axios from "@/common/axios";
 import { toTitleCase } from "../../../util/Util";
-import { type Identifier } from "../../../Inventory/useIdentifiers";
+import {
+  type Identifier,
+  IdentifiersRefreshProvider,
+} from "../../../Inventory/useIdentifiers";
 import Typography from "@mui/material/Typography";
 import RsSet from "../../../util/set";
 import Alerts from "../../../components/Alerts/Alerts";
-import { IdentifiersRefreshProvider } from "../../../Inventory/useIdentifiers";
 
 type Editor = {
   ui: {
     registry: {
       addMenuItem: (
-        string,
-        { text: string, icon: string, onAction: () => void }
-      ) => void,
+        menuItemIdentifier: string,
+        options: { text: string; icon: string; onAction: () => void }
+      ) => void;
       addButton: (
-        string,
-        { tooltip: string, icon: string, onAction: () => void }
-      ) => void,
-      ...
-    },
-    ...
-  },
-  execCommand: (string, boolean, string) => void,
-  ...
+        buttonIdentifier: string,
+        options: { tooltip: string; icon: string; onAction: () => void }
+      ) => void;
+    };
+  };
+  execCommand: (
+    command: string,
+    someFlag: boolean,
+    htmlContent: string
+  ) => void;
 };
 
 function IdentifiersDialog({
   open,
   onClose,
   editor,
-}: {|
-  open: boolean,
-  onClose: () => void,
-  editor: Editor,
-|}) {
+}: {
+  open: boolean;
+  onClose: () => void;
+  editor: Editor;
+}) {
   const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
     new RsSet([])
   );
@@ -67,7 +68,7 @@ function IdentifiersDialog({
         }
         resolve(reader.result);
       };
-      reader.onerror = (error) => reject(error);
+      reader.onerror = (error: ProgressEvent<FileReader>) => reject(error);
     });
 
   async function fetchBarcodeUrl(igsn: Identifier) {
@@ -137,10 +138,10 @@ function IdentifiersDialog({
   );
 }
 
-type IdentifiersDialogProps = {|
-  open?: boolean,
-  onClose?: () => void,
-|};
+type IdentifiersDialogProps = {
+  open?: boolean;
+  onClose?: () => void;
+};
 
 class IdentifiersPlugin {
   constructor(editor: Editor) {
@@ -206,7 +207,9 @@ class IdentifiersPlugin {
         });
       },
     });
+    // @ts-expect-error TS does not recognise the insertActions property
     if (!window.insertActions) window.insertActions = new Map();
+    // @ts-expect-error TS does not recognise the insertActions property
     window.insertActions.set("optIdentifiers", {
       text: "Inventory Identifiers",
       aliases: ["IGSN"],
@@ -223,14 +226,14 @@ class IdentifiersPlugin {
   }
 }
 
-// $FlowExpectedError[cannot-resolve-name]
+// @ts-expect-error TS does not recognise the PluginManager property
 tinyMCE.PluginManager.add("identifiers", IdentifiersPlugin);
 
 function tableHtml({
   data,
-}: {|
-  data: Array<{| igsn: Identifier, barcodeUrl: string |}>,
-|}): HTMLTableElement {
+}: {
+  data: Array<{ igsn: Identifier; barcodeUrl: string }>;
+}): HTMLTableElement {
   const identifiersTable = document.createElement("table");
   identifiersTable.setAttribute("data-tableSource", "identifiers");
   const tableHeader = document.createElement("tr");
