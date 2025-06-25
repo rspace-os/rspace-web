@@ -1,19 +1,9 @@
-// @flow
-
-import React, { useEffect, useState, type Node } from "react";
+import React, { useEffect, useState } from "react";
 
 import KetcherDialog from "../../components/Ketcher/KetcherDialog";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
-import useOauthToken from "../../common/useOauthToken";
 import Analytics from "../../components/Analytics";
-
-type ChemicalElement = {|
-  chemId: number,
-  chemFileId: number,
-  chemElements: string,
-  format: string,
-|};
 
 /**
  * This component retrieves the selected chemical element in the global tinymce
@@ -22,13 +12,12 @@ type ChemicalElement = {|
  * editing buttons disabled. Note that it relies on jQuery and tinymce being
  * available as global variables.
  */
-export const KetcherViewer = (): Node => {
+export const KetcherViewer = (): React.ReactNode => {
   const [existingChemical, setExistingChemical] = useState("");
   const [dialogIsOpen, setDialogIsOpen] = useState(true);
-  const { getToken } = useOauthToken();
 
   useEffect(() => {
-    // $FlowExpectedError[cannot-resolve-name]
+    // @ts-expect-error TS cannot find this global
     const editor = tinymce.activeEditor;
     const selectedNode = editor.selection.getNode();
     const loadChemicalFile = async () => {
@@ -44,23 +33,23 @@ export const KetcherViewer = (): Node => {
         });
 
         if (!response.data) {
-          // $FlowExpectedError[cannot-resolve-name]
+          // @ts-expect-error global
           tinymceDialogUtils.showErrorAlert(
             "Problem loading chemical element."
           );
           return;
         }
         setExistingChemical(response.data);
-      } catch (error) {
-        // $FlowExpectedError[cannot-resolve-name]
+      } catch {
+        // @ts-expect-error global
         tinymceDialogUtils.showErrorAlert("Loading chemical elements failed.");
       }
     };
 
-    // $FlowExpectedError[cannot-resolve-name]
+    // @ts-expect-error global
     if ($(selectedNode).hasClass("chem")) {
       loadChemicalFile().catch(() => {
-        // $FlowExpectedError[cannot-resolve-name]
+        // @ts-expect-error global
         tinymceDialogUtils.showErrorAlert("Loading chemical elements failed.");
       });
     }
@@ -69,13 +58,13 @@ export const KetcherViewer = (): Node => {
   const handleClose = () => {
     setDialogIsOpen(false);
     setExistingChemical("");
-    // $FlowExpectedError[cannot-resolve-name]
+    // @ts-expect-error global
     const editor = tinymce.activeEditor;
     editor.selection.select(editor.getBody());
     editor.selection.collapse(true);
   };
 
-  // $FlowExpectedError[cannot-resolve-name]
+  // @ts-expect-error global
   return $(tinymce.activeEditor.selection.getNode()).hasClass("chem") &&
     existingChemical === "" ? null : (
     <KetcherDialog
@@ -91,6 +80,7 @@ export const KetcherViewer = (): Node => {
 
 document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("OPEN_KETCHER_VIEWER", () => {
+    // @ts-expect-error top wont be null
     const wrapperDiv = top.document.getElementById("tinymce-ketcher");
     if (wrapperDiv) {
       const root = createRoot(wrapperDiv);

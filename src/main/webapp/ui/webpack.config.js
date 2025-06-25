@@ -63,7 +63,7 @@ module.exports = {
     tinymceOmero: "./src/tinyMCE/omero/index.js",
     tinymceJove: "./src/tinyMCE/jove/index.js",
     tinymceKetcher: "./src/tinyMCE/ketcher/KetcherTinyMce.js",
-    ketcherViewer: "./src/tinyMCE/ketcher/KetcherViewer.js",
+    ketcherViewer: "./src/tinyMCE/ketcher/KetcherViewer.tsx",
     tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.tsx",
     baseSearch: "./src/components/BaseSearch.tsx",
     confirmationDialog: "./src/components/ConfirmationDialog.js",
