@@ -1,5 +1,5 @@
 "use strict";
-import React, { useState, useRef, useEffect, type Node } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
@@ -17,7 +17,7 @@ const scrollToRef = (ref) => window.scrollTo(0, ref.current.offsetTop);
 const PROJECT_GROUP = "PROJECT_GROUP";
 const LAB_GROUP = "LAB_GROUP";
 
-export default function NewLabGroup(): Node {
+export default function NewLabGroup() {
   const [values, setValues] = useState({
     name: "",
     nameError: false,
@@ -169,7 +169,10 @@ export default function NewLabGroup(): Node {
                 <MenuItem value={LAB_GROUP} data-test-id="groupType-labGroup">
                   Lab Group
                 </MenuItem>
-                <MenuItem value={PROJECT_GROUP} data-test-id="groupType-projectGroup">
+                <MenuItem
+                  value={PROJECT_GROUP}
+                  data-test-id="groupType-projectGroup"
+                >
                   Project Group
                 </MenuItem>
               </Select>

@@ -1,5 +1,5 @@
 "use strict";
-import React, { useEffect, type Node } from "react";
+import React, { useEffect } from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -90,7 +90,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export default function InternalLink(props): Node {
+export default function InternalLink(props) {
   const { classes } = useStyles();
   const [open, setOpen] = React.useState(true);
   const [revisions, setRevisions] = React.useState([]);
