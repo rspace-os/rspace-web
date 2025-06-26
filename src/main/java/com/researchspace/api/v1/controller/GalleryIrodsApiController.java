@@ -220,11 +220,11 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
     String irodsHomePath =
         nfsFileStore.getFileSystem().getClientOption(NfsFileSystemOption.IRODS_HOME_DIR);
     String filestorePath = nfsFileStore.getPath();
-    if (StringUtils.isEmpty(irodsHomePath)) {
-      return filestorePath;
+    if (StringUtils.isBlank(irodsHomePath)) {
+      irodsHomePath = "";
     }
-    if (StringUtils.isEmpty(filestorePath)) {
-      return irodsHomePath;
+    if (StringUtils.isBlank(filestorePath)) {
+      filestorePath = "";
     }
     if (filestorePath.startsWith(irodsHomePath)) {
       return filestorePath;

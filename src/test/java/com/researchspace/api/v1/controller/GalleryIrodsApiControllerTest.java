@@ -396,28 +396,44 @@ class GalleryIrodsApiControllerTest {
 
   @Test
   void testGettingAbsoluteTargetFilestorePath() {
-    NfsFileSystem nfsFileSystem = new NfsFileSystem();
-    nfsFileSystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice");
+    NfsFileSystem testFilesystem = new NfsFileSystem();
+    testFilesystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice");
 
     NfsFileStore testFilestore = new NfsFileStore();
-    testFilestore.setFileSystem(nfsFileSystem);
+    testFilestore.setFileSystem(testFilesystem);
 
-    // relative path saved with filestore
-    testFilestore.setPath("/testFolder/testFolder");
+    // absolute path saved in filestore path
+    testFilestore.setPath("/tempZone/home/alice/testFolder/testFolder");
     assertEquals(
         "/tempZone/home/alice/testFolder/testFolder",
         galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
 
-    // absolute path saved with filestore
-    testFilestore.setPath("/tempZone/home/alice/testFolder/testFolder2");
+    // relative path saved in filestore path
+    testFilestore.setPath("/testFolder/testFolder2");
     assertEquals(
         "/tempZone/home/alice/testFolder/testFolder2",
         galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
 
     // with trailing slash in filesystem path
-    nfsFileSystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice");
+    testFilesystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice/");
     assertEquals(
         "/tempZone/home/alice/testFolder/testFolder2",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // filestore path blank
+    testFilestore.setPath(" ");
+    assertEquals(
+        "/tempZone/home/alice/",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // filesystem path null
+    testFilesystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, null);
+    assertEquals("", galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // filesystem path null, but filestores path not null
+    testFilestore.setPath("/testFolder/testFolder3");
+    assertEquals(
+        "/testFolder/testFolder3",
         galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
   }
 }
