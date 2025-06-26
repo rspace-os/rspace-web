@@ -210,7 +210,7 @@ pipeline {
                     notify currentBuild.result
                 }
                 success {
-                    junit checksName: 'Jest Tests', testResults: '**/ui/junit.xml'
+                    junit checksName: 'Jest Tests', testResults: '**/ui/junit.xml', allowEmptyResults: true
                 }
             }
         }

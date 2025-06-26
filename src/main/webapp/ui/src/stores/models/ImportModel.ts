@@ -44,6 +44,7 @@ export const Fields: { [fieldName: string]: symbol } = {
   parent_container_import_id: Symbol.for("PARENT CONTAINER IMPORT ID"),
   parent_sample_global_id: Symbol.for("PARENT SAMPLE GLOBAL ID"),
   parent_sample_import_id: Symbol.for("PARENT SAMPLE IMPORT ID"),
+  identifier: Symbol.for("IDENTIFIER"),
   custom: Symbol.for("CUSTOM"),
   none: Symbol.for("IGNORE"),
 };
@@ -63,6 +64,7 @@ export const getTypeOfField: (field: Field) => FieldType | null = match([
   [(f) => f === Fields.parent_container_import_id, FieldTypes.plain_text],
   [(f) => f === Fields.parent_sample_global_id, FieldTypes.plain_text],
   [(f) => f === Fields.parent_sample_import_id, FieldTypes.plain_text],
+  [(f) => f === Fields.identifier, FieldTypes.plain_text],
   [() => true, null],
 ]);
 
@@ -722,6 +724,7 @@ export default class Import {
           templateInfo?: TemplateAttrs;
           quantityUnitForColumn?: { [column: string]: number };
           radioOptionsForColumn?: { [column: string]: Array<string> };
+          fieldMappings?: Record<string, string>;
         }>("/import/parseFile", params);
 
         if (this.isSamplesImport) {
@@ -786,6 +789,14 @@ export default class Import {
                   fieldsByRecordType[nameToMatch(name as string)]
                 );
               }
+              if (
+                data.fieldMappings !== undefined &&
+                data.fieldMappings.hasOwnProperty(originalColumnName)
+              ) {
+                newFieldMap.field =
+                  Fields[data.fieldMappings[originalColumnName]];
+                newFieldMap.selected = true;
+              }
               return newFieldMap;
             });
           });
@@ -823,6 +834,13 @@ export default class Import {
               } else {
                 newFieldMap.setField(Fields.none);
                 newFieldMap.selected = false;
+              }
+              if (
+                data.fieldMappings !== undefined &&
+                data.fieldMappings.hasOwnProperty(columnName)
+              ) {
+                newFieldMap.field = Fields[data.fieldMappings[columnName]];
+                newFieldMap.selected = true;
               }
               return newFieldMap;
             });
@@ -961,6 +979,10 @@ export default class Import {
       mappings,
       Fields.parent_sample_import_id
     );
+    const identifierMapping = this.findParsedColumnName(
+      mappings,
+      Fields.identifier
+    );
 
     const result = {
       [name]: "name",
@@ -982,6 +1004,7 @@ export default class Import {
       ...(pSampleImportId
         ? { [pSampleImportId]: "parent sample import id" }
         : {}),
+      ...(identifierMapping ? { [identifierMapping]: "identifier" } : {}),
 
       ...Object.fromEntries(
         mappings
@@ -1171,7 +1194,7 @@ export default class Import {
       return { matches: false, reason: "Template has not been selected" };
     const template = this.template;
 
-    const customFields = this.mappingsByRecordType.filter(
+    const customFields = this.samplesMappings.filter(
       ({ field, selected }) => field === Fields.custom && selected
     );
     if (customFields.length !== template.fields.length)

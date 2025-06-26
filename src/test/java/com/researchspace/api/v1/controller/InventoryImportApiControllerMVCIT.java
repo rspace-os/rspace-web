@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
 import com.researchspace.api.v1.model.ApiContainer;
@@ -24,19 +25,25 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.JacksonUtil;
+import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.csvimport.CsvSampleImporter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -46,7 +53,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @WebAppConfiguration
 public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
-  private static final String ANTIBODY_IMPORT_ALL_COLUMNS_CSV = "antibody_import_all_columns.csv";
+  private static final String ANTIBODY_IMPORT_ALL_COLUMNS = "antibody_import_all_columns.csv";
   private static final String ANTIBODY_IMPORT_COMPLEX_TEMPLATE_CSV =
       "antibody_import_complex_template.csv";
   private static final String ANTIBODY_IMPORT_REAL_DATA_CSV = "antibody_import_real_data.csv";
@@ -58,20 +65,30 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
   private static final String SUBSAMPLE_IMPORT_INTO_CONTAINERS_CSV =
       "subsample_import_into_containers.csv";
 
-  User anyUser;
-  String apiKey;
+  private User anyUser;
+  private String apiKey;
 
-  @Autowired SamplesApiController samplesController;
+  @Autowired private SamplesApiController samplesController;
 
-  @Autowired SampleApiManager sampleApiMgr;
+  @Autowired private SampleApiManager sampleApiMgr;
 
-  @Autowired ContainerApiManager containerApiMgr;
+  @Autowired private ContainerApiManager containerApiMgr;
+
+  @Autowired private DigitalObjectIdentifierDao doiDao;
+  @Autowired private CsvSampleImporter csvSampleImporter;
+  @Mock private ApiAvailabilityHandler apiHandler;
 
   @Before
   public void setup() throws Exception {
     super.setUp();
+    MockitoAnnotations.openMocks(this);
     anyUser = createInitAndLoginAnyUser();
     apiKey = createNewApiKeyForUser(anyUser);
+    csvSampleImporter.setApiHandler(apiHandler);
+
+    when(apiHandler.isInventoryAndDataciteEnabled(anyUser)).thenReturn(true);
+    when(apiHandler.isInventoryAvailable(anyUser)).thenReturn(true);
+    when(apiHandler.isDataCiteConnectorEnabled()).thenReturn(true);
   }
 
   @Test
@@ -197,13 +214,12 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
 
   @Test
   public void parseAndImportSampleAllColumnsCsv() throws Exception {
-
     // let's parse antibodies example csv and get the suggested template
     MvcResult result =
         mockMvc
             .perform(
                 multipart(createUrl(API_VERSION.ONE, "/import/parseFile"))
-                    .file(getTestCsvFile("file", ANTIBODY_IMPORT_ALL_COLUMNS_CSV))
+                    .file(getTestCsvFile("file", ANTIBODY_IMPORT_ALL_COLUMNS))
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .param("recordType", "SAMPLES")
                     .header("apiKey", apiKey))
@@ -216,7 +232,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleTemplatePost templateInfo = parseResult.getTemplateInfo();
     assertEquals("antibody_import_all_columns", templateInfo.getName());
     assertTrue(templateInfo.isTemplate());
-    assertEquals(11, templateInfo.getFields().size());
+    assertEquals(12, templateInfo.getFields().size());
     assertEquals(ApiFieldType.STRING, templateInfo.getFields().get(0).getType());
     assertEquals("_Name", templateInfo.getFields().get(0).getName());
     assertEquals(ApiFieldType.TEXT, templateInfo.getFields().get(1).getType());
@@ -232,7 +248,8 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(ApiFieldType.RADIO, templateInfo.getFields().get(8).getType());
     assertEquals(ApiFieldType.URI, templateInfo.getFields().get(9).getType());
     assertEquals(ApiFieldType.STRING, templateInfo.getFields().get(10).getType());
-    assertEquals(10, parseResult.getRadioOptionsForColumn().size());
+    assertEquals(ApiFieldType.URI, templateInfo.getFields().get(11).getType());
+    assertEquals(11, parseResult.getRadioOptionsForColumn().size());
     assertEquals(
         List.of("14:00", "15:00"), parseResult.getRadioOptionsForColumn().get("Creation Time"));
     assertEquals(
@@ -244,6 +261,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(
         RSUnitDef.MILLI_GRAM.getId(), parseResult.getQuantityUnitForColumn().get("Quantity"));
     assertEquals(Integer.valueOf(5), parseResult.getRowsCount());
+    assertEquals("identifier", parseResult.getFieldMappings().get("Igsn"));
 
     // remove suggested template field that will be mapped to quantity
     templateInfo.getFields().remove(10);
@@ -255,6 +273,8 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     templateInfo.getFields().remove(4);
     // remove suggested template field that will be mapped to name
     templateInfo.getFields().remove(0);
+    // remove the igsn as a field since it is mapped
+    templateInfo.getFields().remove(6);
 
     /* correct the issue with LocalDateDeserialiser setting expiry date to
      * LocalDateDeserialiser.NULL_DATE when decoding response body */
@@ -264,6 +284,25 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     /* chagne default template quantity unit to one suggested for 'Quantity' column */
     templateInfo.setDefaultUnitId(parseResult.getQuantityUnitForColumn().get("Quantity"));
 
+    // create the DOI to assign
+    DigitalObjectIdentifier doi1 = new DigitalObjectIdentifier("10.82316/hm02-fz20", null);
+    DigitalObjectIdentifier doi2 = new DigitalObjectIdentifier("10.82316/hm02-fz21", null);
+    DigitalObjectIdentifier doi3 = new DigitalObjectIdentifier("10.82316/pqv5-0v92", null);
+    DigitalObjectIdentifier doi4 = new DigitalObjectIdentifier("10.82316/k8xy-6y85", null);
+    doi1.setOwner(anyUser);
+    doi2.setOwner(anyUser);
+    doi3.setOwner(anyUser);
+    doi4.setOwner(anyUser);
+    doi1.setState("draft");
+    doi2.setState("draft");
+    doi3.setState("draft");
+    doi4.setState("draft");
+    openTransaction();
+    doiDao.save(doi1);
+    doiDao.save(doi2);
+    doiDao.save(doi3);
+    doiDao.save(doi4);
+    commitTransaction();
     /*
      * let's import using default parsed template, with name column being 'Name',
      * with ignored 'Dummy Data' column and 'Best Before' put into 'Expiry date' column
@@ -271,14 +310,14 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     String settingsJson =
         "{ \"sampleSettings\": { \"fieldMappings\": { \"Name\": \"name\", \"Dummy Data\": null,"
             + " \"Best Before\": \"expiry date\", \"Sample Source\": \"source\", \"Quantity\":"
-            + " \"quantity\" },  \"templateInfo\": "
+            + " \"quantity\", \"Igsn\": \"identifier\"},  \"templateInfo\": "
             + JacksonUtil.toJson(templateInfo)
             + " } }";
     result =
         mockMvc
             .perform(
                 multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
-                    .file(getTestCsvFile("samplesFile", ANTIBODY_IMPORT_ALL_COLUMNS_CSV))
+                    .file(getTestCsvFile("samplesFile", ANTIBODY_IMPORT_ALL_COLUMNS))
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .param("importSettings", settingsJson)
                     .header("apiKey", apiKey))
@@ -303,6 +342,9 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(null, firstSample.getFields().get(1).getContent());
     assertEquals(List.of("monoclonal"), firstSample.getFields().get(1).getSelectedOptions());
     assertEquals("https://researchspace.com", firstSample.getFields().get(5).getContent());
+    assertNotNull(firstSample.getIdentifiers());
+    assertEquals(1, firstSample.getIdentifiers().size());
+    assertEquals("10.82316/k8xy-6y85", firstSample.getIdentifiers().get(0).getDoi());
     assertEquals(InventoryBulkOperationStatus.COMPLETED, sampleResults.getStatus());
   }
 
@@ -358,7 +400,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
         mockMvc
             .perform(
                 multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
-                    .file(getTestCsvFile("samplesFile", ANTIBODY_IMPORT_ALL_COLUMNS_CSV))
+                    .file(getTestCsvFile("samplesFile", ANTIBODY_IMPORT_ALL_COLUMNS))
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .param("importSettings", settingsJson)
                     .header("apiKey", apiKey))
@@ -375,7 +417,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
         mockMvc
             .perform(
                 multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
-                    .file(getTestCsvFile("samplesFile", ANTIBODY_IMPORT_ALL_COLUMNS_CSV))
+                    .file(getTestCsvFile("samplesFile", ANTIBODY_IMPORT_ALL_COLUMNS))
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .param("importSettings", settingsJson)
                     .header("apiKey", apiKey))
@@ -393,7 +435,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
         mockMvc
             .perform(
                 multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
-                    .file(getTestCsvFile("samplesFile", ANTIBODY_IMPORT_ALL_COLUMNS_CSV))
+                    .file(getTestCsvFile("samplesFile", ANTIBODY_IMPORT_ALL_COLUMNS))
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .param("importSettings", settingsJson)
                     .header("apiKey", apiKey))
