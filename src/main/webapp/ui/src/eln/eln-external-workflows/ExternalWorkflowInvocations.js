@@ -4,7 +4,7 @@ import materialTheme from "@/theme";
 import TitledBox from "@/Inventory/components/TitledBox";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import React, {Node} from "react";
+import React, {Node, useEffect, useState} from "react";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import {ThemeProvider} from "@mui/material/styles";
 import {withStyles} from "Styles";
@@ -14,48 +14,102 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {createSvgIcon, Icon} from "@mui/material";
 import SvgIcon from "@mui/material/SvgIcon";
 import {makeStyles} from "tss-react/mui";
+import axios from "@/common/axios";
+import {DataGrid} from "@mui/x-data-grid";
+import {DataGridColumn} from "@/util/table";
+import Link from "@mui/material/Link";
+import MaterialsDialog
+  from "@/eln-inventory-integration/MaterialsListing/MaterialsDialog";
+import ExternalWorkflowDialog
+  from "@/eln/eln-external-workflows/ExternalWorkflowDialog";
 
-function GalaxyWorkflowInvocations() {
-  const { classes } = useStyles({ fabRightPadding });
+function ExternalWorkflowInvocations({
+  isForNotebookPage = false,
+  fieldId
+}) {
+  const [count,setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const [galaxyDataSummary, setGalaxyDataSummary] = useState([]);
+  const [showDialog, setShowDialog] = useState(false);
+  const BUTTON_TOP = isForNotebookPage ? 115: 100;
+  const BUTTON_RIGHT = isForNotebookPage ? 15: -24;
+  const BUTTON_BOTTOM = BUTTON_TOP-48;
+  const { classes } = useStyles({ BUTTON_TOP, BUTTON_RIGHT,BUTTON_BOTTOM });
+  const CustomBadge = withStyles< {| children: Node, count: number  |},{ root: string, badge: string }>(() => ({
+    root: {
+      position: "sticky",
+      top: BUTTON_TOP,
+      zIndex: 1, // so it appears above the TinyMCE Editor
+      pointerEvents: "auto",
+    },
+    badge: {
+      transform: "none",
+    },
+  }))(({classes, children, count}) => (
+      <Badge badgeContent={count} color="primary" classes={classes}>
+        {children}
+      </Badge>
+  ));
+
+  useEffect( () => {
+    async function fetchData() {
+      await updateGalaxyDataSummary();
+    }
+    fetchData();
+  }, []);
+
+  const updateGalaxyDataSummary = async () => {
+    const data = await getGalaxyData();
+    if (data === null || data === "") {
+      setGalaxyDataSummary([])
+    } else {
+      setGalaxyDataSummary(data);
+      setCount(data.filter(d => d.galaxyInvocationName !== null).length);
+    }
+  }
+
+  const getGalaxyData = async () => {
+    return (await axios.get(
+        "/apps/galaxy/getSummaryGalaxyDataForRSpaceField/" + fieldId)).data;
+  }
+
+  window.addEventListener("galaxy-used", function (e) {
+    const eFieldId = e.detail.fieldId.substring(4);
+    if (eFieldId === fieldId) {
+      setIsVisible(true);
+    }
+  });
+
   return (
-      <>
-        <div className={classes.launcherWrapper}>
-        <CustomBadge count={1} >
-          <Fab
-              color="primary"
-              size="medium"
-              aria-label="Show computational workflows associated with this field"
-              aria-haspopup="menu"
-              className={classes.fab}
-          >
-            <WorkFlowIcon width="100%" viewBox="0 0 225 225" enableBackground="new 0 0 225 225"></WorkFlowIcon>
-          </Fab>
-        </CustomBadge>
-        </div>
+
+      <>  {(isVisible || galaxyDataSummary.length > 0) && (
+          <>
+            <div className={classes.launcherWrapper}>
+              <CustomBadge count={count}>
+                <Fab
+                    onClick={async () => {
+                      await updateGalaxyDataSummary();
+                      setShowDialog(true);
+                    }}
+                    color="primary"
+                    size="medium"
+                    aria-label="Show computational workflows associated with this field"
+                    aria-haspopup="menu"
+                    className={classes.fab}
+                >
+                  <WorkFlowIcon width="100%" viewBox="0 0 225 225"
+                                enableBackground="new 0 0 225 225"></WorkFlowIcon>
+                </Fab>
+              </CustomBadge>
+            </div>
+            <ExternalWorkflowDialog open={showDialog} setOpen={setShowDialog}
+                                    galaxySummaryReport={galaxyDataSummary}/>
+          </>
+      )}
       </>
   );
 }
-const FAB_SIZE = 48;
-const fabRightPadding =  -FAB_SIZE / 2;
 
-const CustomBadge = withStyles<
-    {| children: Node, count: number |},
-{ root: string, badge: string }
->(() => ({
-  root: {
-    position: "sticky",
-    top: FAB_SIZE,
-    zIndex: 1, // so it appears above the TinyMCE Editor
-    pointerEvents: "auto",
-  },
-  badge: {
-    transform: "none",
-  },
-}))(({ classes, children, count }) => (
-    <Badge badgeContent={count} color="primary" classes={classes}>
-      {children}
-    </Badge>
-));
 const WorkFlowIcon = createSvgIcon(
     <path fill="#075869" opacity="1.000000" stroke="none"
           d="
@@ -114,32 +168,33 @@ z"/>
     ,
     'WorkFlow');
 
-const useStyles = makeStyles()((theme, { fabRightPadding }) => ({
-  launcherWrapper: {
-    position: "absolute",
-    top: FAB_SIZE+50,
-    right: fabRightPadding,
-    bottom: FAB_SIZE+50,
-    pointerEvents: "none",
-    "@media print": {
-      display: "none",
-    },
-  },
-  growTransform: { transformOrigin: "center right" },
-  primary: { color: theme.palette.primary.main },
-  popper: {
-    zIndex: 1, // so it appears above the TinyMCE Editor
-    pointerEvents: "auto",
-  },
-  itemName: { fontWeight: "bold" },
-  itemText: {
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    width: "240px",
-  },
-  fab: {
-    zIndex: "initial",
-  },
-}));
-export default GalaxyWorkflowInvocations;
+const useStyles = makeStyles()(
+    (theme, {BUTTON_TOP, BUTTON_RIGHT, BUTTON_BOTTOM}) => ({
+      launcherWrapper: {
+        position: "absolute",
+        top: BUTTON_TOP,
+        right: BUTTON_RIGHT,
+        bottom: BUTTON_BOTTOM,
+        pointerEvents: "none",
+        "@media print": {
+          display: "none",
+        },
+      },
+      growTransform: {transformOrigin: "center right"},
+      primary: {color: theme.palette.primary.main},
+      popper: {
+        zIndex: 1, // so it appears above the TinyMCE Editor
+        pointerEvents: "auto",
+      },
+      itemName: {fontWeight: "bold"},
+      itemText: {
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        width: "240px",
+      },
+      fab: {
+        zIndex: "initial",
+      },
+    }));
+export default ExternalWorkflowInvocations;

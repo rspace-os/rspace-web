@@ -1,124 +1,133 @@
 <databaseChangeLog
-        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <!-- External Workflows -->
-    <changeSet id="2025-04-23a" context="run" author="nico">
-        <comment>Create a new app - Galaxy</comment>
-        <insert tableName="App">
-            <column name="id" type="NUMERIC" value="NULL" />
-            <column name="label" type="STRING" value="Galaxy" />
-            <column name="name" type="STRING" value="app.galaxy" />
-            <column name="defaultEnabled" type="BOOLEAN" valueBoolean="false" />
-        </insert>
-    </changeSet>
+  <!-- External Workflows -->
+  <changeSet id="2025-06-13a" context="run" author="nhanlon2">
+    <createTable tableName="ExternalWorkFlow">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="extId" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="description" type="TEXT"/>
+    </createTable>
+  </changeSet>
 
-    <changeSet id="2025-04-23b" context="run" author="nico">
-        <comment>Create a new system properties for Galaxy</comment>
-        <insert tableName="PropertyDescriptor">
-            <column name="id" type="NUMERIC" value="NULL"/>
-            <column name="defaultValue" type="STRING" value="ALLOWED"/>
-            <column name="name" type="STRING" value="galaxy.available"/>
-            <column name="type" type="NUMERIC" value="3"/>
-        </insert>
-        <insert tableName="SystemProperty">
-            <column name="id" type="NUMERIC" value="NULL"/>
-            <column name="dependent_id" type="NUMERIC" value="NULL"/>
-            <column name="descriptor_id" type="NUMERIC"
-                    valueComputed="(select id from PropertyDescriptor where name ='galaxy.available')"/>
-        </insert>
-        <insert tableName="SystemPropertyValue">
-            <column name="id" type="NUMERIC" value="NULL"/>
-            <column name="value" type="String" value="DENIED"/>
-            <column name="property_id" type="NUMERIC"
-                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='galaxy.available')"/>
-        </insert>
-    </changeSet>
+  <changeSet id="2025-06-13b" context="run" author="nhanlon2">
+    <createTable tableName="ExternalWorkFlowData">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+        <column name="externalService" type="VARCHAR(30)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="rspacedataid" type="BIGINT" >
+            <constraints nullable="false"/>
+        </column>
+        <column name="rspaceDataType" type="VARCHAR(30)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="rspacecontainerid" type="BIGINT" >
+            <constraints nullable="false"/>
+        </column>
+      <column name="rspacecontainerName" type="VARCHAR(255)" >
+        <constraints nullable="false"/>
+      </column>
+        <column name="rspaceContainerType" type="VARCHAR(30)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="extName" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="extId" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="extSecondaryId" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="extContainerID" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+      <column name="extContainerName" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+        <column name="baseUrl" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+    </createTable>
+  </changeSet>
 
-    <changeSet id="2025-04-23c" context="run" author="nico">
-        <comment>Property Descriptor for Galaxy App</comment>
-        <insert tableName="PropertyDescriptor">
-            <column name="id" type="NUMERIC" value="NULL"/>
-            <column name="defaultValue" type="STRING" value="" />
-            <column name="name" type="STRING" value="GALAXY_APIKEY" />
-            <column name="type" type="NUMERIC" value="2" />
-        </insert>
-    </changeSet>
+  <changeSet id="2025-06-13c" context="run" author="nhanlon2">
+    <createTable tableName="ExternalWorkFlowInvocation">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="extId" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="status" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="external_work_flow_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint baseColumnNames="external_work_flow_id" baseTableName="ExternalWorkFlowInvocation"
+      constraintName="fk_invocation_workflow" deferrable="false" initiallyDeferred="false"
+      onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ExternalWorkFlow"/>
+  </changeSet>
 
-    <changeSet id="2025-04-23d" context="run" author="nico">
-        <comment>AppConfigElementDescriptor for Galaxy App: id, descriptor_id, app_id</comment>
-        <sql>insert into AppConfigElementDescriptor (descriptor_id, app_id)
-                 select pd.id as descriptor_id, app.id as app_id
-                 from PropertyDescriptor pd, App app
-                 where app.name="app.galaxy" and pd.name='GALAXY_APIKEY';</sql>
-    </changeSet>
+  <changeSet id="2025-06-13d" context="run" author="nhanlon2">
+    <createTable tableName="ExtInvoc_ExtData">
+      <column name="invocation_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="data_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addPrimaryKey tableName="ExtInvoc_ExtData" columnNames="invocation_id, data_id"
+      constraintName="pk_ext_invoc_ext_data"/>
+    <addForeignKeyConstraint baseColumnNames="invocation_id" baseTableName="ExtInvoc_ExtData"
+      constraintName="fk_extdata_invocation" deferrable="false" initiallyDeferred="false"
+      onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ExternalWorkFlowInvocation"/>
+    <addForeignKeyConstraint baseColumnNames="data_id" baseTableName="ExtInvoc_ExtData"
+      constraintName="fk_extdata_data" deferrable="false" initiallyDeferred="false"
+      onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ExternalWorkFlowData"/>
+  </changeSet>
 
-    <changeSet id="2025-06-13a" context="run" author="nhanlon2">
-        <createTable tableName="ExternalWorkFlow">
-            <column name="id" type="BIGINT" autoIncrement="true">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <!-- Additional fields for ExternalWorkFlow would go here -->
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="description" type="TEXT"/>
-        </createTable>
-    </changeSet>
-
-    <changeSet id="2025-06-13b" context="run" author="nhanlon2">
-        <createTable tableName="ExternalWorkFlowData">
-            <column name="id" type="BIGINT" autoIncrement="true">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <!-- Additional fields for ExternalWorkFlowData would go here -->
-            <column name="data_key" type="VARCHAR(255)"/>
-            <column name="data_value" type="TEXT"/>
-        </createTable>
-    </changeSet>
-
-    <changeSet id="2025-06-13c" context="run" author="nhanlon2">
-        <createTable tableName="ExternalWorkFlowInvocation">
-            <column name="id" type="BIGINT" autoIncrement="true">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="ext_id" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="status" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="external_work_flow_id" type="BIGINT">
-                <constraints nullable="true" foreignKeyName="fk_invocation_workflow" references="external_work_flow(id)"/>
-            </column>
-        </createTable>
-    </changeSet>
-
-    <changeSet id="2025-06-13d" context="run" author="nhanlon2">
-        <createTable tableName="ExtInvoc_ExtData">
-            <column name="invocation_id" type="BIGINT">
-                <constraints nullable="false" foreignKeyName="fk_extdata_invocation" references="ExternalWorkFlowInvocation(id)"/>
-            </column>
-            <column name="data_id" type="BIGINT">
-                <constraints nullable="false" foreignKeyName="fk_extdata_data" references="ExternalWorkFlowData(id)"/>
-            </column>
-        </createTable>
-        <addPrimaryKey tableName="ExtInvoc_ExtData" columnNames="invocation_id, data_id" constraintName="pk_ext_invoc_ext_data"/>
-    </changeSet>
-
-    <changeSet id="2025-06-13e" context="run" author="nhanlon2">
-        <createIndex tableName="external_workflow_invocation" indexName="idx_invocation_workflow">
-            <column name="external_work_flow_id"/>
-        </createIndex>
-        <createIndex tableName="ext_invoc_ext_data" indexName="idx_ext_invoc_data_invocation">
-            <column name="invocation_id"/>
-        </createIndex>
-        <createIndex tableName="ext_invoc_ext_data" indexName="idx_ext_invoc_data_data">
-            <column name="data_id"/>
-        </createIndex>
-    </changeSet>
-
-
+  <changeSet id="2025-06-13e" context="run" author="nhanlon2">
+    <createIndex tableName="ExternalWorkFlow" indexName="idx_ExternalWorkFlow_extId">
+      <column name="extId"/>
+    </createIndex>
+    <createIndex tableName="ExternalWorkFlowInvocation"
+      indexName="idx_ExternalWorkFlowInvocation_extId">
+      <column name="extId"/>
+    </createIndex>
+    <createIndex tableName="ExternalWorkFlowData" indexName="idx_ExternalWorkFlowData_extId">
+      <column name="extId"/>
+    </createIndex>
+    <createIndex tableName="ExternalWorkFlowData"
+      indexName="idx_ExternalWorkFlowData_extSecondaryId">
+      <column name="extSecondaryId"/>
+    </createIndex>
+    <createIndex tableName="ExternalWorkFlowInvocation" indexName="idx_invocation_workflow">
+      <column name="external_work_flow_id"/>
+    </createIndex>
+    <createIndex tableName="ExtInvoc_ExtData" indexName="idx_ext_invoc_data_invocation">
+      <column name="invocation_id"/>
+    </createIndex>
+    <createIndex tableName="ExtInvoc_ExtData" indexName="idx_ext_invoc_data_data">
+      <column name="data_id"/>
+    </createIndex>
+  </changeSet>
 
 
 </databaseChangeLog>
