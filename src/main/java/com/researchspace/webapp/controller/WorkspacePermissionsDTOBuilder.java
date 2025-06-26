@@ -99,9 +99,10 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     // override if it is notebook
     if (parentFolder.isNotebook()) {
-      createRecord = createRecord ||
-          (isParentFolderInSharedTree &&
-              permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr));
+      createRecord =
+          createRecord
+              || (isParentFolderInSharedTree
+                  && permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr));
       dto.setCreateRecord(createRecord);
       dto.setCreateFolder(false);
     }
@@ -132,8 +133,9 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     model.addAttribute("movetargetRoot", movetargetRoot);
     model.addAttribute("isNotebook", parentFolder.isNotebook());
-    boolean canCreateEntry = parentFolder.isNotebook() &&
-        permissionUtils.isPermitted(parentFolder, PermissionType.CREATE, usr);
+    boolean canCreateEntry =
+        parentFolder.isNotebook()
+            && permissionUtils.isPermitted(parentFolder, PermissionType.CREATE, usr);
     model.addAttribute("allowCreateNewEntryInNotebook", canCreateEntry);
 
     model.addAttribute("createPermission", dto);

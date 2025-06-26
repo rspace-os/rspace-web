@@ -116,8 +116,7 @@ public class WorkspacePermissionsDTOBuilderTest {
 
     Mockito.when(results.getResults()).thenReturn(new ArrayList<BaseRecord>());
     Mockito.verify(folderMger, Mockito.never())
-        .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-            Mockito.anyLong(), any(User.class));
+        .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(Mockito.anyLong(), any(User.class));
 
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(

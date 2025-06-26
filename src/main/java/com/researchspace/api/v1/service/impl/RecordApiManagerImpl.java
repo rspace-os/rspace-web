@@ -13,7 +13,6 @@ import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.audittrail.RenameAuditEvent;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.IPermissionUtils;
-import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
@@ -67,10 +66,8 @@ public class RecordApiManagerImpl implements RecordApiManager {
 
     if (apiDocument.getParentFolderId() != null) {
       Folder originalParentFolder = folderManager.getFolder(apiDocument.getParentFolderId(), user);
-      if (originalParentFolder.isSharedFolder()
-          || (originalParentFolder.isNotebook()
-              && originalParentFolder.isShared()
-              && !permissionUtils.isPermitted(originalParentFolder, PermissionType.CREATE, user))) {
+      if (folderManager.isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+          user, originalParentFolder)) {
         if (originalParentFolder.isNotebook()) {
           // shareDocument into the current parent sharedNotebook
           recordShareHandler.shareIntoSharedNotebook(

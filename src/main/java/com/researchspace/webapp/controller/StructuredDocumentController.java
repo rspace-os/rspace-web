@@ -310,10 +310,8 @@ public class StructuredDocumentController extends BaseController {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Form", formid));
       }
       Folder originalParentFolder = folderManager.getFolder(parentRecordId, user);
-      if (originalParentFolder.isSharedFolder()
-          || (originalParentFolder.isNotebook()
-              && originalParentFolder.isShared()
-              && !permissionUtils.isPermitted(originalParentFolder, PermissionType.CREATE, user))) {
+      if (folderManager.isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+          user, originalParentFolder)) {
         ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult;
         if (originalParentFolder.isNotebook()) {
           // shareDocument into the current parent sharedNotebook
