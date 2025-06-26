@@ -1,5 +1,0 @@
-//@flow
-
-import React, { type Node } from "react";
-
-declare export default function Router(): Node;

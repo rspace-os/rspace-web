@@ -1,8 +1,0 @@
-// @flow
-
-import { type ComponentType, type Node } from "react";
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
-
-declare function ContentContextMenu(): Node;
-
-export default (ContentContextMenu: ComponentType<{||}>);

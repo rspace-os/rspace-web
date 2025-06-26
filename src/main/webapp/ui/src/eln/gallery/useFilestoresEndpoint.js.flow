@@ -1,7 +1,0 @@
-//@flow
-
-import { type Filestore } from "./useGalleryListing";
-
-declare export default function useFilestoresEndpoint(): {|
-  logout: (Filestore) => Promise<void>,
-|};

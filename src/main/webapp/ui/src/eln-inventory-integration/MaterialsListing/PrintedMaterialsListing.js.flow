@@ -1,8 +1,0 @@
-//@flow
-
-import { type Node } from 'react';
-import { ListOfMaterials } from "../../stores/models/MaterialsModel";
-
-declare export default function PrintedMaterialsListing({|
-  listsOfMaterials: ?Array<ListOfMaterials>,
-|}): Node;

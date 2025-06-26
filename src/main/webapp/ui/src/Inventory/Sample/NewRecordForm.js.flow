@@ -1,7 +1,0 @@
-// @flow
-
-import { type Node, type ComponentType } from "react";
-import SampleModel from "../../stores/models/SampleModel";
-import { type FormSectionError } from "../components/Stepper/StepperPanelHeader";
-
-declare export default ComponentType<{||}>;

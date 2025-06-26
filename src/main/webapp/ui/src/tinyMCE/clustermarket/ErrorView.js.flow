@@ -1,9 +1,0 @@
-// @flow
-
-import { type Node } from 'react';
-import { ErrorReason } from "./Enums";
-
-declare export default function ErrorView({
-    errorReason: $Values<typeof ErrorReason>,
-    errorMessage: string,
-}): Node;

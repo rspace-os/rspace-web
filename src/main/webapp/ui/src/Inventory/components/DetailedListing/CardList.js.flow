@@ -1,8 +1,0 @@
-// @flow
-
-import { type Node } from "react";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-
-declare export default function ResultsTable({|
-  records: Array<InventoryRecord>,
-|}): Node;

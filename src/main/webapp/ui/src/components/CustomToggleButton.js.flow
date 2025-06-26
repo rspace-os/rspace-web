@@ -1,6 +1,0 @@
-//@flow
-
-import { type Node, type ElementProps } from "react";
-import ToggleButton from "@mui/material/ToggleButton";
-
-declare export default function CustomToggleButton({| title: string, disabled: boolean, ...ElementProps<typeof ToggleButton> |}): Node;

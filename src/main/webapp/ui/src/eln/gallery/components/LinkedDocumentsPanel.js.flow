@@ -1,8 +1,0 @@
-//@flow
-
-import { type Node } from "react";
-import { type GalleryFile } from "../useGalleryListing";
-
-declare export function LinkedDocumentsPanel({|
-  file: GalleryFile
-|}): Node;

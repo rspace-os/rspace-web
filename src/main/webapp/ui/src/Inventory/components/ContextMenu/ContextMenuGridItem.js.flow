@@ -1,8 +1,0 @@
-// @flow
-
-import { type Node } from "react";
-
-declare export default function ContextMenuGridItem({|
-  className?: string,
-  children: Node,
-|}): Node;

@@ -1,7 +1,0 @@
-// @flow
-
-import typeof { ACCENT_COLOR } from "../assets/branding/rspace/gallery";
-
-declare function currentPage(): string;
-
-declare function color(page: string): ACCENT_COLOR;

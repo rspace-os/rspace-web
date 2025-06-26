@@ -1,5 +1,0 @@
-//@flow
-
-import { type PlanSummary } from "./PlanSummary";
-
-declare export function importPlan(PlanSummary): Promise<void>;

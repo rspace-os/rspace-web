@@ -1,6 +1,0 @@
-// @flow
-
-import { type ComponentType } from "react";
-
-const Content: ComponentType<{||}> = (null: any);
-export default Content;

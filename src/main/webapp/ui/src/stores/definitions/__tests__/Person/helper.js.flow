@@ -1,7 +1,0 @@
-// @flow
-
-import { type Arbitrary } from "fast-check";
-import { type Person } from "../../Person";
-import { type Container } from "../../Container";
-
-declare export var arbitraryPerson: Arbitrary<Person>;

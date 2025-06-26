@@ -1,7 +1,0 @@
-// @flow
-
-import { type Node, type ComponentType } from "react";
-
-declare function InventoryRouter(): Node;
-
-export default (InventoryRouter: ComponentType<{||}>);

@@ -1,8 +1,0 @@
-// @flow
-
-import React, { type Node } from "react";
-
-declare export default function MyBench({|
-  size?: "small",
-  color?: string,
-|}): Node;
