@@ -113,13 +113,14 @@ public interface NfsClient extends Serializable {
   /***
    * Stores a list of files into a specific path of an external storage file system.
    *
-   * @param pathToFiles the path where you want to save the files
+   * @param destinationPath the path where you want to save the files
    * @param mapRecordIdToFile the Map[recordId, File] of the files you want to upload
    * @return the map of the file descriptors of the files saved
    * @throws UnsupportedOperationException if any of the file cannot be deleted
    */
   default ApiExternalStorageOperationResult uploadFilesToNfs(
-      String pathToFiles, Map<Long, File> mapRecordIdToFile) throws UnsupportedOperationException {
+      String destinationPath, Map<Long, File> mapRecordIdToFile)
+      throws UnsupportedOperationException {
     if (!this.supportWritePermission()) {
       throw new UnsupportedOperationException(
           "The Operation is not supported by the NfsClient in use");
