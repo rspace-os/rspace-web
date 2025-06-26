@@ -89,9 +89,20 @@ export function HasLocationMixin<
         .flatMap(Parsers.isString)
         .flatMap(Parsers.parseDate)
         .orElse(null);
-      this.lastNonWorkbenchParent = Parsers.getValueWithKey(
+      const lastNonWorkbenchParentParams = Parsers.getValueWithKey(
         "lastNonWorkbenchParent"
-      )(params).elseThrow() as Container | null;
+      )(params).elseThrow() as
+        | (Record<string, unknown> & {
+            globalId: GlobalId;
+          })
+        | null;
+      if (lastNonWorkbenchParentParams) {
+        this.lastNonWorkbenchParent = factory.newRecord(
+          lastNonWorkbenchParentParams
+        ) as Container | null;
+      } else {
+        this.lastNonWorkbenchParent = null;
+      }
     }
 
     get fieldValues(): InventoryBaseRecordEditableFields &
