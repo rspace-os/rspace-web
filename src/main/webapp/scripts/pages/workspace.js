@@ -146,8 +146,9 @@ function configurePermittedActions() {
   var canCreateThirdPartyRecord = $('#authzCreateThirdPartyRecord').val() === 'true';
   var canCreateFormRecord = $('#authzCreateFormRecord').val() === 'true';
   var isNotebook = $('#isNotebook').val() === 'true';
+  var allowCreateNewEntryInNotebook = $('#allowCreateNewEntryInNotebook').val() === 'true';
 
-  $('#createEntry').toggle(canCreateRecord && isNotebook);
+  $('#createEntry').toggle(canCreateRecord && isNotebook && allowCreateNewEntryInNotebook);
   $('#createNotebook').toggle(canCreateRecord && !isNotebook);
   $('.directList').toggle(canCreateRecord);
   $("#templateMenuLnk").toggle(canCreateRecord);

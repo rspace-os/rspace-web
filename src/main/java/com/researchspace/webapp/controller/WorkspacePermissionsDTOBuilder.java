@@ -101,7 +101,6 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     // override if it is notebook
     if (parentFolder.isNotebook()) {
-      // TODO[nik]: implement check EDIT permission with the user group
       boolean hasEditPermissions =
           permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr);
       dto.setCreateRecord(createRecord || (isParentFolderInSharedTree && hasEditPermissions));
@@ -135,7 +134,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
     model.addAttribute("movetargetRoot", movetargetRoot);
     model.addAttribute("isNotebook", parentFolder.isNotebook());
     boolean canCreateEntry = permissionUtils.isPermitted(parentFolder, PermissionType.CREATE, usr);
-    model.addAttribute("allowCreateEntry", canCreateEntry);
+    model.addAttribute("allowCreateNewEntryInNotebook", canCreateEntry);
 
     model.addAttribute("createPermission", dto);
     model.addAttribute("allowThirdPartyImport", !parentFolder.isSharedFolder());
