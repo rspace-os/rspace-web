@@ -80,7 +80,6 @@ export type IntegrationStates = {
         optionsId: OptionsId;
       }>
     >
-<<<<<<< HEAD:src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts
   >;
   DIGITALCOMMONSDATA: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
@@ -105,35 +104,9 @@ export type IntegrationStates = {
   FIGSHARE: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
-=======
-  >,
-  DIGITALCOMMONSDATA: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  DMPONLINE: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  DMPTOOL: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  DROPBOX: IntegrationState<{||}>,
-  DRYAD: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  EGNYTE: IntegrationState<{|
-    EGNYTE_DOMAIN: Optional<string>,
-  |}>,
-  EVERNOTE: IntegrationState<{||}>,
-  FIELDMARK: IntegrationState<{|
-    FIELDMARK_USER_TOKEN: Optional<string>,
-  |}>,
-  FIGSHARE: IntegrationState<{|
-    ACCESS_TOKEN: Optional<string>,
-  |}>,
-  GALAXY: IntegrationState<{|
-    GALAXY_API_KEY: Optional<string>,
-  |}>,
->>>>>>> 5a67011e (Add new card and dialog to apps page):src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.js
+  GALAXY: IntegrationState<{
+    GALAXY_API_KEY: Optional<string>;
+    }>;
   GITHUB: IntegrationState<
     Array<
       Optional<{
@@ -1430,13 +1403,9 @@ export function useIntegrationsEndpoint(): {
         case "FIELDMARK":
           return decodeFieldmark(response.data.data) as IntegrationStates[I];
         case "FIGSHARE":
-<<<<<<< HEAD:src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts
           return decodeFigshare(response.data.data) as IntegrationStates[I];
-=======
-          return decodeFigshare(response.data.data);
         case "GALAXY":
-          return decodeGalaxy(response.data.data);
->>>>>>> 5a67011e (Add new card and dialog to apps page):src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.js
+          return decodeGalaxy(response.data.data) as IntegrationStates[I];
         case "GITHUB":
           return decodeGitHub(response.data.data) as IntegrationStates[I];
         case "GOOGLEDRIVE":

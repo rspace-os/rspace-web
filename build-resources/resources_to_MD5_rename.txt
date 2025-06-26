@@ -131,7 +131,7 @@ ui/dist/inventoryRecordIdentifierPublicPage.js
 ui/dist/ketcherViewer.js
 ui/dist/labgroupsTable.js
 ui/dist/materialsListing.js
-ui/dist/galaxyWorkFlows.js
+ui/dist/externalWorkFlows.js
 ui/dist/memberAutoshareStatusWrapper.js
 ui/dist/myLabGroups.js
 ui/dist/newLabGroup.js

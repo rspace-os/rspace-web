@@ -97,7 +97,7 @@
   <script src="<c:url value='/ui/dist/tinymceSidebarInfo.js'/>"></script>
   <script src="<c:url value='/ui/dist/internalLink.js'/>"></script>
   <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
-    <script src="<c:url value='/ui/dist/galaxyWorkFlows.js'/>"></script>
+    <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
   <script src="<c:url value='/ui/dist/associatedInventoryRecords.js'/>"></script>
   <script src="<c:url value='/ui/dist/tinymceKetcher.js'/>"></script>
   <script src="<c:url value='/ui/dist/ketcherViewer.js'/>"></script>

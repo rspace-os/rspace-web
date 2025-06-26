@@ -1,4 +1,4 @@
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+git add <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
@@ -146,6 +146,7 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-365.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-664.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-695.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-639.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-575.xml"/>
 
 
