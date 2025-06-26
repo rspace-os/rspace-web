@@ -48,7 +48,7 @@ import org.mockito.junit.MockitoRule;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
-public class WorkspacePermissionsDTOFBuilderTest {
+public class WorkspacePermissionsDTOBuilderTest {
 
   @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock ISearchResults<BaseRecord> results;
@@ -341,6 +341,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     assertTrue(can(result, DOC_ID, PermissionType.DELETE));
     // notebook entries can't be moved out from:
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
+    assertTrue((boolean) model.getAttribute("allowCreateNewEntryInNotebook"));
 
     parentFolder.addChild(nb, user);
     // now let's add notebook entry to shared folder and check it can be
