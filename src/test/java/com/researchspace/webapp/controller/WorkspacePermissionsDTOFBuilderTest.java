@@ -4,6 +4,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -16,6 +17,7 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
@@ -52,6 +54,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
   @Mock ISearchResults<BaseRecord> results;
   @Mock FolderManager folderMger;
   @Mock RecordManager recMger;
+  @Mock IPermissionUtils permissionUtils;
   @InjectMocks WorkspacePermissionsDTOBuilder dtoBuilder;
   PermissionFactory permFac;
   Model model;
@@ -67,6 +70,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     user = TestFactory.createAnyUser("any");
     parentFolder = TestFactory.createAFolder("folder", user);
     recordFac = new RecordFactory();
+    when(permissionUtils.isPermitted(any(), any(), any())).thenReturn(true);
   }
 
   @After
@@ -90,7 +94,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     // folder owned by user enables crud operations on contents
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), parentFolderId, false, null);
+            parentFolder, user, model, results.getResults(), parentFolderId, false);
 
     assertTrue(can(result, DOC_ID, PermissionType.RENAME));
     assertTrue(can(result, DOC_ID, PermissionType.DELETE));
@@ -113,11 +117,11 @@ public class WorkspacePermissionsDTOFBuilderTest {
     Mockito.when(results.getResults()).thenReturn(new ArrayList<BaseRecord>());
     Mockito.verify(folderMger, Mockito.never())
         .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-            Mockito.anyLong(), Mockito.any(User.class));
+            Mockito.anyLong(), any(User.class));
 
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), 1L, false, null);
+            parentFolder, user, model, results.getResults(), 1L, false);
     // make sure we get the gandparent Id
     String moveRoot = (String) model.asMap().get("movetargetRoot");
     assertEquals("/", moveRoot);
@@ -132,7 +136,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
 
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), 1L, false, null);
+            parentFolder, user, model, results.getResults(), 1L, false);
     // make sure we get the gandparent Id,i i.e., the shared folder
     moveRoot = (String) model.asMap().get("movetargetRoot");
     assertEquals(SHARED_ROOT_ID + "", moveRoot);
@@ -148,16 +152,16 @@ public class WorkspacePermissionsDTOFBuilderTest {
     final List<BaseRecord> records = toList(snip);
     parentFolder.addChild(snip, user);
     when(results.getResults()).thenReturn(records);
-    when(recMger.canMove(Mockito.eq(snip), Mockito.eq(parentFolder), Mockito.any(User.class)))
+    when(recMger.canMove(Mockito.eq(snip), Mockito.eq(parentFolder), any(User.class)))
         .thenReturn(true);
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), parentFolderId, false, null);
+            parentFolder, user, model, results.getResults(), parentFolderId, false);
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
     assertFalse(can(result, DOC_ID, PermissionType.EXPORT));
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), parentFolderId, true, null);
+            parentFolder, user, model, results.getResults(), parentFolderId, true);
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
     assertFalse(can(result, DOC_ID, PermissionType.EXPORT));
   }
@@ -174,13 +178,13 @@ public class WorkspacePermissionsDTOFBuilderTest {
     parentFolder.addChild(sdoc, user);
     final User other = TestFactory.createAnyUser("other");
     when(results.getResults()).thenReturn(records);
-    when(recMger.canMove(Mockito.eq(sdoc), Mockito.eq(parentFolder), Mockito.any(User.class)))
+    when(recMger.canMove(Mockito.eq(sdoc), Mockito.eq(parentFolder), any(User.class)))
         .thenReturn(true);
 
     // simulate search results; can delete
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), parentFolderId, false, null);
+            parentFolder, user, model, results.getResults(), parentFolderId, false);
     assertTrue(can(result, DOC_ID, PermissionType.DELETE));
     assertTrue(can(result, DOC_ID, PermissionType.SEND));
     assertTrue(can(result, DOC_ID, PermissionType.EXPORT));
@@ -188,7 +192,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
 
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, other, model, results.getResults(), parentFolderId, false, null);
+            parentFolder, other, model, results.getResults(), parentFolderId, false);
     assertFalse(can(result, DOC_ID, PermissionType.DELETE));
 
     // now we'll give other permission to delete the doc:
@@ -198,13 +202,13 @@ public class WorkspacePermissionsDTOFBuilderTest {
     sdoc.getSharingACL().addACLElement(new ACLElement(other.getUsername(), cbp));
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, other, model, results.getResults(), parentFolderId, false, null);
+            parentFolder, other, model, results.getResults(), parentFolderId, false);
     assertTrue(can(result, DOC_ID, PermissionType.DELETE));
 
     // now set is Search results = true:
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, other, model, results.getResults(), parentFolderId, true, null);
+            parentFolder, other, model, results.getResults(), parentFolderId, true);
     assertFalse(can(result, DOC_ID, PermissionType.DELETE));
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
   }
@@ -226,15 +230,15 @@ public class WorkspacePermissionsDTOFBuilderTest {
     Mockito.when(folderMger.getTemplateFolderForUser(user)).thenReturn(template);
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            templatesub, user, model, results.getResults(), null, true, null);
+            templatesub, user, model, results.getResults(), null, true);
     assertEquals(template.getId() + "", model.asMap().get("movetargetRoot").toString());
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            template, user, model, results.getResults(), null, true, null);
+            template, user, model, results.getResults(), null, true);
     assertEquals(template.getId() + "", model.asMap().get("movetargetRoot").toString());
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), null, true, null);
+            parentFolder, user, model, results.getResults(), null, true);
     assertEquals("/", model.asMap().get("movetargetRoot").toString());
   }
 
@@ -260,11 +264,11 @@ public class WorkspacePermissionsDTOFBuilderTest {
     Mockito.when(results.getResults()).thenReturn(records);
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            nb, pi, model, results.getResults(), null, false, null);
+            nb, pi, model, results.getResults(), null, false);
     assertTrue(can(result, DOC_ID, PermissionType.COPY));
     ActionPermissionsDTO result2 =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            nb, user, model, results.getResults(), null, false, null);
+            nb, user, model, results.getResults(), null, false);
     assertFalse(can(result2, DOC_ID, PermissionType.COPY));
     assertTrue(can(result, DOC_ID, PermissionType.EXPORT));
   }
@@ -283,7 +287,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     // RSPAC-1636 We can't rename or delete group shared folder.
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), 1L, false, null);
+            parentFolder, user, model, results.getResults(), 1L, false);
     assertFalse(can(result, DOC_ID, PermissionType.COPY));
     assertFalse(can(result, DOC_ID, PermissionType.RENAME));
     assertFalse(can(result, DOC_ID, PermissionType.DELETE));
@@ -307,7 +311,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     // folder owned by user enables crud operations on contents
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), parentFolderId, false, null);
+            parentFolder, user, model, results.getResults(), parentFolderId, false);
     assertTrue(can(result, DOC_ID, PermissionType.COPY));
     assertTrue(can(result, DOC_ID, PermissionType.RENAME));
     assertTrue(can(result, DOC_ID, PermissionType.DELETE));
@@ -317,7 +321,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     clearACLs(user, parentFolder, sdoc);
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            parentFolder, user, model, results.getResults(), parentFolderId, false, null);
+            parentFolder, user, model, results.getResults(), parentFolderId, false);
     assertFalse(can(result, DOC_ID, PermissionType.COPY));
     assertFalse(can(result, DOC_ID, PermissionType.RENAME));
     assertFalse(can(result, DOC_ID, PermissionType.DELETE));
@@ -331,7 +335,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
 
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            nb, user, model, results.getResults(), parentFolderId, false, null);
+            nb, user, model, results.getResults(), parentFolderId, false);
     assertTrue(can(result, DOC_ID, PermissionType.COPY));
     assertTrue(can(result, DOC_ID, PermissionType.RENAME));
     assertTrue(can(result, DOC_ID, PermissionType.DELETE));
@@ -349,7 +353,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
 
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
-            sharedFolder, user, model, results.getResults(), parentFolderId, false, null);
+            sharedFolder, user, model, results.getResults(), parentFolderId, false);
     assertTrue(can(result, DOC_ID, PermissionType.SEND));
   }
 

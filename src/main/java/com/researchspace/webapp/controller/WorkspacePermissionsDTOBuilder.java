@@ -13,7 +13,6 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import java.util.Collection;
-import javax.servlet.ServletContext;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +46,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
       Model model,
       Collection<? extends BaseRecord> records,
       Long previousFolderId,
-      boolean isSearch,
-      ServletContext servletContext) {
+      boolean isSearch) {
 
     boolean createRecord =
         (parentFolder.isSharedFolder() && !parentFolder.hasType(INDIVIDUAL_SHARED_FOLDER_ROOT))
