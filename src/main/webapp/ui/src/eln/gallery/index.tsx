@@ -55,6 +55,7 @@ import useOauthToken from "../../common/useOauthToken";
 import RsSet from "../../util/set";
 import docLinks from "../../assets/DocLinks";
 import Stack from "@mui/material/Stack";
+import * as ArrayUtils from "../../util/ArrayUtils";
 
 const WholePage = styled(
   ({
@@ -146,140 +147,159 @@ const WholePage = styled(
        */
     }, []);
 
+    React.useEffect(() => {
+      if (listingOf.tag === "folder") {
+        document.title = `${FetchingData.getSuccessValue(path)
+          .flatMap(ArrayUtils.last)
+          .map((file) => `${file.pathAsString()} `)
+          .orElse("")}| RSpace Gallery`;
+      } else {
+        if (listingOf.path.length > 0) {
+          document.title = `${ArrayUtils.last(listingOf.path)
+            .elseThrow()
+            .pathAsString()} | RSpace Gallery`;
+        } else {
+          document.title = `/${listingOf.section}/ | RSpace Gallery`;
+        }
+      }
+    }, [listingOf, path]);
+
     return (
-      <CallableImagePreview>
-        <CallablePdfPreview>
-          <CallableAsposePreview>
-            <CallableSnapGenePreview>
-              <OpenFolderProvider
-                setPath={(newPath) => {
-                  FetchingData.getSuccessValue(selectedSection).do(
-                    (section) => {
-                      if (section === GALLERY_SECTION.NETWORKFILES) {
-                        setPath(newPath);
-                        return;
-                      }
-                      if (newPath.length > 0) {
-                        navigate(
-                          `/gallery/${idToString(
-                            newPath[newPath.length - 1].id
-                          ).elseThrow()}`
-                        );
-                      } else {
-                        try {
-                          navigate(`/gallery?mediaType=${section}`);
-                        } catch {
-                          // do nothing
+      <>
+        <CallableImagePreview>
+          <CallablePdfPreview>
+            <CallableAsposePreview>
+              <CallableSnapGenePreview>
+                <OpenFolderProvider
+                  setPath={(newPath) => {
+                    FetchingData.getSuccessValue(selectedSection).do(
+                      (section) => {
+                        if (section === GALLERY_SECTION.NETWORKFILES) {
+                          setPath(newPath);
+                          return;
+                        }
+                        if (newPath.length > 0) {
+                          navigate(
+                            `/gallery/${idToString(
+                              newPath[newPath.length - 1].id
+                            ).elseThrow()}`
+                          );
+                        } else {
+                          try {
+                            navigate(`/gallery?mediaType=${section}`);
+                          } catch {
+                            // do nothing
+                          }
                         }
                       }
-                    }
-                  );
-                }}
-              >
-                <Stack sx={{ height: "100%" }}>
-                  <AppBar
-                    variant="page"
-                    currentPage="Gallery"
-                    sidebarToggle={
-                      <SidebarToggle
-                        setSidebarOpen={setDrawerOpen}
-                        sidebarOpen={drawerOpen}
-                        sidebarId={sidebarId}
-                      />
-                    }
-                    accessibilityTips={{
-                      supportsHighContrastMode: true,
-                      supportsReducedMotion: true,
-                      supports2xZoom: true,
-                    }}
-                  />
-                  <Box sx={{ borderBottom: theme.borders.card }}>
-                    <Alert
-                      icon={<BroadcastIcon fontSize="inherit" />}
-                      severity="info"
-                    >
-                      Welcome to the{" "}
-                      <Link href={docLinks.gallery}>new Gallery!</Link> If you
-                      encounter any issues, please let us know by emailing{" "}
-                      <Link href="mailto:support@researchspace.com">
-                        support
-                      </Link>{" "}
-                      and using the{" "}
-                      <Link target="_self" href="/oldGallery">
-                        old Gallery
-                      </Link>{" "}
-                      in the meantime.
-                    </Alert>
-                  </Box>
-                  <Box
-                    sx={{ display: "flex", minHeight: "0", flexGrow: 1 }}
-                    component="main"
-                  >
-                    <Sidebar
-                      selectedSection={FetchingData.getSuccessValue(
-                        selectedSection
-                      ).orElse(null)}
-                      setSelectedSection={(mediaType) => {
-                        setSelectedSection({ mediaType });
-                        setPath([]);
-                        setAppliedSearchTerm("");
-                        trackEvent("user:change:section:gallery", {
-                          section: mediaType,
-                        });
+                    );
+                  }}
+                >
+                  <Stack sx={{ height: "100%" }}>
+                    <AppBar
+                      variant="page"
+                      currentPage="Gallery"
+                      sidebarToggle={
+                        <SidebarToggle
+                          setSidebarOpen={setDrawerOpen}
+                          sidebarOpen={drawerOpen}
+                          sidebarId={sidebarId}
+                        />
+                      }
+                      accessibilityTips={{
+                        supportsHighContrastMode: true,
+                        supportsReducedMotion: true,
+                        supports2xZoom: true,
                       }}
-                      drawerOpen={drawerOpen}
-                      setDrawerOpen={setDrawerOpen}
-                      folderId={folderId}
-                      refreshListing={refreshListing}
-                      id={sidebarId}
                     />
+                    <Box sx={{ borderBottom: theme.borders.card }}>
+                      <Alert
+                        icon={<BroadcastIcon fontSize="inherit" />}
+                        severity="info"
+                      >
+                        Welcome to the{" "}
+                        <Link href={docLinks.gallery}>new Gallery!</Link> If you
+                        encounter any issues, please let us know by emailing{" "}
+                        <Link href="mailto:support@researchspace.com">
+                          support
+                        </Link>{" "}
+                        and using the{" "}
+                        <Link target="_self" href="/oldGallery">
+                          old Gallery
+                        </Link>{" "}
+                        in the meantime.
+                      </Alert>
+                    </Box>
                     <Box
-                      sx={{
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        flexGrow: 1,
-                        minWidth: 0,
-                      }}
+                      sx={{ display: "flex", minHeight: "0", flexGrow: 1 }}
+                      component="main"
                     >
-                      <MainPanel
+                      <Sidebar
                         selectedSection={FetchingData.getSuccessValue(
                           selectedSection
                         ).orElse(null)}
-                        path={FetchingData.getSuccessValue(path).orElse(null)}
                         setSelectedSection={(mediaType) => {
                           setSelectedSection({ mediaType });
                           setPath([]);
                           setAppliedSearchTerm("");
+                          trackEvent("user:change:section:gallery", {
+                            section: mediaType,
+                          });
                         }}
-                        galleryListing={galleryListing}
+                        drawerOpen={drawerOpen}
+                        setDrawerOpen={setDrawerOpen}
                         folderId={folderId}
                         refreshListing={refreshListing}
-                        key={null}
-                        sortOrder={sortOrder}
-                        orderBy={orderBy}
-                        setSortOrder={setSortOrder}
-                        setOrderBy={setOrderBy}
-                        appliedSearchTerm={appliedSearchTerm}
-                        setAppliedSearchTerm={(newTerm) => {
-                          FetchingData.getSuccessValue(path).do((p) => {
-                            if (p.length > 0) {
-                              trackEvent("user:search:folder:gallery");
-                            } else {
-                              trackEvent("user:search:section:gallery");
-                            }
-                          });
-                          setAppliedSearchTerm(newTerm);
-                        }}
+                        id={sidebarId}
                       />
+                      <Box
+                        sx={{
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          flexGrow: 1,
+                          minWidth: 0,
+                        }}
+                      >
+                        <MainPanel
+                          selectedSection={FetchingData.getSuccessValue(
+                            selectedSection
+                          ).orElse(null)}
+                          path={FetchingData.getSuccessValue(path).orElse(null)}
+                          setSelectedSection={(mediaType) => {
+                            setSelectedSection({ mediaType });
+                            setPath([]);
+                            setAppliedSearchTerm("");
+                          }}
+                          galleryListing={galleryListing}
+                          folderId={folderId}
+                          refreshListing={refreshListing}
+                          key={null}
+                          sortOrder={sortOrder}
+                          orderBy={orderBy}
+                          setSortOrder={setSortOrder}
+                          setOrderBy={setOrderBy}
+                          appliedSearchTerm={appliedSearchTerm}
+                          setAppliedSearchTerm={(newTerm) => {
+                            FetchingData.getSuccessValue(path).do((p) => {
+                              if (p.length > 0) {
+                                trackEvent("user:search:folder:gallery");
+                              } else {
+                                trackEvent("user:search:section:gallery");
+                              }
+                            });
+                            setAppliedSearchTerm(newTerm);
+                          }}
+                        />
+                      </Box>
                     </Box>
-                  </Box>
-                </Stack>
-              </OpenFolderProvider>
-            </CallableSnapGenePreview>
-          </CallableAsposePreview>
-        </CallablePdfPreview>
-      </CallableImagePreview>
+                  </Stack>
+                </OpenFolderProvider>
+              </CallableSnapGenePreview>
+            </CallableAsposePreview>
+          </CallablePdfPreview>
+        </CallableImagePreview>
+      </>
     );
   }
 )(() => ({
