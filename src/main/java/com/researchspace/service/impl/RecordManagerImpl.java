@@ -335,7 +335,9 @@ public class RecordManagerImpl implements RecordManager {
       parentFolder = folderDao.get(parentId);
     }
 
-    if (!parentFolder.isSharedFolder()) {
+    if (!parentFolder.isShared()
+        || (parentFolder.isNotebook()
+            && permissnUtils.isPermitted(parentFolder, PermissionType.CREATE, user))) {
       if (!context.enableDirectTemplateCreationInTemplateFolder()
           || !(parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true))) {
         permissnUtils.assertIsPermitted(

@@ -29,6 +29,7 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserManager;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -92,12 +93,41 @@ public class SharingHandlerImpl implements SharingHandler {
     return rc;
   }
 
-  @Override
-  public ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
+  public List<RecordGroupSharing> shareIntoSharedFolderOrNotebook(
+      User user, Folder sharedFolderOrNotebook, Long recordId) {
+    if (folderManager.isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+        user, sharedFolderOrNotebook)) {
+      ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult;
+      if (sharedFolderOrNotebook.isNotebook()) {
+        // shareDocument into the current parent sharedNotebook
+        sharingResult =
+            this.shareIntoSharedNotebook(user, (Notebook) sharedFolderOrNotebook, recordId);
+      } else {
+        // shareDocument into the current parentFolder
+        sharingResult = this.shareIntoSharedFolder(user, sharedFolderOrNotebook, recordId);
+      }
+      return sharingResult.getResults();
+    }
+    return Collections.EMPTY_LIST;
+  }
+
+  private ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
       shareIntoSharedFolder(User user, Folder sharedFolder, Long recordId) {
     Group sharedGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedFolder);
     ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "write");
     shareConfigElement.setGroupFolderId(sharedFolder.getId());
+    ShareConfigCommand shareConfig =
+        new ShareConfigCommand(
+            new Long[] {recordId}, new ShareConfigElement[] {shareConfigElement});
+    return this.shareRecords(shareConfig, user);
+  }
+
+  private ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
+      shareIntoSharedNotebook(User user, Notebook sharedNotebook, Long recordId) {
+    Group sharedGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedNotebook);
+    ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "read");
+    shareConfigElement.setGroupFolderId(sharedNotebook.getId());
+    shareConfigElement.setAllowedOps(List.of("read", "write"));
     ShareConfigCommand shareConfig =
         new ShareConfigCommand(
             new Long[] {recordId}, new ShareConfigElement[] {shareConfigElement});

@@ -178,9 +178,9 @@ public class FolderApiControllerTest {
             eq(root.getId()), eq(toCreate.getName()), any(DefaultRecordContext.class), eq(subject)))
         .thenReturn(createdNotebook);
     mockBaseUrl();
-    when(recordShareHandler.shareIntoSharedFolder(
+    when(recordShareHandler.shareIntoSharedFolderOrNotebook(
             eq(subject), eq(sharedFolder), eq(createdNotebook.getId())))
-        .thenReturn(new ServiceOperationResultCollection());
+        .thenReturn(Collections.EMPTY_LIST);
 
     ApiFolder created =
         controller.createNewFolder(
@@ -188,7 +188,8 @@ public class FolderApiControllerTest {
     assertTrue(created.isNotebook());
     assertEquals(root.getId(), created.getParentFolderId());
     verify(recordShareHandler)
-        .shareIntoSharedFolder(eq(subject), eq(sharedFolder), eq(createdNotebook.getId()));
+        .shareIntoSharedFolderOrNotebook(
+            eq(subject), eq(sharedFolder), eq(createdNotebook.getId()));
   }
 
   @Test(expected = BindException.class)

@@ -360,4 +360,6 @@ public interface FolderManager {
    * @throws IllegalArgumentException if invalid <code>mediaFolderName</code>
    */
   Folder createGallerySubfolder(String name, String mediaFolderName, User user);
+
+  boolean isSharedFolderOrSharedNotebookWithoutCreatePermssison(User user, Folder parentFolder);
 }

@@ -12,6 +12,7 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.audittrail.RenameAuditEvent;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
@@ -51,31 +52,30 @@ public class RecordApiManagerImpl implements RecordApiManager {
   private @Autowired @Setter AuditTrailService auditTrailService;
   private @Autowired DocumentTagManager documentTagManager;
   private @Autowired SharingHandler recordShareHandler;
+  private @Autowired IPermissionUtils permissionUtils;
 
   @Override
   public Long createNewDocument(ApiDocument apiDocument, RSForm docForm, User user) {
 
     Folder targetFolder =
         folderManager.getApiUploadTargetFolder("", user, apiDocument.getParentFolderId());
-    StructuredDocument result =
+    StructuredDocument newDocument =
         createNewDocumentInTargetLocation(
             user, docForm, apiDocument.getName(), targetFolder.getId());
 
     if (apiDocument.getParentFolderId() != null) {
-      Folder originalTargetFolder = folderManager.getFolder(apiDocument.getParentFolderId(), user);
-      if (originalTargetFolder.isSharedFolder()) {
-        // shareDocument into the current parentFolder
-        recordShareHandler.shareIntoSharedFolder(user, originalTargetFolder, result.getId());
-      }
+      Folder originalParentFolder = folderManager.getFolder(apiDocument.getParentFolderId(), user);
+      recordShareHandler.shareIntoSharedFolderOrNotebook(
+          user, originalParentFolder, newDocument.getId());
     }
     try {
-      saveApiDocumentChangesToStructuredDocument(apiDocument, user, result);
+      saveApiDocumentChangesToStructuredDocument(apiDocument, user, newDocument);
     } catch (DocumentAlreadyEditedException e) {
       // should never happen for a new document
       throw new IllegalStateException("new document, but being edited?", e);
     }
 
-    return result.getId();
+    return newDocument.getId();
   }
 
   /**

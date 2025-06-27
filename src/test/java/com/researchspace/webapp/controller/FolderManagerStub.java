@@ -215,6 +215,12 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
+  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+      User user, Folder parentFolder) {
+    return true;
+  }
+
+  @Override
   public ServiceOperationResult<Folder> addChild(
       Long folderId,
       BaseRecord child,

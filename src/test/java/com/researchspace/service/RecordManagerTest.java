@@ -75,6 +75,7 @@ import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
+import com.researchspace.webapp.controller.WorkspaceController;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
@@ -85,6 +86,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
@@ -99,6 +101,8 @@ public class RecordManagerTest extends SpringTransactionalTest {
   private @Autowired EcatCommentManager commentManager;
   private @Autowired BaseRecordAdaptable baseRecordAdapter;
   private @Autowired FieldDao fieldDao;
+  private @Autowired SharingHandler sharingHandler;
+  private @Autowired WorkspaceController workspaceController;
 
   private RSForm anyForm;
   private User user;
@@ -1608,10 +1612,11 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testCreateNewStructuredDocumentIntoSharedFolder() throws Exception {
+  public void testCreateNewStructuredDocumentIntoSharedFolder() {
     User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
     Group group = new Group(CoreTestUtils.getRandomName(10), admin);
     group.addMember(user, RoleInGroup.DEFAULT);
+    group.addMember(admin, RoleInGroup.DEFAULT);
     group = grpMgr.saveGroup(group, admin);
     initialiseContentWithEmptyContent(user, admin);
     grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
@@ -1626,6 +1631,47 @@ public class RecordManagerTest extends SpringTransactionalTest {
     anyForm = formDao.getAll().get(0);
     StructuredDocument newCreatedDocument =
         recordMgr.createNewStructuredDocument(sharedFolderId, anyForm.getId(), user);
+    assertColumnIndicesAreTheSameForFieldsAndFormss(newCreatedDocument);
+    assertNotNull(recordMgr.get(newCreatedDocument.getId()));
+    assertNotNull(newCreatedDocument.getId());
+    assertEquals(initialCountRootFolder + 1, rootFolder.getChildren().size());
+  }
+
+  @Test
+  public void testCreateNewStructuredDocumentIntoSharedNotebook() {
+    User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group group = new Group(CoreTestUtils.getRandomName(10), admin);
+    group.addMember(user, RoleInGroup.DEFAULT);
+    group.addMember(admin, RoleInGroup.DEFAULT);
+    group = grpMgr.saveGroup(group, admin);
+    initialiseContentWithEmptyContent(user, admin);
+    grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
+
+    Long sharedFolderId = group.getCommunalGroupFolderId();
+    Folder rootFolder = user.getRootFolder();
+    Folder sharedGroupFolder = folderMgr.getFolder(sharedFolderId, admin);
+
+    flushDatabaseState();
+
+    long initialCountRootFolder =
+        recordMgr.listFolderRecords(rootFolder.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
+    anyForm = formDao.getAll().get(0);
+
+    Long notebookId = workspaceController.createNotebook(sharedFolderId, "notebook",
+        new MockPrincipal(admin));
+    flushDatabaseState();
+
+    sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedGroupFolder, notebookId);
+    flushDatabaseState();
+
+    final Notebook sharedNotebook = folderMgr.getNotebook(notebookId);
+    assertTrue(sharedNotebook.isShared());
+    assertTrue(sharedNotebook.getChildrens().isEmpty());
+
+
+    StructuredDocument newCreatedDocument =
+        recordMgr.createNewStructuredDocument(notebookId, anyForm.getId(), user);
+
     assertColumnIndicesAreTheSameForFieldsAndFormss(newCreatedDocument);
     assertNotNull(recordMgr.get(newCreatedDocument.getId()));
     assertNotNull(newCreatedDocument.getId());

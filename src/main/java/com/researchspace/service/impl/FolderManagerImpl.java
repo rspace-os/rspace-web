@@ -828,4 +828,13 @@ public class FolderManagerImpl implements FolderManager {
     Folder targetFolder = createNewFolder(imagGalleryFolder.getId(), folderName, user);
     return targetFolder;
   }
+
+  @Override
+  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+      User user, Folder originalParentFolder) {
+    return originalParentFolder.isSharedFolder()
+        || (originalParentFolder.isNotebook()
+            && originalParentFolder.isShared()
+            && !permissionUtils.isPermitted(originalParentFolder, PermissionType.CREATE, user));
+  }
 }

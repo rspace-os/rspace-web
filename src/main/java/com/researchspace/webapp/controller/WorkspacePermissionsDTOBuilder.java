@@ -1,14 +1,20 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.model.core.RecordType.*;
+import static com.researchspace.model.core.RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT;
+import static com.researchspace.model.core.RecordType.SHARED_FOLDER;
+import static com.researchspace.model.core.RecordType.SHARED_GROUP_FOLDER_ROOT;
+import static com.researchspace.model.core.RecordType.TEMPLATE;
 
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import java.util.Collection;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
@@ -20,8 +26,9 @@ import org.springframework.ui.Model;
 public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOBuilder {
 
   private FolderManager fMger;
-
   private RecordManager recMgr;
+
+  @Getter @Setter private @Autowired IPermissionUtils permissionUtils;
 
   @Autowired
   public void setRecMgr(RecordManager recMgr) {
@@ -92,7 +99,11 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     // override if it is notebook
     if (parentFolder.isNotebook()) {
-      // dto.setCreateRecord(false);
+      createRecord =
+          createRecord
+              || (isParentFolderInSharedTree
+                  && permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr));
+      dto.setCreateRecord(createRecord);
       dto.setCreateFolder(false);
     }
 
@@ -122,6 +133,11 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     model.addAttribute("movetargetRoot", movetargetRoot);
     model.addAttribute("isNotebook", parentFolder.isNotebook());
+    boolean canCreateEntry =
+        parentFolder.isNotebook()
+            && permissionUtils.isPermitted(parentFolder, PermissionType.CREATE, usr);
+    model.addAttribute("allowCreateNewEntryInNotebook", canCreateEntry);
+
     model.addAttribute("createPermission", dto);
     model.addAttribute("allowThirdPartyImport", !parentFolder.isSharedFolder());
     model.addAttribute("allowCreateForm", !parentFolder.isSharedFolder());

@@ -4,6 +4,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -16,6 +17,7 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
@@ -46,12 +48,13 @@ import org.mockito.junit.MockitoRule;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
-public class WorkspacePermissionsDTOFBuilderTest {
+public class WorkspacePermissionsDTOBuilderTest {
 
   @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock ISearchResults<BaseRecord> results;
   @Mock FolderManager folderMger;
   @Mock RecordManager recMger;
+  @Mock IPermissionUtils permissionUtils;
   @InjectMocks WorkspacePermissionsDTOBuilder dtoBuilder;
   PermissionFactory permFac;
   Model model;
@@ -67,6 +70,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     user = TestFactory.createAnyUser("any");
     parentFolder = TestFactory.createAFolder("folder", user);
     recordFac = new RecordFactory();
+    when(permissionUtils.isPermitted(any(), any(), any())).thenReturn(true);
   }
 
   @After
@@ -112,8 +116,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
 
     Mockito.when(results.getResults()).thenReturn(new ArrayList<BaseRecord>());
     Mockito.verify(folderMger, Mockito.never())
-        .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-            Mockito.anyLong(), Mockito.any(User.class));
+        .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(Mockito.anyLong(), any(User.class));
 
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
@@ -148,7 +151,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     final List<BaseRecord> records = toList(snip);
     parentFolder.addChild(snip, user);
     when(results.getResults()).thenReturn(records);
-    when(recMger.canMove(Mockito.eq(snip), Mockito.eq(parentFolder), Mockito.any(User.class)))
+    when(recMger.canMove(Mockito.eq(snip), Mockito.eq(parentFolder), any(User.class)))
         .thenReturn(true);
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
@@ -174,7 +177,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     parentFolder.addChild(sdoc, user);
     final User other = TestFactory.createAnyUser("other");
     when(results.getResults()).thenReturn(records);
-    when(recMger.canMove(Mockito.eq(sdoc), Mockito.eq(parentFolder), Mockito.any(User.class)))
+    when(recMger.canMove(Mockito.eq(sdoc), Mockito.eq(parentFolder), any(User.class)))
         .thenReturn(true);
 
     // simulate search results; can delete
@@ -337,6 +340,7 @@ public class WorkspacePermissionsDTOFBuilderTest {
     assertTrue(can(result, DOC_ID, PermissionType.DELETE));
     // notebook entries can't be moved out from:
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
+    assertTrue((boolean) model.getAttribute("allowCreateNewEntryInNotebook"));
 
     parentFolder.addChild(nb, user);
     // now let's add notebook entry to shared folder and check it can be
