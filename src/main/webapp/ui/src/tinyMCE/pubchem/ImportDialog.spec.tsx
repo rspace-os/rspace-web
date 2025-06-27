@@ -18,6 +18,7 @@ const feature = test.extend<{
     "there should be a dialog header banner": () => Promise<void>;
     "there should be a title: 'Import from PubChem'": () => Promise<void>;
     "the dialog is closed": () => Promise<void>;
+    "there should be a search input": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -69,6 +70,14 @@ const feature = test.extend<{
       "the dialog is closed": async () => {
         const dialog = page.getByRole("dialog");
         await expect(dialog).not.toBeVisible();
+      },
+      "there should be a search input": async () => {
+        const searchInput = page.getByRole("search");
+        await expect(searchInput).toBeVisible();
+        await expect(searchInput).toHaveAttribute(
+          "placeholder",
+          "Enter a compound name, CAS number, or SMILES"
+        );
       },
     });
   },
@@ -154,5 +163,9 @@ test.describe("ImportDialog", () => {
     await Given["that the ImportDialog is mounted"]();
     await When["the cancel button is clicked"]();
     await Then["the dialog is closed"]();
+  });
+  feature("Should have a search input", async ({ Given, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await Then["there should be a search input"]();
   });
 });
