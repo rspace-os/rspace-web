@@ -13,6 +13,7 @@ const feature = test.extend<{
     "the cancel button is clicked": () => Promise<void>;
     "a search is performed": () => Promise<void>;
     "the search type selector is clicked": () => Promise<void>;
+    "SMILES is chosen as the search type": () => Promise<void>;
   };
   Then: {
     "there should be a dialog visible": () => Promise<void>;
@@ -23,8 +24,9 @@ const feature = test.extend<{
     "there should be a search input": () => Promise<void>;
     "the mocked results are shown": () => Promise<void>;
     "there should be a search type selector": () => Promise<void>;
+    "SMILES is passed in the API call": () => void;
   };
-  networkRequests: Array<URL>;
+  networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -54,9 +56,20 @@ const feature = test.extend<{
         });
         await searchTypeSelector.click();
       },
+      "SMILES is chosen as the search type": async () => {
+        const searchTypeSelector = page.getByRole("combobox", {
+          name: "Name/CAS",
+        });
+        await searchTypeSelector.click();
+        await page
+          .getByRole("option", {
+            name: "SMILES",
+          })
+          .click();
+      },
     });
   },
-  Then: async ({ page }, use) => {
+  Then: async ({ page, networkRequests }, use) => {
     await use({
       "there should be a dialog visible": async () => {
         const dialog = page.getByRole("dialog");
@@ -106,6 +119,14 @@ const feature = test.extend<{
         });
         await expect(searchResults).toHaveText(/Aspirin/);
       },
+      "SMILES is passed in the API call": () => {
+        const searchRequest = networkRequests.find(
+          (request) =>
+            request.url.pathname === "/api/v1/chemical/search" &&
+            request.postData?.includes('"searchType":"SMILES"')
+        );
+        expect(searchRequest).toBeDefined();
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -113,7 +134,7 @@ const feature = test.extend<{
   },
 });
 
-feature.beforeEach(async ({ router }) => {
+feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
@@ -183,9 +204,18 @@ feature.beforeEach(async ({ router }) => {
       body: JSON.stringify(searchResults),
     });
   });
+
+  page.on("request", (request) => {
+    networkRequests.push({
+      url: new URL(request.url()),
+      postData: request.postData(),
+    });
+  });
 });
 
-feature.afterEach(({}) => {});
+feature.afterEach(({ networkRequests }) => {
+  networkRequests.splice(0, networkRequests.length);
+});
 
 test.describe("ImportDialog", () => {
   feature("Renders correctly", async ({ Given, Then }) => {
@@ -225,4 +255,10 @@ test.describe("ImportDialog", () => {
       await Then["the mocked results are shown"]();
     }
   );
+  feature("searchType is passed in API call", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["SMILES is chosen as the search type"]();
+    await When["a search is performed"]();
+    Then["SMILES is passed in the API call"]();
+  });
 });
