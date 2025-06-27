@@ -21,6 +21,10 @@ import CardMedia from "@mui/material/CardMedia";
 import CardActions from "@mui/material/CardActions";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import ValidatingSubmitButton, {
+  IsValid,
+  IsInvalid,
+} from "../../components/ValidatingSubmitButton";
 import useChemicalImport, {
   type ChemicalCompound,
 } from "@/hooks/api/useChemicalImport";
@@ -48,6 +52,13 @@ export default function ImportDialog({
   const [selectedCompounds, setSelectedCompounds] = React.useState<
     Record<string, boolean>
   >({});
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const validationResult = React.useMemo(() => {
+    return Object.values(selectedCompounds).some((isSelected) => isSelected)
+      ? IsValid()
+      : IsInvalid("Please select at least one compound.");
+  }, [selectedCompounds]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +73,21 @@ export default function ImportDialog({
       ...prev,
       [compound.pubchemId]: checked,
     }));
+  }
+
+  function handleSubmit() {
+    setIsSubmitting(true);
+    // Get the selected compounds
+    const selected = Object.entries(selectedCompounds)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([id]) => results.find((r) => r.pubchemId === id))
+      .filter(Boolean) as ChemicalCompound[];
+
+    // Here you would implement the logic to insert the compounds into the document
+    console.log("Importing selected compounds:", selected);
+
+    // Close the dialog when done
+    onClose();
   }
 
   return (
@@ -207,6 +233,13 @@ export default function ImportDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>
+        <ValidatingSubmitButton
+          validationResult={validationResult}
+          loading={isSubmitting}
+          onClick={handleSubmit}
+        >
+          Import Selected
+        </ValidatingSubmitButton>
       </DialogActions>
     </Dialog>
   );

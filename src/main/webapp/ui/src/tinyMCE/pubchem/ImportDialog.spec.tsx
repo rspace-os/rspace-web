@@ -14,6 +14,9 @@ const feature = test.extend<{
     "a search is performed": () => Promise<void>;
     "the search type selector is clicked": () => Promise<void>;
     "SMILES is chosen as the search type": () => Promise<void>;
+    "the import button is clicked without selecting any compounds": () => Promise<void>;
+    "the escape key is pressed to dismiss the validation warning": () => Promise<void>;
+    "a compound is selected": () => Promise<void>;
   };
   Then: {
     "there should be a dialog visible": () => Promise<void>;
@@ -25,6 +28,8 @@ const feature = test.extend<{
     "the mocked results are shown": () => Promise<void>;
     "there should be a search type selector": () => Promise<void>;
     "SMILES is passed in the API call": () => void;
+    "a validation warning should be shown": () => Promise<void>;
+    "the validation warning should disappear after selecting a compound": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -66,6 +71,17 @@ const feature = test.extend<{
             name: "SMILES",
           })
           .click();
+      },
+      "the import button is clicked without selecting any compounds":
+        async () => {
+          await page.getByRole("button", { name: /import selected/i }).click();
+        },
+      "the escape key is pressed to dismiss the validation warning":
+        async () => {
+          await page.keyboard.press("Escape");
+        },
+      "a compound is selected": async () => {
+        await page.getByRole("checkbox", { name: /select/i }).click();
       },
     });
   },
@@ -123,6 +139,16 @@ const feature = test.extend<{
         );
         expect(searchRequest).toBeDefined();
       },
+      "a validation warning should be shown": async () => {
+        const alert = page.getByRole("alert");
+        await expect(alert).toBeVisible();
+        await expect(alert).toHaveText(/please select at least one compound/i);
+      },
+      "the validation warning should disappear after selecting a compound":
+        async () => {
+          const alert = page.getByRole("alert");
+          await expect(alert).not.toBeVisible();
+        },
     });
   },
   networkRequests: async ({}, use) => {
@@ -257,4 +283,23 @@ test.describe("ImportDialog", () => {
     await When["a search is performed"]();
     Then["SMILES is passed in the API call"]();
   });
+
+  feature(
+    "Should validate compound selection",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search is performed"]();
+      await When[
+        "the import button is clicked without selecting any compounds"
+      ]();
+      await Then["a validation warning should be shown"]();
+      await When[
+        "the escape key is pressed to dismiss the validation warning"
+      ]();
+      await When["a compound is selected"]();
+      await Then[
+        "the validation warning should disappear after selecting a compound"
+      ]();
+    }
+  );
 });
