@@ -1,8 +1,0 @@
-// @flow
-
-import { type ComponentType, type Node } from "react";
-import { observer } from "mobx-react-lite";
-
-declare function LocationsImageField(): Node;
-
-export default (observer(LocationsImageField): ComponentType<{||}>);

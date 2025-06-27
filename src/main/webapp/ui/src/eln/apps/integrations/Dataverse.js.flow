@@ -1,9 +1,0 @@
-//@flow strict
-
-import { type Node } from "react";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-
-declare export default function Dataverse({|
-  integrationState: IntegrationStates["DATAVERSE"],
-  update: (IntegrationStates["DATAVERSE"]) => void,
-|}): Node;

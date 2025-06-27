@@ -1,9 +1,0 @@
-//@flow
-
-import { type Node } from "react";
-import { type Record } from "../../stores/definitions/Record";
-
-declare export default function SimpleRecordsTable({|
-  open: boolean,
-  records: $ReadOnlyArray<Record>,
-|}): Node;

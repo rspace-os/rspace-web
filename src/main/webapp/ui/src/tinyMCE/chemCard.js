@@ -1,5 +1,5 @@
 "use strict";
-import React, { useEffect, type Node } from "react";
+import React, { useEffect } from "react";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
@@ -56,7 +56,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export default function ChemCard(props): Node {
+export default function ChemCard(props) {
   const { classes } = useStyles();
   const [chem, setChem] = React.useState({
     reactants: [],
@@ -77,7 +77,10 @@ export default function ChemCard(props): Node {
         if (response.data.data) {
           setChem(response.data.data);
         } else {
-          console.warn("error when retrieving info for chem elem " + props.item.id, response.data.error)
+          console.warn(
+            "error when retrieving info for chem elem " + props.item.id,
+            response.data.error
+          );
         }
       })
       .catch((error) => {

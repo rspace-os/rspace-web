@@ -1,7 +1,0 @@
-// @flow
-
-import { type Node, type ComponentType } from "react";
-import TemplateModel from "../../stores/models/TemplateModel";
-import { type Person } from "../../stores/definitions/Person";
-
-declare export default ComponentType<{||}>;

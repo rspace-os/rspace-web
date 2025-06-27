@@ -1,5 +1,5 @@
 "use strict";
-import React, { useEffect, type Node } from "react";
+import React, { useEffect } from "react";
 import styled from "@emotion/styled";
 import IconButton from "@mui/material/IconButton";
 import { library } from "@fortawesome/fontawesome-svg-core";
@@ -49,7 +49,7 @@ const Actions = styled.div`
   }
 `;
 
-export default function main(props): Node {
+export default function main(props) {
   const [usersLeft, setUsersLeft] = React.useState([]);
   const [usersRight, setUsersRight] = React.useState([]);
   const [selectedLeft, setSelectedLeft] = React.useState([]);

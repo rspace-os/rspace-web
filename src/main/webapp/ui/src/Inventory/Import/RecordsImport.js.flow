@@ -1,9 +1,0 @@
-// @flow
-
-import { type Node, type ComponentType } from "react";
-import { type ImportRecordType } from "../../stores/stores/ImportStore";
-import { type URL } from "../../util/types";
-
-declare function RecordsImport(): Node;
-
-export default (RecordsImport: ComponentType<{||}>);

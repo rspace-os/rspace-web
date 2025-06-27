@@ -1,7 +1,0 @@
-//@flow
-
-import { type Attachment } from "../../Attachment";
-
-export const mockAttachment: ({|
-  setImageLink?: () => Promise<void>,
-|}) => Attachment = () => ({} : any);

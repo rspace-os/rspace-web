@@ -1,7 +1,0 @@
-//@flow
-
-import { type StoreContainer } from "../../RootStore";
-
-export type MockStores = Partial<{[key in keyof StoreContainer]: { ... }}>;
-
-declare export const makeMockRootStore: (mockData: ?MockStores) => StoreContainer;

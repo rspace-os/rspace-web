@@ -1,5 +1,5 @@
 "use strict";
-import React, { useState, useEffect, type Node } from "react";
+import React, { useState, useEffect } from "react";
 import ChemCard from "./chemCard";
 import { createRoot } from "react-dom/client";
 import { makeStyles } from "tss-react/mui";
@@ -13,7 +13,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export default function PreviewInfo(props): Node {
+export default function PreviewInfo(props) {
   const { classes } = useStyles();
   useEffect(() => {
     document.dispatchEvent(new Event("images-replaced"));

@@ -1,8 +1,0 @@
-//@flow
-
-import React, { type ComponentType } from "react";
-
-export type RightPanelArgs = {||};
-
-declare const RightPanel: ComponentType<RightPanelArgs>;
-export default RightPanel;

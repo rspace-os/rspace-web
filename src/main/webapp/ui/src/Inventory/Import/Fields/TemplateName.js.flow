@@ -1,9 +1,0 @@
-// @flow
-
-import React, { type Node, type ComponentType } from "react";
-
-type TemplateNameArgs = {|
-  disabled?: boolean,
-|};
-
-declare export default ComponentType<TemplateNameArgs>;

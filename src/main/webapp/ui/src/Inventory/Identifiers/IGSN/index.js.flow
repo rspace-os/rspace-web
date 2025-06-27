@@ -1,6 +1,0 @@
-// @flow
-
-import { type Node } from "react";
-import { type Identifier } from "../../useIdentifiers";
-
-declare export default function IGSN(): Node;

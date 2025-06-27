@@ -1,9 +1,0 @@
-//@flow
-
-import { type Arbitrary } from "fast-check";
-import { type Id, type GlobalId, type GlobalIdPrefix } from "../../BaseRecord";
-import { type Record as Foo } from "../../Record";
-
-declare export const arbitraryId: Arbitrary<Id>;
-declare export const arbitraryGlobalId: (prefix: GlobalIdPrefix) => Arbitrary<GlobalId>;
-declare export const arbitraryRecord: Arbitrary<Foo>;

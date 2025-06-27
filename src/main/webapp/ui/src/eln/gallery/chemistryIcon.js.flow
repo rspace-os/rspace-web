@@ -1,6 +1,0 @@
-//@flow strict
-
-import { type Node } from "react";
-
-declare export default function ChemistryIcon(): Node;
-

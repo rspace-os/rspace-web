@@ -1,8 +1,0 @@
-// @flow
-
-import { type Node } from "react";
-
-declare export default function DMPDialog({|
-  open: boolean,
-  setOpen: (boolean) => void,
-|}): Node;
