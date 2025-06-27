@@ -1,3 +1,6 @@
+import axios from "@/common/axios";
+import useOauthToken from "@/common/useOauthToken";
+
 export type ChemicalCompound = {
   name: string;
   pngImage: string;
@@ -20,6 +23,8 @@ export default function useChemicalImport(): {
     searchTerm: string;
   }) => Promise<ReadonlyArray<ChemicalCompound>>;
 } {
+  const { getToken } = useOauthToken();
+
   async function search({
     searchType,
     searchTerm,
@@ -27,18 +32,29 @@ export default function useChemicalImport(): {
     searchType: "NAME" | "SMILES";
     searchTerm: string;
   }): Promise<ReadonlyArray<ChemicalCompound>> {
-    console.debug("search");
-    return Promise.resolve([
-      {
-        name: "2-acetoxybenzoic acid",
-        pngImage:
-          "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
-        smiles: "CC(=O)OC1=CC=CC=C1C(=O)O",
-        formula: "C9H8O4",
-        pubchemId: "2244",
-        pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
-      },
-    ]);
+    try {
+      /*
+       * We use a POST because encoding SMILES in a URL can be problematic
+       */
+      return axios
+        .post<ReadonlyArray<ChemicalCompound>>(
+          "/api/v1/chemical/search",
+          {
+            searchType,
+            searchTerm,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
+            },
+          }
+        )
+        .then((response) => response.data);
+    } catch (e) {
+      throw new Error("Could not search for chemical compounds", {
+        cause: e,
+      });
+    }
   }
 
   return { search };

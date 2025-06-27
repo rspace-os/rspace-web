@@ -43,7 +43,7 @@ const feature = test.extend<{
       },
       "a search is performed": async () => {
         const searchInput = page.getByRole("search");
-        await searchInput.fill("test");
+        await searchInput.fill("aspirin");
         await searchInput.press("Enter");
       },
     });
@@ -90,7 +90,7 @@ const feature = test.extend<{
         const searchResults = page.getByRole("region", {
           name: /Search Results/i,
         });
-        await expect(searchResults).toHaveText(/2-acetoxybenzoic acid/);
+        await expect(searchResults).toHaveText(/Aspirin/);
       },
     });
   },
@@ -149,6 +149,24 @@ feature.beforeEach(async ({ router }) => {
         operatedAs: false,
         nextMaintenance: null,
       }),
+    });
+  });
+  await router.route("/api/v1/chemical/search", async (route) => {
+    const searchResults = [
+      {
+        name: "Aspirin",
+        pngImage:
+          "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
+        smiles: "CC(=O)OC1=CC=CC=C1C(=O)O",
+        formula: "C9H8O4",
+        pubchemId: "2244",
+        pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
+      },
+    ];
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(searchResults),
     });
   });
 });
