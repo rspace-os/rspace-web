@@ -11,6 +11,9 @@ import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
+import useChemicalImport, {
+  type ChemicalCompound,
+} from "@/hooks/api/useChemicalImport";
 
 /**
  * This dialog is opened by the TinyMCE plugin, allowing the users to browse
@@ -25,6 +28,17 @@ export default function ImportDialog({
 }): React.ReactNode {
   const titleId = React.useId();
   const resultsId = React.useId();
+  const { search } = useChemicalImport();
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [results, setResults] = React.useState<ReadonlyArray<ChemicalCompound>>(
+    []
+  );
+
+  function handleSearch(e: FormEvent) {
+    e.preventDefault();
+    console.debug("handleSearch");
+    void search({ searchTerm, searchType: "NAME" }).then(setResults);
+  }
 
   return (
     <Dialog open={open} onClose={onClose} aria-labelledby={titleId}>
@@ -43,10 +57,12 @@ export default function ImportDialog({
               <Link href="#">PubChem integration docs</Link> for more.
             </Typography>
           </Box>
-          <form>
+          <form onSubmit={handleSearch}>
             <Grid container spacing={1} direction="row">
               <Grid item flexGrow={1}>
                 <TextField
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   variant="standard"
                   fullWidth
                   inputProps={{
@@ -56,7 +72,7 @@ export default function ImportDialog({
                 />
               </Grid>
               <Grid item>
-                <Button>Search</Button>
+                <Button type="submit">Search</Button>
               </Grid>
             </Grid>
           </form>
@@ -64,6 +80,11 @@ export default function ImportDialog({
             <Typography id={resultsId} variant="h6" component="h4">
               Search Results
             </Typography>
+            <ul>
+              {results.map((compound) => (
+                <li key={compound.pubchemId}>{compound.name}</li>
+              ))}
+            </ul>
           </section>
         </Stack>
       </DialogContent>

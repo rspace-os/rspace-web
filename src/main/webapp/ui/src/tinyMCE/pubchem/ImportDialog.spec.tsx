@@ -11,6 +11,7 @@ const feature = test.extend<{
   Once: Record<string, never>;
   When: {
     "the cancel button is clicked": () => Promise<void>;
+    "a search is performed": () => Promise<void>;
   };
   Then: {
     "there should be a dialog visible": () => Promise<void>;
@@ -19,6 +20,7 @@ const feature = test.extend<{
     "there should be a title: 'Import from PubChem'": () => Promise<void>;
     "the dialog is closed": () => Promise<void>;
     "there should be a search input": () => Promise<void>;
+    "the mocked results are shown": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -38,6 +40,11 @@ const feature = test.extend<{
         const dialog = page.getByRole("dialog");
         const closeButton = dialog.getByRole("button", { name: /cancel/i });
         await closeButton.click();
+      },
+      "a search is performed": async () => {
+        const searchInput = page.getByRole("search");
+        await searchInput.fill("test");
+        await searchInput.press("Enter");
       },
     });
   },
@@ -78,6 +85,12 @@ const feature = test.extend<{
           "placeholder",
           "Enter a compound name, CAS number, or SMILES"
         );
+      },
+      "the mocked results are shown": async () => {
+        const searchResults = page.getByRole("region", {
+          name: /Search Results/i,
+        });
+        await expect(searchResults).toHaveText(/2-acetoxybenzoic acid/);
       },
     });
   },
@@ -168,4 +181,12 @@ test.describe("ImportDialog", () => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a search input"]();
   });
+  feature(
+    "The API endpoint is called when a search is performed",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search is performed"]();
+      await Then["the mocked results are shown"]();
+    }
+  );
 });
