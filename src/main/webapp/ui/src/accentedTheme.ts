@@ -252,6 +252,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
                 background: prefersMoreContrast ? "white" : accentedBackground,
                 borderBottom: prefersMoreContrast ? accentedBorder : "none",
+                [`& .${typographyClasses.h6}`]: {
+                  color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
+                },
                 [`& .${svgIconClasses.root}`]: {
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
                   transition: "all .3s ease",
