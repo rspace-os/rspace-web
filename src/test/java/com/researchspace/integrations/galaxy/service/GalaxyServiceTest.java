@@ -67,49 +67,32 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class GalaxyServiceTest {
 
-  public static final String HISTORY_NAME_ON_GALAXY = "RSPACE_rspaceDocument_GL4444v4_field1_GL1111v1";
-  @Mock
-  private GalaxyClient client;
-  @Mock
-  private BaseRecordManager baseRecordManager;
-  @Mock
-  private FileStore fileStore;
-  @Mock
-  private RecordManager recordManager;
-  @Mock
-  private FieldManager fieldManager;
-  @Mock
-  private UserConnectionManager userConnectionManager;
-  @Mock
-  private ExternalWorkFlowDataManager externalWorkFlowDataManager;
-  @Mock
-  private User user;
-  @Mock
-  private UserConnection userConnection;
-  @Mock
-  private StructuredDocument rspaceDocument;
-  @Mock
-  private Field field;
-  @Mock
-  private History history;
-  @Mock
-  private EcatMediaFile ecatMediaFile1;
-  @Mock
-  private EcatMediaFile ecatMediaFile2;
-  @Mock
-  private FileProperty fileProperyt1;
-  @Mock
-  private FileProperty fileProperyt2;
+  public static final String HISTORY_NAME_ON_GALAXY =
+      "RSPACE_rspaceDocument_GL4444v4_field1_GL1111v1";
+  @Mock private GalaxyClient client;
+  @Mock private BaseRecordManager baseRecordManager;
+  @Mock private FileStore fileStore;
+  @Mock private RecordManager recordManager;
+  @Mock private FieldManager fieldManager;
+  @Mock private UserConnectionManager userConnectionManager;
+  @Mock private ExternalWorkFlowDataManager externalWorkFlowDataManager;
+  @Mock private User user;
+  @Mock private UserConnection userConnection;
+  @Mock private StructuredDocument rspaceDocument;
+  @Mock private Field field;
+  @Mock private History history;
+  @Mock private EcatMediaFile ecatMediaFile1;
+  @Mock private EcatMediaFile ecatMediaFile2;
+  @Mock private FileProperty fileProperyt1;
+  @Mock private FileProperty fileProperyt2;
   private File attachmentFile1;
   private File attachmentFile2;
-  @Mock
-  private UploadFileResponse uploadFileResponse1;
-  @Mock
-  private UploadFileResponse uploadFileResponse2;
+  @Mock private UploadFileResponse uploadFileResponse1;
+  @Mock private UploadFileResponse uploadFileResponse2;
   private HistoryDatasetAssociation historyDatasetAssociation1;
   private HistoryDatasetAssociation historyDatasetAssociation2;
-  @Captor
-  private ArgumentCaptor<ExternalWorkFlowData> externalWorkFlowDataArgumentCaptor;
+  @Captor private ArgumentCaptor<ExternalWorkFlowData> externalWorkFlowDataArgumentCaptor;
+
   @Captor
   private ArgumentCaptor<ExternalWorkFlowInvocation> externalWorkFlowInvocationArgumentCaptor;
 
@@ -142,8 +125,7 @@ public class GalaxyServiceTest {
     EditInfo editInfo = new EditInfo();
     editInfo.setName("rspaceDocument");
     when(rspaceDocument.getEditInfo()).thenReturn(editInfo);
-    when(client.createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY)))
-        .thenReturn(history);
+    when(client.createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY))).thenReturn(history);
     when(history.getId()).thenReturn(HISTORY_ID_1);
     when(history.getName()).thenReturn(HISTORY_NAME_ON_GALAXY);
     when(baseRecordManager.retrieveMediaFile(eq(user), eq(1L), eq(null), eq(null), eq(null)))
@@ -164,18 +146,31 @@ public class GalaxyServiceTest {
     when(uploadFileResponse2.getOutputs()).thenReturn(List.of(historyDatasetAssociation2));
   }
 
-
   @Test
   public void shouldUploadDataToGalaxyWhenSetUpDataInGalaxy() throws IOException {
-    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[]{1L, 2L});
-    verify(client)
-        .createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY));
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L});
+    verify(client).createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY));
+    verify(client).uploadFile(eq(HISTORY_ID_1), eq(API_KEY), eq(attachmentFile1));
+  }
+
+  @Test
+  public void shouldIncrementHistoryNameByOneWhenExistingUploadDataForThatFieldWhenSetUpDataInGalaxy() throws IOException {
+    ExternalWorkFlowData testExternalWorkFlowData =
+        ExternalWorkFlowTestMother.createExternalWorkFlowData(
+            HISTORY_ID_1, DATASET_ID_1, "Test History");
+
+    when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
+        1L, ExternalWorkFlowData.ExternalService.GALAXY))
+        .thenReturn(List.of(testExternalWorkFlowData));
+    when(client.createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY+"_1"))).thenReturn(history);
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L});
+    verify(client).createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY+"_1"));
     verify(client).uploadFile(eq(HISTORY_ID_1), eq(API_KEY), eq(attachmentFile1));
   }
 
   @Test
   public void shouldSaveDataWhenUploadToGalaxyIsCompleteWhenSetUpDataInGalaxy() throws IOException {
-    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[]{1L, 2L});
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L});
     verify(externalWorkFlowDataManager, times(2))
         .save(externalWorkFlowDataArgumentCaptor.capture());
     ExternalWorkFlowData externalWorkFlowData1 =
@@ -189,9 +184,7 @@ public class GalaxyServiceTest {
     assertEquals(HISTORY_ID_1, externalWorkFlowData1.getExtContainerID());
     assertEquals("https://galaxy.eu", externalWorkFlowData1.getBaseUrl());
     assertEquals("field1", externalWorkFlowData1.getRspacecontainerName());
-    assertEquals(
-        HISTORY_NAME_ON_GALAXY,
-        externalWorkFlowData1.getExtContainerName());
+    assertEquals(HISTORY_NAME_ON_GALAXY, externalWorkFlowData1.getExtContainerName());
     assertEquals("historyDatasetAssociationUuid1", externalWorkFlowData1.getExtSecondaryId());
     assertEquals(1L, externalWorkFlowData1.getRspacecontainerid());
     assertEquals(RSPACE_CONTAINER_TYPE.FIELD, externalWorkFlowData1.getRspaceContainerType());
@@ -201,7 +194,7 @@ public class GalaxyServiceTest {
 
   @Test
   public void shouldCreateDataSetCollectionInGalaxyWhenSetUpDataInGalaxy() throws IOException {
-    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[]{1L, 2L});
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L});
     Map<String, String> uploadedFileNamesToIds = new HashMap<>();
     uploadedFileNamesToIds.put(
         "historyDatasetAssociationName1", "historyDatasetAssociationDataSetId1");
@@ -209,16 +202,13 @@ public class GalaxyServiceTest {
         "historyDatasetAssociationName2", "historyDatasetAssociationDataSetId2");
     verify(client)
         .createDatasetCollection(
-            eq(API_KEY),
-            eq(HISTORY_ID_1),
-            eq(HISTORY_NAME_ON_GALAXY),
-            eq(uploadedFileNamesToIds));
+            eq(API_KEY), eq(HISTORY_ID_1), eq(HISTORY_NAME_ON_GALAXY), eq(uploadedFileNamesToIds));
   }
 
   @Test
   public void testGetSummaryGalaxyDataForRSpaceFieldWhenNoDataUploaded() throws IOException {
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
-        1L, ExternalWorkFlowData.ExternalService.GALAXY))
+            1L, ExternalWorkFlowData.ExternalService.GALAXY))
         .thenReturn(Collections.emptyList());
 
     List<GalaxySummaryStatusReport> result =
@@ -239,7 +229,7 @@ public class GalaxyServiceTest {
             HISTORY_ID_1, DATASET_ID_1, "Test History");
 
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
-        1L, ExternalWorkFlowData.ExternalService.GALAXY))
+            1L, ExternalWorkFlowData.ExternalService.GALAXY))
         .thenReturn(List.of(testExternalWorkFlowData));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
@@ -259,15 +249,16 @@ public class GalaxyServiceTest {
   }
 
   @Test
-  public void testGetSummaryGalaxyDataForRSpaceFieldWhenDataUploadedInvocationsNotMatchingAndNoInvocationsPreexisting()
-      throws IOException {
+  public void
+      testGetSummaryGalaxyDataForRSpaceFieldWhenDataUploadedInvocationsNotMatchingAndNoInvocationsPreexisting()
+          throws IOException {
     ExternalWorkFlowData testExternalWorkFlowData =
         ExternalWorkFlowTestMother.createExternalWorkFlowData(
             HISTORY_ID_1, DATASET_ID_1, "Test History");
     WorkflowInvocationResponse workflowInvocationResponse =
         ExternalWorkFlowTestMother.createWorkflowInvocationResponse(INVOCATION_ID_1, HISTORY_ID_1);
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
-        1L, ExternalWorkFlowData.ExternalService.GALAXY))
+            1L, ExternalWorkFlowData.ExternalService.GALAXY))
         .thenReturn(List.of(testExternalWorkFlowData));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
@@ -287,15 +278,17 @@ public class GalaxyServiceTest {
   }
 
   @Test
-  public void testGetSummaryGalaxyDataForRSpaceFieldWhenDataUploadedInvocationsAreMatchingAndNoInvocationsPreexisting()
-      throws IOException {
+  public void
+      testGetSummaryGalaxyDataForRSpaceFieldWhenDataUploadedInvocationsAreMatchingAndNoInvocationsPreexisting()
+          throws IOException {
     ExternalWorkFlowData testExternalWorkFlowData =
         ExternalWorkFlowTestMother.createExternalWorkFlowData(
             HISTORY_ID_1, DATASET_ID_1, "Test History");
     WorkflowInvocationResponse workflowInvocationResponse =
-        ExternalWorkFlowTestMother.createWorkflowInvocationResponse(ExternalWorkFlowTestMother.INVOCATION_ID_1, HISTORY_ID_1);
+        ExternalWorkFlowTestMother.createWorkflowInvocationResponse(
+            ExternalWorkFlowTestMother.INVOCATION_ID_1, HISTORY_ID_1);
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
-        1L, ExternalWorkFlowData.ExternalService.GALAXY))
+            1L, ExternalWorkFlowData.ExternalService.GALAXY))
         .thenReturn(List.of(testExternalWorkFlowData));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
@@ -312,24 +305,33 @@ public class GalaxyServiceTest {
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
-    verify(externalWorkFlowDataManager).saveExternalWorkfFlowInvocation(WORKFLOW_ID_1,
-        ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED, ExternalWorkFlowTestMother.INVOCATION_ID_1, List.of(testExternalWorkFlowData), DEFAULT_INVOCATION_STATE);
+    verify(externalWorkFlowDataManager)
+        .saveExternalWorkfFlowInvocation(
+            WORKFLOW_ID_1,
+            ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED,
+            ExternalWorkFlowTestMother.INVOCATION_ID_1,
+            List.of(testExternalWorkFlowData),
+            DEFAULT_INVOCATION_STATE);
     makeGalaxyDataAssertionsWithInvocation(result.get(0));
   }
 
   @Test
   public void testGetSummaryGalaxyDataForRSpaceFieldWhenInvocationsPreexisting()
       throws IOException {
-    //verify that data is queried from the database and requests to galaxy are not performed.
-    //Also verify that any new 'state' seen in the GalaxyInvocationresponse is saved to the DB ExternalWorkFlowInvocation data
+    // verify that data is queried from the database and requests to galaxy are not performed.
+    // Also verify that any new 'state' seen in the GalaxyInvocationresponse is saved to the DB
+    // ExternalWorkFlowInvocation data
     ExternalWorkFlowData testExternalWorkFlowData =
         ExternalWorkFlowTestMother.createExternalWorkFlowDataWithInvocations(
-            HISTORY_ID_1, DATASET_ID_1, "Test History",
-            "new");//the state returned by the test mother for the invocation response is 'RUNNING'
+            HISTORY_ID_1,
+            DATASET_ID_1,
+            "Test History",
+            "new"); // the state returned by the test mother for the invocation response is
+    // 'RUNNING'
     WorkflowInvocationResponse workflowInvocationResponse =
         ExternalWorkFlowTestMother.createWorkflowInvocationResponse(INVOCATION_ID_1, HISTORY_ID_1);
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
-        1L, ExternalWorkFlowData.ExternalService.GALAXY))
+            1L, ExternalWorkFlowData.ExternalService.GALAXY))
         .thenReturn(List.of(testExternalWorkFlowData));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
@@ -342,40 +344,54 @@ public class GalaxyServiceTest {
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
     verify(externalWorkFlowDataManager).save(externalWorkFlowInvocationArgumentCaptor.capture());
-    ExternalWorkFlowInvocation savedInvocation = externalWorkFlowInvocationArgumentCaptor.getValue();
-    assertEquals(DEFAULT_INVOCATION_STATE,savedInvocation.getStatus());
-    assertEquals(INVOCATION_ID_1,savedInvocation.getExtId());
+    ExternalWorkFlowInvocation savedInvocation =
+        externalWorkFlowInvocationArgumentCaptor.getValue();
+    assertEquals(DEFAULT_INVOCATION_STATE, savedInvocation.getStatus());
+    assertEquals(INVOCATION_ID_1, savedInvocation.getExtId());
     makeGalaxyDataAssertionsWithInvocation(result.get(0));
   }
+
   @Test
-  public void testGetSummaryGalaxyDataForRSpaceFieldWhenInvocationsPreexistingAndSomeNotPreexisting()
-      throws IOException {
-    //verify that data is queried from the database for pre-existing invocations and
-    //requested from Galaxy for new invocations; which are then saved to the DB
+  public void
+      testGetSummaryGalaxyDataForRSpaceFieldWhenInvocationsPreexistingAndSomeNotPreexisting()
+          throws IOException {
+    // verify that data is queried from the database for pre-existing invocations and
+    // requested from Galaxy for new invocations; which are then saved to the DB
     ExternalWorkFlowData testExternalWorkFlowDataPreexisting =
         ExternalWorkFlowTestMother.createExternalWorkFlowDataWithInvocations(
-            HISTORY_ID_1, DATASET_ID_1, "Test History",
-            "new");//the state returned by the test mother for the invocation response is 'RUNNING'
+            HISTORY_ID_1,
+            DATASET_ID_1,
+            "Test History",
+            "new"); // the state returned by the test mother for the invocation response is
+    // 'RUNNING'
     ExternalWorkFlowData testExternalWorkFlowDataNotPreexisting =
         ExternalWorkFlowTestMother.createExternalWorkFlowDataWithInvocations(
-            HISTORY_ID_1+"_not_pre", DATASET_ID_1+"_not_pre", "Test History"+"_not_pre",
+            HISTORY_ID_1 + "_not_pre",
+            DATASET_ID_1 + "_not_pre",
+            "Test History" + "_not_pre",
             "new");
     WorkflowInvocationResponse workflowInvocationResponsePreexisting =
         ExternalWorkFlowTestMother.createWorkflowInvocationResponse(INVOCATION_ID_1, HISTORY_ID_1);
     WorkflowInvocationResponse workflowInvocationResponseNotPreexisting =
-        ExternalWorkFlowTestMother.createWorkflowInvocationResponse(INVOCATION_ID_1+"_not_pre", HISTORY_ID_1+"_not_pre");
+        ExternalWorkFlowTestMother.createWorkflowInvocationResponse(
+            INVOCATION_ID_1 + "_not_pre", HISTORY_ID_1 + "_not_pre");
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
-        1L, ExternalWorkFlowData.ExternalService.GALAXY))
-        .thenReturn(List.of(testExternalWorkFlowDataPreexisting,testExternalWorkFlowDataNotPreexisting));
+            1L, ExternalWorkFlowData.ExternalService.GALAXY))
+        .thenReturn(
+            List.of(testExternalWorkFlowDataPreexisting, testExternalWorkFlowDataNotPreexisting));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
-        .thenReturn(List.of(workflowInvocationResponsePreexisting, workflowInvocationResponseNotPreexisting));
+        .thenReturn(
+            List.of(
+                workflowInvocationResponsePreexisting, workflowInvocationResponseNotPreexisting));
 
-    when(client.getWorkflowInvocationData(API_KEY, ExternalWorkFlowTestMother.INVOCATION_ID_1+"_not_pre"))
+    when(client.getWorkflowInvocationData(
+            API_KEY, ExternalWorkFlowTestMother.INVOCATION_ID_1 + "_not_pre"))
         .thenReturn(ExternalWorkFlowTestMother.createWorkflowInvocationStepStatusResponse());
-    when(client.getDataSetCollectionDetails(API_KEY, HISTORY_ID_1+"_not_pre", INPUT_ID))
-        .thenReturn(createMatchingHDCA(DATASET_ID_1+"_not_pre"+"_uuid"));
-    when(client.getWorkflowInvocationReport(API_KEY, ExternalWorkFlowTestMother.INVOCATION_ID_1+"_not_pre"))
+    when(client.getDataSetCollectionDetails(API_KEY, HISTORY_ID_1 + "_not_pre", INPUT_ID))
+        .thenReturn(createMatchingHDCA(DATASET_ID_1 + "_not_pre" + "_uuid"));
+    when(client.getWorkflowInvocationReport(
+            API_KEY, ExternalWorkFlowTestMother.INVOCATION_ID_1 + "_not_pre"))
         .thenReturn(createWorkFlowInvocationReport());
 
     List<GalaxySummaryStatusReport> result =
@@ -385,14 +401,19 @@ public class GalaxyServiceTest {
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
     verify(externalWorkFlowDataManager).save(externalWorkFlowInvocationArgumentCaptor.capture());
-    ExternalWorkFlowInvocation savedPreExistingInvocation = externalWorkFlowInvocationArgumentCaptor.getValue();
+    ExternalWorkFlowInvocation savedPreExistingInvocation =
+        externalWorkFlowInvocationArgumentCaptor.getValue();
 
-    assertEquals(DEFAULT_INVOCATION_STATE,savedPreExistingInvocation.getStatus());
-    assertEquals(INVOCATION_ID_1,savedPreExistingInvocation.getExtId());
-    verify(externalWorkFlowDataManager).saveExternalWorkfFlowInvocation(WORKFLOW_ID_1,WORKFLOWTHATWASUSED,INVOCATION_ID_1+"_not_pre", List.of(testExternalWorkFlowDataNotPreexisting), DEFAULT_INVOCATION_STATE);
+    assertEquals(DEFAULT_INVOCATION_STATE, savedPreExistingInvocation.getStatus());
+    assertEquals(INVOCATION_ID_1, savedPreExistingInvocation.getExtId());
+    verify(externalWorkFlowDataManager)
+        .saveExternalWorkfFlowInvocation(
+            WORKFLOW_ID_1,
+            WORKFLOWTHATWASUSED,
+            INVOCATION_ID_1 + "_not_pre",
+            List.of(testExternalWorkFlowDataNotPreexisting),
+            DEFAULT_INVOCATION_STATE);
     makeGalaxyDataAssertionsWithInvocation(result.get(0));
     makeGalaxyDataAssertionsWithInvocation(result.get(1), "_not_pre");
   }
-
-
 }
