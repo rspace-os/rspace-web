@@ -14,6 +14,7 @@ const feature = test.extend<{
     "there should be a dialog visible": () => Promise<void>;
     "there should be no axe violations": () => Promise<void>;
     "there should be a dialog header banner": () => Promise<void>;
+    "there should be a title: 'Import from PubChem'": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -48,6 +49,13 @@ const feature = test.extend<{
         });
         await expect(dialogHeader).toBeVisible();
         await expect(dialogHeader).toHaveText("PubChem");
+      },
+      "there should be a title: 'Import from PubChem'": async () => {
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).toHaveAccessibleName("Import from PubChem");
+        const title = dialog.getByRole("heading", { level: 3 });
+        await expect(title).toBeVisible();
+        await expect(title).toHaveText("Import from PubChem");
       },
     });
   },
@@ -124,5 +132,9 @@ test.describe("ImportDialog", () => {
   feature("Should be a dialog header banner", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a dialog header banner"]();
+  });
+  feature("Should have a title", async ({ Given, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await Then["there should be a title: 'Import from PubChem'"]();
   });
 });
