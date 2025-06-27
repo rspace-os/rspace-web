@@ -45,7 +45,13 @@ export default function ImportDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} aria-labelledby={titleId}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby={titleId}
+      maxWidth="md"
+      fullWidth
+    >
       <AppBar variant="dialog" currentPage="PubChem" accessibilityTips={{}} />
       <DialogTitle id={titleId} component="h3">
         Import from PubChem
@@ -67,23 +73,26 @@ export default function ImportDialog({
                 <TextField
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  variant="standard"
+                  variant="outlined"
                   fullWidth
-                  inputProps={{
-                    role: "search",
-                  }}
-                  placeholder="Enter a compound name, CAS number, or SMILES"
+                  placeholder={
+                    searchType === "NAME"
+                      ? "Enter a compound name or CAS number"
+                      : "SMILES"
+                  }
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
                         <FormControl variant="standard" size="small">
                           <Select
+                            inputProps={{
+                              "aria-label": "Search type",
+                              name: "search-type",
+                            }}
                             value={searchType}
                             onChange={(e) =>
                               setSearchType(e.target.value as "NAME" | "SMILES")
                             }
-                            aria-label="Search type"
-                            name="searchType"
                           >
                             <MenuItem value="NAME">Name/CAS</MenuItem>
                             <MenuItem value="SMILES">SMILES</MenuItem>

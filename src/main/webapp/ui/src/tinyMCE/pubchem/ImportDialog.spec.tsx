@@ -46,19 +46,19 @@ const feature = test.extend<{
         await closeButton.click();
       },
       "a search is performed": async () => {
-        const searchInput = page.getByRole("search");
+        const searchInput = page.getByRole("textbox");
         await searchInput.fill("aspirin");
         await searchInput.press("Enter");
       },
       "the search type selector is clicked": async () => {
         const searchTypeSelector = page.getByRole("combobox", {
-          name: "Name/CAS",
+          name: "Search type",
         });
         await searchTypeSelector.click();
       },
       "SMILES is chosen as the search type": async () => {
         const searchTypeSelector = page.getByRole("combobox", {
-          name: "Name/CAS",
+          name: "Search type",
         });
         await searchTypeSelector.click();
         await page
@@ -77,7 +77,7 @@ const feature = test.extend<{
       },
       "there should be a search type selector": async () => {
         const searchTypeSelector = page.getByRole("combobox", {
-          name: "Name/CAS",
+          name: "Search type",
         });
         await expect(searchTypeSelector).toBeVisible();
       },
@@ -106,12 +106,8 @@ const feature = test.extend<{
         await expect(dialog).not.toBeVisible();
       },
       "there should be a search input": async () => {
-        const searchInput = page.getByRole("search");
+        const searchInput = page.getByRole("textbox");
         await expect(searchInput).toBeVisible();
-        await expect(searchInput).toHaveAttribute(
-          "placeholder",
-          "Enter a compound name, CAS number, or SMILES"
-        );
       },
       "the mocked results are shown": async () => {
         const searchResults = page.getByRole("region", {
