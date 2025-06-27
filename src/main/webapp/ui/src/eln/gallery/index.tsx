@@ -7,6 +7,7 @@ import {
   SELECTED_OR_FOCUS_BLUE,
   GALLERY_SECTION,
   type GallerySection,
+  gallerySectionLabel,
 } from "./common";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 import AppBar from "../../components/AppBar";
@@ -151,15 +152,17 @@ const WholePage = styled(
       if (listingOf.tag === "folder") {
         document.title = `${FetchingData.getSuccessValue(path)
           .flatMap(ArrayUtils.last)
-          .map((file) => `${file.pathAsString()} `)
+          .map((file) => `${file.name} `)
           .orElse("")}| RSpace Gallery`;
       } else {
         if (listingOf.path.length > 0) {
-          document.title = `${ArrayUtils.last(listingOf.path)
-            .elseThrow()
-            .pathAsString()} | RSpace Gallery`;
+          document.title = `${
+            ArrayUtils.last(listingOf.path).elseThrow().name
+          } | RSpace Gallery`;
         } else {
-          document.title = `/${listingOf.section}/ | RSpace Gallery`;
+          document.title = `${
+            gallerySectionLabel[listingOf.section]
+          } | RSpace Gallery`;
         }
       }
     }, [listingOf, path]);
