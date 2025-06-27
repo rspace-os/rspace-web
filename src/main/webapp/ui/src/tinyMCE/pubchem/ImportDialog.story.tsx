@@ -9,11 +9,17 @@ import createAccentedTheme from "../../accentedTheme";
  * A basic example of how to use the ImportDialog component.
  */
 export function ImportDialogStory(): React.ReactNode {
+  const [open, setOpen] = React.useState(true);
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <h1>PubChem import example</h1>
-        <ImportDialog open onClose={() => {}} />
+        <ImportDialog
+          open={open}
+          onClose={() => {
+            setOpen(false);
+          }}
+        />
       </ThemeProvider>
     </StyledEngineProvider>
   );

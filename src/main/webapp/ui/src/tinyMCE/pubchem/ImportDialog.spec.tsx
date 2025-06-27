@@ -9,12 +9,15 @@ const feature = test.extend<{
     "that the ImportDialog is mounted": () => Promise<void>;
   };
   Once: Record<string, never>;
-  When: Record<string, never>;
+  When: {
+    "the cancel button is clicked": () => Promise<void>;
+  };
   Then: {
     "there should be a dialog visible": () => Promise<void>;
     "there should be no axe violations": () => Promise<void>;
     "there should be a dialog header banner": () => Promise<void>;
     "there should be a title: 'Import from PubChem'": () => Promise<void>;
+    "the dialog is closed": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -28,8 +31,14 @@ const feature = test.extend<{
   Once: async ({}, use) => {
     await use({});
   },
-  When: async ({}, use) => {
-    await use({});
+  When: async ({ page }, use) => {
+    await use({
+      "the cancel button is clicked": async () => {
+        const dialog = page.getByRole("dialog");
+        const closeButton = dialog.getByRole("button", { name: /cancel/i });
+        await closeButton.click();
+      },
+    });
   },
   Then: async ({ page }, use) => {
     await use({
@@ -56,6 +65,10 @@ const feature = test.extend<{
         const title = dialog.getByRole("heading", { level: 3 });
         await expect(title).toBeVisible();
         await expect(title).toHaveText("Import from PubChem");
+      },
+      "the dialog is closed": async () => {
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).not.toBeVisible();
       },
     });
   },
@@ -136,5 +149,10 @@ test.describe("ImportDialog", () => {
   feature("Should have a title", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a title: 'Import from PubChem'"]();
+  });
+  feature("Should have a a close button", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["the cancel button is clicked"]();
+    await Then["the dialog is closed"]();
   });
 });
