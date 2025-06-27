@@ -29,7 +29,7 @@ const feature = test.extend<{
   Then: async ({ page }, use) => {
     await use({
       "there should be a dialog visible": async () => {
-        const dialog = page.locator("dialog");
+        const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible();
       },
     });

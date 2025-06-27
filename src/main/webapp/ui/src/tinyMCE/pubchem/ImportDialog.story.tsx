@@ -13,7 +13,7 @@ export function ImportDialogStory(): React.ReactNode {
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <h1>PubChem import example</h1>
-        <ImportDialog />
+        <ImportDialog open onClose={() => {}} />
       </ThemeProvider>
     </StyledEngineProvider>
   );

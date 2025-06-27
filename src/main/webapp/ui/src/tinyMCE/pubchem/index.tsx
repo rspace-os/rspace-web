@@ -49,27 +49,18 @@ declare global {
   }
 }
 
-type PubchemDialogProps = {
-  open: boolean;
-  onClose: () => void;
-};
-
-function PubchemDialog(_props: PubchemDialogProps): React.ReactNode {
-  return null;
-}
-
 class PubchemPlugin {
   constructor(editor: Editor) {
     function* renderPubchem(
       domContainer: HTMLElement
-    ): Generator<void, void, PubchemDialogProps> {
+    ): Generator<void, void, React.ComponentProps<typeof ImportDialog>> {
       const root = createRoot(domContainer);
       while (true) {
-        const newProps: PubchemDialogProps = yield;
+        const newProps: React.ComponentProps<typeof ImportDialog> = yield;
         root.render(
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <ImportDialog />
+              <ImportDialog {...newProps} />
             </ThemeProvider>
           </StyledEngineProvider>
         );
@@ -88,7 +79,10 @@ class PubchemPlugin {
 
     const pubchemRenderer = renderPubchem(container);
     pubchemRenderer.next();
-    const initialProps: PubchemDialogProps = { open: false, onClose: () => {} };
+    const initialProps: React.ComponentProps<typeof ImportDialog> = {
+      open: false,
+      onClose: () => {},
+    };
     pubchemRenderer.next(initialProps);
 
     // Add a button to the toolbar
