@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { ImportDialogStory } from "./ImportDialog.story";
+import AxeBuilder from "@axe-core/playwright";
 
 const feature = test.extend<{
   Given: {
@@ -10,6 +11,7 @@ const feature = test.extend<{
   When: Record<string, never>;
   Then: {
     "there should be a dialog visible": () => Promise<void>;
+    "there should be no axe violations": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -32,6 +34,12 @@ const feature = test.extend<{
         const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible();
       },
+      "there should be no axe violations": async () => {
+        const accessibilityScanResults = await new AxeBuilder({
+          page,
+        }).analyze();
+        expect(accessibilityScanResults.violations).toEqual([]);
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -47,5 +55,9 @@ test.describe("ImportDialog", () => {
   feature("Renders correctly", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a dialog visible"]();
+  });
+  feature("Should have no axe violations.", async ({ Given, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await Then["there should be no axe violations"]();
   });
 });

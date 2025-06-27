@@ -13,8 +13,8 @@ export default function ImportDialog({
   onClose: () => void;
 }): React.ReactNode {
   return (
-    <Dialog open={open} onClose={onClose}>
-      hi
+    <Dialog open={open} onClose={onClose} aria-labelledby="test">
+      <h2 id="test">test</h2>
     </Dialog>
   );
 }
