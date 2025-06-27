@@ -15,9 +15,16 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardMedia from "@mui/material/CardMedia";
+import CardActions from "@mui/material/CardActions";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import useChemicalImport, {
   type ChemicalCompound,
 } from "@/hooks/api/useChemicalImport";
+import DescriptionList from "@/components/DescriptionList";
 
 /**
  * This dialog is opened by the TinyMCE plugin, allowing the users to browse
@@ -38,10 +45,23 @@ export default function ImportDialog({
   const [results, setResults] = React.useState<ReadonlyArray<ChemicalCompound>>(
     []
   );
+  const [selectedCompounds, setSelectedCompounds] = React.useState<
+    Record<string, boolean>
+  >({});
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     void search({ searchTerm, searchType }).then(setResults);
+  }
+
+  function handleCompoundSelection(
+    compound: ChemicalCompound,
+    checked: boolean
+  ) {
+    setSelectedCompounds((prev) => ({
+      ...prev,
+      [compound.pubchemId]: checked,
+    }));
   }
 
   return (
@@ -49,7 +69,7 @@ export default function ImportDialog({
       open={open}
       onClose={onClose}
       aria-labelledby={titleId}
-      maxWidth="md"
+      maxWidth="sm"
       fullWidth
     >
       <AppBar variant="dialog" currentPage="PubChem" accessibilityTips={{}} />
@@ -112,11 +132,76 @@ export default function ImportDialog({
             <Typography id={resultsId} variant="h6" component="h4">
               Search Results
             </Typography>
-            <ul>
+            <Grid container spacing={2}>
               {results.map((compound) => (
-                <li key={compound.pubchemId}>{compound.name}</li>
+                <Grid item xs={12} key={compound.pubchemId}>
+                  <Card sx={{ display: "flex" }}>
+                    <CardMedia
+                      component="img"
+                      sx={{ width: 151 }}
+                      image={compound.pngImage}
+                      alt={`Chemical structure of ${compound.name}`}
+                    />
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        flexGrow: 1,
+                      }}
+                    >
+                      <CardContent sx={{ flex: "1 0 auto" }}>
+                        <Typography component="div" variant="h6">
+                          {compound.name}
+                        </Typography>
+                        <DescriptionList
+                          content={[
+                            {
+                              label: "PubChem ID",
+                              value: compound.pubchemId,
+                            },
+                            {
+                              label: "SMILES",
+                              value: compound.smiles,
+                            },
+                            {
+                              label: "Formula",
+                              value: compound.formula,
+                            },
+                          ]}
+                          sx={{ mt: 3 }}
+                        />
+                      </CardContent>
+                      <CardActions>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={Boolean(
+                                selectedCompounds[compound.pubchemId]
+                              )}
+                              onChange={(e) =>
+                                handleCompoundSelection(
+                                  compound,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                          }
+                          label="Select"
+                        />
+                        <Link
+                          href={compound.pubchemUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{ ml: 1 }}
+                        >
+                          View on PubChem
+                        </Link>
+                      </CardActions>
+                    </Box>
+                  </Card>
+                </Grid>
               ))}
-            </ul>
+            </Grid>
           </section>
         </Stack>
       </DialogContent>
