@@ -28,7 +28,7 @@ public class GalaxySummaryStatusReport {
   public enum GalaxyInvocationStatus {
     IN_PROGRESS("new,waiting,queued,running,resubmitted,upload, ready"),
     COMPLETED(""),
-    CANCELLED("cancelled"),
+    CANCELLED("cancelled, cancelling"),
     FAILED("failed,error,deleted");
     private String text;
 

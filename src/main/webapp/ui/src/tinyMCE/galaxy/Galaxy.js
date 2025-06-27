@@ -8,36 +8,14 @@ import TitledBox from "@/Inventory/components/TitledBox";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import TextField from "@mui/material/TextField";
-import DialogActions from "@mui/material/DialogActions";
-import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
-import {doNotAwait, toTitleCase} from "@/util/Util";
 import {DataGridColumn} from "@/util/table";
-import GlobalId from "@/components/GlobalId";
-import LinkableRecordFromGlobalId
-  from "@/stores/models/LinkableRecordFromGlobalId";
-import {DataGrid, GridRowSelectionModel, GridToolbar} from "@mui/x-data-grid";
-import Link from "@mui/material/Link";
-import {
-  getAllBookingDetails, getAllEquipmentDetails,
-  getBookings, getRelevantBookings
-} from "@/tinyMCE/clustermarket/ClustermarketClient";
-import {
-  BOOKING_TYPE,
-  BookingAndEquipmentDetails,
-  BookingDetails, BookingsList,
-  EquipmentDetails,
-  EquipmentWithBookingDetails,
-  makeBookingAndEquipmentData,
-  makeEquipmentWithBookingData
-} from "@/tinyMCE/clustermarket/ClustermarketData";
-import {BookingType, ErrorReason} from "@/tinyMCE/clustermarket/Enums";
+import {DataGrid} from "@mui/x-data-grid";
 import CssBaseline from "@mui/material/CssBaseline";
-import ResultsTable from "@/tinyMCE/clustermarket/ResultsTable";
+import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
 import CircularProgress from "@mui/material/CircularProgress";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import {Modal} from "@mui/material";
 
 function Galaxy({
     fieldId,
@@ -47,7 +25,21 @@ function Galaxy({
 }) {
   const sendDataToGalaxy = async () => {
     setHistoryId(null);
+    setUploading(true);
+    window.parent.postMessage(
+        {
+          mceAction:  "uploading"
+        },
+        "*"
+    );
     const createdGalaxyHistoryHistory = ((await setUpGalaxyData()).data);
+    setUploading(false);
+    window.parent.postMessage(
+        {
+          mceAction:  "uploading_complete"
+        },
+        "*"
+    );
     const historyId = createdGalaxyHistoryHistory.id;
     setHistoryId(historyId);
     setHistoryName(createdGalaxyHistoryHistory.name);
@@ -65,27 +57,11 @@ function Galaxy({
         selectedAttachmentIds : selectedAttachmentIds.join(",")
       }});
   }
-  //TODO - create a json file to hold the workflows data (or fetch it from Galaxy?)
-  const workflows = [{
-    id: 0,
-    name: 'RNA-seq for Paired-end fastqs (release v1.2) ',
-    url: '/workflows/run?id=2d08a73dd8ff99e9',
-    galaxyID: '2d08a73dd8ff99e9',
-    description: 'This workflow takes as input a list of paired-end fastqs. Adapters and bad quality bases are removed with fastp. Reads are mapped with STAR with ENCODE parameters and genes are counted simultaneously as well as normalized coverage (per million mapped reads) on uniquely mapped reads. The counts are reprocessed to be similar to HTSeq-count output. Alternatively, featureCounts can be used to count the reads/fragments per gene. FPKM are computed with cufflinks and/or with StringTie. The unstranded normalized coverage is computed with bedtools.'
-  },
-    {
-      id: 1,
-      name: 'RNA-seq for Single-read fastqs (release v1.2)',
-      url: '/workflows/run?id=87fea062a9646a31',
-      galaxyID: '87fea062a9646a31',
-      description: 'This workflow takes as input a list of single-end fastqs. Adapters and bad quality bases are removed with fastp. Reads are mapped with STAR with ENCODE parameters and genes are counted simultaneously as well as normalized coverage (per million mapped reads) on uniquely mapped reads. The counts are reprocessed to be similar to HTSeq-count output. Alternatively, featureCounts can be used to count the reads/fragments per gene. FPKM are computed with cufflinks and/or with StringTie. The unstranded normalized coverage is computed with bedtools.'
-    }];
   const [attachedFiles, setAttachedFiles] = useState([]);
-  const [selectedWorkflowId, setSelectedWorkflowId] = useState(null);
   const [selectedAttachmentIds, setSelectedAttachmentIds] = useState([]);
   const [historyId, setHistoryId] = useState(null);
   const [historyName, setHistoryName] = useState(null);
-
+  const [uploading, setUploading] = useState(false);
   useEffect(() => {
     window.parent.postMessage(
         {
@@ -137,10 +113,28 @@ function Galaxy({
                   color="primary"
                   disableElevation
                   onClick={() => sendDataToGalaxy()}
-                  disabled={selectedAttachmentIds.length == 0}
+                  disabled={selectedAttachmentIds.length == 0 || uploading}
               >
                 Upload To Galaxy
               </Button>
+              <Modal
+                  open={uploading}
+                  aria-labelledby="modal-modal-title"
+                  aria-describedby="modal-modal-description"
+              >
+                <Grid
+                    container
+                    spacing={0}
+                    direction="column"
+                    alignItems="center"
+                    justifyContent="center"
+                    sx={{ minHeight: '100vh' }}
+                >
+                  <Grid item xs={3}>
+                    {uploading && <CircularProgress variant="indeterminate" value={1} size="8rem" />}
+                  </Grid>
+                </Grid>
+              </Modal>
             </Stack>
           </TitledBox>
           <DataGrid

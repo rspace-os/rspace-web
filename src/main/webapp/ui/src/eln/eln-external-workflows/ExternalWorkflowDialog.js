@@ -16,11 +16,11 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
 
       <>
         <Dialog open={open}  fullWidth maxWidth="xl" >
-          <DialogTitle>Galaxy Data</DialogTitle>
+          <DialogTitle>External WorkFlow Data</DialogTitle>
           <DialogContent>
             <Stack spacing={3}>
               <Typography>
-                Galaxy Data uploaded and Workflow Invocations using that data
+                Data uploaded and Workflow Invocations using that data
               </Typography>
               <DataGrid
                   getRowHeight={()=>"auto"} //for text wrapping
@@ -32,19 +32,19 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
                     },
                   }}
                   columns={[
-                    DataGridColumn.newColumnWithValueGetter("RSpaceData",
+                    DataGridColumn.newColumnWithValueGetter("Data File Names",
                         (wf) =>  wf.galaxyDataNames,
                         {
-                          headerName: "RSpace Data",
+                          headerName: "Data File Names",
                           flex: 1,
                           sortable: false,
                           resizable: true,
                           renderCell: ({row}) => row.galaxyDataNames
                         }),
-                    DataGridColumn.newColumnWithValueGetter("History",
+                    DataGridColumn.newColumnWithValueGetter("Container",
                         (wf) => wf.galaxyHistoryName,
                         {
-                          headerName: "Galaxy History",
+                          headerName: "Container",
                           flex: 1,
                           resizable: true,
                           renderCell: ({row}) =>

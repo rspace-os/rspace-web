@@ -21,8 +21,7 @@ public class GalaxySummaryStatusReportTest {
     List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
 
     ExternalWorkFlowData data1 =
-        ExternalWorkFlowTestMother.createExternalWorkFlowData(
-            "history1", "data1", "history_name1");
+        ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1", "history_name1");
     workflowDataList.add(data1);
     DatasetCollection used = new DatasetCollection();
     used.setId("used1");
@@ -56,11 +55,9 @@ public class GalaxySummaryStatusReportTest {
     List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
 
     ExternalWorkFlowData data1 =
-        ExternalWorkFlowTestMother.createExternalWorkFlowData(
-            "history1", "data1", "history_name1");
+        ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1", "history_name1");
     ExternalWorkFlowData data2 =
-        ExternalWorkFlowTestMother.createExternalWorkFlowData(
-            "history2", "data2", "history_name2");
+        ExternalWorkFlowTestMother.createExternalWorkFlowData("history2", "data2", "history_name2");
     workflowDataList.add(data1);
     workflowDataList.add(data2);
     DatasetCollection used1 = new DatasetCollection();
@@ -90,14 +87,11 @@ public class GalaxySummaryStatusReportTest {
     List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
 
     ExternalWorkFlowData data1 =
-        ExternalWorkFlowTestMother.createExternalWorkFlowData(
-            "history1", "data1", "history_name1");
+        ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1", "history_name1");
     ExternalWorkFlowData data2 =
-        ExternalWorkFlowTestMother.createExternalWorkFlowData(
-            "history2", "data2", "history_name2");
+        ExternalWorkFlowTestMother.createExternalWorkFlowData("history2", "data2", "history_name2");
     ExternalWorkFlowData data3 =
-        ExternalWorkFlowTestMother.createExternalWorkFlowData(
-            "history3", "data3", "history_name3");
+        ExternalWorkFlowTestMother.createExternalWorkFlowData("history3", "data3", "history_name3");
     workflowDataList.add(data1);
     workflowDataList.add(data2);
     workflowDataList.add(data3);

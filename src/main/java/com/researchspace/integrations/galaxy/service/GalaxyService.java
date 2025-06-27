@@ -90,7 +90,7 @@ public class GalaxyService {
     String fieldName = field.getName();
     String fieldGlobalID = field.getOid().toString();
     String globalID = ((StructuredDocument) theDocument).getOidWithVersion().toString();
-    String docName = ((StructuredDocument) theDocument).getEditInfo().getName();
+    String docName = theDocument.getEditInfo().getName();
     String metaData = generateUniqueMetaData(fieldId, docName, globalID, fieldName, fieldGlobalID);
     History history = client.createNewHistory(apiKey, metaData);
     Map<String, String> uploadedFileNamesToIds = new HashMap<>();
@@ -126,7 +126,7 @@ public class GalaxyService {
   }
 
   @NotNull
-  private String generateUniqueMetaData(
+  public String generateUniqueMetaData(
       long fieldId, String docName, String globalID, String fieldName, String fieldGlobalID) {
     String metaData = "RSPACE_" + docName + "_" + globalID + "_" + fieldName + "_" + fieldGlobalID;
     List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField =
@@ -134,7 +134,11 @@ public class GalaxyService {
             fieldId, GALAXY);
     if (allDataUploadedToGalaxyForThisRSpaceField != null
         && !allDataUploadedToGalaxyForThisRSpaceField.isEmpty()) {
-      metaData = metaData + "_" + allDataUploadedToGalaxyForThisRSpaceField.size();
+      Set<String> allHistoryNames =
+          allDataUploadedToGalaxyForThisRSpaceField.stream()
+              .map(ExternalWorkFlowData::getExtContainerName)
+              .collect(HashSet::new, HashSet::add, HashSet::addAll);
+      metaData = metaData + "_" + allHistoryNames.size();
     }
     return metaData;
   }
