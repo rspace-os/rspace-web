@@ -15,7 +15,6 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.FolderRecordPair;
@@ -66,17 +65,8 @@ public class RecordApiManagerImpl implements RecordApiManager {
 
     if (apiDocument.getParentFolderId() != null) {
       Folder originalParentFolder = folderManager.getFolder(apiDocument.getParentFolderId(), user);
-      if (folderManager.isSharedFolderOrSharedNotebookWithoutCreatePermssison(
-          user, originalParentFolder)) {
-        if (originalParentFolder.isNotebook()) {
-          // shareDocument into the current parent sharedNotebook
-          recordShareHandler.shareIntoSharedNotebook(
-              user, (Notebook) originalParentFolder, newDocument.getId());
-        } else {
-          // shareDocument into the current parentFolder
-          recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newDocument.getId());
-        }
-      }
+      recordShareHandler.shareIntoSharedFolderOrNotebook(
+          user, originalParentFolder, newDocument.getId());
     }
     try {
       saveApiDocumentChangesToStructuredDocument(apiDocument, user, newDocument);

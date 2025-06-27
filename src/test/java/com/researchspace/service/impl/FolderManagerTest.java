@@ -2,9 +2,12 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -12,6 +15,8 @@ import com.researchspace.dao.FolderDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import com.researchspace.model.core.RecordType;
+import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionDomain;
@@ -19,6 +24,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.ACLPropagationPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
@@ -39,21 +45,24 @@ public class FolderManagerTest {
   @Mock FolderDao folderDao;
   @InjectMocks private FolderManagerImpl folderManagerImpl;
 
-  User anyUser = TestFactory.createAnyUser("any");
+  User user = TestFactory.createAnyUser("any");
   Folder parent = null, child = null;
+  Notebook notebook = null;
 
   @Before
   public void before() {
-    parent = TestFactory.createAFolder("parent", anyUser);
+    parent = TestFactory.createAFolder("parent", user);
     parent.setId(1L);
-    child = TestFactory.createAFolder("child", anyUser);
+    child = TestFactory.createAFolder("child", user);
     child.setId(2L);
+    notebook = TestFactory.createANotebook("notebook", user);
+    child.setId(3L);
   }
 
   @Test
   public void testCreateGallerySubfolderThrowsIAEIfInvalid() {
     assertIllegalArgumentException(
-        () -> folderManagerImpl.createGallerySubfolder("any", "unknown", anyUser));
+        () -> folderManagerImpl.createGallerySubfolder("any", "unknown", user));
   }
 
   // rspac-1949
@@ -62,14 +71,14 @@ public class FolderManagerTest {
 
     // we add this in the model, so that subsequent attempt to add parent to child
     // will trigger IACO
-    parent.addChild(child, anyUser);
+    parent.addChild(child, user);
     when(folderDao.get(child.getId())).thenReturn(child);
 
     // this should trigger IACO
     CoreTestUtils.assertExceptionThrown(
         () ->
             folderManagerImpl.addChild(
-                child.getId(), parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, false),
+                child.getId(), parent, user, ACLPropagationPolicy.DEFAULT_POLICY, false),
         IllegalAddChildOperation.class);
 
     assertChildNotAddedtoParent(parent);
@@ -77,7 +86,7 @@ public class FolderManagerTest {
     // suppress exception, but fails
     ServiceOperationResult<Folder> result =
         folderManagerImpl.addChild(
-            child.getId(), parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, true);
+            child.getId(), parent, user, ACLPropagationPolicy.DEFAULT_POLICY, true);
     assertThat(result.isSucceeded(), Matchers.is(Boolean.FALSE));
     assertEquals(child, result.getEntity()); // returns the intended parent
     assertChildNotAddedtoParent(parent);
@@ -109,6 +118,42 @@ public class FolderManagerTest {
   public void communityAdminCanViewCommunityGroupFolderCreatedByPi() {
     User piFolderCreator = TestFactory.createAnyUserWithRole("piFolderCreator", "ROLE_PI");
     assertCommunityAdminCanGetFolder(piFolderCreator);
+  }
+
+  @Test
+  public void testIsSharedFolderOrSharedNotebookWithoutCreatePermssison_whenSharedFolder() {
+    // when is NOT shared folder && NOT shared notebook
+    assertFalse(
+        folderManagerImpl.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, parent));
+
+    // when is shared folder and NOT shared notebook
+    parent.addType(RecordType.SHARED_FOLDER);
+    assertTrue(parent.isSharedFolder());
+    assertTrue(
+        folderManagerImpl.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, parent));
+  }
+
+  @Test
+  public void testIsSharedFolderOrSharedNotebookWithoutCreatePermssison_whenSharedNotebook() {
+    notebook
+        .getSharingACL()
+        .addACLElement(new ACLElement("userGroup1", new ConstraintBasedPermission()));
+    notebook
+        .getSharingACL()
+        .addACLElement(new ACLElement("userGroup2", new ConstraintBasedPermission()));
+    assertTrue(notebook.isShared());
+
+    // when is shared Notebook with CREATE permission
+    when(permissionUtils.isPermitted(eq(notebook), eq(PermissionType.CREATE), eq(user)))
+        .thenReturn(true);
+    assertFalse(
+        folderManagerImpl.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, notebook));
+
+    // when is shared Notebook and NO CREATE permission
+    when(permissionUtils.isPermitted(eq(notebook), eq(PermissionType.CREATE), eq(user)))
+        .thenReturn(false);
+    assertTrue(
+        folderManagerImpl.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, notebook));
   }
 
   private void assertCommunityAdminCanGetFolder(User folderCreator) {
@@ -144,7 +189,7 @@ public class FolderManagerTest {
   private ServiceOperationResult<Folder> addChildToParent(boolean suppressException) {
     ServiceOperationResult<Folder> result =
         folderManagerImpl.addChild(
-            parent.getId(), child, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, suppressException);
+            parent.getId(), child, user, ACLPropagationPolicy.DEFAULT_POLICY, suppressException);
     return result;
   }
 

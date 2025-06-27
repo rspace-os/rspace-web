@@ -5,13 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.Group;
-import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
-import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,8 +38,7 @@ public class SharingHandlerTest extends SpringTransactionalTest {
     Record newDoc =
         recordMgr.createNewStructuredDocument(admin.getRootFolder().getId(), form.getId(), admin);
     assertFalse(newDoc.isShared());
-    ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
-        sharingHandler.shareIntoSharedFolder(admin, sharedFolder, newDoc.getId());
+    sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedFolder, newDoc.getId());
     newDoc = recordMgr.get(newDoc.getId());
     assertTrue(newDoc.isShared());
   }
