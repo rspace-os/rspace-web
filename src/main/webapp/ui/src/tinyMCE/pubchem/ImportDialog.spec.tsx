@@ -12,6 +12,7 @@ const feature = test.extend<{
   When: {
     "the cancel button is clicked": () => Promise<void>;
     "a search is performed": () => Promise<void>;
+    "the search type selector is clicked": () => Promise<void>;
   };
   Then: {
     "there should be a dialog visible": () => Promise<void>;
@@ -21,6 +22,7 @@ const feature = test.extend<{
     "the dialog is closed": () => Promise<void>;
     "there should be a search input": () => Promise<void>;
     "the mocked results are shown": () => Promise<void>;
+    "there should be a search type selector": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -46,6 +48,12 @@ const feature = test.extend<{
         await searchInput.fill("aspirin");
         await searchInput.press("Enter");
       },
+      "the search type selector is clicked": async () => {
+        const searchTypeSelector = page.getByRole("combobox", {
+          name: "Name/CAS",
+        });
+        await searchTypeSelector.click();
+      },
     });
   },
   Then: async ({ page }, use) => {
@@ -53,6 +61,12 @@ const feature = test.extend<{
       "there should be a dialog visible": async () => {
         const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible();
+      },
+      "there should be a search type selector": async () => {
+        const searchTypeSelector = page.getByRole("combobox", {
+          name: "Name/CAS",
+        });
+        await expect(searchTypeSelector).toBeVisible();
       },
       "there should be no axe violations": async () => {
         const accessibilityScanResults = await new AxeBuilder({
@@ -198,6 +212,10 @@ test.describe("ImportDialog", () => {
   feature("Should have a search input", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a search input"]();
+  });
+  feature("Should have a search type selector", async ({ Given, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await Then["there should be a search type selector"]();
   });
   feature(
     "The API endpoint is called when a search is performed",

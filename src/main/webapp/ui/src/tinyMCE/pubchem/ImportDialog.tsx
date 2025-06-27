@@ -11,6 +11,10 @@ import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
+import InputAdornment from "@mui/material/InputAdornment";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
 import useChemicalImport, {
   type ChemicalCompound,
 } from "@/hooks/api/useChemicalImport";
@@ -30,14 +34,14 @@ export default function ImportDialog({
   const resultsId = React.useId();
   const { search } = useChemicalImport();
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [searchType, setSearchType] = React.useState<"NAME" | "SMILES">("NAME");
   const [results, setResults] = React.useState<ReadonlyArray<ChemicalCompound>>(
     []
   );
 
-  function handleSearch(e: FormEvent) {
+  function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    console.debug("handleSearch");
-    void search({ searchTerm, searchType: "NAME" }).then(setResults);
+    void search({ searchTerm, searchType }).then(setResults);
   }
 
   return (
@@ -69,6 +73,25 @@ export default function ImportDialog({
                     role: "search",
                   }}
                   placeholder="Enter a compound name, CAS number, or SMILES"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FormControl variant="standard" size="small">
+                          <Select
+                            value={searchType}
+                            onChange={(e) =>
+                              setSearchType(e.target.value as "NAME" | "SMILES")
+                            }
+                            aria-label="Search type"
+                            name="searchType"
+                          >
+                            <MenuItem value="NAME">Name/CAS</MenuItem>
+                            <MenuItem value="SMILES">SMILES</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
               <Grid item>
