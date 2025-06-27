@@ -1,0 +1,27 @@
+// @flow
+
+import { type Node } from "react";
+import { Order } from "./Enums";
+import { type Article, type ArticleId } from "./JoveClient";
+import {
+  type Cell,
+} from "../../components/EnhancedTableHead";
+
+type ResultsTableArgs = {|
+  page: number,
+  visibleHeaderCells: Array<Cell<"" | "thumbnail" | "title" | "section">>,
+  searchResults: Array<Article>,
+  setSearchResults: (Array<Article>) => void,
+  order: $Values<typeof Order>,
+  setOrder: ($Values<typeof Order>) => void,
+  orderBy: "" | "thumbnail" | "title" | "section",
+  setOrderBy: ("" | "thumbnail" | "title" | "section") => void,
+  selectedJoveIds: Array<ArticleId>,
+  setSelectedJoveIds: (Array<ArticleId>) => void,
+  onRowsPerPageChange: (number) => void,
+  onPageChange: (number) => void,
+  rowsPerPage: number,
+  count: number,
+|};
+
+declare export default function ResultsTable(ResultsTableArgs): Node;

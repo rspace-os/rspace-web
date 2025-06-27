@@ -1,0 +1,19 @@
+// @flow
+
+import { type Node } from "react";
+import ContainerModel from "../../stores/models/ContainerModel";
+import { type FormSectionError } from "../components/Stepper/StepperPanelHeader";
+
+type OverviewSectionProps = {
+  activeResult: ContainerModel,
+};
+
+type DetailsSectionProps = {
+  activeResult: ContainerModel,
+};
+
+type ExtaFieldSectionProps = {
+  activeResult: ContainerModel,
+};
+
+declare export default function NewRecordForm(): Node;

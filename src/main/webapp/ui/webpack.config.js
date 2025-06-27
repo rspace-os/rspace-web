@@ -10,9 +10,9 @@ module.exports = {
      * bundle, with some additional JavaScript assets for other standalone
      * pages.
      */
-    inventoryEntry: "./src/App.js",
+    inventoryEntry: "./src/App.tsx",
     inventoryRecordIdentifierPublicPage:
-      "./src/components/PublicPages/IdentifierPublicPage.js",
+      "./src/components/PublicPages/IdentifierPublicPage.tsx",
 
     /*
      * Some of the ELN pages are Single Page Applications too. These JS bundles
@@ -31,7 +31,7 @@ module.exports = {
      * Without a single React component that defines the whole application,
      * each island of React must be defined as a separate JS asset.
      */
-    appBar: "./src/eln/AppBar.js",
+    appBar: "./src/eln/AppBar.tsx",
     memberAutoshareStatusWrapper:
       "./src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.js",
     createGroup: "./src/CreateGroup/CreateGroup.js",
@@ -43,7 +43,7 @@ module.exports = {
     notebookToolbar: "./src/Toolbar/Notebook/Toolbar.js",
     structuredDocumentToolbar: "./src/Toolbar/StructuredDocument/Toolbar.js",
     fileTreeToolbar: "./src/Toolbar/FileTreeToolbar.js",
-    galleryToolbar: "./src/Toolbar/Gallery/Toolbar.js",
+    galleryToolbar: "./src/Toolbar/Gallery/Toolbar.tsx",
     newLabGroup: "./src/system-groups/NewLabGroup.js",
     tinymceSidebarInfo: "./src/tinyMCE/sidebarInfo.js",
     previewInfo: "./src/tinyMCE/previewInfo.js",
@@ -61,17 +61,17 @@ module.exports = {
     tinymcePyrat: "./src/tinyMCE/pyrat/Pyrat.js",
     tinymceClustermarket: "./src/tinyMCE/clustermarket/index.js",
     tinymceOmero: "./src/tinyMCE/omero/index.js",
-    tinymceJove: "./src/tinyMCE/jove/index.js",
+    tinymceJove: "./src/tinyMCE/jove/index.tsx",
     tinymceKetcher: "./src/tinyMCE/ketcher/KetcherTinyMce.js",
-    ketcherViewer: "./src/tinyMCE/ketcher/KetcherViewer.js",
-    tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.js",
-    baseSearch: "./src/components/BaseSearch.js",
+    ketcherViewer: "./src/tinyMCE/ketcher/KetcherViewer.tsx",
+    tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.tsx",
+    baseSearch: "./src/components/BaseSearch.tsx",
     confirmationDialog: "./src/components/ConfirmationDialog.js",
     imageEditor: "./src/Gallery/imageEditorDialog.js",
     materialsListing:
-      "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.js",
+      "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
     associatedInventoryRecords:
-      "./src/eln-inventory-integration/AssociatedInventoryRecords/index.js",
+      "./src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
     sysadminUsers: "./src/eln/sysadmin/users/index.tsx",
   },
   output: {

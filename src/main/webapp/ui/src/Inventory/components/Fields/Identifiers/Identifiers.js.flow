@@ -1,0 +1,22 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import {
+  type Identifier,
+  type IdentifierField,
+  type IGSNPublishingState,
+  type CreatorType,
+} from "../../../../stores/definitions/Identifier";
+
+type IdentifiersListArgs = {| activeResult: InventoryRecord |};
+
+export const IdentifiersList: ComponentType<IdentifiersListArgs> = () => null;
+
+declare export default ComponentType<{|
+  fieldOwner: HasEditableFields<{
+    identifiers: Array<Identifier>,
+    ...
+  }>
+|}>;

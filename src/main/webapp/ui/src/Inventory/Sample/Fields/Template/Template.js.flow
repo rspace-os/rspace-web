@@ -1,0 +1,8 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import TemplateModel from "../../../../stores/models/TemplateModel";
+
+declare function Template(): Node;
+
+export default (Template: ComponentType<{||}>);

@@ -33,4 +33,3 @@ const AmberNumberField: ComponentType<NumberFieldArgs> = withStyles<
 ));
 
 export default AmberNumberField;
-

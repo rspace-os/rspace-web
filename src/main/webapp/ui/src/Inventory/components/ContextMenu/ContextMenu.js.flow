@@ -1,0 +1,18 @@
+// @flow
+
+import { type Node } from "react";
+import {
+  type InventoryRecord,
+} from "../../../stores/definitions/InventoryRecord";
+import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+
+export type ContextMenuArgs = {|
+  selectedResults: Array<InventoryRecord>,
+  forceDisabled?: string,
+  onSelectOptions?: Array<SplitButtonOption>,
+  menuID: string,
+  paddingTop: boolean,
+  basketSearch: boolean,
+|};
+
+declare export default function ContextMenu(ContextMenuArgs): Node;

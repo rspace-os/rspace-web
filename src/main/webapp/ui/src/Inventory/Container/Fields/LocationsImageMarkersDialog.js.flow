@@ -1,0 +1,16 @@
+// @flow
+
+import { type Node, type ComponentType } from "react";
+import { type TappedLocationData } from "../Content/ImageView/PlaceMarkers/ContentImage";
+
+export const COMPACT_VIEW: 0 = 0;
+export const DETAILED_VIEW: 1 = 1;
+export const IMAGE_VIEW: 2 = 2;
+export const LOCATION_TAPPED_EVENT: string = "locationTapped";
+
+type LocationsImageMarkersDialogArgs = {|
+  open: boolean,
+  close: () => void,
+|};
+
+declare export default ComponentType<LocationsImageMarkersDialogArgs>;

@@ -1,0 +1,14 @@
+// @flow
+
+import React, { type Node } from "react";
+import RsSet from "../../util/set";
+import SubSampleModel, {
+  SubSampleCollection,
+} from "../../stores/models/SubSampleModel";
+import { type ComponentType } from "react";
+
+type BatchFormArgs = {|
+  records: RsSet<SubSampleModel>,
+|};
+
+declare export default ComponentType<BatchFormArgs>;

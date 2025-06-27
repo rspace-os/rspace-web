@@ -1,0 +1,12 @@
+//@flow
+
+import { type Node } from "react";
+import ContainerModel from "../../../../stores/models/ContainerModel";
+
+type GridDimensionsAndLayoutArgs = {|
+  container: ContainerModel,
+|};
+
+declare export default function GridDimensionsAndLayout(
+  args: GridDimensionsAndLayoutArgs
+): Node;

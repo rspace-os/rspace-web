@@ -1,0 +1,10 @@
+// @flow
+import { ErrorReason } from "./Enums";
+import * as React from "react";
+
+type Props = {
+  errorReason: $Values<typeof ErrorReason>,
+  errorMessage: string,
+};
+
+declare export default function ErrorView(props: Props): React.Node;

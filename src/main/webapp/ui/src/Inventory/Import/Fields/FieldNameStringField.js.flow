@@ -1,0 +1,12 @@
+//@flow
+
+import { type Node } from "react";
+import { ColumnFieldMap } from "../../../stores/models/ImportModel";
+
+type FieldNameStringFieldArgs = {|
+  columnFieldMap: ColumnFieldMap,
+|};
+
+declare export default function FieldNameStringField(
+  props: FieldNameStringFieldArgs
+): Node;

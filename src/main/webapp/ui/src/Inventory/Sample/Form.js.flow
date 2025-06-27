@@ -1,0 +1,21 @@
+// @flow
+
+import React, { type Node, type ComponentType } from "react";
+import type SampleModel from "../../stores/models/SampleModel";
+import type { Person } from "../../stores/definitions/Person";
+
+declare function Form(): Node;
+
+declare const OverviewSection: ComponentType<{
+  activeResult: SampleModel,
+}>;
+
+declare const DetailsSection: ComponentType<{
+  activeResult: SampleModel,
+}>;
+
+declare const MoreFieldsSection: ComponentType<{
+  activeResult: SampleModel,
+}>;
+
+export default (Form: ComponentType<{||}>);

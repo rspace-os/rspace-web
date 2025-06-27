@@ -1,0 +1,10 @@
+// @flow
+
+import { type Node } from "react";
+import { type Note } from "../../../../stores/models/SubSampleModel";
+
+type NoteItemArgs = {|
+  note: Note,
+|};
+
+declare export default function NoteItem(props: NoteItemArgs): Node;

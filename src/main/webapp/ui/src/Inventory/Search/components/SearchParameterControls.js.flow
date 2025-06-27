@@ -1,0 +1,11 @@
+//@flow
+
+import React, { type Node, type ComponentType } from "react";
+import { type SavedSearch } from "../../../stores/stores/SearchStore";
+import BasketModel from "../../../stores/models/Basket";
+
+export type SavedItem = SavedSearch | BasketModel;
+
+declare function SearchParameterControls(): Node;
+
+declare export default ComponentType<{||}>;

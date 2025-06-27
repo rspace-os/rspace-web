@@ -1,0 +1,17 @@
+//@flow
+
+import { type ComponentType, type Node } from "react";
+import { type Search } from "../../../stores/definitions/Search";
+import SubSampleModel from "../../../stores/models/SubSampleModel";
+
+type WrapperProps = {|
+  children: Node,
+|};
+
+type SubsampleDetailsArgs = {|
+  search: Search,
+|};
+
+declare function SubsampleDetails(props: SubsampleDetailsArgs): Node;
+
+declare export default ComponentType<SubsampleDetailsArgs>;

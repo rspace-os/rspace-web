@@ -1,0 +1,15 @@
+//@flow
+/* eslint-env jest */
+
+expect.extend({
+  urlSearchParamContaining(actual: URLSearchParams, expected: {[string]: string}) {
+    return {
+      pass: true,
+      message: ""
+    };
+  },
+
+  urlSearchParamHasKey(actual: URLSearchParams, expectedKey: string) {
+    return { pass: true, message: "" };
+  }
+});

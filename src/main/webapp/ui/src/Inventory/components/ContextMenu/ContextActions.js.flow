@@ -1,0 +1,8 @@
+// @flow
+
+import { type Node, type MixedElement } from "react";
+
+declare export default function CreateAction({|
+  component: MixedElement,
+  hidden: boolean,
+|}): Node;

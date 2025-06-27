@@ -1,0 +1,12 @@
+// @flow
+
+import { type Node } from "react";
+import { menuIDs } from "../../../util/menuIDs";
+import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+
+declare export default function CustomTableHead({|
+  selectedCount: number,
+  onSelectOptions: Array<SplitButtonOption>,
+  toggleAll: () => void,
+  contextMenuId: $Values<typeof menuIDs>,
+|}): Node;
