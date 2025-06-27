@@ -514,8 +514,8 @@ const COLOR = {
 
 export default function Wrapper(): React.ReactNode {
   return (
-    <ErrorBoundary topOfViewport>
-      <Analytics>
+    <Analytics>
+      <ErrorBoundary topOfViewport>
         <Portal>
           <Alerts>
             <DialogBoundary>
@@ -525,7 +525,7 @@ export default function Wrapper(): React.ReactNode {
             </DialogBoundary>
           </Alerts>
         </Portal>
-      </Analytics>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </Analytics>
   );
 }

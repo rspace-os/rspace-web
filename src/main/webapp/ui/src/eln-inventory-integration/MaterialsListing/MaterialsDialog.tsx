@@ -40,6 +40,7 @@ import ValidatingSubmitButton, {
 import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
 import getRootStore from "../../stores/stores/RootStore";
 import { hasLocation } from "../../stores/models/HasLocation";
+import Analytics from "../../components/Analytics";
 
 const EmptyListText = ({
   currentList,
@@ -466,209 +467,214 @@ function MaterialsDialog({
   };
 
   return (
-    <ErrorBoundary topOfViewport>
-      <Portal>
-        <Alerts>
-          <DialogBoundary>
-            <CustomDialog
-              onClose={() => {
-                materialsStore.setCurrentList(materialsStore.originalList);
-                setOpen(false);
-              }}
-              open={open}
-              maxWidth="lg"
-              fullWidth
-              fullScreen={isSingleColumn || standalonePage}
-              onClick={() => {
-                setOpenPicker(false);
-                setOpenExporter(false);
-              }}
-            >
-              <DialogTitle className={classes.dialogTitle}>
-                {currentList?.id === undefined && "New "} List of Materials
-                (Inventory)&nbsp;
-                <HelpLinkIcon
-                  link={docLinks.listOfMaterials}
-                  title="Info on using Lists of Materials."
-                />
-                {!isSingleColumn && (
-                  <MetadataBar
-                    currentList={currentList}
-                    canEdit={canEdit}
-                    isSingleColumn={false}
-                  />
-                )}
-              </DialogTitle>
-              <DialogContent className={classes.contentWrapper}>
-                <Grid container>
-                  <Grid item xs={12} className={classes.disableBackground}>
-                    {isSingleColumn && (
-                      <MetadataBar
-                        currentList={currentList}
-                        canEdit={canEdit}
-                        isSingleColumn={isSingleColumn}
-                      />
-                    )}
-                    <ActionsBar
-                      setOpenPicker={setOpenPicker}
-                      currentList={currentList}
-                      standalonePage={standalonePage}
-                      onOpenStandalone={onOpenStandalone}
-                      canEdit={canEdit}
-                    />
-                    {currentList && (
-                      <MaterialsTable
-                        list={currentList}
-                        isSingleColumn={isSingleColumn}
-                        onRemove={(mat) => currentList.removeMaterial(mat)}
-                        canEdit={canEdit}
-                      />
-                    )}
-                    <EmptyListText currentList={currentList} />
-                  </Grid>
-                  <Slide
-                    in={openSlide}
-                    direction="left"
-                    onClick={preventEventBubbling(() => {})}
-                  >
-                    <CardWrapper>
-                      {openPicker && currentList?.pickerSearch && (
-                        <InventoryPicker
-                          elevation={6}
-                          onAddition={(additions) => {
-                            if (currentList) {
-                              currentList.addMaterials(additions);
-                            }
-                            setOpenPicker(false);
-                          }}
-                          search={currentList.pickerSearch}
-                          header="Pick Inventory Items"
-                          showActions
-                        />
-                      )}
-                      {openExporter && currentList && (
-                        <Exporter
-                          elevation={6}
-                          header={"Export Options"}
-                          showActions
-                          selectedResults={currentList.materials.map(
-                            (m) => m.invRec
-                          )}
-                          setOpenExporter={setOpenExporter}
-                          exportOptions={exportOptions}
-                          setExportOptions={setExportOptions}
-                          onExport={() => {
-                            void currentList.export(exportOptions);
-                            setOpenExporter(false);
-                          }}
-                        />
-                      )}
-                    </CardWrapper>
-                  </Slide>
-                </Grid>
-              </DialogContent>
-              {!materialsStore.isCurrentListUnchanged && (
-                <Box mr={3}>
-                  <WarningBar />
-                </Box>
-              )}
-              <DialogActions
-                className={clsx(
-                  classes.barWrapper,
-                  classes.disableBackground,
-                  classes.hideWhenPrinting
-                )}
+    <Analytics>
+      <ErrorBoundary topOfViewport>
+        <Portal>
+          <Alerts>
+            <DialogBoundary>
+              <CustomDialog
+                onClose={() => {
+                  materialsStore.setCurrentList(materialsStore.originalList);
+                  setOpen(false);
+                }}
+                open={open}
+                maxWidth="lg"
+                fullWidth
+                fullScreen={isSingleColumn || standalonePage}
+                onClick={() => {
+                  setOpenPicker(false);
+                  setOpenExporter(false);
+                }}
               >
-                <div
-                  className={clsx(classes.spacedBetweenRow, classes.fullWidth)}
+                <DialogTitle className={classes.dialogTitle}>
+                  {currentList?.id === undefined && "New "} List of Materials
+                  (Inventory)&nbsp;
+                  <HelpLinkIcon
+                    link={docLinks.listOfMaterials}
+                    title="Info on using Lists of Materials."
+                  />
+                  {!isSingleColumn && (
+                    <MetadataBar
+                      currentList={currentList}
+                      canEdit={canEdit}
+                      isSingleColumn={false}
+                    />
+                  )}
+                </DialogTitle>
+                <DialogContent className={classes.contentWrapper}>
+                  <Grid container>
+                    <Grid item xs={12} className={classes.disableBackground}>
+                      {isSingleColumn && (
+                        <MetadataBar
+                          currentList={currentList}
+                          canEdit={canEdit}
+                          isSingleColumn={isSingleColumn}
+                        />
+                      )}
+                      <ActionsBar
+                        setOpenPicker={setOpenPicker}
+                        currentList={currentList}
+                        standalonePage={standalonePage}
+                        onOpenStandalone={onOpenStandalone}
+                        canEdit={canEdit}
+                      />
+                      {currentList && (
+                        <MaterialsTable
+                          list={currentList}
+                          isSingleColumn={isSingleColumn}
+                          onRemove={(mat) => currentList.removeMaterial(mat)}
+                          canEdit={canEdit}
+                        />
+                      )}
+                      <EmptyListText currentList={currentList} />
+                    </Grid>
+                    <Slide
+                      in={openSlide}
+                      direction="left"
+                      onClick={preventEventBubbling(() => {})}
+                    >
+                      <CardWrapper>
+                        {openPicker && currentList?.pickerSearch && (
+                          <InventoryPicker
+                            elevation={6}
+                            onAddition={(additions) => {
+                              if (currentList) {
+                                currentList.addMaterials(additions);
+                              }
+                              setOpenPicker(false);
+                            }}
+                            search={currentList.pickerSearch}
+                            header="Pick Inventory Items"
+                            showActions
+                          />
+                        )}
+                        {openExporter && currentList && (
+                          <Exporter
+                            elevation={6}
+                            header={"Export Options"}
+                            showActions
+                            selectedResults={currentList.materials.map(
+                              (m) => m.invRec
+                            )}
+                            setOpenExporter={setOpenExporter}
+                            exportOptions={exportOptions}
+                            setExportOptions={setExportOptions}
+                            onExport={() => {
+                              void currentList.export(exportOptions);
+                              setOpenExporter(false);
+                            }}
+                          />
+                        )}
+                      </CardWrapper>
+                    </Slide>
+                  </Grid>
+                </DialogContent>
+                {!materialsStore.isCurrentListUnchanged && (
+                  <Box mr={3}>
+                    <WarningBar />
+                  </Box>
+                )}
+                <DialogActions
+                  className={clsx(
+                    classes.barWrapper,
+                    classes.disableBackground,
+                    classes.hideWhenPrinting
+                  )}
                 >
-                  <Button
-                    color="primary"
-                    variant="contained"
-                    disableElevation
-                    onClick={preventEventBubbling<
-                      React.MouseEvent<HTMLButtonElement>
-                    >(
-                      doNotAwait(async () => {
-                        if (currentList) {
-                          const changed = materialsStore.hasListChanged;
-                          if (changed) {
-                            await showToastWhilstPending(
-                              `Saving changes...`,
-                              currentList.update()
-                            );
+                  <div
+                    className={clsx(
+                      classes.spacedBetweenRow,
+                      classes.fullWidth
+                    )}
+                  >
+                    <Button
+                      color="primary"
+                      variant="contained"
+                      disableElevation
+                      onClick={preventEventBubbling<
+                        React.MouseEvent<HTMLButtonElement>
+                      >(
+                        doNotAwait(async () => {
+                          if (currentList) {
+                            const changed = materialsStore.hasListChanged;
+                            if (changed) {
+                              await showToastWhilstPending(
+                                `Saving changes...`,
+                                currentList.update()
+                              );
+                              materialsStore.setCurrentList(currentList);
+                              refetch();
+                            }
+                            setOpenExporter(true);
+                          }
+                        })
+                      )}
+                      disabled={!isListExisting || !isListValid}
+                    >
+                      Export
+                    </Button>
+                    {isListExisting && (
+                      <Button
+                        className={clsx(classes.warningRed, classes.sideSpaced)}
+                        disableElevation
+                        onClick={doNotAwait(() => confirmListDeletion())}
+                        disabled={!canEdit}
+                      >
+                        Delete List
+                      </Button>
+                    )}
+                    <div>
+                      <Button
+                        className={classes.sideSpaced}
+                        onClick={
+                          isUnchanged
+                            ? () => setOpen(false)
+                            : () => {
+                                materialsStore.setCurrentList(
+                                  materialsStore.originalList
+                                );
+                                if (isListNew) setOpen(false);
+                              }
+                        }
+                      >
+                        {isUnchanged ? "Close" : "Cancel"}
+                      </Button>
+                      <ValidatingSubmitButton
+                        onClick={doNotAwait(async () => {
+                          if (currentList && isListValid) {
+                            if (isListNew) {
+                              await showToastWhilstPending(
+                                `Creating list...`,
+                                currentList.create()
+                              );
+                            }
+                            if (isListExisting) {
+                              const changed = materialsStore.hasListChanged;
+                              if (changed)
+                                await showToastWhilstPending(
+                                  `Updating list...`,
+                                  currentList.update()
+                                );
+                            }
                             materialsStore.setCurrentList(currentList);
                             refetch();
                           }
-                          setOpenExporter(true);
-                        }
-                      })
-                    )}
-                    disabled={!isListExisting || !isListValid}
-                  >
-                    Export
-                  </Button>
-                  {isListExisting && (
-                    <Button
-                      className={clsx(classes.warningRed, classes.sideSpaced)}
-                      disableElevation
-                      onClick={doNotAwait(() => confirmListDeletion())}
-                      disabled={!canEdit}
-                    >
-                      Delete List
-                    </Button>
-                  )}
-                  <div>
-                    <Button
-                      className={classes.sideSpaced}
-                      onClick={
-                        isUnchanged
-                          ? () => setOpen(false)
-                          : () => {
-                              materialsStore.setCurrentList(
-                                materialsStore.originalList
-                              );
-                              if (isListNew) setOpen(false);
-                            }
-                      }
-                    >
-                      {isUnchanged ? "Close" : "Cancel"}
-                    </Button>
-                    <ValidatingSubmitButton
-                      onClick={doNotAwait(async () => {
-                        if (currentList && isListValid) {
-                          if (isListNew) {
-                            await showToastWhilstPending(
-                              `Creating list...`,
-                              currentList.create()
-                            );
-                          }
-                          if (isListExisting) {
-                            const changed = materialsStore.hasListChanged;
-                            if (changed)
-                              await showToastWhilstPending(
-                                `Updating list...`,
-                                currentList.update()
-                              );
-                          }
-                          materialsStore.setCurrentList(currentList);
-                          refetch();
-                        }
-                      })}
-                      loading={isListLoading}
-                      validationResult={materialsStore.cantSaveCurrentList}
-                    >
-                      Save
-                    </ValidatingSubmitButton>
+                        })}
+                        loading={isListLoading}
+                        validationResult={materialsStore.cantSaveCurrentList}
+                      >
+                        Save
+                      </ValidatingSubmitButton>
+                    </div>
                   </div>
-                </div>
-              </DialogActions>
-              <Confirm />
-            </CustomDialog>
-          </DialogBoundary>
-        </Alerts>
-      </Portal>
-    </ErrorBoundary>
+                </DialogActions>
+                <Confirm />
+              </CustomDialog>
+            </DialogBoundary>
+          </Alerts>
+        </Portal>
+      </ErrorBoundary>
+    </Analytics>
   );
 }
 

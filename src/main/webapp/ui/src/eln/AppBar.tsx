@@ -11,6 +11,7 @@ import { DialogBoundary } from "../components/DialogBoundary";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../assets/branding/rspace/gallery";
 import { ACCENT_COLOR as WORKSPACE_COLOR } from "../assets/branding/rspace/workspace";
 import { ACCENT_COLOR as OTHER_COLOR } from "../assets/branding/rspace/other";
+import Analytics from "../components/Analytics";
 
 function currentPage(): string {
   const pages: Record<string, string> = {
@@ -65,24 +66,26 @@ window.addEventListener("load", () => {
   root.render(
     <React.StrictMode>
       <CacheProvider value={cache}>
-        <ErrorBoundary>
-          <CssBaseline />
-          <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
-            <div style={{ fontSize: "1rem", lineHeight: "1.5" }}>
-              {/*
-               * We use a DialogBoundary to keep the menu inside the shadow DOM
-               */}
-              <DialogBoundary>
-                <AppBar
-                  variant="page"
-                  currentPage={currentPage()}
-                  accessibilityTips={{}}
-                />
-              </DialogBoundary>
-            </div>
-            <div style={{ height: "30px" }}></div>
-          </ThemeProvider>
-        </ErrorBoundary>
+        <Analytics>
+          <ErrorBoundary>
+            <CssBaseline />
+            <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
+              <div style={{ fontSize: "1rem", lineHeight: "1.5" }}>
+                {/*
+                 * We use a DialogBoundary to keep the menu inside the shadow DOM
+                 */}
+                <DialogBoundary>
+                  <AppBar
+                    variant="page"
+                    currentPage={currentPage()}
+                    accessibilityTips={{}}
+                  />
+                </DialogBoundary>
+              </div>
+              <div style={{ height: "30px" }}></div>
+            </ThemeProvider>
+          </ErrorBoundary>
+        </Analytics>
       </CacheProvider>
     </React.StrictMode>
   );

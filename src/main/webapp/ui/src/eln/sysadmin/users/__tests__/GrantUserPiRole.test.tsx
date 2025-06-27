@@ -51,6 +51,10 @@ describe("Grant User PI Role", () => {
         .onGet("/vfpwd/ajax/checkVerificationPasswordNeeded")
         .reply(200, { data: true });
 
+      mockAxios.onGet("/analyticsProperties").reply(200, {
+        analyticsEnabled: false,
+      });
+
       render(
         <ThemeProvider theme={materialTheme}>
           <UsersPage />

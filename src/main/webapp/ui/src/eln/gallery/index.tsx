@@ -440,13 +440,13 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <ErrorBoundary>
-          <BrowserRouter>
-            <GoogleLoginProvider />
-            <StyledEngineProvider injectFirst>
-              <CssBaseline />
-              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-                <Analytics>
+        <Analytics>
+          <ErrorBoundary>
+            <BrowserRouter>
+              <GoogleLoginProvider />
+              <StyledEngineProvider injectFirst>
+                <CssBaseline />
+                <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
                   <UiPreferences>
                     <DisableDragAndDropByDefault>
                       <Routes>
@@ -499,11 +499,11 @@ window.addEventListener("load", () => {
                       </Routes>
                     </DisableDragAndDropByDefault>
                   </UiPreferences>
-                </Analytics>
-              </ThemeProvider>
-            </StyledEngineProvider>
-          </BrowserRouter>
-        </ErrorBoundary>
+                </ThemeProvider>
+              </StyledEngineProvider>
+            </BrowserRouter>
+          </ErrorBoundary>
+        </Analytics>
       </React.StrictMode>
     );
 

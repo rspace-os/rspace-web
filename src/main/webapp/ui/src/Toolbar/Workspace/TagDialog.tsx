@@ -27,18 +27,21 @@ import AlertContext, {
 } from "../../stores/contexts/Alert";
 import { Optional } from "../../util/optional";
 import docLinks from "../../assets/DocLinks";
+import Analytics from "../../components/Analytics";
 
 export default function Wrapper(): React.ReactNode {
   return (
-    <ErrorBoundary topOfViewport>
-      <Portal>
-        <Alerts>
-          <DialogBoundary>
-            <TagDialog />
-          </DialogBoundary>
-        </Alerts>
-      </Portal>
-    </ErrorBoundary>
+    <Analytics>
+      <ErrorBoundary topOfViewport>
+        <Portal>
+          <Alerts>
+            <DialogBoundary>
+              <TagDialog />
+            </DialogBoundary>
+          </Alerts>
+        </Portal>
+      </ErrorBoundary>
+    </Analytics>
   );
 }
 
