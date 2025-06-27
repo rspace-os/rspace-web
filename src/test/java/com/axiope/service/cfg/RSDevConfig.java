@@ -48,6 +48,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.annotation.EnableAsync;
 
@@ -256,5 +257,12 @@ public class RSDevConfig extends BaseConfig {
   private MockMultipartFile fileToMultipartfile(String paramname, File file) throws IOException {
     return new MockMultipartFile(
         paramname, file.getName(), "unknown", FileUtils.readFileToByteArray(file));
+  }
+
+  // Mock websocket messaging bean for test context as WebSocket configuration is excluded from test
+  // context
+  @Bean
+  public SimpMessagingTemplate simpMessagingTemplate() {
+    return Mockito.mock(SimpMessagingTemplate.class);
   }
 }

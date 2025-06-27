@@ -5,17 +5,22 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.comms.MessageType;
+import com.researchspace.webapp.messaging.NotificationMessage;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
+@RunWith(MockitoJUnitRunner.class)
 public class MessageAndNotificationTrackerTest {
-  MessageAndNotificationTracker tracker = null;
 
-  @Before
-  public void setUp() throws Exception {
-    tracker = new MessageAndNotificationTracker();
-  }
+  @Mock SimpMessagingTemplate messagingTemplate;
+
+  @InjectMocks MessageAndNotificationTracker tracker;
 
   @After
   public void tearDown() throws Exception {}
@@ -59,5 +64,14 @@ public class MessageAndNotificationTrackerTest {
   public void testClearUserNotificationCount() {
     // check ok to call this if there is no count associated with user yet
     tracker.clearUserNotificationCount(3L);
+  }
+
+  @Test
+  public void testNotificationServiceCalledOnNewNotification() {
+    Long userId = 1L;
+    tracker.changeUserNotificationCount(userId, 1);
+
+    Mockito.verify(messagingTemplate)
+        .convertAndSend("/topic/notifications/1", new NotificationMessage(1, 0, 0));
   }
 }
