@@ -1748,8 +1748,19 @@ paths:
           required: false
           items:
             enum:
-              - RECORD
+              - AUDIT
+              - COMMUNITY
+              - FOLDER
+              - FORM
+              - GROUP
+              - INV_CONTAINER
+              - INV_SAMPLE
+              - INV_SUBSAMPLE
+              - MEDIA
+              - MESSAGING
               - NOTEBOOK
+              - RECORD
+              - USER
               - WORKSPACE
         - name: oid
           description: 'The global ID of a resource, e.g. SD12345'
