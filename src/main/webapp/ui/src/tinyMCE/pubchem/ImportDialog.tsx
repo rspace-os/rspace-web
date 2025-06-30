@@ -64,6 +64,16 @@ export default function ImportDialog({
     void search({ searchTerm, searchType }).then(setResults);
   }
 
+  React.useEffect(() => {
+    if (open) {
+      setSelectedCompounds(
+        Object.fromEntries(
+          results.map((c) => [c.pubchemId, results.length === 1])
+        )
+      );
+    }
+  }, [open, results]);
+
   function handleCompoundSelection(
     compound: ChemicalCompound,
     checked: boolean

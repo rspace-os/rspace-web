@@ -12,6 +12,7 @@ const feature = test.extend<{
   When: {
     "the cancel button is clicked": () => Promise<void>;
     "a search is performed": () => Promise<void>;
+    "a search is performed that returns multiple results": () => Promise<void>;
     "the search type selector is clicked": () => Promise<void>;
     "SMILES is chosen as the search type": () => Promise<void>;
     "the import button is clicked without selecting any compounds": () => Promise<void>;
@@ -30,6 +31,8 @@ const feature = test.extend<{
     "SMILES is passed in the API call": () => void;
     "a validation warning should be shown": () => Promise<void>;
     "the validation warning should disappear after selecting a compound": () => Promise<void>;
+    "the single result should be selected by default": () => Promise<void>;
+    "multiple results should not be selected by default": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -53,6 +56,11 @@ const feature = test.extend<{
       "a search is performed": async () => {
         const searchInput = page.getByRole("textbox");
         await searchInput.fill("aspirin");
+        await searchInput.press("Enter");
+      },
+      "a search is performed that returns multiple results": async () => {
+        const searchInput = page.getByRole("textbox");
+        await searchInput.fill("multiple");
         await searchInput.press("Enter");
       },
       "the search type selector is clicked": async () => {
@@ -81,7 +89,10 @@ const feature = test.extend<{
           await page.keyboard.press("Escape");
         },
       "a compound is selected": async () => {
-        await page.getByRole("checkbox", { name: /select/i }).click();
+        await page
+          .getByRole("checkbox", { name: /select/i })
+          .first()
+          .click();
       },
     });
   },
@@ -90,6 +101,20 @@ const feature = test.extend<{
       "there should be a dialog visible": async () => {
         const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible();
+      },
+      "the single result should be selected by default": async () => {
+        const checkbox = page.getByRole("checkbox", {
+          name: /select compound/i,
+        });
+        await expect(checkbox).toBeChecked();
+      },
+      "multiple results should not be selected by default": async () => {
+        const checkboxes = page
+          .getByRole("checkbox", { name: /select compound/i })
+          .all();
+        for (const checkbox of await checkboxes) {
+          await expect(checkbox).not.toBeChecked();
+        }
       },
       "there should be a search type selector": async () => {
         const searchTypeSelector = page.getByRole("combobox", {
@@ -209,23 +234,56 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     });
   });
   await router.route("/api/v1/chemical/search", async (route) => {
-    const searchResults = [
-      {
-        name: "Aspirin",
-        pngImage:
-          "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
-        smiles: "CC(=O)OC1=CC=CC=C1C(=O)O",
-        formula: "C9H8O4",
-        pubchemId: "2244",
-        pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
-        cas: "50-78-2",
-      },
-    ];
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(searchResults),
-    });
+    const requestData = JSON.parse(route.request().postData() || "{}");
+    const searchTerm = requestData.searchTerm;
+
+    if (searchTerm === "multiple") {
+      const multipleResults = [
+        {
+          name: "Aspirin",
+          pngImage:
+            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
+          smiles: "CC(=O)OC1=CC=CC=C1C(=O)O",
+          formula: "C9H8O4",
+          pubchemId: "2244",
+          pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
+          cas: "50-78-2",
+        },
+        {
+          name: "Paracetamol",
+          pngImage:
+            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=1983&t=l",
+          smiles: "CC(=O)NC1=CC=C(O)C=C1",
+          formula: "C8H9NO2",
+          pubchemId: "1983",
+          pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/1983",
+          cas: "103-90-2",
+        },
+      ];
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(multipleResults),
+      });
+    } else {
+      const searchResults = [
+        {
+          name: "Aspirin",
+          pngImage:
+            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
+          smiles: "CC(=O)OC1=CC=CC=C1C(=O)O",
+          formula: "C9H8O4",
+          pubchemId: "2244",
+          pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
+          cas: "50-78-2",
+        },
+      ];
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(searchResults),
+      });
+    }
   });
 
   page.on("request", (request) => {
@@ -286,10 +344,34 @@ test.describe("ImportDialog", () => {
   });
 
   feature(
-    "Should validate compound selection",
+    "Should auto-select a compound when there is only one result",
     async ({ Given, When, Then }) => {
       await Given["that the ImportDialog is mounted"]();
       await When["a search is performed"]();
+      await Then["the single result should be selected by default"]();
+      /*
+       * The vast majority of the time there will only be one result, so
+       * auto-selecting it is a small usability improvement that reduces
+       * the friction to inserting compounds, especially when paired with
+       * the slash menu command.
+       */
+    }
+  );
+
+  feature(
+    "Should not auto-select compounds when there are multiple results",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search is performed that returns multiple results"]();
+      await Then["multiple results should not be selected by default"]();
+    }
+  );
+
+  feature(
+    "Should validate compound selection",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search is performed that returns multiple results"]();
       await When[
         "the import button is clicked without selecting any compounds"
       ]();
