@@ -28,7 +28,7 @@ import useChemicalImport, {
   type ChemicalCompound,
 } from "@/hooks/api/useChemicalImport";
 import { TwoColumnDl } from "@/components/DescriptionList";
-import { alpha, Theme } from "@mui/material/styles";
+import { type Theme, alpha } from "@mui/material/styles";
 import styled from "@emotion/styled";
 import { ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { CardActionArea } from "@mui/material";
@@ -38,6 +38,11 @@ type CompoundCardProps = {
   compound: ChemicalCompound;
   onSelected: (compound: ChemicalCompound, selected: boolean) => void;
   className?: string;
+};
+
+type StyledProps = {
+  selected: boolean;
+  theme?: Theme;
 };
 
 const CompoundCard = styled(
@@ -122,11 +127,10 @@ const CompoundCard = styled(
       </Card>
     );
   }
-)(
-  ({
-    theme,
-    selected,
-  }: { theme: Theme } & Pick<CompoundCardProps, "selected">) => ({
+)(({ selected, theme }: StyledProps) => {
+  if (!theme) return {};
+
+  return {
     border: `2px solid ${
       selected ? theme.palette.callToAction.main : theme.palette.primary.main
     }`,
@@ -150,8 +154,8 @@ const CompoundCard = styled(
         ? theme.palette.callToAction.main
         : theme.palette.primary.main,
     },
-  })
-);
+  };
+});
 
 /**
  * This dialog is opened by the TinyMCE plugin, allowing the users to browse
