@@ -11,10 +11,8 @@ import Button from "@mui/material/Button";
 import {DataGridColumn} from "@/util/table";
 import {DataGrid} from "@mui/x-data-grid";
 import CssBaseline from "@mui/material/CssBaseline";
-import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid";
-import Box from "@mui/material/Box";
 import {Modal} from "@mui/material";
 
 function Galaxy({
