@@ -3,13 +3,17 @@ package com.researchspace.service.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.PubChemResponse;
+import com.researchspace.model.dtos.chemistry.PubChemSynonymsResponse;
 import com.researchspace.service.ChemicalImportException;
 import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -46,6 +50,25 @@ public class PubChemImporterTest {
     return response;
   }
 
+  private static PubChemSynonymsResponse createValidSynonymsResponse(Long cid) {
+    PubChemSynonymsResponse.Information information = new PubChemSynonymsResponse.Information();
+    information.setCid(cid);
+    information.setSynonyms(
+        List.of(
+            "Aspirin",
+            "Acetylsalicylic acid",
+            "50-78-2",
+            "2-acetoxybenzoic acid"));
+
+    PubChemSynonymsResponse.InformationList informationList =
+        new PubChemSynonymsResponse.InformationList();
+    informationList.setInformation(List.of(information));
+
+    PubChemSynonymsResponse response = new PubChemSynonymsResponse();
+    response.setInformationList(informationList);
+    return response;
+  }
+
   private static PubChemResponse createEmptyPubChemResponse() {
     PubChemResponse.PropertyTable propertyTable = new PubChemResponse.PropertyTable();
     propertyTable.setProperties(List.of());
@@ -57,8 +80,17 @@ public class PubChemImporterTest {
 
   @Test
   public void whenValidSearchRequest_thenReturnParsedResults() throws Exception {
-    when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK));
+    ResponseEntity<PubChemResponse> mainResponse =
+        new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK);
+
+    ResponseEntity<PubChemSynonymsResponse> synonymsResponse =
+        new ResponseEntity<>(createValidSynonymsResponse(2244L), HttpStatus.OK);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemResponse.class)))
+        .thenReturn(mainResponse);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemSynonymsResponse.class)))
+        .thenReturn(synonymsResponse);
 
     List<ChemicalImportSearchResult> results =
         pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin");
@@ -71,6 +103,7 @@ public class PubChemImporterTest {
     assertEquals("2-acetoxybenzoic acid", result.getName());
     assertEquals("C9H8O4", result.getFormula());
     assertEquals("CC(=O)OC1=CC=CC=C1C(=O)O", result.getSmiles());
+    assertEquals("50-78-2", result.getCas());
     assertEquals(
         "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l", result.getPngImage());
     assertEquals("https://pubchem.ncbi.nlm.nih.gov/compound/2244", result.getPubchemUrl());
@@ -78,8 +111,11 @@ public class PubChemImporterTest {
 
   @Test
   public void whenSearchEmptyResponse_thenReturnEmptyList() throws Exception {
-    when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(createEmptyPubChemResponse(), HttpStatus.OK));
+    ResponseEntity<PubChemResponse> emptyResponse =
+        new ResponseEntity<>(createEmptyPubChemResponse(), HttpStatus.OK);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemResponse.class)))
+        .thenReturn(emptyResponse);
 
     List<ChemicalImportSearchResult> results =
         pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "nonexistent");
@@ -186,17 +222,12 @@ public class PubChemImporterTest {
   }
 
   @Test
-  public void whenValidCasSearch_thenCorrectUrlBuilt() throws Exception {
-    when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(createEmptyPubChemResponse(), HttpStatus.OK));
-
-    pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "50-78-2");
-  }
-
-  @Test
   public void whenValidSmilesSearch_thenCorrectUrlBuilt() {
-    when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(createEmptyPubChemResponse(), HttpStatus.OK));
+    ResponseEntity<PubChemResponse> mainResponse =
+        new ResponseEntity<>(createEmptyPubChemResponse(), HttpStatus.OK);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemResponse.class)))
+        .thenReturn(mainResponse);
 
     assertDoesNotThrow(
         () ->
@@ -204,18 +235,75 @@ public class PubChemImporterTest {
                 ChemicalImportSearchType.SMILES, "CC(=O)OC1=CC=CC=C1C(=O)O"));
   }
 
+  @Test public void correctlyParseCasFromSynonyms() throws Exception {
+    assertCasIsParsed("1234567-12-1", List.of("123-123-123", "1234567-12-1"));
+    assertCasIsParsed("50-12-1", List.of("somehting", "somehting else", "31/12/1999", "50-12-1"));
+    assertCasIsParsed(null, List.of("Aspirin", "Acetylsalicylic acid"));
+    assertCasIsParsed(null, List.of());
+    assertCasIsParsed(null, List.of("123", "5049383757586-12-1"));
+  }
+
+  private void assertCasIsParsed(String targetCas, List<String> candidates) throws ChemicalImportException {
+    ResponseEntity<PubChemResponse> mainResponse =
+            new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK);
+
+    PubChemSynonymsResponse synonymsResponse = getPubChemSynonymsResponseWithSynonyms(candidates); // No CAS number included
+
+    ResponseEntity<PubChemSynonymsResponse> response =
+            new ResponseEntity<>(synonymsResponse, HttpStatus.OK);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemResponse.class)))
+            .thenReturn(mainResponse);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemSynonymsResponse.class)))
+            .thenReturn(response);
+
+    ChemicalImportSearchResult result =
+            pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin").get(0);
+
+    assertEquals(targetCas, result.getCas());
+  }
+
+  private static PubChemSynonymsResponse getPubChemSynonymsResponseWithSynonyms(List<String> synonyms) {
+    PubChemSynonymsResponse.InformationList informationList = new PubChemSynonymsResponse.InformationList();
+    PubChemSynonymsResponse.Information information = new PubChemSynonymsResponse.Information();
+    information.setSynonyms(synonyms);
+    informationList.setInformation(List.of(information));
+    PubChemSynonymsResponse synonymsResponse = new PubChemSynonymsResponse();
+    synonymsResponse.setInformationList(informationList);
+    return synonymsResponse;
+  }
+
   @Test
   public void whenValidCidImport_thenImportSuccessfully() {
-    when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK));
+    ResponseEntity<PubChemResponse> mainResponse =
+        new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK);
+
+    ResponseEntity<PubChemSynonymsResponse> synonymsResponse =
+        new ResponseEntity<>(createValidSynonymsResponse(2244L), HttpStatus.OK);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemResponse.class)))
+        .thenReturn(mainResponse);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemSynonymsResponse.class)))
+        .thenReturn(synonymsResponse);
 
     assertDoesNotThrow(() -> pubChemImporter.importChemicals(List.of("2244")));
   }
 
   @Test
   public void whenValidMultipleCidImport_thenImportAllSuccessfully() {
-    when(restTemplate.getForEntity(anyString(), any()))
-        .thenReturn(new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK));
+    ResponseEntity<PubChemResponse> mainResponse =
+        new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK);
+
+    ResponseEntity<PubChemSynonymsResponse> synonymsResponse =
+        new ResponseEntity<>(createValidSynonymsResponse(2244L), HttpStatus.OK);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemResponse.class)))
+        .thenReturn(mainResponse);
+
+    when(restTemplate.getForEntity(anyString(), eq(PubChemSynonymsResponse.class)))
+        .thenReturn(synonymsResponse);
 
     assertDoesNotThrow(() -> pubChemImporter.importChemicals(List.of("2244", "702", "5957")));
   }

@@ -16,4 +16,5 @@ public class ChemicalImportSearchResult {
   private String formula;
   private String pubchemId;
   private String pubchemUrl;
+  private String cas;
 }

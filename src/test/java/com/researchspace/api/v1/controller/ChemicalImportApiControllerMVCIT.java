@@ -48,7 +48,8 @@ public class ChemicalImportApiControllerMVCIT extends API_MVC_TestBase {
                 "CC(=O)OC1=CC=CC=C1C(=O)O",
                 "C9H8O4",
                 "2244",
-                "https://pubchem.ncbi.nlm.nih.gov/compound/2244"));
+                "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
+                "50-78-2"));
 
     ObjectMapper objectMapper = new ObjectMapper();
     List<ChemicalImportSearchResult> actual =

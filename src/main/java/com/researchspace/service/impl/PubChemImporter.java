@@ -5,10 +5,12 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.PubChemResponse;
+import com.researchspace.model.dtos.chemistry.PubChemSynonymsResponse;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalImporter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -109,12 +111,14 @@ public class PubChemImporter implements ChemicalImporter {
       }
 
       String cid = String.valueOf(property.getCid());
+      String cas = fetchCasNumberFromSynonyms(cid);
 
       return ChemicalImportSearchResult.builder()
           .pubchemId(cid)
           .name(property.getTitle())
           .formula(property.getMolecularFormula())
           .smiles(property.getSmiles())
+          .cas(cas)
           .pngImage(
               String.format("https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=%s&t=l", cid))
           .pubchemUrl(String.format("https://pubchem.ncbi.nlm.nih.gov/compound/%s", cid))
@@ -122,6 +126,63 @@ public class PubChemImporter implements ChemicalImporter {
 
     } catch (Exception e) {
       log.warn("Error converting property to search result: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Fetches the CAS number for a given PubChem CID by querying the synonym endpoint, as it's not available from the
+   * same endpoint where we get other chemical information.
+   * A CAS Registry Number includes up to 10 digits which are separated into 3 groups by hyphens.
+   * The first part of the number, starting from the left, has 2 to 7 digits; the second part has 2 digits.
+   * The final part consists of a single check digit.
+   */
+  private String fetchCasNumberFromSynonyms(String cid) {
+    try {
+      String url = String.format("%s/cid/%s/synonyms/JSON", PUBCHEM_BASE_URL, cid);
+      log.info("Fetching synonyms from PubChem API: {}", url);
+
+      ResponseEntity<PubChemSynonymsResponse> response =
+          restTemplate.getForEntity(url, PubChemSynonymsResponse.class);
+
+      if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+        log.warn("Failed to fetch synonyms for CID {}: {}", cid, response.getStatusCode());
+        return null;
+      }
+
+      PubChemSynonymsResponse synonymsResponse = response.getBody();
+      if (synonymsResponse.getInformationList() == null
+          || synonymsResponse.getInformationList().getInformation() == null
+          || synonymsResponse.getInformationList().getInformation().isEmpty()) {
+        log.warn("No synonym information found for CID {}", cid);
+        return null;
+      }
+
+      List<String> synonyms =
+          synonymsResponse.getInformationList().getInformation().get(0).getSynonyms();
+      if (synonyms == null || synonyms.isEmpty()) {
+        log.warn("No synonyms found for CID {}", cid);
+        return null;
+      }
+
+      // CAS Registry Numbers follow the format: numbers separated by hyphens (e.g., 50-78-2)
+      Pattern casPattern = Pattern.compile("([0-9]{2,7}-[0-9]{2}-[0-9])");
+
+      for (String synonym : synonyms) {
+        if (casPattern.matcher(synonym).matches()) {
+          log.info("Found CAS number {} for CID {}", synonym, cid);
+          return synonym;
+        }
+      }
+
+      log.warn("No CAS number found in synonyms for CID {}", cid);
+      return null;
+
+    } catch (HttpClientErrorException e) {
+      log.warn("HTTP error fetching synonyms for CID {}: {}", cid, e.getMessage());
+      return null;
+    } catch (Exception e) {
+      log.warn("Error fetching CAS number for CID {}: {}", cid, e.getMessage());
       return null;
     }
   }
