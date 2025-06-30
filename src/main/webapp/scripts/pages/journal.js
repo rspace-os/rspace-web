@@ -204,7 +204,7 @@ function journal($, extensions = default_extensions) {
             $("#journalToolbar>button").show();
             $("#journalSearch").show();
 
-            $("#cachedData").html(data.html);
+            $("#cachedData").text(data.html);
 
             //rspac-1396
             document.title = data.name;
@@ -359,7 +359,7 @@ function journal($, extensions = default_extensions) {
 
     _loadPage: function() {
 
-      $(".journalPageContent").html($("#cachedData").html());
+      $(".journalPageContent").html($("#cachedData").text());
 
       $(".commentIcon").click(function() {
         showCommentDialog(this, true);
