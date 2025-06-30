@@ -49,7 +49,8 @@ export default function useWebSocketNotifications(
       client.subscribe(`/topic/notifications/${userId}`, handleNotification);
     };
 
-    client.onStompError = () => {
+    client.onStompError = (frame) => {
+      console.error("STOMP error occurred:", frame);
       setConnectionStatus("error");
     };
 
