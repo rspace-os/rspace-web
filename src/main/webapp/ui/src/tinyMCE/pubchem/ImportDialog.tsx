@@ -29,6 +29,88 @@ import useChemicalImport, {
 } from "@/hooks/api/useChemicalImport";
 import { TwoColumnDl } from "@/components/DescriptionList";
 
+function CompoundCard({
+  selected,
+  compound,
+  onSelected,
+}: {
+  selected: boolean;
+  compound: ChemicalCompound;
+  onSelected: (compound: ChemicalCompound, selected: boolean) => void;
+}) {
+  return (
+    <Card sx={{ display: "flex" }}>
+      <Box>
+        <Checkbox
+          checked={selected}
+          inputProps={{
+            "aria-label": "Select compound",
+          }}
+          onChange={(e) => onSelected(compound, e.target.checked)}
+        />
+      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          flexGrow: 1,
+        }}
+      >
+        <CardContent sx={{ flex: "1 0 auto", pt: 1, pl: 0.5 }}>
+          <Typography component="div" variant="h6">
+            {compound.name}
+          </Typography>
+          <TwoColumnDl sx={{ mt: 1, mb: 0 }}>
+            <Typography component="dt" variant="overline">
+              PubChem ID
+            </Typography>
+            <Typography component="dd" variant="subtitle2">
+              {compound.pubchemId}
+            </Typography>
+            <Typography component="dt" variant="overline">
+              SMILES
+            </Typography>
+            <Typography component="dd" variant="subtitle2">
+              {compound.smiles}
+            </Typography>
+            <Typography component="dt" variant="overline">
+              Formula
+            </Typography>
+            <Typography component="dd" variant="subtitle2">
+              {compound.formula}
+            </Typography>
+            {compound.cas !== null && (
+              <>
+                <Typography component="dt" variant="overline">
+                  CAS Number
+                </Typography>
+                <Typography component="dd" variant="subtitle2">
+                  {compound.cas}
+                </Typography>
+              </>
+            )}
+          </TwoColumnDl>
+        </CardContent>
+        <CardActions sx={{ pl: 0 }}>
+          <Link
+            href={compound.pubchemUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View on PubChem
+          </Link>
+        </CardActions>
+      </Box>
+      <CardMedia
+        component="img"
+        sx={{ width: 151, m: 1, borderRadius: "3px" }}
+        image={compound.pngImage}
+        alt={`Chemical structure of ${compound.name}`}
+      />
+    </Card>
+  );
+}
+
 /**
  * This dialog is opened by the TinyMCE plugin, allowing the users to browse
  * chemistry files on PubChem and importing into their document.
@@ -170,77 +252,11 @@ export default function ImportDialog({
             <Grid container spacing={2}>
               {results.map((compound) => (
                 <Grid item xs={12} key={compound.pubchemId}>
-                  <Card sx={{ display: "flex" }}>
-                    <Box>
-                      <Checkbox
-                        checked={Boolean(selectedCompounds[compound.pubchemId])}
-                        inputProps={{
-                          "aria-label": "Select compound",
-                        }}
-                        onChange={(e) =>
-                          handleCompoundSelection(compound, e.target.checked)
-                        }
-                      />
-                    </Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        flexGrow: 1,
-                      }}
-                    >
-                      <CardContent sx={{ flex: "1 0 auto", pt: 1, pl: 0.5 }}>
-                        <Typography component="div" variant="h6">
-                          {compound.name}
-                        </Typography>
-                        <TwoColumnDl sx={{ mt: 1, mb: 0 }}>
-                          <Typography component="dt" variant="overline">
-                            PubChem ID
-                          </Typography>
-                          <Typography component="dd" variant="subtitle2">
-                            {compound.pubchemId}
-                          </Typography>
-                          <Typography component="dt" variant="overline">
-                            SMILES
-                          </Typography>
-                          <Typography component="dd" variant="subtitle2">
-                            {compound.smiles}
-                          </Typography>
-                          <Typography component="dt" variant="overline">
-                            Formula
-                          </Typography>
-                          <Typography component="dd" variant="subtitle2">
-                            {compound.formula}
-                          </Typography>
-                          {compound.cas !== null && (
-                            <>
-                              <Typography component="dt" variant="overline">
-                                CAS Number
-                              </Typography>
-                              <Typography component="dd" variant="subtitle2">
-                                {compound.cas}
-                              </Typography>
-                            </>
-                          )}
-                        </TwoColumnDl>
-                      </CardContent>
-                      <CardActions sx={{ pl: 0 }}>
-                        <Link
-                          href={compound.pubchemUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          View on PubChem
-                        </Link>
-                      </CardActions>
-                    </Box>
-                    <CardMedia
-                      component="img"
-                      sx={{ width: 151, m: 1, borderRadius: "3px" }}
-                      image={compound.pngImage}
-                      alt={`Chemical structure of ${compound.name}`}
-                    />
-                  </Card>
+                  <CompoundCard
+                    selected={Boolean(selectedCompounds[compound.pubchemId])}
+                    compound={compound}
+                    onSelected={handleCompoundSelection}
+                  />
                 </Grid>
               ))}
             </Grid>
