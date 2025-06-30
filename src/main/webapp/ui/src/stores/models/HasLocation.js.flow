@@ -1,6 +1,0 @@
-//@flow
-
-import { Optional } from "../../util/optional";
-import { type HasLocation } from "../definitions/HasLocation";
-
-declare export function hasLocation<T>(T): Optional<HasLocation & T>;

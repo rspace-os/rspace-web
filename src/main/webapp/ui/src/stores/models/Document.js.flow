@@ -1,6 +1,0 @@
-// @flow
-
-import { type Document, type DocumentAttrs } from "../definitions/Document";
-
-declare export function newDocument(DocumentAttrs): Document;
-

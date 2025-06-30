@@ -30,7 +30,7 @@ import Alert from "@mui/material/Alert";
 export type ExportType = "userData" | "contextMenu" | "listOfMaterials";
 
 export function defaultExportOptions(
-  selectedResults: Array<InventoryRecord> | null,
+  selectedResults: Array<InventoryRecord> | null | undefined,
   exportType: ExportType
 ): ExportOptions {
   const exportedRecordTypes = new Set(selectedResults?.map(({ type }) => type));

@@ -42,6 +42,7 @@
     <filter>
         <filter-name>encodingFilter</filter-name>
         <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+        <async-supported>true</async-supported>
         <init-param>
             <param-name>encoding</param-name>
             <param-value>UTF-8</param-value>
@@ -66,10 +67,12 @@
     <filter>
         <filter-name>localeFilter</filter-name>
         <filter-class>com.researchspace.webapp.filter.LocaleFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter>
         <filter-name>anonymousUserFilter</filter-name>
         <filter-class>com.researchspace.webapp.filter.AnonymousUserFilter</filter-class>
+        <async-supported>true</async-supported>
         <init-param>
             <param-name>urlsAllowedForAnonymousAccess</param-name>
             <param-value>/login,/public,/styles,/ssoinfo,/scripts,/resources,/wopi,/api,/oauth</param-value>
@@ -78,6 +81,7 @@
     <filter>
         <filter-name>rewriteFilter</filter-name>
         <filter-class>org.tuckey.web.filters.urlrewrite.UrlRewriteFilter</filter-class>
+        <async-supported>true</async-supported>
         <!-- sets up log level (will be logged to context log)
             can be: TRACE, DEBUG, INFO (default), WARN, ERROR, FATAL, log4j, commons, sysout:{level} (ie, sysout:DEBUG)
             if you are having trouble using normal levels use sysout:DEBUG -->
@@ -97,6 +101,7 @@
     <filter>
         <filter-name>shiroFilter</filter-name>
         <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <async-supported>true</async-supported>
         <init-param>
             <param-name>targetFilterLifecycle</param-name>
             <param-value>true</param-value>
@@ -106,10 +111,12 @@
     <filter>
         <filter-name>sitemesh</filter-name>
         <filter-class>com.opensymphony.module.sitemesh.filter.PageFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter>
         <filter-name>customResourceFilter</filter-name>
         <filter-class>net.bull.javamelody.CustomResourceFilter</filter-class>
+        <async-supported>true</async-supported>
         <init-param>
             <param-name>customizableMonitoring.css</param-name>
             <param-value>/styles/customMonitoring.css</param-value>
@@ -135,7 +142,6 @@
 		  <param-name>authorized-users</param-name>
 		  <param-value>rs_monitoring:Np4kqEXuGXPKxkcGLR70dTPZcaZ</param-value>
 	     </init-param>
-        
          <init-param>
          <param-name>displayed-counters</param-name>
          <param-value>http,error,log</param-value>
@@ -144,6 +150,7 @@
     <filter>
         <filter-name>hiddenHttpMethodFilter</filter-name>
         <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
 
     <!--  this has to go first to secure subsequent URLs in filters -->
@@ -188,7 +195,6 @@
         <filter-name>rewriteFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-    
      <jsp-config>
         <jsp-property-group>
             <url-pattern>*.jsp</url-pattern>
@@ -234,6 +240,7 @@
         <servlet-name>dispatcher</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
+        <async-supported>true</async-supported>
     </servlet>   
 
     <servlet-mapping>

@@ -1,5 +1,0 @@
-// @flow
-
-import React from "react";
-
-declare export default function NoValue({| label: string |}): React.Node;

@@ -1,5 +1,0 @@
-//@flow strict
-
-declare export function useOwncloudEndpoint(): {|
-  disconnect: () => Promise<void>,
-|};

@@ -16,6 +16,9 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
+import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
@@ -389,5 +392,48 @@ class GalleryIrodsApiControllerTest {
     assertEquals(1, exception.getAllErrors().size());
     assertEquals("nfsClient", exception.getAllErrors().get(0).getObjectName());
     assertEquals("User is not logged in", exception.getAllErrors().get(0).getDefaultMessage());
+  }
+
+  @Test
+  void testGettingAbsoluteTargetFilestorePath() {
+    NfsFileSystem testFilesystem = new NfsFileSystem();
+    testFilesystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice");
+
+    NfsFileStore testFilestore = new NfsFileStore();
+    testFilestore.setFileSystem(testFilesystem);
+
+    // absolute path saved in filestore path
+    testFilestore.setPath("/tempZone/home/alice/testFolder/testFolder");
+    assertEquals(
+        "/tempZone/home/alice/testFolder/testFolder",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // relative path saved in filestore path
+    testFilestore.setPath("/testFolder/testFolder2");
+    assertEquals(
+        "/tempZone/home/alice/testFolder/testFolder2",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // with trailing slash in filesystem path
+    testFilesystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice/");
+    assertEquals(
+        "/tempZone/home/alice/testFolder/testFolder2",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // filestore path blank
+    testFilestore.setPath(" ");
+    assertEquals(
+        "/tempZone/home/alice/",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // filesystem path null
+    testFilesystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, null);
+    assertEquals("", galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
+
+    // filesystem path null, but filestores path not null
+    testFilestore.setPath("/testFolder/testFolder3");
+    assertEquals(
+        "/testFolder/testFolder3",
+        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
   }
 }

@@ -1,5 +1,5 @@
 "use strict";
-import React, { useEffect, type Node } from "react";
+import React, { useEffect } from "react";
 import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
@@ -11,7 +11,7 @@ import Checkbox from "@mui/material/Checkbox";
 import UserDetails from "../components/UserDetails";
 import { stripDiacritics } from "../util/StringUtils";
 
-export default function UserList(props): Node {
+export default function UserList(props) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [visibleUsers, setVisibleUsers] = React.useState([]);
 

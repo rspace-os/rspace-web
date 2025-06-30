@@ -1,9 +1,0 @@
-//@flow strict
-
-import { type Node } from "react";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-
-declare export default function OneDrive({|
-  integrationState: IntegrationStates["ONEDRIVE"],
-  update: (IntegrationStates["ONEDRIVE"]) => void,
-|}): Node;
