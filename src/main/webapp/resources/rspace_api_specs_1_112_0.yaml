@@ -1808,7 +1808,7 @@ paths:
       summary: Browse remote filestore
       description:
         Lists the content of a path on remote filestore belonging to the user.
-        
+
         User must be logged into the filesystem connected to the filestore (see /login endpoint).
       produces:
         - application/json
@@ -1825,7 +1825,7 @@ paths:
       summary: Download from remote filestore
       description:
         Streams the resource retrieved from remote filestore.
-        
+
         User must be logged into the filesystem connected to the filestore (see /login endpoint).
       produces:
         - application/octet-stream
@@ -1869,7 +1869,7 @@ paths:
       summary: Browse remote filesystem
       description:
         Lists the content of a remote filesystem. 
-        
+
         User must be logged into the filesystem (see /login endpoint).
       produces:
         - application/json
@@ -1954,7 +1954,7 @@ paths:
         Copy a list of files (identified by their Researchspace ID) from the RSpace filestore
         to an external IRODS storage
         The files that can be copied to IRODS need to live in the Gallery.
-        
+
         The response message is a JSON with the detail of the operation done for each file requested
       consumes:
         - application/json
@@ -2013,7 +2013,7 @@ paths:
         Move a list of files (identified by their Researchspace ID) from the RSpace filestore
         to an external IRODS storage
         The files that can be moved to IRODS need to live in the Gallery
-        
+
         The response message is a JSON with the detail of the operation done for each file requested
       consumes:
         - application/json
@@ -3062,6 +3062,10 @@ definitions:
         type: string
         description: URL to PubChem compound page
         example: "https://pubchem.ncbi.nlm.nih.gov/compound/2244"
+      cas:
+        type: string
+        description: CAS Registry Number of the chemical
+        example: "50-78-2"
   Field:
     description: |
       A field in a Document, with a list of attached Files and 'listOfMaterials' that store inventory items connected to the document.
