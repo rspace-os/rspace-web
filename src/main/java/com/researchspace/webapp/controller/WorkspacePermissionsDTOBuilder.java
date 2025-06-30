@@ -137,9 +137,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
         parentFolder.isNotebook()
             && permissionUtils.isPermitted(parentFolder, PermissionType.CREATE, usr);
     model.addAttribute("allowCreateNewEntryInNotebook", canCreateEntry);
-
     model.addAttribute("createPermission", dto);
-    model.addAttribute("allowThirdPartyImport", !parentFolder.isSharedFolder());
     model.addAttribute("allowCreateForm", !parentFolder.isSharedFolder());
 
     return dto;
