@@ -28,88 +28,130 @@ import useChemicalImport, {
   type ChemicalCompound,
 } from "@/hooks/api/useChemicalImport";
 import { TwoColumnDl } from "@/components/DescriptionList";
+import { alpha, Theme } from "@mui/material/styles";
+import styled from "@emotion/styled";
+import { ACCENT_COLOR } from "@/assets/branding/pubchem";
+import { CardActionArea } from "@mui/material";
 
-function CompoundCard({
-  selected,
-  compound,
-  onSelected,
-}: {
+type CompoundCardProps = {
   selected: boolean;
   compound: ChemicalCompound;
   onSelected: (compound: ChemicalCompound, selected: boolean) => void;
-}) {
-  return (
-    <Card sx={{ display: "flex" }}>
-      <Box>
-        <Checkbox
-          checked={selected}
-          inputProps={{
-            "aria-label": "Select compound",
-          }}
-          onChange={(e) => onSelected(compound, e.target.checked)}
-        />
-      </Box>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          flexGrow: 1,
-        }}
-      >
-        <CardContent sx={{ flex: "1 0 auto", pt: 1, pl: 0.5 }}>
-          <Typography component="div" variant="h6">
-            {compound.name}
-          </Typography>
-          <TwoColumnDl sx={{ mt: 1, mb: 0 }}>
-            <Typography component="dt" variant="overline">
-              PubChem ID
-            </Typography>
-            <Typography component="dd" variant="subtitle2">
-              {compound.pubchemId}
-            </Typography>
-            <Typography component="dt" variant="overline">
-              SMILES
-            </Typography>
-            <Typography component="dd" variant="subtitle2">
-              {compound.smiles}
-            </Typography>
-            <Typography component="dt" variant="overline">
-              Formula
-            </Typography>
-            <Typography component="dd" variant="subtitle2">
-              {compound.formula}
-            </Typography>
-            {compound.cas !== null && (
-              <>
+  className?: string;
+};
+
+const CompoundCard = styled(
+  ({ selected, compound, onSelected, className }: CompoundCardProps) => {
+    return (
+      <Card className={className}>
+        <CardActionArea
+          onClick={() => onSelected(compound, !selected)}
+          sx={{ display: "flex", alignItems: "stretch" }}
+        >
+          <Box>
+            <Checkbox
+              checked={selected}
+              inputProps={{
+                "aria-label": "Select compound",
+              }}
+              onChange={(e) => onSelected(compound, e.target.checked)}
+            />
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              flexGrow: 1,
+            }}
+          >
+            <CardContent sx={{ flex: "1 0 auto", pt: 1, pl: 0.5 }}>
+              <Typography component="div" variant="h6">
+                {compound.name}
+              </Typography>
+              <TwoColumnDl sx={{ mt: 1, mb: 0 }}>
                 <Typography component="dt" variant="overline">
-                  CAS Number
+                  PubChem ID
                 </Typography>
                 <Typography component="dd" variant="subtitle2">
-                  {compound.cas}
+                  {compound.pubchemId}
                 </Typography>
-              </>
-            )}
-          </TwoColumnDl>
-        </CardContent>
-        <CardActions sx={{ pl: 0 }}>
-          <Link
-            href={compound.pubchemUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View on PubChem
-          </Link>
-        </CardActions>
-      </Box>
-      <CardMedia
-        component="img"
-        sx={{ width: 151, m: 1, borderRadius: "3px" }}
-        image={compound.pngImage}
-        alt={`Chemical structure of ${compound.name}`}
-      />
-    </Card>
-  );
-}
+                <Typography component="dt" variant="overline">
+                  SMILES
+                </Typography>
+                <Typography component="dd" variant="subtitle2">
+                  {compound.smiles}
+                </Typography>
+                <Typography component="dt" variant="overline">
+                  Formula
+                </Typography>
+                <Typography component="dd" variant="subtitle2">
+                  {compound.formula}
+                </Typography>
+                {compound.cas !== null && (
+                  <>
+                    <Typography component="dt" variant="overline">
+                      CAS Number
+                    </Typography>
+                    <Typography component="dd" variant="subtitle2">
+                      {compound.cas}
+                    </Typography>
+                  </>
+                )}
+              </TwoColumnDl>
+            </CardContent>
+            <CardActions sx={{ pl: 0 }}>
+              <Link
+                href={compound.pubchemUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                View on PubChem
+              </Link>
+            </CardActions>
+          </Box>
+          <CardMedia
+            component="img"
+            sx={{ width: 151, m: 1, borderRadius: "3px" }}
+            image={compound.pngImage}
+            alt={`Chemical structure of ${compound.name}`}
+          />
+        </CardActionArea>
+      </Card>
+    );
+  }
+)(
+  ({
+    theme,
+    selected,
+  }: { theme: Theme } & Pick<CompoundCardProps, "selected">) => ({
+    border: `2px solid ${
+      selected ? theme.palette.callToAction.main : theme.palette.primary.main
+    }`,
+    backgroundColor: selected
+      ? `${alpha(theme.palette.callToAction.background, 0.15)}`
+      : "initial",
+    boxShadow: selected
+      ? "none"
+      : `hsl(${ACCENT_COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
+    "&:hover": {
+      border: window.matchMedia("(prefers-contrast: more)").matches
+        ? "2px solid black !important"
+        : `2px solid ${theme.palette.callToAction.main} !important`,
+      backgroundColor: `${alpha(
+        theme.palette.callToAction.background,
+        0.05
+      )} !important`,
+    },
+    "& .MuiCheckbox-root": {
+      color: selected
+        ? theme.palette.callToAction.main
+        : theme.palette.primary.main,
+    },
+  })
+);
 
 /**
  * This dialog is opened by the TinyMCE plugin, allowing the users to browse
