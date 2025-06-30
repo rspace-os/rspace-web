@@ -5,12 +5,15 @@ import clsx from "clsx";
 import { styled } from "@mui/material/styles";
 import Divider from "@mui/material/Divider";
 
+export const TwoColumnDl = styled("dl")(() => ({
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+}));
+
 const useStyles = makeStyles()((theme) => ({
   dl: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    fontSize: "0.8rem",
     rowGap: theme.spacing(1),
+    fontSize: "0.8rem",
     margin: 0,
     marginBottom: theme.spacing(1),
   },
@@ -49,9 +52,6 @@ type DescriptionListArgs = {
   sx?: object;
 };
 
-// This is used so that we can attach sx to the <dl>
-const Dl = styled("dl")``;
-
 /**
  * This component provides some means for the contents to be styled using the
  * MUI `sx` prop.
@@ -77,7 +77,7 @@ function DescriptionList({
   const { classes } = useStyles();
 
   return (
-    <Dl className={classes.dl} sx={sx}>
+    <TwoColumnDl sx={sx} className={classes.dl}>
       {content.map(
         ({ label, value, below = false, reducedPadding = false }, i) => (
           <React.Fragment key={i}>
@@ -113,7 +113,7 @@ function DescriptionList({
           </React.Fragment>
         )
       )}
-    </Dl>
+    </TwoColumnDl>
   );
 }
 
