@@ -5,6 +5,7 @@ export type ChemicalCompound = {
   name: string;
   pngImage: string;
   smiles: string;
+  cas: string | null;
   formula: string;
   pubchemId: string;
   pubchemUrl: string;

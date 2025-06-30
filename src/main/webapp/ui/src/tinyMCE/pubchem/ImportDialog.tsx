@@ -193,6 +193,14 @@ export default function ImportDialog({
                               label: "Formula",
                               value: compound.formula,
                             },
+                            ...(compound.cas !== null
+                              ? [
+                                  {
+                                    label: "CAS Number",
+                                    value: compound.cas,
+                                  },
+                                ]
+                              : []),
                           ]}
                           sx={{ mt: 3 }}
                         />

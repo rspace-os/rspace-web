@@ -218,6 +218,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         formula: "C9H8O4",
         pubchemId: "2244",
         pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
+        cas: "50-78-2",
       },
     ];
     return route.fulfill({
