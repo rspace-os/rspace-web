@@ -88,7 +88,7 @@ function Galaxy({
                     >
                       {historyName}
                     </a>{" "}(opens in new tab){" "}</Typography><Typography variant="body1">
-                      <b>Click on 'switch to this  history', </b></Typography>
+                      <b>Click on 'switch to this  history' </b></Typography>
                   </Stack>
                 </TitledBox>
                 </>
