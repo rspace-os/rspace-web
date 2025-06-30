@@ -131,11 +131,11 @@ public class PubChemImporter implements ChemicalImporter {
   }
 
   /**
-   * Fetches the CAS number for a given PubChem CID by querying the synonym endpoint, as it's not available from the
-   * same endpoint where we get other chemical information.
-   * A CAS Registry Number includes up to 10 digits which are separated into 3 groups by hyphens.
-   * The first part of the number, starting from the left, has 2 to 7 digits; the second part has 2 digits.
-   * The final part consists of a single check digit.
+   * Fetches the CAS number for a given PubChem CID by querying the synonym endpoint, as it's not
+   * available from the same endpoint where we get other chemical information. A CAS Registry Number
+   * includes up to 10 digits which are separated into 3 groups by hyphens. The first part of the
+   * number, starting from the left, has 2 to 7 digits; the second part has 2 digits. The final part
+   * consists of a single check digit.
    */
   private String fetchCasNumberFromSynonyms(String cid) {
     try {

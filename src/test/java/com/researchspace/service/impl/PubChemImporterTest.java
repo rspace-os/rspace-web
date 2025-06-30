@@ -12,8 +12,6 @@ import com.researchspace.model.dtos.chemistry.PubChemResponse;
 import com.researchspace.model.dtos.chemistry.PubChemSynonymsResponse;
 import com.researchspace.service.ChemicalImportException;
 import java.util.List;
-
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,11 +52,7 @@ public class PubChemImporterTest {
     PubChemSynonymsResponse.Information information = new PubChemSynonymsResponse.Information();
     information.setCid(cid);
     information.setSynonyms(
-        List.of(
-            "Aspirin",
-            "Acetylsalicylic acid",
-            "50-78-2",
-            "2-acetoxybenzoic acid"));
+        List.of("Aspirin", "Acetylsalicylic acid", "50-78-2", "2-acetoxybenzoic acid"));
 
     PubChemSynonymsResponse.InformationList informationList =
         new PubChemSynonymsResponse.InformationList();
@@ -235,7 +229,8 @@ public class PubChemImporterTest {
                 ChemicalImportSearchType.SMILES, "CC(=O)OC1=CC=CC=C1C(=O)O"));
   }
 
-  @Test public void correctlyParseCasFromSynonyms() throws Exception {
+  @Test
+  public void correctlyParseCasFromSynonyms() throws Exception {
     assertCasIsParsed("1234567-12-1", List.of("123-123-123", "1234567-12-1"));
     assertCasIsParsed("50-12-1", List.of("somehting", "somehting else", "31/12/1999", "50-12-1"));
     assertCasIsParsed(null, List.of("Aspirin", "Acetylsalicylic acid"));
@@ -243,29 +238,33 @@ public class PubChemImporterTest {
     assertCasIsParsed(null, List.of("123", "5049383757586-12-1"));
   }
 
-  private void assertCasIsParsed(String targetCas, List<String> candidates) throws ChemicalImportException {
+  private void assertCasIsParsed(String targetCas, List<String> candidates)
+      throws ChemicalImportException {
     ResponseEntity<PubChemResponse> mainResponse =
-            new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK);
+        new ResponseEntity<>(createValidPubChemResponse(), HttpStatus.OK);
 
-    PubChemSynonymsResponse synonymsResponse = getPubChemSynonymsResponseWithSynonyms(candidates); // No CAS number included
+    PubChemSynonymsResponse synonymsResponse =
+        getPubChemSynonymsResponseWithSynonyms(candidates); // No CAS number included
 
     ResponseEntity<PubChemSynonymsResponse> response =
-            new ResponseEntity<>(synonymsResponse, HttpStatus.OK);
+        new ResponseEntity<>(synonymsResponse, HttpStatus.OK);
 
     when(restTemplate.getForEntity(anyString(), eq(PubChemResponse.class)))
-            .thenReturn(mainResponse);
+        .thenReturn(mainResponse);
 
     when(restTemplate.getForEntity(anyString(), eq(PubChemSynonymsResponse.class)))
-            .thenReturn(response);
+        .thenReturn(response);
 
     ChemicalImportSearchResult result =
-            pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin").get(0);
+        pubChemImporter.searchChemicals(ChemicalImportSearchType.NAME, "aspirin").get(0);
 
     assertEquals(targetCas, result.getCas());
   }
 
-  private static PubChemSynonymsResponse getPubChemSynonymsResponseWithSynonyms(List<String> synonyms) {
-    PubChemSynonymsResponse.InformationList informationList = new PubChemSynonymsResponse.InformationList();
+  private static PubChemSynonymsResponse getPubChemSynonymsResponseWithSynonyms(
+      List<String> synonyms) {
+    PubChemSynonymsResponse.InformationList informationList =
+        new PubChemSynonymsResponse.InformationList();
     PubChemSynonymsResponse.Information information = new PubChemSynonymsResponse.Information();
     information.setSynonyms(synonyms);
     informationList.setInformation(List.of(information));
