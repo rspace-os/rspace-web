@@ -84,7 +84,11 @@ const CompoundCard = styled(
                 <Typography component="dt" variant="overline">
                   SMILES
                 </Typography>
-                <Typography component="dd" variant="subtitle2">
+                <Typography
+                  component="dd"
+                  variant="subtitle2"
+                  sx={{ wordBreak: "break-all" }}
+                >
                   {compound.smiles}
                 </Typography>
                 <Typography component="dt" variant="overline">
