@@ -342,6 +342,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
                   getSmilesString(chemical.getChemElements(), chemical.getChemElementsFormat()))
               .parentId(field.getId())
               .record(field.getStructuredDocument())
+              .metadata(chemical.getMetadata())
               .build();
     }
     // Set Chemistry file related params if chem file id isn't null
@@ -450,6 +451,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
                     chemistryProvider.convertToDefaultFormat(
                         toCopy.getChemElements(), toCopy.getChemElementsFormat().getLabel()))
                 .chemElementsFormat(toCopy.getChemElementsFormat())
+                .metadata(toCopy.getMetadata())
                 .build();
       } else {
         return null;
