@@ -171,6 +171,8 @@ function journal($, extensions = default_extensions) {
 
     loadEntry: function(pagePositionModifier) {
       $("#prevEntryButton, #nextEntryButton, #prevEntryButton_mobile, #nextEntryButton_mobile").hide();
+      RS.addBreadcrumbAndRefresh("editorBcrumb", "" + notebookId, notebookName);
+
       const url =extensions.springMVCUrlReroutePrefix + "/journal/ajax/retrieveEntry/";
       /* loads an entry in a page uses page modifier to determine if it should show a new document
        * or another page of an existing record */
