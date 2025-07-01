@@ -24,6 +24,18 @@ export function ImportDialogStory(): React.ReactNode {
               onClose={() => {
                 setOpen(false);
               }}
+              editor={{
+                id: "rtf_1",
+                ui: {
+                  registry: {
+                    addMenuItem: (menuItemIdentifier, options) => {},
+                    addButton: (buttonIdentifier, options) => {},
+                  },
+                },
+                execCommand: (command, ui, value) => {
+                  console.log(`Executed command: ${command}`, { ui, value });
+                },
+              }}
             />
           </Alerts>
         </ErrorBoundary>

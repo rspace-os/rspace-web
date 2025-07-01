@@ -14,6 +14,8 @@ export type ChemicalCompound = {
   pubchemUrl: string;
 };
 
+export type RspaceCompoundId = string;
+
 /**
  * This custom hook provides functionality to search for chemical compounds,
  * using the `/chemical/*` endpoints.
@@ -36,7 +38,14 @@ export default function useChemicalImport(): {
     chemElementsFormat: "ket" | "smi";
     fieldId: string;
     metadata?: Record<string, string>;
-  }) => Promise<void>;
+  }) => Promise<{ id: RspaceCompoundId }>;
+  formatAsHtml: ({
+    id,
+    fieldId,
+  }: {
+    id: RspaceCompoundId;
+    fieldId: string;
+  }) => Promise<string>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -89,7 +98,7 @@ export default function useChemicalImport(): {
     chemElementsFormat: "ket" | "smi";
     fieldId: string;
     metadata?: Record<string, string>;
-  }): Promise<void> {
+  }): Promise<{ id: RspaceCompoundId }> {
     try {
       const { data } = await axios.post("/chemical/save", {
         chemElements,
@@ -99,7 +108,7 @@ export default function useChemicalImport(): {
         fieldId,
         metadata: JSON.stringify(metadata),
       });
-      return data;
+      return { id: data.id };
     } catch (e) {
       addAlert(
         mkAlert({
@@ -112,5 +121,35 @@ export default function useChemicalImport(): {
     }
   }
 
-  return { search, save };
+  async function formatAsHtml({
+    id,
+    fieldId,
+  }: {
+    id: string;
+    fieldId: string;
+  }): Promise<string> {
+    const fullWidth = 500;
+    const fullHeight = 500;
+    const previewWidth = 250;
+    const previewHeight = 250;
+    const milliseconds = new Date().getTime();
+    const json = {
+      id,
+      ecatChemFileId: null,
+      sourceParentId: fieldId,
+      width: previewWidth,
+      height: previewHeight,
+      fullwidth: fullWidth,
+      fullheight: fullHeight,
+      fieldId,
+      tstamp: milliseconds,
+    };
+    const htmlTemplate = await axios.get(
+      "/fieldTemplates/ajax/chemElementLink"
+    );
+    // @ts-expect-error Globally available on the document editor page
+    return Mustache.render(htmlTemplate.data, json) as string;
+  }
+
+  return { search, save, formatAsHtml };
 }

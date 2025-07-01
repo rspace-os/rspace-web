@@ -32,6 +32,7 @@ import { type Theme, alpha } from "@mui/material/styles";
 import styled from "@emotion/styled";
 import { ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { CardActionArea } from "@mui/material";
+import { type Editor } from ".";
 
 type CompoundCardProps = {
   selected: boolean;
@@ -165,13 +166,15 @@ const CompoundCard = styled(
 export default function ImportDialog({
   open,
   onClose,
+  editor,
 }: {
   open: boolean;
   onClose: () => void;
+  editor: Editor;
 }): React.ReactNode {
   const titleId = React.useId();
   const resultsId = React.useId();
-  const { search } = useChemicalImport();
+  const { search, save, formatAsHtml } = useChemicalImport();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [searchType, setSearchType] = React.useState<"NAME" | "SMILES">("NAME");
   const [results, setResults] = React.useState<ReadonlyArray<ChemicalCompound>>(
@@ -231,8 +234,31 @@ export default function ImportDialog({
       .map(([id]) => results.find((r) => r.pubchemId === id))
       .filter(Boolean) as ChemicalCompound[];
 
-    // Here you would implement the logic to insert the compounds into the document
-    console.log("Importing selected compounds:", selected);
+    // TODO: get the field ID from the editor or context
+    const fieldId = "34";
+
+    Promise.all(
+      selected.map((compound) =>
+        save({
+          chemElements: compound.smiles,
+          chemElementsFormat: "smi",
+          fieldId,
+          metadata: {
+            "Pubchem CID": compound.pubchemId,
+            CAS: compound.cas || "",
+            "PubChem URL": compound.pubchemUrl,
+          },
+        })
+      )
+    ).then((data) => {
+      setIsSubmitting(false);
+      data.forEach(({ id }) => {
+        formatAsHtml({ id, fieldId }).then((html) => {
+          editor.execCommand("mceInsertContent", false, html);
+        });
+      });
+      // TODO: analytics event
+    });
 
     // Close the dialog when done
     onClose();

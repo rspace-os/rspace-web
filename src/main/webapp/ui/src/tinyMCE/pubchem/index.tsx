@@ -21,13 +21,14 @@ type MenuItemConfig = {
   onAction: () => void;
 };
 
-interface Editor {
+export interface Editor {
   ui: {
     registry: {
       addButton: (name: string, config: ButtonConfig) => void;
       addMenuItem: (name: string, config: MenuItemConfig) => void;
     };
   };
+  execCommand: (command: string, ui: boolean, value?: string) => void;
 }
 
 // Declare the global tinymce object
@@ -35,6 +36,7 @@ declare const tinymce: {
   PluginManager: {
     add: (name: string, plugin: new (editor: Editor) => unknown) => void;
   };
+  activeEditor: Editor;
 };
 
 declare global {
@@ -88,6 +90,7 @@ class PubchemPlugin {
     const initialProps: React.ComponentProps<typeof ImportDialog> = {
       open: false,
       onClose: () => {},
+      editor: tinymce.activeEditor,
     };
     pubchemRenderer.next(initialProps);
 
@@ -99,8 +102,13 @@ class PubchemPlugin {
         pubchemRenderer.next({
           open: true,
           onClose: () => {
-            pubchemRenderer.next({ open: false, onClose: () => {} });
+            pubchemRenderer.next({
+              open: false,
+              onClose: () => {},
+              editor: tinymce.activeEditor,
+            });
           },
+          editor: tinymce.activeEditor,
         });
       },
     });
@@ -113,8 +121,13 @@ class PubchemPlugin {
         pubchemRenderer.next({
           open: true,
           onClose: () => {
-            pubchemRenderer.next({ open: false, onClose: () => {} });
+            pubchemRenderer.next({
+              open: false,
+              onClose: () => {},
+              editor: tinymce.activeEditor,
+            });
           },
+          editor: tinymce.activeEditor,
         });
       },
     });
@@ -130,8 +143,13 @@ class PubchemPlugin {
         pubchemRenderer.next({
           open: true,
           onClose: () => {
-            pubchemRenderer.next({ open: false, onClose: () => {} });
+            pubchemRenderer.next({
+              open: false,
+              onClose: () => {},
+              editor: tinymce.activeEditor,
+            });
           },
+          editor: tinymce.activeEditor,
         });
       },
     });
