@@ -1,5 +1,5 @@
 import React from "react";
-import Dialog from "@mui/material/Dialog";
+import { Dialog } from "../../components/DialogBoundary";
 import AppBar from "../../components/AppBar";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";

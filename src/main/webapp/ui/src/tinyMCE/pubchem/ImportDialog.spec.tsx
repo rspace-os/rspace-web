@@ -24,6 +24,7 @@ const feature = test.extend<{
     "enter key is pressed": () => Promise<void>;
     "space key is pressed": () => Promise<void>;
     "the 'View on PubChem' link is clicked": () => Promise<void>;
+    "a search fails": () => Promise<void>;
   };
   Then: {
     "there should be a dialog visible": () => Promise<void>;
@@ -41,6 +42,7 @@ const feature = test.extend<{
     "multiple results should not be selected by default": () => Promise<void>;
     "the compound should not be selected": () => Promise<void>;
     "the compound should be selected": () => Promise<void>;
+    "an error alert should be shown": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -137,6 +139,11 @@ const feature = test.extend<{
         const newPage = await newPagePromise;
         await newPage.close();
       },
+      "a search fails": async () => {
+        const searchInput = page.getByRole("textbox");
+        await searchInput.fill("error");
+        await searchInput.press("Enter");
+      },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -229,6 +236,11 @@ const feature = test.extend<{
           .first();
         await expect(checkbox).toBeChecked();
       },
+      "an error alert should be shown": async () => {
+        const alert = page.getByRole("alert");
+        await expect(alert).toBeVisible();
+        await expect(alert).toHaveText(/There was an error/);
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -292,7 +304,13 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     const requestData = JSON.parse(route.request().postData() || "{}");
     const searchTerm = requestData.searchTerm;
 
-    if (searchTerm === "multiple") {
+    if (searchTerm === "error") {
+      return route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "There was an error" }),
+      });
+    } else if (searchTerm === "multiple") {
       const multipleResults = [
         {
           name: "Aspirin",
@@ -498,6 +516,15 @@ test.describe("ImportDialog", () => {
       await Then[
         "the validation warning should disappear after selecting a compound"
       ]();
+    }
+  );
+
+  feature(
+    "An error when searching should result in an alert toast",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search fails"]();
+      await Then["an error alert should be shown"]();
     }
   );
 });

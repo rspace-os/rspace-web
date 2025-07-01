@@ -5,6 +5,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ACCENT_COLOR } from "../../assets/branding/pubchem";
 import createAccentedTheme from "../../accentedTheme";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import Alerts from "@/components/Alerts/Alerts";
 
 /**
  * A basic example of how to use the ImportDialog component.
@@ -15,13 +16,15 @@ export function ImportDialogStory(): React.ReactNode {
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <ErrorBoundary>
-          <h1>PubChem import example</h1>
-          <ImportDialog
-            open={open}
-            onClose={() => {
-              setOpen(false);
-            }}
-          />
+          <Alerts>
+            <h1>PubChem import example</h1>
+            <ImportDialog
+              open={open}
+              onClose={() => {
+                setOpen(false);
+              }}
+            />
+          </Alerts>
         </ErrorBoundary>
       </ThemeProvider>
     </StyledEngineProvider>

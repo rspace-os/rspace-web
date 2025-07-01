@@ -6,6 +6,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ACCENT_COLOR } from "../../assets/branding/pubchem";
 import ImportDialog from "./ImportDialog";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import Alerts from "@/components/Alerts/Alerts";
 
 // Define types for external interfaces
 type ButtonConfig = {
@@ -62,7 +63,9 @@ class PubchemPlugin {
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <ErrorBoundary>
-                <ImportDialog {...newProps} />
+                <Alerts>
+                  <ImportDialog {...newProps} />
+                </Alerts>
               </ErrorBoundary>
             </ThemeProvider>
           </StyledEngineProvider>
