@@ -25,6 +25,7 @@ const feature = test.extend<{
     "space key is pressed": () => Promise<void>;
     "the 'View on PubChem' link is clicked": () => Promise<void>;
     "a search fails": () => Promise<void>;
+    "the dialog is closed and reopened": () => Promise<void>;
   };
   Then: {
     "there should be a dialog visible": () => Promise<void>;
@@ -43,6 +44,8 @@ const feature = test.extend<{
     "the compound should not be selected": () => Promise<void>;
     "the compound should be selected": () => Promise<void>;
     "an error alert should be shown": () => Promise<void>;
+    "the search input should be empty": () => Promise<void>;
+    "there should be no search results visible": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -144,6 +147,13 @@ const feature = test.extend<{
         await searchInput.fill("error");
         await searchInput.press("Enter");
       },
+      "the dialog is closed and reopened": async () => {
+        const dialog = page.getByRole("dialog");
+        const closeButton = dialog.getByRole("button", { name: /cancel/i });
+        await closeButton.click();
+        await expect(dialog).not.toBeVisible();
+        await page.getByRole("button", { name: /open/i }).click();
+      },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -240,6 +250,19 @@ const feature = test.extend<{
         const alert = page.getByRole("alert");
         await expect(alert).toBeVisible();
         await expect(alert).toHaveText(/There was an error/);
+      },
+      "the search input should be empty": async () => {
+        const searchInput = page.getByRole("textbox");
+        await expect(searchInput).toHaveValue("");
+      },
+      "there should be no search results visible": async () => {
+        const resultsSection = page.getByRole("region", {
+          name: /Search Results/i,
+        });
+        // Verify the search results section exists but has no compound cards
+        await expect(resultsSection).toBeVisible();
+        const cards = page.getByRole("article").count();
+        expect(await cards).toBe(0);
       },
     });
   },
@@ -525,6 +548,19 @@ test.describe("ImportDialog", () => {
       await Given["that the ImportDialog is mounted"]();
       await When["a search fails"]();
       await Then["an error alert should be shown"]();
+    }
+  );
+
+  feature(
+    "Should reset state when dialog is closed and reopened",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search is performed that returns multiple results"]();
+      await When["a compound is selected"]();
+      await When["the dialog is closed and reopened"]();
+      await Then["there should be a search input"]();
+      await Then["the search input should be empty"]();
+      await Then["there should be no search results visible"]();
     }
   );
 });

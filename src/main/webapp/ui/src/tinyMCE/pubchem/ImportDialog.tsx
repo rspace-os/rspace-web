@@ -207,6 +207,16 @@ export default function ImportDialog({
     }
   }, [open, results]);
 
+  React.useEffect(() => {
+    if (!open) {
+      setSearchTerm("");
+      setSearchType("NAME");
+      setResults([]);
+      setSelectedCompounds({});
+      setIsSubmitting(false);
+    }
+  }, [open]);
+
   function handleCompoundSelection(
     compound: ChemicalCompound,
     checked: boolean

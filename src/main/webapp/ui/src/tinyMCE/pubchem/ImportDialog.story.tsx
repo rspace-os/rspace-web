@@ -18,6 +18,7 @@ export function ImportDialogStory(): React.ReactNode {
         <ErrorBoundary>
           <Alerts>
             <h1>PubChem import example</h1>
+            <button onClick={() => setOpen(true)}>Open</button>
             <ImportDialog
               open={open}
               onClose={() => {
