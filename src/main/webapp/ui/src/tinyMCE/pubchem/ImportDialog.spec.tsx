@@ -18,6 +18,12 @@ const feature = test.extend<{
     "the import button is clicked without selecting any compounds": () => Promise<void>;
     "the escape key is pressed to dismiss the validation warning": () => Promise<void>;
     "a compound is selected": () => Promise<void>;
+    "a selected compound is clicked again": () => Promise<void>;
+    "tab key is used to navigate to a compound card": () => Promise<void>;
+    "tab key is used to navigate to a compound checkbox": () => Promise<void>;
+    "enter key is pressed": () => Promise<void>;
+    "space key is pressed": () => Promise<void>;
+    "the 'View on PubChem' link is clicked": () => Promise<void>;
   };
   Then: {
     "there should be a dialog visible": () => Promise<void>;
@@ -33,6 +39,8 @@ const feature = test.extend<{
     "the validation warning should disappear after selecting a compound": () => Promise<void>;
     "the single result should be selected by default": () => Promise<void>;
     "multiple results should not be selected by default": () => Promise<void>;
+    "the compound should not be selected": () => Promise<void>;
+    "the compound should be selected": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -93,6 +101,36 @@ const feature = test.extend<{
           .getByRole("checkbox", { name: /select/i })
           .first()
           .click();
+      },
+      "a selected compound is clicked again": async () => {
+        const checkbox = page
+          .getByRole("checkbox", { name: /select/i })
+          .first();
+        await checkbox.click();
+      },
+      "tab key is used to navigate to a compound card": async () => {
+        await page.keyboard.press("Tab"); // Focus on search button
+        await page.keyboard.press("Tab"); // Focus on first compound card
+      },
+      "tab key is used to navigate to a compound checkbox": async () => {
+        await page.keyboard.press("Tab"); // Focus on search button
+        await page.keyboard.press("Tab"); // Focus on first compound card
+        await page.keyboard.press("Tab"); // Focus on first compound checkbox
+      },
+      "enter key is pressed": async () => {
+        await page.keyboard.press("Enter");
+      },
+      "space key is pressed": async () => {
+        await page.keyboard.press("Space");
+      },
+      "the 'View on PubChem' link is clicked": async () => {
+        const newPagePromise = page.context().waitForEvent("page");
+        await page
+          .getByRole("link", { name: /View on PubChem/i })
+          .first()
+          .click();
+        const newPage = await newPagePromise;
+        await newPage.close();
       },
     });
   },
@@ -174,6 +212,18 @@ const feature = test.extend<{
           const alert = page.getByRole("alert");
           await expect(alert).not.toBeVisible();
         },
+      "the compound should not be selected": async () => {
+        const checkbox = page
+          .getByRole("checkbox", { name: /select/i })
+          .first();
+        await expect(checkbox).not.toBeChecked();
+      },
+      "the compound should be selected": async () => {
+        const checkbox = page
+          .getByRole("checkbox", { name: /select/i })
+          .first();
+        await expect(checkbox).toBeChecked();
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -303,31 +353,38 @@ test.describe("ImportDialog", () => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a dialog visible"]();
   });
+
   feature("Should have no axe violations.", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be no axe violations"]();
   });
+
   feature("Should be a dialog header banner", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a dialog header banner"]();
   });
+
   feature("Should have a title", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a title: 'Import from PubChem'"]();
   });
+
   feature("Should have a a close button", async ({ Given, When, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await When["the cancel button is clicked"]();
     await Then["the dialog is closed"]();
   });
+
   feature("Should have a search input", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a search input"]();
   });
+
   feature("Should have a search type selector", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a search type selector"]();
   });
+
   feature(
     "The API endpoint is called when a search is performed",
     async ({ Given, When, Then }) => {
@@ -336,6 +393,7 @@ test.describe("ImportDialog", () => {
       await Then["the mocked results are shown"]();
     }
   );
+
   feature("searchType is passed in API call", async ({ Given, When, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await When["SMILES is chosen as the search type"]();
@@ -364,6 +422,58 @@ test.describe("ImportDialog", () => {
       await Given["that the ImportDialog is mounted"]();
       await When["a search is performed that returns multiple results"]();
       await Then["multiple results should not be selected by default"]();
+    }
+  );
+
+  feature(
+    "Should toggle compound selection when clicked twice",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search is performed that returns multiple results"]();
+      await When["a compound is selected"]();
+      await When["a selected compound is clicked again"]();
+      await Then["the compound should not be selected"]();
+    }
+  );
+
+  feature(
+    "Should allow keyboard selection of compounds by pressing enter on the card",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search is performed that returns multiple results"]();
+      await When["tab key is used to navigate to a compound card"]();
+      await When["enter key is pressed"]();
+      await Then["the compound should be selected"]();
+    }
+  );
+
+  feature(
+    "Should allow keyboard selection of compounds by pressing space on the checkbox",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search is performed that returns multiple results"]();
+      await When["tab key is used to navigate to a compound checkbox"]();
+      await When["space key is pressed"]();
+      await Then["the compound should be selected"]();
+    }
+  );
+
+  feature(
+    "Should not toggle selection when clicking on external links",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search is performed that returns multiple results"]();
+      await When["a compound is selected"]();
+      await When["the 'View on PubChem' link is clicked"]();
+      await Then["the compound should be selected"]();
+      /*
+       * Clicking a link inside of the interactive card should not toggle the
+       * selection state. Having interactive items be nested is less than ideal,
+       * given the potentially issues with misclicking but given that a misclick
+       * would only toggle the selected state which can be easily reverted this
+       * was not considered worth foregoing the convenience of having the link
+       * inside the card.
+       */
     }
   );
 
