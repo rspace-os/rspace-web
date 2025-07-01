@@ -26,6 +26,17 @@ export default function useChemicalImport(): {
     searchType: "NAME" | "SMILES";
     searchTerm: string;
   }) => Promise<ReadonlyArray<ChemicalCompound>>;
+  save: ({
+    chemElements,
+    chemElementsFormat,
+    fieldId,
+    metadata,
+  }: {
+    chemElements: string;
+    chemElementsFormat: "ket" | "smi";
+    fieldId: string;
+    metadata?: Record<string, string>;
+  }) => Promise<void>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -68,5 +79,38 @@ export default function useChemicalImport(): {
     }
   }
 
-  return { search };
+  async function save({
+    chemElements,
+    chemElementsFormat,
+    fieldId,
+    metadata = {},
+  }: {
+    chemElements: string;
+    chemElementsFormat: "ket" | "smi";
+    fieldId: string;
+    metadata?: Record<string, string>;
+  }): Promise<void> {
+    try {
+      const { data } = await axios.post("/chemical/save", {
+        chemElements,
+        chemElementsFormat,
+        chemId: "",
+        imageBase64: "",
+        fieldId,
+        metadata: JSON.stringify(metadata),
+      });
+      return data;
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error saving chemical compounds",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        })
+      );
+      throw new Error("Could not save chemical compounds", { cause: e });
+    }
+  }
+
+  return { search, save };
 }
