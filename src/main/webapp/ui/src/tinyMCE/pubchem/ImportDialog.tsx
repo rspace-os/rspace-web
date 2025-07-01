@@ -47,8 +47,9 @@ type StyledProps = {
 
 const CompoundCard = styled(
   ({ selected, compound, onSelected, className }: CompoundCardProps) => {
+    const nameId = React.useId();
     return (
-      <Card className={className}>
+      <Card className={className} aria-labelledby={nameId}>
         <CardActionArea
           onClick={() => onSelected(compound, !selected)}
           sx={{ display: "flex", alignItems: "stretch" }}
@@ -70,7 +71,7 @@ const CompoundCard = styled(
             }}
           >
             <CardContent sx={{ flex: "1 0 auto", pt: 1, pl: 0.5 }}>
-              <Typography component="div" variant="h6">
+              <Typography component="div" variant="h6" id={nameId}>
                 {compound.name}
               </Typography>
               <TwoColumnDl sx={{ mt: 1, mb: 0 }}>

@@ -109,13 +109,18 @@ const feature = test.extend<{
         await checkbox.click();
       },
       "tab key is used to navigate to a compound card": async () => {
-        await page.keyboard.press("Tab"); // Focus on search button
-        await page.keyboard.press("Tab"); // Focus on first compound card
+        const button = page.getByLabel("Aspirin").getByRole("button");
+        while (await button.evaluate((btn) => btn !== document.activeElement)) {
+          await page.keyboard.press("Tab");
+        }
       },
       "tab key is used to navigate to a compound checkbox": async () => {
-        await page.keyboard.press("Tab"); // Focus on search button
-        await page.keyboard.press("Tab"); // Focus on first compound card
-        await page.keyboard.press("Tab"); // Focus on first compound checkbox
+        const checkbox = page.getByLabel("Aspirin").getByRole("checkbox");
+        while (
+          await checkbox.evaluate((input) => input !== document.activeElement)
+        ) {
+          await page.keyboard.press("Tab");
+        }
       },
       "enter key is pressed": async () => {
         await page.keyboard.press("Enter");
