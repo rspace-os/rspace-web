@@ -124,7 +124,13 @@ const CompoundCard = styled(
           </Box>
           <CardMedia
             component="img"
-            sx={{ width: 151, m: 1, borderRadius: "3px" }}
+            sx={{
+              width: 151,
+              m: 1,
+              borderRadius: "3px",
+              objectFit: "scale-down",
+              alignSelf: "flex-start",
+            }}
             image={compound.pngImage}
             alt={`Chemical structure of ${compound.name}`}
           />
