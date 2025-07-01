@@ -81,22 +81,6 @@ const CompoundCard = styled(
                 <Typography component="dd" variant="subtitle2">
                   {compound.pubchemId}
                 </Typography>
-                <Typography component="dt" variant="overline">
-                  SMILES
-                </Typography>
-                <Typography
-                  component="dd"
-                  variant="subtitle2"
-                  sx={{ wordBreak: "break-all" }}
-                >
-                  {compound.smiles}
-                </Typography>
-                <Typography component="dt" variant="overline">
-                  Formula
-                </Typography>
-                <Typography component="dd" variant="subtitle2">
-                  {compound.formula}
-                </Typography>
                 {compound.cas !== null && (
                   <>
                     <Typography component="dt" variant="overline">
@@ -107,6 +91,12 @@ const CompoundCard = styled(
                     </Typography>
                   </>
                 )}
+                <Typography component="dt" variant="overline">
+                  Formula
+                </Typography>
+                <Typography component="dd" variant="subtitle2">
+                  {compound.formula}
+                </Typography>
               </TwoColumnDl>
             </CardContent>
             <CardActions sx={{ pl: 0 }}>
