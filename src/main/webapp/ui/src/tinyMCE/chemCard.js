@@ -163,6 +163,18 @@ export default function ChemCard(props) {
             {chemical.atomCount}
           </TableCell>
         </TableRow>
+        {Object.entries(JSON.parse(chemical.additionalMetadata ?? "{}")).map(
+          ([k, v]) => (
+            <TableRow>
+              <TableCell component="th" scope="row">
+                {k}
+              </TableCell>
+              <TableCell align="right" className={classes.tableCell}>
+                {v}
+              </TableCell>
+            </TableRow>
+          )
+        )}
       </React.Fragment>
     );
   };
@@ -226,6 +238,18 @@ export default function ChemCard(props) {
             {chem.reactants.map((r) => chemInfoTable(r))}
             {chem.products.map((p) => chemInfoTable(p))}
             {chem.molecules.map((m) => chemInfoTable(m))}
+            {Object.entries(JSON.parse(chem.additionalMetadata ?? "{}")).map(
+              ([k, v]) => (
+                <TableRow key={k}>
+                  <TableCell component="th" scope="row">
+                    {k}
+                  </TableCell>
+                  <TableCell align="right" className={classes.tableCell}>
+                    {v}
+                  </TableCell>
+                </TableRow>
+              )
+            )}
           </TableBody>
         </Table>
       </CardContent>
