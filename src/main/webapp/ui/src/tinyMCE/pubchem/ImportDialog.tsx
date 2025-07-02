@@ -257,8 +257,7 @@ export default function ImportDialog({
       .map(([id]) => results.find((r) => r.pubchemId === id))
       .filter(Boolean) as ChemicalCompound[];
 
-    // TODO: get the field ID from the editor or context
-    const fieldId = "34";
+    const fieldId = editor.id.replace(/^\D+/g, "");
 
     Promise.all(
       selected.map((compound) =>

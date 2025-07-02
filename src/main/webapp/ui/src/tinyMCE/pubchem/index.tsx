@@ -29,6 +29,7 @@ export interface Editor {
     };
   };
   execCommand: (command: string, ui: boolean, value?: string) => void;
+  id: string; // the id the current document field prefixed with "rtf_"
 }
 
 // Declare the global tinymce object
