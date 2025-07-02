@@ -58,6 +58,12 @@ import IconButton from "@mui/material/IconButton";
 import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
 import useSessionStorage from "../../util/useSessionStorage";
+import useWebSocketNotifications from "../../api/useWebSocketNotifications";
+import Badge from "@mui/material/Badge";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import useWhoAmI from "@/api/useWhoAmI";
+import { Person } from "@/stores/definitions/Person";
 
 declare global {
   interface Window {
@@ -70,6 +76,48 @@ declare global {
     };
   }
 }
+
+const AdjustedBadge = styled(Badge)({
+  "& .MuiBadge-badge": {
+    transform: "translate(17%, -19%)",
+  },
+});
+
+const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
+  const { notificationCount, messageCount, specialMessageCount } =
+    useWebSocketNotifications(`${currentUser.id}`);
+  return (
+    <Box
+      ml={1}
+      role="status"
+      aria-live="polite"
+      aria-relevant="text"
+      aria-label="notifications and messages"
+    >
+      <AdjustedBadge
+        badgeContent={notificationCount + messageCount + specialMessageCount}
+        color="error"
+      >
+        <IconButtonWithTooltip
+          size="small"
+          href="/dashboard"
+          component="a"
+          sx={{
+            cursor: "pointer",
+          }}
+          icon={
+            notificationCount + messageCount + specialMessageCount > 0 ? (
+              <NotificationsIcon />
+            ) : (
+              <NotificationsNoneIcon />
+            )
+          }
+          title="Notifications"
+        />
+      </AdjustedBadge>
+    </Box>
+  );
+};
 
 const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -300,6 +348,8 @@ function GalleryAppBar({
     React.useState<null | HTMLElement>(null);
   const leftClipId = React.useId();
   const rightClipId = React.useId();
+
+  const fetchedCurrentUser = useWhoAmI();
 
   const [brandingHref, setBrandingHref] = useSessionStorage<string | null>(
     "brandingHref",
@@ -622,9 +672,288 @@ function GalleryAppBar({
             <IncomingMaintenancePopup key="maintenance" startDate={startDate} />
           ))
           .orElse(null)}
+        {variant === "page" && (
+          <>
+            {FetchingData.getSuccessValue(fetchedCurrentUser)
+              .map((currentUser) => (
+                <NotificationCounter
+                  key="notification counter"
+                  currentUser={currentUser}
+                />
+              ))
+              .orElse(null)}
+            <Box ml={1}>
+              <IconButtonWithTooltip
+                size="small"
+                disabled={FetchingData.isLoading(uiNavigationData)}
+                onClick={(event) => {
+                  setAccountMenuAnchorEl(event.currentTarget);
+                }}
+                icon={
+                  <DynamicAvatar
+                    uiNavigationData={uiNavigationData}
+                    size="small"
+                  />
+                }
+                title="Account Menu"
+                id="account-menu-button"
+                aria-haspopup="menu"
+                aria-controls="account-menu"
+                {...(accountMenuAnchorEl
+                  ? {
+                      ["aria-expanded"]: "true",
+                    }
+                  : {})}
+              />
+              <Menu
+                id="account-menu"
+                anchorEl={accountMenuAnchorEl}
+                open={Boolean(accountMenuAnchorEl)}
+                onClose={() => {
+                  setAccountMenuAnchorEl(null);
+                }}
+                MenuListProps={{
+                  "aria-labelledby": "account-menu-button",
+                  disablePadding: true,
+                  sx: { pt: 0.5 },
+                }}
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "right",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                sx={{
+                  [`.${menuClasses.paper}`]: {
+                    /*
+                     * Generally we don't add box shadows to menus, but we do add
+                     * box shadows to popups opened from the app bar to make them
+                     * hover over the page's content.
+                     */
+                    boxShadow:
+                      "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
+                  },
+                }}
+              >
+                {FetchingData.match(uiNavigationData, {
+                  loading: () => null,
+                  error: (errorMsg) => (
+                    <ListItem>
+                      <ListItemText
+                        primary="Error loading your details"
+                        secondary={errorMsg}
+                      />
+                    </ListItem>
+                  ),
+                  success: ({ userDetails }) => (
+                    <ListItem key="user details" sx={{ py: 0 }}>
+                      <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
+                        <DynamicAvatar uiNavigationData={uiNavigationData} />
+                      </ListItemIcon>
+                      <Stack>
+                        <ListItemText
+                          sx={{ mt: 0.5 }}
+                          primary={
+                            <>
+                              {FetchingData.getSuccessValue(uiNavigationData)
+                                .map(({ operatedAs }) => operatedAs)
+                                .flatMap(Parsers.isTrue)
+                                .map(() => (
+                                  <>
+                                    <strong>Operating as:</strong>
+                                    <br />
+                                  </>
+                                ))
+                                .orElse(null)}
+                              {userDetails.fullName} ({userDetails.username})
+                            </>
+                          }
+                          secondary={userDetails.email}
+                        />
+                        {userDetails.orcidAvailable && (
+                          <ListItemText
+                            /*
+                             * The styling of this component is dictated by the ORCID display guidelines
+                             * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
+                             */
+                            sx={{ mt: -0.5 }}
+                            primaryTypographyProps={{
+                              sx: {
+                                fontFamily:
+                                  userDetails.orcidId === null
+                                    ? "inherit"
+                                    : "monospace",
+                                lineHeight:
+                                  userDetails.orcidId === null
+                                    ? "unset"
+                                    : "1em",
+                                fontSize: "0.8em",
+                                alignItems: "center",
+                                textDecoration:
+                                  userDetails.orcidId === null
+                                    ? "none"
+                                    : "underline",
+                              },
+                            }}
+                            primary={
+                              userDetails.orcidId === null ? (
+                                <>
+                                  Add an ORCID iD to your{" "}
+                                  <Link href="/userform">profile</Link>.
+                                </>
+                              ) : (
+                                <Stack
+                                  direction="row"
+                                  spacing={0.5}
+                                  alignItems="center"
+                                >
+                                  <SvgIcon>
+                                    <OrcidIcon />
+                                  </SvgIcon>
+                                  <span>{userDetails.orcidId}</span>
+                                </Stack>
+                              )
+                            }
+                          />
+                        )}
+                      </Stack>
+                    </ListItem>
+                  ),
+                })}
+                <AccentMenuItem
+                  title="Messaging"
+                  avatar={<MessageIcon />}
+                  compact
+                  onClick={() => {
+                    setAccountMenuAnchorEl(null);
+                  }}
+                  component="a"
+                  href="/dashboard"
+                />
+                <AccentMenuItem
+                  title="Apps"
+                  avatar={<AppsIcon />}
+                  compact
+                  onClick={() => {
+                    setAccountMenuAnchorEl(null);
+                  }}
+                  component="a"
+                  href="/apps"
+                />
+                {FetchingData.getSuccessValue(uiNavigationData)
+                  .map(({ visibleTabs: { published } }) => published)
+                  .flatMap(Parsers.isTrue)
+                  .map(() => (
+                    <AccentMenuItem
+                      key="published"
+                      title="Published"
+                      avatar={<PublicIcon />}
+                      compact
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setAccountMenuAnchorEl(null);
+                        window.open(
+                          "/public/publishedView/publishedDocuments",
+                          "_target"
+                        );
+                      }}
+                      component="a"
+                      href="/public/publishedView/publishedDocuments"
+                    />
+                  ))
+                  .orElse(null)}
+                <AccessibilityTipsMenuItem
+                  {...(accessibilityTips ?? {})}
+                  onClose={() => {
+                    setAccountMenuAnchorEl(null);
+                  }}
+                />
+                {FetchingData.getSuccessValue(uiNavigationData)
+                  .map(({ operatedAs }) => operatedAs)
+                  .flatMap(Parsers.isTrue)
+                  .map(() => (
+                    <AccentMenuItem
+                      key="release"
+                      title="Release"
+                      avatar={<LogoutIcon />}
+                      backgroundColor={lighten(theme.palette.error.light, 0.5)}
+                      foregroundColor={darken(theme.palette.error.dark, 0.3)}
+                      compact
+                      onClick={() => {
+                        JwtService.destroyToken();
+                        setAccountMenuAnchorEl(null);
+                        window.location.href = "/logout/runAsRelease";
+                      }}
+                    />
+                  ))
+                  .orElse(
+                    <AccentMenuItem
+                      title="Log Out"
+                      avatar={<LogoutIcon />}
+                      backgroundColor={lighten(theme.palette.error.light, 0.5)}
+                      foregroundColor={darken(theme.palette.error.dark, 0.3)}
+                      compact
+                      onClick={() => {
+                        JwtService.destroyToken();
+
+                        /*
+                         * On some servers the user can login with the Google
+                         * Login workflow. On those servers, `gapi` will be
+                         * defined globally by header.jsp
+                         */
+                        if (
+                          typeof window.gapi !== "undefined" &&
+                          window.gapi.auth2
+                        ) {
+                          const auth2 = window.gapi.auth2.getAuthInstance();
+                          if (auth2) {
+                            void auth2.signOut().then(() => {
+                              // eslint-disable-next-line no-console
+                              console.log("User signed out.");
+                            });
+                          } else {
+                            // eslint-disable-next-line no-console
+                            console.log("No GAPI authinstance defined");
+                          }
+                        } else {
+                          // eslint-disable-next-line no-console
+                          console.log("No GAPI defined");
+                        }
+
+                        setAccountMenuAnchorEl(null);
+                        window.location.href = "/logout";
+                      }}
+                    />
+                  )}
+                {FetchingData.getSuccessValue(uiNavigationData)
+                  .map(({ bannerImgSrc }) => (
+                    <ListItem
+                      key="branding large"
+                      sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}
+                    >
+                      <img
+                        src={bannerImgSrc}
+                        role="presentation"
+                        alt="branding"
+                        style={{ width: "min(100%, 120px)" }}
+                      />
+                    </ListItem>
+                  ))
+                  .orElse(null)}
+              </Menu>
+            </Box>
+          </>
+        )}
+        {variant === "dialog" && (
+          <Box sx={{ ml: 1 }}>
+            <AccessibilityTipsIconButton {...(accessibilityTips ?? {})} />
+          </Box>
+        )}
         <Box ml={1}>
           {helpPage ? (
-            <Box ml={1} sx={{ transform: "translateY(2px)" }}>
+            <Box sx={{ transform: "translateY(2px)" }}>
               <HelpLinkIcon title={helpPage.title} link={helpPage.docLink} />
             </Box>
           ) : (
@@ -641,273 +970,6 @@ function GalleryAppBar({
             />
           )}
         </Box>
-        {variant === "page" && (
-          <Box ml={1}>
-            <IconButtonWithTooltip
-              size="small"
-              disabled={FetchingData.isLoading(uiNavigationData)}
-              onClick={(event) => {
-                setAccountMenuAnchorEl(event.currentTarget);
-              }}
-              icon={
-                <DynamicAvatar
-                  uiNavigationData={uiNavigationData}
-                  size="small"
-                />
-              }
-              title="Account Menu"
-              id="account-menu-button"
-              aria-haspopup="menu"
-              aria-controls="account-menu"
-              {...(accountMenuAnchorEl
-                ? {
-                    ["aria-expanded"]: "true",
-                  }
-                : {})}
-            />
-            <Menu
-              id="account-menu"
-              anchorEl={accountMenuAnchorEl}
-              open={Boolean(accountMenuAnchorEl)}
-              onClose={() => {
-                setAccountMenuAnchorEl(null);
-              }}
-              MenuListProps={{
-                "aria-labelledby": "account-menu-button",
-                disablePadding: true,
-                sx: { pt: 0.5 },
-              }}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              sx={{
-                [`.${menuClasses.paper}`]: {
-                  /*
-                   * Generally we don't add box shadows to menus, but we do add
-                   * box shadows to popups opened from the app bar to make them
-                   * hover over the page's content.
-                   */
-                  boxShadow:
-                    "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
-                },
-              }}
-            >
-              {FetchingData.match(uiNavigationData, {
-                loading: () => null,
-                error: (errorMsg) => (
-                  <ListItem>
-                    <ListItemText
-                      primary="Error loading your details"
-                      secondary={errorMsg}
-                    />
-                  </ListItem>
-                ),
-                success: ({ userDetails }) => (
-                  <ListItem key="user details" sx={{ py: 0 }}>
-                    <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
-                      <DynamicAvatar uiNavigationData={uiNavigationData} />
-                    </ListItemIcon>
-                    <Stack>
-                      <ListItemText
-                        sx={{ mt: 0.5 }}
-                        primary={
-                          <>
-                            {FetchingData.getSuccessValue(uiNavigationData)
-                              .map(({ operatedAs }) => operatedAs)
-                              .flatMap(Parsers.isTrue)
-                              .map(() => (
-                                <>
-                                  <strong>Operating as:</strong>
-                                  <br />
-                                </>
-                              ))
-                              .orElse(null)}
-                            {userDetails.fullName} ({userDetails.username})
-                          </>
-                        }
-                        secondary={userDetails.email}
-                      />
-                      {userDetails.orcidAvailable && (
-                        <ListItemText
-                          /*
-                           * The styling of this component is dictated by the ORCID display guidelines
-                           * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
-                           */
-                          sx={{ mt: -0.5 }}
-                          primaryTypographyProps={{
-                            sx: {
-                              fontFamily:
-                                userDetails.orcidId === null
-                                  ? "inherit"
-                                  : "monospace",
-                              lineHeight:
-                                userDetails.orcidId === null ? "unset" : "1em",
-                              fontSize: "0.8em",
-                              alignItems: "center",
-                              textDecoration:
-                                userDetails.orcidId === null
-                                  ? "none"
-                                  : "underline",
-                            },
-                          }}
-                          primary={
-                            userDetails.orcidId === null ? (
-                              <>
-                                Add an ORCID iD to your{" "}
-                                <Link href="/userform">profile</Link>.
-                              </>
-                            ) : (
-                              <Stack
-                                direction="row"
-                                spacing={0.5}
-                                alignItems="center"
-                              >
-                                <SvgIcon>
-                                  <OrcidIcon />
-                                </SvgIcon>
-                                <span>{userDetails.orcidId}</span>
-                              </Stack>
-                            )
-                          }
-                        />
-                      )}
-                    </Stack>
-                  </ListItem>
-                ),
-              })}
-              <AccentMenuItem
-                title="Messaging"
-                avatar={<MessageIcon />}
-                compact
-                onClick={() => {
-                  setAccountMenuAnchorEl(null);
-                }}
-                component="a"
-                href="/dashboard"
-              />
-              <AccentMenuItem
-                title="Apps"
-                avatar={<AppsIcon />}
-                compact
-                onClick={() => {
-                  setAccountMenuAnchorEl(null);
-                }}
-                component="a"
-                href="/apps"
-              />
-              {FetchingData.getSuccessValue(uiNavigationData)
-                .map(({ visibleTabs: { published } }) => published)
-                .flatMap(Parsers.isTrue)
-                .map(() => (
-                  <AccentMenuItem
-                    key="published"
-                    title="Published"
-                    avatar={<PublicIcon />}
-                    compact
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setAccountMenuAnchorEl(null);
-                      window.open(
-                        "/public/publishedView/publishedDocuments",
-                        "_target"
-                      );
-                    }}
-                    component="a"
-                    href="/public/publishedView/publishedDocuments"
-                  />
-                ))
-                .orElse(null)}
-              <AccessibilityTipsMenuItem
-                {...(accessibilityTips ?? {})}
-                onClose={() => {
-                  setAccountMenuAnchorEl(null);
-                }}
-              />
-              {FetchingData.getSuccessValue(uiNavigationData)
-                .map(({ operatedAs }) => operatedAs)
-                .flatMap(Parsers.isTrue)
-                .map(() => (
-                  <AccentMenuItem
-                    key="release"
-                    title="Release"
-                    avatar={<LogoutIcon />}
-                    backgroundColor={lighten(theme.palette.error.light, 0.5)}
-                    foregroundColor={darken(theme.palette.error.dark, 0.3)}
-                    compact
-                    onClick={() => {
-                      JwtService.destroyToken();
-                      setAccountMenuAnchorEl(null);
-                      window.location.href = "/logout/runAsRelease";
-                    }}
-                  />
-                ))
-                .orElse(
-                  <AccentMenuItem
-                    title="Log Out"
-                    avatar={<LogoutIcon />}
-                    backgroundColor={lighten(theme.palette.error.light, 0.5)}
-                    foregroundColor={darken(theme.palette.error.dark, 0.3)}
-                    compact
-                    onClick={() => {
-                      JwtService.destroyToken();
-
-                      /*
-                       * On some servers the user can login with the Google
-                       * Login workflow. On those servers, `gapi` will be
-                       * defined globally by header.jsp
-                       */
-                      if (
-                        typeof window.gapi !== "undefined" &&
-                        window.gapi.auth2
-                      ) {
-                        const auth2 = window.gapi.auth2.getAuthInstance();
-                        if (auth2) {
-                          void auth2.signOut().then(() => {
-                            // eslint-disable-next-line no-console
-                            console.log("User signed out.");
-                          });
-                        } else {
-                          // eslint-disable-next-line no-console
-                          console.log("No GAPI authinstance defined");
-                        }
-                      } else {
-                        // eslint-disable-next-line no-console
-                        console.log("No GAPI defined");
-                      }
-
-                      setAccountMenuAnchorEl(null);
-                      window.location.href = "/logout";
-                    }}
-                  />
-                )}
-              {FetchingData.getSuccessValue(uiNavigationData)
-                .map(({ bannerImgSrc }) => (
-                  <ListItem
-                    key="branding large"
-                    sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}
-                  >
-                    <img
-                      src={bannerImgSrc}
-                      role="presentation"
-                      alt="branding"
-                      style={{ width: "min(100%, 120px)" }}
-                    />
-                  </ListItem>
-                ))
-                .orElse(null)}
-            </Menu>
-          </Box>
-        )}
-        {variant === "dialog" && (
-          <Box sx={{ ml: 0.5 }}>
-            <AccessibilityTipsIconButton {...(accessibilityTips ?? {})} />
-          </Box>
-        )}
       </Toolbar>
     </AppBar>
   );

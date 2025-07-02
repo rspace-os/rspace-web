@@ -47,6 +47,10 @@ describe("CSV Export", () => {
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { ...PDF_CONFIG });
 
+      mockAxios.onGet("/analyticsProperties").reply(200, {
+        analyticsEnabled: false,
+      });
+
       render(
         <StyledEngineProvider injectFirst>
           <ThemeProvider theme={materialTheme}>
@@ -82,6 +86,10 @@ describe("CSV Export", () => {
       mockAxios
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { ...PDF_CONFIG });
+
+      mockAxios.onGet("/analyticsProperties").reply(200, {
+        analyticsEnabled: false,
+      });
 
       render(
         <StyledEngineProvider injectFirst>
