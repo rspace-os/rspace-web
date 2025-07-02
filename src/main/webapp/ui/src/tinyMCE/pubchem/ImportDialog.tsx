@@ -27,12 +27,47 @@ import ValidatingSubmitButton, {
 import useChemicalImport, {
   type ChemicalCompound,
 } from "@/hooks/api/useChemicalImport";
-import { TwoColumnDl } from "@/components/DescriptionList";
 import { type Theme, alpha } from "@mui/material/styles";
 import styled from "@emotion/styled";
 import { ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { CardActionArea } from "@mui/material";
 import { type Editor } from ".";
+
+function Dl({ children }: { children: React.ReactNode }): React.ReactNode {
+  return (
+    <Typography
+      component="dd"
+      sx={{ display: "grid", gridTemplateColumns: "auto 1fr", mt: 1, mb: 0 }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+function Dt({ children }: { children: React.ReactNode }): React.ReactNode {
+  return (
+    <Typography
+      component="dt"
+      sx={{
+        lineHeight: 1.8,
+        textTransform: "uppercase",
+        fontWeight: 600,
+        marginRight: 2,
+        fontSize: "0.8rem",
+      }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+function Dd({ children }: { children: React.ReactNode }): React.ReactNode {
+  return (
+    <Typography component="dd" sx={{ lineHeight: 1.8, fontSize: "0.8rem" }}>
+      {children}
+    </Typography>
+  );
+}
 
 type CompoundCardProps = {
   selected: boolean;
@@ -75,30 +110,18 @@ const CompoundCard = styled(
               <Typography component="div" variant="h6" id={nameId}>
                 {compound.name}
               </Typography>
-              <TwoColumnDl sx={{ mt: 1, mb: 0 }}>
-                <Typography component="dt" variant="overline">
-                  PubChem ID
-                </Typography>
-                <Typography component="dd" variant="subtitle2">
-                  {compound.pubchemId}
-                </Typography>
+              <Dl>
+                <Dt>PubChem ID</Dt>
+                <Dd>{compound.pubchemId}</Dd>
                 {compound.cas !== null && (
                   <>
-                    <Typography component="dt" variant="overline">
-                      CAS Number
-                    </Typography>
-                    <Typography component="dd" variant="subtitle2">
-                      {compound.cas}
-                    </Typography>
+                    <Dt>CAS Number</Dt>
+                    <Dd>{compound.cas}</Dd>
                   </>
                 )}
-                <Typography component="dt" variant="overline">
-                  Formula
-                </Typography>
-                <Typography component="dd" variant="subtitle2">
-                  {compound.formula}
-                </Typography>
-              </TwoColumnDl>
+                <Dt>Formula</Dt>
+                <Dd>{compound.formula}</Dd>
+              </Dl>
             </CardContent>
             <CardActions sx={{ pl: 0 }}>
               <Link
@@ -280,7 +303,8 @@ export default function ImportDialog({
         <Stack spacing={2} flexWrap="nowrap">
           <Box>
             <Typography variant="body2">
-              Importing a compond from PubChem will insert it into the document.
+              Importing a compound from PubChem will insert the chemical
+              structure and its associated metadata into the document.
             </Typography>
             <Typography variant="body2">
               See <Link href="#">[pubchem website]</Link> and our{" "}
@@ -298,7 +322,7 @@ export default function ImportDialog({
                   placeholder={
                     searchType === "NAME"
                       ? "Enter a compound name or CAS number"
-                      : "SMILES"
+                      : "Enter a SMILES string"
                   }
                   InputProps={{
                     startAdornment: (
