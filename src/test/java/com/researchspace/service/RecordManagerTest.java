@@ -16,8 +16,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
@@ -1760,8 +1758,10 @@ public class RecordManagerTest extends SpringTransactionalTest {
         .addACLElement(new ACLElement("userGroup2", new ConstraintBasedPermission()));
     notebook
         .getSharingACL()
-        .addACLElement(new ACLElement(user.getUniqueName(), new ConstraintBasedPermission(
-            PermissionDomain.USER, PermissionType.CREATE)));
+        .addACLElement(
+            new ACLElement(
+                user.getUniqueName(),
+                new ConstraintBasedPermission(PermissionDomain.USER, PermissionType.CREATE)));
     Assertions.assertTrue(notebook.isShared());
 
     // when is shared Notebook with CREATE permission
@@ -1769,6 +1769,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     logoutAndLoginAs(anotherUser);
     // when is shared Notebook and NO CREATE permission
-    assertTrue(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(anotherUser, notebook));
+    assertTrue(
+        recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(anotherUser, notebook));
   }
 }
