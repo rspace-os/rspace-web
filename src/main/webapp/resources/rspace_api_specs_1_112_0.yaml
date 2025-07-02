@@ -2597,7 +2597,7 @@ paths:
       responses:
         '200':
           description:  A sum of two provided quantiies
-  /chemical/search:
+  /pubchem/search:
     post:
       summary: Search for chemicals
       description: >
