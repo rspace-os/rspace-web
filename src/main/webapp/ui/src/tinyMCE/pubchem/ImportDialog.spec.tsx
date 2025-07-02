@@ -227,7 +227,7 @@ const feature = test.extend<{
       "SMILES is passed in the API call": () => {
         const searchRequest = networkRequests.find(
           (request) =>
-            request.url.pathname === "/api/v1/chemical/search" &&
+            request.url.pathname === "/api/v1/pubchem/search" &&
             request.postData?.includes('"searchType":"SMILES"')
         );
         expect(searchRequest).toBeDefined();
@@ -350,7 +350,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       }),
     });
   });
-  await router.route("/api/v1/chemical/search", async (route) => {
+  await router.route("/api/v1/pubchem/search", async (route) => {
     const requestData = JSON.parse(route.request().postData() || "{}");
     const searchTerm = requestData.searchTerm;
 

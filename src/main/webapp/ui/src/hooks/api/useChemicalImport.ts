@@ -62,7 +62,7 @@ export default function useChemicalImport(): {
        * We use a POST because encoding SMILES in a URL can be problematic
        */
       const { data } = await axios.post<ReadonlyArray<ChemicalCompound>>(
-        "/api/v1/chemical/search",
+        "/api/v1/pubchem/search",
         {
           searchType,
           searchTerm,
