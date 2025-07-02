@@ -47,7 +47,6 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.FolderRecordPair;
 import com.researchspace.model.views.MessagedServiceOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
-import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.model.views.SigningResult;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DocumentAlreadyEditedException;
@@ -310,11 +309,11 @@ public class StructuredDocumentController extends BaseController {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Form", formid));
       }
       Folder originalParentFolder = folderManager.getFolder(parentRecordId, user);
-      if (originalParentFolder.isSharedFolder()) {
-        // shareDocument into the current parentFolder
-        ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
-            recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newRecord.getId());
-        sharedWithGroup = sharingResult.getResults();
+      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+          user, originalParentFolder)) {
+        sharedWithGroup =
+            recordShareHandler.shareIntoSharedFolderOrNotebook(
+                user, originalParentFolder, newRecord.getId());
       }
     } catch (AuthorizationException ae) {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", parentRecordId));
@@ -396,9 +395,9 @@ public class StructuredDocumentController extends BaseController {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Template", templateid));
 
       } else if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
-        ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
-            recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, rc.getId());
-        sharedWithGroup = sharingResult.getResults();
+        sharedWithGroup =
+            recordShareHandler.shareIntoSharedFolderOrNotebook(
+                user, originalParentFolder, rc.getId());
       }
 
     } catch (AuthorizationException ae) {

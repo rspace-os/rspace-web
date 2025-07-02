@@ -18,7 +18,6 @@ import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.FormDao;
 import com.researchspace.dao.FormUsageDao;
-import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.NameDateFilter;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.RecordGroupSharingDao;
@@ -26,7 +25,6 @@ import com.researchspace.dao.RecordUserFavoritesDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.linkedelements.FieldContentDelta;
 import com.researchspace.linkedelements.FieldLinksEntitiesSynchronizer;
-import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.linkedelements.TextFieldDataSanitizer;
 import com.researchspace.model.EcatChemistryFile;
@@ -133,11 +131,9 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired MovePermissionChecker movePermissionChecker;
   private @Autowired IPermissionUtils permissnUtils;
   private @Autowired RecordDao recordDao;
-  private @Autowired GroupDao groupDao;
   private @Autowired UserManager userManager;
   private @Autowired UserDao userDao;
   private @Autowired AuditDao auditDao;
-  private @Autowired FieldParser fieldParser;
   private @Autowired TextFieldDataSanitizer textFieldDataSanitizer;
 
   private @Autowired NameDateFilter folderFilter;
@@ -335,18 +331,18 @@ public class RecordManagerImpl implements RecordManager {
       parentFolder = folderDao.get(parentId);
     }
 
-    if (!parentFolder.isSharedFolder()) {
-      if (!context.enableDirectTemplateCreationInTemplateFolder()
-          || !(parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true))) {
-        permissnUtils.assertIsPermitted(
-            parentFolder, PermissionType.CREATE, user, "create document in parent folder");
-      }
-    } else {
+    if (this.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, parentFolder)) {
       log.warn(
           "The record will be created inside the root folder since the"
               + " specified one [{}] is a shared folder",
           parentFolder.getName());
       parentFolder = folderDao.get(user.getRootFolder().getId());
+    } else {
+      if (!context.enableDirectTemplateCreationInTemplateFolder()
+          || !(parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true))) {
+        permissnUtils.assertIsPermitted(
+            parentFolder, PermissionType.CREATE, user, "create document in parent folder");
+      }
     }
     RSForm form = formDao.get(formID);
 
@@ -1365,5 +1361,14 @@ public class RecordManagerImpl implements RecordManager {
     }
 
     return false;
+  }
+
+  @Override
+  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+      User user, Folder folderOrNotebook) {
+    return folderOrNotebook.isSharedFolder()
+        || (folderOrNotebook.isNotebook()
+            && folderOrNotebook.isShared()
+            && !permissnUtils.isPermitted(folderOrNotebook, PermissionType.CREATE, user));
   }
 }

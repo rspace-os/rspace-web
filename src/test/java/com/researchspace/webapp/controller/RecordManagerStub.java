@@ -412,6 +412,12 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
+  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+      User user, Folder parentFolder) {
+    return true;
+  }
+
+  @Override
   public StructuredDocument createNewStructuredDocument(
       Long parentId, Long formId, User user, RecordContext context, ImportOverride override) {
     return null;

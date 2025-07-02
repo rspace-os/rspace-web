@@ -33,6 +33,7 @@
     <input id="authzCreateFolder" type="hidden" value="${createPermission.createFolder}" />
     <input id="movetargetRoot" type="hidden" value="${movetargetRoot}" />
     <input id="isNotebook" type="hidden" value="${isNotebook}" />
+    <input id="allowCreateNewEntryInNotebook" type="hidden" value="${allowCreateNewEntryInNotebook}" />
 </div>
 
 <div class="rs-working-area">

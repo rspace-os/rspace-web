@@ -15,6 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.RenameAuditEvent;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.DocumentAlreadyEditedException;
@@ -23,6 +24,8 @@ import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.webapp.controller.WorkspaceController;
+import com.researchspace.webapp.controller.WorkspaceHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -36,6 +39,8 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
   @Autowired private FormManager formMgr;
   @Autowired private GroupManager groupManager;
   @Autowired private SharingHandler recordShareHandler;
+  @Autowired private WorkspaceHandler workspaceHandler;
+  @Autowired private WorkspaceController workspaceController;
   @Mock private AuditTrailService auditTrailService;
 
   private User testUser;
@@ -75,6 +80,46 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
     assertTrue(newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.equals(sharedFolder)));
     assertTrue(
         newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.getName().equals("Api Inbox")));
+  }
+
+  @Test
+  public void testCreateDocumentIntoSharedNotebook() {
+    RSForm anyForm = formMgr.getBasicDocumentForm();
+
+    User admin = createAndSaveAPi();
+    User user = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group group = new Group(CoreTestUtils.getRandomName(10), admin);
+    group.setDisplayName(group.getUniqueName());
+    group = grpMgr.saveGroup(group, user);
+    initialiseContentWithEmptyContent(user, admin);
+
+    group = grpMgr.addUserToGroup(admin.getUsername(), group.getId(), RoleInGroup.PI);
+    Folder sharedGroupFolder =
+        grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
+    flushDatabaseState();
+
+    Long notebookId =
+        Long.valueOf(
+            workspaceController.createNotebookAndRedirect(
+                    sharedGroupFolder.getId(), "notebook", new MockPrincipal(admin))
+                .split("/")[2]
+                .split("\\?")[0]);
+
+    flushDatabaseState();
+    final Notebook sharedNotebook = folderMgr.getNotebook(notebookId);
+    assertTrue(sharedNotebook.isShared());
+
+    ApiDocument apiDoc = new ApiDocument();
+    apiDoc.setParentFolderId(sharedNotebook.getId());
+    apiDoc.setName("NewDoc-into-SharedNotebook");
+
+    Long docId = recordApiMgr.createNewDocument(apiDoc, anyForm, admin);
+    StructuredDocument newCreatedDoc = (StructuredDocument) recordMgr.get(docId);
+
+    assertEquals(1, newCreatedDoc.getParentFolders().size());
+    assertTrue(newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.equals(sharedNotebook)));
+    assertTrue(
+        newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.getName().equals("notebook")));
   }
 
   @Test
