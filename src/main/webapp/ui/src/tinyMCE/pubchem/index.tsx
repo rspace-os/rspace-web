@@ -7,6 +7,7 @@ import { ACCENT_COLOR } from "../../assets/branding/pubchem";
 import ImportDialog from "./ImportDialog";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Alerts from "@/components/Alerts/Alerts";
+import Analytics from "@/components/Analytics";
 
 // Define types for external interfaces
 type ButtonConfig = {
@@ -65,11 +66,13 @@ class PubchemPlugin {
         root.render(
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <ErrorBoundary>
-                <Alerts>
-                  <ImportDialog {...newProps} />
-                </Alerts>
-              </ErrorBoundary>
+              <Analytics>
+                <ErrorBoundary>
+                  <Alerts>
+                    <ImportDialog {...newProps} />
+                  </Alerts>
+                </ErrorBoundary>
+              </Analytics>
             </ThemeProvider>
           </StyledEngineProvider>
         );

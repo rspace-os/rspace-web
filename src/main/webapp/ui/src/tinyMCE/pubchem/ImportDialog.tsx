@@ -32,6 +32,7 @@ import styled from "@emotion/styled";
 import { ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { CardActionArea } from "@mui/material";
 import { type Editor } from ".";
+import AnalyticsContext from "@/stores/contexts/Analytics";
 
 function Dl({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
@@ -195,6 +196,7 @@ export default function ImportDialog({
   onClose: () => void;
   editor: Editor;
 }): React.ReactNode {
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const titleId = React.useId();
   const resultsId = React.useId();
   const { search, save, formatAsHtml } = useChemicalImport();
@@ -237,6 +239,7 @@ export default function ImportDialog({
       setSelectedCompounds({});
       setIsSubmitting(false);
     }
+    if (open) trackEvent("user:open:pubchem_import:document");
   }, [open]);
 
   function handleCompoundSelection(
@@ -279,10 +282,9 @@ export default function ImportDialog({
           editor.execCommand("mceInsertContent", false, html);
         });
       });
-      // TODO: analytics event
+      trackEvent("user:add:chemistry_object:document", { from: "pubchem" });
     });
 
-    // Close the dialog when done
     onClose();
   }
 
