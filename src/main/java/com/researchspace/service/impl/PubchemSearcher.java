@@ -7,7 +7,7 @@ import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.PubChemResponse;
 import com.researchspace.model.dtos.chemistry.PubChemSynonymsResponse;
 import com.researchspace.service.ChemicalImportException;
-import com.researchspace.service.ChemicalImporter;
+import com.researchspace.service.ChemicalSearcher;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -18,13 +18,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Service
-public class PubChemImporter implements ChemicalImporter {
+public class PubchemSearcher implements ChemicalSearcher {
 
   private static final String PUBCHEM_BASE_URL =
       "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound";
@@ -32,7 +31,7 @@ public class PubChemImporter implements ChemicalImporter {
   private final RestTemplate restTemplate;
 
   @Autowired
-  public PubChemImporter(RestTemplate restTemplate) {
+  public PubchemSearcher(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
   }
 
@@ -48,36 +47,11 @@ public class PubChemImporter implements ChemicalImporter {
     return makeApiRequestAndParseResponse(url, searchTerm);
   }
 
-  @Override
-  public void importChemicals(List<String> cids) throws ChemicalImportException {
-    if (cids == null || cids.isEmpty()) {
-      throw new ChemicalImportException("At least one PubChem CID is required");
-    }
-
-    for (String cid : cids) {
-      if (isBlank(cid)) {
-        throw new ChemicalImportException("PubChem CID cannot be blank");
-      }
-
-      String url =
-          String.format(
-              "%s/cid/%s/property/Title,SMILES,MolecularFormula/json", PUBCHEM_BASE_URL, cid);
-      List<ChemicalImportSearchResult> results = makeApiRequestAndParseResponse(url, cid);
-
-      if (results.isEmpty()) {
-        throw new ChemicalImportException(
-            String.format("No chemical found for PubChem CID: %s", cid));
-      }
-
-      log.info("Successfully imported chemical with PubChem CID: {}", cid);
-      // todo: import via RSChemService
-    }
-  }
-
   private void validateSearchParameters(ChemicalImportSearchType searchType, String searchTerm)
       throws ChemicalImportException {
     if (searchType == null || isBlank(searchTerm)) {
-      throw new ChemicalImportException("Search type and term are required");
+      throw new ChemicalImportException(
+          "Search type and term are required", HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -99,7 +73,8 @@ public class PubChemImporter implements ChemicalImporter {
       return results;
 
     } catch (Exception e) {
-      throw new ChemicalImportException("Error parsing PubChem response", e);
+      throw new ChemicalImportException(
+          "Error parsing PubChem response", e, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -135,7 +110,8 @@ public class PubChemImporter implements ChemicalImporter {
    * available from the same endpoint where we get other chemical information. A CAS Registry Number
    * includes up to 10 digits which are separated into 3 groups by hyphens. The first part of the
    * number, starting from the left, has 2 to 7 digits; the second part has 2 digits. The final part
-   * consists of a single check digit.
+   * consists of a single check digit. Since cas isn't critical, we don't throw an exception if
+   * there's a problem and instead return an empty string.
    */
   private String fetchCasNumberFromSynonyms(String cid) {
     try {
@@ -147,7 +123,7 @@ public class PubChemImporter implements ChemicalImporter {
 
       if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
         log.warn("Failed to fetch synonyms for CID {}: {}", cid, response.getStatusCode());
-        return null;
+        return "";
       }
 
       PubChemSynonymsResponse synonymsResponse = response.getBody();
@@ -155,14 +131,14 @@ public class PubChemImporter implements ChemicalImporter {
           || synonymsResponse.getInformationList().getInformation() == null
           || synonymsResponse.getInformationList().getInformation().isEmpty()) {
         log.warn("No synonym information found for CID {}", cid);
-        return null;
+        return "";
       }
 
       List<String> synonyms =
           synonymsResponse.getInformationList().getInformation().get(0).getSynonyms();
       if (synonyms == null || synonyms.isEmpty()) {
         log.warn("No synonyms found for CID {}", cid);
-        return null;
+        return "";
       }
 
       // CAS Registry Numbers follow the format: numbers separated by hyphens (e.g., 50-78-2)
@@ -176,14 +152,14 @@ public class PubChemImporter implements ChemicalImporter {
       }
 
       log.warn("No CAS number found in synonyms for CID {}", cid);
-      return null;
+      return "";
 
     } catch (HttpClientErrorException e) {
       log.warn("HTTP error fetching synonyms for CID {}: {}", cid, e.getMessage());
-      return null;
+      return "";
     } catch (Exception e) {
       log.warn("Error fetching CAS number for CID {}: {}", cid, e.getMessage());
-      return null;
+      return "";
     }
   }
 
@@ -196,7 +172,8 @@ public class PubChemImporter implements ChemicalImporter {
 
       if (!response.getStatusCode().is2xxSuccessful()) {
         throw new ChemicalImportException(
-            String.format("PubChem API returned status: %s", response.getStatusCode()));
+            String.format("PubChem API returned status: %s", response.getStatusCode()),
+            response.getStatusCode());
       }
 
       return parseResponseToResults(response.getBody());
@@ -206,18 +183,22 @@ public class PubChemImporter implements ChemicalImporter {
         log.info("No results found for search term: {}", searchTerm);
         return new ArrayList<>();
       } else if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-        throw new ChemicalImportException("Rate limit exceeded. Please try again later.");
+        throw new ChemicalImportException(
+            "Rate limit exceeded. Please try again later.", HttpStatus.TOO_MANY_REQUESTS);
       } else if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
         throw new ChemicalImportException(
-            String.format("Invalid request to PubChem API: %s", e.getMessage()), e);
+            String.format("Invalid request to PubChem API: %s", e.getMessage()),
+            e,
+            HttpStatus.BAD_REQUEST);
       }
-      throw new ChemicalImportException(String.format("PubChem API error: %s", e.getMessage()), e);
-    } catch (ResourceAccessException e) {
-      throw new ChemicalImportException("PubChem API timeout or connection error", e);
+      throw new ChemicalImportException(
+          String.format("PubChem API error: %s", e.getMessage()), e, e.getStatusCode());
     } catch (RestClientException e) {
-      throw new ChemicalImportException("Error communicating with PubChem API", e);
+      throw new ChemicalImportException(
+          "Error communicating with PubChem API", e, HttpStatus.BAD_GATEWAY);
     } catch (Exception e) {
-      throw new ChemicalImportException("Unexpected error during chemical import", e);
+      throw new ChemicalImportException(
+          "Unexpected error during chemical import", e, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 /** Sanity tests to verify connection to PubChem and response format. */
 @WebAppConfiguration
-public class ChemicalImportApiControllerMVCIT extends API_MVC_TestBase {
+public class PubchemSearchApiControllerMVCIT extends API_MVC_TestBase {
 
   private User user;
   private String apiKey;
@@ -36,7 +36,7 @@ public class ChemicalImportApiControllerMVCIT extends API_MVC_TestBase {
         new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
     MvcResult result =
         mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "chemical/search", user, body))
+            .perform(createBuilderForPostWithJSONBody(apiKey, "pubchem/search", user, body))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -56,18 +56,5 @@ public class ChemicalImportApiControllerMVCIT extends API_MVC_TestBase {
         objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
     assertEquals(expected, actual);
-  }
-
-  //  @RunIfSystemPropertyDefined("nightly")
-  @Test
-  public void testImportByCID() throws Exception {
-    List<String> body = List.of("2244", "2246");
-    MvcResult result =
-        mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "chemical/import", user, body))
-            .andExpect(status().isCreated())
-            .andReturn();
-
-    assertEquals("", result.getResponse().getContentAsString());
   }
 }

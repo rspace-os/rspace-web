@@ -2631,7 +2631,7 @@ paths:
           schema:
             type: object
             properties:
-              message:
+              error:
                 type: string
                 example: "Rate limit exceeded. Please try again later."
         '500':
@@ -2639,7 +2639,7 @@ paths:
           schema:
             type: object
             properties:
-              message:
+              error:
                 type: string
                 example: "Error importing chemical data."
         '502':
@@ -2647,66 +2647,17 @@ paths:
           schema:
             type: object
             properties:
-              message:
+              error:
                 type: string
                 example: "External service temporarily unavailable."
-  /chemical/import:
-    post:
-      summary: Import chemicals by PubChem Compound IDs
-      description: >
-        Imports chemical data from external sources (currently PubChem) using PubChem Compound IDs (CIDs).
-        This endpoint accepts a list of CIDs and imports the chemical information.
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      tags:
-        - Chemical Import
-      parameters:
-        - name: cids
-          in: body
-          required: true
-          description: List of PubChem Compound IDs to import
-          schema:
-            type: array
-            items:
-              type: string
-            example: ["2244", "702"]
-      responses:
-        '201':
-          description: Chemicals imported successfully
-        '400':
-          description: Bad request - invalid or missing CIDs
+        '504':
+          description: Gateway timeout - PubChem API timeout or connection error
           schema:
             type: object
             properties:
-              message:
+              error:
                 type: string
-                example: "At least one PubChem CID is required"
-        '429':
-          description: Rate limit exceeded
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Rate limit exceeded. Please try again later."
-        '500':
-          description: Internal server error
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Error importing chemical data."
-        '502':
-          description: External service temporarily unavailable
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "External service temporarily unavailable."
+                example: "PubChem API timeout or connection error"
   /status:
     get:
       summary: Get API status
