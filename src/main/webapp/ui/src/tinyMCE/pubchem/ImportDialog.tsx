@@ -346,6 +346,14 @@ export default function ImportDialog({
                             onChange={(e) =>
                               setSearchType(e.target.value as "NAME" | "SMILES")
                             }
+                            sx={{
+                              "&::before, &::after": {
+                                display: "none",
+                              },
+                              ":hover": {
+                                backgroundColor: "rgba(0, 0, 0, 0.05)",
+                              },
+                            }}
                           >
                             <MenuItem value="NAME">Name/CAS</MenuItem>
                             <MenuItem value="SMILES">SMILES</MenuItem>
