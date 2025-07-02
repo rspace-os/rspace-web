@@ -2626,6 +2626,12 @@ paths:
               $ref: '#/definitions/ChemicalImportSearchResult'
         '400':
           description: Bad request - invalid search parameters
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid request to PubChem API: {pubchem error message}"
         '429':
           description: Rate limit exceeded
           schema:
