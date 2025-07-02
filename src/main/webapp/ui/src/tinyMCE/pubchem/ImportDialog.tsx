@@ -307,8 +307,11 @@ export default function ImportDialog({
               structure and its associated metadata into the document.
             </Typography>
             <Typography variant="body2">
-              See <Link href="#">[pubchem website]</Link> and our{" "}
-              <Link href="#">PubChem integration docs</Link> for more.
+              See{" "}
+              <Link href="https://pubchem.ncbi.nlm.nih.gov/" rel="noreferrer">
+                https://pubchem.ncbi.nlm.nih.gov/
+              </Link>{" "}
+              and our <Link href="#">PubChem integration docs</Link> for more.
             </Typography>
           </Box>
           <form onSubmit={handleSearch}>
