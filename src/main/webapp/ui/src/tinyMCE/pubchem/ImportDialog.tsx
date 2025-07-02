@@ -214,6 +214,7 @@ export default function ImportDialog({
     Record<string, boolean>
   >({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [hasSearched, setHasSearched] = React.useState(false);
 
   const validationResult = React.useMemo(() => {
     return Object.values(selectedCompounds).some((isSelected) => isSelected)
@@ -223,7 +224,10 @@ export default function ImportDialog({
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    void search({ searchTerm, searchType }).then(setResults);
+    void search({ searchTerm, searchType }).then((newResults) => {
+      setResults(newResults);
+      setHasSearched(true);
+    });
   }
 
   React.useEffect(() => {
@@ -243,6 +247,7 @@ export default function ImportDialog({
       setResults([]);
       setSelectedCompounds({});
       setIsSubmitting(false);
+      setHasSearched(false);
     }
     if (open) trackEvent("user:open:pubchem_import:document");
   }, [open]);
@@ -369,11 +374,27 @@ export default function ImportDialog({
               </Grid>
             </Grid>
           </form>
-          <section aria-labelledby={resultsId}>
+          <section aria-labelledby={resultsId} aria-live="polite">
             <Typography id={resultsId} variant="h6" component="h4">
               Search Results
             </Typography>
             <Grid container spacing={2}>
+              {!hasSearched && (
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary">
+                    Enter a search term and click Search to find chemical
+                    compounds.
+                  </Typography>
+                </Grid>
+              )}
+              {hasSearched && results.length === 0 && (
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary">
+                    No compounds found for "{searchTerm}". Try a different
+                    search term.
+                  </Typography>
+                </Grid>
+              )}
               {results.map((compound) => (
                 <Grid item xs={12} key={compound.pubchemId}>
                   <CompoundCard
