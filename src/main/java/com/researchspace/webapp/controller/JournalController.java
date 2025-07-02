@@ -97,8 +97,6 @@ public class JournalController extends BaseController {
       Principal principal) {
 
     User user = userManager.getUserByUsername(principal.getName());
-
-    // this is the index of entry that front end wants to be opened
     return retrieveEntryByRecordIdOrPosition(notebookId, null, position, positionModifier, user);
   }
 
@@ -115,7 +113,7 @@ public class JournalController extends BaseController {
       return new JournalEntry("EMPTY", "");
     }
 
-    // this is the count of requested position, or null if retrieving by id
+    // this is the index of requested position, or null if retrieving by id
     Integer requestedEntryPosition = null;
     if (position != null && positionModifier != null) {
       requestedEntryPosition = position + positionModifier;

@@ -173,10 +173,9 @@ function journal($, extensions = default_extensions) {
       $("#prevEntryButton, #nextEntryButton, #prevEntryButton_mobile, #nextEntryButton_mobile").hide();
       RS.addBreadcrumbAndRefresh("editorBcrumb", "" + notebookId, notebookName);
 
-      var url = extensions.springMVCUrlReroutePrefix;
-
       /* retrieve entry either by record id, or by using current position and
          pagePositionModifier (for next/prev page navigation) */
+      var url = extensions.springMVCUrlReroutePrefix;
       if (recordId !== undefined) {
         url += "/journal/ajax/retrieveEntryById/" + journalSettings.parentRecordId + "/" + recordId;
       } else {
