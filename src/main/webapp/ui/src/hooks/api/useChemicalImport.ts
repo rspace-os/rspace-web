@@ -8,7 +8,7 @@ export type ChemicalCompound = {
   name: string;
   pngImage: string;
   smiles: string;
-  cas: string | null;
+  cas: string; // may be empty if not available
   formula: string;
   pubchemId: string;
   pubchemUrl: string;

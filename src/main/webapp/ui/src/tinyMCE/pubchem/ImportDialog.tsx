@@ -37,7 +37,7 @@ import AnalyticsContext from "@/stores/contexts/Analytics";
 function Dl({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
     <Typography
-      component="dd"
+      component="dl"
       sx={{ display: "grid", gridTemplateColumns: "auto 1fr", mt: 1, mb: 0 }}
     >
       {children}
@@ -56,6 +56,7 @@ function Dt({ children }: { children: React.ReactNode }): React.ReactNode {
         marginRight: 2,
         fontSize: "0.8rem",
       }}
+      role="term"
     >
       {children}
     </Typography>
@@ -64,7 +65,11 @@ function Dt({ children }: { children: React.ReactNode }): React.ReactNode {
 
 function Dd({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
-    <Typography component="dd" sx={{ lineHeight: 1.8, fontSize: "0.8rem" }}>
+    <Typography
+      component="dd"
+      sx={{ lineHeight: 1.8, fontSize: "0.8rem" }}
+      role="definition"
+    >
       {children}
     </Typography>
   );
@@ -86,7 +91,7 @@ const CompoundCard = styled(
   ({ selected, compound, onSelected, className }: CompoundCardProps) => {
     const nameId = React.useId();
     return (
-      <Card className={className} aria-labelledby={nameId}>
+      <Card className={className} aria-labelledby={nameId} role="region">
         <CardActionArea
           onClick={() => onSelected(compound, !selected)}
           sx={{ display: "flex", alignItems: "stretch" }}
@@ -114,7 +119,7 @@ const CompoundCard = styled(
               <Dl>
                 <Dt>PubChem ID</Dt>
                 <Dd>{compound.pubchemId}</Dd>
-                {compound.cas !== null && (
+                {compound.cas !== "" && (
                   <>
                     <Dt>CAS Number</Dt>
                     <Dd>{compound.cas}</Dd>

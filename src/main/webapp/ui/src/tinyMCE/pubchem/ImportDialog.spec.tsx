@@ -13,6 +13,7 @@ const feature = test.extend<{
     "the cancel button is clicked": () => Promise<void>;
     "a search is performed": () => Promise<void>;
     "a search is performed that returns multiple results": () => Promise<void>;
+    "a search is performed that returns a compound with empty CAS": () => Promise<void>;
     "the search type selector is clicked": () => Promise<void>;
     "SMILES is chosen as the search type": () => Promise<void>;
     "the import button is clicked without selecting any compounds": () => Promise<void>;
@@ -46,6 +47,7 @@ const feature = test.extend<{
     "an error alert should be shown": () => Promise<void>;
     "the search input should be empty": () => Promise<void>;
     "there should be no search results visible": () => Promise<void>;
+    "the CAS number should not be displayed": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -76,6 +78,12 @@ const feature = test.extend<{
         await searchInput.fill("multiple");
         await searchInput.press("Enter");
       },
+      "a search is performed that returns a compound with empty CAS":
+        async () => {
+          const searchInput = page.getByRole("textbox");
+          await searchInput.fill("nocas");
+          await searchInput.press("Enter");
+        },
       "the search type selector is clicked": async () => {
         const searchTypeSelector = page.getByRole("combobox", {
           name: "Search type",
@@ -264,6 +272,25 @@ const feature = test.extend<{
         const cards = page.getByRole("article").count();
         expect(await cards).toBe(0);
       },
+      "the CAS number should not be displayed": async () => {
+        const compoundCard = page.getByRole("region", {
+          name: "Compound with Empty CAS",
+        });
+        await expect(compoundCard).toBeVisible();
+
+        await expect(
+          compoundCard.getByRole("term").filter({ hasText: /PubChem ID/i })
+        ).toBeVisible();
+        await expect(
+          compoundCard.getByRole("term").filter({ hasText: /Formula/i })
+        ).toBeVisible();
+
+        const casTerms = compoundCard
+          .getByRole("term")
+          .filter({ hasText: "CAS" })
+          .count();
+        expect(await casTerms).toBe(0);
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -360,6 +387,24 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(multipleResults),
+      });
+    } else if (searchTerm === "nocas") {
+      const noCasResult = [
+        {
+          name: "Compound with Empty CAS",
+          pngImage:
+            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=5555&t=l",
+          smiles: "C1=CC=CC=C1",
+          formula: "C6H6",
+          pubchemId: "5555",
+          pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/5555",
+          cas: "",
+        },
+      ];
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(noCasResult),
       });
     } else {
       const searchResults = [
@@ -561,6 +606,17 @@ test.describe("ImportDialog", () => {
       await Then["there should be a search input"]();
       await Then["the search input should be empty"]();
       await Then["there should be no search results visible"]();
+    }
+  );
+
+  feature(
+    "Should not display CAS Number when it is empty",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When[
+        "a search is performed that returns a compound with empty CAS"
+      ]();
+      await Then["the CAS number should not be displayed"]();
     }
   );
 });
