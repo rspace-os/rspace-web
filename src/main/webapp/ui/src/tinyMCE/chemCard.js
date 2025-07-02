@@ -11,6 +11,7 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import axios from "@/common/axios";
 import { makeStyles } from "tss-react/mui";
+import { isUrl } from "../util/Util";
 
 const useStyles = makeStyles()((theme) => ({
   text: {
@@ -170,7 +171,13 @@ export default function ChemCard(props) {
                 {k}
               </TableCell>
               <TableCell align="right" className={classes.tableCell}>
-                {v}
+                {isUrl(v) ? (
+                  <a href={v} target="_blank" rel="noopener noreferrer">
+                    {v}
+                  </a>
+                ) : (
+                  v
+                )}
               </TableCell>
             </TableRow>
           )
@@ -245,7 +252,13 @@ export default function ChemCard(props) {
                     {k}
                   </TableCell>
                   <TableCell align="right" className={classes.tableCell}>
-                    {v}
+                    {isValidUrl(v) ? (
+                      <a href={v} target="_blank" rel="noopener noreferrer">
+                        {v}
+                      </a>
+                    ) : (
+                      v
+                    )}
                   </TableCell>
                 </TableRow>
               )
