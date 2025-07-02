@@ -98,7 +98,7 @@
     "autosuggest-highlight": "=3.2.1",
     "axios": "=1.10.0",
     "babel-plugin-syntax-hermes-parser": "^0.22.0",
-    "clsx": "=1.2.1",
+    "clsx": "=2.1.1",
     "date-fns": "=2.29.3",
     "dompurify": "=3.2.6",
     "email-validator": "^2.0.4",
