@@ -117,7 +117,7 @@
     "mobx": "=6.13.7",
     "mobx-react": "=9.2.0",
     "npm": "=11.4.2",
-    "photoswipe": "=5.3.8",
+    "photoswipe": "=5.4.4",
     "posthog-js": "=1.256.1",
     "qr-scanner": "^1.4.1",
     "react": "=18.2.0",
