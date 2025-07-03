@@ -132,7 +132,7 @@
     "react-router-dom": "=6.8.0",
     "react-select": "=5.7.0",
     "react-timeago": "=8.2.0",
-    "react-to-print": "^2.14.7",
+    "react-to-print": "=3.1.1",
     "react-window": "^1.8.9",
     "react-window-infinite-loader": "^1.0.9",
     "react-zoom-pan-pinch": "=2.1.3",

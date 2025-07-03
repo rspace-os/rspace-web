@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -18,7 +18,7 @@ import Alert from "@mui/material/Alert";
 import PrintContents, {
   PreviewPrintItem,
 } from "../../components/Print/PrintContents";
-import ReactToPrint from "react-to-print";
+import { useReactToPrint } from "react-to-print";
 import docLinks from "../../../assets/DocLinks";
 import clsx from "clsx";
 import { mkAlert } from "../../../stores/contexts/Alert";
@@ -247,10 +247,10 @@ export const PrintOptionsWrapper = ({
             {printOptions.printerType === "LABEL"
               ? "For label printers size is set automatically (to match a range of label sizes)."
               : printOptions.printCopies === "2"
-              ? "Applying a horizontal layout."
-              : printOptions.printSize === "LARGE"
-              ? "Full width (4cm)."
-              : "Half width (2cm)."}
+                ? "Applying a horizontal layout."
+                : printOptions.printSize === "LARGE"
+                  ? "Full width (4cm)."
+                  : "Half width (2cm)."}
           </Alert>
         </FormControl>
       </Stack>
@@ -269,7 +269,7 @@ function PrintDialog({
   const { classes } = useStyles();
   const { uiStore, trackingStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
-  const componentToPrint = useRef<HTMLDivElement | null>(null);
+  const componentToPrint = useRef<HTMLDivElement>(null);
 
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
     printerType: printerType ?? "GENERIC",
@@ -278,10 +278,35 @@ function PrintDialog({
     printCopies: "1",
   });
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose();
     if (typeof closeMenu === "function") closeMenu();
-  };
+  }, [onClose, closeMenu]);
+
+  const handlePrint = useReactToPrint({
+    contentRef: componentToPrint,
+    onAfterPrint: () => {
+      handleClose();
+      trackingStore.trackEvent("user:print:barcodeLabel", {
+        count: itemsToPrint.length,
+        printIdentifierType: "IGSN ID",
+        printerType: printOptions.printerType,
+        printLayout: printOptions.printLayout,
+        printSize: printOptions.printSize,
+        printCopies: printOptions.printCopies,
+      });
+    },
+    onPrintError: (e: Error | string) => {
+      uiStore.addAlert(
+        mkAlert({
+          title: "Print error.",
+          message: typeof e === "object" ? e.message || "" : String(e),
+          variant: "error",
+          isInfinite: true,
+        }),
+      );
+    },
+  });
 
   const HelperText = () => (
     <>
@@ -302,7 +327,7 @@ function PrintDialog({
           content: `https://doi.org/${identifier.doi}`,
           barcodeType: "QR",
         }),
-        true
+        true,
       );
       const file = new File([data as BlobPart], "", { type: "image/png" });
       return URL.createObjectURL(file);
@@ -319,7 +344,7 @@ function PrintDialog({
             message: e.message || "",
             variant: "error",
             isInfinite: true,
-          })
+          }),
         );
       });
   }, [itemsToPrint, uiStore]);
@@ -345,7 +370,7 @@ function PrintDialog({
           <div
             className={clsx(
               classes.previewWrapper,
-              isSingleColumnLayout ? classes.fullWidth : classes.halfWidth
+              isSingleColumnLayout ? classes.fullWidth : classes.halfWidth,
             )}
           >
             <HelperText />
@@ -390,7 +415,7 @@ function PrintDialog({
                         identifier: Optional.present(identifier),
                         globalId: Optional.empty(),
                         barcodeUrl,
-                      })
+                      }),
                     )}
                     imageLinks={imageLinks}
                     target={
@@ -411,40 +436,14 @@ function PrintDialog({
         <Button onClick={handleClose} disabled={false}>
           Cancel
         </Button>
-        <ReactToPrint
-          trigger={() => (
-            <Button
-              // do not add an onClick, it would be overwritten
-              color="primary"
-              variant="contained"
-              disableElevation
-            >
-              {`Print selected (${itemsToPrint.length})`}
-            </Button>
-          )}
-          content={() => componentToPrint.current}
-          onAfterPrint={() => {
-            handleClose();
-            trackingStore.trackEvent("user:print:barcodeLabel", {
-              count: itemsToPrint.length,
-              printIdentifierType: "IGSN ID",
-              printerType: printOptions.printerType,
-              printLayout: printOptions.printLayout,
-              printSize: printOptions.printSize,
-              printCopies: printOptions.printCopies,
-            });
-          }}
-          onPrintError={(e: Error | string) => {
-            uiStore.addAlert(
-              mkAlert({
-                title: "Print error.",
-                message: typeof e === "object" ? e.message || "" : String(e),
-                variant: "error",
-                isInfinite: true,
-              })
-            );
-          }}
-        />
+        <Button
+          onClick={handlePrint}
+          color="primary"
+          variant="contained"
+          disableElevation
+        >
+          {`Print selected (${itemsToPrint.length})`}
+        </Button>
       </DialogActions>
     </ContextDialog>
   );
