@@ -134,55 +134,6 @@ $(document).ready(function() {
             RS.ajaxFailed("Querying audit trail",false,jxqr);
         });
     });
-    /*
-    $(document).on('click', '.moreResults', function(e) {
-        e.preventDefault();
-        var requestData = serializeForm();
-        // manipulate pagination to reload next pages
-        nextPage++;
-        requestData.push({name:"pageNumber", "value":nextPage});
-        var requestUrl = url + "?" + $.param(requestData);
-        console.log(requestUrl);
-
-        if (RS.webResultCache.get(requestUrl) != undefined) {
-            $('#directoryContainer').html(RS.webResultCache.get(requestUrl));
-        } else {
-            var jxqr = $.get(requestUrl, function(xhr) {
-                if(isInputValidationError(xhr)){
-                    return;
-                }
-                var templateHTML = $('#auditMoreResultsTemplate').html();
-                var resultsHTML = Mustache.render(templateHTML, xhr.data);
-                // console.log(resultsHTML);
-                $('#renderedTable').find('tbody').html(resultsHTML);
-                // then check again if we should display this link or not
-                calculateIfMore(xhr.data);
-
-                // $('#directoryContainer').html(data);
-                RS.webResultCache.put(requestUrl, xhr.data, 30 * 1000 );//30 seconds
-            });
-            jxqr.fail(function() {
-                RS.ajaxFailed("Getting user activity information", false, jxqr);
-            });
-        }
-
-        // var jxqr = $.get(requestUrl, function(xhr) {
-        //     if(isInputValidationError(xhr)){
-        //         return;
-        //     }
-        //     // we just generate some more rows, and insert them in the existing table
-        //     var templateHTML = $('#auditMoreResultsTemplate').html();
-        //     var resultsHTML = Mustache.render(templateHTML, xhr.data);
-        //     $('#renderedTable').find('tbody').append( resultsHTML);
-        //     // then check again if we should display this link or not
-        //     calculateIfMore(xhr.data);
-        // });
-
-        jxqr.fail(function(){
-        	RS.ajaxFailed("Querying audit trail", false, jxqr);
-        });
-    });
-    */
 
     var paginationEventHandler = function(source, e) {
         var pageNumber = source.data("pagenumber") - 1;
@@ -270,19 +221,8 @@ function init() {
 	})
 	var domainhtml = Mustache.render($('#auditdomainTemplate').html());
 	$(".domainsRow").append(domainhtml);
-};
+}
 
- /**
-  * Shows or hides the 'more ' link depending on number of results
-  * @param data  - returned from ajax search query
-  */
-//function calculateIfMore(data) {
-//	if (data.totalHits > ((data.pageNumber + 1) * data.numberRecords)) {
-//		$('.moreResults').show();
-//	} else {
-//		$('.moreResults').hide();
-//	}
-//}
 function serializeForm () {
 	return doSerializeForm(false);
 }
@@ -290,6 +230,7 @@ function serializeForm () {
 function _isNotDomain (obj) {
 	return obj["name"] !== "domains"
 }
+
 /**
  * Serialized form to JSON array and adds additional data / configuration
  */
@@ -299,17 +240,22 @@ function doSerializeForm(forDownload) {
 	// where the value has a comma-separated list of domains, but we can't do both as Spring treats the comma-separated values
 	// as a single value.
 	// So, here we coalesce domain names into a single name-value pair to submit.
-	var elnDomains = ["RECORD","NOTEBOOK","FOLDER","WORKSPACE","USER","UNKNOWN","AUDIT"]
+	var elnDomains = ["AUDIT","FOLDER","FORM","MEDIA","NOTEBOOK","RECORD","WORKSPACE"]
 	var invDomains = ["INV_SAMPLE","INV_SUBSAMPLE","INV_CONTAINER"]
+	var otherDomains = ["COMMUNITY","GROUP","MESSAGING","UNKNOWN","USER"]
 	var domainsToSubmit = []
 	var requestData = $('form').serializeArray();
 	for (i=0; i< requestData.length; i++) {
 		if (requestData[i]["name"] == "domains") {
 			if (requestData[i]["value"] == "ELN") {
-					domainsToSubmit = domainsToSubmit.concat(elnDomains)
-			} else if (requestData[i]["value"] == "INV") {
+				domainsToSubmit = domainsToSubmit.concat(elnDomains)
+			}
+			if (requestData[i]["value"] == "INV") {
 				domainsToSubmit = domainsToSubmit.concat(invDomains)
-			}	
+			}
+			if (requestData[i]["value"] == "OTHER") {
+				domainsToSubmit = domainsToSubmit.concat(otherDomains)
+			}
 		}
 	}
 	// replace >=1 'domains' value with single 'domains' value
@@ -318,17 +264,17 @@ function doSerializeForm(forDownload) {
 		requestData.push({"name":"domains", "value":domainsToSubmit.join(",") })
 	}
 	
-    // order by date descending until ordering is implemented
-    if(forDownload) {
-    	requestData.push({name:"sortOrder", value:previousOrder});
-    	requestData.push({name:"orderBy", value:previousOrderBy});
-    } else {
-    	 requestData.push({name:"sortOrder", value:order});
-    	 requestData.push({name:"orderBy", value:orderBy});
-    }
-   
-    requestData.push({name:"resultsPerPage", value:50}); //RSPAC-1283
-    return requestData;
+	// order by date descending until ordering is implemented
+	if(forDownload) {
+		requestData.push({name:"sortOrder", value:previousOrder});
+		requestData.push({name:"orderBy", value:previousOrderBy});
+	} else {
+		 requestData.push({name:"sortOrder", value:order});
+		 requestData.push({name:"orderBy", value:orderBy});
+	}
+
+	requestData.push({name:"resultsPerPage", value:50}); //RSPAC-1283
+	return requestData;
 }
 
 /**

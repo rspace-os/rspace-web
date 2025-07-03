@@ -1760,6 +1760,7 @@ paths:
               - MESSAGING
               - NOTEBOOK
               - RECORD
+              - UNKNOWN
               - USER
               - WORKSPACE
         - name: oid
