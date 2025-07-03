@@ -21,6 +21,9 @@ export type RspaceCompoundId = string;
  * using the `/chemical/*` endpoints.
  */
 export default function useChemicalImport(): {
+  /**
+   * Searches PubChem for chemical compounds by name or SMILES.
+   */
   search: ({
     searchType,
     searchTerm,
@@ -28,6 +31,11 @@ export default function useChemicalImport(): {
     searchType: "NAME" | "SMILES";
     searchTerm: string;
   }) => Promise<ReadonlyArray<ChemicalCompound>>;
+
+  /**
+   * Saves a chemical compound into the database, but doesn't create a new
+   * Gallery file for it.
+   */
   save: ({
     chemElements,
     chemElementsFormat,
@@ -39,6 +47,11 @@ export default function useChemicalImport(): {
     fieldId: string;
     metadata?: Record<string, string>;
   }) => Promise<{ id: RspaceCompoundId }>;
+
+  /**
+   * Saves a chemical compound, based on a SMILES string, into the database
+   * and creates a new Gallery file for it.
+   */
   saveSmilesString: ({
     name,
     smiles,
@@ -50,6 +63,15 @@ export default function useChemicalImport(): {
     fieldId: string;
     metadata?: Record<string, string>;
   }) => Promise<{ id: RspaceCompoundId; chemFileId: string }>;
+
+  /**
+   * Formats a chemical compound as HTML, suitable for rendering in the document
+   * editor.
+   * @arg id      - The Rspace ID of the saved chemical compound. To get this
+   *                id, use the `save` or `saveSmilesString` methods.
+   * @arg fieldId - The ID of the field in which the outputted HTML will be
+   *                inserted.
+   */
   formatAsHtml: ({
     id,
     fieldId,
