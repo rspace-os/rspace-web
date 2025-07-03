@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useContext } from "react";
 import axios from "@/common/axios";
 import AnalyticsContext from "../stores/contexts/Analytics";
+import { runInAction } from "mobx";
 import { usePostHog, PostHogProvider } from "posthog-js/react";
 import posthog from "posthog-js";
 
@@ -141,49 +142,41 @@ function loadIntercom({
       resolve();
     } catch (e) {
       console.warn("Could not load Segment", e);
-      reject(new Error("Could not load Segment", { cause: e }));
+      reject();
     }
   });
 }
 
-function PostHogAnalyticsContext({ children }: { children: React.ReactNode }) {
-  const phog = usePostHog();
+function PostHogAnalyticsContext() {
+  const posthog = usePostHog();
+  const analyticsContext = useContext(AnalyticsContext);
 
-  return (
-    <AnalyticsContext.Provider
-      value={{
-        isAvailable: true,
-        trackEvent: (name, properties) => {
-          phog.capture(name, properties);
-        },
-      }}
-    >
-      {children}
-    </AnalyticsContext.Provider>
-  );
+  useEffect(() => {
+    runInAction(() => {
+      analyticsContext.trackEvent = (name, properties) => {
+        posthog.capture(name, properties);
+      };
+    });
+  }, []);
+
+  return <></>;
 }
 
 type AnalyticsArgs = {
   children: React.ReactNode;
 };
 
-/**
- * The Analytics component is a React component that sets up the analytics
- * context and initializes the analytics service.
- */
 export default function Analytics({
   children,
 }: AnalyticsArgs): React.ReactNode {
+  const [postHogEnabled, setPostHogEnable] = React.useState(false);
+  const analyticsContext = useContext(AnalyticsContext);
   const api = useRef(
     axios.create({
       baseURL: "/session/ajax",
       timeout: ONE_MINUTE_IN_MS,
     })
   );
-
-  const [analyticsIsSetUp, setAnalyticsIsSetUp] = React.useState<
-    "" | "posthog" | "intercom"
-  >("");
 
   useEffect(() => {
     void (async () => {
@@ -204,45 +197,45 @@ export default function Analytics({
       }>("/analyticsProperties");
       if (analyticsEnabled) {
         if (analyticsServerType === "posthog") {
+          setPostHogEnable(true);
           posthog.init(analyticsServerKey, {
             api_host: analyticsServerHost,
           });
-          setAnalyticsIsSetUp("posthog");
+          runInAction(() => {
+            analyticsContext.isAvailable = true;
+          });
         } else {
           void loadIntercom({ analyticsServerKey, analyticsUserId })
             .then(() => {
-              setAnalyticsIsSetUp("intercom");
+              runInAction(() => {
+                analyticsContext.isAvailable = true;
+                analyticsContext.trackEvent = (name, properties) => {
+                  window.analytics.track(name, properties);
+                };
+              });
             })
             .catch(() => {
-              setAnalyticsIsSetUp("");
+              runInAction(() => {
+                analyticsContext.isAvailable = false;
+              });
             });
         }
       } else {
-        setAnalyticsIsSetUp("");
+        runInAction(() => {
+          analyticsContext.isAvailable = false;
+        });
       }
     })();
   }, []);
 
-  if (analyticsIsSetUp === "posthog") {
-    return (
-      <PostHogProvider client={posthog}>
-        <PostHogAnalyticsContext>{children}</PostHogAnalyticsContext>
-      </PostHogProvider>
-    );
-  }
-  if (analyticsIsSetUp === "intercom") {
-    return (
-      <AnalyticsContext.Provider
-        value={{
-          isAvailable: true,
-          trackEvent: (name, properties) => {
-            window.analytics.track(name, properties);
-          },
-        }}
-      >
-        {children}
-      </AnalyticsContext.Provider>
-    );
-  }
-  return <>{children}</>;
+  return (
+    <AnalyticsContext.Provider value={analyticsContext}>
+      {postHogEnabled && (
+        <PostHogProvider client={posthog}>
+          <PostHogAnalyticsContext />
+        </PostHogProvider>
+      )}
+      {children}
+    </AnalyticsContext.Provider>
+  );
 }
