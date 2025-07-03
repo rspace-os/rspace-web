@@ -204,7 +204,7 @@ export default function ImportDialog({
   const { trackEvent } = React.useContext(AnalyticsContext);
   const titleId = React.useId();
   const resultsId = React.useId();
-  const { search, save, formatAsHtml } = useChemicalImport();
+  const { search, saveSmilesString, formatAsHtml } = useChemicalImport();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [searchType, setSearchType] = React.useState<"NAME" | "SMILES">("NAME");
   const [results, setResults] = React.useState<ReadonlyArray<ChemicalCompound>>(
@@ -274,9 +274,9 @@ export default function ImportDialog({
 
     Promise.all(
       selected.map((compound) =>
-        save({
-          chemElements: compound.smiles,
-          chemElementsFormat: "smi",
+        saveSmilesString({
+          name: compound.name,
+          smiles: compound.smiles,
           fieldId,
           metadata: {
             "Pubchem CID": compound.pubchemId,
@@ -287,8 +287,8 @@ export default function ImportDialog({
       )
     ).then((data) => {
       setIsSubmitting(false);
-      data.forEach(({ id }) => {
-        formatAsHtml({ id, fieldId }).then((html) => {
+      data.forEach(({ id, chemFileId }) => {
+        formatAsHtml({ id, fieldId, chemFileId }).then((html) => {
           editor.execCommand("mceInsertContent", false, html);
         });
       });

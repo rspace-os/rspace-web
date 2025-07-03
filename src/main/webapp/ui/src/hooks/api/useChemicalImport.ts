@@ -39,12 +39,25 @@ export default function useChemicalImport(): {
     fieldId: string;
     metadata?: Record<string, string>;
   }) => Promise<{ id: RspaceCompoundId }>;
+  saveSmilesString: ({
+    name,
+    smiles,
+    fieldId,
+    metadata,
+  }: {
+    name: string;
+    smiles: string;
+    fieldId: string;
+    metadata?: Record<string, string>;
+  }) => Promise<{ id: RspaceCompoundId; chemFileId: string }>;
   formatAsHtml: ({
     id,
     fieldId,
+    chemFileId,
   }: {
     id: RspaceCompoundId;
     fieldId: string;
+    chemFileId?: string | null;
   }) => Promise<string>;
 } {
   const { getToken } = useOauthToken();
@@ -88,6 +101,52 @@ export default function useChemicalImport(): {
     }
   }
 
+  async function saveSmilesString({
+    name,
+    smiles,
+    fieldId,
+    metadata = {},
+  }: {
+    name: string;
+    smiles: string;
+    fieldId: string;
+    metadata?: Record<string, string>;
+  }): Promise<{ id: RspaceCompoundId; chemFileId: string }> {
+    const file = new File([smiles], `${name}.smiles`, { type: "text/plain" });
+    const formData = new FormData();
+    formData.append("xfile", file);
+    try {
+      const {
+        data: {
+          data: { id: ecatChemFileId },
+        },
+      } = await axios.post("/gallery/ajax/uploadFile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      const {
+        data: {
+          data: { rsChemElementId },
+        },
+      } = await axios.post("/chemical/ajax/createChemElement", {
+        ecatChemFileId,
+        fieldId,
+        metadata: JSON.stringify(metadata),
+      });
+      return { id: rsChemElementId, chemFileId: ecatChemFileId };
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error saving chemical compounds",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        })
+      );
+      throw new Error("Could not save chemical compounds", { cause: e });
+    }
+  }
+
   async function save({
     chemElements,
     chemElementsFormat,
@@ -124,9 +183,11 @@ export default function useChemicalImport(): {
   async function formatAsHtml({
     id,
     fieldId,
+    chemFileId = null,
   }: {
     id: string;
     fieldId: string;
+    chemFileId?: string | null;
   }): Promise<string> {
     const fullWidth = 500;
     const fullHeight = 500;
@@ -135,7 +196,7 @@ export default function useChemicalImport(): {
     const milliseconds = new Date().getTime();
     const json = {
       id,
-      ecatChemFileId: null,
+      ecatChemFileId: chemFileId,
       sourceParentId: fieldId,
       width: previewWidth,
       height: previewHeight,
@@ -151,5 +212,5 @@ export default function useChemicalImport(): {
     return Mustache.render(htmlTemplate.data, json) as string;
   }
 
-  return { search, save, formatAsHtml };
+  return { search, save, saveSmilesString, formatAsHtml };
 }
