@@ -94,6 +94,12 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
       const molecules = Object.keys(JSON.parse(ketData)).filter((key) =>
         key.startsWith("mol")
       );
+      if (molecules.length === 0) {
+        setIsValid(
+          IsInvalid("Chemical search requires a molecule to be drawn.")
+        );
+        return;
+      }
       if (molecules.length > 1) {
         setIsValid(
           IsInvalid(
