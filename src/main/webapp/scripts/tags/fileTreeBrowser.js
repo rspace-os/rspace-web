@@ -274,7 +274,7 @@ function _defaultRecordClickHandler(node) {
   var breadcrumbsLength = fileTreeBrowserCurrentBreadcrumbIds.length;
   if (breadcrumbsLength > 1) {
     var currentParentId = fileTreeBrowserCurrentBreadcrumbIds[breadcrumbsLength - 2];
-    if (parentNotebookId === currentParentId && !isDocumentEditor) {
+    if (!isDocumentEditor && parentNotebookId === currentParentId) {
       console.log('clicked node ' + node.key + ' is an entry within the same notebook, switching');
       $("#notebook").journal("loadEntryById", "journalEntry" + node.key);
       clickHandled = true; // notebook entry is reloading on the right
