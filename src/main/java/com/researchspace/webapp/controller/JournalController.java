@@ -74,7 +74,7 @@ public class JournalController extends BaseController {
     this.signingManager = signingManager;
   }
 
-  /** Load notebook entry by id notebook id */
+  /** Load notebook entry by record id (and notebook id) */
   @GetMapping("/ajax/retrieveEntryById/{notebookId}/{recordId}")
   @ResponseBody
   public JournalEntry retrieveEntry(

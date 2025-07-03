@@ -215,10 +215,6 @@ function journal($, extensions = default_extensions) {
 
             $("#cachedData").text(data.html);
 
-            //var position = parseInt(data);
-            //journalPrivateVars.recordPosition = position;
-            //journalPrivateVars.selectedRecordId = recordId;
-
             //rspac-1396
             document.title = data.name;
             // this works in history list but not in back button
