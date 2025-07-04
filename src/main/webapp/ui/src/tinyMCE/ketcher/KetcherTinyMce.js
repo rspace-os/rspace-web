@@ -143,7 +143,9 @@ export const KetcherTinyMce = () => {
       );
       if (molecules.length === 0) {
         setIsValid(
-          IsInvalid("Please draw a molecule before attempting insertion.")
+          IsInvalid(
+            "Please draw, paste, or open a molecule to insert into the document"
+          )
         );
         return;
       }

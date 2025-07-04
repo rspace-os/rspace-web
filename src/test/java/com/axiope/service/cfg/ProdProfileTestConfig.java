@@ -32,5 +32,4 @@ public class ProdProfileTestConfig {
   public SimpMessagingTemplate simpMessagingTemplate() {
     return Mockito.mock(SimpMessagingTemplate.class);
   }
-
 }

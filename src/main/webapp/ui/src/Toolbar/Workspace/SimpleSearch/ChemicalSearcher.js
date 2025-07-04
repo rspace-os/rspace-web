@@ -96,7 +96,9 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
       );
       if (molecules.length === 0) {
         setIsValid(
-          IsInvalid("Chemical search requires a molecule to be drawn.")
+          IsInvalid(
+            "Please draw, paste, or open a molecule to start your search"
+          )
         );
         return;
       }
