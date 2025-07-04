@@ -9,7 +9,7 @@
         "Field-ID": "00010",
         "hridPrimary-Next-Section": "Sample-45-00010",
         "Survey-Number": 45,
-        "IGSN-QR-Code": "1",
+        "IGSN-QR-Code": "",
         "Sample-Location": {
           "type": "Feature",
           "properties": {
@@ -117,7 +117,7 @@
         "Field-ID": "00008",
         "hridPrimary-Next-Section": "Sample-1-00008",
         "Survey-Number": 1,
-        "IGSN-QR-Code": "1",
+        "IGSN-QR-Code": "10.12345/asdf-good",
         "Sample-Location": null,
         "New-Text-Field": "glasgow",
         "Description": "rock hard",
@@ -207,7 +207,7 @@
         "Field-ID": "00009",
         "hridPrimary-Next-Section": "Sample-12-00009",
         "Survey-Number": 12,
-        "IGSN-QR-Code": "1",
+        "IGSN-QR-Code": "",
         "Sample-Location": null,
         "New-Text-Field": "Rome",
         "Description": "Arcdheological interest area",

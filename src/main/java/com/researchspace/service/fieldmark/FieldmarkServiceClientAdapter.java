@@ -14,6 +14,10 @@ public interface FieldmarkServiceClientAdapter {
   List<FieldmarkNotebook> getFieldmarkNotebookList(User user)
       throws HttpServerErrorException, MalformedURLException, URISyntaxException;
 
-  FieldmarkNotebookDTO getFieldmarkNotebook(User user, String notebookId)
+  List<String> getIgsnCandidateFields(User user, String notebookId)
+      throws IOException, HttpServerErrorException;
+
+  FieldmarkNotebookDTO getFieldmarkNotebook(
+      User user, String notebookId, String identifierFieldName)
       throws IOException, HttpServerErrorException;
 }
