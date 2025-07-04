@@ -43,7 +43,7 @@
     "axios-mock-adapter": "=2.1.0",
     "babel-loader": "=10.0.0",
     "babel-plugin-transform-import-meta": "=2.3.3",
-    "canvas": "^3.1.0",
+    "canvas": "=3.1.2",
     "clean-webpack-plugin": "=4.0.0",
     "css-loader": "=7.1.2",
     "dependency-cruiser": "=16.10.4",
