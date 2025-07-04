@@ -8,7 +8,6 @@ import axios from "@/common/axios";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
-import v1ROR from "./json/v1Ror.json";
 import v2ROR from "./json/v2Ror.json";
 import invalidRoR from "./json/invalidRor.json";
 import rorNotFound from "./json/rorNotFound.json";
@@ -24,7 +23,7 @@ beforeEach(() => {
     .onGet(
       "/system/ror/rorForID/https:__rspacror_forsl____rspacror_forsl__ror.org__rspacror_forsl__02mhbdp94"
     )
-    .reply(200, v1ROR);
+    .reply(200, v2ROR);
   mockAxios
     .onGet(
       "/system/ror/rorForID/https:__rspacror_forsl____rspacror_forsl__ror.org__rspacror_forsl__02mhbdp941"
@@ -43,13 +42,7 @@ beforeEach(() => {
   mockAxios.onDelete("/system/ror/rorForID/").reply(200, rorUpdateSucess);
   mockAxios.onGet("system/ror/existingGlobalRoRID").reply(200, "");
 });
-const returnV2Details = () => {
-  mockAxios
-    .onGet(
-      "/system/ror/rorForID/https:__rspacror_forsl____rspacror_forsl__ror.org__rspacror_forsl__02mhbdp94"
-    )
-    .reply(200, v2ROR);
-};
+
 const setUpComponent = () => {
   act(() => {
     getWrapper();
@@ -103,22 +96,7 @@ describe("Renders page with ROR data ", () => {
     await assertRoRDetailsText();
   });
 
-  it("displays ROR v1 details on search and a Link Button ", async () => {
-    setUpComponent();
-    await screen.findByText("Research Organization Registry (ROR) Integration");
-    await screen.findByRole("textbox");
-    await searchForRoRDetails();
-    await assertRoRDetailsText();
-    await screen.findByText(/ROR ID found. Click./);
-    expect(
-      screen.getByRole("button", {
-        name: /Link/,
-      })
-    ).toBeInTheDocument();
-  });
-
   it("displays ROR v2 details on search", async () => {
-    returnV2Details();
     setUpComponent();
     await screen.findByText("Research Organization Registry (ROR) Integration");
     await screen.findByRole("textbox");

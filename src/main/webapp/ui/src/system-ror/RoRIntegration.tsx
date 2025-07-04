@@ -13,17 +13,6 @@ import Alert from "@mui/material/Alert";
 import { Button } from "@mui/material";
 library.add(faPlus, faMinus);
 
-type AddressV1 = { city: string };
-type RORDataV1 = {
-  status: string;
-  id: string;
-  addresses: Array<AddressV1>;
-  country: { country_name: string };
-  links: Array<string>;
-  name: string;
-  exceptionMessage?: string;
-};
-
 type Location = { geonames_details: { name: string; country_name: string } };
 type Name = { types: Array<string>; value: string };
 type Link = { type: string; value: string };
@@ -37,7 +26,7 @@ type RORDataV2 = {
   exceptionMessage?: string;
 };
 
-type RoRApiResponse = RORDataV1 | RORDataV2;
+type RoRApiResponse = RORDataV2;
 
 type RSpaceApiResponse = { data: { exceptionMessage?: string } };
 
@@ -176,19 +165,7 @@ function RoRIntegration(): React.ReactNode {
   }, [candidateRor]);
 
   const getCityCountryAddressesFromRoRDetails = () => {
-    if (rorDetails && "addresses" in rorDetails) {
-      //v1 api uses addresses
-      return rorDetails.addresses.map((address, i) => {
-        const cityCountry =
-          address.city + ", " + rorDetails.country.country_name;
-        return (
-          <RorDetails key={i}>
-            <h5>{cityCountry}</h5>
-          </RorDetails>
-        );
-      });
-    } else if (rorDetails) {
-      //v2 api uses locations in place of addresses
+    if (rorDetails) {
       return rorDetails.locations.map((location) => {
         const cityCountry =
           location.geonames_details.name +
@@ -217,27 +194,11 @@ function RoRIntegration(): React.ReactNode {
           </RorDetails>
         );
       });
-    } else if (rorDetails) {
-      return rorDetails.links.map((link) => {
-        //v1 api
-        return (
-          <RorDetails>
-            <h5>
-              <a target="_blank" rel="noreferrer" href={link}>
-                {link}
-              </a>
-            </h5>
-          </RorDetails>
-        );
-      });
     }
   };
 
   const getDisplayName = (): string | null => {
-    if (rorDetails && "name" in rorDetails) {
-      //v1 api
-      return rorDetails.name;
-    } else if (rorDetails && rorDetails.names) {
+    if (rorDetails && rorDetails.names) {
       return rorDetails.names
         .filter((name) => name.types.includes("ror_display"))
         .map((name) => name.value)[0];
@@ -291,7 +252,7 @@ function RoRIntegration(): React.ReactNode {
                 background: "white",
                 border: "1px solid #808080",
               }}
-              placeholder={"https://ror.org/02mhbdp94"}
+              placeholder={"https://ror.org/038xqyz77"}
               searchToolTip={"Search Registry"}
             />
           )}

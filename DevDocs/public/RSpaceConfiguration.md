@@ -368,7 +368,7 @@ Properties for configuring Collabora Online integration:
 
 Properties for configuring Research Organisation Registry (ROR) integration:
 * **ror.enabled** true/false. Whether ROR Registry panel should be visible on System -> Configuration page. Default is `false`.
-* **ror.api.url** Default is `https://api.ror.org/organizations`.
+* **ror.api.url** Default is `https://api.ror.org/v2/organizations`.
 
 #### Google's reCAPTCHA on 'Sign up' page
 
