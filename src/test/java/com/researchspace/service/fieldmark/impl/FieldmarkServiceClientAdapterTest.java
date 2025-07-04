@@ -157,7 +157,7 @@ public class FieldmarkServiceClientAdapterTest {
   @Test
   public void testGetFieldmarkNotebook() throws IOException {
     FieldmarkNotebookDTO resultUnderTest =
-        adapterUnderTest.getFieldmarkNotebook(goodUser, GOOD_NOTEBOOK_ID);
+        adapterUnderTest.getFieldmarkNotebook(goodUser, GOOD_NOTEBOOK_ID, null);
 
     verify(userConnectionManager).findByUserNameProviderName(USERNAME, FIELDMARK_APP_NAME);
     verify(fieldmarkClient).getNotebook(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID);
@@ -282,7 +282,7 @@ public class FieldmarkServiceClientAdapterTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> adapterUnderTest.getFieldmarkNotebook(wrongUser, GOOD_NOTEBOOK_ID),
+            () -> adapterUnderTest.getFieldmarkNotebook(wrongUser, GOOD_NOTEBOOK_ID, null),
             "FieldmarkServiceClientAdapterImpl did not throw the exception, but it was needed");
     assertTrue(thrown.getMessage().contains("No UserConnection exists for"));
   }
@@ -292,7 +292,7 @@ public class FieldmarkServiceClientAdapterTest {
     HttpServerErrorException thrown =
         assertThrows(
             HttpServerErrorException.class,
-            () -> adapterUnderTest.getFieldmarkNotebook(goodUser, WRONG_NOTEBOOK_ID),
+            () -> adapterUnderTest.getFieldmarkNotebook(goodUser, WRONG_NOTEBOOK_ID, null),
             "FieldmarkServiceClientAdapterImpl did not throw the exception, but it was needed");
     assertTrue(thrown.getMessage().contains("Unauthorized"));
 

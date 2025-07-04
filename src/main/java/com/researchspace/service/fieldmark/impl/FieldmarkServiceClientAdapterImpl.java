@@ -15,9 +15,12 @@ import com.researchspace.model.dtos.fieldmark.FieldmarkRecordDTO;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.fieldmark.FieldmarkServiceClientAdapter;
+import com.researchspace.service.inventory.InventoryImportManager;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -37,6 +40,7 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
   private static final String CSV_RECORD_IDENTIFIER = "identifier";
   @Autowired private FieldmarkClient fieldmarkClient;
   @Autowired private UserConnectionManager userConnectionManager;
+  @Autowired private InventoryImportManager importManager;
 
   public static Set<String> RESERVED_FIELD_NAMES =
       Set.of("name", "description", "tags", "source", "expiry date");
@@ -50,7 +54,35 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
   }
 
   @Override
-  public FieldmarkNotebookDTO getFieldmarkNotebook(User user, String notebookId)
+  public List<String> getIgsnCandidateFields(User user, String notebookId)
+      throws IOException, HttpServerErrorException {
+    UserConnection existingConnection =
+        getExistingConnection(user); // 1726126204618-rspace-igsn-demo
+    String formId =
+        fieldmarkClient
+            .getNotebookRecords(existingConnection.getAccessToken(), notebookId)
+            .getFormId();
+    FieldmarkRecordsCsvExport fieldmarkCsvExport =
+        fieldmarkClient.getNotebookCsv(existingConnection.getAccessToken(), notebookId, formId);
+
+    InputStream fieldmarkCsv = fieldmarkCsvExport.getCsvFile();
+
+    Map<String, String> typeByFieldNameMap =
+        importManager
+            .parseSamplesCsvFile("fieldmarkImport_" + notebookId, fieldmarkCsv, user)
+            .getFieldMappings();
+    List<String> igsnFieldCanditates = new LinkedList<>();
+    for (Entry<String, String> typeByFieldNameEntry : typeByFieldNameMap.entrySet()) {
+      if ("identifier".equals(typeByFieldNameEntry.getValue())) {
+        igsnFieldCanditates.add(typeByFieldNameEntry.getKey());
+      }
+    }
+    return igsnFieldCanditates;
+  }
+
+  @Override
+  public FieldmarkNotebookDTO getFieldmarkNotebook(
+      User user, String notebookId, String identifierFieldName)
       throws IOException, HttpServerErrorException {
     UserConnection existingConnection = getExistingConnection(user);
 
@@ -64,7 +96,8 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
     FieldmarkNotebookDTO notebookDTO =
         new FieldmarkNotebookDTO(
             fieldmarkNotebook.getMetadata().getProjectId(),
-            fieldmarkNotebook.getMetadata().getName());
+            fieldmarkNotebook.getMetadata().getName(),
+            identifierFieldName);
     notebookDTO.setMetadata(fieldmarkNotebook.getMetadata());
 
     // Fetch files if existing
@@ -88,11 +121,20 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
       for (Map.Entry<String, Object> currentField :
           currentRecord.getValue().getFieldList().entrySet()) {
         String fieldName = currentField.getKey();
-        if (RESERVED_FIELD_NAMES.contains(fieldName.toLowerCase(Locale.getDefault()))) {
-          fieldName = "Item-" + fieldName;
+        if (!fieldName.equals(notebookDTO.getDoiIdentifierFieldName())) {
+          if (RESERVED_FIELD_NAMES.contains(fieldName.toLowerCase(Locale.getDefault()))) {
+            fieldName = "Item-" + fieldName;
+          }
+          copyToDTOField(
+              currentRecord,
+              currentField,
+              fieldName,
+              fieldName.equals(identifierFieldName)
+                  || fieldName.equals("Item-" + identifierFieldName),
+              csvRecords,
+              currentRecordDTO,
+              filesInRecords);
         }
-        copyToDTOFields(
-            currentRecord, currentField, fieldName, csvRecords, currentRecordDTO, filesInRecords);
       }
       notebookDTO.addRecord(currentRecordDTO);
     }
@@ -109,16 +151,17 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
                     "No UserConnection exists for: " + FIELDMARK_APP_NAME));
   }
 
-  private static void copyToDTOFields(
+  private static void copyToDTOField(
       Entry<String, FieldmarkRecord> recordEntry,
       Entry<String, Object> fieldEntry,
       String fieldName,
+      boolean isIdentifier,
       FieldmarkRecordsCsvExport csvRecords,
       FieldmarkRecordDTO currentRecordDTO,
       Map<String, byte[]> filesInRecords) {
     try {
       FieldmarkTypeExtractor typeExtractor =
-          recordEntry.getValue().createFieldTypeExtractor(fieldEntry.getKey());
+          recordEntry.getValue().createFieldTypeExtractor(fieldEntry.getKey(), isIdentifier);
       // for each field FILE the fill the gap
       if (typeExtractor != null && byte[].class.equals(typeExtractor.getFieldType())) {
         // grab the path from CSV

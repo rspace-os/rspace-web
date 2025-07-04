@@ -54,7 +54,7 @@ public class FieldmarkServiceClientAdapterRealConnectionTest extends SpringTrans
   @Test
   public void testImportNotebook() throws IOException {
     FieldmarkNotebookDTO notebookList =
-        fieldmarkServiceClientAdapter.getFieldmarkNotebook(user, NOTEBOOK_ID);
+        fieldmarkServiceClientAdapter.getFieldmarkNotebook(user, NOTEBOOK_ID, null);
 
     assertNotNull(notebookList);
   }

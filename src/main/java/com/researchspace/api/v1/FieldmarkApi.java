@@ -12,7 +12,9 @@ import org.springframework.http.MediaType;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -33,6 +35,22 @@ public interface FieldmarkApi {
   @ResponseStatus(HttpStatus.OK)
   List<FieldmarkNotebook> getNotebooks(User user)
       throws BindException, MalformedURLException, URISyntaxException;
+
+  /**
+   * End point that gives the list of fields of the notebook that can be imported as identifiers
+   *
+   * @param notebookId
+   * @param user
+   * @return a list of fields that can be imported as Igsn
+   * @throws BindException
+   * @throws MalformedURLException
+   * @throws URISyntaxException
+   */
+  @GetMapping(value = "/fieldmark/notebooks/igsn/{notebookId}")
+  @ResponseStatus(HttpStatus.OK)
+  List<String> getIgsnCandidateFields(
+      @PathVariable("notebookId") String notebookId, @RequestAttribute(name = "user") User user)
+      throws BindException;
 
   /***
    *

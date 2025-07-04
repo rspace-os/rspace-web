@@ -2,6 +2,7 @@ package com.researchspace.service.fieldmark.impl;
 
 import static com.researchspace.api.v1.model.ApiField.ApiFieldType.ATTACHMENT;
 import static com.researchspace.api.v1.model.ApiField.ApiFieldType.DATE;
+import static com.researchspace.api.v1.model.ApiField.ApiFieldType.IDENTIFIER;
 import static com.researchspace.api.v1.model.ApiField.ApiFieldType.NUMBER;
 import static com.researchspace.api.v1.model.ApiField.ApiFieldType.RADIO;
 import static com.researchspace.api.v1.model.ApiField.ApiFieldType.TEXT;
@@ -79,6 +80,10 @@ public class FieldmarkToRSpaceApiConverter {
       case "byte[]":
         columnIndex =
             addFieldToSampleTemplate(fieldDTO.getKey(), ATTACHMENT, columnIndex, fieldsPost);
+        break;
+      case "FieldmarkDoiIdentifier": // TODO[nik]: non aggiungere al template
+        columnIndex =
+            addFieldToSampleTemplate(fieldDTO.getKey(), IDENTIFIER, columnIndex, fieldsPost);
         break;
       case "FieldmarkLocation":
         columnIndex =
