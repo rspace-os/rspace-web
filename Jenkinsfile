@@ -25,7 +25,7 @@ pipeline {
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
         booleanParam(name: 'DOCKER_AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to Docker on AWS - see the README in build/ folder for more details')
-        booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run Flow/Jest tests (runs after changes to frontend files by default)')
+        booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run TypeScript/Jest tests (runs after changes to frontend files by default)')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
@@ -106,7 +106,6 @@ pipeline {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
-                    changeset '**/*.js.flow'
                     changeset '**/*.ts'
                     changeset '**/*.tsx'
                     changeset '**/*.jsp'
@@ -118,24 +117,6 @@ pipeline {
                 dir('src/main/webapp/ui') {
                     echo 'Installing npm packages'
                     sh 'npm ci --force'
-                }
-            }
-        }
-        stage('Flow Check') {
-            when {
-                anyOf {
-                    expression { return params.FRONTEND_TESTS }
-                    changeset '**/*.js'
-                    changeset '**/*.js.flow'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
-                }
-            }
-            steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Running flow check'
-                    sh 'npm run flow check 2>/dev/null | awk \'{ print $0 } /^Found 0 errors$/ { pass = 1 } END { exit !pass }\''
                 }
             }
         }
@@ -163,7 +144,6 @@ pipeline {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
-                    changeset '**/*.js.flow'
                     changeset '**/*.ts'
                     changeset '**/*.tsx'
                     changeset '**/*.jsp'
@@ -186,7 +166,6 @@ pipeline {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
-                    changeset '**/*.js.flow'
                     changeset '**/*.ts'
                     changeset '**/*.tsx'
                     changeset '**/*.jsp'
@@ -220,7 +199,6 @@ pipeline {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
-                    changeset '**/*.js.flow'
                     changeset '**/*.ts'
                     changeset '**/*.tsx'
                     changeset '**/*.jsp'

@@ -1,8 +1,0 @@
-//@flow
-
-import { type Node } from "react";
-import { type GlobalId } from "../../../stores/definitions/BaseRecord";
-
-declare export default function EmptyListing({|
-  parentGlobalId: GlobalId,
-|}): Node;

@@ -5,6 +5,7 @@ import {
   useIntegrationsEndpoint,
 } from "./useIntegrationsEndpoint";
 import Grid from "@mui/material/Grid";
+import ApiDirect from "./integrations/ApiDirect";
 import Argos from "./integrations/Argos";
 import Ascenscia from "./integrations/Ascenscia";
 import Box from "./integrations/Box";
@@ -360,6 +361,8 @@ function CardListing({
           update={argosUpdate}
         />
       )}
+      {integrationStates.API_DIRECT.mode === mode && <ApiDirect />}
+      {integrationStates.ASCENSCIA.mode === mode && <Ascenscia />}
       {integrationStates.ASCENSCIA.mode === mode && (
         <Ascenscia
           integrationState={integrationStates.ASCENSCIA}

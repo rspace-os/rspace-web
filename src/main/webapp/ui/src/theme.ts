@@ -1,4 +1,5 @@
 import { createTheme, ThemeOptions as MuiThemeOptions } from "@mui/material";
+import { type Transitions } from "@mui/material/styles/createTransitions";
 import { makeStyles } from "tss-react/mui";
 import { grey, red } from "@mui/material/colors";
 import { hslToHex } from "./util/colors";
@@ -30,7 +31,7 @@ declare module "@mui/material/styles" {
     transitions: {
       iconTransformations: string;
       filterToggle: string;
-    };
+    } & Transitions;
   }
 
   // eslint-disable-next-line no-unused-vars

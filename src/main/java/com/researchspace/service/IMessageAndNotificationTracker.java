@@ -79,4 +79,6 @@ public interface IMessageAndNotificationTracker {
    * @param notificationStatus
    */
   void initCount(Long userId, NotificationStatus notificationStatus);
+
+  void sendNotificationUpdate(Long userId);
 }

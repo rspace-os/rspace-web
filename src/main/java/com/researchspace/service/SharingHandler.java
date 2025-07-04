@@ -10,6 +10,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
+import java.util.List;
 
 /** Facade to share documents/notebooks */
 public interface SharingHandler {
@@ -19,8 +20,8 @@ public interface SharingHandler {
 
   SharingResult shareRecordsWithResult(ShareConfigCommand shareConfig, User sharer);
 
-  ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> shareIntoSharedFolder(
-      User user, Folder sharedFolder, Long recordId);
+  List<RecordGroupSharing> shareIntoSharedFolderOrNotebook(
+      User user, Folder sharedFolderOrNotebook, Long recordId);
 
   SharingResult moveIntoSharedNotebook(
       Group group, BaseRecord baseRecordToMove, Notebook targetSharedNotebook);

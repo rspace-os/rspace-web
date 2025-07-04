@@ -1,9 +1,0 @@
-//@flow strict
-
-import { type Node } from "react";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-
-declare export default function ProtocolsIO({|
-  integrationState: IntegrationStates["PROTOCOLS_IO"],
-  update: (IntegrationStates["PROTOCOLS_IO"]) => void,
-|}): Node;

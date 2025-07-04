@@ -1,9 +1,0 @@
-//@flow
-
-import { type CoreFetcherArgs } from "../stores/definitions/Search";
-import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
-
-declare export default function useNavigateHelpers(): {|
-  navigateToSearch: (CoreFetcherArgs) => void,
-  navigateToRecord: (InventoryRecord) => Promise<void>,
-|};

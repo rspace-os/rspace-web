@@ -5,89 +5,126 @@
  * @import 'global_vars';
  */
 .importForm {
-  width: 60%;
-  margin: 0 auto; }
+    width: 60%;
+    margin: 0 auto;
+}
 
 .formBlock {
-  width: 33%;
-  float: left; }
+    width: 33%;
+    float: left;
+}
 
 #importFormError {
-  text-align: right;
-  visibility: visible;
-  font-weight: bold;
-  color: red; }
+    text-align: right;
+    visibility: visible;
+    font-weight: bold;
+    color: red;
+}
 
 #sendMessageBar {
-  margin-top: 10px;
-  padding: 8px;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #DDDDDD;
-  text-align: right;
-  overflow: hidden; }
-  #sendMessageBar .sendMessage {
+    margin-top: 10px;
+    padding: 8px;
+    border-style: solid;
+    border-width: 1px 1px 1px 1px;
+    border-color: #dddddd;
+    text-align: right;
+    overflow: hidden;
+}
+#sendMessageBar .sendMessage {
     display: inline-block;
     float: left;
-    text-align: left; }
-  #sendMessageBar .createMessage {
+    text-align: left;
+}
+#sendMessageBar .createMessage {
     margin-right: 220px;
-    display: inline-block; }
-  #sendMessageBar #settingsLink {
+    display: inline-block;
+}
+#sendMessageBar #settingsLink {
     float: right;
     width: 150px;
-    text-align: center; }
+    text-align: center;
+}
 
 #messageSettingsBar {
-  float: right;
-  width: 170px; }
+    float: right;
+    width: 170px;
+}
 
 #requestHeader {
-  display: block;
-  width: 100%;
-  margin-bottom: 14px; }
+    display: block;
+    width: 100%;
+    margin-bottom: 14px;
+}
 
 .dashboardOptions {
-  display: inline;
-  float: left;
-  font-size: 1em !important;
-  line-height: 1em !important;
-  font-weight: normal !important;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #AFAFAF;
-  margin: 0 9px 0 0 !important;
-  background: transparent;
-  background-image: url("/images/icons/editIcon.png");
-  background-repeat: no-repeat;
-  background-position: top left;
-  border-radius: 0 !important;
-  text-shadow: none !important;
-  cursor: pointer; }
-  .dashboardOptions:focus {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+    display: inline;
+    float: left;
+    font-size: 1em !important;
+    line-height: 1em !important;
+    font-weight: normal !important;
+    border-style: solid;
+    border-width: 1px 1px 1px 1px;
+    border-color: #afafaf;
+    margin: 0 9px 0 0 !important;
+    background: transparent;
+    background-image: url("/images/icons/editIcon.png");
+    background-repeat: no-repeat;
+    background-position: top left;
+    border-radius: 0 !important;
+    text-shadow: none !important;
+    cursor: pointer;
+    position: relative;
+}
+.dashboardOptions:focus {
+    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+}
+.dashboardOptions .badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #d32f2f;
+    border-radius: 50%;
+    padding: 4px;
+    color: white;
+    width: 12px;
+    height: 16px;
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    font-weight: 500;
+    font-size: 0.75rem;
+    line-height: 1;
+    height: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+}
 
 .dashboardContainer {
-  display: inline-block;
-  width: 100%;
-  margin-top: 20px; }
+    display: inline-block;
+    width: 100%;
+    margin-top: 20px;
+}
 
 #mynotifications {
-  padding: 11px 7px 9px 47px;
-  background-image: url("/images/notificationReceived.png");
-  background-position: 10px 1px; }
+    padding: 11px 7px 9px 47px;
+    background-image: url("/images/notificationReceived.png");
+    background-position: 10px 1px;
+}
 
 #mor {
-  padding: 11px 7px 9px 47px;
-  background-image: url("/images/messageReceived.png");
-  background-position: 10px 1px; }
+    padding: 11px 7px 9px 47px;
+    background-image: url("/images/messageReceived.png");
+    background-position: 10px 1px;
+}
 
 #myrequests {
-  padding: 11px 7px 9px 45px;
-  background-image: url("/images/sentRequests.png");
-  background-position: 10px 1px; }
+    padding: 11px 7px 9px 45px;
+    background-image: url("/images/sentRequests.png");
+    background-position: 10px 1px;
+}
 
 #createCalendarEntryDlgLink {
-  padding: 11px 7px 9px 45px;
-  background-image: url("/images/calendar_icon.png");
-  background-position: 10px 1px; }
+    padding: 11px 7px 9px 45px;
+    background-image: url("/images/calendar_icon.png");
+    background-position: 10px 1px;
+}

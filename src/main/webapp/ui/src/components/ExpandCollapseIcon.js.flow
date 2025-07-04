@@ -1,5 +1,0 @@
-//@flow strict
-
-import { type Node } from "react";
-
-declare export default function ExpandCollapseIcon({| open: boolean |}): Node;

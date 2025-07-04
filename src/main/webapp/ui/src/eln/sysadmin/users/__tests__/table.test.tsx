@@ -37,6 +37,9 @@ describe("Table Listing", () => {
     mockAxios
       .onGet("/export/ajax/defaultPDFConfig")
       .reply(200, { ...PDF_CONFIG });
+    mockAxios.onGet("/analyticsProperties").reply(200, {
+      analyticsEnabled: false,
+    });
 
     render(
       <StyledEngineProvider injectFirst>

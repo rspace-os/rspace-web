@@ -19,6 +19,25 @@
   */
 $(document).ready(function() {
 
+  function decrementNotificationsBadge() {
+    const badge = $('#notificationsBadge');
+    if (badge.length > 0) {
+        let count = parseInt(badge.text(), 10);
+        if (count > 0) {
+            count--;
+            badge.text(count);
+            if (count === 0) {
+                badge.hide();
+            }
+        }
+    }
+  }
+  function clearNotificationsBadge() {
+    const badge = $('#notificationsBadge');
+    badge.text('0');
+    badge.hide();
+  }
+  
 	//handles the accept/reject form in a toast message
 	$(document).on('submit', '.specialMsgUpdate', function (e){
 		var form$= $(this);
@@ -107,6 +126,7 @@ $(document).ready(function() {
 		$.post(createURL('/dashboard/ajax/markAsRead'), data, function (xhr) {
 			contentDiv$.html(xhr);
 			unescapeMessageContent();
+      clearNotificationsBadge();
 		}).fail(function() {
 			RS.ajaxFailed("Marking notifications as read", false, jxqr);
 		});
@@ -120,6 +140,7 @@ $(document).ready(function() {
 		var url = createURL('/dashboard/ajax/markAllAsRead');
 		$.post(url, data, function (xhr) {
 			contentDiv$.html(xhr);
+      clearNotificationsBadge();
 		});
 	});
 
@@ -140,6 +161,7 @@ $(document).ready(function() {
 			// if we've deleted some, pagination links will hold notifications that
 			// are now deleted.
 			RS.webResultCache.clearAll();
+      decrementNotificationsBadge();
 		});
 	});
 

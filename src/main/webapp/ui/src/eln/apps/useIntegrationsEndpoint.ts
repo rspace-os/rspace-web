@@ -59,6 +59,7 @@ export type IntegrationState<Credentials> = {
  * have an associated credential because it may have been available previously.
  */
 export type IntegrationStates = {
+  API_DIRECT: IntegrationState<null>;
   ARGOS: IntegrationState<emptyObject>;
   ASCENSCIA: IntegrationState<{
     ASCENSCIA_USERNAME: Optional<string>;
@@ -678,6 +679,10 @@ function decodeIntegrationStates(data: {
   [integration in Integration]: FetchedState;
 }): IntegrationStates {
   return {
+    API_DIRECT: {
+      mode: "EXTERNAL",
+      credentials: null,
+    },
     ARGOS: decodeArgos(data.ARGOS),
     ASCENSCIA: decodeAscenscia(data.ASCENSCIA),
     BOX: decodeBox(data.BOX),

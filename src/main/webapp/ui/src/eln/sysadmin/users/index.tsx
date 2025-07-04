@@ -91,6 +91,7 @@ import useUiPreference, {
   UiPreferences,
 } from "../../../util/useUiPreference";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
+import Analytics from "../../../components/Analytics";
 
 /*
  * All of the DOM events that happen inside of components that are themselves
@@ -1464,7 +1465,6 @@ const Toolbar = ({
       </Panel>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
-        //variant="outlined"
         ref={(node) => {
           if (node) columnMenuRef.current = node;
         }}
@@ -1712,335 +1712,343 @@ export const UsersPage = (): React.ReactNode => {
   ];
 
   return (
-    <ErrorBoundary topOfViewport>
-      <Alerts>
-        <div
-          style={{
-            width: "calc(100% - 16px)",
-            backgroundColor: "#f5f5f5",
-            padding: "8px",
-          }}
-        >
-          <StyledCard sx={{ m: 3 }} variant="outlined">
-            <StyledCardHeader title="Users" />
-            <StyledCardContent>
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  right: 0,
-                  margin: 2,
-                  zIndex: 1000,
-                }}
-              >
-                <TableContainer component={SummaryInfoCard}>
-                  <Table size="small" sx={{ mb: 0 }}>
-                    <TableBody>
-                      <TableRow>
-                        <StyledTableCell sx={{ borderBottomWidth: 2 }}>
-                          Available Seats
-                        </StyledTableCell>
-                        <StyledTableCell sx={{ borderBottomWidth: 2 }}>
-                          {FetchingData.match<UserListing, React.ReactNode>(
-                            userListing,
-                            {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
-                              success: (listing) => listing.availableSeats,
-                            }
-                          )}
-                        </StyledTableCell>
-                      </TableRow>
-                      <TableRow>
-                        <StyledTableCell>
-                          <CustomTooltip title="Enabled users and PIs, excluding admins.">
-                            <Abbr>Billable Users</Abbr>
-                          </CustomTooltip>
-                        </StyledTableCell>
-                        <StyledTableCell>
-                          {FetchingData.match<UserListing, React.ReactNode>(
-                            userListing,
-                            {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
-                              success: (listing) => listing.billableUsersCount,
-                            }
-                          )}
-                        </StyledTableCell>
-                      </TableRow>
-                      <TableRow>
-                        <StyledTableCell>System Admins</StyledTableCell>
-                        <StyledTableCell>
-                          {FetchingData.match<UserListing, React.ReactNode>(
-                            userListing,
-                            {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
-                              success: (listing) => listing.systemAdminCount,
-                            }
-                          )}
-                        </StyledTableCell>
-                      </TableRow>
-                      <TableRow>
-                        <StyledTableCell sx={{ borderBottomWidth: 2 }}>
-                          Community Admins
-                        </StyledTableCell>
-                        <StyledTableCell sx={{ borderBottomWidth: 2 }}>
-                          {FetchingData.match<UserListing, React.ReactNode>(
-                            userListing,
-                            {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
-                              success: (listing) => listing.communityAdminCount,
-                            }
-                          )}
-                        </StyledTableCell>
-                      </TableRow>
-                      <TableRow>
-                        <StyledTableCell sx={{ borderBottom: "unset" }}>
-                          <CustomTooltip title="All users including admins and those with disabled accounts.">
-                            <Abbr>Total Users</Abbr>
-                          </CustomTooltip>
-                        </StyledTableCell>
-                        <StyledTableCell sx={{ borderBottom: "unset" }}>
-                          {FetchingData.match<UserListing, React.ReactNode>(
-                            userListing,
-                            {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
-                              success: (listing) => listing.totalUsersCount,
-                            }
-                          )}
-                        </StyledTableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-              <Grid container direction="column" spacing={1.25}>
-                <Grid item>
-                  <Typography variant="body2" sx={{ maxWidth: 575 }}>
-                    You can search, filter, and tag user accounts, as well as
-                    export summary information about the users on this server.
-                    See our{" "}
-                    <Link
-                      target="_blank"
-                      rel="noreferrer"
-                      href={docLinks.taggingUsers}
-                    >
-                      Tagging docs
-                    </Link>{" "}
-                    for more.
-                  </Typography>
-                </Grid>
-                <Grid item>
-                  <Box height={4}></Box>
-                </Grid>
-                <Grid item sx={{ width: "100%" }}>
-                  {FetchingData.match(userListing, {
-                    loading: () => (
-                      <Typography variant="body2" sx={{ height: "36px" }}>
-                        Loading listing of users.
-                      </Typography>
-                    ),
-                    error: (error) => (
-                      <>
-                        <Typography variant="body2">
-                          Failed to load listing of users. Please try
-                          refreshing.
+    <Analytics>
+      <ErrorBoundary topOfViewport>
+        <Alerts>
+          <div
+            style={{
+              width: "calc(100% - 16px)",
+              backgroundColor: "#f5f5f5",
+              padding: "8px",
+            }}
+          >
+            <StyledCard sx={{ m: 3 }} variant="outlined">
+              <StyledCardHeader title="Users" />
+              <StyledCardContent>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    margin: 2,
+                    zIndex: 1000,
+                  }}
+                >
+                  <TableContainer component={SummaryInfoCard}>
+                    <Table size="small" sx={{ mb: 0 }}>
+                      <TableBody>
+                        <TableRow>
+                          <StyledTableCell sx={{ borderBottomWidth: 2 }}>
+                            Available Seats
+                          </StyledTableCell>
+                          <StyledTableCell sx={{ borderBottomWidth: 2 }}>
+                            {FetchingData.match<UserListing, React.ReactNode>(
+                              userListing,
+                              {
+                                loading: () => <>&mdash;</>,
+                                error: () => <>&mdash;</>,
+                                success: (listing) => listing.availableSeats,
+                              }
+                            )}
+                          </StyledTableCell>
+                        </TableRow>
+                        <TableRow>
+                          <StyledTableCell>
+                            <CustomTooltip title="Enabled users and PIs, excluding admins.">
+                              <Abbr>Billable Users</Abbr>
+                            </CustomTooltip>
+                          </StyledTableCell>
+                          <StyledTableCell>
+                            {FetchingData.match<UserListing, React.ReactNode>(
+                              userListing,
+                              {
+                                loading: () => <>&mdash;</>,
+                                error: () => <>&mdash;</>,
+                                success: (listing) =>
+                                  listing.billableUsersCount,
+                              }
+                            )}
+                          </StyledTableCell>
+                        </TableRow>
+                        <TableRow>
+                          <StyledTableCell>System Admins</StyledTableCell>
+                          <StyledTableCell>
+                            {FetchingData.match<UserListing, React.ReactNode>(
+                              userListing,
+                              {
+                                loading: () => <>&mdash;</>,
+                                error: () => <>&mdash;</>,
+                                success: (listing) => listing.systemAdminCount,
+                              }
+                            )}
+                          </StyledTableCell>
+                        </TableRow>
+                        <TableRow>
+                          <StyledTableCell sx={{ borderBottomWidth: 2 }}>
+                            Community Admins
+                          </StyledTableCell>
+                          <StyledTableCell sx={{ borderBottomWidth: 2 }}>
+                            {FetchingData.match<UserListing, React.ReactNode>(
+                              userListing,
+                              {
+                                loading: () => <>&mdash;</>,
+                                error: () => <>&mdash;</>,
+                                success: (listing) =>
+                                  listing.communityAdminCount,
+                              }
+                            )}
+                          </StyledTableCell>
+                        </TableRow>
+                        <TableRow>
+                          <StyledTableCell sx={{ borderBottom: "unset" }}>
+                            <CustomTooltip title="All users including admins and those with disabled accounts.">
+                              <Abbr>Total Users</Abbr>
+                            </CustomTooltip>
+                          </StyledTableCell>
+                          <StyledTableCell sx={{ borderBottom: "unset" }}>
+                            {FetchingData.match<UserListing, React.ReactNode>(
+                              userListing,
+                              {
+                                loading: () => <>&mdash;</>,
+                                error: () => <>&mdash;</>,
+                                success: (listing) => listing.totalUsersCount,
+                              }
+                            )}
+                          </StyledTableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+                <Grid container direction="column" spacing={1.25}>
+                  <Grid item>
+                    <Typography variant="body2" sx={{ maxWidth: 575 }}>
+                      You can search, filter, and tag user accounts, as well as
+                      export summary information about the users on this server.
+                      See our{" "}
+                      <Link
+                        target="_blank"
+                        rel="noreferrer"
+                        href={docLinks.taggingUsers}
+                      >
+                        Tagging docs
+                      </Link>{" "}
+                      for more.
+                    </Typography>
+                  </Grid>
+                  <Grid item>
+                    <Box height={4}></Box>
+                  </Grid>
+                  <Grid item sx={{ width: "100%" }}>
+                    {FetchingData.match(userListing, {
+                      loading: () => (
+                        <Typography variant="body2" sx={{ height: "36px" }}>
+                          Loading listing of users.
                         </Typography>
-                        <samp>{error}</samp>
-                      </>
-                    ),
-                    success: () => <></>,
-                  })}
-                  <SelectionActions
-                    selectedIds={rowSelectionModel as ReadonlyArray<UserId>}
-                    fetchedListing={userListing}
-                  />
-                  <div style={{ width: "100%" }}>
-                    <DataGrid
-                      aria-label="users"
-                      autoHeight
-                      columns={columns}
-                      rows={FetchingData.match(userListing, {
-                        loading: () => [] as Array<User>,
-                        error: () => [] as Array<User>,
-                        success: (listing) => listing.users,
-                      })}
-                      columnVisibilityModel={columnVisibility}
-                      onColumnVisibilityModelChange={setColumnVisibility}
-                      density="standard"
-                      getRowId={(row: User) => row.id}
-                      hideFooterSelectedRowCount
-                      checkboxSelection
-                      rowSelectionModel={rowSelectionModel}
-                      onRowSelectionModelChange={(
-                        newRowSelectionModel: GridRowSelectionModel,
-                        _details
-                      ) => {
-                        /*
-                         * This prop is called not only when the user taps
-                         * one of the checkboxes but also when new data is
-                         * fetched. It would be nice if we could determine
-                         * if the new data being fetched has an overlap
-                         * with the old data (e.g. because we're refreshing
-                         * after enabling or disabling a user) and keep the
-                         * selection that is common. However, the `_details`
-                         * argument is always `{ cause: undefined }` rather
-                         * than a useful value. This is presumably a bug :(
-                         */
-                        setRowSelectionModel(newRowSelectionModel);
-                      }}
-                      disableColumnFilter
-                      paginationMode="server"
-                      rowCount={FetchingData.match(userListing, {
-                        loading: () => 0,
-                        error: () => 0,
-                        success: (listing) => listing.totalListingCount,
-                      })}
-                      paginationModel={FetchingData.match(userListing, {
-                        loading: () => ({ page: 0, pageSize: 0 }),
-                        error: () => ({ page: 0, pageSize: 0 }),
-                        success: (listing) => ({
-                          page: listing.page,
-                          pageSize: listing.pageSize,
-                        }),
-                      })}
-                      pageSizeOptions={FetchingData.match(userListing, {
-                        loading: () => [0],
-                        error: () => [0],
-                        success: (listing) =>
-                          paginationOptions(listing.totalListingCount),
-                      })}
-                      onPaginationModelChange={({
-                        pageSize: newPageSize,
-                        page: newPage,
-                      }) => {
-                        FetchingData.match(userListing, {
-                          loading: () => {},
-                          error: () => {},
-                          success: (listing) => {
-                            if (newPage !== listing.page) {
-                              void listing.setPage(newPage);
-                            }
-                            if (newPageSize !== listing.pageSize) {
-                              void listing.setPageSize(newPageSize);
-                            }
-                          },
-                        });
-                      }}
-                      sortingMode="server"
-                      sortModel={sortModel}
-                      onSortModelChange={(
-                        newSortModel: Array<GridSortItem>
-                      ) => {
-                        FetchingData.match(userListing, {
-                          loading: () => {},
-                          error: () => {},
-                          success: (listing) => {
-                            if (newSortModel.length === 0) {
-                              setSortModel([]);
-                              void listing.clearOrdering();
-                              return;
-                            }
-                            const [{ field: newOrderBy, sort: newSortOrder }] =
-                              newSortModel;
-                            setSortModel([
-                              { field: newOrderBy, sort: newSortOrder },
-                            ]);
-                            const apiOrderBy = {
-                              username: "username",
-                              fileUsage: "fileUsage()",
-                              recordCount: "recordCount()",
-                              lastLogin: "lastLogin",
-                              created: "creationDate",
-                              name: "lastName",
-                              firstName: "firstName",
-                              lastName: "lastName",
-                              email: "email",
-                            }[newOrderBy];
-                            if (!apiOrderBy)
-                              throw new Error(
-                                `Invalid order by: ${newOrderBy}`
-                              );
-                            if (typeof newSortOrder !== "string")
-                              throw new Error(
-                                `Invalid sort order: ${newSortOrder}`
-                              );
-                            void listing.setOrdering(apiOrderBy, newSortOrder);
-                          },
-                        });
-                      }}
-                      slots={{
-                        // @ts-expect-error The type of toolbar does not account for the slotProps that also get passed
-                        toolbar: Toolbar,
-                      }}
-                      slotProps={{
-                        toolbar: {
-                          userListing,
-                          setColumnsMenuAnchorEl,
-                          rowSelectionModel,
-                        },
-                        panel: {
-                          // this has to be here because the panel isn't a
-                          // descendent of .MuiDataGrid as it is rendered
-                          // inside a Portal
-                          sx: {
-                            "& .MuiPaper-root": {
-                              boxShadow:
-                                // this is copied from the other menus
-                                "0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12)",
-                            },
-                          },
-                          anchorEl: columnsMenuAnchorEl,
-                        },
-                      }}
-                      loading={FetchingData.match(userListing, {
-                        loading: () => true,
-                        error: () => false,
-                        success: () => false,
-                      })}
-                      {...FetchingData.match(userListing, {
-                        loading: () => ({ "aria-hidden": true }),
-                        error: () => ({ "aria-hidden": true }),
-                        success: () => ({}),
-                      })}
+                      ),
+                      error: (error) => (
+                        <>
+                          <Typography variant="body2">
+                            Failed to load listing of users. Please try
+                            refreshing.
+                          </Typography>
+                          <samp>{error}</samp>
+                        </>
+                      ),
+                      success: () => <></>,
+                    })}
+                    <SelectionActions
+                      selectedIds={rowSelectionModel as ReadonlyArray<UserId>}
+                      fetchedListing={userListing}
                     />
-                  </div>
-                  <Panel
-                    anchorEl={groupsAnchorEl}
-                    onClose={() => setGroupsAnchorEl(null)}
-                    ariaLabel="Groups"
-                  >
-                    <List sx={{ p: 0 }}>
-                      {groupsList.map((group) => (
-                        <ListItem key={group}>
-                          <ListItemText primary={group} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Panel>
-                  <Panel
-                    anchorEl={tagsAnchorEl}
-                    onClose={() => setTagsAnchorEl(null)}
-                    ariaLabel="Tags"
-                  >
-                    <List sx={{ p: 0 }}>
-                      {tagsList.map((tag) => (
-                        <ListItem key={tag}>
-                          <ListItemText primary={tag} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Panel>
+                    <div style={{ width: "100%" }}>
+                      <DataGrid
+                        aria-label="users"
+                        autoHeight
+                        columns={columns}
+                        rows={FetchingData.match(userListing, {
+                          loading: () => [] as Array<User>,
+                          error: () => [] as Array<User>,
+                          success: (listing) => listing.users,
+                        })}
+                        columnVisibilityModel={columnVisibility}
+                        onColumnVisibilityModelChange={setColumnVisibility}
+                        density="standard"
+                        getRowId={(row: User) => row.id}
+                        hideFooterSelectedRowCount
+                        checkboxSelection
+                        rowSelectionModel={rowSelectionModel}
+                        onRowSelectionModelChange={(
+                          newRowSelectionModel: GridRowSelectionModel,
+                          _details
+                        ) => {
+                          /*
+                           * This prop is called not only when the user taps
+                           * one of the checkboxes but also when new data is
+                           * fetched. It would be nice if we could determine
+                           * if the new data being fetched has an overlap
+                           * with the old data (e.g. because we're refreshing
+                           * after enabling or disabling a user) and keep the
+                           * selection that is common. However, the `_details`
+                           * argument is always `{ cause: undefined }` rather
+                           * than a useful value. This is presumably a bug :(
+                           */
+                          setRowSelectionModel(newRowSelectionModel);
+                        }}
+                        disableColumnFilter
+                        paginationMode="server"
+                        rowCount={FetchingData.match(userListing, {
+                          loading: () => 0,
+                          error: () => 0,
+                          success: (listing) => listing.totalListingCount,
+                        })}
+                        paginationModel={FetchingData.match(userListing, {
+                          loading: () => ({ page: 0, pageSize: 0 }),
+                          error: () => ({ page: 0, pageSize: 0 }),
+                          success: (listing) => ({
+                            page: listing.page,
+                            pageSize: listing.pageSize,
+                          }),
+                        })}
+                        pageSizeOptions={FetchingData.match(userListing, {
+                          loading: () => [0],
+                          error: () => [0],
+                          success: (listing) =>
+                            paginationOptions(listing.totalListingCount),
+                        })}
+                        onPaginationModelChange={({
+                          pageSize: newPageSize,
+                          page: newPage,
+                        }) => {
+                          FetchingData.match(userListing, {
+                            loading: () => {},
+                            error: () => {},
+                            success: (listing) => {
+                              if (newPage !== listing.page) {
+                                void listing.setPage(newPage);
+                              }
+                              if (newPageSize !== listing.pageSize) {
+                                void listing.setPageSize(newPageSize);
+                              }
+                            },
+                          });
+                        }}
+                        sortingMode="server"
+                        sortModel={sortModel}
+                        onSortModelChange={(
+                          newSortModel: Array<GridSortItem>
+                        ) => {
+                          FetchingData.match(userListing, {
+                            loading: () => {},
+                            error: () => {},
+                            success: (listing) => {
+                              if (newSortModel.length === 0) {
+                                setSortModel([]);
+                                void listing.clearOrdering();
+                                return;
+                              }
+                              const [
+                                { field: newOrderBy, sort: newSortOrder },
+                              ] = newSortModel;
+                              setSortModel([
+                                { field: newOrderBy, sort: newSortOrder },
+                              ]);
+                              const apiOrderBy = {
+                                username: "username",
+                                fileUsage: "fileUsage()",
+                                recordCount: "recordCount()",
+                                lastLogin: "lastLogin",
+                                created: "creationDate",
+                                name: "lastName",
+                                firstName: "firstName",
+                                lastName: "lastName",
+                                email: "email",
+                              }[newOrderBy];
+                              if (!apiOrderBy)
+                                throw new Error(
+                                  `Invalid order by: ${newOrderBy}`
+                                );
+                              if (typeof newSortOrder !== "string")
+                                throw new Error(
+                                  `Invalid sort order: ${newSortOrder}`
+                                );
+                              void listing.setOrdering(
+                                apiOrderBy,
+                                newSortOrder
+                              );
+                            },
+                          });
+                        }}
+                        slots={{
+                          // @ts-expect-error The type of toolbar does not account for the slotProps that also get passed
+                          toolbar: Toolbar,
+                        }}
+                        slotProps={{
+                          toolbar: {
+                            userListing,
+                            setColumnsMenuAnchorEl,
+                            rowSelectionModel,
+                          },
+                          panel: {
+                            // this has to be here because the panel isn't a
+                            // descendent of .MuiDataGrid as it is rendered
+                            // inside a Portal
+                            sx: {
+                              "& .MuiPaper-root": {
+                                boxShadow:
+                                  // this is copied from the other menus
+                                  "0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12)",
+                              },
+                            },
+                            anchorEl: columnsMenuAnchorEl,
+                          },
+                        }}
+                        loading={FetchingData.match(userListing, {
+                          loading: () => true,
+                          error: () => false,
+                          success: () => false,
+                        })}
+                        {...FetchingData.match(userListing, {
+                          loading: () => ({ "aria-hidden": true }),
+                          error: () => ({ "aria-hidden": true }),
+                          success: () => ({}),
+                        })}
+                      />
+                    </div>
+                    <Panel
+                      anchorEl={groupsAnchorEl}
+                      onClose={() => setGroupsAnchorEl(null)}
+                      ariaLabel="Groups"
+                    >
+                      <List sx={{ p: 0 }}>
+                        {groupsList.map((group) => (
+                          <ListItem key={group}>
+                            <ListItemText primary={group} />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Panel>
+                    <Panel
+                      anchorEl={tagsAnchorEl}
+                      onClose={() => setTagsAnchorEl(null)}
+                      ariaLabel="Tags"
+                    >
+                      <List sx={{ p: 0 }}>
+                        {tagsList.map((tag) => (
+                          <ListItem key={tag}>
+                            <ListItemText primary={tag} />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Panel>
+                  </Grid>
                 </Grid>
-              </Grid>
-            </StyledCardContent>
-          </StyledCard>
-        </div>
-      </Alerts>
-    </ErrorBoundary>
+              </StyledCardContent>
+            </StyledCard>
+          </div>
+        </Alerts>
+      </ErrorBoundary>
+    </Analytics>
   );
 };
 

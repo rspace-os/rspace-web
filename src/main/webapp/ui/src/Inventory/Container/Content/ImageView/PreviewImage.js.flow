@@ -1,8 +1,0 @@
-// @flow
-import React, { type Node, type ComponentType } from "react";
-import { type UseState } from "../../../../util/types";
-import ContainerModel from "../../../../stores/models/ContainerModel";
-
-declare function PreviewImage(): Node;
-
-export default (PreviewImage: ComponentType<{||}>);
