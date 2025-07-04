@@ -15,9 +15,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpClientErrorException;
+
+import java.security.Principal;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Controller
@@ -35,40 +41,53 @@ public class AscensciaController extends BaseController {
   }
 
   @PostMapping("/connect")
-  public ResponseEntity<?> connect(@Valid ConnectDTO connectDTO) {
+  public @ResponseBody AuthResponseDTO connect(@Valid ConnectDTO connectDTO) {
     User subject = userManager.getAuthenticatedUserInSession();
 
     try {
-      ResponseEntity<AuthResponseDTO> response = ascensciaClient.authenticate(connectDTO, subject);
+      AuthResponseDTO authResponse = ascensciaClient.authenticate(connectDTO, subject);
 
-      if (response.getStatusCode() == HttpStatus.CREATED && response.getBody() != null) {
-        String token = response.getBody().getAccessToken();
+        String token = authResponse.getAccessToken();
 
         UserConnection connection = new UserConnection();
         connection.setId(
             new UserConnectionId(
                 subject.getUsername(), ASCENSCIA_APP_NAME, connectDTO.getUsername()));
         connection.setAccessToken(token);
-        connection.setRefreshToken(response.getBody().getRefreshToken());
+        connection.setRefreshToken(authResponse.getRefreshToken());
         connection.setDisplayName("Ascenscia token");
         userConnectionManager.save(connection);
 
-        return ResponseEntity.ok().build();
-      } else {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body("Failed to connect to Ascenscia");
-      }
+        return authResponse;
+
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        throw new RuntimeException("Invalid credentials");
       } else {
-        return ResponseEntity.status(e.getStatusCode())
-            .body(e.getStatusCode() + " " + e.getStatusText());
+        throw new RuntimeException(e.getStatusCode() + " " + e.getStatusText());
       }
     } catch (Exception e) {
       log.error("Error connecting to Ascenscia", e);
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("An error occurred while connecting to Ascenscia");
+      throw new RuntimeException("An error occurred while connecting to Ascenscia", e);
+    }
+  }
+
+  @GetMapping("/refreshToken")
+  public @ResponseBody AuthResponseDTO refreshAccessCredentials() {
+    User user = userManager.getAuthenticatedUserInSession();
+    Optional<UserConnection> connection =
+        userConnectionManager.findByUserNameProviderName(
+            ASCENSCIA_APP_NAME, user.getUsername(), user.getUsername());
+
+    if (connection.isEmpty()) {
+      throw new IllegalStateException("No Ascenscia connection found for user " + user.getUsername());
+    }
+
+    try {
+      return ascensciaClient.refreshAccessToken(connection.get(), user);
+    } catch (HttpClientErrorException e) {
+      log.error("Error refreshing Ascenscia access token", e);
+      throw new RuntimeException("Failed to refresh access token: " + e.getMessage(), e);
     }
   }
 }

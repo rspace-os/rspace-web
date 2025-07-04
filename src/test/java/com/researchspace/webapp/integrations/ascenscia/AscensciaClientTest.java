@@ -60,24 +60,20 @@ public class AscensciaClientTest {
             eq(AuthResponseDTO.class)))
         .thenReturn(new ResponseEntity<>(authResponseDTO, HttpStatus.OK));
 
-    ResponseEntity<AuthResponseDTO> response = ascensciaClient.authenticate(connectDTO, user);
+    AuthResponseDTO response = ascensciaClient.authenticate(connectDTO, user);
 
-    assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(authResponseDTO, response.getBody());
+    assertEquals(authResponseDTO, response);
   }
 
   @ParameterizedTest
   @EnumSource(
       value = HttpStatus.class,
       names = {"UNAUTHORIZED", "BAD_REQUEST", "INTERNAL_SERVER_ERROR"})
-  public void whenAuthenticationError_thenReturnCorrectResponse(HttpStatus errorStatus) {
+  public void whenAuthenticationError_thenThrowException(HttpStatus errorStatus) {
     when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(AuthResponseDTO.class)))
         .thenReturn(new ResponseEntity<>(null, errorStatus));
 
-    ResponseEntity<AuthResponseDTO> response = ascensciaClient.authenticate(connectDTO, user);
-
-    assertEquals(errorStatus, response.getStatusCode());
-    assertNull(response.getBody());
+    assertThrows(HttpClientErrorException.class, () -> ascensciaClient.authenticate(connectDTO, user));
   }
 
   @Test

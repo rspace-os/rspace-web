@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.ascenscia;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -61,14 +62,14 @@ public class AscensciaControllerTest {
   }
 
   @Test
-  public void whenAuthenticationSuccess_thenReturnOKAndSaveToken() {
+  public void whenAuthenticationSuccess_thenReturnAuthResponseAndSaveToken() {
     when(user.getUsername()).thenReturn("rspaceuser");
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
-        .thenReturn(new ResponseEntity<>(authResponseDTO, HttpStatus.CREATED));
+        .thenReturn(authResponseDTO);
 
-    ResponseEntity<?> response = ascensciaController.connect(connectDTO);
+    AuthResponseDTO response = ascensciaController.connect(connectDTO);
 
-    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(authResponseDTO, response);
 
     verify(userConnectionManager).save(userConnectionCaptor.capture());
     UserConnection savedConnection = userConnectionCaptor.getValue();
@@ -77,35 +78,38 @@ public class AscensciaControllerTest {
   }
 
   @Test
-  public void whenClientReturnsUnauthorized_thenReturn401() {
+  public void whenClientReturnsUnauthorized_thenThrowException() {
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
         .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
 
-    ResponseEntity<?> response = ascensciaController.connect(connectDTO);
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+      ascensciaController.connect(connectDTO);
+    });
 
-    assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-    assertEquals("Invalid credentials", response.getBody());
+    assertEquals("Invalid credentials", exception.getMessage());
   }
 
   @Test
-  public void whenClientReturnsBadRequest_thenReturn400() {
+  public void whenClientReturnsBadRequest_thenThrowException() {
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
         .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad request"));
 
-    ResponseEntity<?> response = ascensciaController.connect(connectDTO);
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+      ascensciaController.connect(connectDTO);
+    });
 
-    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    assertEquals("400 BAD_REQUEST Bad request", response.getBody());
+    assertEquals("400 BAD_REQUEST Bad request", exception.getMessage());
   }
 
   @Test
-  public void whenExceptionThrownByClient_thenReturn500() {
+  public void whenExceptionThrownByClient_thenThrowException() {
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
         .thenThrow(new RuntimeException("Unexpected error"));
 
-    ResponseEntity<?> response = ascensciaController.connect(connectDTO);
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+      ascensciaController.connect(connectDTO);
+    });
 
-    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-    assertEquals("An error occurred while connecting to Ascenscia", response.getBody());
+    assertEquals("An error occurred while connecting to Ascenscia", exception.getMessage());
   }
 }

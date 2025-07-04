@@ -245,7 +245,10 @@ function decodeAscenscia(data: FetchedState): IntegrationStates["ASCENSCIA"] {
         data.options,
         "ASCENSCIA_PASSWORD"
       ),
-      ASCENSCIA_ORGANIZATION: parseCredentialString(data.options, "ASCENSCIA_ORGANIZATION"),
+      ASCENSCIA_ORGANIZATION: parseCredentialString(
+        data.options,
+        "ASCENSCIA_ORGANIZATION"
+      ),
     },
   };
 }
