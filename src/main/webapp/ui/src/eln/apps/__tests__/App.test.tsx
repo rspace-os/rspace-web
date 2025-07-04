@@ -51,7 +51,6 @@ describe("Apps page", () => {
 
       await screen.findAllByText(/Something went wrong!/i);
 
-      // $FlowExpectedError[incompatible-call] See expect.extend above
       expect(await axe(container)).toHaveNoViolations();
     });
   });

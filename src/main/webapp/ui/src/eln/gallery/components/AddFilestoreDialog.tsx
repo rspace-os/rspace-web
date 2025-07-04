@@ -449,7 +449,6 @@ export default function AddFilestoreDialog({
         "filestores",
         {},
         {
-          //$FlowExpectedError[incompatible-call] Flow types are wrong; plain object is allowed for `params`
           params: {
             filesystemId,
             name,

@@ -37,7 +37,6 @@ describe("fetchMembersOfSameGroup", () => {
     });
     try {
       await peopleStore.fetchMembersOfSameGroup();
-      // $FlowExpectedError[cannot-resolve-name] Global variable
       fail("Shouldn't have resolved.");
     } catch (e) {
       expect((e as Error).message).toEqual("some error message");

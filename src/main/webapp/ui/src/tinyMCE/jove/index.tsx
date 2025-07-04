@@ -59,7 +59,6 @@ function createJoveContent(articles: Array<Article>) {
 function getIframeAndInnerContent(joveArticle: Article) {
   var iframe = document.createElement("iframe");
   iframe.setAttribute("id", "embed-iframe");
-  // $FlowExpectedError[prop-missing] Flow is wrong; allow is valid
   iframe.allow = "encrypted-media *";
   iframe.src = joveArticle.embed_url;
   iframe.scrolling = "no";
