@@ -8,7 +8,19 @@ module.exports = {
       severity: "error",
       from: {},
       to: {
-        licenseNot: ["MIT", "BSD", "Apache", "Hippocratic", "ISC", "MPL"],
+        licenseNot: [
+          "MIT",
+          "BSD",
+          "Apache",
+          "Hippocratic",
+          "ISC",
+          "MPL",
+          "GPL",
+        ],
+        pathNot: [
+          // posthog-js doesn't properly encode its license in package.json
+          "node_modules/posthog-js",
+        ],
       },
     },
 

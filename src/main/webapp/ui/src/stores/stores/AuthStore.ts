@@ -82,7 +82,8 @@ export default class AuthStore {
       )
       .then(() => {})
       .catch(() => {
-        window.location = "/login" as unknown as Location;
+        // @ts-expect-error I can update the location by assigning a string to it
+        window.location = "/login";
       }) as Promise<void>;
   }
 

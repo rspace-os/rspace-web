@@ -54,29 +54,31 @@ describe("constructor", () => {
       // Define a mock factory with circular references
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mockFactoryRef: any = {};
-      
+
       // Create a mock newRecord implementation
-      const mockNewRecord = jest.fn().mockImplementation(
-        (attrs: Record<string, unknown> & { globalId: string | null }) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          return new ContainerModel(mockFactoryRef, attrs as ContainerAttrs);
-        }
-      );
-      
+      const mockNewRecord = jest
+        .fn()
+        .mockImplementation(
+          (attrs: Record<string, unknown> & { globalId: string | null }) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            return new ContainerModel(mockFactoryRef, attrs as ContainerAttrs);
+          }
+        );
+
       // Create a mock factory with the mock implementations
       const factory = mockFactory({
         newRecord: mockNewRecord,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         newFactory: jest.fn().mockReturnValue(mockFactoryRef as any),
       });
-      
+
       // Assign the factory to the reference to resolve circular dependency
       Object.assign(mockFactoryRef, factory);
-      
+
       // Execute the test
       mockContainerWithTwoContents(factory);
 
-      expect(mockNewRecord).toBeCalledTimes(5);
+      expect(mockNewRecord).toHaveBeenCalledTimes(5);
 
       // the root container
       expect(mockNewRecord).toHaveBeenNthCalledWith(

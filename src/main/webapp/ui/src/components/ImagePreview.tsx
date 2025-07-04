@@ -112,23 +112,32 @@ export default function ImagePreview({
           height={size?.height ?? 100}
           caption={(caption ?? []).map(escapeHtml).join("<br /><br />")}
         >
-          {({ ref, open: openFn }) => (
-            <img
-              className={classes.image}
-              ref={ref as React.Ref<HTMLImageElement>}
-              src={link}
-              onLoad={() => {
-                setSize({
-                  width: (ref as React.MutableRefObject<HTMLImageElement>)
-                    ?.current?.naturalWidth,
-                  height: (ref as React.MutableRefObject<HTMLImageElement>)
-                    ?.current?.naturalHeight,
-                });
-                // for some unknown reason Safari needs 20ms break
-                setTimeout(openFn, 20);
-              }}
-            />
-          )}
+          {({ ref, open: openFn }) => {
+            const imgRef = React.useRef<HTMLImageElement>(null);
+
+            return (
+              <img
+                className={classes.image}
+                ref={(node) => {
+                  (
+                    imgRef as React.MutableRefObject<HTMLImageElement | null>
+                  ).current = node;
+                  if (typeof ref === "function") {
+                    ref(node);
+                  }
+                }}
+                src={link}
+                onLoad={() => {
+                  setSize({
+                    width: imgRef.current?.naturalWidth ?? 100,
+                    height: imgRef.current?.naturalHeight ?? 100,
+                  });
+                  // for some unknown reason Safari needs 20ms break
+                  setTimeout(openFn, 20);
+                }}
+              />
+            );
+          }}
         </Item>
       </Gallery>
     </>

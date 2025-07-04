@@ -193,7 +193,7 @@ describe("ImageEditingDialog", () => {
     ctx2.fillStyle = "green";
     ctx2.fillRect(300, 0, 600, 300);
     const expected = await new Promise((resolve) =>
-      canvas2.toBlob(resolve, "image/png", "1.0")
+      canvas2.toBlob(resolve, "image/png", 1.0)
     );
 
     await waitFor(() => {
@@ -252,7 +252,7 @@ describe("ImageEditingDialog", () => {
     ctx2.fillStyle = "green";
     ctx2.fillRect(0, 300, 300, 600);
     const expected = await new Promise((resolve) =>
-      canvas2.toBlob(resolve, "image/png", "1.0")
+      canvas2.toBlob(resolve, "image/png", 1.0)
     );
 
     await waitFor(() => {

@@ -49,7 +49,7 @@ describe("useNavigateHelpers", () => {
       );
       await user.click(screen.getByText("Click me."));
 
-      expect(setActiveResultSpy).toBeCalledWith(mockContainer);
+      expect(setActiveResultSpy).toHaveBeenCalledWith(mockContainer);
     });
   });
 
@@ -87,7 +87,7 @@ describe("useNavigateHelpers", () => {
       );
       await user.click(screen.getByText("Click me."));
 
-      expect(setActiveResultSpy).not.toBeCalled();
+      expect(setActiveResultSpy).not.toHaveBeenCalled();
     });
   });
 });

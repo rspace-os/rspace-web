@@ -81,7 +81,7 @@ describe("method: importFile", () => {
         .mockImplementation(() => {});
 
       await uploadModel.importFiles();
-      expect(addAlertSpy).toBeCalledWith(
+      expect(addAlertSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           variant: "error",
           details: [
