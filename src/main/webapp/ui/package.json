@@ -139,7 +139,7 @@
     "resize-observer-polyfill": "^1.5.1",
     "sockjs-client": "^1.6.1",
     "tinymce": "=7.9.1",
-    "tss-react": "=4.6.0"
+    "tss-react": "=4.9.18"
   },
   "overrides": {
     "word-wrap": "=1.2.5",
