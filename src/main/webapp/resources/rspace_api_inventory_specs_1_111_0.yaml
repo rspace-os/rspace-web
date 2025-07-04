@@ -1859,6 +1859,28 @@ paths:
           description: >-
             Returns a list of notebook Ids for the given user
 
+  /fieldmark/notebooks/igsn/{notebookId}:
+    get:
+      summary: List Fieldmark fields (of a given notebook) that could be imported as IGSN
+      description: >-
+        Return the list Fieldmark fields (of a given notebook) that could be imported as IGSN
+        
+        The pre-requisite is that user enables Fieldmark App on RSpace Apps page, and saves their Fieldmark API token.
+      produces:
+        - application/json
+      tags:
+        - Import
+      parameters:
+        - name: notebookId
+          description: The notebookId to check
+          type: string
+          in: path
+          required: true
+      responses:
+        '200':
+          description: >-
+            Returns a list of fields that can be imported as Igsn
+
   /import/fieldmark/notebook:
     post:
       summary: >-
