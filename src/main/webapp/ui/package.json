@@ -95,7 +95,7 @@
     "@tinymce/tinymce-react": "=6.2.1",
     "@toast-ui/react-image-editor": "=3.15.2",
     "@types/react-window-infinite-loader": "^1.0.9",
-    "autosuggest-highlight": "=3.2.1",
+    "autosuggest-highlight": "=3.3.4",
     "axios": "=1.10.0",
     "babel-plugin-syntax-hermes-parser": "=0.29.1",
     "clsx": "=2.1.1",
