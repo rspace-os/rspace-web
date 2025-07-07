@@ -215,6 +215,7 @@ export default function ImportDialog({
   >({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [hasSearched, setHasSearched] = React.useState(false);
+  const [displayedSearchTerm, setDisplayedSearchTerm] = React.useState("");
 
   const validationResult = React.useMemo(() => {
     return Object.values(selectedCompounds).some((isSelected) => isSelected)
@@ -227,6 +228,7 @@ export default function ImportDialog({
     void search({ searchTerm, searchType }).then((newResults) => {
       setResults(newResults);
       setHasSearched(true);
+      setDisplayedSearchTerm(searchTerm);
     });
   }
 
@@ -248,6 +250,7 @@ export default function ImportDialog({
       setSelectedCompounds({});
       setIsSubmitting(false);
       setHasSearched(false);
+      setDisplayedSearchTerm("");
     }
     if (open) trackEvent("user:open:pubchem_import:document");
   }, [open]);
@@ -330,7 +333,12 @@ export default function ImportDialog({
               <Grid item flexGrow={1}>
                 <TextField
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    if (hasSearched && results.length === 0) {
+                      setHasSearched(false);
+                    }
+                  }}
                   variant="outlined"
                   fullWidth
                   placeholder={
@@ -390,8 +398,8 @@ export default function ImportDialog({
               {hasSearched && results.length === 0 && (
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary">
-                    No compounds found for "{searchTerm}". Try a different
-                    search term.
+                    No compounds found for "{displayedSearchTerm}". Try a
+                    different search term.
                   </Typography>
                 </Grid>
               )}

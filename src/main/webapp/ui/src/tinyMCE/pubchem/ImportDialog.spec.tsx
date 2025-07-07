@@ -155,6 +155,15 @@ const feature = test.extend<{
         await searchInput.fill("error");
         await searchInput.press("Enter");
       },
+      "a search returns no results": async () => {
+        const searchInput = page.getByRole("textbox");
+        await searchInput.fill("noresults");
+        await searchInput.press("Enter");
+      },
+      "the search term is modified after a no-results search": async () => {
+        const searchInput = page.getByRole("textbox");
+        await searchInput.fill("modified");
+      },
       "the dialog is closed and reopened": async () => {
         const dialog = page.getByRole("dialog");
         const closeButton = dialog.getByRole("button", { name: /cancel/i });
@@ -291,6 +300,17 @@ const feature = test.extend<{
           .count();
         expect(await casTerms).toBe(0);
       },
+      "no results error message should be displayed": async () => {
+        const errorMessage = page.getByText(
+          /No compounds found for "noresults"/i
+        );
+        await expect(errorMessage).toBeVisible();
+      },
+      "no results error message should not be visible after modifying search term":
+        async () => {
+          const errorMessage = page.getByText(/No compounds found for/i);
+          await expect(errorMessage).not.toBeVisible();
+        },
     });
   },
   networkRequests: async ({}, use) => {
@@ -405,6 +425,12 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(noCasResult),
+      });
+    } else if (searchTerm === "noresults") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
       });
     } else {
       const searchResults = [
@@ -617,6 +643,19 @@ test.describe("ImportDialog", () => {
         "a search is performed that returns a compound with empty CAS"
       ]();
       await Then["the CAS number should not be displayed"]();
+    }
+  );
+
+  feature(
+    "Should hide error message when typing after a no-results search",
+    async ({ Given, When, Then }) => {
+      await Given["that the ImportDialog is mounted"]();
+      await When["a search returns no results"]();
+      await Then["no results error message should be displayed"]();
+      await When["the search term is modified after a no-results search"]();
+      await Then[
+        "no results error message should not be visible after modifying search term"
+      ]();
     }
   );
 });
