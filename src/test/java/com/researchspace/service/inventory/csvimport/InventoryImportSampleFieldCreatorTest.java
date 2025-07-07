@@ -178,7 +178,7 @@ public class InventoryImportSampleFieldCreatorTest {
     fieldMappings = helper.getFieldMappingForIdentifier("testIgsn", values);
     assertNull(fieldMappings.get("testIgsn"));
 
-  // all empty values
+    // all empty values
     values.clear();
     values.add("");
     values.add("");

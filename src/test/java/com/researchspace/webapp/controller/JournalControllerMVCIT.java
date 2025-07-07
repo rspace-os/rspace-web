@@ -73,9 +73,9 @@ public class JournalControllerMVCIT extends MVCTestBase {
         mockMvc
             .perform(
                 get(
-                    "/journal/ajax/retrieveEntryById/{notebookId}/{entryId}",
-                    nbook.getId(),
-                    entry.getId())
+                        "/journal/ajax/retrieveEntryById/{notebookId}/{entryId}",
+                        nbook.getId(),
+                        entry.getId())
                     .principal(new MockPrincipal(user.getUsername())))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
