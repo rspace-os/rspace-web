@@ -27,16 +27,20 @@ public class TextFieldEmbedIframeHandler {
   // youtube src url last fragment, e.g. 'YkRldqVfTJo?start=17'
   private static final String YOUTUBE_SRC_SUFFIX_PATTERN =
       "([\\w-])+(\\?((si=[\\w-]+)|((&amp;)?&?start=\\d+)|((&amp;)?&?controls=0))+)?";
+
   // jove src url last fragment, e.g. 'id=54239&t=1&s=1&fpv=1'
   private static final String JOVE_SRC_SUFFIX_PATTERN =
       "\\?id=\\d+((&\\w+=1)|(&language=\\w+)|(&access=\\w+)|(&utm_source=\\w+))*";
+
+   // TIB AV-Portal src url last fragment
+  private static final String AVPORTAL_SRC_SUFFIX_PATTERN = "\\d+";
 
   private static final String[] knownIframeSrcPatterns = {
     "https://www.youtube.com/embed/" + YOUTUBE_SRC_SUFFIX_PATTERN,
     "https://www.youtube-nocookie.com/embed/" + YOUTUBE_SRC_SUFFIX_PATTERN,
     "https://www.jove.com/embed/player" + JOVE_SRC_SUFFIX_PATTERN,
     "https://app.jove.com/embed/player" + JOVE_SRC_SUFFIX_PATTERN,
-    "https://richard-dev2.jove.com/embed/player" + JOVE_SRC_SUFFIX_PATTERN
+    "https://av.tib.eu/player/" + AVPORTAL_SRC_SUFFIX_PATTERN
   };
 
   private static final Map<String, String> knownIframeAttrsAndPatterns;
@@ -55,8 +59,8 @@ public class TextFieldEmbedIframeHandler {
     knownIframeAttrsAndPatterns.put(
         "allow",
         "((\\s?accelerometer;?)|(\\s?autoplay;?)|(\\s?clipboard-write;?)|(\\s?encrypted-media;?)"
-            + "|(\\s?encrypted-media \\*;?)|(\\s?gyroscope;?)|(\\s?picture-in-picture;?)"
-            + "|(\\s?web-share;?))*");
+            + "|(\\s?encrypted-media \\*;?)|(\\s?fullscreen;?)|(\\s?gyroscope;?)"
+            + "|(\\s?picture-in-picture;?)|(\\s?web-share;?))*");
     knownIframeAttrsAndPatterns.put("allowfullscreen", "");
     knownIframeAttrsAndPatterns.put("allowtransparency", "true");
     knownIframeAttrsAndPatterns.put("referrerpolicy", "strict-origin-when-cross-origin");
