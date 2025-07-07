@@ -464,7 +464,7 @@ function initTinyMCE(selector) {
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
 		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
 		const identifiersEnabled = false; // Once RSDEV-484 is complete, this should check whether Inventory is available
-		const pubchemEnabled = true;
+    const pubchemEnabled = chemistryEnabled;
 
 		const chemistryProvider = properties["chemistry.provider"];
 		chemistryAvailable = integrations.CHEMISTRY.available;
