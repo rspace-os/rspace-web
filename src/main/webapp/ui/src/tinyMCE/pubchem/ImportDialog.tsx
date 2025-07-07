@@ -33,6 +33,7 @@ import { ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { CardActionArea } from "@mui/material";
 import { type Editor } from ".";
 import AnalyticsContext from "@/stores/contexts/Analytics";
+import docLinks from "../../assets/DocLinks";
 
 function Dl({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
@@ -325,7 +326,9 @@ export default function ImportDialog({
               <Link href="https://pubchem.ncbi.nlm.nih.gov/" rel="noreferrer">
                 https://pubchem.ncbi.nlm.nih.gov/
               </Link>{" "}
-              and our <Link href="#">PubChem integration docs</Link> for more.
+              and our{" "}
+              <Link href={docLinks.pubchem}>PubChem integration docs</Link> for
+              more.
             </Typography>
           </Box>
           <form onSubmit={handleSearch}>
