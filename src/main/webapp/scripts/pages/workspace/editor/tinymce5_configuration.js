@@ -464,6 +464,7 @@ function initTinyMCE(selector) {
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
 		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
 		const identifiersEnabled = false; // Once RSDEV-484 is complete, this should check whether Inventory is available
+    const pubchemEnabled = chemistryEnabled;
 
 		const chemistryProvider = properties["chemistry.provider"];
 		chemistryAvailable = integrations.CHEMISTRY.available;
@@ -555,6 +556,11 @@ function initTinyMCE(selector) {
 			localTinymcesetup.external_plugins["identifiers"] = "/ui/dist/tinymceIdentifiers.js";
 			addToToolbarIfNotPresent(localTinymcesetup, " | identifiers");
 			addToMenuIfNotPresent(localTinymcesetup, " | optIdentifiers");
+		}
+		if (pubchemEnabled) {
+			localTinymcesetup.external_plugins["pubchem"] = "/ui/dist/tinymcePubchem.js";
+			addToToolbarIfNotPresent(localTinymcesetup, " | pubchem");
+			addToMenuIfNotPresent(localTinymcesetup, " | optPubchem");
 		}
 	});
 

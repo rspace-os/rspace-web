@@ -326,6 +326,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       rsChemElement.setDataImage(decodedBytes);
       rsChemElement.setChemElements(chemical.getChemElements());
       rsChemElement.setChemElementsFormat(chemistryProvider.graphicFormat());
+      rsChemElement.setMetadata(chemical.getMetadata());
       // need to save field, if we need to remove a previous revision id
       boolean revisionRemoved =
           textUpdater.removeRevisionsFromChemWithId(field, rsChemElement.getId() + "");
@@ -342,6 +343,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
                   getSmilesString(chemical.getChemElements(), chemical.getChemElementsFormat()))
               .parentId(field.getId())
               .record(field.getStructuredDocument())
+              .metadata(chemical.getMetadata())
               .build();
     }
     // Set Chemistry file related params if chem file id isn't null
@@ -406,6 +408,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
     if (result != null) {
       result.setParentId(field.getId());
       result.setRecord(field.getStructuredDocument());
+      result.setMetadata(chemElementDataDto.getMetadata());
       result = save(result, subject);
       // need to save field, if we need to remove a previous revision id
       boolean revisionRemoved =
@@ -450,6 +453,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
                     chemistryProvider.convertToDefaultFormat(
                         toCopy.getChemElements(), toCopy.getChemElementsFormat().getLabel()))
                 .chemElementsFormat(toCopy.getChemElementsFormat())
+                .metadata(toCopy.getMetadata())
                 .build();
       } else {
         return null;
@@ -487,6 +491,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
             .smilesString(
                 getSmilesString(chemistryFile.getChemString(), chemistryFile.getExtension()))
             .record(field.getStructuredDocument())
+            .metadata(chemElementDataDto.getMetadata())
             .build();
     // Save chem element here so the id isn't null when saving chem image
     newChemElement = save(newChemElement, subject);

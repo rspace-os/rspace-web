@@ -8,6 +8,8 @@ import AnalyticsContext from "../../stores/contexts/Analytics";
 import Analytics from "../../components/Analytics";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "../../theme";
+import useChemicalImport from "../../hooks/api/useChemicalImport";
+import Alerts from "../../components/Alerts/Alerts";
 import { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 
 export const KetcherTinyMce = () => {
@@ -16,6 +18,7 @@ export const KetcherTinyMce = () => {
   const [dialogIsOpen, setDialogIsOpen] = useState(true);
   const [isValid, setIsValid] = useState(IsValid());
   let ketcherObj;
+  const { save } = useChemicalImport();
 
   useEffect(() => {
     const editor = tinymce.activeEditor;
@@ -97,27 +100,18 @@ export const KetcherTinyMce = () => {
       chemElements: chemical,
       chemElementsFormat: "ket",
       fieldId: tinymce.activeEditor.id.replace(/^\D+/g, ""),
-      chemId: "",
-      imageBase64: "",
     };
-    axios
-      .post("/chemical/save", data)
-      .then((result) => {
-        if (result !== null) {
-          const newChemElemId = result.data.id;
-          saveFullSizeImage(chemical, newChemElemId);
-          insertChemicalIntoDoc(newChemElemId);
-        }
-      })
-      .catch((err) => {
-        tinymceDialogUtils.showErrorAlert("Saving chemical elements failed.");
-      });
+    save(data).then((data) => {
+      const newChemElemId = data.id;
+      saveFullSizeImage(chemical, newChemElemId);
+      insertChemicalIntoDoc(newChemElemId);
+    });
   };
 
   const handleInsert = (ketcher) => {
     ketcherObj = ketcher;
     ketcherObj.getKet().then(
-      (chemical) => { 
+      (chemical) => {
         saveChemicalAndInsert(chemical);
         setDialogIsOpen(false);
         setExistingChemical("");
@@ -180,7 +174,9 @@ document.addEventListener("DOMContentLoaded", () => {
       root.render(
         <ThemeProvider theme={theme}>
           <Analytics>
-            <KetcherTinyMce />
+            <Alerts>
+              <KetcherTinyMce />
+            </Alerts>
           </Analytics>
         </ThemeProvider>
       );

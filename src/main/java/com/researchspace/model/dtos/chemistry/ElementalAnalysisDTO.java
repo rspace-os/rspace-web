@@ -18,6 +18,7 @@ public class ElementalAnalysisDTO {
   private List<MoleculeInfoDTO> moleculeInfo;
   private String formula;
   private boolean isReaction;
+  private String additionalMetadata;
 
   public List<MoleculeInfoDTO> getAgents() {
     return filterByRole(MoleculeRole.AGENT);
