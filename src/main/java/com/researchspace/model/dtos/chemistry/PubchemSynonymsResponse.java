@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PubChemSynonymsResponse {
+public class PubchemSynonymsResponse {
 
   @JsonProperty("InformationList")
   private InformationList informationList;

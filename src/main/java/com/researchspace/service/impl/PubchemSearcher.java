@@ -4,8 +4,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
-import com.researchspace.model.dtos.chemistry.PubChemResponse;
-import com.researchspace.model.dtos.chemistry.PubChemSynonymsResponse;
+import com.researchspace.model.dtos.chemistry.PubchemResponse;
+import com.researchspace.model.dtos.chemistry.PubchemSynonymsResponse;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
 import java.util.ArrayList;
@@ -55,14 +55,14 @@ public class PubchemSearcher implements ChemicalSearcher {
     }
   }
 
-  private List<ChemicalImportSearchResult> parseResponseToResults(PubChemResponse response)
+  private List<ChemicalImportSearchResult> parseResponseToResults(PubchemResponse response)
       throws ChemicalImportException {
     try {
       List<ChemicalImportSearchResult> results = new ArrayList<>();
 
       if (response.getPropertyTable() != null
           && response.getPropertyTable().getProperties() != null) {
-        for (PubChemResponse.ChemicalProperty property :
+        for (PubchemResponse.ChemicalProperty property :
             response.getPropertyTable().getProperties()) {
           ChemicalImportSearchResult result = convertToSearchResult(property);
           if (result != null) {
@@ -79,7 +79,7 @@ public class PubchemSearcher implements ChemicalSearcher {
   }
 
   private ChemicalImportSearchResult convertToSearchResult(
-      PubChemResponse.ChemicalProperty property) {
+      PubchemResponse.ChemicalProperty property) {
     try {
       if (property.getCid() == null) {
         return null;
@@ -118,15 +118,15 @@ public class PubchemSearcher implements ChemicalSearcher {
       String url = String.format("%s/cid/%s/synonyms/JSON", PUBCHEM_BASE_URL, cid);
       log.info("Fetching synonyms from PubChem API: {}", url);
 
-      ResponseEntity<PubChemSynonymsResponse> response =
-          restTemplate.getForEntity(url, PubChemSynonymsResponse.class);
+      ResponseEntity<PubchemSynonymsResponse> response =
+          restTemplate.getForEntity(url, PubchemSynonymsResponse.class);
 
       if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
         log.warn("Failed to fetch synonyms for CID {}: {}", cid, response.getStatusCode());
         return "";
       }
 
-      PubChemSynonymsResponse synonymsResponse = response.getBody();
+      PubchemSynonymsResponse synonymsResponse = response.getBody();
       if (synonymsResponse.getInformationList() == null
           || synonymsResponse.getInformationList().getInformation() == null
           || synonymsResponse.getInformationList().getInformation().isEmpty()) {
@@ -167,8 +167,8 @@ public class PubchemSearcher implements ChemicalSearcher {
       String url, String searchTerm) throws ChemicalImportException {
     try {
       log.info("Making PubChem API request to: {}", url);
-      ResponseEntity<PubChemResponse> response =
-          restTemplate.getForEntity(url, PubChemResponse.class);
+      ResponseEntity<PubchemResponse> response =
+          restTemplate.getForEntity(url, PubchemResponse.class);
 
       if (!response.getStatusCode().is2xxSuccessful()) {
         throw new ChemicalImportException(
