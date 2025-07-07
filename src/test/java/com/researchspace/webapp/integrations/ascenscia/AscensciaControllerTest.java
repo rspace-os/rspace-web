@@ -23,7 +23,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,8 +63,7 @@ public class AscensciaControllerTest {
   @Test
   public void whenAuthenticationSuccess_thenReturnAuthResponseAndSaveToken() {
     when(user.getUsername()).thenReturn("rspaceuser");
-    when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
-        .thenReturn(authResponseDTO);
+    when(ascensciaClient.authenticate(eq(connectDTO), any(User.class))).thenReturn(authResponseDTO);
 
     AuthResponseDTO response = ascensciaController.connect(connectDTO);
 
@@ -82,9 +80,12 @@ public class AscensciaControllerTest {
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
         .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
 
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-      ascensciaController.connect(connectDTO);
-    });
+    RuntimeException exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> {
+              ascensciaController.connect(connectDTO);
+            });
 
     assertEquals("Invalid credentials", exception.getMessage());
   }
@@ -94,9 +95,12 @@ public class AscensciaControllerTest {
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
         .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad request"));
 
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-      ascensciaController.connect(connectDTO);
-    });
+    RuntimeException exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> {
+              ascensciaController.connect(connectDTO);
+            });
 
     assertEquals("400 BAD_REQUEST Bad request", exception.getMessage());
   }
@@ -106,9 +110,12 @@ public class AscensciaControllerTest {
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
         .thenThrow(new RuntimeException("Unexpected error"));
 
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-      ascensciaController.connect(connectDTO);
-    });
+    RuntimeException exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> {
+              ascensciaController.connect(connectDTO);
+            });
 
     assertEquals("An error occurred while connecting to Ascenscia", exception.getMessage());
   }

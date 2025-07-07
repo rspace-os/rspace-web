@@ -10,20 +10,16 @@ import com.researchspace.webapp.controller.BaseController;
 import com.researchspace.webapp.integrations.ascenscia.client.AscensciaClient;
 import com.researchspace.webapp.integrations.ascenscia.dto.AuthResponseDTO;
 import com.researchspace.webapp.integrations.ascenscia.dto.ConnectDTO;
+import java.util.Optional;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpClientErrorException;
-
-import java.security.Principal;
-import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @Controller
@@ -47,18 +43,18 @@ public class AscensciaController extends BaseController {
     try {
       AuthResponseDTO authResponse = ascensciaClient.authenticate(connectDTO, subject);
 
-        String token = authResponse.getAccessToken();
+      String token = authResponse.getAccessToken();
 
-        UserConnection connection = new UserConnection();
-        connection.setId(
-            new UserConnectionId(
-                subject.getUsername(), ASCENSCIA_APP_NAME, connectDTO.getUsername()));
-        connection.setAccessToken(token);
-        connection.setRefreshToken(authResponse.getRefreshToken());
-        connection.setDisplayName("Ascenscia token");
-        userConnectionManager.save(connection);
+      UserConnection connection = new UserConnection();
+      connection.setId(
+          new UserConnectionId(
+              subject.getUsername(), ASCENSCIA_APP_NAME, connectDTO.getUsername()));
+      connection.setAccessToken(token);
+      connection.setRefreshToken(authResponse.getRefreshToken());
+      connection.setDisplayName("Ascenscia token");
+      userConnectionManager.save(connection);
 
-        return authResponse;
+      return authResponse;
 
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
@@ -80,7 +76,8 @@ public class AscensciaController extends BaseController {
             ASCENSCIA_APP_NAME, user.getUsername(), user.getUsername());
 
     if (connection.isEmpty()) {
-      throw new IllegalStateException("No Ascenscia connection found for user " + user.getUsername());
+      throw new IllegalStateException(
+          "No Ascenscia connection found for user " + user.getUsername());
     }
 
     try {

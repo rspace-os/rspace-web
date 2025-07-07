@@ -37,7 +37,9 @@ public class AscensciaClient {
     HttpEntity<ConnectDTO> requestEntity = new HttpEntity<>(connectDTO, headers);
 
     try {
-      ResponseEntity<AuthResponseDTO> response = restTemplate.postForEntity(ASCENSCIA_BASE_URL + "login", requestEntity, AuthResponseDTO.class);
+      ResponseEntity<AuthResponseDTO> response =
+          restTemplate.postForEntity(
+              ASCENSCIA_BASE_URL + "login", requestEntity, AuthResponseDTO.class);
 
       if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
         return response.getBody();
@@ -57,11 +59,15 @@ public class AscensciaClient {
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
-    RefreshDTO refreshDTO = new RefreshDTO(connection.getRefreshToken(), user.getUsername(), connection.getId().getProviderId());
+    RefreshDTO refreshDTO =
+        new RefreshDTO(
+            connection.getRefreshToken(), user.getUsername(), connection.getId().getProviderId());
     HttpEntity<RefreshDTO> requestEntity = new HttpEntity<>(refreshDTO, headers);
 
     try {
-      return restTemplate.postForEntity(ASCENSCIA_BASE_URL + "refresh", requestEntity, AuthResponseDTO.class).getBody();
+      return restTemplate
+          .postForEntity(ASCENSCIA_BASE_URL + "refresh", requestEntity, AuthResponseDTO.class)
+          .getBody();
       // Simulating a successful response for demonstration purposes
       //        AuthResponseDTO mockResponse = new AuthResponseDTO();
       //        mockResponse.setAccessToken("mock-jwt-token");
@@ -69,7 +75,7 @@ public class AscensciaClient {
     } catch (RestClientException e) {
       log.error("Error connecting to Ascenscia API", e);
       throw new HttpClientErrorException(
-              HttpStatus.INTERNAL_SERVER_ERROR, "Error connecting to Ascenscia API");
+          HttpStatus.INTERNAL_SERVER_ERROR, "Error connecting to Ascenscia API");
     }
   }
 }

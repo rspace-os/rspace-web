@@ -1,7 +1,6 @@
 package com.researchspace.webapp.integrations.ascenscia;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -73,7 +72,8 @@ public class AscensciaClientTest {
     when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(AuthResponseDTO.class)))
         .thenReturn(new ResponseEntity<>(null, errorStatus));
 
-    assertThrows(HttpClientErrorException.class, () -> ascensciaClient.authenticate(connectDTO, user));
+    assertThrows(
+        HttpClientErrorException.class, () -> ascensciaClient.authenticate(connectDTO, user));
   }
 
   @Test
