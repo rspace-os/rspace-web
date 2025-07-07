@@ -27,6 +27,8 @@ const feature = test.extend<{
     "the 'View on PubChem' link is clicked": () => Promise<void>;
     "a search fails": () => Promise<void>;
     "the dialog is closed and reopened": () => Promise<void>;
+    "a search returns no results": () => Promise<void>;
+    "the search term is modified after a no-results search": () => Promise<void>;
   };
   Then: {
     "there should be a dialog visible": () => Promise<void>;
@@ -48,6 +50,8 @@ const feature = test.extend<{
     "the search input should be empty": () => Promise<void>;
     "there should be no search results visible": () => Promise<void>;
     "the CAS number should not be displayed": () => Promise<void>;
+    "no results error message should be displayed": () => Promise<void>;
+    "no results error message should not be visible after modifying search term": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
