@@ -62,6 +62,7 @@ export type IntegrationStates = {
   API_DIRECT: IntegrationState<null>;
   ARGOS: IntegrationState<emptyObject>;
   ASCENSCIA: IntegrationState<{
+    ASCENSCIA_USER_TOKEN: Optional<string>;
     ASCENSCIA_USERNAME: Optional<string>;
     ASCENSCIA_PASSWORD: Optional<string>;
     ASCENSCIA_ORGANIZATION: Optional<string>;

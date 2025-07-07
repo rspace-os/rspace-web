@@ -21,6 +21,9 @@ function Ascenscia({
   integrationState,
   update,
 }: AscensciaArgs): React.ReactNode {
+  const [apiKey, setApiKey] = useState(
+    integrationState.credentials.ASCENSCIA_USER_TOKEN.orElse("")
+  );
   const [username, setUsername] = useState(
     integrationState.credentials.ASCENSCIA_USERNAME.orElse("")
   );
@@ -86,8 +89,24 @@ function Ascenscia({
                     fullWidth
                     value={organization}
                     onChange={({ target: { value } }) => setOrganization(value)}
-                    label="organization"
+                    label="Organization"
                     sx={{ mt: 1 }}
+                  />
+                </Grid>
+                <Grid item>
+                  <TextField
+                    inputProps={{
+                      name: "organization",
+                    }}
+                    fullWidth
+                    variant="outlined"
+                    label="API Key"
+                    type="password"
+                    size="small"
+                    value={apiKey}
+                    onChange={({ target: { value } }) => {
+                      setApiKey(value);
+                    }}
                   />
                 </Grid>
                 <Grid item>
