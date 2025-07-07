@@ -729,7 +729,6 @@ export class ListOfMaterials {
           variant: "error",
         })
       );
-      // $FlowExpectedError[incompatible-type] this.id !== null
       console.error(`Error deleting List of Materials ${this.id}`, error);
       throw error;
     } finally {

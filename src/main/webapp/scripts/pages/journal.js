@@ -171,7 +171,6 @@ function journal($, extensions = default_extensions) {
 
     loadEntry: function(pagePositionModifier, recordId) {
       $("#prevEntryButton, #nextEntryButton, #prevEntryButton_mobile, #nextEntryButton_mobile").hide();
-      RS.addBreadcrumbAndRefresh("editorBcrumb", "" + notebookId, notebookName);
 
       /* retrieve entry either by record id, or by using current position and
          pagePositionModifier (for next/prev page navigation) */
@@ -184,7 +183,7 @@ function journal($, extensions = default_extensions) {
       }
       $.get(url,
         function(data) {
-            tagMetaData = data.tagMetaData ? data.tagMetaData: "";
+          tagMetaData = data.tagMetaData ? data.tagMetaData: "";
           if (data.name == "EMPTY") {
             journalPrivateVars.journalEmpty = true;
             $plugin.append(journalPrivateVars.journalPageHtml);
@@ -390,7 +389,6 @@ function journal($, extensions = default_extensions) {
       applyCodeSampleHighlights($('.journalPageContent'));
       addDownloadButtonToTables($('.journalPageContent table'));
       extensions.loadPageModify();
-      extensions.selectFileTreeBrowserRecordById(journalPrivateVars.selectedRecordId);
       // Tell React that a new document was placed into the dom
       document.dispatchEvent(new Event('document-placed'));
 
@@ -403,6 +401,7 @@ function journal($, extensions = default_extensions) {
       }
 
       methods._readjustJournalPageAfterImagesLoaded();
+      extensions.selectFileTreeBrowserRecordById(journalPrivateVars.selectedRecordId);
     },
 
     _readjustJournalPageAfterImagesLoaded: function() {

@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.csvimport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryRadioField;
@@ -176,5 +177,16 @@ public class InventoryImportSampleFieldCreatorTest {
     values.add(null);
     fieldMappings = helper.getFieldMappingForIdentifier("testIgsn", values);
     assertNull(fieldMappings.get("testIgsn"));
+
+  // all empty values
+    values.clear();
+    values.add("");
+    values.add("");
+    values.add("");
+    values.add("");
+    values.add("");
+    values.add(null);
+    fieldMappings = helper.getFieldMappingForIdentifier("testIgsn", values);
+    assertTrue(fieldMappings.isEmpty());
   }
 }

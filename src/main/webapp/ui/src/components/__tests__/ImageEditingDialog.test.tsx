@@ -23,7 +23,6 @@ const readAsDataUrl = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      // $FlowExpectedError[incompatible-cast] reader.result will be string because we called readAsDataUrl
       resolve(reader.result as string);
     };
     reader.onerror = () => {
@@ -65,7 +64,6 @@ describe("ImageEditingDialog", () => {
     // wait for image to load
     await act(() => sleep(1000));
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(baseElement)).toHaveNoViolations();
   });
   test("Rotating four times in either direction is a no-op.", async () => {

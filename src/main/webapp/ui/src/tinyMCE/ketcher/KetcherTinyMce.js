@@ -8,11 +8,13 @@ import AnalyticsContext from "../../stores/contexts/Analytics";
 import Analytics from "../../components/Analytics";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "../../theme";
+import { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 
 export const KetcherTinyMce = () => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [existingChemical, setExistingChemical] = useState("");
   const [dialogIsOpen, setDialogIsOpen] = useState(true);
+  const [isValid, setIsValid] = useState(IsValid());
   let ketcherObj;
 
   useEffect(() => {
@@ -130,6 +132,27 @@ export const KetcherTinyMce = () => {
     setExistingChemical("");
   };
 
+  const validate = (ketcher) => {
+    if (!ketcher) {
+      setIsValid(IsValid());
+      return;
+    }
+    ketcher.getKet().then((ketData) => {
+      const molecules = Object.keys(JSON.parse(ketData)).filter((key) =>
+        key.startsWith("mol")
+      );
+      if (molecules.length === 0) {
+        setIsValid(
+          IsInvalid(
+            "Please draw, paste, or open a molecule to insert into the document"
+          )
+        );
+        return;
+      }
+      setIsValid(IsValid());
+    });
+  };
+
   return $(tinymce.activeEditor.selection.getNode()).hasClass("chem") &&
     existingChemical === "" ? null : (
     <KetcherDialog
@@ -139,6 +162,10 @@ export const KetcherTinyMce = () => {
       existingChem={existingChemical}
       handleClose={handleClose}
       actionBtnText={"Insert"}
+      validationResult={isValid}
+      onChange={() => {
+        validate(window.ketcher);
+      }}
     />
   );
 };

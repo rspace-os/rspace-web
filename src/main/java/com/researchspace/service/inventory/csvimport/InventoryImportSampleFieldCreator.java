@@ -97,7 +97,7 @@ public class InventoryImportSampleFieldCreator {
   }
 
   private boolean isSuggestedFieldForValues(Set<String> values, SampleField field) {
-    return values.stream().allMatch(v -> field.isSuggestedFieldForData(v));
+    return !values.isEmpty() && values.stream().allMatch(v -> field.isSuggestedFieldForData(v));
   }
 
   private boolean shouldRadioTypeBeSuggested(
