@@ -35,6 +35,7 @@ import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import MoveToIrods from "./MoveToIrods";
 import { ACCENT_COLOR as IRODS_COLOR } from "../../../assets/branding/irods";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import IrodsLogo from "./IrodsLogo.svg";
 import Typography from "@mui/material/Typography";
 import MoveDialog from "./MoveDialog";
@@ -118,7 +119,7 @@ const UploadNewVersionMenuItem = ({
       .asSet()
       .only.toResult(
         () =>
-          new Error("Only one item may be updated with a new version at once.")
+          new Error("Only one item may be updated with a new version at once."),
       )
       .flatMap((file) => file.canUploadNewVersion);
   });
@@ -150,7 +151,7 @@ const UploadNewVersionMenuItem = ({
         .flatMap(([f, ext]) =>
           Parsers.isNotNull(ext)
             .toOptional()
-            .map<[GalleryFile, string | null]>((e) => [f, e])
+            .map<[GalleryFile, string | null]>((e) => [f, e]),
         )
         .map(([file, extension]) => (
           <input
@@ -194,7 +195,7 @@ const UploadNewVersionMenuItem = ({
                     "user:uploads_new_version:file:gallery",
                     Optional.fromNullable(file.version)
                       .map((v) => ({ version: v + 1 }))
-                      .orElse({})
+                      .orElse({}),
                   );
                 })
                 .catch(onError);
@@ -324,7 +325,7 @@ function ActionsMenu({
   const [irodsOpen, setIrodsOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
   const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(
-    null
+    null,
   );
 
   const openAllowed = computed(() => {
@@ -361,10 +362,10 @@ function ActionsMenu({
             >((url) => ({
               key: "officeonline" as const,
               url,
-            }))
+            })),
           )
           .mapError(() => new Error("Cannot edit this item."));
-      })
+      }),
   );
 
   const viewHidden = computed(() =>
@@ -372,7 +373,7 @@ function ActionsMenu({
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
       .map((file) => file.canOpen.isOk)
-      .orElse(false)
+      .orElse(false),
   );
 
   const viewAllowed = computed(() =>
@@ -397,21 +398,21 @@ function ActionsMenu({
             canPreviewAsPdf(file).map((downloadHref) => ({
               key: "pdf" as const,
               downloadHref,
-            }))
+            })),
           )
           .orElseTry(() =>
             canPreviewWithSnapGene(file).map(() => ({
               key: "snapgene" as const,
               file,
-            }))
+            })),
           )
           .orElseTry(() =>
             canPreviewWithAspose(file).map(() => ({
               key: "aspose" as const,
               file,
-            }))
-          )
-      )
+            })),
+          ),
+      ),
   );
 
   const duplicateAllowed = computed((): Result<null> => {
@@ -420,7 +421,7 @@ function ActionsMenu({
         new Error("Cannot duplicate more than 50 items at once."),
       ]);
     return Result.all(...selection.asSet().map((f) => f.canDuplicate)).map(
-      () => null
+      () => null,
     );
   });
 
@@ -430,7 +431,7 @@ function ActionsMenu({
         new Error("Cannot delete more than 50 items at once."),
       ]);
     return Result.all(...selection.asSet().map((f) => f.canDelete)).map(
-      () => null
+      () => null,
     );
   });
 
@@ -443,7 +444,7 @@ function ActionsMenu({
 
   const moveToIrodsAllowed = computed((): Result<null> => {
     return Result.all(...selection.asSet().map((f) => f.canMoveToIrods)).map(
-      () => null
+      () => null,
     );
   });
 
@@ -453,7 +454,7 @@ function ActionsMenu({
         new Error("Cannot export more than 100 itemes at once."),
       ]);
     return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(
-      () => null
+      () => null,
     );
   });
 
@@ -469,7 +470,7 @@ function ActionsMenu({
         new Error("Cannot move more than 50 items at once."),
       ]);
     return Result.all(...selection.asSet().map((f) => f.canBeMoved)).map(
-      () => null
+      () => null,
     );
   });
 
@@ -477,13 +478,13 @@ function ActionsMenu({
     return selection
       .asSet()
       .only.toResult(
-        () => new Error("Only one item may be logged out of at once.")
+        () => new Error("Only one item may be logged out of at once."),
       )
       .flatMapDiscarding((file) => file.canBeLoggedOutOf)
       .flatMap((f: GalleryFile) =>
         f instanceof Filestore
           ? Result.Ok(f)
-          : Result.Error([new Error("Cannot log out of this item.")])
+          : Result.Error([new Error("Cannot log out of this item.")]),
       );
   });
   const { logout } = useFilestoresEndpoint();
@@ -612,12 +613,12 @@ function ActionsMenu({
                             variant: "error",
                             title: "Failed to download image for editing",
                             message: e.message,
-                          })
+                          }),
                         );
                       }
                     }
                   }
-                })
+                }),
               );
               setActionsMenuAnchorEl(null);
             }}
@@ -745,7 +746,7 @@ function ActionsMenu({
               ...selection
                 .asSet()
                 .toArray()
-                .map(({ id }) => idToString(id))
+                .map(({ id }) => idToString(id)),
             )
               .map((exportIds) => (
                 <ExportDialog
@@ -792,7 +793,7 @@ function ActionsMenu({
             ...selection
               .asSet()
               .toArray()
-              .map(({ id }) => idToString(id))
+              .map(({ id }) => idToString(id)),
           )
             .map((selectedIds) => (
               <MoveToIrods
@@ -876,7 +877,7 @@ function ActionsMenu({
               file.transformFilename((name) => name + "_edited"),
               {
                 type: newBlob.type,
-              }
+              },
             );
             const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
               .map(({ id }) => id)
@@ -895,7 +896,7 @@ function ActionsMenu({
                   variant: "error",
                   title: "Failed to process edited image",
                   message: e.message,
-                })
+                }),
               );
             }
           } finally {
@@ -911,7 +912,7 @@ function ActionsMenu({
                 missing: () => "",
                 empty: () => "",
                 present: (d) => d,
-              })
+              }),
           )
           .orElse("")}
       />
@@ -941,7 +942,9 @@ function ActionsMenu({
           },
           ...(selection.isEmpty
             ? {
-                color: "grey",
+                // just enough contrast for the AA standard,
+                // but we don't want it to be too prominent
+                color: `hsl(${ACCENT_COLOR.main.hue} 1% 45% / 1)`,
               }
             : {}),
         }}

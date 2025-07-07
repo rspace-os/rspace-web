@@ -92,7 +92,7 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 function useIsBeingMoved(): (
   file: GalleryFile,
   // eslint-disable-next-line no-undefined -- undefined in types is fine
-  fileBeingMoved: GalleryFile | null | typeof undefined
+  fileBeingMoved: GalleryFile | null | typeof undefined,
 ) => boolean {
   const selection = useGallerySelection();
   return (file, fileBeingMoved) => {
@@ -137,7 +137,7 @@ const StyledBreadcrumb = styled(
   >((props, ref) => (
     // @ts-expect-error For some reason the component prop is not recognized
     <Chip ref={ref} {...props} clickable component={ReactRouterLink} />
-  ))
+  )),
 )(({ theme }) => ({
   height: theme.spacing(3.5),
   color: alpha(theme.palette.primary.contrastText, 0.85),
@@ -165,7 +165,7 @@ const DragOverlayContents = styled(
     if (dndContext.active) {
       if (
         selection.includes(
-          dndContext.active?.data.current?.fileBeingMoved as GalleryFile
+          dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
         )
       )
         numberBeingMoved = selection.size;
@@ -179,7 +179,7 @@ const DragOverlayContents = styled(
         className={className}
       ></Badge>
     );
-  })
+  }),
 )(({ theme }) => ({
   width: "100%",
   height: "100%",
@@ -373,16 +373,16 @@ const Path = observer(
                   selection
                     .asSet()
                     .only.map((f) => f.path)
-                    .orElse(path)
+                    .orElse(path),
                 )
                   .map(({ id }) => `/${idToString(id).elseThrow()}`)
-                  .orElse(`?mediaType=${section}`)}`
+                  .orElse(`?mediaType=${section}`)}`,
               );
               addAlert(
                 mkAlert({
                   message: "Link copied to clipboard successfully!",
                   variant: "success",
-                })
+                }),
               );
             } catch (e) {
               console.error(e);
@@ -391,7 +391,7 @@ const Path = observer(
                   message:
                     "Failed to copy link to clipboard. Please try again.",
                   variant: "error",
-                })
+                }),
               );
             }
           })}
@@ -401,16 +401,16 @@ const Path = observer(
             backgroundColor: (theme) =>
               alpha(
                 lighten((theme.palette.primary as { main: string }).main, 0.1),
-                0.6
+                0.6,
               ),
             "&:hover": {
               backgroundColor: (theme) =>
                 alpha(
                   lighten(
                     (theme.palette.primary as { main: string }).main,
-                    0.1
+                    0.1,
                   ),
-                  0.85
+                  0.85,
                 ),
             },
             padding: "2px",
@@ -419,7 +419,7 @@ const Path = observer(
         />
       </Stack>
     );
-  }
+  },
 );
 
 const StyledMenu = styled(Menu)(({ open }) => ({
@@ -456,7 +456,7 @@ const FileCard = styled(
           onFocus: () => void;
           onBlur: () => void;
         },
-        ref: React.ForwardedRef<HTMLElement>
+        ref: React.ForwardedRef<HTMLElement>,
       ) => {
         const NAME_STYLES = {
           LINE_HEIGHT: 1.5,
@@ -496,7 +496,7 @@ const FileCard = styled(
             !file.isFolder ||
             isBeingMoved(
               file,
-              dndContext.active?.data.current?.fileBeingMoved as GalleryFile
+              dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
             ) ||
             file.id === null,
           data: {
@@ -552,7 +552,7 @@ const FileCard = styled(
             dndContext.active?.data.current?.fileBeingMoved as
               | GalleryFile
               | null
-              | typeof undefined
+              | typeof undefined,
           )
             ? {
                 border: "2px solid white",
@@ -565,7 +565,7 @@ const FileCard = styled(
         const inGroupBeingDraggedStyle =
           Boolean(dndContext.active?.data.current?.fileBeingMoved) &&
           (selection.includes(
-            dndContext.active?.data.current?.fileBeingMoved as GalleryFile
+            dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
           )
             ? selection.includes(file)
             : file.id ===
@@ -599,16 +599,75 @@ const FileCard = styled(
                 : 400
             }
           >
-            <Grid
-              item
-              {...cardWidth}
-              sx={{
+            <Card
+              component="div"
+              elevation={0}
+              className={className}
+              /*
+               * These are for dragging files from outside the browser
+               */
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onDragEnter={onDragEnter}
+              onDragLeave={onDragLeave}
+              /*
+               * These are for dragging files between folders within the gallery
+               */
+              ref={(node: HTMLDivElement) => {
+                setDropRef(node);
+                setDragRef(node);
+                if (ref) {
+                  if (typeof ref === "function") {
+                    ref(node);
+                  } else {
+                    ref.current = node;
+                  }
+                }
+              }}
+              onMouseDown={(...args) => {
+                setDndDebounce(
+                  setTimeout(() => {
+                    listeners?.onMouseDown(...args);
+                  }, 500),
+                );
+              }}
+              onMouseUp={() => {
+                if (dndDebounce) clearTimeout(dndDebounce);
+              }}
+              onTouchStart={(...args) => {
+                setDndDebounce(
+                  setTimeout(() => {
+                    listeners?.onTouchStart(...args);
+                  }, 500),
+                );
+              }}
+              onTouchEnd={() => {
+                if (dndDebounce) clearTimeout(dndDebounce);
+              }}
+              onKeyDown={
+                listeners?.onKeyDown as React.KeyboardEventHandler<HTMLDivElement>
+              }
+              {...attributes}
+              tabIndex={tabIndex}
+              onFocus={onFocus}
+              onBlur={onBlur}
+              style={{
+                ...dropStyle,
+                ...inGroupBeingDraggedStyle,
+                ...fileUploadDropping,
+
+                /*
+                 * We don't need the outline as the selected styles will indicate
+                 * which item has focus
+                 */
+                outline: "none",
+
                 /*
                  * This way, the animation takes the same amount of time (36ms) for
                  * each row of cards
                  */
                 transitionDelay: window.matchMedia(
-                  "(prefers-reduced-motion: reduce)"
+                  "(prefers-reduced-motion: reduce)",
                 ).matches
                   ? "0s"
                   : `${
@@ -617,224 +676,159 @@ const FileCard = styled(
                       3
                     }ms !important`,
               }}
+              /*
+               * We conditionally just add the onKeyDown when file has an
+               * `open` action (which is to say it is a folder), leaving the
+               * keyDown event to propagate up to the KeyboardSensor of the
+               * drag-and-drop mechanism for all other files
+               */
+              {...file.canOpen
+                .map(() => ({
+                  onKeyDown: (e: React.KeyboardEvent) => {
+                    if (e.key === " ") openFolder(file);
+                  },
+                }))
+                .orElse({})}
             >
-              <Card
-                component="div"
-                elevation={0}
-                className={className}
-                /*
-                 * These are for dragging files from outside the browser
-                 */
-                onDrop={onDrop}
-                onDragOver={onDragOver}
-                onDragEnter={onDragEnter}
-                onDragLeave={onDragLeave}
-                /*
-                 * These are for dragging files between folders within the gallery
-                 */
-                ref={(node: HTMLDivElement) => {
-                  setDropRef(node);
-                  setDragRef(node);
-                  if (ref) {
-                    if (typeof ref === "function") {
-                      ref(node);
-                    } else {
-                      ref.current = node;
-                    }
-                  }
-                }}
-                onMouseDown={(...args) => {
-                  setDndDebounce(
-                    setTimeout(() => {
-                      listeners?.onMouseDown(...args);
-                    }, 500)
-                  );
-                }}
-                onMouseUp={() => {
-                  if (dndDebounce) clearTimeout(dndDebounce);
-                }}
-                onTouchStart={(...args) => {
-                  setDndDebounce(
-                    setTimeout(() => {
-                      listeners?.onTouchStart(...args);
-                    }, 500)
-                  );
-                }}
-                onTouchEnd={() => {
-                  if (dndDebounce) clearTimeout(dndDebounce);
-                }}
-                onKeyDown={
-                  listeners?.onKeyDown as React.KeyboardEventHandler<HTMLDivElement>
-                }
-                {...attributes}
-                tabIndex={tabIndex}
-                onFocus={onFocus}
-                onBlur={onBlur}
-                style={{
-                  ...dropStyle,
-                  ...inGroupBeingDraggedStyle,
-                  ...fileUploadDropping,
+              <CardActionArea
+                role="gridcell"
+                aria-selected={selected}
+                tabIndex={-1}
+                onFocus={(e) => {
                   /*
-                   * We don't need the outline as the selected styles will indicate
-                   * which item has focus
+                   * We're manually handling focus states through a roving tab
+                   * index on the GridView component, so we don't need to
+                   * handle focus state triggered by keyboard events here.
+                   * Moreover, we don't want mouse events, such as clicking, to
+                   * trigger a focus event either as the file with the current
+                   * tabIndexCoord will end up selected instead of the one the
+                   * user taps.
                    */
-                  outline: "none",
+                  e.stopPropagation();
                 }}
-                /*
-                 * We conditionally just add the onKeyDown when file has an
-                 * `open` action (which is to say it is a folder), leaving the
-                 * keyDown event to propagate up to the KeyboardSensor of the
-                 * drag-and-drop mechanism for all other files
-                 */
-                {...file.canOpen
-                  .map(() => ({
-                    onKeyDown: (e: React.KeyboardEvent) => {
-                      if (e.key === " ") openFolder(file);
-                    },
-                  }))
-                  .orElse({})}
+                onClick={(e) => {
+                  onClick(e);
+                }}
+                sx={{ height: "100%" }}
               >
-                <CardActionArea
-                  role={file.canOpen.map(() => "button").orElse("checkbox")}
-                  aria-checked={selected}
-                  tabIndex={-1}
-                  onFocus={(e) => {
-                    /*
-                     * We're manually handling focus states through a roving tab
-                     * index on the GridView component, so we don't need to
-                     * handle focus state triggered by keyboard events here.
-                     * Moreover, we don't want mouse events, such as clicking, to
-                     * trigger a focus event either as the file with the current
-                     * tabIndexCoord will end up selected instead of the one the
-                     * user taps.
-                     */
-                    e.stopPropagation();
-                  }}
-                  onClick={(e) => {
-                    onClick(e);
-                  }}
-                  sx={{ height: "100%" }}
+                <Grid
+                  container
+                  direction="column"
+                  height="100%"
+                  flexWrap="nowrap"
                 >
                   <Grid
+                    item
+                    sx={{
+                      flexShrink: 0,
+                      padding: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: "calc(100% - 9999999px)",
+                      flexDirection: "column",
+                      flexGrow: 1,
+                    }}
+                  >
+                    <Avatar
+                      src={file.thumbnailUrl}
+                      imgProps={{
+                        role: "presentation",
+                      }}
+                      variant="rounded"
+                      sx={{
+                        width: "auto",
+                        height: "100%",
+                        aspectRatio: "1 / 1",
+                        fontSize: "5em",
+                        backgroundColor: "transparent",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <BrokenImageIcon fontSize="inherit" />
+                    </Avatar>
+                  </Grid>
+                  <Grid
+                    item
                     container
-                    direction="column"
-                    height="100%"
+                    direction="row"
                     flexWrap="nowrap"
+                    alignItems="baseline"
+                    sx={{
+                      padding: "8px",
+                      paddingTop: 0,
+                    }}
                   >
                     <Grid
                       item
                       sx={{
-                        flexShrink: 0,
-                        padding: "8px",
+                        // give room for two lines of text
+                        lineHeight: NAME_STYLES.LINE_HEIGHT,
+                        fontSize: NAME_STYLES.FONT_SIZE,
+                        minHeight: `calc(2* ${NAME_STYLES.LINE_HEIGHT}* ${NAME_STYLES.FONT_SIZE})`,
+
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        height: "calc(100% - 9999999px)",
                         flexDirection: "column",
+                        justifyContent: "end",
                         flexGrow: 1,
+                        textAlign: "center",
                       }}
                     >
-                      <Avatar
-                        src={file.thumbnailUrl}
-                        imgProps={{
-                          role: "presentation",
-                        }}
-                        variant="rounded"
+                      <Typography
                         sx={{
-                          width: "auto",
-                          height: "100%",
-                          aspectRatio: "1 / 1",
-                          fontSize: "5em",
-                          backgroundColor: "transparent",
-                          pointerEvents: "none",
+                          ...(selected
+                            ? {
+                                backgroundColor: (theme) =>
+                                  window.matchMedia("(prefers-contrast: more)")
+                                    .matches
+                                    ? "black"
+                                    : theme.palette.callToAction.main,
+                                p: 0.25,
+                                borderRadius: "4px",
+                                mx: 0.5,
+                                color: window.matchMedia(
+                                  "(prefers-contrast: more)",
+                                ).matches
+                                  ? "white"
+                                  : `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`,
+                              }
+                            : {}),
+                          fontSize: "0.8125rem",
+                          fontWeight: window.matchMedia(
+                            "(prefers-contrast: more)",
+                          ).matches
+                            ? 700
+                            : 400,
+
+                          // wrap onto a second line, but use an ellipsis after that
+                          overflowWrap: "anywhere",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: "2",
+                          WebkitBoxOrient: "vertical",
                         }}
                       >
-                        <BrokenImageIcon fontSize="inherit" />
-                      </Avatar>
-                    </Grid>
-                    <Grid
-                      item
-                      container
-                      direction="row"
-                      flexWrap="nowrap"
-                      alignItems="baseline"
-                      sx={{
-                        padding: "8px",
-                        paddingTop: 0,
-                      }}
-                    >
-                      <Grid
-                        item
-                        sx={{
-                          // give room for two lines of text
-                          lineHeight: NAME_STYLES.LINE_HEIGHT,
-                          fontSize: NAME_STYLES.FONT_SIZE,
-                          minHeight: `calc(2* ${NAME_STYLES.LINE_HEIGHT}* ${NAME_STYLES.FONT_SIZE})`,
-
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "end",
-                          flexGrow: 1,
-                          textAlign: "center",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            ...(selected
-                              ? {
-                                  backgroundColor: (theme) =>
-                                    window.matchMedia(
-                                      "(prefers-contrast: more)"
-                                    ).matches
-                                      ? "black"
-                                      : theme.palette.callToAction.main,
-                                  p: 0.25,
-                                  borderRadius: "4px",
-                                  mx: 0.5,
-                                  color: window.matchMedia(
-                                    "(prefers-contrast: more)"
-                                  ).matches
-                                    ? "white"
-                                    : `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`,
-                                }
-                              : {}),
-                            fontSize: "0.8125rem",
-                            fontWeight: window.matchMedia(
-                              "(prefers-contrast: more)"
-                            ).matches
-                              ? 700
-                              : 400,
-
-                            // wrap onto a second line, but use an ellipsis after that
-                            overflowWrap: "anywhere",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            display: "-webkit-box",
-                            WebkitLineClamp: "2",
-                            WebkitBoxOrient: "vertical",
-                          }}
-                        >
-                          {file.name}
-                        </Typography>
-                      </Grid>
+                        {file.name}
+                      </Typography>
                     </Grid>
                   </Grid>
-                  {typeof file.version === "number" && file.version > 1 && (
-                    <div
-                      className="versionIndicator"
-                      aria-label={`version ${file.version}`}
-                    >
-                      v{file.version}
-                    </div>
-                  )}
-                </CardActionArea>
-              </Card>
-            </Grid>
+                </Grid>
+                {typeof file.version === "number" && file.version > 1 && (
+                  <div
+                    className="versionIndicator"
+                    aria-label={`version ${file.version}`}
+                  >
+                    v{file.version}
+                  </div>
+                )}
+              </CardActionArea>
+            </Card>
           </Fade>
         );
-      }
-    )
-  )
+      },
+    ),
+  ),
 )(({ selected, theme }) => ({
   height: "150px",
   "& .versionIndicator": {
@@ -867,7 +861,7 @@ const FileCard = styled(
             : `${SELECTED_OR_FOCUS_BORDER} !important`,
           backgroundColor: `${alpha(
             theme.palette.callToAction.background,
-            0.05
+            0.05,
           )} !important`,
         },
         backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
@@ -963,7 +957,7 @@ const GridView = observer(
      * that Id.
      */
     const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
-      null
+      null,
     );
 
     if (listing.tag === "empty")
@@ -981,7 +975,7 @@ const GridView = observer(
               <PlaceholderLabel>
                 {listing.refreshing
                   ? "Refreshing..."
-                  : listing.reason ?? "There are no folders."}
+                  : (listing.reason ?? "There are no folders.")}
               </PlaceholderLabel>
             </div>
           </Fade>
@@ -989,11 +983,16 @@ const GridView = observer(
       );
     return (
       <>
-        <Grid
-          role="region"
+        <div
+          role="grid"
           aria-label="grid view of files"
-          container
-          spacing={2}
+          aria-multiselectable="true"
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${cols}, 1fr)`,
+            gap: "16px", // equivalent to spacing={2}
+            width: "100%",
+          }}
           onKeyDown={(e) => {
             if (dndContext.active) return;
             if (e.key === "Escape") {
@@ -1038,7 +1037,7 @@ const GridView = observer(
             if (e.shiftKey) {
               if (shiftOriginFileId) {
                 const indexOfShiftOriginFile = listing.list.findIndex(
-                  (f) => f.id === shiftOriginFileId
+                  (f) => f.id === shiftOriginFileId,
                 );
                 const shiftOriginX = indexOfShiftOriginFile % cols;
                 const shiftOriginY = Math.floor(indexOfShiftOriginFile / cols);
@@ -1067,8 +1066,8 @@ const GridView = observer(
 
             setShiftOriginFileId(
               e.shiftKey
-                ? shiftOriginFileId ?? listing.list[y * cols + x].id
-                : listing.list[y * cols + x].id
+                ? (shiftOriginFileId ?? listing.list[y * cols + x].id)
+                : listing.list[y * cols + x].id,
             );
             setTabIndexCoord({ x, y });
           }}
@@ -1084,130 +1083,134 @@ const GridView = observer(
             if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
           }}
         >
-          {listing.list.map((file, index) => (
-            <FileCard
-              ref={
-                index % cols === tabIndexCoord.x &&
-                Math.floor(index / cols) === tabIndexCoord.y
-                  ? focusFileCardRef
-                  : null
-              }
-              onFocus={() => {
-                setGridHasFocus(true);
-              }}
-              onBlur={() => {
-                setGridHasFocus(false);
-              }}
-              selected={selection.includes(file)}
-              file={file}
-              key={file.key}
-              index={index}
-              tabIndex={
-                index % cols === tabIndexCoord.x &&
-                Math.floor(index / cols) === tabIndexCoord.y
-                  ? 0
-                  : -1
-              }
-              onClick={(e) => {
-                if (e.shiftKey) {
-                  if (!shiftOriginFileId) return;
-                  const indexOfShiftOriginFile = listing.list.findIndex(
-                    (f) => f.id === shiftOriginFileId
-                  );
-                  /*
-                   * if shiftOriginFileId is an Id of a file that has been
-                   * deleted then it will no longer be in the listing, will not
-                   * be visible and this code should act as if no file has been
-                   * focussed
-                   */
-                  if (indexOfShiftOriginFile === -1) return;
-                  const tappedCoord = {
-                    x: index % cols,
-                    y: Math.floor(index / cols),
-                  };
-                  const shiftOriginX = indexOfShiftOriginFile % cols;
-                  const shiftOriginY = Math.floor(
-                    indexOfShiftOriginFile / cols
-                  );
-                  const toSelect = listing.list.filter((_file, i) => {
-                    const coord = {
-                      x: i % cols,
-                      y: Math.floor(i / cols),
-                    };
-                    return (
-                      coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
-                      coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
-                      coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
-                      coord.y <= Math.max(tappedCoord.y, shiftOriginY)
-                    );
-                  });
-                  selection.clear();
-                  toSelect.forEach((f) => {
-                    selection.append(f);
-                  });
-                  setTabIndexCoord({
-                    x: index % cols,
-                    y: Math.floor(index / cols),
-                  });
-                } else if (e.ctrlKey || e.metaKey) {
-                  if (selection.includes(file)) {
-                    selection.remove(file);
-                  } else {
-                    selection.append(file);
+          {ArrayUtils.chunksOf(cols, listing.list).map((files, index) => (
+            <div role="row" key={index} style={{ display: "contents" }}>
+              {files.map((file) => (
+                <FileCard
+                  ref={
+                    index % cols === tabIndexCoord.x &&
+                    Math.floor(index / cols) === tabIndexCoord.y
+                      ? focusFileCardRef
+                      : null
                   }
-                } else {
-                  // on double click, try and figure out what the user would want
-                  // to do with a file of this type based on what services are
-                  // configured
-                  if (e.detail > 1) {
-                    primaryAction(file).do((action) => {
-                      if (action.tag === "open") {
-                        openFolder(file);
-                        return;
+                  onFocus={() => {
+                    setGridHasFocus(true);
+                  }}
+                  onBlur={() => {
+                    setGridHasFocus(false);
+                  }}
+                  selected={selection.includes(file)}
+                  file={file}
+                  key={file.key}
+                  index={index}
+                  tabIndex={
+                    index % cols === tabIndexCoord.x &&
+                    Math.floor(index / cols) === tabIndexCoord.y
+                      ? 0
+                      : -1
+                  }
+                  onClick={(e) => {
+                    if (e.shiftKey) {
+                      if (!shiftOriginFileId) return;
+                      const indexOfShiftOriginFile = listing.list.findIndex(
+                        (f) => f.id === shiftOriginFileId,
+                      );
+                      /*
+                       * if shiftOriginFileId is an Id of a file that has been
+                       * deleted then it will no longer be in the listing, will not
+                       * be visible and this code should act as if no file has been
+                       * focussed
+                       */
+                      if (indexOfShiftOriginFile === -1) return;
+                      const tappedCoord = {
+                        x: index % cols,
+                        y: Math.floor(index / cols),
+                      };
+                      const shiftOriginX = indexOfShiftOriginFile % cols;
+                      const shiftOriginY = Math.floor(
+                        indexOfShiftOriginFile / cols,
+                      );
+                      const toSelect = listing.list.filter((_file, i) => {
+                        const coord = {
+                          x: i % cols,
+                          y: Math.floor(i / cols),
+                        };
+                        return (
+                          coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
+                          coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
+                          coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
+                          coord.y <= Math.max(tappedCoord.y, shiftOriginY)
+                        );
+                      });
+                      selection.clear();
+                      toSelect.forEach((f) => {
+                        selection.append(f);
+                      });
+                      setTabIndexCoord({
+                        x: index % cols,
+                        y: Math.floor(index / cols),
+                      });
+                    } else if (e.ctrlKey || e.metaKey) {
+                      if (selection.includes(file)) {
+                        selection.remove(file);
+                      } else {
+                        selection.append(file);
                       }
-                      if (action.tag === "image") {
-                        void action.downloadHref().then((downloadHref) => {
-                          openImagePreview(downloadHref, {
-                            caption: action.caption,
-                          });
+                    } else {
+                      // on double click, try and figure out what the user would want
+                      // to do with a file of this type based on what services are
+                      // configured
+                      if (e.detail > 1) {
+                        primaryAction(file).do((action) => {
+                          if (action.tag === "open") {
+                            openFolder(file);
+                            return;
+                          }
+                          if (action.tag === "image") {
+                            void action.downloadHref().then((downloadHref) => {
+                              openImagePreview(downloadHref, {
+                                caption: action.caption,
+                              });
+                            });
+                            return;
+                          }
+                          if (action.tag === "collabora") {
+                            window.open(action.url);
+                            return;
+                          }
+                          if (action.tag === "officeonline") {
+                            window.open(action.url);
+                            return;
+                          }
+                          if (action.tag === "pdf") {
+                            void action.downloadHref().then((downloadHref) => {
+                              openPdfPreview(downloadHref);
+                            });
+                            return;
+                          }
+                          if (action.tag === "aspose") {
+                            void openAsposePreview(file);
+                          }
+                          if (action.tag === "snapgene") {
+                            void openSnapGenePreview(file);
+                          }
                         });
                         return;
                       }
-                      if (action.tag === "collabora") {
-                        window.open(action.url);
-                        return;
-                      }
-                      if (action.tag === "officeonline") {
-                        window.open(action.url);
-                        return;
-                      }
-                      if (action.tag === "pdf") {
-                        void action.downloadHref().then((downloadHref) => {
-                          openPdfPreview(downloadHref);
-                        });
-                        return;
-                      }
-                      if (action.tag === "aspose") {
-                        void openAsposePreview(file);
-                      }
-                      if (action.tag === "snapgene") {
-                        void openSnapGenePreview(file);
-                      }
-                    });
-                    return;
-                  }
-                  selection.clear();
-                  selection.append(file);
-                  setShiftOriginFileId(file.id);
-                  setTabIndexCoord({
-                    x: index % cols,
-                    y: Math.floor(index / cols),
-                  });
-                }
-              }}
-            />
+                      selection.clear();
+                      selection.append(file);
+                      setShiftOriginFileId(file.id);
+                      setTabIndexCoord({
+                        x: index % cols,
+                        y: Math.floor(index / cols),
+                      });
+                    }
+                  }}
+                />
+              ))}
+            </div>
           ))}
-        </Grid>
+        </div>
         {listing.loadMore
           .map((loadMore) => (
             <Box key={null} sx={{ mt: 1 }}>
@@ -1217,7 +1220,7 @@ const GridView = observer(
           .orElse(null)}
       </>
     );
-  }
+  },
 );
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
@@ -1340,7 +1343,7 @@ const PathAndSearch = observer(
         )}
       </Grid>
     );
-  }
+  },
 );
 
 type GalleryMainPanelArgs = {
@@ -1393,7 +1396,7 @@ function GalleryMainPanel({
             mkAlert({
               variant: "error",
               message: "Cannot drop files to upload here.",
-            })
+            }),
           );
           throw new Error("Unknown folder id");
         });
@@ -1415,7 +1418,7 @@ function GalleryMainPanel({
     PREFERENCES.GALLERY_VIEW_MODE,
     {
       defaultValue: "grid",
-    }
+    },
   );
   const [sortMenuAnchorEl, setSortMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
@@ -1496,7 +1499,7 @@ function GalleryMainPanel({
           void moveFiles(
             selectedSection,
             event.over.data.current.destination as Destination,
-            filesBeingMoved
+            filesBeingMoved,
           ).then(() => {
             void refreshListing();
           });
@@ -1621,13 +1624,13 @@ function GalleryMainPanel({
                     [
                       () => sortOrder === "ASC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted from A to Z)"
+                        "(Sorted from A to Z)",
                       )}`,
                     ],
                     [
                       () => sortOrder === "DESC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted from Z to A)"
+                        "(Sorted from Z to A)",
                       )}`,
                     ],
                   ])()}`}
@@ -1673,13 +1676,13 @@ function GalleryMainPanel({
                     [
                       () => sortOrder === "ASC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted oldest first)"
+                        "(Sorted oldest first)",
                       )}`,
                     ],
                     [
                       () => sortOrder === "DESC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted newest first)"
+                        "(Sorted newest first)",
                       )}`,
                     ],
                   ])()}`}

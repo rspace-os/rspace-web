@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { NestedFoldersWithImageFile } from "./MainPanel.story";
 import * as Jwt from "jsonwebtoken";
+import AxeBuilder from "@axe-core/playwright";
 
 const feature = test.extend<{
   Given: {
@@ -28,6 +29,7 @@ const feature = test.extend<{
     "the opened folder and gallery section are shown in the breadcrumbs": () => Promise<void>;
     "the root gallery section is returned to": () => Promise<void>;
     "the outer folder is returned to": () => Promise<void>;
+    "there shouldn't be any axe violations": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -46,7 +48,7 @@ const feature = test.extend<{
         });
         await treeitem.locator("> div").click();
         await expect(
-          page.getByRole("treeitem", { name: "Inner folder" })
+          page.getByRole("treeitem", { name: "Inner folder" }),
         ).toBeVisible();
       },
       "the inner folder is selected": async () => {
@@ -69,7 +71,7 @@ const feature = test.extend<{
         await expect(
           page.getByRole("alert", {
             name: "Link copied to clipboard successfully!",
-          })
+          }),
         ).toBeVisible();
       },
     });
@@ -83,16 +85,16 @@ const feature = test.extend<{
             ["clipboard-read", "clipboard-write"],
             {
               origin: page.url(),
-            }
+            },
           );
         }
         await page.getByRole("button", { name: "Copy to clipboard" }).click();
       },
       "the user opens the outer folder": async () => {
-        await page.getByRole("button", { name: "Outer folder" }).dblclick();
+        await page.getByRole("gridcell", { name: "Outer folder" }).dblclick();
       },
       "the user opens the inner folder": async () => {
-        await page.getByRole("button", { name: "Inner folder" }).dblclick();
+        await page.getByRole("gridcell", { name: "Inner folder" }).dblclick();
       },
       "the user taps the gallery section breadcrumb": async () => {
         await page
@@ -112,13 +114,13 @@ const feature = test.extend<{
     await use({
       "the clipboard contains a link to the file's parent folder": async () => {
         const clipboardText = await page.evaluate(() =>
-          navigator.clipboard.readText()
+          navigator.clipboard.readText(),
         );
         expect(clipboardText).toMatch(/\/gallery\/1/);
       },
       "the clipboard contains the gallery-section link": async () => {
         const clipboardText = await page.evaluate(() =>
-          navigator.clipboard.readText()
+          navigator.clipboard.readText(),
         );
         expect(clipboardText).toMatch(/\?mediaType=Images/);
       },
@@ -147,10 +149,10 @@ const feature = test.extend<{
         const listItems = breadcrumbs.getByRole("listitem");
         await expect(listItems).toHaveCount(1);
         await expect(listItems.first().getByRole("button")).toHaveText(
-          "Images"
+          "Images",
         );
         await expect(
-          page.getByRole("button", { name: "Outer folder" })
+          page.getByRole("gridcell", { name: "Outer folder" }),
         ).toBeVisible();
       },
       "the outer folder is returned to": async () => {
@@ -160,11 +162,37 @@ const feature = test.extend<{
         const listItems = breadcrumbs.getByRole("listitem");
         await expect(listItems).toHaveCount(2);
         await expect(listItems.first().getByRole("button")).toHaveText(
-          "Images"
+          "Images",
         );
         await expect(listItems.nth(1).getByRole("button")).toHaveText(
-          "Outer folder"
+          "Outer folder",
         );
+      },
+      "there shouldn't be any axe violations": async () => {
+        const accessibilityScanResults = await new AxeBuilder({
+          page,
+        }).analyze();
+        expect(
+          accessibilityScanResults.violations.filter((v) => {
+            /*
+             * These violations are expected in component tests as we're not rendering
+             * a complete page with proper document structure:
+             *
+             * 1. MUI DataGrid renders its immediate children with role=presentation,
+             *    which Firefox considers to be a violation
+             * 2. Component tests don't have main landmarks as they're isolated components
+             * 3. Component tests typically don't have h1 headings as they're not full pages
+             * 4. Content not in landmarks is expected in component testing context
+             */
+            return (
+              v.description !==
+                "Ensure elements with an ARIA role that require child roles contain them" &&
+              v.id !== "landmark-one-main" &&
+              v.id !== "page-has-heading-one" &&
+              v.id !== "region"
+            );
+          }),
+        ).toEqual([]);
       },
     });
   },
@@ -275,7 +303,7 @@ feature.beforeEach(async ({ router }) => {
           errorMsg: null,
         }),
       });
-    }
+    },
   );
   await router.route("/gallery/getThumbnail/*/*", (route) => {
     return route.fulfill({
@@ -283,7 +311,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "image/png",
       body: Buffer.from(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8//8/AwAI/wH+9Q4AAAAASUVORK5CYII=",
-        "base64"
+        "base64",
       ),
     });
   });
@@ -292,6 +320,11 @@ feature.beforeEach(async ({ router }) => {
 feature.afterEach(({}) => {});
 
 test.describe("MainPanel", () => {
+  feature("Should have no axe violations", async ({ Given, Then }) => {
+    await Given["the main panel is showing the Images section"]();
+    await Then["there shouldn't be any axe violations"]();
+  });
+
   test.describe("breadcrumbs", () => {
     feature("The root of the gallery section", async ({ Given, Then }) => {
       await Given["the main panel is showing the Images section"]();
@@ -320,7 +353,7 @@ test.describe("MainPanel", () => {
          * root folder, mimicing the behaviour of similar systems like macOS's
          * Finder.
          */
-      }
+      },
     );
     feature(
       "Tapping the root gallery section breadcrumb works as a link",
@@ -329,7 +362,7 @@ test.describe("MainPanel", () => {
         await When["the user opens the outer folder"]();
         await When["the user taps the gallery section breadcrumb"]();
         await Then["the root gallery section is returned to"]();
-      }
+      },
     );
     feature(
       "Tapping the outer folder breadcrump works as a link",
@@ -339,13 +372,13 @@ test.describe("MainPanel", () => {
         await When["the user opens the inner folder"]();
         await When["the user taps the outer folder breadcrumb"]();
         await Then["the outer folder is returned to"]();
-      }
+      },
     );
   });
   test.describe("Copy-to-clipboard button and tree-view", () => {
     test.skip(
       ({ browserName }) => browserName === "webkit",
-      "Safari does not support clipboard API"
+      "Safari does not support clipboard API",
     );
     feature("Nothing is selected.", async ({ Given, When, Once, Then }) => {
       await Given["the main panel is showing the Images section"]();
@@ -365,7 +398,7 @@ test.describe("MainPanel", () => {
         await When["the user taps the paths's copy-to-clipboard button"]();
         await Once["a clipboard success alert is shown"]();
         await Then["the clipboard contains the gallery-section link"]();
-      }
+      },
     );
     feature(
       "The inner folder is selected.",
@@ -386,7 +419,7 @@ test.describe("MainPanel", () => {
          * refer to the parent folder of the selected file and not the current
          * root folder.
          */
-      }
+      },
     );
   });
 });
