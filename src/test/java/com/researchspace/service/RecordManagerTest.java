@@ -50,6 +50,9 @@ import com.researchspace.model.dtos.WorkspaceFilters;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.permissions.ACLElement;
+import com.researchspace.model.permissions.ConstraintBasedPermission;
+import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecordAdaptable;
@@ -75,6 +78,7 @@ import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
+import com.researchspace.webapp.controller.WorkspaceController;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
@@ -85,6 +89,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
@@ -99,11 +104,17 @@ public class RecordManagerTest extends SpringTransactionalTest {
   private @Autowired EcatCommentManager commentManager;
   private @Autowired BaseRecordAdaptable baseRecordAdapter;
   private @Autowired FieldDao fieldDao;
+  private @Autowired SharingHandler sharingHandler;
+  private @Autowired WorkspaceController workspaceController;
 
   private RSForm anyForm;
   private User user;
+  private User anotherUser;
   private PaginationCriteria<BaseRecord> pgCrit =
       PaginationCriteria.createDefaultForClass(BaseRecord.class);
+
+  private Folder parent = null;
+  private Notebook notebook = null;
 
   @Before
   public void setUp() throws Exception {
@@ -111,7 +122,16 @@ public class RecordManagerTest extends SpringTransactionalTest {
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
     initialiseContentWithExampleContent(user);
     assertTrue(user.isContentInitialized());
+
+    anotherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("anotherUser"));
+    initialiseContentWithEmptyContent(anotherUser);
+    assertTrue(anotherUser.isContentInitialized());
+
     logoutAndLoginAs(user);
+    parent = TestFactory.createAFolder("parent", user);
+    parent.setId(1L);
+    notebook = TestFactory.createANotebook("notebook", user);
+    notebook.setId(2L);
   }
 
   @After
@@ -1608,10 +1628,11 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testCreateNewStructuredDocumentIntoSharedFolder() throws Exception {
+  public void testCreateNewStructuredDocumentIntoSharedFolder() {
     User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
     Group group = new Group(CoreTestUtils.getRandomName(10), admin);
     group.addMember(user, RoleInGroup.DEFAULT);
+    group.addMember(admin, RoleInGroup.DEFAULT);
     group = grpMgr.saveGroup(group, admin);
     initialiseContentWithEmptyContent(user, admin);
     grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
@@ -1626,6 +1647,46 @@ public class RecordManagerTest extends SpringTransactionalTest {
     anyForm = formDao.getAll().get(0);
     StructuredDocument newCreatedDocument =
         recordMgr.createNewStructuredDocument(sharedFolderId, anyForm.getId(), user);
+    assertColumnIndicesAreTheSameForFieldsAndFormss(newCreatedDocument);
+    assertNotNull(recordMgr.get(newCreatedDocument.getId()));
+    assertNotNull(newCreatedDocument.getId());
+    assertEquals(initialCountRootFolder + 1, rootFolder.getChildren().size());
+  }
+
+  @Test
+  public void testCreateNewStructuredDocumentIntoSharedNotebook() {
+    User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group group = new Group(CoreTestUtils.getRandomName(10), admin);
+    group.addMember(user, RoleInGroup.DEFAULT);
+    group.addMember(admin, RoleInGroup.DEFAULT);
+    group = grpMgr.saveGroup(group, admin);
+    initialiseContentWithEmptyContent(user, admin);
+    grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
+
+    Long sharedFolderId = group.getCommunalGroupFolderId();
+    Folder rootFolder = user.getRootFolder();
+    Folder sharedGroupFolder = folderMgr.getFolder(sharedFolderId, admin);
+
+    flushDatabaseState();
+
+    long initialCountRootFolder =
+        recordMgr.listFolderRecords(rootFolder.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
+    anyForm = formDao.getAll().get(0);
+
+    Long notebookId =
+        workspaceController.createNotebook(sharedFolderId, "notebook", new MockPrincipal(admin));
+    flushDatabaseState();
+
+    sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedGroupFolder, notebookId);
+    flushDatabaseState();
+
+    final Notebook sharedNotebook = folderMgr.getNotebook(notebookId);
+    assertTrue(sharedNotebook.isShared());
+    assertTrue(sharedNotebook.getChildrens().isEmpty());
+
+    StructuredDocument newCreatedDocument =
+        recordMgr.createNewStructuredDocument(notebookId, anyForm.getId(), user);
+
     assertColumnIndicesAreTheSameForFieldsAndFormss(newCreatedDocument);
     assertNotNull(recordMgr.get(newCreatedDocument.getId()));
     assertNotNull(newCreatedDocument.getId());
@@ -1674,5 +1735,41 @@ public class RecordManagerTest extends SpringTransactionalTest {
     Folder nonSharedParentForImplicitlySharedEntry =
         recordMgr.getRecordParentPreferNonShared(user, entryInSharedNotebook);
     assertEquals("shared nbook", nonSharedParentForImplicitlySharedEntry.getName());
+  }
+
+  @Test
+  public void testIsSharedFolderOrSharedNotebookWithoutCreatePermssison_whenSharedFolder() {
+    // when is NOT shared folder && NOT shared notebook
+    assertFalse(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, parent));
+
+    // when is shared folder and NOT shared notebook
+    parent.addType(RecordType.SHARED_FOLDER);
+    Assertions.assertTrue(parent.isSharedFolder());
+    assertTrue(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, parent));
+  }
+
+  @Test
+  public void testIsSharedFolderOrSharedNotebookWithoutCreatePermssison_whenSharedNotebook() {
+    notebook
+        .getSharingACL()
+        .addACLElement(new ACLElement("userGroup1", new ConstraintBasedPermission()));
+    notebook
+        .getSharingACL()
+        .addACLElement(new ACLElement("userGroup2", new ConstraintBasedPermission()));
+    notebook
+        .getSharingACL()
+        .addACLElement(
+            new ACLElement(
+                user.getUniqueName(),
+                new ConstraintBasedPermission(PermissionDomain.USER, PermissionType.CREATE)));
+    Assertions.assertTrue(notebook.isShared());
+
+    // when is shared Notebook with CREATE permission
+    assertFalse(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, notebook));
+
+    logoutAndLoginAs(anotherUser);
+    // when is shared Notebook and NO CREATE permission
+    assertTrue(
+        recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(anotherUser, notebook));
   }
 }

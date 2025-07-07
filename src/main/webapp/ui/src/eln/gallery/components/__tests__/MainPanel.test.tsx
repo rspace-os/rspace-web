@@ -74,7 +74,6 @@ describe("MainPanel", () => {
       </BrowserRouter>
     );
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(container)).toHaveNoViolations();
   });
 });

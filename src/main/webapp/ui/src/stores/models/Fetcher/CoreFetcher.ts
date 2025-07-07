@@ -447,7 +447,6 @@ export default class CoreFetcher {
   generateParams(editedParams: Partial<CoreFetcherArgs> = {}): CoreFetcherArgs {
     const keys = new Set([...Object.keys(DEFAULT_SEARCH), "permalink"]);
 
-    // $FlowExpectedError[cannot-spread-indexer] There's no way flow can tell what's going on here
     const params = {
       ...DEFAULT_SEARCH,
       ...filterObject((k) => keys.has(k), { ...this }),

@@ -11,7 +11,6 @@ import com.researchspace.api.v1.model.RecordTreeItemInfo;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.PaginationCriteria;
-import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
@@ -92,9 +91,8 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       if (originalParentFolder != null
           && originalParentFolder.isSharedFolder()
           && toCreate.isNotebook()) {
-        ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
-            recordShareHandler.shareIntoSharedFolder(
-                user, originalParentFolder, newCreatedFolder.getId());
+        recordShareHandler.shareIntoSharedFolderOrNotebook(
+            user, originalParentFolder, newCreatedFolder.getId());
       }
     } else {
       newCreatedFolder = folderMgr.createNewFolder(targetFolder.getId(), toCreate.getName(), user);

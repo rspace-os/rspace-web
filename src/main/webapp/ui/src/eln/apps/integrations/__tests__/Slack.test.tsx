@@ -46,7 +46,6 @@ describe("Slack", () => {
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      // $FlowExpectedError[incompatible-call] See expect.extend above
       expect(await axe(baseElement)).toHaveNoViolations();
     });
   });

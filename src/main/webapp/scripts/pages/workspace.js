@@ -143,11 +143,11 @@ function init() {
 
 function configurePermittedActions() {
   var canCreateRecord = $('#authzCreateRecord').val() === 'true';
-  var canCreateThirdPartyRecord = $('#authzCreateThirdPartyRecord').val() === 'true';
   var canCreateFormRecord = $('#authzCreateFormRecord').val() === 'true';
   var isNotebook = $('#isNotebook').val() === 'true';
+  var allowCreateNewEntryInNotebook = $('#allowCreateNewEntryInNotebook').val() === 'true';
 
-  $('#createEntry').toggle(canCreateRecord && isNotebook);
+  $('#createEntry').toggle(canCreateRecord && isNotebook && allowCreateNewEntryInNotebook);
   $('#createNotebook').toggle(canCreateRecord && !isNotebook);
   $('.directList').toggle(canCreateRecord);
   $("#templateMenuLnk").toggle(canCreateRecord);
@@ -156,11 +156,9 @@ function configurePermittedActions() {
   var canCreateFolder = $('#authzCreateFolder').val() === 'true';
   $("#createFolder").toggle(canCreateFolder);
   $("#create").toggle(canCreateFolder || canCreateRecord);
-  $('#createFromWord').toggle(canCreateRecord && canCreateThirdPartyRecord);
-  $('#createFromEvernote').toggle(canCreateRecord && canCreateThirdPartyRecord);
-
-  $('#createFromProtocolsIo').toggle(
-      canCreateRecord && canCreateThirdPartyRecord);
+  $('#createFromWord').toggle(canCreateRecord);
+  $('#createFromEvernote').toggle(canCreateRecord);
+  $('#createFromProtocolsIo').toggle(canCreateRecord);
   $('#createNewForm').toggle(canCreateRecord && canCreateFormRecord);
   // if permitted to create a record, there will be at least one option in the 2nd and 3rd menu sections therefore show the dividers
   $('.createMenuItemDivider').toggle(canCreateRecord);

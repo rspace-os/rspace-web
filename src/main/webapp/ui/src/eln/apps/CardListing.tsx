@@ -331,7 +331,6 @@ function CardListing({
 
   if (
     Object.values(integrationStates)
-      // $FlowExpectedError[incompatible-use]
       .map((s) => s.mode)
       .filter((m) => m === mode).length === 0
   ) {

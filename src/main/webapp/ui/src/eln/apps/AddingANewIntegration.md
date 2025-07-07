@@ -159,9 +159,6 @@ if (integration === "$NAME") {
       name: "$NAME",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      // $FlowExpectedError[prop-missing]
-      // $FlowExpectedError[incompatible-type]
-      // $FlowExpectedError[incompatible-use]
       options: data.credentials.ACCESS_TOKEN.map((token) => ({
         ACCESS_TOKEN: token,
       })).orElse({}),
