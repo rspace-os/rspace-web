@@ -7,12 +7,12 @@
     <changeSet id="2025-07-01" context="run" author="fraser">
         <comment>Add metadata column to RSChemElement</comment>
         <addColumn tableName="RSChemElement">
-            <column type="clob" name="metadata">
+            <column type="text" name="metadata">
                 <constraints nullable="true" />
             </column>
         </addColumn>
         <addColumn tableName="RSChemElement_AUD">
-            <column type="clob" name="metadata">
+            <column type="text" name="metadata">
                 <constraints nullable="true" />
             </column>
         </addColumn>
