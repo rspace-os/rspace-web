@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -15,7 +15,7 @@ import { type InventoryRecord } from "../../../../stores/definitions/InventoryRe
 import Alert from "@mui/material/Alert";
 import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
 import PrintContents, { PreviewPrintItem } from "./PrintContents";
-import ReactToPrint from "react-to-print";
+import { useReactToPrint } from "react-to-print";
 import docLinks from "../../../../assets/DocLinks";
 import clsx from "clsx";
 import { mkAlert } from "../../../../stores/contexts/Alert";
@@ -199,8 +199,8 @@ export const PrintOptionsWrapper = ({
             {printOptions.printerType === "LABEL"
               ? "For label printers size is set automatically (to match a range of label sizes)."
               : printOptions.printSize === "LARGE"
-              ? "Full width (4cm)."
-              : "Half width (2cm)."}
+                ? "Full width (4cm)."
+                : "Half width (2cm)."}
           </Alert>
         </FormControl>
       </Stack>
@@ -230,10 +230,27 @@ function PrintDialog({
     printSize: printSize ?? "LARGE",
   });
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose();
     if (typeof closeMenu === "function") closeMenu();
-  };
+  }, [onClose, closeMenu]);
+
+  const handlePrint = useReactToPrint({
+    contentRef: componentToPrint,
+    onAfterPrint: () => {
+      handleClose();
+    },
+    onPrintError: (errorLocation, error) => {
+      uiStore.addAlert(
+        mkAlert({
+          title: "Print error.",
+          message: error.message || "",
+          variant: "error",
+          isInfinite: true,
+        }),
+      );
+    },
+  });
 
   const HelperText = () => (
     <>
@@ -264,7 +281,7 @@ function PrintDialog({
           <div
             className={clsx(
               classes.previewWrapper,
-              isSingleColumnLayout ? classes.fullWidth : classes.halfWidth
+              isSingleColumnLayout ? classes.fullWidth : classes.halfWidth,
             )}
           >
             <HelperText />
@@ -298,33 +315,15 @@ function PrintDialog({
         <Button onClick={handleClose} disabled={false}>
           Cancel
         </Button>
-        <ReactToPrint
-          trigger={() => (
-            <Button
-              // do not add an onClick, it would be overwritten
-              color="primary"
-              variant="contained"
-              disableElevation
-              disabled={false}
-            >
-              {`Print selected (${itemsToPrint.length})`}
-            </Button>
-          )}
-          content={() => componentToPrint.current}
-          onAfterPrint={() => {
-            handleClose();
-          }}
-          onPrintError={(errorLocation, error) => {
-            uiStore.addAlert(
-              mkAlert({
-                title: "Print error.",
-                message: error.message || "",
-                variant: "error",
-                isInfinite: true,
-              })
-            );
-          }}
-        />
+        <Button
+          onClick={handlePrint}
+          color="primary"
+          variant="contained"
+          disableElevation
+          disabled={false}
+        >
+          {`Print selected (${itemsToPrint.length})`}
+        </Button>
       </DialogActions>
     </ContextDialog>
   );
