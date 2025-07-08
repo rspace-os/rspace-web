@@ -66,7 +66,8 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
         onClick={preventEventBubbling<React.MouseEvent<HTMLDivElement>>()}
         data-testid="Toasts"
         component="section"
-        aria-label={`Alerts Listing. There are currently ${alerts.length} alerts.`}
+        aria-roledescription="Alerts"
+        aria-label={`There are currently ${alerts.length} alerts.`}
       >
         {alerts.map((alert) => (
           <ToastMessage key={alert.id} alert={alert} />
