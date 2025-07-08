@@ -405,7 +405,7 @@ function PrintDialog({
           }),
         );
       });
-  }, [itemsToPrint, printOptions, uiStore, imageLinks]);
+  }, [itemsToPrint, printOptions, uiStore]);
 
   return (
     <ContextDialog
