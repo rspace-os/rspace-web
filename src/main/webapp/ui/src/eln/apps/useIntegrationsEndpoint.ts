@@ -63,9 +63,6 @@ export type IntegrationStates = {
   ARGOS: IntegrationState<emptyObject>;
   ASCENSCIA: IntegrationState<{
     ASCENSCIA_USER_TOKEN: Optional<string>;
-    ASCENSCIA_USERNAME: Optional<string>;
-    ASCENSCIA_PASSWORD: Optional<string>;
-    ASCENSCIA_ORGANIZATION: Optional<string>;
   }>;
   BOX: IntegrationState<{
     BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">;
@@ -238,17 +235,9 @@ function decodeAscenscia(data: FetchedState): IntegrationStates["ASCENSCIA"] {
   return {
     mode: parseState(data),
     credentials: {
-      ASCENSCIA_USERNAME: parseCredentialString(
+      ASCENSCIA_USER_TOKEN: parseCredentialString(
         data.options,
-        "ASCENSCIA_USERNAME"
-      ),
-      ASCENSCIA_PASSWORD: parseCredentialString(
-        data.options,
-        "ASCENSCIA_PASSWORD"
-      ),
-      ASCENSCIA_ORGANIZATION: parseCredentialString(
-        data.options,
-        "ASCENSCIA_ORGANIZATION"
+        "ASCENSCIA_USER_TOKEN"
       ),
     },
   };
@@ -739,20 +728,10 @@ const encodeIntegrationState = <I extends Integration>(
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        ...creds.ASCENSCIA_USERNAME.map((username) => ({
-          ASCENSCIA_USERNAME: username,
+        ...creds.ASCENSCIA_USER_TOKEN.map((token) => ({
+          ASCENSCIA_USER_TOKEN: token,
         })).orElse({
-          ASCENSCIA_USERNAME: "",
-        }),
-        ...creds.ASCENSCIA_PASSWORD.map((password) => ({
-          ASCENSCIA_PASSWORD: password,
-        })).orElse({
-          ASCENSCIA_PASSWORD: "",
-        }),
-        ...creds.ASCENSCIA_ORGANIZATION.map((org) => ({
-          ASCENSCIA_ORGANIZATION: org,
-        })).orElse({
-          ASCENSCIA_ORGANIZATION: "",
+          ASCENSCIA_USER_TOKEN: "",
         }),
       },
     };

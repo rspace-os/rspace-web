@@ -361,7 +361,6 @@ function CardListing({
         />
       )}
       {integrationStates.API_DIRECT.mode === mode && <ApiDirect />}
-      {integrationStates.ASCENSCIA.mode === mode && <Ascenscia />}
       {integrationStates.ASCENSCIA.mode === mode && (
         <Ascenscia
           integrationState={integrationStates.ASCENSCIA}
