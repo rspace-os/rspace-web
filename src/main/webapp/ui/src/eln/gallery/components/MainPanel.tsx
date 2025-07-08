@@ -92,7 +92,7 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 function useIsBeingMoved(): (
   file: GalleryFile,
   // eslint-disable-next-line no-undefined -- undefined in types is fine
-  fileBeingMoved: GalleryFile | null | typeof undefined,
+  fileBeingMoved: GalleryFile | null | typeof undefined
 ) => boolean {
   const selection = useGallerySelection();
   return (file, fileBeingMoved) => {
@@ -137,7 +137,7 @@ const StyledBreadcrumb = styled(
   >((props, ref) => (
     // @ts-expect-error For some reason the component prop is not recognized
     <Chip ref={ref} {...props} clickable component={ReactRouterLink} />
-  )),
+  ))
 )(({ theme }) => ({
   height: theme.spacing(3.5),
   color: alpha(theme.palette.primary.contrastText, 0.85),
@@ -165,7 +165,7 @@ const DragOverlayContents = styled(
     if (dndContext.active) {
       if (
         selection.includes(
-          dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
+          dndContext.active?.data.current?.fileBeingMoved as GalleryFile
         )
       )
         numberBeingMoved = selection.size;
@@ -179,7 +179,7 @@ const DragOverlayContents = styled(
         className={className}
       ></Badge>
     );
-  }),
+  })
 )(({ theme }) => ({
   width: "100%",
   height: "100%",
@@ -373,16 +373,16 @@ const Path = observer(
                   selection
                     .asSet()
                     .only.map((f) => f.path)
-                    .orElse(path),
+                    .orElse(path)
                 )
                   .map(({ id }) => `/${idToString(id).elseThrow()}`)
-                  .orElse(`?mediaType=${section}`)}`,
+                  .orElse(`?mediaType=${section}`)}`
               );
               addAlert(
                 mkAlert({
                   message: "Link copied to clipboard successfully!",
                   variant: "success",
-                }),
+                })
               );
             } catch (e) {
               console.error(e);
@@ -391,7 +391,7 @@ const Path = observer(
                   message:
                     "Failed to copy link to clipboard. Please try again.",
                   variant: "error",
-                }),
+                })
               );
             }
           })}
@@ -401,16 +401,16 @@ const Path = observer(
             backgroundColor: (theme) =>
               alpha(
                 lighten((theme.palette.primary as { main: string }).main, 0.1),
-                0.6,
+                0.6
               ),
             "&:hover": {
               backgroundColor: (theme) =>
                 alpha(
                   lighten(
                     (theme.palette.primary as { main: string }).main,
-                    0.1,
+                    0.1
                   ),
-                  0.85,
+                  0.85
                 ),
             },
             padding: "2px",
@@ -419,7 +419,7 @@ const Path = observer(
         />
       </Stack>
     );
-  },
+  }
 );
 
 const StyledMenu = styled(Menu)(({ open }) => ({
@@ -456,7 +456,7 @@ const FileCard = styled(
           onFocus: () => void;
           onBlur: () => void;
         },
-        ref: React.ForwardedRef<HTMLElement>,
+        ref: React.ForwardedRef<HTMLElement>
       ) => {
         const NAME_STYLES = {
           LINE_HEIGHT: 1.5,
@@ -496,7 +496,7 @@ const FileCard = styled(
             !file.isFolder ||
             isBeingMoved(
               file,
-              dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
+              dndContext.active?.data.current?.fileBeingMoved as GalleryFile
             ) ||
             file.id === null,
           data: {
@@ -552,7 +552,7 @@ const FileCard = styled(
             dndContext.active?.data.current?.fileBeingMoved as
               | GalleryFile
               | null
-              | typeof undefined,
+              | typeof undefined
           )
             ? {
                 border: "2px solid white",
@@ -565,7 +565,7 @@ const FileCard = styled(
         const inGroupBeingDraggedStyle =
           Boolean(dndContext.active?.data.current?.fileBeingMoved) &&
           (selection.includes(
-            dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
+            dndContext.active?.data.current?.fileBeingMoved as GalleryFile
           )
             ? selection.includes(file)
             : file.id ===
@@ -628,7 +628,7 @@ const FileCard = styled(
                 setDndDebounce(
                   setTimeout(() => {
                     listeners?.onMouseDown(...args);
-                  }, 500),
+                  }, 500)
                 );
               }}
               onMouseUp={() => {
@@ -638,7 +638,7 @@ const FileCard = styled(
                 setDndDebounce(
                   setTimeout(() => {
                     listeners?.onTouchStart(...args);
-                  }, 500),
+                  }, 500)
                 );
               }}
               onTouchEnd={() => {
@@ -667,7 +667,7 @@ const FileCard = styled(
                  * each row of cards
                  */
                 transitionDelay: window.matchMedia(
-                  "(prefers-reduced-motion: reduce)",
+                  "(prefers-reduced-motion: reduce)"
                 ).matches
                   ? "0s"
                   : `${
@@ -787,7 +787,7 @@ const FileCard = styled(
                                 borderRadius: "4px",
                                 mx: 0.5,
                                 color: window.matchMedia(
-                                  "(prefers-contrast: more)",
+                                  "(prefers-contrast: more)"
                                 ).matches
                                   ? "white"
                                   : `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`,
@@ -795,7 +795,7 @@ const FileCard = styled(
                             : {}),
                           fontSize: "0.8125rem",
                           fontWeight: window.matchMedia(
-                            "(prefers-contrast: more)",
+                            "(prefers-contrast: more)"
                           ).matches
                             ? 700
                             : 400,
@@ -826,9 +826,9 @@ const FileCard = styled(
             </Card>
           </Fade>
         );
-      },
-    ),
-  ),
+      }
+    )
+  )
 )(({ selected, theme }) => ({
   height: "150px",
   "& .versionIndicator": {
@@ -861,7 +861,7 @@ const FileCard = styled(
             : `${SELECTED_OR_FOCUS_BORDER} !important`,
           backgroundColor: `${alpha(
             theme.palette.callToAction.background,
-            0.05,
+            0.05
           )} !important`,
         },
         backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
@@ -957,7 +957,7 @@ const GridView = observer(
      * that Id.
      */
     const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
-      null,
+      null
     );
 
     if (listing.tag === "empty")
@@ -975,7 +975,7 @@ const GridView = observer(
               <PlaceholderLabel>
                 {listing.refreshing
                   ? "Refreshing..."
-                  : (listing.reason ?? "There are no folders.")}
+                  : listing.reason ?? "There are no folders."}
               </PlaceholderLabel>
             </div>
           </Fade>
@@ -1037,7 +1037,7 @@ const GridView = observer(
             if (e.shiftKey) {
               if (shiftOriginFileId) {
                 const indexOfShiftOriginFile = listing.list.findIndex(
-                  (f) => f.id === shiftOriginFileId,
+                  (f) => f.id === shiftOriginFileId
                 );
                 const shiftOriginX = indexOfShiftOriginFile % cols;
                 const shiftOriginY = Math.floor(indexOfShiftOriginFile / cols);
@@ -1066,8 +1066,8 @@ const GridView = observer(
 
             setShiftOriginFileId(
               e.shiftKey
-                ? (shiftOriginFileId ?? listing.list[y * cols + x].id)
-                : listing.list[y * cols + x].id,
+                ? shiftOriginFileId ?? listing.list[y * cols + x].id
+                : listing.list[y * cols + x].id
             );
             setTabIndexCoord({ x, y });
           }}
@@ -1083,133 +1083,135 @@ const GridView = observer(
             if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
           }}
         >
-          {ArrayUtils.chunksOf(cols, listing.list).map((files, index) => (
-            <div role="row" key={index} style={{ display: "contents" }}>
-              {files.map((file) => (
-                <FileCard
-                  ref={
-                    index % cols === tabIndexCoord.x &&
-                    Math.floor(index / cols) === tabIndexCoord.y
-                      ? focusFileCardRef
-                      : null
-                  }
-                  onFocus={() => {
-                    setGridHasFocus(true);
-                  }}
-                  onBlur={() => {
-                    setGridHasFocus(false);
-                  }}
-                  selected={selection.includes(file)}
-                  file={file}
-                  key={file.key}
-                  index={index}
-                  tabIndex={
-                    index % cols === tabIndexCoord.x &&
-                    Math.floor(index / cols) === tabIndexCoord.y
-                      ? 0
-                      : -1
-                  }
-                  onClick={(e) => {
-                    if (e.shiftKey) {
-                      if (!shiftOriginFileId) return;
-                      const indexOfShiftOriginFile = listing.list.findIndex(
-                        (f) => f.id === shiftOriginFileId,
-                      );
-                      /*
-                       * if shiftOriginFileId is an Id of a file that has been
-                       * deleted then it will no longer be in the listing, will not
-                       * be visible and this code should act as if no file has been
-                       * focussed
-                       */
-                      if (indexOfShiftOriginFile === -1) return;
-                      const tappedCoord = {
-                        x: index % cols,
-                        y: Math.floor(index / cols),
-                      };
-                      const shiftOriginX = indexOfShiftOriginFile % cols;
-                      const shiftOriginY = Math.floor(
-                        indexOfShiftOriginFile / cols,
-                      );
-                      const toSelect = listing.list.filter((_file, i) => {
-                        const coord = {
-                          x: i % cols,
-                          y: Math.floor(i / cols),
-                        };
-                        return (
-                          coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
-                          coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
-                          coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
-                          coord.y <= Math.max(tappedCoord.y, shiftOriginY)
-                        );
-                      });
-                      selection.clear();
-                      toSelect.forEach((f) => {
-                        selection.append(f);
-                      });
-                      setTabIndexCoord({
-                        x: index % cols,
-                        y: Math.floor(index / cols),
-                      });
-                    } else if (e.ctrlKey || e.metaKey) {
-                      if (selection.includes(file)) {
-                        selection.remove(file);
-                      } else {
-                        selection.append(file);
-                      }
-                    } else {
-                      // on double click, try and figure out what the user would want
-                      // to do with a file of this type based on what services are
-                      // configured
-                      if (e.detail > 1) {
-                        primaryAction(file).do((action) => {
-                          if (action.tag === "open") {
-                            openFolder(file);
-                            return;
-                          }
-                          if (action.tag === "image") {
-                            void action.downloadHref().then((downloadHref) => {
-                              openImagePreview(downloadHref, {
-                                caption: action.caption,
-                              });
-                            });
-                            return;
-                          }
-                          if (action.tag === "collabora") {
-                            window.open(action.url);
-                            return;
-                          }
-                          if (action.tag === "officeonline") {
-                            window.open(action.url);
-                            return;
-                          }
-                          if (action.tag === "pdf") {
-                            void action.downloadHref().then((downloadHref) => {
-                              openPdfPreview(downloadHref);
-                            });
-                            return;
-                          }
-                          if (action.tag === "aspose") {
-                            void openAsposePreview(file);
-                          }
-                          if (action.tag === "snapgene") {
-                            void openSnapGenePreview(file);
-                          }
-                        });
-                        return;
-                      }
-                      selection.clear();
-                      selection.append(file);
-                      setShiftOriginFileId(file.id);
-                      setTabIndexCoord({
-                        x: index % cols,
-                        y: Math.floor(index / cols),
-                      });
+          {ArrayUtils.chunksOf(cols, listing.list).map(
+            (files: Array<GalleryFile>, y: number) => (
+              <div role="row" key={y} style={{ display: "contents" }}>
+                {files.map((file: GalleryFile, x: number) => (
+                  <FileCard
+                    ref={
+                      x === tabIndexCoord.x && y === tabIndexCoord.y
+                        ? focusFileCardRef
+                        : null
                     }
-                  }}
-                />
-              ))}
-            </div>
-          ))}
+                    onFocus={() => {
+                      setGridHasFocus(true);
+                    }}
+                    onBlur={() => {
+                      setGridHasFocus(false);
+                    }}
+                    selected={selection.includes(file)}
+                    file={file}
+                    key={file.key}
+                    index={y * cols + x}
+                    tabIndex={
+                      x === tabIndexCoord.x && y === tabIndexCoord.y ? 0 : -1
+                    }
+                    onClick={(e) => {
+                      if (e.shiftKey) {
+                        if (!shiftOriginFileId) return;
+                        const indexOfShiftOriginFile = listing.list.findIndex(
+                          (f) => f.id === shiftOriginFileId
+                        );
+                        /*
+                         * if shiftOriginFileId is an Id of a file that has been
+                         * deleted then it will no longer be in the listing, will not
+                         * be visible and this code should act as if no file has been
+                         * focussed
+                         */
+                        if (indexOfShiftOriginFile === -1) return;
+                        const tappedCoord = {
+                          x,
+                          y,
+                        };
+                        const shiftOriginX = indexOfShiftOriginFile % cols;
+                        const shiftOriginY = Math.floor(
+                          indexOfShiftOriginFile / cols
+                        );
+                        const toSelect = listing.list.filter((_file, i) => {
+                          const coord = {
+                            x: i % cols,
+                            y: Math.floor(i / cols),
+                          };
+                          return (
+                            coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
+                            coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
+                            coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
+                            coord.y <= Math.max(tappedCoord.y, shiftOriginY)
+                          );
+                        });
+                        selection.clear();
+                        toSelect.forEach((f) => {
+                          selection.append(f);
+                        });
+                        setTabIndexCoord({
+                          x,
+                          y,
+                        });
+                      } else if (e.ctrlKey || e.metaKey) {
+                        if (selection.includes(file)) {
+                          selection.remove(file);
+                        } else {
+                          selection.append(file);
+                        }
+                      } else {
+                        // on double click, try and figure out what the user would want
+                        // to do with a file of this type based on what services are
+                        // configured
+                        if (e.detail > 1) {
+                          primaryAction(file).do((action) => {
+                            if (action.tag === "open") {
+                              openFolder(file);
+                              return;
+                            }
+                            if (action.tag === "image") {
+                              void action
+                                .downloadHref()
+                                .then((downloadHref) => {
+                                  openImagePreview(downloadHref, {
+                                    caption: action.caption,
+                                  });
+                                });
+                              return;
+                            }
+                            if (action.tag === "collabora") {
+                              window.open(action.url);
+                              return;
+                            }
+                            if (action.tag === "officeonline") {
+                              window.open(action.url);
+                              return;
+                            }
+                            if (action.tag === "pdf") {
+                              void action
+                                .downloadHref()
+                                .then((downloadHref) => {
+                                  openPdfPreview(downloadHref);
+                                });
+                              return;
+                            }
+                            if (action.tag === "aspose") {
+                              void openAsposePreview(file);
+                            }
+                            if (action.tag === "snapgene") {
+                              void openSnapGenePreview(file);
+                            }
+                          });
+                          return;
+                        }
+                        selection.clear();
+                        selection.append(file);
+                        setShiftOriginFileId(file.id);
+                        setTabIndexCoord({
+                          x: x,
+                          y: y,
+                        });
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          )}
         </div>
         {listing.loadMore
           .map((loadMore) => (
@@ -1220,7 +1222,7 @@ const GridView = observer(
           .orElse(null)}
       </>
     );
-  },
+  }
 );
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
@@ -1343,7 +1345,7 @@ const PathAndSearch = observer(
         )}
       </Grid>
     );
-  },
+  }
 );
 
 type GalleryMainPanelArgs = {
@@ -1396,7 +1398,7 @@ function GalleryMainPanel({
             mkAlert({
               variant: "error",
               message: "Cannot drop files to upload here.",
-            }),
+            })
           );
           throw new Error("Unknown folder id");
         });
@@ -1418,7 +1420,7 @@ function GalleryMainPanel({
     PREFERENCES.GALLERY_VIEW_MODE,
     {
       defaultValue: "grid",
-    },
+    }
   );
   const [sortMenuAnchorEl, setSortMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
@@ -1499,7 +1501,7 @@ function GalleryMainPanel({
           void moveFiles(
             selectedSection,
             event.over.data.current.destination as Destination,
-            filesBeingMoved,
+            filesBeingMoved
           ).then(() => {
             void refreshListing();
           });
@@ -1624,13 +1626,13 @@ function GalleryMainPanel({
                     [
                       () => sortOrder === "ASC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted from A to Z)",
+                        "(Sorted from A to Z)"
                       )}`,
                     ],
                     [
                       () => sortOrder === "DESC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted from Z to A)",
+                        "(Sorted from Z to A)"
                       )}`,
                     ],
                   ])()}`}
@@ -1676,13 +1678,13 @@ function GalleryMainPanel({
                     [
                       () => sortOrder === "ASC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted oldest first)",
+                        "(Sorted oldest first)"
                       )}`,
                     ],
                     [
                       () => sortOrder === "DESC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted newest first)",
+                        "(Sorted newest first)"
                       )}`,
                     ],
                   ])()}`}

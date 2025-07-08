@@ -8,7 +8,7 @@ import { Optional, lift2 } from "./optional";
 export const zipWith = <A, B, C>(
   listA: ReadonlyArray<A>,
   listB: ReadonlyArray<B>,
-  f: (a: A, b: B, index: number) => C,
+  f: (a: A, b: B, index: number) => C
 ): Array<C> => {
   if (listA.length !== listB.length) {
     throw new Error("Both lists must have the same length");
@@ -81,7 +81,7 @@ export function dropLast<T>(array: ReadonlyArray<T>): Result<ReadonlyArray<T>> {
 export const outerProduct = <A, B, C>(
   as: ReadonlyArray<A>,
   bs: ReadonlyArray<B>,
-  f: (a: A, b: B) => C,
+  f: (a: A, b: B) => C
 ): Array<Array<C>> => as.map((a) => bs.map((b) => f(a, b)));
 
 /**
@@ -94,14 +94,14 @@ export const outerProduct = <A, B, C>(
  */
 export const partition = <T>(
   predicate: (t: T) => boolean,
-  list: ReadonlyArray<T>,
+  list: ReadonlyArray<T>
 ): [Array<T>, Array<T>] =>
   list.reduce<[Array<T>, Array<T>]>(
     ([yes, no], element) => {
       if (predicate(element)) return [[...yes, element], no];
       return [yes, [...no, element]];
     },
-    [[], []],
+    [[], []]
   );
 
 /**
@@ -109,15 +109,12 @@ export const partition = <T>(
  */
 export const groupBy = <T, K extends string>(
   f: (t: T) => K,
-  list: ReadonlyArray<T>,
+  list: ReadonlyArray<T>
 ): { [key in K]: Array<T> } =>
-  list.reduce(
-    (acc, element) => {
-      const key = f(element);
-      return { ...acc, [key]: [...(acc[key] || []), element] };
-    },
-    {} as { [key in K]: Array<T> },
-  );
+  list.reduce((acc, element) => {
+    const key = f(element);
+    return { ...acc, [key]: [...(acc[key] || []), element] };
+  }, {} as { [key in K]: Array<T> });
 
 /**
  * Just like normal filter, but specifically just to check whether the elements
@@ -126,7 +123,7 @@ export const groupBy = <T, K extends string>(
  */
 export const filterClass = <T, U>(
   clazz: { new (...args: any[]): T },
-  array: ReadonlyArray<U>,
+  array: ReadonlyArray<U>
 ): Array<T> => {
   const arrayOft: Array<T> = [];
   for (const a of array) {
@@ -160,7 +157,7 @@ export const intersperse = <A>(a: A, as: ReadonlyArray<A>): Array<A> => {
  */
 export const takeWhere = <A>(
   as: ReadonlyArray<A>,
-  where: ReadonlyArray<boolean>,
+  where: ReadonlyArray<boolean>
 ): Array<A> => {
   if (as.length !== where.length) throw new Error("length must match");
   const output = [];
@@ -176,7 +173,7 @@ export const takeWhere = <A>(
  */
 export function find<T>(
   func: (t: T) => boolean,
-  array: ReadonlyArray<T>,
+  array: ReadonlyArray<T>
 ): Optional<T> {
   const found: T | undefined = array.find(func);
   if (typeof found === "undefined" || found === null) return Optional.empty();
@@ -210,7 +207,7 @@ export function getAt<T>(index: number, array: ReadonlyArray<T>): Optional<T> {
  */
 export const mapOptional = <A, B>(
   f: (a: A) => Optional<B>,
-  as: ReadonlyArray<A>,
+  as: ReadonlyArray<A>
 ): Array<B> => {
   // These classes are here solely so that filterClass can be used
   class Present<T> {
@@ -226,12 +223,12 @@ export const mapOptional = <A, B>(
     arrayOfOptionals.map((opt) =>
       opt.destruct(
         () => new Empty(),
-        (v) => new Present(v),
-      ),
+        (v) => new Present(v)
+      )
     );
   const arrayOfPresent: ReadonlyArray<Present<B>> = filterClass(
     Present as { new (...args: unknown[]): Present<B> },
-    arrayOfPresentOrEmpty,
+    arrayOfPresentOrEmpty
   );
   return arrayOfPresent.map((opt) => opt.value);
 };
@@ -276,12 +273,16 @@ export const all = <A>(as: ReadonlyArray<Optional<A>>): Optional<Array<A>> => {
   return lift2((newHead, newTail) => [newHead, ...newTail], h, all(t));
 };
 
-export function chunksOf(
+/**
+ * Splits the array into chunks of size n. If the last chunk is smaller than n,
+ * it will still be included in the result.
+ */
+export function chunksOf<T>(
   n: number,
-  array: ReadonlyArray<any>,
-): Array<Array<any>> {
+  array: ReadonlyArray<T>
+): Array<Array<T>> {
   if (n <= 0) throw new Error("Chunk size must be greater than zero");
-  const result: Array<Array<any>> = [];
+  const result: Array<Array<T>> = [];
   for (let i = 0; i < array.length; i += n) {
     result.push(array.slice(i, i + n));
   }
