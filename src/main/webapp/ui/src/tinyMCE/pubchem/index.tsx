@@ -141,7 +141,7 @@ class PubchemPlugin {
       window.insertActions = new Map();
     }
     window.insertActions.set("optPubchem", {
-      text: "pubchem",
+      text: "PubChem",
       icon: "pubchem",
       action: () => {
         pubchemRenderer.next({
