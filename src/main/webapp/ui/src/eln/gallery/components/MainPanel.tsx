@@ -12,7 +12,13 @@ import {
   GALLERY_SECTION,
 } from "../common";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import { styled, alpha, lighten, SxProps } from "@mui/material/styles";
+import {
+  styled,
+  alpha,
+  lighten,
+  SxProps,
+  useTheme,
+} from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
@@ -888,6 +894,7 @@ const GridView = observer(
           refreshing: boolean;
         };
   }) => {
+    const theme = useTheme();
     const dndContext = useDndContext();
     const selection = useGallerySelection();
     const { openImagePreview } = useImagePreview();
@@ -985,12 +992,13 @@ const GridView = observer(
       <>
         <div
           role="grid"
+          tabIndex={0}
           aria-label="grid view of files"
           aria-multiselectable="true"
           style={{
             display: "grid",
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
-            gap: "16px", // equivalent to spacing={2}
+            gap: theme.spacing(2),
             width: "100%",
           }}
           onKeyDown={(e) => {
