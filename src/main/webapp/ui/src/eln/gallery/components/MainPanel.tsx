@@ -1035,7 +1035,7 @@ const GridView = observer(
 
             let origin = { x, y };
             if (e.shiftKey) {
-              if (shiftOriginFileId) {
+              if (shiftOriginFileId !== null) {
                 const indexOfShiftOriginFile = listing.list.findIndex(
                   (f) => f.id === shiftOriginFileId
                 );
@@ -1108,7 +1108,7 @@ const GridView = observer(
                     }
                     onClick={(e) => {
                       if (e.shiftKey) {
-                        if (!shiftOriginFileId) return;
+                        if (shiftOriginFileId === null) return;
                         const indexOfShiftOriginFile = listing.list.findIndex(
                           (f) => f.id === shiftOriginFileId
                         );
@@ -1153,6 +1153,10 @@ const GridView = observer(
                         } else {
                           selection.append(file);
                         }
+                        setTabIndexCoord({
+                          x,
+                          y,
+                        });
                       } else {
                         // on double click, try and figure out what the user would want
                         // to do with a file of this type based on what services are
@@ -1202,8 +1206,8 @@ const GridView = observer(
                         selection.append(file);
                         setShiftOriginFileId(file.id);
                         setTabIndexCoord({
-                          x: x,
-                          y: y,
+                          x,
+                          y,
                         });
                       }
                     }}
