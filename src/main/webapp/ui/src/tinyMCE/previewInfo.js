@@ -20,7 +20,8 @@ export default function PreviewInfo(props) {
   }, []);
   return (
     <span className={classes.wrapper}>
-      <div style={{ display: "flex", minHeight: "200px", maxHeight: "300px" }}>
+      <div style={{ display: "flex", minHeight: "200px", maxHeight: "334px" }}>
+        {/* TODO: make scrolling */}
         <div style={{ alignSelf: "center" }}>
           <img
             id={props.item.id}

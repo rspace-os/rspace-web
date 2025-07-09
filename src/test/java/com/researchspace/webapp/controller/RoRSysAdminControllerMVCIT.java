@@ -27,29 +27,22 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
-@TestPropertySource(properties = "ror.api.url=https://api.ror.org/organizations")
-// The NIGHLTY test contacts the REAL ROR API
-
-// Uncomment and use the DEV url to test v2 of RoR API EXPLICITLY.
-// RoR will switch to v2 api as default sometime soon and therefore the tests use PROD api and check
-// the response for which version is being returned and then assert the values which we use in the
-// front end
-// are present as expected.
-
-// @TestPropertySource(properties = "ror.api.url=https://api.dev.ror.org/v2/organizations")
+@TestPropertySource(properties = "ror.api.url=https://api.ror.org/v2/organizations")
+// tests marked as NIGHLTY are contacting the REAL ROR API
 @RunWith(ConditionalTestRunner.class)
 public class RoRSysAdminControllerMVCIT extends MVCTestBase {
 
   private static final String rorSysadminUrl = "/system/ror/";
   private static final String rorPublicUrl = "/global/ror/";
-  // ROR IDS can be the full Url - Spring controllers however, dont allow forward slashes in request
-  // params, so front end escapes them
+
+  /* ROR IDS can be the full Url - Spring controllers however, don't allow forward
+  slashes in request params, so front end escapes them */
   private static final String validRorOne =
-      "https:__rspacror_forsl____rspacror_forsl__ror.org__rspacror_forsl__02mhbdp94";
-  private static final String validRorTwo = "ror.org__rspacror_forsl__02mhbdp94";
-  private static final String validRorThree = "02mhbdp94";
-  public static final String ROR_FULL_ID = "https://ror.org/02mhbdp94";
-  public static final String ROR_NAME = "Universidad de Los Andes";
+      "https:__rspacror_forsl____rspacror_forsl__ror.org__rspacror_forsl__038xqyz77";
+  private static final String validRorTwo = "ror.org__rspacror_forsl__038xqyz77";
+  private static final String validRorThree = "038xqyz77";
+  public static final String ROR_FULL_ID = "https://ror.org/038xqyz77";
+  public static final String ROR_NAME = "Research Space (United Kingdom)";
   @Autowired private SystemPropertyManager systemPropertyManager;
 
   @Before
@@ -107,43 +100,30 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
   @RunIfSystemPropertyDefined(value = "nightly")
   public void testSearchForValidRor() throws Exception {
     // There are 3 versions of a valid ROR ID
+    mockMvc
+        .perform(get(rorSysadminUrl + "rorForID/" + validRorOne))
+        .andExpect(status().is2xxSuccessful())
+        .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
+        .andReturn();
+    mockMvc
+        .perform(get(rorSysadminUrl + "rorForID/" + validRorTwo))
+        .andExpect(status().is2xxSuccessful())
+        .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
+        .andReturn();
     MvcResult result =
-        mockMvc
-            .perform(get(rorSysadminUrl + "rorForID/" + validRorOne))
-            .andExpect(status().is2xxSuccessful())
-            .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
-            .andReturn();
-    result =
-        mockMvc
-            .perform(get(rorSysadminUrl + "rorForID/" + validRorTwo))
-            .andExpect(status().is2xxSuccessful())
-            .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
-            .andReturn();
-    result =
         mockMvc
             .perform(get(rorSysadminUrl + "rorForID/" + validRorThree))
             .andExpect(status().is2xxSuccessful())
             .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
             .andReturn();
+
     JsonNode rorDetails = getFromJsonResponseBody(result, JsonNode.class);
     String rorID = rorDetails.get("id").asText();
     assertEquals(ROR_FULL_ID, rorID);
-    // test v1 API
-    if (rorDetails.get("addresses") != null) {
-      String country = rorDetails.get("country").get("country_name").asText();
-      assertEquals("Colombia", country);
-      checkV1Links(rorDetails);
-      checkV1City(rorDetails);
-      String name = rorDetails.get("name").asText();
-      assertEquals("Universidad de Los Andes", name);
-    } else {
-      // test v2 api - switch should happen transparently when RoR decide
-      // to do so in the next few months from Oct 2023 - we can delete v1 tests at that point
-      checkV2City(rorDetails);
-      checkV2Country(rorDetails);
-      checkV2Links(rorDetails);
-      checkV2Names(rorDetails);
-    }
+    checkV2City(rorDetails);
+    checkV2Country(rorDetails);
+    checkV2Links(rorDetails);
+    checkV2Names(rorDetails);
   }
 
   @Test
@@ -154,11 +134,12 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     assertEquals(
-        "https://ror.org/02mhbdp941 is not a valid ROR",
+        "https://ror.org/038xqyz771 is not a valid ROR",
         result.getModelAndView().getModel().get("exceptionMessage"));
   }
 
   @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testUpdateRorAsSysadmin() throws Exception {
     logoutAndLoginAsSysAdmin();
     mockMvc
@@ -197,7 +178,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
 
   @Test
   public void tesDeleteRorAsSysadmin() throws Exception {
-    User sysadmin = logoutAndLoginAsSysAdmin();
+    logoutAndLoginAsSysAdmin();
     mockMvc
         .perform(delete(rorSysadminUrl + "rorForID/"))
         .andExpect(status().is2xxSuccessful())
@@ -231,7 +212,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
         rorDetails.get("locations").findValues("country_name", new ArrayList<>()).stream()
             .map(n -> n.toString())
             .collect(Collectors.toList())
-            .contains("\"Colombia\""));
+            .contains("\"United Kingdom\""));
   }
 
   private void checkV2City(JsonNode rorDetails) {
@@ -239,7 +220,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
         rorDetails.get("locations").findValues("name", new ArrayList<>()).stream()
             .map(n -> n.toString())
             .collect(Collectors.toList())
-            .contains("\"Bogotá\""));
+            .contains("\"Edinburgh\""));
   }
 
   private void checkV2Names(JsonNode rorDetails) {
@@ -247,7 +228,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
         rorDetails.get("names").findValues("value", new ArrayList<>()).stream()
             .map(n -> n.toString())
             .collect(Collectors.toList())
-            .contains("\"Universidad de Los Andes\""));
+            .contains("\"Research Space\""));
   }
 
   private void checkV2Links(JsonNode rorDetails) {
@@ -255,18 +236,6 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
         rorDetails.get("links").findValues("value", new ArrayList<>()).stream()
             .map(n -> n.toString())
             .collect(Collectors.toList())
-            .contains("\"http://www.uniandes.edu.co/\""));
-  }
-
-  private void checkV1Links(JsonNode rorDetails) {
-    assertTrue(rorDetails.get("links").toString().contains("\"http://www.uniandes.edu.co/\""));
-  }
-
-  private void checkV1City(JsonNode rorDetails) {
-    assertTrue(
-        rorDetails.get("addresses").findValues("city", new ArrayList<>()).stream()
-            .map(n -> n.toString())
-            .collect(Collectors.toList())
-            .contains("\"Bogotá\""));
+            .contains("\"https://www.researchspace.com\""));
   }
 }

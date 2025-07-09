@@ -86,21 +86,8 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
     assertTrue(
         iframeHandler.isKnownIframeSrc("https://app.jove.com/embed/player?id=2359&t=1&s=1&fpv=1"));
 
-    // Jove staging site src variants
-    assertTrue(
-        iframeHandler.isKnownIframeSrc("https://richard-dev2.jove.com/embed/player?id=54239"));
-    assertTrue(
-        iframeHandler.isKnownIframeSrc(
-            "https://richard-dev2.jove.com/embed/player?id=54239&t=1&a=1&i=1&chap=1&s=1&fpv=1"));
-    assertTrue(
-        iframeHandler.isKnownIframeSrc(
-            "https://richard-dev2.jove.com/embed/player?id=54239&a=1&s=1&i=1&chap=1&t=1&fpv=1")); // different order
-    assertTrue(
-        iframeHandler.isKnownIframeSrc(
-            "https://richard-dev2.jove.com/embed/player?id=49&t=1&s=1&fpv=1"));
-    assertTrue(
-        iframeHandler.isKnownIframeSrc(
-            "https://richard-dev2.jove.com/embed/player?id=49&t=1&s=1&fpv=1&access=OiHE3FBw&utm_source=JoVE_RSpace"));
+    // av.tib.eu videos pattern
+    assertTrue(iframeHandler.isKnownIframeSrc("https://av.tib.eu/player/70488"));
 
     assertFalse(iframeHandler.isKnownIframeSrc(""));
     assertFalse(iframeHandler.isKnownIframeSrc("test"));
@@ -295,6 +282,35 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
     String restoredHtmlAdjustedForEqualsAssertion =
         restoredHtml.replaceAll("/p> <iframe", "/p>\n<iframe");
     String expectedRestoredHtml = String.format(htmlFragmentFormat, expectedRestoredJoveEmbed);
+    assertEquals(expectedRestoredHtml, restoredHtmlAdjustedForEqualsAssertion);
+  }
+
+  @Test
+  public void checkTibAvPortalIframeConversion_Jul2025() {
+
+    // TIV AV portal embed code fragment (taken in July 2025)
+    String avportalEmbed =
+        "<iframe width=\"560\" src=\"https://av.tib.eu/player/70488\" allow=\"fullscreen\" "
+            + "style=\"aspect-ratio: 16 / 9;\"></iframe>";
+    String expectedConvertedAvportalEmbed =
+        "<p class=\"rsKnownIframeReplacement\" "
+            + "data-src=\"https://av.tib.eu/player/70488\" "
+            + "data-width=\"560\" data-allow=\"fullscreen\"></p>";
+    String expectedRestoredAvportalEmbed =
+        "<iframe width=\"560\" src=\"https://av.tib.eu/player/70488\" allow=\"fullscreen\"> "
+            + "</iframe>";
+
+    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n<p>end</p>";
+    String htmlFragment = String.format(htmlFragmentFormat, avportalEmbed);
+    String expectedConvertedHtml = String.format(htmlFragmentFormat, expectedConvertedAvportalEmbed);
+
+    String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(htmlFragment);
+    assertEquals(expectedConvertedHtml, convertedHtml);
+
+    String restoredHtml = iframeHandler.decodeKnownIframesFromParagraphs(convertedHtml);
+    String restoredHtmlAdjustedForEqualsAssertion =
+        restoredHtml.replaceAll("/p> <iframe", "/p>\n<iframe");
+    String expectedRestoredHtml = String.format(htmlFragmentFormat, expectedRestoredAvportalEmbed);
     assertEquals(expectedRestoredHtml, restoredHtmlAdjustedForEqualsAssertion);
   }
 

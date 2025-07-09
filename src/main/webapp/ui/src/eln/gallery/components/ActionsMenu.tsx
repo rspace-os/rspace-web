@@ -35,6 +35,7 @@ import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import MoveToIrods from "./MoveToIrods";
 import { ACCENT_COLOR as IRODS_COLOR } from "../../../assets/branding/irods";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import IrodsLogo from "./IrodsLogo.svg";
 import Typography from "@mui/material/Typography";
 import MoveDialog from "./MoveDialog";
@@ -917,6 +918,7 @@ function ActionsMenu({
       />
       <Typography
         variant="body2"
+        role="status"
         sx={{
           p: 0,
           pl: 1,
@@ -941,7 +943,9 @@ function ActionsMenu({
           },
           ...(selection.isEmpty
             ? {
-                color: "grey",
+                // just enough contrast for the AA standard,
+                // but we don't want it to be too prominent
+                color: `hsl(${ACCENT_COLOR.main.hue} 1% 45% / 1)`,
               }
             : {}),
         }}

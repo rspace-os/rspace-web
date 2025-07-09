@@ -48,7 +48,7 @@ describe("ContextMenuAction", () => {
     const input = await screen.findByRole("textbox");
     fireEvent.keyDown(input, {});
 
-    expect(onKeyDown).not.toBeCalled();
+    expect(onKeyDown).not.toHaveBeenCalled();
   });
 
   describe("Disabled state", () => {

@@ -17,6 +17,85 @@ import { Description, LocalGalleryFile } from "../useGalleryListing";
 import Alerts from "@/components/Alerts/Alerts";
 import OpenFolderProvider from "./OpenFolderProvider";
 import { GallerySelection } from "../useGallerySelection";
+import { incrementForever, take } from "@/util/iterators";
+
+/**
+ * An example gallery listing with just a bunch of images and no folders.
+ */
+export function BunchOfImages(): React.ReactNode {
+  const MOCK_ROOT_WITH_IMAGES = {
+    tag: "success" as const,
+    value: {
+      tag: "list" as const,
+      list: [
+        ...[...take(incrementForever(), 8)].map(
+          (i) =>
+            new LocalGalleryFile({
+              id: i,
+              globalId: `GF${i}`,
+              name: `Image${i}.jpg`,
+              extension: "jpg",
+              creationDate: new Date("2023-01-01T00:00:00Z"),
+              modificationDate: new Date("2023-01-01T00:00:00Z"),
+              description: Description.Empty(),
+              type: "Image",
+              ownerName: "user1",
+              path: [],
+              gallerySection: "Images",
+              size: 0,
+              version: 1,
+              thumbnailId: null,
+              originalImageId: null,
+              token: "",
+            })
+        ),
+      ],
+      totalHits: 8,
+      loadMore: Optional.empty<() => Promise<void>>(),
+      refreshing: false,
+    },
+  };
+
+  return (
+    <React.StrictMode>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <StyledEngineProvider injectFirst>
+            <CssBaseline />
+            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+              <Analytics>
+                <UiPreferences>
+                  <DisableDragAndDropByDefault>
+                    <Alerts>
+                      <GallerySelection>
+                        <OpenFolderProvider setPath={() => {}}>
+                          <MainPanel
+                            selectedSection="Images"
+                            path={[]}
+                            setSelectedSection={() => {}}
+                            galleryListing={MOCK_ROOT_WITH_IMAGES}
+                            folderId={{ tag: "success", value: -1 }}
+                            refreshListing={async () => {}}
+                            sortOrder="ASC"
+                            orderBy="name"
+                            setSortOrder={() => {}}
+                            setOrderBy={() => {}}
+                            appliedSearchTerm=""
+                            setAppliedSearchTerm={() => {}}
+                          />
+                        </OpenFolderProvider>
+                      </GallerySelection>
+                    </Alerts>
+                  </DisableDragAndDropByDefault>
+                </UiPreferences>
+              </Analytics>
+            </ThemeProvider>
+          </StyledEngineProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+}
 
 /**
  * A gallery listing with nested folders:

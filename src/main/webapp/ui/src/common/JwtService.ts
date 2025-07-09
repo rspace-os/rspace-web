@@ -1,4 +1,4 @@
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 class JwtService {
   // if you change this, change login.jsp and logout.jsp accordingly

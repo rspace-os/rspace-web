@@ -16,4 +16,5 @@ public class MoleculeInfoDTO {
   private double exactMass, mass;
   private String formula, name;
   private MoleculeRole role;
+  private String additionalMetadata;
 }

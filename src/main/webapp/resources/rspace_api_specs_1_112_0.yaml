@@ -1820,7 +1820,7 @@ paths:
       summary: Browse remote filestore
       description:
         Lists the content of a path on remote filestore belonging to the user.
-        
+
         User must be logged into the filesystem connected to the filestore (see /login endpoint).
       produces:
         - application/json
@@ -1837,7 +1837,7 @@ paths:
       summary: Download from remote filestore
       description:
         Streams the resource retrieved from remote filestore.
-        
+
         User must be logged into the filesystem connected to the filestore (see /login endpoint).
       produces:
         - application/octet-stream
@@ -1881,7 +1881,7 @@ paths:
       summary: Browse remote filesystem
       description:
         Lists the content of a remote filesystem. 
-        
+
         User must be logged into the filesystem (see /login endpoint).
       produces:
         - application/json
@@ -1966,7 +1966,7 @@ paths:
         Copy a list of files (identified by their Researchspace ID) from the RSpace filestore
         to an external IRODS storage
         The files that can be copied to IRODS need to live in the Gallery.
-        
+
         The response message is a JSON with the detail of the operation done for each file requested
       consumes:
         - application/json
@@ -2025,7 +2025,7 @@ paths:
         Move a list of files (identified by their Researchspace ID) from the RSpace filestore
         to an external IRODS storage
         The files that can be moved to IRODS need to live in the Gallery
-        
+
         The response message is a JSON with the detail of the operation done for each file requested
       consumes:
         - application/json
@@ -2609,7 +2609,73 @@ paths:
       responses:
         '200':
           description:  A sum of two provided quantiies
-
+  /pubchem/search:
+    post:
+      summary: Search for chemicals
+      description: >
+        Searches for chemical data from external sources (currently only PubChem) using either chemical name 
+        CAS numbers or SMILES notation. Note: CAS numbers should be searched using the NAME search type, as they're
+        synonyms of name on pubchem rather than a distinct type.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Chemical Import
+      parameters:
+        - name: searchRequest
+          in: body
+          required: true
+          description: Chemical search request
+          schema:
+            $ref: '#/definitions/ChemicalSearchRequest'
+      responses:
+        '200':
+          description: Search completed successfully
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ChemicalImportSearchResult'
+        '400':
+          description: Bad request - invalid search parameters
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid request to PubChem API: {pubchem error message}"
+        '429':
+          description: Rate limit exceeded
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Rate limit exceeded. Please try again later."
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Error importing chemical data."
+        '502':
+          description: External service temporarily unavailable
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "External service temporarily unavailable."
+        '504':
+          description: Gateway timeout - PubChem API timeout or connection error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "PubChem API timeout or connection error"
   /status:
     get:
       summary: Get API status
@@ -2921,6 +2987,54 @@ parameters:
 
 
 definitions:
+  ChemicalSearchRequest:
+    description: Request object for searching chemicals
+    required:
+      - searchType
+      - searchTerm
+    properties:
+      searchType:
+        type: string
+        description: The type of search to perform. Use NAME for both chemical names and CAS numbers.
+        enum:
+          - NAME
+          - SMILES
+        example: "NAME"
+      searchTerm:
+        type: string
+        description: The search term to use (chemical name, CAS number, or SMILES notation)
+        example: "aspirin"
+  ChemicalImportSearchResult:
+    description: Chemical search result from external sources
+    properties:
+      name:
+        type: string
+        description: IUPAC or common name of the chemical
+        example: "2-acetoxybenzoic acid"
+      pngImage:
+        type: string
+        description: URL to PNG image of the chemical structure from PubChem
+        example: "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l"
+      smiles:
+        type: string
+        description: SMILES notation of the chemical structure
+        example: "CC(=O)OC1=CC=CC=C1C(=O)O"
+      formula:
+        type: string
+        description: Molecular formula of the chemical
+        example: "C9H8O4"
+      pubchemId:
+        type: string
+        description: PubChem Compound ID
+        example: "2244"
+      pubchemUrl:
+        type: string
+        description: URL to PubChem compound page
+        example: "https://pubchem.ncbi.nlm.nih.gov/compound/2244"
+      cas:
+        type: string
+        description: CAS Registry Number of the chemical
+        example: "50-78-2"
   Field:
     description: |
       A field in a Document, with a list of attached Files and 'listOfMaterials' that store inventory items connected to the document.

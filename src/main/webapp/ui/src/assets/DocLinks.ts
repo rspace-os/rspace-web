@@ -54,6 +54,10 @@ const docLinks: { [name: string]: URL } = {
   cloudstorage: mkDocLink("j2z5f5r90q"),
   jove: mkDocLink("mopbqzzdf5"),
   chemistry: mkDocLink("wfxm4xwtio"),
+  pubchem: mkDocLink(
+    "wfxm4xwtio",
+    "importing_chemical_structures_from_external_databases"
+  ),
   nextcloud: mkDocLink("na3hn8ilee"),
   omero: mkDocLink("bwwbpkll90"),
   owncloud: mkDocLink("v8ss2uso0a"),

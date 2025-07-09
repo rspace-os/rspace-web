@@ -147,7 +147,7 @@ function ImageEditingDialog({
         ctx.rotate(((direction === "clockwise" ? 90 : -90) * Math.PI) / 180);
         ctx.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
       }
-      return canvas.toDataURL(imageType, "1.0");
+      return canvas.toDataURL(imageType, 1.0);
     };
     setEditorData(getRotatedImageURL());
   };
@@ -183,7 +183,7 @@ function ImageEditingDialog({
           }
         },
         format,
-        "1.0"
+        1.0
       );
     });
   };

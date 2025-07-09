@@ -17,4 +17,5 @@ public class ChemicalDataDTO {
   @NotNull private String imageBase64;
   @NotNull private long fieldId;
   private Long rsChemElementId;
+  private String metadata;
 }

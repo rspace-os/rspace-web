@@ -14,6 +14,7 @@ import com.researchspace.model.dtos.chemistry.ChemicalExportType;
 import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
+import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.record.Breadcrumb;
 import com.researchspace.model.record.BreadcrumbGenerator;
 import com.researchspace.model.record.Folder;
@@ -217,7 +218,18 @@ public class RSChemService implements ChemistryService {
     if (chemical == null) {
       return null;
     }
-    return rsChemElementManager.getInfo(chemical);
+    Optional<ElementalAnalysisDTO> analysis = rsChemElementManager.getInfo(chemical);
+    if (analysis.isPresent()) {
+      ElementalAnalysisDTO elementalAnalysis = analysis.get();
+      if (elementalAnalysis.isReaction()) {
+        elementalAnalysis.setAdditionalMetadata(chemical.getMetadata());
+      } else {
+        for (MoleculeInfoDTO molecule : elementalAnalysis.getMolecules()) {
+          molecule.setAdditionalMetadata(chemical.getMetadata());
+        }
+      }
+    }
+    return analysis;
   }
 
   @Override

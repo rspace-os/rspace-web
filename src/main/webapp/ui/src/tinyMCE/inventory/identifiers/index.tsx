@@ -23,6 +23,20 @@ import Typography from "@mui/material/Typography";
 import RsSet from "../../../util/set";
 import Alerts from "../../../components/Alerts/Alerts";
 
+declare global {
+  interface Window {
+    insertActions?: Map<
+      string,
+      {
+        text: string;
+        icon: string;
+        action: () => void;
+        aliases?: string[];
+      }
+    >;
+  }
+}
+
 type Editor = {
   ui: {
     registry: {
@@ -207,9 +221,7 @@ class IdentifiersPlugin {
         });
       },
     });
-    // @ts-expect-error TS does not recognise the insertActions property
     if (!window.insertActions) window.insertActions = new Map();
-    // @ts-expect-error TS does not recognise the insertActions property
     window.insertActions.set("optIdentifiers", {
       text: "Inventory Identifiers",
       aliases: ["IGSN"],

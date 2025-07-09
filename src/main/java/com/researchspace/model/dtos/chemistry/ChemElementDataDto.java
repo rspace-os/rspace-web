@@ -23,4 +23,5 @@ public class ChemElementDataDto {
   private Integer previewHeight;
   private Integer previewWidth;
   private List<RSChemElement> rsChemElements;
+  private String metadata;
 }

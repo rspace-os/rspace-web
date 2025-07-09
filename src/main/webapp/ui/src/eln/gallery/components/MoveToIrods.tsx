@@ -23,7 +23,7 @@ import TextField from "@mui/material/TextField";
 import { withStyles } from "Styles";
 import Stack from "@mui/material/Stack";
 import useIrods, { type IrodsLocation } from "./useIrods";
-import Alert from "@mui/lab/Alert";
+import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import * as FetchingData from "../../../util/fetchingData";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
@@ -80,7 +80,7 @@ const CustomFieldset = withStyles<
   }: {
     children: React.ReactNode;
     classes: { root: string };
-  }) => <fieldset className={classes.root}>{children}</fieldset>
+  }) => <fieldset className={classes.root}>{children}</fieldset>,
 );
 
 const ErrorAlert = ({ message }: { message: string }) => {
@@ -137,7 +137,7 @@ function MoveCopyDialog({
         : Result.Ok(null),
       irods.tag === "error"
         ? Result.Error([new Error(irods.error)])
-        : Result.Ok(null)
+        : Result.Ok(null),
     )
       .flatMap(() =>
         Result.all(
@@ -153,8 +153,8 @@ function MoveCopyDialog({
             ? Result.Error([
                 new Error("Password for iRODS server is required."),
               ])
-            : Result.Ok(null)
-        )
+            : Result.Ok(null),
+        ),
       )
       .map(() => null);
   }

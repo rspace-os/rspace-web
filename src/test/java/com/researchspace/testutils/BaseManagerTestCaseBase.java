@@ -978,6 +978,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
             .imageBase64(imageBytes)
             .fieldId(field.getId())
             .chemElementsFormat(ChemElementsFormat.MOL.getLabel())
+            .metadata("{\"test\":\"test\"}")
             .build();
 
     RSChemElement chem = rsChemElementManager.saveChemElement(chemicalData, owner);

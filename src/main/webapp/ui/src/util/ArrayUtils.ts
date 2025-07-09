@@ -272,3 +272,19 @@ export const all = <A>(as: ReadonlyArray<Optional<A>>): Optional<Array<A>> => {
   const [h, ...t] = as;
   return lift2((newHead, newTail) => [newHead, ...newTail], h, all(t));
 };
+
+/**
+ * Splits the array into chunks of size n. If the last chunk is smaller than n,
+ * it will still be included in the result.
+ */
+export function chunksOf<T>(
+  n: number,
+  array: ReadonlyArray<T>
+): Array<Array<T>> {
+  if (n <= 0) throw new Error("Chunk size must be greater than zero");
+  const result: Array<Array<T>> = [];
+  for (let i = 0; i < array.length; i += n) {
+    result.push(array.slice(i, i + n));
+  }
+  return result;
+}

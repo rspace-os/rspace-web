@@ -1,7 +1,7 @@
 import React from "react";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import Popover from "@mui/material/Popover";
-import Alert from "@mui/lab/Alert";
+import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import { styled } from "@mui/material/styles";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -15,7 +15,7 @@ const StyledPopover = styled(
     ...rest
   }: { highContrastMode: boolean } & React.ComponentProps<typeof Popover>) => (
     <Popover {...rest} />
-  )
+  ),
 )(({ highContrastMode }) => ({
   "& > .MuiPaper-root": {
     padding: "2px",
@@ -65,10 +65,10 @@ function AccessibilityTipsPopup({
   elementType: "dialog" | "page";
 }) {
   const highContrastModeIsEnabled = window.matchMedia(
-    "(prefers-contrast: more)"
+    "(prefers-contrast: more)",
   ).matches;
   const reducedMotionModeIsEnabled = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
+    "(prefers-reduced-motion: reduce)",
   ).matches;
 
   return (

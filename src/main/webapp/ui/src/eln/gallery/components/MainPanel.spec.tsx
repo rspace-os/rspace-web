@@ -1,11 +1,13 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
-import { NestedFoldersWithImageFile } from "./MainPanel.story";
+import { NestedFoldersWithImageFile, BunchOfImages } from "./MainPanel.story";
 import * as Jwt from "jsonwebtoken";
+import AxeBuilder from "@axe-core/playwright";
 
 const feature = test.extend<{
   Given: {
-    "the main panel is showing the Images section": () => Promise<void>;
+    "the main panel is showing a nested folder structure": () => Promise<void>;
+    "the main panel is showing a bunch of image files": () => Promise<void>;
     "tree view is being shown": () => Promise<void>;
     "the outer folder is open": () => Promise<void>;
     "the inner folder is selected": () => Promise<void>;
@@ -20,6 +22,14 @@ const feature = test.extend<{
     "the user opens the inner folder": () => Promise<void>;
     "the user taps the gallery section breadcrumb": () => Promise<void>;
     "the user taps the outer folder breadcrumb": () => Promise<void>;
+    "the user taps the outer folder": () => Promise<void>;
+    "the user taps the image file": (
+      filename: string,
+      options?: { modifiers: Array<"Shift" | "ControlOrMeta"> }
+    ) => Promise<void>;
+    "the user taps the arrow key": (
+      key: "ArrowRight" | "Shift+ArrowRight" | "ArrowLeft" | "Shift+ArrowLeft"
+    ) => Promise<void>;
   };
   Then: {
     "the clipboard contains a link to the file's parent folder": () => Promise<void>;
@@ -28,13 +38,19 @@ const feature = test.extend<{
     "the opened folder and gallery section are shown in the breadcrumbs": () => Promise<void>;
     "the root gallery section is returned to": () => Promise<void>;
     "the outer folder is returned to": () => Promise<void>;
+    "there shouldn't be any axe violations": () => Promise<void>;
+    "the outer folder is selected": () => Promise<void>;
+    "the selection is": (expectedSelection: Array<string>) => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
   Given: async ({ mount, page }, use) => {
     await use({
-      "the main panel is showing the Images section": async () => {
+      "the main panel is showing a nested folder structure": async () => {
         await mount(<NestedFoldersWithImageFile />);
+      },
+      "the main panel is showing a bunch of image files": async () => {
+        await mount(<BunchOfImages />);
       },
       "tree view is being shown": async () => {
         await page.getByRole("button", { name: /views/i }).click();
@@ -89,10 +105,10 @@ const feature = test.extend<{
         await page.getByRole("button", { name: "Copy to clipboard" }).click();
       },
       "the user opens the outer folder": async () => {
-        await page.getByRole("button", { name: "Outer folder" }).dblclick();
+        await page.getByRole("gridcell", { name: "Outer folder" }).dblclick();
       },
       "the user opens the inner folder": async () => {
-        await page.getByRole("button", { name: "Inner folder" }).dblclick();
+        await page.getByRole("gridcell", { name: "Inner folder" }).dblclick();
       },
       "the user taps the gallery section breadcrumb": async () => {
         await page
@@ -105,6 +121,24 @@ const feature = test.extend<{
           .getByRole("navigation", { name: "Breadcrumbs" })
           .getByRole("button", { name: "Outer folder" })
           .click();
+      },
+      "the user taps the outer folder": async () => {
+        await page.getByRole("gridcell", { name: "Outer folder" }).click();
+      },
+      "the user taps the image file": async (
+        filename: string,
+        options: { modifiers: Array<"Shift" | "ControlOrMeta"> } = {
+          modifiers: [],
+        }
+      ) => {
+        await page.getByRole("gridcell", { name: filename }).click(options);
+      },
+      "the user taps the arrow key": async (
+        key: "ArrowRight" | "Shift+ArrowRight" | "ArrowLeft" | "Shift+ArrowLeft"
+      ) => {
+        await page.keyboard.press(key, {
+          delay: 100, // Add a delay to ensure the key press is registered
+        });
       },
     });
   },
@@ -150,7 +184,7 @@ const feature = test.extend<{
           "Images"
         );
         await expect(
-          page.getByRole("button", { name: "Outer folder" })
+          page.getByRole("gridcell", { name: "Outer folder" })
         ).toBeVisible();
       },
       "the outer folder is returned to": async () => {
@@ -164,6 +198,63 @@ const feature = test.extend<{
         );
         await expect(listItems.nth(1).getByRole("button")).toHaveText(
           "Outer folder"
+        );
+      },
+      "there shouldn't be any axe violations": async () => {
+        const accessibilityScanResults = await new AxeBuilder({
+          page,
+        }).analyze();
+        expect(
+          accessibilityScanResults.violations.filter((v) => {
+            /*
+             * These violations are expected in component tests as we're not rendering
+             * a complete page with proper document structure:
+             *
+             * 1. MUI DataGrid renders its immediate children with role=presentation,
+             *    which Firefox considers to be a violation
+             * 2. Component tests don't have main landmarks as they're isolated components
+             * 3. Component tests typically don't have h1 headings as they're not full pages
+             * 4. Content not in landmarks is expected in component testing context
+             */
+            return (
+              v.description !==
+                "Ensure elements with an ARIA role that require child roles contain them" &&
+              v.id !== "landmark-one-main" &&
+              v.id !== "page-has-heading-one" &&
+              v.id !== "region"
+            );
+          })
+        ).toEqual([]);
+      },
+      "the outer folder is selected": async () => {
+        await expect(
+          page.getByRole("region", { name: "files listing controls" })
+        ).toHaveText(/1 folder selected/);
+        await expect(
+          page.getByRole("gridcell", { name: "Outer folder" })
+        ).toHaveAttribute("aria-selected", "true");
+      },
+      "the selection is": async (expectedSelection) => {
+        for (const item of expectedSelection) {
+          await expect(
+            page.getByRole("gridcell", { name: item })
+          ).toHaveAttribute("aria-selected", "true");
+        }
+        const selectionStatusText =
+          (await page
+            .getByRole("region", { name: "files listing controls" })
+            .getByRole("status")
+            .textContent()) ?? "";
+        const matches = selectionStatusText.match(
+          /((\d+) files?)?(, )?((\d+) folders?)?/
+        );
+        if (!matches)
+          throw new Error(
+            "Selection status text does not match expected format"
+          );
+        const [, , files = "0", , , folders = "0"] = matches;
+        expect(expectedSelection.length).toEqual(
+          parseInt(files, 10) + parseInt(folders, 10)
         );
       },
     });
@@ -292,13 +383,18 @@ feature.beforeEach(async ({ router }) => {
 feature.afterEach(({}) => {});
 
 test.describe("MainPanel", () => {
+  feature("Should have no axe violations", async ({ Given, Then }) => {
+    await Given["the main panel is showing a nested folder structure"]();
+    await Then["there shouldn't be any axe violations"]();
+  });
+
   test.describe("breadcrumbs", () => {
     feature("The root of the gallery section", async ({ Given, Then }) => {
-      await Given["the main panel is showing the Images section"]();
+      await Given["the main panel is showing a nested folder structure"]();
       await Then["only the gallery section is shown in the breadcrumbs"]();
     });
     feature("A outer folder is opened", async ({ Given, When, Then }) => {
-      await Given["the main panel is showing the Images section"]();
+      await Given["the main panel is showing a nested folder structure"]();
       await When["the user opens the outer folder"]();
       await Then[
         "the opened folder and gallery section are shown in the breadcrumbs"
@@ -307,7 +403,7 @@ test.describe("MainPanel", () => {
     feature(
       "Selecting the inner folder alters the breadcrumbs",
       async ({ Given, Then }) => {
-        await Given["the main panel is showing the Images section"]();
+        await Given["the main panel is showing a nested folder structure"]();
         await Given["tree view is being shown"]();
         await Given["the outer folder is open"]();
         await Given["the inner folder is selected"]();
@@ -325,7 +421,7 @@ test.describe("MainPanel", () => {
     feature(
       "Tapping the root gallery section breadcrumb works as a link",
       async ({ Given, When, Then }) => {
-        await Given["the main panel is showing the Images section"]();
+        await Given["the main panel is showing a nested folder structure"]();
         await When["the user opens the outer folder"]();
         await When["the user taps the gallery section breadcrumb"]();
         await Then["the root gallery section is returned to"]();
@@ -334,7 +430,7 @@ test.describe("MainPanel", () => {
     feature(
       "Tapping the outer folder breadcrump works as a link",
       async ({ Given, When, Then }) => {
-        await Given["the main panel is showing the Images section"]();
+        await Given["the main panel is showing a nested folder structure"]();
         await When["the user opens the outer folder"]();
         await When["the user opens the inner folder"]();
         await When["the user taps the outer folder breadcrumb"]();
@@ -348,7 +444,7 @@ test.describe("MainPanel", () => {
       "Safari does not support clipboard API"
     );
     feature("Nothing is selected.", async ({ Given, When, Once, Then }) => {
-      await Given["the main panel is showing the Images section"]();
+      await Given["the main panel is showing a nested folder structure"]();
       await Given["tree view is being shown"]();
       await Given["the outer folder is open"]();
       await When["the user taps the paths's copy-to-clipboard button"]();
@@ -358,7 +454,7 @@ test.describe("MainPanel", () => {
     feature(
       "A outer folder is selected.",
       async ({ Given, When, Once, Then }) => {
-        await Given["the main panel is showing the Images section"]();
+        await Given["the main panel is showing a nested folder structure"]();
         await Given["tree view is being shown"]();
         await Given["the outer folder is open"]();
         await Given["the outer folder is selected"]();
@@ -370,7 +466,7 @@ test.describe("MainPanel", () => {
     feature(
       "The inner folder is selected.",
       async ({ Given, When, Once, Then }) => {
-        await Given["the main panel is showing the Images section"]();
+        await Given["the main panel is showing a nested folder structure"]();
         await Given["tree view is being shown"]();
         await Given["the outer folder is open"]();
         await Given["the inner folder is selected"]();
@@ -388,5 +484,191 @@ test.describe("MainPanel", () => {
          */
       }
     );
+  });
+  feature.describe("Grid view", () => {
+    feature.describe("Selection", () => {
+      feature(
+        "When a file is tapped, it should become selected",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await Then["the selection is"](["Image0.jpg"]);
+        }
+      );
+      feature(
+        "Ctrl-clicking on a second file, adds it to the selection",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await When["the user taps the image file"]("Image1.jpg", {
+            modifiers: ["ControlOrMeta"],
+          });
+          await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
+        }
+      );
+      feature(
+        "Shift-clicking on a second file select the region",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await When["the user taps the image file"]("Image5.jpg", {
+            modifiers: ["Shift"],
+          });
+          await Then["the selection is"]([
+            "Image0.jpg",
+            "Image1.jpg",
+            "Image4.jpg",
+            "Image5.jpg",
+          ]);
+        }
+      );
+      feature(
+        "Shift-clicking a second time modifies the selection based on the first click",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image1.jpg");
+          await When["the user taps the image file"]("Image6.jpg", {
+            modifiers: ["Shift"],
+          });
+          await When["the user taps the image file"]("Image7.jpg", {
+            modifiers: ["Shift"],
+          });
+          await Then["the selection is"]([
+            "Image1.jpg",
+            "Image2.jpg",
+            "Image3.jpg",
+            "Image5.jpg",
+            "Image6.jpg",
+            "Image7.jpg",
+          ]);
+          await When["the user taps the image file"]("Image4.jpg", {
+            modifiers: ["Shift"],
+          });
+          await Then["the selection is"]([
+            "Image0.jpg",
+            "Image1.jpg",
+            "Image4.jpg",
+            "Image5.jpg",
+          ]);
+        }
+      );
+      feature(
+        "Ctrl-clicking an unselected file after shift-clicking several files should expand the selection",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await When["the user taps the image file"]("Image5.jpg", {
+            modifiers: ["Shift"],
+          });
+          await When["the user taps the image file"]("Image6.jpg", {
+            modifiers: ["ControlOrMeta"],
+          });
+          await Then["the selection is"]([
+            "Image0.jpg",
+            "Image1.jpg",
+            "Image4.jpg",
+            "Image5.jpg",
+            "Image6.jpg",
+          ]);
+        }
+      );
+      feature(
+        "Ctrl-clicking a selected file after shift-clicking several files should reduce the selection",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await When["the user taps the image file"]("Image5.jpg", {
+            modifiers: ["Shift"],
+          });
+          await When["the user taps the image file"]("Image1.jpg", {
+            modifiers: ["ControlOrMeta"],
+          });
+          await Then["the selection is"]([
+            "Image0.jpg",
+            "Image4.jpg",
+            "Image5.jpg",
+          ]);
+        }
+      );
+      feature(
+        "Pressing an arrow key moves the selection",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await When["the user taps the arrow key"]("ArrowRight");
+          await Then["the selection is"](["Image1.jpg"]);
+        }
+      );
+      feature(
+        "Pressing an arrow key after selecting multiple files with ctrl moves the selection relative to the second selection",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await When["the user taps the image file"]("Image1.jpg", {
+            modifiers: ["ControlOrMeta"],
+          });
+          await When["the user taps the arrow key"]("ArrowRight");
+          await Then["the selection is"](["Image2.jpg"]);
+        }
+      );
+      feature(
+        "Pressing an arrow key after selecting multiple files with shift moves the selection relative to the second selection",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await When["the user taps the image file"]("Image1.jpg", {
+            modifiers: ["Shift"],
+          });
+          await When["the user taps the arrow key"]("ArrowRight");
+          await Then["the selection is"](["Image2.jpg"]);
+        }
+      );
+      feature(
+        "Pressing shift-arrow key after selecting multiple files with ctrl expands the selection",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await When["the user taps the image file"]("Image1.jpg", {
+            modifiers: ["ControlOrMeta"],
+          });
+          await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
+          await When["the user taps the arrow key"]("Shift+ArrowRight");
+          await Then["the selection is"]([
+            "Image0.jpg",
+            "Image1.jpg",
+            "Image2.jpg",
+          ]);
+        }
+      );
+      feature(
+        "Pressing shift-arrow key after selecting multiple files with shift expands the selection",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image0.jpg");
+          await When["the user taps the image file"]("Image1.jpg", {
+            modifiers: ["Shift"],
+          });
+          await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
+          await When["the user taps the arrow key"]("Shift+ArrowRight");
+          await Then["the selection is"]([
+            "Image0.jpg",
+            "Image1.jpg",
+            "Image2.jpg",
+          ]);
+        }
+      );
+      feature(
+        "Shift-arrowing a second time modifies the selection based on the first click",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await When["the user taps the image file"]("Image1.jpg");
+          await When["the user taps the arrow key"]("Shift+ArrowRight");
+          await Then["the selection is"](["Image1.jpg", "Image2.jpg"]);
+          await When["the user taps the arrow key"]("Shift+ArrowLeft");
+          await When["the user taps the arrow key"]("Shift+ArrowLeft");
+          await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
+        }
+      );
+    });
   });
 });

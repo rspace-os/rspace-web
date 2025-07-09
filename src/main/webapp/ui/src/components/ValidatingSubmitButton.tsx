@@ -2,7 +2,7 @@ import Result from "../util/result";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 import React from "react";
 import Popover from "@mui/material/Popover";
-import Alert from "@mui/lab/Alert";
+import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import { styled } from "@mui/material/styles";
 import type { Progress } from "../util/progress";
@@ -23,7 +23,7 @@ export const IsInvalid = (reason: string): ValidationResult =>
   Result.Error([new Error(reason)]);
 
 export const allAreValid = (
-  v: ReadonlyArray<ValidationResult>
+  v: ReadonlyArray<ValidationResult>,
 ): ValidationResult => Result.all(...v).map(() => null);
 
 type ValidatingSubmitButtonArgs = {
@@ -49,7 +49,7 @@ const StyledButton = styled(
     animating: boolean;
   } & Omit<React.ComponentProps<typeof SubmitSpinnerButton>, "animating">) => (
     <SubmitSpinnerButton {...rest} />
-  )
+  ),
 )(({ animating }) => ({
   "@keyframes wiggle": {
     "0%, 7%": {
@@ -155,7 +155,7 @@ export default function ValidatingSubmitButton({
                   {error.message}
                 </Alert>
               </Fade>
-            ))
+            )),
           )}
         </Stack>
       </StyledPopover>
