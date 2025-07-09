@@ -145,8 +145,9 @@ export function supportedAsposeFile(file: GalleryFile): Result<null> {
     "odp",
   ];
 
+  if (!file.id) return Result.Error([new Error("Aspose requires a file ID")]);
   if (!file.extension)
-    return Result.Error([new Error("File extension is missing")]);
+    return Result.Error([new Error("Aspose requires a file extension")]);
   if (!ASPOSE_EXTENSIONS.includes(file.extension))
     return Result.Error([
       new Error("Aspose does not support the extension of the file"),
