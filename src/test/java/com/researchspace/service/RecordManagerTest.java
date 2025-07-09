@@ -1740,12 +1740,12 @@ public class RecordManagerTest extends SpringTransactionalTest {
   @Test
   public void testIsSharedFolderOrSharedNotebookWithoutCreatePermssison_whenSharedFolder() {
     // when is NOT shared folder && NOT shared notebook
-    assertFalse(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, parent));
+    assertFalse(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, parent));
 
     // when is shared folder and NOT shared notebook
     parent.addType(RecordType.SHARED_FOLDER);
     Assertions.assertTrue(parent.isSharedFolder());
-    assertTrue(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, parent));
+    assertTrue(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, parent));
   }
 
   @Test
@@ -1765,11 +1765,11 @@ public class RecordManagerTest extends SpringTransactionalTest {
     Assertions.assertTrue(notebook.isShared());
 
     // when is shared Notebook with CREATE permission
-    assertFalse(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, notebook));
+    assertFalse(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, notebook));
 
     logoutAndLoginAs(anotherUser);
     // when is shared Notebook and NO CREATE permission
     assertTrue(
-        recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssison(anotherUser, notebook));
+        recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssion(anotherUser, notebook));
   }
 }

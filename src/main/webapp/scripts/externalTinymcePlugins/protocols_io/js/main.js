@@ -47,8 +47,9 @@ $(document).ready(function () {
 			//wait for all pio_Requests to come back
 			$.when.apply($, pio_requests).done(function (resp) {
 				// submit all protocols
+        const targetFolderId = window.parent.document.querySelector("#protocolsIoChooserDlgIframe").dataset.parentid;
 				$.ajax({
-					url: '/importer/generic/protocols_io', dataType: 'json',
+					url: `/importer/generic/protocols_io/${targetFolderId}`, dataType: 'json',
 					"data": JSON.stringify(pio_results), type: "POST", contentType: "application/json;"
 				})
 					.done(function (response) {

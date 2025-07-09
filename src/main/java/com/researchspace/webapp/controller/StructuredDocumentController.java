@@ -71,8 +71,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpSession;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
@@ -117,7 +119,7 @@ public class StructuredDocumentController extends BaseController {
   private @Autowired RecordEditorTracker tracker;
   private @Autowired DocumentHTMLPreviewHandler htmlGenerator;
   private @Autowired SystemPropertyPermissionManager systemPropertyMgr;
-  private @Autowired SharingHandler recordShareHandler;
+  private @Autowired @Setter(value = AccessLevel.PROTECTED) SharingHandler recordShareHandler;
 
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
   @Autowired private DocumentTagManager documentTagManager;
@@ -211,9 +213,8 @@ public class StructuredDocumentController extends BaseController {
         return new AjaxReturnObject<List<RecordInformation>>(null, el);
       }
     }
-
-    Folder parent = folderManager.getFolder(parentFolderId, user);
-    assertAuthorisation(user, parent, PermissionType.READ);
+    Folder originalParentFolder = folderManager.getFolder(parentFolderId, user);
+    assertAuthorisation(user, originalParentFolder, PermissionType.READ);
     List<RecordInformation> rc = new ArrayList<>();
     ProgressMonitor progress =
         new ProgressMonitorImpl(mswordOrEvernoteFile.size() * 10, "File import progress");
@@ -234,7 +235,12 @@ public class StructuredDocumentController extends BaseController {
           createdOrUpdated =
               importer
                   .get()
-                  .create(mf.getInputStream(), user, parent, null, mf.getOriginalFilename());
+                  .create(
+                      mf.getInputStream(),
+                      user,
+                      originalParentFolder,
+                      null,
+                      mf.getOriginalFilename());
         } else {
           createdOrUpdated =
               importer
@@ -243,6 +249,11 @@ public class StructuredDocumentController extends BaseController {
         }
         if (createdOrUpdated != null) {
           rc.add(createdOrUpdated.toRecordInfo());
+          if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+              user, originalParentFolder)) {
+            recordShareHandler.shareIntoSharedFolderOrNotebook(
+                user, originalParentFolder, createdOrUpdated.getId());
+          }
           publisher.publishEvent(createGenericEvent(user, createdOrUpdated, AuditAction.CREATE));
         } else {
           String error =
@@ -309,7 +320,7 @@ public class StructuredDocumentController extends BaseController {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Form", formid));
       }
       Folder originalParentFolder = folderManager.getFolder(parentRecordId, user);
-      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
           user, originalParentFolder)) {
         sharedWithGroup =
             recordShareHandler.shareIntoSharedFolderOrNotebook(
