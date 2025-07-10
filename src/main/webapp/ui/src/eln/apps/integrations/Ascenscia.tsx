@@ -77,40 +77,6 @@ function Ascenscia({
     }
   };
 
-  // Handler for form submission
-  const handleRefresh = async () => {
-    try {
-      const response = await fetch("/apps/ascenscia/token/refresh", {
-        method: "GET",
-      });
-      if (response.ok) {
-        addAlert(
-          mkAlert({
-            variant: "success",
-            message: "Successfully saved Ascenscia api key",
-          })
-        );
-      } else {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Unable to save Ascenscia API key",
-            message: await response.text(),
-          }),
-        );
-      }
-    } catch (e) {
-      if (e instanceof Error)
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Unable to save Ascenscia API key",
-            message: e.message,
-          })
-        );
-    }
-  };
-
   const showToken = async () => {
     try {
       const response = await fetch("/integration/integrationInfo?name=ASCENSCIA", {
@@ -132,7 +98,7 @@ function Ascenscia({
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Unable to save Ascenscia API key",
+            title: "Unable to show token",
             message: await response.text(),
           }),
         );
@@ -142,7 +108,7 @@ function Ascenscia({
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Unable to save Ascenscia API key",
+            title: "Unable to show token",
             message: e.message,
           })
         );
@@ -228,7 +194,6 @@ function Ascenscia({
                     </CardContent>
                     <CardActions>
                       <Button type="submit">Save</Button>
-                      <Button onClick={handleRefresh}>Refresh Token</Button>
                       <Button onClick={showToken}>Show Token</Button>
                     </CardActions>
                   </form>

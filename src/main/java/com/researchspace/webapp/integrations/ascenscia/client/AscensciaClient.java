@@ -1,8 +1,6 @@
 package com.researchspace.webapp.integrations.ascenscia.client;
 
 import com.researchspace.model.User;
-import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.webapp.integrations.ascenscia.RefreshDTO;
 import com.researchspace.webapp.integrations.ascenscia.dto.AuthResponseDTO;
 import com.researchspace.webapp.integrations.ascenscia.dto.ConnectDTO;
 import com.researchspace.webapp.integrations.ascenscia.exception.AscensciaException;
@@ -58,44 +56,6 @@ public class AscensciaClient {
           e);
       throw new AscensciaException(
           e.getStatusCode(), "Error from Ascenscia API: " + e.getMessage(), e);
-    } catch (RestClientException e) {
-      log.error("Error connecting to Ascenscia API", e);
-      throw new AscensciaException(
-          HttpStatus.INTERNAL_SERVER_ERROR, "Error connecting to Ascenscia API", e);
-    }
-  }
-
-  public AuthResponseDTO refreshAccessToken(UserConnection connection, User user) {
-    log.info("Refreshing access token for user {} with Ascenscia", user.getUsername());
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    RefreshDTO refreshDTO =
-        new RefreshDTO(
-            connection.getRefreshToken(), user.getUsername(), connection.getId().getProviderId());
-    HttpEntity<RefreshDTO> requestEntity = new HttpEntity<>(refreshDTO, headers);
-
-    try {
-      ResponseEntity<AuthResponseDTO> response =
-          restTemplate.postForEntity(
-              ASCENSCIA_BASE_URL + "refresh", requestEntity, AuthResponseDTO.class);
-
-      if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-        return response.getBody();
-      } else {
-        throw new AscensciaException(
-            response.getStatusCode(),
-            "Error refreshing token with Ascenscia API: "
-                + response.getStatusCode().getReasonPhrase());
-      }
-    } catch (HttpClientErrorException e) {
-      log.error(
-          "HTTP error connecting to Ascenscia API: {} - {}",
-          e.getStatusCode(),
-          e.getStatusText(),
-          e);
-      throw new AscensciaException(
-          e.getStatusCode(), "Error from Ascenscia API: " + e.getStatusText(), e);
     } catch (RestClientException e) {
       log.error("Error connecting to Ascenscia API", e);
       throw new AscensciaException(

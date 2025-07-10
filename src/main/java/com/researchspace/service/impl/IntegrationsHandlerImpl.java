@@ -416,11 +416,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         saveNewUserConnectionForSingleOptionApp(
             propertyHolder.getJoveApiKey(), user, JOVE_APP_NAME);
         break;
-      case ASCENSCIA_APP_NAME:
-        //        saveNewUserConnectionForSingleOptionApp(
-        //            newInfo.getOptions().get(ASCENSCIA_USER_TOKEN).toString(), user,
-        // ASCENSCIA_APP_NAME);
-        break;
       default:
         break;
     }
