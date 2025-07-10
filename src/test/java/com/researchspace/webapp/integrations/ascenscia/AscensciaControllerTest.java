@@ -87,7 +87,7 @@ public class AscensciaControllerTest {
               ascensciaController.connect(connectDTO);
             });
 
-    assertEquals("Invalid credentials", exception.getMessage());
+    assertEquals("401 UNAUTHORIZED", exception.getMessage());
   }
 
   @Test
@@ -102,7 +102,7 @@ public class AscensciaControllerTest {
               ascensciaController.connect(connectDTO);
             });
 
-    assertEquals("400 BAD_REQUEST Bad request", exception.getMessage());
+    assertEquals("400 Bad request", exception.getMessage());
   }
 
   @Test
@@ -117,6 +117,6 @@ public class AscensciaControllerTest {
               ascensciaController.connect(connectDTO);
             });
 
-    assertEquals("An error occurred while connecting to Ascenscia", exception.getMessage());
+    assertEquals("Unexpected error", exception.getMessage());
   }
 }

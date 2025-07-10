@@ -10,16 +10,19 @@ import com.researchspace.webapp.controller.BaseController;
 import com.researchspace.webapp.integrations.ascenscia.client.AscensciaClient;
 import com.researchspace.webapp.integrations.ascenscia.dto.AuthResponseDTO;
 import com.researchspace.webapp.integrations.ascenscia.dto.ConnectDTO;
+import com.researchspace.webapp.integrations.ascenscia.exception.AscensciaConnectionNotFoundException;
+import com.researchspace.webapp.integrations.ascenscia.exception.AscensciaException;
+import com.researchspace.webapp.integrations.ascenscia.exception.AscensciaExceptionHandler;
 import java.util.Optional;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.client.HttpClientErrorException;
 
 @Slf4j
 @Controller
@@ -30,61 +33,50 @@ public class AscensciaController extends BaseController {
 
   private final UserConnectionManager userConnectionManager;
 
+  private final AscensciaExceptionHandler exceptionHandler = new AscensciaExceptionHandler();
+
   public AscensciaController(
       AscensciaClient ascensciaClient, UserConnectionManager userConnectionManager) {
     this.ascensciaClient = ascensciaClient;
     this.userConnectionManager = userConnectionManager;
   }
 
+  @ExceptionHandler(AscensciaException.class)
+  public ResponseEntity<String> handleAscensciaException(AscensciaException e) {
+    return exceptionHandler.handle(e);
+  }
+
   @PostMapping("/connect")
   public @ResponseBody AuthResponseDTO connect(@Valid ConnectDTO connectDTO) {
     User subject = userManager.getAuthenticatedUserInSession();
 
-    try {
-      AuthResponseDTO authResponse = ascensciaClient.authenticate(connectDTO, subject);
+    AuthResponseDTO authResponse = ascensciaClient.authenticate(connectDTO, subject);
 
-      String token = authResponse.getAccessToken();
+    // should only be 1 active connection per user and provider so delete any existing
+    userConnectionManager.deleteByUserAndProvider(ASCENSCIA_APP_NAME, subject.getUsername());
 
-      UserConnection connection = new UserConnection();
-      connection.setId(
-          new UserConnectionId(
-              subject.getUsername(), ASCENSCIA_APP_NAME, connectDTO.getUsername()));
-      connection.setAccessToken(token);
-      connection.setRefreshToken(authResponse.getRefreshToken());
-      connection.setDisplayName("Ascenscia token");
-      userConnectionManager.save(connection);
+    UserConnection newUserConnection = new UserConnection();
+    newUserConnection.setId(
+        new UserConnectionId(subject.getUsername(), ASCENSCIA_APP_NAME, connectDTO.getUsername()));
+    newUserConnection.setAccessToken(authResponse.getAccessToken());
+    newUserConnection.setRefreshToken(authResponse.getRefreshToken());
+    newUserConnection.setDisplayName("Ascenscia token");
+    userConnectionManager.save(newUserConnection);
 
-      return authResponse;
-
-    } catch (HttpClientErrorException e) {
-      if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
-        throw new RuntimeException("Invalid credentials");
-      } else {
-        throw new RuntimeException(e.getStatusCode() + " " + e.getStatusText());
-      }
-    } catch (Exception e) {
-      log.error("Error connecting to Ascenscia", e);
-      throw new RuntimeException("An error occurred while connecting to Ascenscia", e);
-    }
+    return authResponse;
   }
 
-  @GetMapping("/refreshToken")
+  @GetMapping("/token/refresh")
   public @ResponseBody AuthResponseDTO refreshAccessCredentials() {
     User user = userManager.getAuthenticatedUserInSession();
     Optional<UserConnection> connection =
-        userConnectionManager.findByUserNameProviderName(
-            ASCENSCIA_APP_NAME, user.getUsername(), user.getUsername());
+        userConnectionManager.findByUserNameProviderName(user.getUsername(), ASCENSCIA_APP_NAME);
 
     if (connection.isEmpty()) {
-      throw new IllegalStateException(
+      throw new AscensciaConnectionNotFoundException(
           "No Ascenscia connection found for user " + user.getUsername());
     }
 
-    try {
-      return ascensciaClient.refreshAccessToken(connection.get(), user);
-    } catch (HttpClientErrorException e) {
-      log.error("Error refreshing Ascenscia access token", e);
-      throw new RuntimeException("Failed to refresh access token: " + e.getMessage(), e);
-    }
+    return ascensciaClient.refreshAccessToken(connection.get(), user);
   }
 }

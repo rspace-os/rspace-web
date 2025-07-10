@@ -1,5 +1,5 @@
 import Grid from "@mui/material/Grid";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import TextField from "@mui/material/TextField";
@@ -11,6 +11,8 @@ import AscensciaIcon from "../../../assets/branding/ascenscia/logo.svg";
 import { observer } from "mobx-react-lite";
 import { LOGO_COLOR } from "../../../assets/branding/ascenscia";
 import { Optional } from "../../../util/optional";
+import { mkAlert } from "@/stores/contexts/Alert";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 type AscensciaArgs = {
   integrationState: IntegrationStates["ASCENSCIA"];
@@ -25,12 +27,128 @@ function Ascenscia({
   integrationState,
   update,
 }: AscensciaArgs): React.ReactNode {
-  const [apiKey, setApiKey] = useState(
-    integrationState.credentials.ASCENSCIA_USER_TOKEN.orElse("")
-  );
+  const [apiKey, setApiKey] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [organization, setOrganization] = useState("");
+  // Add a ref for the form
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const { addAlert } = useContext(AlertContext);
+
+  // Handler for form submission
+  const handleConnect = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    try {
+      const response = await fetch("/apps/ascenscia/connect", {
+        method: "POST",
+        body: formData,
+      });
+      if (response.ok) {
+        update({
+          mode: integrationState.mode,
+          credentials: integrationState.credentials,
+        });
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: "Successfully saved Ascenscia api key",
+          })
+        );
+      } else {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Unable to save Ascenscia API key",
+            message: await response.text(),
+          }),
+        );
+      }
+    } catch (e) {
+      if (e instanceof Error)
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Unable to save Ascenscia API key",
+            message: e.message,
+          })
+        );
+    }
+  };
+
+  // Handler for form submission
+  const handleRefresh = async () => {
+    try {
+      const response = await fetch("/apps/ascenscia/token/refresh", {
+        method: "GET",
+      });
+      if (response.ok) {
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: "Successfully saved Ascenscia api key",
+          })
+        );
+      } else {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Unable to save Ascenscia API key",
+            message: await response.text(),
+          }),
+        );
+      }
+    } catch (e) {
+      if (e instanceof Error)
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Unable to save Ascenscia API key",
+            message: e.message,
+          })
+        );
+    }
+  };
+
+  const showToken = async () => {
+    try {
+      const response = await fetch("/integration/integrationInfo?name=ASCENSCIA", {
+        method: "GET",
+      });
+      if (response.ok) {
+        
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message:
+              "Token is: " +
+              (await response
+                .json()
+                .then(data => data.data.options.ASCENSCIA_USER_TOKEN))
+          }),
+        );
+      } else {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Unable to save Ascenscia API key",
+            message: await response.text(),
+          }),
+        );
+      }
+    } catch (e) {
+      if (e instanceof Error)
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Unable to save Ascenscia API key",
+            message: e.message,
+          })
+        );
+    }
+  };
+
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -43,6 +161,12 @@ function Ascenscia({
         helpLinkText="Ascenscia integration docs"
         website="ascenscia.ai"
         docLink="ascenscia"
+        update={(newMode) => {
+          update({
+            mode: newMode,
+            credentials: {},
+          });
+        }}
         setupSection={
           <>
             <ol>
@@ -53,7 +177,9 @@ function Ascenscia({
             <Grid container direction="column" spacing={1} sx={{ mt: 2 }}>
               <Grid item>
                 <Card variant="outlined">
-                  <form action="/apps/ascenscia/connect" method="POST">
+                  <form
+                    onSubmit={handleConnect}
+                  >
                     <CardContent>
                       <Grid container direction="column" spacing={2}>
                         <Grid item>
@@ -98,24 +224,12 @@ function Ascenscia({
                             }}
                           />
                         </Grid>
-                        <Grid item>
-                          <TextField
-                            fullWidth
-                            variant="outlined"
-                            label="API Key"
-                            type="text"
-                            size="small"
-                            value={apiKey}
-                            disabled
-                            onChange={({ target: { value } }) => {
-                              setApiKey(value);
-                            }}
-                          />
-                        </Grid>
                       </Grid>
                     </CardContent>
                     <CardActions>
                       <Button type="submit">Save</Button>
+                      <Button onClick={handleRefresh}>Refresh Token</Button>
+                      <Button onClick={showToken}>Show Token</Button>
                     </CardActions>
                   </form>
                 </Card>
@@ -123,12 +237,6 @@ function Ascenscia({
             </Grid>
           </>
         }
-        update={(newMode) => {
-          update({
-            mode: newMode,
-            credentials: integrationState.credentials,
-          });
-        }}
       />
     </Grid>
   );

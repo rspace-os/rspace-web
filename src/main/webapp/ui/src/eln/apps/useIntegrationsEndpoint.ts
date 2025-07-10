@@ -61,9 +61,7 @@ export type IntegrationState<Credentials> = {
 export type IntegrationStates = {
   API_DIRECT: IntegrationState<null>;
   ARGOS: IntegrationState<emptyObject>;
-  ASCENSCIA: IntegrationState<{
-    ASCENSCIA_USER_TOKEN: Optional<string>;
-  }>;
+  ASCENSCIA: IntegrationState<emptyObject>;
   BOX: IntegrationState<{
     BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">;
     "box.api.enabled": Optional<boolean>;
@@ -234,12 +232,7 @@ function decodeArgos(data: FetchedState): IntegrationStates["ARGOS"] {
 function decodeAscenscia(data: FetchedState): IntegrationStates["ASCENSCIA"] {
   return {
     mode: parseState(data),
-    credentials: {
-      ASCENSCIA_USER_TOKEN: parseCredentialString(
-        data.options,
-        "ASCENSCIA_USER_TOKEN"
-      ),
-    },
+    credentials: {}
   };
 }
 function decodeBox(data: FetchedState): IntegrationStates["BOX"] {
@@ -727,13 +720,7 @@ const encodeIntegrationState = <I extends Integration>(
       name: "ASCENSCIA",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      options: {
-        ...creds.ASCENSCIA_USER_TOKEN.map((token) => ({
-          ASCENSCIA_USER_TOKEN: token,
-        })).orElse({
-          ASCENSCIA_USER_TOKEN: "",
-        }),
-      },
+      options: {},
     };
   }
   if (integration === "BOX") {

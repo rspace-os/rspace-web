@@ -11,6 +11,7 @@ import com.researchspace.model.User;
 import com.researchspace.webapp.integrations.ascenscia.client.AscensciaClient;
 import com.researchspace.webapp.integrations.ascenscia.dto.AuthResponseDTO;
 import com.researchspace.webapp.integrations.ascenscia.dto.ConnectDTO;
+import com.researchspace.webapp.integrations.ascenscia.exception.AscensciaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -72,8 +72,7 @@ public class AscensciaClientTest {
     when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(AuthResponseDTO.class)))
         .thenReturn(new ResponseEntity<>(null, errorStatus));
 
-    assertThrows(
-        HttpClientErrorException.class, () -> ascensciaClient.authenticate(connectDTO, user));
+    assertThrows(AscensciaException.class, () -> ascensciaClient.authenticate(connectDTO, user));
   }
 
   @Test
@@ -81,11 +80,11 @@ public class AscensciaClientTest {
     when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(AuthResponseDTO.class)))
         .thenThrow(new RestClientException("Connection error"));
 
-    HttpClientErrorException exception =
+    AscensciaException exception =
         assertThrows(
-            HttpClientErrorException.class, () -> ascensciaClient.authenticate(connectDTO, user));
+            AscensciaException.class, () -> ascensciaClient.authenticate(connectDTO, user));
 
-    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
-    assertEquals("500 Error connecting to Ascenscia API", exception.getMessage());
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatus());
+    assertEquals("Error connecting to Ascenscia API", exception.getMessage());
   }
 }

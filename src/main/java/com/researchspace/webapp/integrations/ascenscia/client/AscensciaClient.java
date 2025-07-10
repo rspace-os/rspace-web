@@ -5,6 +5,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.webapp.integrations.ascenscia.RefreshDTO;
 import com.researchspace.webapp.integrations.ascenscia.dto.AuthResponseDTO;
 import com.researchspace.webapp.integrations.ascenscia.dto.ConnectDTO;
+import com.researchspace.webapp.integrations.ascenscia.exception.AscensciaException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -44,13 +45,23 @@ public class AscensciaClient {
       if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
         return response.getBody();
       } else {
-        throw new HttpClientErrorException(
-            response.getStatusCode(), "Error authenticating with Ascenscia API");
+        throw new AscensciaException(
+            response.getStatusCode(),
+            "Error authenticating with Ascenscia API: "
+                + response.getStatusCode().getReasonPhrase());
       }
+    } catch (HttpClientErrorException e) {
+      log.error(
+          "HTTP error connecting to Ascenscia API: {} - {}",
+          e.getStatusCode(),
+          e.getStatusText(),
+          e);
+      throw new AscensciaException(
+          e.getStatusCode(), "Error from Ascenscia API: " + e.getMessage(), e);
     } catch (RestClientException e) {
       log.error("Error connecting to Ascenscia API", e);
-      throw new HttpClientErrorException(
-          HttpStatus.INTERNAL_SERVER_ERROR, "Error connecting to Ascenscia API");
+      throw new AscensciaException(
+          HttpStatus.INTERNAL_SERVER_ERROR, "Error connecting to Ascenscia API", e);
     }
   }
 
@@ -65,17 +76,30 @@ public class AscensciaClient {
     HttpEntity<RefreshDTO> requestEntity = new HttpEntity<>(refreshDTO, headers);
 
     try {
-      return restTemplate
-          .postForEntity(ASCENSCIA_BASE_URL + "refresh", requestEntity, AuthResponseDTO.class)
-          .getBody();
-      // Simulating a successful response for demonstration purposes
-      //        AuthResponseDTO mockResponse = new AuthResponseDTO();
-      //        mockResponse.setAccessToken("mock-jwt-token");
-      //        return new ResponseEntity<>(mockResponse, HttpStatus.OK);
+      ResponseEntity<AuthResponseDTO> response =
+          restTemplate.postForEntity(
+              ASCENSCIA_BASE_URL + "refresh", requestEntity, AuthResponseDTO.class);
+
+      if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+        return response.getBody();
+      } else {
+        throw new AscensciaException(
+            response.getStatusCode(),
+            "Error refreshing token with Ascenscia API: "
+                + response.getStatusCode().getReasonPhrase());
+      }
+    } catch (HttpClientErrorException e) {
+      log.error(
+          "HTTP error connecting to Ascenscia API: {} - {}",
+          e.getStatusCode(),
+          e.getStatusText(),
+          e);
+      throw new AscensciaException(
+          e.getStatusCode(), "Error from Ascenscia API: " + e.getStatusText(), e);
     } catch (RestClientException e) {
       log.error("Error connecting to Ascenscia API", e);
-      throw new HttpClientErrorException(
-          HttpStatus.INTERNAL_SERVER_ERROR, "Error connecting to Ascenscia API");
+      throw new AscensciaException(
+          HttpStatus.INTERNAL_SERVER_ERROR, "Error connecting to Ascenscia API", e);
     }
   }
 }
