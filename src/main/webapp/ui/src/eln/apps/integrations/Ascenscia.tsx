@@ -10,8 +10,6 @@ import Button from "@mui/material/Button";
 import AscensciaIcon from "../../../assets/branding/ascenscia/logo.svg";
 import { observer } from "mobx-react-lite";
 import { LOGO_COLOR } from "../../../assets/branding/ascenscia";
-import { Optional } from "../../../util/optional";
-import { mkAlert } from "@/stores/contexts/Alert";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 type AscensciaArgs = {
@@ -31,11 +29,9 @@ function Ascenscia({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [organization, setOrganization] = useState("");
-  // Add a ref for the form
-  const formRef = React.useRef<HTMLFormElement>(null);
+
   const { addAlert } = useContext(AlertContext);
 
-  // Handler for form submission
   const handleConnect = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
