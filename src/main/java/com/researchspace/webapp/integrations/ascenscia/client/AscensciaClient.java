@@ -7,12 +7,10 @@ import com.researchspace.webapp.integrations.ascenscia.exception.AscensciaExcept
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
@@ -50,16 +48,9 @@ public class AscensciaClient {
       }
     } catch (HttpClientErrorException e) {
       log.error(
-          "HTTP error connecting to Ascenscia API: {} - {}",
-          e.getStatusCode(),
-          e.getStatusText(),
-          e);
+          "HTTP error connecting to Ascenscia API: {} - {}", e.getStatusCode(), e.getMessage(), e);
       throw new AscensciaException(
-          e.getStatusCode(), "Error from Ascenscia API: " + e.getMessage(), e);
-    } catch (RestClientException e) {
-      log.error("Error connecting to Ascenscia API", e);
-      throw new AscensciaException(
-          HttpStatus.INTERNAL_SERVER_ERROR, "Error connecting to Ascenscia API", e);
+          e.getStatusCode(), "Error from Ascenscia API: " + e.getMessage());
     }
   }
 }
