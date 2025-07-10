@@ -9,7 +9,7 @@ import { SimplePageWithAppBar } from "./index.story";
 const feature = test.extend<{
   Given: {
     "the app bar is being shown": (
-      props?: React.ComponentProps<typeof SimplePageWithAppBar>
+      props?: React.ComponentProps<typeof SimplePageWithAppBar>,
     ) => Promise<void>;
   };
   Once: {};
@@ -20,6 +20,7 @@ const feature = test.extend<{
     "a visually hidden heading with {title} should be shown": (props: {
       title: string;
     }) => Promise<void>;
+    "a visually hidden heading should not be shown": () => Promise<void>;
     "a dialog heading with {title} should be shown": (props: {
       title: string;
     }) => Promise<void>;
@@ -38,7 +39,7 @@ const feature = test.extend<{
     await use({
       "the app bar is being shown": async (props) => {
         const mountResult: MountResult = await mount(
-          <SimplePageWithAppBar {...props} />
+          <SimplePageWithAppBar {...props} />,
         );
         expect(mountResult).toBeDefined();
       },
@@ -83,12 +84,12 @@ const feature = test.extend<{
       },
       "the Inventory link should be hidden": async () => {
         await expect(
-          page.getByRole("link", { name: /inventory/i })
+          page.getByRole("link", { name: /inventory/i }),
         ).not.toBeVisible();
       },
       "the System link should be hidden": async () => {
         await expect(
-          page.getByRole("link", { name: /system/i })
+          page.getByRole("link", { name: /system/i }),
         ).not.toBeVisible();
       },
       "the Published menuitem should be hidden": async () => {
@@ -97,7 +98,7 @@ const feature = test.extend<{
         });
         await accontMenuButton.click();
         await expect(
-          page.getByRole("menuitem", { name: /published/i })
+          page.getByRole("menuitem", { name: /published/i }),
         ).not.toBeVisible();
       },
       "the MyRSpace link should point to /groups/viewPIGroup": async () => {
@@ -106,7 +107,7 @@ const feature = test.extend<{
         });
         await expect(myRSpaceLink).toHaveAttribute(
           "href",
-          "/groups/viewPIGroup"
+          "/groups/viewPIGroup",
         );
       },
       "the MyRSpace link should point to /userform": async () => {
@@ -129,7 +130,7 @@ const feature = test.extend<{
           });
           await expect(helpMenuButton).toBeVisible();
           const helpMenuButtonHandle = await helpMenuButton.evaluateHandle(
-            (x) => Promise.resolve(x)
+            (x) => Promise.resolve(x),
           );
 
           const orderResults = await page.evaluate(
@@ -139,7 +140,7 @@ const feature = test.extend<{
               }
               const accountBeforeHelp = Boolean(
                 accountButton.compareDocumentPosition(helpButton) &
-                  Node.DOCUMENT_POSITION_FOLLOWING
+                  Node.DOCUMENT_POSITION_FOLLOWING,
               );
               return {
                 accountBeforeHelp,
@@ -148,7 +149,7 @@ const feature = test.extend<{
             {
               accountButton: accountMenuButtonHandle,
               helpButton: helpMenuButtonHandle,
-            }
+            },
           );
 
           if ("error" in orderResults) {
@@ -157,7 +158,7 @@ const feature = test.extend<{
 
           expect(
             orderResults.accountBeforeHelp,
-            "Account button should be before Help button"
+            "Account button should be before Help button",
           ).toBe(true);
         },
       "the icon menu buttons should be in the order: accessibility tips, then help":
@@ -168,7 +169,7 @@ const feature = test.extend<{
           await expect(accessibilityTipsButton).toBeVisible();
           const accessibilityTipsButtonHandle =
             await accessibilityTipsButton.evaluateHandle((x) =>
-              Promise.resolve(x)
+              Promise.resolve(x),
             );
 
           const helpMenuButton = page.getByRole("button", {
@@ -176,7 +177,7 @@ const feature = test.extend<{
           });
           await expect(helpMenuButton).toBeVisible();
           const helpMenuButtonHandle = await helpMenuButton.evaluateHandle(
-            (x) => Promise.resolve(x)
+            (x) => Promise.resolve(x),
           );
 
           const orderResults = await page.evaluate(
@@ -186,8 +187,8 @@ const feature = test.extend<{
               }
               const accessibilityTipsBeforeHelp = Boolean(
                 accessibilityTipsButtonDomNode.compareDocumentPosition(
-                  helpButtonDomNode
-                ) & Node.DOCUMENT_POSITION_FOLLOWING
+                  helpButtonDomNode,
+                ) & Node.DOCUMENT_POSITION_FOLLOWING,
               );
               return {
                 accessibilityTipsBeforeHelp,
@@ -196,7 +197,7 @@ const feature = test.extend<{
             {
               accessibilityTipsButtonDomNode: accessibilityTipsButtonHandle,
               helpButtonDomNode: helpMenuButtonHandle,
-            }
+            },
           );
 
           if ("error" in orderResults) {
@@ -205,9 +206,12 @@ const feature = test.extend<{
 
           expect(
             orderResults.accessibilityTipsBeforeHelp,
-            "Accessibility Tips button should be before Help button"
+            "Accessibility Tips button should be before Help button",
           ).toBe(true);
         },
+      "a visually hidden heading should not be shown": async () => {
+        await expect(page.getByRole("heading", { level: 1 })).toHaveCount(0);
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -270,22 +274,86 @@ feature.beforeEach(async ({ router }) => {
 feature.afterEach(({}) => {});
 
 test.describe("App Bar", () => {
-  feature(
-    "On page variant, the heading is only exposed to screen readers",
-    async ({ Given, Then }) => {
-      await Given["the app bar is being shown"]({
-        variant: "page",
-        currentPage: "Test Page",
-      });
-      await Then["a visually hidden heading with {title} should be shown"]({
-        title: "Test Page",
-      });
-      /*
-       * The app bar should have a visually hidden heading that is accessible to
-       * screen readers when we don't show the heading to all users.
-       */
-    }
-  );
+  test.describe("Hidden heading", () => {
+    /*
+     * The app bar should have a visually hidden heading that is accessible to
+     * screen readers when we don't show the heading to all users.
+     */
+    feature(
+      "On Workspace, a hidden heading should be shown",
+      async ({ Given, Then }) => {
+        await Given["the app bar is being shown"]({
+          variant: "page",
+          currentPage: "Workspace",
+        });
+        await Then["a visually hidden heading with {title} should be shown"]({
+          title: "Workspace",
+        });
+      },
+    );
+    feature(
+      "On Inventory, a hidden heading should be shown",
+      async ({ Given, Then }) => {
+        await Given["the app bar is being shown"]({
+          variant: "page",
+          currentPage: "Inventory",
+        });
+        await Then["a visually hidden heading with {title} should be shown"]({
+          title: "Inventory",
+        });
+      },
+    );
+    feature(
+      "On Gallery, a hidden heading should be shown",
+      async ({ Given, Then }) => {
+        await Given["the app bar is being shown"]({
+          variant: "page",
+          currentPage: "Gallery",
+        });
+        await Then["a visually hidden heading with {title} should be shown"]({
+          title: "Gallery",
+        });
+      },
+    );
+    feature(
+      "On System, a hidden heading should be shown",
+      async ({ Given, Then }) => {
+        await Given["the app bar is being shown"]({
+          variant: "page",
+          currentPage: "System",
+        });
+        await Then["a visually hidden heading with {title} should be shown"]({
+          title: "System",
+        });
+      },
+    );
+    feature(
+      "On My RSpace, a hidden heading should be shown",
+      async ({ Given, Then }) => {
+        await Given["the app bar is being shown"]({
+          variant: "page",
+          currentPage: "My RSpace",
+        });
+        await Then["a visually hidden heading with {title} should be shown"]({
+          title: "My RSpace",
+        });
+      },
+    );
+    feature(
+      "On any other page, a hidden heading should not be shown",
+      async ({ Given, Then }) => {
+        await Given["the app bar is being shown"]({
+          variant: "page",
+          currentPage: "Test Page",
+        });
+        await Then["a visually hidden heading should not be shown"]();
+        /*
+         * The app bar should have a visually hidden heading that is accessible to
+         * screen readers when we don't show the heading to all users.
+         */
+      },
+    );
+  });
   feature(
     "On dialog variant, the heading is always shown",
     async ({ Given, Then }) => {
@@ -296,7 +364,7 @@ test.describe("App Bar", () => {
       await Then["a dialog heading with {title} should be shown"]({
         title: "Test Page",
       });
-    }
+    },
   );
 
   feature(
@@ -308,7 +376,7 @@ test.describe("App Bar", () => {
       });
       await When["the user clicks the avatar"]();
       await Then["the profile and logout options should be visible"]();
-    }
+    },
   );
 
   /*
@@ -348,7 +416,7 @@ test.describe("App Bar", () => {
                 nextMaintenance: null,
               }),
             });
-          }
+          },
         );
         await Given["the app bar is being shown"]({
           variant: "page",
@@ -357,7 +425,7 @@ test.describe("App Bar", () => {
         /*
          * This is when the sysadmin has disallowed Inventory entirely.
          */
-      }
+      },
     );
     feature(
       "When visibleTabs.myLabGroups is true, the link should point to /groups/viewPIGroup",
@@ -389,7 +457,7 @@ test.describe("App Bar", () => {
                 nextMaintenance: null,
               }),
             });
-          }
+          },
         );
         await Given["the app bar is being shown"]({
           variant: "page",
@@ -400,7 +468,7 @@ test.describe("App Bar", () => {
          * user is the PI, which is more helpful to them than their personal
          * page.
          */
-      }
+      },
     );
     feature(
       "When visibleTabs.myLabGroups is false, the link should point to /userform",
@@ -432,7 +500,7 @@ test.describe("App Bar", () => {
                 nextMaintenance: null,
               }),
             });
-          }
+          },
         );
         await Given["the app bar is being shown"]({
           variant: "page",
@@ -442,7 +510,7 @@ test.describe("App Bar", () => {
          * For non-PIs, the MyRSpace link points to their account page,
          * which is more helpful to them than the group page.
          */
-      }
+      },
     );
     feature(
       "When visibleTabs.system is false, the link should be hidden",
@@ -474,7 +542,7 @@ test.describe("App Bar", () => {
                 nextMaintenance: null,
               }),
             });
-          }
+          },
         );
         await Given["the app bar is being shown"]({
           variant: "page",
@@ -485,7 +553,7 @@ test.describe("App Bar", () => {
          * does not have the permissions to view it, it should not be
          * shown.
          */
-      }
+      },
     );
     feature(
       "When visibleTabs.published is false, the menuitem should be hidden",
@@ -517,7 +585,7 @@ test.describe("App Bar", () => {
                 nextMaintenance: null,
               }),
             });
-          }
+          },
         );
         await Given["the app bar is being shown"]({
           variant: "page",
@@ -528,7 +596,7 @@ test.describe("App Bar", () => {
          * sysadmin can disable for all users, so if it has not been
          * enabled then the menuitem should not be shown.
          */
-      }
+      },
     );
   });
 
@@ -547,7 +615,7 @@ test.describe("App Bar", () => {
        * in a consistent location -- the furthest right -- as having help be in
        * a consistent location across the entire product is an a11y requirement.
        */
-    }
+    },
   );
 
   feature(
@@ -565,6 +633,6 @@ test.describe("App Bar", () => {
        * in a consistent location -- the furthest right -- as having help be in
        * a consistent location across the entire product is an a11y requirement.
        */
-    }
+    },
   );
 });
