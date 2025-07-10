@@ -174,6 +174,12 @@ declare module "@mui/material/Switch" {
     tertiary: true;
   }
 }
+declare module "@mui/material/Chip" {
+  // eslint-disable-next-line no-unused-vars
+  interface ChipsPropsColorOverrides {
+    callToAction: true;
+  }
+}
 
 declare module "@mui/material/styles/createTypography" {
   interface Typography {
@@ -219,16 +225,12 @@ const baseTheme = createTheme({
       light: "rgba(51, 189, 242, 1)",
     },
     callToAction: {
-      main: hslToHex(
-        COLORS.primary.hue,
-        COLORS.primary.saturation,
-        COLORS.primary.lightness
-      ),
-      contrastText: "#fff",
-      saturated: "#009ad6",
+      main: hslToHex(207, 76, 76),
+      contrastText: "#264b58",
+      saturated: "#ff0000",
       placeholderText: "#8babcb",
-      background: "#00adef22",
-      dark: "rgba(0, 121, 167, 1)",
+      background: hslToHex(207, 76, 66),
+      dark: hslToHex(207, 76, 66),
       light: "rgba(51, 189, 242, 1)",
     },
     secondary: {
@@ -393,6 +395,11 @@ export default createTheme({
       defaultProps: {
         color: "standardIcon",
       },
+      styleOverrides: {
+        containedCallToAction: {
+          fontWeight: 700,
+        },
+      },
     },
     MuiSelect: {
       styleOverrides: {
@@ -435,6 +442,9 @@ export default createTheme({
         },
         clickable: {
           cursor: "default",
+        },
+        filledCallToAction: {
+          fontWeight: 700,
         },
       },
     },
