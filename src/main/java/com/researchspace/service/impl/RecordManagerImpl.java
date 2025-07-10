@@ -331,7 +331,7 @@ public class RecordManagerImpl implements RecordManager {
       parentFolder = folderDao.get(parentId);
     }
 
-    if (this.isSharedFolderOrSharedNotebookWithoutCreatePermssison(user, parentFolder)) {
+    if (this.isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, parentFolder)) {
       log.warn(
           "The record will be created inside the root folder since the"
               + " specified one [{}] is a shared folder",
@@ -929,8 +929,10 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   private void assertCreatePermission(User user, Folder parentFolder) {
-    if (!permissnUtils.isPermitted(parentFolder, PermissionType.CREATE, user)) {
-      throw new AuthorizationException();
+    if (!permissnUtils.isPermitted(parentFolder, PermissionType.CREATE, user)
+        && !isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, parentFolder)) {
+      throw new AuthorizationException(
+          "User is not authorized to created in this folder or notebook");
     }
   }
 
@@ -1364,7 +1366,7 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
-  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermssion(
       User user, Folder folderOrNotebook) {
     return folderOrNotebook.isSharedFolder()
         || (folderOrNotebook.isNotebook()

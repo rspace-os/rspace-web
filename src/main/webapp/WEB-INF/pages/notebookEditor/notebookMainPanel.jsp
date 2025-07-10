@@ -3,7 +3,7 @@
     <div id="createDocForm">
         <axt:importFromWord isNotebook="${isNotebook}" parentId="${selectedNotebookId}"/>
     </div>
-        <axt:importFromProtocolsIo />
+        <axt:importFromProtocolsIo parentId="${selectedNotebookId}" />
     </c:if>
     <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
     <script src="<c:url value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>

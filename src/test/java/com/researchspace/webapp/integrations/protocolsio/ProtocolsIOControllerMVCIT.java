@@ -98,13 +98,14 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
   public void testStandardUpload() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     File testFile = RSpaceTestUtils.getResource("p_io_8163.json");
+    Folder rootFolderWorkspace = folderMgr.getRootFolderForUser(anyUser);
     String p1 = readFileToString(testFile, "UTF-8");
     String p2 = readFileToString(testFile, "UTF-8");
     String protocolList = "[" + p1 + "," + p2 + "]";
     MvcResult result =
         mockMvc
             .perform(
-                post("/importer/generic/protocols_io")
+                post("/importer/generic/protocols_io/" + rootFolderWorkspace.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(protocolList))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())

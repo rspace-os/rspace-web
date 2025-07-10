@@ -138,6 +138,7 @@ function init() {
     $(this).attr("action", newurl);
   });
   $("form#wordImportForm").data("parentid", workspaceSettings.parentFolderId);
+  document.getElementById("protocolsIoChooserDlgIframe").setAttribute("data-parentid", workspaceSettings.parentFolderId);
   displayOrderIcon();
 }
 

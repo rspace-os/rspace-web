@@ -412,7 +412,7 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
-  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermssison(
+  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermssion(
       User user, Folder parentFolder) {
     return true;
   }

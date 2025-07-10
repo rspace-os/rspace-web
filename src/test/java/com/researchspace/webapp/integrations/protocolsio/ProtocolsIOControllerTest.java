@@ -1,15 +1,21 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.protocolsio.Protocol;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.RecordManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import org.junit.After;
@@ -24,16 +30,40 @@ import org.mockito.junit.MockitoRule;
 public class ProtocolsIOControllerTest {
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
-  @Mock ProtocolsIOToDocumentConverter converter;
-  @Mock UserManager userMgr;
-  @Mock FolderManager folderMgr;
-  @InjectMocks ProtocolsIOController ctrller;
-  User subject = TestFactory.createAnyUser("any");
-  Folder folder = TestFactory.createAFolder("imports", subject);
+  private @Mock ProtocolsIOToDocumentConverter converter;
+  private @Mock UserManager userMgr;
+  private @Mock FolderManager folderMgr;
+  private @Mock RecordManager recordManager;
+  private @Mock SharingHandler recordShareHandler;
+  private @Mock PermissionUtils permissionUtils;
+  private @InjectMocks ProtocolsIOController ctrller;
+  private User subject = TestFactory.createAnyUser("any");
+  private Folder workspaceRootFolder = TestFactory.createAFolder("workspaceRoot", subject);
+  private Folder importsFolder = TestFactory.createAFolder("imports", subject);
+  private Folder sharedFolder = TestFactory.createAFolder("shared", subject);
+  private Folder sharedNotebook = TestFactory.createANotebook("notebook", subject);
+  private Protocol protocol = getAProtocol();
+  private StructuredDocument anyDoc = getADocument();
 
   @Before
   public void setUp() throws Exception {
-    folder.setId(3L);
+    importsFolder.setId(3L);
+    sharedFolder.setId(1L);
+    sharedNotebook.setId(4L);
+    workspaceRootFolder.setId(5L);
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
+    when(converter.generateFromProtocol(protocol, subject, sharedFolder.getId())).thenReturn(null);
+    when(converter.generateFromProtocol(protocol, subject, workspaceRootFolder.getId()))
+        .thenReturn(null);
+    when(converter.generateFromProtocol(protocol, subject, importsFolder.getId()))
+        .thenReturn(anyDoc);
+    when(converter.generateFromProtocol(protocol, subject, sharedNotebook.getId()))
+        .thenReturn(anyDoc);
+    when(folderMgr.getImportsFolder(subject)).thenReturn(importsFolder);
+    when(folderMgr.getFolder(sharedFolder.getId(), subject)).thenReturn(sharedFolder);
+    when(folderMgr.getFolder(importsFolder.getId(), subject)).thenReturn(importsFolder);
+    when(folderMgr.getFolder(sharedNotebook.getId(), subject)).thenReturn(sharedNotebook);
+    when(folderMgr.getFolder(workspaceRootFolder.getId(), subject)).thenReturn(workspaceRootFolder);
   }
 
   @After
@@ -41,15 +71,59 @@ public class ProtocolsIOControllerTest {
 
   @Test
   public void importExternalDataOK() {
-    Protocol protocol = getAProtocol();
-    StructuredDocument anyDoc = getADocument();
-    when(converter.generateFromProtocol(protocol, subject)).thenReturn(anyDoc);
-    when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
-    when(folderMgr.getImportsFolder(subject)).thenReturn(folder);
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+            subject, workspaceRootFolder))
+        .thenReturn(false);
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(subject, importsFolder))
+        .thenReturn(false);
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
-        ctrller.importExternalData(TransformerUtils.toList(protocol));
-    assertEquals(2L, rc.getData().getResults().get(0).getId().longValue());
-    assertEquals(3L, rc.getData().getImportFolderId().longValue());
+        ctrller.importExternalData(workspaceRootFolder.getId(), TransformerUtils.toList(protocol));
+    assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
+    assertEquals(importsFolder.getId(), rc.getData().getImportFolderId());
+    verifyNoInteractions(recordShareHandler);
+  }
+
+  @Test
+  public void importExternalDataIntoASharedFolder() {
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(subject, sharedFolder))
+        .thenReturn(true);
+    AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
+        ctrller.importExternalData(sharedFolder.getId(), TransformerUtils.toList(protocol));
+    assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
+    assertEquals(importsFolder.getId(), rc.getData().getImportFolderId());
+    verify(recordShareHandler)
+        .shareIntoSharedFolderOrNotebook(subject, sharedFolder, anyDoc.getId());
+  }
+
+  @Test
+  public void importExternalData_INTO_OWNED_SharedNotebook() {
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+            subject, sharedNotebook))
+        .thenReturn(false);
+    when(permissionUtils.isPermitted(sharedNotebook, PermissionType.CREATE, subject))
+        .thenReturn(true);
+
+    AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
+        ctrller.importExternalData(sharedNotebook.getId(), TransformerUtils.toList(protocol));
+    assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
+    assertEquals(sharedNotebook.getId(), rc.getData().getImportFolderId());
+    verifyNoInteractions(recordShareHandler);
+  }
+
+  @Test
+  public void importExternalData_INTO_NOT_OWNED_SharedNotebook() {
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+            subject, sharedNotebook))
+        .thenReturn(true);
+    when(permissionUtils.isPermitted(sharedNotebook, PermissionType.CREATE, subject))
+        .thenReturn(false);
+
+    AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
+        ctrller.importExternalData(sharedNotebook.getId(), TransformerUtils.toList(protocol));
+    assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
+    assertEquals(importsFolder.getId(), rc.getData().getImportFolderId());
+    verify(recordShareHandler)
+        .shareIntoSharedFolderOrNotebook(subject, sharedNotebook, anyDoc.getId());
   }
 
   private Protocol getAProtocol() {

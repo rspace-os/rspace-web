@@ -124,7 +124,7 @@ public class ProtocolsIOConverterTest {
 
     setupmocks(protocol, aform);
     impl.document = doc;
-    assertEquals(doc, impl.generateFromProtocol(protocol, any));
+    assertEquals(doc, impl.generateFromProtocol(protocol, any, null));
     verify(publisher).publishEvent(Mockito.any(GenericEvent.class));
   }
 
@@ -145,7 +145,7 @@ public class ProtocolsIOConverterTest {
 
     setupmocks(protocol, aform);
     impl.document = doc;
-    assertEquals(doc, impl.generateFromProtocol(protocol, any));
+    assertEquals(doc, impl.generateFromProtocol(protocol, any, null));
     assertTrue(impl.updateFieldContentInvoked);
   }
 
