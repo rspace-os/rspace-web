@@ -73,44 +73,6 @@ function Ascenscia({
     }
   };
 
-  const showToken = async () => {
-    try {
-      const response = await fetch("/integration/integrationInfo?name=ASCENSCIA", {
-        method: "GET",
-      });
-      if (response.ok) {
-        
-        addAlert(
-          mkAlert({
-            variant: "success",
-            message:
-              "Token is: " +
-              (await response
-                .json()
-                .then(data => data.data.options.ASCENSCIA_USER_TOKEN))
-          }),
-        );
-      } else {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Unable to show token",
-            message: await response.text(),
-          }),
-        );
-      }
-    } catch (e) {
-      if (e instanceof Error)
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Unable to show token",
-            message: e.message,
-          })
-        );
-    }
-  };
-
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -190,7 +152,6 @@ function Ascenscia({
                     </CardContent>
                     <CardActions>
                       <Button type="submit">Save</Button>
-                      <Button onClick={showToken}>Show Token</Button>
                     </CardActions>
                   </form>
                 </Card>
