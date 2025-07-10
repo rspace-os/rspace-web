@@ -1,7 +1,6 @@
 package com.researchspace.webapp.integrations.ascenscia;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -23,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,21 +53,19 @@ public class AscensciaControllerTest {
     authResponseDTO = new AuthResponseDTO();
     authResponseDTO.setAccessToken("test-jwt-token");
 
-    // Set userManager in BaseController
     ascensciaController.setUserManager(userManager);
-
-    // Always return the user when getAuthenticatedUserInSession is called
-    when(userManager.getAuthenticatedUserInSession()).thenReturn(user);
   }
 
   @Test
   public void whenAuthenticationSuccess_thenReturnAuthResponseAndSaveToken() {
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(user);
     when(user.getUsername()).thenReturn("rspaceuser");
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class))).thenReturn(authResponseDTO);
 
-    AuthResponseDTO response = ascensciaController.connect(connectDTO);
+    ResponseEntity<?> responseEntity = ascensciaController.connect(connectDTO);
 
-    assertEquals(authResponseDTO, response);
+    assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
+    assertEquals(authResponseDTO, responseEntity.getBody());
 
     verify(userConnectionManager).save(userConnectionCaptor.capture());
     UserConnection savedConnection = userConnectionCaptor.getValue();
@@ -76,47 +74,76 @@ public class AscensciaControllerTest {
   }
 
   @Test
-  public void whenClientReturnsUnauthorized_thenThrowException() {
+  public void whenClientReturnsUnauthorized_thenReturnErrorResponse() {
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(user);
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
         .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
 
-    RuntimeException exception =
-        assertThrows(
-            RuntimeException.class,
-            () -> {
-              ascensciaController.connect(connectDTO);
-            });
+    ResponseEntity<?> responseEntity = ascensciaController.connect(connectDTO);
 
-    assertEquals("401 UNAUTHORIZED", exception.getMessage());
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
+    assertEquals("Unable to generate API key", responseEntity.getBody());
   }
 
   @Test
-  public void whenClientReturnsBadRequest_thenThrowException() {
+  public void whenClientReturnsBadRequest_thenReturnErrorResponse() {
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(user);
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
         .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad request"));
 
-    RuntimeException exception =
-        assertThrows(
-            RuntimeException.class,
-            () -> {
-              ascensciaController.connect(connectDTO);
-            });
+    ResponseEntity<?> responseEntity = ascensciaController.connect(connectDTO);
 
-    assertEquals("400 Bad request", exception.getMessage());
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
+    assertEquals("Unable to generate API key", responseEntity.getBody());
   }
 
   @Test
-  public void whenExceptionThrownByClient_thenThrowException() {
+  public void whenExceptionThrownByClient_thenReturnErrorResponse() {
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(user);
     when(ascensciaClient.authenticate(eq(connectDTO), any(User.class)))
         .thenThrow(new RuntimeException("Unexpected error"));
 
-    RuntimeException exception =
-        assertThrows(
-            RuntimeException.class,
-            () -> {
-              ascensciaController.connect(connectDTO);
-            });
+    ResponseEntity<?> responseEntity = ascensciaController.connect(connectDTO);
 
-    assertEquals("Unexpected error", exception.getMessage());
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
+    assertEquals("Unable to generate API key", responseEntity.getBody());
+  }
+
+  @Test
+  public void whenConnectDTOIsNull_thenReturnBadRequest() {
+    ResponseEntity<?> responseEntity = ascensciaController.connect(null);
+
+    assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    assertEquals("ConnectDTO must not be null", responseEntity.getBody());
+  }
+
+  @Test
+  public void whenUsernameIsEmpty_thenReturnBadRequest() {
+    connectDTO.setUsername("");
+
+    ResponseEntity<?> responseEntity = ascensciaController.connect(connectDTO);
+
+    assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    assertEquals("Username must not be empty", responseEntity.getBody());
+  }
+
+  @Test
+  public void whenPasswordIsEmpty_thenReturnBadRequest() {
+    connectDTO.setPassword("");
+
+    ResponseEntity<?> responseEntity = ascensciaController.connect(connectDTO);
+
+    assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    assertEquals("Password must not be empty", responseEntity.getBody());
+  }
+
+  @Test
+  public void whenOrganizationIsEmpty_thenReturnBadRequest() {
+    connectDTO.setOrganization("");
+
+    ResponseEntity<?> responseEntity = ascensciaController.connect(connectDTO);
+
+    assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    assertEquals("Organization must not be empty", responseEntity.getBody());
   }
 }

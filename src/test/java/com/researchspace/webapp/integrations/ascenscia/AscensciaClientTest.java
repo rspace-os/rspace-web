@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -72,7 +73,11 @@ public class AscensciaClientTest {
     when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(AuthResponseDTO.class)))
         .thenReturn(new ResponseEntity<>(null, errorStatus));
 
-    assertThrows(AscensciaException.class, () -> ascensciaClient.authenticate(connectDTO, user));
+    AscensciaException exception =
+        assertThrows(
+            AscensciaException.class, () -> ascensciaClient.authenticate(connectDTO, user));
+
+    assertEquals(errorStatus, exception.getStatus());
   }
 
   @Test
@@ -86,5 +91,31 @@ public class AscensciaClientTest {
 
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatus());
     assertEquals("Error connecting to Ascenscia API", exception.getMessage());
+  }
+
+  @Test
+  public void whenHttpClientErrorExceptionDuringAuthentication_thenThrowWithCorrectMessage() {
+    when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(AuthResponseDTO.class)))
+        .thenThrow(new HttpClientErrorException(HttpStatus.FORBIDDEN, "Access denied"));
+
+    AscensciaException exception =
+        assertThrows(
+            AscensciaException.class, () -> ascensciaClient.authenticate(connectDTO, user));
+
+    assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
+    assertEquals("Error from Ascenscia API: 403 Access denied", exception.getMessage());
+  }
+
+  @Test
+  public void whenSuccessfulResponseWithNullBody_thenThrowException() {
+    when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(AuthResponseDTO.class)))
+        .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
+
+    AscensciaException exception =
+        assertThrows(
+            AscensciaException.class, () -> ascensciaClient.authenticate(connectDTO, user));
+
+    assertEquals(HttpStatus.OK, exception.getStatus());
+    assertEquals("Error authenticating with Ascenscia API: OK", exception.getMessage());
   }
 }
