@@ -99,7 +99,9 @@ public class NotebookEditorController extends BaseController {
     }
 
     ActionPermissionsDTO permDTO = new ActionPermissionsDTO();
-    permDTO.setCreateRecord(permissionUtils.isPermitted(notebook, PermissionType.CREATE, user));
+    permDTO.setCreateRecord(
+        permissionUtils.isPermitted(notebook, PermissionType.CREATE, user)
+            || recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, notebook));
     // this is a quick fix, we need to hook into permissions system so that
     // shared notebook entries can't be deleted by PI/admin in the way that other shared content
     // can be deleted from shared folders
@@ -151,6 +153,8 @@ public class NotebookEditorController extends BaseController {
         "clientUISettingsPref", getUserPreferenceValue(user, Preference.UI_CLIENT_SETTINGS));
     model.addAttribute("workspaceFolderId", bcrumb.getParentFolderId());
     model.addAttribute("pioEnabled", isProtocolsIOEnabled(user));
+    model.addAttribute("evernoteEnabled", isEvernoteEnabled(user));
+    model.addAttribute("asposeEnabled", isAsposeEnabled());
     model.addAttribute("isPublished", notebook.isPublished());
     model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));

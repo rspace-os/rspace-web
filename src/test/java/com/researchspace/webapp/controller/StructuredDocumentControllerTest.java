@@ -54,6 +54,7 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
@@ -89,6 +90,7 @@ public class StructuredDocumentControllerTest {
 
   @Mock private UserManager userMgr;
   @Mock private RecordManager recordMgr;
+  @Mock private SharingHandler recordShareHandler;
   @Mock private DocumentTagManager documentTagManager;
   @Mock private EcatCommentManager commentMgr;
   @Mock private BaseRecordManager baseRecordMgr;
@@ -133,6 +135,7 @@ public class StructuredDocumentControllerTest {
     strucDocCtrller.setFolderManager(fMgr);
     strucDocCtrller.setdocumentTagManager(documentTagManager);
     strucDocCtrller.setInputValidator(validator);
+    strucDocCtrller.setRecordShareHandler(recordShareHandler);
 
     user = TestFactory.createAnyUser("user");
     mockPrincipal = new MockPrincipal(user.getUsername());
@@ -560,16 +563,18 @@ public class StructuredDocumentControllerTest {
   }
 
   @Test
-  public void importFromWord() throws IOException {
+  public void importFromWordIntoNonSharedFolderAndErrorCases() throws IOException {
 
     messageSource.addMessage(
         "workspace.word.import.nofiles.error.msg", Locale.getDefault(), "empty");
 
     getAuthenticatedUser();
     List<MultipartFile> files = new ArrayList<>();
+    Folder parentFolder = TestFactory.createAFolder("any", user);
+    parentFolder.setId(1L);
 
     AjaxReturnObject<List<RecordInformation>> resp =
-        strucDocCtrller.createSDFromWordFile(1L, files, null, session);
+        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     verifyWordImportNotAttempted();
     assertNull(resp.getData());
     assertNotNull(resp.getErrorMsg());
@@ -583,26 +588,62 @@ public class StructuredDocumentControllerTest {
             RSpaceTestUtils.getResourceAsByteArray("genFilesi.txt"));
     files = toList(multipart);
     StructuredDocument created = TestFactory.createAnySD();
-    created.setId(1L);
-    Folder folder = TestFactory.createAFolder("any", user);
-    when(fMgr.getFolder(1L, user)).thenReturn(folder);
-    when(permissionUtils.isRecordAccessPermitted(user, folder, PermissionType.READ))
+    created.setId(2L);
+
+    when(fMgr.getFolder(parentFolder.getId(), user)).thenReturn(parentFolder);
+    when(permissionUtils.isRecordAccessPermitted(user, parentFolder, PermissionType.READ))
         .thenReturn(TRUE);
     whenCreatingDoc(multipart).thenReturn(created);
+    when(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, parentFolder))
+        .thenReturn(false);
+
     AjaxReturnObject<List<RecordInformation>> res =
-        strucDocCtrller.createSDFromWordFile(1L, files, null, session);
+        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     verifyFileImporterCalled(multipart);
     assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
+    verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenThrow(new RuntimeException());
-    res = strucDocCtrller.createSDFromWordFile(1L, files, null, session);
+    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     assertEquals(0, res.getData().size());
     assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
+    verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenReturn(null);
-    res = strucDocCtrller.createSDFromWordFile(1L, files, null, session);
+    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     assertEquals(0, res.getData().size());
     assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
+    verifyNoInteractions(recordShareHandler);
+  }
+
+  @Test
+  public void importFromWordIntoSharedFolderOrSharedNotebook() throws IOException {
+    getAuthenticatedUser();
+    Folder parentFolder = TestFactory.createAFolder("any", user);
+    parentFolder.setId(1L);
+
+    MultipartFile multipart =
+        new MockMultipartFile(
+            "wordFile",
+            "genFilesi.txt",
+            "text/text",
+            RSpaceTestUtils.getResourceAsByteArray("genFilesi.txt"));
+    List<MultipartFile> files = toList(multipart);
+    StructuredDocument created = TestFactory.createAnySD();
+    created.setId(2L);
+
+    when(fMgr.getFolder(parentFolder.getId(), user)).thenReturn(parentFolder);
+    when(permissionUtils.isRecordAccessPermitted(user, parentFolder, PermissionType.READ))
+        .thenReturn(TRUE);
+    whenCreatingDoc(multipart).thenReturn(created);
+    when(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, parentFolder))
+        .thenReturn(true);
+
+    AjaxReturnObject<List<RecordInformation>> res =
+        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+    verifyFileImporterCalled(multipart);
+    assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
+    verify(recordShareHandler).shareIntoSharedFolderOrNotebook(user, parentFolder, created.getId());
   }
 
   private void verifyFileImporterCalled(MultipartFile multipart) throws IOException {
