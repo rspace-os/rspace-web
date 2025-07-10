@@ -11,7 +11,6 @@ import com.researchspace.webapp.integrations.ascenscia.client.AscensciaClient;
 import com.researchspace.webapp.integrations.ascenscia.dto.AuthResponseDTO;
 import com.researchspace.webapp.integrations.ascenscia.dto.ConnectDTO;
 import com.researchspace.webapp.integrations.ascenscia.exception.AscensciaException;
-import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,10 +34,10 @@ public class AscensciaController extends BaseController {
   }
 
   @PostMapping("/connect")
-  public ResponseEntity<?> connect(@Valid ConnectDTO connectDTO) {
-    User subject = userManager.getAuthenticatedUserInSession();
-
+  public ResponseEntity<?> connect(ConnectDTO connectDTO) {
     try {
+      validateParams(connectDTO);
+      User subject = userManager.getAuthenticatedUserInSession();
       AuthResponseDTO authResponse = ascensciaClient.authenticate(connectDTO, subject);
 
       saveToken(connectDTO.getUsername(), subject, authResponse);
@@ -50,6 +49,21 @@ public class AscensciaController extends BaseController {
     } catch (Exception e) {
       log.error("Error connecting to Ascenscia: {}", e.getMessage(), e);
       return new ResponseEntity<>("Unable to generate API key", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private void validateParams(ConnectDTO connectDTO) {
+    if (connectDTO == null) {
+      throw new AscensciaException(HttpStatus.BAD_REQUEST, "ConnectDTO must not be null");
+    }
+    if (connectDTO.getUsername().isBlank()) {
+      throw new AscensciaException(HttpStatus.BAD_REQUEST, "Username must not be empty");
+    }
+    if (connectDTO.getPassword().isBlank()) {
+      throw new AscensciaException(HttpStatus.BAD_REQUEST, "Password must not be empty");
+    }
+    if (connectDTO.getOrganization().isBlank()) {
+      throw new AscensciaException(HttpStatus.BAD_REQUEST, "Organization must not be empty");
     }
   }
 
