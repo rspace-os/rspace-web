@@ -25,10 +25,10 @@ const feature = test.extend<{
     "the user taps the outer folder": () => Promise<void>;
     "the user taps the image file": (
       filename: string,
-      options?: { modifiers: Array<"Shift" | "ControlOrMeta"> }
+      options?: { modifiers: Array<"Shift" | "ControlOrMeta"> },
     ) => Promise<void>;
     "the user taps the arrow key": (
-      key: "ArrowRight" | "Shift+ArrowRight" | "ArrowLeft" | "Shift+ArrowLeft"
+      key: "ArrowRight" | "Shift+ArrowRight" | "ArrowLeft" | "Shift+ArrowLeft",
     ) => Promise<void>;
   };
   Then: {
@@ -41,6 +41,13 @@ const feature = test.extend<{
     "there shouldn't be any axe violations": () => Promise<void>;
     "the outer folder is selected": () => Promise<void>;
     "the selection is": (expectedSelection: Array<string>) => Promise<void>;
+    "the name of the selected file has colour": ({
+      text,
+      background,
+    }: {
+      text: string;
+      background: string;
+    }) => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -62,7 +69,7 @@ const feature = test.extend<{
         });
         await treeitem.locator("> div").click();
         await expect(
-          page.getByRole("treeitem", { name: "Inner folder" })
+          page.getByRole("treeitem", { name: "Inner folder" }),
         ).toBeVisible();
       },
       "the inner folder is selected": async () => {
@@ -85,7 +92,7 @@ const feature = test.extend<{
         await expect(
           page.getByRole("alert", {
             name: "Link copied to clipboard successfully!",
-          })
+          }),
         ).toBeVisible();
       },
     });
@@ -99,7 +106,7 @@ const feature = test.extend<{
             ["clipboard-read", "clipboard-write"],
             {
               origin: page.url(),
-            }
+            },
           );
         }
         await page.getByRole("button", { name: "Copy to clipboard" }).click();
@@ -129,12 +136,16 @@ const feature = test.extend<{
         filename: string,
         options: { modifiers: Array<"Shift" | "ControlOrMeta"> } = {
           modifiers: [],
-        }
+        },
       ) => {
         await page.getByRole("gridcell", { name: filename }).click(options);
       },
       "the user taps the arrow key": async (
-        key: "ArrowRight" | "Shift+ArrowRight" | "ArrowLeft" | "Shift+ArrowLeft"
+        key:
+          | "ArrowRight"
+          | "Shift+ArrowRight"
+          | "ArrowLeft"
+          | "Shift+ArrowLeft",
       ) => {
         await page.keyboard.press(key, {
           delay: 100, // Add a delay to ensure the key press is registered
@@ -146,13 +157,13 @@ const feature = test.extend<{
     await use({
       "the clipboard contains a link to the file's parent folder": async () => {
         const clipboardText = await page.evaluate(() =>
-          navigator.clipboard.readText()
+          navigator.clipboard.readText(),
         );
         expect(clipboardText).toMatch(/\/gallery\/1/);
       },
       "the clipboard contains the gallery-section link": async () => {
         const clipboardText = await page.evaluate(() =>
-          navigator.clipboard.readText()
+          navigator.clipboard.readText(),
         );
         expect(clipboardText).toMatch(/\?mediaType=Images/);
       },
@@ -181,10 +192,10 @@ const feature = test.extend<{
         const listItems = breadcrumbs.getByRole("listitem");
         await expect(listItems).toHaveCount(1);
         await expect(listItems.first().getByRole("button")).toHaveText(
-          "Images"
+          "Images",
         );
         await expect(
-          page.getByRole("gridcell", { name: "Outer folder" })
+          page.getByRole("gridcell", { name: "Outer folder" }),
         ).toBeVisible();
       },
       "the outer folder is returned to": async () => {
@@ -194,10 +205,10 @@ const feature = test.extend<{
         const listItems = breadcrumbs.getByRole("listitem");
         await expect(listItems).toHaveCount(2);
         await expect(listItems.first().getByRole("button")).toHaveText(
-          "Images"
+          "Images",
         );
         await expect(listItems.nth(1).getByRole("button")).toHaveText(
-          "Outer folder"
+          "Outer folder",
         );
       },
       "there shouldn't be any axe violations": async () => {
@@ -223,21 +234,21 @@ const feature = test.extend<{
               v.id !== "page-has-heading-one" &&
               v.id !== "region"
             );
-          })
+          }),
         ).toEqual([]);
       },
       "the outer folder is selected": async () => {
         await expect(
-          page.getByRole("region", { name: "files listing controls" })
+          page.getByRole("region", { name: "files listing controls" }),
         ).toHaveText(/1 folder selected/);
         await expect(
-          page.getByRole("gridcell", { name: "Outer folder" })
+          page.getByRole("gridcell", { name: "Outer folder" }),
         ).toHaveAttribute("aria-selected", "true");
       },
       "the selection is": async (expectedSelection) => {
         for (const item of expectedSelection) {
           await expect(
-            page.getByRole("gridcell", { name: item })
+            page.getByRole("gridcell", { name: item }),
           ).toHaveAttribute("aria-selected", "true");
         }
         const selectionStatusText =
@@ -246,15 +257,28 @@ const feature = test.extend<{
             .getByRole("status")
             .textContent()) ?? "";
         const matches = selectionStatusText.match(
-          /((\d+) files?)?(, )?((\d+) folders?)?/
+          /((\d+) files?)?(, )?((\d+) folders?)?/,
         );
         if (!matches)
           throw new Error(
-            "Selection status text does not match expected format"
+            "Selection status text does not match expected format",
           );
         const [, , files = "0", , , folders = "0"] = matches;
         expect(expectedSelection.length).toEqual(
-          parseInt(files, 10) + parseInt(folders, 10)
+          parseInt(files, 10) + parseInt(folders, 10),
+        );
+      },
+      "the name of the selected file has colour": async ({
+        text,
+        background,
+      }) => {
+        const selectedFile = page.getByRole("gridcell", {
+          name: "Image0.jpg",
+        });
+        await expect(selectedFile.locator("p")).toHaveCSS("color", text);
+        await expect(selectedFile.locator("p")).toHaveCSS(
+          "background-color",
+          background,
         );
       },
     });
@@ -366,7 +390,7 @@ feature.beforeEach(async ({ router }) => {
           errorMsg: null,
         }),
       });
-    }
+    },
   );
   await router.route("/gallery/getThumbnail/*/*", (route) => {
     return route.fulfill({
@@ -374,7 +398,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "image/png",
       body: Buffer.from(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8//8/AwAI/wH+9Q4AAAAASUVORK5CYII=",
-        "base64"
+        "base64",
       ),
     });
   });
@@ -416,7 +440,7 @@ test.describe("MainPanel", () => {
          * root folder, mimicing the behaviour of similar systems like macOS's
          * Finder.
          */
-      }
+      },
     );
     feature(
       "Tapping the root gallery section breadcrumb works as a link",
@@ -425,7 +449,7 @@ test.describe("MainPanel", () => {
         await When["the user opens the outer folder"]();
         await When["the user taps the gallery section breadcrumb"]();
         await Then["the root gallery section is returned to"]();
-      }
+      },
     );
     feature(
       "Tapping the outer folder breadcrump works as a link",
@@ -435,13 +459,13 @@ test.describe("MainPanel", () => {
         await When["the user opens the inner folder"]();
         await When["the user taps the outer folder breadcrumb"]();
         await Then["the outer folder is returned to"]();
-      }
+      },
     );
   });
   test.describe("Copy-to-clipboard button and tree-view", () => {
     test.skip(
       ({ browserName }) => browserName === "webkit",
-      "Safari does not support clipboard API"
+      "Safari does not support clipboard API",
     );
     feature("Nothing is selected.", async ({ Given, When, Once, Then }) => {
       await Given["the main panel is showing a nested folder structure"]();
@@ -461,7 +485,7 @@ test.describe("MainPanel", () => {
         await When["the user taps the paths's copy-to-clipboard button"]();
         await Once["a clipboard success alert is shown"]();
         await Then["the clipboard contains the gallery-section link"]();
-      }
+      },
     );
     feature(
       "The inner folder is selected.",
@@ -482,7 +506,7 @@ test.describe("MainPanel", () => {
          * refer to the parent folder of the selected file and not the current
          * root folder.
          */
-      }
+      },
     );
   });
   feature.describe("Grid view", () => {
@@ -493,7 +517,7 @@ test.describe("MainPanel", () => {
           await Given["the main panel is showing a bunch of image files"]();
           await When["the user taps the image file"]("Image0.jpg");
           await Then["the selection is"](["Image0.jpg"]);
-        }
+        },
       );
       feature(
         "Ctrl-clicking on a second file, adds it to the selection",
@@ -504,7 +528,7 @@ test.describe("MainPanel", () => {
             modifiers: ["ControlOrMeta"],
           });
           await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
-        }
+        },
       );
       feature(
         "Shift-clicking on a second file select the region",
@@ -520,7 +544,7 @@ test.describe("MainPanel", () => {
             "Image4.jpg",
             "Image5.jpg",
           ]);
-        }
+        },
       );
       feature(
         "Shift-clicking a second time modifies the selection based on the first click",
@@ -550,7 +574,7 @@ test.describe("MainPanel", () => {
             "Image4.jpg",
             "Image5.jpg",
           ]);
-        }
+        },
       );
       feature(
         "Ctrl-clicking an unselected file after shift-clicking several files should expand the selection",
@@ -570,7 +594,7 @@ test.describe("MainPanel", () => {
             "Image5.jpg",
             "Image6.jpg",
           ]);
-        }
+        },
       );
       feature(
         "Ctrl-clicking a selected file after shift-clicking several files should reduce the selection",
@@ -588,7 +612,7 @@ test.describe("MainPanel", () => {
             "Image4.jpg",
             "Image5.jpg",
           ]);
-        }
+        },
       );
       feature(
         "Pressing an arrow key moves the selection",
@@ -597,7 +621,7 @@ test.describe("MainPanel", () => {
           await When["the user taps the image file"]("Image0.jpg");
           await When["the user taps the arrow key"]("ArrowRight");
           await Then["the selection is"](["Image1.jpg"]);
-        }
+        },
       );
       feature(
         "Pressing an arrow key after selecting multiple files with ctrl moves the selection relative to the second selection",
@@ -609,7 +633,7 @@ test.describe("MainPanel", () => {
           });
           await When["the user taps the arrow key"]("ArrowRight");
           await Then["the selection is"](["Image2.jpg"]);
-        }
+        },
       );
       feature(
         "Pressing an arrow key after selecting multiple files with shift moves the selection relative to the second selection",
@@ -621,7 +645,7 @@ test.describe("MainPanel", () => {
           });
           await When["the user taps the arrow key"]("ArrowRight");
           await Then["the selection is"](["Image2.jpg"]);
-        }
+        },
       );
       feature(
         "Pressing shift-arrow key after selecting multiple files with ctrl expands the selection",
@@ -638,7 +662,7 @@ test.describe("MainPanel", () => {
             "Image1.jpg",
             "Image2.jpg",
           ]);
-        }
+        },
       );
       feature(
         "Pressing shift-arrow key after selecting multiple files with shift expands the selection",
@@ -655,7 +679,7 @@ test.describe("MainPanel", () => {
             "Image1.jpg",
             "Image2.jpg",
           ]);
-        }
+        },
       );
       feature(
         "Shift-arrowing a second time modifies the selection based on the first click",
@@ -667,7 +691,29 @@ test.describe("MainPanel", () => {
           await When["the user taps the arrow key"]("Shift+ArrowLeft");
           await When["the user taps the arrow key"]("Shift+ArrowLeft");
           await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
-        }
+        },
+      );
+      feature(
+        "The name of a selected file has a background colour",
+        async ({ Given, When, Then }) => {
+          await Given["the main panel is showing a bunch of image files"]();
+          await Then["the name of the selected file has colour"]({
+            text: "rgb(75, 71, 77)",
+            background: "rgba(0, 0, 0, 0)",
+          });
+          await When["the user taps the image file"]("Image0.jpg");
+          await Then["the name of the selected file has colour"]({
+            text: "rgb(38, 75, 88)",
+            background: "rgb(147, 198, 240)",
+          });
+          /*
+           * This is done to ensure that we are not using colour alone to indicate
+           * selection. The border colour changes to indicate selection but it is
+           * possible that this will be imperceptable to some users. The
+           * background and text colours of the file name, however, completely
+           * switch places which should suffice
+           */
+        },
       );
     });
   });
