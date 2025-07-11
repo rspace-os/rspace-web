@@ -514,7 +514,7 @@ function PrintDialog({
         </Button>
         <Button
           onClick={handlePrint}
-          color="primary"
+          color="callToAction"
           variant="contained"
           disableElevation
           disabled={
