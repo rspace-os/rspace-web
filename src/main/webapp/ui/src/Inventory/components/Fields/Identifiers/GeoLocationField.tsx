@@ -575,7 +575,7 @@ const GeoLocationField = ({
                     {!polygonEmpty && (
                       <Button
                         onClick={() => setOpenPolygonDialog(true)}
-                        color="primary"
+                        color="callToAction"
                         variant="outlined"
                       >
                         View Polygon

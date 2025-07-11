@@ -302,7 +302,8 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
 
     String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n<p>end</p>";
     String htmlFragment = String.format(htmlFragmentFormat, avportalEmbed);
-    String expectedConvertedHtml = String.format(htmlFragmentFormat, expectedConvertedAvportalEmbed);
+    String expectedConvertedHtml =
+        String.format(htmlFragmentFormat, expectedConvertedAvportalEmbed);
 
     String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(htmlFragment);
     assertEquals(expectedConvertedHtml, convertedHtml);

@@ -32,7 +32,7 @@ public class TextFieldEmbedIframeHandler {
   private static final String JOVE_SRC_SUFFIX_PATTERN =
       "\\?id=\\d+((&\\w+=1)|(&language=\\w+)|(&access=\\w+)|(&utm_source=\\w+))*";
 
-   // TIB AV-Portal src url last fragment
+  // TIB AV-Portal src url last fragment
   private static final String AVPORTAL_SRC_SUFFIX_PATTERN = "\\d+";
 
   private static final String[] knownIframeSrcPatterns = {

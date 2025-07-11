@@ -16,10 +16,6 @@ const useStyles = makeStyles()((theme) => ({
     marginBottom: 4,
     cursor: "default",
   },
-  filled: {
-    backgroundColor: `${theme.palette.primary.saturated} !important`,
-    color: theme.palette.primary.contrastText,
-  },
 }));
 
 type ContextMenuButtonArgs = {
@@ -60,9 +56,9 @@ function ContextMenuButton({
         >
           <div>
             <Chip
-              className={clsx(classes.chip, inContrast && classes.filled)}
+              className={classes.chip}
               size="medium"
-              variant={"outlined"}
+              variant={inContrast ? "filled" : "outlined"}
               role="button"
               icon={
                 loading ? (
@@ -73,7 +69,7 @@ function ContextMenuButton({
               }
               disabled={disabledHelp !== ""}
               clickable={disabledHelp === ""}
-              color={inContrast ? "primary" : "default"}
+              color={inContrast ? "callToAction" : "default"}
               aria-disabled={disabledHelp !== ""}
               {...props}
             />

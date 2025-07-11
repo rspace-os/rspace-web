@@ -147,7 +147,7 @@ function InventoryPicker({
           <>
             <Button
               variant="contained"
-              color="primary"
+              color="callToAction"
               disableElevation
               onClick={() => {
                 onAddition(selectedRecords);

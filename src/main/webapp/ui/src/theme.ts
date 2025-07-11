@@ -176,7 +176,13 @@ declare module "@mui/material/Switch" {
 }
 declare module "@mui/material/Chip" {
   // eslint-disable-next-line no-unused-vars
-  interface ChipsPropsColorOverrides {
+  interface ChipPropsColorOverrides {
+    callToAction: true;
+  }
+}
+declare module "@mui/material/Fab" {
+  // eslint-disable-next-line no-unused-vars
+  interface FabPropsColorOverrides {
     callToAction: true;
   }
 }
@@ -215,7 +221,7 @@ const baseTheme = createTheme({
       main: hslToHex(
         COLORS.primary.hue,
         COLORS.primary.saturation,
-        COLORS.primary.lightness
+        COLORS.primary.lightness,
       ),
       contrastText: "#fff",
       saturated: "#009ad6",

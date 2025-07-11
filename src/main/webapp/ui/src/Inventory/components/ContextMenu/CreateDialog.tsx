@@ -456,7 +456,7 @@ const ParameterField = observer(
                   <Stack spacing={1} direction="row">
                     {showNextButton && (
                       <Button
-                        color="primary"
+                        color="callToAction"
                         variant="contained"
                         disableElevation
                         onClick={() => {

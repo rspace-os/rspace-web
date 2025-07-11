@@ -144,7 +144,7 @@ export default function UpdateField({
           </Grid>
           <Grid item md={12} xs={12}>
             <Button
-              color="primary"
+              color="callToAction"
               disableElevation
               variant="contained"
               aria-label="Update field"

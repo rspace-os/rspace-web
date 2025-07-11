@@ -92,7 +92,7 @@ const CustomBadge = withStyles<
     transform: "none",
   },
 }))(({ classes, children, count }) => (
-  <Badge badgeContent={count} color="primary" classes={classes}>
+  <Badge badgeContent={count} color="callToAction" classes={classes}>
     {children}
   </Badge>
 ));
@@ -132,7 +132,7 @@ const MaterialsLauncher = observer(
               <CustomBadge count={fieldListCount}>
                 <Fab
                   disabled={!materialsStore.canEdit && fieldListCount === 0}
-                  color="primary"
+                  color="callToAction"
                   onClick={({ currentTarget }) => {
                     setShowMenu(true);
                     setAnchorEl(currentTarget);
