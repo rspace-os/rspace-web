@@ -139,7 +139,7 @@ const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
           setAnchorEl(e.currentTarget);
         }}
         aria-label={`A scheduled maintenance window begins ${getRelativeTime(
-          startDate
+          startDate,
         )}.`}
         aria-controls={popoverId}
         aria-haspopup="dialog"
@@ -353,7 +353,7 @@ function GalleryAppBar({
 
   const [brandingHref, setBrandingHref] = useSessionStorage<string | null>(
     "brandingHref",
-    null
+    null,
   );
   React.useEffect(() => {
     FetchingData.getSuccessValue(uiNavigationData).do(({ bannerImgSrc }) => {
@@ -376,6 +376,17 @@ function GalleryAppBar({
         showSystem: false,
         showMyLabGroups: false,
       });
+
+  /*
+   * The parts of the product that are important enough to get a tab in the app bar
+   */
+  const isTabbedPage = [
+    "Workspace",
+    "Gallery",
+    "Inventory",
+    "System",
+    "My RSpace",
+  ].includes(currentPage);
 
   return (
     <AppBar
@@ -422,12 +433,12 @@ function GalleryAppBar({
             <Box height="36px" sx={{ ml: 0.5, py: 0.25, position: "relative" }}>
               {Result.fromNullable(
                 brandingHref,
-                new Error("branding not cached")
+                new Error("branding not cached"),
               )
                 .orElseTry(() =>
                   FetchingData.getSuccessValue(uiNavigationData).map(
-                    ({ bannerImgSrc }) => bannerImgSrc
-                  )
+                    ({ bannerImgSrc }) => bannerImgSrc,
+                  ),
                 )
                 .map((href) => (
                   <img
@@ -465,7 +476,7 @@ function GalleryAppBar({
             </svg>
           </>
         )}
-        {variant === "page" && (
+        {variant === "page" && isTabbedPage && (
           <VisuallyHiddenHeading variant="h1">
             {currentPage}
           </VisuallyHiddenHeading>
@@ -549,17 +560,7 @@ function GalleryAppBar({
                 }}
               >
                 <ListItemText
-                  primary={
-                    [
-                      "Workspace",
-                      "Gallery",
-                      "Inventory",
-                      "System",
-                      "My RSpace",
-                    ].includes(currentPage)
-                      ? currentPage
-                      : "Go to..."
-                  }
+                  primary={isTabbedPage ? currentPage : "Go to..."}
                 />
                 <ListItemIcon>
                   <ArrowDropDownIcon />
@@ -856,7 +857,7 @@ function GalleryAppBar({
                         setAccountMenuAnchorEl(null);
                         window.open(
                           "/public/publishedView/publishedDocuments",
-                          "_target"
+                          "_target",
                         );
                       }}
                       component="a"
@@ -925,7 +926,7 @@ function GalleryAppBar({
                         setAccountMenuAnchorEl(null);
                         window.location.href = "/logout";
                       }}
-                    />
+                    />,
                   )}
                 {FetchingData.getSuccessValue(uiNavigationData)
                   .map(({ bannerImgSrc }) => (
