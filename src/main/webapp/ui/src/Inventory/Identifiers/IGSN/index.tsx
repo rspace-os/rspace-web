@@ -19,7 +19,7 @@ export default function IGSN(): React.ReactNode {
   );
 
   React.useEffect(() => {
-    document.title = "Manage IGSNs | RSpace Inventory";
+    document.title = "Manage IGSN IDs | RSpace Inventory";
   }, []);
 
   return (
