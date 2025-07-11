@@ -18,6 +18,7 @@ import MainSearchNavigationContext from "./MainSearchNavigationContext";
 import { UiPreferences } from "../../util/useUiPreference";
 import LeftPanelView from "./LeftPanelView";
 import Box from "@mui/material/Box";
+import { globalId } from "@/stores/definitions/BaseRecord";
 
 type SearchRouterArgs = {
   paramsOverride?: CoreFetcherArgs;
@@ -30,6 +31,17 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   const { useNavigate, useLocation } = useContext(NavigateContext);
   const navigate = useNavigate();
   const location: UseLocation = useLocation();
+
+  useEffect(() => {
+    if (paramsOverride?.permalink) {
+      document.title = `${globalId({
+        type: paramsOverride.permalink.type,
+        id: paramsOverride.permalink.id,
+      })} | RSpace Inventory`;
+    } else {
+      document.title = "RSpace Inventory";
+    }
+  }, [paramsOverride]);
 
   useEffect(() => {
     void (async () => {

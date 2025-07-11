@@ -54,6 +54,19 @@ export const globalIdPatterns: Record<string, RegExp> = {
   group: /^gp\d+$/i,
 };
 
+export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
+  sample: "SA",
+  subsample: "SS",
+  container: "IC",
+  sampleTemplate: "IT",
+  bench: "BE",
+  basket: "BA",
+  attachment: "IF",
+  field: "SF",
+  document: "SD",
+  group: "GP",
+};
+
 /*
  * The corresponding label, as should be rendered by the UI, for each Inventory
  * record.
@@ -100,6 +113,21 @@ export const globalIdToInventoryRecordTypeLabel: (
       inventoryRecordTypeLabels.basket,
     ],
   ]);
+
+/**
+ * Creates the Global ID string for a given record type and ID.
+ * This works because "type + id <-> Global ID" is an isomorphism
+ */
+export function globalId({
+  type,
+  id,
+}: {
+  type: keyof typeof globalIdPatterns;
+  id: number;
+}): GlobalId {
+  const prefix = globalIdPrefixes[type];
+  return `${prefix}${id}`;
+}
 
 /**
  * This is the canonical definition of what the frontend considers to be the

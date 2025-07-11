@@ -25,6 +25,10 @@ export default function ImportRouter(): React.ReactNode {
     );
   }, [location.search]);
 
+  useEffect(() => {
+    document.title = "Import CSV | RSpace Inventory";
+  }, []);
+
   const sidebarId = React.useId();
 
   const recordType = importStore.importData?.recordType;
