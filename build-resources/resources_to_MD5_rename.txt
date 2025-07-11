@@ -109,6 +109,8 @@ styles/tags/fileTreeBrowser.css
 styles/tinymce_rs.css
 styles/userform.css
 ui/dist/accountActivity.js
+ui/dist/appBar.js
+ui/dist/apps.js
 ui/dist/associatedInventoryRecords.js
 ui/dist/baseSearch.js
 ui/dist/confirmationDialog.js
@@ -140,9 +142,11 @@ ui/dist/snapGeneDialog.js
 ui/dist/structuredDocumentToolbar.js
 ui/dist/sysadminUsers.js
 ui/dist/tinymceClustermarket.js
+ui/dist/tinymceIdentifiers.js
 ui/dist/tinymceJove.js
 ui/dist/tinymceKetcher.js
 ui/dist/tinymceOmero.js
+ui/dist/tinymcePubchem.js
 ui/dist/tinymcePyrat.js
 ui/dist/tinymceShortcuts.js
 ui/dist/tinymceSidebarInfo.js
