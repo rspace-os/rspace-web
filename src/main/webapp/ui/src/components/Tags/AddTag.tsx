@@ -68,7 +68,7 @@ export default function AddTag<
     <>
       <Chip
         icon={<AddIcon />}
-        color={disabled ? "default" : "callToAction"}
+        color={disabled ? "default" : "primary"}
         label="Add Tag"
         onClick={
           disabled

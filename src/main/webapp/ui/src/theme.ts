@@ -443,9 +443,6 @@ export default createTheme({
         clickable: {
           cursor: "default",
         },
-        filledCallToAction: {
-          fontWeight: 700,
-        },
       },
     },
     MuiTypography: {
