@@ -55,13 +55,14 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
     // this is a modified version of a p-io protocol with images.
     // original has 5 images stored on AWS, this has 2 so that test runs afaster
     File testFile = RSpaceTestUtils.getResource("pio-with-images.json");
+    Folder rootFolderWorkspace = folderMgr.getRootFolderForUser(anyUser);
     String p1 = readFileToString(testFile, "UTF-8");
     long initialImageCount = getCountOfEntityTable("EcatImage");
     long initialFolderCount = getCountOfEntityTable("Folder");
     MvcResult result =
         mockMvc
             .perform(
-                post("/importer/generic/protocols_io")
+                post("/importer/generic/protocols_io/" + rootFolderWorkspace.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("[" + p1 + "]"))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
