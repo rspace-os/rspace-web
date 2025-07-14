@@ -53,9 +53,11 @@ type ArbType = "string" | "integer" | "natural number" | "one of";
 function property(name: string) {
   return {
     let: function <T>(
-      setupFn: (
-        IsAny: (desc: ArbType, ...args: Array<unknown>) => unknown,
-      ) => T,
+      setupFn: ({
+        IsAny,
+      }: {
+        IsAny: (desc: ArbType, ...args: Array<unknown>) => unknown;
+      }) => T,
     ) {
       return {
         checkThat: (
@@ -90,9 +92,11 @@ function property(name: string) {
              * properties are used in the setup function.
              */
             const usedProperties = new Map<string, Array<unknown>>();
-            setupFn((description: ArbType, ...args: Array<unknown>) => {
-              usedProperties.set(description, args);
-              return "some string";
+            setupFn({
+              IsAny: (description: ArbType, ...args: Array<unknown>) => {
+                usedProperties.set(description, args);
+                return "some string";
+              },
             });
 
             /*
@@ -134,7 +138,7 @@ function property(name: string) {
                   return generated[description];
                 };
 
-                const actualValues = setupFn(isAny);
+                const actualValues = setupFn({ IsAny: isAny });
 
                 try {
                   await testFn(actualValues, {
@@ -318,7 +322,7 @@ test.describe("Gallery", () => {
     property(
       "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'",
     )
-      .let((IsAny) => ({
+      .let(({ IsAny }) => ({
         section: IsAny(
           "one of",
           "Images",
@@ -350,7 +354,7 @@ test.describe("Gallery", () => {
       });
 
     property("On '/{id}', the title should be '{folder name} | RSpace Gallery'")
-      .let((IsAny) => ({
+      .let(({ IsAny }) => ({
         id: IsAny("natural number"),
         folderName: IsAny("string"),
       }))
@@ -409,7 +413,7 @@ test.describe("Gallery", () => {
     property(
       "On '/item/{id}', the title should be '{filename} | RSpace Gallery'",
     )
-      .let((IsAny) => ({
+      .let(({ IsAny }) => ({
         id: IsAny("integer"),
         filename: IsAny("string"),
       }))
