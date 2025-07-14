@@ -130,15 +130,17 @@ function property(name: string) {
 
                 const actualValues = setupFn(isAny);
 
-                await testFn(actualValues, {
-                  Given: wrappedGiven,
-                  Then,
-                  router,
-                });
-
-                if (mountedComponent) {
-                  await mountedComponent.unmount();
-                  mountedComponent = null;
+                try {
+                  await testFn(actualValues, {
+                    Given: wrappedGiven,
+                    Then,
+                    router,
+                  });
+                } finally {
+                  if (mountedComponent) {
+                    await mountedComponent.unmount();
+                    mountedComponent = null;
+                  }
                 }
               }),
               { numRuns: 5 },
@@ -244,13 +246,13 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
-  await router.route("/api/v1/folders/123*", (route) => {
-    return route.fulfill({
+  await router.route("/api/v1/folders/*", (route) =>
+    route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         id: 123,
-        globalId: "GF123",
+        globalId: `GF123`,
         name: "Examples",
         created: "2025-07-07T11:09:18.126Z",
         lastModified: "2025-07-07T11:09:18.126Z",
@@ -283,15 +285,9 @@ feature.beforeEach(async ({ router }) => {
             _links: [],
           },
         ],
-        _links: [
-          {
-            link: "http://localhost:8080/api/v1/folders/132",
-            rel: "self",
-          },
-        ],
       }),
-    });
-  });
+    }),
+  );
 });
 
 feature.afterEach(({}) => {});
@@ -319,19 +315,69 @@ test.describe("Gallery", () => {
         await Then["the page title should be"]("Videos | RSpace Gallery");
       },
     );
-    feature(
-      "On '/123', the title should be 'Examples | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]({ url: "/123" });
-        await Then["the page title should be"]("Examples | RSpace Gallery");
-      },
-    );
+
+    property("On '/{id}', the title should be '{folder name} | RSpace Gallery'")
+      .let((IsAny) => ({
+        id: IsAny("natural number"),
+        folderName: IsAny("string"),
+      }))
+      .checkThat(async ({ id, folderName }, { Given, Then, router }) => {
+        await router.route("/api/v1/folders/*", (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              id,
+              globalId: `GF${id}`,
+              name: folderName,
+              created: "2025-07-07T11:09:18.126Z",
+              lastModified: "2025-07-07T11:09:18.126Z",
+              parentFolderId: 131,
+              notebook: false,
+              mediaType: "Images",
+              pathToRootFolder: [
+                {
+                  id: 131,
+                  globalId: "GF131",
+                  name: "Images",
+                  created: "2025-07-07T11:09:18.119Z",
+                  lastModified: "2025-07-07T11:09:18.119Z",
+                  parentFolderId: 130,
+                  notebook: false,
+                  mediaType: "Images",
+                  pathToRootFolder: null,
+                  _links: [],
+                },
+                {
+                  id: 130,
+                  globalId: "GF130",
+                  name: "Gallery",
+                  created: "2025-07-07T11:09:18.112Z",
+                  lastModified: "2025-07-07T11:09:18.112Z",
+                  parentFolderId: 124,
+                  notebook: false,
+                  mediaType: null,
+                  pathToRootFolder: null,
+                  _links: [],
+                },
+              ],
+            }),
+          }),
+        );
+
+        await Given["the Gallery is mounted"]({
+          url: `/${id}`,
+        });
+        await Then["the page title should be"](
+          `${folderName} | RSpace Gallery`,
+        );
+      });
 
     property(
       "On '/item/{id}', the title should be '{filename} | RSpace Gallery'",
     )
       .let((IsAny) => ({
-        id: IsAny("natural number"),
+        id: IsAny("integer"),
         filename: IsAny("string"),
       }))
       .checkThat(async ({ id, filename }, { Given, Then, router }) => {
