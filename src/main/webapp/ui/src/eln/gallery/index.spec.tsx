@@ -337,47 +337,118 @@ test.describe("Gallery", () => {
   // });
 });
 
-const properties = {
-  "id be an integer": fc.integer({ min: 1 }),
-  "name be a string": fc.string(),
-  // ... other properties
-};
+function propertyTest(name: string) {
+  return {
+    using: function <T>(
+      setupFn: (IsAny: (desc: "string" | "integer") => string | number) => T,
+    ) {
+      return {
+        run: (
+          testFn: (
+            values: T,
+            helpers: { Given: any; Then: any },
+          ) => Promise<void>,
+        ) => {
+          return feature(
+            name,
+            async ({ Given, Then /* other existing fixtures */ }) => {
+              /*
+               * With each iteration of the test, we need to make sure that
+               * react has a clean state so we wrap the Given steps that mount
+               * components to keep track of the mounted components, so that
+               * after the test is done, we can unmount them.
+               */
+              let mountedComponent: MountResult | null = null;
+              const wrappedGiven = {
+                ...Given,
+                "the Gallery is mounted": async (
+                  args: {
+                    url?: React.ComponentProps<
+                      typeof GalleryStory
+                    >["urlSuffix"];
+                  } = {},
+                ) => {
+                  const component = await Given["the Gallery is mounted"](args);
+                  mountedComponent = component;
+                  return component;
+                },
+              };
 
-function propertyTest(
-  name: string,
-  testFn: (helpers: {
-    Let: (desc: string) => any;
-    Given: any;
-    Then: any;
-  }) => Promise<void>,
-) {
-  return feature(name, async ({ Given, Then }) => {
-    const propertyValues = Object.fromEntries(
-      Object.entries(properties).map(([key, arb]) => [key, arb]),
-    );
+              /*
+               * We take a first pass over the IsAny calls to determine which
+               * properties are used in the setup function.
+               */
+              const usedProperties = new Set<string>();
+              setupFn((description: "string" | "integer") => {
+                usedProperties.add(description);
+                return "some string";
+              });
 
-    await fc.assert(
-      fc.asyncProperty(fc.record(propertyValues), async (generated) => {
-        const Let = (description: string) => {
-          if (!(description in generated)) {
-            throw new Error(`Unknown property: ${description}`);
-          }
-          return generated[description];
-        };
+              /*
+               * Next we create the arbitraries for the properties that were
+               * used in the setup function.
+               */
+              const propertyValues: {
+                integer: fc.Arbitrary<number>;
+                string: fc.Arbitrary<string>;
+              } = Object.fromEntries(
+                Array.from(usedProperties).map((key) => {
+                  switch (key) {
+                    case "integer":
+                      return [key, fc.integer({ min: 1 })];
+                    case "string":
+                      return [key, fc.string()];
+                    default:
+                      throw new Error(`Unknown property: ${key}`);
+                  }
+                }),
+              );
 
-        await testFn({ Let, Given, Then });
-      }),
-      { numRuns: 5 },
-    );
-  });
+              /*
+               * Finally we run the test function with the generated values.
+               */
+              await fc.assert(
+                fc.asyncProperty(
+                  fc.record(propertyValues),
+                  async (generated) => {
+                    const isAny = (description: "string" | "integer") => {
+                      if (!(description in generated)) {
+                        throw new Error(`Unknown property: ${description}`);
+                      }
+                      return generated[description];
+                    };
+
+                    const actualValues = setupFn(isAny);
+
+                    await testFn(actualValues, {
+                      Given: wrappedGiven,
+                      Then /* pass other fixtures */,
+                    });
+
+                    // Unmount all components after the test
+                    if (mountedComponent) {
+                      await mountedComponent.unmount();
+                      mountedComponent = null;
+                    }
+                  },
+                ),
+                { numRuns: 5 },
+              );
+            },
+          );
+        },
+      };
+    },
+  };
 }
 
-propertyTest("fast-check test 3", async ({ Let, Given, Then }) => {
-  const id = Let("id be an integer");
-
-  const component = await Given["the Gallery is mounted"]({
-    url: `/item/${id}`,
+propertyTest("fast-check test 3")
+  .using((IsAny) => ({
+    id: IsAny("integer"),
+  }))
+  .run(async ({ id }, { Given, Then }) => {
+    await Given["the Gallery is mounted"]({
+      url: `/item/${id}`,
+    });
+    await Then["the page title should be"](`Picture1.png | RSpace Gallery`);
   });
-  await Then["the page title should be"]("Picture1.png | RSpace Gallery");
-  await component.unmount();
-});
