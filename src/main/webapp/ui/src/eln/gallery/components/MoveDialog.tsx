@@ -58,7 +58,7 @@ const MoveDialog = observer(
         section,
         path: [],
       }),
-      [section]
+      [section],
     );
     const { galleryListing, refreshListing: refreshListingInsideDialog } =
       useGalleryListing({
@@ -113,8 +113,7 @@ const MoveDialog = observer(
         <DialogTitle>Move</DialogTitle>
         <DialogContent sx={{ overflow: "hidden", flexGrow: 0 }}>
           <DialogContentText variant="body2">
-            Choose a folder, enter a path, or tap the &quot;top-level&quot;
-            button.
+            Choose a folder or tap the &quot;top-level&quot; button.
           </DialogContentText>
         </DialogContent>
         <DialogContent sx={{ pt: 0 }}>
@@ -176,14 +175,14 @@ const MoveDialog = observer(
                     .only.toResult(
                       () =>
                         new Error(
-                          "Impossible; submit button requires a selection of one"
-                        )
+                          "Impossible; submit button requires a selection of one",
+                        ),
                     )
                     .elseThrow();
                   await moveFiles(
                     section,
                     folderDestination(destinationFolder),
-                    selectedFiles
+                    selectedFiles,
                   );
                   void refreshListing();
                   onClose();
@@ -202,7 +201,7 @@ const MoveDialog = observer(
         </DialogActions>
       </Dialog>
     );
-  }
+  },
 );
 
 /**
@@ -214,7 +213,7 @@ const MoveDialog = observer(
  */
 // eslint-disable-next-line react/display-name -- This is a wrapper component
 export default (
-  props: Omit<MoveDialogArgs, "selectedFiles">
+  props: Omit<MoveDialogArgs, "selectedFiles">,
 ): React.ReactNode => {
   const selection = useGallerySelection();
   return (
