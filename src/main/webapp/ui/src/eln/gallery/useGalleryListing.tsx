@@ -57,7 +57,7 @@ export function idToString(id: Id): Result<string> {
  */
 const mapToSvgImageIcon = (
   extensions: ReadonlyArray<string>,
-  filename: string
+  filename: string,
 ): ReadonlyArray<[string, string]> =>
   extensions.map((ext) => [ext, `/images/icons/${filename}.svg`]);
 const fileIconMap = new Map([
@@ -233,7 +233,7 @@ export function chemistryFilePreview(file: GalleryFile): Result<string> {
   const time = file.modificationDate.getTime();
   if (file.type === "Chemistry")
     return idToString(file.id).map(
-      (id) => `/gallery/getChemThumbnail/${id}/${Math.floor(time / 1000)}`
+      (id) => `/gallery/getChemThumbnail/${id}/${Math.floor(time / 1000)}`,
     );
   return Result.Error([new Error("Not a chemistry file")]);
 }
@@ -252,7 +252,7 @@ function generateIconSrc(
   isFolder: boolean,
   isSystemFolder: boolean,
   file: GalleryFile,
-  section: GallerySection
+  section: GallerySection,
 ) {
   if (isFolder) {
     if (isSystemFolder) return "/images/icons/system_folder.svg";
@@ -266,8 +266,8 @@ function generateIconSrc(
       if (type === "Image")
         return Result.Ok(
           `/gallery/getThumbnail/${idStr}/${Math.floor(
-            modificationDate.getTime() / 1000
-          )}`
+            modificationDate.getTime() / 1000,
+          )}`,
         );
       if (
         (type === "Documents" || type === "PdfDocuments") &&
@@ -382,7 +382,7 @@ export class LocalGalleryFile implements GalleryFile {
             headers: {
               Authorization: "Bearer " + token,
             },
-          }
+          },
         );
         const url = URL.createObjectURL(blob);
         this.cachedDownloadHref = url;
@@ -439,14 +439,14 @@ export class LocalGalleryFile implements GalleryFile {
       this.isFolder,
       this.isSystemFolder,
       this,
-      this.gallerySection
+      this.gallerySection,
     );
   }
 
   transformFilename(f: (filename: string) => string): string {
     if (this.isFolder) return f(this.name);
     return `${f(filenameExceptExtension(this.name))}.${justFilenameExtension(
-      this.name
+      this.name,
     )}`;
   }
 
@@ -497,7 +497,7 @@ export class LocalGalleryFile implements GalleryFile {
     if (!this.extension)
       return Result.Error([
         new Error(
-          "An extension is required to be able to update the file with a new version."
+          "An extension is required to be able to update the file with a new version.",
         ),
       ]);
     return Result.Ok(null);
@@ -689,7 +689,7 @@ class RemoteFile implements GalleryFile {
         urlSearchParams.append("remotePath", this.remotePath);
         const { data: blob } = await axios.get<Blob>(
           `/api/v1/gallery/filestores/${idToString(
-            filestoreId
+            filestoreId,
           ).elseThrow()}/download`,
           {
             params: urlSearchParams,
@@ -697,7 +697,7 @@ class RemoteFile implements GalleryFile {
             headers: {
               Authorization: "Bearer " + token,
             },
-          }
+          },
         );
         const url = URL.createObjectURL(blob);
         this.cachedDownloadHref = url;
@@ -732,7 +732,7 @@ class RemoteFile implements GalleryFile {
       this.isFolder,
       false,
       this,
-      GALLERY_SECTION.NETWORKFILES
+      GALLERY_SECTION.NETWORKFILES,
     );
   }
 
@@ -760,7 +760,7 @@ class RemoteFile implements GalleryFile {
   transformFilename(f: (filename: string) => string): string {
     if (this.isFolder) return f(this.name);
     return `${f(filenameExceptExtension(this.name))}.${justFilenameExtension(
-      this.name
+      this.name,
     )}`;
   }
 
@@ -778,7 +778,7 @@ class RemoteFile implements GalleryFile {
       new Error(
         `Cannot duplicate ${
           this.isFolder ? "folders" : "files"
-        } stored in filestores.`
+        } stored in filestores.`,
       ),
     ]);
   }
@@ -788,7 +788,7 @@ class RemoteFile implements GalleryFile {
       new Error(
         `Cannot delete ${
           this.isFolder ? "folders" : "files"
-        } stored in filestores.`
+        } stored in filestores.`,
       ),
     ]);
   }
@@ -798,7 +798,7 @@ class RemoteFile implements GalleryFile {
       new Error(
         `Cannot rename ${
           this.isFolder ? "folders" : "files"
-        } stored in filestores.`
+        } stored in filestores.`,
       ),
     ]);
   }
@@ -808,7 +808,7 @@ class RemoteFile implements GalleryFile {
       new Error(
         `Cannot move ${
           this.isFolder ? "folders" : "files"
-        } stored in filestores to iRODS.`
+        } stored in filestores to iRODS.`,
       ),
     ]);
   }
@@ -828,7 +828,7 @@ class RemoteFile implements GalleryFile {
   get canUploadNewVersion(): Result<null> {
     return Result.Error([
       new Error(
-        "Contents of filestores cannot be updated by uploading new versions."
+        "Contents of filestores cannot be updated by uploading new versions.",
       ),
     ]);
   }
@@ -849,7 +849,7 @@ class RemoteFile implements GalleryFile {
 
 function parseGalleryFileFromFolderApiResponse(
   obj: object,
-  path: ReadonlyArray<GalleryFile>
+  path: ReadonlyArray<GalleryFile>,
 ): Result<LocalGalleryFile> {
   try {
     const id = Parsers.getValueWithKey("id")(obj)
@@ -891,7 +891,7 @@ function parseGalleryFileFromFolderApiResponse(
         thumbnailId: null,
         originalImageId: null,
         token: "",
-      })
+      }),
     );
   } catch (e) {
     return Result.Error([e instanceof Error ? e : new Error("Unknown error")]);
@@ -974,8 +974,8 @@ export function useGalleryListing({
         headers: {
           Authorization: "Bearer " + token,
         },
-      })
-    )
+      }),
+    ),
   );
 
   /*
@@ -996,10 +996,10 @@ export function useGalleryListing({
           const response = await (
             await api
           ).get<unknown>(
-            `folders/${listingOf.folderId}?includePathToRootFolder=true`
+            `folders/${listingOf.folderId}?includePathToRootFolder=true`,
           );
           const data = Parsers.isObject(response.data).flatMap(
-            Parsers.isNotNull
+            Parsers.isNotNull,
           );
           setDirectSection(
             data
@@ -1007,7 +1007,7 @@ export function useGalleryListing({
               .flatMap(Parsers.isString)
               .flatMap(parseGallerySection)
               .map((value) => ({ tag: "success" as const, value }))
-              .elseThrow()
+              .elseThrow(),
           );
 
           const path = data
@@ -1033,11 +1033,11 @@ export function useGalleryListing({
               Parsers.isObject(obj)
                 .flatMap(Parsers.isNotNull)
                 .flatMap((folderObj) =>
-                  parseGalleryFileFromFolderApiResponse(folderObj, p)
+                  parseGalleryFileFromFolderApiResponse(folderObj, p),
                 )
                 .elseThrow(),
             ],
-            []
+            [],
           );
           /*
            * this code does not work when the folderId is that of the
@@ -1057,7 +1057,7 @@ export function useGalleryListing({
                 .flatMap(Parsers.isObject)
                 .flatMap(Parsers.isNotNull)
                 .flatMap((folderObj) =>
-                  parseGalleryFileFromFolderApiResponse(folderObj, parents)
+                  parseGalleryFileFromFolderApiResponse(folderObj, parents),
                 )
                 .elseThrow(),
             ],
@@ -1090,7 +1090,7 @@ export function useGalleryListing({
   const [totalPages, setTotalPages] = React.useState<number>(0);
   const [totalHits, setTotalHits] = React.useState<number>(0);
   const [parentId, setParentId] = React.useState<Result<Id>>(
-    Result.Error([new Error("Parent Id is not yet known")])
+    Result.Error([new Error("Parent Id is not yet known")]),
   );
   const selection = useGallerySelection();
   const { login } = useFilestoreLogin();
@@ -1109,10 +1109,10 @@ export function useGalleryListing({
         if (searchTerm !== "")
           return `There are no top-level ${gallerySectionCollectiveNoun[s]} that match the search term "${searchTerm}".`;
         return `There are no top-level ${gallerySectionCollectiveNoun[s]}.`;
-      }
+      },
     )(
       FetchingData.getSuccessValue(path),
-      FetchingData.getSuccessValue(section)
+      FetchingData.getSuccessValue(section),
     ).orElse("Loading...");
   }
 
@@ -1126,7 +1126,7 @@ export function useGalleryListing({
   function parseGalleryFiles(
     data: unknown,
     token: string,
-    p: ReadonlyArray<GalleryFile>
+    p: ReadonlyArray<GalleryFile>,
   ) {
     return Parsers.objectPath(["data", "items", "results"], data)
       .flatMap(Parsers.isArray)
@@ -1153,13 +1153,13 @@ export function useGalleryListing({
                     .elseThrow();
 
                   const ownerName = Parsers.getValueWithKey("ownerFullName")(
-                    obj
+                    obj,
                   )
                     .flatMap(Parsers.isString)
                     .orElse("Unknown owner");
 
                   const description = Parsers.getValueWithKey("description")(
-                    obj
+                    obj,
                   )
                     .flatMap(Parsers.isString)
                     .map((d) => {
@@ -1169,19 +1169,19 @@ export function useGalleryListing({
                     .orElseTry(() =>
                       Parsers.getValueWithKey("description")(obj)
                         .flatMap(Parsers.isNull)
-                        .map(() => Description.Empty())
+                        .map(() => Description.Empty()),
                     )
                     .orElse(Description.Missing());
 
                   const creationDate = Parsers.getValueWithKey("creationDate")(
-                    obj
+                    obj,
                   )
                     .flatMap(Parsers.isNumber)
                     .flatMap(Parsers.parseDate)
                     .elseThrow();
 
                   const modificationDate = Parsers.getValueWithKey(
-                    "modificationDate"
+                    "modificationDate",
                   )(obj)
                     .flatMap(Parsers.isNumber)
                     .flatMap(Parsers.parseDate)
@@ -1193,15 +1193,15 @@ export function useGalleryListing({
 
                   const extension = Parsers.getValueWithKey("extension")(obj)
                     .flatMap((e) =>
-                      Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
+                      Parsers.isString(e).orElseTry(() => Parsers.isNull(e)),
                     )
                     .elseThrow();
 
                   const thumbnailId = Parsers.getValueWithKey("thumbnailId")(
-                    obj
+                    obj,
                   )
                     .flatMap((t) =>
-                      Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
+                      Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t)),
                     )
                     .elseThrow();
 
@@ -1215,7 +1215,7 @@ export function useGalleryListing({
 
                   const originalImageId = Parsers.objectPath(
                     ["originalImageOid", "idString"],
-                    obj
+                    obj,
                   )
                     .flatMap(Parsers.isString)
                     .orElse(null);
@@ -1239,22 +1239,22 @@ export function useGalleryListing({
                       thumbnailId,
                       originalImageId,
                       token,
-                    })
+                    }),
                   );
                 } catch (e) {
                   return Result.Error<GalleryFile>([
                     e instanceof Error ? e : new Error("Unknown error"),
                   ]);
                 }
-              })
-          )
+              }),
+          ),
         ).orElseGet<ReadonlyArray<GalleryFile>>((errors) => {
           addAlert(
             mkAlert({
               variant: "error",
               title: "Could not process Gallery content.",
               message: "Please try refreshing.",
-            })
+            }),
           );
           errors.forEach((e) => {
             console.error(e);
@@ -1273,7 +1273,7 @@ export function useGalleryListing({
                 variant: "error",
                 title: "Error retrieving gallery files.",
                 message: exceptionMessage,
-              })
+              }),
             );
           });
         return [];
@@ -1303,20 +1303,20 @@ export function useGalleryListing({
                       .elseThrow();
 
                     const filesystem = Parsers.getValueWithKey("fileSystem")(
-                      obj
+                      obj,
                     )
                       .flatMap(Parsers.isObject)
                       .flatMap(Parsers.isNotNull)
                       .elseThrow();
 
                     const filesystemId = Parsers.getValueWithKey("id")(
-                      filesystem
+                      filesystem,
                     )
                       .flatMap(Parsers.isNumber)
                       .elseThrow();
 
                     const filesystemName = Parsers.getValueWithKey("name")(
-                      filesystem
+                      filesystem,
                     )
                       .flatMap(Parsers.isString)
                       .elseThrow();
@@ -1327,21 +1327,21 @@ export function useGalleryListing({
                         name,
                         filesystemId,
                         filesystemName,
-                      })
+                      }),
                     );
                   } catch (e) {
                     return Result.Error<GalleryFile>([
                       e instanceof Error ? e : new Error("Unknown error"),
                     ]);
                   }
-                })
-            )
-          )
+                }),
+            ),
+          ),
         )
         .do(clearAndSetGalleryListing);
 
       setParentId(
-        Result.Error([new Error("Remote filesystems don't have parent ids")])
+        Result.Error([new Error("Remote filesystems don't have parent ids")]),
       );
 
       Parsers.isArray(data)
@@ -1356,7 +1356,7 @@ export function useGalleryListing({
           variant: "error",
           title: "Error retrieving filestores.",
           message: "Please try refreshing.",
-        })
+        }),
       );
       console.error(e);
     } finally {
@@ -1372,13 +1372,13 @@ export function useGalleryListing({
       .toResult(
         () =>
           new Error(
-            "Remote files path should never be empty. Where is the filestore?"
-          )
+            "Remote files path should never be empty. Where is the filestore?",
+          ),
       )
       .flatMap<Filestore>((p) =>
         p instanceof Filestore
           ? Result.Ok(p)
-          : Result.Error([new Error("First part of path isn't a filestore")])
+          : Result.Error([new Error("First part of path isn't a filestore")]),
       )
       .elseThrow();
 
@@ -1388,10 +1388,10 @@ export function useGalleryListing({
         await api
       ).get<unknown>(
         `gallery/filestores/${idToString(
-          filestore.id
+          filestore.id,
         ).elseThrow()}/browse?remotePath=${ArrayUtils.last(pa)
           .map((file) => file.pathAsString())
-          .orElse("/")}`
+          .orElse("/")}`,
       );
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -1421,7 +1421,7 @@ export function useGalleryListing({
                       .elseThrow();
 
                     const modificationDate = Parsers.getValueWithKey(
-                      "modificationDate"
+                      "modificationDate",
                     )(obj)
                       .flatMap(Parsers.isString)
                       .flatMap(Parsers.parseDate)
@@ -1441,21 +1441,21 @@ export function useGalleryListing({
                         path: pa,
                         logicPath,
                         token,
-                      })
+                      }),
                     );
                   } catch (e) {
                     return Result.Error<GalleryFile>([
                       e instanceof Error ? e : new Error("Unknown error"),
                     ]);
                   }
-                })
-            )
-          )
+                }),
+            ),
+          ),
         )
         .do(clearAndSetGalleryListing);
 
       setParentId(
-        Result.Error([new Error("Remote filesystems don't have parent ids")])
+        Result.Error([new Error("Remote filesystems don't have parent ids")]),
       );
 
       Parsers.isObject(data)
@@ -1474,7 +1474,7 @@ export function useGalleryListing({
           .flatMap((status) =>
             status === 403
               ? Result.Ok(null)
-              : Result.Error([new Error("Not a 403")])
+              : Result.Error([new Error("Not a 403")]),
           )
           .flatMap(() =>
             Parsers.objectPath(["response", "data", "message"], e)
@@ -1482,8 +1482,8 @@ export function useGalleryListing({
               .flatMap((message) =>
                 new RegExp("Call '/login' endpoint first?").test(message)
                   ? Result.Ok(true)
-                  : Result.Error([new Error("Not a login error")])
-              )
+                  : Result.Error([new Error("Not a login error")]),
+              ),
           )
           .orElse(false)
       ) {
@@ -1504,7 +1504,7 @@ export function useGalleryListing({
               variant: "error",
               title: "Error retrieving remote files.",
               message: e.message,
-            })
+            }),
           );
           setErrorState(true);
           throw e;
@@ -1518,7 +1518,7 @@ export function useGalleryListing({
 
   async function getGalleryFiles(
     p: ReadonlyArray<GalleryFile>,
-    s: GallerySection
+    s: GallerySection,
   ): Promise<void> {
     setErrorState(false);
     if (s === "NetworkFiles" && p.length === 0) {
@@ -1560,19 +1560,19 @@ export function useGalleryListing({
           .flatMap(Parsers.isObject)
           .flatMap(Parsers.isNotNull)
           .flatMap(Parsers.getValueWithKey("parentId"))
-          .flatMap(Parsers.isNumber)
+          .flatMap(Parsers.isNumber),
       );
 
       setTotalPages(
         Parsers.objectPath(["data", "items", "totalPages"], data)
           .flatMap(Parsers.isNumber)
-          .orElse(1)
+          .orElse(1),
       );
 
       setTotalHits(
         Parsers.objectPath(["data", "items", "totalHits"], data)
           .flatMap(Parsers.isNumber)
-          .orElse(1)
+          .orElse(1),
       );
 
       clearAndSetGalleryListing(parseGalleryFiles(data, token, p));
@@ -1585,7 +1585,7 @@ export function useGalleryListing({
             variant: "error",
             title: "Error retrieving gallery files.",
             message: e.message,
-          })
+          }),
         );
       }
     } finally {
@@ -1629,7 +1629,7 @@ export function useGalleryListing({
       void getGalleryFiles(p, s);
     })(
       FetchingData.getSuccessValue(path),
-      FetchingData.getSuccessValue(section)
+      FetchingData.getSuccessValue(section),
     );
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - getGalleryFiles will not meaningfully change
@@ -1675,7 +1675,7 @@ export function useGalleryListing({
           return getFilestores();
         }
         throw new Error(
-          "refreshListing is not implemented for filestore contents"
+          "refreshListing is not implemented for filestore contents",
         );
       }
       try {
@@ -1715,7 +1715,7 @@ export function useGalleryListing({
                     });
                   const newTotalPages = Parsers.objectPath(
                     ["data", "items", "totalPages"],
-                    data
+                    data,
                   )
                     .flatMap(Parsers.isNumber)
                     .orElse(1);
@@ -1728,8 +1728,8 @@ export function useGalleryListing({
                   setPage(Math.min(page, newTotalPages - 1));
 
                   return parseGalleryFiles(data, token, pa);
-                })
-            )
+                }),
+            ),
           )
         ).flat();
         clearAndSetGalleryListing(newFiles);
@@ -1772,7 +1772,7 @@ export function useGalleryListing({
             variant: "error",
             title: "Error refreshing Gallery listing.",
             message: e.message,
-          })
+          }),
         );
       } finally {
         setRefreshing(false);

@@ -57,6 +57,7 @@ import RsSet from "../../util/set";
 import docLinks from "../../assets/DocLinks";
 import Stack from "@mui/material/Stack";
 import * as ArrayUtils from "../../util/ArrayUtils";
+import Result from "@/util/result";
 
 const WholePage = styled(
   ({
@@ -64,6 +65,7 @@ const WholePage = styled(
     setSelectedSection,
     setPath,
     autoSelect,
+    title,
   }: {
     listingOf:
       | {
@@ -75,6 +77,13 @@ const WholePage = styled(
     setSelectedSection: ({ mediaType }: { mediaType: GallerySection }) => void;
     setPath: (path: ReadonlyArray<GalleryFile>) => void;
     autoSelect?: ReadonlyArray<number>;
+    title: ({
+      path,
+      section,
+    }: {
+      path: ReadonlyArray<GalleryFile>;
+      section: GallerySection;
+    }) => string;
   }) => {
     const theme = useTheme();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -82,13 +91,13 @@ const WholePage = styled(
       PREFERENCES.GALLERY_SORT_BY,
       {
         defaultValue: "modificationDate",
-      }
+      },
     );
     const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(
       PREFERENCES.GALLERY_SORT_ORDER,
       {
         defaultValue: "DESC",
-      }
+      },
     );
     const { galleryListing, folderId, path, refreshListing, selectedSection } =
       useGalleryListing({
@@ -106,7 +115,7 @@ const WholePage = styled(
           if (listing.tag === "empty") return;
           for (const f of new RsSet(listing.list).intersectionMap(
             ({ id }) => idToString(id).elseThrow(),
-            new RsSet(autoSelect ?? []).map((id) => `${id}`)
+            new RsSet(autoSelect ?? []).map((id) => `${id}`),
           )) {
             selection.append(f);
           }
@@ -149,21 +158,18 @@ const WholePage = styled(
     }, []);
 
     React.useEffect(() => {
-      if (listingOf.tag === "folder") {
-        document.title = `${FetchingData.getSuccessValue(path)
-          .flatMap(ArrayUtils.last)
-          .map((file) => `${file.name} `)
-          .orElse("")}| RSpace Gallery`;
-      } else {
-        if (listingOf.path.length > 0) {
-          document.title = `${
-            ArrayUtils.last(listingOf.path).elseThrow().name
-          } | RSpace Gallery`;
-        } else {
-          document.title = `${
-            gallerySectionLabel[listingOf.section]
-          } | RSpace Gallery`;
-        }
+      try {
+        Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>(
+          (p, s) => {
+            document.title = `${title({ path: p, section: s })} | RSpace Gallery`;
+          },
+        )(
+          FetchingData.getSuccessValue(path),
+          FetchingData.getSuccessValue(selectedSection),
+        );
+      } catch (e) {
+        console.error("Error setting document title", e);
+        document.title = "RSpace Gallery";
       }
     }, [listingOf, path]);
 
@@ -184,8 +190,8 @@ const WholePage = styled(
                         if (newPath.length > 0) {
                           navigate(
                             `/gallery/${idToString(
-                              newPath[newPath.length - 1].id
-                            ).elseThrow()}`
+                              newPath[newPath.length - 1].id,
+                            ).elseThrow()}`,
                           );
                         } else {
                           try {
@@ -194,7 +200,7 @@ const WholePage = styled(
                             // do nothing
                           }
                         }
-                      }
+                      },
                     );
                   }}
                 >
@@ -239,7 +245,7 @@ const WholePage = styled(
                     >
                       <Sidebar
                         selectedSection={FetchingData.getSuccessValue(
-                          selectedSection
+                          selectedSection,
                         ).orElse(null)}
                         setSelectedSection={(mediaType) => {
                           setSelectedSection({ mediaType });
@@ -266,7 +272,7 @@ const WholePage = styled(
                       >
                         <MainPanel
                           selectedSection={FetchingData.getSuccessValue(
-                            selectedSection
+                            selectedSection,
                           ).orElse(null)}
                           path={FetchingData.getSuccessValue(path).orElse(null)}
                           setSelectedSection={(mediaType) => {
@@ -304,7 +310,7 @@ const WholePage = styled(
         </CallableImagePreview>
       </>
     );
-  }
+  },
 )(() => ({
   "@keyframes drop": {
     "0%": {
@@ -363,6 +369,11 @@ function LandingPage() {
           listingOf={{ tag: "section", section: selectedSection, path }}
           setSelectedSection={setSelectedSection}
           setPath={setPath}
+          title={({ path, section }) =>
+            ArrayUtils.last(path)
+              .map(({ name }) => name)
+              .orElse(gallerySectionLabel[section])
+          }
         />
       );
     },
@@ -389,6 +400,7 @@ function GalleryFolder() {
             navigate(`/gallery?mediaType=${mediaType}`);
           }}
           setPath={() => {}}
+          title={({ path }) => ArrayUtils.last(path).elseThrow().name}
         />
       );
     })
@@ -402,6 +414,7 @@ function GalleryFileInFolder() {
   const [folderId, setFolderId] = React.useState<FetchingData.Fetched<number>>({
     tag: "loading",
   });
+  const [fileName, setFileName] = React.useState<string | null>(null);
   const { getToken } = useOauthToken();
 
   async function fetchFileDetails() {
@@ -413,13 +426,18 @@ function GalleryFileInFolder() {
           headers: {
             Authorization: "Bearer " + token,
           },
-        }
+        },
       );
       setFolderId(
         Parsers.objectPath(["parentFolderId"], data)
           .flatMap(Parsers.isNumber)
           .map((id) => ({ tag: "success" as const, value: id }))
-          .orElseGet(([e]) => ({ tag: "error", error: e.message }))
+          .orElseGet(([e]) => ({ tag: "error", error: e.message })),
+      );
+      setFileName(
+        Parsers.objectPath(["name"], data)
+          .flatMap(Parsers.isString)
+          .orElse(null),
       );
     } catch (error) {
       console.error("Error fetching file details", error);
@@ -450,9 +468,77 @@ function GalleryFileInFolder() {
           .flatMap(Parsers.parseInteger)
           .map((fileId) => [fileId])
           .orElse([])}
+        title={() => fileName ?? "Loading..."}
       />
     ),
   });
+}
+
+export function Gallery() {
+  return (
+    <Analytics>
+      <ErrorBoundary>
+        <GoogleLoginProvider />
+        <StyledEngineProvider injectFirst>
+          <CssBaseline />
+          <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+            <UiPreferences>
+              <DisableDragAndDropByDefault>
+                <Routes>
+                  <Route
+                    path="/gallery"
+                    element={
+                      <Alerts>
+                        <RouterNavigationProvider>
+                          <GallerySelection>
+                            <FilestoreLoginProvider>
+                              <LandingPage />
+                            </FilestoreLoginProvider>
+                          </GallerySelection>
+                        </RouterNavigationProvider>
+                      </Alerts>
+                    }
+                  />
+                  <Route
+                    path="gallery/:folderId"
+                    element={
+                      <Alerts>
+                        <RouterNavigationProvider>
+                          <GallerySelection>
+                            <FilestoreLoginProvider>
+                              <GalleryFolder />
+                            </FilestoreLoginProvider>
+                          </GallerySelection>
+                        </RouterNavigationProvider>
+                      </Alerts>
+                    }
+                  />
+                  <Route
+                    path="gallery/item/:fileId"
+                    element={
+                      <Alerts>
+                        <RouterNavigationProvider>
+                          <GallerySelection>
+                            <FilestoreLoginProvider>
+                              <GalleryFileInFolder />
+                            </FilestoreLoginProvider>
+                          </GallerySelection>
+                        </RouterNavigationProvider>
+                      </Alerts>
+                    }
+                  />
+                  <Route
+                    path="*"
+                    element={<Navigate to="/gallery" replace />}
+                  />
+                </Routes>
+              </DisableDragAndDropByDefault>
+            </UiPreferences>
+          </ThemeProvider>
+        </StyledEngineProvider>
+      </ErrorBoundary>
+    </Analytics>
+  );
 }
 
 window.addEventListener("load", () => {
@@ -463,71 +549,10 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <Analytics>
-          <ErrorBoundary>
-            <BrowserRouter>
-              <GoogleLoginProvider />
-              <StyledEngineProvider injectFirst>
-                <CssBaseline />
-                <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-                  <UiPreferences>
-                    <DisableDragAndDropByDefault>
-                      <Routes>
-                        <Route
-                          path="/gallery"
-                          element={
-                            <Alerts>
-                              <RouterNavigationProvider>
-                                <GallerySelection>
-                                  <FilestoreLoginProvider>
-                                    <LandingPage />
-                                  </FilestoreLoginProvider>
-                                </GallerySelection>
-                              </RouterNavigationProvider>
-                            </Alerts>
-                          }
-                        />
-                        <Route
-                          path="gallery/:folderId"
-                          element={
-                            <Alerts>
-                              <RouterNavigationProvider>
-                                <GallerySelection>
-                                  <FilestoreLoginProvider>
-                                    <GalleryFolder />
-                                  </FilestoreLoginProvider>
-                                </GallerySelection>
-                              </RouterNavigationProvider>
-                            </Alerts>
-                          }
-                        />
-                        <Route
-                          path="gallery/item/:fileId"
-                          element={
-                            <Alerts>
-                              <RouterNavigationProvider>
-                                <GallerySelection>
-                                  <FilestoreLoginProvider>
-                                    <GalleryFileInFolder />
-                                  </FilestoreLoginProvider>
-                                </GallerySelection>
-                              </RouterNavigationProvider>
-                            </Alerts>
-                          }
-                        />
-                        <Route
-                          path="*"
-                          element={<Navigate to="/gallery" replace />}
-                        />
-                      </Routes>
-                    </DisableDragAndDropByDefault>
-                  </UiPreferences>
-                </ThemeProvider>
-              </StyledEngineProvider>
-            </BrowserRouter>
-          </ErrorBoundary>
-        </Analytics>
-      </React.StrictMode>
+        <BrowserRouter>
+          <Gallery />
+        </BrowserRouter>
+      </React.StrictMode>,
     );
 
     const meta = document.createElement("meta");
