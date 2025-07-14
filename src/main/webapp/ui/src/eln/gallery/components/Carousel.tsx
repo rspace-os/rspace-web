@@ -522,6 +522,8 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
           </Button>
         </Grid>
         <Typography
+          role="status"
+          aria-label="Current file index"
           variant="body2"
           sx={{
             alignSelf: "center",

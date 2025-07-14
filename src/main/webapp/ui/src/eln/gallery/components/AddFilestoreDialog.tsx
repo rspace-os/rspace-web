@@ -374,6 +374,9 @@ function NameStep(props: {
           onChange={({ target: { value } }) => {
             setName(value);
           }}
+          inputProps={{
+            "aria-label": "Filestore name",
+          }}
         />
         <Box sx={{ mb: 2 }}>
           <Button
