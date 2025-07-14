@@ -15,6 +15,7 @@ import { DataGridColumn } from "../../util/table";
 import {
   GridToolbarContainer,
   GridToolbarColumnsButton,
+  GridRowId,
 } from "@mui/x-data-grid";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -32,6 +33,12 @@ import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import docLinks from "../../assets/DocLinks";
 import { ACCENT_COLOR } from "../../assets/branding/fieldmark";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
+import Result from "@/util/result";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormHelperText from "@mui/material/FormHelperText";
 
 /**
  * This class allows us to provide a link to the newly created container in the
@@ -152,6 +159,12 @@ export default function FieldmarkImportDialog({
     React.useState<HTMLElement | null>(null);
   const [fetchingNotebooks, setFetchingNotebooks] = React.useState(false);
   const [importing, setImporting] = React.useState(false);
+  const [fetchingIdentifierFields, setFetchingIdentifierFields] =
+    React.useState(false);
+  const [identifierFields, setIdentifierFields] =
+    React.useState<ReadonlyArray<string> | null>(null);
+  const [selectedIdentifierField, setSelectedIdentifierField] =
+    React.useState<string>("");
 
   React.useEffect(
     doNotAwait(async () => {
@@ -159,7 +172,7 @@ export default function FieldmarkImportDialog({
       setFetchingNotebooks(true);
       try {
         const { data } = await InvApiService.get<ReadonlyArray<Notebook>>(
-          "/fieldmark/notebooks"
+          "/fieldmark/notebooks",
         );
         setNotebooks(data);
       } catch (e) {
@@ -167,7 +180,7 @@ export default function FieldmarkImportDialog({
         if (e instanceof Error) {
           const message = Parsers.objectPath(
             ["response", "data", "data", "validationErrors"],
-            e
+            e,
           )
             .flatMap(Parsers.isArray)
             .flatMap(ArrayUtils.head)
@@ -181,14 +194,14 @@ export default function FieldmarkImportDialog({
               variant: "error",
               title: "Could not get notebooks from Fieldmark",
               message,
-            })
+            }),
           );
         }
       } finally {
         setFetchingNotebooks(false);
       }
     }),
-    [open]
+    [open],
   );
 
   async function importNotebook(notebook: Notebook) {
@@ -199,6 +212,9 @@ export default function FieldmarkImportDialog({
         containerGlobalId: string;
       }>("/import/fieldmark/notebook", {
         notebookId: notebook.metadata.project_id,
+        ...(selectedIdentifierField
+          ? { identifier: selectedIdentifierField }
+          : {}),
       });
       addAlert(
         mkAlert({
@@ -214,7 +230,7 @@ export default function FieldmarkImportDialog({
               }),
             },
           ],
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -224,11 +240,36 @@ export default function FieldmarkImportDialog({
             variant: "error",
             title: "Could not import notebook.",
             message: e.message,
-          })
+          }),
         );
       throw e;
     } finally {
       setImporting(false);
+    }
+  }
+
+  async function fetchIdentifierColumn(
+    notebookId: Notebook["metadata"]["project_id"],
+  ) {
+    setFetchingIdentifierFields(true);
+    setIdentifierFields(null);
+    setSelectedIdentifierField("");
+    try {
+      const { data } = await InvApiService.get(
+        "/fieldmark/notebooks/igsn/" + notebookId,
+      );
+      setIdentifierFields(
+        Parsers.isArray(data)
+          .flatMap((fieldNames) =>
+            Result.all(...fieldNames.map(Parsers.isString)),
+          )
+          .elseThrow(),
+      );
+    } catch (e) {
+      console.error(e);
+      setIdentifierFields([]);
+    } finally {
+      setFetchingIdentifierFields(false);
     }
   }
 
@@ -289,7 +330,7 @@ export default function FieldmarkImportDialog({
                       headerName: "Name",
                       flex: 1,
                       sortable: false,
-                    }
+                    },
                   ),
                   DataGridColumn.newColumnWithFieldName<"status", Notebook>(
                     "status",
@@ -297,7 +338,7 @@ export default function FieldmarkImportDialog({
                       headerName: "Status",
                       flex: 1,
                       sortable: false,
-                    }
+                    },
                   ),
                   DataGridColumn.newColumnWithValueGetter<
                     "isPublic",
@@ -319,7 +360,7 @@ export default function FieldmarkImportDialog({
                       headerName: "Description",
                       flex: 1,
                       sortable: false,
-                    }
+                    },
                   ),
                   DataGridColumn.newColumnWithValueGetter<
                     "projectLead",
@@ -332,7 +373,7 @@ export default function FieldmarkImportDialog({
                       headerName: "Project Lead",
                       flex: 1,
                       sortable: false,
-                    }
+                    },
                   ),
                   DataGridColumn.newColumnWithValueGetter<
                     "id",
@@ -360,9 +401,12 @@ export default function FieldmarkImportDialog({
                 onSelectionChange={(newSelectionId) => {
                   ArrayUtils.find(
                     (n) => n.metadata.project_id === newSelectionId,
-                    notebooks ?? []
+                    notebooks ?? [],
                   ).do((newlySelectedNotebook) => {
                     setSelectedNotebook(newlySelectedNotebook);
+                    void fetchIdentifierColumn(
+                      newlySelectedNotebook.metadata.project_id,
+                    );
                   });
                 }}
                 selectRadioAriaLabelFunc={(row) =>
@@ -390,6 +434,55 @@ export default function FieldmarkImportDialog({
                 getRowId={(row) => row.metadata.project_id}
               />
             </Grid>
+            <Grid item>
+              {selectedNotebook && (
+                <>
+                  {fetchingIdentifierFields ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        ml: 2,
+                      }}
+                    >
+                      <CircularProgress size={24} />
+                      <Typography variant="body2">
+                        Loading available identifier fields...
+                      </Typography>
+                    </Box>
+                  ) : (
+                    identifierFields &&
+                    identifierFields.length > 0 && (
+                      <FormControl sx={{ width: "auto", minWidth: 200 }}>
+                        <InputLabel id="identifier-field-select-label">
+                          Identifier Field
+                        </InputLabel>
+                        <Select
+                          labelId="identifier-field-select-label"
+                          id="identifier-field-select"
+                          value={selectedIdentifierField}
+                          label="Identifier Field"
+                          onChange={(e) =>
+                            setSelectedIdentifierField(e.target.value)
+                          }
+                        >
+                          {identifierFields.map((field) => (
+                            <MenuItem key={field} value={field}>
+                              {field}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        <FormHelperText>
+                          Select the field to use as the identifier for imported
+                          samples
+                        </FormHelperText>
+                      </FormControl>
+                    )
+                  )}
+                </>
+              )}
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
@@ -403,7 +496,7 @@ export default function FieldmarkImportDialog({
                   onClick={() => {
                     if (selectedNotebook)
                       void importNotebook(selectedNotebook).then(() =>
-                        onClose()
+                        onClose(),
                       );
                   }}
                   validationResult={
