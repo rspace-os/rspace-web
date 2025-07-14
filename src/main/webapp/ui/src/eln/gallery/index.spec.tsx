@@ -10,6 +10,9 @@ const feature = test.extend<{
       cb: (id: number) => Promise<void>,
     ) => Promise<void>;
   };
+  Let2: {
+    "the id be an integer": () => AsyncGenerator<void, void, unknown>;
+  };
   Given: {
     "the Gallery is mounted": ({
       url,
@@ -36,6 +39,18 @@ const feature = test.extend<{
       },
     });
   },
+  // Let2: async ({}, use) => {
+  //   await use({
+  //     "the id be an integer": async function* () {
+  //       await fc.assert(
+  //         fc.asyncProperty(fc.integer({ min: 1 }), async (id) => {
+  //           yield id;
+  //         }),
+  //         { numRuns: 5 },
+  //       );
+  //     },
+  //   });
+  // },
   Given: async ({ mount }, use) => {
     await use({
       "the Gallery is mounted": async ({
@@ -309,4 +324,60 @@ test.describe("Gallery", () => {
       });
     });
   });
+
+  // feature("fast-check test 3", async ({ Let2, Given, Then }) => {
+  //   async function* test() {
+  //     const id: number = yield Let2["the id be an integer"]();
+  //     await Given["the Gallery is mounted"]({
+  //       url: `/item/${id}`,
+  //     });
+  //     await Then["the page title should be"]("Picture1.png | RSpace Gallery");
+  //   }
+  //   test();
+  // });
+});
+
+const properties = {
+  "id be an integer": fc.integer({ min: 1 }),
+  "name be a string": fc.string(),
+  // ... other properties
+};
+
+function propertyTest(
+  name: string,
+  testFn: (helpers: {
+    Let: (desc: string) => any;
+    Given: any;
+    Then: any;
+  }) => Promise<void>,
+) {
+  return feature(name, async ({ Given, Then }) => {
+    const propertyValues = Object.fromEntries(
+      Object.entries(properties).map(([key, arb]) => [key, arb]),
+    );
+
+    await fc.assert(
+      fc.asyncProperty(fc.record(propertyValues), async (generated) => {
+        const Let = (description: string) => {
+          if (!(description in generated)) {
+            throw new Error(`Unknown property: ${description}`);
+          }
+          return generated[description];
+        };
+
+        await testFn({ Let, Given, Then });
+      }),
+      { numRuns: 5 },
+    );
+  });
+}
+
+propertyTest("fast-check test 3", async ({ Let, Given, Then }) => {
+  const id = Let("id be an integer");
+
+  const component = await Given["the Gallery is mounted"]({
+    url: `/item/${id}`,
+  });
+  await Then["the page title should be"]("Picture1.png | RSpace Gallery");
+  await component.unmount();
 });
