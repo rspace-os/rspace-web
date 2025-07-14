@@ -49,11 +49,13 @@ const feature = test.extend<{
   },
 });
 
-type ArbType = "string" | "integer" | "natural number";
+type ArbType = "string" | "integer" | "natural number" | "one of";
 function property(name: string) {
   return {
     let: function <T>(
-      setupFn: (IsAny: (desc: ArbType) => string | number) => T,
+      setupFn: (
+        IsAny: (desc: ArbType, ...args: Array<unknown>) => unknown,
+      ) => T,
     ) {
       return {
         checkThat: (
@@ -87,9 +89,9 @@ function property(name: string) {
              * We take a first pass over the IsAny calls to determine which
              * properties are used in the setup function.
              */
-            const usedProperties = new Set<string>();
-            setupFn((description: ArbType) => {
-              usedProperties.add(description);
+            const usedProperties = new Map<string, Array<unknown>>();
+            setupFn((description: ArbType, ...args: Array<unknown>) => {
+              usedProperties.set(description, args);
               return "some string";
             });
 
@@ -98,23 +100,27 @@ function property(name: string) {
              * used in the setup function.
              */
             const propertyValues: {
-              integer: fc.Arbitrary<number>;
-              string: fc.Arbitrary<string>;
-              "natural number": fc.Arbitrary<number>;
-            } = Object.fromEntries(
-              Array.from(usedProperties).map((key) => {
-                switch (key) {
-                  case "integer":
-                    return [key, fc.integer({ min: 1 })];
-                  case "string":
-                    return [key, fc.string()];
-                  case "natural number":
-                    return [key, fc.nat()];
-                  default:
-                    throw new Error(`Unknown property: ${key}`);
-                }
-              }),
-            );
+              integer?: fc.Arbitrary<number>;
+              string?: fc.Arbitrary<string>;
+              "natural number"?: fc.Arbitrary<number>;
+              "one of"?: fc.Arbitrary<unknown>;
+            } = {};
+            if (usedProperties.has("integer")) {
+              propertyValues["integer"] = fc.integer({ min: 1 });
+            }
+            if (usedProperties.has("string")) {
+              propertyValues["string"] = fc.string();
+            }
+            if (usedProperties.has("natural number")) {
+              propertyValues["natural number"] = fc.nat();
+            }
+            if (usedProperties.has("one of")) {
+              propertyValues["one of"] = fc.oneof(
+                ...usedProperties
+                  .get("one of")!
+                  .map((value) => fc.constant(value)),
+              ) as fc.Arbitrary<unknown>;
+            }
 
             /*
              * Finally we run the test function with the generated values.
@@ -308,13 +314,40 @@ test.describe("Gallery", () => {
          */
       },
     );
-    feature(
-      "On '/gallery?mediaType=Videos', the title should be 'Videos | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]({ url: "?mediaType=Videos" });
-        await Then["the page title should be"]("Videos | RSpace Gallery");
-      },
-    );
+
+    property(
+      "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'",
+    )
+      .let((IsAny) => ({
+        section: IsAny(
+          "one of",
+          "Images",
+          "Audios",
+          "Videos",
+          "Documents",
+          "Chemistry",
+          "DMPs",
+          "Snippets",
+          "Miscellaneous",
+          "PdfDocuments",
+        ),
+      }))
+      .checkThat(async ({ section }, { Given, Then }) => {
+        console.debug(section);
+        await Given["the Gallery is mounted"]({
+          url: `?mediaType=${section}`,
+        });
+        /*
+         * For some of the pages, we keep the old URL for backwards compatibility but use a more descriptive title
+         */
+        if (section === "PdfDocuments") {
+          await Then["the page title should be"]("Exports | RSpace Gallery");
+        } else if (section === "Audios") {
+          await Then["the page title should be"]("Audio | RSpace Gallery");
+        } else {
+          await Then["the page title should be"](`${section} | RSpace Gallery`);
+        }
+      });
 
     property("On '/{id}', the title should be '{folder name} | RSpace Gallery'")
       .let((IsAny) => ({
