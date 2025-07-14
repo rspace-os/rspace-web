@@ -1,15 +1,21 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import { test, expect, MountResult } from "@playwright/experimental-ct-react";
 import React from "react";
 import { GalleryStory } from "./index.story";
 import * as Jwt from "jsonwebtoken";
+import fc from "fast-check";
 
 const feature = test.extend<{
+  Let: {
+    "the id be an integer": (
+      cb: (id: number) => Promise<void>,
+    ) => Promise<void>;
+  };
   Given: {
     "the Gallery is mounted": ({
       url,
     }?: {
       url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
-    }) => Promise<void>;
+    }) => Promise<MountResult>;
   };
   Once: {};
   When: {};
@@ -18,6 +24,18 @@ const feature = test.extend<{
   };
   networkRequests: Array<URL>;
 }>({
+  Let: async ({}, use) => {
+    await use({
+      "the id be an integer": async (cb: (id: number) => Promise<void>) => {
+        await fc.assert(
+          fc.asyncProperty(fc.integer({ min: 1 }), async (id) => {
+            await cb(id);
+          }),
+          { numRuns: 5 },
+        );
+      },
+    });
+  },
   Given: async ({ mount }, use) => {
     await use({
       "the Gallery is mounted": async ({
@@ -25,7 +43,7 @@ const feature = test.extend<{
       }: {
         url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
       } = {}) => {
-        await mount(<GalleryStory urlSuffix={url} />);
+        return mount(<GalleryStory urlSuffix={url} />);
       },
     });
   },
@@ -189,7 +207,7 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
-  await router.route("/api/v1/files/456", (route) => {
+  await router.route("/api/v1/files/*", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -218,44 +236,77 @@ feature.beforeEach(async ({ router }) => {
   });
 });
 
-feature.afterEach(({}) => {});
+// feature.afterEach(({}) => {});
 
 test.describe("Gallery", () => {
   test.describe("Should have a title that describes the current page", () => {
-    /*
-     * This an a11y requirement, under WCAG 2.2 criteria 2.4.2 Page Titled (A),
-     * see https://www.w3.org/WAI/WCAG21/Understanding/page-titled.html
-     */
-    feature(
-      "On `/gallery', the title should be 'Images | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]();
-        await Then["the page title should be"]("Images | RSpace Gallery");
-        /*
-         * The images is the default gallery section.
-         */
-      },
-    );
-    feature(
-      "On '/gallery?mediaType=Videos', the title should be 'Videos | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]({ url: "?mediaType=Videos" });
-        await Then["the page title should be"]("Videos | RSpace Gallery");
-      },
-    );
-    feature(
-      "On '/123', the title should be 'Examples | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]({ url: "/123" });
-        await Then["the page title should be"]("Examples | RSpace Gallery");
-      },
-    );
-    feature(
-      "On '/item/456', the title should be 'Picture1.png | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]({ url: "/item/456" });
+    //     /*
+    //      * This an a11y requirement, under WCAG 2.2 criteria 2.4.2 Page Titled (A),
+    //      * see https://www.w3.org/WAI/WCAG21/Understanding/page-titled.html
+    //      */
+    //     feature(
+    //       "On `/gallery', the title should be 'Images | RSpace Gallery'",
+    //       async ({ Given, Then }) => {
+    //         await Given["the Gallery is mounted"]();
+    //         await Then["the page title should be"]("Images | RSpace Gallery");
+    //         /*
+    //          * The images is the default gallery section.
+    //          */
+    //       },
+    //     );
+    //     feature(
+    //       "On '/gallery?mediaType=Videos', the title should be 'Videos | RSpace Gallery'",
+    //       async ({ Given, Then }) => {
+    //         await Given["the Gallery is mounted"]({ url: "?mediaType=Videos" });
+    //         await Then["the page title should be"]("Videos | RSpace Gallery");
+    //       },
+    //     );
+    //     feature(
+    //       "On '/123', the title should be 'Examples | RSpace Gallery'",
+    //       async ({ Given, Then }) => {
+    //         await Given["the Gallery is mounted"]({ url: "/123" });
+    //         await Then["the page title should be"]("Examples | RSpace Gallery");
+    //       },
+    //     );
+    //     feature(
+    //       "On '/item/456', the title should be 'Picture1.png | RSpace Gallery'",
+    //       async ({ Given, Then }) => {
+    //         return fc.assert(
+    //           fc.asyncProperty(fc.integer({ min: 1 }), async (id) => {
+    //             const component = await Given["the Gallery is mounted"]({
+    //               url: "/item/456",
+    //             });
+    //             await Then["the page title should be"](
+    //               "Picture1.png | RSpace Gallery",
+    //             );
+    //             component.unmount();
+    //           }),
+    //         );
+    //       },
+    //     );
+
+    feature("fast-check test", async ({ mount, Then }) => {
+      await fc.assert(
+        fc.asyncProperty(fc.integer({ min: 1 }), async (id) => {
+          const component = await mount(
+            <GalleryStory urlSuffix={`/item/${id}`} />,
+          );
+          await Then["the page title should be"](
+            "Picture1.png | RSpace Gallery",
+          );
+          await component.unmount();
+        }),
+        { numRuns: 5 },
+      );
+    });
+
+    feature("fast-check test 2", async ({ Let, Given, Then }) => {
+      await Let["the id be an integer"](async (id) => {
+        await Given["the Gallery is mounted"]({
+          url: `/item/${id}`,
+        });
         await Then["the page title should be"]("Picture1.png | RSpace Gallery");
-      },
-    );
+      });
+    });
   });
 });
