@@ -4,6 +4,32 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.12.0 2025-07-15
+
+### ELN Features
+
+- RSDEV-681 new integration with PubChem, can be used by users who enabled 'Chemistry' App
+- RSDEV-644 incoming messages count is added to Navbar, so it can be accessed from every page
+- RSDEV-691 users can now trigger document creation inside shared notebooks
+- RSDEV-684 chemical search dialog explains that only searching for a single molecule is supported
+
+### ELN Bugfix
+
+- RSDEV-729, RSDEV-733 performance fixes around opening notebooks, and navigating between notebook entries
+
+### Inventory Features
+
+- RSDEV-631 pre-created IGSN IDs can be now linked with CSV import
+
+### Inventory Bugfix
+
+- RSDEV-694 fix problem with Container tags not being saved during CSV import
+- RSDEV-709 fix problem with 'previous location' column
+
+### Contributed by open-source community
+
+- ISSUE#232 align RSpace API and UI when retrieving audit trail events (contributed by richarda23)
+
 # 2.11.0 2025-06-06
 
 ### ELN Features
