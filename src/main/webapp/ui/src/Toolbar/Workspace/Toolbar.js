@@ -206,22 +206,26 @@ class WorkspaceToolbar extends React.Component {
     tree_view();
     this.setState({ treeView: true });
     this.handleClose(0);
+    RS.trackEvent("user:view:tree:workspace");
   };
 
   openListView = () => {
     list_view();
     this.setState({ treeView: false });
     this.handleClose(0);
+    RS.trackEvent("user:view:list:workspace");
   };
 
   openFolderView = () => {
     this.setState({ viewableItemsFilter: false }, this.displayWorkspace);
     this.handleClose(1);
+    RS.trackEvent("user:view:folder:workspace");
   };
 
   openViewAll = () => {
     this.setState({ viewableItemsFilter: true }, this.displayWorkspace);
     this.handleClose(1);
+    RS.trackEvent("user:view:all:workspace");
   };
 
   toggleFilter = (filter) => {
