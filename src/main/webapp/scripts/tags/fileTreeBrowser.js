@@ -312,7 +312,7 @@ function _selectFileTreeBrowserNode(node) {
 
   var $tree = $('#fancyTree');
   var topMargin = -($tree.height() / 3); // so selected record is about the middle
-  $('#fancyTree').scrollTo(node.li, 300, { axis : 'y', offset: { top: topMargin } });
+  $('#fancyTree').scrollTo(node.li, 300, {axis: 'y', offset: {top: topMargin}});
 }
 
 function _selectRecordInFileTreeBrowserBranch(node) {
@@ -325,15 +325,42 @@ function _selectRecordInFileTreeBrowserBranch(node) {
       });
     } else if (!node.isLoading()) {
       node.load();
-    };
-  } 
-  if (node.key == fileTreeBrowserRecordId) {
-    if (!fileTreeBrowserCurrentBreadcrumbIds.includes(node.key)) {
-      fileTreeBrowserCurrentBreadcrumbIds.push(node.key);
     }
-    // in timeout, as maybe the tree is just being expanded
-    setTimeout(function() {
-      _selectFileTreeBrowserNode(node);
-    }, 0);
   }
+
+  if (node.key === fileTreeBrowserRecordId.toString()) {
+    if (_isNodeAncestorMatchingBreadcrumbs(node)) {
+      // in timeout, as maybe the tree is just being expanded
+      setTimeout(function () {
+        _selectFileTreeBrowserNode(node);
+      }, 0);
+    }
+  }
+}
+
+/* prt-962, the node with given key may be in a few places of the filetree,
+   e.g. in Workspace and in Shared folder. The method checks if the node parents
+    are matching the nodes shown by breadcrumbs */
+function _isNodeAncestorMatchingBreadcrumbs(node) {
+  const breadcrumbsLength = fileTreeBrowserCurrentBreadcrumbIds.length;
+  if (node === null || node.parent === null || breadcrumbsLength < 1) {
+    return false; // unexpected
+  }
+  if (breadcrumbsLength === 2 && node.parent.parent === null) {
+    return true; // top level workspace
+  }
+  if (breadcrumbsLength === 3) {
+    if (node.parent.key === fileTreeBrowserCurrentBreadcrumbIds.slice(-2)[0]
+        && node.parent.parent.parent === null) {
+      return true; // workspace subfolder/notebook
+    }
+  }
+  if (breadcrumbsLength > 3) {
+    if (node.parent.key === fileTreeBrowserCurrentBreadcrumbIds.slice(-2)[0]
+        && node.parent.parent.key
+        === fileTreeBrowserCurrentBreadcrumbIds.slice(-3)[0]) {
+      return true; // both parent and grandparent ids are matching
+    }
+  }
+  return false;
 }

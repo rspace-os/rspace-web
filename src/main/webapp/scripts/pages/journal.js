@@ -401,7 +401,6 @@ function journal($, extensions = default_extensions) {
       }
 
       methods._readjustJournalPageAfterImagesLoaded();
-      extensions.selectFileTreeBrowserRecordById(journalPrivateVars.selectedRecordId);
     },
 
     _readjustJournalPageAfterImagesLoaded: function() {
@@ -412,6 +411,7 @@ function journal($, extensions = default_extensions) {
 
         methods._updateTopHeaderWithEntryData();
         updateEntryNameInBreadcrumbs(journalPrivateVars.selectedRecordId, journalPrivateVars.pageName);
+        extensions.selectFileTreeBrowserRecordById(journalPrivateVars.selectedRecordId);
 
         // updating top scrollbar
         var journalPageElement = $(".journalPageContent")[0];
