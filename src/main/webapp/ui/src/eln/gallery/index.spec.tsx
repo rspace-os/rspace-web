@@ -49,14 +49,18 @@ const feature = test.extend<{
   },
 });
 
-type ArbType = "string" | "integer" | "natural number" | "one of";
 function property(name: string) {
   return {
-    let: function <T>(
-      setupFn: ({
+    let: function <T extends object>(
+      letBindings: ({
         IsAny,
+        IsOneOf,
       }: {
-        IsAny: (desc: ArbType, ...args: Array<unknown>) => unknown;
+        IsAny: (
+          desc: "string" | "integer" | "natural number",
+          ...args: Array<unknown>
+        ) => unknown;
+        IsOneOf: (...options: Array<unknown>) => unknown;
       }) => T,
     ) {
       return {
@@ -87,72 +91,40 @@ function property(name: string) {
               },
             };
 
-            /*
-             * We take a first pass over the IsAny calls to determine which
-             * properties are used in the setup function.
-             */
-            const usedProperties = new Map<string, Array<unknown>>();
-            setupFn({
-              IsAny: (description: ArbType, ...args: Array<unknown>) => {
-                usedProperties.set(description, args);
-                return "some string";
+            const letBindingsToArbitraries = letBindings({
+              IsAny: (description, ...args) => {
+                if (description === "integer") {
+                  return fc.integer();
+                }
+                if (description === "string") {
+                  return fc.string();
+                }
+                if (description === "natural number") {
+                  return fc.nat();
+                }
+                throw new Error(`Unknown type: ${description}`);
               },
+              IsOneOf: (...options) => fc.constantFrom(...options),
             });
 
-            /*
-             * Next we create the arbitraries for the properties that were
-             * used in the setup function.
-             */
-            const propertyValues: {
-              integer?: fc.Arbitrary<number>;
-              string?: fc.Arbitrary<string>;
-              "natural number"?: fc.Arbitrary<number>;
-              "one of"?: fc.Arbitrary<unknown>;
-            } = {};
-            if (usedProperties.has("integer")) {
-              propertyValues["integer"] = fc.integer({ min: 1 });
-            }
-            if (usedProperties.has("string")) {
-              propertyValues["string"] = fc.string();
-            }
-            if (usedProperties.has("natural number")) {
-              propertyValues["natural number"] = fc.nat();
-            }
-            if (usedProperties.has("one of")) {
-              propertyValues["one of"] = fc.oneof(
-                ...usedProperties
-                  .get("one of")!
-                  .map((value) => fc.constant(value)),
-              ) as fc.Arbitrary<unknown>;
-            }
-
-            /*
-             * Finally we run the test function with the generated values.
-             */
             await fc.assert(
-              fc.asyncProperty(fc.record(propertyValues), async (generated) => {
-                const isAny = (description: ArbType) => {
-                  if (!(description in generated)) {
-                    throw new Error(`Unknown property: ${description}`);
+              fc.asyncProperty(
+                fc.record(letBindingsToArbitraries),
+                async (generated) => {
+                  try {
+                    await testFn(generated as T, {
+                      Given: wrappedGiven,
+                      Then,
+                      router,
+                    });
+                  } finally {
+                    if (mountedComponent) {
+                      await mountedComponent.unmount();
+                      mountedComponent = null;
+                    }
                   }
-                  return generated[description];
-                };
-
-                const actualValues = setupFn({ IsAny: isAny });
-
-                try {
-                  await testFn(actualValues, {
-                    Given: wrappedGiven,
-                    Then,
-                    router,
-                  });
-                } finally {
-                  if (mountedComponent) {
-                    await mountedComponent.unmount();
-                    mountedComponent = null;
-                  }
-                }
-              }),
+                },
+              ),
               { numRuns: 5 },
             );
           });
@@ -322,9 +294,8 @@ test.describe("Gallery", () => {
     property(
       "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'",
     )
-      .let(({ IsAny }) => ({
-        section: IsAny(
-          "one of",
+      .let(({ IsOneOf }) => ({
+        section: IsOneOf(
           "Images",
           "Audios",
           "Videos",
@@ -337,7 +308,6 @@ test.describe("Gallery", () => {
         ),
       }))
       .checkThat(async ({ section }, { Given, Then }) => {
-        console.debug(section);
         await Given["the Gallery is mounted"]({
           url: `?mediaType=${section}`,
         });
