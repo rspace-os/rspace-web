@@ -191,6 +191,10 @@ class AdvancedSearch extends React.Component {
     workspaceSettings.pageNumber = 0;
 
     doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
+    RS.trackEvent("user:search:advanced:workspace", {
+      options: workspaceSettings.options,
+      operator: workspaceSettings.operator,
+    });
   };
 
   formatTerm = (query) => {
@@ -200,7 +204,7 @@ class AdvancedSearch extends React.Component {
         query.to,
         23,
         59,
-        59
+        59,
       )}`;
     } else if (query.filter == "records") {
       return query.term.join("; ");
@@ -284,7 +288,7 @@ class AdvancedSearch extends React.Component {
       },
       () => {
         if (valid) this.submitSearch();
-      }
+      },
     );
   };
 
@@ -317,7 +321,7 @@ class AdvancedSearch extends React.Component {
         </td>
         <td className="search-term">
           {["fullText", "name", "form", "template", "attachment"].includes(
-            query.filter
+            query.filter,
           ) && (
             <Searchbox
               idx={idx}
@@ -441,7 +445,7 @@ class AdvancedSearch extends React.Component {
                     <div>
                       Satisfy all conditions
                       {this.state.queries.findIndex(
-                        (q) => q.filter == "records"
+                        (q) => q.filter == "records",
                       ) != -1 && (
                         <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
                           <IconButton
@@ -475,7 +479,7 @@ class AdvancedSearch extends React.Component {
                     <div>
                       Satisfy at least one condition
                       {this.state.queries.findIndex(
-                        (q) => q.filter == "records"
+                        (q) => q.filter == "records",
                       ) != -1 && (
                         <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
                           <IconButton
