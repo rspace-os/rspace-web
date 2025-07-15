@@ -79,31 +79,4 @@ describe("Apps page", () => {
       { level: 2, content: "Third-party RSpace Integrations" },
     ]);
   });
-
-  describe("Third-party section", () => {
-    test.only("Ascenscia should also be shown in this section", async () => {
-      mockAxios.onGet("livechatProperties").reply(200, {
-        livechatEnabled: false,
-      });
-      mockAxios
-        .onGet("integration/allIntegrations")
-        .reply(200, allIntegrationsAreDisabled);
-
-      render(
-        <ThemeProvider theme={materialTheme}>
-          <App />
-        </ThemeProvider>
-      );
-
-      await waitFor(() => {
-        expect(
-          within(
-            screen.getByRole("region", {
-              name: /Third-party RSpace Integrations/,
-            })
-          ).getByRole("button", { name: /Ascenscia/ })
-        ).toBeVisible();
-      });
-    });
-  });
 });

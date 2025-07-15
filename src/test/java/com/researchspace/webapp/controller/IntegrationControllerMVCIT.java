@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.model.preference.Preference.BOX;
 import static com.researchspace.model.preference.Preference.DROPBOX;
 import static com.researchspace.service.IntegrationsHandler.ARGOS_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.ASCENSCIA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.CLUSTERMARKET_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
@@ -69,7 +70,7 @@ import org.springframework.test.web.servlet.MvcResult;
             + " \"https://pyrat2.server.com\", \"token\": \"server2-secret-token\"}}")
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 27;
+  final int TOTAL_INTEGRATIONS = 28;
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
@@ -128,6 +129,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(DIGITAL_COMMONS_DATA_APP_NAME, new String[] {});
     expectedOptions.put(FIELDMARK_APP_NAME, new String[] {});
     expectedOptions.put(GALAXY_APP_NAME, new String[] {});
+    expectedOptions.put(ASCENSCIA_APP_NAME, new String[] {});
 
     for (var info : infos.values()) {
       String integrationName = (String) info.get("name");
