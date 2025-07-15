@@ -167,6 +167,7 @@ $(document).ready(function() {
 
 	$('body').on("click", '#openNotificationDlgLink', function(e) {
 		$('#notificationsDlg').dialog('open');
+		RS.trackEvent("user:open:notifications_dialog:workspace");
 	});
 
 	// set up pop-up dialog with notification listings, dialog defined in notifications_ajax.jsp
