@@ -163,8 +163,14 @@ export default function FieldmarkImportDialog({
     React.useState(false);
   const [identifierFields, setIdentifierFields] =
     React.useState<ReadonlyArray<string> | null>(null);
-  const [selectedIdentifierField, setSelectedIdentifierField] =
-    React.useState<string>("");
+
+  type IdentifierFieldSelection =
+    | { type: "unselected" }
+    | { type: "none" }
+    | { type: "selected"; field: string };
+
+  const [identifierFieldSelection, setIdentifierFieldSelection] =
+    React.useState<IdentifierFieldSelection>({ type: "unselected" });
 
   React.useEffect(
     doNotAwait(async () => {
@@ -212,8 +218,8 @@ export default function FieldmarkImportDialog({
         containerGlobalId: string;
       }>("/import/fieldmark/notebook", {
         notebookId: notebook.metadata.project_id,
-        ...(selectedIdentifierField
-          ? { identifier: selectedIdentifierField }
+        ...(identifierFieldSelection.type === "selected"
+          ? { identifier: identifierFieldSelection.field }
           : {}),
       });
       addAlert(
@@ -253,7 +259,7 @@ export default function FieldmarkImportDialog({
   ) {
     setFetchingIdentifierFields(true);
     setIdentifierFields(null);
-    setSelectedIdentifierField("");
+    setIdentifierFieldSelection({ type: "unselected" });
     try {
       const { data } = await InvApiService.get(
         "/fieldmark/notebooks/igsn/" + notebookId,
@@ -461,12 +467,33 @@ export default function FieldmarkImportDialog({
                         <Select
                           labelId="identifier-field-select-label"
                           id="identifier-field-select"
-                          value={selectedIdentifierField}
-                          label="Identifier Field"
-                          onChange={(e) =>
-                            setSelectedIdentifierField(e.target.value)
+                          value={
+                            identifierFieldSelection.type === "none"
+                              ? "none"
+                              : identifierFieldSelection.type === "selected"
+                                ? identifierFieldSelection.field
+                                : ""
                           }
+                          label="Identifier Field"
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === "none") {
+                              setIdentifierFieldSelection({ type: "none" });
+                            } else if (value !== "") {
+                              setIdentifierFieldSelection({
+                                type: "selected",
+                                field: value,
+                              });
+                            } else {
+                              setIdentifierFieldSelection({
+                                type: "unselected",
+                              });
+                            }
+                          }}
                         >
+                          <MenuItem value="none">
+                            <em>Do not use an identifier</em>
+                          </MenuItem>
                           {identifierFields.map((field) => (
                             <MenuItem key={field} value={field}>
                               {field}
@@ -474,8 +501,9 @@ export default function FieldmarkImportDialog({
                           ))}
                         </Select>
                         <FormHelperText>
-                          Select the field to use as the identifier for imported
-                          samples
+                          Select a field to use as the identifier for imported
+                          samples, or select 'Do not use an identifier' to
+                          import without one
                         </FormHelperText>
                       </FormControl>
                     )
