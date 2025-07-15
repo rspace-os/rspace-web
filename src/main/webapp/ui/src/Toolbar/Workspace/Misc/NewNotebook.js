@@ -38,16 +38,17 @@ export default function NewNotebook() {
     form.attr("method", "POST");
     form.attr(
       "action",
-      "/workspace/create_notebook/" + workspaceSettings.parentFolderId
+      "/workspace/create_notebook/" + workspaceSettings.parentFolderId,
     );
     form.append(
       $(`<input name="notebookNameField" value="${name}"/>`).attr(
         "type",
-        "hidden"
-      )
+        "hidden",
+      ),
     );
     $("body").append(form);
     form.submit();
+    RS.trackEvent("user:create:notebook:workspace");
   }
 
   const focusUsernameInputField = (input) => {
