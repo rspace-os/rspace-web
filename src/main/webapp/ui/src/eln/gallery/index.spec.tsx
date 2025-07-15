@@ -57,7 +57,11 @@ function property(name: string) {
         IsOneOf,
       }: {
         IsAny: (
-          desc: "string" | "integer" | "natural number",
+          desc:
+            | "file id"
+            | "file name without extension"
+            | "folder id"
+            | "folder name",
           ...args: Array<unknown>
         ) => unknown;
         IsOneOf: (...options: Array<unknown>) => unknown;
@@ -87,14 +91,17 @@ function property(name: string) {
           })(name, async ({ Given, Then, router }) => {
             const letBindingsToArbitraries = letBindings({
               IsAny: (description, ...args) => {
-                if (description === "integer") {
-                  return fc.integer();
+                if (description === "file id") {
+                  return fc.integer({ min: 1, max: 10000 });
                 }
-                if (description === "string") {
-                  return fc.string();
+                if (description === "file name without extension") {
+                  return fc.string({ minLength: 1, maxLength: 20 });
                 }
-                if (description === "natural number") {
-                  return fc.nat();
+                if (description === "folder id") {
+                  return fc.nat(1000);
+                }
+                if (description === "folder name") {
+                  return fc.string({ minLength: 1, maxLength: 20 });
                 }
                 throw new Error(`Unknown type: ${description}`);
               },
@@ -319,8 +326,8 @@ test.describe("Gallery", () => {
 
     property("On '/{id}', the title should be '{folder name} | RSpace Gallery'")
       .let(({ IsAny }) => ({
-        id: IsAny("natural number"),
-        folderName: IsAny("string"),
+        id: IsAny("folder id"),
+        folderName: IsAny("folder name"),
       }))
       .checkThat(async ({ id, folderName }, { Given, Then, router }) => {
         await router.route("/api/v1/folders/*", (route) =>
@@ -378,8 +385,8 @@ test.describe("Gallery", () => {
       "On '/item/{id}', the title should be '{filename} | RSpace Gallery'",
     )
       .let(({ IsAny }) => ({
-        id: IsAny("integer"),
-        filename: IsAny("string"),
+        id: IsAny("file id"),
+        filename: IsAny("file name without extension"),
       }))
       .checkThat(async ({ id, filename }, { Given, Then, router }) => {
         await router.route(`/api/v1/files/${id}`, (route) =>
