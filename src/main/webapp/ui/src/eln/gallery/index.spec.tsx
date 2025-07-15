@@ -70,27 +70,21 @@ function property(name: string) {
             helpers: { Given: any; Then: any; router: RouterFixture },
           ) => Promise<void>,
         ) => {
-          return feature(name, async ({ Given, Then, router }) => {
+          let mountedComponent: MountResult | null = null;
+          return feature.extend({
             /*
              * With each iteration of the test, we need to make sure that
-             * react has a clean state so we wrap the Given steps that mount
-             * components to keep track of the mounted components, so that
-             * after the test is done, we can unmount them.
+             * react has a clean state so we wrap the mount function to keep
+             * track of the mounted components, so that after the test is done,
+             * we can unmount them.
              */
-            let mountedComponent: MountResult | null = null;
-            const wrappedGiven = {
-              ...Given,
-              "the Gallery is mounted": async (
-                args: {
-                  url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
-                } = {},
-              ) => {
-                const component = await Given["the Gallery is mounted"](args);
-                mountedComponent = component;
-                return component;
-              },
-            };
-
+            mount: async ({ mount }, use) => {
+              await use(async (component, options) => {
+                mountedComponent = await mount(component, options);
+                return mountedComponent;
+              });
+            },
+          })(name, async ({ Given, Then, router }) => {
             const letBindingsToArbitraries = letBindings({
               IsAny: (description, ...args) => {
                 if (description === "integer") {
@@ -113,7 +107,7 @@ function property(name: string) {
                 async (generated) => {
                   try {
                     await testFn(generated as T, {
-                      Given: wrappedGiven,
+                      Given,
                       Then,
                       router,
                     });
