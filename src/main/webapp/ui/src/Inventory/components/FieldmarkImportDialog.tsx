@@ -176,6 +176,9 @@ export default function FieldmarkImportDialog({
     doNotAwait(async () => {
       if (!open) return;
       setFetchingNotebooks(true);
+      setIdentifierFieldSelection({ type: "unselected" });
+      setSelectedNotebook(null);
+      setNotebooks(null);
       try {
         const { data } = await InvApiService.get<ReadonlyArray<Notebook>>(
           "/fieldmark/notebooks",
