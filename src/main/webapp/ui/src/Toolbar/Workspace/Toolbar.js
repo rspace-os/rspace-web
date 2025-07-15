@@ -241,6 +241,7 @@ class WorkspaceToolbar extends React.Component {
     const callback = () => {
       this.setWorkspaceSettings();
       getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
+      RS.trackEvent("user:view:labgroup:workspace");
     };
 
     this.setWorkspaceSettingsUrl();
@@ -444,7 +445,10 @@ class WorkspaceToolbar extends React.Component {
             ></span>
             <Tooltip title="Favorites" enterDelay={300}>
               <IconButton
-                onClick={() => this.toggleFilter("favoritesFilter")}
+                onClick={() => {
+                  this.toggleFilter("favoritesFilter");
+                  RS.trackEvent("user:filter:favorites:workspace");
+                }}
                 id="favoritesFilter_1"
                 color={this.state.favoritesFilter ? "default" : "inherit"}
                 className={this.state.favoritesFilter ? "active" : ""}
@@ -456,7 +460,10 @@ class WorkspaceToolbar extends React.Component {
             </Tooltip>
             <Tooltip title="Shared with me" enterDelay={300}>
               <IconButton
-                onClick={() => this.toggleFilter("sharedFilter")}
+                onClick={() => {
+                  this.toggleFilter("sharedFilter");
+                  RS.trackEvent("user:filter:shared_with_me:workspace");
+                }}
                 id="sharedFilter_1"
                 color={this.state.sharedFilter ? "default" : "inherit"}
                 className={this.state.sharedFilter ? "active" : ""}
@@ -468,7 +475,10 @@ class WorkspaceToolbar extends React.Component {
             </Tooltip>
             <Tooltip title="Templates" enterDelay={300}>
               <IconButton
-                onClick={() => this.toggleFilter("templatesFilter")}
+                onClick={() => {
+                  this.toggleFilter("templatesFilter");
+                  RS.trackEvent("user:filter:templates:workspace");
+                }}
                 id="templatesFilter_1"
                 color={this.state.templatesFilter ? "default" : "inherit"}
                 className={this.state.templatesFilter ? "active" : ""}
@@ -491,7 +501,10 @@ class WorkspaceToolbar extends React.Component {
             </Tooltip>
             <Tooltip title="Ontology files" enterDelay={300}>
               <IconButton
-                onClick={() => this.toggleFilter("ontologiesFilter")}
+                onClick={() => {
+                  this.toggleFilter("ontologiesFilter");
+                  RS.trackEvent("user:filter:ontologies:workspace");
+                }}
                 id="ontologiesFilter_1"
                 color={this.state.ontologiesFilter ? "default" : "inherit"}
                 className={this.state.ontologiesFilter ? "active" : ""}
