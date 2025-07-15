@@ -71,7 +71,7 @@ export default function BarcodeScannerSkeleton({
             message: e.message,
             variant: "error",
             isInfinite: true,
-          })
+          }),
         );
     } finally {
       onClose();

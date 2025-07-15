@@ -10,6 +10,8 @@ import AllBarcodeScanner from "../AllBarcodeScanner";
 import { sleep } from "../../../../util/Util";
 import { type BarcodeInput } from "../BarcodeScannerSkeleton";
 import userEvent from "@testing-library/user-event";
+import { ThemeProvider } from "@mui/material/styles";
+import materialTheme from "../../../../theme";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -27,11 +29,13 @@ describe("AllBarcodeScanner", () => {
     const onScan = jest.fn() as jest.Mock<void, [BarcodeInput]>;
 
     render(
-      <AllBarcodeScanner
-        onClose={() => {}}
-        onScan={onScan}
-        buttonPrefix="Scan"
-      />
+      <ThemeProvider theme={materialTheme}>
+        <AllBarcodeScanner
+          onClose={() => {}}
+          onScan={onScan}
+          buttonPrefix="Scan"
+        />
+      </ThemeProvider>,
     );
 
     /*
