@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
@@ -122,9 +123,11 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
       if (typeExtractor != null && byte[].class.equals(typeExtractor.getFieldType())) {
         // grab the path from CSV
         String filePath = csvRecords.getStringFieldValue(currentRecordDTO.getRecordId(), fieldName);
-        // grab the file from the ZIP and attach it to the extractor
-        typeExtractor.setFieldValue(filesInRecords.get(filePath));
-        ((FieldmarkFileExtractor) typeExtractor).setFileName(filePath);
+        if (StringUtils.isNotBlank(filePath)) {
+          // grab the file from the ZIP and attach it to the extractor
+          typeExtractor.setFieldValue(filesInRecords.get(filePath));
+          ((FieldmarkFileExtractor) typeExtractor).setFileName(filePath);
+        }
       }
       currentRecordDTO.addField(fieldName, typeExtractor);
     } catch (NoSuchElementException ex2) {

@@ -166,11 +166,13 @@ public class FieldmarkApiController extends BaseApiController implements Fieldma
           FieldmarkFileExtractor fileExtractor =
               (FieldmarkFileExtractor) currentRecordDTO.getField(currentField.getName());
 
-          inventoryFilesApiController.uploadFile(
-              new FieldmarkMultipartFile(
-                  fileExtractor.getFieldValue(), fileExtractor.getFileName()),
-              new ApiInventoryFilePost(globalId, fileExtractor.getFileName()),
-              user);
+          if (StringUtils.isNotBlank(fileExtractor.getFileName())) {
+            inventoryFilesApiController.uploadFile(
+                new FieldmarkMultipartFile(
+                    fileExtractor.getFieldValue(), fileExtractor.getFileName()),
+                new ApiInventoryFilePost(globalId, fileExtractor.getFileName()),
+                user);
+          }
         }
       }
     }
