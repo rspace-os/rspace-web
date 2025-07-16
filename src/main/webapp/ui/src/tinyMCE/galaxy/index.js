@@ -25,6 +25,5 @@ parent.tinymce.activeEditor.on("galaxy-used", function () {
   if (parent && parent.tinymce) {
     const ed = parent.tinymce.activeEditor;
     parent.dispatchEvent(new CustomEvent("galaxy-used", {detail: {fieldId:parent.tinymce.activeEditor.id}}));//TODO - add the datasets and history that were uploaded to Galaxy?
-    ed.windowManager.close();
   }
 });

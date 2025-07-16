@@ -2,11 +2,16 @@ package com.researchspace.integrations.galaxy.service;
 
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.API_KEY;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DATASET_ID_1;
+import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_DATA_EXITID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_INVOCATION_STATE;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_UUID;
+import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.ECATMEDIA_FILE1_GLOBAL_ID;
+import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.ECATMEDIA_FILE1_ID;
+import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.HISTORY_DATASET_ASSOCIATION_DATA_SET_ID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.HISTORY_ID_1;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.INPUT_ID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.INVOCATION_ID_1;
+import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.RSPACE_DOCUMENT_ID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOW_ID_1;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.createHistoryDatasetAssociation;
@@ -125,6 +130,7 @@ public class GalaxyServiceTest {
     EditInfo editInfo = new EditInfo();
     editInfo.setName("rspaceDocument");
     when(rspaceDocument.getEditInfo()).thenReturn(editInfo);
+    when(rspaceDocument.getId()).thenReturn(RSPACE_DOCUMENT_ID);
     when(client.createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY))).thenReturn(history);
     when(history.getId()).thenReturn(HISTORY_ID_1);
     when(history.getName()).thenReturn(HISTORY_NAME_ON_GALAXY);
@@ -134,6 +140,8 @@ public class GalaxyServiceTest {
         .thenReturn(ecatMediaFile2);
     when(ecatMediaFile1.getFileProperty()).thenReturn(fileProperyt1);
     when(ecatMediaFile2.getFileProperty()).thenReturn(fileProperyt2);
+    when(ecatMediaFile1.getId()).thenReturn(ECATMEDIA_FILE1_ID);
+    when(ecatMediaFile1.getGlobalIdentifier()).thenReturn(ECATMEDIA_FILE1_GLOBAL_ID);
     when(fileStore.findFile(eq(fileProperyt1))).thenReturn(attachmentFile1);
     when(fileStore.findFile(eq(fileProperyt2))).thenReturn(attachmentFile2);
     when(client.uploadFile(eq(HISTORY_ID_1), eq(API_KEY), eq(attachmentFile1)))
@@ -148,29 +156,32 @@ public class GalaxyServiceTest {
 
   @Test
   public void shouldUploadDataToGalaxyWhenSetUpDataInGalaxy() throws IOException {
-    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L});
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L}, "serverAddress");
     verify(client).createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY));
     verify(client).uploadFile(eq(HISTORY_ID_1), eq(API_KEY), eq(attachmentFile1));
   }
 
   @Test
-  public void shouldIncrementHistoryNameByOneWhenExistingUploadDataForThatFieldWhenSetUpDataInGalaxy() throws IOException {
+  public void
+      shouldIncrementHistoryNameByOneWhenExistingUploadDataForThatFieldWhenSetUpDataInGalaxy()
+          throws IOException {
     ExternalWorkFlowData testExternalWorkFlowData =
         ExternalWorkFlowTestMother.createExternalWorkFlowData(
             HISTORY_ID_1, DATASET_ID_1, "Test History");
 
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
-        1L, ExternalWorkFlowData.ExternalService.GALAXY))
+            1L, ExternalWorkFlowData.ExternalService.GALAXY))
         .thenReturn(List.of(testExternalWorkFlowData));
-    when(client.createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY+"_1"))).thenReturn(history);
-    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L});
-    verify(client).createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY+"_1"));
+    when(client.createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY + "_1")))
+        .thenReturn(history);
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L}, "serverAddress");
+    verify(client).createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY + "_1"));
     verify(client).uploadFile(eq(HISTORY_ID_1), eq(API_KEY), eq(attachmentFile1));
   }
 
   @Test
   public void shouldSaveDataWhenUploadToGalaxyIsCompleteWhenSetUpDataInGalaxy() throws IOException {
-    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L});
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L}, "serverAddress");
     verify(externalWorkFlowDataManager, times(2))
         .save(externalWorkFlowDataArgumentCaptor.capture());
     ExternalWorkFlowData externalWorkFlowData1 =
@@ -194,7 +205,7 @@ public class GalaxyServiceTest {
 
   @Test
   public void shouldCreateDataSetCollectionInGalaxyWhenSetUpDataInGalaxy() throws IOException {
-    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L});
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L}, "serverAddress");
     Map<String, String> uploadedFileNamesToIds = new HashMap<>();
     uploadedFileNamesToIds.put(
         "historyDatasetAssociationName1", "historyDatasetAssociationDataSetId1");
@@ -203,6 +214,15 @@ public class GalaxyServiceTest {
     verify(client)
         .createDatasetCollection(
             eq(API_KEY), eq(HISTORY_ID_1), eq(HISTORY_NAME_ON_GALAXY), eq(uploadedFileNamesToIds));
+  }
+
+  @Test
+  public void shouldPutAnnotationsInGalaxyWhenSetUpDataInGalaxy() throws IOException {
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[]{1L, 2L}, "serverAddress");
+    verify(client)
+        .putAnnotationOnDataset(eq(HISTORY_ID_1), eq(HISTORY_DATASET_ASSOCIATION_DATA_SET_ID + 1),
+            eq("Document: serverAddress/workspace/editor/structuredDocument/444 Data: serverAddress/gallery/item/123 Download: serverAddress/globalId/ecatmediafile1GlobalId"),
+            eq(API_KEY));
   }
 
   @Test
