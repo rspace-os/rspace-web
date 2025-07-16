@@ -1,6 +1,5 @@
 import React from "react";
 import Portal from "@mui/material/Portal";
-import Typography from "@mui/material/Typography";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import Alerts from "../../components/Alerts/Alerts";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
@@ -8,18 +7,8 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
-import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
-import Grid from "@mui/material/Grid";
 import axios from "@/common/axios";
-import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
-import { doNotAwait } from "../../util/Util";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import AlertContext, {
-  mkAlert,
-  type AlertDetails,
-} from "../../stores/contexts/Alert";
-import { Optional } from "../../util/optional";
-import docLinks from "../../assets/DocLinks";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import Analytics from "../../components/Analytics";
 import DialogContentText from "@mui/material/DialogContentText";
 import TextField from "@mui/material/TextField";
@@ -91,12 +80,18 @@ const RenameDialog = () => {
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Document renamed successfully",
+            message: "Successfully renamed document.",
           }),
         );
         trackEvent("user:renames:document:workspace");
         handleClose();
-        // trigger refresh of the table
+        window.dispatchEvent(
+          new CustomEvent("COMPLETE_RENAME", {
+            detail: {
+              newName,
+            },
+          }),
+        );
       } else {
         addAlert(
           mkAlert({
