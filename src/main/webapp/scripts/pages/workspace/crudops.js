@@ -380,74 +380,16 @@ function createMoveDialog(onmove, moveparams) {
 }
 
 function createRenameDialog() {
-  $('#renameRecord').dialog({
-    modal: true,
-    autoOpen: false,
-    title: "Rename",
-    open: function (event, ui) {
-      var name = $(this).data('recordNameWithoutExt');
-      $('#nameField').val(name);
-    },
-    buttons: {
-      Cancel: function () {
-        $(this).dialog('close');
-      },
-      Rename: function () {
-        $(this).dialog('close');
-        // recordId is defined local, it is not using workspaceSettings.
-        var recordId = $(this).data('selectedId');
-        var extension = $(this).data('recordExt');
-        var newName = $('#nameField').val() + extension;
-
-        var data = {
-          settingsKey: settingsKey,
-          recordId: recordId,
-          newName: newName
-        };
-        var jqxhr$ = $.post(createURL("/workspace/editor/structuredDocument/ajax/rename"),
-            data,
-            function (response) {
-              if (response.errorMsg !== null) {
-                apprise(getValidationErrorString(response.errorMsg));
-              } else {
-                // update document title
-                var idStr = "_" + recordId;
-                var match = "a[id$=" + idStr + "]";
-                $(match).text(newName);
-                reloadFileTreeBrowser();
-              }
-            });
-        jqxhr$.fail(function () {
-          RS.ajaxFailed("Renaming", false, jqxhr$);
-        });
-      }
-    }
-  });
-
-  RS.onEnterSubmitJQueryUIDialog('#renameRecord');
-
-  $('body').on('click', '#renameRecords', function (e) {
+  $("body").on("click", "#renameRecords", function (e) {
     e.preventDefault();
 
-    var selectedChkBxes = $("input[class='record_checkbox']:checked");
-    var $selected = $(selectedChkBxes[0]);
-    var selectedId = $selected.attr('id').split("_")[1];
-    var recordName = $selected.closest('tr').children().find("a.recordNameCell").text().trim();
-    var recordExt = "";
-
-    var type = $selected.siblings('[name="recordType"]').val();
-    var isMediaFile = type === 'MEDIA_FILE';
-    if (isMediaFile && recordName.indexOf('.') >= 0) {
-      recordExt = recordName.substring(recordName.lastIndexOf('.'));
-    }
-    var recordNameWithoutExt = recordName.substring(0, recordName.length - recordExt.length);
-
-    // this parameterizes the dialog
-    $("#renameRecord")
-    .data('selectedId', selectedId)
-    .data("recordNameWithoutExt", recordNameWithoutExt)
-    .data("recordExt", recordExt)
-    .dialog('open');
+    var selected = getSelectedIdsNamesAndTypes();
+    console.debug(selected);
+    window.dispatchEvent(
+      new CustomEvent("OPEN_RENAME_DIALOG", {
+        detail: { documentId: selected.ids[0], currentName: selected.names[0] },
+      }),
+    );
   });
 }
 
