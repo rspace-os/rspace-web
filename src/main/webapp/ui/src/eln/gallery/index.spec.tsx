@@ -4,21 +4,23 @@ import { GalleryStory } from "./index.story";
 import * as Jwt from "jsonwebtoken";
 import fc from "fast-check";
 import { type RouterFixture } from "@playwright/experimental-ct-core";
+import { GallerySection } from "./common";
+
+type GivenSteps = {
+  "the Gallery is mounted": ({
+    url,
+  }?: {
+    url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
+  }) => Promise<MountResult>;
+};
+
+type ThenSteps = {
+  "the page title should be": (title: string) => Promise<void>;
+};
 
 const feature = test.extend<{
-  Given: {
-    "the Gallery is mounted": ({
-      url,
-    }?: {
-      url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
-    }) => Promise<MountResult>;
-  };
-  Once: {};
-  When: {};
-  Then: {
-    "the page title should be": (title: string) => Promise<void>;
-  };
-  networkRequests: Array<URL>;
+  Given: GivenSteps;
+  Then: ThenSteps;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -31,27 +33,18 @@ const feature = test.extend<{
       },
     });
   },
-  Once: async ({ page }, use) => {
-    await use({});
-  },
-  When: async ({ page }, use) => {
-    await use({});
-  },
-  Then: async ({ page, networkRequests }, use) => {
+  Then: async ({ page }, use) => {
     await use({
       "the page title should be": async (title: string) => {
         await expect(page).toHaveTitle(title);
       },
     });
   },
-  networkRequests: async ({}, use) => {
-    await use([]);
-  },
 });
 
 function property(name: string) {
   return {
-    let: function <T extends object>(
+    let<T extends object>(
       letBindings: ({
         IsAny,
         IsOneOf,
@@ -65,14 +58,18 @@ function property(name: string) {
           ...args: Array<unknown>
         ) => unknown;
         IsOneOf: (...options: Array<unknown>) => unknown;
-      }) => T,
+      }) => T
     ) {
       return {
         checkThat: (
           testFn: (
             values: T,
-            helpers: { Given: any; Then: any; router: RouterFixture },
-          ) => Promise<void>,
+            helpers: {
+              Given: GivenSteps;
+              Then: ThenSteps;
+              router: RouterFixture;
+            }
+          ) => Promise<void>
         ) => {
           let mountedComponent: MountResult | null = null;
           return feature.extend({
@@ -90,7 +87,7 @@ function property(name: string) {
             },
           })(name, async ({ Given, Then, router }) => {
             const letBindingsToArbitraries = letBindings({
-              IsAny: (description, ...args) => {
+              IsAny: (description) => {
                 if (description === "file id") {
                   return fc.integer({ min: 1, max: 10000 });
                 }
@@ -103,7 +100,6 @@ function property(name: string) {
                 if (description === "folder name") {
                   return fc.string({ minLength: 1, maxLength: 20 });
                 }
-                throw new Error(`Unknown type: ${description}`);
               },
               IsOneOf: (...options) => fc.constantFrom(...options),
             });
@@ -124,9 +120,9 @@ function property(name: string) {
                       mountedComponent = null;
                     }
                   }
-                },
+                }
               ),
-              { numRuns: 5 },
+              { numRuns: 5 }
             );
           });
         },
@@ -269,7 +265,7 @@ feature.beforeEach(async ({ router }) => {
           },
         ],
       }),
-    }),
+    })
   );
 });
 
@@ -289,11 +285,11 @@ test.describe("Gallery", () => {
         /*
          * The images is the default gallery section.
          */
-      },
+      }
     );
 
     property(
-      "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'",
+      "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'"
     )
       .let(({ IsOneOf }) => ({
         section: IsOneOf(
@@ -305,8 +301,8 @@ test.describe("Gallery", () => {
           "DMPs",
           "Snippets",
           "Miscellaneous",
-          "PdfDocuments",
-        ),
+          "PdfDocuments"
+        ) as GallerySection,
       }))
       .checkThat(async ({ section }, { Given, Then }) => {
         await Given["the Gallery is mounted"]({
@@ -326,8 +322,8 @@ test.describe("Gallery", () => {
 
     property("On '/{id}', the title should be '{folder name} | RSpace Gallery'")
       .let(({ IsAny }) => ({
-        id: IsAny("folder id"),
-        folderName: IsAny("folder name"),
+        id: IsAny("folder id") as number,
+        folderName: IsAny("folder name") as string,
       }))
       .checkThat(async ({ id, folderName }, { Given, Then, router }) => {
         await router.route("/api/v1/folders/*", (route) =>
@@ -370,23 +366,23 @@ test.describe("Gallery", () => {
                 },
               ],
             }),
-          }),
+          })
         );
 
         await Given["the Gallery is mounted"]({
           url: `/${id}`,
         });
         await Then["the page title should be"](
-          `${folderName} | RSpace Gallery`,
+          `${folderName} | RSpace Gallery`
         );
       });
 
     property(
-      "On '/item/{id}', the title should be '{filename} | RSpace Gallery'",
+      "On '/item/{id}', the title should be '{filename} | RSpace Gallery'"
     )
       .let(({ IsAny }) => ({
-        id: IsAny("file id"),
-        filename: IsAny("file name without extension"),
+        id: IsAny("file id") as number,
+        filename: IsAny("file name without extension") as string,
       }))
       .checkThat(async ({ id, filename }, { Given, Then, router }) => {
         await router.route(`/api/v1/files/${id}`, (route) =>
@@ -404,14 +400,14 @@ test.describe("Gallery", () => {
               version: 1,
               parentFolderId: 123,
             }),
-          }),
+          })
         );
 
         await Given["the Gallery is mounted"]({
           url: `/item/${id}`,
         });
         await Then["the page title should be"](
-          `${filename}.jpg | RSpace Gallery`,
+          `${filename}.jpg | RSpace Gallery`
         );
       });
   });
