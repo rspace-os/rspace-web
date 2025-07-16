@@ -384,18 +384,18 @@ function createRenameDialog() {
     e.preventDefault();
 
     var selected = getSelectedIdsNamesAndTypes();
-    window.addEventListener("COMPLETE_RENAME", (event) => {
-      const newName = event.detail.newName;
-      var idStr = "_" + selected.ids[0];
-      var match = "a[id$=" + idStr + "]";
-      $(match).text(newName);
-      reloadFileTreeBrowser();
-    });
     window.dispatchEvent(
       new CustomEvent("OPEN_RENAME_DIALOG", {
         detail: { documentId: selected.ids[0], currentName: selected.names[0] },
       }),
     );
+  });
+  window.addEventListener("COMPLETE_RENAME", (event) => {
+    const newName = event.detail.newName;
+    var idStr = "_" + selected.ids[0];
+    var match = "a[id$=" + idStr + "]";
+    $(match).text(newName);
+    reloadFileTreeBrowser();
   });
 }
 

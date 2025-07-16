@@ -142,6 +142,7 @@ const RenameDialog = () => {
           <TextField
             size="small"
             label="Name"
+            value={newName}
             onChange={({ target: { value } }) => setNewName(value)}
           />
         </DialogContent>
