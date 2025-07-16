@@ -32,21 +32,7 @@ public class ExternalWorkFlowInvocationDaoHibernate
     externalWorkFlow = externalWorkFlowDao.save(externalWorkFlow);
     ExternalWorkFlowInvocation externalWorkFlowInvocation =
         new ExternalWorkFlowInvocation(
-            invocationId, new HashSet(allMatchingDataForThisInvocation), state, externalWorkFlow);
+            invocationId, new HashSet<>(allMatchingDataForThisInvocation), state, externalWorkFlow);
     save(externalWorkFlowInvocation);
   }
-
-  //  @Override
-  //  public List<ExternalWorkFlowData> findWorkFlowDataByRSpaceContainerIdAndServiceType(
-  //      long rspaceContainerId, ExternalWorkFlowData.ExternalService type) {
-  //    return sessionFactory
-  //        .getCurrentSession()
-  //        .createQuery(
-  //            "from ExternalWorkFlowData where rspacecontainerid = (:rspaceContainerId) and"
-  //                + " externalService = (:type) ",
-  //            ExternalWorkFlowData.class)
-  //        .setParameter("rspaceContainerId", rspaceContainerId)
-  //        .setParameter("type", type)
-  //        .list();
-  //  }
 }

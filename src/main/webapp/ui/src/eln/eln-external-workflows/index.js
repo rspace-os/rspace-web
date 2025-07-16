@@ -14,7 +14,7 @@ window.addEventListener("extWorkFlows-init", function () {
  * @param isForNotebookPage
  */
 const loadUIOnPageLoad = (isForNotebookPage = false) => {
-  [...document.getElementsByClassName("galaxy-textfield")].forEach(
+  [...document.getElementsByClassName("ext-workflows-textfield")].forEach(
       (wrapperDiv) => {
         const fieldId = wrapperDiv.getAttribute("data-field-id");
         const root = createRoot(wrapperDiv);

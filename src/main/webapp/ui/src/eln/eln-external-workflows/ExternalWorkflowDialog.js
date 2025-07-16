@@ -16,7 +16,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
 
       <>
         <Dialog open={open}  fullWidth maxWidth="xl" >
-          <DialogTitle>External WorkFlow Data</DialogTitle>
+          <DialogTitle>Galaxy WorkFlow Data</DialogTitle>
           <DialogContent>
             <Stack spacing={3}>
               <Typography>
@@ -35,7 +35,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
                     DataGridColumn.newColumnWithValueGetter("Data File Names",
                         (wf) =>  wf.galaxyDataNames,
                         {
-                          headerName: "Data File Names",
+                          headerName: "Data Uploaded",
                           flex: 1,
                           sortable: false,
                           resizable: true,
@@ -44,7 +44,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
                     DataGridColumn.newColumnWithValueGetter("Container",
                         (wf) => wf.galaxyHistoryName,
                         {
-                          headerName: "Container",
+                          headerName: "Container/Galaxy History",
                           flex: 1,
                           resizable: true,
                           renderCell: ({row}) =>
@@ -66,7 +66,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
                     DataGridColumn.newColumnWithValueGetter("Status",
                         (wf) => wf.galaxyInvocationStatus,
                         {
-                          headerName: "Status",
+                          headerName: "Invocation Status",
                           flex: 1,
                           resizable: true,
                           renderCell: ({row}) => row.galaxyInvocationStatus

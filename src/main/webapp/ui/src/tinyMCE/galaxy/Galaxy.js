@@ -21,6 +21,11 @@ function Galaxy({
     attachedFileInfo,
   galaxy_web_url
 }) {
+
+  parent.tinymce.activeEditor.on("galaxy-used",  function () {
+   setDoUpload(true);
+  });
+
   const sendDataToGalaxy = async () => {
     setHistoryId(null);
     setUploading(true);
@@ -34,7 +39,7 @@ function Galaxy({
     setUploading(false);
     window.parent.postMessage(
         {
-          mceAction:  "uploading_complete"
+          mceAction:  "uploading-complete"
         },
         "*"
     );
@@ -60,15 +65,34 @@ function Galaxy({
   const [historyId, setHistoryId] = useState(null);
   const [historyName, setHistoryName] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [doUpload, setDoUpload] = useState(false);
+  useEffect(() => {
+    void  setAttachedFiles(attachedFileInfo);
+  }, []);
+  useEffect(() => {
+    async function doTheUpload () {
+      if (doUpload) {
+        await sendDataToGalaxy();
+        window.parent.postMessage(
+            {
+              mceAction:  "no-data-selected"
+            },
+            "*"
+        );
+      }
+    }
+    doTheUpload();
+  }, [doUpload]);
   useEffect(() => {
     window.parent.postMessage(
         {
-          mceAction:  "disableClose"
+          mceAction: selectedAttachmentIds.length === 0 ? "no-data-selected"
+              : "data-selected"
         },
         "*"
     );
     void  setAttachedFiles(attachedFileInfo);
-  }, []);
+  }, [selectedAttachmentIds]);
   return (
       <StyledEngineProvider injectFirst>
         <link rel="stylesheet" href='/styles/simplicity/typo.css' />
@@ -88,7 +112,10 @@ function Galaxy({
                     >
                       {historyName}
                     </a>{" "}(opens in new tab){" "}</Typography><Typography variant="body1">
-                      <b>Click on 'switch to this  history' </b></Typography>
+                      <p><b> The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.</b></p>
+                    <p><b> Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear in your document. Any invocations in Galaxy which use
+                      this data will be tracked in RSpace, the data being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon indicates
+                      how many Galaxy Invocations are using the uploaded data.</b></p></Typography>
                   </Stack>
                 </TitledBox>
                 </>
@@ -100,21 +127,14 @@ function Galaxy({
                Choose attached files to be uploaded to Galaxy.
               </Typography>
               <Typography>
-                All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document.
+                All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:
+                <p><b>"RSPACE_" + document name + "_" + global ID of document + "_" + name of field data was attached to + "_" + global ID of that field.</b></p>
               </Typography>
               <Typography>
-                When you click 'Upload to Galaxy', a new history will be created in Galaxy named  after your RSpace document.
+                When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace document with the same name as the 'list dataset' described above.
                 Your chosen data will be uploaded to this new history. You can make this history active in Galaxy by switching to it.
+                <p><b>RSpace will store the details of the files you have uploaded and also any use of these files on Galaxy in Invocations will be tracked.</b></p>
               </Typography>
-              <Button
-                  variant="contained"
-                  color="primary"
-                  disableElevation
-                  onClick={() => sendDataToGalaxy()}
-                  disabled={selectedAttachmentIds.length == 0 || uploading}
-              >
-                Upload To Galaxy
-              </Button>
               <Modal
                   open={uploading}
                   aria-labelledby="modal-modal-title"

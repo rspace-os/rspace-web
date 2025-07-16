@@ -68,8 +68,8 @@
     <c:if test="${inventoryAvailable eq 'true'}">
          <div class="invMaterialsListing" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
     </c:if>
-    <c:if test="${galaxyEnabled eq 'true'}">
-      <div class="galaxy-textfield" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
+    <c:if test="${galaxyEnabled eq 'true'}"> <!--TODO add more conditions as and when we integrate with other external workflows -->
+      <div class="ext-workflows-textfield" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
     </c:if>
   </div>
   </td>

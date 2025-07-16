@@ -73,17 +73,21 @@ public class GalaxyService {
   /**
    * Uploads data to galaxy, creates a dataset for that data with a name matching: "RSPACE_" +
    * docName + "_" + globalID + "_" + fieldName + "_" + fieldGlobalID; saves the upload response
-   * data IDs from Galaxy into the RSpace DB, so we can later retrieve the data from Galaxy.
+   * data IDs from Galaxy into the RSpace DB, so we can later retrieve the data from Galaxy. Finally
+   * uploads an annotation to the data in Galaxy for each file uploaded, with a link to the RSpace
+   * page and a download link using the uploaded file's globalID.
    *
    * @param user
    * @param recordId
    * @param fieldId
    * @param selectedAttachmentIds
+   * @param serverAddress
    * @return
    * @throws IOException
    */
   public History setUpDataInGalaxyFor(
-      User user, long recordId, long fieldId, long[] selectedAttachmentIds) throws IOException {
+      User user, long recordId, long fieldId, long[] selectedAttachmentIds, String serverAddress)
+      throws IOException {
     String apiKey = getApiKeyForUser(user);
     BaseRecord theDocument = recordManager.getRecordWithFields(recordId, user);
     Field field = fieldManager.get(fieldId, user).get();
@@ -119,6 +123,13 @@ public class GalaxyService {
               history.getName(),
               baseUrl);
       externalWorkFlowDataManager.save(externalWorkFlowData);
+      String documentLink =
+          serverAddress + "/workspace/editor/structuredDocument/" + theDocument.getId();
+      String galleryLink = serverAddress + "/gallery/item/" + ecatMediaFile.getId();
+      String downloadLink = serverAddress + "/globalId/" + ecatMediaFile.getGlobalIdentifier();
+      String annotation =
+          "Document: " + documentLink + " Data: " + galleryLink + " Download: " + downloadLink;
+      client.putAnnotationOnDataset(history.getId(), uploadedFileGalaxyID, annotation, apiKey);
     }
     client.createDatasetCollection(apiKey, history.getId(), metaData, uploadedFileNamesToIds);
 
@@ -267,10 +278,10 @@ public class GalaxyService {
                         client.getWorkflowInvocationReport(apiKey, invocation.getInvocationId());
                     thisGalaxyInvocationDetails.setWorkflowName(
                         workflowInvocationReport.getTitle());
+                    saveInvocation(
+                        invocation, thisGalaxyInvocationDetails, allMatchingDataForThisInvocation);
                   }
                 }
-                saveInvocation(
-                    invocation, thisGalaxyInvocationDetails, allMatchingDataForThisInvocation);
               }
             });
   }

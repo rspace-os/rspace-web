@@ -1,5 +1,6 @@
 package com.researchspace.webapp.integrations.galaxy;
 
+import com.researchspace.core.util.RequestUtil;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.galaxy.client.GalaxyClient;
 import com.researchspace.galaxy.model.output.history.History;
@@ -13,6 +14,7 @@ import com.researchspace.service.UserManager;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -55,11 +57,14 @@ public class GalaxyController {
       Principal principal,
       @RequestParam(required = true) long recordId,
       @RequestParam(required = true) long fieldId,
-      @RequestParam(required = true) long[] selectedAttachmentIds)
+      @RequestParam(required = true) long[] selectedAttachmentIds,
+      HttpServletRequest request)
       throws IOException {
     User user = userManager.getAuthenticatedUserInSession();
+    String serverAddress = RequestUtil.getAppURL(request);
     History galaxyHistory =
-        galaxyService.setUpDataInGalaxyFor(user, recordId, fieldId, selectedAttachmentIds);
+        galaxyService.setUpDataInGalaxyFor(
+            user, recordId, fieldId, selectedAttachmentIds, serverAddress);
     return galaxyHistory;
   }
 
