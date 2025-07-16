@@ -22,7 +22,7 @@ type ZenodoArgs = {
  */
 function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
   const [apiKey, setApiKey] = useState(
-    integrationState.credentials.ZENODO_USER_TOKEN.orElse("")
+    integrationState.credentials.ZENODO_USER_TOKEN.orElse(""),
   );
 
   return (
