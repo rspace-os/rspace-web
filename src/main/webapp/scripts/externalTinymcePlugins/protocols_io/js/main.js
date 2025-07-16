@@ -67,6 +67,7 @@ $(document).ready(function () {
 									});
 							});
 						} else {
+						  RS.trackEvent("user:import:from_protocols_io:workspace");
 							var importFolderId = response.data.importFolderId;
 							window.parent.RS.confirmAndNavigateTo("All documents imported, reloading page...",
 								'success', 3000, window.parent.createURL('/workspace/' + importFolderId));

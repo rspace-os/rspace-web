@@ -24,6 +24,8 @@ function submit() {
   $form.find('#createFromTemplateId').val(templateId);
   $form.find('#createFromTemplateNewName').val(docName);
   $form.submit();
+  
+  RS.trackEvent("user:create:from_template:workspace");
 
   RS.blockPage('Creating a document...');
 }
