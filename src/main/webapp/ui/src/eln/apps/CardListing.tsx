@@ -70,8 +70,7 @@ function CardListing({
         integrationStates.ARGOS = await update("ARGOS", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.ARGOS],
   );
 
   const boxUpdate = React.useCallback(
@@ -80,8 +79,7 @@ function CardListing({
         integrationStates.BOX = await update("BOX", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.BOX],
   );
 
   const clustermarketUpdate = React.useCallback(
@@ -89,12 +87,11 @@ function CardListing({
       void runInAction(async () => {
         integrationStates.CLUSTERMARKET = await update(
           "CLUSTERMARKET",
-          newState
+          newState,
         );
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.CLUSTERMARKET],
   );
 
   const dataverseUpdate = React.useCallback(
@@ -103,8 +100,7 @@ function CardListing({
         integrationStates.DATAVERSE = await update("DATAVERSE", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.DATAVERSE],
   );
 
   const digitalCommonsDataUpdate = React.useCallback(
@@ -112,12 +108,11 @@ function CardListing({
       void runInAction(async () => {
         integrationStates.DIGITALCOMMONSDATA = await update(
           "DIGITALCOMMONSDATA",
-          newState
+          newState,
         );
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.DIGITALCOMMONSDATA],
   );
 
   const dmponlineUpdate = React.useCallback(
@@ -126,7 +121,7 @@ function CardListing({
         integrationStates.DMPONLINE = await update("DMPONLINE", newState);
       });
     },
-    [update]
+    [update, integrationStates.DMPONLINE],
   );
 
   const dmptoolUpdate = React.useCallback(
@@ -135,8 +130,7 @@ function CardListing({
         integrationStates.DMPTOOL = await update("DMPTOOL", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.DMPTOOL],
   );
 
   const dropboxUpdate = React.useCallback(
@@ -145,8 +139,7 @@ function CardListing({
         integrationStates.DROPBOX = await update("DROPBOX", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.DROPBOX],
   );
 
   const dryadUpdate = React.useCallback(
@@ -155,8 +148,7 @@ function CardListing({
         integrationStates.DRYAD = await update("DRYAD", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.DRYAD],
   );
 
   const egnyteUpdate = React.useCallback(
@@ -165,8 +157,7 @@ function CardListing({
         integrationStates.EGNYTE = await update("EGNYTE", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.EGNYTE],
   );
 
   const evernoteUpdate = React.useCallback(
@@ -175,8 +166,7 @@ function CardListing({
         integrationStates.EVERNOTE = await update("EVERNOTE", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.EVERNOTE],
   );
 
   const fieldmarkUpdate = React.useCallback(
@@ -185,8 +175,7 @@ function CardListing({
         integrationStates.FIELDMARK = await update("FIELDMARK", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.FIELDMARK],
   );
 
   const figshareUpdate = React.useCallback(
@@ -195,8 +184,7 @@ function CardListing({
         integrationStates.FIGSHARE = await update("FIGSHARE", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.FIGSHARE],
   );
 
   const githubUpdate = React.useCallback(
@@ -205,8 +193,7 @@ function CardListing({
         integrationStates.GITHUB = await update("GITHUB", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.GITHUB],
   );
 
   const googleDriveUpdate = React.useCallback(
@@ -215,8 +202,7 @@ function CardListing({
         integrationStates.GOOGLEDRIVE = await update("GOOGLEDRIVE", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.GOOGLEDRIVE],
   );
 
   const joveUpdate = React.useCallback(
@@ -225,8 +211,7 @@ function CardListing({
         integrationStates.JOVE = await update("JOVE", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.JOVE],
   );
 
   const chemistryUpdate = React.useCallback(
@@ -235,8 +220,7 @@ function CardListing({
         integrationStates.CHEMISTRY = await update("CHEMISTRY", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.CHEMISTRY],
   );
 
   const nextCloudUpdate = React.useCallback(
@@ -245,8 +229,7 @@ function CardListing({
         integrationStates.NEXTCLOUD = await update("NEXTCLOUD", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.NEXTCLOUD],
   );
 
   const omeroUpdate = React.useCallback(
@@ -255,8 +238,7 @@ function CardListing({
         integrationStates.OMERO = await update("OMERO", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.OMERO],
   );
 
   const onedriveUpdate = React.useCallback(
@@ -265,8 +247,7 @@ function CardListing({
         integrationStates.ONEDRIVE = await update("ONEDRIVE", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.ONEDRIVE],
   );
 
   const ownCloudUpdate = React.useCallback(
@@ -275,8 +256,7 @@ function CardListing({
         integrationStates.OWNCLOUD = await update("OWNCLOUD", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.OWNCLOUD],
   );
 
   const protocolsioUpdate = React.useCallback(
@@ -285,8 +265,7 @@ function CardListing({
         integrationStates.PROTOCOLS_IO = await update("PROTOCOLS_IO", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.PROTOCOLS_IO],
   );
 
   const pyratUpdate = React.useCallback(
@@ -295,8 +274,7 @@ function CardListing({
         integrationStates.PYRAT = await update("PYRAT", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.PYRAT],
   );
 
   const slackUpdate = React.useCallback(
@@ -305,8 +283,7 @@ function CardListing({
         integrationStates.SLACK = await update("SLACK", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.SLACK],
   );
 
   const teamsUpdate = React.useCallback(
@@ -315,8 +292,7 @@ function CardListing({
         integrationStates.MSTEAMS = await update("MSTEAMS", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.MSTEAMS],
   );
 
   const zenodoUpdate = React.useCallback(
@@ -325,8 +301,7 @@ function CardListing({
         integrationStates.ZENODO = await update("ZENODO", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.ZENODO],
   );
 
   if (
