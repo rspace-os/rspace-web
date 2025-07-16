@@ -28,6 +28,7 @@ import AlertContext, {
 import { Optional } from "../../util/optional";
 import docLinks from "../../assets/DocLinks";
 import Analytics from "../../components/Analytics";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 export default function Wrapper(): React.ReactNode {
   return (
@@ -47,6 +48,7 @@ export default function Wrapper(): React.ReactNode {
 
 function TagDialog(): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const [saving, setSaving] = React.useState(false);
   const [enforcedOntologies, setEnforcedOntologies] = React.useState<
     null | boolean
@@ -57,7 +59,7 @@ function TagDialog(): React.ReactNode {
    * will be null before the user has opened the dialog
    */
   const [selectedIds, setSelectedIds] = React.useState<Array<number> | null>(
-    null
+    null,
   );
 
   // a mapping of record ID to tags, as is currently saved on the server
@@ -103,14 +105,14 @@ function TagDialog(): React.ReactNode {
             tagMetaData === null || tagMetaData === ""
               ? ([] as Array<Tag>)
               : parseEncodedTags(tagMetaData.split(",")),
-          ])
+          ]),
         );
         setSavedTagsMap(newlyFetchedTags);
         const newCommonTags = flattenWithIntersectionWithEq(
           new RsSet(
-            Object.values(newlyFetchedTags).map((tags) => new RsSet(tags))
+            Object.values(newlyFetchedTags).map((tags) => new RsSet(tags)),
           ),
-          areSameTag
+          areSameTag,
         );
         setCommonTags(newCommonTags);
       } catch (error) {
@@ -121,7 +123,7 @@ function TagDialog(): React.ReactNode {
               variant: "error",
               title: "Could not get tags.",
               message: error.message,
-            })
+            }),
           );
         }
       }
@@ -142,8 +144,8 @@ function TagDialog(): React.ReactNode {
             ...new RsSet(savedTags)
               .unionWithEq(new RsSet(addedTags), areSameTag)
               .subtractWithEq(new RsSet(deletedTags), areSameTag),
-          ]).map((tagMetaData) => ({ recordId, tagMetaData }))
-        )
+          ]).map((tagMetaData) => ({ recordId, tagMetaData })),
+        ),
       ).orElseGet(() => {
         throw new Error("Some tags are invalid");
       });
@@ -154,7 +156,9 @@ function TagDialog(): React.ReactNode {
         if (error.response.data.errorMessages.length === 1)
           throw new Error(error.response.data.errorMessages[0]);
         throw new AggregateError(
-          error.response.data.errorMessages.map((msg: string) => new Error(msg))
+          error.response.data.errorMessages.map(
+            (msg: string) => new Error(msg),
+          ),
         );
       }
       throw e;
@@ -167,7 +171,7 @@ function TagDialog(): React.ReactNode {
     const handler = doNotAwait(async () => {
       try {
         const { data } = await axios.get<boolean>(
-          "/userform/ajax/enforcedOntologies"
+          "/userform/ajax/enforcedOntologies",
         );
         setEnforcedOntologies(data);
       } catch (e) {
@@ -178,7 +182,7 @@ function TagDialog(): React.ReactNode {
               title: "Could not determine if ontologies are enforced or not.",
               message: e.message,
               variant: "error",
-            })
+            }),
           );
         }
       }
@@ -220,11 +224,11 @@ function TagDialog(): React.ReactNode {
                   : [
                       ...commonTags.subtractWithEq(
                         new RsSet(deletedTags),
-                        areSameTag
+                        areSameTag,
                       ),
                       ...new RsSet(addedTags).subtractWithEq(
                         new RsSet(deletedTags),
-                        areSameTag
+                        areSameTag,
                       ),
                     ]
               }
@@ -244,7 +248,7 @@ function TagDialog(): React.ReactNode {
                             vocabulary: string;
                             uri: string;
                             version: string;
-                          }
+                          },
                     ) => {
                       /*
                        * If ontologies are being enforced then it is guarateed that a
@@ -277,8 +281,8 @@ function TagDialog(): React.ReactNode {
                         setAddedTags([...addedTags, normalisedTag]);
                         setDeletedTags(
                           deletedTags.filter(
-                            (dTag) => !areSameTag(dTag, normalisedTag)
-                          )
+                            (dTag) => !areSameTag(dTag, normalisedTag),
+                          ),
                         );
                       }
                     }}
@@ -305,12 +309,15 @@ function TagDialog(): React.ReactNode {
           onClick={doNotAwait(async () => {
             try {
               await handleSave();
+              trackEvent("user:tag:documents:workspace", {
+                count: selectedIds?.length,
+              });
               setSelectedIds(null);
               addAlert(
                 mkAlert({
                   variant: "success",
                   message: "Successfully saved tags.",
-                })
+                }),
               );
             } catch (e) {
               let error: Error;
@@ -326,7 +333,7 @@ function TagDialog(): React.ReactNode {
                   (e: Error) => ({
                     title: e.message,
                     variant: "error",
-                  })
+                  }),
                 );
                 message = "There are multiple errors.";
               }
@@ -337,7 +344,7 @@ function TagDialog(): React.ReactNode {
                   title: "Could not save tags.",
                   message,
                   ...(details.length === 0 ? {} : { details }),
-                })
+                }),
               );
             }
           })}

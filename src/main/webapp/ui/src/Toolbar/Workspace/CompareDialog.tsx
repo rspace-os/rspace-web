@@ -145,7 +145,7 @@ const ExportMenuItem = ({
       getByKey<{ hideMenu?: () => void }, "hideMenu">("hideMenu", rest).do(
         (hideMenu) => {
           hideMenu();
-        }
+        },
       );
     })}
   >
@@ -195,7 +195,7 @@ const Toolbar = ({
         <ExportMenuItem
           onClick={() => {
             exportVisibleRows();
-            trackEvent("CSV comparing ELN documents downloaded");
+            trackEvent("user:export:documents:workspace");
             return Promise.resolve();
           }}
         >
@@ -229,7 +229,7 @@ function CompareDialog(): React.ReactNode {
         if (
           cols.findIndex(
             ([formId, fieldName]: [number, string]) =>
-              formId === doc.form.id && fieldName === field.name
+              formId === doc.form.id && fieldName === field.name,
           ) === -1
         ) {
           cols.push([doc.form.id, field.name]);
@@ -274,7 +274,7 @@ function CompareDialog(): React.ReactNode {
               });
             setLoadedCount((x) => x + 1);
             return data as Document;
-          })
+          }),
         );
         setDocuments(docs);
       } catch (e) {
@@ -289,7 +289,7 @@ function CompareDialog(): React.ReactNode {
             variant: "error",
             title: "Could not read all of the documents",
             message,
-          })
+          }),
         );
       }
     });
@@ -326,7 +326,7 @@ function CompareDialog(): React.ReactNode {
             position={["bottom", "right"]}
           />
         ),
-      }
+      },
     ),
     DataGridColumn.newColumnWithFieldName<"created", Document>("created", {
       headerName: "Created Date",
@@ -345,7 +345,7 @@ function CompareDialog(): React.ReactNode {
           Parsers.parseDate(value)
             .map((l) => l.toLocaleString())
             .orElse("—"),
-      }
+      },
     ),
     DataGridColumn.newColumnWithFieldName<"signed", Document>("signed", {
       headerName: "Signed",
@@ -382,8 +382,8 @@ function CompareDialog(): React.ReactNode {
           headerName: fieldName,
           flex: 1,
           sortable: false,
-        }
-      )
+        },
+      ),
     );
   }
 
@@ -437,7 +437,7 @@ function CompareDialog(): React.ReactNode {
               }}
               rowSelectionModel={rowSelectionModel}
               onRowSelectionModelChange={(
-                newRowSelectionModel: GridRowSelectionModel
+                newRowSelectionModel: GridRowSelectionModel,
               ) => {
                 setRowSelectionModel(newRowSelectionModel);
               }}

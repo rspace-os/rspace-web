@@ -77,7 +77,7 @@ function setUpCrudOps(args) {
   registerDeleteRecordsHandler(onDelete);
 
   registerFavoritesRecordsHandler();
-  registerViewRevisionsHandler();
+  registerViewRevisionsHandler(); 
   registerOfflineWorkHandler();
   registerExternalMessagesHandler();
 
@@ -104,6 +104,7 @@ function setUpUseTemplateDialog() {
   $('#createDocFromTemplate').click(function (e) {
     e.preventDefault();
     $('#useTemplateDlg').dialog('open');
+    RS.trackEvent("user:open:create_document_from_template_dialog:workspace");
   });
 }
 
@@ -151,6 +152,7 @@ function registerViewRevisionsHandler() {
     var namesToRename = [];
     getSelectedIdsAndNames(idsToRename, namesToRename);
     var url = createURL("/workspace/revisionHistory/list/" + idsToRename[0] + "?settingsKey=" + settingsKey);
+    RS.trackEvent("user:view:revisions:workspace", { count: idsToRename.length });
     window.location.href = url;
   });
 }
@@ -172,6 +174,10 @@ function registerOfflineWorkHandler() {
     var jqxhr = $.post(url, { recordIds: selectedIds },
         function (result) {
           RS.unblockPage();
+          RS.trackEvent("user:toggle_offline:documents:workspace", {
+            count: selectedIds.length,
+            setTo: e.target.id === "startOfflineWork" ? "offline" : "online"
+          });
           $.get(createURL('/workspace/ajax/view/' + workspaceSettings.parentFolderId),
               function (result) {
                 defaultRefresh(result);
@@ -361,6 +367,7 @@ function createMoveDialog(onmove, moveparams) {
         var jqxhr = $.post(createURL('/workspace/ajax/move'), data,
             function (result) {
               onmove(result);
+              RS.trackEvent("user:move:documents:workspace", { count: data.toMove.length });
             });
         jqxhr.fail(function () {
           RS.ajaxFailed("Move", true, jqxhr);
@@ -484,6 +491,7 @@ function registerCopyRecordsHandler(oncopy) {
     var jqxhr = $.post(createURL("/workspace/ajax/copy"), data, function (result) {
       RS.unblockPage();
       oncopy(result);
+      RS.trackEvent("user:duplicate:documents:workspace", { count: idsToCopy.length });
     });
 
     jqxhr.fail(function () {
@@ -516,6 +524,7 @@ function registerDeleteRecordsHandler(onDelete) {
           function (result) {
             RS.blockingProgressBar.hide();
             onDelete(result);
+            RS.trackEvent("user:delete:documents:workspace", { count: idsToDelete.length });
           });
       jqxhr.fail(function () {
         RS.blockingProgressBar.hide();
@@ -572,6 +581,7 @@ function registerFavoritesRecordsHandler() {
 
         updateCrudopsMenu();
 
+        RS.trackEvent("user:favorite:documents:workspace", { count: favIds.length });
         if (favIds.length === 1) {
           RS.confirm("Document marked as favorite", "success", 3000);
         } else {

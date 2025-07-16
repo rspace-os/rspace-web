@@ -39,6 +39,7 @@ import { doNotAwait } from "../util/Util";
 import { PdfExportDetails } from "./PdfExport";
 import { HtmlXmlExportDetails } from "./HtmlXmlExport";
 import { WordExportDetails } from "./WordExport";
+import AnalyticsContext from "../stores/contexts/Analytics";
 
 type ExportConfig = {
   archiveType: string;
@@ -107,13 +108,14 @@ function ExportDialog({
 }: ExportDialogArgs): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   const [state, setState] = useState<typeof DEFAULT_STATE>(
-    observable(DEFAULT_STATE)
+    observable(DEFAULT_STATE),
   );
 
   const [firstPane, setFirstPane] = useState(
-    makePane("FormatChoice", "Export")
+    makePane("FormatChoice", "Export"),
   );
   const [activePane, setActivePane] = useState(firstPane);
 
@@ -127,7 +129,7 @@ function ExportDialog({
     if (state.exportConfig.fileStores)
       appendPane(
         newListOfPanes,
-        makePane("ExportFileStore", "Filestore Links Export Configuration")
+        makePane("ExportFileStore", "Filestore Links Export Configuration"),
       );
 
     setFirstPane(newListOfPanes);
@@ -170,7 +172,7 @@ function ExportDialog({
   useEffect(() => {
     axios
       .get<{ data: { pageSize: string; defaultPDFConfig: string } }>(
-        "/export/ajax/defaultPDFConfig"
+        "/export/ajax/defaultPDFConfig",
       )
       .then((response) => {
         const format = response.data.data.pageSize;
@@ -230,7 +232,7 @@ function ExportDialog({
         setState(
           observable({
             ...DEFAULT_STATE,
-          })
+          }),
         );
         addAlert(
           mkAlert({
@@ -240,8 +242,9 @@ function ExportDialog({
                 ? "error"
                 : "success",
             message: response.data,
-          })
+          }),
         );
+        trackEvent("user:export:submitted");
       })
       .catch((error) => {
         console.log(error);
@@ -289,10 +292,10 @@ function ExportDialog({
                 }),
                 tag.vocabulary,
                 tag.uri,
-                tag.version
+                tag.version,
               ),
-            parseEncodedTags(dataStrings.flatMap((str) => str.split(",")))
-          )
+            parseEncodedTags(dataStrings.flatMap((str) => str.split(","))),
+          ),
         )
         .mapError(([e]) => {
           console.error(e);
@@ -313,17 +316,17 @@ function ExportDialog({
 
   function exportConfigUpdate(
     itemToUpdate: "archiveType",
-    value: ArchiveType
+    value: ArchiveType,
   ): void;
   function exportConfigUpdate(itemToUpdate: "repository", value: boolean): void;
   function exportConfigUpdate(
     itemToUpdate: "allVersions",
-    value: boolean
+    value: boolean,
   ): void;
   function exportConfigUpdate(itemToUpdate: "fileStores", value: boolean): void;
   function exportConfigUpdate(
     itemToUpdate: "repoData",
-    value: ReadonlyArray<Repo>
+    value: ReadonlyArray<Repo>,
   ): void;
   function exportConfigUpdate(
     itemToUpdate:
@@ -332,7 +335,7 @@ function ExportDialog({
       | "allVersions"
       | "fileStores"
       | "repoData",
-    value: ArchiveType | boolean | ReadonlyArray<Repo>
+    value: ArchiveType | boolean | ReadonlyArray<Repo>,
   ) {
     action((newState: typeof DEFAULT_STATE) => {
       if (itemToUpdate === "archiveType") {
@@ -369,7 +372,7 @@ function ExportDialog({
 
   const updateFileStoreFilters = <Key extends keyof typeof state.nfsConfig>(
     name: Key,
-    value: (typeof state.nfsConfig)[Key]
+    value: (typeof state.nfsConfig)[Key],
   ) => {
     runInAction(() => {
       state.nfsConfig[name] = value;
@@ -378,19 +381,19 @@ function ExportDialog({
 
   function updateExportDetails<Key extends keyof PdfExportDetails>(
     name: Key,
-    value: PdfExportDetails[Key]
+    value: PdfExportDetails[Key],
   ): void;
   function updateExportDetails<Key extends keyof HtmlXmlExportDetails>(
     name: Key,
-    value: HtmlXmlExportDetails[Key]
+    value: HtmlXmlExportDetails[Key],
   ): void;
   function updateExportDetails<Key extends keyof WordExportDetails>(
     name: Key,
-    value: WordExportDetails[Key]
+    value: WordExportDetails[Key],
   ): void;
   function updateExportDetails<Key extends keyof ExportConfig>(
     name: Key,
-    value: (typeof state.exportDetails)[Key]
+    value: (typeof state.exportDetails)[Key],
   ) {
     runInAction(() => {
       state.exportDetails[name] = value;
