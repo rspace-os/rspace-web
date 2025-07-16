@@ -367,15 +367,15 @@ function orderInfoEventHandler() {
     var orderByLink = $(this).children('.orderByLink');
     var url = orderByLink.attr('id').split('_')[1];
     if (url.indexOf("orderBy=name") > -1 &&
-        workspaceSettings.orderBy !== "name") {
+      workspaceSettings.orderBy !== "name") {
       workspaceSettings.orderBy = "name";
       workspaceSettings.sortOrder = "DESC";
     } else if (url.indexOf("orderBy=modificationDateMillis") > -1 &&
-        workspaceSettings.orderBy !== "modificationDateMillis") {
+      workspaceSettings.orderBy !== "modificationDateMillis") {
       workspaceSettings.orderBy = "modificationDateMillis";
       workspaceSettings.sortOrder = "DESC";
     } else if (url.indexOf("orderBy=creationDateMillis") > -1 &&
-        workspaceSettings.orderBy !== "creationDateMillis") {
+      workspaceSettings.orderBy !== "creationDateMillis") {
       workspaceSettings.orderBy = "creationDateMillis";
       workspaceSettings.sortOrder = "DESC";
     } else {
@@ -385,6 +385,10 @@ function orderInfoEventHandler() {
         workspaceSettings.sortOrder = "ASC";
       }
     }
+    RS.trackEvent("user:sort:table:workspace", {
+      orderBy: workspaceSettings.orderBy,
+      sortOrder: workspaceSettings.sortOrder
+    });
     getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
   });
 

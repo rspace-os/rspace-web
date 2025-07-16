@@ -2,12 +2,12 @@
 // Instructions
 // If adding directly using React components, the minimum data required is
 {
-  /* 
-  <UserDetails 
-    userId={data.ownerId} 
+  /*
+  <UserDetails
+    userId={data.ownerId}
     fullName={data.ownerFullName}
     position={['bottom', 'right']}
-  /> 
+  />
 */
 }
 
@@ -278,11 +278,12 @@ function renderElement(domContainer, event) {
       display={domContainer.dataset.display}
       fullName={domContainer.dataset.fullname}
       event={event}
-    />
+    />,
   );
 }
 
 $("body").on("click", ".user-details", function (e) {
   e.preventDefault();
   renderElement($(this)[0], e);
+  RS.trackEvent("user:open:user_details_popover");
 });

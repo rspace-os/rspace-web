@@ -283,6 +283,7 @@ function openRecordInfoDialog(recordId) {
       var $recordInfoPanel = generate$RecordInfoPanel(val);
       $('#recordInfoDialog').find('.recordInfoPanel').replaceWith($recordInfoPanel);
       $('#recordInfoDialog').dialog('open');
+      RS.trackEvent("user:open:info_panel:workspace");
     }
   });
 }
