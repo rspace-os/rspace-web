@@ -15,12 +15,14 @@ import com.researchspace.api.v1.controller.SamplesApiController;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.fieldmark.model.FieldmarkMultipartFile;
 import com.researchspace.fieldmark.model.FieldmarkNotebook;
+import com.researchspace.fieldmark.model.exception.FieldmarkImportException;
 import com.researchspace.fieldmark.model.utils.FieldmarkDoiIdentifierExtractor;
 import com.researchspace.fieldmark.model.utils.FieldmarkFileExtractor;
 import com.researchspace.fieldmark.model.utils.FieldmarkTypeExtractor;
@@ -29,6 +31,7 @@ import com.researchspace.model.dtos.fieldmark.FieldmarkNotebookDTO;
 import com.researchspace.model.dtos.fieldmark.FieldmarkRecordDTO;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.fieldmark.FieldmarkServiceClientAdapter;
+import com.researchspace.service.fieldmark.FieldmarkServiceManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -60,6 +63,8 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
   private @Autowired FieldmarkServiceClientAdapter fieldmarkServiceClientAdapter;
   private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiManager;
   private @Autowired ApiAvailabilityHandler apiHandler;
+
+  private @Autowired FieldmarkServiceManager fieldmarkManager;
 
   @Override
   public List<FieldmarkNotebook> getNotebooks(@RequestAttribute(name = "user") User user)
@@ -126,6 +131,43 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
       @RequestBody FieldmarkApiImportRequest importRequest,
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
+      throws BindException {
+    validateInput(importRequest, errors);
+    throwBindExceptionIfErrors(errors);
+    FieldmarkApiImportResult importResult = null;
+    try {
+      importResult = fieldmarkManager.importNotebook(importRequest, user);
+
+      // build links for Template
+      ApiSampleTemplate sampleTemplate =
+          sampleApiMgr.getApiSampleTemplateById(importResult.getSampleTemplateId(), user);
+      buildAndAddInventoryRecordLinks(sampleTemplate);
+
+      // build links for Container
+      ApiContainer container =
+          containerApiMgr.getApiContainerIfExists(importResult.getContainerId(), user);
+      buildAndAddInventoryRecordLinks(container);
+
+      // build links for Samples
+      for (Long sampleId : importResult.getSampleIds()) {
+        ApiSample sample = sampleApiMgr.getApiSampleById(sampleId, user);
+        buildAndAddInventoryRecordLinks(sample);
+      }
+    } catch (FieldmarkImportException e) {
+      log.error("ERROR: " + e.getMessage());
+      errors.rejectValue(
+          "", "errors.fieldmark.import", new Object[] {}, "ERROR: " + e.getMessage());
+    } finally {
+      throwBindExceptionIfErrors(errors);
+    }
+    return importResult;
+  }
+
+  //TODO[nik]: remove this
+  public FieldmarkApiImportResult importNotebookOld(
+      @RequestBody FieldmarkApiImportRequest importRequest,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
       throws BindException, InvalidNameException {
     validateInput(importRequest, errors);
     throwBindExceptionIfErrors(errors);
@@ -144,11 +186,8 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
     ApiContainer containerRSpace =
         containersApiController.createNewContainer(containerToPost, bindingResult, user);
 
-    FieldmarkApiImportResult result =
-        new FieldmarkApiImportResult(
-            containerRSpace.getGlobalId(),
-            containerRSpace.getName(),
-            sampleTemplateRSpace.getGlobalId());
+    FieldmarkApiImportResult importResult =
+        new FieldmarkApiImportResult(containerRSpace, sampleTemplateRSpace);
     // call the Controllers to create 1 sample (with 1 subSample) placed into the container
     for (FieldmarkRecordDTO currentRecordDTO : notebookDTO.getRecords().values()) {
 
@@ -157,7 +196,7 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
 
       bindingResult = new BeanPropertyBindingResult(samplePost, "samplePost");
       samplePost = samplesApiController.createNewSample(samplePost, bindingResult, user);
-      result.addSampleGlobalId(samplePost.getGlobalId());
+      importResult.addSample(samplePost);
 
       if (StringUtils.isNotBlank(notebookDTO.getDoiIdentifierFieldName())) {
         apiHandler.assertInventoryAndDataciteEnabled(user);
@@ -171,15 +210,17 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
           FieldmarkFileExtractor fileExtractor =
               (FieldmarkFileExtractor) currentRecordDTO.getField(currentField.getName());
 
-          inventoryFilesApiController.uploadFile(
-              new FieldmarkMultipartFile(
-                  fileExtractor.getFieldValue(), fileExtractor.getFileName()),
-              new ApiInventoryFilePost(globalId, fileExtractor.getFileName()),
-              user);
+          if (StringUtils.isNotBlank(fileExtractor.getFileName())) {
+            inventoryFilesApiController.uploadFile(
+                new FieldmarkMultipartFile(
+                    fileExtractor.getFieldValue(), fileExtractor.getFileName()),
+                new ApiInventoryFilePost(globalId, fileExtractor.getFileName()),
+                user);
+          }
         }
       }
     }
-    return result;
+    return importResult;
   }
 
   private void associateIdentifierToSample(
