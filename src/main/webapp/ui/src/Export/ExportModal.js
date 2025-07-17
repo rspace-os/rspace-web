@@ -4,6 +4,7 @@ import ExportDialog from "./ExportDialog";
 import { createRoot } from "react-dom/client";
 import React from "react";
 import Alerts from "../components/Alerts/Alerts";
+import Analytics from "../components/Analytics";
 
 /*
  * This module initialises the ExportDialog react component within the
@@ -28,7 +29,7 @@ root.render(
       open={false}
       allowFileStores={RS.netFileStoresExportEnabled}
     />
-  </Alerts>
+  </Alerts>,
 );
 
 RS.exportModal = {
@@ -59,12 +60,14 @@ RS.exportModal = {
     };
     root.render(
       <Alerts>
-        <ExportDialog
-          exportSelection={adjustedSelection}
-          open={true}
-          allowFileStores={RS.netFileStoresExportEnabled}
-        />
-      </Alerts>
+        <Analytics>
+          <ExportDialog
+            exportSelection={adjustedSelection}
+            open={true}
+            allowFileStores={RS.netFileStoresExportEnabled}
+          />
+        </Analytics>
+      </Alerts>,
     );
   },
 };

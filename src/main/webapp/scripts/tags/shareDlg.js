@@ -340,8 +340,10 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
                         } catch (err){
                             console.error(err);
                         }
+                      RS.trackEvent("user:publish:documents:workspace");
                     } else {
                         postShare(sharedIds,idsToShare,0,false,selectedUsersAndGroups, result, false);
+                        RS.trackEvent("user:share:documents:workspace");
                     }
                 });
                 jqxhr.fail(function(xhr) {

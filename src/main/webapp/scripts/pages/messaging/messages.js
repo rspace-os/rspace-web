@@ -64,6 +64,7 @@
     	// handles polling
     	$('body').on("click", '#openMessageDlgLink', function (e){
     		$('#messageDlg').dialog ('open');
+        RS.trackEvent("user:open:messages_dialog:workspace");
     	});
     	
     	$('body').on("change", '.messageStatusChooser', function(e){

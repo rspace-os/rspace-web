@@ -265,44 +265,45 @@ function toolbarButtonsEventHandler() {
     form.setAttribute('method', 'POST');
     document.body.appendChild(form);
     form.submit();
+    RS.trackEvent("user:create:notebook_entry:workspace");
   });
 
   $(document).on('click', '#templateMenuLnk', function (e) {
     e.preventDefault();
-    RS.trackEvent('CreateFromTemplate');
     initFormCreateMenuDialog(workspaceSettings.parentFolderId);
     $('#formListDlg').dialog('open');
+    RS.trackEvent("user:open:create_from_form_dialog:workspace");
   });
 
   $('#createFromWord').click(function (e) {
     e.preventDefault();
-    RS.trackEvent('CreateFromWord');
     openWordChooserDlg(getSelectedIdsNamesAndTypes, {
       title: "Import from Word/Open Office",
       fileType: "Word or Open Office",
       showImportOptions: true,
       listNotebooks: true
     });
+    RS.trackEvent("user:open:create_from_word_dialog:workspace");
   });
 
   $('#createFromEvernote').click(function (e) {
     e.preventDefault();
-    RS.trackEvent('CreateFromEvernote');
     openWordChooserDlg(getSelectedIdsNamesAndTypes, {
       title: "Import from Evernote",
       fileType: "Evernote XML", showImportOptions: false, listNotebooks: false
     });
+    RS.trackEvent("user:open:create_from_evernote_dialog:workspace");
   });
 
   $('#createFromProtocolsIo').click(function (e) {
     e.preventDefault();
-    RS.trackEvent('CreateFromProtocolsIo');
+    RS.trackEvent('user:open:create_from_protocols_io_dialog:workspace');
     openProtocolsIoChooserDlg();
   });
 
   $('#createNewForm').click(function (e) {
     e.preventDefault();
-    RS.trackEvent('CreateNewForm');
+    RS.trackEvent('user:open:create_new_form_window:workspace');
     $("#createNewFormForm").submit();
   });
 
@@ -325,6 +326,7 @@ function toolbarButtonsEventHandler() {
   $(document).on('click', '#createFromTemplate', function (e) {
     e.preventDefault();
     openCreateFromTemplateDlg(workspaceSettings.parentFolderId);
+    RS.trackEvent("user:open:create_from_template_dialog:workspace");
   });
 
   $(document).on('click', '.createSDFromFormLink', function (e) {
@@ -349,10 +351,12 @@ function toolbarButtonsEventHandler() {
 
   $('#createRequest').click(function () {
     $('#createRequestDlg').dialog('open');
+    RS.trackEvent("user:open:create_request_dialog:workspace");
   });
 
   $('#createCalendarEntryDlgLink').click(function () {
     $('#createCalendarEntryDlg').dialog('open');
+    RS.trackEvent("user:open:create_calendar_entry_dialog:workspace");
   });
 }
 
@@ -363,15 +367,15 @@ function orderInfoEventHandler() {
     var orderByLink = $(this).children('.orderByLink');
     var url = orderByLink.attr('id').split('_')[1];
     if (url.indexOf("orderBy=name") > -1 &&
-        workspaceSettings.orderBy !== "name") {
+      workspaceSettings.orderBy !== "name") {
       workspaceSettings.orderBy = "name";
       workspaceSettings.sortOrder = "DESC";
     } else if (url.indexOf("orderBy=modificationDateMillis") > -1 &&
-        workspaceSettings.orderBy !== "modificationDateMillis") {
+      workspaceSettings.orderBy !== "modificationDateMillis") {
       workspaceSettings.orderBy = "modificationDateMillis";
       workspaceSettings.sortOrder = "DESC";
     } else if (url.indexOf("orderBy=creationDateMillis") > -1 &&
-        workspaceSettings.orderBy !== "creationDateMillis") {
+      workspaceSettings.orderBy !== "creationDateMillis") {
       workspaceSettings.orderBy = "creationDateMillis";
       workspaceSettings.sortOrder = "DESC";
     } else {
@@ -381,6 +385,10 @@ function orderInfoEventHandler() {
         workspaceSettings.sortOrder = "ASC";
       }
     }
+    RS.trackEvent("user:sort:table:workspace", {
+      orderBy: workspaceSettings.orderBy,
+      sortOrder: workspaceSettings.sortOrder
+    });
     getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
   });
 

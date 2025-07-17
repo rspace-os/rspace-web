@@ -35,6 +35,7 @@ function initUseTemplateDlg(templateIdAndNameGetter) {
                 $form.find('#useTemplateFormTemplateId').val(templateId);
                 $form.find('#useTemplateNewName').val(docName);
                 $form.submit();
+        RS.trackEvent("user:create_document:from_template:workspace");
                 
                 RS.blockPage('Creating a document...');
 			}

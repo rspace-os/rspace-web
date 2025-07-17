@@ -168,7 +168,7 @@ class SimpleSearch extends React.Component {
       this.state.filter,
       this.state.term,
       this.state.from,
-      this.state.to
+      this.state.to,
     );
     this.resetState();
     this.props.hideIcons(false);
@@ -210,14 +210,14 @@ class SimpleSearch extends React.Component {
         filter: key,
         term: "",
       },
-      this.handleClose
+      this.handleClose,
     );
   };
 
   isValid = () => {
     if (
       ["lastModified", "created", "owner", "tag"].findIndex(
-        (i) => i == this.state.filter
+        (i) => i == this.state.filter,
       ) == -1
     ) {
       return this.state.term.length >= 2;
@@ -254,13 +254,21 @@ class SimpleSearch extends React.Component {
     workspaceSettings.searchMode = true;
     workspaceSettings.pageNumber = 0;
 
+    let scopedSearch = false;
     if (this.state.selectedRecords.length) {
+      scopedSearch = true;
       workspaceSettings.options.push("records");
       workspaceSettings.terms.push(this.state.selectedRecords.join("; "));
       this.setState({ selectedRecords: [] });
     }
 
     doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
+
+    if (scopedSearch) {
+      RS.trackEvent("user:search:scoped:workspace");
+    } else {
+      RS.trackEvent("user:search:simple:workspace");
+    }
   };
 
   formatTerm = (options) => {
@@ -270,7 +278,7 @@ class SimpleSearch extends React.Component {
         this.state.to,
         23,
         59,
-        59
+        59,
       )}`;
     }
     if (
@@ -387,7 +395,7 @@ class SimpleSearch extends React.Component {
                   ))}
                 </Menu>
                 {!["lastModified", "created", "owner", "tag"].includes(
-                  this.state.filter
+                  this.state.filter,
                 ) && (
                   <InputBase
                     data-test-id="s-search-input-normal"
