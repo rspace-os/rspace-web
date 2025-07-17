@@ -83,7 +83,7 @@ const AddButton = styled(
     >
       {drawerOpen && <div>Create</div>}
     </Button>
-  )
+  ),
 )(() => ({
   overflowX: "hidden",
   height: "32px",
@@ -311,7 +311,7 @@ const AddFilestoreMenuItem = ({
           Authorization: "Bearer " + (await getToken()),
         },
       });
-    })()
+    })(),
   );
 
   React.useEffect(() => {
@@ -342,9 +342,9 @@ const AddFilestoreMenuItem = ({
                       url: string;
                     }>([e instanceof Error ? e : new Error("Unknown error")]);
                   }
-                })
-            )
-          )
+                }),
+            ),
+          ),
         )
         .do((newFilesystems) => setFilesystems(newFilesystems));
     })();
@@ -400,13 +400,13 @@ const DmpMenuSection = ({
   showDmpPanel,
 }: DmpMenuSectionArgs) => {
   const showArgos = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("ARGOS")
+    useIntegrationIsAllowedAndEnabled("ARGOS"),
   ).orElse(false);
   const showDmponline = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("DMPONLINE")
+    useIntegrationIsAllowedAndEnabled("DMPONLINE"),
   ).orElse(false);
   const showDmptool = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("DMPTOOL")
+    useIntegrationIsAllowedAndEnabled("DMPTOOL"),
   ).orElse(false);
 
   React.useEffect(() => {
@@ -455,7 +455,7 @@ const DrawerTab = styled(
   >(
     (
       { icon, label, index, className, selected, onClick, tabIndex },
-      ref: React.ForwardedRef<HTMLDivElement>
+      ref: React.ForwardedRef<HTMLDivElement>,
     ) => (
       <ListItem disablePadding className={className}>
         <ListItemButton
@@ -471,8 +471,8 @@ const DrawerTab = styled(
           />
         </ListItemButton>
       </ListItem>
-    )
-  )
+    ),
+  ),
 )(({ drawerOpen }) => ({
   position: "static",
   "& .MuiListItemText-root": {
@@ -487,14 +487,14 @@ const DrawerTab = styled(
     "&:hover": {
       backgroundColor: darken(
         `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 100%)`,
-        0.05
+        0.05,
       ),
     },
     "&.Mui-selected": {
       "&:hover": {
         backgroundColor: darken(
           `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 100%)`,
-          0.05
+          0.05,
         ),
       },
     },
@@ -693,24 +693,11 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.DMPs}
-              icon={gallerySectionIcon.DMPs}
+              label={gallerySectionLabel.Snippets}
+              icon={gallerySectionIcon.Snippets}
               index={5}
               tabIndex={getTabIndex(5)}
               ref={getRef(5)}
-              drawerOpen={drawerOpen}
-              selected={selectedSection === "DMPs"}
-              onClick={() => {
-                setSelectedSection("DMPs");
-                if (viewport.isViewportSmall) setDrawerOpen(false);
-              }}
-            />
-            <DrawerTab
-              label={gallerySectionLabel.Snippets}
-              icon={gallerySectionIcon.Snippets}
-              index={6}
-              tabIndex={getTabIndex(6)}
-              ref={getRef(6)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Snippets"}
               onClick={() => {
@@ -721,9 +708,9 @@ const Sidebar = ({
             <DrawerTab
               label={gallerySectionLabel.Miscellaneous}
               icon={gallerySectionIcon.Miscellaneous}
-              index={7}
-              tabIndex={getTabIndex(7)}
-              ref={getRef(7)}
+              index={6}
+              tabIndex={getTabIndex(6)}
+              ref={getRef(6)}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Miscellaneous"}
               onClick={() => {
@@ -731,14 +718,17 @@ const Sidebar = ({
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
+          </List>
+          <Divider />
+          <List sx={{ position: "static" }}>
             {showFilestores && (
               <DrawerTab
                 key={null}
                 label={gallerySectionLabel.NetworkFiles}
                 icon={gallerySectionIcon.NetworkFiles}
-                index={8}
-                tabIndex={getTabIndex(8)}
-                ref={getRef(8)}
+                index={7}
+                tabIndex={getTabIndex(7)}
+                ref={getRef(7)}
                 drawerOpen={drawerOpen}
                 selected={selectedSection === "NetworkFiles"}
                 onClick={() => {
@@ -747,9 +737,19 @@ const Sidebar = ({
                 }}
               />
             )}
-          </List>
-          <Divider />
-          <List sx={{ position: "static" }}>
+            <DrawerTab
+              label={gallerySectionLabel.DMPs}
+              icon={gallerySectionIcon.DMPs}
+              index={showFilestores ? 8 : 7}
+              tabIndex={getTabIndex(showFilestores ? 8 : 7)}
+              ref={getRef(showFilestores ? 8 : 7)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "DMPs"}
+              onClick={() => {
+                setSelectedSection("DMPs");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+              }}
+            />
             <DrawerTab
               label={gallerySectionLabel.PdfDocuments}
               icon={gallerySectionIcon.PdfDocuments}
