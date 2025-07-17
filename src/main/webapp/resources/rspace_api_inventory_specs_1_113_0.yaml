@@ -1902,7 +1902,7 @@ paths:
       tags:
         - Import
       parameters:
-        - name: JSON
+        - name: FieldmarkApiImportRequest
           in: body
           description: >-
             The ID for the Fieldmark notebook. 

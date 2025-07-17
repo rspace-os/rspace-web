@@ -132,7 +132,12 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
             FieldmarkFileExtractor fileExtractor =
                 (FieldmarkFileExtractor) currentRecordDTO.getField(currentField.getName());
 
-            uploadAttachmentToSample(user, sampleFieldGlobalId, fileExtractor, createdSample);
+            if (StringUtils.isNotBlank(fileExtractor.getFileName())) {
+              uploadAttachmentToSample(user, sampleFieldGlobalId, fileExtractor, createdSample);
+            } else {
+              log.warn(
+                  "The Fieldmark attachment has not been uploaded since the filename is empty");
+            }
           }
         }
       }
@@ -186,17 +191,15 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
     inputValidator.validate(uploadPost, invFilePostValidator, bindingResult);
     throwBindExceptionIfErrors(bindingResult);
     String fileName = uploadPost.getFileName();
-    GlobalIdentifier parentInvRecordGlobalId = new GlobalIdentifier(uploadPost.getParentGlobalId());
-    sampleApiMgr.assertUserCanEditSampleField(parentInvRecordGlobalId.getDbId(), user);
+    GlobalIdentifier parentFieldGlobalId = new GlobalIdentifier(uploadPost.getParentGlobalId());
+    sampleApiMgr.assertUserCanEditSampleField(parentFieldGlobalId.getDbId(), user);
 
-    if (StringUtils.isNotBlank(fileName)) {
-      MultipartFile file = new FieldmarkMultipartFile(fileExtractor.getFieldValue(), fileName);
-      try (InputStream is = file.getInputStream()) {
-        inventoryFileManager.attachNewInventoryFileToInventoryRecord(
-            parentInvRecordGlobalId, fileName, is, user);
-      } catch (IOException ioe) {
-        throw new FieldmarkImportException("Impossible to upload attachment to RSpace: " + ioe);
-      }
+    MultipartFile file = new FieldmarkMultipartFile(fileExtractor.getFieldValue(), fileName);
+    try (InputStream is = file.getInputStream()) {
+      inventoryFileManager.attachNewInventoryFileToInventoryRecord(
+          parentFieldGlobalId, fileName, is, user);
+    } catch (IOException ioe) {
+      throw new FieldmarkImportException("Impossible to upload attachment to RSpace: " + ioe);
     }
   }
 

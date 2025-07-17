@@ -163,150 +163,150 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
     return importResult;
   }
 
-  //TODO[nik]: remove this
-  public FieldmarkApiImportResult importNotebookOld(
-      @RequestBody FieldmarkApiImportRequest importRequest,
-      BindingResult errors,
-      @RequestAttribute(name = "user") User user)
-      throws BindException, InvalidNameException {
-    validateInput(importRequest, errors);
-    throwBindExceptionIfErrors(errors);
-
-    FieldmarkNotebookDTO notebookDTO = getFieldmarkNotebookDTO(importRequest, errors, user);
-    // call the controller to create 1 sample template
-    ApiSampleTemplatePost sampleTemplatePost = createSampleTemplateRequest(notebookDTO);
-    BindingResult bindingResult = new BeanPropertyBindingResult(sampleTemplatePost, "templatePost");
-    ApiSampleTemplate sampleTemplateRSpace =
-        sampleTemplatesApiController.createNewSampleTemplate(
-            sampleTemplatePost, bindingResult, user);
-
-    // call the Controllers to create 1 container
-    ApiContainer containerToPost = createContainerRequest(notebookDTO, user);
-    bindingResult = new BeanPropertyBindingResult(containerToPost, "containerPost");
-    ApiContainer containerRSpace =
-        containersApiController.createNewContainer(containerToPost, bindingResult, user);
-
-    FieldmarkApiImportResult importResult =
-        new FieldmarkApiImportResult(containerRSpace, sampleTemplateRSpace);
-    // call the Controllers to create 1 sample (with 1 subSample) placed into the container
-    for (FieldmarkRecordDTO currentRecordDTO : notebookDTO.getRecords().values()) {
-
-      ApiSampleWithFullSubSamples samplePost =
-          createSampleRequest(currentRecordDTO, sampleTemplateRSpace, containerRSpace.getId());
-
-      bindingResult = new BeanPropertyBindingResult(samplePost, "samplePost");
-      samplePost = samplesApiController.createNewSample(samplePost, bindingResult, user);
-      importResult.addSample(samplePost);
-
-      if (StringUtils.isNotBlank(notebookDTO.getDoiIdentifierFieldName())) {
-        apiHandler.assertInventoryAndDataciteEnabled(user);
-        associateIdentifierToSample(user, currentRecordDTO, samplePost);
-      }
-      // for each ATTACHMENT field get "globalID" and "content" (having file identifier) and
-      // then upload the right file
-      for (ApiSampleField currentField : samplePost.getFields()) {
-        if (ApiFieldType.ATTACHMENT.equals(currentField.getType())) {
-          String globalId = currentField.getGlobalId();
-          FieldmarkFileExtractor fileExtractor =
-              (FieldmarkFileExtractor) currentRecordDTO.getField(currentField.getName());
-
-          if (StringUtils.isNotBlank(fileExtractor.getFileName())) {
-            inventoryFilesApiController.uploadFile(
-                new FieldmarkMultipartFile(
-                    fileExtractor.getFieldValue(), fileExtractor.getFileName()),
-                new ApiInventoryFilePost(globalId, fileExtractor.getFileName()),
-                user);
-          }
-        }
-      }
-    }
-    return importResult;
-  }
-
-  private void associateIdentifierToSample(
-      User user, FieldmarkRecordDTO currentRecordDTO, ApiSampleWithFullSubSamples samplePost)
-      throws InvalidNameException {
-    FieldmarkDoiIdentifierExtractor doiExtractor =
-        (FieldmarkDoiIdentifierExtractor)
-            currentRecordDTO.getFields().values().stream()
-                .filter(FieldmarkTypeExtractor::isDoiIdentifier)
-                .findFirst()
-                .get();
-    String identifierValue = doiExtractor.getFieldValue().getDoiIdentifier();
-    if (StringUtils.isNotBlank(identifierValue)) {
-      List<ApiInventoryDOI> identifierList =
-          inventoryIdentifierApiManager.findIdentifiers(
-              "draft", false, identifierValue, false, user);
-      if (identifierList.isEmpty()) {
-        throw new IllegalArgumentException(
-            "Unable to find an existing assignable identifier: " + identifierValue);
-      } else if (identifierList.size() > 1) {
-        throw new IllegalArgumentException(
-            "Found more than one identifier to assign for the value: " + identifierValue);
-      } else {
-        inventoryIdentifierApiManager.assignIdentifier(
-            samplePost.getOid(), identifierList.get(0).getId(), user);
-      }
-    }
-  }
-
-  private FieldmarkNotebookDTO getFieldmarkNotebookDTO(
-      FieldmarkApiImportRequest importRequest, BindingResult errors, User user)
-      throws BindException {
-    if (errors == null) {
-      errors = new BeanPropertyBindingResult(importRequest, "importRequest");
-    }
-    FieldmarkNotebookDTO fieldmarkNotebookDTO = null;
-    try {
-      fieldmarkNotebookDTO =
-          fieldmarkServiceClientAdapter.getFieldmarkNotebook(
-              user, importRequest.getNotebookId(), importRequest.getIdentifier());
-    } catch (IOException ioEx) {
-      log.error(
-          "The notebookID \""
-              + importRequest.getNotebookId()
-              + "\" has not being imported from Fieldmark "
-              + "cause to the following error:"
-              + ioEx.getMessage());
-      errors.rejectValue(
-          "",
-          "errors.fieldmark.import",
-          new Object[] {},
-          "Error importing notebook \""
-              + importRequest.getNotebookId()
-              + "\" from fieldmark due to the following error: "
-              + ioEx.getMessage());
-
-    } catch (HttpServerErrorException serverEx) {
-      log.error(
-          "The notebook cannot be fetched because of an error on the Fieldmark server: "
-              + serverEx.getMessage());
-      errors.rejectValue(
-          "",
-          "errors.fieldmark.import",
-          new Object[] {},
-          "Error importing notebook \""
-              + importRequest.getNotebookId()
-              + "\" due to Fieldmark server "
-              + "unavailable: "
-              + serverEx.getMessage());
-    } catch (HttpClientErrorException clientEx) {
-      log.error(
-          "The notebook cannot be fetched because of the following error: "
-              + clientEx.getMessage());
-      errors.rejectValue(
-          "",
-          "errors.fieldmark.import",
-          new Object[] {},
-          "Error importing notebook \""
-              + importRequest.getNotebookId()
-              + "\" due to the following error: "
-              + clientEx.getMessage());
-    } finally {
-      throwBindExceptionIfErrors(errors);
-    }
-    return fieldmarkNotebookDTO;
-  }
+//  /// TODO[nik]: remove this
+//  public FieldmarkApiImportResult importNotebookOld(
+//      @RequestBody FieldmarkApiImportRequest importRequest,
+//      BindingResult errors,
+//      @RequestAttribute(name = "user") User user)
+//      throws BindException, InvalidNameException {
+//    validateInput(importRequest, errors);
+//    throwBindExceptionIfErrors(errors);
+//
+//    FieldmarkNotebookDTO notebookDTO = getFieldmarkNotebookDTO(importRequest, errors, user);
+//    // call the controller to create 1 sample template
+//    ApiSampleTemplatePost sampleTemplatePost = createSampleTemplateRequest(notebookDTO);
+//    BindingResult bindingResult = new BeanPropertyBindingResult(sampleTemplatePost, "templatePost");
+//    ApiSampleTemplate sampleTemplateRSpace =
+//        sampleTemplatesApiController.createNewSampleTemplate(
+//            sampleTemplatePost, bindingResult, user);
+//
+//    // call the Controllers to create 1 container
+//    ApiContainer containerToPost = createContainerRequest(notebookDTO, user);
+//    bindingResult = new BeanPropertyBindingResult(containerToPost, "containerPost");
+//    ApiContainer containerRSpace =
+//        containersApiController.createNewContainer(containerToPost, bindingResult, user);
+//
+//    FieldmarkApiImportResult importResult =
+//        new FieldmarkApiImportResult(containerRSpace, sampleTemplateRSpace);
+//    // call the Controllers to create 1 sample (with 1 subSample) placed into the container
+//    for (FieldmarkRecordDTO currentRecordDTO : notebookDTO.getRecords().values()) {
+//
+//      ApiSampleWithFullSubSamples samplePost =
+//          createSampleRequest(currentRecordDTO, sampleTemplateRSpace, containerRSpace.getId());
+//
+//      bindingResult = new BeanPropertyBindingResult(samplePost, "samplePost");
+//      samplePost = samplesApiController.createNewSample(samplePost, bindingResult, user);
+//      importResult.addSample(samplePost);
+//
+//      if (StringUtils.isNotBlank(notebookDTO.getDoiIdentifierFieldName())) {
+//        apiHandler.assertInventoryAndDataciteEnabled(user);
+//        associateIdentifierToSample(user, currentRecordDTO, samplePost);
+//      }
+//      // for each ATTACHMENT field get "globalID" and "content" (having file identifier) and
+//      // then upload the right file
+//      for (ApiSampleField currentField : samplePost.getFields()) {
+//        if (ApiFieldType.ATTACHMENT.equals(currentField.getType())) {
+//          String globalId = currentField.getGlobalId();
+//          FieldmarkFileExtractor fileExtractor =
+//              (FieldmarkFileExtractor) currentRecordDTO.getField(currentField.getName());
+//
+//          if (StringUtils.isNotBlank(fileExtractor.getFileName())) {
+//            inventoryFilesApiController.uploadFile(
+//                new FieldmarkMultipartFile(
+//                    fileExtractor.getFieldValue(), fileExtractor.getFileName()),
+//                new ApiInventoryFilePost(globalId, fileExtractor.getFileName()),
+//                user);
+//          }
+//        }
+//      }
+//    }
+//    return importResult;
+//  }
+//
+//  private void associateIdentifierToSample(
+//      User user, FieldmarkRecordDTO currentRecordDTO, ApiSampleWithFullSubSamples samplePost)
+//      throws InvalidNameException {
+//    FieldmarkDoiIdentifierExtractor doiExtractor =
+//        (FieldmarkDoiIdentifierExtractor)
+//            currentRecordDTO.getFields().values().stream()
+//                .filter(FieldmarkTypeExtractor::isDoiIdentifier)
+//                .findFirst()
+//                .get();
+//    String identifierValue = doiExtractor.getFieldValue().getDoiIdentifier();
+//    if (StringUtils.isNotBlank(identifierValue)) {
+//      List<ApiInventoryDOI> identifierList =
+//          inventoryIdentifierApiManager.findIdentifiers(
+//              "draft", false, identifierValue, false, user);
+//      if (identifierList.isEmpty()) {
+//        throw new IllegalArgumentException(
+//            "Unable to find an existing assignable identifier: " + identifierValue);
+//      } else if (identifierList.size() > 1) {
+//        throw new IllegalArgumentException(
+//            "Found more than one identifier to assign for the value: " + identifierValue);
+//      } else {
+//        inventoryIdentifierApiManager.assignIdentifier(
+//            samplePost.getOid(), identifierList.get(0).getId(), user);
+//      }
+//    }
+//  }
+//
+//  private FieldmarkNotebookDTO getFieldmarkNotebookDTO(
+//      FieldmarkApiImportRequest importRequest, BindingResult errors, User user)
+//      throws BindException {
+//    if (errors == null) {
+//      errors = new BeanPropertyBindingResult(importRequest, "importRequest");
+//    }
+//    FieldmarkNotebookDTO fieldmarkNotebookDTO = null;
+//    try {
+//      fieldmarkNotebookDTO =
+//          fieldmarkServiceClientAdapter.getFieldmarkNotebook(
+//              user, importRequest.getNotebookId(), importRequest.getIdentifier());
+//    } catch (IOException ioEx) {
+//      log.error(
+//          "The notebookID \""
+//              + importRequest.getNotebookId()
+//              + "\" has not being imported from Fieldmark "
+//              + "cause to the following error:"
+//              + ioEx.getMessage());
+//      errors.rejectValue(
+//          "",
+//          "errors.fieldmark.import",
+//          new Object[] {},
+//          "Error importing notebook \""
+//              + importRequest.getNotebookId()
+//              + "\" from fieldmark due to the following error: "
+//              + ioEx.getMessage());
+//
+//    } catch (HttpServerErrorException serverEx) {
+//      log.error(
+//          "The notebook cannot be fetched because of an error on the Fieldmark server: "
+//              + serverEx.getMessage());
+//      errors.rejectValue(
+//          "",
+//          "errors.fieldmark.import",
+//          new Object[] {},
+//          "Error importing notebook \""
+//              + importRequest.getNotebookId()
+//              + "\" due to Fieldmark server "
+//              + "unavailable: "
+//              + serverEx.getMessage());
+//    } catch (HttpClientErrorException clientEx) {
+//      log.error(
+//          "The notebook cannot be fetched because of the following error: "
+//              + clientEx.getMessage());
+//      errors.rejectValue(
+//          "",
+//          "errors.fieldmark.import",
+//          new Object[] {},
+//          "Error importing notebook \""
+//              + importRequest.getNotebookId()
+//              + "\" due to the following error: "
+//              + clientEx.getMessage());
+//    } finally {
+//      throwBindExceptionIfErrors(errors);
+//    }
+//    return fieldmarkNotebookDTO;
+//  }
 
   private void validateInput(FieldmarkApiImportRequest importRequest, BindingResult errors) {
     if (importRequest == null || StringUtils.isBlank(importRequest.getNotebookId())) {
