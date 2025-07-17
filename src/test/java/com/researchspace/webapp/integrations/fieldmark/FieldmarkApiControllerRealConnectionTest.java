@@ -15,6 +15,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
+import javax.naming.InvalidNameException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -57,7 +58,7 @@ public class FieldmarkApiControllerRealConnectionTest extends SpringTransactiona
     assertNotNull(result);
   }
 
-  public void testImportNotebook() throws BindException {
+  public void testImportNotebook() throws BindException, InvalidNameException {
     FieldmarkApiImportResult result =
         fieldmarkApiController.importNotebook(IMPORT_REQ, mockBindingResult, user);
     assertNotNull(result);
