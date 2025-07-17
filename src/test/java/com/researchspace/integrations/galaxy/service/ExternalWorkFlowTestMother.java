@@ -12,7 +12,6 @@ import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationResponse
 import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationStepInput;
 import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationStepStatusResponse;
 import com.researchspace.integrations.galaxy.service.GalaxySummaryStatusReport.GalaxyInvocationStatus;
-import com.researchspace.model.FileProperty;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
@@ -51,7 +50,8 @@ public class ExternalWorkFlowTestMother {
   public static final String DEFAULT_RSPACE_CONTAINER_NAME = "default-rspace-container-name";
   public static final long RSPACEDATAID = 0L;
   public static final String DATASET_ID_1 = "dataset-id-1";
-  public static final String HISTORY_DATASET_ASSOCIATION_DATA_SET_ID = "historyDatasetAssociationDataSetId";
+  public static final String HISTORY_DATASET_ASSOCIATION_DATA_SET_ID =
+      "historyDatasetAssociationDataSetId";
   public static final String HISTORY_DATASET_ASSOCIATION_UUID = "historyDatasetAssociationUuid";
   public static final String HISTORY_DATASET_ASSOCIATION_NAME = "historyDatasetAssociationName";
 

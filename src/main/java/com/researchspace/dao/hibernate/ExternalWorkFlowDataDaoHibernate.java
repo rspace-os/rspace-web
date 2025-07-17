@@ -3,7 +3,9 @@ package com.researchspace.dao.hibernate;
 import com.researchspace.dao.ExternalWorkFlowDataDao;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
-import java.util.List;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
+import java.util.HashSet;
+import java.util.Set;
 import org.springframework.stereotype.Repository;
 
 @Repository("externalWorkFlowDataDao")
@@ -15,17 +17,18 @@ public class ExternalWorkFlowDataDaoHibernate
   }
 
   @Override
-  public List<ExternalWorkFlowData> findWorkFlowDataByRSpaceContainerIdAndServiceType(
-      long rspaceContainerId, ExternalWorkFlowData.ExternalService type) {
-    return sessionFactory
-        .getCurrentSession()
-        .createQuery(
-            "from ExternalWorkFlowData efd left join fetch efd.externalWorkflowInvocations ewfi"
-                + " left join fetch ewfi.externalWorkFlowData where efd.rspacecontainerid ="
-                + " (:rspaceContainerId) and efd.externalService = (:type) ",
-            ExternalWorkFlowData.class)
-        .setParameter("rspaceContainerId", rspaceContainerId)
-        .setParameter("type", type)
-        .list();
+  public Set<ExternalWorkFlowData> findWorkFlowDataByRSpaceContainerIdAndServiceType(
+      long rspaceContainerId, ExternalService type) {
+    return new HashSet<>(
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(
+                "from ExternalWorkFlowData efd left join fetch efd.externalWorkflowInvocations ewfi"
+                    + " left join fetch ewfi.externalWorkFlowData where efd.rspacecontainerid ="
+                    + " (:rspaceContainerId) and efd.externalService = (:type) ",
+                ExternalWorkFlowData.class)
+            .setParameter("rspaceContainerId", rspaceContainerId)
+            .setParameter("type", type)
+            .list());
   }
 }

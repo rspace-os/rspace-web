@@ -7,9 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.galaxy.model.output.upload.DatasetCollection;
 import com.researchspace.integrations.galaxy.service.GalaxySummaryStatusReport.GalaxyInvocationStatus;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 public class GalaxySummaryStatusReportTest {
@@ -18,7 +20,7 @@ public class GalaxySummaryStatusReportTest {
 
   @Test
   public void testCreateForInvocationsOneInvocationOneHistory() {
-    List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
+    Set<ExternalWorkFlowData> workflowDataList = new HashSet<>();
 
     ExternalWorkFlowData data1 =
         ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1", "history_name1");
@@ -31,7 +33,7 @@ public class GalaxySummaryStatusReportTest {
             "invocation_name1", "running", "history1", used);
     List<GalaxySummaryStatusReport> reports =
         GalaxySummaryStatusReport.createForForInvocationsAndForDataAlone(
-            List.of(invocationDetails), workflowDataList);
+            Set.of(invocationDetails), workflowDataList);
     assertEquals(1, reports.size(), "List should contain 1 item");
     GalaxySummaryStatusReport report = reports.get(0);
     makeGalaxyReportSummaryAssertions(report, "1", GalaxyInvocationStatus.IN_PROGRESS);
@@ -52,7 +54,7 @@ public class GalaxySummaryStatusReportTest {
 
   @Test
   public void testCreateForInvocationsTwoInvocationsTwoHistories() {
-    List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
+    Set<ExternalWorkFlowData> workflowDataList = new HashSet<>();
 
     ExternalWorkFlowData data1 =
         ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1", "history_name1");
@@ -72,9 +74,13 @@ public class GalaxySummaryStatusReportTest {
     GalaxyInvocationDetails invocationDetails2 =
         GalaxyInvocationDetailsTestMother.createInvocationdetails(
             "invocation_name2", "failed", "history2", used2);
+    LinkedHashSet<GalaxyInvocationDetails> invocationDetails =
+        new LinkedHashSet<GalaxyInvocationDetails>();
+    invocationDetails.add(invocationDetails1);
+    invocationDetails.add(invocationDetails2);
     List<GalaxySummaryStatusReport> reports =
         GalaxySummaryStatusReport.createForForInvocationsAndForDataAlone(
-            List.of(invocationDetails1, invocationDetails2), workflowDataList);
+            invocationDetails, workflowDataList);
     assertEquals(2, reports.size(), "List should contain 1 item");
     GalaxySummaryStatusReport report1 = reports.get(0);
     makeGalaxyReportSummaryAssertions(report1, "1", GalaxyInvocationStatus.IN_PROGRESS);
@@ -84,7 +90,7 @@ public class GalaxySummaryStatusReportTest {
 
   @Test
   public void testCreateForInvocationsTwoInvocationsThreeHistories() {
-    List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
+    Set<ExternalWorkFlowData> workflowDataList = new HashSet<>();
 
     ExternalWorkFlowData data1 =
         ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1", "history_name1");
@@ -107,9 +113,13 @@ public class GalaxySummaryStatusReportTest {
     GalaxyInvocationDetails invocationDetails2 =
         GalaxyInvocationDetailsTestMother.createInvocationdetails(
             "invocation_name2", "failed", "history2", used2);
+    LinkedHashSet<GalaxyInvocationDetails> invocationDetails =
+        new LinkedHashSet<GalaxyInvocationDetails>();
+    invocationDetails.add(invocationDetails1);
+    invocationDetails.add(invocationDetails2);
     List<GalaxySummaryStatusReport> reports =
         GalaxySummaryStatusReport.createForForInvocationsAndForDataAlone(
-            List.of(invocationDetails1, invocationDetails2), workflowDataList);
+            invocationDetails, workflowDataList);
     assertEquals(3, reports.size(), "List should contain 1 item");
     GalaxySummaryStatusReport report1 = reports.get(0);
     makeGalaxyReportSummaryAssertions(report1, "1", GalaxyInvocationStatus.IN_PROGRESS);
@@ -129,7 +139,7 @@ public class GalaxySummaryStatusReportTest {
 
   @Test
   public void testGroupByHistoryIdSingleDataItem() {
-    List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
+    Set<ExternalWorkFlowData> workflowDataList = new HashSet<>();
 
     ExternalWorkFlowData data1 =
         ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1");
@@ -147,7 +157,7 @@ public class GalaxySummaryStatusReportTest {
 
   @Test
   public void testGroupByHistoryIdTwoDataItemsOneHistory() {
-    List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
+    Set<ExternalWorkFlowData> workflowDataList = new LinkedHashSet<>();
 
     ExternalWorkFlowData data1 =
         ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1");
@@ -170,8 +180,7 @@ public class GalaxySummaryStatusReportTest {
 
   @Test
   public void testGroupByHistoryIdTwoDataItemsTwoHistory() {
-    List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
-
+    Set<ExternalWorkFlowData> workflowDataList = new HashSet<>();
     ExternalWorkFlowData data1 =
         ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1");
     ExternalWorkFlowData data2 =
@@ -196,7 +205,7 @@ public class GalaxySummaryStatusReportTest {
 
   @Test
   public void testGroupByHistoryIdThreeDataItemsTwoHistory() {
-    List<ExternalWorkFlowData> workflowDataList = new ArrayList<>();
+    Set<ExternalWorkFlowData> workflowDataList = new LinkedHashSet<>();
 
     ExternalWorkFlowData data1 =
         ExternalWorkFlowTestMother.createExternalWorkFlowData("history1", "data1");

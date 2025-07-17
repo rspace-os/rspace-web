@@ -195,7 +195,7 @@ function CardListing({
       });
     },
     //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
+    [update, integrationStates.GALAXY]
   );
 
   const githubUpdate = React.useCallback(

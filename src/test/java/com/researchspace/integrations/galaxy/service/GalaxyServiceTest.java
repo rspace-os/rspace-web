@@ -2,7 +2,6 @@ package com.researchspace.integrations.galaxy.service;
 
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.API_KEY;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DATASET_ID_1;
-import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_DATA_EXITID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_INVOCATION_STATE;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_UUID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.ECATMEDIA_FILE1_GLOBAL_ID;
@@ -63,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -171,7 +171,7 @@ public class GalaxyServiceTest {
 
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY))
-        .thenReturn(List.of(testExternalWorkFlowData));
+        .thenReturn(Set.of(testExternalWorkFlowData));
     when(client.createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY + "_1")))
         .thenReturn(history);
     galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L}, "serverAddress");
@@ -218,10 +218,15 @@ public class GalaxyServiceTest {
 
   @Test
   public void shouldPutAnnotationsInGalaxyWhenSetUpDataInGalaxy() throws IOException {
-    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[]{1L, 2L}, "serverAddress");
+    galaxyService.setUpDataInGalaxyFor(user, 1L, 1L, new long[] {1L, 2L}, "serverAddress");
     verify(client)
-        .putAnnotationOnDataset(eq(HISTORY_ID_1), eq(HISTORY_DATASET_ASSOCIATION_DATA_SET_ID + 1),
-            eq("Document: serverAddress/workspace/editor/structuredDocument/444 Data: serverAddress/gallery/item/123 Download: serverAddress/globalId/ecatmediafile1GlobalId"),
+        .putAnnotationOnDataset(
+            eq(HISTORY_ID_1),
+            eq(HISTORY_DATASET_ASSOCIATION_DATA_SET_ID + 1),
+            eq(
+                "Document: serverAddress/workspace/editor/structuredDocument/444 Data:"
+                    + " serverAddress/gallery/item/123 Download:"
+                    + " serverAddress/globalId/ecatmediafile1GlobalId"),
             eq(API_KEY));
   }
 
@@ -229,7 +234,7 @@ public class GalaxyServiceTest {
   public void testGetSummaryGalaxyDataForRSpaceFieldWhenNoDataUploaded() throws IOException {
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY))
-        .thenReturn(Collections.emptyList());
+        .thenReturn(Collections.emptySet());
 
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
@@ -250,7 +255,7 @@ public class GalaxyServiceTest {
 
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY))
-        .thenReturn(List.of(testExternalWorkFlowData));
+        .thenReturn(Set.of(testExternalWorkFlowData));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
         .thenReturn(Collections.emptyList());
@@ -279,7 +284,7 @@ public class GalaxyServiceTest {
         ExternalWorkFlowTestMother.createWorkflowInvocationResponse(INVOCATION_ID_1, HISTORY_ID_1);
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY))
-        .thenReturn(List.of(testExternalWorkFlowData));
+        .thenReturn(Set.of(testExternalWorkFlowData));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
         .thenReturn(Collections.singletonList(workflowInvocationResponse));
@@ -309,7 +314,7 @@ public class GalaxyServiceTest {
             ExternalWorkFlowTestMother.INVOCATION_ID_1, HISTORY_ID_1);
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY))
-        .thenReturn(List.of(testExternalWorkFlowData));
+        .thenReturn(Set.of(testExternalWorkFlowData));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
         .thenReturn(Collections.singletonList(workflowInvocationResponse));
@@ -352,7 +357,7 @@ public class GalaxyServiceTest {
         ExternalWorkFlowTestMother.createWorkflowInvocationResponse(INVOCATION_ID_1, HISTORY_ID_1);
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY))
-        .thenReturn(List.of(testExternalWorkFlowData));
+        .thenReturn(Set.of(testExternalWorkFlowData));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
         .thenReturn(Collections.singletonList(workflowInvocationResponse));
@@ -398,7 +403,7 @@ public class GalaxyServiceTest {
     when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY))
         .thenReturn(
-            List.of(testExternalWorkFlowDataPreexisting, testExternalWorkFlowDataNotPreexisting));
+            Set.of(testExternalWorkFlowDataPreexisting, testExternalWorkFlowDataNotPreexisting));
 
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
         .thenReturn(
