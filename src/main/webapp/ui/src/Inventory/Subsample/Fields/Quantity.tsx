@@ -19,14 +19,16 @@ import { styled } from "@mui/material/styles";
 import { textFieldClasses } from "@mui/material/TextField";
 import { inputBaseClasses } from "@mui/material/InputBase";
 
-const CustomBatchFormField = styled(BatchFormField<string>)(() => ({
+const CustomBatchFormField = styled(BatchFormField)(() => ({
   [`& .${textFieldClasses.root}`]: {
     maxWidth: "264px",
     [`& .${inputBaseClasses.root}`]: {
       paddingRight: 0,
     },
   },
-}));
+})) as <T>(
+  props: React.ComponentProps<typeof BatchFormField<T>>,
+) => React.ReactNode;
 
 function QuantityField<
   Fields extends {
@@ -106,7 +108,7 @@ function QuantityField<
   return (
     <>
       {editable ? (
-        <CustomBatchFormField
+        <CustomBatchFormField<string | number>
           label="Quantity"
           value={amount}
           error={!valid}
