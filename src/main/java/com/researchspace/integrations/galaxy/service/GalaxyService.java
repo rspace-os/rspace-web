@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -140,7 +141,7 @@ public class GalaxyService {
   public String generateUniqueMetaData(
       long fieldId, String docName, String globalID, String fieldName, String fieldGlobalID) {
     String metaData = "RSPACE_" + docName + "_" + globalID + "_" + fieldName + "_" + fieldGlobalID;
-    List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField =
+    Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField =
         externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             fieldId, GALAXY);
     if (allDataUploadedToGalaxyForThisRSpaceField != null
@@ -183,7 +184,7 @@ public class GalaxyService {
    */
   public List<GalaxySummaryStatusReport> getSummaryGalaxyDataForRSpaceField(long fieldId, User user)
       throws IOException {
-    List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField =
+    Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField =
         externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             fieldId, GALAXY);
     if (!allDataUploadedToGalaxyForThisRSpaceField.isEmpty()) {
@@ -200,7 +201,7 @@ public class GalaxyService {
         // check if any invocations have been persisted for this RSpace field
         Set<ExternalWorkFlowInvocation> persistedInvocations =
             findInvocationsFromData(allDataUploadedToGalaxyForThisRSpaceField);
-        List<GalaxyInvocationDetails> allInvocationDetails = new ArrayList<>();
+        Set<GalaxyInvocationDetails> allInvocationDetails = new LinkedHashSet<>();
         allTopLevelInvocationsForThisData.forEach(
             (invocation) -> {
               GalaxyInvocationDetails thisGalaxyInvocationDetails = new GalaxyInvocationDetails();
@@ -242,8 +243,8 @@ public class GalaxyService {
   private void getLatestInvocationDataFromGalaxy(
       WorkflowInvocationResponse invocation,
       String apiKey,
-      List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField,
-      List<GalaxyInvocationDetails> allInvocationDetails,
+      Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField,
+      Set<GalaxyInvocationDetails> allInvocationDetails,
       GalaxyInvocationDetails thisGalaxyInvocationDetails) {
     WorkflowInvocationStepStatusResponse details =
         client.getWorkflowInvocationData(apiKey, invocation.getInvocationId());
@@ -268,8 +269,8 @@ public class GalaxyService {
                   boolean dataMatched = matchingData.isPresent();
                   if (dataMatched) {
                     allMatchingDataForThisInvocation.add(matchingData.get());
-                    allInvocationDetails.add(thisGalaxyInvocationDetails);
                     thisGalaxyInvocationDetails.setInvocation(invocation);
+                    allInvocationDetails.add(thisGalaxyInvocationDetails);
                     if (thisGalaxyInvocationDetails.getDataUsedInInvocation() == null) {
                       thisGalaxyInvocationDetails.setDataUsedInInvocation(new ArrayList<>());
                     }
@@ -278,16 +279,15 @@ public class GalaxyService {
                         client.getWorkflowInvocationReport(apiKey, invocation.getInvocationId());
                     thisGalaxyInvocationDetails.setWorkflowName(
                         workflowInvocationReport.getTitle());
-                    saveInvocation(
-                        invocation, thisGalaxyInvocationDetails, allMatchingDataForThisInvocation);
                   }
                 }
               }
             });
+    saveInvocation(invocation, thisGalaxyInvocationDetails, allMatchingDataForThisInvocation);
   }
 
   private Set<ExternalWorkFlowInvocation> findInvocationsFromData(
-      List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
+      Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
     List<ExternalWorkFlowInvocation> invocations = new ArrayList<>();
     allDataUploadedToGalaxyForThisRSpaceField.forEach(
         data -> invocations.addAll(data.getExternalWorkflowInvocations()));
@@ -308,7 +308,7 @@ public class GalaxyService {
   }
 
   private Set<String> findAllHistoryIdsForThisData(
-      List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
+      Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
     Set<String> historyIDs = new HashSet<>();
     for (ExternalWorkFlowData data : allDataUploadedToGalaxyForThisRSpaceField) {
       historyIDs.add(data.getExtContainerID());

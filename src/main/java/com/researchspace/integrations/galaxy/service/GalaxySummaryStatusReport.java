@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Data;
 
@@ -80,7 +81,7 @@ public class GalaxySummaryStatusReport {
    * @return
    */
   public static List<GalaxySummaryStatusReport> createForForDataAlone(
-      List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
+      Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
     List<GalaxySummaryStatusReport> summaryReports = new ArrayList<>();
     Map<String, List<ExternalWorkFlowData>> groupedByHistoryId =
         groupByHistoryId(allDataUploadedToGalaxyForThisRSpaceField);
@@ -97,7 +98,7 @@ public class GalaxySummaryStatusReport {
    * @return
    */
   public static Map<String, List<ExternalWorkFlowData>> groupByHistoryId(
-      List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRspaceProject) {
+      Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRspaceProject) {
     Map<String, List<ExternalWorkFlowData>> groupedByHistoryId = new HashMap<>();
     for (ExternalWorkFlowData data : allDataUploadedToGalaxyForThisRspaceProject) {
       groupedByHistoryId.computeIfPresent(
@@ -126,8 +127,8 @@ public class GalaxySummaryStatusReport {
    * @return
    */
   public static List<GalaxySummaryStatusReport> createForForInvocationsAndForDataAlone(
-      List<GalaxyInvocationDetails> invocationsAndDataSetsMatchingRSpaceData,
-      List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
+      Set<GalaxyInvocationDetails> invocationsAndDataSetsMatchingRSpaceData,
+      Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
     List<GalaxySummaryStatusReport> summaryReports = new ArrayList<>();
     for (GalaxyInvocationDetails galaxyInvocationDetails :
         invocationsAndDataSetsMatchingRSpaceData) {
@@ -138,10 +139,10 @@ public class GalaxySummaryStatusReport {
         invocationsAndDataSetsMatchingRSpaceData.stream()
             .map(i -> i.getInvocation().getHistoryId())
             .collect(Collectors.toList());
-    List<ExternalWorkFlowData> notHavingAnInvocation =
+    Set<ExternalWorkFlowData> notHavingAnInvocation =
         allDataUploadedToGalaxyForThisRSpaceField.stream()
             .filter(data -> !historyIdsWithAnInvocations.contains(data.getExtContainerID()))
-            .collect(Collectors.toList());
+            .collect(Collectors.toSet());
     List<GalaxySummaryStatusReport> dataOnlyReports = createForForDataAlone(notHavingAnInvocation);
     summaryReports.addAll(dataOnlyReports);
     return summaryReports;
@@ -149,7 +150,7 @@ public class GalaxySummaryStatusReport {
 
   public static GalaxySummaryStatusReport createForInvocation(
       GalaxyInvocationDetails galaxyInvocationDetails,
-      List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
+      Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
     GalaxySummaryStatusReport report = new GalaxySummaryStatusReport();
     report.setGalaxyInvocationStatus(
         GalaxyInvocationStatus.fromString(galaxyInvocationDetails.getInvocation().getState()));
