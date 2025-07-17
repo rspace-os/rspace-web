@@ -13,10 +13,14 @@ import Link from "@mui/material/Link";
 import { Optional } from "../../../util/optional";
 import { styled } from "@mui/material/styles";
 import { textFieldClasses } from "@mui/material/TextField";
+import { inputBaseClasses } from "@mui/material";
 
 const CustomFormField = styled(FormField<string | number>)(() => ({
   [`& .${textFieldClasses.root}`]: {
     maxWidth: "264px",
+    [`& .${inputBaseClasses.root}`]: {
+      paddingRight: 0,
+    },
   },
 }));
 
@@ -85,7 +89,7 @@ function Quantity({
       return Optional.present(
         `${totalQuantity.toFixed(totalQuantity % 1 === 0 ? 0 : 2)} ${
           sample.quantityUnitLabel
-        } in total`
+        } in total`,
       );
     }
 
@@ -182,7 +186,7 @@ function Quantity({
                       e.preventDefault();
                       if (sample.globalId)
                         navigate(
-                          `/inventory/search?parentGlobalId=${sample.globalId}`
+                          `/inventory/search?parentGlobalId=${sample.globalId}`,
                         );
                     }}
                   >

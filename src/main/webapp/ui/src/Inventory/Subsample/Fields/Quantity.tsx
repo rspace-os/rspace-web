@@ -15,12 +15,24 @@ import Typography from "@mui/material/Typography";
 import { type Sample } from "../../../stores/definitions/Sample";
 import Link from "@mui/material/Link";
 import NavigateContext from "../../../stores/contexts/Navigate";
+import { styled } from "@mui/material/styles";
+import { textFieldClasses } from "@mui/material/TextField";
+import { inputBaseClasses } from "@mui/material/InputBase";
+
+const CustomBatchFormField = styled(BatchFormField<string>)(() => ({
+  [`& .${textFieldClasses.root}`]: {
+    maxWidth: "264px",
+    [`& .${inputBaseClasses.root}`]: {
+      paddingRight: 0,
+    },
+  },
+}));
 
 function QuantityField<
   Fields extends {
     quantity: Quantity | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   quantityCategory,
@@ -94,7 +106,7 @@ function QuantityField<
   return (
     <>
       {editable ? (
-        <BatchFormField
+        <CustomBatchFormField
           label="Quantity"
           value={amount}
           error={!valid}
@@ -117,7 +129,7 @@ function QuantityField<
                 step: 0.001,
               }}
               InputProps={{
-                startAdornment: (
+                endAdornment: (
                   <UnitSelect
                     categories={[quantityCategory]}
                     value={quantityUnitId}
@@ -130,7 +142,7 @@ function QuantityField<
         />
       ) : (
         <>
-          <BatchFormField
+          <CustomBatchFormField
             label="Quantity"
             value={quantityLabel}
             disabled
@@ -150,7 +162,7 @@ function QuantityField<
                         e.preventDefault();
                         if (parentSample.globalId)
                           navigate(
-                            `/inventory/search?parentGlobalId=${parentSample.globalId}`
+                            `/inventory/search?parentGlobalId=${parentSample.globalId}`,
                           );
                       }}
                     >

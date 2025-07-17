@@ -8,6 +8,7 @@ import FormLabel from "@mui/material/FormLabel";
 import NoValue from "../../../components/NoValue";
 import { makeStyles } from "tss-react/mui";
 import { Heading } from "../../../components/DynamicHeadingLevel";
+import clsx from "clsx";
 
 /**
  * This component renders form fields specifically used by the main Inventory
@@ -173,7 +174,7 @@ export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
       label={label}
       {...(canChooseWhichToEdit ? { id: controlledId } : {})}
       asFieldset={asFieldset}
-      className={classes.formControl}
+      className={clsx(classes.formControl, rest.className)}
       renderInput={(inputProps) => (
         <>
           {canChooseWhichToEdit ? (
