@@ -44,6 +44,7 @@ const RenameDialog = () => {
   const [newName, setNewName] = React.useState("");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { addAlert } = React.useContext(AlertContext);
+  const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     function handler(event: Event) {
@@ -68,6 +69,7 @@ const RenameDialog = () => {
   }
 
   async function handleSubmit() {
+    setSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("recordId", documentId);
@@ -115,6 +117,8 @@ const RenameDialog = () => {
           }),
         );
       return;
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -155,7 +159,7 @@ const RenameDialog = () => {
             Cancel
           </Button>
           <ValidatingSubmitButton
-            loading={false}
+            loading={submitting}
             onClick={() => {
               void handleSubmit();
             }}
