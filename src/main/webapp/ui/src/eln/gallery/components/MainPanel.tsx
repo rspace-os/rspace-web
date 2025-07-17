@@ -792,11 +792,11 @@ const FileCard = styled(
                                 p: 0.25,
                                 borderRadius: "4px",
                                 mx: 0.5,
-                                color: window.matchMedia(
-                                  "(prefers-contrast: more)"
-                                ).matches
-                                  ? "white"
-                                  : `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`,
+                                color: (theme) =>
+                                  window.matchMedia("(prefers-contrast: more)")
+                                    .matches
+                                    ? "white"
+                                    : theme.palette.callToAction.contrastText,
                               }
                             : {}),
                           fontSize: "0.8125rem",

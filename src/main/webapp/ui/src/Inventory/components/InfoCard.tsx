@@ -59,7 +59,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
       )}
       {r instanceof ContainerModel && (
         <Button
-          color="primary"
+          color="callToAction"
           variant="contained"
           onClick={doNotAwait(async () => {
             await moveStore.search?.setActiveResult(r);

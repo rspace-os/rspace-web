@@ -102,7 +102,7 @@ function Exporter({
           <>
             <Button
               variant="contained"
-              color="primary"
+              color="callToAction"
               disableElevation
               onClick={() => {
                 void onExport();

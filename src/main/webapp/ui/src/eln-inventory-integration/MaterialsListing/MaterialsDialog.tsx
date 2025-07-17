@@ -303,7 +303,7 @@ const ActionsBar = observer(
       >
         <Grid item>
           <Button
-            color="primary"
+            color="callToAction"
             variant="contained"
             disableElevation
             onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(
@@ -318,7 +318,7 @@ const ActionsBar = observer(
         </Grid>
         <Grid item>
           <Button
-            color="primary"
+            color="callToAction"
             variant="contained"
             disableElevation
             onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(
@@ -588,7 +588,7 @@ function MaterialsDialog({
                     )}
                   >
                     <Button
-                      color="primary"
+                      color="callToAction"
                       variant="contained"
                       disableElevation
                       onClick={preventEventBubbling<

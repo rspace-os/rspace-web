@@ -491,7 +491,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                     }
                   >
                     <Button
-                      color="primary"
+                      color="callToAction"
                       variant="outlined"
                       size="small"
                       onClick={() => handlePreview(id)}

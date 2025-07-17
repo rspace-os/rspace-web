@@ -71,7 +71,7 @@ export default function BarcodeScannerSkeleton({
             message: e.message,
             variant: "error",
             isInfinite: true,
-          })
+          }),
         );
     } finally {
       onClose();
@@ -120,7 +120,7 @@ export default function BarcodeScannerSkeleton({
           </Button>
           <Button
             disabled={!barcode?.rawValue}
-            color="primary"
+            color="callToAction"
             variant="contained"
             disableElevation
             onClick={handleOnSubmit}
