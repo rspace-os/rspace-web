@@ -35,10 +35,11 @@ library.add(
   faBook,
   faFolderOpen,
   faThList,
-  faStream
+  faStream,
 );
 import TagDialog from "./TagDialog";
 import CompareDialog from "./CompareDialog";
+import RenameDialog from "./RenameDialog";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import TreeSort from "../../components/TreeSort";
@@ -67,9 +68,9 @@ class WorkspaceToolbar extends React.Component {
       evernoteEnabled:
         props.domContainer.getAttribute("data-evernote-enabled") === "true",
       asposeEnabled:
-          props.domContainer.getAttribute("data-aspose-enabled") === "true",
+        props.domContainer.getAttribute("data-aspose-enabled") === "true",
       labgroupsFolderId: props.domContainer.getAttribute(
-        "data-labgroups-folder-id"
+        "data-labgroups-folder-id",
       ),
     };
 
@@ -149,7 +150,7 @@ class WorkspaceToolbar extends React.Component {
 
     if (localQueries.length > 1) {
       this.setState({ advancedOpen: true }, () =>
-        this.advancedSearch.current.setQueries(localQueries)
+        this.advancedSearch.current.setQueries(localQueries),
       );
     } else if (localQueries.length === 1) {
       this.simpleSearch.current.setQueries(localQueries);
@@ -192,7 +193,7 @@ class WorkspaceToolbar extends React.Component {
       }
 
       this.setState({ advancedOpen: true }, () =>
-        this.advancedSearch.current.setQueries(queries)
+        this.advancedSearch.current.setQueries(queries),
       );
     }
   };
@@ -228,7 +229,7 @@ class WorkspaceToolbar extends React.Component {
       {
         [filter]: !this.state[filter],
       },
-      this.displayWorkspace
+      this.displayWorkspace,
     );
   };
 
@@ -249,7 +250,7 @@ class WorkspaceToolbar extends React.Component {
           viewableItemsFilter: false,
           treeView: false,
         },
-        callback
+        callback,
       );
     } else {
       workspaceSettings.searchMode = false;
@@ -259,7 +260,7 @@ class WorkspaceToolbar extends React.Component {
           favoritesFilter: false,
           sharedFilter: false,
         },
-        callback
+        callback,
       );
     }
   };
@@ -537,6 +538,7 @@ class WorkspaceToolbar extends React.Component {
             )}
             <TagDialog />
             <CompareDialog />
+            <RenameDialog />
           </Analytics>
         </ThemeProvider>
       </StyledEngineProvider>
@@ -574,7 +576,7 @@ window.renderToolbar = (newProps) => {
     },
   };
   rootNode.render(
-    <WorkspaceToolbar domContainer={domContainer} {...prevProps} />
+    <WorkspaceToolbar domContainer={domContainer} {...prevProps} />,
   );
 };
 
