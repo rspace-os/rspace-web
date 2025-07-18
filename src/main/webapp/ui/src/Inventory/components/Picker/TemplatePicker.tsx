@@ -6,15 +6,18 @@ import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
 import InventoryPicker from "./Picker";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
+import { Sample } from "@/stores/definitions/Sample";
 
 type TemplatePickerArgs = {
   setTemplate: (template: TemplateModel) => void;
   disabled?: boolean;
+  sample?: Sample;
 };
 
 function TemplatePicker({
   setTemplate,
   disabled,
+  sample,
 }: TemplatePickerArgs): ReactNode {
   const [search] = useState(
     new Search({
@@ -34,17 +37,18 @@ function TemplatePicker({
         ]),
         allowedTypeFilters: new Set(["TEMPLATE"]),
         selectionMode: "SINGLE",
-        /*
-         * Don't highlight the selected template as whilst the activeResult is
-         * used by Picker to identify the selected template this is an
-         * implementation detail; the activeResult is not shown to the user and
-         * so highlighting it is likely to confuse them when it doesn't match
-         * the new sample's template due to setTemplate being called elsewhere.
-         */
-        highlightActiveResult: false,
       },
-    })
+    }),
   );
+
+  useEffect(() => {
+    if (
+      typeof sample !== "undefined" &&
+      search.activeResult !== sample?.template
+    ) {
+      search.setActiveResult(sample?.template);
+    }
+  }, [sample?.template]);
 
   useEffect(() => {
     if (!disabled) void search.fetcher.performInitialSearch(null);

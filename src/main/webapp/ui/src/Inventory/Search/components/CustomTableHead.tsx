@@ -52,7 +52,8 @@ function CustomTableHead({
   const { isViewportSmall, isViewportLarge } = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
-  const multiselect = search.uiConfig.selectionMode === "MULTIPLE";
+  const multiSelect = search.uiConfig.selectionMode === "MULTIPLE";
+  const singleSelect = search.uiConfig.selectionMode === "SINGLE";
   const { order } = search.fetcher;
 
   let cols = 3;
@@ -62,7 +63,7 @@ function CustomTableHead({
   /* this could be made adjustable too (e.g. name or global ID) */
   const mainProperty: SortProperty = ArrayUtils.find(
     (p) => p.label === search.uiConfig.mainColumn,
-    sortProperties
+    sortProperties,
   ).orElseGet(() => {
     throw new Error("mainColumn is not a sortable property");
   });
@@ -78,7 +79,7 @@ function CustomTableHead({
       <TableRow>
         {selectedCount === 0 ? (
           <>
-            {multiselect && (
+            {multiSelect && (
               <TableCell variant="head" className={classes.iconCell}>
                 <IconButtonWithTooltip
                   title="Select all"
@@ -88,6 +89,7 @@ function CustomTableHead({
                 />
               </TableCell>
             )}
+            {singleSelect && <TableCell variant="head">Select</TableCell>}
             <TableCell variant="head" padding="normal" sortDirection={order}>
               {isSortable(mainProperty.key) ? (
                 <SortableProperty property={mainProperty} />

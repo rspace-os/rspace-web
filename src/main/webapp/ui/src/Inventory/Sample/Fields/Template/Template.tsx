@@ -35,7 +35,7 @@ function Template(): React.ReactNode {
           title: "Could not fetch template details.",
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       console.error("Could not set template", error);
     });
@@ -123,6 +123,7 @@ function Template(): React.ReactNode {
             <TemplatePicker
               disabled={!activeResult.isFieldEditable("template")}
               setTemplate={setTemplate}
+              sample={activeResult}
             />
           </Collapse>
         </>
