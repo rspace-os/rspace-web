@@ -1,22 +1,26 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import { test, expect, MountResult } from "@playwright/experimental-ct-react";
 import React from "react";
 import { GalleryStory } from "./index.story";
 import * as Jwt from "jsonwebtoken";
+import fc from "fast-check";
+import { type RouterFixture } from "@playwright/experimental-ct-core";
+import { GallerySection } from "./common";
+
+type GivenSteps = {
+  "the Gallery is mounted": ({
+    url,
+  }?: {
+    url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
+  }) => Promise<MountResult>;
+};
+
+type ThenSteps = {
+  "the page title should be": (title: string) => Promise<void>;
+};
 
 const feature = test.extend<{
-  Given: {
-    "the Gallery is mounted": ({
-      url,
-    }?: {
-      url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
-    }) => Promise<void>;
-  };
-  Once: {};
-  When: {};
-  Then: {
-    "the page title should be": (title: string) => Promise<void>;
-  };
-  networkRequests: Array<URL>;
+  Given: GivenSteps;
+  Then: ThenSteps;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -25,27 +29,107 @@ const feature = test.extend<{
       }: {
         url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
       } = {}) => {
-        await mount(<GalleryStory urlSuffix={url} />);
+        return mount(<GalleryStory urlSuffix={url} />);
       },
     });
   },
-  Once: async ({ page }, use) => {
-    await use({});
-  },
-  When: async ({ page }, use) => {
-    await use({});
-  },
-  Then: async ({ page, networkRequests }, use) => {
+  Then: async ({ page }, use) => {
     await use({
       "the page title should be": async (title: string) => {
         await expect(page).toHaveTitle(title);
       },
     });
   },
-  networkRequests: async ({}, use) => {
-    await use([]);
-  },
 });
+
+function property(name: string) {
+  return {
+    let<T extends object>(
+      letBindings: ({
+        IsAny,
+        IsOneOf,
+      }: {
+        IsAny: (
+          desc:
+            | "file id"
+            | "file name without extension"
+            | "folder id"
+            | "folder name",
+          ...args: Array<unknown>
+        ) => unknown;
+        IsOneOf: (...options: Array<unknown>) => unknown;
+      }) => T
+    ) {
+      return {
+        checkThat: (
+          testFn: (
+            values: T,
+            helpers: {
+              Given: GivenSteps;
+              Then: ThenSteps;
+              router: RouterFixture;
+            }
+          ) => Promise<void>
+        ) => {
+          let mountedComponent: MountResult | null = null;
+          return feature.extend({
+            /*
+             * With each iteration of the test, we need to make sure that
+             * react has a clean state so we wrap the mount function to keep
+             * track of the mounted components, so that after the test is done,
+             * we can unmount them.
+             */
+            mount: async ({ mount }, use) => {
+              await use(async (component, options) => {
+                mountedComponent = await mount(component, options);
+                return mountedComponent;
+              });
+            },
+          })(name, async ({ Given, Then, router }) => {
+            const letBindingsToArbitraries = letBindings({
+              IsAny: (description) => {
+                if (description === "file id") {
+                  return fc.integer({ min: 1, max: 10000 });
+                }
+                if (description === "file name without extension") {
+                  return fc.string({ minLength: 1, maxLength: 20 });
+                }
+                if (description === "folder id") {
+                  return fc.nat(1000);
+                }
+                if (description === "folder name") {
+                  return fc.string({ minLength: 1, maxLength: 20 });
+                }
+              },
+              IsOneOf: (...options) => fc.constantFrom(...options),
+            });
+
+            await fc.assert(
+              fc.asyncProperty(
+                fc.record(letBindingsToArbitraries),
+                async (generated) => {
+                  try {
+                    await testFn(generated as T, {
+                      Given,
+                      Then,
+                      router,
+                    });
+                  } finally {
+                    if (mountedComponent) {
+                      await mountedComponent.unmount();
+                      mountedComponent = null;
+                    }
+                  }
+                }
+              ),
+              { numRuns: 5 }
+            );
+          });
+        },
+      };
+    },
+  };
+}
 
 feature.beforeEach(async ({ router }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
@@ -141,13 +225,13 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
-  await router.route("/api/v1/folders/123*", (route) => {
-    return route.fulfill({
+  await router.route("/api/v1/folders/*", (route) =>
+    route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         id: 123,
-        globalId: "GF123",
+        globalId: `GF123`,
         name: "Examples",
         created: "2025-07-07T11:09:18.126Z",
         lastModified: "2025-07-07T11:09:18.126Z",
@@ -180,42 +264,9 @@ feature.beforeEach(async ({ router }) => {
             _links: [],
           },
         ],
-        _links: [
-          {
-            link: "http://localhost:8080/api/v1/folders/132",
-            rel: "self",
-          },
-        ],
       }),
-    });
-  });
-  await router.route("/api/v1/files/456", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        id: 456,
-        globalId: "GL456",
-        name: "Picture1.png",
-        caption: null,
-        contentType: "image/x-png",
-        created: "2025-07-07T11:09:18.312Z",
-        size: 40721,
-        version: 1,
-        parentFolderId: 123,
-        _links: [
-          {
-            link: "http://localhost:8080/api/v1/files/149",
-            rel: "self",
-          },
-          {
-            link: "http://localhost:8080/api/v1/files/149/file",
-            rel: "enclosure",
-          },
-        ],
-      }),
-    });
-  });
+    })
+  );
 });
 
 feature.afterEach(({}) => {});
@@ -234,28 +285,130 @@ test.describe("Gallery", () => {
         /*
          * The images is the default gallery section.
          */
-      },
+      }
     );
-    feature(
-      "On '/gallery?mediaType=Videos', the title should be 'Videos | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]({ url: "?mediaType=Videos" });
-        await Then["the page title should be"]("Videos | RSpace Gallery");
-      },
-    );
-    feature(
-      "On '/123', the title should be 'Examples | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]({ url: "/123" });
-        await Then["the page title should be"]("Examples | RSpace Gallery");
-      },
-    );
-    feature(
-      "On '/item/456', the title should be 'Picture1.png | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]({ url: "/item/456" });
-        await Then["the page title should be"]("Picture1.png | RSpace Gallery");
-      },
-    );
+
+    property(
+      "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'"
+    )
+      .let(({ IsOneOf }) => ({
+        section: IsOneOf(
+          "Images",
+          "Audios",
+          "Videos",
+          "Documents",
+          "Chemistry",
+          "DMPs",
+          "Snippets",
+          "Miscellaneous",
+          "PdfDocuments"
+        ) as GallerySection,
+      }))
+      .checkThat(async ({ section }, { Given, Then }) => {
+        await Given["the Gallery is mounted"]({
+          url: `?mediaType=${section}`,
+        });
+        /*
+         * For some of the pages, we keep the old URL for backwards compatibility but use a more descriptive title
+         */
+        if (section === "PdfDocuments") {
+          await Then["the page title should be"]("Exports | RSpace Gallery");
+        } else if (section === "Audios") {
+          await Then["the page title should be"]("Audio | RSpace Gallery");
+        } else {
+          await Then["the page title should be"](`${section} | RSpace Gallery`);
+        }
+      });
+
+    property("On '/{id}', the title should be '{folder name} | RSpace Gallery'")
+      .let(({ IsAny }) => ({
+        id: IsAny("folder id") as number,
+        folderName: IsAny("folder name") as string,
+      }))
+      .checkThat(async ({ id, folderName }, { Given, Then, router }) => {
+        await router.route("/api/v1/folders/*", (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              id,
+              globalId: `GF${id}`,
+              name: folderName,
+              created: "2025-07-07T11:09:18.126Z",
+              lastModified: "2025-07-07T11:09:18.126Z",
+              parentFolderId: 131,
+              notebook: false,
+              mediaType: "Images",
+              pathToRootFolder: [
+                {
+                  id: 131,
+                  globalId: "GF131",
+                  name: "Images",
+                  created: "2025-07-07T11:09:18.119Z",
+                  lastModified: "2025-07-07T11:09:18.119Z",
+                  parentFolderId: 130,
+                  notebook: false,
+                  mediaType: "Images",
+                  pathToRootFolder: null,
+                  _links: [],
+                },
+                {
+                  id: 130,
+                  globalId: "GF130",
+                  name: "Gallery",
+                  created: "2025-07-07T11:09:18.112Z",
+                  lastModified: "2025-07-07T11:09:18.112Z",
+                  parentFolderId: 124,
+                  notebook: false,
+                  mediaType: null,
+                  pathToRootFolder: null,
+                  _links: [],
+                },
+              ],
+            }),
+          })
+        );
+
+        await Given["the Gallery is mounted"]({
+          url: `/${id}`,
+        });
+        await Then["the page title should be"](
+          `${folderName} | RSpace Gallery`
+        );
+      });
+
+    property(
+      "On '/item/{id}', the title should be '{filename} | RSpace Gallery'"
+    )
+      .let(({ IsAny }) => ({
+        id: IsAny("file id") as number,
+        filename: IsAny("file name without extension") as string,
+      }))
+      .checkThat(async ({ id, filename }, { Given, Then, router }) => {
+        await router.route(`/api/v1/files/${id}`, (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              id,
+              globalId: `GL${id}`,
+              name: `${filename}.jpg`,
+              caption: null,
+              contentType: "image/jpeg",
+              created: "2025-07-07T11:09:18.312Z",
+              size: 40721,
+              version: 1,
+              parentFolderId: 123,
+            }),
+          })
+        );
+
+        await Given["the Gallery is mounted"]({
+          url: `/item/${id}`,
+        });
+        await Then["the page title should be"](
+          `${filename}.jpg | RSpace Gallery`
+        );
+      });
   });
 });
