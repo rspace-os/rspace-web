@@ -1,5 +1,5 @@
 import React, { type ReactNode, useState, useEffect } from "react";
-import { observer, useLocalObservable } from "mobx-react-lite";
+import { observer } from "mobx-react-lite";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import Search from "../../../stores/models/Search";
 import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
@@ -19,27 +19,26 @@ function TemplatePicker({
   disabled,
   sample,
 }: TemplatePickerArgs): ReactNode {
-  const search = useLocalObservable(
-    () =>
-      new Search({
-        factory: new AlwaysNewFactory(),
-        fetcherParams: {
-          resultType: "TEMPLATE",
-          pageSize: 5,
-          orderBy: "name",
-          order: "asc",
-        },
-        uiConfig: {
-          allowedSearchModules: new Set([
-            "TYPE",
-            "OWNER",
-            "SAVEDSEARCHES",
-            "TAG",
-          ]),
-          allowedTypeFilters: new Set(["TEMPLATE"]),
-          selectionMode: "SINGLE",
-        },
-      }),
+  const [search] = useState(
+    new Search({
+      factory: new AlwaysNewFactory(),
+      fetcherParams: {
+        resultType: "TEMPLATE",
+        pageSize: 5,
+        orderBy: "name",
+        order: "asc",
+      },
+      uiConfig: {
+        allowedSearchModules: new Set([
+          "TYPE",
+          "OWNER",
+          "SAVEDSEARCHES",
+          "TAG",
+        ]),
+        allowedTypeFilters: new Set(["TEMPLATE"]),
+        selectionMode: "SINGLE",
+      },
+    }),
   );
 
   /*
