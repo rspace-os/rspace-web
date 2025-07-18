@@ -101,7 +101,7 @@ function InventoryPicker({
     if (singularSelection && search.activeResult) {
       onAddition([search.activeResult]);
     }
-  }, [search.activeResult /*, onAddition, search.uiConfig.selectionMode*/]);
+  }, [search.activeResult, onAddition, search.uiConfig.selectionMode]);
 
   const selectedRecords =
     search.searchView === "LIST" ? [...search.selectedResults] : [];

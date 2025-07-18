@@ -61,17 +61,20 @@ function TemplatePicker({
     if (!disabled) void search.fetcher.performInitialSearch(null);
   }, []);
 
-  const handleOnAddition = ([t]: Array<InventoryRecord>) => {
-    if (!(t instanceof TemplateModel)) {
-      /*
-       * This shouldn't happen because the Search passed to the Picker should
-       * only allow Templates (see allowedTypeFilters above), but if it does
-       * then we want to error
-       */
-      throw new Error("Only Template can be chosen");
-    }
-    setTemplate(t);
-  };
+  const handleOnAddition = React.useCallback(
+    ([t]: Array<InventoryRecord>) => {
+      if (!(t instanceof TemplateModel)) {
+        /*
+         * This shouldn't happen because the Search passed to the Picker should
+         * only allow Templates (see allowedTypeFilters above), but if it does
+         * then we want to error
+         */
+        throw new Error("Only Template can be chosen");
+      }
+      setTemplate(t);
+    },
+    [setTemplate],
+  );
 
   return (
     <AlwaysNewWindowNavigationContext>

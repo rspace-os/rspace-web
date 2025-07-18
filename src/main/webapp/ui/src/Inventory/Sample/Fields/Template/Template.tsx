@@ -30,18 +30,21 @@ function Template(): React.ReactNode {
 
   const [open, setOpen] = useState(true);
 
-  const setTemplate = (t: TemplateModel | null) => {
-    activeResult.setTemplate(t).catch((error) => {
-      uiStore.addAlert(
-        mkAlert({
-          title: "Could not fetch template details.",
-          message: getErrorMessage(error, "Unknown reason."),
-          variant: "error",
-        }),
-      );
-      console.error("Could not set template", error);
-    });
-  };
+  const setTemplate = React.useCallback(
+    (t: TemplateModel | null) => {
+      activeResult.setTemplate(t).catch((error) => {
+        uiStore.addAlert(
+          mkAlert({
+            title: "Could not fetch template details.",
+            message: getErrorMessage(error, "Unknown reason."),
+            variant: "error",
+          }),
+        );
+        console.error("Could not set template", error);
+      });
+    },
+    [activeResult, uiStore],
+  );
 
   const template = activeResult.template;
   if (!(template === null || template instanceof TemplateModel))
