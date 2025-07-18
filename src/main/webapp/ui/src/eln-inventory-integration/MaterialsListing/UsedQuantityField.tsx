@@ -7,6 +7,14 @@ import {
 import NumberField from "../../components/Inputs/NumberField";
 import UnitSelect from "../../components/Inputs/UnitSelect";
 import { hasQuantity } from "../../stores/models/HasQuantity";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { styled } from "@mui/material/styles";
+
+const CustomNumberField = styled(NumberField)(() => ({
+  [`& .${inputBaseClasses.root}`]: {
+    paddingRight: 0,
+  },
+}));
 
 type UsedQuantityFieldArgs = {
   material: Material;
@@ -27,10 +35,10 @@ function UsedQuantityField({
   const errorMessage = mixedSelectedCategories
     ? "Unit categories must match"
     : notValidAmount
-    ? "Enter a positive or zero"
-    : !enoughLeft
-    ? "Not enough left, reduce or unselect"
-    : null;
+      ? "Enter a positive or zero"
+      : !enoughLeft
+        ? "Not enough left, reduce or unselect"
+        : null;
 
   const getNumericValue = () => {
     if (material.selected && mixedSelectedCategories) return "0";
@@ -82,7 +90,7 @@ function UsedQuantityField({
   };
 
   return (
-    <NumberField
+    <CustomNumberField
       datatestid={`material-additional-quantity-${globalId}`}
       disabled={!material.selected || mixedSelectedCategories}
       value={getNumericValue()}
@@ -91,6 +99,7 @@ function UsedQuantityField({
       onChange={({ target }) => {
         onChangeValue(parseFloat(target.value));
       }}
+      variant="outlined"
       size="small"
       error={mixedSelectedCategories || notValidAmount || !enoughLeft}
       helperText={material.selected ? errorMessage : null}

@@ -3,7 +3,7 @@ import FormControl from "@mui/material/FormControl";
 import { observer } from "mobx-react-lite";
 import useStores from "../../stores/use-stores";
 import InputAdornment from "@mui/material/InputAdornment";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Select, { SelectChangeEvent, selectClasses } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 
 type UnitSelectArgs = {
@@ -34,7 +34,7 @@ function UnitSelect({
   const { unitStore } = useStores();
 
   return (
-    <InputAdornment position="start">
+    <InputAdornment position="end">
       <FormControl>
         <Select
           disabled={disabled}
@@ -43,7 +43,23 @@ function UnitSelect({
             "aria-label": "Quantity units",
           }}
           value={value}
-          variant="standard"
+          size="small"
+          sx={{
+            [`& .${selectClasses.select}`]: {
+              mt: 0.25,
+              pt: 0.5,
+              borderLeft: "1px solid #c4c4c4",
+              borderRadius: 0,
+              mb: 0.25,
+              pb: 0.5,
+              ":focus": {
+                borderRadius: 0,
+              },
+            },
+            "& fieldset": {
+              border: "none",
+            },
+          }}
         >
           {unitStore.unitsOfCategory(categories).map((u) => (
             <MenuItem key={u.id} value={u.id}>
