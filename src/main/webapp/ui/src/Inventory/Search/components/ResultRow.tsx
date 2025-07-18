@@ -134,13 +134,12 @@ function ResultRow({
         </TableCell>
       )}
       {singleSelect && (
-        <TableCell scope="row" align="left" className={classes.checkbox}>
+        <TableCell scope="row" align="left">
           <Radio
-            checked={
-              (search.activeResult &&
-                result.globalId === search.activeResult.globalId) ??
-              false
-            }
+            checked={Boolean(
+              search.activeResult &&
+                result.globalId === search.activeResult.globalId,
+            )}
             onChange={() => activateResult()}
             onClick={(e) => e.stopPropagation()}
             color="default"

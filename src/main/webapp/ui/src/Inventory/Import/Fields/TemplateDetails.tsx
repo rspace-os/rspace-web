@@ -24,7 +24,7 @@ function TemplateDetails(): ReactNode {
       onChange={(event, value) => {
         if (event.target.name === "newOrExisting") {
           importStore.importData?.setCreateNewTemplate(
-            Parsers.parseBoolean(value as "true" | "false").elseThrow()
+            Parsers.parseBoolean(value as "true" | "false").elseThrow(),
           );
           if (Parsers.parseBoolean(value as "true" | "false").elseThrow()) {
             importStore.importData?.setTemplate(null);

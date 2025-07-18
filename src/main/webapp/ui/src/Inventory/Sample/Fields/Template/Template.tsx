@@ -17,6 +17,8 @@ import IconButton from "@mui/material/IconButton";
 import Collapse from "@mui/material/Collapse";
 import Alert from "@mui/material/Alert";
 import { getErrorMessage } from "../../../../util/error";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Radio from "@mui/material/Radio";
 
 function Template(): React.ReactNode {
   const {
@@ -28,7 +30,7 @@ function Template(): React.ReactNode {
 
   const [open, setOpen] = useState(true);
 
-  const setTemplate = (t: TemplateModel) => {
+  const setTemplate = (t: TemplateModel | null) => {
     activeResult.setTemplate(t).catch((error) => {
       uiStore.addAlert(
         mkAlert({
@@ -44,6 +46,46 @@ function Template(): React.ReactNode {
   const template = activeResult.template;
   if (!(template === null || template instanceof TemplateModel))
     throw new Error("Template is not a TemplateModel");
+  if (!activeResult.id)
+    return (
+      <>
+        <InputWrapper
+          label="Sample Template"
+          dataTestId="ChooseTemplate"
+          explanation={
+            activeResult.isFieldEditable("template") ? (
+              <>
+                See the documentation for information on{" "}
+                <a
+                  href={docLinks.createTemplate}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  how to create custom templates
+                </a>
+                .
+              </>
+            ) : null
+          }
+        >
+          <FormControlLabel
+            value="no-template"
+            control={<Radio checked={template === null} />}
+            label="No template"
+            onClick={() => {
+              setTemplate(null);
+            }}
+          />
+          {activeResult.isFieldEditable("template") && (
+            <TemplatePicker
+              disabled={!activeResult.isFieldEditable("template")}
+              setTemplate={setTemplate}
+              sample={activeResult}
+            />
+          )}
+        </InputWrapper>
+      </>
+    );
   return (
     <>
       <InputWrapper
