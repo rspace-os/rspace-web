@@ -693,28 +693,28 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Snippets}
-              icon={gallerySectionIcon.Snippets}
+              label={gallerySectionLabel.Miscellaneous}
+              icon={gallerySectionIcon.Miscellaneous}
               index={5}
               tabIndex={getTabIndex(5)}
               ref={getRef(5)}
               drawerOpen={drawerOpen}
-              selected={selectedSection === "Snippets"}
+              selected={selectedSection === "Miscellaneous"}
               onClick={() => {
-                setSelectedSection("Snippets");
+                setSelectedSection("Miscellaneous");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Miscellaneous}
-              icon={gallerySectionIcon.Miscellaneous}
+              label={gallerySectionLabel.Snippets}
+              icon={gallerySectionIcon.Snippets}
               index={6}
               tabIndex={getTabIndex(6)}
               ref={getRef(6)}
               drawerOpen={drawerOpen}
-              selected={selectedSection === "Miscellaneous"}
+              selected={selectedSection === "Snippets"}
               onClick={() => {
-                setSelectedSection("Miscellaneous");
+                setSelectedSection("Snippets");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
