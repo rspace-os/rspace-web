@@ -328,7 +328,7 @@ function _selectRecordInFileTreeBrowserBranch(node) {
     }
   }
 
-  if (node.key === fileTreeBrowserRecordId.toString()) {
+  if (fileTreeBrowserRecordId != null && node.key === fileTreeBrowserRecordId.toString()) {
     if (_isNodeAncestorMatchingBreadcrumbs(node)) {
       // in timeout, as maybe the tree is just being expanded
       setTimeout(function () {
