@@ -55,15 +55,15 @@ function Template(): React.ReactNode {
           explanation={
             activeResult.isFieldEditable("template") ? (
               <>
-                See the documentation for information on{" "}
+                If you select a sample template below, initial metadata and
+                custom fields will be automatically generated.
                 <a
                   href={docLinks.createTemplate}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  how to create custom templates
+                  (Learn more about sample templates)
                 </a>
-                .
               </>
             ) : null
           }
