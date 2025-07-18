@@ -15,17 +15,17 @@ import {
   faShapes,
   faCircleDown,
   faVolumeLow,
+  faScissors,
 } from "@fortawesome/free-solid-svg-icons";
-import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
 library.add(faFileInvoice);
 library.add(faDatabase);
 library.add(faShapes);
-library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
+library.add(faScissors);
 
 /**
  * Constants for the strings that identify gallery sections.
@@ -77,7 +77,7 @@ export const parseGallerySection = (section: string): Result<GallerySection> =>
     Parsers.parseString(GALLERY_SECTION.NETWORKFILES, section),
     Parsers.parseString(GALLERY_SECTION.SNIPPETS, section),
     Parsers.parseString(GALLERY_SECTION.MISCELLANEOUS, section),
-    Parsers.parseString(GALLERY_SECTION.PDFDOCUMENTS, section)
+    Parsers.parseString(GALLERY_SECTION.PDFDOCUMENTS, section),
   );
 
 /**
@@ -86,11 +86,11 @@ export const parseGallerySection = (section: string): Result<GallerySection> =>
  * string is indeed one of the valid strings that identify a gallery section.
  */
 export const parseGallerySectionFromUrlSearchParams = (
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
 ): Result<GallerySection> =>
   Result.fromNullable(
     searchParams.get("mediaType"),
-    new Error("No search parameter with name 'mediaType'")
+    new Error("No search parameter with name 'mediaType'"),
   ).flatMap(parseGallerySection);
 
 /**
@@ -120,7 +120,7 @@ export const gallerySectionIcon: Record<string, React.ReactNode> = {
   Chemistry: <ChemistryIcon />,
   DMPs: <FaIcon icon="file-invoice" />,
   NetworkFiles: <FilestoreIcon />,
-  Snippets: <FaIcon icon={["far", "note-sticky"]} />,
+  Snippets: <FaIcon icon="scissors" />,
   Miscellaneous: <FaIcon icon="shapes" />,
   PdfDocuments: <FaIcon icon="circle-down" />,
 };
