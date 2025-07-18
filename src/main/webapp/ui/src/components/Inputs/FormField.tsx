@@ -294,7 +294,12 @@ export default function FormField<T>({
       role="group"
       className={className}
       fullWidth
-      error={error}
+      error={
+        error ||
+        (typeof value === "string" &&
+          typeof maxLength === "number" &&
+          value.length > maxLength)
+      }
       aria-labelledby={labelId}
       required={required}
       id={id}
