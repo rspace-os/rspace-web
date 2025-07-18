@@ -90,6 +90,12 @@ function InventoryPicker({
     void search.fetcher.performInitialSearch(props);
   };
 
+  /*
+   * When the user selects a result, the activeResult is set. This logic then
+   * invokes onAddition so that callers of this component can rely on one method
+   * of knowing when an item has been selected regardless of whether multi or
+   * singular selection is used.
+   */
   useEffect(() => {
     const singularSelection = search.uiConfig.selectionMode === "SINGLE";
     if (singularSelection && search.activeResult) {
@@ -102,7 +108,7 @@ function InventoryPicker({
   if (search.searchView === "TREE" && search.tree.selectedNode)
     selectedRecords.push(search.tree.selectedNode);
   const selectedAndNotAllowed = new RsSet(selectedRecords).filter(
-    search.alwaysFilterOut
+    search.alwaysFilterOut,
   );
 
   return (

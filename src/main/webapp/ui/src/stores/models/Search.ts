@@ -83,7 +83,7 @@ const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
 
 export const getViewGroup = (
-  view: SearchView
+  view: SearchView,
 ): "dynamic" | "cache" | "static" =>
   match<SearchView, "dynamic" | "cache" | "static">([
     [(v) => DYNAMIC_VIEWS.includes(v), "dynamic"],
@@ -93,7 +93,7 @@ export const getViewGroup = (
 
 const prepareRecordsForBulkApi = (
   records: Array<InventoryRecord>,
-  opts?: { forceDelete?: boolean }
+  opts?: { forceDelete?: boolean },
 ) =>
   records.map((record) => ({
     id: record.id,
@@ -326,7 +326,7 @@ export default class Search implements SearchInterface {
   }
 
   async cleanUpActiveResult(
-    options: { releaseLock?: boolean } = {}
+    options: { releaseLock?: boolean } = {},
   ): Promise<void> {
     const { releaseLock = true } = options;
     const activeResult = this.activeResult;
@@ -340,7 +340,7 @@ export default class Search implements SearchInterface {
     await Promise.all<Array<Promise<void>>>(
       this.batchEditingRecords?.toArray().map(async (r) => {
         await r.setEditing(false, true, true);
-      }) ?? []
+      }) ?? [],
     );
     this.disableBatchEditing();
   }
@@ -394,7 +394,7 @@ export default class Search implements SearchInterface {
 
   async setActiveResult(
     result: InventoryRecord | null = null,
-    options: { defaultToFirstResult?: boolean; force?: boolean } = {}
+    options: { defaultToFirstResult?: boolean; force?: boolean } = {},
   ): Promise<void> {
     const { defaultToFirstResult = true, force = false } = options;
     if (this.canEditActiveResult && !force) {
@@ -421,7 +421,8 @@ export default class Search implements SearchInterface {
         this.callbacks?.setActiveResult?.(null);
       }
     });
-    if (result instanceof InventoryBaseRecord || result === null) await assignment(result);
+    if (result instanceof InventoryBaseRecord || result === null)
+      await assignment(result);
   }
 
   /*
@@ -432,7 +433,7 @@ export default class Search implements SearchInterface {
     const { peopleStore } = getRootStore();
 
     const benchOwner: Person | null = username
-      ? (await peopleStore.getUser(username)) ?? null
+      ? ((await peopleStore.getUser(username)) ?? null)
       : peopleStore.currentUser;
 
     this.setOwner(null, false);
@@ -446,7 +447,7 @@ export default class Search implements SearchInterface {
    */
   async deleteRecords(
     records: Array<InventoryRecord>,
-    opts?: { forceDelete?: boolean }
+    opts?: { forceDelete?: boolean },
   ): Promise<void> {
     this.setProcessingContextActions(true);
     const { uiStore } = getRootStore();
@@ -474,7 +475,7 @@ export default class Search implements SearchInterface {
             record: null | SampleResponse;
           }>;
           errorCount: number;
-        }>(prepareRecordsForBulkApi(records, opts), "DELETE", false)
+        }>(prepareRecordsForBulkApi(records, opts), "DELETE", false),
       );
 
       /*
@@ -484,16 +485,18 @@ export default class Search implements SearchInterface {
        * with an error detailing these subsamples and where to find them.
        */
       const samplesThatCouldNotBeDeleted = ArrayUtils.filterNull(
-        data.results.map(({ record }) => record)
+        data.results.map(({ record }) => record),
       ).filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
       const samplesThatCouldBeDeleted = ArrayUtils.filterNull(
-        data.results.map(({ record }) => record)
+        data.results.map(({ record }) => record),
       ).filter((r) => r.type === "SAMPLE" && r.canBeDeleted);
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
         ...ArrayUtils.filterNull(
-          data.results.filter(({ error }) => !error).map(({ record }) => record)
+          data.results
+            .filter(({ error }) => !error)
+            .map(({ record }) => record),
         )
           .filter((record) => record.type !== "SAMPLE")
           /*
@@ -523,7 +526,7 @@ export default class Search implements SearchInterface {
               s.subSamples.map<[SampleResponse, SubSampleResponse]>((ss) => [
                 s,
                 ss,
-              ])
+              ]),
             )
             .filter(([, ss]) => ss.storedInContainer);
         uiStore.addAlert(
@@ -548,7 +551,7 @@ export default class Search implements SearchInterface {
             onActionClick: () => {
               void this.deleteRecords(records, { forceDelete: true });
             },
-          })
+          }),
         );
       }
       handleDetailedErrors(
@@ -558,7 +561,7 @@ export default class Search implements SearchInterface {
           record: r,
         })),
         "sending to trash",
-        (erroredRecords) => this.deleteRecords(erroredRecords)
+        (erroredRecords) => this.deleteRecords(erroredRecords),
       );
       if (successfullyDeleted.length > 0)
         handleDetailedSuccesses(successfullyDeleted, "trashed");
@@ -571,7 +574,7 @@ export default class Search implements SearchInterface {
           title: "Sending to trash failed.",
           message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
-        })
+        }),
       );
       console.error("Could not perform deletion.", error);
     } finally {
@@ -633,7 +636,7 @@ export default class Search implements SearchInterface {
      * to MemoisedFactory
      */
     const nowEmptySamples = new Set(
-      samplesOfDeletedSubSamples.filter((s) => s.subSamplesCount === 0)
+      samplesOfDeletedSubSamples.filter((s) => s.subSamplesCount === 0),
     );
 
     for (const sample of nowEmptySamples) {
@@ -648,7 +651,7 @@ export default class Search implements SearchInterface {
             await sample.fetchAdditionalInfo();
             await searchStore.search.fetcher.performInitialSearch(null);
           }),
-        })
+        }),
       );
     }
   }
@@ -670,7 +673,7 @@ export default class Search implements SearchInterface {
             record: Record<string, unknown> & { globalId: GlobalId };
           }>;
           errorCount: number;
-        }>(prepareRecordsForBulkApi(records), "RESTORE", false)
+        }>(prepareRecordsForBulkApi(records), "RESTORE", false),
       );
 
       const factory = this.factory.newFactory();
@@ -689,7 +692,7 @@ export default class Search implements SearchInterface {
           record: r,
         })),
         "restore",
-        (erroredRecords) => this.restoreRecords(erroredRecords)
+        (erroredRecords) => this.restoreRecords(erroredRecords),
       );
       handleDetailedSuccesses(successfullyRestored, "restored");
       await this.updateStateAfterRestore(new RsSet(successfullyRestored));
@@ -699,7 +702,7 @@ export default class Search implements SearchInterface {
           title: "Restore failed.",
           message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
-        })
+        }),
       );
       console.error("Could not perform restoration.", error);
     } finally {
@@ -749,7 +752,7 @@ export default class Search implements SearchInterface {
             record: Record<string, unknown> & { globalId: GlobalId };
           }>;
           errorCount: number;
-        }>(prepareRecordsForBulkApi(records), "DUPLICATE", true)
+        }>(prepareRecordsForBulkApi(records), "DUPLICATE", true),
       );
       if (
         handleDetailedErrors(
@@ -759,7 +762,7 @@ export default class Search implements SearchInterface {
             record: r,
           })),
           "duplicate",
-          (erroredRecords) => this.duplicateRecords(erroredRecords)
+          (erroredRecords) => this.duplicateRecords(erroredRecords),
         )
       ) {
         await this.fetcher.performInitialSearch(null);
@@ -779,7 +782,7 @@ export default class Search implements SearchInterface {
 
       const newBenchItems = [
         ...(newRecords.some(
-          (r) => r.hasSubSamples || r instanceof SubSampleModel
+          (r) => r.hasSubSamples || r instanceof SubSampleModel,
         )
           ? ["subsamples"]
           : []),
@@ -794,9 +797,9 @@ export default class Search implements SearchInterface {
         () => "created",
         newBenchItems.length > 0
           ? `Newly created ${newBenchItems.join(
-              " and "
+              " and ",
             )} are placed on your Bench.`
-          : null
+          : null,
       );
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
       await this.fetcher.performInitialSearch(null);
@@ -809,7 +812,7 @@ export default class Search implements SearchInterface {
           title: "Duplication failed.",
           message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
-        })
+        }),
       );
       console.error("Could not perform duplication.", error);
     } finally {
@@ -833,8 +836,8 @@ export default class Search implements SearchInterface {
           {
             split: true,
             numSubSamples: `${copies}`,
-          }
-        )
+          },
+        ),
       );
 
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
@@ -852,7 +855,7 @@ export default class Search implements SearchInterface {
         ],
         "split",
         (r) => (r === subsample ? "Updated" : "Created"),
-        "Newly created subsamples are placed on your Bench."
+        "Newly created subsamples are placed on your Bench.",
       );
       await this.updateStateAfterSplit(subsample);
     } catch (error) {
@@ -863,7 +866,7 @@ export default class Search implements SearchInterface {
           message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
           duration: 8000,
-        })
+        }),
       );
     } finally {
       this.setProcessingContextActions(false);
@@ -906,7 +909,7 @@ export default class Search implements SearchInterface {
 
   async transferRecords(
     username: Username,
-    records: Array<InventoryRecord>
+    records: Array<InventoryRecord>,
   ): Promise<void> {
     const { peopleStore } = getRootStore();
     this.setProcessingContextActions(true);
@@ -925,7 +928,7 @@ export default class Search implements SearchInterface {
             record: Record<string, unknown> & { globalId: GlobalId };
           }>;
           errorCount: number;
-        }>(prepareRecordsForBulkApi(records), "CHANGE_OWNER", true)
+        }>(prepareRecordsForBulkApi(records), "CHANGE_OWNER", true),
       );
 
       const factory = this.factory.newFactory();
@@ -939,7 +942,7 @@ export default class Search implements SearchInterface {
       const recordsOnBench = successfullyTranferred.every(
         (r) =>
           (r instanceof ContainerModel || r instanceof SubSampleModel) &&
-          r.isDirectlyOnWorkbench
+          r.isDirectlyOnWorkbench,
       );
       const helpMessage = recordsOnBench
         ? `The records have been moved to ${username}'s bench`
@@ -952,13 +955,13 @@ export default class Search implements SearchInterface {
           record: r,
         })),
         "transfer",
-        (erroredRecords) => this.transferRecords(username, erroredRecords)
+        (erroredRecords) => this.transferRecords(username, erroredRecords),
       );
       handleDetailedSuccesses(
         successfullyTranferred,
         "transferred",
         () => "transferred",
-        helpMessage
+        helpMessage,
       );
       await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));
     } catch (error) {
@@ -967,7 +970,7 @@ export default class Search implements SearchInterface {
           title: "Transfer failed.",
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       console.error("Could not perform transfer.", error);
     } finally {
@@ -981,7 +984,7 @@ export default class Search implements SearchInterface {
    * the correct state of the system.
    */
   async updateStateAfterTransfer(
-    transferredRecords: RsSet<InventoryRecord>
+    transferredRecords: RsSet<InventoryRecord>,
   ): Promise<void> {
     const {
       peopleStore: { currentUser },
@@ -1020,7 +1023,7 @@ export default class Search implements SearchInterface {
   async createTemplateFromSample(
     name: string,
     sample: Sample,
-    includeContentForFields: Set<Id>
+    includeContentForFields: Set<Id>,
   ): Promise<void> {
     const { uiStore } = getRootStore();
     try {
@@ -1031,7 +1034,7 @@ export default class Search implements SearchInterface {
       };
       const { data } = await ApiService.post<TemplateAttrs>(
         "sampleTemplates",
-        args
+        args,
       );
       const factory = this.factory.newFactory();
       const template = factory.newRecord(data);
@@ -1046,7 +1049,7 @@ export default class Search implements SearchInterface {
               record: template,
             },
           ],
-        })
+        }),
       );
       void this.fetcher.performInitialSearch(null);
     } catch (error) {
@@ -1062,11 +1065,11 @@ export default class Search implements SearchInterface {
                 titles.map((title) => ({
                   title,
                   variant: "error" as const,
-                }))
-              )
+                })),
+              ),
             )
             .orElse(undefined),
-        })
+        }),
       );
       console.error("Could not create template from sample.", error);
       throw error;
@@ -1086,7 +1089,7 @@ export default class Search implements SearchInterface {
           sampleId: opts.sample.id,
           numSubSamples: `${opts.numberOfNewSubsamples}`,
           singleSubSampleQuantity: opts.quantityPerSubsample,
-        }
+        },
       );
       await Promise.all([
         opts.sample.fetchAdditionalInfo(),
@@ -1112,7 +1115,7 @@ export default class Search implements SearchInterface {
             variant: "success",
             record: r,
           })),
-        })
+        }),
       );
     } catch (error) {
       uiStore.addAlert(
@@ -1127,11 +1130,11 @@ export default class Search implements SearchInterface {
                 titles.map((title) => ({
                   title,
                   variant: "error" as const,
-                }))
-              )
+                })),
+              ),
             )
             .orElse(undefined),
-        })
+        }),
       );
       throw error;
     }
@@ -1139,7 +1142,7 @@ export default class Search implements SearchInterface {
 
   async exportRecords(
     exportOptions: ExportOptions,
-    records: Array<InventoryRecord>
+    records: Array<InventoryRecord>,
   ): Promise<void> {
     this.setProcessingContextActions(true);
     const { uiStore, trackingStore } = getRootStore();
@@ -1172,14 +1175,14 @@ export default class Search implements SearchInterface {
             : {
                 includeContainerContent: includeContainerContent === "INCLUDE",
               }),
-        })
+        }),
       );
       const { data } = await showToastWhilstPending(
         "Exporting...",
         ApiService.post<{ _links: Array<{ link: string; rel: string }> }>(
           "export",
-          params
-        )
+          params,
+        ),
       );
       const downloadLink = data._links[1];
       const fileName = downloadLink.link.split("downloadArchive/")[1];
@@ -1194,7 +1197,7 @@ export default class Search implements SearchInterface {
         count: {
           ...mapObject(
             (_type: ApiRecordType, list) => list.length,
-            ArrayUtils.groupBy(({ type }) => type, records)
+            ArrayUtils.groupBy(({ type }) => type, records),
           ),
           total: records.length,
         },
@@ -1205,7 +1208,7 @@ export default class Search implements SearchInterface {
           title: `Data export failed.`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       console.error(`Could not export the selected records.`, error);
       throw error;
@@ -1232,7 +1235,7 @@ export default class Search implements SearchInterface {
       await this.fetcher.performInitialSearch(currentSearchParams);
 
       this.filteredResults.map((res) =>
-        res.toggleSelected(selectedResultsIds.includes(res.globalId))
+        res.toggleSelected(selectedResultsIds.includes(res.globalId)),
       );
 
       /*
@@ -1243,12 +1246,12 @@ export default class Search implements SearchInterface {
        * continue to alter their behaviour without apparent reason.
        */
       const gIdsOfResultsOfNewFetcher = new Set(
-        this.filteredResults.map((r) => r.globalId)
+        this.filteredResults.map((r) => r.globalId),
       );
       priorFetcher.results.map((res) =>
         res.toggleSelected(
-          res.selected && gIdsOfResultsOfNewFetcher.has(res.globalId)
-        )
+          res.selected && gIdsOfResultsOfNewFetcher.has(res.globalId),
+        ),
       );
     }
   }
@@ -1310,7 +1313,7 @@ export default class Search implements SearchInterface {
   get showSavedSearches(): boolean {
     return Boolean(
       this.uiConfig.allowedSearchModules.has("SAVEDSEARCHES") &&
-        getRootStore().searchStore.savedSearches.length > 0
+        getRootStore().searchStore.savedSearches.length > 0,
     );
   }
 
@@ -1321,8 +1324,8 @@ export default class Search implements SearchInterface {
   get adjustableColumnOptions(): RsSet<AdjustableTableRowLabel> {
     return new RsSet<AdjustableTableRowLabel>().union(
       ...this.filteredResults.map(
-        (r) => new RsSet([...r.adjustableTableOptions().keys()])
-      )
+        (r) => new RsSet([...r.adjustableTableOptions().keys()]),
+      ),
     );
   }
 
@@ -1420,7 +1423,7 @@ export default class Search implements SearchInterface {
     const searchParameterAfter = this.fetcher.serialize;
     if (!sameKeysAndValues(searchParameterBefore, searchParameterAfter))
       throw new InvalidState(
-        "Search parameters have changed, cancelling search."
+        "Search parameters have changed, cancelling search.",
       );
     return resolved;
   }
@@ -1443,7 +1446,7 @@ export default class Search implements SearchInterface {
     if (params.ownedBy) {
       try {
         const person = await this.rejectIfSearchParametersChange(
-          peopleStore.getUser(params.ownedBy)
+          peopleStore.getUser(params.ownedBy),
         );
         this.setOwner(person ?? null, false);
       } catch (e) {
@@ -1461,7 +1464,7 @@ export default class Search implements SearchInterface {
         if (id) {
           try {
             const person = await this.rejectIfSearchParametersChange(
-              peopleStore.getPersonFromBenchId(parseInt(id, 10))
+              peopleStore.getPersonFromBenchId(parseInt(id, 10)),
             );
             this.setBench(person, false);
           } catch (e) {
@@ -1528,8 +1531,8 @@ export default class Search implements SearchInterface {
               await Promise.all(records.map((r) => r.cancel()));
               await this.setActiveResult();
               this.editLoading = "no";
-            })().then(resolve)
-          )
+            })().then(resolve),
+          ),
         ),
       update: async () => {
         this.editLoading = "batch";
@@ -1549,11 +1552,11 @@ export default class Search implements SearchInterface {
                   ({
                     ...r.paramsForBackend,
                     type: r.type,
-                  } as BulkEndpointRecordSerialisation)
+                  }) as BulkEndpointRecordSerialisation,
               ),
             ],
             "UPDATE",
-            false
+            false,
           );
           if (
             handleDetailedErrors(
@@ -1562,13 +1565,13 @@ export default class Search implements SearchInterface {
                 response: d,
                 record: r,
               })),
-              "update"
+              "update",
             )
           ) {
             return;
           }
           const newRecordData: Record<GlobalId, any> = Object.fromEntries(
-            results.map(({ record }) => [record.globalId, record])
+            results.map(({ record }) => [record.globalId, record]),
           );
           const factory = this.factory.newFactory();
           for (const r of records) {
@@ -1585,7 +1588,7 @@ export default class Search implements SearchInterface {
               title: "Update failed.",
               message: getErrorMessage(error, "Unknown reason"),
               variant: "error",
-            })
+            }),
           );
           console.error("Could not perform update.", error);
         } finally {
@@ -1597,7 +1600,7 @@ export default class Search implements SearchInterface {
         this.editLoading === "no" ? IsValid() : IsInvalid("Loading."),
         ...records.map((r) => r.submittable),
         this.batchEditingRecords?.some(
-          (r) => r.currentlyEditableFields.size > 0
+          (r) => r.currentlyEditableFields.size > 0,
         )
           ? IsValid()
           : IsInvalid("No fields have been edited."),
@@ -1619,7 +1622,7 @@ export default class Search implements SearchInterface {
    * might add elements to the set that would violate the subtype invariant.
    */
   isActiveResultTemplateOfAny<T extends InventoryRecord>(
-    records: RsSet<T>
+    records: RsSet<T>,
   ): boolean {
     const activeResultGlobalId =
       getRootStore().searchStore.activeResult?.globalId;
