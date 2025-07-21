@@ -134,7 +134,7 @@ function ResultRow({
         </TableCell>
       )}
       {singleSelect && (
-        <TableCell scope="row" align="left">
+        <TableCell scope="row" align="left" className={classes.checkbox}>
           <Radio
             checked={Boolean(
               search.activeResult &&

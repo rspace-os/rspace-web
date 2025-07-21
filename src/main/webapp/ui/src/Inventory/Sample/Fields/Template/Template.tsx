@@ -78,6 +78,7 @@ function Template(): React.ReactNode {
             onClick={() => {
               setTemplate(null);
             }}
+            sx={{ mb: 2, mt: 1 }}
           />
           {activeResult.isFieldEditable("template") && (
             <TemplatePicker
