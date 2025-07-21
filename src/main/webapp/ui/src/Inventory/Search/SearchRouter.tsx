@@ -59,7 +59,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
             message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
             isInfinite: true,
-          })
+          }),
         );
       }
 
@@ -73,16 +73,16 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
         }
       }
     })();
-  }, [paramsOverride, location.search, search, uiStore]);
+  }, [paramsOverride]);
 
   useEffect(() => {
     search.overrideSearchOnFilter = (args: CoreFetcherArgs) => {
       // when the main search's parameters change, the URL should be updated
       navigate(
-        `/inventory/search?${search.fetcher.generateQuery(args).toString()}`
+        `/inventory/search?${search.fetcher.generateQuery(args).toString()}`,
       );
     };
-  }, [search, navigate]);
+  }, [search]);
 
   const sidebarId = React.useId();
 
