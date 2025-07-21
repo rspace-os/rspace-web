@@ -17,7 +17,6 @@ type NewNoteArgs = {
 
 function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
   const [note, setNote] = useState("");
-  console.debug("NewNote", { record, note });
 
   /*
    * Track when we're programmatically resetting the field after creating a note.
