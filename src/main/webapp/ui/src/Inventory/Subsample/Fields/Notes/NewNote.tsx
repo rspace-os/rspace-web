@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import TextField from "../../../../components/Inputs/TextField";
@@ -19,18 +19,13 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
   const [note, setNote] = useState("");
 
   /*
-   * TextField's onChange handler is called both when the user types and when
-   * the `value` prop changes. `handleChange` needs to call `onErrorStateChange`
-   * so that if the user types more characters than is allowed then we propagate
-   * on error state up to the parent section of the form. However, when
-   * `createNote` resets the TextField after succesfully saving the new note,
-   * `handleChange` will now be called with a value of the empty string. This is
-   * technically an error, but we don't want the parent form section to be in an
-   * error state when the user has just created a note, so we track whether this
-   * is the initial state of the TextField with `initial` and only call
-   * `onErrorStateChange` if it is not the initial state.
+   * Track when we're programmatically resetting the field after creating a note.
+   * This prevents showing an error state in the parent form section when
+   * `setNote("")` triggers `handleChange` with an empty value, which would
+   * normally be considered an error state. Using a ref to avoid timing issues
+   * with state updates.
    */
-  const [initial, setInitial] = useState(true);
+  const isResettingRef = useRef(false);
 
   const handleChange = ({
     target: { value },
@@ -38,34 +33,35 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
     target: { name: string; value: string };
   }) => {
     setNote(value);
-    setInitial(false);
+
     if (value === "") {
-      // when editing, unsetting the dirty flag could result in other changes
-      // being not savable
       if (record.state === "preview") record.unsetDirtyFlag();
     } else {
       record.setDirtyFlag();
     }
-    console.debug("calling onErrorStateChange", {
-      value,
-      initial,
-      isError: validate(value).isError,
-      errors: validate(value).orElseGet((e) => e),
-    });
-    onErrorStateChange(!initial && validate(value).isError);
+
+    // Don't show error state when we're programmatically resetting the field
+    if (!isResettingRef.current) {
+      onErrorStateChange(validateValue(value).isError);
+    }
   };
 
-  const createNote = () => {
-    void record.createNote({ content: note });
+  const createNote = async () => {
+    isResettingRef.current = true;
+    await record.createNote({ content: note });
     setNote("");
-    setInitial(true);
+    onErrorStateChange(false);
+    // Reset the flag after a microtask to ensure onChange has been called
+    await Promise.resolve();
+    isResettingRef.current = false;
   };
 
   useEffect(() => {
     setNote("");
+    isResettingRef.current = false;
   }, [record]);
 
-  function validate(value: string) {
+  function validateValue(value: string) {
     if (!record.isFieldEditable("notes")) {
       return IsInvalid("Notes are not editable");
     }
@@ -99,7 +95,7 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
           deleted.
         </Typography>
         <ValidatingSubmitButton
-          validationResult={validate(note)}
+          validationResult={validateValue(note)}
           onClick={createNote}
           loading={false}
         >
