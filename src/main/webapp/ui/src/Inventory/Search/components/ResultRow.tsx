@@ -126,7 +126,6 @@ function ResultRow({
             checked={result.selected}
             onChange={() => result.toggleSelected()}
             onClick={(e) => e.stopPropagation()}
-            color="default"
             name={`Select result ${result.globalId}`}
             inputProps={{ "aria-label": "Select result item" }}
             className={classes.defaultCursor}
@@ -142,7 +141,6 @@ function ResultRow({
             )}
             onChange={() => activateResult()}
             onClick={(e) => e.stopPropagation()}
-            color="default"
             name={`Select result ${result.globalId}`}
             inputProps={{ "aria-label": "Select result item" }}
           />
