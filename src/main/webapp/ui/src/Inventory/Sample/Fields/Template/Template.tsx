@@ -19,6 +19,7 @@ import Alert from "@mui/material/Alert";
 import { getErrorMessage } from "../../../../util/error";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
+import { Stack } from "@mui/material";
 
 function Template(): React.ReactNode {
   const {
@@ -71,22 +72,24 @@ function Template(): React.ReactNode {
             ) : null
           }
         >
-          <FormControlLabel
-            value="no-template"
-            control={<Radio checked={template === null} />}
-            label="No template"
-            onClick={() => {
-              setTemplate(null);
-            }}
-            sx={{ mb: 2, mt: 1 }}
-          />
-          {activeResult.isFieldEditable("template") && (
-            <TemplatePicker
-              disabled={!activeResult.isFieldEditable("template")}
-              setTemplate={setTemplate}
-              sample={activeResult}
+          <Stack flexWrap="nowrap">
+            <FormControlLabel
+              value="no-template"
+              control={<Radio checked={template === null} />}
+              label="No template"
+              onClick={() => {
+                setTemplate(null);
+              }}
+              sx={{ mb: 2, mt: 1 }}
             />
-          )}
+            {activeResult.isFieldEditable("template") && (
+              <TemplatePicker
+                disabled={!activeResult.isFieldEditable("template")}
+                setTemplate={setTemplate}
+                sample={activeResult}
+              />
+            )}
+          </Stack>
         </InputWrapper>
       </>
     );
