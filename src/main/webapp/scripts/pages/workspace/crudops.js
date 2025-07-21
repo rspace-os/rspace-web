@@ -399,7 +399,7 @@ function createRenameDialog() {
   });
   window.addEventListener("COMPLETE_RENAME", (event) => {
     const newName = event.detail.newName;
-    var idStr = "_" + selected.ids[0];
+    var idStr = "_" + getSelectedIdsNamesAndTypes().ids[0];
     var match = "a[id$=" + idStr + "]";
     $(match).text(newName);
     reloadFileTreeBrowser();
