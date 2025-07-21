@@ -238,24 +238,24 @@ test.describe("NewNote", () => {
     await Then["there should be an error message"]("Note cannot be empty.");
   });
 
-  feature.skip(
-    ({ browserName }) => browserName === "firefox",
-    "Validates notes that exceed character limit",
-    async ({ Given, Then }) => {
-      /*
-       * Skipped on Firefox due to TinyMCE performance issues when typing
-       * large amounts of text (2000+ characters). Firefox times out during
-       * the pressSequentially operation, while other browsers handle it fine.
-       */
-      await Given["that the new note field has been mounted"]();
-      await Given[
-        "that the user has typed a note that exceeds the character limit"
-      ]();
-      await Then["there should be an error message"](
-        "Note cannot exceed 2000 characters.",
-      );
-    },
-  );
+  test.describe("Validates notes that exceed character limit", () => {
+    test.skip(
+      ({ browserName }) => browserName === "firefox",
+      "Skipped on Firefox due to TinyMCE performance issues when typing large amounts of text (2000+ characters). Firefox times out during the pressSequentially operation, while other browsers handle it fine.",
+    );
+    feature(
+      "shows error for notes exceeding character limit",
+      async ({ Given, Then }) => {
+        await Given["that the new note field has been mounted"]();
+        await Given[
+          "that the user has typed a note that exceeds the character limit"
+        ]();
+        await Then["there should be an error message"](
+          "Note cannot exceed 2000 characters.",
+        );
+      },
+    );
+  });
 
   feature(
     "Successfully creates a note with valid input",
