@@ -48,6 +48,7 @@ const feature = test.extend<{
     "the user types in the note field": (text: string) => Promise<void>;
     "the user removes all of the text": () => Promise<void>;
     "the user clicks the create note button": () => Promise<void>;
+    "the user clicks the clear button": () => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
@@ -133,6 +134,9 @@ const feature = test.extend<{
       "the user removes all of the text": async () => {
         const frame = page.frameLocator("iframe");
         await frame.locator('body[contenteditable="true"]').fill("");
+      },
+      "the user clicks the clear button": async () => {
+        await page.getByRole("button", { name: "Clear", exact: true }).click();
       },
     });
   },
@@ -346,6 +350,60 @@ test.describe("NewNote", () => {
       await Then[
         "onErrorStateChange should never be called with true during note creation flow"
       ]({
+        onErrorStateChangeSpy,
+      });
+    },
+  );
+
+  feature(
+    "Clear button clears the field and resets error state",
+    async ({ Given, When, Then }) => {
+      const { onErrorStateChangeSpy } =
+        await Given["that the new note field has been mounted"]();
+      await Given["that the user has typed some text"]("Test note");
+      await Then["onErrorStateChange should be called with"](false, {
+        onErrorStateChangeSpy,
+      });
+      await When["the user clicks the clear button"]();
+      await Then["the note field should be empty"]();
+      await Then["onErrorStateChange should be called with"](false, {
+        onErrorStateChangeSpy,
+      });
+    },
+  );
+
+  feature(
+    "Clear button works when field is in error state",
+    async ({ Given, When, Then }) => {
+      const { onErrorStateChangeSpy } =
+        await Given["that the new note field has been mounted"]();
+      await Given["that the user has typed some text"]("Valid note");
+      await When["the user removes all of the text"]();
+      await Then["onErrorStateChange should be called with"](true, {
+        onErrorStateChangeSpy,
+      });
+      await When["the user clicks the clear button"]();
+      await Then["the note field should be empty"]();
+      await Then["onErrorStateChange should be called with"](false, {
+        onErrorStateChangeSpy,
+      });
+    },
+  );
+
+  feature(
+    "Clear button is idempotent when field is already empty",
+    async ({ Given, When, Then }) => {
+      const { onErrorStateChangeSpy } =
+        await Given["that the new note field has been mounted"]();
+      await Then["the note field should be empty"]();
+      await When["the user clicks the clear button"]();
+      await Then["the note field should be empty"]();
+      await Then["onErrorStateChange should be called with"](false, {
+        onErrorStateChangeSpy,
+      });
+      await When["the user clicks the clear button"]();
+      await Then["the note field should be empty"]();
+      await Then["onErrorStateChange should be called with"](false, {
         onErrorStateChangeSpy,
       });
     },

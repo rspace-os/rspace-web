@@ -5,6 +5,7 @@ import TextField from "../../../../components/Inputs/TextField";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import FormField from "../../../../components/Inputs/FormField";
 import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
 import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
@@ -56,6 +57,16 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
     isResettingRef.current = false;
   };
 
+  const clearNote = async () => {
+    isResettingRef.current = true;
+    setNote("");
+    if (record.state === "preview") record.unsetDirtyFlag();
+    onErrorStateChange(false);
+    // Reset the flag after a microtask to ensure onChange has been called
+    await Promise.resolve();
+    isResettingRef.current = false;
+  };
+
   useEffect(() => {
     setNote("");
     isResettingRef.current = false;
@@ -94,13 +105,18 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
           Please note that once created, notes can be neither edited nor
           deleted.
         </Typography>
-        <ValidatingSubmitButton
-          validationResult={validateValue(note)}
-          onClick={createNote}
-          loading={false}
-        >
-          Create note
-        </ValidatingSubmitButton>
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" onClick={clearNote}>
+            Clear
+          </Button>
+          <ValidatingSubmitButton
+            validationResult={validateValue(note)}
+            onClick={createNote}
+            loading={false}
+          >
+            Create note
+          </ValidatingSubmitButton>
+        </Stack>
       </Stack>
     </>
   );
