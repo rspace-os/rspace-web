@@ -18,15 +18,7 @@ type NewNoteArgs = {
 
 function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
   const [note, setNote] = useState("");
-
-  /*
-   * Track when we're programmatically resetting the field after creating a note.
-   * This prevents showing an error state in the parent form section when
-   * `setNote("")` triggers `handleChange` with an empty value, which would
-   * normally be considered an error state. Using a ref to avoid timing issues
-   * with state updates.
-   */
-  const isResettingRef = useRef(false);
+  const [initial, setInitial] = useState(true);
 
   const handleChange = ({
     target: { value },
@@ -41,35 +33,48 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
       record.setDirtyFlag();
     }
 
-    // Don't show error state when we're programmatically resetting the field
-    if (!isResettingRef.current) {
-      onErrorStateChange(validateValue(value).isError);
+    /*
+     * Once the users start editing, they can't go back to the initial state
+     * without pressing the clear or submit buttons. This is to ensure that the
+     * form section doesn't show an error state before the user has interacted
+     * with the field.
+     */
+    if (!initial || value !== "") {
+      setInitial(false);
     }
   };
 
-  const createNote = async () => {
-    isResettingRef.current = true;
-    await record.createNote({ content: note });
+  /*
+   * Thanks to the condition above, these two state changes are intrinsically tied together.
+   * If we call `setNote` with anything but an empty string, then `handleChange`
+   * is called immediately by TextField, setting `initial` to false. If we call
+   * `setNote` with an empty string but do not set `initial` to true, then the
+   * useEffect below will move us into an error state even though the user has not
+   * performed any action.
+   */
+  function resetField() {
     setNote("");
-    onErrorStateChange(false);
-    // Reset the flag after a microtask to ensure onChange has been called
-    await Promise.resolve();
-    isResettingRef.current = false;
+    setInitial(true);
+  }
+
+  const createNote = async () => {
+    await record.createNote({ content: note });
+    resetField();
+    if (record.state === "preview") record.unsetDirtyFlag();
   };
 
   const clearNote = async () => {
-    isResettingRef.current = true;
-    setNote("");
+    resetField();
     if (record.state === "preview") record.unsetDirtyFlag();
-    onErrorStateChange(false);
-    // Reset the flag after a microtask to ensure onChange has been called
-    await Promise.resolve();
-    isResettingRef.current = false;
   };
 
   useEffect(() => {
-    setNote("");
-    isResettingRef.current = false;
+    resetField();
+    /*
+     * Note that we do not call unsetDirtyFlag on the previous record here. We
+     * assume that if the `record` has changed then it is because the user has
+     * chosen to discard any changes they made to the previous record.
+     */
   }, [record]);
 
   function validateValue(value: string) {
@@ -84,6 +89,17 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
     }
     return IsValid();
   }
+
+  /*
+   * This HAS to be a useEffect because handleChange gets called both when the
+   * user enters text into the TextField but also when the `value` prop changes
+   * e.g. when we programmatically set the field when clearing or submitting. By
+   * using an effect, the `setInitial(true)` calls get applied and only then do
+   * we check the error state.
+   */
+  useEffect(() => {
+    onErrorStateChange(!initial && validateValue(note).isError);
+  }, [note, initial]);
 
   return (
     <>
