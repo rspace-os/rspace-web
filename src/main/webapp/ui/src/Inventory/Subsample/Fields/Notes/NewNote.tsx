@@ -122,9 +122,7 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
           deleted.
         </Typography>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" onClick={clearNote}>
-            Clear
-          </Button>
+          <Button onClick={clearNote}>Clear</Button>
           <ValidatingSubmitButton
             validationResult={validateValue(note)}
             onClick={createNote}
