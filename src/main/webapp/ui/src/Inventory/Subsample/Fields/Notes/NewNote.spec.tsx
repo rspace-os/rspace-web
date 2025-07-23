@@ -30,11 +30,34 @@ const createCallbackSpy = () => {
   };
 };
 
+const createFlagSpy = ({ initialValue }: { initialValue: boolean }) => {
+  let value = initialValue;
+  let setIsCalled = false;
+  let unsetIsCalled = false;
+  return {
+    set: () => {
+      console.debug("set called");
+      setIsCalled = true;
+      value = true;
+    },
+    unset: () => {
+      console.debug("unset called");
+      unsetIsCalled = true;
+      value = false;
+    },
+    isSet: () => value,
+    isUnset: () => !value,
+    hasBeenSet: () => setIsCalled,
+    hasBeenUnset: () => unsetIsCalled,
+  };
+};
+
 const feature = test.extend<{
   Given: {
     "that the new note field has been mounted": () => Promise<{
       onErrorStateChangeSpy: ReturnType<typeof createCallbackSpy>;
       createNoteSpy: ReturnType<typeof createCallbackSpy>;
+      dirtyFlagSpy: ReturnType<typeof createFlagSpy>;
     }>;
     "that the new note field has been mounted with non-editable record": () => Promise<{
       onErrorStateChangeSpy: ReturnType<typeof createCallbackSpy>;
@@ -42,6 +65,9 @@ const feature = test.extend<{
     }>;
     "that the user has typed some text": (text: string) => Promise<void>;
     "that the user has typed a note that exceeds the character limit": () => Promise<void>;
+    "that the new note field has been mounted whilst editing the whole record": () => Promise<{
+      dirtyFlagSpy: ReturnType<typeof createFlagSpy>;
+    }>;
   };
   Once: {};
   When: {
@@ -72,6 +98,21 @@ const feature = test.extend<{
     }: {
       onErrorStateChangeSpy: ReturnType<typeof createCallbackSpy>;
     }) => Promise<void>;
+    "the record should be dirty": ({
+      dirtyFlagSpy,
+    }: {
+      dirtyFlagSpy: ReturnType<typeof createFlagSpy>;
+    }) => void;
+    "the record should not be dirty": ({
+      dirtyFlagSpy,
+    }: {
+      dirtyFlagSpy: ReturnType<typeof createFlagSpy>;
+    }) => void;
+    "record's dirty flag should not change": ({
+      dirtyFlagSpy,
+    }: {
+      dirtyFlagSpy: ReturnType<typeof createFlagSpy>;
+    }) => void;
   };
   networkRequests: Array<URL>;
 }>({
@@ -80,13 +121,20 @@ const feature = test.extend<{
       "that the new note field has been mounted": async () => {
         const onErrorStateChangeSpy = createCallbackSpy();
         const createNoteSpy = createCallbackSpy();
+        const dirtyFlagSpy = createFlagSpy({ initialValue: false });
         await mount(
           <NewNoteStory
             onErrorStateChange={onErrorStateChangeSpy.handler}
             createNote={createNoteSpy.asyncHandler}
+            setDirtyFlag={dirtyFlagSpy.set}
+            unsetDirtyFlag={dirtyFlagSpy.unset}
           />,
         );
-        return { onErrorStateChangeSpy, createNoteSpy };
+        return {
+          onErrorStateChangeSpy,
+          createNoteSpy,
+          dirtyFlagSpy,
+        };
       },
       "that the new note field has been mounted with non-editable record":
         async () => {
@@ -100,6 +148,18 @@ const feature = test.extend<{
             />,
           );
           return { onErrorStateChangeSpy, createNoteSpy };
+        },
+      "that the new note field has been mounted whilst editing the whole record":
+        async () => {
+          const dirtyFlagSpy = createFlagSpy({ initialValue: false });
+          await mount(
+            <NewNoteStory
+              state="editing"
+              setDirtyFlag={dirtyFlagSpy.set}
+              unsetDirtyFlag={dirtyFlagSpy.unset}
+            />,
+          );
+          return { dirtyFlagSpy };
         },
       "that the user has typed some text": async (text: string) => {
         const frame = page.frameLocator("iframe");
@@ -224,6 +284,27 @@ const feature = test.extend<{
             expect(call).toEqual([false]);
           });
         },
+      "the record should be dirty": ({
+        dirtyFlagSpy,
+      }: {
+        dirtyFlagSpy: ReturnType<typeof createFlagSpy>;
+      }) => {
+        expect(dirtyFlagSpy.isSet()).toBe(true);
+      },
+      "the record should not be dirty": ({
+        dirtyFlagSpy,
+      }: {
+        dirtyFlagSpy: ReturnType<typeof createFlagSpy>;
+      }) => {
+        expect(dirtyFlagSpy.isUnset()).toBe(true);
+      },
+      "record's dirty flag should not change": ({
+        dirtyFlagSpy,
+      }: {
+        dirtyFlagSpy: ReturnType<typeof createFlagSpy>;
+      }) => {
+        expect(dirtyFlagSpy.hasBeenUnset()).toBe(false);
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -408,4 +489,46 @@ test.describe("NewNote", () => {
       });
     },
   );
+
+  test.describe("dirty flag", () => {
+    feature(
+      "Manages dirty flag correctly when the subsample is in preview",
+      async ({ Given, When, Then }) => {
+        const { dirtyFlagSpy } =
+          await Given["that the new note field has been mounted"]();
+        await When["the user types in the note field"]("test");
+        Then["the record should be dirty"]({
+          dirtyFlagSpy,
+        });
+        await When["the user clicks the create note button"]();
+        Then["the record should not be dirty"]({ dirtyFlagSpy });
+      },
+    );
+    feature(
+      "Does not manage dirty flag when the subsample is in editing",
+      async ({ Given, When, Then }) => {
+        const { dirtyFlagSpy } =
+          await Given[
+            "that the new note field has been mounted whilst editing the whole record"
+          ]();
+        await When["the user types in the note field"]("test");
+        Then["the record should be dirty"]({
+          dirtyFlagSpy,
+        });
+        await When["the user clicks the create note button"]();
+        Then["record's dirty flag should not change"]({
+          dirtyFlagSpy,
+        });
+      },
+      /*
+       * When the user is editing the whole subsample, the dirty flag is set by
+       * the new note component but it is not unset. If we unset the dirty flag
+       * but the user has made other changes, then the dirty flag will not
+       * alert them of unsaved changes. This does mean that if the only change
+       * the user has made is to the new note field, then the dirty flag will
+       * not be unset and they will get a false warning about unsaved changes
+       * when there are none.
+       */
+    );
+  });
 });

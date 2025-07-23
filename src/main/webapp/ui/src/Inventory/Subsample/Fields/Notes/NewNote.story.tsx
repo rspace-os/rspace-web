@@ -8,20 +8,26 @@ export function NewNoteStory({
   onErrorStateChange,
   createNote,
   isEditable = true,
+  setDirtyFlag,
+  unsetDirtyFlag,
+  state,
 }: {
   onErrorStateChange?: (hasError: boolean) => void;
   createNote?: () => Promise<void>;
   isEditable?: boolean;
+  setDirtyFlag?: () => void;
+  unsetDirtyFlag?: () => void;
+  state?: "preview" | "editing";
 }): React.ReactNode {
   const mockSubSample = {
-    state: "editing" as const,
+    state: state ?? ("preview" as const),
     createNote: createNote ?? (async () => Promise.resolve()),
     isFieldEditable: (field: string) => {
       if (field === "notes") return isEditable;
       return true;
     },
-    setDirtyFlag: () => {},
-    unsetDirtyFlag: () => {},
+    setDirtyFlag: setDirtyFlag ?? (() => {}),
+    unsetDirtyFlag: unsetDirtyFlag ?? (() => {}),
   };
 
   return (
