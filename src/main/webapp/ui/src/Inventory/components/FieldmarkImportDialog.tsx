@@ -152,7 +152,7 @@ export default function FieldmarkImportDialog({
 }: FieldmarkImportDialogArgs): React.ReactNode {
   const confirm = useConfirm();
   const { isViewportSmall } = useViewportDimensions();
-  const { addAlert } = React.useContext(AlertContext);
+  const { addAlert, removeAlert } = React.useContext(AlertContext);
   const [notebooks, setNotebooks] =
     React.useState<null | ReadonlyArray<Notebook>>(null);
   const [selectedNotebook, setSelectedNotebook] =
@@ -217,6 +217,13 @@ export default function FieldmarkImportDialog({
 
   async function importNotebook(notebook: Notebook) {
     setImporting(true);
+    const importingAlert = mkAlert({
+      variant: "notice",
+      title: "Importing notebook",
+      message: `Importing notebook "${notebook.name}" from Fieldmark.`,
+      isInfinite: true,
+    });
+    addAlert(importingAlert);
     try {
       const { data } = await InvApiService.post<{
         containerName: string;
@@ -256,6 +263,7 @@ export default function FieldmarkImportDialog({
       throw e;
     } finally {
       setImporting(false);
+      if (importingAlert) removeAlert(importingAlert);
     }
   }
 
