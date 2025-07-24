@@ -126,7 +126,7 @@ public class GalaxySummaryStatusReport {
    * @param allDataUploadedToGalaxyForThisRSpaceField
    * @return
    */
-  public static List<GalaxySummaryStatusReport> createForForInvocationsAndForDataAlone(
+  public static List<GalaxySummaryStatusReport> createForInvocationsAndForDataAlone(
       Set<GalaxyInvocationDetails> invocationsAndDataSetsMatchingRSpaceData,
       Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
     List<GalaxySummaryStatusReport> summaryReports = new ArrayList<>();

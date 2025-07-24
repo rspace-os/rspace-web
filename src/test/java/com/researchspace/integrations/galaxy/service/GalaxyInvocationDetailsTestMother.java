@@ -11,7 +11,7 @@ public class GalaxyInvocationDetailsTestMother {
   public static GalaxyInvocationDetails createInvocationdetails(
       String name, String state, String historyID, DatasetCollection used) {
     WorkflowInvocationResponse wir = new WorkflowInvocationResponse();
-    wir.setInvocationId("test_invocation_id");
+    wir.setInvocationId("test_invocation_id_" + name);
     wir.setHistoryId(historyID);
     wir.setCreateTime(invocationDate);
     wir.setState(state);

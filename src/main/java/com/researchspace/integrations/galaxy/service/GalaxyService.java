@@ -245,7 +245,7 @@ public class GalaxyService {
                     thisGalaxyInvocationDetails);
               }
             });
-        return GalaxySummaryStatusReport.createForForInvocationsAndForDataAlone(
+        return GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
             allInvocationDetails, allDataUploadedToGalaxyForThisRSpaceField);
       }
       // no invocations were present

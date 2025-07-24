@@ -32,7 +32,7 @@ public class GalaxySummaryStatusReportTest {
         GalaxyInvocationDetailsTestMother.createInvocationdetails(
             "invocation_name1", "running", "history1", used);
     List<GalaxySummaryStatusReport> reports =
-        GalaxySummaryStatusReport.createForForInvocationsAndForDataAlone(
+        GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
             Set.of(invocationDetails), workflowDataList);
     assertEquals(1, reports.size(), "List should contain 1 item");
     GalaxySummaryStatusReport report = reports.get(0);
@@ -43,7 +43,8 @@ public class GalaxySummaryStatusReportTest {
       GalaxySummaryStatusReport report, String reportNumber, GalaxyInvocationStatus status) {
     assertEquals(status, report.getGalaxyInvocationStatus());
     assertEquals(GalaxyInvocationDetailsTestMother.invocationDate, report.getCreatedOn());
-    assertEquals("test_invocation_id", report.getGalaxyInvocationId());
+    assertEquals(
+        "test_invocation_id_invocation_name" + reportNumber, report.getGalaxyInvocationId());
     assertEquals("invocation_name" + reportNumber, report.getGalaxyInvocationName());
     assertEquals("default-baseurl", report.getGalaxyBaseUrl());
     assertEquals("history" + reportNumber, report.getGalaxyHistoryId());
@@ -79,7 +80,7 @@ public class GalaxySummaryStatusReportTest {
     invocationDetails.add(invocationDetails1);
     invocationDetails.add(invocationDetails2);
     List<GalaxySummaryStatusReport> reports =
-        GalaxySummaryStatusReport.createForForInvocationsAndForDataAlone(
+        GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
             invocationDetails, workflowDataList);
     assertEquals(2, reports.size(), "List should contain 1 item");
     GalaxySummaryStatusReport report1 = reports.get(0);
@@ -118,7 +119,7 @@ public class GalaxySummaryStatusReportTest {
     invocationDetails.add(invocationDetails1);
     invocationDetails.add(invocationDetails2);
     List<GalaxySummaryStatusReport> reports =
-        GalaxySummaryStatusReport.createForForInvocationsAndForDataAlone(
+        GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
             invocationDetails, workflowDataList);
     assertEquals(3, reports.size(), "List should contain 1 item");
     GalaxySummaryStatusReport report1 = reports.get(0);
