@@ -9,7 +9,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
-import InvApiService from "../../common/InvApiService";
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
 import {
@@ -40,6 +39,8 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormHelperText from "@mui/material/FormHelperText";
 import { useConfirm } from "@/components/ConfirmProvider";
+import useOauthToken from "@/common/useOauthToken";
+import axios from "@/common/axios";
 
 /**
  * This class allows us to provide a link to the newly created container in the
@@ -158,6 +159,7 @@ export default function FieldmarkImportDialog({
   onClose,
 }: FieldmarkImportDialogArgs): React.ReactNode {
   const confirm = useConfirm();
+  const { getToken } = useOauthToken();
   const { isViewportSmall } = useViewportDimensions();
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const [notebooks, setNotebooks] =
@@ -189,8 +191,13 @@ export default function FieldmarkImportDialog({
       setSelectedNotebook(null);
       setNotebooks(null);
       try {
-        const { data } = await InvApiService.get<ReadonlyArray<Notebook>>(
-          "/fieldmark/notebooks",
+        const { data } = await axios.get<ReadonlyArray<Notebook>>(
+          "/api/inventory/v1/fieldmark/notebooks",
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
+            },
+          },
         );
         setNotebooks(data);
       } catch (e) {
@@ -232,15 +239,23 @@ export default function FieldmarkImportDialog({
     });
     addAlert(importingAlert);
     try {
-      const { data } = await InvApiService.post<{
+      const { data } = await axios.post<{
         containerName: string;
         containerGlobalId: string;
-      }>("/import/fieldmark/notebook", {
-        notebookId: notebook.metadata.project_id,
-        ...(identifierFieldSelection.type === "selected"
-          ? { identifier: identifierFieldSelection.field }
-          : {}),
-      });
+      }>(
+        "/api/inventory/v1/import/fieldmark/notebook",
+        {
+          notebookId: notebook.metadata.project_id,
+          ...(identifierFieldSelection.type === "selected"
+            ? { identifier: identifierFieldSelection.field }
+            : {}),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        },
+      );
       addAlert(
         mkAlert({
           variant: "success",
@@ -281,8 +296,13 @@ export default function FieldmarkImportDialog({
     setIdentifierFields(null);
     setIdentifierFieldSelection({ type: "unselected" });
     try {
-      const { data } = await InvApiService.get(
-        "/fieldmark/notebooks/igsn/" + notebookId,
+      const { data } = await axios.get(
+        "/api/inventory/v1/fieldmark/notebooks/igsn/" + notebookId,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        },
       );
       setIdentifierFields(
         Parsers.isArray(data)
