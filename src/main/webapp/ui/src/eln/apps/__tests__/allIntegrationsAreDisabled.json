@@ -82,6 +82,14 @@
       "oauthConnected" : false,
       "options" : { }
     },
+    "GALAXY" : {
+      "name" : "GALAXY",
+      "displayName" : "Galaxy",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
     "JOVE" : {
       "name" : "JOVE",
       "displayName" : "Jove",
