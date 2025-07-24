@@ -11,7 +11,7 @@ import org.springframework.web.servlet.ModelAndView;
 /**
  * Writes details of slow requests to a log file. This is set in log4j2.xml to be 'SlowRequests.txt'
  *
- * <p>Note: If rennaming or moving to another package, log4j configuration files should also be
+ * <p>Note: If renaming or moving to another package, log4j2 configuration files should also be
  * updated.
  */
 public class PerformanceLoggingInterceptor implements HandlerInterceptor {
