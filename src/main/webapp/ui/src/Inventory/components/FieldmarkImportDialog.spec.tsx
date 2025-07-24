@@ -16,11 +16,14 @@ const feature = test.extend<{
   When: {
     "the dialog is in the DOM": () => Promise<void>;
     "the notebooks have been fetched": () => Promise<void>;
+    "the user selects a notebook and clicks import": () => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
     "the notebooks should be displayed in the table": () => Promise<void>;
+    "an import request should be made to the server with the correct notebook ID": () => void;
   };
+  networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
   Given: async ({ mount, page }, use) => {
     await use({
@@ -49,9 +52,15 @@ const feature = test.extend<{
         const dataGrid = page.getByRole("grid");
         await expect(dataGrid).toBeVisible();
       },
+      "the user selects a notebook and clicks import": async () => {
+        await page
+          .getByRole("radio", { name: "Select notebook: Test Notebook 1" })
+          .click();
+        await page.getByRole("button", { name: "Import" }).click();
+      },
     });
   },
-  Then: async ({ page }, use) => {
+  Then: async ({ page, networkRequests }, use) => {
     await use({
       "there shouldn't be any axe violations": async () => {
         const accessibilityScanResults = await new AxeBuilder({
@@ -104,11 +113,30 @@ const feature = test.extend<{
           page.getByRole("radio", { name: "Select notebook: Test Notebook 2" }),
         ).toBeVisible();
       },
+      "an import request should be made to the server with the correct notebook ID":
+        () => {
+          const importRequest = networkRequests.find(
+            (request) =>
+              request.url.pathname ===
+                "/api/inventory/v1/import/fieldmark/notebook" &&
+              request.postData?.includes('"notebookId":"test-project-1"'),
+          );
+          expect(importRequest).toBeDefined();
+        },
     });
+  },
+  networkRequests: async ({}, use) => {
+    await use([]);
   },
 });
 
-feature.beforeEach(async ({ router }) => {
+feature.beforeEach(async ({ router, page, networkRequests }) => {
+  page.on("request", (request) => {
+    networkRequests.push({
+      url: new URL(request.url()),
+      postData: request.postData(),
+    });
+  });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
@@ -190,6 +218,23 @@ feature.beforeEach(async ({ router }) => {
       ]),
     });
   });
+  await router.route(
+    "/api/inventory/v1/import/fieldmark/notebook",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          containerName: "Test Container from Test Notebook 1",
+          containerGlobalId: "CT123456",
+        }),
+      });
+    },
+  );
+});
+
+feature.afterEach(({ networkRequests }) => {
+  networkRequests.splice(0, networkRequests.length);
 });
 
 test.describe("FieldmarkImportDialog", () => {
@@ -219,6 +264,22 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await When["the notebooks have been fetched"]();
         await Then["the notebooks should be displayed in the table"]();
+      },
+    );
+  });
+
+  test.describe("notebook import", () => {
+    feature(
+      "should make an import request when a notebook is selected and imported",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the fieldmark import dialog is open with mock notebooks"
+        ]();
+        await When["the notebooks have been fetched"]();
+        await When["the user selects a notebook and clicks import"]();
+        await Then[
+          "an import request should be made to the server with the correct notebook ID"
+        ]();
       },
     );
   });
