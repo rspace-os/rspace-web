@@ -1,5 +1,3 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
 import IntegrationCard from "../IntegrationCard";
 import React, { useState } from "react";
