@@ -106,6 +106,9 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
       FieldmarkApiImportRequest importRequest, User user) {
     FieldmarkApiImportResult importResult = null;
     try {
+      if (StringUtils.isNotBlank(importRequest.getIdentifier())) {
+        apiHandler.assertInventoryAndDataciteEnabled(user);
+      }
       FieldmarkNotebookDTO notebookDTO = getFieldmarkNotebookDTO(importRequest, user);
 
       // create sample template
@@ -161,7 +164,7 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
     } catch (FieldmarkImportException ex) {
       throw ex;
     } catch (Exception ex) {
-      throw new FieldmarkImportException(ex);
+      throw new FieldmarkImportException(ex.getMessage());
     }
     return importResult;
   }

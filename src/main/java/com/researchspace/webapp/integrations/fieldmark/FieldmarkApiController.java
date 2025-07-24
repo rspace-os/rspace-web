@@ -51,10 +51,10 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
   public List<String> getIgsnCandidateFields(
       @PathVariable("notebookId") String notebookId, @RequestAttribute(name = "user") User user)
       throws BindException {
-    apiHandler.assertInventoryAndDataciteEnabled(user);
     BindingResult errors = new BeanPropertyBindingResult("notebookId", "notebookId");
     List<String> candidateFields = new LinkedList<>();
     try {
+      apiHandler.assertInventoryAndDataciteEnabled(user);
       candidateFields = fieldmarkServiceManagerImpl.getIgsnCandidateFields(user, notebookId);
     } catch (FieldmarkImportException serverEx) {
       log.error("Error creating IGSN candidate fields: " + serverEx.getMessage());
@@ -63,7 +63,17 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
           "errors.fieldmark.import",
           new Object[] {},
           "Error creating IGSN candidate fields for notebook \"" + notebookId + "\"");
-      throwBindExceptionIfErrors(errors);
+    } catch (UnsupportedOperationException dataciteEx) {
+      log.error("Error creating IGSN candidate fields: " + dataciteEx.getMessage());
+      errors.rejectValue(
+          "",
+          "errors.fieldmark.import",
+          new Object[] {},
+          "Not possible to create IGSN candidate fields for notebook \""
+              + notebookId
+              + "\" because "
+              + dataciteEx.getMessage());
+
     } finally {
       throwBindExceptionIfErrors(errors);
     }
