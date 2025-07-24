@@ -48,21 +48,6 @@ const feature = test.extend<{
         // Wait for the DataGrid to appear
         const dataGrid = page.getByRole("grid");
         await expect(dataGrid).toBeVisible();
-
-        // Wait for the API call to complete or timeout
-        try {
-          await page.waitForResponse(
-            (response) =>
-              response
-                .url()
-                .includes("/api/inventory/v1/fieldmark/notebooks") &&
-              response.status() === 200,
-            { timeout: 5000 },
-          );
-        } catch (e) {
-          // If no API call is made, just wait for the grid to be populated
-          await page.waitForTimeout(2000);
-        }
       },
     });
   },
@@ -98,12 +83,11 @@ const feature = test.extend<{
         ).toEqual([]);
       },
       "the notebooks should be displayed in the table": async () => {
-        // Check that the table contains the expected notebook data
         await expect(
-          page.getByRole("gridcell", { name: "Test Notebook 1" }),
+          page.getByRole("gridcell", { name: /^Test Notebook 1$/ }),
         ).toBeVisible();
         await expect(
-          page.getByRole("gridcell", { name: "Test Notebook 2" }),
+          page.getByRole("gridcell", { name: /^Test Notebook 2$/ }),
         ).toBeVisible();
         await expect(
           page.getByRole("gridcell", { name: "draft" }),
@@ -182,30 +166,28 @@ feature.beforeEach(async ({ router }) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        data: [
-          {
-            name: "Test Notebook 1",
-            metadata: {
-              project_id: "test-project-1",
-              ispublic: false,
-              pre_description: "A test notebook for development",
-              project_lead: "Test User 1",
-            },
-            status: "draft",
+      body: JSON.stringify([
+        {
+          name: "Test Notebook 1",
+          metadata: {
+            project_id: "test-project-1",
+            ispublic: false,
+            pre_description: "A test notebook for development",
+            project_lead: "Test User 1",
           },
-          {
-            name: "Test Notebook 2",
-            metadata: {
-              project_id: "test-project-2",
-              ispublic: true,
-              pre_description: "Another test notebook",
-              project_lead: "Test User 2",
-            },
-            status: "published",
+          status: "draft",
+        },
+        {
+          name: "Test Notebook 2",
+          metadata: {
+            project_id: "test-project-2",
+            ispublic: true,
+            pre_description: "Another test notebook",
+            project_lead: "Test User 2",
           },
-        ],
-      }),
+          status: "published",
+        },
+      ]),
     });
   });
 });
