@@ -9,9 +9,15 @@ import {DataGrid} from "@mui/x-data-grid";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import Link from "@mui/material/Link";
-
-
-function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
+import {
+  type GalaxyDataSummary
+} from "./GalaxyData";
+export type ExternalWorkflowDialogArgs = {
+  open: boolean;
+  setOpen: (val: boolean) => void;
+  galaxySummaryReport: Array<GalaxyDataSummary>
+};
+function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport} :ExternalWorkflowDialogArgs ) {
   return (
 
       <>
@@ -33,7 +39,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
                   }}
                   columns={[
                     DataGridColumn.newColumnWithValueGetter("Data File Names",
-                        (wf) =>  wf.galaxyDataNames,
+                        (wf : GalaxyDataSummary) =>  wf.galaxyDataNames,
                         {
                           headerName: "Data Uploaded",
                           flex: 1,
@@ -42,7 +48,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
                           renderCell: ({row}) => row.galaxyDataNames
                         }),
                     DataGridColumn.newColumnWithValueGetter("Container",
-                        (wf) => wf.galaxyHistoryName,
+                        (wf: GalaxyDataSummary) => wf.galaxyHistoryName,
                         {
                           headerName: "Container/Galaxy History",
                           flex: 1,
@@ -53,7 +59,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
                                   target="_blank">{row.galaxyHistoryName}</Link>,
                         }),
                     DataGridColumn.newColumnWithValueGetter("Invocation",
-                        (wf) => wf.galaxyInvocationName,
+                        (wf: GalaxyDataSummary) => wf.galaxyInvocationName,
                         {
                           headerName: "Invocation",
                           flex: 1,
@@ -64,7 +70,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
 
                         }),
                     DataGridColumn.newColumnWithValueGetter("Status",
-                        (wf) => wf.galaxyInvocationStatus,
+                        (wf: GalaxyDataSummary) => wf.galaxyInvocationStatus,
                         {
                           headerName: "Invocation Status",
                           flex: 1,
@@ -72,7 +78,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
                           renderCell: ({row}) => row.galaxyInvocationStatus
                         }),
                     DataGridColumn.newColumnWithValueGetter("Created",
-                        (wf) => new Date(wf.createdOn),
+                        (wf: GalaxyDataSummary) => new Date(wf.createdOn),
                         {
                           headerName: "Invocation Created",
                           flex: 1,
@@ -82,7 +88,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}) {
                         }),
                   ]}
                   loading={false}
-                  getRowId={(row) => row.galaxyHistoryName + row.createdOn}
+                  getRowId={( row : GalaxyDataSummary) => row.galaxyHistoryName + row.createdOn}
                   density="compact"
                   disableColumnFilter
                   hideFooter

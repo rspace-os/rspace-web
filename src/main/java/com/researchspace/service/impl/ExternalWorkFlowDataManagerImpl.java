@@ -35,12 +35,6 @@ public class ExternalWorkFlowDataManagerImpl implements ExternalWorkFlowDataMana
   }
 
   @Override
-  public List<ExternalWorkFlowInvocation> findInvocationsByRSpaceContainerIdAndServiceType(
-      long containerId, ExternalWorkFlowData.ExternalService type) {
-    return List.of(); // TODO
-  }
-
-  @Override
   public void save(ExternalWorkFlowInvocation invocation) {
     externalWorkFlowInvocationDao.save(invocation);
   }

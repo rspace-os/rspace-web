@@ -930,15 +930,14 @@ const encodeIntegrationState = <I extends Integration>(
     };
   }
   if (integration === "GALAXY") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["GALAXY"]["credentials"] = data.credentials;
     return {
       name: "GALAXY",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[prop-missing]
-        // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.GALAXY_API_KEY.map((key) => ({
+        ...creds.GALAXY_API_KEY.map((key) => ({
           GALAXY_API_KEY: key,
         })).orElse({
           GALAXY_API_KEY: "",

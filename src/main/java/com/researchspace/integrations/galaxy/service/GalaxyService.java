@@ -72,6 +72,21 @@ public class GalaxyService {
   }
 
   /**
+   * Browser localStorage will cache this data and it will only be requeried if no localstorage data
+   * exists for the field (for example: new document, shared document, localstorage erased, user
+   * switches browser).
+   *
+   * @param fieldId
+   * @return
+   */
+  public boolean galaxyDataExists(long fieldId) {
+    Set<ExternalWorkFlowData> data =
+        externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
+            fieldId, GALAXY);
+    return data != null && !data.isEmpty();
+  }
+
+  /**
    * Uploads data to galaxy, creates a dataset for that data with a name matching: "RSPACE_" +
    * docName + "_" + globalID + "_" + fieldName + "_" + fieldGlobalID; saves the upload response
    * data IDs from Galaxy into the RSpace DB, so we can later retrieve the data from Galaxy. Finally
@@ -237,7 +252,7 @@ public class GalaxyService {
       return GalaxySummaryStatusReport.createForForDataAlone(
           allDataUploadedToGalaxyForThisRSpaceField);
     }
-    return null;
+    return new ArrayList<>();
   }
 
   private void getLatestInvocationDataFromGalaxy(

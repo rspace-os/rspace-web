@@ -12,9 +12,6 @@ public interface ExternalWorkFlowDataManager {
   Set<ExternalWorkFlowData> findWorkFlowDataByRSpaceContainerIdAndServiceType(
       long containerId, ExternalService type);
 
-  List<ExternalWorkFlowInvocation> findInvocationsByRSpaceContainerIdAndServiceType(
-      long containerId, ExternalWorkFlowData.ExternalService type);
-
   void save(ExternalWorkFlowInvocation invocation);
 
   void saveExternalWorkfFlowInvocation(
