@@ -114,10 +114,17 @@ const StyledGridOverlay = styled("div")(({ theme }) => ({
 }));
 
 function CustomLoadingOverlay() {
+  const id = React.useId();
   return (
     <StyledGridOverlay>
-      <CircularProgress variant="indeterminate" value={1} />
-      <Box sx={{ mt: 2 }}>Fetching notebooks from Fieldmark…</Box>
+      <CircularProgress
+        variant="indeterminate"
+        value={1}
+        aria-labelledby={id}
+      />
+      <Box sx={{ mt: 2 }} id={id}>
+        Fetching notebooks from Fieldmark…
+      </Box>
     </StyledGridOverlay>
   );
 }
