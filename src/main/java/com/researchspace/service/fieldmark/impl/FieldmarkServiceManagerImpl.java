@@ -295,37 +295,31 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
   private FieldmarkNotebookDTO getFieldmarkNotebookDTO(
       FieldmarkApiImportRequest importRequest, User user) throws FieldmarkImportException {
     FieldmarkNotebookDTO fieldmarkNotebookDTO;
+    String errorMsg = null;
     try {
       fieldmarkNotebookDTO =
           fieldmarkServiceClientAdapter.getFieldmarkNotebook(
               user, importRequest.getNotebookId(), importRequest.getIdentifier());
     } catch (IOException ioEx) {
-      log.error(
+      errorMsg =
           "The notebookID \""
               + importRequest.getNotebookId()
-              + "\" has not being imported from Fieldmark "
-              + "cause to the following error: "
-              + ioEx.getMessage());
-      throw new FieldmarkImportException(
-          "The notebookID \""
-              + importRequest.getNotebookId()
-              + "\" has not being imported from Fieldmark "
-              + "cause to the following error: "
-              + ioEx.getMessage());
+              + "\" has not being imported "
+              + "from Fieldmark cause to the following error: "
+              + ioEx.getMessage();
+      log.error(errorMsg);
+      throw new FieldmarkImportException(errorMsg);
     } catch (HttpServerErrorException serverEx) {
-      log.error(
+      errorMsg =
           "The notebook cannot be fetched because of an error on the Fieldmark server: "
-              + serverEx.getMessage());
-      throw new FieldmarkImportException(
-          "The notebook cannot be fetched because of an error on the Fieldmark server: "
-              + serverEx.getMessage());
+              + serverEx.getMessage();
+      log.error(errorMsg);
+      throw new FieldmarkImportException(errorMsg);
     } catch (HttpClientErrorException clientEx) {
-      log.error(
-          "The notebook cannot be fetched because of the following error: "
-              + clientEx.getMessage());
-      throw new FieldmarkImportException(
-          "The notebook cannot be fetched because of the following error: "
-              + clientEx.getMessage());
+      errorMsg =
+          "The notebook cannot be fetched because of the following error: " + clientEx.getMessage();
+      log.error(errorMsg);
+      throw new FieldmarkImportException(errorMsg);
     }
     return fieldmarkNotebookDTO;
   }

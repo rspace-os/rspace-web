@@ -16,9 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Slf4j
 @ApiController
@@ -49,7 +49,8 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
 
   @Override
   public List<String> getIgsnCandidateFields(
-      @PathVariable("notebookId") String notebookId, @RequestAttribute(name = "user") User user)
+      @RequestParam(name = "notebookId") String notebookId,
+      @RequestAttribute(name = "user") User user)
       throws BindException {
     BindingResult errors = new BeanPropertyBindingResult("notebookId", "notebookId");
     List<String> candidateFields = new LinkedList<>();

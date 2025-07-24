@@ -1859,7 +1859,7 @@ paths:
           description: >-
             Returns a list of notebook Ids for the given user
 
-  /fieldmark/notebooks/igsn/{notebookId}:
+  /fieldmark/notebooks/igsnCandidateFields:
     get:
       summary: List Fieldmark fields (of a given notebook) that could be imported as IGSN
       description: >-
@@ -1872,9 +1872,9 @@ paths:
         - Import
       parameters:
         - name: notebookId
+          in: query
           description: The notebookId to check
           type: string
-          in: path
           required: true
       responses:
         '200':
