@@ -10,10 +10,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.jstl.core.Config;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /** Filter to wrap request with a request including user preferred locale. */
+@Slf4j
 public class LocaleFilter extends OncePerRequestFilter {
 
   /**
@@ -31,6 +33,7 @@ public class LocaleFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws IOException, ServletException {
 
+    long tStart = System.currentTimeMillis();
     String locale = request.getParameter("locale");
     Locale preferredLocale = null;
 
@@ -71,5 +74,17 @@ public class LocaleFilter extends OncePerRequestFilter {
 
     // Reset thread-bound LocaleContext.
     LocaleContextHolder.setLocaleContext(null);
+
+    /* RSDEV-760: LocaleFilter is the first of RSpace filters configured in web.xml, and measuring
+    the request processing time here, rather than e.g. in PerformanceLoggingInterceptor, may
+    sometimes give a better picture. To enable logging just uncomment the line in log4j2.xml */
+    if (log.isDebugEnabled()) {
+      long tEnd = System.currentTimeMillis();
+      String requestUrl = request.getRequestURI();
+      log.debug(
+          "It took [{}] ms to complete request to {} (as measured by LocaleFilter)",
+          tEnd - tStart,
+          requestUrl);
+    }
   }
 }

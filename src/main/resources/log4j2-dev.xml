@@ -85,6 +85,9 @@
       <AppenderRef ref="SlowRequestsLogAppender"/>
     </Logger>
 
+    <!-- for debugging some performance issues, will log request time on filter level (RSDEV-760) -->
+    <!--<Logger name="com.researchspace.webapp.filter.LocaleFilter" level="DEBUG"/>-->
+
     <Logger name="com.researchspace.service.impl.FailedEmailLogger" level="INFO">
       <AppenderRef ref="FailedEmailLogAppender"/>
     </Logger>

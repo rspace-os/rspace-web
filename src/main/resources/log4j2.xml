@@ -138,6 +138,10 @@
       <AppenderRef ref="SlowRequestsLogAppender"/>
     </Logger>
 
+    <!-- for debugging some performance issues, will log request time on filter level (RSDEV-760) -->
+    <!--<Logger name="com.researchspace.webapp.filter.LocaleFilter" level="DEBUG"/>-->
+
+
     <!-- all appenders need to be registered here so that they can get the root logging
      folder set in at application startup -->
     <Logger name="com.researchspace.service.impl.LoggingInitializer" level="INFO">
