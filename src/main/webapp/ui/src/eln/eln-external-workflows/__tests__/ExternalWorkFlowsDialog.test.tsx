@@ -51,7 +51,7 @@ describe("Renders with table of  data ", () => {
     expect(gridCells[1]).toHaveTextContent('RSPACE_Untitled document_SD375v3_Data_FD229379');
     expect(gridCells[2]).toHaveTextContent('Invocation Name');
     expect(gridCells[3]).toHaveTextContent('FAILED');
-    expect(gridCells[4]).toHaveTextContent('7/18/2025, 11:31:38 AM');
+    expect(gridCells[4]).toHaveTextContent(new Date(GalaxyDataSummary.createdOn).toLocaleString());
   });
 
 });
