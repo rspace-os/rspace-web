@@ -1,22 +1,16 @@
 package com.researchspace.webapp.integrations.galaxy;
 
 import com.researchspace.core.util.RequestUtil;
-import com.researchspace.files.service.FileStore;
-import com.researchspace.galaxy.client.GalaxyClient;
 import com.researchspace.galaxy.model.output.history.History;
 import com.researchspace.integrations.galaxy.service.GalaxyService;
 import com.researchspace.integrations.galaxy.service.GalaxySummaryStatusReport;
 import com.researchspace.model.User;
-import com.researchspace.service.BaseRecordManager;
-import com.researchspace.service.FieldManager;
-import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserManager;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -31,18 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/apps/galaxy")
 public class GalaxyController {
 
-  private final GalaxyClient client;
   private final UserManager userManager;
-  // TODO Create Galaxy service class
-  private @Autowired BaseRecordManager baseRecordManager;
-  private @Autowired @Qualifier("compositeFileStore") FileStore fileStore;
-  private @Autowired RecordManager recordManager;
-  @Autowired private FieldManager fieldManager;
 
   @Autowired private GalaxyService galaxyService;
 
-  public GalaxyController(GalaxyClient client, UserManager userManager) {
-    this.client = client;
+  public GalaxyController(UserManager userManager) {
     this.userManager = userManager;
   }
 
@@ -73,5 +60,10 @@ public class GalaxyController {
       @PathVariable long fieldId) throws IOException {
     User user = userManager.getAuthenticatedUserInSession();
     return galaxyService.getSummaryGalaxyDataForRSpaceField(fieldId, user);
+  }
+
+  @GetMapping("/galaxyDataExists/{fieldId}")
+  public Boolean galaxyDataExistsForRSpaceField(@PathVariable long fieldId) {
+    return galaxyService.galaxyDataExists(fieldId);
   }
 }

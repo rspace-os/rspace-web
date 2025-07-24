@@ -1,28 +1,27 @@
 //@flow strict
 
 import Grid from "@mui/material/Grid";
-import React, { type Node, useState, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import React, { useState } from "react";
 import TextField from "@mui/material/TextField";
-import { Optional } from "../../../util/optional";
-import { observer } from "mobx-react-lite";
+import { Optional } from "@/util/optional";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
 import GalaxyIcon from "../../../assets/branding/galaxy/logo.svg";
-import { LOGO_COLOR } from "../../../assets/branding/galaxy";
+import { LOGO_COLOR } from "@/assets/branding/galaxy";
+import type {IntegrationStates} from "@/eln/apps/useIntegrationsEndpoint";
 
-type GalaxyArgs = {|
-  integrationState: IntegrationStates["GALAXY"],
-  update: (IntegrationStates["GALAXY"]) => void,
-|};
+type GalaxyArgs = {
+  integrationState: IntegrationStates["GALAXY"];
+  update: (newIntegrationState: IntegrationStates["GALAXY"]) => void;
+};
 
 /*
  * Galaxy uses API-key based authentication, as implemented by the form below.
  */
-function Galaxy({ integrationState, update }: GalaxyArgs): Node {
+function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
   const [apiKey, setApiKey] = useState(
     integrationState.credentials.GALAXY_API_KEY.orElse("")
   );
@@ -93,4 +92,4 @@ function Galaxy({ integrationState, update }: GalaxyArgs): Node {
   );
 }
 
-export default (React.memo(observer(Galaxy)): AbstractComponent<GalaxyArgs>);
+export default React.memo(Galaxy);

@@ -60,7 +60,7 @@ module.exports = {
     tinymceShortcuts: "./src/tinyMCE/shortcutsPlugin/shortcuts.js",
     tinymcePyrat: "./src/tinyMCE/pyrat/Pyrat.js",
     tinymceClustermarket: "./src/tinyMCE/clustermarket/index.js",
-    tinymceGalaxy: "./src/tinyMCE/galaxy/index.js",
+    tinymceGalaxy: "./src/tinyMCE/galaxy/index.tsx",
     tinymceOmero: "./src/tinyMCE/omero/index.js",
     tinymceJove: "./src/tinyMCE/jove/index.tsx",
     tinymceKetcher: "./src/tinyMCE/ketcher/KetcherTinyMce.js",
@@ -72,7 +72,7 @@ module.exports = {
     imageEditor: "./src/Gallery/imageEditorDialog.js",
     materialsListing:
       "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
-    externalWorkFlows: "./src/eln/eln-galaxy-workflows/index.js",
+    externalWorkFlows: "./src/eln/eln-external-workflows/index.tsx",
     associatedInventoryRecords:
       "./src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
     sysadminUsers: "./src/eln/sysadmin/users/index.tsx",

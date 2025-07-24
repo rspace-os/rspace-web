@@ -186,7 +186,7 @@ public class JournalController extends BaseController {
       "<div class='invMaterialsListing' data-field-id='%d'></div>";
 
   private static final String EXTERNAL_WORKFLOWS_DIV =
-      "<div class='galaxy-textfield' data-field-id='%d''></div>";
+      "<div class='ext-workflows-textfield' data-field-id='%d' data-document-id='%d'></div>";
 
   /* Creates html string containing all the named fields and contents. Escapes content of non-text fields. */
   protected String prepareStructuredDocumentContent(StructuredDocument doc) {
@@ -211,7 +211,7 @@ public class JournalController extends BaseController {
           galaxyEnabled = sysPropPermissionsMgr.isPropertyAllowed((User) null, "galaxy.available");
         }
         if (galaxyEnabled) {
-          buffer.append(String.format(EXTERNAL_WORKFLOWS_DIV, field.getId()));
+          buffer.append(String.format(EXTERNAL_WORKFLOWS_DIV, field.getId(), doc.getId()));
         }
       }
       Field latestField = field;

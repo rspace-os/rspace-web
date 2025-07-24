@@ -50,7 +50,10 @@
           >
         </div>
         <td class="field-value-inner">
-          <textarea 
+          <c:if test="${galaxyEnabled eq 'true'}"> <!--TODO add more conditions as and when we integrate with other external workflows -->
+            <div class="ext-workflows-textfield" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
+          </c:if>
+          <textarea
             id="rtf_${field.id}" 
             name="fieldRtfData" 
             aria-label="Document editor" 
@@ -67,9 +70,6 @@
     <p class="lastModified textFieldLastModified">Last modified: <span>${field.modificationDateAsDate}</span></p>
     <c:if test="${inventoryAvailable eq 'true'}">
          <div class="invMaterialsListing" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
-    </c:if>
-    <c:if test="${galaxyEnabled eq 'true'}"> <!--TODO add more conditions as and when we integrate with other external workflows -->
-      <div class="ext-workflows-textfield" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
     </c:if>
   </div>
   </td>
