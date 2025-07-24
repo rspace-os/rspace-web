@@ -12,16 +12,22 @@ const feature = test.extend<{
     "the fieldmark import dialog is rendered but closed": () => Promise<void>;
     "the fieldmark import dialog is open": () => Promise<void>;
     "the fieldmark import dialog is open with mock notebooks": () => Promise<void>;
+    "the fieldmark import dialog is open with notebooks that have no identifier columns": () => Promise<void>;
+    "the fieldmark import dialog is open with notebooks that have identifier columns": () => Promise<void>;
   };
   When: {
     "the dialog is in the DOM": () => Promise<void>;
     "the notebooks have been fetched": () => Promise<void>;
     "the user selects a notebook and clicks import": () => Promise<void>;
+    "the user selects a notebook with no identifier columns and clicks import": () => Promise<void>;
+    "the user selects a notebook with identifier columns, selects an identifier column, and clicks import": () => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
     "the notebooks should be displayed in the table": () => Promise<void>;
     "an import request should be made to the server with the correct notebook ID": () => void;
+    "an import request should be made without an identifier column": () => void;
+    "an import request should be made with the selected identifier column": () => void;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -36,6 +42,14 @@ const feature = test.extend<{
       "the fieldmark import dialog is open with mock notebooks": async () => {
         await mount(<OpenFieldmarkImportDialog />);
       },
+      "the fieldmark import dialog is open with notebooks that have no identifier columns":
+        async () => {
+          await mount(<OpenFieldmarkImportDialog />);
+        },
+      "the fieldmark import dialog is open with notebooks that have identifier columns":
+        async () => {
+          await mount(<OpenFieldmarkImportDialog />);
+        },
     });
   },
   When: async ({ page }, use) => {
@@ -58,6 +72,30 @@ const feature = test.extend<{
           .click();
         await page.getByRole("button", { name: "Import" }).click();
       },
+      "the user selects a notebook with no identifier columns and clicks import":
+        async () => {
+          await page
+            .getByRole("radio", {
+              name: "Select notebook: Notebook No Identifiers",
+            })
+            .click();
+          await page.getByRole("button", { name: "Import" }).click();
+        },
+      "the user selects a notebook with identifier columns, selects an identifier column, and clicks import":
+        async () => {
+          await page
+            .getByRole("radio", {
+              name: "Select notebook: Notebook With Identifiers",
+            })
+            .click();
+          const identifierSelect = page.getByRole("combobox", {
+            name: "Identifier field",
+          });
+          await identifierSelect.click();
+          await page.getByRole("option", { name: "sample_id" }).click();
+          const importButton = page.getByRole("button", { name: "Import" });
+          await importButton.click();
+        },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -99,7 +137,13 @@ const feature = test.extend<{
           page.getByRole("gridcell", { name: /^Test Notebook 2$/ }),
         ).toBeVisible();
         await expect(
-          page.getByRole("gridcell", { name: "draft" }),
+          page.getByRole("gridcell", { name: /^Notebook No Identifiers$/ }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("gridcell", { name: /^Notebook With Identifiers$/ }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("gridcell", { name: "draft" }).first(),
         ).toBeVisible();
         await expect(
           page.getByRole("gridcell", { name: "published" }),
@@ -112,6 +156,16 @@ const feature = test.extend<{
         await expect(
           page.getByRole("radio", { name: "Select notebook: Test Notebook 2" }),
         ).toBeVisible();
+        await expect(
+          page.getByRole("radio", {
+            name: "Select notebook: Notebook No Identifiers",
+          }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("radio", {
+            name: "Select notebook: Notebook With Identifiers",
+          }),
+        ).toBeVisible();
       },
       "an import request should be made to the server with the correct notebook ID":
         () => {
@@ -120,6 +174,31 @@ const feature = test.extend<{
               request.url.pathname ===
                 "/api/inventory/v1/import/fieldmark/notebook" &&
               request.postData?.includes('"notebookId":"test-project-1"'),
+          );
+          expect(importRequest).toBeDefined();
+        },
+      "an import request should be made without an identifier column": () => {
+        const importRequest = networkRequests.find(
+          (request) =>
+            request.url.pathname ===
+              "/api/inventory/v1/import/fieldmark/notebook" &&
+            request.postData?.includes(
+              '"notebookId":"test-project-no-identifiers"',
+            ) &&
+            !request.postData?.includes('"identifierColumn"'),
+        );
+        expect(importRequest).toBeDefined();
+      },
+      "an import request should be made with the selected identifier column":
+        () => {
+          const importRequest = networkRequests.find(
+            (request) =>
+              request.url.pathname ===
+                "/api/inventory/v1/import/fieldmark/notebook" &&
+              request.postData?.includes(
+                '"notebookId":"test-project-with-identifiers"',
+              ) &&
+              request.postData?.includes('"identifier":"sample_id"'),
           );
           expect(importRequest).toBeDefined();
         },
@@ -215,6 +294,26 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
           },
           status: "published",
         },
+        {
+          name: "Notebook No Identifiers",
+          metadata: {
+            project_id: "test-project-no-identifiers",
+            ispublic: false,
+            pre_description: "A notebook with no identifier columns",
+            project_lead: "Test User 3",
+          },
+          status: "draft",
+        },
+        {
+          name: "Notebook With Identifiers",
+          metadata: {
+            project_id: "test-project-with-identifiers",
+            ispublic: false,
+            pre_description: "A notebook with identifier columns",
+            project_lead: "Test User 4",
+          },
+          status: "draft",
+        },
       ]),
     });
   });
@@ -228,6 +327,47 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
           containerName: "Test Container from Test Notebook 1",
           containerGlobalId: "CT123456",
         }),
+      });
+    },
+  );
+  await router.route(
+    "/api/inventory/v1/fieldmark/notebooks/igsn/test-project-1",
+    async (route) => {
+      // Mock response with identifier fields as array
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(["sample_id", "batch_id"]),
+      });
+    },
+  );
+  await router.route(
+    "/api/inventory/v1/fieldmark/notebooks/igsn/test-project-2",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    },
+  );
+  await router.route(
+    "/api/inventory/v1/fieldmark/notebooks/igsn/test-project-no-identifiers",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    },
+  );
+  await router.route(
+    "/api/inventory/v1/fieldmark/notebooks/igsn/test-project-with-identifiers",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(["sample_id", "batch_id"]),
       });
     },
   );
@@ -277,8 +417,38 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await When["the notebooks have been fetched"]();
         await When["the user selects a notebook and clicks import"]();
-        await Then[
+        Then[
           "an import request should be made to the server with the correct notebook ID"
+        ]();
+      },
+    );
+
+    feature(
+      "should make an import request without identifier column when notebook has no identifier columns",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the fieldmark import dialog is open with notebooks that have no identifier columns"
+        ]();
+        await When["the notebooks have been fetched"]();
+        await When[
+          "the user selects a notebook with no identifier columns and clicks import"
+        ]();
+        Then["an import request should be made without an identifier column"]();
+      },
+    );
+
+    feature(
+      "should make an import request with selected identifier column when notebook has identifier columns",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the fieldmark import dialog is open with notebooks that have identifier columns"
+        ]();
+        await When["the notebooks have been fetched"]();
+        await When[
+          "the user selects a notebook with identifier columns, selects an identifier column, and clicks import"
+        ]();
+        Then[
+          "an import request should be made with the selected identifier column"
         ]();
       },
     );
