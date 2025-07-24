@@ -39,6 +39,7 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormHelperText from "@mui/material/FormHelperText";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 /**
  * This class allows us to provide a link to the newly created container in the
@@ -149,6 +150,7 @@ export default function FieldmarkImportDialog({
   open,
   onClose,
 }: FieldmarkImportDialogArgs): React.ReactNode {
+  const confirm = useConfirm();
   const { isViewportSmall } = useViewportDimensions();
   const { addAlert } = React.useContext(AlertContext);
   const [notebooks, setNotebooks] =
@@ -282,11 +284,40 @@ export default function FieldmarkImportDialog({
     }
   }
 
+  function handleClose() {
+    const resetState = () => {
+      setNotebooks(null);
+      setSelectedNotebook(null);
+      setColumnsMenuAnchorEl(null);
+      setFetchingNotebooks(false);
+      setImporting(false);
+      setFetchingIdentifierFields(false);
+      setIdentifierFields(null);
+      setIdentifierFieldSelection({ type: "unselected" });
+    };
+
+    if (!importing) {
+      onClose();
+      resetState();
+      return;
+    }
+    confirm(
+      "Importing in progress",
+      "Are you sure you want to close this dialog? The import will continue in the background and there will be an alert when it completes.",
+      "Yes, close",
+      "No, keep open",
+    ).then((confirmed) => {
+      if (confirmed) {
+        onClose();
+        resetState();
+      }
+    });
+  }
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Dialog
         open={open}
-        onClose={onClose}
+        onClose={handleClose}
         maxWidth="lg"
         fullWidth
         fullScreen={isViewportSmall}
@@ -520,14 +551,12 @@ export default function FieldmarkImportDialog({
           <Grid container direction="row" spacing={1}>
             <Grid item sx={{ ml: "auto" }}>
               <Stack direction="row" spacing={1}>
-                <Button onClick={() => onClose()} disabled={importing}>
-                  {selectedNotebook ? "Cancel" : "Close"}
-                </Button>
+                <Button onClick={() => handleClose()}>Close</Button>
                 <ValidatingSubmitButton
                   onClick={() => {
                     if (selectedNotebook)
                       void importNotebook(selectedNotebook).then(() =>
-                        onClose(),
+                        handleClose(),
                       );
                   }}
                   validationResult={

@@ -10,6 +10,7 @@ import { Routes, Route } from "react-router";
 import { BrowserRouter } from "react-router-dom";
 import RouterNavigationContext from "./Inventory/components/RouterNavigationContext";
 import useStores from "./stores/use-stores";
+import ConfirmProvider from "./components/ConfirmProvider";
 
 function Router(): React.ReactNode {
   const { authStore } = useStores();
@@ -24,17 +25,19 @@ function Router(): React.ReactNode {
     <BrowserRouter>
       <RouterNavigationContext>
         <CssBaseline />
-        <Routes>
-          {authStore.isAuthenticated && (
-            <>
-              <Route path="/inventory/*" element={<InventoryRouter />} />
-              <Route
-                path="/listOfMaterials/:lomId"
-                element={<StandaloneListOfMaterialsPage />}
-              />
-            </>
-          )}
-        </Routes>
+        <ConfirmProvider>
+          <Routes>
+            {authStore.isAuthenticated && (
+              <>
+                <Route path="/inventory/*" element={<InventoryRouter />} />
+                <Route
+                  path="/listOfMaterials/:lomId"
+                  element={<StandaloneListOfMaterialsPage />}
+                />
+              </>
+            )}
+          </Routes>
+        </ConfirmProvider>
         <Confirm />
       </RouterNavigationContext>
     </BrowserRouter>
