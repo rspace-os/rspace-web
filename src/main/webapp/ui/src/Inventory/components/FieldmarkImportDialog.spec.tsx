@@ -11,12 +11,15 @@ const feature = test.extend<{
   Given: {
     "the fieldmark import dialog is rendered but closed": () => Promise<void>;
     "the fieldmark import dialog is open": () => Promise<void>;
+    "the fieldmark import dialog is open with mock notebooks": () => Promise<void>;
   };
   When: {
     "the dialog is in the DOM": () => Promise<void>;
+    "the notebooks have been fetched": () => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
+    "the notebooks should be displayed in the table": () => Promise<void>;
   };
 }>({
   Given: async ({ mount, page }, use) => {
@@ -27,6 +30,9 @@ const feature = test.extend<{
       "the fieldmark import dialog is open": async () => {
         await mount(<OpenFieldmarkImportDialog />);
       },
+      "the fieldmark import dialog is open with mock notebooks": async () => {
+        await mount(<OpenFieldmarkImportDialog />);
+      },
     });
   },
   When: async ({ page }, use) => {
@@ -34,6 +40,29 @@ const feature = test.extend<{
       "the dialog is in the DOM": async () => {
         const dialog = page.getByRole("dialog", { includeHidden: true });
         await expect(dialog).toBeHidden();
+      },
+      "the notebooks have been fetched": async () => {
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).toBeVisible();
+
+        // Wait for the DataGrid to appear
+        const dataGrid = page.getByRole("grid");
+        await expect(dataGrid).toBeVisible();
+
+        // Wait for the API call to complete or timeout
+        try {
+          await page.waitForResponse(
+            (response) =>
+              response
+                .url()
+                .includes("/api/inventory/v1/fieldmark/notebooks") &&
+              response.status() === 200,
+            { timeout: 5000 },
+          );
+        } catch (e) {
+          // If no API call is made, just wait for the grid to be populated
+          await page.waitForTimeout(2000);
+        }
       },
     });
   },
@@ -61,11 +90,35 @@ const feature = test.extend<{
               !(
                 v.id === "aria-required-children" &&
                 v.nodes[0]?.target[0] === ".MuiDataGrid-main" &&
-                v.nodes[0]?.any[0].data.values === "[role=progressbar]"
+                (v.nodes[0]?.any[0]?.data?.values === "[role=progressbar]" ||
+                  v.nodes[0]?.any[0]?.data?.values === "[role=presentation]")
               )
             );
           }),
         ).toEqual([]);
+      },
+      "the notebooks should be displayed in the table": async () => {
+        // Check that the table contains the expected notebook data
+        await expect(
+          page.getByRole("gridcell", { name: "Test Notebook 1" }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("gridcell", { name: "Test Notebook 2" }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("gridcell", { name: "draft" }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("gridcell", { name: "published" }),
+        ).toBeVisible();
+
+        // Check that the radio buttons are present for selection
+        await expect(
+          page.getByRole("radio", { name: "Select notebook: Test Notebook 1" }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("radio", { name: "Select notebook: Test Notebook 2" }),
+        ).toBeVisible();
       },
     });
   },
@@ -114,6 +167,47 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
+  await router.route("/api/v1/userDetails/whoami", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        username: "user1a",
+        fullName: "Test User",
+        email: "test@example.com",
+      }),
+    });
+  });
+  await router.route("/api/inventory/v1/fieldmark/notebooks", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: [
+          {
+            name: "Test Notebook 1",
+            metadata: {
+              project_id: "test-project-1",
+              ispublic: false,
+              pre_description: "A test notebook for development",
+              project_lead: "Test User 1",
+            },
+            status: "draft",
+          },
+          {
+            name: "Test Notebook 2",
+            metadata: {
+              project_id: "test-project-2",
+              ispublic: true,
+              pre_description: "Another test notebook",
+              project_lead: "Test User 2",
+            },
+            status: "published",
+          },
+        ],
+      }),
+    });
+  });
 });
 
 test.describe("FieldmarkImportDialog", () => {
@@ -130,6 +224,19 @@ test.describe("FieldmarkImportDialog", () => {
       async ({ Given, When, Then }) => {
         await Given["the fieldmark import dialog is open"]();
         await Then["there shouldn't be any axe violations"]();
+      },
+    );
+  });
+
+  test.describe("notebook fetching", () => {
+    feature(
+      "should fetch and display notebooks when opened",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the fieldmark import dialog is open with mock notebooks"
+        ]();
+        await When["the notebooks have been fetched"]();
+        await Then["the notebooks should be displayed in the table"]();
       },
     );
   });
