@@ -1,19 +1,13 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
-import {
-  ClosedFieldmarkImportDialog,
-  OpenFieldmarkImportDialog,
-} from "./FieldmarkImportDialog.story";
+import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 import AxeBuilder from "@axe-core/playwright";
 import * as Jwt from "jsonwebtoken";
+import { sleep } from "@/util/Util";
 
 const feature = test.extend<{
   Given: {
-    "the fieldmark import dialog is rendered but closed": () => Promise<void>;
-    "the fieldmark import dialog is open": () => Promise<void>;
-    "the fieldmark import dialog is open with mock notebooks": () => Promise<void>;
-    "the fieldmark import dialog is open with notebooks that have no identifier columns": () => Promise<void>;
-    "the fieldmark import dialog is open with notebooks that have identifier columns": () => Promise<void>;
+    "the fieldmark import dialog is mounted": () => Promise<void>;
   };
   When: {
     "the dialog is in the DOM": () => Promise<void>;
@@ -21,6 +15,7 @@ const feature = test.extend<{
     "the user selects a notebook and clicks import": () => Promise<void>;
     "the user selects a notebook with no identifier columns and clicks import": () => Promise<void>;
     "the user selects a notebook with identifier columns, selects an identifier column, and clicks import": () => Promise<void>;
+    "the user selects a notebook and clicks import for alert testing": () => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
@@ -28,28 +23,17 @@ const feature = test.extend<{
     "an import request should be made to the server with the correct notebook ID": () => void;
     "an import request should be made without an identifier column": () => void;
     "an import request should be made with the selected identifier column": () => void;
+    "an importing alert should be visible": () => Promise<void>;
+    "a success alert should be visible": () => Promise<void>;
+    "the import button should show loading state": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
   Given: async ({ mount, page }, use) => {
     await use({
-      "the fieldmark import dialog is rendered but closed": async () => {
-        await mount(<ClosedFieldmarkImportDialog />);
+      "the fieldmark import dialog is mounted": async () => {
+        await mount(<FieldmarkImportDialogStory />);
       },
-      "the fieldmark import dialog is open": async () => {
-        await mount(<OpenFieldmarkImportDialog />);
-      },
-      "the fieldmark import dialog is open with mock notebooks": async () => {
-        await mount(<OpenFieldmarkImportDialog />);
-      },
-      "the fieldmark import dialog is open with notebooks that have no identifier columns":
-        async () => {
-          await mount(<OpenFieldmarkImportDialog />);
-        },
-      "the fieldmark import dialog is open with notebooks that have identifier columns":
-        async () => {
-          await mount(<OpenFieldmarkImportDialog />);
-        },
     });
   },
   When: async ({ page }, use) => {
@@ -93,8 +77,14 @@ const feature = test.extend<{
           });
           await identifierSelect.click();
           await page.getByRole("option", { name: "sample_id" }).click();
-          const importButton = page.getByRole("button", { name: "Import" });
-          await importButton.click();
+          await page.getByRole("button", { name: "Import" }).click();
+        },
+      "the user selects a notebook and clicks import for alert testing":
+        async () => {
+          await page
+            .getByRole("radio", { name: "Select notebook: Test Notebook 1" })
+            .click();
+          await page.getByRole("button", { name: "Import" }).click();
         },
     });
   },
@@ -149,7 +139,6 @@ const feature = test.extend<{
           page.getByRole("gridcell", { name: "published" }),
         ).toBeVisible();
 
-        // Check that the radio buttons are present for selection
         await expect(
           page.getByRole("radio", { name: "Select notebook: Test Notebook 1" }),
         ).toBeVisible();
@@ -202,6 +191,21 @@ const feature = test.extend<{
           );
           expect(importRequest).toBeDefined();
         },
+      "an importing alert should be visible": async () => {
+        const alert = page.getByRole("alert");
+        await expect(alert).toBeVisible();
+        await expect(alert).toContainText("Importing notebook");
+        await expect(alert).toContainText("Test Notebook 1");
+      },
+      "a success alert should be visible": async () => {
+        const alert = page.getByRole("alert");
+        await expect(alert).toBeVisible();
+        await expect(alert).toContainText("Successfully imported notebook");
+      },
+      "the import button should show loading state": async () => {
+        const importButton = page.getByRole("button", { name: "Import" });
+        await expect(importButton).toBeDisabled();
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -333,7 +337,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route(
     "/api/inventory/v1/fieldmark/notebooks/igsn/test-project-1",
     async (route) => {
-      // Mock response with identifier fields as array
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -380,16 +383,9 @@ feature.afterEach(({ networkRequests }) => {
 test.describe("FieldmarkImportDialog", () => {
   test.describe("accessibility", () => {
     feature(
-      "should not have any accessibility issues when closed",
-      async ({ Given, When, Then }) => {
-        await Given["the fieldmark import dialog is rendered but closed"]();
-        await Then["there shouldn't be any axe violations"]();
-      },
-    );
-    feature(
       "should not have any accessibility issues when open",
       async ({ Given, When, Then }) => {
-        await Given["the fieldmark import dialog is open"]();
+        await Given["the fieldmark import dialog is mounted"]();
         await Then["there shouldn't be any axe violations"]();
       },
     );
@@ -399,9 +395,7 @@ test.describe("FieldmarkImportDialog", () => {
     feature(
       "should fetch and display notebooks when opened",
       async ({ Given, When, Then }) => {
-        await Given[
-          "the fieldmark import dialog is open with mock notebooks"
-        ]();
+        await Given["the fieldmark import dialog is mounted"]();
         await When["the notebooks have been fetched"]();
         await Then["the notebooks should be displayed in the table"]();
       },
@@ -412,9 +406,7 @@ test.describe("FieldmarkImportDialog", () => {
     feature(
       "should make an import request when a notebook is selected and imported",
       async ({ Given, When, Then }) => {
-        await Given[
-          "the fieldmark import dialog is open with mock notebooks"
-        ]();
+        await Given["the fieldmark import dialog is mounted"]();
         await When["the notebooks have been fetched"]();
         await When["the user selects a notebook and clicks import"]();
         Then[
@@ -426,9 +418,7 @@ test.describe("FieldmarkImportDialog", () => {
     feature(
       "should make an import request without identifier column when notebook has no identifier columns",
       async ({ Given, When, Then }) => {
-        await Given[
-          "the fieldmark import dialog is open with notebooks that have no identifier columns"
-        ]();
+        await Given["the fieldmark import dialog is mounted"]();
         await When["the notebooks have been fetched"]();
         await When[
           "the user selects a notebook with no identifier columns and clicks import"
@@ -440,9 +430,7 @@ test.describe("FieldmarkImportDialog", () => {
     feature(
       "should make an import request with selected identifier column when notebook has identifier columns",
       async ({ Given, When, Then }) => {
-        await Given[
-          "the fieldmark import dialog is open with notebooks that have identifier columns"
-        ]();
+        await Given["the fieldmark import dialog is mounted"]();
         await When["the notebooks have been fetched"]();
         await When[
           "the user selects a notebook with identifier columns, selects an identifier column, and clicks import"
@@ -450,6 +438,72 @@ test.describe("FieldmarkImportDialog", () => {
         Then[
           "an import request should be made with the selected identifier column"
         ]();
+      },
+    );
+
+    feature(
+      "should show importing alert during import process",
+      async ({ Given, When, Then, router }) => {
+        await router.route(
+          "/api/inventory/v1/import/fieldmark/notebook",
+          async (route) => {
+            // Add a longer delay to ensure importing alert is visible long enough for tests
+            await sleep(2500);
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                containerName: "Test Container from Test Notebook 1",
+                containerGlobalId: "CT123456",
+              }),
+            });
+          },
+        );
+        await Given["the fieldmark import dialog is mounted"]();
+        await When["the notebooks have been fetched"]();
+        await When[
+          "the user selects a notebook and clicks import for alert testing"
+        ]();
+        await Then["an importing alert should be visible"]();
+      },
+    );
+
+    feature(
+      "should show success alert after import completes",
+      async ({ Given, When, Then }) => {
+        await Given["the fieldmark import dialog is mounted"]();
+        await When["the notebooks have been fetched"]();
+        await When[
+          "the user selects a notebook and clicks import for alert testing"
+        ]();
+        await Then["a success alert should be visible"]();
+      },
+    );
+
+    feature(
+      "should show loading state on import button during import",
+      async ({ Given, When, Then, router }) => {
+        await router.route(
+          "/api/inventory/v1/import/fieldmark/notebook",
+          async (route) => {
+            // Add a longer delay to ensure importing alert is visible long enough for tests
+            await sleep(2500);
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                containerName: "Test Container from Test Notebook 1",
+                containerGlobalId: "CT123456",
+              }),
+            });
+          },
+        );
+        await Given["the fieldmark import dialog is mounted"]();
+        await When["the notebooks have been fetched"]();
+        await When[
+          "the user selects a notebook and clicks import for alert testing"
+        ]();
+        await Then["the import button should show loading state"]();
       },
     );
   });
