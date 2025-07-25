@@ -210,6 +210,15 @@ const feature = test.extend<{
         const alert = page.getByRole("alert");
         await expect(alert).toBeVisible();
         await expect(alert).toContainText("Successfully imported notebook");
+        await alert
+          .getByRole("button", { name: "1 sub-messages. Toggle to show" })
+          .click();
+        const subMessage = alert
+          .getByRole("alert")
+          .filter({ hasText: "Test Container from Test Notebook 1" });
+        const link = subMessage.getByRole("link", { name: "IC123456" });
+        await expect(link).toBeVisible();
+        expect(link).toHaveAttribute("href", "/globalId/IC123456");
       },
       "the import button should show loading state": async () => {
         const importButton = page.getByRole("button", { name: "Import" });
@@ -355,7 +364,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         contentType: "application/json",
         body: JSON.stringify({
           containerName: "Test Container from Test Notebook 1",
-          containerGlobalId: "CT123456",
+          containerGlobalId: "IC123456",
         }),
       });
     },
@@ -498,7 +507,7 @@ test.describe("FieldmarkImportDialog", () => {
               contentType: "application/json",
               body: JSON.stringify({
                 containerName: "Test Container from Test Notebook 1",
-                containerGlobalId: "CT123456",
+                containerGlobalId: "IC123456",
               }),
             });
           },
@@ -537,7 +546,7 @@ test.describe("FieldmarkImportDialog", () => {
               contentType: "application/json",
               body: JSON.stringify({
                 containerName: "Test Container from Test Notebook 1",
-                containerGlobalId: "CT123456",
+                containerGlobalId: "IC123456",
               }),
             });
           },
