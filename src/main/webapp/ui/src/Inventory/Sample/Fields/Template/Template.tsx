@@ -17,6 +17,9 @@ import IconButton from "@mui/material/IconButton";
 import Collapse from "@mui/material/Collapse";
 import Alert from "@mui/material/Alert";
 import { getErrorMessage } from "../../../../util/error";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Radio from "@mui/material/Radio";
+import { Stack } from "@mui/material";
 
 function Template(): React.ReactNode {
   const {
@@ -28,22 +31,68 @@ function Template(): React.ReactNode {
 
   const [open, setOpen] = useState(true);
 
-  const setTemplate = (t: TemplateModel) => {
-    activeResult.setTemplate(t).catch((error) => {
-      uiStore.addAlert(
-        mkAlert({
-          title: "Could not fetch template details.",
-          message: getErrorMessage(error, "Unknown reason."),
-          variant: "error",
-        })
-      );
-      console.error("Could not set template", error);
-    });
-  };
+  const setTemplate = React.useCallback(
+    (t: TemplateModel | null) => {
+      activeResult.setTemplate(t).catch((error) => {
+        uiStore.addAlert(
+          mkAlert({
+            title: "Could not fetch template details.",
+            message: getErrorMessage(error, "Unknown reason."),
+            variant: "error",
+          }),
+        );
+        console.error("Could not set template", error);
+      });
+    },
+    [activeResult, uiStore],
+  );
 
   const template = activeResult.template;
   if (!(template === null || template instanceof TemplateModel))
     throw new Error("Template is not a TemplateModel");
+  if (!activeResult.id)
+    return (
+      <>
+        <InputWrapper
+          label="Sample Template"
+          dataTestId="ChooseTemplate"
+          explanation={
+            activeResult.isFieldEditable("template") ? (
+              <>
+                If you select a sample template below, initial metadata and
+                custom fields will be automatically generated.
+                <a
+                  href={docLinks.createTemplate}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  (Learn more about sample templates)
+                </a>
+              </>
+            ) : null
+          }
+        >
+          <Stack flexWrap="nowrap">
+            <FormControlLabel
+              value="no-template"
+              control={<Radio checked={template === null} />}
+              label="No template"
+              onClick={() => {
+                setTemplate(null);
+              }}
+              sx={{ mb: 2, mt: 1 }}
+            />
+            {activeResult.isFieldEditable("template") && (
+              <TemplatePicker
+                disabled={!activeResult.isFieldEditable("template")}
+                setTemplate={setTemplate}
+                sample={activeResult}
+              />
+            )}
+          </Stack>
+        </InputWrapper>
+      </>
+    );
   return (
     <>
       <InputWrapper
@@ -123,6 +172,7 @@ function Template(): React.ReactNode {
             <TemplatePicker
               disabled={!activeResult.isFieldEditable("template")}
               setTemplate={setTemplate}
+              sample={activeResult}
             />
           </Collapse>
         </>

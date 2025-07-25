@@ -318,7 +318,7 @@ export default class SampleModel
   populateFromJson(
     factory: Factory,
     passedParams: object,
-    defaultParams: object = {}
+    defaultParams: object = {},
   ) {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = {
@@ -394,7 +394,7 @@ export default class SampleModel
               .searchStore.getTemplate(
                 templateId,
                 this.templateVersion,
-                this.factory.newFactory()
+                this.factory.newFactory(),
               )
               .then((template) => {
                 runInAction(() => {
@@ -504,10 +504,10 @@ export default class SampleModel
    */
   async saveFieldAttachments(
     newResultGlobalId?: GlobalId,
-    newFields?: Array<Field>
+    newFields?: Array<Field>,
   ): Promise<void> {
     const findGlobalIdOfField = (
-      attachment: Attachment
+      attachment: Attachment,
     ): GlobalId | null | undefined => {
       const field = this.fields.find((f) => f.attachment === attachment);
       if (!field) throw new Error("Could not find field");
@@ -520,8 +520,8 @@ export default class SampleModel
         .filter((f) => Boolean(f.attachment))
         // handle removal of correct field attachment
         .map((f) =>
-          f.attachment?.removed ? f.originalAttachment : f.attachment
-        )
+          f.attachment?.removed ? f.originalAttachment : f.attachment,
+        ),
     );
 
     await Promise.all(
@@ -529,10 +529,10 @@ export default class SampleModel
         const g = findGlobalIdOfField(attachment);
         if (!g)
           return Promise.reject(
-            new Error("Could not find Global Id for a field")
+            new Error("Could not find Global Id for a field"),
           );
         return attachment.save(g);
-      })
+      }),
     );
   }
 
@@ -545,7 +545,7 @@ export default class SampleModel
         this.setEditable(FIELDS, true);
         this.setEditable(
           new Set(["template", "quantity", "subSamplesCount"]),
-          false
+          false,
         );
         this.setVisible(new Set(["quantity", "template", "subsamples"]), false);
         this.setEditableExtraFields(this.extraFields, true);
@@ -574,7 +574,7 @@ export default class SampleModel
 
   overrideTemp(
     min: { numericValue: number; unitId: number } | null,
-    max: { numericValue: number; unitId: number } | null
+    max: { numericValue: number; unitId: number } | null,
   ) {
     if (!min || !max) return;
 
@@ -601,14 +601,32 @@ export default class SampleModel
     }
   }
 
-  async setTemplate(template: Template): Promise<void> {
-    await template.fetchAdditionalInfo();
+  async setTemplate(template: Template | null): Promise<void> {
+    if (template) await template.fetchAdditionalInfo();
 
     this.setAttributes({
       template,
-      templateId: template.id,
-      templateVersion: template.version,
+      templateId: template?.id,
+      templateVersion: template?.version,
     });
+
+    if (!template) {
+      this.overrideName(DEFAULT_SAMPLE.name);
+      this.overrideTemp(
+        DEFAULT_SAMPLE.storageTempMin,
+        DEFAULT_SAMPLE.storageTempMax,
+      );
+      this.overrideFields([]);
+      this.overrideSource(DEFAULT_SAMPLE.sampleSource);
+      this.setAttributes({
+        quantity: DEFAULT_SAMPLE.quantity,
+        subSampleAlias: DEFAULT_SAMPLE.subSampleAlias,
+        expiryDate: DEFAULT_SAMPLE.expiryDate,
+        description: DEFAULT_SAMPLE.description,
+        tags: [],
+      });
+      return;
+    }
 
     if (!this.id) {
       // Make sure we don't trigger dirty: true with the following overrides
@@ -672,7 +690,7 @@ export default class SampleModel
       .flatMap(({ numericValue }) => Parsers.isNumber(numericValue))
       .mapError(() => new Error("Quantity is invalid."))
       .flatMap((value) =>
-        value < 0 ? IsInvalid("Quantity must be a positive value.") : IsValid()
+        value < 0 ? IsInvalid("Quantity must be a positive value.") : IsValid(),
       );
   }
 
@@ -701,7 +719,7 @@ export default class SampleModel
         Parsers.isNotBottom(this.expiryDate)
           .flatMap(Parsers.parseDate)
           .mapError(() => new Error("Invalid expiry date."))
-          .map(() => null)
+          .map(() => null),
       );
     };
 
@@ -711,10 +729,10 @@ export default class SampleModel
       validateFields(),
       this.validateQuantity(),
       validateTemperature(this.storageTempMin).mapError(
-        () => new Error("Minimum temperature is invalid.")
+        () => new Error("Minimum temperature is invalid."),
       ),
       validateTemperature(this.storageTempMax).mapError(
-        () => new Error("Maximum temperature is invalid.")
+        () => new Error("Maximum temperature is invalid."),
       ),
       validateExpiryDate(),
     ]);
@@ -733,13 +751,13 @@ export default class SampleModel
     try {
       await ApiService.post<void>(
         `samples/${this.id}/actions/updateToLatestTemplateVersion`,
-        {}
+        {},
       );
       getRootStore().uiStore.addAlert(
         mkAlert({
           message: "Sample updated to latest template successfully.",
           variant: "success",
-        })
+        }),
       );
       await this.fetchAdditionalInfo();
     } catch (error) {
@@ -748,7 +766,7 @@ export default class SampleModel
           title: "Updating sample to latest template failed.",
           message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
-        })
+        }),
       );
       console.error("Could not update template to latest", error);
     }
@@ -760,7 +778,7 @@ export default class SampleModel
 
   contextMenuDisabled(): string | null {
     const searchShowsSelection = new Set(["LIST", "GRID", "IMAGE"]).has(
-      this.search.searchView
+      this.search.searchView,
     );
     return (
       super.contextMenuDisabled() ??
@@ -837,7 +855,7 @@ export default class SampleModel
       { ...super.recordDetails },
       {
         quantity: this.quantityLabel,
-      }
+      },
     );
   }
 
@@ -999,11 +1017,11 @@ export default class SampleModel
         onSubmit: () => {
           if (this.subSamples.length !== 1)
             throw new Error(
-              "Can only split samples when there is one subsample"
+              "Can only split samples when there is one subsample",
             );
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this.subSamples[0] as SubSample
+            this.subSamples[0] as SubSample,
           );
         },
       },
@@ -1054,8 +1072,8 @@ export default class SampleModel
             new RsSet(
               this.createOptionsParametersState.fields.copyFieldContent
                 .filter(({ selected }) => selected)
-                .map(({ id }) => id)
-            )
+                .map(({ id }) => id),
+            ),
           );
         },
       },
@@ -1090,7 +1108,7 @@ export class SampleCollection
       this.records.map((s) => ({
         min: s.storageTempMin,
         max: s.storageTempMax,
-      }))
+      })),
     );
     return (
       !allTemperaturesUnspecified &&
@@ -1111,10 +1129,10 @@ export class SampleCollection
      * temperature range as sets define quality using `===`.
      */
     const currentStorageTemperatureMin = new RsSet(
-      this.records.map((r) => r.storageTempMin)
+      this.records.map((r) => r.storageTempMin),
     );
     const currentStorageTemperatureMax = new RsSet(
-      this.records.map((r) => r.storageTempMax)
+      this.records.map((r) => r.storageTempMax),
     );
 
     return {

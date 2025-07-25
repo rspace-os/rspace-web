@@ -16,6 +16,7 @@ import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { UserCancelledAction } from "../../../util/error";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
+import { Radio } from "@mui/material";
 
 type ResultRowArgs = {
   result: InventoryRecord;
@@ -50,7 +51,8 @@ function ResultRow({
     search,
     scopedResult,
   } = useContext(SearchContext);
-  const multiselect = search.uiConfig.selectionMode === "MULTIPLE";
+  const multiSelect = search.uiConfig.selectionMode === "MULTIPLE";
+  const singleSelect = search.uiConfig.selectionMode === "SINGLE";
   const noSelection = search.uiConfig.selectionMode === "NONE";
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
@@ -105,7 +107,7 @@ function ResultRow({
       tabIndex={-1}
       className={clsx(
         classes.tableRow,
-        search.alwaysFilterOut(result) && globalClasses.greyOut
+        search.alwaysFilterOut(result) && globalClasses.greyOut,
       )}
       onClick={match<void, () => void>([
         [() => noSelection, () => {}],
@@ -115,19 +117,32 @@ function ResultRow({
       selected={Boolean(
         search.activeResult &&
           result.globalId === search.activeResult.globalId &&
-          search.uiConfig.highlightActiveResult
+          search.uiConfig.highlightActiveResult,
       )}
     >
-      {multiselect && (
+      {multiSelect && (
         <TableCell scope="row" align="left" className={classes.checkbox}>
           <Checkbox
             checked={result.selected}
             onChange={() => result.toggleSelected()}
             onClick={(e) => e.stopPropagation()}
-            color="default"
-            name="Select result item"
+            name={`Select result ${result.globalId}`}
             inputProps={{ "aria-label": "Select result item" }}
             className={classes.defaultCursor}
+          />
+        </TableCell>
+      )}
+      {singleSelect && (
+        <TableCell scope="row" align="left" className={classes.checkbox}>
+          <Radio
+            checked={Boolean(
+              search.activeResult &&
+                result.globalId === search.activeResult.globalId,
+            )}
+            onChange={() => activateResult()}
+            onClick={(e) => e.stopPropagation()}
+            name={`Select result ${result.globalId}`}
+            inputProps={{ "aria-label": "Select result item" }}
           />
         </TableCell>
       )}
