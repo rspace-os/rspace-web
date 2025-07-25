@@ -95,7 +95,8 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
                 createBuilderForInventoryGet(
                     API_VERSION.ONE,
                     apiKey,
-                    "fieldmark/notebooks/igsn/" + IMPORT_REQUEST.getNotebookId(),
+                    "fieldmark/notebooks/igsnCandidateFields?notebookId="
+                        + IMPORT_REQUEST.getNotebookId(),
                     user))
             .andExpect(status().isOk())
             .andReturn();

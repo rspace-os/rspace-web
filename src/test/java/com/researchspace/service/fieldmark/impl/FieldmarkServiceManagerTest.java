@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -254,7 +255,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
     verify(sampleApiMgr).createNewApiSample(any(), any());
     verify(sampleApiMgr).assertUserCanEditSampleField(any(), any());
 
-    verify(apiHandler).assertInventoryAndDataciteEnabled(goodUser);
+    verify(apiHandler, times(2)).assertInventoryAndDataciteEnabled(goodUser);
     verify(inventoryIdentifierApiManager)
         .findIdentifiers("draft", false, IDENTIFIER_VALUE, false, goodUser);
     verify(inventoryFileManager)
