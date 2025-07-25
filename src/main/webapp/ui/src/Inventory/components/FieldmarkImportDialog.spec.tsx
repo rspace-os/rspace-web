@@ -16,6 +16,7 @@ const feature = test.extend<{
     "the user selects a notebook with no identifier columns and clicks import": () => Promise<void>;
     "the user selects a notebook with identifier columns, selects an identifier column, and clicks import": () => Promise<void>;
     "the user selects a notebook and clicks import for alert testing": () => Promise<void>;
+    "the user selects a notebook that will trigger IGSN error": () => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
@@ -26,6 +27,7 @@ const feature = test.extend<{
     "an importing alert should be visible": () => Promise<void>;
     "a success alert should be visible": () => Promise<void>;
     "the import button should show loading state": () => Promise<void>;
+    "the IGSN message should be displayed": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -86,6 +88,13 @@ const feature = test.extend<{
             .click();
           await page.getByRole("button", { name: "Import" }).click();
         },
+      "the user selects a notebook that will trigger IGSN error": async () => {
+        await page
+          .getByRole("radio", {
+            name: "Select notebook: Notebook IGSN Error",
+          })
+          .click();
+      },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -206,6 +215,13 @@ const feature = test.extend<{
         const importButton = page.getByRole("button", { name: "Import" });
         await expect(importButton).toBeDisabled();
       },
+      "the IGSN message should be displayed": async () => {
+        await expect(
+          page.getByText(
+            "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark.",
+          ),
+        ).toBeVisible();
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -318,6 +334,16 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
           },
           status: "draft",
         },
+        {
+          name: "Notebook IGSN Error",
+          metadata: {
+            project_id: "test-project-igsn-error",
+            ispublic: false,
+            pre_description: "A notebook that triggers IGSN error",
+            project_lead: "Test User 5",
+          },
+          status: "draft",
+        },
       ]),
     });
   });
@@ -371,6 +397,24 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(["sample_id", "batch_id"]),
+      });
+    },
+  );
+  await router.route(
+    "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-igsn-error",
+    async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            validationErrors: [
+              {
+                message: "IGSN integration is not enabled",
+              },
+            ],
+          },
+        }),
       });
     },
   );
@@ -504,6 +548,18 @@ test.describe("FieldmarkImportDialog", () => {
           "the user selects a notebook and clicks import for alert testing"
         ]();
         await Then["the import button should show loading state"]();
+      },
+    );
+
+    feature(
+      "should display IGSN message when igsnCandidateFields endpoint returns IGSN error",
+      async ({ Given, When, Then }) => {
+        await Given["the fieldmark import dialog is mounted"]();
+        await When["the notebooks have been fetched"]();
+        await When[
+          "the user selects a notebook that will trigger IGSN error"
+        ]();
+        await Then["the IGSN message should be displayed"]();
       },
     );
   });

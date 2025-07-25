@@ -174,6 +174,7 @@ export default function FieldmarkImportDialog({
     React.useState(false);
   const [identifierFields, setIdentifierFields] =
     React.useState<ReadonlyArray<string> | null>(null);
+  const [showIgsnMessage, setShowIgsnMessage] = React.useState(false);
 
   type IdentifierFieldSelection =
     | { type: "unselected" }
@@ -295,6 +296,7 @@ export default function FieldmarkImportDialog({
     setFetchingIdentifierFields(true);
     setIdentifierFields(null);
     setIdentifierFieldSelection({ type: "unselected" });
+    setShowIgsnMessage(false);
     try {
       const { data } = await axios.get(
         "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=" +
@@ -312,9 +314,27 @@ export default function FieldmarkImportDialog({
           )
           .elseThrow(),
       );
-    } catch (e) {
-      console.error(e);
+    } catch (error: unknown) {
+      console.error(error);
       setIdentifierFields([]);
+      setShowIgsnMessage(
+        Parsers.objectPath(
+          ["response", "data", "data", "validationErrors"],
+          error,
+        )
+          .flatMap(Parsers.isArray)
+          .map((validationErrors) =>
+            validationErrors.some((validationError) =>
+              Parsers.objectPath(["message"], validationError)
+                .flatMap(Parsers.isString)
+                .map((message) =>
+                  /IGSN integration is not enabled/.test(message),
+                )
+                .orElse(false),
+            ),
+          )
+          .orElse(false),
+      );
     } finally {
       setFetchingIdentifierFields(false);
     }
@@ -513,6 +533,16 @@ export default function FieldmarkImportDialog({
             <Grid item>
               {selectedNotebook && (
                 <>
+                  {showIgsnMessage && (
+                    <Typography variant="body2" sx={{ ml: 0.5 }}>
+                      RSpace can link pre-registered IGSN IDs with samples
+                      imported by Fieldmark. This feature requires the{" "}
+                      <Link href={docLinks.IGSNIdentifiers}>
+                        DataCite IGSN ID integration
+                      </Link>{" "}
+                      to be enabled.
+                    </Typography>
+                  )}
                   {fetchingIdentifierFields ? (
                     <Box
                       sx={{
