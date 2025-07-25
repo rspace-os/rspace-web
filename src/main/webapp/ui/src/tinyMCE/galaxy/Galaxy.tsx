@@ -93,6 +93,10 @@ function Galaxy({
   useEffect(() => {
     void  setAttachedFiles(attachedFileInfo);
   }, []);
+  /**
+   * If tinymce event calls upload code directly, blocking modal does not wait for full upload before it closes.
+   * Having tinymce event set a react state which then triggers the upload code resolves this issue.
+   */
   useEffect(() => {
     async function doTheUpload () {
       if (doUpload) {
@@ -186,8 +190,7 @@ function Galaxy({
               )}
               <Modal
                   open={uploading}
-                  aria-labelledby="uploading data to galaxy is in progress"
-                  aria-describedby="The UI will be blocked until the upload to Galaxy is complete"
+                  aria-label="Please wait, uploading data to galaxy is in progress"
                   title={'Galaxy Upload In Progress'}
               >
                 <Grid

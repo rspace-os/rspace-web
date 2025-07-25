@@ -204,7 +204,6 @@ function CardListing({
         integrationStates.GALAXY = await update("GALAXY", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
     [update, integrationStates.GALAXY]
   );
 
