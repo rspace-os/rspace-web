@@ -392,7 +392,7 @@ export default class InventoryBaseRecord
   populateFromJson(
     factory: Factory,
     passedParams: object,
-    defaultParams: object = {}
+    defaultParams: object = {},
   ): void {
     const params = { ...defaultParams, ...passedParams } as ResultAttrs;
     this.id = params.id;
@@ -401,7 +401,7 @@ export default class InventoryBaseRecord
     this.name = params.name;
     this.description = params.description;
     this.extraFields = (params.extraFields ?? []).map(
-      (efParams) => new ExtraFieldModel(efParams, this)
+      (efParams) => new ExtraFieldModel(efParams, this),
     );
     this.tags =
       params.tags === null || params.tags === ""
@@ -429,8 +429,8 @@ export default class InventoryBaseRecord
     this.permittedActions = new Set(params.permittedActions);
     this.attachments = (params.attachments ?? []).map((a) =>
       newExistingAttachment(a, this.permalinkURL, () =>
-        this.setAttributesDirty({})
-      )
+        this.setAttributesDirty({}),
+      ),
     );
     this.iconId = params.iconId;
     this.sharingMode = params.sharingMode;
@@ -479,7 +479,7 @@ export default class InventoryBaseRecord
    */
   processLinks(_links: Array<_LINK>): void {
     this._links = Object.fromEntries(
-      _links.map(({ link, rel }) => [rel, link])
+      _links.map(({ link, rel }) => [rel, link]),
     );
   }
 
@@ -494,7 +494,7 @@ export default class InventoryBaseRecord
   setDirtyFlag() {
     getRootStore().uiStore.setPageNavigationConfirmation(true);
     getRootStore().uiStore.setDirty(async () => {
-      if (this.id) await this.setEditing(false);
+      if (this.id && this.state === "edit") await this.setEditing(false);
       else this.unsetDirtyFlag();
     });
   }
@@ -601,7 +601,7 @@ export default class InventoryBaseRecord
     if (this.currentlyEditableFields.has("barcodes"))
       params.barcodes = ArrayUtils.filterClass(
         PersistedBarcode,
-        this.barcodes
+        this.barcodes,
       ).map((b) => b.paramsForBackend);
     if (this.currentlyEditableFields.has("identifiers"))
       params.identifiers = this.identifiers.map((i) => i.toJson());
@@ -679,8 +679,8 @@ export default class InventoryBaseRecord
     return this.permittedActions.has("READ")
       ? "full"
       : this.permittedActions.has("LIMITED_READ")
-      ? "limited"
-      : "public";
+        ? "limited"
+        : "public";
   }
 
   async expiryCheck() {
@@ -699,7 +699,7 @@ export default class InventoryBaseRecord
             to continue editing this {this.recordTypeLabel.toLowerCase()}. If
             you cancel, your unsaved changes will be lost.
           </>,
-          "CONTINUE"
+          "CONTINUE",
         ))
       ) {
         /*
@@ -710,9 +710,12 @@ export default class InventoryBaseRecord
         const recentBatchEditExpiryCheck = uiStore.recentBatchEditExpiryCheck;
         uiStore.recentBatchEditExpiryCheck = true;
         if (recentBatchEditExpiryCheck === null) {
-          setTimeout(() => {
-            uiStore.recentBatchEditExpiryCheck = null;
-          }, 4 * 60 * 1000);
+          setTimeout(
+            () => {
+              uiStore.recentBatchEditExpiryCheck = null;
+            },
+            4 * 60 * 1000,
+          );
         }
 
         runInAction(() => {
@@ -744,7 +747,7 @@ export default class InventoryBaseRecord
           <strong>Cancel</strong>.
         </>,
         "OK",
-        ""
+        "",
       );
     }
   }
@@ -752,12 +755,12 @@ export default class InventoryBaseRecord
   handleLockExpiry(remainingSeconds: number) {
     if (remainingSeconds) {
       this.lockExpiry = new Date(
-        this.lastEditInput.getTime() + remainingSeconds * 1000
+        this.lastEditInput.getTime() + remainingSeconds * 1000,
       );
       void this.expiryCheck();
       this.expiryCheckInterval = setInterval(
         () => void this.expiryCheck(),
-        5000
+        5000,
       );
     } else {
       clearInterval(this.expiryCheckInterval);
@@ -778,7 +781,7 @@ export default class InventoryBaseRecord
       if (!this.globalId) throw new Error("globalId is required.");
       const response = await ApiService.delete<void>(
         `editLocks/${this.globalId}`,
-        ""
+        "",
       );
       return response.status === 200;
     } catch (error) {
@@ -790,16 +793,16 @@ export default class InventoryBaseRecord
             } failed`,
             message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
-          })
+          }),
         );
       }
       console.error(
         `Error relinquishing control of ${this.globalId ?? "UNKNOWN"}`,
-        error
+        error,
       );
       throw new Error(
         `Error relinquishing control of ${this.globalId ?? "UNKNOWN"}`,
-        { cause: error }
+        { cause: error },
       );
     }
   }
@@ -826,7 +829,7 @@ export default class InventoryBaseRecord
             title: `Something went wrong while checking the lock for "${this.name}"`,
             message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
-          })
+          }),
         );
       }
 
@@ -843,7 +846,7 @@ export default class InventoryBaseRecord
   async setEditing(
     value: boolean,
     refresh?: boolean | null,
-    silent?: boolean | null
+    silent?: boolean | null,
   ): Promise<LockStatus> {
     refresh = refresh ?? true;
     silent = silent ?? false;
@@ -883,7 +886,7 @@ export default class InventoryBaseRecord
                     "editing here could result in an error.",
                   variant: "warning",
                   isInfinite: true,
-                })
+                }),
               );
             }
             runInAction(() => {
@@ -985,7 +988,7 @@ export default class InventoryBaseRecord
      * than comparing IDs.
      */
     const parentLocation = locations.find(
-      ({ content }) => (content as InventoryBaseRecord | null) === this
+      ({ content }) => (content as InventoryBaseRecord | null) === this,
     );
 
     // this check is necessary to avoid stack overflow
@@ -996,7 +999,7 @@ export default class InventoryBaseRecord
 
   async fetchAdditionalInfo(
     silent: boolean = false,
-    queryParameters: URLSearchParams = new URLSearchParams()
+    queryParameters: URLSearchParams = new URLSearchParams(),
   ): Promise<void> {
     if (this.fetchingAdditionalInfo || !this.id) {
       if (this.fetchingAdditionalInfo === null) return;
@@ -1009,7 +1012,7 @@ export default class InventoryBaseRecord
     try {
       this.fetchingAdditionalInfo = ApiService.query<object>(
         `${this.recordType}s/${id}`,
-        new URLSearchParams(queryParameters)
+        new URLSearchParams(queryParameters),
       );
       const { data } = await this.fetchingAdditionalInfo;
       this.fetchingAdditionalInfo = null;
@@ -1029,16 +1032,16 @@ export default class InventoryBaseRecord
             }.`,
             message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
-          })
+          }),
         );
       }
       console.error(
         `Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`,
-        error
+        error,
       );
       throw new Error(
         `Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`,
-        { cause: error }
+        { cause: error },
       );
     } finally {
       this.setLoading(false);
@@ -1063,7 +1066,7 @@ export default class InventoryBaseRecord
             uploadProgress: progressEvent.total
               ? calculateUploadProgress(
                   progressEvent.loaded,
-                  progressEvent.total
+                  progressEvent.total,
                 )
               : 0,
           }),
@@ -1082,7 +1085,7 @@ export default class InventoryBaseRecord
             title: "Could not save changes to attachments.",
             message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
-          })
+          }),
         );
       }
       // copy over attachments as data from first POST doesn't have them
@@ -1093,11 +1096,11 @@ export default class InventoryBaseRecord
         mkAlert({
           message: `${this.name} was successfully created.`,
           variant: "success",
-        })
+        }),
       );
       trackingStore.trackEvent(
         "InventoryRecordCreated",
-        this.dataAttachedToRecordCreatedAnaylticsEvent
+        this.dataAttachedToRecordCreatedAnaylticsEvent,
       );
       if (peopleStore.currentUser) await peopleStore.currentUser.getBench();
     } catch (error) {
@@ -1112,7 +1115,7 @@ export default class InventoryBaseRecord
           if (statusCode !== 400) throw new Error("Not a 400 status code");
           const validationErrors = Parsers.objectPath(
             ["data", "data", "validationErrors"],
-            response
+            response,
           )
             .flatMap(Parsers.isArray)
             .elseThrow();
@@ -1134,17 +1137,17 @@ export default class InventoryBaseRecord
                       variant: "error",
                     }))(
                       Parsers.getValueWithKey("field")(obj).flatMap(
-                        Parsers.isString
+                        Parsers.isString,
                       ),
                       Parsers.getValueWithKey("message")(obj).flatMap(
-                        Parsers.isString
-                      )
-                    )
-                  )
-              )
+                        Parsers.isString,
+                      ),
+                    ),
+                  ),
+              ),
             )
               .mapError(
-                () => new Error("Could not parse any validation errors")
+                () => new Error("Could not parse any validation errors"),
               )
               .elseThrow(),
             retryFunction: () => this.update().then(() => {}),
@@ -1157,7 +1160,7 @@ export default class InventoryBaseRecord
               title: `Something went wrong and the ${this.recordType} was not saved.`,
               message: getErrorMessage(error, "Unknown reason."),
               variant: "error",
-            })
+            }),
           );
           if (error instanceof Error) {
             console.error(error.message);
@@ -1196,11 +1199,11 @@ export default class InventoryBaseRecord
               uploadProgress: progressEvent.total
                 ? calculateUploadProgress(
                     progressEvent.loaded,
-                    progressEvent.total
+                    progressEvent.total,
                   )
                 : 0,
             }),
-        }
+        },
       );
       try {
         await this.saveAttachments();
@@ -1210,7 +1213,7 @@ export default class InventoryBaseRecord
             title: "Could not save changes to attachments.",
             message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
-          })
+          }),
         );
       }
       this.populateFromJson(this.factory.newFactory(), data as object);
@@ -1220,7 +1223,7 @@ export default class InventoryBaseRecord
         mkAlert({
           message: `${this.name} updated successfully.`,
           variant: "success",
-        })
+        }),
       );
     } catch (error) {
       this.setAttributes({
@@ -1234,7 +1237,7 @@ export default class InventoryBaseRecord
           if (statusCode !== 400) throw new Error("Not a 400 status code");
           const validationErrors = Parsers.objectPath(
             ["data", "data", "validationErrors"],
-            response
+            response,
           )
             .flatMap(Parsers.isArray)
             .elseThrow();
@@ -1256,17 +1259,17 @@ export default class InventoryBaseRecord
                       variant: "error",
                     }))(
                       Parsers.getValueWithKey("field")(obj).flatMap(
-                        Parsers.isString
+                        Parsers.isString,
                       ),
                       Parsers.getValueWithKey("message")(obj).flatMap(
-                        Parsers.isString
-                      )
-                    )
-                  )
-              )
+                        Parsers.isString,
+                      ),
+                    ),
+                  ),
+              ),
             )
               .mapError(
-                () => new Error("Could not parse any validation errors")
+                () => new Error("Could not parse any validation errors"),
               )
               .elseThrow(),
             retryFunction: () => this.update().then(() => {}),
@@ -1279,7 +1282,7 @@ export default class InventoryBaseRecord
               title: `Something went wrong and the ${this.recordType} was not saved.`,
               message: getErrorMessage(error, "Unknown reason."),
               variant: "error",
-            })
+            }),
           );
           if (error instanceof Error) {
             console.error(error.message);
@@ -1370,7 +1373,7 @@ export default class InventoryBaseRecord
             newFieldRequest: true,
             initial: true,
           },
-          this
+          this,
         ),
       ],
     });
@@ -1390,7 +1393,7 @@ export default class InventoryBaseRecord
 
   updateExtraField(
     oldFieldName: string,
-    updatedField: { name: string; type: string }
+    updatedField: { name: string; type: string },
   ) {
     const field = this.extraFields.find((ef) => ef.name === oldFieldName);
 
@@ -1404,7 +1407,7 @@ export default class InventoryBaseRecord
       const justNameAndType = pick("name", "type");
       const areEqual = sameKeysAndValues(
         justNameAndType(field),
-        justNameAndType(updatedField)
+        justNameAndType(updatedField),
       );
       if (areEqual) {
         field.setAttributes(attrs);
@@ -1425,7 +1428,7 @@ export default class InventoryBaseRecord
             metadata will be made public at this stage.
           </>,
           "OK",
-          "CANCEL"
+          "CANCEL",
         )
       ) {
         const globalId = this.globalId;
@@ -1434,12 +1437,12 @@ export default class InventoryBaseRecord
           `/identifiers`,
           {
             parentGlobalId: globalId,
-          }
+          },
         );
         const newIGSN = new IdentifierModel(
           response.data,
           globalId,
-          ApiService
+          ApiService,
         );
         this.identifiers = this.identifiers.concat(newIGSN);
         getRootStore().searchStore.search.replaceResult(this);
@@ -1447,7 +1450,7 @@ export default class InventoryBaseRecord
           mkAlert({
             message: `Identifier ${response.data.doi} created.`,
             variant: "success",
-          })
+          }),
         );
       }
     } catch (error) {
@@ -1457,10 +1460,10 @@ export default class InventoryBaseRecord
           title: `The Identifier could not be created.`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       throw new Error(
-        `An error occurred while minting the identifier: ${error}`
+        `An error occurred while minting the identifier: ${error}`,
       );
     } finally {
       this.setLoading(false);
@@ -1478,24 +1481,24 @@ export default class InventoryBaseRecord
             IGSN ID associated with it. Do you want to proceed?
           </>,
           "OK",
-          "CANCEL"
+          "CANCEL",
         )
       ) {
         if (!id) throw new Error("DOI Id must be known.");
         const response = await ApiService.delete<unknown>(
           `/identifiers/${id}`,
-          ""
+          "",
         );
         if (response.data) {
           const index = this.identifiers.findIndex(
-            (identifier) => identifier.id === id
+            (identifier) => identifier.id === id,
           );
           this.identifiers.splice(index, 1);
           getRootStore().uiStore.addAlert(
             mkAlert({
               message: `Identifier draft deleted.`,
               variant: "success",
-            })
+            }),
           );
         }
       }
@@ -1505,10 +1508,10 @@ export default class InventoryBaseRecord
           title: `The Identifier draft could not be deleted.`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       throw new Error(
-        `An error occurred while deleting the identifier draft: ${error}`
+        `An error occurred while deleting the identifier draft: ${error}`,
       );
     } finally {
       this.setLoading(false);
@@ -1521,7 +1524,7 @@ export default class InventoryBaseRecord
   }
 
   fetchImage(
-    name: "image" | "locationsImage" | "thumbnail"
+    name: "image" | "locationsImage" | "thumbnail",
   ): Promise<BlobUrl | null> {
     const link = this._links[name];
     if (!link) return Promise.resolve(null);
@@ -1532,13 +1535,13 @@ export default class InventoryBaseRecord
           // @ts-expect-error locationsImage is container-specific
           this[name] = blobUrl;
           return null;
-        })
+        }),
       );
   }
 
   setImage(
     imageName: "image" | "locationsImage",
-    canvasId: string
+    canvasId: string,
   ): ({ dataURL, file }: { dataURL: string; file: Blob }) => Promise<void> {
     return async ({ dataURL, file }: { dataURL: string; file: Blob }) => {
       const scaledImage = await capImageAt1MB(file, dataURL, canvasId);

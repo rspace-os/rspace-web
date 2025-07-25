@@ -4,19 +4,23 @@ import NoValue from "../../components/NoValue";
 import DOMPurify from "dompurify";
 
 export type TextFieldArgs = {
-  // required
   value: string;
-
-  // optional
   disabled?: boolean;
   name?: string;
   noValueLabel?: string | null;
-  onChange?: (event: { target: { name: string; value: string } }) => void;
   variant?: "filled" | "outlined" | "standard";
   id?: string;
+
+  /**
+   * This fires both when the user type in the field and when the `value` prop changes.
+   */
+  onChange?: (event: { target: { name: string; value: string } }) => void;
 };
 
-export default function TextField({ onChange, ...props }: TextFieldArgs): React.ReactNode {
+export default function TextField({
+  onChange,
+  ...props
+}: TextFieldArgs): React.ReactNode {
   const handleEditorChange = (content: string) => {
     const e = {
       target: {
