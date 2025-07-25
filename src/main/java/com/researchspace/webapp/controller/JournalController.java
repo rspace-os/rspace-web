@@ -185,11 +185,15 @@ public class JournalController extends BaseController {
   private static final String LIST_OF_MATERIALS_DIV =
       "<div class='invMaterialsListing' data-field-id='%d'></div>";
 
+  private static final String EXTERNAL_WORKFLOWS_DIV =
+      "<div class='ext-workflows-textfield' data-field-id='%d' data-document-id='%d'></div>";
+
   /* Creates html string containing all the named fields and contents. Escapes content of non-text fields. */
   protected String prepareStructuredDocumentContent(StructuredDocument doc) {
     StringBuffer buffer = new StringBuffer();
     List<Field> allFields = doc.getFields();
     Boolean inventoryEnabled = null;
+    Boolean galaxyEnabled = null;
     for (Field field : allFields) {
       if (!doc.isBasicDocument()) {
         buffer.append("<h2 class='formTitles'>" + field.getName() + "</h2>");
@@ -202,6 +206,12 @@ public class JournalController extends BaseController {
         }
         if (inventoryEnabled) {
           buffer.append(String.format(LIST_OF_MATERIALS_DIV, field.getId()));
+        }
+        if (galaxyEnabled == null) {
+          galaxyEnabled = sysPropPermissionsMgr.isPropertyAllowed((User) null, "galaxy.available");
+        }
+        if (galaxyEnabled) {
+          buffer.append(String.format(EXTERNAL_WORKFLOWS_DIV, field.getId(), doc.getId()));
         }
       }
       Field latestField = field;

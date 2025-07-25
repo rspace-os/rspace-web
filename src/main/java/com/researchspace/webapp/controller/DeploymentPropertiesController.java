@@ -81,6 +81,12 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${clustermarket.web.url}")
   private String clustermarketWebUrl;
 
+  @Value("${galaxy.api.url}")
+  private String galaxyApiUrl;
+
+  @Value("${galaxy.web.url}")
+  private String galaxyWebUrl;
+
   @Value("${omero.api.url}")
   private String omeroApiUrl;
 
@@ -131,6 +137,10 @@ public class DeploymentPropertiesController extends BaseController {
         return clustermarketWebUrl;
       case "clustermarket.api.url":
         return clustermarketApiUrl;
+      case "galaxy.web.url":
+        return galaxyWebUrl;
+      case "galaxy.api.url":
+        return galaxyApiUrl;
       case "omero.api.url":
         return omeroApiUrl;
       case "jove.api.url":
@@ -199,6 +209,8 @@ public class DeploymentPropertiesController extends BaseController {
     Map<String, String> properties = new HashMap<>();
     properties.put("clustermarket.api.url", clustermarketApiUrl);
     properties.put("clustermarket.web.url", clustermarketWebUrl);
+    properties.put("galaxy.api.url", galaxyApiUrl);
+    properties.put("galaxy.web.url", galaxyWebUrl);
     properties.put("omero.api.url", omeroApiUrl);
     properties.put("jove.api.url", joveApiUrl);
     properties.put("dropbox.available", rc.get("dropbox.available").getValue());

@@ -302,6 +302,7 @@ function journal($, extensions = default_extensions) {
         repositionEntryNavButtons();
 
         window.dispatchEvent(new CustomEvent("listOfMaterialInit"));
+        window.dispatchEvent(new CustomEvent("extWorkFlows-init"));
       }, 800);
     },
 

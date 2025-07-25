@@ -1,0 +1,229 @@
+import React, {useEffect, useState} from "react";
+import {withStyles} from "Styles";
+import Badge from "@mui/material/Badge";
+import Fab from "@mui/material/Fab";
+import {createSvgIcon} from "@mui/material";
+import {makeStyles} from "tss-react/mui";
+import axios from "@/common/axios";
+import ExternalWorkflowDialog
+  from "@/eln/eln-external-workflows/ExternalWorkflowDialog";
+import {
+  type GalaxyDataSummary
+} from "./GalaxyData";
+import {ErrorReason} from "./Enums";
+import ErrorView from "./ErrorView";
+import useLocalStorage from "@/util/useLocalStorage";
+export type ExternalWorkflowInvocationsArgs = {
+  fieldId: string | null;
+  isForNotebookPage: boolean;
+};
+
+function ExternalWorkflowInvocations({
+  isForNotebookPage = false,
+  fieldId
+} : ExternalWorkflowInvocationsArgs) {
+  const [errorReason, setErrorReason] = useState<
+  (typeof ErrorReason)[keyof typeof ErrorReason] >(ErrorReason.None);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [numInvocations, setNumInvocations] = useState(0);
+  /**
+   * Always attempt to fetch data from Galaxy once, to cover shared documents, user changing browser or user erasing local storage
+   * setShouldCheckForGalaxyData and setButtonVisible will be reset to true if a user ever uploads data from this document field to Galaxy
+   */
+  const [shouldCheckForGalaxyData, setShouldCheckForGalaxyData] = useLocalStorage("checkForGalaxyData_"+fieldId,true);
+  const [galaxyDataFoundInRSpace, setGalaxyDataFoundInRSpace] = useLocalStorage("galaxyDataFound_" + fieldId, false);
+  const [buttonVisible, setButtonVisible]  = useState(false);
+  const [galaxyDataSummary, setGalaxyDataSummary] = useState<Array<GalaxyDataSummary>>([]);
+  const [showDialog, setShowDialog] = useState(false);
+  const BUTTON_TOP = isForNotebookPage ? 115: 100;
+  const BUTTON_RIGHT = isForNotebookPage ? 15: -24;
+  const BUTTON_BOTTOM = BUTTON_TOP-48;
+  const { classes } = useStyles({ BUTTON_TOP, BUTTON_RIGHT,BUTTON_BOTTOM });
+  const CustomBadge =
+      withStyles<{ children: React.ReactNode; count: number; }, {
+        root: string,
+        badge: string
+      }>(() => ({
+    root: {
+      position: "sticky",
+      top: BUTTON_TOP,
+      zIndex: 1, // so it appears above the TinyMCE Editor
+      pointerEvents: "auto",
+    },
+    badge: {
+      transform: "none",
+    },
+  }))(({classes, children, count}) => (
+      <Badge badgeContent={count} color="primary" classes={classes}>
+        {children}
+      </Badge>
+  ));
+
+  async function checkForRSpaceGalaxyData() {
+    await galaxyDataExistsInRSpace();
+  }
+
+  async function fetchDataFromGalaxy() {
+    await updateGalaxyDataSummary();
+  }
+
+  // useEffect( () => {
+  //   if (galaxyDataFoundInRSpace) {
+  //     fetchDataFromGalaxy();
+  //   } else if (shouldCheckForGalaxyData) {
+  //     checkForRSpaceGalaxyData();
+  //     if (galaxyDataFoundInRSpace) {
+  //       fetchDataFromGalaxy();
+  //     }
+  //   }
+  // }, []);
+
+  useEffect( () => {
+   if (shouldCheckForGalaxyData) {
+      checkForRSpaceGalaxyData();
+    }
+  }, [shouldCheckForGalaxyData]);
+
+  useEffect( () => {
+    if (galaxyDataFoundInRSpace) {
+      fetchDataFromGalaxy();
+    }
+  }, [galaxyDataFoundInRSpace]);
+
+
+  const galaxyDataExistsInRSpace = async () => {
+      const data = await getGalaxyDataExists();
+      setGalaxyDataFoundInRSpace(data);
+      setShouldCheckForGalaxyData(false);
+  }
+
+  const updateGalaxyDataSummary = async () => {
+    try {
+      const data = await getGalaxyData();
+        setGalaxyDataSummary(data);
+        setNumInvocations(data.filter(d => d.galaxyInvocationName !== null).length);
+    } catch (error) {
+      handleRequestError(error as Error);
+    }
+  }
+  function handleRequestError(error: { message: string }) {
+    if (error.message.slice(error.message.length - 3) === "408") {
+      setErrorReason(ErrorReason.Timeout);
+    } else if (error.message.slice(error.message.length - 3) === "404") {
+      setErrorReason(ErrorReason.NotFound);
+    } else if (error.message.slice(error.message.length - 3) === "403") {
+      setErrorReason(ErrorReason.Unauthorized);
+    } else if (error.message.slice(error.message.length - 3) === "400") {
+      setErrorReason(ErrorReason.BadRequest);
+    } else {
+      setErrorReason(ErrorReason.UNKNOWN);
+      setErrorMessage(error.message);
+    }
+  }
+
+  const getGalaxyData = async () :Promise<Array<GalaxyDataSummary>> => {
+    return (await axios.get(
+        "/apps/galaxy/getSummaryGalaxyDataForRSpaceField/" + fieldId)).data;
+  }
+  const getGalaxyDataExists = async () :Promise<boolean> => {
+    return (await axios.get(
+        "/apps/galaxy/galaxyDataExists/" + fieldId)).data;
+  }
+
+  window.addEventListener("galaxy-used", function (e) {
+    // @ts-ignore
+    const eFieldId = e.detail?.fieldId.substring(4);
+    if (eFieldId === fieldId) {
+      setButtonVisible(true);
+      //not strictly true yet but will be true when the page is refreshed etc
+      setGalaxyDataFoundInRSpace(true);
+      setShouldCheckForGalaxyData(false);
+      //this is a workaround because saving the data is async we cant use
+      // a simple check for the existence of the data
+    }
+  });
+
+  return (
+      <>
+        {errorReason !== ErrorReason.None && (
+            // <div className={classes.launcherWrapper}>
+                <ErrorView
+                    errorReason={errorReason}
+                    errorMessage={errorMessage}
+                    WorkFlowIcon={WorkFlowIcon}
+                />
+            // </div>
+          )}
+        {(buttonVisible || galaxyDataSummary.length > 0) && (
+          <>
+            <div className={classes.launcherWrapper}>
+              <CustomBadge count={numInvocations}>
+                <Fab
+                    onClick={async () => {
+                      await updateGalaxyDataSummary();
+                      setShowDialog(true);
+                    }}
+                    color="primary"
+                    size="medium"
+                    aria-label="Show computational workflows associated with this field"
+                    aria-haspopup="menu"
+                    className={classes.fab}
+                >
+                  <WorkFlowIcon width="100%" viewBox="0 0 225 225"
+                                enableBackground="new 0 0 225 225"></WorkFlowIcon>
+                </Fab>
+              </CustomBadge>
+            </div>
+            <ExternalWorkflowDialog open={showDialog} setOpen={setShowDialog}
+                                    galaxySummaryReport={galaxyDataSummary}/>
+          </>
+      )}
+      </>
+  );
+}
+
+export const  WorkFlowIcon = createSvgIcon(<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
+      <g>
+        <circle cx="5.055" cy="3.51" r="2.332" fill="#fff"/>
+        <circle cx="5.154" cy="10" r="2.332" fill="#fff"/>
+        <circle cx="5.154" cy="16.49" r="2.332" fill="#fff"/>
+      </g>
+      <line x1="6.443" y1="10" x2="17.276" y2="10" fill="#fff" stroke="#fff" strokeMiterlimit="10" strokeWidth="1.4"/>
+      <path d="M4.932,3.535c3.136,0,5.677,2.894,5.677,6.465s-2.542,6.465-5.677,6.465" fill="none" stroke="#fff" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4"/>
+      <polyline points="15.073 7.867 17.206 10 15.073 12.133" fill="none" stroke="#fff" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4"/>
+    </svg>
+    ,
+    'WorkFlow'
+);
+
+const useStyles = makeStyles<{ BUTTON_TOP: number; BUTTON_RIGHT: number; BUTTON_BOTTOM: number }>()(
+    (theme, {BUTTON_TOP, BUTTON_RIGHT, BUTTON_BOTTOM}) => ({
+      launcherWrapper: {
+        position: "absolute",
+        top: BUTTON_TOP,
+        right: BUTTON_RIGHT,
+        bottom: BUTTON_BOTTOM,
+        pointerEvents: "none",
+        "@media print": {
+          display: "none",
+        },
+        zIndex:2
+      },
+      growTransform: {transformOrigin: "center right"},
+      primary: {color: theme.palette.primary.main},
+      popper: {
+        zIndex: 1, // so it appears above the TinyMCE Editor
+        pointerEvents: "auto",
+      },
+      itemName: {fontWeight: "bold"},
+      itemText: {
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        width: "240px",
+      },
+      fab: {
+        zIndex: "initial",
+      },
+    }));
+export default ExternalWorkflowInvocations;
