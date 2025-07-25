@@ -407,6 +407,7 @@ var initTinyMCE_cachedIntegrationsResponse;
 
 function initTinyMCE(selector) {
 	var localTinymcesetup = tinymcesetup;
+	// THIS IS USED BY THE GALAXY INTEGRATION
 	localTinymcesetup.recordId = recordId;
 	localTinymcesetup.selector = selector;
 	var toolbarRequest, propertiesRequest, integrationsRequest;

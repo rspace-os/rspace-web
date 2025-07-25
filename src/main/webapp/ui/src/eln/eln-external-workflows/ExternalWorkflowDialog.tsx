@@ -12,16 +12,18 @@ import Link from "@mui/material/Link";
 import {
   type GalaxyDataSummary
 } from "./GalaxyData";
+
 export type ExternalWorkflowDialogArgs = {
   open: boolean;
   setOpen: (val: boolean) => void;
   galaxySummaryReport: Array<GalaxyDataSummary>
 };
-function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport} :ExternalWorkflowDialogArgs ) {
+
+function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWorkflowDialogArgs) {
   return (
 
       <>
-        <Dialog open={open}  fullWidth maxWidth="xl" >
+        <Dialog open={open} fullWidth maxWidth="xl">
           <DialogTitle>Galaxy WorkFlow Data</DialogTitle>
           <DialogContent>
             <Stack spacing={3}>
@@ -29,17 +31,20 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport} :ExternalWo
                 Data uploaded and Workflow Invocations using that data
               </Typography>
               <DataGrid
-                  getRowHeight={()=>"auto"} //for text wrapping
+                  getRowHeight={() => "auto"} //for text wrapping
                   rows={galaxySummaryReport}
                   disableColumnSelector={true}
                   initialState={{
                     sorting: {
-                      sortModel: [{ field: 'Created', sort: 'desc' }, { field: 'History', sort: 'asc' }],
+                      sortModel: [{field: 'Created', sort: 'desc'}, {
+                        field: 'History',
+                        sort: 'asc'
+                      }],
                     },
                   }}
                   columns={[
                     DataGridColumn.newColumnWithValueGetter("Data File Names",
-                        (wf : GalaxyDataSummary) =>  wf.galaxyDataNames,
+                        (wf: GalaxyDataSummary) => wf.galaxyDataNames,
                         {
                           headerName: "Data Uploaded",
                           flex: 1,
@@ -55,8 +60,8 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport} :ExternalWo
                           resizable: true,
                           renderCell: ({row}) =>
                               <Link
-                                  href={row.galaxyBaseUrl + "/histories/view?id="+row.galaxyHistoryId}
-                                  target="_blank">{row.galaxyHistoryName}</Link>,
+                                  href={row.galaxyBaseUrl + "/histories/view?id=" + row.galaxyHistoryId}
+                                  target="_blank" rel="noreferrer">{row.galaxyHistoryName}</Link>,
                         }),
                     DataGridColumn.newColumnWithValueGetter("Invocation",
                         (wf: GalaxyDataSummary) => wf.galaxyInvocationName,
@@ -65,8 +70,8 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport} :ExternalWo
                           flex: 1,
                           resizable: true,
                           renderCell: ({row}) => <Link
-                              href={row.galaxyBaseUrl + "/workflows/invocations/"+row.galaxyInvocationId}
-                              target="_blank">{row.galaxyInvocationName}</Link>,
+                              href={row.galaxyBaseUrl + "/workflows/invocations/" + row.galaxyInvocationId}
+                              target="_blank" rel="noreferrer">{row.galaxyInvocationName}</Link>,
 
                         }),
                     DataGridColumn.newColumnWithValueGetter("Status",
@@ -88,7 +93,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport} :ExternalWo
                         }),
                   ]}
                   loading={false}
-                  getRowId={( row : GalaxyDataSummary) => row.galaxyHistoryName + row.createdOn}
+                  getRowId={(row: GalaxyDataSummary) => row.galaxyHistoryName + row.createdOn}
                   density="compact"
                   disableColumnFilter
                   hideFooter
@@ -101,13 +106,15 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport} :ExternalWo
           </DialogContent>
           <DialogActions>
             <Button
-              color="primary"
-              variant="contained"
-              disableElevation
-              onClick={() => {setOpen(false)}}
-          >
-            Close
-          </Button>
+                color="primary"
+                variant="contained"
+                disableElevation
+                onClick={() => {
+                  setOpen(false)
+                }}
+            >
+              Close
+            </Button>
 
           </DialogActions>
         </Dialog>
