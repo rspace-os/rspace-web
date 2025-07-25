@@ -171,9 +171,16 @@ const feature = test.extend<{
         async () => {
           const longText = "a".repeat(2010);
           const frame = page.frameLocator("iframe");
+          /*
+           * pressSequentially is too slow on jenkins, so we use fill, but fill
+           * doesn't trigger all of the same events so we also use a single
+           * pressSequentially to ensure that the dirty flag is set and the
+           * error state is triggered.
+           */
+          await frame.locator('body[contenteditable="true"]').fill(longText);
           await frame
             .locator('body[contenteditable="true"]')
-            .pressSequentially(longText);
+            .pressSequentially("a");
         },
     });
   },
