@@ -28,7 +28,7 @@
       const baseUrl = window.location.href.substring(0, window.location.href.indexOf("/public/apiDocs"));
        var urls = [
                   { url: baseUrl + "/resources/rspace_api_specs_1_112_0.yaml", name: "RSpace ELN"},
-                  { url: baseUrl + "/resources/rspace_api_inventory_specs_1_111_0.yaml", name: "RSpace Inventory"}
+                  { url: baseUrl + "/resources/rspace_api_inventory_specs_1_113_0.yaml", name: "RSpace Inventory"}
                 ];
        var urlPrimaryName = "RSpace ELN";
 

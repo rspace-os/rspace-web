@@ -14,7 +14,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiInventoryImportSampleParseResult;
 import com.researchspace.fieldmark.client.FieldmarkClient;
+import com.researchspace.fieldmark.model.FieldmarkDoiIdentifier;
 import com.researchspace.fieldmark.model.FieldmarkNotebook;
 import com.researchspace.fieldmark.model.FieldmarkNotebookMetadata;
 import com.researchspace.fieldmark.model.FieldmarkRecordsCsvExport;
@@ -26,6 +28,7 @@ import com.researchspace.model.dtos.fieldmark.FieldmarkNotebookDTO;
 import com.researchspace.model.dtos.fieldmark.FieldmarkRecordDTO;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.service.inventory.InventoryImportManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -50,14 +53,17 @@ public class FieldmarkServiceClientAdapterTest {
   private static final String USERNAME = "userName";
   private static final String WRONG_USERNAME = "wrong_" + USERNAME;
   private static final String GOOD_NOTEBOOK_ID = "notebookId";
+  private static final String GOOD_NOTEBOOK_ID_NO_IGSN = "notebookId_NoIgsn";
   private static final String WRONG_NOTEBOOK_ID = "wrong_notebookId";
   private static final String FORM_ID = "Primary";
-  @InjectMocks private FieldmarkServiceClientAdapterImpl adapterUnderTest;
-  @Mock private FieldmarkClient fieldmarkClient;
-  @Mock private User goodUser;
-  @Mock private User wrongUser;
-  @Mock private UserConnectionManager userConnectionManager;
-  @Mock private UserConnection userConnectionMock;
+  private static final String IGSN_CANDIDATE_FIELD_NAME = "IGSN-QR-Code";
+  private @InjectMocks FieldmarkServiceClientAdapterImpl adapterUnderTest;
+  private @Mock FieldmarkClient fieldmarkClient;
+  private @Mock User goodUser;
+  private @Mock User wrongUser;
+  private @Mock UserConnectionManager userConnectionManager;
+  private @Mock UserConnection userConnectionMock;
+  private @Mock InventoryImportManager importManager;
 
   private List<FieldmarkNotebook> notebookList;
   private FieldmarkNotebook notebook;
@@ -95,27 +101,40 @@ public class FieldmarkServiceClientAdapterTest {
         .thenThrow(
             new HttpServerErrorException(
                 HttpStatus.INTERNAL_SERVER_ERROR, "Fieldmark server is down"));
-
     when(fieldmarkClient.getNotebook(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID)).thenReturn(notebook);
     when(fieldmarkClient.getNotebook(GOOD_ACCESS_TOKEN, WRONG_NOTEBOOK_ID))
         .thenThrow(new HttpServerErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
-
     when(fieldmarkClient.getNotebookRecords(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID))
         .thenReturn(records);
-
+    when(fieldmarkClient.getNotebookRecords(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID_NO_IGSN))
+        .thenReturn(records);
     when(fieldmarkClient.getNotebookFiles(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID, FORM_ID))
         .thenReturn(filesInRecords);
-
     when(fieldmarkClient.getNotebookCsv(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID, FORM_ID))
+        .thenReturn(csvRecords);
+    when(fieldmarkClient.getNotebookCsv(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID_NO_IGSN, FORM_ID))
         .thenReturn(csvRecords);
 
     when(goodUser.getUsername()).thenReturn(USERNAME);
     when(wrongUser.getUsername()).thenReturn(WRONG_USERNAME);
+
     when(userConnectionManager.findByUserNameProviderName(USERNAME, FIELDMARK_APP_NAME))
         .thenReturn(Optional.of(userConnectionMock));
     when(userConnectionManager.findByUserNameProviderName(WRONG_USERNAME, FIELDMARK_APP_NAME))
         .thenReturn(Optional.empty());
     when(userConnectionMock.getAccessToken()).thenReturn(GOOD_ACCESS_TOKEN);
+
+    ApiInventoryImportSampleParseResult parseCsvResult = new ApiInventoryImportSampleParseResult();
+    parseCsvResult.setFieldMappings(Map.of(IGSN_CANDIDATE_FIELD_NAME, "identifier"));
+    when(importManager.parseSamplesCsvFile(
+            "fieldmarkImport_" + GOOD_NOTEBOOK_ID, csvRecords.getCsvFile(), goodUser))
+        .thenReturn(parseCsvResult);
+    when(importManager.parseSamplesCsvFile(
+            "fieldmarkImport_" + GOOD_NOTEBOOK_ID_NO_IGSN, csvRecords.getCsvFile(), goodUser))
+        .thenReturn(new ApiInventoryImportSampleParseResult());
+    when(importManager.parseSamplesCsvFile(
+            "fieldmarkImport_" + WRONG_NOTEBOOK_ID, csvRecords.getCsvFile(), goodUser))
+        .thenThrow(new IOException("Error while parsing CSV"));
   }
 
   /* testing getFieldmarkNotebookList */
@@ -157,7 +176,8 @@ public class FieldmarkServiceClientAdapterTest {
   @Test
   public void testGetFieldmarkNotebook() throws IOException {
     FieldmarkNotebookDTO resultUnderTest =
-        adapterUnderTest.getFieldmarkNotebook(goodUser, GOOD_NOTEBOOK_ID);
+        adapterUnderTest.getFieldmarkNotebook(
+            goodUser, GOOD_NOTEBOOK_ID, IGSN_CANDIDATE_FIELD_NAME);
 
     verify(userConnectionManager).findByUserNameProviderName(USERNAME, FIELDMARK_APP_NAME);
     verify(fieldmarkClient).getNotebook(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID);
@@ -208,7 +228,9 @@ public class FieldmarkServiceClientAdapterTest {
     assertEquals(
         "Sample-12-00009", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
     assertEquals(12, currentRecord.getField("Survey-Number").getFieldValue());
-    assertEquals("1", currentRecord.getField("IGSN-QR-Code").getFieldValue());
+    assertEquals(
+        new FieldmarkDoiIdentifier(""),
+        currentRecord.getField(IGSN_CANDIDATE_FIELD_NAME).getFieldValue());
     assertNull(currentRecord.getField("Sample-Location").getFieldValue());
     assertEquals("Rome", currentRecord.getField("New-Text-Field").getFieldValue());
     assertEquals(
@@ -232,7 +254,9 @@ public class FieldmarkServiceClientAdapterTest {
     assertEquals(
         "Sample-45-00010", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
     assertEquals(45, currentRecord.getField("Survey-Number").getFieldValue());
-    assertEquals("1", currentRecord.getField("IGSN-QR-Code").getFieldValue());
+    assertEquals(
+        new FieldmarkDoiIdentifier(""),
+        currentRecord.getField(IGSN_CANDIDATE_FIELD_NAME).getFieldValue());
     assertEquals(
         "-4.290634804694207",
         ((FieldmarkLocationExtractor) currentRecord.getField("Sample-Location"))
@@ -264,7 +288,10 @@ public class FieldmarkServiceClientAdapterTest {
     assertEquals(
         "Sample-1-00008", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
     assertEquals(1, currentRecord.getField("Survey-Number").getFieldValue());
-    assertEquals("1", currentRecord.getField("IGSN-QR-Code").getFieldValue());
+    assertEquals(
+        "10.12345/asdf-good",
+        ((FieldmarkDoiIdentifier) currentRecord.getField("IGSN-QR-Code").getFieldValue())
+            .getDoiIdentifier());
     assertNull(currentRecord.getField("Sample-Location").getFieldValue());
     assertEquals("glasgow", currentRecord.getField("New-Text-Field").getFieldValue());
     assertEquals("rock hard", currentRecord.getField("Item-Description").getFieldValue());
@@ -282,7 +309,7 @@ public class FieldmarkServiceClientAdapterTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> adapterUnderTest.getFieldmarkNotebook(wrongUser, GOOD_NOTEBOOK_ID),
+            () -> adapterUnderTest.getFieldmarkNotebook(wrongUser, GOOD_NOTEBOOK_ID, null),
             "FieldmarkServiceClientAdapterImpl did not throw the exception, but it was needed");
     assertTrue(thrown.getMessage().contains("No UserConnection exists for"));
   }
@@ -292,12 +319,43 @@ public class FieldmarkServiceClientAdapterTest {
     HttpServerErrorException thrown =
         assertThrows(
             HttpServerErrorException.class,
-            () -> adapterUnderTest.getFieldmarkNotebook(goodUser, WRONG_NOTEBOOK_ID),
+            () -> adapterUnderTest.getFieldmarkNotebook(goodUser, WRONG_NOTEBOOK_ID, null),
             "FieldmarkServiceClientAdapterImpl did not throw the exception, but it was needed");
     assertTrue(thrown.getMessage().contains("Unauthorized"));
 
     verify(userConnectionManager).findByUserNameProviderName(USERNAME, FIELDMARK_APP_NAME);
     verify(fieldmarkClient).getNotebook(GOOD_ACCESS_TOKEN, WRONG_NOTEBOOK_ID);
     verifyNoMoreInteractions(fieldmarkClient);
+  }
+
+  /*  testing getIgsnCandidateFields */
+  @Test
+  public void testGetIgsnCandidateFieldsSucceedWithOneField() throws IOException {
+    List<String> result = adapterUnderTest.getIgsnCandidateFields(goodUser, GOOD_NOTEBOOK_ID);
+
+    verify(userConnectionManager).findByUserNameProviderName(USERNAME, FIELDMARK_APP_NAME);
+    verify(fieldmarkClient).getNotebookRecords(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID);
+    verify(fieldmarkClient).getNotebookCsv(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID, FORM_ID);
+    verify(importManager)
+        .parseSamplesCsvFile(
+            "fieldmarkImport_" + GOOD_NOTEBOOK_ID, csvRecords.getCsvFile(), goodUser);
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals(IGSN_CANDIDATE_FIELD_NAME, result.get(0));
+  }
+
+  @Test
+  public void testGetIgsnCandidateFieldsSucceedWithNoFields() throws IOException {
+    List<String> result =
+        adapterUnderTest.getIgsnCandidateFields(goodUser, GOOD_NOTEBOOK_ID_NO_IGSN);
+
+    verify(userConnectionManager).findByUserNameProviderName(USERNAME, FIELDMARK_APP_NAME);
+    verify(fieldmarkClient).getNotebookRecords(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID_NO_IGSN);
+    verify(fieldmarkClient).getNotebookCsv(GOOD_ACCESS_TOKEN, GOOD_NOTEBOOK_ID_NO_IGSN, FORM_ID);
+    verify(importManager)
+        .parseSamplesCsvFile(
+            "fieldmarkImport_" + GOOD_NOTEBOOK_ID_NO_IGSN, csvRecords.getCsvFile(), goodUser);
+    assertNotNull(result);
+    assertTrue(result.isEmpty());
   }
 }

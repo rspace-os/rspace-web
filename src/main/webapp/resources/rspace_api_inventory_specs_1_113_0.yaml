@@ -5,7 +5,7 @@ info:
   description: >
     Welcome to the RSpace Inventory API.
 
-  version: "1.111"
+  version: "1.113"
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit headers.
   license:
@@ -1859,6 +1859,28 @@ paths:
           description: >-
             Returns a list of notebook Ids for the given user
 
+  /fieldmark/notebooks/igsnCandidateFields:
+    get:
+      summary: List Fieldmark fields (of a given notebook) that could be imported as IGSN
+      description: >-
+        Return the list Fieldmark fields (of a given notebook) that could be imported as IGSN
+        
+        The pre-requisite is that user enables Fieldmark App on RSpace Apps page, and saves their Fieldmark API token.
+      produces:
+        - application/json
+      tags:
+        - Import
+      parameters:
+        - name: notebookId
+          in: query
+          description: The notebookId to check
+          type: string
+          required: true
+      responses:
+        '200':
+          description: >-
+            Returns a list of fields that can be imported as Igsn
+
   /import/fieldmark/notebook:
     post:
       summary: >-
@@ -1880,12 +1902,15 @@ paths:
       tags:
         - Import
       parameters:
-        - name: notebookId
+        - name: FieldmarkApiImportRequest
           in: body
           description: >-
-                        The ID for the Fieldmark notebook. 
-                        The notebook ID is returned in `project_id` property 
-                        of the `/fieldmark/notebooks` response.
+            The ID for the Fieldmark notebook. 
+            The notebook ID is returned in `project_id` property 
+            of the `/fieldmark/notebooks` response (*required*)
+            
+            The name of the field you want to be imported as DOI identifier (*optional*).
+            DataCite and Inventory MUST be enabled by the admin in order to map to DOi Identifiers
           required: true
           schema:
             $ref: '#/definitions/FieldmarkApiImportRequest'
@@ -2956,6 +2981,10 @@ definitions:
         type: string
         description: Unique identifier Fieldmark notebook
         example: "1726126204618-rspace-igsn-demo"
+      identifier:
+        type: string
+        description: Name of the field you want to be the Doi Identifier
+        example: "FieldName"
   FieldmarkApiImportResult:
     description: Representation of Fieldmark Api import result
     properties:
