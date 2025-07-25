@@ -335,7 +335,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     },
   );
   await router.route(
-    "/api/inventory/v1/fieldmark/notebooks/igsn/test-project-1",
+    "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-1",
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -345,7 +345,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     },
   );
   await router.route(
-    "/api/inventory/v1/fieldmark/notebooks/igsn/test-project-2",
+    "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-2",
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -355,7 +355,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     },
   );
   await router.route(
-    "/api/inventory/v1/fieldmark/notebooks/igsn/test-project-no-identifiers",
+    "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-no-identifiers",
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -365,7 +365,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     },
   );
   await router.route(
-    "/api/inventory/v1/fieldmark/notebooks/igsn/test-project-with-identifiers",
+    "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-with-identifiers",
     async (route) => {
       await route.fulfill({
         status: 200,

@@ -297,7 +297,8 @@ export default function FieldmarkImportDialog({
     setIdentifierFieldSelection({ type: "unselected" });
     try {
       const { data } = await axios.get(
-        "/api/inventory/v1/fieldmark/notebooks/igsn/" + notebookId,
+        "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=" +
+          notebookId,
         {
           headers: {
             Authorization: `Bearer ${await getToken()}`,
