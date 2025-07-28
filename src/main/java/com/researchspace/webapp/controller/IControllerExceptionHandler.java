@@ -26,5 +26,8 @@ public interface IControllerExceptionHandler {
       HttpServletRequest request, HttpServletResponse response, Exception e);
 
   ModelAndView handleExceptions(
-      HttpServletRequest request, HttpServletResponse response, Exception e, ExceptionHandlerVisitor visitor);
+      HttpServletRequest request,
+      HttpServletResponse response,
+      Exception e,
+      ExceptionHandlerVisitor visitor);
 }

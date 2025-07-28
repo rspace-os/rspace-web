@@ -1872,7 +1872,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>galaxy-java-client</artifactId>
-      <version>RSDEV-639-Galaxy-Java-Client-SNAPSHOT</version>
+      <version>1.0.0</version>
       <exclusions>
       <exclusion>
         <groupId>org.jetbrains</groupId>

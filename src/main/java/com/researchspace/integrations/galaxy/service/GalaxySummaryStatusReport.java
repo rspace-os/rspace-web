@@ -54,7 +54,6 @@ public class GalaxySummaryStatusReport {
   /**
    * Creates a summary report for all data uploaded to a SINGLE GALAXY HISTORY. That data is not
    * used in any invocations
-   *
    */
   public static GalaxySummaryStatusReport createForHistoryForDataNotUsedInAnyInvocations(
       List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisGalaxyHistory) {
@@ -72,17 +71,15 @@ public class GalaxySummaryStatusReport {
     return report;
   }
 
-  /**
-   * Creates a summary report for all data uploaded PER HISTORY when there are NO INVOCATIONS
-   *
-   */
+  /** Creates a summary report for all data uploaded PER HISTORY when there are NO INVOCATIONS */
   public static List<GalaxySummaryStatusReport> createPerHistoryForDataUnusedByAnyInvocation(
       Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
     List<GalaxySummaryStatusReport> summaryReports = new ArrayList<>();
     Map<String, List<ExternalWorkFlowData>> groupedByHistoryId =
         groupByHistoryId(allDataUploadedToGalaxyForThisRSpaceField);
     for (String historyId : groupedByHistoryId.keySet()) {
-      summaryReports.add(createForHistoryForDataNotUsedInAnyInvocations(groupedByHistoryId.get(historyId)));
+      summaryReports.add(
+          createForHistoryForDataNotUsedInAnyInvocations(groupedByHistoryId.get(historyId)));
     }
     return summaryReports;
   }
@@ -116,7 +113,6 @@ public class GalaxySummaryStatusReport {
   /**
    * Creates summary report when there are histories with invocations (and optionally some histories
    * with no invocations)
-   *
    */
   public static List<GalaxySummaryStatusReport> createForInvocationsAndForDataAlone(
       Set<GalaxyInvocationDetails> invocationsAndDataSetsMatchingRSpaceData,
@@ -135,7 +131,8 @@ public class GalaxySummaryStatusReport {
         allDataUploadedToGalaxyForThisRSpaceField.stream()
             .filter(data -> !historyIdsWithAnInvocations.contains(data.getExtContainerID()))
             .collect(Collectors.toSet());
-    List<GalaxySummaryStatusReport> dataOnlyReports = createPerHistoryForDataUnusedByAnyInvocation(notHavingAnInvocation);
+    List<GalaxySummaryStatusReport> dataOnlyReports =
+        createPerHistoryForDataUnusedByAnyInvocation(notHavingAnInvocation);
     summaryReports.addAll(dataOnlyReports);
     return summaryReports;
   }

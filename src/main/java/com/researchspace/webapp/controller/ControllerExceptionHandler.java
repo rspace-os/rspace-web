@@ -30,38 +30,70 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControllerExceptionHandler implements IControllerExceptionHandler {
 
   /**
-   * Allows clients to override the 5 main types of exception handling logging (RSpace General,Security,Constraint,Public Link, Spring Web Client) and two main
-   * types of Model and View to return: 'Ajax' and 'non Ajax'. Call the overloaded method
-   * handleExceptions with this as a fourth parameter. Classes that implement this interface should return true
-   * for each part of the exception handling logging they perform themselves. For example, if an implementation of this interface
-   * handles Ajax errors but not Spring Web Client of RSpace errors it would return false for handleRSpaceExceptions, false for
-   * handleSpringWebClientExceptions and true for handleAjaxExceptions. Classes that implement this interface should return a ModelAndView
-   * for each part of the ExceptionHandling return value generation they implement themselves and null if they do not implement a return value
-   * for exception handling. For example, to return the default ModelAndView for Ajax requests, an implementation of this interface should return null for visitorHandleAjaxExceptionReturnValue.
-   * To return an customised ModelAndView for non ajax requests, an implementation of this interface should return a non null ModelAndView.
+   * Allows clients to override the 5 main types of exception handling logging (RSpace
+   * General,Security,Constraint,Public Link, Spring Web Client) and two main types of Model and
+   * View to return: 'Ajax' and 'non Ajax'. Call the overloaded method handleExceptions with this as
+   * a fourth parameter. Classes that implement this interface should return true for each part of
+   * the exception handling logging they perform themselves. For example, if an implementation of
+   * this interface handles Ajax errors but not Spring Web Client of RSpace errors it would return
+   * false for handleRSpaceExceptions, false for handleSpringWebClientExceptions and true for
+   * handleAjaxExceptions. Classes that implement this interface should return a ModelAndView for
+   * each part of the ExceptionHandling return value generation they implement themselves and null
+   * if they do not implement a return value for exception handling. For example, to return the
+   * default ModelAndView for Ajax requests, an implementation of this interface should return null
+   * for visitorHandleAjaxExceptionReturnValue. To return an customised ModelAndView for non ajax
+   * requests, an implementation of this interface should return a non null ModelAndView.
    */
   public static interface ExceptionHandlerVisitor {
 
-    boolean visitorHasHandledGeneralRSpaceExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId);
+    boolean visitorHasHandledGeneralRSpaceExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
 
-    boolean visitorHasHandledPublicLinkExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId);
+    boolean visitorHasHandledPublicLinkExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
 
-    boolean visitorHasHandleSecurityExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId);
+    boolean visitorHasHandledSecurityExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
 
-    boolean visitorHasHandleConstraintExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId);
+    boolean visitorHasHandledConstraintExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
 
-    boolean visitorHasHandleSpringWebClientExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId);
+    boolean visitorHasHandledSpringWebClientExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
 
-    ModelAndView visitorHandleAjaxExceptionReturnValue(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId);
+    ModelAndView visitorHandleAjaxExceptionReturnValue(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
 
-    ModelAndView visitorHandleNonAjaxExceptionReturnValue(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId);
+    ModelAndView visitorHandleNonAjaxExceptionReturnValue(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
 
     default void logErrorFromException(Exception e, String errorId) {
       ControllerExceptionHandler.logErrorFromException(e, errorId);
@@ -79,58 +111,90 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
       ControllerExceptionHandler.setErrorResponseStatus(response, e);
     }
   }
-  private static final ExceptionHandlerVisitor DEFAULT_VISITOR = new DefaultExceptionHandlerVisitor();
+
+  private static final ExceptionHandlerVisitor DEFAULT_VISITOR =
+      new DefaultExceptionHandlerVisitor();
+
   /**
    * The default visitor signals that it does not implement any exception handling - therefore code
-   * in the outer class, ControllerExceptionHandler, will be completely unaffected by its use. Child classes of
-   * DefaultExceptionHandlerVisitor can override the methods they wish to modify and then call the overloaded
-   * 4 param method handleExceptions, passing in the child of DefaultExceptionHandlerVisitor as the 4th parameter
+   * in the outer class, ControllerExceptionHandler, will be completely unaffected by its use. Child
+   * classes of DefaultExceptionHandlerVisitor can override the methods they wish to modify and then
+   * call the overloaded 4 param method handleExceptions, passing in the child of
+   * DefaultExceptionHandlerVisitor as the 4th parameter
    */
   public static class DefaultExceptionHandlerVisitor implements ExceptionHandlerVisitor {
 
     @Override
-    public boolean visitorHasHandledGeneralRSpaceExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId) {
+    public boolean visitorHasHandledGeneralRSpaceExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
       return false;
     }
 
     @Override
-    public boolean visitorHasHandledPublicLinkExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId) {
+    public boolean visitorHasHandledPublicLinkExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
       return false;
     }
 
     @Override
-    public boolean visitorHasHandleSecurityExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId) {
+    public boolean visitorHasHandledSecurityExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
       return false;
     }
 
     @Override
-    public boolean visitorHasHandleConstraintExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId) {
+    public boolean visitorHasHandledConstraintExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
       return false;
     }
 
     @Override
-    public boolean visitorHasHandleSpringWebClientExceptionLogging(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId) {
+    public boolean visitorHasHandledSpringWebClientExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
       return false;
     }
 
     @Override
-    public ModelAndView visitorHandleAjaxExceptionReturnValue(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId) {
+    public ModelAndView visitorHandleAjaxExceptionReturnValue(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
       return null;
     }
 
     @Override
-    public ModelAndView visitorHandleNonAjaxExceptionReturnValue(HttpServletRequest request,
-        HttpServletResponse response, Exception e, String timestamp, String errorId) {
+    public ModelAndView visitorHandleNonAjaxExceptionReturnValue(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
       return null;
     }
-
-  };
+  }
+  ;
 
   public static final String EXCEPTION_MESSAGE_ATTR_NAME = "exceptionMessage";
 
@@ -154,29 +218,36 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
   public void setExceptionMessageStringLength(int exceptionMessageStringLength) {
     this.exceptionMessageStringLength = exceptionMessageStringLength;
   }
+
   /**
    * Logs exceptions, stack traces and returns a suitable view for both regular and Ajax based
-   * requests. Logs security exceptions to Security log.
-   * Child classes of BaseController that need to implement custom error handling
-   * should override the 'handleExceptions' method of BaseController and call the overloaded 4 parameter 'handleExceptions' method of this class
-   * with an implementation of ExceptionHandlerVisitor as the 4th parameter
+   * requests. Logs security exceptions to Security log. Child classes of BaseController that need
+   * to implement custom error handling should override the 'handleExceptions' method of
+   * BaseController and call the overloaded 4 parameter 'handleExceptions' method of this class with
+   * an implementation of ExceptionHandlerVisitor as the 4th parameter
    */
   public ModelAndView handleExceptions(
       HttpServletRequest request, HttpServletResponse response, Exception e) {
-      return handleExceptions(request, response, e, DEFAULT_VISITOR);
+    return handleExceptions(request, response, e, DEFAULT_VISITOR);
   }
+
   /**
    * Logs exceptions, stack traces and returns a suitable view for both regular and Ajax based
-   * requests. Logs security exceptions to Security log. See ControllerExceptionHandler.ExceptionHandlerVisitor for
-   * an explanation of how this may be used to modify exception handling in this class
+   * requests. Logs security exceptions to Security log. See
+   * ControllerExceptionHandler.ExceptionHandlerVisitor for an explanation of how this may be used
+   * to modify exception handling in this class
    */
   public ModelAndView handleExceptions(
-      HttpServletRequest request, HttpServletResponse response, Exception e, ExceptionHandlerVisitor visitor) {
+      HttpServletRequest request,
+      HttpServletResponse response,
+      Exception e,
+      ExceptionHandlerVisitor visitor) {
     // handle authentication/authorisation exceptions differently.
     String tstamp = DateUtil.convertDateToISOFormat(new Date(), TimeZone.getDefault());
     String errorId = LoggingUtils.generateLogId();
     if (isSecurityException(e)) {
-      if(!visitor.visitorHasHandledGeneralRSpaceExceptionLogging(request, response, e, tstamp, errorId)) {
+      if (!visitor.visitorHasHandledSecurityExceptionLogging(
+          request, response, e, tstamp, errorId)) {
         log.warn("Handling security-related exception {}: {}", errorId, e.getMessage());
         SECURITY_LOG.warn(
             "Security-related exception [{}] by user [{}] to [{}]: {}",
@@ -185,17 +256,18 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
             request.getRequestURI(),
             e.getMessage());
       }
-    }
-     else if (e instanceof PublicLinkNotFoundException) {
-       if(!visitor.visitorHasHandledPublicLinkExceptionLogging(request, response, e, tstamp, errorId)) {
-         log.warn(
-             "The following external public link was not found in this instance of RSpace: "
-                 + e.getMessage());
-         return new ModelAndView("/public/publicLinkNotFound");
-       }
+    } else if (e instanceof PublicLinkNotFoundException) {
+      if (!visitor.visitorHasHandledPublicLinkExceptionLogging(
+          request, response, e, tstamp, errorId)) {
+        log.warn(
+            "The following external public link was not found in this instance of RSpace: "
+                + e.getMessage());
+        return new ModelAndView("/public/publicLinkNotFound");
+      }
     } else {
       if (e instanceof HttpClientErrorException) {
-        if(!visitor.visitorHasHandleSpringWebClientExceptionLogging(request, response, e, tstamp, errorId)) {
+        if (!visitor.visitorHasHandledSpringWebClientExceptionLogging(
+            request, response, e, tstamp, errorId)) {
           if (((HttpClientErrorException) e).getStatusCode().is5xxServerError()) {
             logErrorFromException(e, errorId);
           } else {
@@ -203,11 +275,13 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
           }
         }
       } else if (e instanceof ConstraintViolationException) {
-        if(!visitor.visitorHasHandleConstraintExceptionLogging(request, response, e, tstamp, errorId)) {
+        if (!visitor.visitorHasHandledConstraintExceptionLogging(
+            request, response, e, tstamp, errorId)) {
           logWarningFor(getConstraintViolationMessage((ConstraintViolationException) e), errorId);
         }
       } else {
-        if(!visitor.visitorHasHandledGeneralRSpaceExceptionLogging(request, response, e, tstamp, errorId)) {
+        if (!visitor.visitorHasHandledGeneralRSpaceExceptionLogging(
+            request, response, e, tstamp, errorId)) {
           logErrorFromException(e, errorId);
         }
       }
@@ -218,7 +292,8 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
     boolean ajaxShowTechMessage = true;
     ModelAndView visitedValue = null;
     if (isAjax(request)) {
-      visitedValue = visitor.visitorHandleAjaxExceptionReturnValue(request, response, e, tstamp, errorId);
+      visitedValue =
+          visitor.visitorHandleAjaxExceptionReturnValue(request, response, e, tstamp, errorId);
       if (visitedValue == null) {
         String exceptionMessage = ajaxDefaultErrorMessage;
         if (ajaxShowTechMessage) {
@@ -239,14 +314,14 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
         return visitedValue;
       }
     } else {
-      visitedValue = visitor.visitorHandleNonAjaxExceptionReturnValue(request, response, e, tstamp, errorId);
+      visitedValue =
+          visitor.visitorHandleNonAjaxExceptionReturnValue(request, response, e, tstamp, errorId);
       if (visitedValue == null) {
         ModelAndView m = new ModelAndView(NON_AJAX_ERROR_VIEW_NAME);
         m.addObject(EXCEPTION_MESSAGE_ATTR_NAME, getExceptionMessage(e));
         addTimeStampAndErrorId(tstamp, errorId, m);
         return m;
-      }
-      else {
+      } else {
         return visitedValue;
       }
     }

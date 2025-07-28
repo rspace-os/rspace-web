@@ -10,10 +10,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
 
 /**
- * Will log 404 exceptions at Error level instead of Warn, also makes additional exception info available if log level set to debug
+ * Will log 404 exceptions at Error level instead of Warn, also makes additional exception info
+ * available if log level set to debug
  */
 @Slf4j
-public class SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor extends ControllerExceptionHandler.DefaultExceptionHandlerVisitor {
+public class SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor
+    extends ControllerExceptionHandler.DefaultExceptionHandlerVisitor {
 
   public void logWebClientExceptions(Exception exception, String errorId) {
     HttpStatus responseStatus = resolveAnnotatedResponseStatus(exception);
@@ -26,9 +28,9 @@ public class SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor extends
     if (responseStatus == HttpStatus.INTERNAL_SERVER_ERROR
         || responseStatus == HttpStatus.NOT_FOUND) {
       log.debug(makeMessage(exception), exception);
-      logErrorFromException(exception,errorId);
+      logErrorFromException(exception, errorId);
     } else {
-      logWarningFromException(exception,errorId);
+      logWarningFromException(exception, errorId);
       log.debug(makeMessage(exception), exception);
     }
   }
@@ -60,9 +62,13 @@ public class SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor extends
   }
 
   @Override
-  public boolean visitorHasHandleSpringWebClientExceptionLogging(HttpServletRequest request,
-      HttpServletResponse response, Exception e, String timestamp, String errorId) {
-    logWebClientExceptions(e,errorId);
+  public boolean visitorHasHandledSpringWebClientExceptionLogging(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      Exception e,
+      String timestamp,
+      String errorId) {
+    logWebClientExceptions(e, errorId);
     return true;
   }
 }

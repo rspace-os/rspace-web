@@ -75,7 +75,6 @@ public class GalaxyService {
    * Browser localStorage will cache this data and it will only be requeried if no localstorage data
    * exists for the field (for example: new document, shared document, localstorage erased, user
    * switches browser).
-   *
    */
   public boolean galaxyDataExists(long fieldId) {
     Set<ExternalWorkFlowData> data =

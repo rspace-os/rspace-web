@@ -30,7 +30,8 @@ public class GalaxyController extends BaseController {
   private final UserManager userManager;
 
   @Autowired private GalaxyService galaxyService;
-  private SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor exceptionHandlerVisitor = new SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor();
+  private SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor exceptionHandlerVisitor =
+      new SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor();
 
   public GalaxyController(UserManager userManager) {
     this.userManager = userManager;
