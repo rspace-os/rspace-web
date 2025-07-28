@@ -11,6 +11,6 @@ public interface ExternalWorkFlowInvocationDao
       String workflowId,
       String workflowName,
       String invocationId,
-      List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
+      List<ExternalWorkFlowData> workFlowData,
       String state);
 }

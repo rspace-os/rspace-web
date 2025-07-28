@@ -26,13 +26,13 @@ public class ExternalWorkFlowInvocationDaoHibernate
       String workflowId,
       String workflowName,
       String invocationId,
-      List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
+      List<ExternalWorkFlowData> workFlowData,
       String state) {
     ExternalWorkFlow externalWorkFlow = new ExternalWorkFlow(workflowId, workflowName, "");
     externalWorkFlow = externalWorkFlowDao.save(externalWorkFlow);
     ExternalWorkFlowInvocation externalWorkFlowInvocation =
         new ExternalWorkFlowInvocation(
-            invocationId, new HashSet<>(allMatchingDataForThisInvocation), state, externalWorkFlow);
+            invocationId, new HashSet<>(workFlowData), state, externalWorkFlow);
     save(externalWorkFlowInvocation);
   }
 }

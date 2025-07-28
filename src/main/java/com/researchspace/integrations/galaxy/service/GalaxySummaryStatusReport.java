@@ -52,13 +52,11 @@ public class GalaxySummaryStatusReport {
   }
 
   /**
-   * Creates a summary report for all data uploaded to a SINGLE GALAXY HISTORY which has NO
-   * INVOCATIONS
+   * Creates a summary report for all data uploaded to a SINGLE GALAXY HISTORY. That data is not
+   * used in any invocations
    *
-   * @param allDataUploadedToGalaxyForThisGalaxyHistory
-   * @return
    */
-  public static GalaxySummaryStatusReport createForHistoryForDataOnly(
+  public static GalaxySummaryStatusReport createForHistoryForDataNotUsedInAnyInvocations(
       List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisGalaxyHistory) {
     GalaxySummaryStatusReport report = new GalaxySummaryStatusReport();
     ExternalWorkFlowData first = allDataUploadedToGalaxyForThisGalaxyHistory.get(0);
@@ -77,16 +75,14 @@ public class GalaxySummaryStatusReport {
   /**
    * Creates a summary report for all data uploaded PER HISTORY when there are NO INVOCATIONS
    *
-   * @param allDataUploadedToGalaxyForThisRSpaceField
-   * @return
    */
-  public static List<GalaxySummaryStatusReport> createForForDataAlone(
+  public static List<GalaxySummaryStatusReport> createPerHistoryForDataUnusedByAnyInvocation(
       Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
     List<GalaxySummaryStatusReport> summaryReports = new ArrayList<>();
     Map<String, List<ExternalWorkFlowData>> groupedByHistoryId =
         groupByHistoryId(allDataUploadedToGalaxyForThisRSpaceField);
     for (String historyId : groupedByHistoryId.keySet()) {
-      summaryReports.add(createForHistoryForDataOnly(groupedByHistoryId.get(historyId)));
+      summaryReports.add(createForHistoryForDataNotUsedInAnyInvocations(groupedByHistoryId.get(historyId)));
     }
     return summaryReports;
   }
@@ -95,7 +91,6 @@ public class GalaxySummaryStatusReport {
    * Groups workflow data into lists which have the historyID as key in the map
    *
    * @param allDataUploadedToGalaxyForThisRspaceProject a List of workflowdata
-   * @return
    */
   public static Map<String, List<ExternalWorkFlowData>> groupByHistoryId(
       Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRspaceProject) {
@@ -122,9 +117,6 @@ public class GalaxySummaryStatusReport {
    * Creates summary report when there are histories with invocations (and optionally some histories
    * with no invocations)
    *
-   * @param invocationsAndDataSetsMatchingRSpaceData
-   * @param allDataUploadedToGalaxyForThisRSpaceField
-   * @return
    */
   public static List<GalaxySummaryStatusReport> createForInvocationsAndForDataAlone(
       Set<GalaxyInvocationDetails> invocationsAndDataSetsMatchingRSpaceData,
@@ -143,7 +135,7 @@ public class GalaxySummaryStatusReport {
         allDataUploadedToGalaxyForThisRSpaceField.stream()
             .filter(data -> !historyIdsWithAnInvocations.contains(data.getExtContainerID()))
             .collect(Collectors.toSet());
-    List<GalaxySummaryStatusReport> dataOnlyReports = createForForDataAlone(notHavingAnInvocation);
+    List<GalaxySummaryStatusReport> dataOnlyReports = createPerHistoryForDataUnusedByAnyInvocation(notHavingAnInvocation);
     summaryReports.addAll(dataOnlyReports);
     return summaryReports;
   }

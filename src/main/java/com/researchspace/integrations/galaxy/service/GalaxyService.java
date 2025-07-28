@@ -76,8 +76,6 @@ public class GalaxyService {
    * exists for the field (for example: new document, shared document, localstorage erased, user
    * switches browser).
    *
-   * @param fieldId
-   * @return
    */
   public boolean galaxyDataExists(long fieldId) {
     Set<ExternalWorkFlowData> data =
@@ -92,14 +90,6 @@ public class GalaxyService {
    * data IDs from Galaxy into the RSpace DB, so we can later retrieve the data from Galaxy. Finally
    * uploads an annotation to the data in Galaxy for each file uploaded, with a link to the RSpace
    * page and a download link using the uploaded file's globalID.
-   *
-   * @param user
-   * @param recordId
-   * @param fieldId
-   * @param selectedAttachmentIds
-   * @param serverAddress
-   * @return
-   * @throws IOException
    */
   public History setUpDataInGalaxyFor(
       User user, long recordId, long fieldId, long[] selectedAttachmentIds, String serverAddress)
@@ -192,10 +182,7 @@ public class GalaxyService {
    * <p>The GalaxySummary Report displays a single row of data for every invocation, with data names
    * all in one display row, comma separated.
    *
-   * @param fieldId
-   * @param user
    * @return List<GalaxySummaryStatusReport> may be null
-   * @throws IOException
    */
   public List<GalaxySummaryStatusReport> getSummaryGalaxyDataForRSpaceField(long fieldId, User user)
       throws IOException {
@@ -249,7 +236,7 @@ public class GalaxyService {
             allInvocationDetails, allDataUploadedToGalaxyForThisRSpaceField);
       }
       // no invocations were present
-      return GalaxySummaryStatusReport.createForForDataAlone(
+      return GalaxySummaryStatusReport.createPerHistoryForDataUnusedByAnyInvocation(
           allDataUploadedToGalaxyForThisRSpaceField);
     }
     return new ArrayList<>();

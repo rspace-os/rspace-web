@@ -67,17 +67,6 @@ function ExternalWorkflowInvocations({
     await updateGalaxyDataSummary();
   }
 
-  // useEffect( () => {
-  //   if (galaxyDataFoundInRSpace) {
-  //     fetchDataFromGalaxy();
-  //   } else if (shouldCheckForGalaxyData) {
-  //     checkForRSpaceGalaxyData();
-  //     if (galaxyDataFoundInRSpace) {
-  //       fetchDataFromGalaxy();
-  //     }
-  //   }
-  // }, []);
-
   useEffect( () => {
    if (shouldCheckForGalaxyData) {
       checkForRSpaceGalaxyData();
@@ -146,13 +135,11 @@ function ExternalWorkflowInvocations({
   return (
       <>
         {errorReason !== ErrorReason.None && (
-            // <div className={classes.launcherWrapper}>
                 <ErrorView
                     errorReason={errorReason}
                     errorMessage={errorMessage}
                     WorkFlowIcon={WorkFlowIcon}
                 />
-            // </div>
           )}
         {(buttonVisible || galaxyDataSummary.length > 0) && (
           <>
