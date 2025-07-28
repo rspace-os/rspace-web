@@ -36,12 +36,10 @@ const createFlagSpy = ({ initialValue }: { initialValue: boolean }) => {
   let unsetIsCalled = false;
   return {
     set: () => {
-      console.debug("set called");
       setIsCalled = true;
       value = true;
     },
     unset: () => {
-      console.debug("unset called");
       unsetIsCalled = true;
       value = false;
     },
