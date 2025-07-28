@@ -17,6 +17,7 @@ const feature = test.extend<{
     "the user selects a notebook with identifier columns, selects an identifier column, and clicks import": () => Promise<void>;
     "the user selects a notebook and clicks import for alert testing": () => Promise<void>;
     "the user selects a notebook that will trigger IGSN error": () => Promise<void>;
+    "the user selects a notebook with identifier columns and clicks import without selecting identifier": () => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
@@ -28,6 +29,7 @@ const feature = test.extend<{
     "a success alert should be visible": () => Promise<void>;
     "the import button should show loading state": () => Promise<void>;
     "the IGSN message should be displayed": () => Promise<void>;
+    "the identifier parsing UI should be hidden during import": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -95,6 +97,15 @@ const feature = test.extend<{
           })
           .click();
       },
+      "the user selects a notebook with identifier columns and clicks import without selecting identifier":
+        async () => {
+          await page
+            .getByRole("radio", {
+              name: "Select notebook: Notebook With Identifiers",
+            })
+            .click();
+          await page.getByRole("button", { name: "Import" }).click();
+        },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -230,6 +241,23 @@ const feature = test.extend<{
             "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark.",
           ),
         ).toBeVisible();
+      },
+      "the identifier parsing UI should be hidden during import": async () => {
+        // Wait for the importing alert to appear first
+        const importingAlert = page
+          .getByRole("alert")
+          .filter({ hasText: "Importing notebook" });
+        await expect(importingAlert).toBeVisible();
+
+        // Then check that the identifier UI is hidden
+        const identifierSelect = page.getByRole("combobox", {
+          name: "Identifier field",
+        });
+        await expect(identifierSelect).toBeHidden();
+        const loadingMessage = page.getByText(
+          "Loading available identifier fields...",
+        );
+        await expect(loadingMessage).toBeHidden();
       },
     });
   },
@@ -569,6 +597,34 @@ test.describe("FieldmarkImportDialog", () => {
           "the user selects a notebook that will trigger IGSN error"
         ]();
         await Then["the IGSN message should be displayed"]();
+      },
+    );
+
+    feature(
+      "should hide identifier parsing UI during import when identifier field is unselected",
+      async ({ Given, When, Then, router }) => {
+        await router.route(
+          "/api/inventory/v1/import/fieldmark/notebook",
+          async (route) => {
+            await sleep(2500);
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                containerName: "Test Container from Notebook With Identifiers",
+                containerGlobalId: "IC789012",
+              }),
+            });
+          },
+        );
+        await Given["the fieldmark import dialog is mounted"]();
+        await When["the notebooks have been fetched"]();
+        await When[
+          "the user selects a notebook with identifier columns and clicks import without selecting identifier"
+        ]();
+        await Then[
+          "the identifier parsing UI should be hidden during import"
+        ]();
       },
     );
   });

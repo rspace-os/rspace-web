@@ -531,85 +531,88 @@ export default function FieldmarkImportDialog({
               />
             </Grid>
             <Grid item>
-              {selectedNotebook && (
-                <>
-                  {showIgsnMessage && (
-                    <Typography variant="body2" sx={{ ml: 0.5 }}>
-                      RSpace can link pre-registered IGSN IDs with samples
-                      imported by Fieldmark. This feature requires the{" "}
-                      <Link href={docLinks.IGSNIdentifiers}>
-                        DataCite IGSN ID integration
-                      </Link>{" "}
-                      to be enabled.
-                    </Typography>
-                  )}
-                  {fetchingIdentifierFields ? (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        ml: 2,
-                      }}
-                    >
-                      <CircularProgress size={24} />
-                      <Typography variant="body2">
-                        Loading available identifier fields...
+              {selectedNotebook &&
+                !(
+                  identifierFieldSelection.type === "unselected" && importing
+                ) && (
+                  <>
+                    {showIgsnMessage && (
+                      <Typography variant="body2" sx={{ ml: 0.5 }}>
+                        RSpace can link pre-registered IGSN IDs with samples
+                        imported by Fieldmark. This feature requires the{" "}
+                        <Link href={docLinks.IGSNIdentifiers}>
+                          DataCite IGSN ID integration
+                        </Link>{" "}
+                        to be enabled.
                       </Typography>
-                    </Box>
-                  ) : (
-                    identifierFields &&
-                    identifierFields.length > 0 && (
-                      <FormControl sx={{ width: "auto", minWidth: 200 }}>
-                        <InputLabel id="identifier-field-select-label">
-                          Identifier Field
-                        </InputLabel>
-                        <Select
-                          labelId="identifier-field-select-label"
-                          id="identifier-field-select"
-                          value={
-                            identifierFieldSelection.type === "none"
-                              ? "none"
-                              : identifierFieldSelection.type === "selected"
-                                ? identifierFieldSelection.field
-                                : ""
-                          }
-                          label="Identifier Field"
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === "none") {
-                              setIdentifierFieldSelection({ type: "none" });
-                            } else if (value !== "") {
-                              setIdentifierFieldSelection({
-                                type: "selected",
-                                field: value,
-                              });
-                            } else {
-                              setIdentifierFieldSelection({
-                                type: "unselected",
-                              });
+                    )}
+                    {fetchingIdentifierFields ? (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          ml: 2,
+                        }}
+                      >
+                        <CircularProgress size={24} />
+                        <Typography variant="body2">
+                          Loading available identifier fields...
+                        </Typography>
+                      </Box>
+                    ) : (
+                      identifierFields &&
+                      identifierFields.length > 0 && (
+                        <FormControl sx={{ width: "auto", minWidth: 200 }}>
+                          <InputLabel id="identifier-field-select-label">
+                            Identifier Field
+                          </InputLabel>
+                          <Select
+                            labelId="identifier-field-select-label"
+                            id="identifier-field-select"
+                            value={
+                              identifierFieldSelection.type === "none"
+                                ? "none"
+                                : identifierFieldSelection.type === "selected"
+                                  ? identifierFieldSelection.field
+                                  : ""
                             }
-                          }}
-                        >
-                          <MenuItem value="none">
-                            <em>Do not use an identifier</em>
-                          </MenuItem>
-                          {identifierFields.map((field) => (
-                            <MenuItem key={field} value={field}>
-                              {field}
+                            label="Identifier Field"
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === "none") {
+                                setIdentifierFieldSelection({ type: "none" });
+                              } else if (value !== "") {
+                                setIdentifierFieldSelection({
+                                  type: "selected",
+                                  field: value,
+                                });
+                              } else {
+                                setIdentifierFieldSelection({
+                                  type: "unselected",
+                                });
+                              }
+                            }}
+                          >
+                            <MenuItem value="none">
+                              <em>Do not use an identifier</em>
                             </MenuItem>
-                          ))}
-                        </Select>
-                        <FormHelperText>
-                          Select a field to use as the identifier for imported
-                          samples, or select 'Do not use an identifier' to
-                          import without one
-                        </FormHelperText>
-                      </FormControl>
-                    )
-                  )}
-                </>
-              )}
+                            {identifierFields.map((field) => (
+                              <MenuItem key={field} value={field}>
+                                {field}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          <FormHelperText>
+                            Select a field to use as the identifier for imported
+                            samples, or select 'Do not use an identifier' to
+                            import without one
+                          </FormHelperText>
+                        </FormControl>
+                      )
+                    )}
+                  </>
+                )}
             </Grid>
           </Grid>
         </DialogContent>
