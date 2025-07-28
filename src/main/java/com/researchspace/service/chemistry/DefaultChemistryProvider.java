@@ -61,6 +61,11 @@ public class DefaultChemistryProvider implements ChemistryProvider {
   }
 
   @Override
+  public Optional<ElementalAnalysisDTO> getStoichiometry(RSChemElement chemicalElement) {
+    return Optional.of(new ElementalAnalysisDTO());
+  }
+
+  @Override
   public ChemElementsFormat defaultFormat() {
     return ChemElementsFormat.MOL;
   }

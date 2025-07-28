@@ -4,6 +4,7 @@ import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
+import com.researchspace.model.Stoichiometry;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
 import com.researchspace.model.dtos.chemistry.ChemElementDataDto;
@@ -13,6 +14,7 @@ import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
@@ -420,6 +422,94 @@ public class RSChemController extends BaseController {
       log.info(
           "Couldn't retrieve elementalAnalysis for chemId {} and revision {}", chemId, revision);
       return new AjaxReturnObject<>(ErrorList.of("Couldn't retrieve info for chemId: " + chemId));
+    }
+  }
+
+  /**
+   * Gets stoichiometry information for a given RSChemElement Id. <br>
+   * If no such ChemElement exists for the given id, will return an error message in
+   * AjaxReturnObject. <br>
+   * If no stoichiometry information exists, returns an empty result.
+   *
+   * @param chemId the chemId pointing to the RSChemElement
+   * @param revision the current revision of the chem element
+   * @param principal the current principal
+   * @return AjaxReturnObject with stoichiometry information
+   */
+  @GetMapping("ajax/getStoichiometry")
+  @ResponseBody
+  public AjaxReturnObject<ElementalAnalysisDTO> getStoichiometry(
+      @RequestParam("chemId") long chemId,
+      @RequestParam(value = "revision", required = false) Integer revision,
+      Principal principal) {
+    User subject = getUserByUsername(principal.getName());
+    Optional<ElementalAnalysisDTO> stoichiometry =
+        chemistryService.getStoichiometry(chemId, revision, subject);
+    if (stoichiometry == null) {
+      log.info("No chem element found for id {} and revision {}", chemId, revision);
+      return new AjaxReturnObject<>(ErrorList.of("No chem element with id " + chemId));
+    }
+    if (stoichiometry.isPresent()) {
+      return new AjaxReturnObject<>(stoichiometry.get());
+    } else {
+      log.info("Couldn't retrieve stoichiometry for chemId {} and revision {}", chemId, revision);
+      return new AjaxReturnObject<>(
+          ErrorList.of("Couldn't retrieve stoichiometry for chemId: " + chemId));
+    }
+  }
+
+  /**
+   * Saves stoichiometry information for a given RSChemElement Id. <br>
+   * If no such ChemElement exists for the given id, will return an error message in
+   * AjaxReturnObject.
+   *
+   * @param chemId the chemId pointing to the RSChemElement
+   * @param revision the current revision of the chem element
+   * @param principal the current principal
+   * @return AjaxReturnObject with the saved stoichiometry
+   */
+  @PostMapping("ajax/saveStoichiometry")
+  @ResponseBody
+  public AjaxReturnObject<Stoichiometry> saveStoichiometry(
+      @RequestParam("chemId") long chemId,
+      @RequestParam(value = "revision", required = false) Integer revision,
+      Principal principal) {
+    User subject = getUserByUsername(principal.getName());
+    Stoichiometry stoichiometry =
+        chemistryService.getStoichiometryAndSave(chemId, revision, subject);
+    if (stoichiometry == null) {
+      log.info("Couldn't save stoichiometry for chemId {} and revision {}", chemId, revision);
+      return new AjaxReturnObject<>(
+          ErrorList.of("Couldn't save stoichiometry for chemId: " + chemId));
+    }
+    return new AjaxReturnObject<>(stoichiometry);
+  }
+
+  /**
+   * Updates stoichiometry information in the database. <br>
+   * If no such Stoichiometry exists for the given id, will return an error message in
+   * AjaxReturnObject.
+   *
+   * @param stoichiometryId the ID of the stoichiometry to update
+   * @param stoichiometryDTO the updated stoichiometry information
+   * @param principal the current principal
+   * @return AjaxReturnObject with the updated stoichiometry
+   */
+  @PostMapping("ajax/updateStoichiometry")
+  @ResponseBody
+  public AjaxReturnObject<Stoichiometry> updateStoichiometry(
+      @RequestParam("stoichiometryId") long stoichiometryId,
+      @RequestBody StoichiometryDTO stoichiometryDTO,
+      Principal principal) {
+    User subject = getUserByUsername(principal.getName());
+    try {
+      Stoichiometry stoichiometry =
+          chemistryService.updateStoichiometry(stoichiometryId, stoichiometryDTO, subject);
+      return new AjaxReturnObject<>(stoichiometry);
+    } catch (Exception e) {
+      log.error("Error updating stoichiometry with id {}: {}", stoichiometryId, e.getMessage());
+      return new AjaxReturnObject<>(
+          ErrorList.of("Error updating stoichiometry: " + e.getMessage()));
     }
   }
 

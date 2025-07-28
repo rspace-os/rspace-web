@@ -43,6 +43,15 @@ public interface ChemistryProvider {
 
   Optional<ElementalAnalysisDTO> getProperties(RSChemElement chemicalElement);
 
+  /**
+   * Get stoichiometry information for a chemical element. This method calls the external endpoint
+   * /chemistry/stoichiometry.
+   *
+   * @param chemicalElement the chemical element to get stoichiometry information for
+   * @return an Optional containing the stoichiometry information, or empty if none could be found
+   */
+  Optional<ElementalAnalysisDTO> getStoichiometry(RSChemElement chemicalElement);
+
   ChemicalSearchResultsDTO search(String chemQuery, String chemicalSearchType);
 
   List<String> getSupportedFileTypes();

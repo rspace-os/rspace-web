@@ -58,6 +58,11 @@ public class IndigoChemistryProvider implements ChemistryProvider {
   }
 
   @Override
+  public Optional<ElementalAnalysisDTO> getStoichiometry(RSChemElement chemicalElement) {
+    return chemistryClient.extractStoichiometry(chemicalElement);
+  }
+
+  @Override
   public List<String> getSupportedFileTypes() {
     return List.of("smiles", "cdxml", "rxn", "rxnfile", "ket", "mol");
   }

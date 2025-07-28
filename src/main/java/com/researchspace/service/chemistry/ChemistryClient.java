@@ -110,6 +110,54 @@ public class ChemistryClient {
     }
   }
 
+  /**
+   * Extract stoichiometry information for a chemical element. This method calls the external
+   * endpoint /chemistry/stoichiometry.
+   *
+   * @param chemicalElement the chemical element to get stoichiometry information for
+   * @return an Optional containing the stoichiometry information, or empty if none could be found
+   */
+  public Optional<ElementalAnalysisDTO> extractStoichiometry(RSChemElement chemicalElement) {
+    Map<String, Object> body = new HashMap<>();
+
+    String chemString = chemicalElement.getChemElements();
+    if (StringUtils.isNotEmpty(chemicalElement.getSmilesString())) {
+      log.info(
+          "rsChemElement "
+              + chemicalElement.getId()
+              + " has smiles representation, using it for stoichiometry");
+      chemString = chemicalElement.getSmilesString();
+    }
+    body.put("input", chemString);
+    String url = chemistryServiceUrl + "/chemistry/stoichiometry";
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
+
+    try {
+      ResponseEntity<ElementalAnalysisDTO> response =
+          restTemplate.postForEntity(url, httpEntity, ElementalAnalysisDTO.class);
+      if (response.getStatusCode().is2xxSuccessful()) {
+        return Optional.ofNullable(response.getBody());
+      } else {
+        log.warn(
+            "Unsuccessful request for chemElement {} to: {}. Response code: {}",
+            chemicalElement.getId(),
+            url,
+            response.getStatusCodeValue());
+        return Optional.empty();
+      }
+    } catch (RestClientException e) {
+      log.warn(
+          "Error while making request for chemElement {} to {}: {}",
+          chemicalElement.getId(),
+          url,
+          e.getMessage());
+      return Optional.empty();
+    }
+  }
+
   public byte[] exportImage(
       String chemical, String inputFormat, ChemicalExportFormat outputFormat) {
     String imageFormat =
