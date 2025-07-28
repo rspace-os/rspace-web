@@ -81,6 +81,7 @@ define(function() {
 
         _printCategory('Scientific Tools and Specialized Data');
         _printSettings([ 'inventory.available' ]);
+        _printSettings([ 'ascenscia.available' ]);
         _printSettings([ 'chemistry.available' ]);
         _printSettings([ 'clustermarket.available' ]);
         _printSettings([ 'fieldmark.available' ]);
