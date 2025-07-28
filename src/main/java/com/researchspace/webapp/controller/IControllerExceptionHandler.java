@@ -25,6 +25,18 @@ public interface IControllerExceptionHandler {
   ModelAndView handleExceptions(
       HttpServletRequest request, HttpServletResponse response, Exception e);
 
+  /**
+   * Default handler for logging exceptions in RSpace controllers.<br>
+   * Controllers handling ajax responses can optionally add a request attribute "ajax.errors" that
+   * contains an {@link ErrorList} of error messages. This overload accepts an implementation of
+   * ControllerExceptionHandler.ExceptionHandlerVisitor which can modify the logging and return
+   * values during exception handling
+   *
+   * @param e The <code>Exception</code> thrown.
+   * @param visitor An implementation of <code>ControllerExceptionHandler.ExceptionHandlerVisitor
+   *     </code> thrown.
+   * @return A {@link ModelAndView} with a view name of a suitable error page.
+   */
   ModelAndView handleExceptions(
       HttpServletRequest request,
       HttpServletResponse response,

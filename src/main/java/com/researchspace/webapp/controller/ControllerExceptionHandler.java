@@ -117,9 +117,9 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
 
   /**
    * The default visitor signals that it does not implement any exception handling - therefore code
-   * in the outer class, ControllerExceptionHandler, will be completely unaffected by its use. Child
-   * classes of DefaultExceptionHandlerVisitor can override the methods they wish to modify and then
-   * call the overloaded 4 param method handleExceptions, passing in the child of
+   * in the class ControllerExceptionHandler will be completely unaffected by its use. Child classes
+   * of DefaultExceptionHandlerVisitor can override the methods they wish to modify and then call
+   * the overloaded 4 param method handleExceptions, passing in the child of
    * DefaultExceptionHandlerVisitor as the 4th parameter
    */
   public static class DefaultExceptionHandlerVisitor implements ExceptionHandlerVisitor {
