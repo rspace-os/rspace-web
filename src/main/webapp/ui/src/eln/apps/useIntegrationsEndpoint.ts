@@ -104,6 +104,9 @@ export type IntegrationStates = {
   FIGSHARE: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
+  GALAXY: IntegrationState<{
+    GALAXY_API_KEY: Optional<string>;
+    }>;
   GITHUB: IntegrationState<
     Array<
       Optional<{
@@ -403,6 +406,15 @@ function decodeFigshare(data: FetchedState): IntegrationStates["FIGSHARE"] {
   };
 }
 
+function decodeGalaxy(data: FetchedState): IntegrationStates["GALAXY"] {
+  return {
+    mode: parseState(data),
+    credentials: {
+      GALAXY_API_KEY: parseCredentialString(data.options, "GALAXY_API_KEY"),
+    },
+  };
+}
+
 function decodeGitHub(data: FetchedState): IntegrationStates["GITHUB"] {
   return {
     mode: parseState(data),
@@ -684,6 +696,7 @@ function decodeIntegrationStates(data: {
     EVERNOTE: decodeEvernote(data.EVERNOTE),
     FIELDMARK: decodeFieldmark(data.FIELDMARK),
     FIGSHARE: decodeFigshare(data.FIGSHARE),
+    GALAXY: decodeGalaxy(data.GALAXY),
     GITHUB: decodeGitHub(data.GITHUB),
     GOOGLEDRIVE: decodeGoogleDrive(data.GOOGLEDRIVE),
     JOVE: decodeJove(data.JOVE),
@@ -913,6 +926,22 @@ const encodeIntegrationState = <I extends Integration>(
         ...creds.ACCESS_TOKEN.map((token) => ({
           ACCESS_TOKEN: token,
         })).orElse({}),
+      },
+    };
+  }
+  if (integration === "GALAXY") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["GALAXY"]["credentials"] = data.credentials;
+    return {
+      name: "GALAXY",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: {
+        ...creds.GALAXY_API_KEY.map((key) => ({
+          GALAXY_API_KEY: key,
+        })).orElse({
+          GALAXY_API_KEY: "",
+        }),
       },
     };
   }
@@ -1264,6 +1293,8 @@ export function useIntegrationsEndpoint(): {
               return decodeFieldmark(responseData.data) as IntegrationStates[I];
             case "FIGSHARE":
               return decodeFigshare(responseData.data) as IntegrationStates[I];
+            case "GALAXY":
+              return decodeGalaxy(responseData.data) as IntegrationStates[I];
             case "GITHUB":
               return decodeGitHub(responseData.data) as IntegrationStates[I];
             case "GOOGLEDRIVE":
@@ -1372,6 +1403,8 @@ export function useIntegrationsEndpoint(): {
           return decodeFieldmark(response.data.data) as IntegrationStates[I];
         case "FIGSHARE":
           return decodeFigshare(response.data.data) as IntegrationStates[I];
+        case "GALAXY":
+          return decodeGalaxy(response.data.data) as IntegrationStates[I];
         case "GITHUB":
           return decodeGitHub(response.data.data) as IntegrationStates[I];
         case "GOOGLEDRIVE":

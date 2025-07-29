@@ -21,6 +21,7 @@ import Egnyte from "./integrations/Egnyte";
 import Evernote from "./integrations/Evernote";
 import Fieldmark from "./integrations/Fieldmark";
 import Figshare from "./integrations/Figshare";
+import Galaxy from "./integrations/Galaxy";
 import GitHub from "./integrations/GitHub";
 import GoogleDrive from "./integrations/GoogleDrive";
 import Jove from "./integrations/Jove";
@@ -195,6 +196,15 @@ function CardListing({
       });
     },
     [update, integrationStates.FIGSHARE],
+  );
+  
+  const galaxyUpdate = React.useCallback(
+    (newState: IntegrationStates["GALAXY"]) => {
+      void runInAction(async () => {
+        integrationStates.GALAXY = await update("GALAXY", newState);
+      });
+    },
+    [update, integrationStates.GALAXY]
   );
 
   const githubUpdate = React.useCallback(
@@ -409,6 +419,12 @@ function CardListing({
         <Figshare
           integrationState={integrationStates.FIGSHARE}
           update={figshareUpdate}
+        />
+      )}
+      {integrationStates.GALAXY.mode === mode && (
+        <Galaxy
+          integrationState={integrationStates.GALAXY}
+          update={galaxyUpdate}
         />
       )}
       {integrationStates.GITHUB.mode === mode && (
