@@ -1,5 +1,6 @@
 package com.researchspace.integrations.galaxy.service;
 
+import com.researchspace.galaxy.model.output.upload.DataSet;
 import com.researchspace.galaxy.model.output.upload.DatasetCollection;
 import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationResponse;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
@@ -17,6 +18,7 @@ public class GalaxyInvocationDetails {
 
   private WorkflowInvocationResponse invocation;
   private ExternalWorkFlowInvocation persistedInvocation;
-  private List<DatasetCollection> dataUsedInInvocation;
+  private List<DatasetCollection> dataSetCollectionsUsedInInvocation;
+  private List<DataSet> dataSetsUsedInInvocation;
   private String workflowName;
 }

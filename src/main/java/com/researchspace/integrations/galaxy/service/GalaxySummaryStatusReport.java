@@ -156,12 +156,25 @@ public class GalaxySummaryStatusReport {
                   .collect(Collectors.toList())));
     } else {
       report.setGalaxyInvocationName(galaxyInvocationDetails.getWorkflowName());
-      report.setGalaxyDataNames(
-          String.join(
-              ", ",
-              galaxyInvocationDetails.getDataUsedInInvocation().stream()
-                  .map(data -> data.getName())
-                  .collect(Collectors.toList())));
+      String dataSetCollectionNames = "";
+      String dataSetNames = "";
+      if (galaxyInvocationDetails.getDataSetCollectionsUsedInInvocation() != null) {
+        dataSetCollectionNames =
+            String.join(
+                ", ",
+                galaxyInvocationDetails.getDataSetCollectionsUsedInInvocation().stream()
+                    .map(data -> data.getName())
+                    .collect(Collectors.toList()));
+      }
+      if (galaxyInvocationDetails.getDataSetsUsedInInvocation() != null) {
+        dataSetNames =
+            String.join(
+                ", ",
+                galaxyInvocationDetails.getDataSetsUsedInInvocation().stream()
+                    .map(data -> data.getName())
+                    .collect(Collectors.toList()));
+      }
+      report.setGalaxyDataNames((dataSetCollectionNames + " ").trim() + dataSetNames);
     }
     ExternalWorkFlowData first =
         groupByHistoryId(allDataUploadedToGalaxyForThisRSpaceField)

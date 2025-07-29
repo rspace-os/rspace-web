@@ -1872,7 +1872,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>galaxy-java-client</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.1</version>
       <exclusions>
       <exclusion>
         <groupId>org.jetbrains</groupId>
