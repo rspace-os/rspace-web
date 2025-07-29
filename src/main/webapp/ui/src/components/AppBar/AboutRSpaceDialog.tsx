@@ -10,6 +10,7 @@ import Link from "@mui/material/Link";
 import docLinks from "../../assets/DocLinks";
 import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
+import useApplicationVersion from "../../api/useApplicationVersion";
 
 interface AboutRSpaceDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ export default function AboutRSpaceDialog({
 }: AboutRSpaceDialogProps): React.ReactElement {
   const deploymentDescription = useDeploymentProperty("deployment.description");
   const helpEmail = useDeploymentProperty("deployment.helpEmail");
+  const version = useApplicationVersion();
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -44,9 +46,23 @@ export default function AboutRSpaceDialog({
             </Typography>
           </Box>
 
-          <Typography variant="h6" gutterBottom>
-            Version 1.111.1
-          </Typography>
+          {FetchingData.match(version, {
+            loading: () => (
+              <Typography variant="h6" gutterBottom color="textSecondary">
+                Loading version...
+              </Typography>
+            ),
+            error: () => (
+              <Typography variant="h6" gutterBottom color="error">
+                Version unavailable
+              </Typography>
+            ),
+            success: (versionString) => (
+              <Typography variant="h6" gutterBottom>
+                {versionString}
+              </Typography>
+            ),
+          })}
 
           {FetchingData.match(deploymentDescription, {
             loading: () => null,
