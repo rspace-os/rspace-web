@@ -37,23 +37,25 @@ export function AboutRSpaceContent(): React.ReactElement {
         <img src={RSpaceLogo} alt="RSpace Logo" />{" "}
       </Box>
 
-      {FetchingData.match(version, {
-        loading: () => (
-          <Typography variant="h6" gutterBottom color="textSecondary">
-            Loading version...
-          </Typography>
-        ),
-        error: () => (
-          <Typography variant="h6" gutterBottom color="error">
-            Version unavailable
-          </Typography>
-        ),
-        success: (versionString) => (
-          <Typography variant="h6" gutterBottom>
-            {versionString}
-          </Typography>
-        ),
-      })}
+      <Box sx={{ mb: 3 }}>
+        {FetchingData.match(version, {
+          loading: () => (
+            <Typography variant="h6" gutterBottom color="textSecondary">
+              Loading version...
+            </Typography>
+          ),
+          error: () => (
+            <Typography variant="h6" gutterBottom color="error">
+              Version unavailable
+            </Typography>
+          ),
+          success: (versionString) => (
+            <Typography variant="h6" gutterBottom>
+              {versionString}
+            </Typography>
+          ),
+        })}
+      </Box>
 
       {FetchingData.match(deploymentDescription, {
         loading: () => null,
@@ -108,6 +110,15 @@ export function AboutRSpaceContent(): React.ReactElement {
         },
       })}
 
+      <Typography variant="body2" align="center" gutterBottom sx={{ mt: 3 }}>
+        RSpace is open-source, and powered by open-source libraries.
+        <br />
+        RSpace is licensed under AGPL.
+      </Typography>
+      <Typography variant="caption" align="center" color="textSecondary">
+        © 2025 ResearchSpace
+      </Typography>
+
       <Box mt={2} mb={3}>
         <Typography variant="body2" sx={{ fontSize: "1.2em" }}>
           <Stack spacing={2} direction="row" alignItems="center">
@@ -131,13 +142,6 @@ export function AboutRSpaceContent(): React.ReactElement {
           </Stack>
         </Typography>
       </Box>
-
-      <Typography variant="body2" align="center" gutterBottom>
-        RSpace is licensed under the AGPL [legal text goes here]
-      </Typography>
-      <Typography variant="caption" align="center" color="textSecondary">
-        © 2025 ResearchSpace [All Rights Reserved?]
-      </Typography>
     </Box>
   );
 }
