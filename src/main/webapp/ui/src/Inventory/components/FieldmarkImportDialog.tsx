@@ -557,7 +557,7 @@ export default function FieldmarkImportDialog({
                       >
                         <CircularProgress size={24} />
                         <Typography variant="body2">
-                          Loading available identifier fields...
+                          Loading available IGSN ID fields...
                         </Typography>
                       </Box>
                     ) : (
@@ -565,7 +565,7 @@ export default function FieldmarkImportDialog({
                       identifierFields.length > 0 && (
                         <FormControl sx={{ width: "auto", minWidth: 200 }}>
                           <InputLabel id="identifier-field-select-label">
-                            Identifier Field
+                            IGSN ID Field
                           </InputLabel>
                           <Select
                             labelId="identifier-field-select-label"
@@ -577,7 +577,7 @@ export default function FieldmarkImportDialog({
                                   ? identifierFieldSelection.field
                                   : ""
                             }
-                            label="Identifier Field"
+                            label="IGSN ID Field"
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value === "none") {
@@ -595,7 +595,7 @@ export default function FieldmarkImportDialog({
                             }}
                           >
                             <MenuItem value="none">
-                              <em>Do not use an identifier</em>
+                              <em>Do not use an IGSN ID</em>
                             </MenuItem>
                             {identifierFields.map((field) => (
                               <MenuItem key={field} value={field}>
@@ -604,9 +604,9 @@ export default function FieldmarkImportDialog({
                             ))}
                           </Select>
                           <FormHelperText>
-                            Select a field to use as the identifier for imported
-                            samples, or select 'Do not use an identifier' to
-                            import without one
+                            Select a field to use as the IGSN ID for imported
+                            samples, or select 'Do not use an IGSN ID' to import
+                            without one
                           </FormHelperText>
                         </FormControl>
                       )

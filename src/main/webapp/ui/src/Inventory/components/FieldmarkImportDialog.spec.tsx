@@ -77,7 +77,7 @@ const feature = test.extend<{
             })
             .click();
           const identifierSelect = page.getByRole("combobox", {
-            name: "Identifier field",
+            name: "IGSN ID field",
           });
           await identifierSelect.click();
           await page.getByRole("option", { name: "sample_id" }).click();
