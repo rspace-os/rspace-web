@@ -16,8 +16,8 @@ import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalWorkFlowDataBuilder;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RSPACE_CONTAINER_TYPE;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RSPACE_DATA_TYPE;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceContainerType;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceDataType;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import java.util.ArrayList;
 import java.util.Date;
@@ -67,9 +67,9 @@ public class ExternalWorkFlowTestMother {
         .extSecondaryId(DEFAULT_UUID)
         .rspacecontainerId(RSPACECONTAINER_ID)
         .rspaceContainerName(DEFAULT_RSPACE_CONTAINER_NAME)
-        .rspaceContainerType(RSPACE_CONTAINER_TYPE.FIELD)
+        .rspaceContainerType(RspaceContainerType.FIELD)
         .rspacedataid(RSPACEDATAID)
-        .rspaceDataType(RSPACE_DATA_TYPE.LOCAL);
+        .rspaceDataType(RspaceDataType.LOCAL);
     return builder;
   }
 

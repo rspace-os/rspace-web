@@ -40,8 +40,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RSPACE_CONTAINER_TYPE;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RSPACE_DATA_TYPE;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceContainerType;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceDataType;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.oauth.UserConnection;
@@ -197,8 +197,8 @@ public class GalaxyServiceTest {
     assertEquals(HISTORY_NAME_ON_GALAXY, externalWorkFlowData1.getExtContainerName());
     assertEquals("historyDatasetAssociationUuid1", externalWorkFlowData1.getExtSecondaryId());
     assertEquals(1L, externalWorkFlowData1.getRspacecontainerid());
-    assertEquals(RSPACE_CONTAINER_TYPE.FIELD, externalWorkFlowData1.getRspaceContainerType());
-    assertEquals(RSPACE_DATA_TYPE.LOCAL, externalWorkFlowData1.getRspaceDataType());
+    assertEquals(RspaceContainerType.FIELD, externalWorkFlowData1.getRspaceContainerType());
+    assertEquals(RspaceDataType.LOCAL, externalWorkFlowData1.getRspaceDataType());
     assertEquals("field1", externalWorkFlowData1.getRspacecontainerName());
   }
 

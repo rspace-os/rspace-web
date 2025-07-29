@@ -1,8 +1,8 @@
 package com.researchspace.integrations.galaxy.service;
 
 import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService.GALAXY;
-import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RSPACE_CONTAINER_TYPE.FIELD;
-import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RSPACE_DATA_TYPE.LOCAL;
+import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceContainerType.FIELD;
+import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceDataType.LOCAL;
 
 import com.researchspace.files.service.FileStore;
 import com.researchspace.galaxy.client.GalaxyClient;
