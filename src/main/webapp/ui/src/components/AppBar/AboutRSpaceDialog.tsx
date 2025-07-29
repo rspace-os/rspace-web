@@ -8,6 +8,8 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import docLinks from "../../assets/DocLinks";
+import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
+import * as FetchingData from "../../util/fetchingData";
 
 interface AboutRSpaceDialogProps {
   open: boolean;
@@ -18,6 +20,8 @@ export default function AboutRSpaceDialog({
   open,
   onClose,
 }: AboutRSpaceDialogProps): React.ReactElement {
+  const deploymentDescription = useDeploymentProperty("deployment.description");
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>About RSpace</DialogTitle>
@@ -41,6 +45,35 @@ export default function AboutRSpaceDialog({
 
           <Typography variant="h6" gutterBottom>
             Version 1.111.1
+          </Typography>
+
+          {FetchingData.match(deploymentDescription, {
+            loading: () => null,
+            error: () => null,
+            success: (description) => {
+              if (typeof description === "string" && description.trim()) {
+                return (
+                  <Typography
+                    variant="body2"
+                    align="center"
+                    color="textSecondary"
+                    gutterBottom
+                  >
+                    {description}
+                  </Typography>
+                );
+              }
+              return null;
+            },
+          })}
+
+          <Typography
+            variant="body2"
+            align="center"
+            color="textSecondary"
+            gutterBottom
+          >
+            For general support, email: support@researchspace.com
           </Typography>
 
           <Box mt={2} mb={3} display="flex" justifyContent="center" gap={2}>
