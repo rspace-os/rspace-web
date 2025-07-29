@@ -21,6 +21,7 @@ export default function AboutRSpaceDialog({
   onClose,
 }: AboutRSpaceDialogProps): React.ReactElement {
   const deploymentDescription = useDeploymentProperty("deployment.description");
+  const helpEmail = useDeploymentProperty("deployment.helpEmail");
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -73,8 +74,32 @@ export default function AboutRSpaceDialog({
             color="textSecondary"
             gutterBottom
           >
-            For general support, email: support@researchspace.com
+            For general support, email:{" "}
+            <Link href="mailto:support@researchspace.com">
+              support@researchspace.com
+            </Link>
           </Typography>
+
+          {FetchingData.match(helpEmail, {
+            loading: () => null,
+            error: () => null,
+            success: (email) => {
+              if (typeof email === "string" && email.trim()) {
+                return (
+                  <Typography
+                    variant="body2"
+                    align="center"
+                    color="textSecondary"
+                    gutterBottom
+                  >
+                    For account and group queries, email:{" "}
+                    <Link href={`mailto:${email}`}>{email}</Link>
+                  </Typography>
+                );
+              }
+              return null;
+            },
+          })}
 
           <Box mt={2} mb={3} display="flex" justifyContent="center" gap={2}>
             <Link
