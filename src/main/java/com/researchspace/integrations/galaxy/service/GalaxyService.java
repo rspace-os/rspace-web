@@ -7,6 +7,7 @@ import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.Rsp
 import com.researchspace.files.service.FileStore;
 import com.researchspace.galaxy.client.GalaxyClient;
 import com.researchspace.galaxy.model.output.history.History;
+import com.researchspace.galaxy.model.output.upload.DataSet;
 import com.researchspace.galaxy.model.output.upload.DatasetCollectionElement;
 import com.researchspace.galaxy.model.output.upload.HistoryDatasetCollectionAssociation;
 import com.researchspace.galaxy.model.output.upload.UploadFileResponse;
@@ -269,22 +270,105 @@ public class GalaxyService {
                           .findFirst();
                   boolean dataMatched = matchingData.isPresent();
                   if (dataMatched) {
-                    allMatchingDataForThisInvocation.add(matchingData.get());
-                    thisGalaxyInvocationDetails.setInvocation(invocation);
-                    allInvocationDetails.add(thisGalaxyInvocationDetails);
-                    if (thisGalaxyInvocationDetails.getDataUsedInInvocation() == null) {
-                      thisGalaxyInvocationDetails.setDataUsedInInvocation(new ArrayList<>());
-                    }
-                    thisGalaxyInvocationDetails.getDataUsedInInvocation().add(element.getObject());
-                    WorkflowInvocationReport workflowInvocationReport =
-                        client.getWorkflowInvocationReport(apiKey, invocation.getInvocationId());
-                    thisGalaxyInvocationDetails.setWorkflowName(
-                        workflowInvocationReport.getTitle());
+                    addDataDetailsForDataSetCollection(
+                        invocation,
+                        apiKey,
+                        allInvocationDetails,
+                        thisGalaxyInvocationDetails,
+                        element,
+                        allMatchingDataForThisInvocation,
+                        matchingData);
                   }
+                }
+              } else if (input.getSrc().equals("hda")) {
+                DataSet dataset = client.getDataSetDetails(apiKey, input.getId());
+                String uuid = dataset.getUuid();
+                Optional<ExternalWorkFlowData> matchingData =
+                    allDataUploadedToGalaxyForThisRSpaceField.stream()
+                        .filter(data -> data.getExtSecondaryId().equals(uuid))
+                        .findFirst();
+                boolean dataMatched = matchingData.isPresent();
+                if (dataMatched) {
+                  addDataDetailsForDataSet(
+                      invocation,
+                      apiKey,
+                      allInvocationDetails,
+                      thisGalaxyInvocationDetails,
+                      dataset,
+                      allMatchingDataForThisInvocation,
+                      matchingData);
                 }
               }
             });
-    saveInvocation(invocation, thisGalaxyInvocationDetails, allMatchingDataForThisInvocation);
+    if (!allMatchingDataForThisInvocation.isEmpty()) {
+      saveInvocation(invocation, thisGalaxyInvocationDetails, allMatchingDataForThisInvocation);
+    }
+  }
+
+  private void addDataDetailsForDataSetCollection(
+      WorkflowInvocationResponse invocation,
+      String apiKey,
+      Set<GalaxyInvocationDetails> allInvocationDetails,
+      GalaxyInvocationDetails thisGalaxyInvocationDetails,
+      DatasetCollectionElement element,
+      List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
+      Optional<ExternalWorkFlowData> matchingData) {
+    addDataDetailsForDataSetOrDataSetCollection(
+        invocation,
+        apiKey,
+        allInvocationDetails,
+        thisGalaxyInvocationDetails,
+        allMatchingDataForThisInvocation,
+        matchingData,
+        element,
+        null);
+  }
+
+  private void addDataDetailsForDataSetOrDataSetCollection(
+      WorkflowInvocationResponse invocation,
+      String apiKey,
+      Set<GalaxyInvocationDetails> allInvocationDetails,
+      GalaxyInvocationDetails thisGalaxyInvocationDetails,
+      List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
+      Optional<ExternalWorkFlowData> matchingData,
+      DatasetCollectionElement element,
+      DataSet dataset) {
+    allMatchingDataForThisInvocation.add(matchingData.get());
+    thisGalaxyInvocationDetails.setInvocation(invocation);
+    allInvocationDetails.add(thisGalaxyInvocationDetails);
+    if (element != null) {
+      if (thisGalaxyInvocationDetails.getDataSetCollectionsUsedInInvocation() == null) {
+        thisGalaxyInvocationDetails.setDataSetCollectionsUsedInInvocation(new ArrayList<>());
+      }
+      thisGalaxyInvocationDetails.getDataSetCollectionsUsedInInvocation().add(element.getObject());
+    } else if (dataset != null) {
+      if (thisGalaxyInvocationDetails.getDataSetsUsedInInvocation() == null) {
+        thisGalaxyInvocationDetails.setDataSetsUsedInInvocation(new ArrayList<>());
+      }
+      thisGalaxyInvocationDetails.getDataSetsUsedInInvocation().add(dataset);
+    }
+    WorkflowInvocationReport workflowInvocationReport =
+        client.getWorkflowInvocationReport(apiKey, invocation.getInvocationId());
+    thisGalaxyInvocationDetails.setWorkflowName(workflowInvocationReport.getTitle());
+  }
+
+  private void addDataDetailsForDataSet(
+      WorkflowInvocationResponse invocation,
+      String apiKey,
+      Set<GalaxyInvocationDetails> allInvocationDetails,
+      GalaxyInvocationDetails thisGalaxyInvocationDetails,
+      DataSet dataset,
+      List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
+      Optional<ExternalWorkFlowData> matchingData) {
+    addDataDetailsForDataSetOrDataSetCollection(
+        invocation,
+        apiKey,
+        allInvocationDetails,
+        thisGalaxyInvocationDetails,
+        allMatchingDataForThisInvocation,
+        matchingData,
+        null,
+        dataset);
   }
 
   private Set<ExternalWorkFlowInvocation> findInvocationsFromData(
