@@ -105,42 +105,19 @@ export default function AboutRSpaceDialog({
             <Link
               href="https://researchspace.com"
               target="_blank"
-              rel="noopener noreferrer"
-              underline="hover"
-              sx={{
-                px: 2,
-                py: 1,
-                border: 1,
-                borderColor: "divider",
-                borderRadius: 1,
-                textDecoration: "none",
-                "&:hover": {
-                  textDecoration: "none",
-                  bgcolor: "action.hover",
-                },
-              }}
+              rel="noreferrer"
             >
               Website
             </Link>
-            <Link
-              href={docLinks.changelog}
-              target="_blank"
-              rel="noopener noreferrer"
-              underline="hover"
-              sx={{
-                px: 2,
-                py: 1,
-                border: 1,
-                borderColor: "divider",
-                borderRadius: 1,
-                textDecoration: "none",
-                "&:hover": {
-                  textDecoration: "none",
-                  bgcolor: "action.hover",
-                },
-              }}
-            >
+            <Link href={docLinks.changelog} target="_blank" rel="noreferrer">
               Changelog
+            </Link>
+            <Link
+              href="https://github.com/rspace-os"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Source Code
             </Link>
           </Box>
 
