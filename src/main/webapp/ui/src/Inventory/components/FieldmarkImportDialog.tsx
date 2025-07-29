@@ -595,7 +595,7 @@ export default function FieldmarkImportDialog({
                             }}
                           >
                             <MenuItem value="none">
-                              <em>Do not use an IGSN ID</em>
+                              <em>Do not use IGSN IDs</em>
                             </MenuItem>
                             {identifierFields.map((field) => (
                               <MenuItem key={field} value={field}>
@@ -605,7 +605,7 @@ export default function FieldmarkImportDialog({
                           </Select>
                           <FormHelperText>
                             Select a field to use as the IGSN ID for imported
-                            samples, or select 'Do not use an IGSN ID' to import
+                            samples, or select 'Do not use IGSN IDs' to import
                             without one
                           </FormHelperText>
                         </FormControl>
