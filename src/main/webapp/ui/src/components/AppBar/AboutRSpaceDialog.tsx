@@ -11,6 +11,7 @@ import docLinks from "../../assets/DocLinks";
 import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import useApplicationVersion from "../../api/useApplicationVersion";
+import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
 
 interface AboutRSpaceDialogProps {
   open: boolean;
@@ -30,7 +31,6 @@ export default function AboutRSpaceDialog({
       <DialogTitle>About RSpace</DialogTitle>
       <DialogContent>
         <Box display="flex" flexDirection="column" alignItems="center" py={2}>
-          {/* TODO: Add RSpace logo image */}
           <Box
             width={80}
             height={80}
@@ -38,12 +38,8 @@ export default function AboutRSpaceDialog({
             display="flex"
             alignItems="center"
             justifyContent="center"
-            bgcolor="grey.200"
-            borderRadius={1}
           >
-            <Typography variant="caption" color="textSecondary">
-              LOGO
-            </Typography>
+            <img src={RSpaceLogo} alt="RSpace Logo" />
           </Box>
 
           {FetchingData.match(version, {
