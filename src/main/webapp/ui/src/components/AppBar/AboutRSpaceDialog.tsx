@@ -12,108 +12,105 @@ import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import useApplicationVersion from "../../api/useApplicationVersion";
 import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
+import Stack from "@mui/material/Stack";
 
 interface AboutRSpaceDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-export default function AboutRSpaceDialog({
-  open,
-  onClose,
-}: AboutRSpaceDialogProps): React.ReactElement {
+export function AboutRSpaceContent(): React.ReactElement {
   const deploymentDescription = useDeploymentProperty("deployment.description");
   const helpEmail = useDeploymentProperty("deployment.helpEmail");
   const version = useApplicationVersion();
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>About RSpace</DialogTitle>
-      <DialogContent>
-        <Box display="flex" flexDirection="column" alignItems="center" py={2}>
-          <Box
-            width={80}
-            height={80}
-            mb={2}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <img src={RSpaceLogo} alt="RSpace Logo" />
-          </Box>
+    <Box display="flex" flexDirection="column" alignItems="center" py={2}>
+      <Box
+        width={80}
+        height={80}
+        mb={2}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <img src={RSpaceLogo} alt="RSpace Logo" />{" "}
+      </Box>
 
-          {FetchingData.match(version, {
-            loading: () => (
-              <Typography variant="h6" gutterBottom color="textSecondary">
-                Loading version...
-              </Typography>
-            ),
-            error: () => (
-              <Typography variant="h6" gutterBottom color="error">
-                Version unavailable
-              </Typography>
-            ),
-            success: (versionString) => (
-              <Typography variant="h6" gutterBottom>
-                {versionString}
-              </Typography>
-            ),
-          })}
-
-          {FetchingData.match(deploymentDescription, {
-            loading: () => null,
-            error: () => null,
-            success: (description) => {
-              if (typeof description === "string" && description.trim()) {
-                return (
-                  <Typography
-                    variant="body2"
-                    align="center"
-                    color="textSecondary"
-                    gutterBottom
-                  >
-                    {description}
-                  </Typography>
-                );
-              }
-              return null;
-            },
-          })}
-
-          <Typography
-            variant="body2"
-            align="center"
-            color="textSecondary"
-            gutterBottom
-          >
-            For general support, email:{" "}
-            <Link href="mailto:support@researchspace.com">
-              support@researchspace.com
-            </Link>
+      {FetchingData.match(version, {
+        loading: () => (
+          <Typography variant="h6" gutterBottom color="textSecondary">
+            Loading version...
           </Typography>
+        ),
+        error: () => (
+          <Typography variant="h6" gutterBottom color="error">
+            Version unavailable
+          </Typography>
+        ),
+        success: (versionString) => (
+          <Typography variant="h6" gutterBottom>
+            {versionString}
+          </Typography>
+        ),
+      })}
 
-          {FetchingData.match(helpEmail, {
-            loading: () => null,
-            error: () => null,
-            success: (email) => {
-              if (typeof email === "string" && email.trim()) {
-                return (
-                  <Typography
-                    variant="body2"
-                    align="center"
-                    color="textSecondary"
-                    gutterBottom
-                  >
-                    For account and group queries, email:{" "}
-                    <Link href={`mailto:${email}`}>{email}</Link>
-                  </Typography>
-                );
-              }
-              return null;
-            },
-          })}
+      {FetchingData.match(deploymentDescription, {
+        loading: () => null,
+        error: () => null,
+        success: (description) => {
+          if (typeof description === "string" && description.trim()) {
+            return (
+              <Typography
+                variant="body2"
+                align="center"
+                color="textSecondary"
+                gutterBottom
+              >
+                {description}
+              </Typography>
+            );
+          }
+          return null;
+        },
+      })}
 
-          <Box mt={2} mb={3} display="flex" justifyContent="center" gap={2}>
+      <Typography
+        variant="body2"
+        align="center"
+        color="textSecondary"
+        gutterBottom
+      >
+        For general support, email:{" "}
+        <Link href="mailto:support@researchspace.com">
+          support@researchspace.com
+        </Link>
+      </Typography>
+
+      {FetchingData.match(helpEmail, {
+        loading: () => null,
+        error: () => null,
+        success: (email) => {
+          if (typeof email === "string" && email.trim()) {
+            return (
+              <Typography
+                variant="body2"
+                align="center"
+                color="textSecondary"
+                gutterBottom
+              >
+                For account and group queries, email:{" "}
+                <Link href={`mailto:${email}`}>{email}</Link>
+              </Typography>
+            );
+          }
+          return null;
+        },
+      })}
+
+      <Box mt={2} mb={3}>
+        <Typography variant="body2" sx={{ fontSize: "1.2em" }}>
+          <Stack spacing={2} direction="row" alignItems="center">
             <Link
               href="https://researchspace.com"
               target="_blank"
@@ -131,15 +128,29 @@ export default function AboutRSpaceDialog({
             >
               Source Code
             </Link>
-          </Box>
+          </Stack>
+        </Typography>
+      </Box>
 
-          <Typography variant="body2" align="center" gutterBottom>
-            RSpace is licensed under the AGPL [legal text goes here]
-          </Typography>
-          <Typography variant="caption" align="center" color="textSecondary">
-            © 2025 ResearchSpace [All Rights Reserved?]
-          </Typography>
-        </Box>
+      <Typography variant="body2" align="center" gutterBottom>
+        RSpace is licensed under the AGPL [legal text goes here]
+      </Typography>
+      <Typography variant="caption" align="center" color="textSecondary">
+        © 2025 ResearchSpace [All Rights Reserved?]
+      </Typography>
+    </Box>
+  );
+}
+
+export default function AboutRSpaceDialog({
+  open,
+  onClose,
+}: AboutRSpaceDialogProps): React.ReactElement {
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>About RSpace</DialogTitle>
+      <DialogContent>
+        <AboutRSpaceContent />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
