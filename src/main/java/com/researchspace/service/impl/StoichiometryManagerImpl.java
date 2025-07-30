@@ -72,7 +72,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       for (MoleculeInfoDTO moleculeInfo : analysisDTO.getMoleculeInfo()) {
         // Create a new RSChemElement for the molecule
         RSChemElement molecule =
-            RSChemElement.builder().chemElements(moleculeInfo.getFormula()).build();
+            RSChemElement.builder().chemElements(moleculeInfo.getSmiles()).build();
         molecule = rsChemElementManager.save(molecule, user);
 
         // Create a new StoichiometryMolecule
@@ -81,7 +81,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
                 .stoichiometry(stoichiometry)
                 .molecule(molecule)
                 .role(moleculeInfo.getRole())
-                .compound(moleculeInfo.getName())
+                .compound(moleculeInfo.getSmiles())
                 .molecularMass(moleculeInfo.getMass())
                 .build();
 

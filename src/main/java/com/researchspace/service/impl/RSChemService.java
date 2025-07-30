@@ -307,6 +307,11 @@ public class RSChemService implements ChemistryService {
     return stoichiometryManager.update(stoichiometryId, stoichiometryDTO, user);
   }
 
+  @Override
+  public Stoichiometry getStoichiometryByParentReactionId(long chemId) {
+    return stoichiometryManager.findByParentReactionId(chemId);
+  }
+
   @Data
   @Builder
   @AllArgsConstructor

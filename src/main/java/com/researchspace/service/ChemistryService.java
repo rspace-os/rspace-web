@@ -83,4 +83,12 @@ public interface ChemistryService {
   String getChemicalFileContents(long chemId, Integer revision, User subject);
 
   List<RSChemElement> getAllChemicalsByFormat(ChemElementsFormat format);
+
+  /**
+   * Get existing stoichiometry information for a chemical element without creating a new one.
+   *
+   * @param chemId the ID of the chemical element
+   * @return the Stoichiometry entity, or null if no stoichiometry information exists
+   */
+  Stoichiometry getStoichiometryByParentReactionId(long chemId);
 }

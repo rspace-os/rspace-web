@@ -163,6 +163,10 @@
 
         <mapping class="com.researchspace.integrations.clustermarket.model.ClustermarketBooking"/>
         <mapping class="com.researchspace.integrations.clustermarket.model.ClustermarketEquipment"/>
+        
+        <!-- Stoichiometry entities -->
+        <mapping class="com.researchspace.model.Stoichiometry"/>
+        <mapping class="com.researchspace.model.StoichiometryMolecule"/>
 
     </session-factory>
 </hibernate-configuration>

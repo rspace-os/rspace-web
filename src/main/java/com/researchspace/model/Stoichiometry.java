@@ -5,7 +5,6 @@ import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -41,7 +40,7 @@ public class Stoichiometry {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumn(name = "parent_reaction_id", nullable = false)
   private RSChemElement parentReaction;
 
@@ -56,7 +55,10 @@ public class Stoichiometry {
   private String additionalMetadata;
 
   @Builder.Default
-  @OneToMany(mappedBy = "stoichiometry", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(
+      mappedBy = "stoichiometry",
+      cascade = CascadeType.ALL,
+      fetch = javax.persistence.FetchType.EAGER)
   private List<StoichiometryMolecule> molecules = new ArrayList<>();
 
   /**

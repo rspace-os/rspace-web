@@ -1,16 +1,17 @@
 package com.researchspace.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.researchspace.model.dtos.chemistry.MoleculeRole;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,11 +41,12 @@ public class StoichiometryMolecule {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumn(name = "stoichiometry_id", nullable = false)
+  @JsonBackReference
   private Stoichiometry stoichiometry;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @OneToOne
   @JoinColumn(name = "molecule_id", nullable = false)
   private RSChemElement molecule;
 
@@ -55,8 +57,9 @@ public class StoichiometryMolecule {
   @Column(name = "compound")
   private String compound;
 
+  @Builder.Default
   @Column(name = "coefficient")
-  private Double coefficient;
+  private Double coefficient = 1.00;
 
   @Column(name = "molecular_mass")
   private Double molecularMass;

@@ -17,4 +17,5 @@ public class MoleculeInfoDTO {
   private String formula, name;
   private MoleculeRole role;
   private String additionalMetadata;
+  private String smiles;
 }
