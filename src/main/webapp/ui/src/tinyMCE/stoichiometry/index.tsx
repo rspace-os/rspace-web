@@ -103,6 +103,13 @@ class StoichiometryPlugin {
           "Chemical element id attribute must be a valid number.",
         );
       }
+
+      /*
+       * Mark the chemistry element as having a generated stoichiometry table
+       * So that we start showing the table when the document isn't being edited
+       */
+      node.setAttribute("data-has-stoichiometry-table", "true");
+
       dialogRenderer.next({
         open: true,
         onClose: () => {
