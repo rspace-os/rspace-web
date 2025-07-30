@@ -557,6 +557,7 @@ function initTinyMCE(selector) {
 		if (chemistryEnabled) {
 			localTinymcesetup.external_plugins["cheminfo"] = "/scripts/externalTinymcePlugins/chemInfo/plugin.min.js";
 			localTinymcesetup.external_plugins["ketcher"] = "/scripts/externalTinymcePlugins/ketcher/plugin.min.js";
+			localTinymcesetup.external_plugins["stoichiometry"] = "/ui/dist/tinymceStoichiometry.js";
 			addToMenuIfNotPresent(localTinymcesetup, " ketcherMenuItem");
 			addToToolbarIfNotPresent(localTinymcesetup, "| ketcher23");
 		}
