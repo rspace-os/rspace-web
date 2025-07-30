@@ -3,6 +3,7 @@ package com.researchspace.integrations.galaxy.service;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import com.researchspace.galaxy.model.output.upload.DataSet;
 import com.researchspace.galaxy.model.output.upload.DatasetCollection;
 import com.researchspace.galaxy.model.output.upload.DatasetCollectionElement;
 import com.researchspace.galaxy.model.output.upload.HistoryDatasetAssociation;
@@ -40,6 +41,7 @@ public class ExternalWorkFlowTestMother {
   public static final String DEFAULT_INVOCATION_STATE = "RUNNING";
   public static final String DEFAULT_DATA_NAME = "default-name";
   public static final String HDCA = "hdca";
+  public static final String HDA = "hda";
   public static final String INPUT_ID = "inputId";
   public static final String DEFAULT_DATA_EXITID = "default-exitid";
   public static final String DEFAULT_BASEURL = "default-baseurl";
@@ -81,11 +83,21 @@ public class ExternalWorkFlowTestMother {
     return historyDatasetAssociation;
   }
 
-  public static WorkflowInvocationStepStatusResponse createWorkflowInvocationStepStatusResponse() {
+  public static WorkflowInvocationStepStatusResponse createWorkflowInvocationHDCAStepStatusResponse() {
     WorkflowInvocationStepStatusResponse wissr = new WorkflowInvocationStepStatusResponse();
     Map<String, WorkflowInvocationStepInput> inputs = new HashMap<>();
     WorkflowInvocationStepInput input = new WorkflowInvocationStepInput();
     input.setSrc(HDCA);
+    input.setId(INPUT_ID);
+    inputs.put("1", input);
+    wissr.setInputs(inputs);
+    return wissr;
+  }
+  public static WorkflowInvocationStepStatusResponse createWorkflowInvocationHDAStepStatusResponse() {
+    WorkflowInvocationStepStatusResponse wissr = new WorkflowInvocationStepStatusResponse();
+    Map<String, WorkflowInvocationStepInput> inputs = new HashMap<>();
+    WorkflowInvocationStepInput input = new WorkflowInvocationStepInput();
+    input.setSrc(HDA);
     input.setId(INPUT_ID);
     inputs.put("1", input);
     wissr.setInputs(inputs);
@@ -143,6 +155,16 @@ public class ExternalWorkFlowTestMother {
   public static HistoryDatasetCollectionAssociation createMatchingHDCA(String secondaryId) {
     return createHDCA(secondaryId);
   }
+  public static DataSet createMatchingHDA(String secondaryId) {
+    return createHDA(secondaryId);
+  }
+
+  private static DataSet createHDA(String secondaryId) {
+    DataSet hda = new DataSet();
+    hda.setUuid(secondaryId);
+    hda.setName(DEFAULT_DATA_NAME);
+    return hda;
+  }
 
   public static HistoryDatasetCollectionAssociation createNonMatchingHDCA() {
     return createHDCA(null);
@@ -164,6 +186,7 @@ public class ExternalWorkFlowTestMother {
     hdca.setElements(elements);
     return hdca;
   }
+
 
   public static void makeGalaxyDataAssertions(List<GalaxySummaryStatusReport> result) {
     assertEquals(DEFAULT_DATA_NAME, result.get(0).getGalaxyDataNames());
