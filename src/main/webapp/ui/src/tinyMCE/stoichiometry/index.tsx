@@ -85,7 +85,7 @@ class StoichiometryPlugin {
     const initialProps: React.ComponentProps<typeof StoichiometryDialog> = {
       open: false,
       onClose: () => {},
-      editor: tinymce.activeEditor,
+      chemId: null,
     };
     dialogRenderer.next(initialProps);
 
@@ -93,13 +93,22 @@ class StoichiometryPlugin {
       const node = editor.selection.getNode();
       if (!/chem/.test(node.className))
         throw new Error("Selected node is not a chemical element.");
-      const chemId = node.getAttribute("id");
+      const chemIdAttr = node.getAttribute("id");
+      if (!chemIdAttr) {
+        throw new Error("Chemical element is missing required id attribute.");
+      }
+      const chemId = parseInt(chemIdAttr, 10);
+      if (isNaN(chemId)) {
+        throw new Error(
+          "Chemical element id attribute must be a valid number.",
+        );
+      }
       dialogRenderer.next({
         open: true,
         onClose: () => {
-          dialogRenderer.next({ open: false, onClose: () => {}, editor });
+          dialogRenderer.next({ open: false, onClose: () => {}, chemId: null });
         },
-        editor,
+        chemId,
       });
     });
   }

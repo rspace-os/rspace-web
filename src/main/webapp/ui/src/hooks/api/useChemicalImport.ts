@@ -16,6 +16,18 @@ export type ChemicalCompound = {
 
 export type RspaceCompoundId = string;
 
+export type StoichiometryMolecule = {
+  compound: string;
+  role: string;
+  coefficient: string;
+  molecularMass: string;
+  absoluteMass: string;
+};
+
+export type StoichiometryResponse = {
+  molecules: ReadonlyArray<StoichiometryMolecule>;
+};
+
 /**
  * This custom hook provides functionality to search for chemical compounds,
  * using the `/chemical/*` endpoints.
@@ -81,6 +93,15 @@ export default function useChemicalImport(): {
     fieldId: string;
     chemFileId?: string | null;
   }) => Promise<string>;
+
+  /**
+   * Gets stoichiometry information for a chemical compound.
+   */
+  getStoichiometry: ({
+    chemId,
+  }: {
+    chemId: number;
+  }) => Promise<StoichiometryResponse>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -234,5 +255,30 @@ export default function useChemicalImport(): {
     return Mustache.render(htmlTemplate.data, json) as string;
   }
 
-  return { search, save, saveSmilesString, formatAsHtml };
+  async function getStoichiometry({
+    chemId,
+  }: {
+    chemId: number;
+  }): Promise<StoichiometryResponse> {
+    try {
+      const formData = new FormData();
+      formData.append("chemId", chemId.toString());
+      const { data } = await axios.post<{ data: StoichiometryResponse }>(
+        "/chemical/stoichiometry",
+        formData,
+      );
+      return data.data;
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error retrieving stoichiometry data",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        }),
+      );
+      throw new Error("Could not retrieve stoichiometry data", { cause: e });
+    }
+  }
+
+  return { search, save, saveSmilesString, formatAsHtml, getStoichiometry };
 }
