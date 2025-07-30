@@ -14,14 +14,18 @@ import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTest
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOW_ID_1;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.createHistoryDatasetAssociation;
+import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.createMatchingHDA;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.createMatchingHDCA;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.createNonMatchingHDCA;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.createWorkFlowInvocationReport;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.makeGalaxyDataAssertions;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.makeGalaxyDataAssertionsWithInvocation;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -288,7 +292,7 @@ public class GalaxyServiceTest {
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
         .thenReturn(Collections.singletonList(workflowInvocationResponse));
     when(client.getWorkflowInvocationData(API_KEY, INVOCATION_ID_1))
-        .thenReturn(ExternalWorkFlowTestMother.createWorkflowInvocationStepStatusResponse());
+        .thenReturn(ExternalWorkFlowTestMother.createWorkflowInvocationHDCAStepStatusResponse());
     when(client.getDataSetCollectionDetails(API_KEY, HISTORY_ID_1, "inputId"))
         .thenReturn(createNonMatchingHDCA());
     List<GalaxySummaryStatusReport> result =
@@ -299,6 +303,13 @@ public class GalaxyServiceTest {
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
     makeGalaxyDataAssertions(result);
+    verify(externalWorkFlowDataManager,never())
+        .saveExternalWorkfFlowInvocation(
+            any(String.class),
+            isNull(),
+            any(String.class),
+            eq(List.of()),
+            any(String.class));
   }
 
   @Test
@@ -318,7 +329,7 @@ public class GalaxyServiceTest {
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
         .thenReturn(Collections.singletonList(workflowInvocationResponse));
     when(client.getWorkflowInvocationData(API_KEY, ExternalWorkFlowTestMother.INVOCATION_ID_1))
-        .thenReturn(ExternalWorkFlowTestMother.createWorkflowInvocationStepStatusResponse());
+        .thenReturn(ExternalWorkFlowTestMother.createWorkflowInvocationHDCAStepStatusResponse());
     when(client.getDataSetCollectionDetails(API_KEY, HISTORY_ID_1, INPUT_ID))
         .thenReturn(createMatchingHDCA(DEFAULT_UUID));
     when(client.getWorkflowInvocationReport(API_KEY, ExternalWorkFlowTestMother.INVOCATION_ID_1))
@@ -340,9 +351,47 @@ public class GalaxyServiceTest {
   }
 
   @Test
+  public void
+  testGetSummaryGalaxyDataForRSpaceFieldWhenDataUploadedHDADATAInvocationsAreMatchingAndNoInvocationsPreexisting()
+      throws IOException {
+    ExternalWorkFlowData testExternalWorkFlowData =
+        ExternalWorkFlowTestMother.createExternalWorkFlowData(
+            HISTORY_ID_1, DATASET_ID_1, "Test History");
+    WorkflowInvocationResponse workflowInvocationResponse =
+        ExternalWorkFlowTestMother.createWorkflowInvocationResponse(
+            ExternalWorkFlowTestMother.INVOCATION_ID_1, HISTORY_ID_1);
+    when(externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
+        1L, ExternalWorkFlowData.ExternalService.GALAXY))
+        .thenReturn(Set.of(testExternalWorkFlowData));
+
+    when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1))
+        .thenReturn(Collections.singletonList(workflowInvocationResponse));
+    when(client.getWorkflowInvocationData(API_KEY, ExternalWorkFlowTestMother.INVOCATION_ID_1))
+        .thenReturn(ExternalWorkFlowTestMother.createWorkflowInvocationHDAStepStatusResponse());
+    when(client.getDataSetDetails(API_KEY, INPUT_ID))
+        .thenReturn(createMatchingHDA(DEFAULT_UUID));
+    when(client.getWorkflowInvocationReport(API_KEY, ExternalWorkFlowTestMother.INVOCATION_ID_1))
+        .thenReturn(createWorkFlowInvocationReport());
+    List<GalaxySummaryStatusReport> result =
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
+    assertEquals(1, result.size());
+    verify(externalWorkFlowDataManager)
+        .findWorkFlowDataByRSpaceContainerIdAndServiceType(
+            1L, ExternalWorkFlowData.ExternalService.GALAXY);
+    verify(externalWorkFlowDataManager)
+        .saveExternalWorkfFlowInvocation(
+            WORKFLOW_ID_1,
+            ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED,
+            ExternalWorkFlowTestMother.INVOCATION_ID_1,
+            List.of(testExternalWorkFlowData),
+            DEFAULT_INVOCATION_STATE);
+    makeGalaxyDataAssertionsWithInvocation(result.get(0));
+  }
+
+  @Test
   public void testGetSummaryGalaxyDataForRSpaceFieldWhenInvocationsPreexisting()
       throws IOException {
-    // verify that data is queried from the database and requests to galaxy are not performed.
+    // Verify that data is queried from the database and requests to galaxy are not performed.
     // Also verify that any new 'state' seen in the GalaxyInvocationresponse is saved to the DB
     // ExternalWorkFlowInvocation data
     ExternalWorkFlowData testExternalWorkFlowData =
@@ -411,7 +460,7 @@ public class GalaxyServiceTest {
 
     when(client.getWorkflowInvocationData(
             API_KEY, ExternalWorkFlowTestMother.INVOCATION_ID_1 + "_not_pre"))
-        .thenReturn(ExternalWorkFlowTestMother.createWorkflowInvocationStepStatusResponse());
+        .thenReturn(ExternalWorkFlowTestMother.createWorkflowInvocationHDCAStepStatusResponse());
     when(client.getDataSetCollectionDetails(API_KEY, HISTORY_ID_1 + "_not_pre", INPUT_ID))
         .thenReturn(createMatchingHDCA(DATASET_ID_1 + "_not_pre" + "_uuid"));
     when(client.getWorkflowInvocationReport(
