@@ -13,6 +13,9 @@ import * as FetchingData from "../../util/fetchingData";
 import useApplicationVersion from "../../api/useApplicationVersion";
 import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
 import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import createAccentedTheme from "../../accentedTheme";
+import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 
 interface AboutRSpaceDialogProps {
   open: boolean;
@@ -151,14 +154,16 @@ export default function AboutRSpaceDialog({
   onClose,
 }: AboutRSpaceDialogProps): React.ReactElement {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>About RSpace</DialogTitle>
-      <DialogContent>
-        <AboutRSpaceContent />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <DialogTitle>About RSpace</DialogTitle>
+        <DialogContent>
+          <AboutRSpaceContent />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </ThemeProvider>
   );
 }
