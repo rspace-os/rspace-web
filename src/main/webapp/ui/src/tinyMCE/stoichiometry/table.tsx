@@ -154,15 +154,6 @@ export default function StoichiometryTable({
         flex: 1.2,
       },
     ),
-    DataGridColumn.newColumnWithFieldName<"smiles", MoleculeRow>("smiles", {
-      headerName: "SMILES",
-      flex: 1.5,
-      renderCell: (params) => (
-        <Box sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
-          {params.value}
-        </Box>
-      ),
-    }),
   ];
 
   const rows: MoleculeRow[] = allMolecules.map((molecule, index) => ({
