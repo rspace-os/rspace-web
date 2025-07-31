@@ -272,7 +272,8 @@ public class RSChemService implements ChemistryService {
       }
     }
     try {
-      return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user);
+      return Optional.ofNullable(
+          stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
