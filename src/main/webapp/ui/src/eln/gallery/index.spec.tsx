@@ -5,6 +5,7 @@ import * as Jwt from "jsonwebtoken";
 import fc from "fast-check";
 import { type RouterFixture } from "@playwright/experimental-ct-core";
 import { GallerySection } from "./common";
+import { sleep } from "@/util/Util";
 
 type GivenSteps = {
   "the Gallery is mounted": ({
@@ -14,13 +15,20 @@ type GivenSteps = {
   }) => Promise<MountResult>;
 };
 
+type WhenSteps = {
+  "the user taps on the 'Chemistry' section": () => Promise<void>;
+};
+
 type ThenSteps = {
   "the page title should be": (title: string) => Promise<void>;
+  "there should be just one request to the server": () => Promise<void>;
 };
 
 const feature = test.extend<{
   Given: GivenSteps;
+  When: WhenSteps;
   Then: ThenSteps;
+  networkRequests: Array<URL>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -33,12 +41,30 @@ const feature = test.extend<{
       },
     });
   },
-  Then: async ({ page }, use) => {
+  When: async ({ page }, use) => {
+    await use({
+      "the user taps on the 'Chemistry' section": async () => {
+        await page.getByRole("button", { name: "Chemistry" }).click();
+      },
+    });
+  },
+  Then: async ({ page, networkRequests }, use) => {
     await use({
       "the page title should be": async (title: string) => {
         await expect(page).toHaveTitle(title);
       },
+      "there should be just one request to the server": async () => {
+        expect(
+          networkRequests
+            .filter((url) => /getUploadedFiles/.test(url.href))
+            .map((url) => new URLSearchParams(url.search).get("mediatype")),
+          // the initial listing, and the one new request
+        ).toEqual(["Images", "Chemistry"]);
+      },
     });
+  },
+  networkRequests: async ({}, use) => {
+    await use([]);
   },
 });
 
@@ -58,7 +84,7 @@ function property(name: string) {
           ...args: Array<unknown>
         ) => unknown;
         IsOneOf: (...options: Array<unknown>) => unknown;
-      }) => T
+      }) => T,
     ) {
       return {
         checkThat: (
@@ -68,8 +94,8 @@ function property(name: string) {
               Given: GivenSteps;
               Then: ThenSteps;
               router: RouterFixture;
-            }
-          ) => Promise<void>
+            },
+          ) => Promise<void>,
         ) => {
           let mountedComponent: MountResult | null = null;
           return feature.extend({
@@ -120,9 +146,9 @@ function property(name: string) {
                       mountedComponent = null;
                     }
                   }
-                }
+                },
               ),
-              { numRuns: 5 }
+              { numRuns: 5 },
             );
           });
         },
@@ -131,7 +157,7 @@ function property(name: string) {
   };
 }
 
-feature.beforeEach(async ({ router }) => {
+feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
@@ -265,11 +291,17 @@ feature.beforeEach(async ({ router }) => {
           },
         ],
       }),
-    })
+    }),
   );
+
+  page.on("request", (request) => {
+    networkRequests.push(new URL(request.url()));
+  });
 });
 
-feature.afterEach(({}) => {});
+feature.afterEach(({ networkRequests }) => {
+  networkRequests.splice(0, networkRequests.length);
+});
 
 test.describe("Gallery", () => {
   test.describe("Should have a title that describes the current page", () => {
@@ -285,11 +317,11 @@ test.describe("Gallery", () => {
         /*
          * The images is the default gallery section.
          */
-      }
+      },
     );
 
     property(
-      "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'"
+      "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'",
     )
       .let(({ IsOneOf }) => ({
         section: IsOneOf(
@@ -301,7 +333,7 @@ test.describe("Gallery", () => {
           "DMPs",
           "Snippets",
           "Miscellaneous",
-          "PdfDocuments"
+          "PdfDocuments",
         ) as GallerySection,
       }))
       .checkThat(async ({ section }, { Given, Then }) => {
@@ -366,19 +398,19 @@ test.describe("Gallery", () => {
                 },
               ],
             }),
-          })
+          }),
         );
 
         await Given["the Gallery is mounted"]({
           url: `/${id}`,
         });
         await Then["the page title should be"](
-          `${folderName} | RSpace Gallery`
+          `${folderName} | RSpace Gallery`,
         );
       });
 
     property(
-      "On '/item/{id}', the title should be '{filename} | RSpace Gallery'"
+      "On '/item/{id}', the title should be '{filename} | RSpace Gallery'",
     )
       .let(({ IsAny }) => ({
         id: IsAny("file id") as number,
@@ -400,15 +432,81 @@ test.describe("Gallery", () => {
               version: 1,
               parentFolderId: 123,
             }),
-          })
+          }),
         );
 
         await Given["the Gallery is mounted"]({
           url: `/item/${id}`,
         });
         await Then["the page title should be"](
-          `${filename}.jpg | RSpace Gallery`
+          `${filename}.jpg | RSpace Gallery`,
         );
       });
+  });
+
+  feature.describe("Network calls on state change", () => {
+    feature(
+      "Changing section should only make one request to the server",
+      async ({ Given, When, Then }) => {
+        await Given["the Gallery is mounted"]({
+          url: "?mediaType=Images",
+        });
+        await When["the user taps on the 'Chemistry' section"]();
+        await sleep(1000); // Wait for all the request to be made
+        await Then["there should be just one request to the server"]();
+      },
+    );
+    feature(
+      "Should handle simultaneous change in path and section",
+      async ({ Given, When, Then, router }) => {
+        await router.route("/api/v1/folders/*", (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              id: 123,
+              globalId: `GF123`,
+              name: "some folder",
+              created: "2025-07-07T11:09:18.126Z",
+              lastModified: "2025-07-07T11:09:18.126Z",
+              parentFolderId: 131,
+              notebook: false,
+              mediaType: "Images",
+              pathToRootFolder: [
+                {
+                  id: 131,
+                  globalId: "GF131",
+                  name: "Images",
+                  created: "2025-07-07T11:09:18.119Z",
+                  lastModified: "2025-07-07T11:09:18.119Z",
+                  parentFolderId: 130,
+                  notebook: false,
+                  mediaType: "Images",
+                  pathToRootFolder: null,
+                  _links: [],
+                },
+                {
+                  id: 130,
+                  globalId: "GF130",
+                  name: "Gallery",
+                  created: "2025-07-07T11:09:18.112Z",
+                  lastModified: "2025-07-07T11:09:18.112Z",
+                  parentFolderId: 124,
+                  notebook: false,
+                  mediaType: null,
+                  pathToRootFolder: null,
+                  _links: [],
+                },
+              ],
+            }),
+          }),
+        );
+        await Given["the Gallery is mounted"]({
+          url: "/123",
+        });
+        await When["the user taps on the 'Chemistry' section"]();
+        await Then["there should be just one request to the server"]();
+      },
+    );
   });
 });

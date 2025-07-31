@@ -1,29 +1,20 @@
 package com.researchspace.webapp.integrations.fieldmark;
 
-import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverterTest.getPreBuiltSample;
-import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverterTest.getPreBuiltSampleTemplate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.researchspace.api.v1.controller.ContainersApiController;
-import com.researchspace.api.v1.controller.InventoryFilesApiController;
-import com.researchspace.api.v1.controller.SampleTemplatesApiController;
-import com.researchspace.api.v1.controller.SamplesApiController;
 import com.researchspace.api.v1.model.ApiContainer;
-import com.researchspace.api.v1.model.ApiInventoryFile;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
-import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.fieldmark.model.FieldmarkNotebook;
+import com.researchspace.fieldmark.model.exception.FieldmarkImportException;
 import com.researchspace.model.User;
-import com.researchspace.model.dtos.fieldmark.FieldmarkNotebookDTO;
-import com.researchspace.service.fieldmark.FieldmarkServiceClientAdapter;
+import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.fieldmark.FieldmarkServiceManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -43,26 +34,22 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.client.HttpServerErrorException;
 
 public class FieldmarkApiControllerTest extends SpringTransactionalTest {
+
+  private static final String NOTEBOOK_ID = "notebookId";
   private static final FieldmarkApiImportRequest GOOD_NOTEBOOK_REQ =
-      new FieldmarkApiImportRequest("notebookId");
+      new FieldmarkApiImportRequest(NOTEBOOK_ID, "IgsnFieldName");
   private static final FieldmarkApiImportRequest WRONG_NOTEBOOK_REQ =
       new FieldmarkApiImportRequest("wrong_notebookId");
 
   private @InjectMocks FieldmarkApiController fieldmarkApiController;
-  private @Mock SampleTemplatesApiController sampleTemplatesApiController;
-  private @Mock InventoryFilesApiController inventoryFilesApiController;
-  private @Mock SamplesApiController samplesApiController;
-  private @Mock ContainersApiController containersApiController;
-  private @Mock FieldmarkServiceClientAdapter fieldmarkServiceClientAdapter;
+  private @Mock FieldmarkServiceManager fieldmarkServiceManagerImpl;
+  private @Mock ApiAvailabilityHandler apiHandler;
   private @Mock User goodUser;
   private @Mock User wrongUser;
   private BindingResult bindingResult;
-
   private List<FieldmarkNotebook> notebookList;
-  private FieldmarkNotebookDTO notebookDTO;
-  private ApiSampleTemplate sampleTemplateRSpace;
-  private ApiContainer containerRSpace;
-  private ApiSampleWithFullSubSamples sampleRSpace10;
+
+  FieldmarkApiImportResult importResult;
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Before
@@ -70,55 +57,48 @@ public class FieldmarkApiControllerTest extends SpringTransactionalTest {
     MockitoAnnotations.openMocks(this);
     bindingResult = new BeanPropertyBindingResult(null, "fieldmark");
 
+    ApiContainer container = new ApiContainer();
+    container.setId(1L);
+    container.setGlobalId("CC1");
+    container.setName("container");
+
+    ApiSampleTemplate sampleTemplate = new ApiSampleTemplate();
+    sampleTemplate.setId(1L);
+    sampleTemplate.setGlobalId("ST1");
+    sampleTemplate.setName("sampleTemplate");
+    importResult = new FieldmarkApiImportResult(container, sampleTemplate);
+
     String json =
         IOUtils.resourceToString(
             "/TestResources/fieldmark/notebooks.json", Charset.defaultCharset());
     notebookList = Arrays.asList(mapper.readValue(json, FieldmarkNotebook[].class));
 
-    when(fieldmarkServiceClientAdapter.getFieldmarkNotebookList(goodUser)).thenReturn(notebookList);
-    when(fieldmarkServiceClientAdapter.getFieldmarkNotebookList(wrongUser))
+    when(fieldmarkServiceManagerImpl.getFieldmarkNotebookList(goodUser)).thenReturn(notebookList);
+    when(fieldmarkServiceManagerImpl.getFieldmarkNotebookList(wrongUser))
         .thenThrow(
-            new HttpServerErrorException(
-                HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error"));
+            new FieldmarkImportException(
+                new HttpServerErrorException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error")));
 
-    json =
-        IOUtils.resourceToString(
-            "/TestResources/fieldmark/notebookDTO-singleRecord.json", Charset.defaultCharset());
-    notebookDTO = mapper.readValue(json, FieldmarkNotebookDTO.class);
+    when(fieldmarkServiceManagerImpl.importNotebook(GOOD_NOTEBOOK_REQ, goodUser))
+        .thenReturn(importResult);
+    when(fieldmarkServiceManagerImpl.importNotebook(GOOD_NOTEBOOK_REQ, wrongUser))
+        .thenThrow(
+            new FieldmarkImportException(
+                new HttpServerErrorException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error")));
 
-    when(fieldmarkServiceClientAdapter.getFieldmarkNotebook(
-            goodUser, GOOD_NOTEBOOK_REQ.getNotebookId()))
-        .thenReturn(notebookDTO);
-    when(fieldmarkServiceClientAdapter.getFieldmarkNotebook(
-            wrongUser, GOOD_NOTEBOOK_REQ.getNotebookId()))
-        .thenThrow(new IOException("No disk space left"));
-    when(fieldmarkServiceClientAdapter.getFieldmarkNotebook(
-            goodUser, WRONG_NOTEBOOK_REQ.getNotebookId()))
-        .thenThrow(new HttpServerErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
-
-    sampleTemplateRSpace = getPreBuiltSampleTemplate(notebookDTO);
-
-    when(sampleTemplatesApiController.createNewSampleTemplate(any(), any(), any()))
-        .thenReturn(sampleTemplateRSpace);
-
-    json =
-        IOUtils.resourceToString(
-            "/TestResources/fieldmark/api-container-response.json", Charset.defaultCharset());
-    containerRSpace = mapper.readValue(json, ApiContainer.class);
-
-    when(containersApiController.createNewContainer(any(), any(), any()))
-        .thenReturn(containerRSpace);
-
-    sampleRSpace10 = getPreBuiltSample(notebookDTO);
-
-    when(samplesApiController.createNewSample(any(), any(), any())).thenReturn(sampleRSpace10);
-
-    when(inventoryFilesApiController.uploadFile(any(), any(), any()))
-        .thenReturn(new ApiInventoryFile());
+    when(fieldmarkServiceManagerImpl.getIgsnCandidateFields(goodUser, NOTEBOOK_ID))
+        .thenReturn(List.of("fieldName1", "fieldName2"));
+    when(fieldmarkServiceManagerImpl.getIgsnCandidateFields(wrongUser, NOTEBOOK_ID))
+        .thenThrow(
+            new FieldmarkImportException(
+                new HttpServerErrorException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error")));
   }
 
   @Test
-  public void testGetNotebooksSuccessful() throws BindException, IOException, URISyntaxException {
+  public void testGetNotebooksSuccessful() throws BindException {
     List<FieldmarkNotebook> result = fieldmarkApiController.getNotebooks(goodUser);
     assertNotNull(result);
     assertEquals(1, result.size());
@@ -150,16 +130,16 @@ public class FieldmarkApiControllerTest extends SpringTransactionalTest {
             .contains(
                 "Error importing notebook \""
                     + GOOD_NOTEBOOK_REQ.getNotebookId()
-                    + "\" from fieldmark"));
+                    + "\" from Fieldmark"));
   }
 
   @Test
-  public void testImportNotebookRaisesServerHttpException() throws IOException {
-    when(fieldmarkServiceClientAdapter.getFieldmarkNotebook(
-            goodUser, GOOD_NOTEBOOK_REQ.getNotebookId()))
+  public void testImportNotebookRaisesServerHttpException() {
+    when(fieldmarkServiceManagerImpl.importNotebook(GOOD_NOTEBOOK_REQ, goodUser))
         .thenThrow(
-            new HttpServerErrorException(
-                HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error"));
+            new FieldmarkImportException(
+                new HttpServerErrorException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error")));
     BindException thrown =
         assertThrows(
             BindException.class,
@@ -171,7 +151,7 @@ public class FieldmarkApiControllerTest extends SpringTransactionalTest {
             .contains(
                 "Error importing notebook \""
                     + GOOD_NOTEBOOK_REQ.getNotebookId()
-                    + "\" due to Fieldmark server unavailable"));
+                    + "\" from Fieldmark"));
   }
 
   public void testImportNotebookRaisesClientHttpException() {
@@ -185,26 +165,34 @@ public class FieldmarkApiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testImportNotebookSuccessful() throws BindException, IOException {
+  public void testImportNotebookSucceed() throws BindException {
     FieldmarkApiImportResult result =
         fieldmarkApiController.importNotebook(GOOD_NOTEBOOK_REQ, bindingResult, goodUser);
 
-    verify(fieldmarkServiceClientAdapter)
-        .getFieldmarkNotebook(goodUser, GOOD_NOTEBOOK_REQ.getNotebookId());
-    verifyNoMoreInteractions(fieldmarkServiceClientAdapter);
-    verify(sampleTemplatesApiController).createNewSampleTemplate(any(), any(), any());
-    verifyNoMoreInteractions(sampleTemplatesApiController);
-    verify(containersApiController).createNewContainer(any(), any(), any());
-    verifyNoMoreInteractions(containersApiController);
-    verify(samplesApiController).createNewSample(any(), any(), any());
-    verifyNoMoreInteractions(samplesApiController);
-    verify(inventoryFilesApiController).uploadFile(any(), any(), any());
-    verifyNoMoreInteractions(inventoryFilesApiController);
+    verify(fieldmarkServiceManagerImpl).importNotebook(GOOD_NOTEBOOK_REQ, goodUser);
     assertNotNull(result);
-    assertEquals("IC98304", result.getContainerGlobalId());
-    assertEquals("IT98304", result.getSampleTemplateGlobalId());
-    assertEquals("Container RSpace IGSN Demo - 2024-11-20 18:24:03", result.getContainerName());
-    assertEquals(1, result.getSampleGlobalIds().size());
-    assertEquals("SA98307", result.getSampleGlobalIds().stream().findFirst().get());
+  }
+
+  @Test
+  public void testGetIgsnCandidateFieldsSucceed() throws BindException {
+    List<String> result = fieldmarkApiController.getIgsnCandidateFields(NOTEBOOK_ID, goodUser);
+
+    verify(fieldmarkServiceManagerImpl).getIgsnCandidateFields(goodUser, NOTEBOOK_ID);
+    assertNotNull(result);
+  }
+
+  @Test
+  public void testGetIgsnCandidateFieldsRaisesException() {
+    BindException thrown =
+        assertThrows(
+            BindException.class,
+            () -> fieldmarkApiController.getIgsnCandidateFields(NOTEBOOK_ID, wrongUser),
+            "FieldmarkApiController did not throw the exception, but it was needed");
+    assertTrue(
+        thrown
+            .getMessage()
+            .contains(
+                "Error creating IGSN candidate fields for notebook \""
+                    + GOOD_NOTEBOOK_REQ.getNotebookId()));
   }
 }

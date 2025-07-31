@@ -29,6 +29,173 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public class ControllerExceptionHandler implements IControllerExceptionHandler {
 
+  /**
+   * Allows clients to override the 5 main types of exception handling logging (RSpace
+   * General,Security,Constraint,Public Link, Spring Web Client) and two main types of Model and
+   * View to return: 'Ajax' and 'non Ajax'. Call the overloaded method handleExceptions with this as
+   * a fourth parameter. Classes that implement this interface should return true for each part of
+   * the exception handling logging they perform themselves. For example, if an implementation of
+   * this interface handles Ajax errors but not Spring Web Client of RSpace errors it would return
+   * false for handleRSpaceExceptions, false for handleSpringWebClientExceptions and true for
+   * handleAjaxExceptions. Classes that implement this interface should return a ModelAndView for
+   * each part of the ExceptionHandling return value generation they implement themselves and null
+   * if they do not implement a return value for exception handling. For example, to return the
+   * default ModelAndView for Ajax requests, an implementation of this interface should return null
+   * for visitorHandleAjaxExceptionReturnValue. To return an customised ModelAndView for non ajax
+   * requests, an implementation of this interface should return a non null ModelAndView.
+   */
+  public static interface ExceptionHandlerVisitor {
+
+    boolean visitorHasHandledGeneralRSpaceExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
+
+    boolean visitorHasHandledPublicLinkExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
+
+    boolean visitorHasHandledSecurityExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
+
+    boolean visitorHasHandledConstraintExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
+
+    boolean visitorHasHandledSpringWebClientExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
+
+    ModelAndView visitorHandleAjaxExceptionReturnValue(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
+
+    ModelAndView visitorHandleNonAjaxExceptionReturnValue(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId);
+
+    default void logErrorFromException(Exception e, String errorId) {
+      ControllerExceptionHandler.logErrorFromException(e, errorId);
+    }
+
+    default void logWarningFromException(Exception e, String errorId) {
+      ControllerExceptionHandler.logWarningFromException(e, errorId);
+    }
+
+    default void addTimeStampAndErrorId(String tstamp, String errorId, ModelAndView m) {
+      ControllerExceptionHandler.addTimeStampAndErrorId(tstamp, errorId, m);
+    }
+
+    default void setErrorResponseStatus(HttpServletResponse response, Exception e) {
+      ControllerExceptionHandler.setErrorResponseStatus(response, e);
+    }
+  }
+
+  private static final ExceptionHandlerVisitor DEFAULT_VISITOR =
+      new DefaultExceptionHandlerVisitor();
+
+  /**
+   * The default visitor signals that it does not implement any exception handling - therefore code
+   * in the class ControllerExceptionHandler will be completely unaffected by its use. Child classes
+   * of DefaultExceptionHandlerVisitor can override the methods they wish to modify and then call
+   * the overloaded 4 param method handleExceptions, passing in the child of
+   * DefaultExceptionHandlerVisitor as the 4th parameter
+   */
+  public static class DefaultExceptionHandlerVisitor implements ExceptionHandlerVisitor {
+
+    @Override
+    public boolean visitorHasHandledGeneralRSpaceExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
+      return false;
+    }
+
+    @Override
+    public boolean visitorHasHandledPublicLinkExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
+      return false;
+    }
+
+    @Override
+    public boolean visitorHasHandledSecurityExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
+      return false;
+    }
+
+    @Override
+    public boolean visitorHasHandledConstraintExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
+      return false;
+    }
+
+    @Override
+    public boolean visitorHasHandledSpringWebClientExceptionLogging(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
+      return false;
+    }
+
+    @Override
+    public ModelAndView visitorHandleAjaxExceptionReturnValue(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
+      return null;
+    }
+
+    @Override
+    public ModelAndView visitorHandleNonAjaxExceptionReturnValue(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Exception e,
+        String timestamp,
+        String errorId) {
+      return null;
+    }
+  }
+  ;
+
   public static final String EXCEPTION_MESSAGE_ATTR_NAME = "exceptionMessage";
 
   public static final String AJAX_DEFAULT_ERROR_MSG = "Something went wrong: ";
@@ -54,69 +221,113 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
 
   /**
    * Logs exceptions, stack traces and returns a suitable view for both regular and Ajax based
-   * requests. Logs security exceptions to Security log
+   * requests. Logs security exceptions to Security log. Child classes of BaseController that need
+   * to implement custom error handling should override the 'handleExceptions' method of
+   * BaseController and call the overloaded 4 parameter 'handleExceptions' method of this class with
+   * an implementation of ExceptionHandlerVisitor as the 4th parameter
    */
   public ModelAndView handleExceptions(
       HttpServletRequest request, HttpServletResponse response, Exception e) {
+    return handleExceptions(request, response, e, DEFAULT_VISITOR);
+  }
+
+  /**
+   * Logs exceptions, stack traces and returns a suitable view for both regular and Ajax based
+   * requests. Logs security exceptions to Security log. See
+   * ControllerExceptionHandler.ExceptionHandlerVisitor for an explanation of how this may be used
+   * to modify exception handling in this class
+   */
+  public ModelAndView handleExceptions(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      Exception e,
+      ExceptionHandlerVisitor visitor) {
     // handle authentication/authorisation exceptions differently.
     String tstamp = DateUtil.convertDateToISOFormat(new Date(), TimeZone.getDefault());
     String errorId = LoggingUtils.generateLogId();
-
     if (isSecurityException(e)) {
-      log.warn("Handling security-related exception {}: {}", errorId, e.getMessage());
-      SECURITY_LOG.warn(
-          "Security-related exception [{}] by user [{}] to [{}]: {}",
-          errorId,
-          SecurityUtils.getSubject().getPrincipal(),
-          request.getRequestURI(),
-          e.getMessage());
+      if (!visitor.visitorHasHandledSecurityExceptionLogging(
+          request, response, e, tstamp, errorId)) {
+        log.warn("Handling security-related exception {}: {}", errorId, e.getMessage());
+        SECURITY_LOG.warn(
+            "Security-related exception [{}] by user [{}] to [{}]: {}",
+            errorId,
+            SecurityUtils.getSubject().getPrincipal(),
+            request.getRequestURI(),
+            e.getMessage());
+      }
     } else if (e instanceof PublicLinkNotFoundException) {
-      log.warn(
-          "The following external public link was not found in this instance of RSpace: "
-              + e.getMessage());
-      return new ModelAndView("/public/publicLinkNotFound");
+      if (!visitor.visitorHasHandledPublicLinkExceptionLogging(
+          request, response, e, tstamp, errorId)) {
+        log.warn(
+            "The following external public link was not found in this instance of RSpace: "
+                + e.getMessage());
+        return new ModelAndView("/public/publicLinkNotFound");
+      }
     } else {
       if (e instanceof HttpClientErrorException) {
-        if (((HttpClientErrorException) e).getStatusCode().is5xxServerError()) {
-          logErrorFromException(e, errorId);
-        } else {
-          logWarningFromException(e, errorId);
+        if (!visitor.visitorHasHandledSpringWebClientExceptionLogging(
+            request, response, e, tstamp, errorId)) {
+          if (((HttpClientErrorException) e).getStatusCode().is5xxServerError()) {
+            logErrorFromException(e, errorId);
+          } else {
+            logWarningFromException(e, errorId);
+          }
         }
       } else if (e instanceof ConstraintViolationException) {
-        logWarningFor(getConstraintViolationMessage((ConstraintViolationException) e), errorId);
+        if (!visitor.visitorHasHandledConstraintExceptionLogging(
+            request, response, e, tstamp, errorId)) {
+          logWarningFor(getConstraintViolationMessage((ConstraintViolationException) e), errorId);
+        }
       } else {
-        logErrorFromException(e, errorId);
+        if (!visitor.visitorHasHandledGeneralRSpaceExceptionLogging(
+            request, response, e, tstamp, errorId)) {
+          logErrorFromException(e, errorId);
+        }
       }
     }
 
     String ajaxErrorView = AJAX_ERROR_VIEW_NAME;
     String ajaxDefaultErrorMessage = AJAX_DEFAULT_ERROR_MSG;
     boolean ajaxShowTechMessage = true;
+    ModelAndView visitedValue = null;
     if (isAjax(request)) {
-      String exceptionMessage = ajaxDefaultErrorMessage;
-      if (ajaxShowTechMessage) {
-        exceptionMessage += "\n" + getExceptionMessage(e);
-      }
-      Object errors = request.getAttribute("ajax.errors");
-      ModelAndView m = new ModelAndView(ajaxErrorView);
-      if (errors != null && errors instanceof ErrorList) {
-        m.addObject("errors", errors);
-      }
-      m.addObject(EXCEPTION_MESSAGE_ATTR_NAME, exceptionMessage);
-      addTimeStampAndErrorId(tstamp, errorId, m);
+      visitedValue =
+          visitor.visitorHandleAjaxExceptionReturnValue(request, response, e, tstamp, errorId);
+      if (visitedValue == null) {
+        String exceptionMessage = ajaxDefaultErrorMessage;
+        if (ajaxShowTechMessage) {
+          exceptionMessage += "\n" + getExceptionMessage(e);
+        }
+        Object errors = request.getAttribute("ajax.errors");
+        ModelAndView m = new ModelAndView(ajaxErrorView);
+        if (errors != null && errors instanceof ErrorList) {
+          m.addObject("errors", errors);
+        }
+        m.addObject(EXCEPTION_MESSAGE_ATTR_NAME, exceptionMessage);
+        addTimeStampAndErrorId(tstamp, errorId, m);
 
-      // this triggers an ajax error event in the client.
-      setErrorResponseStatus(response, e);
-      return m;
+        // this triggers an ajax error event in the client.
+        setErrorResponseStatus(response, e);
+        return m;
+      } else {
+        return visitedValue;
+      }
     } else {
-      ModelAndView m = new ModelAndView(NON_AJAX_ERROR_VIEW_NAME);
-      m.addObject(EXCEPTION_MESSAGE_ATTR_NAME, getExceptionMessage(e));
-      addTimeStampAndErrorId(tstamp, errorId, m);
-      return m;
+      visitedValue =
+          visitor.visitorHandleNonAjaxExceptionReturnValue(request, response, e, tstamp, errorId);
+      if (visitedValue == null) {
+        ModelAndView m = new ModelAndView(NON_AJAX_ERROR_VIEW_NAME);
+        m.addObject(EXCEPTION_MESSAGE_ATTR_NAME, getExceptionMessage(e));
+        addTimeStampAndErrorId(tstamp, errorId, m);
+        return m;
+      } else {
+        return visitedValue;
+      }
     }
   }
 
-  private void logErrorFromException(Exception e, String errorId) {
+  private static void logErrorFromException(Exception e, String errorId) {
     log.error(
         "Unexpected exception in controller:errorId-[{}]. [{}]. {}",
         errorId,
@@ -124,7 +335,7 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
         convertStackTraceToString(e));
   }
 
-  private void logWarningFromException(Exception e, String errorId) {
+  private static void logWarningFromException(Exception e, String errorId) {
     log.warn(
         "Expected exception type in controller:errorId-[{}]. [{}]. {}",
         errorId,
@@ -136,12 +347,12 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
     log.warn("Expected exception type in controller:errorId-[{}]. [{}]. {}", errorId, message);
   }
 
-  private void addTimeStampAndErrorId(String tstamp, String errorId, ModelAndView m) {
+  private static void addTimeStampAndErrorId(String tstamp, String errorId, ModelAndView m) {
     m.addObject("tstamp", tstamp);
     m.addObject("errorId", errorId);
   }
 
-  private void setErrorResponseStatus(HttpServletResponse response, Exception e) {
+  private static void setErrorResponseStatus(HttpServletResponse response, Exception e) {
     if (isSecurityException(e)) {
       response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     } else {
@@ -149,13 +360,13 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
     }
   }
 
-  private boolean isSecurityException(Exception e) {
+  private static boolean isSecurityException(Exception e) {
     return e instanceof RecordAccessDeniedException
         || e instanceof AuthorizationException
         || e instanceof AuthenticationException;
   }
 
-  private String convertStackTraceToString(Exception e) {
+  private static String convertStackTraceToString(Exception e) {
     return Arrays.toString(e.getStackTrace()).replace(",", "\n at");
   }
 

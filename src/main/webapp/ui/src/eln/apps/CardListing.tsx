@@ -21,6 +21,7 @@ import Egnyte from "./integrations/Egnyte";
 import Evernote from "./integrations/Evernote";
 import Fieldmark from "./integrations/Fieldmark";
 import Figshare from "./integrations/Figshare";
+import Galaxy from "./integrations/Galaxy";
 import GitHub from "./integrations/GitHub";
 import GoogleDrive from "./integrations/GoogleDrive";
 import Jove from "./integrations/Jove";
@@ -71,6 +72,16 @@ function CardListing({
       });
     },
     [update, integrationStates.ARGOS],
+  );
+
+  const ascensciaUpdate = React.useCallback(
+    (newState: IntegrationStates["ASCENSCIA"]) => {
+      void runInAction(async () => {
+        integrationStates.ASCENSCIA = await update("ASCENSCIA", newState);
+      });
+    },
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [update]
   );
 
   const boxUpdate = React.useCallback(
@@ -185,6 +196,15 @@ function CardListing({
       });
     },
     [update, integrationStates.FIGSHARE],
+  );
+  
+  const galaxyUpdate = React.useCallback(
+    (newState: IntegrationStates["GALAXY"]) => {
+      void runInAction(async () => {
+        integrationStates.GALAXY = await update("GALAXY", newState);
+      });
+    },
+    [update, integrationStates.GALAXY]
   );
 
   const githubUpdate = React.useCallback(
@@ -326,7 +346,12 @@ function CardListing({
         />
       )}
       {integrationStates.API_DIRECT.mode === mode && <ApiDirect />}
-      {integrationStates.ASCENSCIA.mode === mode && <Ascenscia />}
+      {integrationStates.ASCENSCIA.mode === mode && (
+        <Ascenscia
+          integrationState={integrationStates.ASCENSCIA}
+          update={ascensciaUpdate}
+        />
+      )}
       {integrationStates.BOX.mode === mode && (
         <Box integrationState={integrationStates.BOX} update={boxUpdate} />
       )}
@@ -394,6 +419,12 @@ function CardListing({
         <Figshare
           integrationState={integrationStates.FIGSHARE}
           update={figshareUpdate}
+        />
+      )}
+      {integrationStates.GALAXY.mode === mode && (
+        <Galaxy
+          integrationState={integrationStates.GALAXY}
+          update={galaxyUpdate}
         />
       )}
       {integrationStates.GITHUB.mode === mode && (

@@ -61,7 +61,7 @@ export type IntegrationState<Credentials> = {
 export type IntegrationStates = {
   API_DIRECT: IntegrationState<null>;
   ARGOS: IntegrationState<emptyObject>;
-  ASCENSCIA: IntegrationState<null>;
+  ASCENSCIA: IntegrationState<emptyObject>;
   BOX: IntegrationState<{
     BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">;
     "box.api.enabled": Optional<boolean>;
@@ -104,6 +104,9 @@ export type IntegrationStates = {
   FIGSHARE: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
+  GALAXY: IntegrationState<{
+    GALAXY_API_KEY: Optional<string>;
+    }>;
   GITHUB: IntegrationState<
     Array<
       Optional<{
@@ -229,6 +232,12 @@ function decodeArgos(data: FetchedState): IntegrationStates["ARGOS"] {
   return { mode: parseState(data), credentials: {} };
 }
 
+function decodeAscenscia(data: FetchedState): IntegrationStates["ASCENSCIA"] {
+  return {
+    mode: parseState(data),
+    credentials: {}
+  };
+}
 function decodeBox(data: FetchedState): IntegrationStates["BOX"] {
   return {
     mode: parseState(data),
@@ -393,6 +402,15 @@ function decodeFigshare(data: FetchedState): IntegrationStates["FIGSHARE"] {
     mode: parseState(data),
     credentials: {
       ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+    },
+  };
+}
+
+function decodeGalaxy(data: FetchedState): IntegrationStates["GALAXY"] {
+  return {
+    mode: parseState(data),
+    credentials: {
+      GALAXY_API_KEY: parseCredentialString(data.options, "GALAXY_API_KEY"),
     },
   };
 }
@@ -664,10 +682,7 @@ function decodeIntegrationStates(data: {
       credentials: null,
     },
     ARGOS: decodeArgos(data.ARGOS),
-    ASCENSCIA: {
-      mode: "EXTERNAL",
-      credentials: null,
-    },
+    ASCENSCIA: decodeAscenscia(data.ASCENSCIA),
     BOX: decodeBox(data.BOX),
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),
@@ -681,6 +696,7 @@ function decodeIntegrationStates(data: {
     EVERNOTE: decodeEvernote(data.EVERNOTE),
     FIELDMARK: decodeFieldmark(data.FIELDMARK),
     FIGSHARE: decodeFigshare(data.FIGSHARE),
+    GALAXY: decodeGalaxy(data.GALAXY),
     GITHUB: decodeGitHub(data.GITHUB),
     GOOGLEDRIVE: decodeGoogleDrive(data.GOOGLEDRIVE),
     JOVE: decodeJove(data.JOVE),
@@ -704,6 +720,17 @@ const encodeIntegrationState = <I extends Integration>(
   if (integration === "ARGOS") {
     return {
       name: "ARGOS",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: {},
+    };
+  }
+  if (integration === "ASCENSCIA") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["ASCENSCIA"]["credentials"] =
+      data.credentials;
+    return {
+      name: "ASCENSCIA",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {},
@@ -899,6 +926,22 @@ const encodeIntegrationState = <I extends Integration>(
         ...creds.ACCESS_TOKEN.map((token) => ({
           ACCESS_TOKEN: token,
         })).orElse({}),
+      },
+    };
+  }
+  if (integration === "GALAXY") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["GALAXY"]["credentials"] = data.credentials;
+    return {
+      name: "GALAXY",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: {
+        ...creds.GALAXY_API_KEY.map((key) => ({
+          GALAXY_API_KEY: key,
+        })).orElse({
+          GALAXY_API_KEY: "",
+        }),
       },
     };
   }
@@ -1218,6 +1261,8 @@ export function useIntegrationsEndpoint(): {
           switch (integration) {
             case "ARGOS":
               return decodeArgos(responseData.data) as IntegrationStates[I];
+            case "ASCENSCIA":
+              return decodeAscenscia(responseData.data) as IntegrationStates[I];
             case "BOX":
               return decodeBox(responseData.data) as IntegrationStates[I];
             case "CHEMISTRY":
@@ -1248,6 +1293,8 @@ export function useIntegrationsEndpoint(): {
               return decodeFieldmark(responseData.data) as IntegrationStates[I];
             case "FIGSHARE":
               return decodeFigshare(responseData.data) as IntegrationStates[I];
+            case "GALAXY":
+              return decodeGalaxy(responseData.data) as IntegrationStates[I];
             case "GITHUB":
               return decodeGitHub(responseData.data) as IntegrationStates[I];
             case "GOOGLEDRIVE":
@@ -1356,6 +1403,8 @@ export function useIntegrationsEndpoint(): {
           return decodeFieldmark(response.data.data) as IntegrationStates[I];
         case "FIGSHARE":
           return decodeFigshare(response.data.data) as IntegrationStates[I];
+        case "GALAXY":
+          return decodeGalaxy(response.data.data) as IntegrationStates[I];
         case "GITHUB":
           return decodeGitHub(response.data.data) as IntegrationStates[I];
         case "GOOGLEDRIVE":

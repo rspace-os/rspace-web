@@ -81,6 +81,7 @@ define(function() {
 
         _printCategory('Scientific Tools and Specialized Data');
         _printSettings([ 'inventory.available' ]);
+        _printSettings([ 'ascenscia.available' ]);
         _printSettings([ 'chemistry.available' ]);
         _printSettings([ 'clustermarket.available' ]);
         _printSettings([ 'fieldmark.available' ]);
@@ -91,6 +92,9 @@ define(function() {
         _printCategory('Research Methods and Protocols');
         _printSettings([ 'jove.available' ]);
         _printSettings([ 'protocols_io.available' ]);
+
+        _printCategory('Analysis and Programming');
+        _printSettings([ 'galaxy.available' ]);
 
         _printCategory('Identity');
         _printSettings([ 'orcid.available' ]);

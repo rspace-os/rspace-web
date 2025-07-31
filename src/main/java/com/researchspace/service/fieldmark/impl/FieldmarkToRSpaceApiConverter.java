@@ -57,8 +57,11 @@ public class FieldmarkToRSpaceApiConverter {
       int columnIndex = 1;
       for (Entry<String, FieldmarkTypeExtractor> fieldDTO :
           currentRecordDTO.getFields().entrySet()) {
-        columnIndex =
-            createSampleTemplateFieldFromDTO(fieldDTO, columnIndex, sampleTemplatePost.getFields());
+        if (!fieldDTO.getValue().isDoiIdentifier()) {
+          columnIndex =
+              createSampleTemplateFieldFromDTO(
+                  fieldDTO, columnIndex, sampleTemplatePost.getFields());
+        }
       }
     }
     sampleTemplatePost.setDefaultUnitId(RSUnitDef.DIMENSIONLESS.getId());
@@ -177,8 +180,11 @@ public class FieldmarkToRSpaceApiConverter {
     List<ApiSampleField> currentFieldList = new LinkedList<>();
     int columnIndex = 1;
     for (Entry<String, FieldmarkTypeExtractor> currentFieldDTO : recordDTO.getFields().entrySet()) {
-      columnIndex =
-          createSampleFieldFromDTO(currentFieldDTO, currentFieldList, idsByFieldName, columnIndex);
+      if (!currentFieldDTO.getValue().isDoiIdentifier()) {
+        columnIndex =
+            createSampleFieldFromDTO(
+                currentFieldDTO, currentFieldList, idsByFieldName, columnIndex);
+      }
     }
     samplePost.setFields(currentFieldList);
 

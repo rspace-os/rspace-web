@@ -59,6 +59,18 @@ import Stack from "@mui/material/Stack";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import Result from "@/util/result";
 
+/**
+ * We use this constant to represent an empty path in the gallery to avoid
+ * unnecessary re-renders and the triggering of excessive network calls. React
+ * only performs shallow equality checks on arrays, so we need to use a constant
+ * to ensure that the reference stays the same when the path is set to be empty
+ * when it is already empty, otherwise changing the gallery section results in
+ * the path being set to a new empty state (which triggers a network call for
+ * the current gallery section) and then another network call to actually fetch
+ * the new gallery section.
+ */
+const EMPTY_PATH = Object.freeze([]) as ReadonlyArray<GalleryFile>;
+
 const WholePage = styled(
   ({
     listingOf,
@@ -249,7 +261,7 @@ const WholePage = styled(
                         ).orElse(null)}
                         setSelectedSection={(mediaType) => {
                           setSelectedSection({ mediaType });
-                          setPath([]);
+                          setPath(EMPTY_PATH);
                           setAppliedSearchTerm("");
                           trackEvent("user:change:section:gallery", {
                             section: mediaType,
@@ -277,7 +289,7 @@ const WholePage = styled(
                           path={FetchingData.getSuccessValue(path).orElse(null)}
                           setSelectedSection={(mediaType) => {
                             setSelectedSection({ mediaType });
-                            setPath([]);
+                            setPath(EMPTY_PATH);
                             setAppliedSearchTerm("");
                           }}
                           galleryListing={galleryListing}
@@ -338,8 +350,16 @@ function LandingPage() {
     mediaType: GALLERY_SECTION.IMAGES,
   });
   const selectedSection = searchParams.mediaType;
-  const [path, setPath] = React.useState<ReadonlyArray<GalleryFile>>([]);
+  const [path, setPath] =
+    React.useState<ReadonlyArray<GalleryFile>>(EMPTY_PATH);
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
+  const listingOf = React.useMemo(() => {
+    return {
+      tag: "section" as const,
+      section: selectedSection,
+      path,
+    };
+  }, [selectedSection, path]);
   return FetchingData.match(filestoresEnabled, {
     loading: () => null,
     error: () => (
@@ -366,7 +386,7 @@ function LandingPage() {
         );
       return (
         <WholePage
-          listingOf={{ tag: "section", section: selectedSection, path }}
+          listingOf={listingOf}
           setSelectedSection={setSelectedSection}
           setPath={setPath}
           title={({ path, section }) =>

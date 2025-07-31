@@ -24,7 +24,7 @@
           "simpleTypeName": "Integer"
         },
         "IGSN-QR-Code": {
-          "fieldValue": "1",
+          "fieldValue": "10.82316/zkrr-as98",
           "fieldType": "java.lang.String",
           "simpleTypeName": "String"
         },

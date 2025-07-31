@@ -114,6 +114,13 @@ public abstract class BaseController implements ServletContextAware {
   protected BreadcrumbGenerator breadcrumbGenerator = new DefaultBreadcrumbGenerator();
   protected @Autowired IControllerExceptionHandler exceptionHandler;
 
+  /**
+   * Child classes of BaseController that need
+   * to implement custom error handling should override this 'handleExceptions' method of
+   * BaseController and call the overloaded 4 parameter 'handleExceptions' method of <code>
+   *   IControllerExceptionHandler</> with
+   * an implementation of ExceptionHandlerVisitor as the 4th parameter
+   */
   @ExceptionHandler()
   public ModelAndView handleExceptions(
       HttpServletRequest request, HttpServletResponse response, Exception e) {

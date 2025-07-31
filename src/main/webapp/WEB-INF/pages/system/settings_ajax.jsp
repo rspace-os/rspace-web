@@ -77,11 +77,13 @@
         <div id="zenodo.available.description"><spring:message code="system.property.description.zenodo.available" /></div>
         <div id="digitalCommonsData.available.description"><spring:message code="system.property.description.digitalCommonsData.available" /></div>
         <div id="fieldmark.available.description"><spring:message code="system.property.description.fieldmark.available" /></div>
+        <div id="galaxy.available.description"><spring:message code="system.property.description.galaxy.available" /></div>
         <div id="github.available.description"><spring:message code="system.property.description.github.available" /></div>
         <div id="api.available.description"><spring:message code="system.property.description.api.available" /></div>
         <div id="api.oauth.authentication.description"><spring:message code="system.property.description.api.oauth.authentication" /></div>
         <div id="onboarding.available.description"><spring:message code="system.property.description.onboarding.available" /></div>
         <div id="snapgene.available.description"><spring:message code="system.property.description.snapgene.available" /></div>
+        <div id="ascenscia.available.description"><spring:message code="system.property.description.ascenscia.available" /></div>
         <div id="group_autosharing.available.description"><spring:message code="system.property.description.group_autosharing.available" /></div>
         <div id="self_service_labgroups.description"><spring:message code="system.property.description.self_service_labgroups" /></div>
         <div id="publicLastLogin.available.description"><spring:message code="system.property.description.publicLastLogin.available" /></div>
