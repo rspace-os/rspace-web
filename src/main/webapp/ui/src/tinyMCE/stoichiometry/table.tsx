@@ -136,10 +136,6 @@ function StoichiometryTable({
       headerName: "Name",
       flex: 1.5,
     }),
-    DataGridColumn.newColumnWithFieldName<"formula", MoleculeRow>("formula", {
-      headerName: "Formula",
-      flex: 1,
-    }),
     DataGridColumn.newColumnWithFieldName<"role", MoleculeRow>("role", {
       headerName: "Role",
       flex: 1,
