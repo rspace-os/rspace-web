@@ -107,12 +107,7 @@ export default function StoichiometryTable({
     );
   }
 
-  if (
-    !data ||
-    (!data.reactants?.length &&
-      !data.products?.length &&
-      !data.moleculeInfo?.length)
-  ) {
+  if (!data || !data.molecules?.length) {
     return (
       <Box
         display="flex"
@@ -126,16 +121,16 @@ export default function StoichiometryTable({
     );
   }
 
-  // Combine all molecules for display
-  const allMolecules = [
-    ...(data.reactants || []),
-    ...(data.products || []),
-    ...(data.agents || []),
-  ];
+  // Use the molecules array from the new response format
+  const allMolecules = data.molecules;
 
   type MoleculeRow = StoichiometryMolecule & { id: number };
 
   const columns = [
+    DataGridColumn.newColumnWithFieldName<"name", MoleculeRow>("name", {
+      headerName: "Name",
+      flex: 1.5,
+    }),
     DataGridColumn.newColumnWithFieldName<"formula", MoleculeRow>("formula", {
       headerName: "Formula",
       flex: 1,
@@ -145,34 +140,20 @@ export default function StoichiometryTable({
       flex: 1,
       renderCell: (params) => <RoleChip role={params.value || ""} />,
     }),
-    DataGridColumn.newColumnWithFieldName<"mass", MoleculeRow>("mass", {
-      headerName: "Mass",
-      flex: 1,
+    DataGridColumn.newColumnWithFieldName<"coefficient", MoleculeRow>("coefficient", {
+      headerName: "Coefficient",
+      flex: 0.8,
     }),
-    DataGridColumn.newColumnWithFieldName<"exactMass", MoleculeRow>(
-      "exactMass",
+    DataGridColumn.newColumnWithFieldName<"molecularWeight", MoleculeRow>(
+      "molecularWeight",
       {
-        headerName: "Exact Mass",
-        flex: 1,
-      },
-    ),
-    DataGridColumn.newColumnWithFieldName<"atomCount", MoleculeRow>(
-      "atomCount",
-      {
-        headerName: "Atom Count",
-        flex: 1,
-      },
-    ),
-    DataGridColumn.newColumnWithFieldName<"bondCount", MoleculeRow>(
-      "bondCount",
-      {
-        headerName: "Bond Count",
-        flex: 1,
+        headerName: "Molecular Weight",
+        flex: 1.2,
       },
     ),
     DataGridColumn.newColumnWithFieldName<"smiles", MoleculeRow>("smiles", {
       headerName: "SMILES",
-      flex: 1,
+      flex: 1.5,
       renderCell: (params) => (
         <Box sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
           {params.value}

@@ -16,28 +16,60 @@ export type ChemicalCompound = {
 
 export type RspaceCompoundId = string;
 
+export type RsChemElement = {
+  id: number;
+  parentId: number | null;
+  ecatChemFileId: string | null;
+  dataImage: string | null;
+  chemElements: string;
+  smilesString: string | null;
+  chemId: string | null;
+  reactionId: string | null;
+  rgroupId: string | null;
+  metadata: string | null;
+  chemElementsFormat: string;
+  creationDate: number;
+  imageFileProperty: any | null;
+};
+
 export type StoichiometryMolecule = {
-  atomCount: number;
-  bondCount: number;
-  formalCharge: number;
-  exactMass: number;
-  mass: number;
+  id: number;
+  rsChemElement: RsChemElement;
+  role: string;
   formula: string;
   name: string;
-  role: string;
-  additionalMetadata: string | null;
   smiles: string;
+  coefficient: number;
+  molecularWeight: number;
+  mass: number | null;
+  moles: number | null;
+  expectedAmount: number | null;
+  actualAmount: number | null;
+  actualYield: number | null;
+  limitingReagent: boolean;
+  notes: string | null;
+};
+
+export type ParentReaction = {
+  id: number;
+  parentId: number;
+  ecatChemFileId: string | null;
+  dataImage: string;
+  chemElements: string;
+  smilesString: string;
+  chemId: string | null;
+  reactionId: string | null;
+  rgroupId: string | null;
+  metadata: string;
+  chemElementsFormat: string;
+  creationDate: number;
+  imageFileProperty: any;
 };
 
 export type StoichiometryResponse = {
-  moleculeInfo: ReadonlyArray<StoichiometryMolecule>;
-  formula: string;
-  additionalMetadata: string;
-  reaction: boolean;
+  id: number;
+  parentReaction: ParentReaction;
   molecules: ReadonlyArray<StoichiometryMolecule>;
-  agents: ReadonlyArray<StoichiometryMolecule>;
-  reactants: ReadonlyArray<StoichiometryMolecule>;
-  products: ReadonlyArray<StoichiometryMolecule>;
 };
 
 /**
