@@ -255,7 +255,7 @@ public class RSChemService implements ChemistryService {
   }
 
   @Override
-  public Optional<ElementalAnalysisDTO> getStoichiometry(long chemId, Integer revision, User user) {
+  public Optional<Stoichiometry> getStoichiometry(long chemId, Integer revision, User user) {
     RSChemElement chemical = getChemicalElementByRevision(chemId, revision, user);
     if (chemical == null) {
       return null;
@@ -271,7 +271,11 @@ public class RSChemService implements ChemistryService {
         }
       }
     }
-    return analysis;
+    try {
+      return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

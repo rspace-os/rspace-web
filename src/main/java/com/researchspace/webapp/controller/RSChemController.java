@@ -428,24 +428,18 @@ public class RSChemController extends BaseController {
 
   @GetMapping("stoichiometry")
   @ResponseBody
-  public AjaxReturnObject<ElementalAnalysisDTO> getStoichiometry(
+  public AjaxReturnObject<Stoichiometry> getStoichiometry(
       @RequestParam("chemId") long chemId,
       @RequestParam(value = "revision", required = false) Integer revision,
       Principal principal) {
     User subject = getUserByUsername(principal.getName());
-    Optional<ElementalAnalysisDTO> stoichiometry =
+    Optional<Stoichiometry> stoichiometry =
         chemistryService.getStoichiometry(chemId, revision, subject);
-    if (stoichiometry == null) {
+    if (stoichiometry.isEmpty()) {
       log.info("No chem element found for id {} and revision {}", chemId, revision);
       return new AjaxReturnObject<>(ErrorList.of("No chem element with id " + chemId));
     }
-    if (stoichiometry.isPresent()) {
-      return new AjaxReturnObject<>(stoichiometry.get());
-    } else {
-      log.info("Couldn't retrieve stoichiometry for chemId {} and revision {}", chemId, revision);
-      return new AjaxReturnObject<>(
-          ErrorList.of("Couldn't retrieve stoichiometry for chemId: " + chemId));
-    }
+    return new AjaxReturnObject<>(stoichiometry.get());
   }
 
   @PostMapping("stoichiometry")
@@ -465,16 +459,6 @@ public class RSChemController extends BaseController {
     return new AjaxReturnObject<>(stoichiometry);
   }
 
-  /**
-   * Updates stoichiometry information in the database. <br>
-   * If no such Stoichiometry exists for the given id, will return an error message in
-   * AjaxReturnObject.
-   *
-   * @param stoichiometryId the ID of the stoichiometry to update
-   * @param stoichiometryDTO the updated stoichiometry information
-   * @param principal the current principal
-   * @return AjaxReturnObject with the updated stoichiometry
-   */
   @PutMapping("stoichiometry")
   @ResponseBody
   public AjaxReturnObject<Stoichiometry> updateStoichiometry(

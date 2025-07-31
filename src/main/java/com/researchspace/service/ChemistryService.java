@@ -49,7 +49,7 @@ public interface ChemistryService {
 
   Optional<ElementalAnalysisDTO> getElementalAnalysis(long chemId, Integer revision, User user);
 
-  Optional<ElementalAnalysisDTO> getStoichiometry(long chemId, Integer revision, User user);
+  Optional<Stoichiometry> getStoichiometry(long chemId, Integer revision, User user);
 
   Stoichiometry getStoichiometryAndSave(long chemId, Integer revision, User user);
 

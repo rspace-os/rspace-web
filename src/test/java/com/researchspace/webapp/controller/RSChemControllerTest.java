@@ -1,18 +1,25 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.RSChemElement;
+import com.researchspace.model.Stoichiometry;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
+import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
+import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
+import com.researchspace.model.dtos.chemistry.MoleculeRole;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.TestFactory;
@@ -27,6 +34,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.Arrays;
+import java.util.Optional;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -148,5 +157,141 @@ public class RSChemControllerTest {
     when(chemicalService.getChemicalElementByRevision(2L, null, user)).thenReturn(chem);
     ResponseEntity<byte[]> response = rsChemController.getImageChem(2L, 123L, mockPrincipal, null);
     assertEquals(HttpStatus.OK, response.getStatusCode());
+  }
+
+  @Test
+  public void whenGetStoichiometry_thenReturnStoichiometryData() {
+    MoleculeInfoDTO reactant =
+        MoleculeInfoDTO.builder()
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .mass(46.07)
+            .exactMass(46.042)
+            .atomCount(9)
+            .bondCount(8)
+            .build();
+
+    MoleculeInfoDTO product =
+        MoleculeInfoDTO.builder()
+            .role(MoleculeRole.PRODUCT)
+            .formula("C2H4O")
+            .name("Acetaldehyde")
+            .smiles("CC=O")
+            .mass(44.05)
+            .exactMass(44.026)
+            .atomCount(7)
+            .bondCount(7)
+            .build();
+
+    ElementalAnalysisDTO analysisDTO =
+        ElementalAnalysisDTO.builder()
+            .moleculeInfo(Arrays.asList(reactant, product))
+            .formula("C2H6O -> C2H4O + H2")
+            .isReaction(true)
+            .build();
+
+    generalMocks();
+    when(chemicalService.getStoichiometry(2L, null, user)).thenReturn(Optional.of(analysisDTO));
+
+    AjaxReturnObject<ElementalAnalysisDTO> response =
+        rsChemController.getStoichiometry(2L, null, mockPrincipal);
+
+    assertNotNull(response);
+    assertNotNull(response.getData());
+    assertEquals("C2H6O -> C2H4O + H2", response.getData().getFormula());
+    assertTrue(response.getData().isReaction());
+    assertEquals(1, response.getData().getReactants().size());
+    assertEquals(1, response.getData().getProducts().size());
+    assertEquals("Ethanol", response.getData().getReactants().get(0).getName());
+    assertEquals("Acetaldehyde", response.getData().getProducts().get(0).getName());
+  }
+
+  @Test
+  public void whenGetStoichiometryNotFound_thenReturnError() {
+    generalMocks();
+    when(chemicalService.getStoichiometry(2L, null, user)).thenReturn(Optional.empty());
+
+    AjaxReturnObject<ElementalAnalysisDTO> response =
+        rsChemController.getStoichiometry(2L, null, mockPrincipal);
+
+    assertNotNull(response);
+    assertNull(response.getData());
+    assertNotNull(response.getError());
+    assertFalse(response.isSuccess());
+  }
+
+  @Test
+  public void whenSaveStoichiometry_thenReturnSavedStoichiometry() throws IOException {
+    Stoichiometry stoichiometry = new Stoichiometry();
+    stoichiometry.setId(1L);
+    RSChemElement parentReaction = TestFactory.createChemElement(1L, 2L);
+    stoichiometry.setParentReaction(parentReaction);
+
+    generalMocks();
+    when(chemicalService.getStoichiometryAndSave(2L, null, user)).thenReturn(stoichiometry);
+
+    AjaxReturnObject<Stoichiometry> response =
+        rsChemController.saveStoichiometry(2L, null, mockPrincipal);
+
+    assertNotNull(response);
+    assertNotNull(response.getData());
+    assertEquals(Long.valueOf(1L), response.getData().getId());
+    assertEquals(parentReaction, response.getData().getParentReaction());
+  }
+
+  @Test
+  public void whenSaveStoichiometryFails_thenReturnError() {
+    generalMocks();
+    when(chemicalService.getStoichiometryAndSave(2L, null, user)).thenReturn(null);
+
+    AjaxReturnObject<Stoichiometry> response =
+        rsChemController.saveStoichiometry(2L, null, mockPrincipal);
+
+    assertNotNull(response);
+    assertNull(response.getData());
+    assertNotNull(response.getError());
+    assertFalse(response.isSuccess());
+  }
+
+  @Test
+  public void whenUpdateStoichiometry_thenReturnUpdatedStoichiometry() throws IOException {
+    Stoichiometry stoichiometry = new Stoichiometry();
+    stoichiometry.setId(1L);
+    RSChemElement parentReaction = TestFactory.createChemElement(1L, 2L);
+    stoichiometry.setParentReaction(parentReaction);
+
+    StoichiometryDTO stoichiometryDTO = new StoichiometryDTO();
+    stoichiometryDTO.setParentReactionId(2L);
+
+    generalMocks();
+    when(chemicalService.updateStoichiometry(1L, stoichiometryDTO, user)).thenReturn(stoichiometry);
+
+    AjaxReturnObject<Stoichiometry> response =
+        rsChemController.updateStoichiometry(1L, stoichiometryDTO, mockPrincipal);
+
+    assertNotNull(response);
+    assertNotNull(response.getData());
+    assertEquals(Long.valueOf(1L), response.getData().getId());
+    assertEquals(parentReaction, response.getData().getParentReaction());
+  }
+
+  @Test
+  public void whenUpdateStoichiometryFails_thenReturnError() {
+    StoichiometryDTO stoichiometryDTO = new StoichiometryDTO();
+    stoichiometryDTO.setParentReactionId(2L);
+
+    generalMocks();
+    when(chemicalService.updateStoichiometry(1L, stoichiometryDTO, user))
+        .thenThrow(new RuntimeException("Update failed"));
+
+    AjaxReturnObject<Stoichiometry> response =
+        rsChemController.updateStoichiometry(1L, stoichiometryDTO, mockPrincipal);
+
+    assertNotNull(response);
+    assertNull(response.getData());
+    assertNotNull(response.getError());
+    assertFalse(response.isSuccess());
   }
 }
