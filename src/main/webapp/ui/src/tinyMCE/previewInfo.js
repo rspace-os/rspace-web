@@ -15,9 +15,7 @@ import Analytics from "@/components/Analytics";
 
 const useStyles = makeStyles()((theme) => ({
   wrapper: {
-    display: "table",
     border: "1px solid rgb(200,200,200)",
-    borderCollapse: "collapse",
     margin: "10px 0px",
   },
 }));
