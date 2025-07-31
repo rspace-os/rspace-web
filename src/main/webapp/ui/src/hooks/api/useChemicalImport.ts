@@ -95,7 +95,18 @@ export default function useChemicalImport(): {
   }) => Promise<string>;
 
   /**
-   * Gets stoichiometry information for a chemical compound.
+   * Calculates stoichiometry information for a chemical compound.
+   * This performs a POST request to generate/calculate the data.
+   */
+  calculateStoichiometry: ({
+    chemId,
+  }: {
+    chemId: number;
+  }) => Promise<StoichiometryResponse>;
+
+  /**
+   * Gets existing stoichiometry information for a chemical compound.
+   * This performs a GET request to retrieve previously calculated data.
    */
   getStoichiometry: ({
     chemId,
@@ -255,7 +266,7 @@ export default function useChemicalImport(): {
     return Mustache.render(htmlTemplate.data, json) as string;
   }
 
-  async function getStoichiometry({
+  async function calculateStoichiometry({
     chemId,
   }: {
     chemId: number;
@@ -272,6 +283,31 @@ export default function useChemicalImport(): {
       addAlert(
         mkAlert({
           variant: "error",
+          title: "Error calculating stoichiometry data",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        }),
+      );
+      throw new Error("Could not calculate stoichiometry data", { cause: e });
+    }
+  }
+
+  async function getStoichiometry({
+    chemId,
+  }: {
+    chemId: number;
+  }): Promise<StoichiometryResponse> {
+    try {
+      const { data } = await axios.get<{ data: StoichiometryResponse }>(
+        "/chemical/stoichiometry",
+        {
+          params: { chemId },
+        }
+      );
+      return data.data;
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
           title: "Error retrieving stoichiometry data",
           message: getErrorMessage(e, "An unknown error occurred."),
         }),
@@ -280,5 +316,5 @@ export default function useChemicalImport(): {
     }
   }
 
-  return { search, save, saveSmilesString, formatAsHtml, getStoichiometry };
+  return { search, save, saveSmilesString, formatAsHtml, calculateStoichiometry, getStoichiometry };
 }
