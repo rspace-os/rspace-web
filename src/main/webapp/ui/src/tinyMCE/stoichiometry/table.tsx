@@ -17,7 +17,7 @@ import { doNotAwait } from "../../util/Util";
 export default function StoichiometryTable({
   chemId,
 }: {
-  chemId: number;
+  chemId: number | null;
 }): React.ReactNode {
   const { getStoichiometry } = useChemicalImport();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
@@ -29,6 +29,7 @@ export default function StoichiometryTable({
     setError(null);
     doNotAwait(async () => {
       try {
+        if (!chemId) throw new Error("chemId is required");
         const result = await getStoichiometry({ chemId });
         setData(result);
       } catch (e) {
