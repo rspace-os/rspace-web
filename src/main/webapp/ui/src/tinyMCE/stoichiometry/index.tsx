@@ -32,8 +32,10 @@ export interface Editor {
   execCommand: (command: string, ui: boolean, value?: string) => void;
   id: string; // the id the current document field prefixed with "rtf_"
   addCommand: (name: string, func: () => void) => void;
+  setDirty: (state: boolean) => void;
   selection: {
     getNode: () => HTMLElement;
+    select: (node: HTMLElement) => void;
   };
 }
 
@@ -107,8 +109,18 @@ class StoichiometryPlugin {
       /*
        * Mark the chemistry element as having a generated stoichiometry table
        * So that we start showing the table when the document isn't being edited
+       * We use mceReplaceContent to ensure TinyMCE properly tracks the change
        */
-      node.setAttribute("data-has-stoichiometry-table", "true");
+      const currentHtml = node.outerHTML;
+      const modifiedHtml = currentHtml.replace(
+        /(<img[^>]*)/,
+        '$1 data-has-stoichiometry-table="true"',
+      );
+
+      // Replace the current element with the modified version
+      editor.selection.select(node);
+      editor.execCommand("mceReplaceContent", false, modifiedHtml);
+      editor.setDirty(true);
 
       dialogRenderer.next({
         open: true,

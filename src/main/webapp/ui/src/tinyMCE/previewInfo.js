@@ -3,6 +3,15 @@ import React, { useState, useEffect } from "react";
 import ChemCard from "./chemCard";
 import { createRoot } from "react-dom/client";
 import { makeStyles } from "tss-react/mui";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import createAccentedTheme from "../accentedTheme";
+import { ACCENT_COLOR } from "../assets/branding/chemistry";
+import StoichiometryTable from "./stoichiometry/table";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import Alerts from "@/components/Alerts/Alerts";
+import Analytics from "@/components/Analytics";
 
 const useStyles = makeStyles()((theme) => ({
   wrapper: {
@@ -20,23 +29,40 @@ export default function PreviewInfo(props) {
   }, []);
   return (
     <span className={classes.wrapper}>
-      <div style={{ display: "flex", minHeight: "200px", maxHeight: "334px" }}>
-        {/* TODO: make scrolling */}
-        <div style={{ alignSelf: "center" }}>
-          <img
-            id={props.item.id}
-            className={props.item.class}
-            src={props.item.src}
-            width={props.item.width}
-            height={props.item.height}
-            data-rsrevision={props.item["data-rsrevision"]}
-            data-fullwidth={props.item["data-fullwidth"]}
-            data-fullheight={props.item["data-fullheight"]}
-            data-chemfileid={props.item["data-chemfileid"]}
-          />
+      <Stack>
+        <div
+          style={{ display: "flex", minHeight: "200px", maxHeight: "334px" }}
+        >
+          <div style={{ alignSelf: "center" }}>
+            <img
+              id={props.item.id}
+              className={props.item.class}
+              src={props.item.src}
+              width={props.item.width}
+              height={props.item.height}
+              data-rsrevision={props.item["data-rsrevision"]}
+              data-fullwidth={props.item["data-fullwidth"]}
+              data-fullheight={props.item["data-fullheight"]}
+              data-chemfileid={props.item["data-chemfileid"]}
+              data-foo={props.item["data-has-stoichiometry-table"]}
+            />
+          </div>
+          <ChemCard item={props.item} inline />
         </div>
-        <ChemCard item={props.item} inline />
-      </div>
+        {props.item["data-has-stoichiometry-table"] && (
+          <StyledEngineProvider injectFirst>
+            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+              <Analytics>
+                <ErrorBoundary>
+                  <Alerts>
+                    <StoichiometryTable chemId={props.item.id} />
+                  </Alerts>
+                </ErrorBoundary>
+              </Analytics>
+            </ThemeProvider>
+          </StyledEngineProvider>
+        )}
+      </Stack>
     </span>
   );
 }
