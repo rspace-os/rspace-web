@@ -8,7 +8,6 @@
     <changeSet id="2025-07-25" context="run" author="fraser">
         <comment>Create Stoichiometry tables</comment>
         
-        <!-- Create Stoichiometry table -->
         <createTable tableName="Stoichiometry">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -16,33 +15,9 @@
             <column name="parent_reaction_id" type="BIGINT">
                 <constraints nullable="false" foreignKeyName="fk_stoichiometry_parent_reaction" references="RSChemElement(id)"/>
             </column>
-            <column name="formula" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="is_reaction" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
-            <column name="additional_metadata" type="TEXT">
-                <constraints nullable="true"/>
-            </column>
         </createTable>
+
         
-        <!-- Create Stoichiometry_AUD audit table -->
-        <createTable tableName="Stoichiometry_AUD">
-            <column name="id" type="BIGINT">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="REV" type="INT">
-                <constraints primaryKey="true" nullable="false" foreignKeyName="fk_stoichiometry_aud_rev" references="REVINFO(REV)"/>
-            </column>
-            <column name="REVTYPE" type="TINYINT"/>
-            <column name="parent_reaction_id" type="BIGINT"/>
-            <column name="formula" type="VARCHAR(255)"/>
-            <column name="is_reaction" type="BOOLEAN"/>
-            <column name="additional_metadata" type="TEXT"/>
-        </createTable>
-        
-        <!-- Create StoichiometryMolecule table -->
         <createTable tableName="StoichiometryMolecule">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -50,69 +25,50 @@
             <column name="stoichiometry_id" type="BIGINT">
                 <constraints nullable="false" foreignKeyName="fk_stoichiometry_molecule_stoichiometry" references="Stoichiometry(id)"/>
             </column>
-            <column name="molecule_id" type="BIGINT">
+            <column name="rs_chem_id" type="BIGINT">
                 <constraints nullable="false" foreignKeyName="fk_stoichiometry_molecule_molecule" references="RSChemElement(id)"/>
             </column>
             <column name="role" type="VARCHAR(20)">
                 <constraints nullable="false"/>
             </column>
-            <column name="compound" type="VARCHAR(255)">
+            <column name="formula" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="smiles" type="TEXT">
                 <constraints nullable="true"/>
             </column>
             <column name="coefficient" type="DOUBLE">
                 <constraints nullable="true"/>
             </column>
-            <column name="molecular_mass" type="DOUBLE">
+            <column name="molecular_weight" type="DOUBLE">
                 <constraints nullable="true"/>
             </column>
-            <column name="absolute_mass" type="DOUBLE">
+            <column name="mass" type="DOUBLE">
                 <constraints nullable="true"/>
             </column>
-            <column name="volume" type="DOUBLE">
+            <column name="moles" type="DOUBLE">
                 <constraints nullable="true"/>
             </column>
-            <column name="used_expected_amount" type="DOUBLE">
+            <column name="expected_amount" type="DOUBLE">
                 <constraints nullable="true"/>
             </column>
-            <column name="actual_stoichiometry" type="DOUBLE">
+            <column name="actual_amount" type="DOUBLE">
                 <constraints nullable="true"/>
             </column>
             <column name="actual_yield" type="DOUBLE">
                 <constraints nullable="true"/>
             </column>
-            <column name="yield_percentage" type="DOUBLE">
-                <constraints nullable="true"/>
+            <column name="limiting_reagent" type="BIT(1)" defaultValueBoolean="0">
+                <constraints nullable="false"/>
             </column>
-            <column name="additional_metadata" type="TEXT">
+            <column name="notes" type="TEXT">
                 <constraints nullable="true"/>
             </column>
         </createTable>
         
-        <!-- Create StoichiometryMolecule_AUD audit table -->
-        <createTable tableName="StoichiometryMolecule_AUD">
-            <column name="id" type="BIGINT">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="REV" type="INT">
-                <constraints primaryKey="true" nullable="false" foreignKeyName="fk_stoichiometry_molecule_aud_rev" references="REVINFO(REV)"/>
-            </column>
-            <column name="REVTYPE" type="TINYINT"/>
-            <column name="stoichiometry_id" type="BIGINT"/>
-            <column name="molecule_id" type="BIGINT"/>
-            <column name="role" type="VARCHAR(20)"/>
-            <column name="compound" type="VARCHAR(255)"/>
-            <column name="coefficient" type="DOUBLE"/>
-            <column name="molecular_mass" type="DOUBLE"/>
-            <column name="absolute_mass" type="DOUBLE"/>
-            <column name="volume" type="DOUBLE"/>
-            <column name="used_expected_amount" type="DOUBLE"/>
-            <column name="actual_stoichiometry" type="DOUBLE"/>
-            <column name="actual_yield" type="DOUBLE"/>
-            <column name="yield_percentage" type="DOUBLE"/>
-            <column name="additional_metadata" type="TEXT"/>
-        </createTable>
-        
-        <!-- Create indexes -->
         <createIndex indexName="idx_stoichiometry_parent_reaction" tableName="Stoichiometry">
             <column name="parent_reaction_id"/>
         </createIndex>
@@ -122,11 +78,7 @@
         </createIndex>
         
         <createIndex indexName="idx_stoichiometry_molecule_molecule" tableName="StoichiometryMolecule">
-            <column name="molecule_id"/>
-        </createIndex>
-        
-        <createIndex indexName="idx_stoichiometry_molecule_role" tableName="StoichiometryMolecule">
-            <column name="role"/>
+            <column name="rs_chem_id"/>
         </createIndex>
     </changeSet>
 </databaseChangeLog>

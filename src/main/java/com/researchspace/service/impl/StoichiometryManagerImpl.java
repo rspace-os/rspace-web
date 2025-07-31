@@ -5,10 +5,13 @@ import com.researchspace.model.RSChemElement;
 import com.researchspace.model.Stoichiometry;
 import com.researchspace.model.StoichiometryMolecule;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
+import com.researchspace.service.ChemicalImportException;
+import com.researchspace.service.ChemicalSearcher;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
 import java.io.IOException;
@@ -19,10 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Implementation of the StoichiometryManager interface. Provides methods for CRUD operations on
- * stoichiometry tables.
- */
 @Service("stoichiometryManager")
 @Transactional
 public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, Long>
@@ -30,71 +29,70 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
 
   private final StoichiometryDao stoichiometryDao;
   private final RSChemElementManager rsChemElementManager;
+  private final ChemicalSearcher chemicalSearcher;
 
-  /**
-   * Constructor.
-   *
-   * @param stoichiometryDao the stoichiometry DAO
-   * @param rsChemElementManager the RSChemElement manager
-   */
   @Autowired
   public StoichiometryManagerImpl(
-      StoichiometryDao stoichiometryDao, RSChemElementManager rsChemElementManager) {
+      StoichiometryDao stoichiometryDao,
+      RSChemElementManager rsChemElementManager,
+      ChemicalSearcher chemicalSearcher) {
     super(stoichiometryDao);
     this.stoichiometryDao = stoichiometryDao;
     this.rsChemElementManager = rsChemElementManager;
+    this.chemicalSearcher = chemicalSearcher;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Stoichiometry findByParentReactionId(Long parentReactionId) {
     return stoichiometryDao.findByParentReactionId(parentReactionId);
   }
 
-  /** {@inheritDoc} */
   @Override
   public Stoichiometry createFromAnalysis(
       ElementalAnalysisDTO analysisDTO, RSChemElement parentReaction, User user)
       throws IOException {
-    Stoichiometry stoichiometry =
-        Stoichiometry.builder()
-            .parentReaction(parentReaction)
-            .formula(analysisDTO.getFormula())
-            .isReaction(analysisDTO.isReaction())
-            .additionalMetadata(analysisDTO.getAdditionalMetadata())
-            .build();
+    Stoichiometry stoichiometry = Stoichiometry.builder().parentReaction(parentReaction).build();
 
-    // Save the stoichiometry to get an ID
     stoichiometry = save(stoichiometry);
 
-    // Add molecules
     if (analysisDTO.getMoleculeInfo() != null) {
       for (MoleculeInfoDTO moleculeInfo : analysisDTO.getMoleculeInfo()) {
-        // Create a new RSChemElement for the molecule
         RSChemElement molecule =
             RSChemElement.builder().chemElements(moleculeInfo.getSmiles()).build();
         molecule = rsChemElementManager.save(molecule, user);
 
-        // Create a new StoichiometryMolecule
+        String pubChemName = null;
+        try {
+          pubChemName =
+              chemicalSearcher
+                  .searchChemicals(ChemicalImportSearchType.SMILES, moleculeInfo.getSmiles())
+                  .get(0)
+                  .getName();
+        } catch (ChemicalImportException e) {
+          log.warn(
+              "Unable to find chemical name for smiles: {}. {}",
+              moleculeInfo.getSmiles(),
+              e.getMessage());
+        }
         StoichiometryMolecule stoichiometryMolecule =
             StoichiometryMolecule.builder()
                 .stoichiometry(stoichiometry)
-                .molecule(molecule)
+                .rsChemElement(molecule)
                 .role(moleculeInfo.getRole())
-                .compound(moleculeInfo.getSmiles())
-                .molecularMass(moleculeInfo.getMass())
+                .smiles(moleculeInfo.getSmiles())
+                .molecularWeight(moleculeInfo.getMass())
+                .name(pubChemName)
+                .formula(moleculeInfo.getFormula())
+                .limitingReagent(false)
                 .build();
 
-        // Add the molecule to the stoichiometry
         stoichiometry.addMolecule(stoichiometryMolecule);
       }
     }
 
-    // Save the stoichiometry with molecules
     return save(stoichiometry);
   }
 
-  /** {@inheritDoc} */
   @Override
   public Stoichiometry update(Long stoichiometryId, StoichiometryDTO stoichiometryDTO, User user) {
     Stoichiometry stoichiometry = get(stoichiometryId);
@@ -102,21 +100,13 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       throw new IllegalArgumentException("Stoichiometry not found with ID: " + stoichiometryId);
     }
 
-    // Update basic properties
-    stoichiometry.setFormula(stoichiometryDTO.getFormula());
-    stoichiometry.setReaction(stoichiometryDTO.isReaction());
-    stoichiometry.setAdditionalMetadata(stoichiometryDTO.getAdditionalMetadata());
-
-    // Clear existing molecules
     stoichiometry.getMolecules().clear();
 
-    // Add updated molecules
     if (stoichiometryDTO.getMolecules() != null) {
       for (StoichiometryMoleculeDTO moleculeDTO : stoichiometryDTO.getMolecules()) {
-        // Get or create the RSChemElement for the molecule
         RSChemElement molecule;
-        if (moleculeDTO.getMoleculeId() != null) {
-          molecule = rsChemElementManager.get(moleculeDTO.getMoleculeId(), user);
+        if (moleculeDTO.getRsChemElementId() != null) {
+          molecule = rsChemElementManager.get(moleculeDTO.getRsChemElementId(), user);
         } else {
           molecule = RSChemElement.builder().build();
           try {
@@ -126,34 +116,32 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
           }
         }
 
-        // Create a new StoichiometryMolecule
         StoichiometryMolecule stoichiometryMolecule =
             StoichiometryMolecule.builder()
                 .stoichiometry(stoichiometry)
-                .molecule(molecule)
+                .rsChemElement(molecule)
                 .role(moleculeDTO.getRole())
-                .compound(moleculeDTO.getCompound())
+                .formula(moleculeDTO.getFormula())
+                .name(moleculeDTO.getName())
+                .smiles(moleculeDTO.getSmiles())
                 .coefficient(moleculeDTO.getCoefficient())
-                .molecularMass(moleculeDTO.getMolecularMass())
-                .absoluteMass(moleculeDTO.getAbsoluteMass())
-                .volume(moleculeDTO.getVolume())
-                .usedExpectedAmount(moleculeDTO.getUsedExpectedAmount())
-                .actualStoichiometry(moleculeDTO.getActualStoichiometry())
+                .molecularWeight(moleculeDTO.getMolecularWeight())
+                .mass(moleculeDTO.getMass())
+                .moles(moleculeDTO.getMoles())
+                .expectedAmount(moleculeDTO.getExpectedAmount())
+                .actualAmount(moleculeDTO.getActualAmount())
                 .actualYield(moleculeDTO.getActualYield())
-                .yieldPercentage(moleculeDTO.getYieldPercentage())
-                .additionalMetadata(moleculeDTO.getAdditionalMetadata())
+                .limitingReagent(moleculeDTO.getLimitingReagent())
+                .notes(moleculeDTO.getNotes())
                 .build();
 
-        // Add the molecule to the stoichiometry
         stoichiometry.addMolecule(stoichiometryMolecule);
       }
     }
 
-    // Save the updated stoichiometry
     return save(stoichiometry);
   }
 
-  /** {@inheritDoc} */
   @Override
   public StoichiometryDTO toDTO(Stoichiometry stoichiometry) {
     if (stoichiometry == null) {
@@ -170,14 +158,10 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
 
     return StoichiometryDTO.builder()
         .molecules(moleculeDTOs)
-        .formula(stoichiometry.getFormula())
-        .isReaction(stoichiometry.isReaction())
-        .additionalMetadata(stoichiometry.getAdditionalMetadata())
         .parentReactionId(stoichiometry.getParentReaction().getId())
         .build();
   }
 
-  /** {@inheritDoc} */
   @Override
   public StoichiometryDTO fromAnalysisDTO(ElementalAnalysisDTO analysisDTO) {
     if (analysisDTO == null) {
@@ -192,49 +176,34 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
               .collect(Collectors.toList());
     }
 
-    return StoichiometryDTO.builder()
-        .molecules(moleculeDTOs)
-        .formula(analysisDTO.getFormula())
-        .isReaction(analysisDTO.isReaction())
-        .additionalMetadata(analysisDTO.getAdditionalMetadata())
-        .build();
+    return StoichiometryDTO.builder().molecules(moleculeDTOs).build();
   }
 
-  /**
-   * Convert a StoichiometryMolecule entity to a StoichiometryMoleculeDTO.
-   *
-   * @param molecule the molecule entity to convert
-   * @return the converted DTO
-   */
   private StoichiometryMoleculeDTO moleculeToDTO(StoichiometryMolecule molecule) {
     return StoichiometryMoleculeDTO.builder()
         .id(molecule.getId())
-        .moleculeId(molecule.getMolecule().getId())
+        .rsChemElementId(molecule.getRsChemElement().getId())
         .role(molecule.getRole())
-        .compound(molecule.getCompound())
+        .formula(molecule.getFormula())
+        .name(molecule.getName())
+        .smiles(molecule.getSmiles())
         .coefficient(molecule.getCoefficient())
-        .molecularMass(molecule.getMolecularMass())
-        .absoluteMass(molecule.getAbsoluteMass())
-        .volume(molecule.getVolume())
-        .usedExpectedAmount(molecule.getUsedExpectedAmount())
-        .actualStoichiometry(molecule.getActualStoichiometry())
+        .molecularWeight(molecule.getMolecularWeight())
+        .mass(molecule.getMass())
+        .moles(molecule.getMoles())
+        .expectedAmount(molecule.getExpectedAmount())
+        .actualAmount(molecule.getActualAmount())
         .actualYield(molecule.getActualYield())
-        .yieldPercentage(molecule.getYieldPercentage())
-        .additionalMetadata(molecule.getAdditionalMetadata())
+        .limitingReagent(molecule.getLimitingReagent())
+        .notes(molecule.getNotes())
         .build();
   }
 
-  /**
-   * Convert a MoleculeInfoDTO to a StoichiometryMoleculeDTO.
-   *
-   * @param moleculeInfo the molecule info DTO to convert
-   * @return the converted DTO
-   */
   private StoichiometryMoleculeDTO moleculeInfoToDTO(MoleculeInfoDTO moleculeInfo) {
     return StoichiometryMoleculeDTO.builder()
         .role(moleculeInfo.getRole())
-        .compound(moleculeInfo.getName())
-        .molecularMass(moleculeInfo.getMass())
+        .smiles(moleculeInfo.getName())
+        .molecularWeight(moleculeInfo.getMass())
         .build();
   }
 }

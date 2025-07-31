@@ -9,10 +9,6 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/**
- * Data Transfer Object for stoichiometry information of a chemical reaction. Contains lists of
- * molecules categorized by their role in the reaction (reactants, products, agents).
- */
 @Data
 @Getter
 @Builder
@@ -20,9 +16,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class StoichiometryDTO {
   private List<StoichiometryMoleculeDTO> molecules;
-  private String formula;
-  private boolean isReaction;
-  private String additionalMetadata;
   private Long parentReactionId;
 
   public List<StoichiometryMoleculeDTO> getAgents() {

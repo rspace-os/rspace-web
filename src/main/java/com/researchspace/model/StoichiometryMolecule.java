@@ -20,14 +20,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.Type;
-import org.hibernate.envers.Audited;
 
-/**
- * Entity class representing a molecule in a stoichiometry table. Contains information about the
- * molecule's properties and role in the reaction.
- */
 @Entity
-@Audited
 @Table(name = "StoichiometryMolecule")
 @Data
 @Builder
@@ -47,42 +41,43 @@ public class StoichiometryMolecule {
   private Stoichiometry stoichiometry;
 
   @OneToOne
-  @JoinColumn(name = "molecule_id", nullable = false)
-  private RSChemElement molecule;
+  @JoinColumn(name = "rs_chem_id", nullable = false)
+  private RSChemElement rsChemElement;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "role", nullable = false)
   private MoleculeRole role;
 
-  @Column(name = "compound")
-  private String compound;
+  @Column private String formula;
 
-  @Builder.Default
-  @Column(name = "coefficient")
-  private Double coefficient = 1.00;
+  @Column private String name;
 
-  @Column(name = "molecular_mass")
-  private Double molecularMass;
+  @Column
+  @Type(type = "text")
+  private String smiles;
 
-  @Column(name = "absolute_mass")
-  private Double absoluteMass;
+  @Builder.Default @Column private Double coefficient = 1.00;
 
-  @Column(name = "volume")
-  private Double volume;
+  @Column(name = "molecular_weight")
+  private Double molecularWeight;
 
-  @Column(name = "used_expected_amount")
-  private Double usedExpectedAmount;
+  @Column private Double mass;
 
-  @Column(name = "actual_stoichiometry")
-  private Double actualStoichiometry;
+  @Column private Double moles;
+
+  @Column(name = "expected_amount")
+  private Double expectedAmount;
+
+  @Column(name = "actual_amount")
+  private Double actualAmount;
 
   @Column(name = "actual_yield")
   private Double actualYield;
 
-  @Column(name = "yield_percentage")
-  private Double yieldPercentage;
+  @Column(name = "limiting_reagent")
+  private Boolean limitingReagent;
 
-  @Column(name = "additional_metadata")
+  @Column
   @Type(type = "text")
-  private String additionalMetadata;
+  private String notes;
 }

@@ -281,19 +281,16 @@ public class RSChemService implements ChemistryService {
       return null;
     }
 
-    // Check if stoichiometry already exists for this reaction
     Stoichiometry existingStoichiometry = stoichiometryManager.findByParentReactionId(chemId);
     if (existingStoichiometry != null) {
       return existingStoichiometry;
     }
 
-    // Get stoichiometry information from chemistry provider
     Optional<ElementalAnalysisDTO> analysis = chemistryProvider.getStoichiometry(chemical);
     if (analysis.isEmpty()) {
       return null;
     }
 
-    // Create and save stoichiometry
     try {
       return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user);
     } catch (IOException e) {
@@ -305,11 +302,6 @@ public class RSChemService implements ChemistryService {
   public Stoichiometry updateStoichiometry(
       long stoichiometryId, StoichiometryDTO stoichiometryDTO, User user) {
     return stoichiometryManager.update(stoichiometryId, stoichiometryDTO, user);
-  }
-
-  @Override
-  public Stoichiometry getStoichiometryByParentReactionId(long chemId) {
-    return stoichiometryManager.findByParentReactionId(chemId);
   }
 
   @Data

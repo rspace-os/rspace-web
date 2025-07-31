@@ -5,26 +5,24 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Data Transfer Object for stoichiometry information of a molecule in a chemical reaction. Contains
- * information about the molecule's properties and role in the reaction.
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class StoichiometryMoleculeDTO {
   private Long id;
-  private Long moleculeId; // Foreign key to RSChemElement.id
+  private Long rsChemElementId;
   private MoleculeRole role;
-  private String compound;
+  private String formula;
+  private String name;
+  private String smiles;
   private Double coefficient;
-  private Double molecularMass;
-  private Double absoluteMass;
-  private Double volume;
-  private Double usedExpectedAmount;
-  private Double actualStoichiometry;
+  private Double molecularWeight;
+  private Double mass;
+  private Double moles;
+  private Double expectedAmount;
+  private Double actualAmount;
   private Double actualYield;
-  private Double yieldPercentage;
-  private String additionalMetadata;
+  private Boolean limitingReagent;
+  private String notes;
 }
