@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 import StoichiometryTable from "./table";
 import useChemicalImport from "../../hooks/api/useChemicalImport";
 import { doNotAwait } from "../../util/Util";
+import Stack from "@mui/material/Stack";
 
 export default function StandaloneDialog({
   open,
@@ -54,7 +55,7 @@ export default function StandaloneDialog({
       open={open}
       onClose={onClose}
       aria-labelledby={titleId}
-      maxWidth="md"
+      maxWidth="xl"
       fullWidth
     >
       <AppBar variant="dialog" currentPage="Chemistry" accessibilityTips={{}} />
@@ -84,7 +85,16 @@ export default function StandaloneDialog({
             </Button>
           </Box>
         )}
-        {open && showTable && <StoichiometryTable chemId={chemId} />}
+        {open && showTable && (
+          <Stack spacing={2} flexWrap="nowrap">
+            <Box>
+              <Typography variant="body2">
+                Double-click on Mass or Moles to edit.
+              </Typography>
+              <StoichiometryTable chemId={chemId} editable />
+            </Box>
+          </Stack>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>

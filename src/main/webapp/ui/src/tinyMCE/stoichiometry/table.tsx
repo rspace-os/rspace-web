@@ -10,6 +10,8 @@ import useStoichiometry, {
 } from "../../hooks/api/useStoichiometry";
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
+import { observable, runInAction } from "mobx";
+import { observer } from "mobx-react-lite";
 
 const RoleChip = ({ role }: { role: string }) => {
   const getRoleColor = (role: string) => {
@@ -48,12 +50,12 @@ const RoleChip = ({ role }: { role: string }) => {
   );
 };
 
-export default function StoichiometryTable({
+function StoichiometryTable({
   chemId,
-  useExisting,
+  editable = false,
 }: {
   chemId: number | null;
-  useExisting?: boolean;
+  editable?: boolean;
 }): React.ReactNode {
   const { getStoichiometry } = useStoichiometry();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
@@ -67,7 +69,10 @@ export default function StoichiometryTable({
       try {
         if (!chemId) throw new Error("chemId is required");
         const result = await getStoichiometry({ chemId });
-        setData(result);
+        setData({
+          ...result,
+          molecules: result.molecules.map((molecule) => observable(molecule)),
+        });
       } catch (e) {
         console.error(e);
         setError("Failed to load stoichiometry data");
@@ -75,7 +80,7 @@ export default function StoichiometryTable({
         setLoading(false);
       }
     })();
-  }, [chemId, useExisting]);
+  }, [chemId]);
 
   if (loading) {
     return (
@@ -124,7 +129,7 @@ export default function StoichiometryTable({
   // Use the molecules array from the new response format
   const allMolecules = data.molecules;
 
-  type MoleculeRow = StoichiometryMolecule & { id: number };
+  type MoleculeRow = StoichiometryMolecule;
 
   const columns = [
     DataGridColumn.newColumnWithFieldName<"name", MoleculeRow>("name", {
@@ -150,25 +155,39 @@ export default function StoichiometryTable({
     DataGridColumn.newColumnWithFieldName<"molecularWeight", MoleculeRow>(
       "molecularWeight",
       {
-        headerName: "Molecular Weight",
+        headerName: "Molecular Weight (g/mol)",
         flex: 1.2,
       },
     ),
+    DataGridColumn.newColumnWithFieldName<"mass", MoleculeRow>("mass", {
+      headerName: "Mass (g)",
+      flex: 1,
+      editable: editable,
+      type: "number",
+    }),
+    DataGridColumn.newColumnWithFieldName<"moles", MoleculeRow>("moles", {
+      headerName: "Moles (mol)",
+      flex: 1,
+      editable: editable,
+      type: "number",
+    }),
   ];
-
-  const rows: MoleculeRow[] = allMolecules.map((molecule, index) => ({
-    id: index,
-    ...molecule,
-  }));
 
   return (
     <Box sx={{ p: 2 }}>
       <DataGrid
-        rows={rows}
+        rows={allMolecules ?? []}
         columns={columns}
         autoHeight
-        disableSelectionOnClick
         hideFooter
+        getRowId={(row) => row.id}
+        processRowUpdate={(newRow, oldRow) => {
+          runInAction(() => {
+            oldRow.mass = newRow.mass;
+            oldRow.moles = newRow.moles;
+          });
+          return newRow;
+        }}
         sx={{
           border: "none",
           "& .MuiDataGrid-columnHeaders": {
@@ -186,3 +205,5 @@ export default function StoichiometryTable({
     </Box>
   );
 }
+
+export default observer(StoichiometryTable);
