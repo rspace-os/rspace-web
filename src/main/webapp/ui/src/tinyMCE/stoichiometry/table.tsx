@@ -1,18 +1,14 @@
 import React from "react";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
+import { DataGrid } from "@mui/x-data-grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import useChemicalImport, {
   type StoichiometryResponse,
+  type StoichiometryMolecule,
 } from "../../hooks/api/useChemicalImport";
 import { doNotAwait } from "../../util/Util";
+import { DataGridColumn } from "../../util/table";
 
 export default function StoichiometryTable({
   chemId,
@@ -99,6 +95,58 @@ export default function StoichiometryTable({
     ...(data.agents || []),
   ];
 
+  type MoleculeRow = StoichiometryMolecule & { id: number };
+
+  const columns = [
+    DataGridColumn.newColumnWithFieldName<"formula", MoleculeRow>("formula", {
+      headerName: "Formula",
+      flex: 1,
+    }),
+    DataGridColumn.newColumnWithFieldName<"role", MoleculeRow>("role", {
+      headerName: "Role",
+      flex: 1,
+    }),
+    DataGridColumn.newColumnWithFieldName<"mass", MoleculeRow>("mass", {
+      headerName: "Mass",
+      flex: 1,
+    }),
+    DataGridColumn.newColumnWithFieldName<"exactMass", MoleculeRow>(
+      "exactMass",
+      {
+        headerName: "Exact Mass",
+        flex: 1,
+      },
+    ),
+    DataGridColumn.newColumnWithFieldName<"atomCount", MoleculeRow>(
+      "atomCount",
+      {
+        headerName: "Atom Count",
+        flex: 1,
+      },
+    ),
+    DataGridColumn.newColumnWithFieldName<"bondCount", MoleculeRow>(
+      "bondCount",
+      {
+        headerName: "Bond Count",
+        flex: 1,
+      },
+    ),
+    DataGridColumn.newColumnWithFieldName<"smiles", MoleculeRow>("smiles", {
+      headerName: "SMILES",
+      flex: 1,
+      renderCell: (params) => (
+        <Box sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
+          {params.value}
+        </Box>
+      ),
+    }),
+  ];
+
+  const rows: MoleculeRow[] = allMolecules.map((molecule, index) => ({
+    id: index,
+    ...molecule,
+  }));
+
   return (
     <Box my={2}>
       <Typography variant="h6" gutterBottom>
@@ -113,38 +161,13 @@ export default function StoichiometryTable({
           <strong>Formula:</strong> {data.formula}
         </Typography>
       )}
-      <TableContainer component={Paper} variant="outlined">
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Formula</TableCell>
-              <TableCell>Role</TableCell>
-              <TableCell>Mass</TableCell>
-              <TableCell>Exact Mass</TableCell>
-              <TableCell>Atom Count</TableCell>
-              <TableCell>Bond Count</TableCell>
-              <TableCell>SMILES</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {allMolecules.map((molecule, index) => (
-              <TableRow key={index}>
-                <TableCell>{molecule.formula || ""}</TableCell>
-                <TableCell>{molecule.role || ""}</TableCell>
-                <TableCell>{molecule.mass || ""}</TableCell>
-                <TableCell>{molecule.exactMass || ""}</TableCell>
-                <TableCell>{molecule.atomCount || ""}</TableCell>
-                <TableCell>{molecule.bondCount || ""}</TableCell>
-                <TableCell
-                  sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
-                >
-                  {molecule.smiles || ""}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        autoHeight
+        disableSelectionOnClick
+        hideFooter
+      />
     </Box>
   );
 }

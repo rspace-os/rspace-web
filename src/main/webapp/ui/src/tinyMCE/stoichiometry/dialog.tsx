@@ -89,10 +89,7 @@ export default function StandaloneDialog({
           </Box>
         )}
         {open && showTable && (
-          <StoichiometryTable
-            chemId={chemId}
-            useExisting={hasStoichiometryTable}
-          />
+          <StoichiometryTable chemId={chemId} />
         )}
       </DialogContent>
       <DialogActions>
