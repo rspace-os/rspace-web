@@ -17,15 +17,27 @@ export type ChemicalCompound = {
 export type RspaceCompoundId = string;
 
 export type StoichiometryMolecule = {
-  compound: string;
+  atomCount: number;
+  bondCount: number;
+  formalCharge: number;
+  exactMass: number;
+  mass: number;
+  formula: string;
+  name: string;
   role: string;
-  coefficient: string;
-  molecularMass: string;
-  absoluteMass: string;
+  additionalMetadata: string | null;
+  smiles: string;
 };
 
 export type StoichiometryResponse = {
+  moleculeInfo: ReadonlyArray<StoichiometryMolecule>;
+  formula: string;
+  additionalMetadata: string;
+  reaction: boolean;
   molecules: ReadonlyArray<StoichiometryMolecule>;
+  agents: ReadonlyArray<StoichiometryMolecule>;
+  reactants: ReadonlyArray<StoichiometryMolecule>;
+  products: ReadonlyArray<StoichiometryMolecule>;
 };
 
 /**

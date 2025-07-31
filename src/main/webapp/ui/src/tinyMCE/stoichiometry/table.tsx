@@ -16,7 +16,7 @@ import { doNotAwait } from "../../util/Util";
 
 export default function StoichiometryTable({
   chemId,
-  useExisting = true,
+  useExisting,
 }: {
   chemId: number | null;
   useExisting?: boolean;
@@ -73,7 +73,12 @@ export default function StoichiometryTable({
     );
   }
 
-  if (!data || !data.molecules || data.molecules.length === 0) {
+  if (
+    !data ||
+    (!data.reactants?.length &&
+      !data.products?.length &&
+      !data.moleculeInfo?.length)
+  ) {
     return (
       <Box
         display="flex"
@@ -87,30 +92,54 @@ export default function StoichiometryTable({
     );
   }
 
+  // Combine all molecules for display
+  const allMolecules = [
+    ...(data.reactants || []),
+    ...(data.products || []),
+    ...(data.agents || []),
+  ];
+
   return (
     <Box my={2}>
       <Typography variant="h6" gutterBottom>
         Stoichiometry Table
       </Typography>
+      {data.formula && (
+        <Typography
+          variant="body2"
+          gutterBottom
+          sx={{ fontFamily: "monospace" }}
+        >
+          <strong>Formula:</strong> {data.formula}
+        </Typography>
+      )}
       <TableContainer component={Paper} variant="outlined">
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Compound</TableCell>
+              <TableCell>Formula</TableCell>
               <TableCell>Role</TableCell>
-              <TableCell>Coefficient</TableCell>
-              <TableCell>Molecular Mass</TableCell>
-              <TableCell>Absolute Mass</TableCell>
+              <TableCell>Mass</TableCell>
+              <TableCell>Exact Mass</TableCell>
+              <TableCell>Atom Count</TableCell>
+              <TableCell>Bond Count</TableCell>
+              <TableCell>SMILES</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.molecules.map((molecule, index) => (
+            {allMolecules.map((molecule, index) => (
               <TableRow key={index}>
-                <TableCell>{molecule.compound || ""}</TableCell>
+                <TableCell>{molecule.formula || ""}</TableCell>
                 <TableCell>{molecule.role || ""}</TableCell>
-                <TableCell>{molecule.coefficient || ""}</TableCell>
-                <TableCell>{molecule.molecularMass || ""}</TableCell>
-                <TableCell>{molecule.absoluteMass || ""}</TableCell>
+                <TableCell>{molecule.mass || ""}</TableCell>
+                <TableCell>{molecule.exactMass || ""}</TableCell>
+                <TableCell>{molecule.atomCount || ""}</TableCell>
+                <TableCell>{molecule.bondCount || ""}</TableCell>
+                <TableCell
+                  sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
+                >
+                  {molecule.smiles || ""}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
