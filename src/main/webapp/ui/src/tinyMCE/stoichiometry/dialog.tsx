@@ -88,9 +88,7 @@ export default function StandaloneDialog({
             </Button>
           </Box>
         )}
-        {open && showTable && (
-          <StoichiometryTable chemId={chemId} />
-        )}
+        {open && showTable && <StoichiometryTable chemId={chemId} />}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>

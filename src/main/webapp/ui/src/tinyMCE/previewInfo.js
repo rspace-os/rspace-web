@@ -12,6 +12,7 @@ import StoichiometryTable from "./stoichiometry/table";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
+import Box from "@mui/material/Box";
 
 const useStyles = makeStyles()((theme) => ({
   wrapper: {
@@ -25,6 +26,7 @@ export default function PreviewInfo(props) {
   useEffect(() => {
     document.dispatchEvent(new Event("images-replaced"));
   }, []);
+  const theme = createAccentedTheme(ACCENT_COLOR);
   return (
     <span className={classes.wrapper}>
       <Stack>
@@ -49,11 +51,21 @@ export default function PreviewInfo(props) {
         </div>
         {props.item["data-has-stoichiometry-table"] && (
           <StyledEngineProvider injectFirst>
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+            <ThemeProvider theme={theme}>
               <Analytics>
                 <ErrorBoundary>
                   <Alerts>
-                    <StoichiometryTable chemId={props.item.id} />
+                    <Box
+                      my={3}
+                      sx={{
+                        border: `2px solid ${theme.palette.primary.background}`,
+                        borderRadius: 1,
+                        backgroundColor: "#fafafa",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <StoichiometryTable chemId={props.item.id} />
+                    </Box>
                   </Alerts>
                 </ErrorBoundary>
               </Analytics>

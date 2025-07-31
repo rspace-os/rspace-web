@@ -171,22 +171,26 @@ export default function StoichiometryTable({
   }));
 
   return (
-    <Box my={2}>
-      {data.formula && (
-        <Typography
-          variant="body2"
-          gutterBottom
-          sx={{ fontFamily: "monospace" }}
-        >
-          <strong>Formula:</strong> {data.formula}
-        </Typography>
-      )}
+    <Box sx={{ p: 2 }}>
       <DataGrid
         rows={rows}
         columns={columns}
         autoHeight
         disableSelectionOnClick
         hideFooter
+        sx={{
+          border: "none",
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: "#f8f9fa",
+            borderBottom: "2px solid #e0e0e0",
+          },
+          "& .MuiDataGrid-cell": {
+            borderBottom: "1px solid #f0f0f0",
+          },
+          "& .MuiDataGrid-row:hover": {
+            backgroundColor: "#f8f9fa",
+          },
+        }}
       />
     </Box>
   );
