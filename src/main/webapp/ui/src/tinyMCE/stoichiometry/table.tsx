@@ -140,10 +140,13 @@ export default function StoichiometryTable({
       flex: 1,
       renderCell: (params) => <RoleChip role={params.value || ""} />,
     }),
-    DataGridColumn.newColumnWithFieldName<"coefficient", MoleculeRow>("coefficient", {
-      headerName: "Coefficient",
-      flex: 0.8,
-    }),
+    DataGridColumn.newColumnWithFieldName<"coefficient", MoleculeRow>(
+      "coefficient",
+      {
+        headerName: "Coefficient",
+        flex: 0.8,
+      },
+    ),
     DataGridColumn.newColumnWithFieldName<"molecularWeight", MoleculeRow>(
       "molecularWeight",
       {
@@ -169,9 +172,6 @@ export default function StoichiometryTable({
 
   return (
     <Box my={2}>
-      <Typography variant="h6" gutterBottom>
-        Stoichiometry Table
-      </Typography>
       {data.formula && (
         <Typography
           variant="body2"
