@@ -57,11 +57,7 @@ export default function StandaloneDialog({
       maxWidth="md"
       fullWidth
     >
-      <AppBar
-        variant="dialog"
-        currentPage="Stoichiometry"
-        accessibilityTips={{}}
-      />
+      <AppBar variant="dialog" currentPage="Chemistry" accessibilityTips={{}} />
       <DialogTitle id={titleId} component="h3">
         Stoichiometry Calculator
       </DialogTitle>
