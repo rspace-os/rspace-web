@@ -16,8 +16,10 @@ import { doNotAwait } from "../../util/Util";
 
 export default function StoichiometryTable({
   chemId,
+  useExisting = true,
 }: {
   chemId: number | null;
+  useExisting?: boolean;
 }): React.ReactNode {
   const { getStoichiometry } = useChemicalImport();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
@@ -39,7 +41,7 @@ export default function StoichiometryTable({
         setLoading(false);
       }
     })();
-  }, [chemId]);
+  }, [chemId, useExisting]);
 
   if (loading) {
     return (

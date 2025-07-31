@@ -88,6 +88,7 @@ class StoichiometryPlugin {
       open: false,
       onClose: () => {},
       chemId: null,
+      hasStoichiometryTable: false,
     };
     dialogRenderer.next(initialProps);
 
@@ -106,29 +107,42 @@ class StoichiometryPlugin {
         );
       }
 
-      /*
-       * Mark the chemistry element as having a generated stoichiometry table
-       * So that we start showing the table when the document isn't being edited
-       * We use mceReplaceContent to ensure TinyMCE properly tracks the change
-       */
-      const currentHtml = node.outerHTML;
-      const modifiedHtml = currentHtml.replace(
-        /(<img[^>]*)/,
-        '$1 data-has-stoichiometry-table="true"',
+      const hasStoichiometryTable = node.getAttribute(
+        "data-has-stoichiometry-table",
       );
-
-      // Replace the current element with the modified version
-      editor.selection.select(node);
-      editor.execCommand("mceReplaceContent", false, modifiedHtml);
-      editor.setDirty(true);
 
       dialogRenderer.next({
         open: true,
         onClose: () => {
-          dialogRenderer.next({ open: false, onClose: () => {}, chemId: null });
+          dialogRenderer.next({
+            open: false,
+            onClose: () => {},
+            chemId: null,
+            hasStoichiometryTable: false,
+          });
         },
         chemId,
+        hasStoichiometryTable: hasStoichiometryTable === "true",
       });
+
+      // Only mark the element if it doesn't already have the attribute
+      if (!hasStoichiometryTable) {
+        /*
+         * Mark the chemistry element as having a generated stoichiometry table
+         * So that we start showing the table when the document isn't being edited
+         * We use mceReplaceContent to ensure TinyMCE properly tracks the change
+         */
+        const currentHtml = node.outerHTML;
+        const modifiedHtml = currentHtml.replace(
+          /(<img[^>]*)/,
+          '$1 data-has-stoichiometry-table="true"',
+        );
+
+        // Replace the current element with the modified version
+        editor.selection.select(node);
+        editor.execCommand("mceReplaceContent", false, modifiedHtml);
+        editor.setDirty(true);
+      }
     });
   }
 }
