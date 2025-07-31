@@ -170,35 +170,33 @@ function StoichiometryTable({
   ];
 
   return (
-    <Box sx={{ p: 2 }}>
-      <DataGrid
-        rows={allMolecules ?? []}
-        columns={columns}
-        autoHeight
-        hideFooter
-        getRowId={(row) => row.id}
-        processRowUpdate={(newRow, oldRow) => {
-          runInAction(() => {
-            oldRow.mass = newRow.mass;
-            oldRow.moles = newRow.moles;
-          });
-          return newRow;
-        }}
-        sx={{
-          border: "none",
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: "#f8f9fa",
-            borderBottom: "2px solid #e0e0e0",
-          },
-          "& .MuiDataGrid-cell": {
-            borderBottom: "1px solid #f0f0f0",
-          },
-          "& .MuiDataGrid-row:hover": {
-            backgroundColor: "#f8f9fa",
-          },
-        }}
-      />
-    </Box>
+    <DataGrid
+      rows={allMolecules ?? []}
+      columns={columns}
+      autoHeight
+      hideFooter
+      getRowId={(row) => row.id}
+      processRowUpdate={(newRow, oldRow) => {
+        runInAction(() => {
+          oldRow.mass = newRow.mass;
+          oldRow.moles = newRow.moles;
+        });
+        return newRow;
+      }}
+      sx={{
+        border: "none",
+        "& .MuiDataGrid-columnHeaders": {
+          backgroundColor: "#f8f9fa",
+          borderBottom: "2px solid #e0e0e0",
+        },
+        "& .MuiDataGrid-cell": {
+          borderBottom: "1px solid #f0f0f0",
+        },
+        "& .MuiDataGrid-row:hover": {
+          backgroundColor: "#f8f9fa",
+        },
+      }}
+    />
   );
 }
 
