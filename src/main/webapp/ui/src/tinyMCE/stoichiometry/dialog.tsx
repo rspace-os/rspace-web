@@ -89,7 +89,7 @@ export default function StandaloneDialog({
           <Stack spacing={2} flexWrap="nowrap">
             <Box>
               <Typography variant="body2">
-                Double-click on Mass or Moles to edit.
+                Double-click on Mass, Moles, or Notes to edit.
               </Typography>
               <StoichiometryTable chemId={chemId} editable />
             </Box>

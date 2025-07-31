@@ -160,12 +160,21 @@ function StoichiometryTable({
       flex: 1,
       editable: editable,
       type: "number",
+      renderCell: (params) => params.value ?? <>&mdash;</>,
     }),
     DataGridColumn.newColumnWithFieldName<"moles", MoleculeRow>("moles", {
       headerName: "Moles (mol)",
       flex: 1,
       editable: editable,
       type: "number",
+      renderCell: (params) => params.value ?? <>&mdash;</>,
+    }),
+    DataGridColumn.newColumnWithFieldName<"notes", MoleculeRow>("notes", {
+      headerName: "Notes",
+      flex: 1.5,
+      editable: editable,
+      type: "string",
+      renderCell: (params) => params.value ?? <>&mdash;</>,
     }),
   ];
 
@@ -180,6 +189,7 @@ function StoichiometryTable({
         runInAction(() => {
           oldRow.mass = newRow.mass;
           oldRow.moles = newRow.moles;
+          oldRow.notes = newRow.notes;
         });
         return newRow;
       }}
