@@ -4,10 +4,10 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
-import useChemicalImport, {
+import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
-} from "../../hooks/api/useChemicalImport";
+} from "../../hooks/api/useStoichiometry";
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
 
@@ -55,7 +55,7 @@ export default function StoichiometryTable({
   chemId: number | null;
   useExisting?: boolean;
 }): React.ReactNode {
-  const { getStoichiometry } = useChemicalImport();
+  const { getStoichiometry } = useStoichiometry();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
