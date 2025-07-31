@@ -285,4 +285,8 @@ public interface IPropertyHolder extends Versionable {
   boolean isAsposeEnabled();
 
   String getChemistryProvider();
+
+  String getDeploymentDescription();
+
+  String getDeploymentHelpEmail();
 }

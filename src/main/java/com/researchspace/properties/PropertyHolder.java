@@ -52,6 +52,12 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${deployment.cloud}")
   private String cloud;
 
+  @Value("${deployment.description}")
+  private String deploymentDescription;
+
+  @Value("${deployment.helpEmail}")
+  private String deploymentHelpEmail;
+
   @Value("${sysadmin.delete.user}")
   private String deleteUser;
 
@@ -533,6 +539,16 @@ public class PropertyHolder implements IMutablePropertyHolder {
 
   public String getChemistryProvider() {
     return chemistryProvider;
+  }
+
+  @Override
+  public String getDeploymentDescription() {
+    return deploymentDescription;
+  }
+
+  @Override
+  public String getDeploymentHelpEmail() {
+    return deploymentHelpEmail;
   }
 
   /*
