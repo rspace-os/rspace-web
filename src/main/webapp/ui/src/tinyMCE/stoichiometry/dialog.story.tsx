@@ -1,6 +1,7 @@
 import React from "react";
 import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../theme";
+import createAccentedTheme from "../../accentedTheme";
+import { ACCENT_COLOR } from "../../assets/branding/chemistry";
 import StoichiometryDialog from "./dialog";
 import Alerts from "@/Inventory/components/Alerts";
 
@@ -13,7 +14,7 @@ export function StoichiometryDialogWithCalculateButtonStory({
 
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={materialTheme}>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Alerts>
           <StoichiometryDialog
             open={open}
@@ -33,7 +34,7 @@ export function StoichiometryDialogWithTableStory(): React.ReactNode {
 
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={materialTheme}>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Alerts>
           <StoichiometryDialog
             open={open}
@@ -50,7 +51,7 @@ export function StoichiometryDialogWithTableStory(): React.ReactNode {
 export function StoichiometryDialogClosedStory(): React.ReactNode {
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={materialTheme}>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Alerts>
           <div>Dialog is closed</div>
           <StoichiometryDialog
