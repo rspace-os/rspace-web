@@ -83,6 +83,18 @@ export default function useStoichiometry(): {
   }: {
     chemId: number;
   }) => Promise<StoichiometryResponse>;
+
+  /**
+   * Updates stoichiometry information for a chemical compound.
+   * This performs a PUT request to update the data.
+   */
+  updateStoichiometry: ({
+    stoichiometryId,
+    stoichiometryData,
+  }: {
+    stoichiometryId: number;
+    stoichiometryData: StoichiometryResponse;
+  }) => Promise<StoichiometryResponse>;
 } {
   const { addAlert } = React.useContext(AlertContext);
 
@@ -136,5 +148,33 @@ export default function useStoichiometry(): {
     }
   }
 
-  return { calculateStoichiometry, getStoichiometry };
+  async function updateStoichiometry({
+    stoichiometryId,
+    stoichiometryData,
+  }: {
+    stoichiometryId: number;
+    stoichiometryData: StoichiometryResponse;
+  }): Promise<StoichiometryResponse> {
+    try {
+      const { data } = await axios.put<{ data: StoichiometryResponse }>(
+        "/chemical/stoichiometry",
+        stoichiometryData,
+        {
+          params: { stoichiometryId },
+        }
+      );
+      return data.data;
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error updating stoichiometry data",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        }),
+      );
+      throw new Error("Could not update stoichiometry data", { cause: e });
+    }
+  }
+
+  return { calculateStoichiometry, getStoichiometry, updateStoichiometry };
 }

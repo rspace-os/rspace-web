@@ -14,6 +14,10 @@ import useStoichiometry, {
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
 
+export interface StoichiometryTableRef {
+  save: () => Promise<void>;
+}
+
 
 const RoleChip = ({ role }: { role: string }) => {
   const getRoleColor = (role: string) => {
@@ -52,14 +56,14 @@ const RoleChip = ({ role }: { role: string }) => {
   );
 };
 
-function StoichiometryTable({
-  chemId,
-  editable = false,
-}: {
-  chemId: number | null;
-  editable?: boolean;
-}): React.ReactNode {
-  const { getStoichiometry } = useStoichiometry();
+const StoichiometryTable = React.forwardRef<
+  StoichiometryTableRef,
+  {
+    chemId: number | null;
+    editable?: boolean;
+  }
+>(function StoichiometryTable({ chemId, editable = false }, ref) {
+  const { getStoichiometry, updateStoichiometry } = useStoichiometry();
   const theme = useTheme();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -111,6 +115,24 @@ function StoichiometryTable({
       }
     }
   }, [data]);
+
+  React.useImperativeHandle(ref, () => ({
+    save: async () => {
+      if (!data || !data.id) {
+        throw new Error("No stoichiometry data to save");
+      }
+      
+      const updatedData: StoichiometryResponse = {
+        ...data,
+        molecules: allMolecules,
+      };
+      
+      await updateStoichiometry({
+        stoichiometryId: data.id,
+        stoichiometryData: updatedData,
+      });
+    },
+  }), [data, allMolecules, updateStoichiometry]);
 
   if (loading) {
     return (
@@ -327,6 +349,6 @@ function StoichiometryTable({
       }}
     />
   );
-}
+});
 
 export default StoichiometryTable;

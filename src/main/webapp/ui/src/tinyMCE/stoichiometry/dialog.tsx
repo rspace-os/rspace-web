@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import StoichiometryTable from "./table";
+import StoichiometryTable, { type StoichiometryTableRef } from "./table";
 import useChemicalImport from "../../hooks/api/useChemicalImport";
 import { doNotAwait } from "../../util/Util";
 import Stack from "@mui/material/Stack";
@@ -27,8 +27,10 @@ export default function StandaloneDialog({
 }): React.ReactNode {
   const titleId = React.useId();
   const { calculateStoichiometry } = useChemicalImport();
+  const tableRef = React.useRef<StoichiometryTableRef>(null);
   const [showTable, setShowTable] = React.useState(hasStoichiometryTable);
   const [loading, setLoading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (open) {
@@ -49,6 +51,20 @@ export default function StandaloneDialog({
         console.error("Calculation failed", e);
       } finally {
         setLoading(false);
+      }
+    })();
+  };
+
+  const handleSave = () => {
+    setSaving(true);
+    doNotAwait(async () => {
+      try {
+        await tableRef.current?.save();
+        console.log("Stoichiometry data saved successfully");
+      } catch (e) {
+        console.error("Save failed", e);
+      } finally {
+        setSaving(false);
       }
     })();
   };
@@ -94,12 +110,21 @@ export default function StandaloneDialog({
               <Typography variant="body2">
                 Double-click on Mass, Moles, or Notes to edit.
               </Typography>
-              <StoichiometryTable chemId={chemId} editable />
+              <StoichiometryTable ref={tableRef} chemId={chemId} editable />
             </Box>
           </Stack>
         )}
       </DialogContent>
       <DialogActions>
+        {showTable && (
+          <Button 
+            variant="contained" 
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
+        )}
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
