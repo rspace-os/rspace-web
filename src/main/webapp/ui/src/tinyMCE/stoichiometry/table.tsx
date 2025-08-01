@@ -5,7 +5,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import Radio from "@mui/material/Radio";
-import { useTheme } from "@mui/material/styles";
+import { lighten, useTheme } from "@mui/material/styles";
 import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
@@ -225,10 +225,10 @@ function StoichiometryTable({
   }
 
   // allMolecules state is now defined at the top of the component
-  
+
   // Find the current limiting reagent
   const limitingReagent = allMolecules.find(
-    (m) => m.limitingReagent && m.role.toLowerCase() === "reactant"
+    (m) => m.limitingReagent && m.role.toLowerCase() === "reactant",
   );
 
   type MoleculeRow = StoichiometryMolecule;
@@ -372,8 +372,8 @@ function StoichiometryTable({
           backgroundColor: "#f8f9fa",
         },
         "& .stoichiometry-disabled-cell": {
-          backgroundColor: `${theme.palette.action.disabled} !important`,
-          color: `${theme.palette.text.disabled} !important`,
+          backgroundColor: `${lighten(theme.palette.primary.background, 0.3)} !important`,
+          color: `${theme.palette.primary.contrastText} !important`,
           fontStyle: "italic",
           "&:hover": {
             backgroundColor: `${theme.palette.action.hover} !important`,
