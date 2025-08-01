@@ -154,7 +154,7 @@ pipeline {
             steps {
                 dir('src/main/webapp/ui') {
                     echo 'Running dependency cruiser'
-                    sh 'npm run depcruise'
+                    sh 'npm run depcruise | sed \'s/\\x1b\\[[0-9;]*[a-zA-Z]//g\''
                 }
             }
         }
