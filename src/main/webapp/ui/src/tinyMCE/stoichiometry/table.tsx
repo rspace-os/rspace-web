@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import Radio from "@mui/material/Radio";
+import { useTheme } from "@mui/material/styles";
 import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
@@ -148,6 +149,7 @@ function StoichiometryTable({
   editable?: boolean;
 }): React.ReactNode {
   const { getStoichiometry } = useStoichiometry();
+  const theme = useTheme();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -223,6 +225,11 @@ function StoichiometryTable({
   }
 
   // allMolecules state is now defined at the top of the component
+  
+  // Find the current limiting reagent
+  const limitingReagent = allMolecules.find(
+    (m) => m.limitingReagent && m.role.toLowerCase() === "reactant"
+  );
 
   type MoleculeRow = StoichiometryMolecule;
 
@@ -267,8 +274,21 @@ function StoichiometryTable({
       {
         headerName: "Equivalent",
         flex: 1,
-        editable: editable,
+        editable: (params) => {
+          // Limiting reagent's coefficient should not be editable
+          if (limitingReagent && params.id === limitingReagent.id) {
+            return false;
+          }
+          return editable;
+        },
         type: "number",
+        cellClassName: (params) => {
+          // Add visual styling for disabled cells
+          if (limitingReagent && params.id === limitingReagent.id) {
+            return "stoichiometry-disabled-cell";
+          }
+          return "";
+        },
       },
     ),
     DataGridColumn.newColumnWithFieldName<"molecularWeight", MoleculeRow>(
@@ -281,16 +301,42 @@ function StoichiometryTable({
     DataGridColumn.newColumnWithFieldName<"mass", MoleculeRow>("mass", {
       headerName: "Mass (g)",
       flex: 1,
-      editable: editable,
+      editable: (params) => {
+        // When there's a limiting reagent, only the limiting reagent's mass is editable
+        if (limitingReagent) {
+          return editable && params.id === limitingReagent.id;
+        }
+        return editable;
+      },
       type: "number",
-      renderCell: (params) => params.value ?? <>&mdash;</>,
+      renderCell: (params) => params.value ?? <>&#8212;</>,
+      cellClassName: (params) => {
+        // Add visual styling for disabled cells
+        if (limitingReagent && params.id !== limitingReagent.id) {
+          return "stoichiometry-disabled-cell";
+        }
+        return "";
+      },
     }),
     DataGridColumn.newColumnWithFieldName<"moles", MoleculeRow>("moles", {
       headerName: "Moles (mol)",
       flex: 1,
-      editable: editable,
+      editable: (params) => {
+        // When there's a limiting reagent, only the limiting reagent's moles is editable
+        if (limitingReagent) {
+          return editable && params.id === limitingReagent.id;
+        }
+        return editable;
+      },
       type: "number",
-      renderCell: (params) => params.value ?? <>&mdash;</>,
+      renderCell: (params) => params.value ?? <>&#8212;</>,
+      cellClassName: (params) => {
+        // Add visual styling for disabled cells
+        if (limitingReagent && params.id !== limitingReagent.id) {
+          return "stoichiometry-disabled-cell";
+        }
+        return "";
+      },
     }),
     DataGridColumn.newColumnWithFieldName<"notes", MoleculeRow>("notes", {
       headerName: "Notes",
@@ -324,6 +370,14 @@ function StoichiometryTable({
         },
         "& .MuiDataGrid-row:hover": {
           backgroundColor: "#f8f9fa",
+        },
+        "& .stoichiometry-disabled-cell": {
+          backgroundColor: `${theme.palette.action.disabled} !important`,
+          color: `${theme.palette.text.disabled} !important`,
+          fontStyle: "italic",
+          "&:hover": {
+            backgroundColor: `${theme.palette.action.hover} !important`,
+          },
         },
       }}
     />
