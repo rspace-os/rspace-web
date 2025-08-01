@@ -9,12 +9,12 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
-import InvApiService from "../../common/InvApiService";
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
 import {
   GridToolbarContainer,
   GridToolbarColumnsButton,
+  GridRowId,
 } from "@mui/x-data-grid";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -32,6 +32,15 @@ import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import docLinks from "../../assets/DocLinks";
 import { ACCENT_COLOR } from "../../assets/branding/fieldmark";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
+import Result from "@/util/result";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormHelperText from "@mui/material/FormHelperText";
+import { useConfirm } from "@/components/ConfirmProvider";
+import useOauthToken from "@/common/useOauthToken";
+import axios from "@/common/axios";
 
 /**
  * This class allows us to provide a link to the newly created container in the
@@ -106,10 +115,17 @@ const StyledGridOverlay = styled("div")(({ theme }) => ({
 }));
 
 function CustomLoadingOverlay() {
+  const id = React.useId();
   return (
     <StyledGridOverlay>
-      <CircularProgress variant="indeterminate" value={1} />
-      <Box sx={{ mt: 2 }}>Fetching notebooks from Fieldmark…</Box>
+      <CircularProgress
+        variant="indeterminate"
+        value={1}
+        aria-labelledby={id}
+      />
+      <Box sx={{ mt: 2 }} id={id}>
+        Fetching notebooks from Fieldmark…
+      </Box>
     </StyledGridOverlay>
   );
 }
@@ -142,8 +158,10 @@ export default function FieldmarkImportDialog({
   open,
   onClose,
 }: FieldmarkImportDialogArgs): React.ReactNode {
+  const confirm = useConfirm();
+  const { getToken } = useOauthToken();
   const { isViewportSmall } = useViewportDimensions();
-  const { addAlert } = React.useContext(AlertContext);
+  const { addAlert, removeAlert } = React.useContext(AlertContext);
   const [notebooks, setNotebooks] =
     React.useState<null | ReadonlyArray<Notebook>>(null);
   const [selectedNotebook, setSelectedNotebook] =
@@ -152,14 +170,35 @@ export default function FieldmarkImportDialog({
     React.useState<HTMLElement | null>(null);
   const [fetchingNotebooks, setFetchingNotebooks] = React.useState(false);
   const [importing, setImporting] = React.useState(false);
+  const [fetchingIdentifierFields, setFetchingIdentifierFields] =
+    React.useState(false);
+  const [identifierFields, setIdentifierFields] =
+    React.useState<ReadonlyArray<string> | null>(null);
+  const [showIgsnMessage, setShowIgsnMessage] = React.useState(false);
+
+  type IdentifierFieldSelection =
+    | { type: "unselected" }
+    | { type: "none" }
+    | { type: "selected"; field: string };
+
+  const [identifierFieldSelection, setIdentifierFieldSelection] =
+    React.useState<IdentifierFieldSelection>({ type: "unselected" });
 
   React.useEffect(
     doNotAwait(async () => {
       if (!open) return;
       setFetchingNotebooks(true);
+      setIdentifierFieldSelection({ type: "unselected" });
+      setSelectedNotebook(null);
+      setNotebooks(null);
       try {
-        const { data } = await InvApiService.get<ReadonlyArray<Notebook>>(
-          "/fieldmark/notebooks"
+        const { data } = await axios.get<ReadonlyArray<Notebook>>(
+          "/api/inventory/v1/fieldmark/notebooks",
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
+            },
+          },
         );
         setNotebooks(data);
       } catch (e) {
@@ -167,7 +206,7 @@ export default function FieldmarkImportDialog({
         if (e instanceof Error) {
           const message = Parsers.objectPath(
             ["response", "data", "data", "validationErrors"],
-            e
+            e,
           )
             .flatMap(Parsers.isArray)
             .flatMap(ArrayUtils.head)
@@ -181,25 +220,43 @@ export default function FieldmarkImportDialog({
               variant: "error",
               title: "Could not get notebooks from Fieldmark",
               message,
-            })
+            }),
           );
         }
       } finally {
         setFetchingNotebooks(false);
       }
     }),
-    [open]
+    [open],
   );
 
   async function importNotebook(notebook: Notebook) {
     setImporting(true);
+    const importingAlert = mkAlert({
+      variant: "notice",
+      title: "Importing notebook",
+      message: `Importing notebook "${notebook.name}" from Fieldmark.`,
+      isInfinite: true,
+    });
+    addAlert(importingAlert);
     try {
-      const { data } = await InvApiService.post<{
+      const { data } = await axios.post<{
         containerName: string;
         containerGlobalId: string;
-      }>("/import/fieldmark/notebook", {
-        notebookId: notebook.metadata.project_id,
-      });
+      }>(
+        "/api/inventory/v1/import/fieldmark/notebook",
+        {
+          notebookId: notebook.metadata.project_id,
+          ...(identifierFieldSelection.type === "selected"
+            ? { identifier: identifierFieldSelection.field }
+            : {}),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        },
+      );
       addAlert(
         mkAlert({
           variant: "success",
@@ -214,7 +271,7 @@ export default function FieldmarkImportDialog({
               }),
             },
           ],
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -224,19 +281,99 @@ export default function FieldmarkImportDialog({
             variant: "error",
             title: "Could not import notebook.",
             message: e.message,
-          })
+          }),
         );
       throw e;
     } finally {
       setImporting(false);
+      if (importingAlert) removeAlert(importingAlert);
     }
   }
 
+  async function fetchIdentifierColumn(
+    notebookId: Notebook["metadata"]["project_id"],
+  ) {
+    setFetchingIdentifierFields(true);
+    setIdentifierFields(null);
+    setIdentifierFieldSelection({ type: "unselected" });
+    setShowIgsnMessage(false);
+    try {
+      const { data } = await axios.get(
+        "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=" +
+          notebookId,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        },
+      );
+      setIdentifierFields(
+        Parsers.isArray(data)
+          .flatMap((fieldNames) =>
+            Result.all(...fieldNames.map(Parsers.isString)),
+          )
+          .elseThrow(),
+      );
+    } catch (error: unknown) {
+      console.error(error);
+      setIdentifierFields([]);
+      setShowIgsnMessage(
+        Parsers.objectPath(
+          ["response", "data", "data", "validationErrors"],
+          error,
+        )
+          .flatMap(Parsers.isArray)
+          .map((validationErrors) =>
+            validationErrors.some((validationError) =>
+              Parsers.objectPath(["message"], validationError)
+                .flatMap(Parsers.isString)
+                .map((message) =>
+                  /IGSN integration is not enabled/.test(message),
+                )
+                .orElse(false),
+            ),
+          )
+          .orElse(false),
+      );
+    } finally {
+      setFetchingIdentifierFields(false);
+    }
+  }
+
+  function handleClose() {
+    const resetState = () => {
+      setNotebooks(null);
+      setSelectedNotebook(null);
+      setColumnsMenuAnchorEl(null);
+      setFetchingNotebooks(false);
+      setImporting(false);
+      setFetchingIdentifierFields(false);
+      setIdentifierFields(null);
+      setIdentifierFieldSelection({ type: "unselected" });
+    };
+
+    if (!importing) {
+      onClose();
+      resetState();
+      return;
+    }
+    confirm(
+      "Importing in progress",
+      "Are you sure you want to close this dialog? The import will continue in the background and there will be an alert when it completes.",
+      "Yes, close",
+      "No, keep open",
+    ).then((confirmed) => {
+      if (confirmed) {
+        onClose();
+        resetState();
+      }
+    });
+  }
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Dialog
         open={open}
-        onClose={onClose}
+        onClose={handleClose}
         maxWidth="lg"
         fullWidth
         fullScreen={isViewportSmall}
@@ -289,7 +426,7 @@ export default function FieldmarkImportDialog({
                       headerName: "Name",
                       flex: 1,
                       sortable: false,
-                    }
+                    },
                   ),
                   DataGridColumn.newColumnWithFieldName<"status", Notebook>(
                     "status",
@@ -297,7 +434,7 @@ export default function FieldmarkImportDialog({
                       headerName: "Status",
                       flex: 1,
                       sortable: false,
-                    }
+                    },
                   ),
                   DataGridColumn.newColumnWithValueGetter<
                     "isPublic",
@@ -319,7 +456,7 @@ export default function FieldmarkImportDialog({
                       headerName: "Description",
                       flex: 1,
                       sortable: false,
-                    }
+                    },
                   ),
                   DataGridColumn.newColumnWithValueGetter<
                     "projectLead",
@@ -332,7 +469,7 @@ export default function FieldmarkImportDialog({
                       headerName: "Project Lead",
                       flex: 1,
                       sortable: false,
-                    }
+                    },
                   ),
                   DataGridColumn.newColumnWithValueGetter<
                     "id",
@@ -360,9 +497,12 @@ export default function FieldmarkImportDialog({
                 onSelectionChange={(newSelectionId) => {
                   ArrayUtils.find(
                     (n) => n.metadata.project_id === newSelectionId,
-                    notebooks ?? []
+                    notebooks ?? [],
                   ).do((newlySelectedNotebook) => {
                     setSelectedNotebook(newlySelectedNotebook);
+                    void fetchIdentifierColumn(
+                      newlySelectedNotebook.metadata.project_id,
+                    );
                   });
                 }}
                 selectRadioAriaLabelFunc={(row) =>
@@ -390,20 +530,102 @@ export default function FieldmarkImportDialog({
                 getRowId={(row) => row.metadata.project_id}
               />
             </Grid>
+            <Grid item>
+              {selectedNotebook &&
+                !(
+                  identifierFieldSelection.type === "unselected" && importing
+                ) && (
+                  <>
+                    {showIgsnMessage && (
+                      <Typography variant="body2" sx={{ ml: 0.5 }}>
+                        RSpace can link pre-registered IGSN IDs with samples
+                        imported by Fieldmark. This feature requires the{" "}
+                        <Link href={docLinks.IGSNIdentifiers}>
+                          DataCite IGSN ID integration
+                        </Link>{" "}
+                        to be enabled.
+                      </Typography>
+                    )}
+                    {fetchingIdentifierFields ? (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          ml: 2,
+                        }}
+                      >
+                        <CircularProgress size={24} />
+                        <Typography variant="body2">
+                          Loading available IGSN ID fields...
+                        </Typography>
+                      </Box>
+                    ) : (
+                      identifierFields &&
+                      identifierFields.length > 0 && (
+                        <FormControl sx={{ width: "auto", minWidth: 200 }}>
+                          <InputLabel id="identifier-field-select-label">
+                            IGSN ID Field
+                          </InputLabel>
+                          <Select
+                            labelId="identifier-field-select-label"
+                            id="identifier-field-select"
+                            value={
+                              identifierFieldSelection.type === "none"
+                                ? "none"
+                                : identifierFieldSelection.type === "selected"
+                                  ? identifierFieldSelection.field
+                                  : ""
+                            }
+                            label="IGSN ID Field"
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === "none") {
+                                setIdentifierFieldSelection({ type: "none" });
+                              } else if (value !== "") {
+                                setIdentifierFieldSelection({
+                                  type: "selected",
+                                  field: value,
+                                });
+                              } else {
+                                setIdentifierFieldSelection({
+                                  type: "unselected",
+                                });
+                              }
+                            }}
+                          >
+                            <MenuItem value="none">
+                              <em>Do not use IGSN IDs</em>
+                            </MenuItem>
+                            {identifierFields.map((field) => (
+                              <MenuItem key={field} value={field}>
+                                {field}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          <FormHelperText>
+                            Select a field to use as the IGSN ID for imported
+                            samples, or select 'Do not use IGSN IDs' to import
+                            without one
+                          </FormHelperText>
+                        </FormControl>
+                      )
+                    )}
+                  </>
+                )}
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
           <Grid container direction="row" spacing={1}>
             <Grid item sx={{ ml: "auto" }}>
               <Stack direction="row" spacing={1}>
-                <Button onClick={() => onClose()} disabled={importing}>
-                  {selectedNotebook ? "Cancel" : "Close"}
-                </Button>
+                <Button onClick={() => handleClose()}>Close</Button>
                 <ValidatingSubmitButton
                   onClick={() => {
                     if (selectedNotebook)
                       void importNotebook(selectedNotebook).then(() =>
-                        onClose()
+                        handleClose(),
                       );
                   }}
                   validationResult={
