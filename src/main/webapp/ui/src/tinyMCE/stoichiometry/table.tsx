@@ -1,12 +1,18 @@
 import React from "react";
-import { DataGrid } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridToolbarContainer,
+  GridToolbarExportContainer,
+  useGridApiContext,
+} from "@mui/x-data-grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import Radio from "@mui/material/Radio";
+import MenuItem from "@mui/material/MenuItem";
 import { lighten, useTheme } from "@mui/material/styles";
-import { calculateUpdatedMolecules } from './calculations';
+import { calculateUpdatedMolecules } from "./calculations";
 import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
@@ -17,7 +23,6 @@ import { DataGridColumn } from "../../util/table";
 export interface StoichiometryTableRef {
   save: () => Promise<void>;
 }
-
 
 const RoleChip = ({ role }: { role: string }) => {
   const getRoleColor = (role: string) => {
@@ -56,6 +61,28 @@ const RoleChip = ({ role }: { role: string }) => {
   );
 };
 
+function Toolbar(): React.ReactNode {
+  const apiRef = useGridApiContext();
+  const theme = useTheme();
+
+  return (
+    <GridToolbarContainer sx={{ mr: `${theme.spacing(0.5)} !important` }}>
+      <Box flexGrow={1}></Box>
+      <GridToolbarExportContainer>
+        <MenuItem
+          onClick={() => {
+            apiRef.current?.exportDataAsCsv({
+              allColumns: true,
+            });
+          }}
+        >
+          Export to CSV
+        </MenuItem>
+      </GridToolbarExportContainer>
+    </GridToolbarContainer>
+  );
+}
+
 const StoichiometryTable = React.forwardRef<
   StoichiometryTableRef,
   {
@@ -93,18 +120,18 @@ const StoichiometryTable = React.forwardRef<
     if (data?.molecules) {
       const molecules = data.molecules;
       const hasLimitingReagent = molecules.some(
-        (m) => m.limitingReagent && m.role.toLowerCase() === "reactant"
+        (m) => m.limitingReagent && m.role.toLowerCase() === "reactant",
       );
-      
+
       // Usability enhancement: default first reactant as limiting reagent since it's usually the limiting one
       if (!hasLimitingReagent) {
         const firstReactant = molecules.find(
-          (m) => m.role.toLowerCase() === "reactant"
+          (m) => m.role.toLowerCase() === "reactant",
         );
-        
+
         if (firstReactant) {
-          const updatedMolecules = molecules.map((m) => 
-            m.id === firstReactant.id ? { ...m, limitingReagent: true } : m
+          const updatedMolecules = molecules.map((m) =>
+            m.id === firstReactant.id ? { ...m, limitingReagent: true } : m,
           );
           setAllMolecules(updatedMolecules);
         } else {
@@ -116,23 +143,27 @@ const StoichiometryTable = React.forwardRef<
     }
   }, [data]);
 
-  React.useImperativeHandle(ref, () => ({
-    save: async () => {
-      if (!data || !data.id) {
-        throw new Error("No stoichiometry data to save");
-      }
-      
-      const updatedData: StoichiometryResponse = {
-        ...data,
-        molecules: allMolecules,
-      };
-      
-      await updateStoichiometry({
-        stoichiometryId: data.id,
-        stoichiometryData: updatedData,
-      });
-    },
-  }), [data, allMolecules, updateStoichiometry]);
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      save: async () => {
+        if (!data || !data.id) {
+          throw new Error("No stoichiometry data to save");
+        }
+
+        const updatedData: StoichiometryResponse = {
+          ...data,
+          molecules: allMolecules,
+        };
+
+        await updateStoichiometry({
+          stoichiometryId: data.id,
+          stoichiometryData: updatedData,
+        });
+      },
+    }),
+    [data, allMolecules, updateStoichiometry],
+  );
 
   if (loading) {
     return (
@@ -214,7 +245,9 @@ const StoichiometryTable = React.forwardRef<
           <Radio
             checked={params.row.limitingReagent || false}
             disabled={!editable}
-            inputProps={{ 'aria-label': `Select ${params.row.name} as limiting reagent` }}
+            inputProps={{
+              "aria-label": `Select ${params.row.name} as limiting reagent`,
+            }}
             onChange={(e) => {
               if (e.target.checked && editable) {
                 const updatedRow = { ...params.row, limitingReagent: true };
@@ -325,6 +358,9 @@ const StoichiometryTable = React.forwardRef<
         const newMolecules = calculateUpdatedMolecules(allMolecules, newRow);
         setAllMolecules(newMolecules);
         return newMolecules.find((m) => m.id === newRow.id) || newRow;
+      }}
+      slots={{
+        toolbar: Toolbar,
       }}
       sx={{
         border: "none",
