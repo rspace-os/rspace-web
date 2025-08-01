@@ -16,6 +16,7 @@ const feature = test.extend<{
     "the table displays molecule data": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
     "the default columns should be visible": () => Promise<void>;
+    "the first reactant should be selected as the default limiting reagent": () => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -94,12 +95,25 @@ const feature = test.extend<{
         expect(headers).toContain("Moles (mol)");
         expect(headers).toContain("Notes");
       },
+      "the first reactant should be selected as the default limiting reagent": async () => {
+        // Find all rows with reactant role
+        const dataRows = page.getByRole("row").filter({ hasNot: page.getByRole("columnheader") });
+        
+        // Get the first row (should be Benzene based on mock data)
+        const firstRow = dataRows.first();
+        await expect(firstRow).toContainText("Benzene");
+        
+        // Check that the radio button in the Limiting Reagent column is checked for the first reactant
+        const limitingReagentRadio = firstRow.getByRole("radio", { name: /Select Benzene as limiting reagent/ });
+        await expect(limitingReagentRadio).toBeChecked();
+      },
     });
   },
 });
 
 feature.beforeEach(async ({ router }) => {
   await router.route("/chemical/stoichiometry*", (route) => {
+    // Mock data with all limitingReagent values set to false to test default selection behavior
     const mockResponse = {
       data: {
         id: 3,
@@ -245,5 +259,11 @@ test.describe("Stoichiometry Table", () => {
     await Given["the table is loaded with data"]();
     await Once["the table has loaded"]();
     await Then["the default columns should be visible"]();
+  });
+
+  feature("Sets first reactant as default limiting reagent when none is selected", async ({ Given, Once, Then }) => {
+    await Given["the table is loaded with data"]();
+    await Once["the table has loaded"]();
+    await Then["the first reactant should be selected as the default limiting reagent"]();
   });
 });

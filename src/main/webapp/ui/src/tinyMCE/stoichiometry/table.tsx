@@ -87,7 +87,28 @@ function StoichiometryTable({
 
   React.useEffect(() => {
     if (data?.molecules) {
-      setAllMolecules(data.molecules);
+      const molecules = data.molecules;
+      const hasLimitingReagent = molecules.some(
+        (m) => m.limitingReagent && m.role.toLowerCase() === "reactant"
+      );
+      
+      // Usability enhancement: default first reactant as limiting reagent since it's usually the limiting one
+      if (!hasLimitingReagent) {
+        const firstReactant = molecules.find(
+          (m) => m.role.toLowerCase() === "reactant"
+        );
+        
+        if (firstReactant) {
+          const updatedMolecules = molecules.map((m) => 
+            m.id === firstReactant.id ? { ...m, limitingReagent: true } : m
+          );
+          setAllMolecules(updatedMolecules);
+        } else {
+          setAllMolecules(molecules);
+        }
+      } else {
+        setAllMolecules(molecules);
+      }
     }
   }, [data]);
 
