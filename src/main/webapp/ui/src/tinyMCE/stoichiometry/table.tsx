@@ -15,10 +15,10 @@ import { DataGridColumn } from "../../util/table";
 // Pure function to calculate updated molecules based on edits
 function calculateUpdatedMolecules(
   allMolecules: StoichiometryMolecule[],
-  editedRow: StoichiometryMolecule
+  editedRow: StoichiometryMolecule,
 ): StoichiometryMolecule[] {
-  const updatedMolecules = allMolecules.map(molecule => ({ ...molecule }));
-  const editedMolecule = updatedMolecules.find(m => m.id === editedRow.id);
+  const updatedMolecules = allMolecules.map((molecule) => ({ ...molecule }));
+  const editedMolecule = updatedMolecules.find((m) => m.id === editedRow.id);
 
   if (!editedMolecule) return updatedMolecules;
 
@@ -32,16 +32,28 @@ function calculateUpdatedMolecules(
   // Handle mass <-> moles conversion for the edited molecule
   // We need to determine which field was actually changed to avoid circular updates
   if (editedMolecule.molecularWeight && editedMolecule.molecularWeight > 0) {
-    const originalMolecule = allMolecules.find(m => m.id === editedRow.id);
-    
+    const originalMolecule = allMolecules.find((m) => m.id === editedRow.id);
+
     if (originalMolecule) {
       // If mass changed, calculate moles
-      if (editedMolecule.mass !== originalMolecule.mass && editedMolecule.mass && editedMolecule.mass > 0) {
-        editedMolecule.moles = Number((editedMolecule.mass / editedMolecule.molecularWeight).toFixed(6));
+      if (
+        editedMolecule.mass !== originalMolecule.mass &&
+        editedMolecule.mass &&
+        editedMolecule.mass > 0
+      ) {
+        editedMolecule.moles = Number(
+          (editedMolecule.mass / editedMolecule.molecularWeight).toFixed(6),
+        );
       }
       // If moles changed, calculate mass
-      else if (editedMolecule.moles !== originalMolecule.moles && editedMolecule.moles && editedMolecule.moles > 0) {
-        editedMolecule.mass = Number((editedMolecule.moles * editedMolecule.molecularWeight).toFixed(4));
+      else if (
+        editedMolecule.moles !== originalMolecule.moles &&
+        editedMolecule.moles &&
+        editedMolecule.moles > 0
+      ) {
+        editedMolecule.mass = Number(
+          (editedMolecule.moles * editedMolecule.molecularWeight).toFixed(4),
+        );
       }
     }
   }
@@ -49,23 +61,30 @@ function calculateUpdatedMolecules(
   // Handle limiting reagent selection
   if (editedMolecule.limitingReagent) {
     // Clear all other limiting reagents
-    updatedMolecules.forEach(molecule => {
-      if (molecule.id !== editedMolecule.id && molecule.role.toLowerCase() === 'reactant') {
+    updatedMolecules.forEach((molecule) => {
+      if (
+        molecule.id !== editedMolecule.id &&
+        molecule.role.toLowerCase() === "reactant"
+      ) {
         molecule.limitingReagent = false;
       }
     });
   }
 
   // Perform stoichiometric calculations if there's a limiting reagent
-  const limitingReagent = updatedMolecules.find(m => 
-    m.limitingReagent && m.role.toLowerCase() === 'reactant' && m.moles && m.moles > 0
+  const limitingReagent = updatedMolecules.find(
+    (m) =>
+      m.limitingReagent &&
+      m.role.toLowerCase() === "reactant" &&
+      m.moles &&
+      m.moles > 0,
   );
 
   if (limitingReagent) {
     const limitingMoles = limitingReagent.moles || 0;
     const limitingCoeff = limitingReagent.coefficient || 1;
 
-    updatedMolecules.forEach(molecule => {
+    updatedMolecules.forEach((molecule) => {
       if (molecule.id === limitingReagent.id) return; // Skip the limiting reagent itself
 
       const coeff = molecule.coefficient || 1;
@@ -74,7 +93,9 @@ function calculateUpdatedMolecules(
 
       molecule.moles = Number(theoreticalMoles.toFixed(6));
       if (molecule.molecularWeight) {
-        molecule.mass = Number((theoreticalMoles * molecule.molecularWeight).toFixed(4));
+        molecule.mass = Number(
+          (theoreticalMoles * molecule.molecularWeight).toFixed(4),
+        );
       }
     });
   }
@@ -130,7 +151,9 @@ function StoichiometryTable({
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [allMolecules, setAllMolecules] = React.useState<StoichiometryMolecule[]>([]);
+  const [allMolecules, setAllMolecules] = React.useState<
+    StoichiometryMolecule[]
+  >([]);
 
   React.useEffect(() => {
     setLoading(true);
@@ -226,7 +249,10 @@ function StoichiometryTable({
               onChange={(e) => {
                 if (e.target.checked && editable) {
                   const updatedRow = { ...params.row, limitingReagent: true };
-                  const newMolecules = calculateUpdatedMolecules(allMolecules, updatedRow);
+                  const newMolecules = calculateUpdatedMolecules(
+                    allMolecules,
+                    updatedRow,
+                  );
                   setAllMolecules(newMolecules);
                 }
               }}
@@ -285,7 +311,7 @@ function StoichiometryTable({
       processRowUpdate={(newRow) => {
         const newMolecules = calculateUpdatedMolecules(allMolecules, newRow);
         setAllMolecules(newMolecules);
-        return newRow;
+        return newMolecules.find((m) => m.id === newRow.id) || newRow;
       }}
       sx={{
         border: "none",
