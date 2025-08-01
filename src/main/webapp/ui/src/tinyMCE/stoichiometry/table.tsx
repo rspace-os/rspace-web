@@ -13,30 +13,25 @@ import useStoichiometry, {
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
 
-// Pure function to calculate updated molecules based on edits
 function calculateUpdatedMolecules(
-  allMolecules: StoichiometryMolecule[],
+  allMolecules: ReadonlyArray<StoichiometryMolecule>,
   editedRow: StoichiometryMolecule,
-): StoichiometryMolecule[] {
+): ReadonlyArray<StoichiometryMolecule> {
   const updatedMolecules = allMolecules.map((molecule) => ({ ...molecule }));
   const editedMolecule = updatedMolecules.find((m) => m.id === editedRow.id);
 
   if (!editedMolecule) return updatedMolecules;
 
-  // Update the edited molecule with new state
   editedMolecule.mass = editedRow.mass;
   editedMolecule.moles = editedRow.moles;
   editedMolecule.notes = editedRow.notes;
   editedMolecule.coefficient = editedRow.coefficient;
   editedMolecule.limitingReagent = editedRow.limitingReagent;
 
-  // Handle mass <-> moles conversion for the edited molecule
-  // We need to determine which field was actually changed to avoid circular updates
   if (editedMolecule.molecularWeight && editedMolecule.molecularWeight > 0) {
     const originalMolecule = allMolecules.find((m) => m.id === editedRow.id);
 
     if (originalMolecule) {
-      // If mass changed, calculate moles
       if (
         editedMolecule.mass !== originalMolecule.mass &&
         editedMolecule.mass &&
@@ -45,9 +40,7 @@ function calculateUpdatedMolecules(
         editedMolecule.moles = Number(
           (editedMolecule.mass / editedMolecule.molecularWeight).toFixed(6),
         );
-      }
-      // If moles changed, calculate mass
-      else if (
+      } else if (
         editedMolecule.moles !== originalMolecule.moles &&
         editedMolecule.moles &&
         editedMolecule.moles > 0
@@ -61,7 +54,6 @@ function calculateUpdatedMolecules(
 
   // Handle limiting reagent selection
   if (editedMolecule.limitingReagent) {
-    // Clear all other limiting reagents
     updatedMolecules.forEach((molecule) => {
       if (
         molecule.id !== editedMolecule.id &&
@@ -86,7 +78,7 @@ function calculateUpdatedMolecules(
     const limitingCoeff = limitingReagent.coefficient || 1;
 
     updatedMolecules.forEach((molecule) => {
-      if (molecule.id === limitingReagent.id) return; // Skip the limiting reagent itself
+      if (molecule.id === limitingReagent.id) return;
 
       const coeff = molecule.coefficient || 1;
       // Calculate theoretical moles based on stoichiometry
@@ -154,7 +146,7 @@ function StoichiometryTable({
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [allMolecules, setAllMolecules] = React.useState<
-    StoichiometryMolecule[]
+    ReadonlyArray<StoichiometryMolecule>
   >([]);
 
   React.useEffect(() => {
@@ -224,58 +216,59 @@ function StoichiometryTable({
     );
   }
 
-  // allMolecules state is now defined at the top of the component
-
-  // Find the current limiting reagent
   const limitingReagent = allMolecules.find(
     (m) => m.limitingReagent && m.role.toLowerCase() === "reactant",
   );
 
-  type MoleculeRow = StoichiometryMolecule;
-
   const columns = [
-    DataGridColumn.newColumnWithFieldName<"name", MoleculeRow>("name", {
-      headerName: "Name",
-      flex: 1.5,
-    }),
-    DataGridColumn.newColumnWithFieldName<"role", MoleculeRow>("role", {
-      headerName: "Role",
-      flex: 1,
-      renderCell: (params) => <RoleChip role={params.value || ""} />,
-    }),
-    DataGridColumn.newColumnWithFieldName<"limitingReagent", MoleculeRow>(
-      "limitingReagent",
+    DataGridColumn.newColumnWithFieldName<"name", StoichiometryMolecule>(
+      "name",
       {
-        headerName: "Limiting Reagent",
-        flex: 1,
-        renderCell: (params) =>
-          params.row.role.toLowerCase() === "reactant" ? (
-            <Radio
-              checked={params.row.limitingReagent || false}
-              disabled={!editable}
-              onChange={(e) => {
-                if (e.target.checked && editable) {
-                  const updatedRow = { ...params.row, limitingReagent: true };
-                  const newMolecules = calculateUpdatedMolecules(
-                    allMolecules,
-                    updatedRow,
-                  );
-                  setAllMolecules(newMolecules);
-                }
-              }}
-            />
-          ) : (
-            <>&mdash;</>
-          ),
+        headerName: "Name",
+        flex: 1.5,
       },
     ),
-    DataGridColumn.newColumnWithFieldName<"coefficient", MoleculeRow>(
+    DataGridColumn.newColumnWithFieldName<"role", StoichiometryMolecule>(
+      "role",
+      {
+        headerName: "Role",
+        flex: 1,
+        renderCell: (params) => <RoleChip role={params.value || ""} />,
+      },
+    ),
+    DataGridColumn.newColumnWithFieldName<
+      "limitingReagent",
+      StoichiometryMolecule
+    >("limitingReagent", {
+      headerName: "Limiting Reagent",
+      flex: 1,
+      renderCell: (params) =>
+        params.row.role.toLowerCase() === "reactant" ? (
+          <Radio
+            checked={params.row.limitingReagent || false}
+            disabled={!editable}
+            onChange={(e) => {
+              if (e.target.checked && editable) {
+                const updatedRow = { ...params.row, limitingReagent: true };
+                const newMolecules = calculateUpdatedMolecules(
+                  allMolecules,
+                  updatedRow,
+                );
+                setAllMolecules(newMolecules);
+              }
+            }}
+          />
+        ) : (
+          <>&mdash;</>
+        ),
+    }),
+    DataGridColumn.newColumnWithFieldName<"coefficient", StoichiometryMolecule>(
       "coefficient",
       {
         headerName: "Equivalent",
         flex: 1,
+        // @ts-expect-error It's not documented or typed, but editable can be a function
         editable: (params) => {
-          // Limiting reagent's coefficient should not be editable
           if (limitingReagent && params.id === limitingReagent.id) {
             return false;
           }
@@ -283,7 +276,6 @@ function StoichiometryTable({
         },
         type: "number",
         cellClassName: (params) => {
-          // Add visual styling for disabled cells
           if (limitingReagent && params.id === limitingReagent.id) {
             return "stoichiometry-disabled-cell";
           }
@@ -291,60 +283,67 @@ function StoichiometryTable({
         },
       },
     ),
-    DataGridColumn.newColumnWithFieldName<"molecularWeight", MoleculeRow>(
+    DataGridColumn.newColumnWithFieldName<
       "molecularWeight",
+      StoichiometryMolecule
+    >("molecularWeight", {
+      headerName: "Molecular Weight (g/mol)",
+      flex: 1.2,
+    }),
+    DataGridColumn.newColumnWithFieldName<"mass", StoichiometryMolecule>(
+      "mass",
       {
-        headerName: "Molecular Weight (g/mol)",
-        flex: 1.2,
+        headerName: "Mass (g)",
+        flex: 1,
+        // @ts-expect-error It's not documented or typed, but editable can be a function
+        editable: (params) => {
+          if (limitingReagent) {
+            return editable && params.id === limitingReagent.id;
+          }
+          return editable;
+        },
+        type: "number",
+        renderCell: (params) => params.value ?? <>&#8212;</>,
+        cellClassName: (params) => {
+          if (limitingReagent && params.id !== limitingReagent.id) {
+            return "stoichiometry-disabled-cell";
+          }
+          return "";
+        },
       },
     ),
-    DataGridColumn.newColumnWithFieldName<"mass", MoleculeRow>("mass", {
-      headerName: "Mass (g)",
-      flex: 1,
-      editable: (params) => {
-        // When there's a limiting reagent, only the limiting reagent's mass is editable
-        if (limitingReagent) {
-          return editable && params.id === limitingReagent.id;
-        }
-        return editable;
+    DataGridColumn.newColumnWithFieldName<"moles", StoichiometryMolecule>(
+      "moles",
+      {
+        headerName: "Moles (mol)",
+        flex: 1,
+        // @ts-expect-error It's not documented or typed, but editable can be a function
+        editable: (params) => {
+          if (limitingReagent) {
+            return editable && params.id === limitingReagent.id;
+          }
+          return editable;
+        },
+        type: "number",
+        renderCell: (params) => params.value ?? <>&#8212;</>,
+        cellClassName: (params) => {
+          if (limitingReagent && params.id !== limitingReagent.id) {
+            return "stoichiometry-disabled-cell";
+          }
+          return "";
+        },
       },
-      type: "number",
-      renderCell: (params) => params.value ?? <>&#8212;</>,
-      cellClassName: (params) => {
-        // Add visual styling for disabled cells
-        if (limitingReagent && params.id !== limitingReagent.id) {
-          return "stoichiometry-disabled-cell";
-        }
-        return "";
+    ),
+    DataGridColumn.newColumnWithFieldName<"notes", StoichiometryMolecule>(
+      "notes",
+      {
+        headerName: "Notes",
+        flex: 1.5,
+        editable: editable,
+        type: "string",
+        renderCell: (params) => params.value ?? <>&mdash;</>,
       },
-    }),
-    DataGridColumn.newColumnWithFieldName<"moles", MoleculeRow>("moles", {
-      headerName: "Moles (mol)",
-      flex: 1,
-      editable: (params) => {
-        // When there's a limiting reagent, only the limiting reagent's moles is editable
-        if (limitingReagent) {
-          return editable && params.id === limitingReagent.id;
-        }
-        return editable;
-      },
-      type: "number",
-      renderCell: (params) => params.value ?? <>&#8212;</>,
-      cellClassName: (params) => {
-        // Add visual styling for disabled cells
-        if (limitingReagent && params.id !== limitingReagent.id) {
-          return "stoichiometry-disabled-cell";
-        }
-        return "";
-      },
-    }),
-    DataGridColumn.newColumnWithFieldName<"notes", MoleculeRow>("notes", {
-      headerName: "Notes",
-      flex: 1.5,
-      editable: editable,
-      type: "string",
-      renderCell: (params) => params.value ?? <>&mdash;</>,
-    }),
+    ),
   ];
 
   return (
