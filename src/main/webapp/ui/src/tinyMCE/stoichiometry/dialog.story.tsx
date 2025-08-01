@@ -4,9 +4,13 @@ import materialTheme from "../../theme";
 import StoichiometryDialog from "./dialog";
 import Alerts from "@/Inventory/components/Alerts";
 
-export function StoichiometryDialogWithCalculateButtonStory(): React.ReactNode {
+export function StoichiometryDialogWithCalculateButtonStory({
+  onTableCreated,
+}: {
+  onTableCreated?: () => void;
+} = {}): React.ReactNode {
   const [open, setOpen] = React.useState(true);
-  
+
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
@@ -16,6 +20,7 @@ export function StoichiometryDialogWithCalculateButtonStory(): React.ReactNode {
             onClose={() => setOpen(false)}
             chemId={12345}
             hasStoichiometryTable={false}
+            onTableCreated={onTableCreated}
           />
         </Alerts>
       </ThemeProvider>
@@ -25,7 +30,7 @@ export function StoichiometryDialogWithCalculateButtonStory(): React.ReactNode {
 
 export function StoichiometryDialogWithTableStory(): React.ReactNode {
   const [open, setOpen] = React.useState(true);
-  
+
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>

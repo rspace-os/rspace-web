@@ -5,23 +5,66 @@ import {
   StoichiometryDialogWithTableStory,
 } from "./dialog.story";
 
+const createOnTableCreatedSpy = () => {
+  let called = false;
+
+  const handler = () => {
+    called = true;
+  };
+
+  const hasBeenCalled = () => called;
+
+  return {
+    handler,
+    hasBeenCalled,
+  };
+};
+
 const feature = test.extend<{
   Given: {
-    "the dialog is open without a stoichiometry table": () => Promise<void>;
+    "the dialog is open without a stoichiometry table": ({
+      onTableCreatedSpy,
+    }?: {
+      onTableCreatedSpy?: ReturnType<typeof createOnTableCreatedSpy>;
+    }) => Promise<void>;
     "the dialog is open with a stoichiometry table": () => Promise<void>;
+  };
+  When: {
+    "the user clicks calculate": () => Promise<void>;
   };
   Then: {
     "the calculate button is visible": () => Promise<void>;
     "the table is displayed": () => Promise<void>;
+    "the callback should have been invoked": ({
+      onTableCreatedSpy,
+    }: {
+      onTableCreatedSpy: ReturnType<typeof createOnTableCreatedSpy>;
+    }) => void;
   };
 }>({
   Given: async ({ mount }, use) => {
     await use({
-      "the dialog is open without a stoichiometry table": async () => {
-        await mount(<StoichiometryDialogWithCalculateButtonStory />);
+      "the dialog is open without a stoichiometry table": async ({
+        onTableCreatedSpy,
+      } = {}) => {
+        await mount(
+          <StoichiometryDialogWithCalculateButtonStory
+            onTableCreated={onTableCreatedSpy?.handler}
+          />,
+        );
       },
       "the dialog is open with a stoichiometry table": async () => {
         await mount(<StoichiometryDialogWithTableStory />);
+      },
+    });
+  },
+  When: async ({ page }, use) => {
+    await use({
+      "the user clicks calculate": async () => {
+        const button = page.getByRole("button", {
+          name: "Calculate Stoichiometry",
+        });
+        await button.click();
       },
     });
   },
@@ -36,6 +79,9 @@ const feature = test.extend<{
       "the table is displayed": async () => {
         const table = page.getByRole("grid");
         await expect(table).toBeVisible();
+      },
+      "the callback should have been invoked": ({ onTableCreatedSpy }) => {
+        expect(onTableCreatedSpy.hasBeenCalled()).toBe(true);
       },
     });
   },
@@ -181,6 +227,21 @@ test.describe("Stoichiometry Dialog", () => {
     async ({ Given, Then }) => {
       await Given["the dialog is open with a stoichiometry table"]();
       await Then["the table is displayed"]();
+    },
+  );
+
+  feature(
+    "invokes callback when table is successfully created",
+    async ({ Given, When, Then }) => {
+      const onTableCreatedSpy = createOnTableCreatedSpy();
+      await Given["the dialog is open without a stoichiometry table"]({
+        onTableCreatedSpy,
+      });
+      await When["the user clicks calculate"]();
+      await Then["the table is displayed"]();
+      await Then["the callback should have been invoked"]({
+        onTableCreatedSpy,
+      });
     },
   );
 });
