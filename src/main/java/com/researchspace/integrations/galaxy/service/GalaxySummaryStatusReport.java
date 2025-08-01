@@ -21,35 +21,10 @@ public class GalaxySummaryStatusReport {
   private String galaxyHistoryId;
   private String galaxyDataNames;
   private String galaxyInvocationName;
-  private GalaxyInvocationStatus galaxyInvocationStatus;
+  private String galaxyInvocationStatus;
   private String galaxyInvocationId;
   private String galaxyBaseUrl;
   private Date createdOn;
-
-  public enum GalaxyInvocationStatus {
-    IN_PROGRESS("new,waiting,queued,running,resubmitted,upload, ready"),
-    COMPLETED(""),
-    CANCELLED("cancelled, cancelling"),
-    FAILED("failed,error,deleted");
-    private String text;
-
-    GalaxyInvocationStatus(String text) {
-      this.text = text;
-    }
-
-    public String getText() {
-      return this.text;
-    }
-
-    public static GalaxyInvocationStatus fromString(String text) {
-      for (GalaxyInvocationStatus gis : GalaxyInvocationStatus.values()) {
-        if (gis.text.contains(text.toLowerCase())) {
-          return gis;
-        }
-      }
-      return COMPLETED;
-    }
-  }
 
   /**
    * Creates a summary report for all data uploaded to a SINGLE GALAXY HISTORY. That data is not
@@ -141,8 +116,7 @@ public class GalaxySummaryStatusReport {
       GalaxyInvocationDetails galaxyInvocationDetails,
       Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField) {
     GalaxySummaryStatusReport report = new GalaxySummaryStatusReport();
-    report.setGalaxyInvocationStatus(
-        GalaxyInvocationStatus.fromString(galaxyInvocationDetails.getInvocation().getState()));
+    report.setGalaxyInvocationStatus(galaxyInvocationDetails.getState());
     report.setGalaxyInvocationId(galaxyInvocationDetails.getInvocation().getInvocationId());
     if (galaxyInvocationDetails.getPersistedInvocation() != null) {
       ExternalWorkFlowInvocation externalWorkFlowInvocation =
@@ -156,12 +130,25 @@ public class GalaxySummaryStatusReport {
                   .collect(Collectors.toList())));
     } else {
       report.setGalaxyInvocationName(galaxyInvocationDetails.getWorkflowName());
-      report.setGalaxyDataNames(
-          String.join(
-              ", ",
-              galaxyInvocationDetails.getDataUsedInInvocation().stream()
-                  .map(data -> data.getName())
-                  .collect(Collectors.toList())));
+      String dataSetCollectionNames = "";
+      String dataSetNames = "";
+      if (galaxyInvocationDetails.getDataSetCollectionsUsedInInvocation() != null) {
+        dataSetCollectionNames =
+            String.join(
+                ", ",
+                galaxyInvocationDetails.getDataSetCollectionsUsedInInvocation().stream()
+                    .map(data -> data.getName())
+                    .collect(Collectors.toList()));
+      }
+      if (galaxyInvocationDetails.getDataSetsUsedInInvocation() != null) {
+        dataSetNames =
+            String.join(
+                ", ",
+                galaxyInvocationDetails.getDataSetsUsedInInvocation().stream()
+                    .map(data -> data.getName())
+                    .collect(Collectors.toList()));
+      }
+      report.setGalaxyDataNames((dataSetCollectionNames + " ").trim() + dataSetNames);
     }
     ExternalWorkFlowData first =
         groupByHistoryId(allDataUploadedToGalaxyForThisRSpaceField)

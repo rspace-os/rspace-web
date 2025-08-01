@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.galaxy.model.output.upload.DatasetCollection;
-import com.researchspace.integrations.galaxy.service.GalaxySummaryStatusReport.GalaxyInvocationStatus;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -30,17 +29,17 @@ public class GalaxySummaryStatusReportTest {
     used.setName("used_name1");
     GalaxyInvocationDetails invocationDetails =
         GalaxyInvocationDetailsTestMother.createInvocationdetails(
-            "invocation_name1", "running", "history1", used);
+            "invocation_name1", "Running", "history1", used);
     List<GalaxySummaryStatusReport> reports =
         GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
             Set.of(invocationDetails), workflowDataList);
     assertEquals(1, reports.size(), "List should contain 1 item");
     GalaxySummaryStatusReport report = reports.get(0);
-    makeGalaxyReportSummaryAssertions(report, "1", GalaxyInvocationStatus.IN_PROGRESS);
+    makeGalaxyReportSummaryAssertions(report, "1", "Running");
   }
 
   private static void makeGalaxyReportSummaryAssertions(
-      GalaxySummaryStatusReport report, String reportNumber, GalaxyInvocationStatus status) {
+      GalaxySummaryStatusReport report, String reportNumber, String status) {
     assertEquals(status, report.getGalaxyInvocationStatus());
     assertEquals(GalaxyInvocationDetailsTestMother.invocationDate, report.getCreatedOn());
     assertEquals(
@@ -71,10 +70,10 @@ public class GalaxySummaryStatusReportTest {
     used2.setName("used_name2");
     GalaxyInvocationDetails invocationDetails1 =
         GalaxyInvocationDetailsTestMother.createInvocationdetails(
-            "invocation_name1", "running", "history1", used1);
+            "invocation_name1", "Running", "history1", used1);
     GalaxyInvocationDetails invocationDetails2 =
         GalaxyInvocationDetailsTestMother.createInvocationdetails(
-            "invocation_name2", "failed", "history2", used2);
+            "invocation_name2", "Failed", "history2", used2);
     LinkedHashSet<GalaxyInvocationDetails> invocationDetails =
         new LinkedHashSet<GalaxyInvocationDetails>();
     invocationDetails.add(invocationDetails1);
@@ -84,9 +83,9 @@ public class GalaxySummaryStatusReportTest {
             invocationDetails, workflowDataList);
     assertEquals(2, reports.size(), "List should contain 1 item");
     GalaxySummaryStatusReport report1 = reports.get(0);
-    makeGalaxyReportSummaryAssertions(report1, "1", GalaxyInvocationStatus.IN_PROGRESS);
+    makeGalaxyReportSummaryAssertions(report1, "1", "Running");
     GalaxySummaryStatusReport report2 = reports.get(1);
-    makeGalaxyReportSummaryAssertions(report2, "2", GalaxyInvocationStatus.FAILED);
+    makeGalaxyReportSummaryAssertions(report2, "2", "Failed");
   }
 
   @Test
@@ -110,10 +109,10 @@ public class GalaxySummaryStatusReportTest {
     used2.setName("used_name2");
     GalaxyInvocationDetails invocationDetails1 =
         GalaxyInvocationDetailsTestMother.createInvocationdetails(
-            "invocation_name1", "running", "history1", used1);
+            "invocation_name1", "Running", "history1", used1);
     GalaxyInvocationDetails invocationDetails2 =
         GalaxyInvocationDetailsTestMother.createInvocationdetails(
-            "invocation_name2", "failed", "history2", used2);
+            "invocation_name2", "Failed", "history2", used2);
     LinkedHashSet<GalaxyInvocationDetails> invocationDetails =
         new LinkedHashSet<GalaxyInvocationDetails>();
     invocationDetails.add(invocationDetails1);
@@ -123,9 +122,9 @@ public class GalaxySummaryStatusReportTest {
             invocationDetails, workflowDataList);
     assertEquals(3, reports.size(), "List should contain 1 item");
     GalaxySummaryStatusReport report1 = reports.get(0);
-    makeGalaxyReportSummaryAssertions(report1, "1", GalaxyInvocationStatus.IN_PROGRESS);
+    makeGalaxyReportSummaryAssertions(report1, "1", "Running");
     GalaxySummaryStatusReport report2 = reports.get(1);
-    makeGalaxyReportSummaryAssertions(report2, "2", GalaxyInvocationStatus.FAILED);
+    makeGalaxyReportSummaryAssertions(report2, "2", "Failed");
     GalaxySummaryStatusReport report3 = reports.get(2);
     assertNull(report3.getGalaxyInvocationStatus());
     assertNull(report3.getCreatedOn());

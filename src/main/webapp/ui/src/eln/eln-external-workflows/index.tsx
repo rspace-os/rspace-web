@@ -23,9 +23,13 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
   [...document.getElementsByClassName("ext-workflows-textfield")].forEach(
       (wrapperDiv) => {
         const fieldId = wrapperDiv.getAttribute("data-field-id");
+        if (isForNotebookPage) {
+          // @ts-expect-error style does exist on HTMLDivElement
+          wrapperDiv.style.position = "relative"
+        }
         const root = createRoot(wrapperDiv);
         root.render(
-            <ExternalWorkflowInvocations isForNotebookPage={isForNotebookPage} fieldId = {fieldId}/>
+            <ExternalWorkflowInvocations isForNotebookPage={isForNotebookPage} fieldId={fieldId}/>
         );
       }
   );
