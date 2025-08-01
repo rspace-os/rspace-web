@@ -4,6 +4,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
+import Radio from "@mui/material/Radio";
 import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
@@ -141,11 +142,43 @@ function StoichiometryTable({
       flex: 1,
       renderCell: (params) => <RoleChip role={params.value || ""} />,
     }),
+    DataGridColumn.newColumnWithFieldName<"limitingReagent", MoleculeRow>(
+      "limitingReagent",
+      {
+        headerName: "Limiting Reagent",
+        flex: 1,
+        renderCell: (params) =>
+          params.row.role.toLowerCase() === "reactant" ? (
+            <Radio
+              checked={params.row.limitingReagent || false}
+              disabled={!editable}
+              onChange={(e) => {
+                if (e.target.checked && editable) {
+                  runInAction(() => {
+                    // Clear all other limiting reagents first
+                    allMolecules.forEach((molecule) => {
+                      if (molecule.role.toLowerCase() === "reactant") {
+                        molecule.limitingReagent = false;
+                      }
+                    });
+                    // Set this one as the limiting reagent
+                    params.row.limitingReagent = true;
+                  });
+                }
+              }}
+            />
+          ) : (
+            <>&mdash;</>
+          ),
+      },
+    ),
     DataGridColumn.newColumnWithFieldName<"coefficient", MoleculeRow>(
       "coefficient",
       {
-        headerName: "Coefficient",
-        flex: 0.8,
+        headerName: "Equivalent",
+        flex: 1,
+        editable: editable,
+        type: "number",
       },
     ),
     DataGridColumn.newColumnWithFieldName<"molecularWeight", MoleculeRow>(
@@ -190,6 +223,7 @@ function StoichiometryTable({
           oldRow.mass = newRow.mass;
           oldRow.moles = newRow.moles;
           oldRow.notes = newRow.notes;
+          oldRow.coefficient = newRow.coefficient;
         });
         return newRow;
       }}
