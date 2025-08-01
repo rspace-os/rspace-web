@@ -89,6 +89,7 @@ class StoichiometryPlugin {
       onClose: () => {},
       chemId: null,
       hasStoichiometryTable: false,
+      onTableCreated: () => {},
     };
     dialogRenderer.next(initialProps);
 
@@ -111,6 +112,19 @@ class StoichiometryPlugin {
         "data-has-stoichiometry-table",
       );
 
+      const markElementWithStoichiometry = () => {
+        const currentNode = editor.selection.getNode();
+        const currentHtml = currentNode.outerHTML;
+        const modifiedHtml = currentHtml.replace(
+          /(\<img[^\>]*)/,
+          '$1 data-has-stoichiometry-table="true"',
+        );
+
+        editor.selection.select(currentNode);
+        editor.execCommand("mceReplaceContent", false, modifiedHtml);
+        editor.setDirty(true);
+      };
+
       dialogRenderer.next({
         open: true,
         onClose: () => {
@@ -119,30 +133,13 @@ class StoichiometryPlugin {
             onClose: () => {},
             chemId: null,
             hasStoichiometryTable: false,
+            onTableCreated: () => {},
           });
         },
         chemId,
         hasStoichiometryTable: hasStoichiometryTable === "true",
+        onTableCreated: !hasStoichiometryTable ? markElementWithStoichiometry : undefined,
       });
-
-      // Only mark the element if it doesn't already have the attribute
-      if (!hasStoichiometryTable) {
-        /*
-         * Mark the chemistry element as having a generated stoichiometry table
-         * So that we start showing the table when the document isn't being edited
-         * We use mceReplaceContent to ensure TinyMCE properly tracks the change
-         */
-        const currentHtml = node.outerHTML;
-        const modifiedHtml = currentHtml.replace(
-          /(<img[^>]*)/,
-          '$1 data-has-stoichiometry-table="true"',
-        );
-
-        // Replace the current element with the modified version
-        editor.selection.select(node);
-        editor.execCommand("mceReplaceContent", false, modifiedHtml);
-        editor.setDirty(true);
-      }
     });
   }
 }

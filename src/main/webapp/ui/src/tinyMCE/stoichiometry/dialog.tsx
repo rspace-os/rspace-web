@@ -17,11 +17,13 @@ export default function StandaloneDialog({
   onClose,
   chemId,
   hasStoichiometryTable,
+  onTableCreated,
 }: {
   open: boolean;
   onClose: () => void;
   chemId: number | null;
   hasStoichiometryTable: boolean;
+  onTableCreated?: () => void;
 }): React.ReactNode {
   const titleId = React.useId();
   const { calculateStoichiometry } = useChemicalImport();
@@ -42,6 +44,7 @@ export default function StandaloneDialog({
         if (!chemId) throw new Error("chemId is required");
         await calculateStoichiometry({ chemId });
         setShowTable(true);
+        onTableCreated?.();
       } catch (e) {
         console.error("Calculation failed", e);
       } finally {
