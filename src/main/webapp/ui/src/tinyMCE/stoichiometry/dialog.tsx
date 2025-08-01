@@ -4,6 +4,7 @@ import AppBar from "../../components/AppBar";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
+import ValidatingSubmitButton, { IsValid } from "../../components/ValidatingSubmitButton";
 import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -117,13 +118,13 @@ export default function StandaloneDialog({
       </DialogContent>
       <DialogActions>
         {showTable && (
-          <Button 
-            variant="contained" 
+          <ValidatingSubmitButton
             onClick={handleSave}
-            disabled={saving}
+            loading={saving}
+            validationResult={IsValid()}
           >
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
+            Save Changes
+          </ValidatingSubmitButton>
         )}
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
