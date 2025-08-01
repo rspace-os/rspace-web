@@ -116,12 +116,17 @@ function StoichiometryTable({
     return (
       <Box
         display="flex"
+        flexDirection="column"
         justifyContent="center"
         alignItems="center"
         minHeight={100}
         my={2}
+        gap={1}
       >
         <CircularProgress size={24} />
+        <Typography variant="body2" color="textSecondary">
+          Loading stoichiometry table...
+        </Typography>
       </Box>
     );
   }
