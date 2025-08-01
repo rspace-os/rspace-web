@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/experimental-ct-react";
+import { Download } from "playwright-core";
 import React from "react";
 import { StoichiometryTableWithDataStory } from "./table.story";
 import AxeBuilder from "@axe-core/playwright";
+import fs from "fs/promises";
 
 const feature = test.extend<{
   Given: {
@@ -10,13 +12,23 @@ const feature = test.extend<{
   Once: {
     "the table has loaded": () => Promise<void>;
   };
-  When: {};
+  When: {
+    "a CSV export is downloaded": () => Promise<Download>;
+  };
   Then: {
     "the table should be visible": () => Promise<void>;
     "the table displays molecule data": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
     "the default columns should be visible": () => Promise<void>;
     "the first reactant should be selected as the default limiting reagent": () => Promise<void>;
+    "there should be a menu for exporting the stoichiometry table to CSV": () => Promise<void>;
+    "{CSV} should have {count} rows": ({
+      csv,
+      count,
+    }: {
+      csv: Download;
+      count: number;
+    }) => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -41,7 +53,20 @@ const feature = test.extend<{
     });
   },
   When: async ({ page }, use) => {
-    await use({});
+    await use({
+      "a CSV export is downloaded": async () => {
+        await page.getByRole("button", { name: /Export/ }).click();
+        const [download] = await Promise.all([
+          page.waitForEvent("download"),
+          page
+            .getByRole("menuitem", {
+              name: /Export to CSV/,
+            })
+            .click(),
+        ]);
+        return download;
+      },
+    });
   },
   Then: async ({ page }, use) => {
     await use({
@@ -106,6 +131,19 @@ const feature = test.extend<{
         // Check that the radio button in the Limiting Reagent column is checked for the first reactant
         const limitingReagentRadio = firstRow.getByRole("radio", { name: /Select Benzene as limiting reagent/ });
         await expect(limitingReagentRadio).toBeChecked();
+      },
+      "there should be a menu for exporting the stoichiometry table to CSV":
+        async () => {
+          const menuButton = page.getByRole("button", { name: "Export" });
+          await menuButton.click();
+          const menu = page.getByRole("tooltip");
+          await expect(menu).toBeVisible();
+        },
+      "{CSV} should have {count} rows": async ({ csv, count }) => {
+        const path = await csv.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        const lines = fileContents.split("\n");
+        expect(lines.length).toBe(count + 1); // +1 for header row
       },
     });
   },
@@ -266,4 +304,24 @@ test.describe("Stoichiometry Table", () => {
     await Once["the table has loaded"]();
     await Then["the first reactant should be selected as the default limiting reagent"]();
   });
+
+  feature(
+    "There should be a menu for exporting the stoichiometry table to CSV",
+    async ({ Given, Then }) => {
+      await Given["the table is loaded with data"]();
+      await Then[
+        "there should be a menu for exporting the stoichiometry table to CSV"
+      ]();
+    }
+  );
+
+  feature(
+    "When exporting to CSV, all molecule rows should be included",
+    async ({ Given, Once, When, Then }) => {
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      const csv = await When["a CSV export is downloaded"]();
+      await Then["{CSV} should have {count} rows"]({ csv, count: 3 }); // 3 molecules in mock data
+    }
+  );
 });
