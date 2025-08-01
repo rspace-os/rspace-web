@@ -86,11 +86,13 @@ const feature = test.extend<{
       "the default columns should be visible": async () => {
         const headers = await page.getByRole("columnheader").allTextContents();
         expect(headers).toContain("Name");
-        expect(headers).toContain("Formula");
         expect(headers).toContain("Role");
-        expect(headers).toContain("Coefficient");
-        expect(headers).toContain("Molecular Weight");
-        expect(headers).toContain("SMILES");
+        expect(headers).toContain("Limiting Reagent");
+        expect(headers).toContain("Equivalent");
+        expect(headers).toContain("Molecular Weight (g/mol)");
+        expect(headers).toContain("Mass (g)");
+        expect(headers).toContain("Moles (mol)");
+        expect(headers).toContain("Notes");
       },
     });
   },

@@ -247,6 +247,7 @@ function StoichiometryTable({
           <Radio
             checked={params.row.limitingReagent || false}
             disabled={!editable}
+            inputProps={{ 'aria-label': `Select ${params.row.name} as limiting reagent` }}
             onChange={(e) => {
               if (e.target.checked && editable) {
                 const updatedRow = { ...params.row, limitingReagent: true };
