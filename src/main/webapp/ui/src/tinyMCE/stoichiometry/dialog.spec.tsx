@@ -40,7 +40,9 @@ const feature = test.extend<{
     }: {
       onTableCreatedSpy: ReturnType<typeof createOnTableCreatedSpy>;
     }) => void;
+    "a POST request should have been made to create the stoichiometry table": () => void;
   };
+  networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -68,7 +70,7 @@ const feature = test.extend<{
       },
     });
   },
-  Then: async ({ page }, use) => {
+  Then: async ({ page, networkRequests }, use) => {
     await use({
       "the calculate button is visible": async () => {
         const button = page.getByRole("button", {
@@ -83,11 +85,22 @@ const feature = test.extend<{
       "the callback should have been invoked": ({ onTableCreatedSpy }) => {
         expect(onTableCreatedSpy.hasBeenCalled()).toBe(true);
       },
+      "a POST request should have been made to create the stoichiometry table": () => {
+        const postRequest = networkRequests.find(
+          (request) =>
+            request.url.pathname.includes("/chemical/stoichiometry") &&
+            request.postData !== null
+        );
+        expect(postRequest).toBeDefined();
+      },
     });
+  },
+  networkRequests: async ({}, use) => {
+    await use([]);
   },
 });
 
-feature.beforeEach(async ({ router }) => {
+feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/chemical/stoichiometry*", (route) => {
     const mockResponse = {
       data: {
@@ -211,6 +224,17 @@ feature.beforeEach(async ({ router }) => {
       body: JSON.stringify(mockResponse),
     });
   });
+
+  page.on("request", (request) => {
+    networkRequests.push({
+      url: new URL(request.url()),
+      postData: request.postData(),
+    });
+  });
+});
+
+feature.afterEach(({ networkRequests }) => {
+  networkRequests.splice(0, networkRequests.length);
 });
 
 test.describe("Stoichiometry Dialog", () => {
@@ -242,6 +266,16 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the callback should have been invoked"]({
         onTableCreatedSpy,
       });
+    },
+  );
+
+  feature(
+    "makes a POST API call when creating a new table",
+    async ({ Given, When, Then }) => {
+      await Given["the dialog is open without a stoichiometry table"]();
+      await When["the user clicks calculate"]();
+      await Then["the table is displayed"]();
+      Then["a POST request should have been made to create the stoichiometry table"]();
     },
   );
 });
