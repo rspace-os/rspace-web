@@ -12,7 +12,9 @@ import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationReport;
 import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationResponse;
 import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationStepInput;
 import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationStepStatusResponse;
-import com.researchspace.integrations.galaxy.service.GalaxySummaryStatusReport.GalaxyInvocationStatus;
+import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationSummaryStatusResponse;
+import com.researchspace.galaxy.model.output.workflow.WorkflowOverallStates;
+import com.researchspace.galaxy.model.output.workflow.WorkflowOverallStates.OverAllState;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
@@ -38,7 +40,7 @@ public class ExternalWorkFlowTestMother {
   public static final String API_KEY = "API_KEY";
   public static final Date CREATED_ON = DateTime.parse("1970").toDate();
   public static final String WORKFLOW_ID_1 = "workflow-id-1";
-  public static final String DEFAULT_INVOCATION_STATE = "RUNNING";
+  public static final String DEFAULT_INVOCATION_STATE = "Running";
   public static final String DEFAULT_DATA_NAME = "default-name";
   public static final String HDCA = "hdca";
   public static final String HDA = "hda";
@@ -83,7 +85,8 @@ public class ExternalWorkFlowTestMother {
     return historyDatasetAssociation;
   }
 
-  public static WorkflowInvocationStepStatusResponse createWorkflowInvocationHDCAStepStatusResponse() {
+  public static WorkflowInvocationStepStatusResponse
+      createWorkflowInvocationHDCAStepStatusResponse() {
     WorkflowInvocationStepStatusResponse wissr = new WorkflowInvocationStepStatusResponse();
     Map<String, WorkflowInvocationStepInput> inputs = new HashMap<>();
     WorkflowInvocationStepInput input = new WorkflowInvocationStepInput();
@@ -93,7 +96,9 @@ public class ExternalWorkFlowTestMother {
     wissr.setInputs(inputs);
     return wissr;
   }
-  public static WorkflowInvocationStepStatusResponse createWorkflowInvocationHDAStepStatusResponse() {
+
+  public static WorkflowInvocationStepStatusResponse
+      createWorkflowInvocationHDAStepStatusResponse() {
     WorkflowInvocationStepStatusResponse wissr = new WorkflowInvocationStepStatusResponse();
     Map<String, WorkflowInvocationStepInput> inputs = new HashMap<>();
     WorkflowInvocationStepInput input = new WorkflowInvocationStepInput();
@@ -146,6 +151,35 @@ public class ExternalWorkFlowTestMother {
     return toReturn;
   }
 
+  public static WorkflowInvocationSummaryStatusResponse
+      createWorkflowInvocationSummaryStatusResponseForState(
+          OverAllState overallState, String populatedState) {
+    WorkflowInvocationSummaryStatusResponse wissr = new WorkflowInvocationSummaryStatusResponse();
+    wissr.setPopulatedState(populatedState);
+    wissr.setStates(getWorkflowOverAllStateFor(overallState));
+    return wissr;
+  }
+
+  private static WorkflowOverallStates getWorkflowOverAllStateFor(OverAllState overallState) {
+    WorkflowOverallStates wos = new WorkflowOverallStates();
+    switch (overallState) {
+      case Cancelled:
+        wos.setDeleted(1);
+        break;
+      case Complete:
+        wos.setOk(1);
+        break;
+      case Failed:
+        wos.setError(1);
+        break;
+      case Running:
+        wos.setRunning(1);
+        break;
+      default:
+    }
+    return wos;
+  }
+
   public static WorkflowInvocationReport createWorkFlowInvocationReport() {
     WorkflowInvocationReport wir = new WorkflowInvocationReport();
     wir.setTitle(ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED);
@@ -155,6 +189,12 @@ public class ExternalWorkFlowTestMother {
   public static HistoryDatasetCollectionAssociation createMatchingHDCA(String secondaryId) {
     return createHDCA(secondaryId);
   }
+
+  public static HistoryDatasetCollectionAssociation createMatchingHDCAWithNestedData(
+      String secondaryId) {
+    return createHDCA(secondaryId, true);
+  }
+
   public static DataSet createMatchingHDA(String secondaryId) {
     return createHDA(secondaryId);
   }
@@ -171,9 +211,13 @@ public class ExternalWorkFlowTestMother {
   }
 
   public static HistoryDatasetCollectionAssociation createHDCA(String secondaryId) {
+    return createHDCA(secondaryId, false);
+  }
+
+  public static HistoryDatasetCollectionAssociation createHDCA(String secondaryId, boolean nested) {
     HistoryDatasetCollectionAssociation hdca = new HistoryDatasetCollectionAssociation();
-    List<DatasetCollectionElement> elements = new ArrayList<>();
-    DatasetCollectionElement element = new DatasetCollectionElement();
+    List<DatasetCollectionElement> topLevelElements = new ArrayList<>();
+    DatasetCollectionElement elementWithData = new DatasetCollectionElement();
     DatasetCollection elementObject = new DatasetCollection();
     if (secondaryId != null) {
       elementObject.setUuid(secondaryId);
@@ -181,12 +225,23 @@ public class ExternalWorkFlowTestMother {
       elementObject.setUuid("different-uuid");
     }
     elementObject.setName(DEFAULT_DATA_NAME);
-    element.setObject(elementObject);
-    elements.add(element);
-    hdca.setElements(elements);
+    elementObject.setModelClass("");
+    elementWithData.setObject(elementObject);
+    if (nested) {
+      DatasetCollectionElement top = new DatasetCollectionElement();
+      topLevelElements.add(top);
+      DatasetCollection topElementObject = new DatasetCollection();
+      topElementObject.setModelClass("DatasetCollection");
+      List<DatasetCollectionElement> nestedElements = new ArrayList<>();
+      topElementObject.setElements(nestedElements);
+      nestedElements.add(elementWithData);
+      top.setObject(topElementObject);
+    } else {
+      topLevelElements.add(elementWithData);
+    }
+    hdca.setElements(topLevelElements);
     return hdca;
   }
-
 
   public static void makeGalaxyDataAssertions(List<GalaxySummaryStatusReport> result) {
     assertEquals(DEFAULT_DATA_NAME, result.get(0).getGalaxyDataNames());
@@ -214,6 +269,6 @@ public class ExternalWorkFlowTestMother {
     assertEquals(INVOCATION_ID_1 + suffix, result.getGalaxyInvocationId());
     assertEquals(CREATED_ON, result.getCreatedOn());
     assertEquals(ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED, result.getGalaxyInvocationName());
-    assertEquals(GalaxyInvocationStatus.IN_PROGRESS, result.getGalaxyInvocationStatus());
+    assertEquals("Running", result.getGalaxyInvocationStatus());
   }
 }

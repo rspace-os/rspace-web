@@ -38,7 +38,7 @@ function ExternalWorkflowInvocations({
   const [galaxyDataSummary, setGalaxyDataSummary] = useState<Array<GalaxyDataSummary>>([]);
   const [showDialog, setShowDialog] = useState(false);
   const BUTTON_TOP = isForNotebookPage ? 115: 100;
-  const BUTTON_RIGHT = isForNotebookPage ? 15: -24;
+  const BUTTON_RIGHT = isForNotebookPage ? -48: -24;
   const BUTTON_BOTTOM = BUTTON_TOP-48;
   const { classes } = useStyles({ BUTTON_TOP, BUTTON_RIGHT,BUTTON_BOTTOM });
   const CustomBadge =
