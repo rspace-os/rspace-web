@@ -21,4 +21,5 @@ public class GalaxyInvocationDetails {
   private List<DatasetCollection> dataSetCollectionsUsedInInvocation;
   private List<DataSet> dataSetsUsedInInvocation;
   private String workflowName;
+  private String state;
 }

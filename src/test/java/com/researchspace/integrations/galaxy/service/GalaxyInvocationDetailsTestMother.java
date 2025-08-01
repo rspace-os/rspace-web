@@ -19,6 +19,7 @@ public class GalaxyInvocationDetailsTestMother {
     gid.setInvocation(wir);
     gid.setDataSetCollectionsUsedInInvocation(List.of(used));
     gid.setWorkflowName(name);
+    gid.setState(state);
     return gid;
   }
 }
