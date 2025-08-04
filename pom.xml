@@ -1861,7 +1861,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>fieldmark-java-client</artifactId>
-        <version>2.0.0</version>
+        <version>RSDEV-772-client</version>
       <exclusions>
         <exclusion>
           <groupId>commons-validator</groupId>
