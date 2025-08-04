@@ -32,6 +32,7 @@ function Header({ sidebarId }: HeaderArgs): React.ReactNode {
         }
         accessibilityTips={{
           supports2xZoom: true,
+          supportsSkipToContent: true,
         }}
       />
     </ThemeProvider>

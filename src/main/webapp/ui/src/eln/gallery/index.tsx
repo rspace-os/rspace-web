@@ -233,6 +233,7 @@ const WholePage = styled(
                         supportsHighContrastMode: true,
                         supportsReducedMotion: true,
                         supports2xZoom: true,
+                        supportsSkipToContent: true,
                       }}
                     />
                     <Box sx={{ borderBottom: theme.borders.card }}>
