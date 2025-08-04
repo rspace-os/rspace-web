@@ -6,6 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import Result from "../../../util/result";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
+import { LandmarksProvider } from "@/components/LandmarksContext";
 
 const nonFolderFile: GalleryFile = {
   deconstructor: () => {},
@@ -107,9 +108,11 @@ function ActionsMenuWrapper({ files }: { files: Array<GalleryFile> }) {
 export function ActionsMenuWithNonFolder() {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <GallerySelection>
-        <ActionsMenuWrapper files={[nonFolderFile]} />
-      </GallerySelection>
+      <LandmarksProvider>
+        <GallerySelection>
+          <ActionsMenuWrapper files={[nonFolderFile]} />
+        </GallerySelection>
+      </LandmarksProvider>
     </ThemeProvider>
   );
 }
@@ -117,9 +120,11 @@ export function ActionsMenuWithNonFolder() {
 export function ActionsMenuWithFolder() {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <GallerySelection>
-        <ActionsMenuWrapper files={[folderFile]} />
-      </GallerySelection>
+      <LandmarksProvider>
+        <GallerySelection>
+          <ActionsMenuWrapper files={[folderFile]} />
+        </GallerySelection>
+      </LandmarksProvider>
     </ThemeProvider>
   );
 }
@@ -127,11 +132,13 @@ export function ActionsMenuWithFolder() {
 export function ActionsMenuWithMultipleFiles() {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <GallerySelection>
-        <ActionsMenuWrapper
-          files={[folderFile, { ...folderFile, globalId: "GF3", key: "GF3" }]}
-        />
-      </GallerySelection>
+      <LandmarksProvider>
+        <GallerySelection>
+          <ActionsMenuWrapper
+            files={[folderFile, { ...folderFile, globalId: "GF3", key: "GF3" }]}
+          />
+        </GallerySelection>
+      </LandmarksProvider>
     </ThemeProvider>
   );
 }
