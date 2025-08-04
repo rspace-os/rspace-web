@@ -89,10 +89,6 @@ export const useLandmark = (name: string) => {
   const { registerLandmark, unregisterLandmark } = useLandmarkRegistration();
 
   useEffect(() => {
-    console.debug(
-      `Registering landmark: ${name}`,
-      ref.current?.id || "unknown landmark",
-    );
     registerLandmark(name, ref);
     return () => {
       unregisterLandmark(name);
