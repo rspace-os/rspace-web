@@ -145,7 +145,7 @@ function LeftPanelView(): React.ReactNode {
 
   return (
     <Grid
-      ref={searchNavRef}
+      ref={searchNavRef as React.RefObject<HTMLDivElement>}
       container
       direction="column"
       wrap="nowrap"

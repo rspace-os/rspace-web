@@ -12,7 +12,7 @@ const SkipToContentButton: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   const { getTabIndex, getRef, eventHandlers } =
-    useOneDimensionalRovingTabIndex({
+    useOneDimensionalRovingTabIndex<HTMLDivElement>({
       max: landmarks.length - 1,
       direction: "column",
     });
@@ -91,7 +91,7 @@ const SkipToContentButton: React.FC = () => {
               tabIndex={getTabIndex(index)}
               ref={getRef(index)}
               onFocus={handleFocus}
-              onKeyDown={(e) => {
+              onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   handleSkipToLandmark(landmark.ref);
