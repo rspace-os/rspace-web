@@ -42,10 +42,13 @@ const feature = test.extend<{
   When: async ({ page }, use) => {
     await use({
       "the user focuses the skip button": async () => {
-        await page.focus('button:has-text("Skip to content")');
+        // Focus the first landmark option to make the menu appear
+        await page.getByRole('button', { name: 'Skip to Header' }).focus();
       },
       "the user clicks on a landmark option": async ({ landmarkName }: { landmarkName: string }) => {
-        await page.click(`text=Skip to ${landmarkName}`);
+        // Use keyboard activation instead of clicking to avoid viewport issues
+        await page.getByRole('button', { name: `Skip to ${landmarkName}` }).focus();
+        await page.keyboard.press('Enter');
       },
       "the user presses tab": async () => {
         await page.keyboard.press("Tab");
@@ -64,20 +67,21 @@ const feature = test.extend<{
   Then: async ({ page }, use) => {
     await use({
       "the skip button should be visible": async () => {
-        await expect(page.getByText("Skip to content")).toBeVisible();
+        await expect(page.getByText("Skip to Header")).toBeVisible();
       },
       "the skip button should be hidden": async () => {
-        await expect(page.getByText("Skip to content")).not.toBeVisible();
+        await expect(page.getByText("Skip to Header")).not.toBeVisible();
       },
       "the landmark options should be displayed": async () => {
         await expect(page.getByText("Skip to Header")).toBeVisible();
         await expect(page.getByText("Skip to Footer")).toBeVisible();
       },
       "the selected landmark should be focused": async ({ landmarkName }: { landmarkName: string }) => {
-        await expect(page.getByText(`${landmarkName} Content`)).toBeFocused();
+        // The landmark Box should be focused, not the Typography inside it
+        await expect(page.getByText(`${landmarkName} Content`).locator('..')).toBeFocused();
       },
       "the landmark list should have focus on item": async ({ landmarkName }: { landmarkName: string }) => {
-        await expect(page.getByText(`Skip to ${landmarkName}`)).toBeFocused();
+        await expect(page.getByRole('button', { name: `Skip to ${landmarkName}` })).toBeFocused();
       },
       "the landmark list should include the new landmarks": async () => {
         await expect(page.getByText("Skip to Sidebar")).toBeVisible();
