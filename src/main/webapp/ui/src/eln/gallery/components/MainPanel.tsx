@@ -1398,7 +1398,7 @@ function GalleryMainPanel({
   appliedSearchTerm,
   setAppliedSearchTerm,
 }: GalleryMainPanelArgs): React.ReactNode {
-  const mainContentRef = useLandmark("Gallery Content");
+  const mainContentRef = useLandmark("Files Listing");
   const viewportDimensions = useViewportDimensions();
   const { uploadFiles } = useGalleryActions();
   const { trackEvent } = React.useContext(AnalyticsContext);

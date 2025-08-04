@@ -117,14 +117,14 @@ const CustomDrawer = withStyles<
             uiStore.alwaysVisibleSidebar && {
               [classes.drawerOpen]: uiStore.sidebarOpen,
               [classes.drawerClose]: !uiStore.sidebarOpen,
-            }
+            },
           ),
         }}
       >
         {children}
       </Drawer>
     );
-  })
+  }),
 );
 
 const NavButtonBadge = withStyles<
@@ -203,7 +203,7 @@ const NavItem = withStyles<
         </NavButtonBadge>
       </ListItemButton>
     );
-  })
+  }),
 );
 
 const largestFittingCount = 999;
@@ -217,7 +217,7 @@ const MyBenchNavItem = observer(() => {
     mapNullable((summary) => {
       if (!summary.isAccessible)
         throw new InvalidState(
-          "A user should always be able to access a summary of the contents of their own bench."
+          "A user should always be able to access a summary of the contents of their own bench.",
         );
       return summary.value.totalCount;
     }, benchContentSummary) ?? null;
@@ -238,7 +238,7 @@ const MyBenchNavItem = observer(() => {
       onClick={(e: React.MouseEvent<HTMLLIElement>) => {
         e.stopPropagation();
         navigateToSearch(
-          currentUser ? { parentGlobalId: `BE${currentUser.workbenchId}` } : {}
+          currentUser ? { parentGlobalId: `BE${currentUser.workbenchId}` } : {},
         );
       }}
     />
@@ -494,7 +494,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const { classes } = useStyles();
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
-  const sidebarRef = useLandmark("Inventory Navigation");
+  const sidebarRef = useLandmark("Navigation");
 
   const afterClick = () => {
     if (!uiStore.alwaysVisibleSidebar) uiStore.toggleSidebar(false);
@@ -503,7 +503,11 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
 
   return (
     <CustomDrawer id={id}>
-      <nav ref={sidebarRef} role="navigation" aria-label="Inventory Sidebar Navigation">
+      <nav
+        ref={sidebarRef}
+        role="navigation"
+        aria-label="Inventory Sidebar Navigation"
+      >
         <div className={classes.drawerContainer}>
           <List component="nav" aria-label="Create new Inventory items">
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>

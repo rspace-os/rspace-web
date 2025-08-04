@@ -521,7 +521,7 @@ const Sidebar = ({
   refreshListing,
   id,
 }: SidebarArgs): React.ReactNode => {
-  const sidebarRef = useLandmark("Gallery Navigation");
+  const sidebarRef = useLandmark("Navigation");
   const [newMenuAnchorEl, setNewMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
   const viewport = useViewportDimensions();
