@@ -1,35 +1,20 @@
 import React, { useState, useRef } from "react";
-import {
-  Button,
-  Box,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
 import { useLandmarksList } from "./LandmarksContext";
 
 const SkipToContentButton: React.FC = () => {
   const { landmarks } = useLandmarksList();
   const [isVisible, setIsVisible] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleFocus = () => {
     setIsVisible(true);
   };
 
-  const handleBlur = (e: React.FocusEvent) => {
-    // Only hide if focus is moving outside the container
-    // if (!containerRef.current?.contains(e.relatedTarget as Node)) {
-    //   setIsVisible(false);
-    // }
-  };
-
   const handleSkipToLandmark = (ref: React.RefObject<HTMLElement>) => {
-    console.debug(
-      "Skipping to landmark:",
-      ref.current?.id || "unknown landmark",
-    );
     if (ref.current) {
       // Ensure the element can receive focus
       if (ref.current.tabIndex === -1) {
@@ -63,43 +48,27 @@ const SkipToContentButton: React.FC = () => {
         minWidth: 200,
       }}
     >
-      <Button
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        sx={{
-          position: "absolute",
-          top: isVisible ? 0 : -40,
-          left: 0,
-          width: "100%",
-          opacity: 0,
-          pointerEvents: isVisible ? "auto" : "none",
-        }}
-        tabIndex={0}
-      >
-        Skip to content
-      </Button>
-
-      {isVisible && (
-        <List dense>
-          {landmarks.map((landmark) => (
-            <ListItem key={landmark.name} disablePadding>
-              <ListItemButton
-                onClick={() => {
+      <List dense sx={{ opacity: isVisible ? 1 : 0 }}>
+        {landmarks.map((landmark) => (
+          <ListItem key={landmark.name} disablePadding>
+            <ListItemButton
+              onClick={() => {
+                handleSkipToLandmark(landmark.ref);
+              }}
+              tabIndex={0}
+              onFocus={handleFocus}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
                   handleSkipToLandmark(landmark.ref);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleSkipToLandmark(landmark.ref);
-                  }
-                }}
-              >
-                <ListItemText primary={`Skip to ${landmark.name}`} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      )}
+                }
+              }}
+            >
+              <ListItemText primary={`Skip to ${landmark.name}`} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
     </Box>
   );
 };

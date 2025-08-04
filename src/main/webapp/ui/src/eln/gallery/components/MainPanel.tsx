@@ -993,7 +993,6 @@ const GridView = observer(
       <>
         <div
           role="grid"
-          tabIndex={0}
           aria-label="grid view of files"
           aria-multiselectable="true"
           style={{
