@@ -4,7 +4,9 @@ import AppBar from "../../components/AppBar";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import ValidatingSubmitButton, { IsValid } from "../../components/ValidatingSubmitButton";
+import ValidatingSubmitButton, {
+  IsValid,
+} from "../../components/ValidatingSubmitButton";
 import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -32,13 +34,15 @@ export default function StandaloneDialog({
   const [showTable, setShowTable] = React.useState(hasStoichiometryTable);
   const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [hasTableChanges, setHasTableChanges] = React.useState(false);
 
   React.useEffect(() => {
     if (open) {
       setShowTable(hasStoichiometryTable);
       setLoading(false);
+      setHasTableChanges(false);
     }
-  }, [open]);
+  }, [open, hasStoichiometryTable]);
 
   const handleCalculate = () => {
     setLoading(true);
@@ -111,13 +115,18 @@ export default function StandaloneDialog({
               <Typography variant="body2">
                 Double-click on Mass, Moles, or Notes to edit.
               </Typography>
-              <StoichiometryTable ref={tableRef} chemId={chemId} editable />
+              <StoichiometryTable
+                ref={tableRef}
+                chemId={chemId}
+                editable
+                onChangesUpdate={setHasTableChanges}
+              />
             </Box>
           </Stack>
         )}
       </DialogContent>
       <DialogActions>
-        {showTable && (
+        {showTable && hasTableChanges && (
           <ValidatingSubmitButton
             onClick={handleSave}
             loading={saving}

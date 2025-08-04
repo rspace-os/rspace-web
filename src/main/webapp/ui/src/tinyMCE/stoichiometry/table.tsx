@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
   DataGrid,
   GridToolbarContainer,
@@ -88,8 +88,12 @@ const StoichiometryTable = React.forwardRef<
   {
     chemId: number | null;
     editable?: boolean;
+    onChangesUpdate?: (hasChanges: boolean) => void;
   }
->(function StoichiometryTable({ chemId, editable = false }, ref) {
+>(function StoichiometryTable(
+  { chemId, editable = false, onChangesUpdate },
+  ref,
+) {
   const { getStoichiometry, updateStoichiometry } = useStoichiometry();
   const theme = useTheme();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
@@ -160,6 +164,7 @@ const StoichiometryTable = React.forwardRef<
           stoichiometryId: data.id,
           stoichiometryData: updatedData,
         });
+        onChangesUpdate?.(false);
       },
     }),
     [data, allMolecules, updateStoichiometry],
@@ -256,6 +261,7 @@ const StoichiometryTable = React.forwardRef<
                   updatedRow,
                 );
                 setAllMolecules(newMolecules);
+                onChangesUpdate?.(true);
               }
             }}
           />
@@ -357,6 +363,7 @@ const StoichiometryTable = React.forwardRef<
       processRowUpdate={(newRow) => {
         const newMolecules = calculateUpdatedMolecules(allMolecules, newRow);
         setAllMolecules(newMolecules);
+        onChangesUpdate?.(true);
         return newMolecules.find((m) => m.id === newRow.id) || newRow;
       }}
       slots={{

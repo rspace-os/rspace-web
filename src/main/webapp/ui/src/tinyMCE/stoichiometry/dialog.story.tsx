@@ -29,7 +29,11 @@ export function StoichiometryDialogWithCalculateButtonStory({
   );
 }
 
-export function StoichiometryDialogWithTableStory(): React.ReactNode {
+export function StoichiometryDialogWithTableStory({
+  onChangesUpdate,
+}: {
+  onChangesUpdate?: (hasChanges: boolean) => void;
+} = {}): React.ReactNode {
   const [open, setOpen] = React.useState(true);
 
   return (

@@ -20,6 +20,27 @@ const createOnTableCreatedSpy = () => {
   };
 };
 
+const createOnChangesUpdateSpy = () => {
+  let currentValue = false;
+  let callCount = 0;
+
+  const handler = (hasChanges: boolean) => {
+    currentValue = hasChanges;
+    callCount++;
+  };
+
+  const getCurrentValue = () => currentValue;
+  const getCallCount = () => callCount;
+  const hasBeenCalled = () => callCount > 0;
+
+  return {
+    handler,
+    getCurrentValue,
+    getCallCount,
+    hasBeenCalled,
+  };
+};
+
 const feature = test.extend<{
   Given: {
     "the dialog is open without a stoichiometry table": ({
@@ -31,6 +52,9 @@ const feature = test.extend<{
   };
   When: {
     "the user clicks calculate": () => Promise<void>;
+    "the user edits a cell in the table": () => Promise<void>;
+    "the user changes the limiting reagent": () => Promise<void>;
+    "the user saves the changes": () => Promise<void>;
   };
   Then: {
     "the calculate button is visible": () => Promise<void>;
@@ -41,14 +65,15 @@ const feature = test.extend<{
       onTableCreatedSpy: ReturnType<typeof createOnTableCreatedSpy>;
     }) => void;
     "a POST request should have been made to create the stoichiometry table": () => void;
+    "the save button should not be visible": () => Promise<void>;
+    "the save button should be visible": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
-      "the dialog is open without a stoichiometry table": async ({
-        onTableCreatedSpy,
-      } = {}) => {
+      "the dialog is open without a stoichiometry table": async (spies) => {
+        const onTableCreatedSpy = spies?.onTableCreatedSpy;
         await mount(
           <StoichiometryDialogWithCalculateButtonStory
             onTableCreated={onTableCreatedSpy?.handler}
@@ -68,6 +93,39 @@ const feature = test.extend<{
         });
         await button.click();
       },
+      "the user edits a cell in the table": async () => {
+        const table = page.getByRole("grid");
+
+        const indexOfNotesColumn = await Promise.all(
+          (await table.getByRole("columnheader").all()).map((cell) =>
+            cell.textContent(),
+          ),
+        ).then((textOfCells) =>
+          textOfCells.findIndex((text) => /notes/i.test(text ?? "")),
+        );
+
+        await table
+          .getByRole("row")
+          .nth(1)
+          .getByRole("gridcell")
+          .nth(indexOfNotesColumn)
+          .dblclick();
+
+        // Wait for input to appear and be focused
+        const input = page.locator('input[type="text"]');
+        await input.waitFor({ state: "visible" });
+        await input.fill("Test note");
+        await input.press("Enter");
+      },
+      "the user changes the limiting reagent": async () => {
+        const cyclopentadieneRadio = page.getByRole("radio", {
+          name: /Select Cyclopentadiene as limiting reagent/,
+        });
+        await cyclopentadieneRadio.click();
+      },
+      "the user saves the changes": async () => {
+        await page.getByRole("button", { name: "Save Changes" }).click();
+      },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -85,13 +143,22 @@ const feature = test.extend<{
       "the callback should have been invoked": ({ onTableCreatedSpy }) => {
         expect(onTableCreatedSpy.hasBeenCalled()).toBe(true);
       },
-      "a POST request should have been made to create the stoichiometry table": () => {
-        const postRequest = networkRequests.find(
-          (request) =>
-            request.url.pathname.includes("/chemical/stoichiometry") &&
-            request.postData !== null
-        );
-        expect(postRequest).toBeDefined();
+      "a POST request should have been made to create the stoichiometry table":
+        () => {
+          const postRequest = networkRequests.find(
+            (request) =>
+              request.url.pathname.includes("/chemical/stoichiometry") &&
+              request.postData !== null,
+          );
+          expect(postRequest).toBeDefined();
+        },
+      "the save button should not be visible": async () => {
+        const saveButton = page.getByTestId("SubmitButton");
+        await expect(saveButton).not.toBeVisible();
+      },
+      "the save button should be visible": async () => {
+        const saveButton = page.getByRole("button", { name: "Save Changes" });
+        await expect(saveButton).toBeVisible();
       },
     });
   },
@@ -263,7 +330,7 @@ test.describe("Stoichiometry Dialog", () => {
       });
       await When["the user clicks calculate"]();
       await Then["the table is displayed"]();
-      await Then["the callback should have been invoked"]({
+      Then["the callback should have been invoked"]({
         onTableCreatedSpy,
       });
     },
@@ -275,7 +342,49 @@ test.describe("Stoichiometry Dialog", () => {
       await Given["the dialog is open without a stoichiometry table"]();
       await When["the user clicks calculate"]();
       await Then["the table is displayed"]();
-      Then["a POST request should have been made to create the stoichiometry table"]();
+      Then[
+        "a POST request should have been made to create the stoichiometry table"
+      ]();
+    },
+  );
+
+  feature(
+    "does not show save button when table has not been modified",
+    async ({ Given, Then }) => {
+      await Given["the dialog is open with a stoichiometry table"]();
+      await Then["the table is displayed"]();
+      await Then["the save button should not be visible"]();
+    },
+  );
+
+  feature(
+    "shows save button when table data is modified by editing a cell",
+    async ({ Given, When, Then }) => {
+      await Given["the dialog is open with a stoichiometry table"]();
+      await Then["the table is displayed"]();
+      await When["the user edits a cell in the table"]();
+      await Then["the save button should be visible"]();
+    },
+  );
+
+  feature(
+    "shows save button when limiting reagent is changed",
+    async ({ Given, When, Then }) => {
+      await Given["the dialog is open with a stoichiometry table"]();
+      await Then["the table is displayed"]();
+      await When["the user changes the limiting reagent"]();
+      await Then["the save button should be visible"]();
+    },
+  );
+
+  feature(
+    "hides save button after saving changes",
+    async ({ Given, When, Then }) => {
+      await Given["the dialog is open with a stoichiometry table"]();
+      await Then["the table is displayed"]();
+      await When["the user edits a cell in the table"]();
+      await When["the user saves the changes"]();
+      await Then["the save button should not be visible"]();
     },
   );
 });
