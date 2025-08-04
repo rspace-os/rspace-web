@@ -1,6 +1,6 @@
 import React from "react";
 import { LandmarksProvider, useLandmark } from "./LandmarksContext";
-import SkipToContentButton from "./SkipToContentButton";
+import SkipToContentButton from "./SkipToContentMenu";
 import { Box, Typography } from "@mui/material";
 
 const TestLandmark = ({ name }: { name: string }) => {
@@ -49,7 +49,7 @@ export function DynamicLandmarksExample() {
       <SkipToContentButton />
       <Box sx={{ mt: 5 }}>
         <button onClick={() => setShowExtraLandmarks(!showExtraLandmarks)}>
-          {showExtraLandmarks ? 'Hide' : 'Show'} Extra Landmarks
+          {showExtraLandmarks ? "Hide" : "Show"} Extra Landmarks
         </button>
         <TestLandmark name="Header" />
         <TestLandmark name="Main Content" />

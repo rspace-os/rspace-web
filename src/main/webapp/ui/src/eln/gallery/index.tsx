@@ -1,5 +1,5 @@
 import React from "react";
-import SkipToContentButton from "../../components/SkipToContentButton";
+import SkipToContentMenu from "../../components/SkipToContentMenu";
 import { LandmarksProvider } from "../../components/LandmarksContext";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
@@ -502,65 +502,65 @@ export function Gallery() {
     <Analytics>
       <LandmarksProvider>
         <ErrorBoundary>
-          <SkipToContentButton />
-        <GoogleLoginProvider />
-        <StyledEngineProvider injectFirst>
-          <CssBaseline />
-          <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-            <UiPreferences>
-              <DisableDragAndDropByDefault>
-                <Routes>
-                  <Route
-                    path="/gallery"
-                    element={
-                      <Alerts>
-                        <RouterNavigationProvider>
-                          <GallerySelection>
-                            <FilestoreLoginProvider>
-                              <LandingPage />
-                            </FilestoreLoginProvider>
-                          </GallerySelection>
-                        </RouterNavigationProvider>
-                      </Alerts>
-                    }
-                  />
-                  <Route
-                    path="gallery/:folderId"
-                    element={
-                      <Alerts>
-                        <RouterNavigationProvider>
-                          <GallerySelection>
-                            <FilestoreLoginProvider>
-                              <GalleryFolder />
-                            </FilestoreLoginProvider>
-                          </GallerySelection>
-                        </RouterNavigationProvider>
-                      </Alerts>
-                    }
-                  />
-                  <Route
-                    path="gallery/item/:fileId"
-                    element={
-                      <Alerts>
-                        <RouterNavigationProvider>
-                          <GallerySelection>
-                            <FilestoreLoginProvider>
-                              <GalleryFileInFolder />
-                            </FilestoreLoginProvider>
-                          </GallerySelection>
-                        </RouterNavigationProvider>
-                      </Alerts>
-                    }
-                  />
-                  <Route
-                    path="*"
-                    element={<Navigate to="/gallery" replace />}
-                  />
-                </Routes>
-              </DisableDragAndDropByDefault>
-            </UiPreferences>
-          </ThemeProvider>
-        </StyledEngineProvider>
+          <SkipToContentMenu />
+          <GoogleLoginProvider />
+          <StyledEngineProvider injectFirst>
+            <CssBaseline />
+            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+              <UiPreferences>
+                <DisableDragAndDropByDefault>
+                  <Routes>
+                    <Route
+                      path="/gallery"
+                      element={
+                        <Alerts>
+                          <RouterNavigationProvider>
+                            <GallerySelection>
+                              <FilestoreLoginProvider>
+                                <LandingPage />
+                              </FilestoreLoginProvider>
+                            </GallerySelection>
+                          </RouterNavigationProvider>
+                        </Alerts>
+                      }
+                    />
+                    <Route
+                      path="gallery/:folderId"
+                      element={
+                        <Alerts>
+                          <RouterNavigationProvider>
+                            <GallerySelection>
+                              <FilestoreLoginProvider>
+                                <GalleryFolder />
+                              </FilestoreLoginProvider>
+                            </GallerySelection>
+                          </RouterNavigationProvider>
+                        </Alerts>
+                      }
+                    />
+                    <Route
+                      path="gallery/item/:fileId"
+                      element={
+                        <Alerts>
+                          <RouterNavigationProvider>
+                            <GallerySelection>
+                              <FilestoreLoginProvider>
+                                <GalleryFileInFolder />
+                              </FilestoreLoginProvider>
+                            </GallerySelection>
+                          </RouterNavigationProvider>
+                        </Alerts>
+                      }
+                    />
+                    <Route
+                      path="*"
+                      element={<Navigate to="/gallery" replace />}
+                    />
+                  </Routes>
+                </DisableDragAndDropByDefault>
+              </UiPreferences>
+            </ThemeProvider>
+          </StyledEngineProvider>
         </ErrorBoundary>
       </LandmarksProvider>
     </Analytics>
