@@ -14,6 +14,7 @@ import { storesContext } from "../../../../stores/stores-context";
 import { axe, toHaveNoViolations } from "jest-axe";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
+import { LandmarksProvider } from "../../../../components/LandmarksContext";
 
 expect.extend(toHaveNoViolations);
 
@@ -43,9 +44,11 @@ describe("Sidebar", () => {
     });
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
-        <storesContext.Provider value={rootStore}>
-          <Sidebar id="foo" />
-        </storesContext.Provider>
+        <LandmarksProvider>
+          <storesContext.Provider value={rootStore}>
+            <Sidebar id="foo" />
+          </storesContext.Provider>
+        </LandmarksProvider>
       </ThemeProvider>
     );
 
