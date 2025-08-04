@@ -4,7 +4,7 @@
 /* eslint-env jest */
 import React from "react";
 import axios from "@/common/axios";
-import {render, screen, fireEvent} from "@testing-library/react";
+import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
 import ExternalWorkflowInvocations from "../ExternalWorkflowInvocations";
@@ -32,7 +32,10 @@ describe("Renders with table of  data ", () => {
 
   it("displays WorkFlow Data table headers", async () => {
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByRole("button")).toBeInTheDocument();
+    expect(await screen.findByRole("button")).toBeDisabled();
+    await waitFor(() => expect(screen.getByRole("button")).toBeEnabled(), {
+      timeout: 5000,
+    });
     fireEvent.click(screen.getByRole("button"));
     expect(await screen.findByText(/Galaxy WorkFlow Data/i)).toBeInTheDocument();
     expect(await screen.findByText("Data Uploaded")).toBeInTheDocument();
@@ -43,6 +46,11 @@ describe("Renders with table of  data ", () => {
   });
   it("displays WorkFlow Data ", async () => {
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
+    expect(await screen.findByRole("button")).toBeDisabled();
+    await waitFor(() => expect(screen.getByRole("button")).toBeEnabled(), {
+      timeout: 5000,
+    });
+    screen.debug();
     expect(await screen.findByRole("button")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button"));
     expect(await screen.findByText(/Galaxy WorkFlow Data/i)).toBeInTheDocument();
