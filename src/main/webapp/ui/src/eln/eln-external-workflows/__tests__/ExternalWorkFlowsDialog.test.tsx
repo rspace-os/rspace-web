@@ -50,7 +50,6 @@ describe("Renders with table of  data ", () => {
     await waitFor(() => expect(screen.getByRole("button")).toBeEnabled(), {
       timeout: 5000,
     });
-    screen.debug();
     expect(await screen.findByRole("button")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button"));
     expect(await screen.findByText(/Galaxy WorkFlow Data/i)).toBeInTheDocument();
