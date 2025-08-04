@@ -5,10 +5,16 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import { useLandmarksList } from "./LandmarksContext";
+import useOneDimensionalRovingTabIndex from "./useOneDimensionalRovingTabIndex";
 
 const SkipToContentButton: React.FC = () => {
-  const { landmarks } = useLandmarksList();
+const { landmarks } = useLandmarksList();
   const [isVisible, setIsVisible] = useState(false);
+
+  const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex({
+    max: landmarks.length - 1,
+    direction: "column"
+  });
 
   const handleFocus = () => {
     setIsVisible(true);
@@ -47,15 +53,17 @@ const SkipToContentButton: React.FC = () => {
         boxShadow: 2,
         minWidth: 200,
       }}
+      {...eventHandlers}
     >
       <List dense sx={{ opacity: isVisible ? 1 : 0 }}>
-        {landmarks.map((landmark) => (
+        {landmarks.map((landmark, index) => (
           <ListItem key={landmark.name} disablePadding>
             <ListItemButton
               onClick={() => {
                 handleSkipToLandmark(landmark.ref);
               }}
-              tabIndex={0}
+              tabIndex={getTabIndex(index)}
+              ref={getRef(index)}
               onFocus={handleFocus}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
