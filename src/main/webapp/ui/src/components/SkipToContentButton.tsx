@@ -8,13 +8,14 @@ import { useLandmarksList } from "./LandmarksContext";
 import useOneDimensionalRovingTabIndex from "./useOneDimensionalRovingTabIndex";
 
 const SkipToContentButton: React.FC = () => {
-const { landmarks } = useLandmarksList();
+  const { landmarks } = useLandmarksList();
   const [isVisible, setIsVisible] = useState(false);
 
-  const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex({
-    max: landmarks.length - 1,
-    direction: "column"
-  });
+  const { getTabIndex, getRef, eventHandlers } =
+    useOneDimensionalRovingTabIndex({
+      max: landmarks.length - 1,
+      direction: "column",
+    });
 
   const handleFocus = () => {
     setIsVisible(true);
@@ -31,9 +32,27 @@ const { landmarks } = useLandmarksList();
     }
   };
 
+  const handleClose = () => {
+    setIsVisible(false);
+    // Return focus to the document body after a brief timeout to allow state updates
+    setTimeout(() => {
+      document.body.focus();
+    }, 10);
+  };
+
   if (landmarks.length === 0) {
     return null;
   }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      handleClose();
+    } else {
+      // Pass through to the roving tab index handler
+      eventHandlers.onKeyDown(e);
+    }
+  };
 
   return (
     <Box
@@ -53,11 +72,18 @@ const { landmarks } = useLandmarksList();
         boxShadow: 2,
         minWidth: 200,
       }}
-      {...eventHandlers}
+      onFocus={eventHandlers.onFocus}
+      onBlur={eventHandlers.onBlur}
+      onKeyDown={handleKeyDown}
     >
-      <List dense sx={{ opacity: isVisible ? 1 : 0 }}>
+      <List
+        dense
+        sx={{ opacity: isVisible ? 1 : 0 }}
+        role="menu"
+        aria-label="Skip to content navigation"
+      >
         {landmarks.map((landmark, index) => (
-          <ListItem key={landmark.name} disablePadding>
+          <ListItem key={landmark.name} disablePadding role="menuitem">
             <ListItemButton
               onClick={() => {
                 handleSkipToLandmark(landmark.ref);
@@ -69,6 +95,9 @@ const { landmarks } = useLandmarksList();
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   handleSkipToLandmark(landmark.ref);
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  handleClose();
                 }
               }}
             >

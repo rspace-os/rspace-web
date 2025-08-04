@@ -16,6 +16,7 @@ const feature = test.extend<{
     "the user adds extra landmarks": () => Promise<void>;
     "the user presses the down arrow": () => Promise<void>;
     "the user presses the up arrow": () => Promise<void>;
+    "the user presses escape": () => Promise<void>;
   };
   Then: {
     "the skip button should be visible": () => Promise<void>;
@@ -62,6 +63,9 @@ const feature = test.extend<{
       "the user presses the up arrow": async () => {
         await page.keyboard.press("ArrowUp");
       },
+      "the user presses escape": async () => {
+        await page.keyboard.press("Escape");
+      },
     });
   },
   Then: async ({ page }, use) => {
@@ -70,7 +74,11 @@ const feature = test.extend<{
         await expect(page.getByText("Skip to Header")).toBeVisible();
       },
       "the skip button should be hidden": async () => {
-        await expect(page.getByText("Skip to Header")).not.toBeVisible();
+        // Wait for the CSS transition to complete (component uses 0.2s transition)
+        await page.waitForTimeout(300);
+        // Check that the skip-to-content menu container has opacity 0
+        const skipContainer = page.getByRole('menu', { name: 'Skip to content navigation' });
+        await expect(skipContainer).toHaveCSS('opacity', '0');
       },
       "the landmark options should be displayed": async () => {
         await expect(page.getByText("Skip to Header")).toBeVisible();
@@ -121,5 +129,13 @@ test.describe("SkipToContentButton", () => {
     await When["the user adds extra landmarks"]();
     await When["the user focuses the skip button"]();
     await Then["the landmark list should include the new landmarks"]();
+  });
+
+  feature("Escape key closes the skip-to-content menu", async ({ Given, When, Then }) => {
+    await Given["a simple skip-to-content component is rendered"]();
+    await When["the user focuses the skip button"]();
+    await Then["the skip button should be visible"]();
+    await When["the user presses escape"]();
+    await Then["the skip button should be hidden"]();
   });
 });
