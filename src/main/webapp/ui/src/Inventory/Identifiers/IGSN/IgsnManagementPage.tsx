@@ -27,6 +27,7 @@ import PrintDialog from "./PrintDialog";
 import PrintIcon from "@mui/icons-material/Print";
 import IgsnTable from "./IgsnTable";
 import RsSet from "../../../util/set";
+import { useLandmark } from "../../../components/LandmarksContext";
 
 /**
  * The IGSN Management page allows users to view, bulk register, print, and
@@ -41,6 +42,7 @@ export default function IgsnManagementPage({
 }): React.ReactNode {
   const { refreshListing } = useIdentifiersRefresh();
   const { bulkRegister, deleteIdentifiers } = useIdentifiers();
+  const mainContentRef = useLandmark("IGSN management main content");
   const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] =
     React.useState(false);
   const [numberOfNewIdentifiers, setNumberOfNewIdentifiers] = React.useState(1);
@@ -53,7 +55,12 @@ export default function IgsnManagementPage({
 
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <Main sx={{ overflowY: "auto" }}>
+      <Main
+        sx={{ overflowY: "auto" }}
+        ref={mainContentRef}
+        role="main"
+        aria-label="IGSN management main content"
+      >
         <Stack spacing={2} sx={{ my: 2, mr: 1 }}>
           <TitledBox title="IGSN IDs" border>
             <Typography>

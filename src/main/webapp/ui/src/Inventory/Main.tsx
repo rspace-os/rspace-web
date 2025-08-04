@@ -21,12 +21,15 @@ type MainArgs = {
 
 const StyledMain = styled("main")``;
 
-export default function Main({ children, sx }: MainArgs): React.ReactNode {
+export default React.forwardRef<HTMLElement, MainArgs>(function Main(
+  { children, sx },
+  ref,
+) {
   const { classes } = useStyles();
 
   return (
-    <StyledMain className={clsx(classes.main)} sx={sx}>
+    <StyledMain ref={ref} className={clsx(classes.main)} sx={sx}>
       {children}
     </StyledMain>
   );
-}
+});
