@@ -19,6 +19,7 @@ const StyledPopover = styled(
 )(({ highContrastMode }) => ({
   "& > .MuiPaper-root": {
     padding: "2px",
+    maxWidth: "500px",
     ...(highContrastMode
       ? {
           border: "2px solid black",
@@ -174,9 +175,12 @@ function AccessibilityTipsPopup({
         {supportsSkipToContent && (
           <Alert severity="info" elevation={0} aria-label="Tip">
             <AlertTitle>
-              This {elementType} supports a skip-to-content menu for easier navigation.
+              This {elementType} supports a skip-to-content menu for easier
+              navigation.
             </AlertTitle>
-            Press the "Tab" key to access skip links that allow you to jump directly to main page sections like navigation, content, and other landmarks.
+            Press the "Tab" key to access skip links that allow you to jump
+            directly to main page sections like navigation, content, and other
+            landmarks.
           </Alert>
         )}
       </Stack>
@@ -228,7 +232,12 @@ export function AccessibilityTipsIconButton({
 }: AccessibilityTipsComponentArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
 
-  if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom && !supportsSkipToContent)
+  if (
+    !supportsHighContrastMode &&
+    !supportsReducedMotion &&
+    !supports2xZoom &&
+    !supportsSkipToContent
+  )
     return null;
 
   return (
@@ -280,7 +289,12 @@ export function AccessibilityTipsMenuItem({
 } & AccessibilityTipsComponentArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
 
-  if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom && !supportsSkipToContent)
+  if (
+    !supportsHighContrastMode &&
+    !supportsReducedMotion &&
+    !supports2xZoom &&
+    !supportsSkipToContent
+  )
     return null;
 
   return (
