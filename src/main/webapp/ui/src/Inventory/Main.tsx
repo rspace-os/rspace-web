@@ -17,18 +17,18 @@ const useStyles = makeStyles()((theme) => ({
 type MainArgs = {
   children: React.ReactNode;
   sx?: Record<string, unknown>;
-};
+} & React.HTMLAttributes<HTMLElement>;
 
 const StyledMain = styled("main")``;
 
 export default React.forwardRef<HTMLElement, MainArgs>(function Main(
-  { children, sx },
+  { children, sx, ...htmlAttributes },
   ref,
 ) {
   const { classes } = useStyles();
 
   return (
-    <StyledMain ref={ref} className={clsx(classes.main)} sx={sx}>
+    <StyledMain ref={ref} className={clsx(classes.main)} sx={sx} {...htmlAttributes}>
       {children}
     </StyledMain>
   );
