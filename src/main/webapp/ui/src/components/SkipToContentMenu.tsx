@@ -34,10 +34,7 @@ const SkipToContentButton: React.FC = () => {
 
   const handleClose = () => {
     setIsVisible(false);
-    // Return focus to the document body after a brief timeout to allow state updates
-    setTimeout(() => {
-      document.body.focus();
-    }, 10);
+    document.body.focus();
   };
 
   if (landmarks.length === 0) {
