@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {withStyles} from "Styles";
 import Badge from "@mui/material/Badge";
 import Fab from "@mui/material/Fab";
-import {createSvgIcon} from "@mui/material";
+import {createSvgIcon, Modal} from "@mui/material";
 import {makeStyles} from "tss-react/mui";
 import axios from "@/common/axios";
 import ExternalWorkflowDialog
@@ -13,6 +13,9 @@ import {
 import {ErrorReason} from "./Enums";
 import ErrorView from "./ErrorView";
 import useLocalStorage from "@/util/useLocalStorage";
+import Grid from "@mui/material/Grid";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
 export type ExternalWorkflowInvocationsArgs = {
   fieldId: string | null;
   isForNotebookPage: boolean;
@@ -29,11 +32,16 @@ function ExternalWorkflowInvocations({
   const [errorMessage, setErrorMessage] = useState("");
   const [numInvocations, setNumInvocations] = useState(0);
   /**
+   * This is not a cache for Galaxy data - it is a local flag which will prevent document fields repeatedly requesting
+   * Galaxy updates when there is actually no data in Galaxy associated with that field. If data is ever found in Galaxy
+   * for that field, the data exists query flag is set to false and the update Galaxy data flag is set to trye.
+   *
    * Always attempt to fetch data from Galaxy once, to cover shared documents, user changing browser or user erasing local storage
    * setShouldCheckForGalaxyData and setButtonVisible will be reset to true if a user ever uploads data from this document field to Galaxy
    */
   const [shouldCheckForGalaxyData, setShouldCheckForGalaxyData] = useLocalStorage("checkForGalaxyData_"+fieldId,true);
   const [galaxyDataFoundInRSpace, setGalaxyDataFoundInRSpace] = useLocalStorage("galaxyDataFound_" + fieldId, false);
+  const [querying, setQuerying] = useState(false);
   const [buttonVisible, setButtonVisible]  = useState(false);
   const [galaxyDataSummary, setGalaxyDataSummary] = useState<Array<GalaxyDataSummary>>([]);
   const [showDialog, setShowDialog] = useState(false);
@@ -90,9 +98,11 @@ function ExternalWorkflowInvocations({
 
   const updateGalaxyDataSummary = async () => {
     try {
+      setQuerying(true);
       const data = await getGalaxyData();
-        setGalaxyDataSummary(data);
-        setNumInvocations(data.filter(d => d.galaxyInvocationName !== null).length);
+      setQuerying(false);
+      setGalaxyDataSummary(data);
+      setNumInvocations(data.filter(d => d.galaxyInvocationName !== null).length);
     } catch (error) {
       handleRequestError(error as RSpaceError);
     }
@@ -166,10 +176,46 @@ function ExternalWorkflowInvocations({
                 </Fab>
               </CustomBadge>
             </div>
+            <Modal
+                open={querying}
+                aria-label="Please wait, querying galaxy is in progress"
+                title={'Galaxy Query In Progress'}
+            >
+              <Grid
+                  container
+                  spacing={0}
+                  direction="column"
+                  alignItems="center"
+                  justifyContent="center"
+                  sx={{ minHeight: '100vh' }}
+              >
+                <Grid item xs={3}>
+                  {querying && <CircularProgress variant="indeterminate" value={1} size="8rem" />}
+                </Grid>
+              </Grid>
+            </Modal>
             <ExternalWorkflowDialog open={showDialog} setOpen={setShowDialog}
                                     galaxySummaryReport={galaxyDataSummary}/>
           </>
       )}
+        {(querying && galaxyDataSummary.length === 0) && (
+            <>
+              <div className={classes.launcherWrapper}>
+                <CustomBadge count={numInvocations}>
+                  <Fab
+                      disabled={true}
+                      size="medium"
+                      aria-label="Please wait, loading computational workflows associated with this field"
+                      aria-haspopup="menu"
+                      className={classes.fab}
+                  >
+                    <WorkFlowIcon  width="100%" viewBox="0 0 225 225"
+                                  enableBackground="new 0 0 225 225"></WorkFlowIcon>
+                  </Fab>
+                </CustomBadge>
+              </div>
+            </>
+        )}
       </>
   );
 }
