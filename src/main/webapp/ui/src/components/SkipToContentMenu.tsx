@@ -23,10 +23,12 @@ const SkipToContentButton: React.FC = () => {
 
   const handleSkipToLandmark = (ref: React.RefObject<HTMLElement>) => {
     if (ref.current) {
-      // Ensure the element can receive focus
-      if (ref.current.tabIndex === -1) {
-        ref.current.tabIndex = -1;
-      }
+      /*
+       * Setting tabIndex to -1 (even if already -1) forces the browser to
+       * re-evaluate focusability. This is necessary for reliable programmatic
+       * focus due to React/MUI/browser quirks.
+       */
+      ref.current.tabIndex = -1;
       ref.current.focus({ preventScroll: false });
       setIsVisible(false);
     }
