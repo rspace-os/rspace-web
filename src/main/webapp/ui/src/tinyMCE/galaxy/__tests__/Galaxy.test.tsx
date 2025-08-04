@@ -46,7 +46,6 @@ describe("Galaxy Upload Data tests ", () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]}
                      galaxy_web_url={"galaxy_web_url"}/>);
       const columnHeadings = await screen.findAllByRole("columnheader");
-      screen.debug(columnHeadings);
       expect(columnHeadings[1]).toHaveTextContent('File');
     });
     it("displays attached data ", async () => {
