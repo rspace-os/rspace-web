@@ -1,7 +1,7 @@
 {
   "id": null,
   "globalId": null,
-  "name": "Sample-45-00010 - 2024-11-20 18:24:03",
+  "name": "Sample-63-00050 - 2025-08-20 10:53:26",
   "description": null,
   "created": null,
   "createdBy": null,
@@ -37,16 +37,16 @@
   },
   "sampleSource": null,
   "expiryDate": null,
-  "templateId": 98304,
+  "templateId": 65536,
   "template": false,
   "fields": [
     {
-      "id": 98304,
+      "id": 65536,
       "globalId": null,
       "name": "Field-ID",
       "type": "text",
       "mandatory": false,
-      "content": "00010",
+      "content": "00050",
       "lastModified": null,
       "columnIndex": 1,
       "definition": null,
@@ -55,12 +55,12 @@
       "_links": []
     },
     {
-      "id": 98305,
+      "id": 65537,
       "globalId": null,
       "name": "hridPrimary-Next-Section",
       "type": "text",
       "mandatory": false,
-      "content": "Sample-45-00010",
+      "content": "Sample-63-00050",
       "lastModified": null,
       "columnIndex": 2,
       "definition": null,
@@ -69,12 +69,12 @@
       "_links": []
     },
     {
-      "id": 98306,
+      "id": 65538,
       "globalId": null,
       "name": "Survey-Number",
       "type": "number",
       "mandatory": false,
-      "content": "45",
+      "content": "63",
       "lastModified": null,
       "columnIndex": 3,
       "definition": null,
@@ -83,7 +83,7 @@
       "_links": []
     },
     {
-      "id": 98307,
+      "id": 65539,
       "globalId": null,
       "name": "IGSN-QR-Code",
       "type": "text",
@@ -97,12 +97,12 @@
       "_links": []
     },
     {
-      "id": 98308,
+      "id": 65540,
       "globalId": null,
       "name": "Sample-Location_latitude",
       "type": "number",
       "mandatory": false,
-      "content": "-4.290634804694207",
+      "content": "14.036364239998946",
       "lastModified": null,
       "columnIndex": 5,
       "definition": null,
@@ -111,12 +111,12 @@
       "_links": []
     },
     {
-      "id": 98309,
+      "id": 65541,
       "globalId": null,
       "name": "Sample-Location_longitude",
       "type": "number",
       "mandatory": false,
-      "content": "55.88700753938906",
+      "content": "42.250294200498814",
       "lastModified": null,
       "columnIndex": 6,
       "definition": null,
@@ -125,12 +125,12 @@
       "_links": []
     },
     {
-      "id": 98310,
+      "id": 65542,
       "globalId": null,
       "name": "New-Text-Field",
       "type": "text",
       "mandatory": false,
-      "content": "In glasgow mryhill",
+      "content": "homeS",
       "lastModified": null,
       "columnIndex": 7,
       "definition": null,
@@ -139,12 +139,12 @@
       "_links": []
     },
     {
-      "id": 98311,
+      "id": 65543,
       "globalId": null,
       "name": "Item-Description",
       "type": "text",
       "mandatory": false,
-      "content": "This is the stone with the fossil inside ",
+      "content": "10.82316/8vmr-be22",
       "lastModified": null,
       "columnIndex": 8,
       "definition": null,
@@ -153,7 +153,7 @@
       "_links": []
     },
     {
-      "id": 98312,
+      "id": 65544,
       "globalId": null,
       "name": "Sample-Photograph",
       "type": "attachment",
@@ -167,12 +167,12 @@
       "_links": []
     },
     {
-      "id": 98313,
+      "id": 65545,
       "globalId": null,
       "name": "Length-mm",
       "type": "number",
       "mandatory": false,
-      "content": "15",
+      "content": "50",
       "lastModified": null,
       "columnIndex": 10,
       "definition": null,
@@ -181,12 +181,12 @@
       "_links": []
     },
     {
-      "id": 98314,
+      "id": 65546,
       "globalId": null,
       "name": "Width-mm",
       "type": "number",
       "mandatory": false,
-      "content": "10",
+      "content": "22",
       "lastModified": null,
       "columnIndex": 11,
       "definition": null,
@@ -195,12 +195,12 @@
       "_links": []
     },
     {
-      "id": 98315,
+      "id": 65547,
       "globalId": null,
       "name": "Thickness-mm",
       "type": "number",
       "mandatory": false,
-      "content": "3",
+      "content": "56",
       "lastModified": null,
       "columnIndex": 12,
       "definition": null,

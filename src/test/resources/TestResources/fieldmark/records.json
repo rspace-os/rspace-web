@@ -2,292 +2,140 @@
   "records": [
     {
       "project_id": "1726126204618-rspace-igsn-demo",
-      "record_id": "rec-ae48f602-c9c4-4e9e-ae3b-6ecf65706e87",
-      "revision_id": "frev-626c2f84-3ceb-4a46-8bd3-b2cc7af0f081",
+      "record_id": "rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2",
+      "revision_id": "frev-f55e9bb5-8233-4812-8f7d-4f8c34f68089",
+      "created": "2025-05-12T10:32:22.263Z",
+      "created_by": "dev@researchspace.com",
+      "updated": "2025-08-20T09:24:24.529Z",
+      "updated_by": "dev@researchspace.com",
+      "conflicts": false,
+      "deleted": false,
       "type": "Primary",
+      "relationship": {},
+      "avps": {
+        "Field-ID": "avp-eb341f69-8f3e-4486-8c60-a3c17bf3e38e",
+        "hridPrimary-Next-Section": "avp-a680d8b1-2fb8-4e9c-b8d6-43ac33544535",
+        "Survey-Number": "avp-69ddd81a-432a-47bc-8a6e-463cc7ca5be5",
+        "IGSN-QR-Code": "avp-173ffb00-3224-409c-8c98-5ebf741b22d6",
+        "Sample-Location": "avp-a5c6242c-b92a-47d5-8aff-7baf674a9705",
+        "New-Text-Field": "avp-e9e901e2-db8c-49c4-8f0a-afb4a94f4061",
+        "Description": "avp-455405f0-a353-4565-a352-5ad4ca016dbe",
+        "Sample-Photograph": "avp-2de4c12d-0e85-4cbd-9ba3-2b8a31f9bb80",
+        "Length-mm": "avp-3e153740-e61a-4eba-9f9c-2eccdc9f1e3d",
+        "Width-mm": "avp-ea7d2029-03f7-469f-8092-18d8b3e1fe11",
+        "Thickness-mm": "avp-fa9bc073-44b2-4675-a687-e6321d38300b"
+      },
       "data": {
-        "Field-ID": "00010",
-        "hridPrimary-Next-Section": "Sample-45-00010",
-        "Survey-Number": 45,
-        "IGSN-QR-Code": "",
+        "Field-ID": "00050",
+        "hridPrimary-Next-Section": "Sample-63-00050",
+        "Survey-Number": 63,
+        "IGSN-QR-Code": "1",
         "Sample-Location": {
           "type": "Feature",
           "properties": {
-            "timestamp": 1728314965500,
-            "altitude": 40.929553510506395,
-            "speed": -1,
-            "heading": -1,
-            "accuracy": 27.826936716066943,
-            "altitude_accuracy": 30
+            "timestamp": 1754322997358,
+            "altitude": 0,
+            "speed": null,
+            "heading": null,
+            "accuracy": 35,
+            "altitude_accuracy": null
           },
           "geometry": {
             "type": "Point",
             "coordinates": [
-              -4.290634804694207,
-              55.88700753938906
+              14.036364239998946,
+              42.250294200498814
             ]
           }
         },
-        "New-Text-Field": "In glasgow mryhill",
-        "Description": "This is the stone with the fossil inside ",
-        "Sample-Photograph": [
-          {}
-        ],
-        "Length-mm": 15,
-        "Width-mm": 10,
-        "Thickness-mm": 3,
-        "fieldNames": [],
-        "views": []
+        "New-Text-Field": "homeS",
+        "Description": "10.82316/8vmr-be22",
+        "Sample-Photograph": null,
+        "Length-mm": 50,
+        "Width-mm": 22,
+        "Thickness-mm": 56
       },
-      "updated_by": "dev@researchspace.com",
-      "updated": "2024-10-07T15:30:54.514Z",
-      "created": "2024-10-07T15:25:16.724Z",
-      "created_by": "dev@researchspace.com",
-      "annotations": {
-        "Field-ID": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "hridPrimary-Next-Section": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Survey-Number": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "IGSN-QR-Code": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Sample-Location": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "New-Text-Field": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Description": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Sample-Photograph": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Length-mm": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Width-mm": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Thickness-mm": {
-          "annotation": "",
-          "uncertainty": false
-        }
-      },
-      "field_types": {
-        "Field-ID": "faims-core::String",
-        "hridPrimary-Next-Section": "faims-core::String",
-        "Survey-Number": "faims-core::Integer",
-        "IGSN-QR-Code": "faims-core::String",
-        "Sample-Location": "faims-pos::Location",
-        "New-Text-Field": "faims-core::String",
-        "Description": "faims-core::String",
-        "Sample-Photograph": "faims-attachment::Files",
-        "Length-mm": "faims-core::Integer",
-        "Width-mm": "faims-core::Integer",
-        "Thickness-mm": "faims-core::Integer",
-        "fieldNames": "??:??",
-        "views": "??:??",
-        "updateField": "??:??"
-      },
-      "relationship": {},
-      "deleted": false
+      "hrid": "Sample-63-00050"
     },
     {
       "project_id": "1726126204618-rspace-igsn-demo",
       "record_id": "rec-e881323c-d3cb-4393-9784-07b86585675b",
-      "revision_id": "frev-60539129-2188-4d05-a493-cbc85207a75c",
+      "revision_id": "frev-c5883829-3a7b-4c52-b053-0710f3c67208",
+      "created": "2024-10-02T13:22:22.747Z",
+      "created_by": "dev@researchspace.com",
+      "updated": "2025-08-19T05:56:03.355Z",
+      "updated_by": "dev@researchspace.com",
+      "conflicts": false,
+      "deleted": false,
       "type": "Primary",
+      "relationship": {},
+      "avps": {
+        "Field-ID": "avp-7a92db82-7acf-4e1d-ae88-754b9548b90d",
+        "hridPrimary-Next-Section": "avp-5f850d61-6622-491e-b6a1-05fac1a1ba80",
+        "Survey-Number": "avp-1feb7d29-626d-4dcc-8bf7-f6a53dd2bf24",
+        "IGSN-QR-Code": "avp-16592d46-3650-4478-9a33-98c92c54033b",
+        "Sample-Location": "avp-35098aa6-fa9f-4fc5-84bc-99b0c34632ac",
+        "New-Text-Field": "avp-77c1f6c9-d0c1-4364-9e70-6f14bfada423",
+        "Description": "avp-c7db0c69-5657-4775-95e9-2ccb2d524ed3",
+        "Sample-Photograph": "avp-2f28a1a7-e305-41f4-afe5-410b6cd7ab63",
+        "Length-mm": "avp-c775e460-4a12-47bd-8929-b7d0083f3cf5",
+        "Width-mm": "avp-fe5f0f35-1051-4954-a445-9b7a6c066c99",
+        "Thickness-mm": "avp-d3d35c6b-d509-488b-877f-b88528747a32"
+      },
       "data": {
         "Field-ID": "00008",
         "hridPrimary-Next-Section": "Sample-1-00008",
         "Survey-Number": 1,
-        "IGSN-QR-Code": "10.12345/asdf-good",
+        "IGSN-QR-Code": "1",
         "Sample-Location": null,
-        "New-Text-Field": "glasgow",
-        "Description": "rock hard",
-        "Sample-Photograph": [
-          {}
-        ],
-        "Length-mm": 15,
+        "New-Text-Field": "Glasgow or PAISLEY (Scotland)",
+        "Description": "doi.org/10.82316/731r-r253",
+        "Sample-Photograph": null,
+        "Length-mm": 22,
         "Width-mm": 54,
-        "Thickness-mm": 3,
-        "fieldNames": [],
-        "views": []
+        "Thickness-mm": 32
       },
-      "updated_by": "dev@researchspace.com",
-      "updated": "2024-10-02T13:30:46.936Z",
-      "created": "2024-10-02T13:22:22.747Z",
-      "created_by": "dev@researchspace.com",
-      "annotations": {
-        "Field-ID": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "hridPrimary-Next-Section": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Survey-Number": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "IGSN-QR-Code": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Sample-Location": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "New-Text-Field": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Description": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Sample-Photograph": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Length-mm": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Width-mm": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Thickness-mm": {
-          "annotation": "",
-          "uncertainty": false
-        }
-      },
-      "field_types": {
-        "Field-ID": "faims-core::String",
-        "hridPrimary-Next-Section": "faims-core::String",
-        "Survey-Number": "faims-core::Integer",
-        "IGSN-QR-Code": "faims-core::String",
-        "Sample-Location": "faims-pos::Location",
-        "New-Text-Field": "faims-core::String",
-        "Description": "faims-core::String",
-        "Sample-Photograph": "faims-attachment::Files",
-        "Length-mm": "faims-core::Integer",
-        "Width-mm": "faims-core::Integer",
-        "Thickness-mm": "faims-core::Integer",
-        "fieldNames": "??:??",
-        "views": "??:??"
-      },
-      "relationship": {},
-      "deleted": false
+      "hrid": "Sample-1-00008"
     },
     {
       "project_id": "1726126204618-rspace-igsn-demo",
       "record_id": "rec-5eb53c21-d7f8-41a7-a8b5-4900e46cf8e0",
-      "revision_id": "frev-953d2317-0111-4cb4-81e0-b0e1cb5262b0",
+      "revision_id": "frev-7449ba6b-d7da-49bc-8901-d8fecb1ad7a9",
+      "created": "2024-10-03T09:19:00.656Z",
+      "created_by": "dev@researchspace.com",
+      "updated": "2025-08-04T15:29:52.385Z",
+      "updated_by": "dev@researchspace.com",
+      "conflicts": false,
+      "deleted": false,
       "type": "Primary",
+      "relationship": {},
+      "avps": {
+        "Field-ID": "avp-f49d7d9e-b739-47e4-ace4-6055487d84ce",
+        "hridPrimary-Next-Section": "avp-38fe98e2-8ea2-41d5-8329-422b66245215",
+        "Survey-Number": "avp-7410c161-0e42-4170-b4af-91160f5c1fe5",
+        "IGSN-QR-Code": "avp-69de992d-f1d3-4945-90ad-543abbea681d",
+        "Sample-Location": "avp-8924ba31-384e-4ffc-aed7-f19089d70ba1",
+        "New-Text-Field": "avp-2f6abd53-0bbd-4f42-8749-2ac41b4f5ef5",
+        "Description": "avp-95d7d1aa-3f29-47d9-b91e-63524e5a21c5",
+        "Sample-Photograph": "avp-6e4df539-323a-4d88-899a-55768f47b973",
+        "Length-mm": "avp-1905f29d-f9b8-4790-b376-633a8801790c",
+        "Width-mm": "avp-db9190b5-435a-4cb4-9630-40ecf1fbd9f0",
+        "Thickness-mm": "avp-00f78489-984b-4ad1-9983-12b06253b824"
+      },
       "data": {
         "Field-ID": "00009",
         "hridPrimary-Next-Section": "Sample-12-00009",
         "Survey-Number": 12,
-        "IGSN-QR-Code": "",
+        "IGSN-QR-Code": "1",
         "Sample-Location": null,
-        "New-Text-Field": "Rome",
-        "Description": "Arcdheological interest area",
-        "Sample-Photograph": [
-          {}
-        ],
+        "New-Text-Field": "Roma",
+        "Description": "https://doi.org/10.82316/rzqc-0n83",
+        "Sample-Photograph": null,
         "Length-mm": 18,
         "Width-mm": 88,
-        "Thickness-mm": 5,
-        "fieldNames": [],
-        "views": []
+        "Thickness-mm": 5
       },
-      "updated_by": "dev@researchspace.com",
-      "updated": "2024-10-03T09:19:00.656Z",
-      "created": "2024-10-03T09:19:00.656Z",
-      "created_by": "dev@researchspace.com",
-      "annotations": {
-        "Field-ID": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "hridPrimary-Next-Section": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Survey-Number": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "IGSN-QR-Code": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Sample-Location": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "New-Text-Field": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Description": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Sample-Photograph": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Length-mm": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Width-mm": {
-          "annotation": "",
-          "uncertainty": false
-        },
-        "Thickness-mm": {
-          "annotation": "",
-          "uncertainty": false
-        }
-      },
-      "field_types": {
-        "Field-ID": "faims-core::String",
-        "hridPrimary-Next-Section": "faims-core::String",
-        "Survey-Number": "faims-core::Integer",
-        "IGSN-QR-Code": "faims-core::String",
-        "Sample-Location": "faims-pos::Location",
-        "New-Text-Field": "faims-core::String",
-        "Description": "faims-core::String",
-        "Sample-Photograph": "faims-attachment::Files",
-        "Length-mm": "faims-core::Integer",
-        "Width-mm": "faims-core::Integer",
-        "Thickness-mm": "faims-core::Integer",
-        "fieldNames": "??:??",
-        "views": "??:??",
-        "updateField": "??:??"
-      },
-      "relationship": {},
-      "deleted": false
+      "hrid": "Sample-12-00009"
     }
   ]
 }
