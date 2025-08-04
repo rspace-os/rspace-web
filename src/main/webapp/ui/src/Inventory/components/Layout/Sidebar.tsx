@@ -28,6 +28,7 @@ import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/igsn";
+import { useLandmark } from "../../../components/LandmarksContext";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);
@@ -493,6 +494,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const { classes } = useStyles();
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
+  const sidebarRef = useLandmark("Inventory Navigation");
 
   const afterClick = () => {
     if (!uiStore.alwaysVisibleSidebar) uiStore.toggleSidebar(false);
@@ -501,29 +503,31 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
 
   return (
     <CustomDrawer id={id}>
-      <div className={classes.drawerContainer}>
-        <List component="nav" aria-label="Create new Inventory items">
-          <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-            <CreateNew onClick={afterClick} />
-          </ThemeProvider>
-        </List>
-        <List
-          component="nav"
-          onClick={afterClick}
-          aria-label="List existing Inventory items"
-        >
-          <MyBenchNavItem />
-          <ContainersNavItem />
-          <SampleNavItem />
-          <SubsampleNavItem />
-          <TemplateNavItem />
-          <IgsnNavItem />
-        </List>
-        <List component="nav" aria-label="Other places and action">
-          <ExportNavItem />
-          {isSysAdmin && <SettingsNavItem />}
-        </List>
-      </div>
+      <nav ref={sidebarRef} role="navigation" aria-label="Inventory Sidebar Navigation">
+        <div className={classes.drawerContainer}>
+          <List component="nav" aria-label="Create new Inventory items">
+            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+              <CreateNew onClick={afterClick} />
+            </ThemeProvider>
+          </List>
+          <List
+            component="nav"
+            onClick={afterClick}
+            aria-label="List existing Inventory items"
+          >
+            <MyBenchNavItem />
+            <ContainersNavItem />
+            <SampleNavItem />
+            <SubsampleNavItem />
+            <TemplateNavItem />
+            <IgsnNavItem />
+          </List>
+          <List component="nav" aria-label="Other places and action">
+            <ExportNavItem />
+            {isSysAdmin && <SettingsNavItem />}
+          </List>
+        </div>
+      </nav>
     </CustomDrawer>
   );
 }

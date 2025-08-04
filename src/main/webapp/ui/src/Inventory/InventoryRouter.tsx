@@ -14,6 +14,8 @@ import Alerts from "./components/Alerts";
 import Analytics from "./Analytics";
 import Box from "@mui/material/Box";
 import IdentifiersRouter from "./Identifiers/Router";
+import SkipToContentButton from "../components/SkipToContentButton";
+import { LandmarksProvider } from "../components/LandmarksContext";
 
 const RedirectToBench = () => {
   const {
@@ -34,8 +36,10 @@ function InventoryRouter(): React.ReactNode {
   return (
     <Analytics>
       <ErrorBoundary>
-        <Alerts>
-          <Box height="100%">
+        <LandmarksProvider>
+          <SkipToContentButton />
+          <Alerts>
+            <Box height="100%">
             <Routes>
               <Route
                 path="/"
@@ -64,9 +68,10 @@ function InventoryRouter(): React.ReactNode {
               <Route path="/identifiers/*" element={<IdentifiersRouter />} />
               <Route path="*" element={<PageNotFoundScreen />} />
             </Routes>
-          </Box>
-          <MoveDialog />
-        </Alerts>
+            </Box>
+            <MoveDialog />
+          </Alerts>
+        </LandmarksProvider>
       </ErrorBoundary>
     </Analytics>
   );
