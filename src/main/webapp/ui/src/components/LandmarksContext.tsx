@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useEffect,
+  useRef,
+} from "react";
 
 interface Landmark {
   name: string;
@@ -14,30 +22,43 @@ interface LandmarksListContextProps {
   landmarks: Landmark[];
 }
 
-const LandmarkRegistrationContext = createContext<LandmarkRegistrationContextProps | undefined>(undefined);
-const LandmarksListContext = createContext<LandmarksListContextProps | undefined>(undefined);
+const LandmarkRegistrationContext = createContext<
+  LandmarkRegistrationContextProps | undefined
+>(undefined);
+const LandmarksListContext = createContext<
+  LandmarksListContextProps | undefined
+>(undefined);
 
-export const LandmarksProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const LandmarksProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
 
-  const registerLandmark = useCallback((name: string, ref: React.RefObject<HTMLElement>) => {
-    setLandmarks((prev) => {
-      const existingIndex = prev.findIndex(landmark => landmark.name === name);
-      if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = { name, ref };
-        return updated;
-      }
-      return [...prev, { name, ref }];
-    });
-  }, []);
+  const registerLandmark = useCallback(
+    (name: string, ref: React.RefObject<HTMLElement>) => {
+      setLandmarks((prev) => {
+        const existingIndex = prev.findIndex(
+          (landmark) => landmark.name === name,
+        );
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = { name, ref };
+          return updated;
+        }
+        return [...prev, { name, ref }];
+      });
+    },
+    [],
+  );
 
   const unregisterLandmark = useCallback((name: string) => {
-    setLandmarks((prev) => prev.filter(landmark => landmark.name !== name));
+    setLandmarks((prev) => prev.filter((landmark) => landmark.name !== name));
   }, []);
 
   return (
-    <LandmarkRegistrationContext.Provider value={{ registerLandmark, unregisterLandmark }}>
+    <LandmarkRegistrationContext.Provider
+      value={{ registerLandmark, unregisterLandmark }}
+    >
       <LandmarksListContext.Provider value={{ landmarks }}>
         {children}
       </LandmarksListContext.Provider>
@@ -48,7 +69,9 @@ export const LandmarksProvider: React.FC<{ children: ReactNode }> = ({ children 
 export const useLandmarkRegistration = () => {
   const context = useContext(LandmarkRegistrationContext);
   if (!context) {
-    throw new Error('useLandmarkRegistration must be used within a LandmarksProvider');
+    throw new Error(
+      "useLandmarkRegistration must be used within a LandmarksProvider",
+    );
   }
   return context;
 };
@@ -56,7 +79,7 @@ export const useLandmarkRegistration = () => {
 export const useLandmarksList = () => {
   const context = useContext(LandmarksListContext);
   if (!context) {
-    throw new Error('useLandmarksList must be used within a LandmarksProvider');
+    throw new Error("useLandmarksList must be used within a LandmarksProvider");
   }
   return context;
 };
@@ -66,6 +89,10 @@ export const useLandmark = (name: string) => {
   const { registerLandmark, unregisterLandmark } = useLandmarkRegistration();
 
   useEffect(() => {
+    console.debug(
+      `Registering landmark: ${name}`,
+      ref.current?.id || "unknown landmark",
+    );
     registerLandmark(name, ref);
     return () => {
       unregisterLandmark(name);

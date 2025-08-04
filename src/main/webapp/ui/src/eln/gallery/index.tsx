@@ -1,4 +1,6 @@
 import React from "react";
+import SkipToContentButton from "../../components/SkipToContentButton";
+import { LandmarksProvider } from "../../components/LandmarksContext";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { ThemeProvider, styled, lighten, useTheme } from "@mui/material/styles";
@@ -497,7 +499,9 @@ function GalleryFileInFolder() {
 export function Gallery() {
   return (
     <Analytics>
-      <ErrorBoundary>
+      <LandmarksProvider>
+        <ErrorBoundary>
+          <SkipToContentButton />
         <GoogleLoginProvider />
         <StyledEngineProvider injectFirst>
           <CssBaseline />
@@ -556,7 +560,8 @@ export function Gallery() {
             </UiPreferences>
           </ThemeProvider>
         </StyledEngineProvider>
-      </ErrorBoundary>
+        </ErrorBoundary>
+      </LandmarksProvider>
     </Analytics>
   );
 }

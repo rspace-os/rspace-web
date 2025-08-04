@@ -1,4 +1,5 @@
 import React from "react";
+import { useLandmark } from "../../../components/LandmarksContext";
 import Box from "@mui/material/Box";
 import { Drawer, Menu } from "../../../components/DialogBoundary";
 import { styled } from "@mui/material/styles";
@@ -520,6 +521,7 @@ const Sidebar = ({
   refreshListing,
   id,
 }: SidebarArgs): React.ReactNode => {
+  const sidebarRef = useLandmark("Gallery Navigation");
   const [newMenuAnchorEl, setNewMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
   const viewport = useViewportDimensions();
@@ -555,6 +557,7 @@ const Sidebar = ({
       role="region"
       aria-label="gallery sections drawer"
       id={id}
+      ref={sidebarRef as React.Ref<HTMLDivElement>}
     >
       <Box width="100%" p={1.5}>
         <AddButton
