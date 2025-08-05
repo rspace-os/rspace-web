@@ -3,12 +3,16 @@
  */
 /* eslint-env jest */
 import "@testing-library/jest-dom";
-import { calculateUpdatedMolecules } from "../calculations";
+import {
+  calculateUpdatedMolecules,
+  calculateActualMoles,
+  calculateYield,
+} from "../calculations";
 import { type StoichiometryMolecule } from "../../../hooks/api/useStoichiometry";
 
 // Test data factories
 const createMockMolecule = (
-  overrides: Partial<StoichiometryMolecule> = {}
+  overrides: Partial<StoichiometryMolecule> = {},
 ): StoichiometryMolecule => ({
   id: 1,
   rsChemElement: {
@@ -276,7 +280,7 @@ describe("calculateUpdatedMolecules", () => {
       const result = calculateUpdatedMolecules(allMolecules, editedRow);
       const updatedMolecule = result.find((m) => m.id === 1);
 
-      expect(updatedMolecule?.mass).toBe(1.0000); // 0.333333 * 3 rounded to 4 decimal places
+      expect(updatedMolecule?.mass).toBe(1.0); // 0.333333 * 3 rounded to 4 decimal places
     });
   });
 
@@ -378,12 +382,12 @@ describe("calculateUpdatedMolecules", () => {
 
       // Limiting reagent (id: 1): 4 moles, coefficient 2
       // Ratio: 4/2 = 2
-      
+
       // Reactant B (id: 2): coefficient 1, should be 2 * 1 = 2 moles
       expect(result.find((m) => m.id === 2)?.moles).toBe(2);
       expect(result.find((m) => m.id === 2)?.mass).toBe(100); // 2 * 50 = 100
 
-      // Product C (id: 3): coefficient 3, should be 2 * 3 = 6 moles  
+      // Product C (id: 3): coefficient 3, should be 2 * 3 = 6 moles
       expect(result.find((m) => m.id === 3)?.moles).toBe(6);
       expect(result.find((m) => m.id === 3)?.mass).toBe(900); // 6 * 150 = 900
     });
@@ -539,7 +543,7 @@ describe("calculateUpdatedMolecules", () => {
 
       // Theoretical moles: (1/3) * 1 = 0.333333...
       expect(result.find((m) => m.id === 2)?.moles).toBe(0.333333); // Rounded to 6 decimals
-      expect(result.find((m) => m.id === 2)?.mass).toBe(1.0000); // Rounded to 4 decimals
+      expect(result.find((m) => m.id === 2)?.mass).toBe(1.0); // Rounded to 4 decimals
     });
   });
 
@@ -557,7 +561,7 @@ describe("calculateUpdatedMolecules", () => {
         }),
         createMockMolecule({
           id: 2,
-          role: "reactant", 
+          role: "reactant",
           coefficient: 2,
           molecularWeight: 50,
           mass: 200,
@@ -573,7 +577,7 @@ describe("calculateUpdatedMolecules", () => {
           moles: null,
         }),
       ];
-      
+
       // Change mass of limiting reagent
       const editedRow = createMockMolecule({
         id: 2,
@@ -642,7 +646,7 @@ describe("calculateUpdatedMolecules", () => {
 
       // Old limiting reagent should be false
       expect(result.find((m) => m.id === 1)?.limitingReagent).toBe(false);
-      
+
       // New limiting reagent should be true
       expect(result.find((m) => m.id === 2)?.limitingReagent).toBe(true);
 
@@ -650,6 +654,352 @@ describe("calculateUpdatedMolecules", () => {
       // Ratio: 5/2 = 2.5
       expect(result.find((m) => m.id === 1)?.moles).toBe(2.5); // 2.5 * 1
       expect(result.find((m) => m.id === 3)?.moles).toBe(2.5); // 2.5 * 1
+    });
+  });
+});
+
+describe("calculateActualMoles", () => {
+  describe("valid inputs", () => {
+    test("calculates actual moles from actual amount and molecular weight", () => {
+      const result = calculateActualMoles(100, 50); // 100g / 50 g/mol
+      expect(result).toBe(2);
+    });
+
+    test("handles decimal inputs correctly", () => {
+      const result = calculateActualMoles(18.015, 18.015); // Water: 18.015g / 18.015 g/mol
+      expect(result).toBe(1);
+    });
+
+    test("rounds result to 6 decimal places", () => {
+      const result = calculateActualMoles(1, 3); // 1g / 3 g/mol = 0.333333...
+      expect(result).toBe(0.333333);
+    });
+
+    test("handles very small numbers", () => {
+      const result = calculateActualMoles(0.001, 100);
+      expect(result).toBe(0.00001); // 0.001 / 100 = 0.00001
+    });
+
+    test("handles very large numbers", () => {
+      const result = calculateActualMoles(10000, 1);
+      expect(result).toBe(10000); // 10000 / 1 = 10000
+    });
+  });
+
+  describe("invalid inputs", () => {
+    test("returns null when actualAmount is null", () => {
+      const result = calculateActualMoles(null, 50);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when molecularWeight is null", () => {
+      const result = calculateActualMoles(100, null);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when both are null", () => {
+      const result = calculateActualMoles(null, null);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when actualAmount is zero", () => {
+      const result = calculateActualMoles(0, 50);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when molecularWeight is zero", () => {
+      const result = calculateActualMoles(100, 0);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when actualAmount is negative", () => {
+      const result = calculateActualMoles(-100, 50);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when molecularWeight is negative", () => {
+      const result = calculateActualMoles(100, -50);
+      expect(result).toBeNull();
+    });
+  });
+});
+
+describe("calculateYield", () => {
+  describe("valid inputs", () => {
+    test("calculates perfect yield (100%)", () => {
+      const result = calculateYield(50, 50); // actual = theoretical
+      expect(result).toBe(100);
+    });
+
+    test("calculates partial yield", () => {
+      const result = calculateYield(75, 100); // 75% yield
+      expect(result).toBe(75);
+    });
+
+    test("calculates low yield", () => {
+      const result = calculateYield(25, 100); // 25% yield
+      expect(result).toBe(25);
+    });
+
+    test("handles over 100% yield (theoretical possibility in some reactions)", () => {
+      const result = calculateYield(120, 100); // 120% yield
+      expect(result).toBe(120);
+    });
+
+    test("rounds result to 2 decimal places", () => {
+      const result = calculateYield(33.333, 100); // 33.333%
+      expect(result).toBe(33.33);
+    });
+
+    test("handles decimal inputs correctly", () => {
+      const result = calculateYield(18.015, 36.03); // 50% yield
+      expect(result).toBe(50);
+    });
+
+    test("handles very small numbers", () => {
+      const result = calculateYield(0.001, 0.1); // 1% yield
+      expect(result).toBe(1);
+    });
+
+    test("handles very large numbers", () => {
+      const result = calculateYield(5000, 10000); // 50% yield
+      expect(result).toBe(50);
+    });
+
+    test("calculates precise fractional yields", () => {
+      const result = calculateYield(1, 3); // 1/3 = 33.333...%
+      expect(result).toBe(33.33);
+    });
+  });
+
+  describe("invalid inputs", () => {
+    test("returns null when actualAmount is null", () => {
+      const result = calculateYield(null, 100);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when theoreticalMass is null", () => {
+      const result = calculateYield(50, null);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when both are null", () => {
+      const result = calculateYield(null, null);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when actualAmount is zero", () => {
+      const result = calculateYield(0, 100);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when theoreticalMass is zero", () => {
+      const result = calculateYield(50, 0);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when actualAmount is negative", () => {
+      const result = calculateYield(-50, 100);
+      expect(result).toBeNull();
+    });
+
+    test("returns null when theoreticalMass is negative", () => {
+      const result = calculateYield(50, -100);
+      expect(result).toBeNull();
+    });
+  });
+});
+
+describe("calculateUpdatedMolecules - yield calculations", () => {
+  describe("actualAmount updates", () => {
+    test("updates actualAmount property", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          actualAmount: null,
+        }),
+      ];
+      const editedRow = createMockMolecule({
+        id: 1,
+        actualAmount: 75,
+      });
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+      const updatedMolecule = result.find((m) => m.id === 1);
+
+      expect(updatedMolecule?.actualAmount).toBe(75);
+    });
+  });
+
+  describe("yield calculations", () => {
+    test("calculates yield when both actualAmount and theoretical mass are present", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          mass: 100, // theoretical mass
+          actualAmount: 75, // actual amount
+          actualYield: null,
+        }),
+      ];
+      const editedRow = createMockMolecule({
+        id: 1,
+        mass: 100,
+        actualAmount: 75,
+      });
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+      const updatedMolecule = result.find((m) => m.id === 1);
+
+      expect(updatedMolecule?.actualYield).toBe(75); // 75/100 * 100 = 75%
+    });
+
+    test("sets yield to null when actualAmount is missing", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          mass: 100,
+          actualAmount: null,
+          actualYield: 50, // Previous value
+        }),
+      ];
+      const editedRow = createMockMolecule({
+        id: 1,
+        mass: 100,
+        actualAmount: null,
+      });
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+      const updatedMolecule = result.find((m) => m.id === 1);
+
+      expect(updatedMolecule?.actualYield).toBeNull();
+    });
+
+    test("sets yield to null when theoretical mass is missing", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          mass: null,
+          actualAmount: 75,
+          actualYield: 50, // Previous value
+        }),
+      ];
+      const editedRow = createMockMolecule({
+        id: 1,
+        mass: null,
+        actualAmount: 75,
+      });
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+      const updatedMolecule = result.find((m) => m.id === 1);
+
+      expect(updatedMolecule?.actualYield).toBeNull();
+    });
+
+    test("calculates yield for multiple molecules", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          mass: 100,
+          actualAmount: 80,
+        }),
+        createMockMolecule({
+          id: 2,
+          mass: 200,
+          actualAmount: 150,
+        }),
+        createMockMolecule({
+          id: 3,
+          mass: 50,
+          actualAmount: null, // No actual amount
+        }),
+      ];
+      const editedRow = allMolecules[0]; // Trigger calculation
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+
+      expect(result.find((m) => m.id === 1)?.actualYield).toBe(80); // 80%
+      expect(result.find((m) => m.id === 2)?.actualYield).toBe(75); // 75%
+      expect(result.find((m) => m.id === 3)?.actualYield).toBeNull(); // No actual amount
+    });
+
+    test("recalculates yield after stoichiometric calculations update theoretical mass", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          role: "reactant",
+          coefficient: 1,
+          moles: 2,
+          molecularWeight: 100,
+          mass: 200,
+          limitingReagent: true,
+        }),
+        createMockMolecule({
+          id: 2,
+          role: "product",
+          coefficient: 1,
+          moles: 0,
+          molecularWeight: 150,
+          mass: null,
+          actualAmount: 225, // Actual amount known
+        }),
+      ];
+      const editedRow = allMolecules[0]; // Trigger stoichiometric calculation
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+      const product = result.find((m) => m.id === 2);
+
+      // Stoichiometric calculation should set theoretical mass to 2 * 150 = 300
+      expect(product?.mass).toBe(300);
+      // Yield should be calculated as 225/300 * 100 = 75%
+      expect(product?.actualYield).toBe(75);
+    });
+
+    test("handles edge case with zero theoretical mass", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          mass: 0,
+          actualAmount: 75,
+        }),
+      ];
+      const editedRow = allMolecules[0];
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+      const updatedMolecule = result.find((m) => m.id === 1);
+
+      expect(updatedMolecule?.actualYield).toBeNull();
+    });
+
+    test("handles edge case with zero actual amount", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          mass: 100,
+          actualAmount: 0,
+        }),
+      ];
+      const editedRow = allMolecules[0];
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+      const updatedMolecule = result.find((m) => m.id === 1);
+
+      expect(updatedMolecule?.actualYield).toBeNull();
+    });
+
+    test("rounds yield to 2 decimal places", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          mass: 3,
+          actualAmount: 1, // 1/3 = 33.333...%
+        }),
+      ];
+      const editedRow = allMolecules[0];
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+      const updatedMolecule = result.find((m) => m.id === 1);
+
+      expect(updatedMolecule?.actualYield).toBe(33.33);
     });
   });
 });
