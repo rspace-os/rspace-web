@@ -178,8 +178,12 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
         // grab the path from CSV
         String filePath = csvRecords.getStringFieldValue(currentRecordDTO.getRecordId(), fieldName);
         if (StringUtils.isNotBlank(filePath)) {
+          if (filePath.contains(";")) {
+            filePath = filePath.split(";")[0]; // only supports 1 attachement per field
+          }
           // grab the file from the ZIP and attach it to the extractor
-          typeExtractor.setFieldValue(filesInRecords.get(filePath));
+          typeExtractor.setFieldValue(
+              filesInRecords.get(filePath)); // file path could be a list of path
           ((FieldmarkFileExtractor) typeExtractor).setFileName(filePath);
         }
       }
