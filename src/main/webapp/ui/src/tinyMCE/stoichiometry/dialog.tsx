@@ -17,8 +17,10 @@ import Stack from "@mui/material/Stack";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import { useConfirm } from "../../components/ConfirmProvider";
+import ConfirmProvider from "../../components/ConfirmProvider";
 
-export default function StandaloneDialog({
+function StandaloneDialogInner({
   open,
   onClose,
   chemId,
@@ -32,8 +34,9 @@ export default function StandaloneDialog({
   onTableCreated?: () => void;
 }): React.ReactNode {
   const titleId = React.useId();
-  const { calculateStoichiometry } = useChemicalImport();
+  const { calculateStoichiometry, deleteStoichiometry } = useChemicalImport();
   const { addAlert } = React.useContext(AlertContext);
+  const confirm = useConfirm();
   const tableRef = React.useRef<StoichiometryTableRef>(null);
   const [showTable, setShowTable] = React.useState(hasStoichiometryTable);
   const [loading, setLoading] = React.useState(false);
@@ -114,6 +117,27 @@ export default function StandaloneDialog({
     })();
   };
 
+  const handleDelete = async () => {
+    if (!chemId) return;
+
+    const shouldDelete = await confirm(
+      "Delete Stoichiometry Table",
+      "Are you sure you want to delete this stoichiometry table? This action cannot be undone.",
+      "Delete",
+      "Cancel",
+    );
+
+    if (shouldDelete) {
+      try {
+        await deleteStoichiometry({ chemId });
+        setShowTable(false);
+        setHasTableChanges(false);
+      } catch (e) {
+        console.error("Delete failed", e);
+      }
+    }
+  };
+
   return (
     <Dialog
       open={actuallyOpen}
@@ -175,8 +199,21 @@ export default function StandaloneDialog({
             Save Changes
           </ValidatingSubmitButton>
         )}
+        {showTable && (
+          <Button onClick={handleDelete} variant="outlined" color="error">
+            Delete
+          </Button>
+        )}
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
+  );
+}
+
+export default function StandaloneDialog(props: React.ComponentProps<typeof StandaloneDialogInner>): React.ReactNode {
+  return (
+    <ConfirmProvider>
+      <StandaloneDialogInner {...props} />
+    </ConfirmProvider>
   );
 }
