@@ -14,10 +14,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.ApiAvailabilityHandler;
-import com.researchspace.service.SystemPropertyName;
-import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserConnectionManager;
-import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -38,8 +35,6 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
   private User user;
   private String apiKey;
   private @Autowired UserConnectionManager userConnectionManager;
-  private @Autowired SystemPropertyPermissionManager systemPropertyManager;
-  private @Autowired DataCiteConnector dataCiteConnector;
   private @Autowired ApiAvailabilityHandler apiHandler;
 
   @Before
@@ -57,7 +52,6 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
     userConnectionManager.save(actualConnection);
 
     apiHandler.setDataCiteConnector(new DataCiteConnectorDummy());
-    systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.INVENTORY_AVAILABLE);
   }
 
   @Test
