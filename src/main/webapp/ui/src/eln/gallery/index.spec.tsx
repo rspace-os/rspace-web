@@ -45,6 +45,11 @@ const feature = test.extend<{
     await use({
       "the user taps on the 'Chemistry' section": async () => {
         await page.getByRole("button", { name: "Chemistry" }).click();
+        await expect(
+          page
+            .getByRole("navigation", { name: "Breadcrumbs" })
+            .getByRole("button", { name: "Chemistry" }),
+        ).toBeVisible();
       },
     });
   },

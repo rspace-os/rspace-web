@@ -67,6 +67,7 @@ const docLinks: { [name: string]: URL } = {
   teams: mkDocLink("i95u9itfgu"),
   zenodo: mkDocLink("8i37k8kjqz"),
   tags: mkDocLink("/8ujmvpa1no"),
+  changelog: mkDocLink("mx11qvqg0i"),
   dmponline: mkDocLink("pd84qoylzy"),
   taggingUsers: mkDocLink("zw6o5uh4qv"),
   irods: mkDocLink("xt21074dln"),

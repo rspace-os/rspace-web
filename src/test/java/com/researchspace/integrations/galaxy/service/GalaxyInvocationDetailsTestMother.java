@@ -17,8 +17,9 @@ public class GalaxyInvocationDetailsTestMother {
     wir.setState(state);
     GalaxyInvocationDetails gid = new GalaxyInvocationDetails();
     gid.setInvocation(wir);
-    gid.setDataUsedInInvocation(List.of(used));
+    gid.setDataSetCollectionsUsedInInvocation(List.of(used));
     gid.setWorkflowName(name);
+    gid.setState(state);
     return gid;
   }
 }

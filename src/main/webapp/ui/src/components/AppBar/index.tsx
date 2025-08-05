@@ -64,6 +64,8 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import useWhoAmI from "@/api/useWhoAmI";
 import { Person } from "@/stores/definitions/Person";
+import AboutRSpaceDialog from "./AboutRSpaceDialog";
+import InfoIcon from "@mui/icons-material/Info";
 
 declare global {
   interface Window {
@@ -346,6 +348,7 @@ function GalleryAppBar({
   }
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
     React.useState<null | HTMLElement>(null);
+  const [aboutDialogOpen, setAboutDialogOpen] = React.useState(false);
   const leftClipId = React.useId();
   const rightClipId = React.useId();
 
@@ -871,6 +874,15 @@ function GalleryAppBar({
                     setAccountMenuAnchorEl(null);
                   }}
                 />
+                <AccentMenuItem
+                  title="About RSpace"
+                  avatar={<InfoIcon />}
+                  compact
+                  onClick={() => {
+                    setAccountMenuAnchorEl(null);
+                    setAboutDialogOpen(true);
+                  }}
+                />
                 {FetchingData.getSuccessValue(uiNavigationData)
                   .map(({ operatedAs }) => operatedAs)
                   .flatMap(Parsers.isTrue)
@@ -944,6 +956,10 @@ function GalleryAppBar({
                   ))
                   .orElse(null)}
               </Menu>
+              <AboutRSpaceDialog
+                open={aboutDialogOpen}
+                onClose={() => setAboutDialogOpen(false)}
+              />
             </Box>
           </>
         )}

@@ -111,6 +111,12 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${deployment.cloud}")
   private String cloudDeployment;
 
+  @Value("${deployment.description}")
+  private String deploymentDescription;
+
+  @Value("${deployment.helpEmail}")
+  private String deploymentHelpEmail;
+
   /**
    * Service to return the value of property stored in the deployment.properties file. Uses a
    * whitelist strategy to only return properties that should be exposed.
@@ -189,6 +195,10 @@ public class DeploymentPropertiesController extends BaseController {
         return chemistryProvider;
       case "deployment.cloud":
         return cloudDeployment;
+      case "deployment.description":
+        return deploymentDescription;
+      case "deployment.helpEmail":
+        return deploymentHelpEmail;
       default:
         throw new IllegalArgumentException("No property available for name: " + propertyName);
     }
@@ -261,6 +271,8 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("server.urls.prefix", baseURL);
     properties.put("aspose.enabled", String.valueOf(isAsposeEnabled()));
     properties.put("chemistry.provider", chemistryProvider);
+    properties.put("deployment.description", deploymentDescription);
+    properties.put("deployment.helpEmail", deploymentHelpEmail);
 
     return properties;
   }
