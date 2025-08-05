@@ -14,7 +14,7 @@ import StoichiometryTable, { type StoichiometryTableRef } from "./table";
 import useChemicalImport from "../../hooks/api/useChemicalImport";
 import { doNotAwait } from "../../util/Util";
 import Stack from "@mui/material/Stack";
-import { useIntegrationIsAllowedAndEnabled } from "../../common/integrationHelpers";
+import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
@@ -57,7 +57,7 @@ export default function StandaloneDialog({
               variant: "error",
               title: "Error Checking Chemistry Integration",
               message: `Unable to verify chemistry integration status: ${error}. Please try again later.`,
-            })
+            }),
           );
         },
         success: (isEnabled) => {
@@ -72,8 +72,9 @@ export default function StandaloneDialog({
               mkAlert({
                 variant: "error",
                 title: "Chemistry Integration Disabled",
-                message: "The chemistry integration is not enabled. Please contact your administrator to enable it.",
-              })
+                message:
+                  "The chemistry integration is not enabled. Please contact your administrator to enable it.",
+              }),
             );
           }
         },

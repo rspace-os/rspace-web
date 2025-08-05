@@ -14,7 +14,7 @@ import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import Box from "@mui/material/Box";
 import Alert from "@mui/material/Alert";
-import { useIntegrationIsAllowedAndEnabled } from "../common/integrationHelpers";
+import { useIntegrationIsAllowedAndEnabled } from "../hooks/api/integrationHelpers";
 import * as FetchingData from "../util/fetchingData";
 
 const useStyles = makeStyles()((theme) => ({
@@ -27,7 +27,7 @@ const useStyles = makeStyles()((theme) => ({
 export default function PreviewInfo(props) {
   const { classes } = useStyles();
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
-  
+
   useEffect(() => {
     document.dispatchEvent(new Event("images-replaced"));
   }, []);
@@ -84,16 +84,17 @@ export default function PreviewInfo(props) {
                             </Alert>
                           </Box>
                         ),
-                        success: (isEnabled) => 
+                        success: (isEnabled) =>
                           isEnabled ? (
                             <StoichiometryTable chemId={props.item.id} />
                           ) : (
                             <Box p={2}>
                               <Alert severity="warning">
-                                Chemistry integration is not enabled. Please contact your administrator to enable it.
+                                Chemistry integration is not enabled. Please
+                                contact your administrator to enable it.
                               </Alert>
                             </Box>
-                          )
+                          ),
                       })}
                     </Box>
                   </Alerts>

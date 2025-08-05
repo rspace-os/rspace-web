@@ -128,10 +128,12 @@ export function useIntegrationIsAllowedAndEnabled(
     [],
   );
 
-  if (loading) return { tag: "loading" };
-  if (integrationState === null) return { tag: "error", error };
-  return {
-    tag: "success",
-    value: integrationState.enabled && integrationState.available,
-  };
+  return React.useMemo(() => {
+    if (loading) return { tag: "loading" };
+    if (integrationState === null) return { tag: "error", error };
+    return {
+      tag: "success",
+      value: integrationState.enabled && integrationState.available,
+    };
+  }, [loading, error, integrationState]);
 }
