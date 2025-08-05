@@ -177,7 +177,7 @@ function StandaloneDialogInner({
           <Stack spacing={2} flexWrap="nowrap">
             <Box>
               <Typography variant="body2">
-                Double-click on Mass, Moles, or Notes to edit.
+                Double-click on Mass, Moles, Actual Mass, or Notes to edit. Select limiting reagent by clicking the radio button. Actual Moles and Yield are calculated automatically.
               </Typography>
               <StoichiometryTable
                 ref={tableRef}

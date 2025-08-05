@@ -12,7 +12,10 @@ import Chip from "@mui/material/Chip";
 import Radio from "@mui/material/Radio";
 import MenuItem from "@mui/material/MenuItem";
 import { lighten, useTheme } from "@mui/material/styles";
-import { calculateUpdatedMolecules } from "./calculations";
+import {
+  calculateUpdatedMolecules,
+  calculateActualMoles,
+} from "./calculations";
 import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
@@ -338,6 +341,45 @@ const StoichiometryTable = React.forwardRef<
             return "stoichiometry-disabled-cell";
           }
           return "";
+        },
+      },
+    ),
+    DataGridColumn.newColumnWithFieldName<"actualAmount", StoichiometryMolecule>(
+      "actualAmount",
+      {
+        headerName: "Actual Mass (g)",
+        flex: 1,
+        editable: editable,
+        type: "number",
+        renderCell: (params) => params.value ?? <>&mdash;</>,
+      },
+    ),
+    DataGridColumn.newColumnWithValueGetter<"actualMoles", StoichiometryMolecule, number | null>(
+      "actualMoles",
+      (row: StoichiometryMolecule) => calculateActualMoles(
+        row.actualAmount,
+        row.molecularWeight,
+      ),
+      {
+        headerName: "Actual Moles (mol)",
+        flex: 1,
+        type: "number",
+        editable: false,
+        renderCell: (params) => {
+          return params.value !== null ? params.value : <>&mdash;</>;
+        },
+      },
+    ),
+    DataGridColumn.newColumnWithFieldName<"actualYield", StoichiometryMolecule>(
+      "actualYield",
+      {
+        headerName: "Yield (%)",
+        flex: 1,
+        type: "number",
+        editable: false,
+        renderCell: (params) => {
+          const value = params.value;
+          return value !== null && value !== undefined ? `${value}%` : <>&mdash;</>;
         },
       },
     ),

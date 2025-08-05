@@ -1,6 +1,32 @@
 import { type StoichiometryMolecule } from "../../hooks/api/useStoichiometry";
 
 /**
+ * Calculates actual moles from actual amount (mass in grams) and molecular weight.
+ */
+export function calculateActualMoles(
+  actualAmount: number | null,
+  molecularWeight: number | null,
+): number | null {
+  if (!actualAmount || !molecularWeight || actualAmount <= 0 || molecularWeight <= 0) {
+    return null;
+  }
+  return Number((actualAmount / molecularWeight).toFixed(6));
+}
+
+/**
+ * Calculates yield percentage based on actual mass vs theoretical mass.
+ */
+export function calculateYield(
+  actualAmount: number | null,
+  theoreticalMass: number | null,
+): number | null {
+  if (!actualAmount || !theoreticalMass || actualAmount <= 0 || theoreticalMass <= 0) {
+    return null;
+  }
+  return Number(((actualAmount / theoreticalMass) * 100).toFixed(2));
+}
+
+/**
  * Calculates updated molecules based on stoichiometric relationships.
  * Handles mass-mole conversions, limiting reagent selection, and
  * stoichiometric calculations for all molecules in a reaction.
@@ -19,6 +45,7 @@ export function calculateUpdatedMolecules(
   editedMolecule.notes = editedRow.notes;
   editedMolecule.coefficient = editedRow.coefficient;
   editedMolecule.limitingReagent = editedRow.limitingReagent;
+  editedMolecule.actualAmount = editedRow.actualAmount;
 
   if (editedMolecule.molecularWeight && editedMolecule.molecularWeight > 0) {
     const originalMolecule = allMolecules.find((m) => m.id === editedRow.id);
@@ -84,6 +111,15 @@ export function calculateUpdatedMolecules(
       }
     });
   }
+
+  // Calculate yield for all molecules that have actualAmount
+  updatedMolecules.forEach((molecule) => {
+    if (molecule.actualAmount && molecule.mass) {
+      molecule.actualYield = calculateYield(molecule.actualAmount, molecule.mass);
+    } else {
+      molecule.actualYield = null;
+    }
+  });
 
   return updatedMolecules;
 }
