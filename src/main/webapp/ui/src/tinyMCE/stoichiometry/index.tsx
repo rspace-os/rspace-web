@@ -47,6 +47,7 @@ declare const tinymce: {
   activeEditor: Editor;
 };
 
+
 class StoichiometryPlugin {
   constructor(editor: Editor) {
     function* renderDialog(

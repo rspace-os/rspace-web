@@ -14,6 +14,9 @@ import StoichiometryTable, { type StoichiometryTableRef } from "./table";
 import useChemicalImport from "../../hooks/api/useChemicalImport";
 import { doNotAwait } from "../../util/Util";
 import Stack from "@mui/material/Stack";
+import { useIntegrationIsAllowedAndEnabled } from "../../common/integrationHelpers";
+import * as FetchingData from "../../util/fetchingData";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
 export default function StandaloneDialog({
   open,
@@ -30,19 +33,55 @@ export default function StandaloneDialog({
 }): React.ReactNode {
   const titleId = React.useId();
   const { calculateStoichiometry } = useChemicalImport();
+  const { addAlert } = React.useContext(AlertContext);
   const tableRef = React.useRef<StoichiometryTableRef>(null);
   const [showTable, setShowTable] = React.useState(hasStoichiometryTable);
   const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [hasTableChanges, setHasTableChanges] = React.useState(false);
+  const [actuallyOpen, setActuallyOpen] = React.useState(false);
+  const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
 
   React.useEffect(() => {
     if (open) {
-      setShowTable(hasStoichiometryTable);
-      setLoading(false);
-      setHasTableChanges(false);
+      // Check chemistry integration when dialog is requested to open
+      FetchingData.match(chemistryStatus, {
+        loading: () => {
+          // Don't open dialog while loading
+          setActuallyOpen(false);
+        },
+        error: (error) => {
+          setActuallyOpen(false);
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Error Checking Chemistry Integration",
+              message: `Unable to verify chemistry integration status: ${error}. Please try again later.`,
+            })
+          );
+        },
+        success: (isEnabled) => {
+          if (isEnabled) {
+            setActuallyOpen(true);
+            setShowTable(hasStoichiometryTable);
+            setLoading(false);
+            setHasTableChanges(false);
+          } else {
+            setActuallyOpen(false);
+            addAlert(
+              mkAlert({
+                variant: "error",
+                title: "Chemistry Integration Disabled",
+                message: "The chemistry integration is not enabled. Please contact your administrator to enable it.",
+              })
+            );
+          }
+        },
+      });
+    } else {
+      setActuallyOpen(false);
     }
-  }, [open, hasStoichiometryTable]);
+  }, [open, hasStoichiometryTable, chemistryStatus, addAlert]);
 
   const handleCalculate = () => {
     setLoading(true);
@@ -76,7 +115,7 @@ export default function StandaloneDialog({
 
   return (
     <Dialog
-      open={open}
+      open={actuallyOpen}
       onClose={onClose}
       aria-labelledby={titleId}
       maxWidth="xl"
@@ -87,7 +126,7 @@ export default function StandaloneDialog({
         Stoichiometry Calculator
       </DialogTitle>
       <DialogContent>
-        {open && !showTable && (
+        {actuallyOpen && !showTable && (
           <Box
             display="flex"
             flexDirection="column"
@@ -109,7 +148,7 @@ export default function StandaloneDialog({
             </Button>
           </Box>
         )}
-        {open && showTable && (
+        {actuallyOpen && showTable && (
           <Stack spacing={2} flexWrap="nowrap">
             <Box>
               <Typography variant="body2">

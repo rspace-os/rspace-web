@@ -13,6 +13,9 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import Box from "@mui/material/Box";
+import Alert from "@mui/material/Alert";
+import { useIntegrationIsAllowedAndEnabled } from "../common/integrationHelpers";
+import * as FetchingData from "../util/fetchingData";
 
 const useStyles = makeStyles()((theme) => ({
   wrapper: {
@@ -23,6 +26,8 @@ const useStyles = makeStyles()((theme) => ({
 
 export default function PreviewInfo(props) {
   const { classes } = useStyles();
+  const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
+  
   useEffect(() => {
     document.dispatchEvent(new Event("images-replaced"));
   }, []);
@@ -64,7 +69,32 @@ export default function PreviewInfo(props) {
                         overflow: "hidden",
                       }}
                     >
-                      <StoichiometryTable chemId={props.item.id} />
+                      {FetchingData.match(chemistryStatus, {
+                        loading: () => (
+                          <Box p={2}>
+                            <Alert severity="info">
+                              Checking chemistry integration status...
+                            </Alert>
+                          </Box>
+                        ),
+                        error: (error) => (
+                          <Box p={2}>
+                            <Alert severity="error">
+                              Error checking chemistry integration: {error}
+                            </Alert>
+                          </Box>
+                        ),
+                        success: (isEnabled) => 
+                          isEnabled ? (
+                            <StoichiometryTable chemId={props.item.id} />
+                          ) : (
+                            <Box p={2}>
+                              <Alert severity="warning">
+                                Chemistry integration is not enabled. Please contact your administrator to enable it.
+                              </Alert>
+                            </Box>
+                          )
+                      })}
                     </Box>
                   </Alerts>
                 </ErrorBoundary>
