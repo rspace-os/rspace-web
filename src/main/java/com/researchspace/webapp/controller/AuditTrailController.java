@@ -248,7 +248,7 @@ public class AuditTrailController extends BaseController {
   }
 
   private void addUsers(AuditTrailUISearchConfig searchConfig) {
-    searchConfig.setUsernames(toSet(User.getUsernameesFromMultiUser(searchConfig.getUsers())));
+    searchConfig.setUsernames(toSet(User.getUsernamesFromMultiUser(searchConfig.getUsers())));
   }
 
   private void addGroupUsers(AuditTrailUISearchConfig searchConfig) {
