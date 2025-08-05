@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   @Autowired private SystemPropertyPermissionManager systemPropertyManager;
+
   @Autowired private DataCiteConnector dataCiteConnector;
 
   private static final ServiceOperationResult<String> enabledResult =
@@ -27,7 +28,8 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
     this.systemPropertyManager = systemPropertyManager;
   }
 
-  void setDataCiteConnector(DataCiteConnector dataciteConnector) {
+  @Override
+  public void setDataCiteConnector(DataCiteConnector dataciteConnector) {
     this.dataCiteConnector = dataciteConnector;
   }
 
