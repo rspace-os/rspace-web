@@ -356,10 +356,10 @@ const StoichiometryTable = React.forwardRef<
     ),
     DataGridColumn.newColumnWithValueGetter<"actualMoles", StoichiometryMolecule, number | null>(
       "actualMoles",
-      (row: StoichiometryMolecule) => calculateActualMoles(
-        row.actualAmount,
-        row.molecularWeight,
-      ),
+      (row: StoichiometryMolecule) => calculateActualMoles({
+        actualAmount: row.actualAmount,
+        molecularWeight: row.molecularWeight,
+      }),
       {
         headerName: "Actual Moles (mol)",
         flex: 1,

@@ -661,64 +661,64 @@ describe("calculateUpdatedMolecules", () => {
 describe("calculateActualMoles", () => {
   describe("valid inputs", () => {
     test("calculates actual moles from actual amount and molecular weight", () => {
-      const result = calculateActualMoles(100, 50); // 100g / 50 g/mol
+      const result = calculateActualMoles({ actualAmount: 100, molecularWeight: 50 }); // 100g / 50 g/mol
       expect(result).toBe(2);
     });
 
     test("handles decimal inputs correctly", () => {
-      const result = calculateActualMoles(18.015, 18.015); // Water: 18.015g / 18.015 g/mol
+      const result = calculateActualMoles({ actualAmount: 18.015, molecularWeight: 18.015 }); // Water: 18.015g / 18.015 g/mol
       expect(result).toBe(1);
     });
 
     test("rounds result to 6 decimal places", () => {
-      const result = calculateActualMoles(1, 3); // 1g / 3 g/mol = 0.333333...
+      const result = calculateActualMoles({ actualAmount: 1, molecularWeight: 3 }); // 1g / 3 g/mol = 0.333333...
       expect(result).toBe(0.333333);
     });
 
     test("handles very small numbers", () => {
-      const result = calculateActualMoles(0.001, 100);
+      const result = calculateActualMoles({ actualAmount: 0.001, molecularWeight: 100 });
       expect(result).toBe(0.00001); // 0.001 / 100 = 0.00001
     });
 
     test("handles very large numbers", () => {
-      const result = calculateActualMoles(10000, 1);
+      const result = calculateActualMoles({ actualAmount: 10000, molecularWeight: 1 });
       expect(result).toBe(10000); // 10000 / 1 = 10000
     });
   });
 
   describe("invalid inputs", () => {
     test("returns null when actualAmount is null", () => {
-      const result = calculateActualMoles(null, 50);
+      const result = calculateActualMoles({ actualAmount: null, molecularWeight: 50 });
       expect(result).toBeNull();
     });
 
     test("returns null when molecularWeight is null", () => {
-      const result = calculateActualMoles(100, null);
+      const result = calculateActualMoles({ actualAmount: 100, molecularWeight: null });
       expect(result).toBeNull();
     });
 
     test("returns null when both are null", () => {
-      const result = calculateActualMoles(null, null);
+      const result = calculateActualMoles({ actualAmount: null, molecularWeight: null });
       expect(result).toBeNull();
     });
 
     test("returns null when actualAmount is zero", () => {
-      const result = calculateActualMoles(0, 50);
+      const result = calculateActualMoles({ actualAmount: 0, molecularWeight: 50 });
       expect(result).toBeNull();
     });
 
     test("returns null when molecularWeight is zero", () => {
-      const result = calculateActualMoles(100, 0);
+      const result = calculateActualMoles({ actualAmount: 100, molecularWeight: 0 });
       expect(result).toBeNull();
     });
 
     test("returns null when actualAmount is negative", () => {
-      const result = calculateActualMoles(-100, 50);
+      const result = calculateActualMoles({ actualAmount: -100, molecularWeight: 50 });
       expect(result).toBeNull();
     });
 
     test("returns null when molecularWeight is negative", () => {
-      const result = calculateActualMoles(100, -50);
+      const result = calculateActualMoles({ actualAmount: 100, molecularWeight: -50 });
       expect(result).toBeNull();
     });
   });
@@ -727,84 +727,84 @@ describe("calculateActualMoles", () => {
 describe("calculateYield", () => {
   describe("valid inputs", () => {
     test("calculates perfect yield (100%)", () => {
-      const result = calculateYield(50, 50); // actual = theoretical
+      const result = calculateYield({ actualAmount: 50, theoreticalMass: 50 }); // actual = theoretical
       expect(result).toBe(100);
     });
 
     test("calculates partial yield", () => {
-      const result = calculateYield(75, 100); // 75% yield
+      const result = calculateYield({ actualAmount: 75, theoreticalMass: 100 }); // 75% yield
       expect(result).toBe(75);
     });
 
     test("calculates low yield", () => {
-      const result = calculateYield(25, 100); // 25% yield
+      const result = calculateYield({ actualAmount: 25, theoreticalMass: 100 }); // 25% yield
       expect(result).toBe(25);
     });
 
     test("handles over 100% yield (theoretical possibility in some reactions)", () => {
-      const result = calculateYield(120, 100); // 120% yield
+      const result = calculateYield({ actualAmount: 120, theoreticalMass: 100 }); // 120% yield
       expect(result).toBe(120);
     });
 
     test("rounds result to 2 decimal places", () => {
-      const result = calculateYield(33.333, 100); // 33.333%
+      const result = calculateYield({ actualAmount: 33.333, theoreticalMass: 100 });
       expect(result).toBe(33.33);
     });
 
     test("handles decimal inputs correctly", () => {
-      const result = calculateYield(18.015, 36.03); // 50% yield
+      const result = calculateYield({ actualAmount: 18.015, theoreticalMass: 36.03 }); // 50% yield
       expect(result).toBe(50);
     });
 
     test("handles very small numbers", () => {
-      const result = calculateYield(0.001, 0.1); // 1% yield
+      const result = calculateYield({ actualAmount: 0.001, theoreticalMass: 0.1 }); // 1% yield
       expect(result).toBe(1);
     });
 
     test("handles very large numbers", () => {
-      const result = calculateYield(5000, 10000); // 50% yield
+      const result = calculateYield({ actualAmount: 5000, theoreticalMass: 10000 }); // 50% yield
       expect(result).toBe(50);
     });
 
     test("calculates precise fractional yields", () => {
-      const result = calculateYield(1, 3); // 1/3 = 33.333...%
+      const result = calculateYield({ actualAmount: 1, theoreticalMass: 3 }); // 1/3 = 33.333...%
       expect(result).toBe(33.33);
     });
   });
 
   describe("invalid inputs", () => {
     test("returns null when actualAmount is null", () => {
-      const result = calculateYield(null, 100);
+      const result = calculateYield({ actualAmount: null, theoreticalMass: 100 });
       expect(result).toBeNull();
     });
 
     test("returns null when theoreticalMass is null", () => {
-      const result = calculateYield(50, null);
+      const result = calculateYield({ actualAmount: 50, theoreticalMass: null });
       expect(result).toBeNull();
     });
 
     test("returns null when both are null", () => {
-      const result = calculateYield(null, null);
+      const result = calculateYield({ actualAmount: null, theoreticalMass: null });
       expect(result).toBeNull();
     });
 
     test("returns null when actualAmount is zero", () => {
-      const result = calculateYield(0, 100);
+      const result = calculateYield({ actualAmount: 0, theoreticalMass: 100 });
       expect(result).toBeNull();
     });
 
     test("returns null when theoreticalMass is zero", () => {
-      const result = calculateYield(50, 0);
+      const result = calculateYield({ actualAmount: 50, theoreticalMass: 0 });
       expect(result).toBeNull();
     });
 
     test("returns null when actualAmount is negative", () => {
-      const result = calculateYield(-50, 100);
+      const result = calculateYield({ actualAmount: -50, theoreticalMass: 100 });
       expect(result).toBeNull();
     });
 
     test("returns null when theoreticalMass is negative", () => {
-      const result = calculateYield(50, -100);
+      const result = calculateYield({ actualAmount: 50, theoreticalMass: -100 });
       expect(result).toBeNull();
     });
   });
