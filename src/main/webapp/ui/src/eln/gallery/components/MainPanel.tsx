@@ -1,4 +1,5 @@
 import React from "react";
+import { useLandmark } from "../../../components/LandmarksContext";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -98,7 +99,7 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 function useIsBeingMoved(): (
   file: GalleryFile,
   // eslint-disable-next-line no-undefined -- undefined in types is fine
-  fileBeingMoved: GalleryFile | null | typeof undefined
+  fileBeingMoved: GalleryFile | null | typeof undefined,
 ) => boolean {
   const selection = useGallerySelection();
   return (file, fileBeingMoved) => {
@@ -143,7 +144,7 @@ const StyledBreadcrumb = styled(
   >((props, ref) => (
     // @ts-expect-error For some reason the component prop is not recognized
     <Chip ref={ref} {...props} clickable component={ReactRouterLink} />
-  ))
+  )),
 )(({ theme }) => ({
   height: theme.spacing(3.5),
   color: alpha(theme.palette.primary.contrastText, 0.85),
@@ -171,7 +172,7 @@ const DragOverlayContents = styled(
     if (dndContext.active) {
       if (
         selection.includes(
-          dndContext.active?.data.current?.fileBeingMoved as GalleryFile
+          dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
         )
       )
         numberBeingMoved = selection.size;
@@ -185,7 +186,7 @@ const DragOverlayContents = styled(
         className={className}
       ></Badge>
     );
-  })
+  }),
 )(({ theme }) => ({
   width: "100%",
   height: "100%",
@@ -379,16 +380,16 @@ const Path = observer(
                   selection
                     .asSet()
                     .only.map((f) => f.path)
-                    .orElse(path)
+                    .orElse(path),
                 )
                   .map(({ id }) => `/${idToString(id).elseThrow()}`)
-                  .orElse(`?mediaType=${section}`)}`
+                  .orElse(`?mediaType=${section}`)}`,
               );
               addAlert(
                 mkAlert({
                   message: "Link copied to clipboard successfully!",
                   variant: "success",
-                })
+                }),
               );
             } catch (e) {
               console.error(e);
@@ -397,7 +398,7 @@ const Path = observer(
                   message:
                     "Failed to copy link to clipboard. Please try again.",
                   variant: "error",
-                })
+                }),
               );
             }
           })}
@@ -407,16 +408,16 @@ const Path = observer(
             backgroundColor: (theme) =>
               alpha(
                 lighten((theme.palette.primary as { main: string }).main, 0.1),
-                0.6
+                0.6,
               ),
             "&:hover": {
               backgroundColor: (theme) =>
                 alpha(
                   lighten(
                     (theme.palette.primary as { main: string }).main,
-                    0.1
+                    0.1,
                   ),
-                  0.85
+                  0.85,
                 ),
             },
             padding: "2px",
@@ -425,7 +426,7 @@ const Path = observer(
         />
       </Stack>
     );
-  }
+  },
 );
 
 const StyledMenu = styled(Menu)(({ open }) => ({
@@ -462,7 +463,7 @@ const FileCard = styled(
           onFocus: () => void;
           onBlur: () => void;
         },
-        ref: React.ForwardedRef<HTMLElement>
+        ref: React.ForwardedRef<HTMLElement>,
       ) => {
         const NAME_STYLES = {
           LINE_HEIGHT: 1.5,
@@ -502,7 +503,7 @@ const FileCard = styled(
             !file.isFolder ||
             isBeingMoved(
               file,
-              dndContext.active?.data.current?.fileBeingMoved as GalleryFile
+              dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
             ) ||
             file.id === null,
           data: {
@@ -558,7 +559,7 @@ const FileCard = styled(
             dndContext.active?.data.current?.fileBeingMoved as
               | GalleryFile
               | null
-              | typeof undefined
+              | typeof undefined,
           )
             ? {
                 border: "2px solid white",
@@ -571,7 +572,7 @@ const FileCard = styled(
         const inGroupBeingDraggedStyle =
           Boolean(dndContext.active?.data.current?.fileBeingMoved) &&
           (selection.includes(
-            dndContext.active?.data.current?.fileBeingMoved as GalleryFile
+            dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
           )
             ? selection.includes(file)
             : file.id ===
@@ -634,7 +635,7 @@ const FileCard = styled(
                 setDndDebounce(
                   setTimeout(() => {
                     listeners?.onMouseDown(...args);
-                  }, 500)
+                  }, 500),
                 );
               }}
               onMouseUp={() => {
@@ -644,7 +645,7 @@ const FileCard = styled(
                 setDndDebounce(
                   setTimeout(() => {
                     listeners?.onTouchStart(...args);
-                  }, 500)
+                  }, 500),
                 );
               }}
               onTouchEnd={() => {
@@ -673,7 +674,7 @@ const FileCard = styled(
                  * each row of cards
                  */
                 transitionDelay: window.matchMedia(
-                  "(prefers-reduced-motion: reduce)"
+                  "(prefers-reduced-motion: reduce)",
                 ).matches
                   ? "0s"
                   : `${
@@ -801,7 +802,7 @@ const FileCard = styled(
                             : {}),
                           fontSize: "0.8125rem",
                           fontWeight: window.matchMedia(
-                            "(prefers-contrast: more)"
+                            "(prefers-contrast: more)",
                           ).matches
                             ? 700
                             : 400,
@@ -832,9 +833,9 @@ const FileCard = styled(
             </Card>
           </Fade>
         );
-      }
-    )
-  )
+      },
+    ),
+  ),
 )(({ selected, theme }) => ({
   height: "150px",
   "& .versionIndicator": {
@@ -867,7 +868,7 @@ const FileCard = styled(
             : `${SELECTED_OR_FOCUS_BORDER} !important`,
           backgroundColor: `${alpha(
             theme.palette.callToAction.background,
-            0.05
+            0.05,
           )} !important`,
         },
         backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
@@ -964,7 +965,7 @@ const GridView = observer(
      * that Id.
      */
     const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
-      null
+      null,
     );
 
     if (listing.tag === "empty")
@@ -982,7 +983,7 @@ const GridView = observer(
               <PlaceholderLabel>
                 {listing.refreshing
                   ? "Refreshing..."
-                  : listing.reason ?? "There are no folders."}
+                  : (listing.reason ?? "There are no folders.")}
               </PlaceholderLabel>
             </div>
           </Fade>
@@ -992,7 +993,6 @@ const GridView = observer(
       <>
         <div
           role="grid"
-          tabIndex={0}
           aria-label="grid view of files"
           aria-multiselectable="true"
           style={{
@@ -1045,7 +1045,7 @@ const GridView = observer(
             if (e.shiftKey) {
               if (shiftOriginFileId !== null) {
                 const indexOfShiftOriginFile = listing.list.findIndex(
-                  (f) => f.id === shiftOriginFileId
+                  (f) => f.id === shiftOriginFileId,
                 );
                 const shiftOriginX = indexOfShiftOriginFile % cols;
                 const shiftOriginY = Math.floor(indexOfShiftOriginFile / cols);
@@ -1074,8 +1074,8 @@ const GridView = observer(
 
             setShiftOriginFileId(
               e.shiftKey
-                ? shiftOriginFileId ?? listing.list[y * cols + x].id
-                : listing.list[y * cols + x].id
+                ? (shiftOriginFileId ?? listing.list[y * cols + x].id)
+                : listing.list[y * cols + x].id,
             );
             setTabIndexCoord({ x, y });
           }}
@@ -1118,7 +1118,7 @@ const GridView = observer(
                       if (e.shiftKey) {
                         if (shiftOriginFileId === null) return;
                         const indexOfShiftOriginFile = listing.list.findIndex(
-                          (f) => f.id === shiftOriginFileId
+                          (f) => f.id === shiftOriginFileId,
                         );
                         /*
                          * if shiftOriginFileId is an Id of a file that has been
@@ -1133,7 +1133,7 @@ const GridView = observer(
                         };
                         const shiftOriginX = indexOfShiftOriginFile % cols;
                         const shiftOriginY = Math.floor(
-                          indexOfShiftOriginFile / cols
+                          indexOfShiftOriginFile / cols,
                         );
                         const toSelect = listing.list.filter((_file, i) => {
                           const coord = {
@@ -1222,7 +1222,7 @@ const GridView = observer(
                   />
                 ))}
               </div>
-            )
+            ),
           )}
         </div>
         {listing.loadMore
@@ -1234,7 +1234,7 @@ const GridView = observer(
           .orElse(null)}
       </>
     );
-  }
+  },
 );
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
@@ -1357,7 +1357,7 @@ const PathAndSearch = observer(
         )}
       </Grid>
     );
-  }
+  },
 );
 
 type GalleryMainPanelArgs = {
@@ -1398,6 +1398,7 @@ function GalleryMainPanel({
   appliedSearchTerm,
   setAppliedSearchTerm,
 }: GalleryMainPanelArgs): React.ReactNode {
+  const mainContentRef = useLandmark("Files Listing");
   const viewportDimensions = useViewportDimensions();
   const { uploadFiles } = useGalleryActions();
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -1410,7 +1411,7 @@ function GalleryMainPanel({
             mkAlert({
               variant: "error",
               message: "Cannot drop files to upload here.",
-            })
+            }),
           );
           throw new Error("Unknown folder id");
         });
@@ -1432,7 +1433,7 @@ function GalleryMainPanel({
     PREFERENCES.GALLERY_VIEW_MODE,
     {
       defaultValue: "grid",
-    }
+    },
   );
   const [sortMenuAnchorEl, setSortMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
@@ -1485,6 +1486,7 @@ function GalleryMainPanel({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
+      ref={mainContentRef}
     >
       <DndContext
         sensors={[mouseSensor, touchSensor, keyboardSensor]}
@@ -1513,7 +1515,7 @@ function GalleryMainPanel({
           void moveFiles(
             selectedSection,
             event.over.data.current.destination as Destination,
-            filesBeingMoved
+            filesBeingMoved,
           ).then(() => {
             void refreshListing();
           });
@@ -1638,13 +1640,13 @@ function GalleryMainPanel({
                     [
                       () => sortOrder === "ASC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted from A to Z)"
+                        "(Sorted from A to Z)",
                       )}`,
                     ],
                     [
                       () => sortOrder === "DESC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted from Z to A)"
+                        "(Sorted from Z to A)",
                       )}`,
                     ],
                   ])()}`}
@@ -1690,13 +1692,13 @@ function GalleryMainPanel({
                     [
                       () => sortOrder === "ASC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted oldest first)"
+                        "(Sorted oldest first)",
                       )}`,
                     ],
                     [
                       () => sortOrder === "DESC",
                       ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
-                        "(Sorted newest first)"
+                        "(Sorted newest first)",
                       )}`,
                     ],
                   ])()}`}

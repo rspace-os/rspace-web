@@ -317,6 +317,7 @@ type GalleryAppBarArgs = {
     supportsReducedMotion?: boolean;
     supportsHighContrastMode?: boolean;
     supports2xZoom?: boolean;
+    supportsSkipToContent?: boolean;
   };
 
   /*

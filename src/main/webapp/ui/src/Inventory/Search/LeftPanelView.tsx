@@ -21,6 +21,7 @@ import Search from "./Search";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { hasLocation } from "../../stores/models/HasLocation";
 import * as Parsers from "../../util/parsers";
+import { useLandmark } from "../../components/LandmarksContext";
 
 const useStyles = makeStyles<{ alwaysVisibleSidebar: boolean }>()(
   (theme, { alwaysVisibleSidebar }) => ({
@@ -37,7 +38,7 @@ const useStyles = makeStyles<{ alwaysVisibleSidebar: boolean }>()(
       flexDirection: "column",
       flexGrow: 1,
     },
-  })
+  }),
 );
 
 function LeftPanelView(): React.ReactNode {
@@ -48,6 +49,7 @@ function LeftPanelView(): React.ReactNode {
   const { classes } = useStyles({
     alwaysVisibleSidebar: uiStore.alwaysVisibleSidebar,
   });
+  const searchNavRef = useLandmark("Search");
 
   const results = searchStore.search.filteredResults.map(getSavedGlobalId);
 
@@ -72,9 +74,9 @@ function LeftPanelView(): React.ReactNode {
         .map((recordWithLocation) =>
           recordWithLocation.allParentContainers
             .map(({ globalId }) => globalId)
-            .some((g) => (results as Array<string | null>).includes(g))
+            .some((g) => (results as Array<string | null>).includes(g)),
         )
-        .orElse(false)
+        .orElse(false),
     );
   }, [searchStore.search.filteredResults, searchStore.search.activeResult]);
 
@@ -85,7 +87,7 @@ function LeftPanelView(): React.ReactNode {
     const inContainer =
       typeof searchStore.search.fetcher.parentGlobalId === "string"
         ? globalIdPatterns.container.test(
-            searchStore.search.fetcher.parentGlobalId
+            searchStore.search.fetcher.parentGlobalId,
           )
         : false;
     setInContainerSearch(inContainer);
@@ -137,18 +139,21 @@ function LeftPanelView(): React.ReactNode {
     navigate(
       `/inventory/search?${searchStore.search.fetcher
         .generateQuery(params)
-        .toString()}`
+        .toString()}`,
     );
   };
 
   return (
     <Grid
+      ref={searchNavRef as React.RefObject<HTMLDivElement>}
       container
       direction="column"
       wrap="nowrap"
       className={classes.grid}
       spacing={1}
       data-testid="MainSearch"
+      role="navigation"
+      aria-label="Search and Navigation"
     >
       <Grid item className={classes.searchbarWrapper}>
         <Search

@@ -15,6 +15,7 @@ import { BrowserRouter } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Description, LocalGalleryFile } from "../useGalleryListing";
 import Alerts from "@/components/Alerts/Alerts";
+import { LandmarksProvider } from "@/components/LandmarksContext";
 import OpenFolderProvider from "./OpenFolderProvider";
 import { GallerySelection } from "../useGallerySelection";
 import { incrementForever, take } from "@/util/iterators";
@@ -67,8 +68,9 @@ export function BunchOfImages(): React.ReactNode {
                 <UiPreferences>
                   <DisableDragAndDropByDefault>
                     <Alerts>
-                      <GallerySelection>
-                        <OpenFolderProvider setPath={() => {}}>
+                      <LandmarksProvider>
+                        <GallerySelection>
+                          <OpenFolderProvider setPath={() => {}}>
                           <MainPanel
                             selectedSection="Images"
                             path={[]}
@@ -83,8 +85,9 @@ export function BunchOfImages(): React.ReactNode {
                             appliedSearchTerm=""
                             setAppliedSearchTerm={() => {}}
                           />
-                        </OpenFolderProvider>
-                      </GallerySelection>
+                          </OpenFolderProvider>
+                        </GallerySelection>
+                      </LandmarksProvider>
                     </Alerts>
                   </DisableDragAndDropByDefault>
                 </UiPreferences>
@@ -214,20 +217,21 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
                 <UiPreferences>
                   <DisableDragAndDropByDefault>
                     <Alerts>
-                      <GallerySelection>
-                        <OpenFolderProvider
-                          setPath={(newPath) => {
-                            if (newPath.length === 0) {
-                              setGalleryListing(MOCK_ROOT_WITH_OUTER_FOLDER);
-                              setPath([]);
-                            } else if (newPath.length === 1) {
-                              setGalleryListing(MOCK_OUTER_FOLDER_LISTING);
-                              setPath([
-                                MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0],
-                              ]);
-                            }
-                          }}
-                        >
+                      <LandmarksProvider>
+                        <GallerySelection>
+                          <OpenFolderProvider
+                            setPath={(newPath) => {
+                              if (newPath.length === 0) {
+                                setGalleryListing(MOCK_ROOT_WITH_OUTER_FOLDER);
+                                setPath([]);
+                              } else if (newPath.length === 1) {
+                                setGalleryListing(MOCK_OUTER_FOLDER_LISTING);
+                                setPath([
+                                  MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0],
+                                ]);
+                              }
+                            }}
+                          >
                           <MainPanel
                             selectedSection="Images"
                             path={path}
@@ -245,8 +249,9 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
                             appliedSearchTerm=""
                             setAppliedSearchTerm={() => {}}
                           />
-                        </OpenFolderProvider>
-                      </GallerySelection>
+                          </OpenFolderProvider>
+                        </GallerySelection>
+                      </LandmarksProvider>
                     </Alerts>
                   </DisableDragAndDropByDefault>
                 </UiPreferences>

@@ -19,6 +19,7 @@ const StyledPopover = styled(
 )(({ highContrastMode }) => ({
   "& > .MuiPaper-root": {
     padding: "2px",
+    maxWidth: "500px",
     ...(highContrastMode
       ? {
           border: "2px solid black",
@@ -38,6 +39,11 @@ const StyledPopover = styled(
  * responsive web design means that it should be possible to zoom a large
  * viewport by up to 200%, doubling the size of all of the UI elements.
  *
+ * Additionally, certain pages (Gallery and Inventory) provide skip-to-content
+ * functionality through landmark navigation. This allows users to press the
+ * "Tab" key to reveal skip links that jump directly to main page sections
+ * like navigation, content, and other landmarks for easier navigation.
+ *
  * All of this functionality may not be immediately apparent to the user. As
  * such, this module provides a couple of components that open a popup listing
  * the accessibility functionality provided by this part of the UI, with links
@@ -51,6 +57,7 @@ function AccessibilityTipsPopup({
   supportsHighContrastMode,
   supportsReducedMotion,
   supports2xZoom,
+  supportsSkipToContent,
   anchorOrigin,
   transformOrigin,
   elementType,
@@ -60,6 +67,7 @@ function AccessibilityTipsPopup({
   supportsHighContrastMode: boolean;
   supportsReducedMotion: boolean;
   supports2xZoom: boolean;
+  supportsSkipToContent: boolean;
   anchorOrigin: { vertical: "bottom" | "top"; horizontal: "center" | "left" };
   transformOrigin: { vertical: "top"; horizontal: "center" | "right" };
   elementType: "dialog" | "page";
@@ -164,6 +172,17 @@ function AccessibilityTipsPopup({
             </Link>
           </Alert>
         )}
+        {supportsSkipToContent && (
+          <Alert severity="info" elevation={0} aria-label="Tip">
+            <AlertTitle>
+              This {elementType} supports a skip-to-content menu for easier
+              navigation.
+            </AlertTitle>
+            Press the "Tab" key to access skip links that allow you to jump
+            directly to main page sections like navigation, content, and other
+            landmarks.
+          </Alert>
+        )}
       </Stack>
     </StyledPopover>
   );
@@ -196,6 +215,7 @@ type AccessibilityTipsComponentArgs = {
   supportsHighContrastMode?: boolean;
   supportsReducedMotion?: boolean;
   supports2xZoom?: boolean;
+  supportsSkipToContent?: boolean;
 };
 
 /**
@@ -208,10 +228,16 @@ export function AccessibilityTipsIconButton({
   supportsHighContrastMode,
   supportsReducedMotion,
   supports2xZoom,
+  supportsSkipToContent,
 }: AccessibilityTipsComponentArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
 
-  if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom)
+  if (
+    !supportsHighContrastMode &&
+    !supportsReducedMotion &&
+    !supports2xZoom &&
+    !supportsSkipToContent
+  )
     return null;
 
   return (
@@ -230,6 +256,7 @@ export function AccessibilityTipsIconButton({
         supportsHighContrastMode={supportsHighContrastMode ?? false}
         supportsReducedMotion={supportsReducedMotion ?? false}
         supports2xZoom={supports2xZoom ?? false}
+        supportsSkipToContent={supportsSkipToContent ?? false}
         anchorOrigin={{
           vertical: "bottom",
           horizontal: "center",
@@ -255,13 +282,19 @@ export function AccessibilityTipsMenuItem({
   supportsHighContrastMode,
   supportsReducedMotion,
   supports2xZoom,
+  supportsSkipToContent,
   onClose,
 }: {
   onClose: () => void;
 } & AccessibilityTipsComponentArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
 
-  if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom)
+  if (
+    !supportsHighContrastMode &&
+    !supportsReducedMotion &&
+    !supports2xZoom &&
+    !supportsSkipToContent
+  )
     return null;
 
   return (
@@ -283,6 +316,7 @@ export function AccessibilityTipsMenuItem({
         supportsHighContrastMode={supportsHighContrastMode ?? false}
         supportsReducedMotion={supportsReducedMotion ?? false}
         supports2xZoom={supports2xZoom ?? false}
+        supportsSkipToContent={supportsSkipToContent ?? false}
         anchorOrigin={{
           vertical: "top",
           horizontal: "left",

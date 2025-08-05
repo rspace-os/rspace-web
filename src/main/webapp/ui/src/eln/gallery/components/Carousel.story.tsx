@@ -6,11 +6,13 @@ import { Optional } from "@/util/optional";
 import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
 import { Description, LocalGalleryFile } from "../useGalleryListing";
 import { incrementForever, take } from "@/util/iterators";
+import { LandmarksProvider } from "@/components/LandmarksContext";
 
 export function SimpleCarousel() {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <Carousel
+      <LandmarksProvider>
+        <Carousel
         listing={{
           tag: "list",
           list: [...take(incrementForever(), 8)].map(
@@ -38,7 +40,8 @@ export function SimpleCarousel() {
           loadMore: Optional.empty<() => Promise<void>>(),
           refreshing: false,
         }}
-      />
+        />
+      </LandmarksProvider>
     </ThemeProvider>
   );
 }
