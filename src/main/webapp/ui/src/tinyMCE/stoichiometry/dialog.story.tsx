@@ -31,8 +31,12 @@ export function StoichiometryDialogWithCalculateButtonStory({
 
 export function StoichiometryDialogWithTableStory({
   onChangesUpdate,
+  onSave,
+  onDelete,
 }: {
   onChangesUpdate?: (hasChanges: boolean) => void;
+  onSave?: () => void;
+  onDelete?: () => void;
 } = {}): React.ReactNode {
   const [open, setOpen] = React.useState(true);
 
@@ -45,6 +49,8 @@ export function StoichiometryDialogWithTableStory({
             onClose={() => setOpen(false)}
             chemId={12345}
             hasStoichiometryTable={true}
+            onSave={onSave}
+            onDelete={onDelete}
           />
         </Alerts>
       </ThemeProvider>

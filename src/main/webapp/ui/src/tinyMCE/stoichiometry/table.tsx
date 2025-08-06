@@ -25,6 +25,7 @@ import { DataGridColumn } from "../../util/table";
 
 export interface StoichiometryTableRef {
   save: () => Promise<void>;
+  delete: () => Promise<void>;
 }
 
 const RoleChip = ({ role }: { role: string }) => {
@@ -97,7 +98,8 @@ const StoichiometryTable = React.forwardRef<
   { chemId, editable = false, onChangesUpdate },
   ref,
 ) {
-  const { getStoichiometry, updateStoichiometry } = useStoichiometry();
+  const { getStoichiometry, updateStoichiometry, deleteStoichiometry } =
+    useStoichiometry();
   const theme = useTheme();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -167,6 +169,15 @@ const StoichiometryTable = React.forwardRef<
           stoichiometryId: data.id,
           stoichiometryData: updatedData,
         });
+        onChangesUpdate?.(false);
+      },
+      delete: async () => {
+        if (!data || !data.id) {
+          throw new Error("No stoichiometry data to delete");
+        }
+        await deleteStoichiometry({ stoichiometryId: data.id });
+        setData(null);
+        setAllMolecules([]);
         onChangesUpdate?.(false);
       },
     }),
@@ -344,22 +355,27 @@ const StoichiometryTable = React.forwardRef<
         },
       },
     ),
-    DataGridColumn.newColumnWithFieldName<"actualAmount", StoichiometryMolecule>(
+    DataGridColumn.newColumnWithFieldName<
       "actualAmount",
-      {
-        headerName: "Actual Mass (g)",
-        flex: 1,
-        editable: editable,
-        type: "number",
-        renderCell: (params) => params.value ?? <>&mdash;</>,
-      },
-    ),
-    DataGridColumn.newColumnWithValueGetter<"actualMoles", StoichiometryMolecule, number | null>(
+      StoichiometryMolecule
+    >("actualAmount", {
+      headerName: "Actual Mass (g)",
+      flex: 1,
+      editable: editable,
+      type: "number",
+      renderCell: (params) => params.value ?? <>&mdash;</>,
+    }),
+    DataGridColumn.newColumnWithValueGetter<
       "actualMoles",
-      (row: StoichiometryMolecule) => calculateActualMoles({
-        actualAmount: row.actualAmount,
-        molecularWeight: row.molecularWeight,
-      }),
+      StoichiometryMolecule,
+      number | null
+    >(
+      "actualMoles",
+      (row: StoichiometryMolecule) =>
+        calculateActualMoles({
+          actualAmount: row.actualAmount,
+          molecularWeight: row.molecularWeight,
+        }),
       {
         headerName: "Actual Moles (mol)",
         flex: 1,
@@ -379,7 +395,11 @@ const StoichiometryTable = React.forwardRef<
         editable: false,
         renderCell: (params) => {
           const value = params.value;
-          return value !== null && value !== undefined ? `${value}%` : <>&mdash;</>;
+          return value !== null && value !== undefined ? (
+            `${value}%`
+          ) : (
+            <>&mdash;</>
+          );
         },
       },
     ),

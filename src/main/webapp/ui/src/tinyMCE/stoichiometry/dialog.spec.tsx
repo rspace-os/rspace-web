@@ -41,6 +41,36 @@ const createOnChangesUpdateSpy = () => {
   };
 };
 
+const createOnSaveSpy = () => {
+  let called = false;
+
+  const handler = () => {
+    called = true;
+  };
+
+  const hasBeenCalled = () => called;
+
+  return {
+    handler,
+    hasBeenCalled,
+  };
+};
+
+const createOnDeleteSpy = () => {
+  let called = false;
+
+  const handler = () => {
+    called = true;
+  };
+
+  const hasBeenCalled = () => called;
+
+  return {
+    handler,
+    hasBeenCalled,
+  };
+};
+
 const feature = test.extend<{
   Given: {
     "the dialog is open without a stoichiometry table": ({
@@ -48,13 +78,21 @@ const feature = test.extend<{
     }?: {
       onTableCreatedSpy?: ReturnType<typeof createOnTableCreatedSpy>;
     }) => Promise<void>;
-    "the dialog is open with a stoichiometry table": () => Promise<void>;
+    "the dialog is open with a stoichiometry table": ({
+      onSaveSpy,
+      onDeleteSpy,
+    }?: {
+      onSaveSpy?: ReturnType<typeof createOnSaveSpy>;
+      onDeleteSpy?: ReturnType<typeof createOnDeleteSpy>;
+    }) => Promise<void>;
   };
   When: {
     "the user clicks calculate": () => Promise<void>;
     "the user edits a cell in the table": () => Promise<void>;
     "the user changes the limiting reagent": () => Promise<void>;
     "the user saves the changes": () => Promise<void>;
+    "the user clicks the delete button": () => Promise<void>;
+    "the user confirms the deletion": () => Promise<void>;
   };
   Then: {
     "the calculate button is visible": () => Promise<void>;
@@ -67,8 +105,13 @@ const feature = test.extend<{
     "a POST request should have been made to create the stoichiometry table": () => void;
     "the save button should not be visible": () => Promise<void>;
     "the save button should be visible": () => Promise<void>;
+    "a PUT request should have been made to update the stoichiometry table": () => void;
+    "a DELETE request should have been made to delete the stoichiometry table": () => void;
+    "the delete button should be visible": () => Promise<void>;
+    "the confirmation dialog should be displayed": () => Promise<void>;
+    "the table should be hidden": () => Promise<void>;
   };
-  networkRequests: Array<{ url: URL; postData: string | null }>;
+  networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -80,8 +123,15 @@ const feature = test.extend<{
           />,
         );
       },
-      "the dialog is open with a stoichiometry table": async () => {
-        await mount(<StoichiometryDialogWithTableStory />);
+      "the dialog is open with a stoichiometry table": async (spies) => {
+        const onSaveSpy = spies?.onSaveSpy;
+        const onDeleteSpy = spies?.onDeleteSpy;
+        await mount(
+          <StoichiometryDialogWithTableStory
+            onSave={onSaveSpy?.handler}
+            onDelete={onDeleteSpy?.handler}
+          />,
+        );
       },
     });
   },
@@ -126,6 +176,13 @@ const feature = test.extend<{
       "the user saves the changes": async () => {
         await page.getByRole("button", { name: "Save Changes" }).click();
       },
+      "the user clicks the delete button": async () => {
+        await page.getByRole("button", { name: "Delete" }).click();
+      },
+      "the user confirms the deletion": async () => {
+        const confirmButton = page.getByRole("button", { name: "Delete" });
+        await confirmButton.click();
+      },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -159,6 +216,38 @@ const feature = test.extend<{
       "the save button should be visible": async () => {
         const saveButton = page.getByRole("button", { name: "Save Changes" });
         await expect(saveButton).toBeVisible();
+      },
+      "a PUT request should have been made to update the stoichiometry table":
+        () => {
+          const putRequest = networkRequests.find(
+            (request) =>
+              request.url.pathname.includes("/chemical/stoichiometry") &&
+              request.method === "PUT",
+          );
+          expect(putRequest).toBeDefined();
+        },
+      "a DELETE request should have been made to delete the stoichiometry table":
+        () => {
+          const deleteRequest = networkRequests.find(
+            (request) =>
+              request.url.pathname.includes("/chemical/stoichiometry") &&
+              request.method === "DELETE",
+          );
+          expect(deleteRequest).toBeDefined();
+        },
+      "the delete button should be visible": async () => {
+        const deleteButton = page.getByRole("button", { name: "Delete" });
+        await expect(deleteButton).toBeVisible();
+      },
+      "the confirmation dialog should be displayed": async () => {
+        const confirmDialog = page.getByRole("dialog", {
+          name: /Delete Stoichiometry Table/,
+        });
+        await expect(confirmDialog).toBeVisible();
+      },
+      "the table should be hidden": async () => {
+        const table = page.getByRole("grid");
+        await expect(table).not.toBeVisible();
       },
     });
   },
@@ -284,7 +373,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     },
   };
 
-  // Handle all /chemical/stoichiometry requests (GET, POST, PUT)
+  // Handle all /chemical/stoichiometry requests (GET, POST, PUT, DELETE)
   await router.route("/chemical/stoichiometry*", (route) => {
     const method = route.request().method();
     
@@ -293,6 +382,14 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(mockResponse),
+      });
+    }
+    
+    if (method === "DELETE") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ success: true }),
       });
     }
     
@@ -324,6 +421,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     networkRequests.push({
       url: new URL(request.url()),
       postData: request.postData(),
+      method: request.method(),
     });
   });
 });
@@ -413,6 +511,52 @@ test.describe("Stoichiometry Dialog", () => {
       await When["the user edits a cell in the table"]();
       await When["the user saves the changes"]();
       await Then["the save button should not be visible"]();
+    },
+  );
+
+  feature(
+    "makes a PUT API call when saving changes to the table",
+    async ({ Given, When, Then }) => {
+      await Given["the dialog is open with a stoichiometry table"]();
+      await Then["the table is displayed"]();
+      await When["the user edits a cell in the table"]();
+      await When["the user saves the changes"]();
+      Then[
+        "a PUT request should have been made to update the stoichiometry table"
+      ]();
+    },
+  );
+
+  feature(
+    "shows delete button when table is present",
+    async ({ Given, Then }) => {
+      await Given["the dialog is open with a stoichiometry table"]();
+      await Then["the table is displayed"]();
+      await Then["the delete button should be visible"]();
+    },
+  );
+
+  feature(
+    "shows confirmation dialog when delete button is clicked",
+    async ({ Given, When, Then }) => {
+      await Given["the dialog is open with a stoichiometry table"]();
+      await Then["the table is displayed"]();
+      await When["the user clicks the delete button"]();
+      await Then["the confirmation dialog should be displayed"]();
+    },
+  );
+
+  feature(
+    "makes a DELETE API call and hides table when deletion is confirmed",
+    async ({ Given, When, Then }) => {
+      await Given["the dialog is open with a stoichiometry table"]();
+      await Then["the table is displayed"]();
+      await When["the user clicks the delete button"]();
+      await When["the user confirms the deletion"]();
+      Then[
+        "a DELETE request should have been made to delete the stoichiometry table"
+      ]();
+      await Then["the table should be hidden"]();
     },
   );
 });

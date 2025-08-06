@@ -95,6 +95,16 @@ export default function useStoichiometry(): {
     stoichiometryId: number;
     stoichiometryData: StoichiometryResponse;
   }) => Promise<StoichiometryResponse>;
+
+  /**
+   * Deletes existing stoichiometry information for a chemical compound.
+   * This performs a DELETE request to remove the data.
+   */
+  deleteStoichiometry: ({
+    stoichiometryId,
+  }: {
+    stoichiometryId: number;
+  }) => Promise<void>;
 } {
   const { addAlert } = React.useContext(AlertContext);
 
@@ -182,5 +192,38 @@ export default function useStoichiometry(): {
     }
   }
 
-  return { calculateStoichiometry, getStoichiometry, updateStoichiometry };
+  async function deleteStoichiometry({
+    stoichiometryId,
+  }: {
+    stoichiometryId: number;
+  }): Promise<void> {
+    try {
+      await axios.delete(`/chemical/stoichiometry`, {
+        params: { stoichiometryId },
+      });
+      addAlert(
+        mkAlert({
+          variant: "success",
+          title: "Stoichiometry data deleted",
+          message: "The stoichiometry data was successfully deleted.",
+        }),
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error deleting stoichiometry data",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        }),
+      );
+      throw new Error("Could not delete stoichiometry data", { cause: e });
+    }
+  }
+
+  return {
+    calculateStoichiometry,
+    getStoichiometry,
+    updateStoichiometry,
+    deleteStoichiometry,
+  };
 }

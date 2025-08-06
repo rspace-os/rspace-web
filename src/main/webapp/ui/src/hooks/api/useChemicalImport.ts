@@ -137,36 +137,6 @@ export default function useChemicalImport(): {
     fieldId: string;
     chemFileId?: string | null;
   }) => Promise<string>;
-
-  /**
-   * Calculates stoichiometry information for a chemical compound.
-   * This performs a POST request to generate/calculate the data.
-   */
-  calculateStoichiometry: ({
-    chemId,
-  }: {
-    chemId: number;
-  }) => Promise<StoichiometryResponse>;
-
-  /**
-   * Gets existing stoichiometry information for a chemical compound.
-   * This performs a GET request to retrieve previously calculated data.
-   */
-  getStoichiometry: ({
-    chemId,
-  }: {
-    chemId: number;
-  }) => Promise<StoichiometryResponse>;
-
-  /**
-   * Deletes existing stoichiometry information for a chemical compound.
-   * This performs a DELETE request to remove the data.
-   */
-  deleteStoichiometry: ({
-    chemId,
-  }: {
-    chemId: number;
-  }) => Promise<void>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -320,83 +290,5 @@ export default function useChemicalImport(): {
     return Mustache.render(htmlTemplate.data, json) as string;
   }
 
-  async function calculateStoichiometry({
-    chemId,
-  }: {
-    chemId: number;
-  }): Promise<StoichiometryResponse> {
-    try {
-      const formData = new FormData();
-      formData.append("chemId", chemId.toString());
-      const { data } = await axios.post<{ data: StoichiometryResponse }>(
-        "/chemical/stoichiometry",
-        formData,
-      );
-      return data.data;
-    } catch (e) {
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: "Error calculating stoichiometry data",
-          message: getErrorMessage(e, "An unknown error occurred."),
-        }),
-      );
-      throw new Error("Could not calculate stoichiometry data", { cause: e });
-    }
-  }
-
-  async function getStoichiometry({
-    chemId,
-  }: {
-    chemId: number;
-  }): Promise<StoichiometryResponse> {
-    try {
-      const { data } = await axios.get<{ data: StoichiometryResponse }>(
-        "/chemical/stoichiometry",
-        {
-          params: { chemId },
-        }
-      );
-      return data.data;
-    } catch (e) {
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: "Error retrieving stoichiometry data",
-          message: getErrorMessage(e, "An unknown error occurred."),
-        }),
-      );
-      throw new Error("Could not retrieve stoichiometry data", { cause: e });
-    }
-  }
-
-  async function deleteStoichiometry({
-    chemId,
-  }: {
-    chemId: number;
-  }): Promise<void> {
-    try {
-      await axios.delete(`/chemical/stoichiometry`, {
-        params: { chemId },
-      });
-      addAlert(
-        mkAlert({
-          variant: "success",
-          title: "Stoichiometry data deleted",
-          message: "The stoichiometry data was successfully deleted."
-        })
-      );
-    } catch (e) {
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: "Error deleting stoichiometry data",
-          message: getErrorMessage(e, "An unknown error occurred."),
-        }),
-      );
-      throw new Error("Could not delete stoichiometry data", { cause: e });
-    }
-  }
-
-  return { search, save, saveSmilesString, formatAsHtml, calculateStoichiometry, getStoichiometry, deleteStoichiometry };
+  return { search, save, saveSmilesString, formatAsHtml };
 }

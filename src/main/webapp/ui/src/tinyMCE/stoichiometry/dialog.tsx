@@ -11,7 +11,6 @@ import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import StoichiometryTable, { type StoichiometryTableRef } from "./table";
-import useChemicalImport from "../../hooks/api/useChemicalImport";
 import { doNotAwait } from "../../util/Util";
 import Stack from "@mui/material/Stack";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
@@ -19,6 +18,7 @@ import * as FetchingData from "../../util/fetchingData";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { useConfirm } from "../../components/ConfirmProvider";
 import ConfirmProvider from "../../components/ConfirmProvider";
+import useStoichiometry from "@/hooks/api/useStoichiometry";
 
 function StandaloneDialogInner({
   open,
@@ -26,15 +26,19 @@ function StandaloneDialogInner({
   chemId,
   hasStoichiometryTable,
   onTableCreated,
+  onSave,
+  onDelete,
 }: {
   open: boolean;
   onClose: () => void;
   chemId: number | null;
   hasStoichiometryTable: boolean;
   onTableCreated?: () => void;
+  onSave?: () => void;
+  onDelete?: () => void;
 }): React.ReactNode {
   const titleId = React.useId();
-  const { calculateStoichiometry, deleteStoichiometry } = useChemicalImport();
+  const { calculateStoichiometry } = useStoichiometry();
   const { addAlert } = React.useContext(AlertContext);
   const confirm = useConfirm();
   const tableRef = React.useRef<StoichiometryTableRef>(null);
@@ -108,6 +112,7 @@ function StandaloneDialogInner({
     doNotAwait(async () => {
       try {
         await tableRef.current?.save();
+        onSave?.();
         console.log("Stoichiometry data saved successfully");
       } catch (e) {
         console.error("Save failed", e);
@@ -129,7 +134,8 @@ function StandaloneDialogInner({
 
     if (shouldDelete) {
       try {
-        await deleteStoichiometry({ chemId });
+        await tableRef.current?.delete();
+        onDelete?.();
         setShowTable(false);
         setHasTableChanges(false);
       } catch (e) {
@@ -177,7 +183,9 @@ function StandaloneDialogInner({
           <Stack spacing={2} flexWrap="nowrap">
             <Box>
               <Typography variant="body2">
-                Double-click on Mass, Moles, Actual Mass, or Notes to edit. Select limiting reagent by clicking the radio button. Actual Moles and Yield are calculated automatically.
+                Double-click on Mass, Moles, Actual Mass, or Notes to edit.
+                Select limiting reagent by clicking the radio button. Actual
+                Moles and Yield are calculated automatically.
               </Typography>
               <StoichiometryTable
                 ref={tableRef}
@@ -210,7 +218,9 @@ function StandaloneDialogInner({
   );
 }
 
-export default function StandaloneDialog(props: React.ComponentProps<typeof StandaloneDialogInner>): React.ReactNode {
+export default function StandaloneDialog(
+  props: React.ComponentProps<typeof StandaloneDialogInner>,
+): React.ReactNode {
   return (
     <ConfirmProvider>
       <StandaloneDialogInner {...props} />
