@@ -133,7 +133,7 @@ export default function useStoichiometry(): {
         "/chemical/stoichiometry",
         {
           params: { chemId },
-        }
+        },
       );
       return data.data;
     } catch (e) {
@@ -161,7 +161,13 @@ export default function useStoichiometry(): {
         stoichiometryData,
         {
           params: { stoichiometryId },
-        }
+        },
+      );
+      addAlert(
+        mkAlert({
+          variant: "success",
+          message: "Successfully updated stoichiometry table",
+        }),
       );
       return data.data;
     } catch (e) {
