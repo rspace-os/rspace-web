@@ -51,6 +51,7 @@ const docLinks: { [name: string]: URL } = {
   evernote: mkDocLink("9ckpmfdq8m"),
   figshare: mkDocLink("ir4ybsamcn"),
   github: mkDocLink("y2080yw30x"),
+  galaxy: mkDocLink("zzsl46jo5y"),
   cloudstorage: mkDocLink("j2z5f5r90q"),
   jove: mkDocLink("mopbqzzdf5"),
   chemistry: mkDocLink("wfxm4xwtio"),
