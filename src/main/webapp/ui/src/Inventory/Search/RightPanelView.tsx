@@ -39,7 +39,25 @@ const border = (
   return `${width}px solid ${color}`;
 };
 
-const BorderContainer = styled(Box)<{
+const BorderContainer = styled(
+  React.forwardRef(
+    (
+      {
+        recordType,
+        children,
+        ...props
+      }: {
+        recordType: RecordType | "mixed" | null;
+        children: React.ReactNode;
+      },
+      ref,
+    ) => (
+      <Box {...props} ref={ref}>
+        {children}
+      </Box>
+    ),
+  ),
+)<{
   recordType: RecordType | "mixed" | null;
   children: ReactNode;
   role?: string;
@@ -159,6 +177,7 @@ function RightPanelView(): ReactNode {
   return (
     <ErrorBoundary>
       <BorderContainer
+        data-testid="MainActiveResult"
         ref={mainContentRef as React.RefObject<HTMLDivElement>}
         recordType={
           searchStore.activeResult?.recordType ??
