@@ -470,7 +470,7 @@ public class RSChemController extends BaseController {
     }
   }
 
-  @PutMapping("stoichiometry/update")
+  @PutMapping("stoichiometry")
   @ResponseBody
   public AjaxReturnObject<StoichiometryDTO> updateStoichiometry(
       @RequestParam("stoichiometryId") long stoichiometryId,
