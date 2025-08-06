@@ -6,7 +6,7 @@ import com.researchspace.model.Stoichiometry;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
-@Repository("stoichiometryDao")
+@Repository
 public class StoichiometryDaoHibernate extends GenericDaoHibernate<Stoichiometry, Long>
     implements StoichiometryDao {
 

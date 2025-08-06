@@ -15,8 +15,10 @@ import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
+import com.researchspace.service.exceptions.StoichiometryAlreadyExistsException;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,6 +41,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -428,7 +431,7 @@ public class RSChemController extends BaseController {
 
   @GetMapping("stoichiometry")
   @ResponseBody
-  public AjaxReturnObject<Stoichiometry> getStoichiometry(
+  public AjaxReturnObject<StoichiometryDTO> getStoichiometry(
       @RequestParam("chemId") long chemId,
       @RequestParam(value = "revision", required = false) Integer revision,
       Principal principal) {
@@ -439,41 +442,65 @@ public class RSChemController extends BaseController {
       log.info("No chem element found for id {} and revision {}", chemId, revision);
       return new AjaxReturnObject<>(ErrorList.of("No chem element with id " + chemId));
     }
-    return new AjaxReturnObject<>(stoichiometry.get());
+    StoichiometryDTO stoichiometryDTO =
+        chemistryService.convertStoichiometryToDTO(stoichiometry.get());
+    return new AjaxReturnObject<>(stoichiometryDTO);
   }
 
   @PostMapping("stoichiometry")
   @ResponseBody
-  public AjaxReturnObject<Stoichiometry> saveStoichiometry(
+  public AjaxReturnObject<StoichiometryDTO> saveStoichiometry(
       @RequestParam("chemId") long chemId,
       @RequestParam(value = "revision", required = false) Integer revision,
       Principal principal) {
     User subject = getUserByUsername(principal.getName());
-    Stoichiometry stoichiometry =
-        chemistryService.getStoichiometryAndSave(chemId, revision, subject);
-    if (stoichiometry == null) {
-      log.info("Couldn't save stoichiometry for chemId {} and revision {}", chemId, revision);
+    try {
+      Stoichiometry stoichiometry = chemistryService.createStoichiometry(chemId, revision, subject);
+      if (stoichiometry == null) {
+        log.info("Couldn't save stoichiometry for chemId {} and revision {}", chemId, revision);
+        return new AjaxReturnObject<>(
+            ErrorList.of("Couldn't save stoichiometry for chemId: " + chemId));
+      }
+      StoichiometryDTO stoichiometryDTO = chemistryService.convertStoichiometryToDTO(stoichiometry);
+      return new AjaxReturnObject<>(stoichiometryDTO);
+    } catch (StoichiometryAlreadyExistsException e) {
+      log.info("Stoichiometry already exists for chemId {}", chemId);
       return new AjaxReturnObject<>(
-          ErrorList.of("Couldn't save stoichiometry for chemId: " + chemId));
+          ErrorList.of("Stoichiometry already exists for chemId: " + chemId));
     }
-    return new AjaxReturnObject<>(stoichiometry);
   }
 
-  @PutMapping("stoichiometry")
+  @PutMapping("stoichiometry/update")
   @ResponseBody
-  public AjaxReturnObject<Stoichiometry> updateStoichiometry(
+  public AjaxReturnObject<StoichiometryDTO> updateStoichiometry(
       @RequestParam("stoichiometryId") long stoichiometryId,
-      @RequestBody StoichiometryDTO stoichiometryDTO,
+      @RequestBody StoichiometryUpdateDTO stoichiometryUpdateDTO,
       Principal principal) {
     User subject = getUserByUsername(principal.getName());
     try {
       Stoichiometry stoichiometry =
-          chemistryService.updateStoichiometry(stoichiometryId, stoichiometryDTO, subject);
-      return new AjaxReturnObject<>(stoichiometry);
+          chemistryService.updateStoichiometry(stoichiometryUpdateDTO, subject);
+      StoichiometryDTO updatedStoichiometryDTO =
+          chemistryService.convertStoichiometryToDTO(stoichiometry);
+      return new AjaxReturnObject<>(updatedStoichiometryDTO);
     } catch (Exception e) {
       log.error("Error updating stoichiometry with id {}: {}", stoichiometryId, e.getMessage());
       return new AjaxReturnObject<>(
           ErrorList.of("Error updating stoichiometry: " + e.getMessage()));
+    }
+  }
+
+  @DeleteMapping("stoichiometry")
+  @ResponseBody
+  public AjaxReturnObject<Boolean> deleteStoichiometry(
+      @RequestParam("stoichiometryId") long stoichiometryId, Principal principal) {
+    User subject = getUserByUsername(principal.getName());
+    boolean success = chemistryService.deleteStoichiometry(stoichiometryId, subject);
+    if (success) {
+      return new AjaxReturnObject<>(Boolean.TRUE);
+    } else {
+      return new AjaxReturnObject<>(
+          ErrorList.of("Error deleting stoichiometry with id " + stoichiometryId));
     }
   }
 

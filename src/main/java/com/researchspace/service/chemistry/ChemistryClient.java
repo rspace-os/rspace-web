@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -83,6 +84,12 @@ public class ChemistryClient {
     body.put("input", chemString);
     String url = chemistryServiceUrl + "/chemistry/extract";
 
+    return postForElementalAnalysis(chemicalElement, body, url);
+  }
+
+  @NotNull
+  private Optional<ElementalAnalysisDTO> postForElementalAnalysis(
+      RSChemElement chemicalElement, Map<String, Object> body, String url) {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
@@ -110,13 +117,6 @@ public class ChemistryClient {
     }
   }
 
-  /**
-   * Extract stoichiometry information for a chemical element. This method calls the external
-   * endpoint /chemistry/stoichiometry.
-   *
-   * @param chemicalElement the chemical element to get stoichiometry information for
-   * @return an Optional containing the stoichiometry information, or empty if none could be found
-   */
   public Optional<ElementalAnalysisDTO> extractStoichiometry(RSChemElement chemicalElement) {
     Map<String, Object> body = new HashMap<>();
 
@@ -131,31 +131,7 @@ public class ChemistryClient {
     body.put("input", chemString);
     String url = chemistryServiceUrl + "/chemistry/stoichiometry";
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
-
-    try {
-      ResponseEntity<ElementalAnalysisDTO> response =
-          restTemplate.postForEntity(url, httpEntity, ElementalAnalysisDTO.class);
-      if (response.getStatusCode().is2xxSuccessful()) {
-        return Optional.ofNullable(response.getBody());
-      } else {
-        log.warn(
-            "Unsuccessful request for chemElement {} to: {}. Response code: {}",
-            chemicalElement.getId(),
-            url,
-            response.getStatusCodeValue());
-        return Optional.empty();
-      }
-    } catch (RestClientException e) {
-      log.warn(
-          "Error while making request for chemElement {} to {}: {}",
-          chemicalElement.getId(),
-          url,
-          e.getMessage());
-      return Optional.empty();
-    }
+    return postForElementalAnalysis(chemicalElement, body, url);
   }
 
   public byte[] exportImage(

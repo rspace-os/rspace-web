@@ -10,6 +10,8 @@ import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
 import com.researchspace.service.RSChemElementManager;
@@ -19,13 +21,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service("stoichiometryManager")
+@Service
 @Transactional
 public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, Long>
     implements StoichiometryManager {
@@ -97,59 +98,13 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   }
 
   @Override
-  public Stoichiometry update(Long stoichiometryId, StoichiometryDTO stoichiometryDTO, User user) {
-    Stoichiometry stoichiometry = get(stoichiometryId);
+  public Stoichiometry update(StoichiometryUpdateDTO stoichiometryUpdate, User user) {
+    Stoichiometry stoichiometry = get(stoichiometryUpdate.getId());
     if (stoichiometry == null) {
-      throw new IllegalArgumentException("Stoichiometry not found with ID: " + stoichiometryId);
+      throw new IllegalArgumentException(
+          "Stoichiometry not found with ID: " + stoichiometryUpdate.getId());
     }
 
-    validateUpdatableFields(stoichiometryDTO, stoichiometry);
-
-    stoichiometry.getMolecules().clear();
-
-    if (stoichiometryDTO.getMolecules() != null) {
-      for (StoichiometryMoleculeDTO moleculeDTO : stoichiometryDTO.getMolecules()) {
-        RSChemElement molecule;
-        if (moleculeDTO.getRsChemElementId() != null) {
-          molecule = rsChemElementManager.get(moleculeDTO.getRsChemElementId(), user);
-        } else {
-          molecule = RSChemElement.builder().build();
-          try {
-            molecule = rsChemElementManager.save(molecule, user);
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        }
-
-        StoichiometryMolecule updatedMolecule =
-            StoichiometryMolecule.builder()
-                .id(moleculeDTO.getId())
-                .stoichiometry(stoichiometry)
-                .rsChemElement(molecule)
-                .role(moleculeDTO.getRole())
-                .formula(moleculeDTO.getFormula())
-                .name(moleculeDTO.getName())
-                .smiles(moleculeDTO.getSmiles())
-                .coefficient(moleculeDTO.getCoefficient())
-                .molecularWeight(moleculeDTO.getMolecularWeight())
-                .mass(moleculeDTO.getMass())
-                .moles(moleculeDTO.getMoles())
-                .expectedAmount(moleculeDTO.getExpectedAmount())
-                .actualAmount(moleculeDTO.getActualAmount())
-                .actualYield(moleculeDTO.getActualYield())
-                .limitingReagent(moleculeDTO.getLimitingReagent())
-                .notes(moleculeDTO.getNotes())
-                .build();
-
-        stoichiometry.addMolecule(updatedMolecule);
-      }
-    }
-
-    return save(stoichiometry);
-  }
-
-  private static void validateUpdatableFields(
-      StoichiometryDTO stoichiometryDTO, Stoichiometry stoichiometry) {
     Map<Long, StoichiometryMolecule> existingMolecules = new HashMap<>();
     if (stoichiometry.getMolecules() != null) {
       for (StoichiometryMolecule molecule : stoichiometry.getMolecules()) {
@@ -159,40 +114,44 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       }
     }
 
-    if (stoichiometryDTO.getMolecules() != null) {
-      for (StoichiometryMoleculeDTO moleculeDTO : stoichiometryDTO.getMolecules()) {
-        if (moleculeDTO.getId() != null && existingMolecules.containsKey(moleculeDTO.getId())) {
-          StoichiometryMolecule existingMolecule = existingMolecules.get(moleculeDTO.getId());
+    stoichiometry.getMolecules().clear();
 
-          if (moleculeDTO.getRsChemElementId() != null
-              && !Objects.equals(
-                  moleculeDTO.getRsChemElementId(), existingMolecule.getRsChemElement().getId())) {
-            throw new IllegalArgumentException("Cannot update rsChemElementId field");
-          }
-
-          if (!Objects.equals(moleculeDTO.getRole(), existingMolecule.getRole())) {
-            throw new IllegalArgumentException("Cannot update role field");
-          }
-
-          if (!Objects.equals(moleculeDTO.getFormula(), existingMolecule.getFormula())) {
-            throw new IllegalArgumentException("Cannot update formula field");
-          }
-
-          if (!Objects.equals(moleculeDTO.getName(), existingMolecule.getName())) {
-            throw new IllegalArgumentException("Cannot update name field");
-          }
-
-          if (!Objects.equals(moleculeDTO.getSmiles(), existingMolecule.getSmiles())) {
-            throw new IllegalArgumentException("Cannot update smiles field");
-          }
-
-          if (!Objects.equals(
-              moleculeDTO.getMolecularWeight(), existingMolecule.getMolecularWeight())) {
-            throw new IllegalArgumentException("Cannot update molecularWeight field");
-          }
+    if (stoichiometryUpdate.getMolecules() != null) {
+      for (StoichiometryMoleculeUpdateDTO moleculeUpdateDTO : stoichiometryUpdate.getMolecules()) {
+        if (moleculeUpdateDTO.getId() == null
+            || !existingMolecules.containsKey(moleculeUpdateDTO.getId())) {
+          throw new IllegalArgumentException(
+              "Molecule ID is required and must exist in the stoichiometry");
         }
+
+        StoichiometryMolecule existingMolecule = existingMolecules.get(moleculeUpdateDTO.getId());
+        RSChemElement rsChemElement = existingMolecule.getRsChemElement();
+
+        StoichiometryMolecule updatedMolecule =
+            StoichiometryMolecule.builder()
+                .id(moleculeUpdateDTO.getId())
+                .stoichiometry(stoichiometry)
+                .rsChemElement(rsChemElement)
+                .role(existingMolecule.getRole())
+                .formula(existingMolecule.getFormula())
+                .name(existingMolecule.getName())
+                .smiles(existingMolecule.getSmiles())
+                .coefficient(moleculeUpdateDTO.getCoefficient())
+                .molecularWeight(existingMolecule.getMolecularWeight())
+                .mass(moleculeUpdateDTO.getMass())
+                .moles(moleculeUpdateDTO.getMoles())
+                .expectedAmount(moleculeUpdateDTO.getExpectedAmount())
+                .actualAmount(moleculeUpdateDTO.getActualAmount())
+                .actualYield(moleculeUpdateDTO.getActualYield())
+                .limitingReagent(moleculeUpdateDTO.getLimitingReagent())
+                .notes(moleculeUpdateDTO.getNotes())
+                .build();
+
+        stoichiometry.addMolecule(updatedMolecule);
       }
     }
+
+    return save(stoichiometry);
   }
 
   @Override
@@ -210,6 +169,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
     }
 
     return StoichiometryDTO.builder()
+        .id(stoichiometry.getId())
         .molecules(moleculeDTOs)
         .parentReactionId(stoichiometry.getParentReaction().getId())
         .build();

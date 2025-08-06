@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.RSChemElement;
+import com.researchspace.model.Stoichiometry;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
@@ -20,11 +21,13 @@ import com.researchspace.model.dtos.chemistry.ChemElementDataDto;
 import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.record.BreadcrumbGenerator;
+import com.researchspace.model.record.Record;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.impl.RSChemService;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
@@ -54,6 +57,8 @@ public class ChemistryServiceTest {
   @Mock AuditManager auditManager;
 
   @Mock EcatChemistryFileManager fileManager;
+
+  @Mock StoichiometryManager stoichiometryManager;
 
   @InjectMocks RSChemService chemistryService;
 
@@ -240,5 +245,32 @@ public class ChemistryServiceTest {
       searchResults.add(searchResult);
     }
     return searchResults;
+  }
+
+  @Test
+  public void whenDeleteStoichiometry_thenReturnTrue() {
+    long stoichiometryId = 1L;
+    long parentReactionId = 2L;
+
+    Stoichiometry stoichiometry = new Stoichiometry();
+    stoichiometry.setId(stoichiometryId);
+    RSChemElement parentReaction = new RSChemElement();
+    parentReaction.setId(parentReactionId);
+    stoichiometry.setParentReaction(parentReaction);
+
+    RSChemElement chemical = new RSChemElement();
+    chemical.setId(parentReactionId);
+    Record parentRecord = TestFactory.createAnyRecord(user);
+    chemical.setRecord(parentRecord);
+
+    when(stoichiometryManager.get(stoichiometryId)).thenReturn(stoichiometry);
+
+    when(chemElementManager.get(parentReactionId, user)).thenReturn(chemical);
+
+    boolean result = chemistryService.deleteStoichiometry(stoichiometryId, user);
+
+    verify(stoichiometryManager).remove(stoichiometryId);
+
+    assertTrue(result);
   }
 }

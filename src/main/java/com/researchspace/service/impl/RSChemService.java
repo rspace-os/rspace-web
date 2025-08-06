@@ -17,6 +17,7 @@ import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.record.Breadcrumb;
 import com.researchspace.model.record.BreadcrumbGenerator;
 import com.researchspace.model.record.Folder;
@@ -27,6 +28,7 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
+import com.researchspace.service.exceptions.StoichiometryAlreadyExistsException;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -256,31 +258,16 @@ public class RSChemService implements ChemistryService {
 
   @Override
   public Optional<Stoichiometry> getStoichiometry(long chemId, Integer revision, User user) {
-    RSChemElement chemical = getChemicalElementByRevision(chemId, revision, user);
-    if (chemical == null) {
-      return null;
+    Stoichiometry existingStoichiometry = stoichiometryManager.findByParentReactionId(chemId);
+    if (existingStoichiometry == null) {
+      return Optional.empty();
     }
-    Optional<ElementalAnalysisDTO> analysis = chemistryProvider.getStoichiometry(chemical);
-    if (analysis.isPresent()) {
-      ElementalAnalysisDTO stoichiometryAnalysis = analysis.get();
-      if (stoichiometryAnalysis.isReaction()) {
-        stoichiometryAnalysis.setAdditionalMetadata(chemical.getMetadata());
-      } else {
-        for (MoleculeInfoDTO molecule : stoichiometryAnalysis.getMoleculeInfo()) {
-          molecule.setAdditionalMetadata(chemical.getMetadata());
-        }
-      }
-    }
-    try {
-      return Optional.ofNullable(
-          stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return Optional.of(existingStoichiometry);
   }
 
   @Override
-  public Stoichiometry getStoichiometryAndSave(long chemId, Integer revision, User user) {
+  public Stoichiometry createStoichiometry(long chemId, Integer revision, User user)
+      throws StoichiometryAlreadyExistsException {
     RSChemElement chemical = getChemicalElementByRevision(chemId, revision, user);
     if (chemical == null) {
       return null;
@@ -288,7 +275,7 @@ public class RSChemService implements ChemistryService {
 
     Stoichiometry existingStoichiometry = stoichiometryManager.findByParentReactionId(chemId);
     if (existingStoichiometry != null) {
-      return existingStoichiometry;
+      throw new StoichiometryAlreadyExistsException(chemId);
     }
 
     Optional<ElementalAnalysisDTO> analysis = chemistryProvider.getStoichiometry(chemical);
@@ -305,8 +292,34 @@ public class RSChemService implements ChemistryService {
 
   @Override
   public Stoichiometry updateStoichiometry(
-      long stoichiometryId, StoichiometryDTO stoichiometryDTO, User user) {
-    return stoichiometryManager.update(stoichiometryId, stoichiometryDTO, user);
+      StoichiometryUpdateDTO stoichiometryUpdateDTO, User user) {
+    return stoichiometryManager.update(stoichiometryUpdateDTO, user);
+  }
+
+  @Override
+  public boolean deleteStoichiometry(long stoichiometryId, User user) {
+    try {
+      Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
+      if (stoichiometry == null) {
+        return false;
+      }
+
+      RSChemElement parentReaction = stoichiometry.getParentReaction();
+      RSChemElement chemical = getChemicalElementByRevision(parentReaction.getId(), null, user);
+      if (chemical == null) {
+        return false;
+      }
+
+      stoichiometryManager.remove(stoichiometryId);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  @Override
+  public StoichiometryDTO convertStoichiometryToDTO(Stoichiometry stoichiometry) {
+    return stoichiometryManager.toDTO(stoichiometry);
   }
 
   @Data

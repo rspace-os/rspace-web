@@ -45,7 +45,7 @@ public class StoichiometryMolecule {
   private RSChemElement rsChemElement;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "role", nullable = false)
+  @Column(nullable = false)
   private MoleculeRole role;
 
   @Column private String formula;
