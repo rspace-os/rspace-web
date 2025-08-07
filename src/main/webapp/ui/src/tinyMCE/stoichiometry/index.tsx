@@ -94,7 +94,7 @@ class StoichiometryPlugin {
     };
     dialogRenderer.next(initialProps);
 
-    editor.addCommand("cmdStiochiometry", function () {
+    editor.addCommand("cmdStoichiometry", function () {
       const node = editor.selection.getNode();
       if (!/chem/.test(node.className))
         throw new Error("Selected node is not a chemical element.");
