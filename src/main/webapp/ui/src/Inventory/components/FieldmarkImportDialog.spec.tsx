@@ -18,6 +18,7 @@ const feature = test.extend<{
     "the user selects a notebook and clicks import for alert testing": () => Promise<void>;
     "the user selects a notebook that will trigger IGSN error": () => Promise<void>;
     "the user selects a notebook with identifier columns and clicks import without selecting identifier": () => Promise<void>;
+    "the user selects a notebook that will trigger detailed import error": () => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
@@ -30,6 +31,7 @@ const feature = test.extend<{
     "the import button should show loading state": () => Promise<void>;
     "the IGSN message should be displayed": () => Promise<void>;
     "the identifier parsing UI should be hidden during import": () => Promise<void>;
+    "a detailed error alert should be visible": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
@@ -104,6 +106,20 @@ const feature = test.extend<{
               name: "Select notebook: Notebook With Identifiers",
             })
             .click();
+          await page.getByRole("button", { name: "Import" }).click();
+        },
+      "the user selects a notebook that will trigger detailed import error":
+        async () => {
+          await page
+            .getByRole("radio", {
+              name: "Select notebook: Notebook Detailed Error",
+            })
+            .click();
+          const identifierSelect = page.getByRole("combobox", {
+            name: "IGSN ID field",
+          });
+          await identifierSelect.click();
+          await page.getByRole("option", { name: "identifier_field" }).click();
           await page.getByRole("button", { name: "Import" }).click();
         },
     });
@@ -259,6 +275,29 @@ const feature = test.extend<{
         );
         await expect(loadingMessage).toBeHidden();
       },
+      "a detailed error alert should be visible": async () => {
+        const alert = page.getByRole("alert");
+        await expect(alert).toBeVisible();
+        await expect(alert).toContainText("Could not import notebook.");
+
+        // Click the toggle button to expand the sub-messages with detailed errors
+        await alert
+          .getByRole("button", { name: "2 sub-messages. Toggle to show" })
+          .click();
+
+        // Verify each detailed error message is shown in the dropdown
+        const firstErrorMessage = alert.getByRole("alert").filter({
+          hasText:
+            'Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
+        });
+        await expect(firstErrorMessage).toBeVisible();
+
+        const secondErrorMessage = alert.getByRole("alert").filter({
+          hasText:
+            "Additional validation error: Sample template validation failed",
+        });
+        await expect(secondErrorMessage).toBeVisible();
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -381,6 +420,16 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
           },
           status: "draft",
         },
+        {
+          name: "Notebook Detailed Error",
+          metadata: {
+            project_id: "test-project-detailed-error",
+            ispublic: false,
+            pre_description: "A notebook that triggers detailed import error",
+            project_lead: "Test User 6",
+          },
+          status: "draft",
+        },
       ]),
     });
   });
@@ -452,6 +501,16 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
             ],
           },
         }),
+      });
+    },
+  );
+  await router.route(
+    "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-detailed-error",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(["identifier_field"]),
       });
     },
   );
@@ -625,6 +684,73 @@ test.describe("FieldmarkImportDialog", () => {
         await Then[
           "the identifier parsing UI should be hidden during import"
         ]();
+      },
+    );
+
+    feature(
+      "should show detailed error message when import fails with validation errors",
+      async ({ Given, When, Then, router }) => {
+        await router.route(
+          "/api/inventory/v1/import/fieldmark/notebook",
+          async (route) => {
+            const request = route.request();
+            const postData = request.postData();
+
+            if (
+              postData?.includes('"notebookId":"test-project-detailed-error"')
+            ) {
+              await route.fulfill({
+                status: 400,
+                contentType: "application/json",
+                body: JSON.stringify({
+                  status: "BAD_REQUEST",
+                  httpCode: 400,
+                  internalCode: 40002,
+                  message: "Errors detected : 2",
+                  messageCode: null,
+                  errors: [
+                    'fieldmarkApiImportRequest: Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
+                    "fieldmarkApiImportRequest: Additional validation error: Sample template validation failed",
+                  ],
+                  iso8601Timestamp: "2025-08-07T08:40:52.973881769Z",
+                  data: {
+                    validationErrors: [
+                      {
+                        field: null,
+                        rejectedValue: null,
+                        objectName: "fieldmarkApiImportRequest",
+                        message:
+                          'Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
+                      },
+                      {
+                        field: null,
+                        rejectedValue: null,
+                        objectName: "fieldmarkApiImportRequest",
+                        message:
+                          "Additional validation error: Sample template validation failed",
+                      },
+                    ],
+                  },
+                }),
+              });
+            } else {
+              await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                  containerName: "Test Container from Test Notebook 1",
+                  containerGlobalId: "IC123456",
+                }),
+              });
+            }
+          },
+        );
+        await Given["the fieldmark import dialog is mounted"]();
+        await When["the notebooks have been fetched"]();
+        await When[
+          "the user selects a notebook that will trigger detailed import error"
+        ]();
+        await Then["a detailed error alert should be visible"]();
       },
     );
   });
