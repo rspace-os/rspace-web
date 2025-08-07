@@ -1,6 +1,8 @@
 import React, { useCallback } from "react";
 import {
   DataGrid,
+  GridSlotProps,
+  GridToolbarColumnsButton,
   GridToolbarContainer,
   GridToolbarExportContainer,
   useGridApiContext,
@@ -22,6 +24,12 @@ import useStoichiometry, {
 } from "../../hooks/api/useStoichiometry";
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
+
+declare module "@mui/x-data-grid" {
+  interface ToolbarPropsOverrides {
+    setColumnsMenuAnchorEl: (anchorEl: HTMLElement | null) => void;
+  }
+}
 
 export interface StoichiometryTableRef {
   save: () => Promise<void>;
@@ -65,13 +73,34 @@ const RoleChip = ({ role }: { role: string }) => {
   );
 };
 
-function Toolbar(): React.ReactNode {
+function Toolbar({
+  setColumnsMenuAnchorEl,
+}: GridSlotProps["toolbar"]): React.ReactNode {
   const apiRef = useGridApiContext();
   const theme = useTheme();
+
+  /**
+   * The columns menu can be opened by either tapping the "Columns" toolbar
+   * button or by tapping the "Manage columns" menu item in each column's menu,
+   * logic that is handled my MUI. We provide a custom `anchorEl` so that the
+   * menu is positioned beneath the "Columns" toolbar button to be consistent
+   * with the other toolbar menus, otherwise is appears far to the left. Rather
+   * than having to hook into the logic that triggers the opening of the
+   * columns menu in both places, we just set the `anchorEl` pre-emptively.
+   */
+  const columnMenuRef = React.useRef<HTMLButtonElement>();
+  React.useEffect(() => {
+    if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
+  }, [setColumnsMenuAnchorEl]);
 
   return (
     <GridToolbarContainer sx={{ mr: `${theme.spacing(0.5)} !important` }}>
       <Box flexGrow={1}></Box>
+      <GridToolbarColumnsButton
+        ref={(node) => {
+          if (node) columnMenuRef.current = node;
+        }}
+      />
       <GridToolbarExportContainer>
         <MenuItem
           onClick={() => {
@@ -107,6 +136,8 @@ const StoichiometryTable = React.forwardRef<
   const [allMolecules, setAllMolecules] = React.useState<
     ReadonlyArray<StoichiometryMolecule>
   >([]);
+  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
+    React.useState<HTMLElement | null>(null);
 
   React.useEffect(() => {
     setLoading(true);
@@ -430,6 +461,14 @@ const StoichiometryTable = React.forwardRef<
       }}
       slots={{
         toolbar: Toolbar,
+      }}
+      slotProps={{
+        toolbar: {
+          setColumnsMenuAnchorEl,
+        },
+        panel: {
+          anchorEl: columnsMenuAnchorEl,
+        },
       }}
       sx={{
         border: "none",
