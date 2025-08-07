@@ -290,6 +290,7 @@ const StoichiometryTable = React.forwardRef<
     >("limitingReagent", {
       headerName: "Limiting Reagent",
       flex: 1,
+      align: "center",
       renderCell: (params) =>
         params.row.role.toLowerCase() === "reactant" ? (
           <Radio
@@ -327,6 +328,7 @@ const StoichiometryTable = React.forwardRef<
           return editable;
         },
         type: "number",
+        headerAlign: "left",
         cellClassName: (params) => {
           if (limitingReagent && params.id === limitingReagent.id) {
             return "stoichiometry-disabled-cell";
@@ -341,12 +343,15 @@ const StoichiometryTable = React.forwardRef<
     >("molecularWeight", {
       headerName: "Molecular Weight (g/mol)",
       flex: 1.2,
+      type: "number",
+      headerAlign: "left",
     }),
     DataGridColumn.newColumnWithFieldName<"mass", StoichiometryMolecule>(
       "mass",
       {
         headerName: "Mass (g)",
         flex: 1,
+        headerAlign: "left",
         // @ts-expect-error It's not documented or typed, but editable can be a function
         editable: (params) => {
           if (limitingReagent) {
@@ -369,6 +374,7 @@ const StoichiometryTable = React.forwardRef<
       {
         headerName: "Moles (mol)",
         flex: 1,
+        headerAlign: "left",
         // @ts-expect-error It's not documented or typed, but editable can be a function
         editable: (params) => {
           if (limitingReagent) {
@@ -392,6 +398,7 @@ const StoichiometryTable = React.forwardRef<
     >("actualAmount", {
       headerName: "Actual Mass (g)",
       flex: 1,
+      headerAlign: "left",
       editable: editable,
       type: "number",
       renderCell: (params) => params.value ?? <>&mdash;</>,
@@ -409,6 +416,7 @@ const StoichiometryTable = React.forwardRef<
         }),
       {
         headerName: "Actual Moles (mol)",
+        headerAlign: "left",
         flex: 1,
         type: "number",
         editable: false,
@@ -421,6 +429,7 @@ const StoichiometryTable = React.forwardRef<
       "actualYield",
       {
         headerName: "Yield (%)",
+        headerAlign: "left",
         flex: 1,
         type: "number",
         editable: false,
