@@ -111,10 +111,7 @@ const ShareDialog = () => {
       setOptionsLoading(true);
 
       // Fetch both groups and group members simultaneously
-      Promise.all([
-        getGroups(),
-        getGroupMembers()
-      ])
+      Promise.all([getGroups(), getGroupMembers()])
         .then(([groups, groupMembers]) => {
           // Combine groups and users into a single options array
           const groupOptions: ShareOption[] = groups.map((group) => ({
@@ -271,7 +268,7 @@ const ShareDialog = () => {
                     </Typography>
                   ) : (
                     <TableContainer component={Paper} variant="outlined">
-                      <Table size="small">
+                      <Table size="small" sx={{ mb: 0 }}>
                         <TableHead>
                           <TableRow>
                             <TableCell>Shared With</TableCell>
