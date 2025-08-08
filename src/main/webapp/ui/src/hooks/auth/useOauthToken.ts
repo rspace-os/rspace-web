@@ -80,39 +80,41 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
     );
   }
 
+  const getToken = React.useCallback(async () => {
+    /*
+     * If this hook has been called previously and we've either already
+     * fetched a token or pulled it from the session storage, then we can
+     * just return it; thereby ensuring that we don't setup a new
+     * `setTimeout` with each call to `getToken`.
+     */
+    if (token) return token;
+
+    /*
+     * If this hook has not been previously called then we preferably get the
+     * token from session storage or else get it from the API endpoint.
+     */
+    const savedToken = JwtService.getToken() ?? (await fetchToken());
+    setToken(savedToken);
+
+    /*
+     * Whether the token is fetched from the API or got from the session
+     * storage, we set up a timer to trigger the continuous refreshing of the
+     * token. As the user navigates around and refreshes the page throughout
+     * the window in which the token is valid, we want to keep setting up the
+     * refresh logic so that when the token expires we get a new one, put it
+     * in session storage, and the current page and all subsequent ones in
+     * the next temporal window will continue to work.
+     */
+    setTimeout(
+      () => {
+        void refreshToken();
+      },
+      JwtService.secondsToExpiry(savedToken) * 1000,
+    );
+    return savedToken;
+  }, [token]);
+
   return {
-    getToken: async () => {
-      /*
-       * If this hook has been called previously and we've either already
-       * fetched a token or pulled it from the session storage, then we can
-       * just return it; thereby ensuring that we don't setup a new
-       * `setTimeout` with each call to `getToken`.
-       */
-      if (token) return token;
-
-      /*
-       * If this hook has not been previously called then we preferably get the
-       * token from session storage or else get it from the API endpoint.
-       */
-      const savedToken = JwtService.getToken() ?? (await fetchToken());
-      setToken(savedToken);
-
-      /*
-       * Whether the token is fetched from the API or got from the session
-       * storage, we set up a timer to trigger the continuous refreshing of the
-       * token. As the user navigates around and refreshes the page throughout
-       * the window in which the token is valid, we want to keep setting up the
-       * refresh logic so that when the token expires we get a new one, put it
-       * in session storage, and the current page and all subsequent ones in
-       * the next temporal window will continue to work.
-       */
-      setTimeout(
-        () => {
-          void refreshToken();
-        },
-        JwtService.secondsToExpiry(savedToken) * 1000,
-      );
-      return savedToken;
-    },
+    getToken,
   };
 }

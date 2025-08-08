@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import useOauthToken from "@/common/useOauthToken";
+import useOauthToken from "../auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
 
@@ -42,7 +42,9 @@ export default function useShare(): {
   /**
    * Fetches sharing information for multiple global IDs.
    */
-  getShareInfoForMultiple: (globalIds: string[]) => Promise<Map<string, ShareInfo[]>>;
+  getShareInfoForMultiple: (
+    globalIds: string[],
+  ) => Promise<Map<string, ShareInfo[]>>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -64,7 +66,7 @@ export default function useShare(): {
           variant: "error",
           title: "Error fetching sharing information",
           message: getErrorMessage(e, "An unknown error occurred."),
-        })
+        }),
       );
       throw new Error("Could not fetch sharing information", {
         cause: e,
@@ -72,7 +74,9 @@ export default function useShare(): {
     }
   }
 
-  async function getShareInfoForMultiple(globalIds: string[]): Promise<Map<string, ShareInfo[]>> {
+  async function getShareInfoForMultiple(
+    globalIds: string[],
+  ): Promise<Map<string, ShareInfo[]>> {
     try {
       // Make parallel requests for all global IDs
       const promises = globalIds.map(async (globalId) => {
@@ -81,7 +85,7 @@ export default function useShare(): {
       });
 
       const results = await Promise.all(promises);
-      
+
       // Convert to Map for easy lookup
       const shareMap = new Map<string, ShareInfo[]>();
       results.forEach(({ globalId, shares }) => {
@@ -95,11 +99,14 @@ export default function useShare(): {
           variant: "error",
           title: "Error fetching sharing information",
           message: getErrorMessage(e, "An unknown error occurred."),
-        })
+        }),
       );
-      throw new Error("Could not fetch sharing information for multiple items", {
-        cause: e,
-      });
+      throw new Error(
+        "Could not fetch sharing information for multiple items",
+        {
+          cause: e,
+        },
+      );
     }
   }
 

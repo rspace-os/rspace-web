@@ -19,11 +19,15 @@ import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
+import TextField from "@mui/material/TextField";
+import Autocomplete from "@mui/material/Autocomplete";
+import Divider from "@mui/material/Divider";
 import Analytics from "../../components/Analytics";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
 import Result from "../../util/result";
 import useShare, { ShareInfo } from "../../hooks/api/useShare";
+import useGroups, { Group } from "../../hooks/api/useGroups";
 import UserDetails from "../../Inventory/components/UserDetails";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
@@ -55,8 +59,10 @@ const ShareDialog = () => {
     new Map(),
   );
   const [loading, setLoading] = React.useState(false);
+  const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { getShareInfoForMultiple } = useShare();
+  const { groups, loading: groupsLoading, fetchGroups } = useGroups();
 
   React.useEffect(() => {
     function handler(event: Event) {
@@ -73,7 +79,6 @@ const ShareDialog = () => {
     };
   }, []);
 
-  // Fetch sharing data when dialog opens and we have globalIds
   React.useEffect(() => {
     if (open && globalIds.length > 0) {
       setLoading(true);
@@ -90,12 +95,19 @@ const ShareDialog = () => {
     }
   }, [open, globalIds]);
 
+  React.useEffect(() => {
+    if (open) {
+      fetchGroups();
+    }
+  }, [open, fetchGroups]);
+
   function handleClose() {
     setOpen(false);
     setGlobalIds([]);
     setNames([]);
     setShareData(new Map());
     setLoading(false);
+    setSelectedGroup(null);
   }
 
   return (
@@ -112,6 +124,52 @@ const ShareDialog = () => {
     >
       <DialogTitle>Share</DialogTitle>
       <DialogContent>
+        <Box mb={3}>
+          <Autocomplete
+            options={groups || []}
+            loading={groupsLoading}
+            value={selectedGroup}
+            onChange={(event, newValue) => {
+              setSelectedGroup(newValue);
+            }}
+            getOptionLabel={(option) => option.name}
+            renderOption={(props, option) => (
+              <Box component="li" {...props}>
+                <Box>
+                  <Typography variant="body2" fontWeight="medium">
+                    {option.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {option.type} • {option.members?.length || 0} members
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Search groups to share with"
+                placeholder="Type to search groups..."
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {groupsLoading ? (
+                        <CircularProgress color="inherit" size={20} />
+                      ) : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            fullWidth
+            clearOnBlur
+            handleHomeEndKeys
+          />
+        </Box>
+
+        <Divider sx={{ mb: 3 }} />
         {loading ? (
           <Box
             display="flex"
@@ -169,15 +227,18 @@ const ShareDialog = () => {
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        window.open(`/groups/view/${share.sharedTargetId}`, '_blank');
+                                        window.open(
+                                          `/groups/view/${share.sharedTargetId}`,
+                                          "_blank",
+                                        );
                                       }}
-                                      sx={{ 
-                                        fontWeight: 'medium',
-                                        textAlign: 'left',
-                                        textDecoration: 'none',
-                                        '&:hover': {
-                                          textDecoration: 'underline'
-                                        }
+                                      sx={{
+                                        fontWeight: "medium",
+                                        textAlign: "left",
+                                        textDecoration: "none",
+                                        "&:hover": {
+                                          textDecoration: "underline",
+                                        },
                                       }}
                                     >
                                       {share.sharedTargetDisplayName}
