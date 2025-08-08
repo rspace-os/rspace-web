@@ -25,7 +25,7 @@ import { CallableAsposePreview } from "../components/CallableAsposePreview";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
 import RsSet from "../../../util/set";
-import { DisableDragAndDropByDefault } from "../../../components/useFileImportDragAndDrop";
+import { DisableDragAndDropByDefault } from "../../../hooks/browser/useFileImportDragAndDrop";
 import OpenFolderProvider from "../components/OpenFolderProvider";
 import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 

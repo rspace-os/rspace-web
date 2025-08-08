@@ -25,7 +25,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import Alerts from "../../components/Alerts/Alerts";
-import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
+import { DisableDragAndDropByDefault } from "../../hooks/browser/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection, useGallerySelection } from "./useGallerySelection";
 import { BrowserRouter, Navigate } from "react-router-dom";

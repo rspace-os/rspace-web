@@ -34,7 +34,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import { useIntegrationIsAllowedAndEnabled } from "../../../hooks/api/integrationHelpers";
-import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
+import useOneDimensionalRovingTabIndex from "../../../hooks/browser/useOneDimensionalRovingTabIndex";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import { observer } from "mobx-react-lite";
 import { autorun } from "mobx";
