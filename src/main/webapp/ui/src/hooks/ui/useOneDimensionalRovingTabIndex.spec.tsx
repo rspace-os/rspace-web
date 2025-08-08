@@ -4,7 +4,7 @@ import {
   SimpleExample,
   HorizontalExample,
 } from "./useOneDimensionalRovingTabIndex.story";
-import { type emptyObject } from "../util/types";
+import { type emptyObject } from "../../util/types";
 
 const feature = test.extend<{
   Given: {
@@ -66,7 +66,7 @@ const feature = test.extend<{
               () =>
                 (
                   document.activeElement?.parentNode as HTMLElement | null
-                )?.tagName.toLowerCase() === "li"
+                )?.tagName.toLowerCase() === "li",
             )) ?? false;
         }
       },
@@ -132,7 +132,7 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
       await Given["the simple example component is rendered"]();
       await When["the user presses the tab key {count} times"]({ count: 3 });
       await Then["the after button should gain focus"]();
-    }
+    },
   );
   test.describe("The arrow keys traverse the roving list", () => {
     feature("The down arrow moves the focus", async ({ Given, When, Then }) => {
@@ -149,7 +149,7 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await When["the user presses the down arrow key"]();
         await When["the user presses the up arrow key"]();
         await Then["the first list item gains focus"]();
-      }
+      },
     );
     feature(
       "The focus wraps back to the beginning",
@@ -159,7 +159,7 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await When["the user presses the down arrow key"]();
         await When["the user presses the down arrow key"]();
         await Then["the first list item gains focus"]();
-      }
+      },
     );
     feature(
       "The focus wraps forward to the end",
@@ -169,7 +169,7 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await When["the user presses the up arrow key"]();
         await When["the user presses the up arrow key"]();
         await Then["the first list item gains focus"]();
-      }
+      },
     );
     feature(
       "The right arrow moves the focus in the horizontal layout",
@@ -178,7 +178,7 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await When["the roving list has focus"]();
         await When["the user presses the right arrow key"]();
         await Then["the second list item gains focus"]();
-      }
+      },
     );
     feature(
       "The left arrow moves the focus back in the horizontal layout",
@@ -188,7 +188,7 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await When["the user presses the right arrow key"]();
         await When["the user presses the left arrow key"]();
         await Then["the first list item gains focus"]();
-      }
+      },
     );
     feature(
       "The focus wraps back to the beginning in horizontal layout",
@@ -198,7 +198,7 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await When["the user presses the right arrow key"]();
         await When["the user presses the right arrow key"]();
         await Then["the first list item gains focus"]();
-      }
+      },
     );
     feature(
       "The focus wraps forward to the end in horizontal layout",
@@ -208,7 +208,7 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
         await When["the user presses the left arrow key"]();
         await When["the user presses the left arrow key"]();
         await Then["the first list item gains focus"]();
-      }
+      },
     );
   });
   feature(
@@ -220,6 +220,6 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
       await When["the roving list loses focus"]();
       await When["the roving list has focus"]();
       await Then["the second list item gains focus"]();
-    }
+    },
   );
 });
