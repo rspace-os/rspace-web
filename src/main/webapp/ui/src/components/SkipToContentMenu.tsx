@@ -5,7 +5,7 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import { useLandmarksList } from "./LandmarksContext";
-import useOneDimensionalRovingTabIndex from "./useOneDimensionalRovingTabIndex";
+import useOneDimensionalRovingTabIndex from "../hooks/ui/useOneDimensionalRovingTabIndex";
 
 const SkipToContentButton: React.FC = () => {
   const { landmarks } = useLandmarksList();

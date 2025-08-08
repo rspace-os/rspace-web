@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import axios from "@/common/axios";
 import { doNotAwait } from "../../../util/Util";
-import useOauthToken from "../../../common/useOauthToken";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
@@ -26,7 +26,7 @@ const FilestoreLoginContext = React.createContext<{
 }>({
   login: () =>
     Promise.reject(
-      new Error("FilestoreLoginDialog is not included in the DOM")
+      new Error("FilestoreLoginDialog is not included in the DOM"),
     ),
 });
 
@@ -96,7 +96,7 @@ const FilestoreLoginDialog = ({
                   if (status === 403) return Result.Ok("Wrong credentials?");
                   return Parsers.objectPath(
                     ["response", "data", "message"],
-                    error
+                    error,
                   ).flatMap(Parsers.isString);
                 })
                 .orElse(error.message);
@@ -105,7 +105,7 @@ const FilestoreLoginDialog = ({
                   variant: "error",
                   title: "Could not authenticate",
                   message,
-                })
+                }),
               );
             }
           } finally {

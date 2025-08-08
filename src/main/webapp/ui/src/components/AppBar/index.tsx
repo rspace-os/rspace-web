@@ -2,7 +2,7 @@ import React from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import {
   AccessibilityTipsMenuItem,
@@ -57,12 +57,12 @@ import Popover from "@mui/material/Popover";
 import IconButton from "@mui/material/IconButton";
 import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
-import useSessionStorage from "../../util/useSessionStorage";
-import useWebSocketNotifications from "../../api/useWebSocketNotifications";
+import useSessionStorage from "../../hooks/browser/useSessionStorage";
+import useWebSocketNotifications from "../../hooks/websockets/useWebSocketNotifications";
 import Badge from "@mui/material/Badge";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import useWhoAmI from "@/api/useWhoAmI";
+import useWhoAmI from "../../hooks/api/useWhoAmI";
 import { Person } from "@/stores/definitions/Person";
 import AboutRSpaceDialog from "./AboutRSpaceDialog";
 import InfoIcon from "@mui/icons-material/Info";

@@ -23,9 +23,9 @@ import {
 } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import Alerts from "../../components/Alerts/Alerts";
-import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
+import { DisableDragAndDropByDefault } from "../../hooks/ui/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection, useGallerySelection } from "./useGallerySelection";
 import { BrowserRouter, Navigate } from "react-router-dom";
@@ -33,18 +33,18 @@ import { Routes, Route, useParams } from "react-router";
 import useUiPreference, {
   PREFERENCES,
   UiPreferences,
-} from "../../util/useUiPreference";
+} from "../../hooks/api/useUiPreference";
 import RouterNavigationProvider from "./components/RouterNavigationProvider";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { CallableSnapGenePreview } from "./components/CallableSnapGenePreview";
-import { useSearchParamState } from "../../util/useSearchParamState";
+import { useSearchParamState } from "../../hooks/browser/useSearchParamState";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
 import * as FetchingData from "../../util/fetchingData";
-import { useDeploymentProperty } from "../useDeploymentProperty";
+import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import PlaceholderLabel from "./components/PlaceholderLabel";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import SidebarToggle from "../../components/AppBar/SidebarToggle";
@@ -54,7 +54,7 @@ import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
 import * as Parsers from "../../util/parsers";
 import axios from "@/common/axios";
-import useOauthToken from "../../common/useOauthToken";
+import useOauthToken from "../../hooks/auth/useOauthToken";
 import RsSet from "../../util/set";
 import docLinks from "../../assets/DocLinks";
 import Stack from "@mui/material/Stack";

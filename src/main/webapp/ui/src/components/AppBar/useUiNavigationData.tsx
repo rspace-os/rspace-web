@@ -1,7 +1,7 @@
 import React from "react";
 import * as FetchingData from "../../util/fetchingData";
 import axios from "@/common/axios";
-import useOauthToken from "../../common/useOauthToken";
+import useOauthToken from "../../hooks/auth/useOauthToken";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 
@@ -116,7 +116,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
           headers: {
             Authorization: "Bearer " + token,
           },
-        }
+        },
       );
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -127,44 +127,44 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
               .elseThrow();
             const orcidId = Parsers.objectPath(["userDetails", "orcidId"], obj)
               .flatMap((o) =>
-                Parsers.isString(o).orElseTry(() => Parsers.isNull(o))
+                Parsers.isString(o).orElseTry(() => Parsers.isNull(o)),
               )
               .elseThrow();
             const orcidAvailable = Parsers.objectPath(
               ["userDetails", "orcidAvailable"],
-              obj
+              obj,
             )
               .flatMap(Parsers.isBoolean)
               .elseThrow();
             const fullName = Parsers.objectPath(
               ["userDetails", "fullName"],
-              obj
+              obj,
             )
               .flatMap(Parsers.isString)
               .elseThrow();
             const username = Parsers.objectPath(
               ["userDetails", "username"],
-              obj
+              obj,
             )
               .flatMap(Parsers.isString)
               .elseThrow();
             const profileImgSrc = Parsers.objectPath(
               ["userDetails", "profileImgSrc"],
-              obj
+              obj,
             )
               .flatMap((o) =>
-                Parsers.isString(o).orElseTry(() => Parsers.isNull(o))
+                Parsers.isString(o).orElseTry(() => Parsers.isNull(o)),
               )
               .elseThrow();
             const published = Parsers.objectPath(
               ["visibleTabs", "published"],
-              obj
+              obj,
             )
               .flatMap(Parsers.isBoolean)
               .elseThrow();
             const inventory = Parsers.objectPath(
               ["visibleTabs", "inventory"],
-              obj
+              obj,
             )
               .flatMap(Parsers.isBoolean)
               .elseThrow();
@@ -173,7 +173,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
               .elseThrow();
             const myLabGroups = Parsers.objectPath(
               ["visibleTabs", "myLabGroups"],
-              obj
+              obj,
             )
               .flatMap(Parsers.isBoolean)
               .elseThrow();
@@ -191,9 +191,9 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
                     Parsers.objectPath(["startDate"], nextMaintenanceObj)
                       .flatMap(Parsers.isString)
                       .flatMap(Parsers.parseDate)
-                      .map((startDate) => ({ startDate }))
+                      .map((startDate) => ({ startDate })),
                   )
-                  .orElseTry(() => Parsers.isNull(o))
+                  .orElseTry(() => Parsers.isNull(o)),
               )
               .elseThrow();
             return Result.Ok({

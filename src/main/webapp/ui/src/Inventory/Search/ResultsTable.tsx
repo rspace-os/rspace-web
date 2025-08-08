@@ -15,7 +15,7 @@ import Skeleton from "@mui/material/Skeleton";
 import { withStyles } from "Styles";
 import ScrollBox from "./ScrollBox";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 
 const ResultRowSkeleton = () => {
   const { isViewportSmall, isViewportLarge } = useViewportDimensions();
@@ -64,7 +64,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
 
   const toggleAll = () => {
     const results = search.filteredResults.filter(
-      (r) => !search.alwaysFilterOut(r)
+      (r) => !search.alwaysFilterOut(r),
     );
     const selected = search.filteredResults.some((r) => r.selected === false);
     results.forEach((r) => r.toggleSelected(selected));
@@ -93,7 +93,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
       text: "Mine",
       selection: () => {
         search.filteredResults.forEach((r) =>
-          r.toggleSelected(r.currentUserIsOwner ?? false)
+          r.toggleSelected(r.currentUserIsOwner ?? false),
         );
       },
     },
@@ -101,7 +101,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
       text: "Not Mine",
       selection: () => {
         search.filteredResults.forEach(
-          (r) => r.toggleSelected(r.currentUserIsOwner === false) // if currentUserIsOwner cannot be determined then don't select
+          (r) => r.toggleSelected(r.currentUserIsOwner === false), // if currentUserIsOwner cannot be determined then don't select
         );
       },
     },

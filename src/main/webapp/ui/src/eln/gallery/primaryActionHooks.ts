@@ -2,7 +2,7 @@ import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import * as FetchingData from "../../util/fetchingData";
 import { type GalleryFile, chemistryFilePreview } from "./useGalleryListing";
-import { useDeploymentProperty } from "../useDeploymentProperty";
+import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import useCollabora from "./useCollabora";
 import useOfficeOnline from "./useOfficeOnline";
 import { supportedAsposeFile } from "./components/CallableAsposePreview";
@@ -26,7 +26,7 @@ const dnaFileExtensions = [
  * returns null is returned.
  */
 export function useSnapGenePreviewOfGalleryFile(): (
-  file: GalleryFile
+  file: GalleryFile,
 ) => Result<null> {
   const snapGeneEnabled = useDeploymentProperty("snapgene.available");
   return (file) => {
@@ -41,7 +41,7 @@ export function useSnapGenePreviewOfGalleryFile(): (
           ? Result.Ok(null)
           : Result.Error([
               new Error("The system admin has not made SnapGene available"),
-            ])
+            ]),
       );
   };
 }
@@ -52,7 +52,7 @@ export function useSnapGenePreviewOfGalleryFile(): (
  * image file of such a preview is returned.
  */
 export function useImagePreviewOfGalleryFile(): (
-  file: GalleryFile
+  file: GalleryFile,
 ) => Result<() => Promise<URL>> {
   return (file) => {
     if (file.isImage && file.downloadHref) return Result.Ok(file.downloadHref);
@@ -81,9 +81,9 @@ export function useCollaboraEdit(): (file: GalleryFile) => Result<string> {
           ? Result.Ok(null)
           : Result.Error([
               new Error(
-                "Selected file's extension is not supported by collabora"
+                "Selected file's extension is not supported by collabora",
               ),
-            ])
+            ]),
       )
       .map(() => file.globalId)
       .flatMap(Parsers.isNotBottom)
@@ -112,9 +112,9 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
           ? Result.Ok(null)
           : Result.Error([
               new Error(
-                "Selected file's extension is not supported by office online"
+                "Selected file's extension is not supported by office online",
               ),
-            ])
+            ]),
       )
       .map(() => file.globalId)
       .flatMap(Parsers.isNotBottom)
@@ -129,7 +129,7 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
  * If it is, then a function that produces a URL to the PDF file is returned.
  */
 export function usePdfPreviewOfGalleryFile(): (
-  file: GalleryFile
+  file: GalleryFile,
 ) => Result<() => Promise<URL>> {
   return (file) => {
     if (file.extension !== "pdf")
@@ -145,7 +145,7 @@ export function usePdfPreviewOfGalleryFile(): (
  * previewed by having Aspose generate a PDF.
  */
 export function useAsposePreviewOfGalleryFile(): (
-  file: GalleryFile
+  file: GalleryFile,
 ) => Result<null> {
   const asposeEnabled = useDeploymentProperty("aspose.enabled");
   return (file) => {
@@ -197,33 +197,33 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
             }),
             file.name,
           ],
-        }))
+        })),
       )
       .orElseTry(() =>
         canEditWithCollabora(file).map((url) => ({
           tag: "collabora" as const,
           url,
-        }))
+        })),
       )
       .orElseTry(() =>
         canEditWithOfficeOnline(file).map((url) => ({
           tag: "officeonline" as const,
           url,
-        }))
+        })),
       )
       .orElseTry(() =>
         canPreviewAsPdf(file).map((downloadHref) => ({
           tag: "pdf" as const,
           downloadHref,
-        }))
+        })),
       )
       .orElseTry(() =>
         canPreviewWithSnapGene(file).map(() => ({
           tag: "snapgene" as const,
           file,
-        }))
+        })),
       )
       .orElseTry(() =>
-        canPreviewWithAspose(file).map(() => ({ tag: "aspose" as const }))
+        canPreviewWithAspose(file).map(() => ({ tag: "aspose" as const })),
       );
 }

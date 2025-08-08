@@ -22,7 +22,7 @@ import materialTheme from "../../theme";
 import { ErrorReason, Order, BookingType } from "./Enums";
 import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
-import useLocalStorage from "../../util/useLocalStorage";
+import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import FormControl from "@mui/material/FormControl";
 import { type UseState } from "../../util/types";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -97,19 +97,19 @@ function Clustermarket({
   const [errorMessage, setErrorMessage] = useState("");
 
   const [selectedBookingIds, setSelectedBookingIds] = useState<Array<string>>(
-    []
+    [],
   );
   const [order, setOrder] = useLocalStorage<(typeof Order)[keyof typeof Order]>(
     ORDER_KEY,
-    DEFAULT_ORDER
+    DEFAULT_ORDER,
   );
   const [bookingType, setBookingType] = useLocalStorage(
     "clustermarketBookingType",
-    defaultBookingType
+    defaultBookingType,
   );
   const [isMaintenance, setIsMaintenance] = useLocalStorage(
     "clustermarketIsMaintenance",
-    false
+    false,
   );
   const [orderBy, setOrderBy] = useLocalStorage(ORDER_BY_KEY, DEFAULT_ORDERBY);
 
@@ -122,7 +122,7 @@ function Clustermarket({
   };
 
   const removeMaintanceNotesFromHeaders = (
-    headers: typeof VISIBLE_HEADER_CELLS
+    headers: typeof VISIBLE_HEADER_CELLS,
   ) => {
     if (headers.find((header) => header.id === maintenanceNotes.id)) {
       headers.splice(4, 1);
@@ -132,7 +132,7 @@ function Clustermarket({
 
   const setHeadersByBookingType = (
     newBookingType: BOOKING_TYPE[keyof BOOKING_TYPE],
-    newIsMaintenance: boolean
+    newIsMaintenance: boolean,
   ) => {
     if (newBookingType === BookingType.EQUIPMENT) {
       VISIBLE_HEADER_CELLS = isMaintenance
@@ -186,7 +186,7 @@ function Clustermarket({
               bookingsList,
               bookingDetails,
               equipmentDetails,
-              isMaintenance
+              isMaintenance,
             );
           setEquipment(equipmentTableRows);
           // eslint-disable-next-line no-undef
@@ -202,7 +202,7 @@ function Clustermarket({
               bookingsList,
               bookingDetails,
               equipmentDetails,
-              isMaintenance
+              isMaintenance,
             );
           setBookings(bookingTableRows);
           // eslint-disable-next-line no-undef
@@ -222,7 +222,7 @@ function Clustermarket({
   };
 
   const handleBookingTypeChange = (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const newBookingType = event.target.value;
     setBookingType(newBookingType);
@@ -243,17 +243,17 @@ function Clustermarket({
     > =
       bookingType === BookingType.EQUIPMENT
         ? equipment.filter((item) =>
-            selectedBookingIds.includes(item.equipmentID)
+            selectedBookingIds.includes(item.equipmentID),
           )
         : bookings.filter((booking) =>
-            selectedBookingIds.includes(booking.bookingID)
+            selectedBookingIds.includes(booking.bookingID),
           );
 
     window.parent.postMessage(
       {
         mceAction: selected_bookings.length > 0 ? "enable" : "disable",
       },
-      "*"
+      "*",
     );
 
     return selected_bookings;

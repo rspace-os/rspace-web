@@ -9,7 +9,7 @@ import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
 import ColumnVisibilitySettingsButton from "./ColumnVisibilitySettingsButton";
 import ColumnVisibilitySettings from "./ColumnVisibilitySettings";
-import useLocalStorage from "../../util/useLocalStorage";
+import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import FilterButton from "./FilterButton";
 import Filter from "./Filter";
 import { createRoot } from "react-dom/client";
@@ -52,8 +52,8 @@ function useAuthenticatedServers() {
             .flatMap(Parsers.isNotNull)
             .map((servers) =>
               Object.entries(servers).filter(
-                ([k]) => k !== "PYRAT_CONFIGURED_SERVERS"
-              )
+                ([k]) => k !== "PYRAT_CONFIGURED_SERVERS",
+              ),
             )
             .flatMap((servers) =>
               Result.all(
@@ -72,14 +72,14 @@ function useAuthenticatedServers() {
                   } catch {
                     return Result.Error([
                       new Error(
-                        "Could not parse out pyrat authenticated server"
+                        "Could not parse out pyrat authenticated server",
                       ),
                     ]);
                   }
-                })
-              )
+                }),
+              ),
             )
-            .elseThrow()
+            .elseThrow(),
         );
       })
       .catch((error) => {
@@ -233,19 +233,19 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
 
   const [showSettings, setShowSettings] = useLocalStorage(
     "pyratShowSettings",
-    false
+    false,
   );
   const [showFilter, setShowFilter] = useLocalStorage("pyratShowFilter", false);
   const [visibleColumnIds, setVisibleColumnIds] = useLocalStorage(
     "pyratVisibleColumns",
-    TABLE_HEADER_CELLS.map((cell) => cell.id)
+    TABLE_HEADER_CELLS.map((cell) => cell.id),
   );
 
   const [selectedAnimalIds, setSelectedAnimalIds] = useState([]);
   const [order, setOrder] = useLocalStorage("pyratSearchOrder", Order.desc);
   const [orderBy, setOrderBy] = useLocalStorage(
     "pyratSearchOrderBy",
-    "eartag_or_id"
+    "eartag_or_id",
   );
 
   const [page, setPage] = useState(0);
@@ -278,7 +278,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
   useEffect(() => {
     pyrat
       .get(
-        `locations?serverAlias=${serverAlias}&s=full_name:asc&k=building_id&k=full_name&type=building&=status=available`
+        `locations?serverAlias=${serverAlias}&s=full_name:asc&k=building_id&k=full_name&type=building&=status=available`,
       )
       .then((response) => {
         if (response.data) {
@@ -287,7 +287,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
               acc[building.full_name] = building.building_id;
               return acc;
             },
-            { None: "" }
+            { None: "" },
           );
 
           setFilterSpecial({
@@ -332,7 +332,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
               animal.mutations = animal.mutations
                 .map(
                   (mutation) =>
-                    mutation.mutationname + " " + mutation.mutationgrade
+                    mutation.mutationname + " " + mutation.mutationgrade,
                 )
                 .join(", ");
             }
@@ -345,7 +345,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
               .flatMap(parseInteger)
               .orElseGet(([error]) => {
                 throw new Error("Pagination header missing", { cause: error });
-              })
+              }),
           );
         }
       })
@@ -397,14 +397,14 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
   VISIBLE_HEADER_CELLS = useMemo(
     () =>
       TABLE_HEADER_CELLS.filter((cell) => visibleColumnIds.includes(cell.id)),
-    [visibleColumnIds]
+    [visibleColumnIds],
   );
 
   React.useEffect(() => {
     setSelectedAnimals(
       animals.filter((animal) =>
-        selectedAnimalIds.includes(animal.eartag_or_id)
-      )
+        selectedAnimalIds.includes(animal.eartag_or_id),
+      ),
     );
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - setSelectedAnimals will not meaningfully change
@@ -434,12 +434,12 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
       (async () => {
         try {
           const response = await pyrat.get(
-            `${filterMultiReq[filterKey].query}${input}`
+            `${filterMultiReq[filterKey].query}${input}`,
           );
 
           if (response.data) {
             const enumObj = Object.fromEntries(
-              response.data.map(filterMultiReq[filterKey].renderFunc)
+              response.data.map(filterMultiReq[filterKey].renderFunc),
             );
             setFilterMultiReq({
               ...filterMultiReq,
@@ -607,7 +607,7 @@ function PyratDialog({ editor, open, onClose }) {
             editor.execCommand(
               "mceInsertContent",
               false,
-              createTinyMceTable(selectedAnimals).outerHTML
+              createTinyMceTable(selectedAnimals).outerHTML,
             );
             onClose();
           }}
@@ -635,7 +635,7 @@ class PyratPlugin {
                 {...newProps}
               />
             </ThemeProvider>
-          </StyledEngineProvider>
+          </StyledEngineProvider>,
         );
       }
     }
@@ -716,7 +716,7 @@ function createTinyMceTable(selectedAnimals) {
   linkCell.appendChild(document.createTextNode(new Date().toDateString()));
   linkCell.appendChild(document.createTextNode(" "));
   linkCell.appendChild(
-    document.createTextNode(new Date().toLocaleTimeString())
+    document.createTextNode(new Date().toLocaleTimeString()),
   );
   linkCell.setAttribute("colspan", VISIBLE_HEADER_CELLS.length);
   linkCell.style = "font-weight: 400";

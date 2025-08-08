@@ -14,7 +14,7 @@ import { observer } from "mobx-react-lite";
 import FieldmarkIcon from "../../assets/branding/fieldmark/logo.svg";
 import CardMedia from "@mui/material/CardMedia";
 import FieldmarkImportDialog from "./FieldmarkImportDialog";
-import { useIntegrationIsAllowedAndEnabled } from "../../common/integrationHelpers";
+import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
 import { ACCENT_COLOR as FIELDMARK_COLOR } from "../../assets/branding/fieldmark";
 
@@ -53,11 +53,11 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
   const showFieldmark = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("FIELDMARK")
+    useIntegrationIsAllowedAndEnabled("FIELDMARK"),
   ).orElse(false);
 
   const handleCreate = async (
-    recordType: "sample" | "container" | "template"
+    recordType: "sample" | "container" | "template",
   ) => {
     trackingStore.trackEvent("CreateInventoryRecordClicked", {
       type: recordType,
@@ -66,7 +66,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
       const newRecord = await searchStore.createNew(recordType);
       onClick();
       const params = searchStore.fetcher.generateNewQuery(
-        newRecord.showNewlyCreatedRecordSearchParams
+        newRecord.showNewlyCreatedRecordSearchParams,
       );
       navigate(`/inventory/search?${params.toString()}`, {
         modifyVisiblePanel: false,
@@ -79,7 +79,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   };
 
   const handleImport = async (
-    recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES"
+    recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES",
   ) => {
     if (await uiStore.confirmDiscardAnyChanges()) {
       importStore.initializeNewImport(recordType);

@@ -15,7 +15,7 @@ import NavigateContext, {
 import { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage, UserCancelledAction } from "../../util/error";
 import MainSearchNavigationContext from "./MainSearchNavigationContext";
-import { UiPreferences } from "../../util/useUiPreference";
+import { UiPreferences } from "../../hooks/api/useUiPreference";
 import LeftPanelView from "./LeftPanelView";
 import Box from "@mui/material/Box";
 import { globalId } from "@/stores/definitions/BaseRecord";
