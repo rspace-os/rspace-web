@@ -36,12 +36,12 @@ import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import UploadIcon from "@mui/icons-material/Publish";
 import Result from "../../../../util/result";
-import { useDeploymentProperty } from "../../../../eln/useDeploymentProperty";
+import { useDeploymentProperty } from "../../../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../../../util/fetchingData";
 import * as Parser from "../../../../util/parsers";
 
 const GalleryPicker = React.lazy(
-  () => import("../../../../eln/gallery/picker")
+  () => import("../../../../eln/gallery/picker"),
 );
 
 const CustomCardHeader = withStyles<
@@ -61,7 +61,7 @@ const CollapseContents = <
     image: BlobUrl | null;
     newBase64Image: string | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   attachments,
   fieldOwner,
@@ -72,7 +72,7 @@ const CollapseContents = <
   editable: boolean;
 }): ReactNode => {
   const chemistryProvider = FetchingData.getSuccessValue(
-    useDeploymentProperty("chemistry.provider")
+    useDeploymentProperty("chemistry.provider"),
   )
     .flatMap(Parser.isString)
     .orElse("");
@@ -144,7 +144,7 @@ const FileSelector = ({
       attachments: [
         ...activeResult.attachments,
         newAttachment(file, activeResult.permalinkURL, () =>
-          activeResult.setAttributesDirty({})
+          activeResult.setAttributesDirty({}),
         ),
       ],
     });
@@ -202,8 +202,8 @@ const FileSelector = ({
                   ...activeResult.attachments,
                   ...files.map((f) =>
                     newGalleryAttachment(f, () =>
-                      activeResult.setAttributesDirty({})
-                    )
+                      activeResult.setAttributesDirty({}),
+                    ),
                   ),
                 ],
               });
@@ -213,7 +213,7 @@ const FileSelector = ({
               if (file.isSnippet)
                 return Result.Error([
                   new Error(
-                    "Snippets cannot be attached to Inventory records."
+                    "Snippets cannot be attached to Inventory records.",
                   ),
                 ]);
               if (file.isFolder)
@@ -240,7 +240,7 @@ const FilesCard = observer(
       image: BlobUrl | null;
       newBase64Image: string | null;
     },
-    FieldOwner extends HasEditableFields<Fields>
+    FieldOwner extends HasEditableFields<Fields>,
   >({
     fieldOwner,
   }: {
@@ -293,7 +293,7 @@ const FilesCard = observer(
         </Collapse>
       </Card>
     );
-  }
+  },
 );
 
 function Attachments<
@@ -301,7 +301,7 @@ function Attachments<
     image: BlobUrl | null;
     newBase64Image: string | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner?: FieldOwner }): ReactNode {
   const {
     searchStore: { activeResult },

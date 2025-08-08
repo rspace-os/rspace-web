@@ -48,7 +48,7 @@ import DnsIcon from "@mui/icons-material/Dns";
 import axios from "@/common/axios";
 import useOauthToken from "../../../hooks/api/useOauthToken";
 import * as Parsers from "../../../util/parsers";
-import { useDeploymentProperty } from "../../useDeploymentProperty";
+import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import AddFilestoreDialog from "./AddFilestoreDialog";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
