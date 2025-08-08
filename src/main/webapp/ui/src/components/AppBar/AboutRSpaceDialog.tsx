@@ -10,7 +10,7 @@ import Link from "@mui/material/Link";
 import docLinks from "../../assets/DocLinks";
 import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
-import useApplicationVersion from "../../api/useApplicationVersion";
+import useApplicationVersion from "../../hooks/api/useApplicationVersion";
 import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
