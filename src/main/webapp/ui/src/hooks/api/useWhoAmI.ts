@@ -3,7 +3,7 @@ import axios from "@/common/axios";
 import { Person, PersonAttrs } from "@/stores/definitions/Person";
 import { Fetched } from "@/util/fetchingData";
 import { doNotAwait } from "@/util/Util";
-import useOauthToken from "./useOauthToken";
+import useOauthToken from "../auth/useOauthToken";
 
 /**
  * Get the current user's information from the /api/v1/userDetails/whoami endpoint.

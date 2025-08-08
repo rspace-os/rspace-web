@@ -29,7 +29,7 @@ import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
 import RsSet from "../../../util/set";
-import useDebounce from "../../../hooks/browser/useDebounce";
+import useDebounce from "../../../hooks/ui/useDebounce";
 import Popover from "@mui/material/Popover";
 import Button from "@mui/material/Button";
 import BarcodeScanner from "../../components/BarcodeScanner/AllBarcodeScanner";

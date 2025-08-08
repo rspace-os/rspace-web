@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import { DisableDragAndDropByDefault } from "@/hooks/browser/useFileImportDragAndDrop";
+import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
 import Analytics from "@/components/Analytics";
 import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { BrowserRouter } from "react-router-dom";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type UseState } from "./types";
+import { type UseState } from "../../util/types";
 
 /**
  * Like useState, but synchronised with local storage.
@@ -9,7 +9,7 @@ import { type UseState } from "./types";
  */
 export default function useLocalStorage<T>(
   key: string,
-  defaultValue: T
+  defaultValue: T,
 ): UseState<T> {
   const [storedValue, setStoredValue] = useState(() => {
     const item = window.localStorage.getItem(key);

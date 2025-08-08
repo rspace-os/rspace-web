@@ -17,7 +17,7 @@ import { useDroppable, useDraggable, useDndContext } from "@dnd-kit/core";
 import Box from "@mui/material/Box";
 import { runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
-import { useFileImportDropZone } from "../../../hooks/browser/useFileImportDragAndDrop";
+import { useFileImportDropZone } from "../../../hooks/ui/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import PlaceholderLabel from "./PlaceholderLabel";
 import { Optional } from "../../../util/optional";

@@ -9,7 +9,7 @@ import StepLabel from "@mui/material/StepLabel";
 import StepContent from "@mui/material/StepContent";
 import axios from "@/common/axios";
 import Result from "../../../util/result";
-import useOauthToken from "../../../hooks/api/useOauthToken";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";

@@ -13,7 +13,7 @@ import {
   type Id,
 } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import useOauthToken from "../../hooks/api/useOauthToken";
+import useOauthToken from "../../hooks/auth/useOauthToken";
 import { partitionAllSettled } from "../../util/Util";
 import { type GallerySection } from "./common";
 import AnalyticsContext from "../../stores/contexts/Analytics";
