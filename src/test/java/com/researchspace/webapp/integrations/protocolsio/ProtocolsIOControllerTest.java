@@ -71,10 +71,11 @@ public class ProtocolsIOControllerTest {
 
   @Test
   public void importExternalDataOK() {
-    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
             subject, workspaceRootFolder))
         .thenReturn(false);
-    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(subject, importsFolder))
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
+            subject, importsFolder))
         .thenReturn(false);
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
         ctrller.importExternalData(workspaceRootFolder.getId(), TransformerUtils.toList(protocol));
@@ -85,7 +86,7 @@ public class ProtocolsIOControllerTest {
 
   @Test
   public void importExternalDataIntoASharedFolder() {
-    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(subject, sharedFolder))
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(subject, sharedFolder))
         .thenReturn(true);
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
         ctrller.importExternalData(sharedFolder.getId(), TransformerUtils.toList(protocol));
@@ -97,7 +98,7 @@ public class ProtocolsIOControllerTest {
 
   @Test
   public void importExternalData_INTO_OWNED_SharedNotebook() {
-    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
             subject, sharedNotebook))
         .thenReturn(false);
     when(permissionUtils.isPermitted(sharedNotebook, PermissionType.CREATE, subject))
@@ -112,7 +113,7 @@ public class ProtocolsIOControllerTest {
 
   @Test
   public void importExternalData_INTO_NOT_OWNED_SharedNotebook() {
-    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
             subject, sharedNotebook))
         .thenReturn(true);
     when(permissionUtils.isPermitted(sharedNotebook, PermissionType.CREATE, subject))
