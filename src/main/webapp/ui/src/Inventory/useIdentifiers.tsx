@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import useOauthToken from "../hooks/api/useOauthToken";
+import useOauthToken from "../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";

@@ -3,7 +3,7 @@ import React from "react";
 import Result from "../../../util/result";
 import * as Parsers from "../../../util/parsers";
 import * as FetchingData from "../../../util/fetchingData";
-import useOauthToken from "../../../hooks/api/useOauthToken";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
 import { Optional } from "../../../util/optional";
 import AlertContext, {
   mkAlert,

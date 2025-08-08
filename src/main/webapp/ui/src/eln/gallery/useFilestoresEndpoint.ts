@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import useOauthToken from "../../hooks/api/useOauthToken";
+import useOauthToken from "../../hooks/auth/useOauthToken";
 import { type Filestore } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 

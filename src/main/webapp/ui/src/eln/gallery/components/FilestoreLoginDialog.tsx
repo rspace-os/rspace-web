@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import axios from "@/common/axios";
 import { doNotAwait } from "../../../util/Util";
-import useOauthToken from "../../../hooks/api/useOauthToken";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";

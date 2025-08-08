@@ -12,7 +12,7 @@ import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import { Optional } from "../../../util/optional";
 import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManagementPage";
 import Button from "@mui/material/Button";
-import useOauthToken from "../../../hooks/api/useOauthToken";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
 import axios from "@/common/axios";
 import { toTitleCase } from "../../../util/Util";
 import {
