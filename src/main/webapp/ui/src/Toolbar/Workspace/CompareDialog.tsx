@@ -4,7 +4,7 @@ import Alerts from "../../components/Alerts/Alerts";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import axios from "@/common/axios";
-import useOauthToken from "../../common/useOauthToken";
+import useOauthToken from "../../hooks/api/useOauthToken";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";

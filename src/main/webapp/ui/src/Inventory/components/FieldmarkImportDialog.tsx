@@ -39,7 +39,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormHelperText from "@mui/material/FormHelperText";
 import { useConfirm } from "@/components/ConfirmProvider";
-import useOauthToken from "@/common/useOauthToken";
+import useOauthToken from "@/hooks/api/useOauthToken";
 import axios from "@/common/axios";
 
 /**

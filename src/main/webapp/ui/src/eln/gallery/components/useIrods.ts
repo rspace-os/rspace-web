@@ -3,7 +3,7 @@ import React from "react";
 import Result from "../../../util/result";
 import * as Parsers from "../../../util/parsers";
 import * as FetchingData from "../../../util/fetchingData";
-import useOauthToken from "../../../common/useOauthToken";
+import useOauthToken from "../../../hooks/api/useOauthToken";
 import { Optional } from "../../../util/optional";
 import AlertContext, {
   mkAlert,
@@ -28,15 +28,15 @@ function parseIrodsLocationLinks(obj: object): Result<ReadonlyArray<Link>> {
                 href,
               }))(
                 Parsers.getValueWithKey("operation")(linkObj).flatMap(
-                  Parsers.isString
+                  Parsers.isString,
                 ),
                 Parsers.getValueWithKey("link")(linkObj).flatMap(
-                  Parsers.isString
-                )
-              )
-            )
-        )
-      )
+                  Parsers.isString,
+                ),
+              ),
+            ),
+        ),
+      ),
     );
 }
 
@@ -50,7 +50,7 @@ const parseSpecificHref =
   (op: string) =>
   (links: ReadonlyArray<Link>): Optional<string> =>
     ArrayUtils.find(({ operation }) => operation === op, links).map(
-      ({ href }) => href
+      ({ href }) => href,
     );
 
 const parseOperationError = (error: unknown): Result<string> =>
@@ -87,7 +87,7 @@ function handleErrors(response: unknown): Alert {
               mkAlert({
                 variant: "success",
                 message: "Successfully moved the files.",
-              })
+              }),
             );
           return data
             .flatMap(Parsers.getValueWithKey("fileInfoDetails"))
@@ -99,7 +99,7 @@ function handleErrors(response: unknown): Alert {
                     .flatMap(Parsers.isNotNull)
                     .flatMap((obj) => {
                       const succeeded = Parsers.getValueWithKey("succeeded")(
-                        obj
+                        obj,
                       )
                         .flatMap(Parsers.isBoolean)
                         .flatMap(Parsers.isTrue);
@@ -115,7 +115,7 @@ function handleErrors(response: unknown): Alert {
                             .map((filename) => ({
                               variant: "success" as const,
                               title: filename,
-                            }))
+                            })),
                         )
                         .orElseTry(() =>
                           /*
@@ -128,31 +128,31 @@ function handleErrors(response: unknown): Alert {
                             help: reason,
                           }))(
                             Parsers.getValueWithKey("fileName")(obj).flatMap(
-                              Parsers.isString
+                              Parsers.isString,
                             ),
                             Parsers.getValueWithKey("reason")(obj).flatMap(
-                              Parsers.isString
-                            )
-                          )
+                              Parsers.isString,
+                            ),
+                          ),
                         );
-                    })
-                )
+                    }),
+                ),
               ).map((details) =>
                 mkAlert({
                   variant: "warning",
                   message: "Moving some files failed.",
                   details,
                   isInfinite: true,
-                })
-              )
+                }),
+              ),
             );
-        })
+        }),
     )
     .orElse(
       mkAlert({
         variant: "error",
         message: "Could not parse response.",
-      })
+      }),
     );
 }
 
@@ -190,7 +190,7 @@ export default function useIrods(
   /**
    * A list of IDs of files in the Gallery. The order is not significant.
    */
-  selectedIds: ReadonlyArray<string>
+  selectedIds: ReadonlyArray<string>,
 ): FetchingData.Fetched<{
   /**
    * The URL of the configured iRODS server. This is set by the sysadmin and is
@@ -221,7 +221,7 @@ export default function useIrods(
     name: IrodsLocation["name"],
     path: IrodsLocation["path"],
     copyLink: Optional<string>,
-    moveLink: Optional<string>
+    moveLink: Optional<string>,
   ): IrodsLocation {
     return {
       id,
@@ -250,7 +250,7 @@ export default function useIrods(
               variant: "error",
               title: "Could not copy file.",
               message: errorMsg,
-            })
+            }),
           );
           throw e;
         }
@@ -278,7 +278,7 @@ export default function useIrods(
               variant: "error",
               title: "Could not move file.",
               message: errorMsg,
-            })
+            }),
           );
           throw e;
         }
@@ -292,7 +292,7 @@ export default function useIrods(
     Result<ReadonlyArray<IrodsLocation>>
   >(Result.Ok([]));
   const [serverUrl, setServerUrl] = React.useState<Result<string>>(
-    Result.Ok("")
+    Result.Ok(""),
   );
 
   async function fetchConfiguredLocations() {
@@ -311,7 +311,7 @@ export default function useIrods(
         }),
       });
       const dataObj: Result<object> = Parsers.isObject(data).flatMap(
-        Parsers.isNotNull
+        Parsers.isNotNull,
       );
       setServerUrl(
         dataObj
@@ -320,14 +320,14 @@ export default function useIrods(
           .mapError(([error]) => {
             console.error("Cannot parse 'serverUrl' from API response", error);
             return new Error(
-              "Could not determine which iRODS server is configured."
+              "Could not determine which iRODS server is configured.",
             );
           })
           .flatMap((url) =>
             url === ""
               ? Result.Error([new Error("No iRODS filestore configured")])
-              : Result.Ok(url)
-          )
+              : Result.Ok(url),
+          ),
       );
       setConfiguredLocations(
         dataObj
@@ -342,21 +342,21 @@ export default function useIrods(
                     const links = parseIrodsLocationLinks(obj);
                     return Result.lift5(mkIrodsLocation)(
                       Parsers.getValueWithKey("id")(obj).flatMap(
-                        Parsers.isNumber
+                        Parsers.isNumber,
                       ),
                       Parsers.getValueWithKey("name")(obj).flatMap(
-                        Parsers.isString
+                        Parsers.isString,
                       ),
                       Parsers.getValueWithKey("path")(obj).flatMap(
-                        Parsers.isString
+                        Parsers.isString,
                       ),
                       links.map(parseSpecificHref("copy")),
-                      links.map(parseSpecificHref("move"))
+                      links.map(parseSpecificHref("move")),
                     );
-                  })
-              )
+                  }),
+              ),
             );
-          })
+          }),
       );
     } catch (e) {
       setErrorMessage(
@@ -372,7 +372,7 @@ export default function useIrods(
               .flatMap(ArrayUtils.head)
               .flatMap(Parsers.isString);
           })
-          .orElse("Error parsing error")
+          .orElse("Error parsing error"),
       );
       console.error(e);
     } finally {
@@ -387,7 +387,7 @@ export default function useIrods(
    * need to re-fetch, nor if the same array has been re-ordered.
    */
   const parsedSelectedIds = Result.all(
-    ...selectedIds.map(Parsers.parseInteger)
+    ...selectedIds.map(Parsers.parseInteger),
   ).orElseGet(() => {
     throw new Error("Invalid selected Ids");
   });
@@ -396,7 +396,7 @@ export default function useIrods(
       if (a > b) return 1;
       if (a < b) return -1;
       return 0;
-    })
+    }),
   );
   React.useEffect(() => {
     void fetchConfiguredLocations();
@@ -414,7 +414,7 @@ export default function useIrods(
         serverUrl: url,
         configuredLocations: locations,
       },
-    })
+    }),
   )(serverUrl, configuredLocations).orElseGet(([error]) => ({
     tag: "error",
     error: error.message,

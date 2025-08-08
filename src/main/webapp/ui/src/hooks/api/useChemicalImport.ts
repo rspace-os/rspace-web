@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import useOauthToken from "@/common/useOauthToken";
+import useOauthToken from "./useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
 
@@ -106,7 +106,7 @@ export default function useChemicalImport(): {
           headers: {
             Authorization: `Bearer ${await getToken()}`,
           },
-        }
+        },
       );
       return data;
     } catch (e) {
@@ -115,7 +115,7 @@ export default function useChemicalImport(): {
           variant: "error",
           title: "Error searching for chemical compounds",
           message: getErrorMessage(e, "An unknown error occurred."),
-        })
+        }),
       );
       throw new Error("Could not search for chemical compounds", {
         cause: e,
@@ -163,7 +163,7 @@ export default function useChemicalImport(): {
           variant: "error",
           title: "Error saving chemical compounds",
           message: getErrorMessage(e, "An unknown error occurred."),
-        })
+        }),
       );
       throw new Error("Could not save chemical compounds", { cause: e });
     }
@@ -196,7 +196,7 @@ export default function useChemicalImport(): {
           variant: "error",
           title: "Error saving chemical compounds",
           message: getErrorMessage(e, "An unknown error occurred."),
-        })
+        }),
       );
       throw new Error("Could not save chemical compounds", { cause: e });
     }
@@ -228,7 +228,7 @@ export default function useChemicalImport(): {
       tstamp: milliseconds,
     };
     const htmlTemplate = await axios.get(
-      "/fieldTemplates/ajax/chemElementLink"
+      "/fieldTemplates/ajax/chemElementLink",
     );
     // @ts-expect-error Globally available on the document editor page
     return Mustache.render(htmlTemplate.data, json) as string;
