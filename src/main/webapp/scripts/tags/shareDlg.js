@@ -496,13 +496,18 @@ $(document).on('click', '#shareRecord', function (e) {
       $(this).find("span").data("cloud");
 
     const selected = typeof getSelectedIdsNamesAndTypes === 'function' ? getSelectedIdsNamesAndTypes():galleries_getSelectedIdsNamesAndTypes();
-    $('#share-dialog')
-      .data("isCloud", isCloud)
-      .data("selectedTypes", selected.types).data("publish-only", false)
-      .dialog("open");
-
-    applyAutocomplete(".email");
-    applyGroupAutocomplete(3, ".externalGroupId");
+    
+    // Dispatch event for React ShareDialog
+    window.dispatchEvent(
+      new CustomEvent("OPEN_SHARE_DIALOG", {
+        detail: { 
+          ids: selected.ids, 
+          names: selected.names,
+          types: selected.types,
+          isCloud: isCloud 
+        },
+      }),
+    );
 });
 
 $(document).on('click', '#publishRecord', function (e) {

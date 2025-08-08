@@ -40,6 +40,7 @@ library.add(
 import TagDialog from "./TagDialog";
 import CompareDialog from "./CompareDialog";
 import RenameDialog from "./RenameDialog";
+import ShareDialog from "./ShareDialog";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import TreeSort from "../../components/TreeSort";
@@ -556,6 +557,7 @@ class WorkspaceToolbar extends React.Component {
             <TagDialog />
             <CompareDialog />
             <RenameDialog />
+            <ShareDialog />
           </Analytics>
         </ThemeProvider>
       </StyledEngineProvider>
