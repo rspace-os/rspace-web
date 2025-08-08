@@ -10,7 +10,7 @@ import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { DisableDragAndDropByDefault } from "@/components/useFileImportDragAndDrop";
 import Analytics from "@/components/Analytics";
-import { UiPreferences } from "@/util/useUiPreference";
+import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { BrowserRouter } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Description, LocalGalleryFile } from "../useGalleryListing";
@@ -48,7 +48,7 @@ export function BunchOfImages(): React.ReactNode {
               thumbnailId: null,
               originalImageId: null,
               token: "",
-            })
+            }),
         ),
       ],
       totalHits: 8,
@@ -71,20 +71,20 @@ export function BunchOfImages(): React.ReactNode {
                       <LandmarksProvider>
                         <GallerySelection>
                           <OpenFolderProvider setPath={() => {}}>
-                          <MainPanel
-                            selectedSection="Images"
-                            path={[]}
-                            setSelectedSection={() => {}}
-                            galleryListing={MOCK_ROOT_WITH_IMAGES}
-                            folderId={{ tag: "success", value: -1 }}
-                            refreshListing={async () => {}}
-                            sortOrder="ASC"
-                            orderBy="name"
-                            setSortOrder={() => {}}
-                            setOrderBy={() => {}}
-                            appliedSearchTerm=""
-                            setAppliedSearchTerm={() => {}}
-                          />
+                            <MainPanel
+                              selectedSection="Images"
+                              path={[]}
+                              setSelectedSection={() => {}}
+                              galleryListing={MOCK_ROOT_WITH_IMAGES}
+                              folderId={{ tag: "success", value: -1 }}
+                              refreshListing={async () => {}}
+                              sortOrder="ASC"
+                              orderBy="name"
+                              setSortOrder={() => {}}
+                              setOrderBy={() => {}}
+                              appliedSearchTerm=""
+                              setAppliedSearchTerm={() => {}}
+                            />
                           </OpenFolderProvider>
                         </GallerySelection>
                       </LandmarksProvider>
@@ -232,23 +232,23 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
                               }
                             }}
                           >
-                          <MainPanel
-                            selectedSection="Images"
-                            path={path}
-                            setSelectedSection={() => {
-                              setGalleryListing(MOCK_ROOT_WITH_OUTER_FOLDER);
-                              setPath([]);
-                            }}
-                            galleryListing={galleryListing}
-                            folderId={{ tag: "success", value: -1 }}
-                            refreshListing={async () => {}}
-                            sortOrder="ASC"
-                            orderBy="name"
-                            setSortOrder={() => {}}
-                            setOrderBy={() => {}}
-                            appliedSearchTerm=""
-                            setAppliedSearchTerm={() => {}}
-                          />
+                            <MainPanel
+                              selectedSection="Images"
+                              path={path}
+                              setSelectedSection={() => {
+                                setGalleryListing(MOCK_ROOT_WITH_OUTER_FOLDER);
+                                setPath([]);
+                              }}
+                              galleryListing={galleryListing}
+                              folderId={{ tag: "success", value: -1 }}
+                              refreshListing={async () => {}}
+                              sortOrder="ASC"
+                              orderBy="name"
+                              setSortOrder={() => {}}
+                              setOrderBy={() => {}}
+                              appliedSearchTerm=""
+                              setAppliedSearchTerm={() => {}}
+                            />
                           </OpenFolderProvider>
                         </GallerySelection>
                       </LandmarksProvider>

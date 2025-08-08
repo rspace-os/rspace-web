@@ -1,6 +1,6 @@
 import React from "react";
 import Input from "@mui/material/Input";
-import useIsTextWiderThanField from "../../../util/useIsTextWiderThanField";
+import useIsTextWiderThanField from "../../../hooks/browser/useIsTextWiderThanField";
 import SearchDialog from "../../../components/SearchDialog";
 
 type SearchboxArgs = {

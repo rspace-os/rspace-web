@@ -20,7 +20,7 @@ import {
   SxProps,
   useTheme,
 } from "@mui/material/styles";
-import useViewportDimensions from "../../../util/useViewportDimensions";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import Avatar from "@mui/material/Avatar";
@@ -66,7 +66,9 @@ import { Link as ReactRouterLink } from "react-router-dom";
 import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
-import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
+import useUiPreference, {
+  PREFERENCES,
+} from "../../../hooks/api/useUiPreference";
 import Divider from "@mui/material/Divider";
 import {
   InfoPanelForSmallViewports,

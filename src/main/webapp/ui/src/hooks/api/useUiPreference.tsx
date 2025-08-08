@@ -1,7 +1,7 @@
-import { type UseState } from "./types";
+import { type UseState } from "../../util/types";
 import React from "react";
 import axios from "@/common/axios";
-import { mapObject } from "./Util";
+import { mapObject } from "../../util/Util";
 
 /**
  * This constant ensures that we don't end up with clashing keys
@@ -13,7 +13,7 @@ export const PREFERENCES: { [pref: string]: symbol } = {
   GALLERY_PICKER_INITIAL_SECTION: Symbol.for("GALLERY_PICKER_INITIAL_SECTION"),
   GALLERY_SIDEBAR_OPEN: Symbol.for("GALLERY_SIDEBAR_OPEN"),
   INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for(
-    "INVENTORY_FORM_SECTIONS_EXPANDED"
+    "INVENTORY_FORM_SECTIONS_EXPANDED",
   ),
   INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
   SYSADMIN_USERS_TABLE_COLUMNS: Symbol.for("SYSADMIN_USERS_TABLE_COLUMNS"),
@@ -66,7 +66,7 @@ export function UiPreferences({
       .then((data) => {
         if (data === "") {
           setUiPreferences(
-            mapObject<string, unknown, unknown>(() => null, PREFERENCES)
+            mapObject<string, unknown, unknown>(() => null, PREFERENCES),
           );
           return;
         }
@@ -106,7 +106,7 @@ export default function useUiPreference<T>(
   preference: (typeof PREFERENCES)[keyof typeof PREFERENCES],
   opts: {
     defaultValue: T;
-  }
+  },
 ): UseState<T> {
   const { uiPreferences, setUiPreferences } =
     React.useContext(UiPreferencesContext);
@@ -132,7 +132,7 @@ export default function useUiPreference<T>(
               time: new Date().getTime(),
             },
           };
-        }
+        },
       );
 
       if (!key) return;
@@ -150,7 +150,7 @@ export default function useUiPreference<T>(
               // eviction polciy in the future
               time: new Date().getTime(),
             },
-          })
+          }),
         );
         await axios.post<unknown>("/userform/ajax/preference", formData);
       })();

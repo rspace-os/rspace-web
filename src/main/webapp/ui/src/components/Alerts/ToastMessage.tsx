@@ -4,7 +4,7 @@ import SnackbarContentWrapper from "./SnackbarContentWrapper";
 import React, { useContext } from "react";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
 
 const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
@@ -17,7 +17,7 @@ const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
       width: "100%",
       left: 0,
     },
-  })
+  }),
 );
 
 type ToastMessageArgs = {
@@ -33,7 +33,7 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
 
   const handleClose = (
     event?: Event | React.SyntheticEvent,
-    reason?: SnackbarCloseReason
+    reason?: SnackbarCloseReason,
   ): void => {
     if (reason !== "clickaway") removeAlert(alert);
   };
