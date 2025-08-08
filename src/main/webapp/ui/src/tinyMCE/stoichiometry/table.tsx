@@ -437,18 +437,22 @@ const StoichiometryTable = React.forwardRef<
     DataGridColumn.newColumnWithFieldName<"actualYield", StoichiometryMolecule>(
       "actualYield",
       {
-        headerName: "Yield (%)",
+        headerName: "Yield/Excess (%)",
         sortable: false,
         headerAlign: "left",
         flex: 1,
         type: "number",
         editable: false,
         renderCell: (params) => {
+          // Don't show yield for limiting reagent
+          if (limitingReagent && params.id === limitingReagent.id) {
+            return <>&#8212;</>;
+          }
           const value = params.value;
           return value !== null && value !== undefined ? (
             `${value}%`
           ) : (
-            <>&mdash;</>
+            <>&#8212;</>
           );
         },
       },

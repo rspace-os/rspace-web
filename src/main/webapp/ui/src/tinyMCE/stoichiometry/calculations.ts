@@ -128,9 +128,12 @@ export function calculateUpdatedMolecules(
     });
   }
 
-  // Calculate yield for all molecules that have actualAmount
+  // Calculate yield for all molecules that have actualAmount, except for limiting reagent
   updatedMolecules.forEach((molecule) => {
-    if (molecule.actualAmount && molecule.mass) {
+    // Don't calculate yield for the limiting reagent
+    if (molecule.limitingReagent && molecule.role.toLowerCase() === "reactant") {
+      molecule.actualYield = null;
+    } else if (molecule.actualAmount && molecule.mass) {
       molecule.actualYield = calculateYield({
         actualAmount: molecule.actualAmount,
         theoreticalMass: molecule.mass,

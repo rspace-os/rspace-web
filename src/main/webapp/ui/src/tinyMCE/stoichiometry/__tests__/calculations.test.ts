@@ -923,19 +923,23 @@ describe("calculateUpdatedMolecules - yield calculations", () => {
   });
 
   describe("yield calculations", () => {
-    test("calculates yield when both actualAmount and theoretical mass are present", () => {
+    test("calculates yield when both actualAmount and theoretical mass are present and molecule is not limiting reagent", () => {
       const allMolecules = [
         createMockMolecule({
           id: 1,
+          role: "product", // Not a limiting reagent (product)
           mass: 100, // theoretical mass
           actualAmount: 75, // actual amount
           actualYield: null,
+          limitingReagent: false,
         }),
       ];
       const editedRow = createMockMolecule({
         id: 1,
+        role: "product",
         mass: 100,
         actualAmount: 75,
+        limitingReagent: false,
       });
 
       const result = calculateUpdatedMolecules(allMolecules, editedRow);
@@ -1091,6 +1095,72 @@ describe("calculateUpdatedMolecules - yield calculations", () => {
       const updatedMolecule = result.find((m) => m.id === 1);
 
       expect(updatedMolecule?.actualYield).toBe(33.33);
+    });
+
+    test("does not calculate yield for limiting reagent even with actualAmount and mass", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          role: "reactant",
+          mass: 100,
+          actualAmount: 75,
+          limitingReagent: true, // This is the limiting reagent
+        }),
+        createMockMolecule({
+          id: 2,
+          role: "product",
+          mass: 150,
+          actualAmount: 100,
+          limitingReagent: false,
+        }),
+      ];
+      const editedRow = allMolecules[0]; // Trigger calculation
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+
+      // Limiting reagent should not have yield calculated
+      expect(result.find((m) => m.id === 1)?.actualYield).toBeNull();
+      // Product should have yield calculated
+      expect(result.find((m) => m.id === 2)?.actualYield).toBe(66.67); // 100/150 * 100 = 66.67%
+    });
+
+    test("switches yield calculation when limiting reagent changes", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          role: "reactant",
+          mass: 100,
+          actualAmount: 75,
+          limitingReagent: true, // Initially limiting reagent
+        }),
+        createMockMolecule({
+          id: 2,
+          role: "reactant",
+          mass: 150,
+          actualAmount: 100,
+          limitingReagent: false,
+        }),
+      ];
+
+      // First, check initial state
+      let result = calculateUpdatedMolecules(allMolecules, allMolecules[0]);
+      expect(result.find((m) => m.id === 1)?.actualYield).toBeNull(); // Limiting reagent has no yield
+      expect(result.find((m) => m.id === 2)?.actualYield).toBe(66.67); // 100/150 * 100 = 66.67%
+
+      // Now change limiting reagent to second molecule
+      const editedRow = createMockMolecule({
+        id: 2,
+        role: "reactant",
+        mass: 150,
+        actualAmount: 100,
+        limitingReagent: true, // Now this is the limiting reagent
+      });
+
+      result = calculateUpdatedMolecules(result, editedRow);
+
+      // Now first molecule should have yield, second should not
+      expect(result.find((m) => m.id === 1)?.actualYield).toBe(75); // 75/100 * 100 = 75%
+      expect(result.find((m) => m.id === 2)?.actualYield).toBeNull(); // New limiting reagent has no yield
     });
   });
 });
