@@ -154,7 +154,7 @@ function StandaloneDialogInner({
     >
       <AppBar variant="dialog" currentPage="Chemistry" accessibilityTips={{}} />
       <DialogTitle id={titleId} component="h3">
-        Stoichiometry Calculator
+        Reaction Table
       </DialogTitle>
       <DialogContent>
         {actuallyOpen && !showTable && (
