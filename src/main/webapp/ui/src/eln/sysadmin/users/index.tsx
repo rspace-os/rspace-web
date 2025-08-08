@@ -83,7 +83,7 @@ import Badge from "@mui/material/Badge";
 import docLinks from "../../../assets/DocLinks";
 import createAccentedTheme from "../../../accentedTheme";
 import UserAliasIcon from "@mui/icons-material/ContactEmergency";
-import { useDeploymentProperty } from "../../useDeploymentProperty";
+import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
 import useCheckVerificationPasswordNeeded from "../../../common/useCheckVerificationPasswordNeeded";
 import useUiPreference, {
@@ -252,12 +252,12 @@ const TagDialog = ({
   onClose: () => void;
   setTags: (
     addedTags: Array<string>,
-    deletedTags: Array<string>
+    deletedTags: Array<string>,
   ) => Promise<void>;
 }) => {
   const { addAlert } = React.useContext(AlertContext);
   const [commonTags, setCommonTags] = React.useState<RsSet<string>>(
-    new RsSet([])
+    new RsSet([]),
   );
   const [addedTags, setAddedTags] = React.useState<Array<string>>([]);
   const [deletedTags, setDeletedTags] = React.useState<Array<string>>([]);
@@ -276,8 +276,8 @@ const TagDialog = ({
   React.useEffect(() => {
     setCommonTags(
       flattenWithIntersection(
-        new RsSet(selectedUsers.map((user) => new RsSet(user.tags)))
-      )
+        new RsSet(selectedUsers.map((user) => new RsSet(user.tags))),
+      ),
     );
   }, [selectedUsers]);
 
@@ -336,7 +336,7 @@ const TagDialog = ({
                       if (!addedTags.includes(newTag))
                         setAddedTags([...addedTags, newTag]);
                       setDeletedTags(
-                        deletedTags.filter((dTag) => dTag !== newTag)
+                        deletedTags.filter((dTag) => dTag !== newTag),
                       );
                     }}
                     onClose={() => {
@@ -361,7 +361,7 @@ const TagDialog = ({
                   mkAlert({
                     message: "Successfully saved tags.",
                     variant: "success",
-                  })
+                  }),
                 );
                 onClose();
               } catch (error) {
@@ -372,7 +372,7 @@ const TagDialog = ({
                       title: "Could not save tags.",
                       message: error.message,
                       variant: "error",
-                    })
+                    }),
                   );
                 }
               } finally {
@@ -492,7 +492,7 @@ const PiAction = ({
         <ListItemText
           primary={allowedPiAction
             .map(({ action }) =>
-              action === "grant" ? "Grant PI role" : "Revoke PI role"
+              action === "grant" ? "Grant PI role" : "Revoke PI role",
             )
             .orElse("Grant PI role")}
           secondary={allowedPiAction
@@ -527,7 +527,7 @@ const PiAction = ({
                           mkAlert({
                             variant: "success",
                             message: "Successfully granted PI role to user.",
-                          })
+                          }),
                         );
                         setOpen(false);
                         setActionsAnchorEl(null);
@@ -538,7 +538,7 @@ const PiAction = ({
                               title: "Could not grant PI role to user.",
                               message: error.message,
                               variant: "error",
-                            })
+                            }),
                           );
                         }
                       }
@@ -550,7 +550,7 @@ const PiAction = ({
                           mkAlert({
                             variant: "success",
                             message: "Successfully revoked PI role from user.",
-                          })
+                          }),
                         );
                         setOpen(false);
                         setActionsAnchorEl(null);
@@ -561,7 +561,7 @@ const PiAction = ({
                               title: "Could not revoke user's PI role.",
                               message: error.message,
                               variant: "error",
-                            })
+                            }),
                           );
                         }
                       }
@@ -657,7 +657,7 @@ const SetUsernamAliasAction = ({
   const [alias, setAlias] = React.useState("");
 
   const allowedToSetAlias: Result<User> = selectedUser.mapError(
-    () => new Error("Only one user can have an alias set at a time.")
+    () => new Error("Only one user can have an alias set at a time."),
   );
 
   return (
@@ -703,7 +703,7 @@ const SetUsernamAliasAction = ({
                       mkAlert({
                         variant: "success",
                         message: "Successfully set username alias.",
-                      })
+                      }),
                     );
                     setOpen(false);
                     setActionsAnchorEl(null);
@@ -714,7 +714,7 @@ const SetUsernamAliasAction = ({
                           title: "Could not set username alias.",
                           message: error.message,
                           variant: "error",
-                        })
+                        }),
                       );
                     }
                   }
@@ -784,12 +784,12 @@ const DeleteAction = ({
     .flatMap(Parsers.isTrue)
     .mapError(
       () =>
-        new Error('The deployment property "sysadmin.delete.user" is false.')
+        new Error('The deployment property "sysadmin.delete.user" is false.'),
     )
     .flatMap(() =>
       selectedUser.mapError(
-        () => new Error("Only one user can be deleted at a time.")
-      )
+        () => new Error("Only one user can be deleted at a time."),
+      ),
     );
 
   return (
@@ -837,7 +837,7 @@ const DeleteAction = ({
                       mkAlert({
                         variant: "success",
                         message: "Successfully deleted user's account.",
-                      })
+                      }),
                     );
                     setOpen(false);
                     setActionsAnchorEl(null);
@@ -848,7 +848,7 @@ const DeleteAction = ({
                           title: "Could not delete user's account.",
                           message: error.message,
                           variant: "error",
-                        })
+                        }),
                       );
                     }
                   }
@@ -951,9 +951,9 @@ const SelectionActions = ({
       : Result.all(
           ...selectedIds.map((id) =>
             FetchingData.getSuccessValue(fetchedListing).flatMap((listing) =>
-              listing.getById(id)
-            )
-          )
+              listing.getById(id),
+            ),
+          ),
         );
 
   const selectedUser: Result<User> = ArrayUtils.getAt(0, selectedIds)
@@ -961,12 +961,12 @@ const SelectionActions = ({
     .flatMap((id) =>
       selectedIds.length > 1
         ? Result.Error<UserId>([new Error("More than one user is selected")])
-        : Result.Ok(id)
+        : Result.Ok(id),
     )
     .flatMap((id) =>
       FetchingData.getSuccessValue(fetchedListing).flatMap((listing) =>
-        listing.getById(id)
-      )
+        listing.getById(id),
+      ),
     );
 
   const enableDisableAction: Result<{
@@ -974,10 +974,10 @@ const SelectionActions = ({
     action: "enable" | "disable";
   }> = selectedUser
     .mapError(
-      () => new Error("Only one user can be enabled / disabled at a time.")
+      () => new Error("Only one user can be enabled / disabled at a time."),
     )
     .map((user) =>
-      user.enabled ? { user, action: "disable" } : { user, action: "enable" }
+      user.enabled ? { user, action: "disable" } : { user, action: "enable" },
     );
 
   const unlockAction: Result<User> = selectedUser
@@ -985,7 +985,7 @@ const SelectionActions = ({
     .flatMap((user) =>
       user.locked
         ? Result.Ok(user)
-        : Result.Error([new Error("Only locked accounts can be unlocked.")])
+        : Result.Error([new Error("Only locked accounts can be unlocked.")]),
     );
 
   return (
@@ -1083,7 +1083,7 @@ const SelectionActions = ({
                   <ListItemText
                     primary="Export Work"
                     secondary={exportAllowed.orElseGet(
-                      ([error]) => error.message
+                      ([error]) => error.message,
                     )}
                     secondaryTypographyProps={{
                       style: {
@@ -1103,7 +1103,7 @@ const SelectionActions = ({
                             mkAlert({
                               variant: "success",
                               message: "Successfully unlocked account.",
-                            })
+                            }),
                           );
                           setActionsAnchorEl(null);
                         } catch (error) {
@@ -1113,11 +1113,11 @@ const SelectionActions = ({
                                 title: "Could not unlock account.",
                                 message: error.message,
                                 variant: "error",
-                              })
+                              }),
                             );
                           }
                         }
-                      })
+                      }),
                     );
                   }}
                 >
@@ -1154,7 +1154,7 @@ const SelectionActions = ({
                               mkAlert({
                                 variant: "success",
                                 message: "Successfully enabled account.",
-                              })
+                              }),
                             );
                             setActionsAnchorEl(null);
                           } catch (error) {
@@ -1164,7 +1164,7 @@ const SelectionActions = ({
                                   title: "Could not enable account.",
                                   message: error.message,
                                   variant: "error",
-                                })
+                                }),
                               );
                             }
                           }
@@ -1176,7 +1176,7 @@ const SelectionActions = ({
                               mkAlert({
                                 variant: "success",
                                 message: "Successfully disabled account.",
-                              })
+                              }),
                             );
                             setActionsAnchorEl(null);
                           } catch (error) {
@@ -1186,12 +1186,12 @@ const SelectionActions = ({
                                   title: "Could not disable account.",
                                   message: error.message,
                                   variant: "error",
-                                })
+                                }),
                               );
                             }
                           }
                         }
-                      })
+                      }),
                     )
                   }
                 >
@@ -1201,7 +1201,7 @@ const SelectionActions = ({
                   <ListItemText
                     primary={enableDisableAction
                       .map(({ action }) =>
-                        action === "disable" ? "Disable" : "Enable"
+                        action === "disable" ? "Disable" : "Enable",
                       )
                       .orElse("Enable / Disable")}
                     secondary={enableDisableAction
@@ -1389,9 +1389,9 @@ const Toolbar = ({
                           FetchingData.getSuccessValue(userListing).do(
                             (listing) => {
                               void listing.applyTagsFilter(
-                                event.target.checked ? tags : []
+                                event.target.checked ? tags : [],
                               );
-                            }
+                            },
                           );
                         }}
                       />
@@ -1419,7 +1419,7 @@ const Toolbar = ({
                             FetchingData.getSuccessValue(userListing).do(
                               (listing) => {
                                 void listing.applyTagsFilter(newTags);
-                              }
+                              },
                             );
                           }}
                           disabled={!tagsChecked}
@@ -1447,7 +1447,7 @@ const Toolbar = ({
                             FetchingData.getSuccessValue(userListing).do(
                               (listing) => {
                                 void listing.applyTagsFilter(newTags);
-                              }
+                              },
                             );
                           }
                         }}
@@ -1497,7 +1497,7 @@ export const UsersPage = (): React.ReactNode => {
     React.useState<HTMLElement | null>(null);
   const [groupsList, setGroupsList] = React.useState<Array<string>>([]);
   const [tagsAnchorEl, setTagsAnchorEl] = React.useState<HTMLElement | null>(
-    null
+    null,
   );
   const [tagsList, setTagsList] = React.useState<Array<string>>([]);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
@@ -1515,7 +1515,7 @@ export const UsersPage = (): React.ReactNode => {
         tags: false,
         usernameAlias: false,
       } as GridColumnVisibilityModel,
-    }
+    },
   );
 
   const columns = [
@@ -1544,7 +1544,7 @@ export const UsersPage = (): React.ReactNode => {
           );
         },
         disableExport: true,
-      }
+      },
     ),
     DataGridColumn.newColumnWithFieldName<"firstName", User>("firstName", {
       headerName: "First Name",
@@ -1573,7 +1573,7 @@ export const UsersPage = (): React.ReactNode => {
         headerName: "Role",
         sortable: false,
         flex: 1,
-      }
+      },
     ),
     DataGridColumn.newColumnWithFieldName<"username", User>("username", {
       headerName: "Username",
@@ -1585,7 +1585,7 @@ export const UsersPage = (): React.ReactNode => {
       {
         headerName: "Documents",
         flex: 1,
-      }
+      },
     ),
     DataGridColumn.newColumnWithFieldName<"fileUsage", User>("fileUsage", {
       headerName: "Usage",
@@ -1707,7 +1707,7 @@ export const UsersPage = (): React.ReactNode => {
         headerName: "Username Alias",
         flex: 1,
         sortable: false,
-      }
+      },
     ),
   ];
 
@@ -1748,7 +1748,7 @@ export const UsersPage = (): React.ReactNode => {
                                 loading: () => <>&mdash;</>,
                                 error: () => <>&mdash;</>,
                                 success: (listing) => listing.availableSeats,
-                              }
+                              },
                             )}
                           </StyledTableCell>
                         </TableRow>
@@ -1766,7 +1766,7 @@ export const UsersPage = (): React.ReactNode => {
                                 error: () => <>&mdash;</>,
                                 success: (listing) =>
                                   listing.billableUsersCount,
-                              }
+                              },
                             )}
                           </StyledTableCell>
                         </TableRow>
@@ -1779,7 +1779,7 @@ export const UsersPage = (): React.ReactNode => {
                                 loading: () => <>&mdash;</>,
                                 error: () => <>&mdash;</>,
                                 success: (listing) => listing.systemAdminCount,
-                              }
+                              },
                             )}
                           </StyledTableCell>
                         </TableRow>
@@ -1795,7 +1795,7 @@ export const UsersPage = (): React.ReactNode => {
                                 error: () => <>&mdash;</>,
                                 success: (listing) =>
                                   listing.communityAdminCount,
-                              }
+                              },
                             )}
                           </StyledTableCell>
                         </TableRow>
@@ -1812,7 +1812,7 @@ export const UsersPage = (): React.ReactNode => {
                                 loading: () => <>&mdash;</>,
                                 error: () => <>&mdash;</>,
                                 success: (listing) => listing.totalUsersCount,
-                              }
+                              },
                             )}
                           </StyledTableCell>
                         </TableRow>
@@ -1880,7 +1880,7 @@ export const UsersPage = (): React.ReactNode => {
                         rowSelectionModel={rowSelectionModel}
                         onRowSelectionModelChange={(
                           newRowSelectionModel: GridRowSelectionModel,
-                          _details
+                          _details,
                         ) => {
                           /*
                            * This prop is called not only when the user taps
@@ -1936,7 +1936,7 @@ export const UsersPage = (): React.ReactNode => {
                         sortingMode="server"
                         sortModel={sortModel}
                         onSortModelChange={(
-                          newSortModel: Array<GridSortItem>
+                          newSortModel: Array<GridSortItem>,
                         ) => {
                           FetchingData.match(userListing, {
                             loading: () => {},
@@ -1966,15 +1966,15 @@ export const UsersPage = (): React.ReactNode => {
                               }[newOrderBy];
                               if (!apiOrderBy)
                                 throw new Error(
-                                  `Invalid order by: ${newOrderBy}`
+                                  `Invalid order by: ${newOrderBy}`,
                                 );
                               if (typeof newSortOrder !== "string")
                                 throw new Error(
-                                  `Invalid sort order: ${newSortOrder}`
+                                  `Invalid sort order: ${newSortOrder}`,
                                 );
                               void listing.setOrdering(
                                 apiOrderBy,
-                                newSortOrder
+                                newSortOrder,
                               );
                             },
                           });
@@ -2062,6 +2062,6 @@ if (wrapperDiv) {
           <UsersPage />
         </UiPreferences>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </StyledEngineProvider>,
   );
 }

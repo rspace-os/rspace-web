@@ -8,7 +8,7 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import docLinks from "../../assets/DocLinks";
-import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
+import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import useApplicationVersion from "../../hooks/api/useApplicationVersion";
 import RSpaceLogo from "../../assets/branding/rspace/logo.svg";

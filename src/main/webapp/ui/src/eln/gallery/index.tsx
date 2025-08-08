@@ -44,7 +44,7 @@ import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
 import * as FetchingData from "../../util/fetchingData";
-import { useDeploymentProperty } from "../useDeploymentProperty";
+import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import PlaceholderLabel from "./components/PlaceholderLabel";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import SidebarToggle from "../../components/AppBar/SidebarToggle";
