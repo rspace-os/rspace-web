@@ -273,6 +273,7 @@ const StoichiometryTable = React.forwardRef<
       "name",
       {
         headerName: "Name",
+        sortable: false,
         flex: 1.5,
       },
     ),
@@ -280,6 +281,7 @@ const StoichiometryTable = React.forwardRef<
       "role",
       {
         headerName: "Role",
+        sortable: false,
         flex: 1,
         renderCell: (params) => <RoleChip role={params.value || ""} />,
       },
@@ -289,6 +291,7 @@ const StoichiometryTable = React.forwardRef<
       StoichiometryMolecule
     >("limitingReagent", {
       headerName: "Limiting Reagent",
+      sortable: false,
       flex: 1,
       align: "center",
       renderCell: (params) =>
@@ -319,6 +322,7 @@ const StoichiometryTable = React.forwardRef<
       "coefficient",
       {
         headerName: "Equivalent",
+        sortable: false,
         flex: 1,
         // @ts-expect-error It's not documented or typed, but editable can be a function
         editable: (params) => {
@@ -342,6 +346,7 @@ const StoichiometryTable = React.forwardRef<
       StoichiometryMolecule
     >("molecularWeight", {
       headerName: "Molecular Weight (g/mol)",
+      sortable: false,
       flex: 1.2,
       type: "number",
       headerAlign: "left",
@@ -350,6 +355,7 @@ const StoichiometryTable = React.forwardRef<
       "mass",
       {
         headerName: "Mass (g)",
+        sortable: false,
         flex: 1,
         headerAlign: "left",
         // @ts-expect-error It's not documented or typed, but editable can be a function
@@ -373,6 +379,7 @@ const StoichiometryTable = React.forwardRef<
       "moles",
       {
         headerName: "Moles (mol)",
+        sortable: false,
         flex: 1,
         headerAlign: "left",
         // @ts-expect-error It's not documented or typed, but editable can be a function
@@ -397,6 +404,7 @@ const StoichiometryTable = React.forwardRef<
       StoichiometryMolecule
     >("actualAmount", {
       headerName: "Actual Mass (g)",
+      sortable: false,
       flex: 1,
       headerAlign: "left",
       editable: editable,
@@ -416,6 +424,7 @@ const StoichiometryTable = React.forwardRef<
         }),
       {
         headerName: "Actual Moles (mol)",
+        sortable: false,
         headerAlign: "left",
         flex: 1,
         type: "number",
@@ -429,6 +438,7 @@ const StoichiometryTable = React.forwardRef<
       "actualYield",
       {
         headerName: "Yield (%)",
+        sortable: false,
         headerAlign: "left",
         flex: 1,
         type: "number",
@@ -447,6 +457,7 @@ const StoichiometryTable = React.forwardRef<
       "notes",
       {
         headerName: "Notes",
+        sortable: false,
         flex: 1.5,
         editable: editable,
         type: "string",
@@ -461,6 +472,7 @@ const StoichiometryTable = React.forwardRef<
       columns={columns}
       autoHeight
       hideFooter
+      disableColumnFilter
       getRowId={(row) => row.id}
       processRowUpdate={(newRow) => {
         const newMolecules = calculateUpdatedMolecules(allMolecules, newRow);
