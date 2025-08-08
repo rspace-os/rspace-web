@@ -18,11 +18,13 @@ import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
+import Link from "@mui/material/Link";
 import Analytics from "../../components/Analytics";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
 import Result from "../../util/result";
 import useShare, { ShareInfo } from "../../hooks/api/useShare";
+import UserDetails from "../../Inventory/components/UserDetails";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/workspace";
@@ -154,15 +156,37 @@ const ShareDialog = () => {
                             <TableRow key={share.id}>
                               <TableCell>
                                 <Box>
-                                  <Typography
-                                    variant="body2"
-                                    fontWeight="medium"
-                                  >
-                                    {share.sharedTargetDisplayName}
-                                  </Typography>
+                                  {share.sharedTargetType === "USER" ? (
+                                    <UserDetails
+                                      userId={share.sharedTargetId}
+                                      fullName={share.sharedTargetDisplayName}
+                                      position={["bottom", "right"]}
+                                    />
+                                  ) : (
+                                    <Link
+                                      component="button"
+                                      variant="body2"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        window.open(`/groups/view/${share.sharedTargetId}`, '_blank');
+                                      }}
+                                      sx={{ 
+                                        fontWeight: 'medium',
+                                        textAlign: 'left',
+                                        textDecoration: 'none',
+                                        '&:hover': {
+                                          textDecoration: 'underline'
+                                        }
+                                      }}
+                                    >
+                                      {share.sharedTargetDisplayName}
+                                    </Link>
+                                  )}
                                   <Typography
                                     variant="caption"
                                     color="text.secondary"
+                                    display="block"
                                   >
                                     {share.sharedTargetName}
                                   </Typography>
