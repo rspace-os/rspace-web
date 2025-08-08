@@ -89,7 +89,7 @@ import useCheckVerificationPasswordNeeded from "../../../hooks/api/useCheckVerif
 import useUiPreference, {
   PREFERENCES,
   UiPreferences,
-} from "../../../util/useUiPreference";
+} from "../../../hooks/api/useUiPreference";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import Analytics from "../../../components/Analytics";
 

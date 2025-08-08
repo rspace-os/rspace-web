@@ -2,7 +2,7 @@ import React from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import {
   AccessibilityTipsMenuItem,
@@ -57,7 +57,7 @@ import Popover from "@mui/material/Popover";
 import IconButton from "@mui/material/IconButton";
 import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
-import useSessionStorage from "../../util/useSessionStorage";
+import useSessionStorage from "../../hooks/browser/useSessionStorage";
 import useWebSocketNotifications from "../../hooks/api/useWebSocketNotifications";
 import Badge from "@mui/material/Badge";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";

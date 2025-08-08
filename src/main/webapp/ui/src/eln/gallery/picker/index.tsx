@@ -7,14 +7,16 @@ import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";
 import createAccentedTheme from "../../../accentedTheme";
 import Grow from "@mui/material/Grow";
-import useViewportDimensions from "../../../util/useViewportDimensions";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import { observer } from "mobx-react-lite";
 import Sidebar from "../components/Sidebar";
 import MainPanel from "../components/MainPanel";
-import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
+import useUiPreference, {
+  PREFERENCES,
+} from "../../../hooks/api/useUiPreference";
 import { type GallerySection } from "../common";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { CallableImagePreview } from "../components/CallableImagePreview";
@@ -83,18 +85,18 @@ const Picker = observer(
       PREFERENCES.GALLERY_SORT_BY,
       {
         defaultValue: "modificationDate",
-      }
+      },
     );
     const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(
       PREFERENCES.GALLERY_SORT_ORDER,
       {
         defaultValue: "DESC",
-      }
+      },
     );
     const [selectedSection, setSelectedSection] =
       useUiPreference<GallerySection>(
         PREFERENCES.GALLERY_PICKER_INITIAL_SECTION,
-        { defaultValue: "Chemistry" }
+        { defaultValue: "Chemistry" },
       );
 
     const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
@@ -123,7 +125,7 @@ const Picker = observer(
     const [path, setPath] = React.useState<ReadonlyArray<GalleryFile>>([]);
     const listingOf = React.useMemo(
       () => ({ tag: "section" as const, section: selectedSection, path }),
-      [selectedSection, path]
+      [selectedSection, path],
     );
     const { galleryListing, folderId, refreshListing } = useGalleryListing({
       listingOf,
@@ -218,11 +220,11 @@ const Picker = observer(
                         validationResult={
                           selection.size > 0
                             ? Result.all(
-                                ...selection.asSet().map(validateSelection)
+                                ...selection.asSet().map(validateSelection),
                               ).map(() => null)
                             : Result.Error([
                                 new Error(
-                                  "Select at least one file to proceed."
+                                  "Select at least one file to proceed.",
                                 ),
                               ])
                         }
@@ -242,7 +244,7 @@ const Picker = observer(
         </CallablePdfPreview>
       </CallableImagePreview>
     );
-  }
+  },
 );
 
 /**

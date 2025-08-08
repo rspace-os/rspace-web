@@ -10,7 +10,7 @@ import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { DisableDragAndDropByDefault } from "@/components/useFileImportDragAndDrop";
 import Analytics from "@/components/Analytics";
-import { UiPreferences } from "@/util/useUiPreference";
+import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { BrowserRouter } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { dummyId } from "../useGalleryListing";
@@ -31,13 +31,13 @@ export function DefaultSidebar(): React.ReactNode {
                     <Alerts>
                       <LandmarksProvider>
                         <Sidebar
-                        selectedSection="Images"
-                        setSelectedSection={() => {}}
-                        drawerOpen={true}
-                        setDrawerOpen={() => {}}
-                        folderId={{ tag: "success", value: dummyId() }}
-                        refreshListing={() => Promise.resolve()}
-                        id="1"
+                          selectedSection="Images"
+                          setSelectedSection={() => {}}
+                          drawerOpen={true}
+                          setDrawerOpen={() => {}}
+                          folderId={{ tag: "success", value: dummyId() }}
+                          refreshListing={() => Promise.resolve()}
+                          id="1"
                         />
                       </LandmarksProvider>
                     </Alerts>

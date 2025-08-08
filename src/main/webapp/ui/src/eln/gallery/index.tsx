@@ -23,7 +23,7 @@ import {
 } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import Alerts from "../../components/Alerts/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
@@ -33,14 +33,14 @@ import { Routes, Route, useParams } from "react-router";
 import useUiPreference, {
   PREFERENCES,
   UiPreferences,
-} from "../../util/useUiPreference";
+} from "../../hooks/api/useUiPreference";
 import RouterNavigationProvider from "./components/RouterNavigationProvider";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { CallableSnapGenePreview } from "./components/CallableSnapGenePreview";
-import { useSearchParamState } from "../../util/useSearchParamState";
+import { useSearchParamState } from "../../hooks/browser/useSearchParamState";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
 import * as FetchingData from "../../util/fetchingData";

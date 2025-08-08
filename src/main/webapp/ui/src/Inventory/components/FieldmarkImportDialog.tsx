@@ -16,7 +16,7 @@ import {
   GridToolbarColumnsButton,
   GridRowId,
 } from "@mui/x-data-grid";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import Stack from "@mui/material/Stack";
