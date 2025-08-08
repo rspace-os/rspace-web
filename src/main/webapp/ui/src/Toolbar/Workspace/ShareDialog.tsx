@@ -28,10 +28,16 @@ import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
 import Result from "../../util/result";
 import useShare, { ShareInfo } from "../../hooks/api/useShare";
 import useGroups, { Group } from "../../hooks/api/useGroups";
+import useUserDetails, { GroupMember } from "../../hooks/api/useUserDetails";
 import UserDetails from "../../Inventory/components/UserDetails";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/workspace";
+
+// Combined type for autocomplete options
+type ShareOption =
+  | (Group & { optionType: "group" })
+  | (GroupMember & { optionType: "user" });
 
 export default function Wrapper(): React.ReactNode {
   return (
@@ -59,10 +65,14 @@ const ShareDialog = () => {
     new Map(),
   );
   const [loading, setLoading] = React.useState(false);
-  const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
+  const [selectedOption, setSelectedOption] =
+    React.useState<ShareOption | null>(null);
+  const [shareOptions, setShareOptions] = React.useState<ShareOption[]>([]);
+  const [optionsLoading, setOptionsLoading] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { getShareInfoForMultiple } = useShare();
-  const { groups, loading: groupsLoading, fetchGroups } = useGroups();
+  const { getGroups } = useGroups();
+  const { getGroupMembers } = useUserDetails();
 
   React.useEffect(() => {
     function handler(event: Event) {
@@ -95,11 +105,51 @@ const ShareDialog = () => {
     }
   }, [open, globalIds]);
 
+  // Fetch and combine groups and group members when dialog opens
   React.useEffect(() => {
     if (open) {
-      fetchGroups();
+      setOptionsLoading(true);
+
+      // Fetch both groups and group members simultaneously
+      Promise.all([
+        getGroups(),
+        getGroupMembers()
+      ])
+        .then(([groups, groupMembers]) => {
+          // Combine groups and users into a single options array
+          const groupOptions: ShareOption[] = groups.map((group) => ({
+            ...group,
+            optionType: "group" as const,
+          }));
+
+          const userOptions: ShareOption[] = groupMembers.map((user) => ({
+            ...user,
+            optionType: "user" as const,
+          }));
+
+          setShareOptions([...groupOptions, ...userOptions]);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch share options:", error);
+          // Try to fetch just groups as fallback
+          getGroups()
+            .then((groups) => {
+              const groupOptions: ShareOption[] = groups.map((group) => ({
+                ...group,
+                optionType: "group" as const,
+              }));
+              setShareOptions(groupOptions);
+            })
+            .catch((groupError) => {
+              console.error("Failed to fetch groups as fallback:", groupError);
+              setShareOptions([]);
+            });
+        })
+        .finally(() => {
+          setOptionsLoading(false);
+        });
     }
-  }, [open, fetchGroups]);
+  }, [open, getGroups, getGroupMembers]);
 
   function handleClose() {
     setOpen(false);
@@ -107,7 +157,9 @@ const ShareDialog = () => {
     setNames([]);
     setShareData(new Map());
     setLoading(false);
-    setSelectedGroup(null);
+    setSelectedOption(null);
+    setShareOptions([]);
+    setOptionsLoading(false);
   }
 
   return (
@@ -126,21 +178,31 @@ const ShareDialog = () => {
       <DialogContent>
         <Box mb={3}>
           <Autocomplete
-            options={groups || []}
-            loading={groupsLoading}
-            value={selectedGroup}
+            options={shareOptions}
+            loading={optionsLoading}
+            value={selectedOption}
             onChange={(event, newValue) => {
-              setSelectedGroup(newValue);
+              setSelectedOption(newValue);
             }}
-            getOptionLabel={(option) => option.name}
+            getOptionLabel={(option) => {
+              if (option.optionType === "group") {
+                return option.name;
+              } else {
+                return `${option.firstName} ${option.lastName} (${option.username})`;
+              }
+            }}
             renderOption={(props, option) => (
               <Box component="li" {...props}>
                 <Box>
                   <Typography variant="body2" fontWeight="medium">
-                    {option.name}
+                    {option.optionType === "group"
+                      ? option.name
+                      : `${option.firstName} ${option.lastName}`}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {option.type} • {option.members?.length || 0} members
+                    {option.optionType === "group"
+                      ? `${option.type} • ${option.members?.length || 0} members`
+                      : `User • ${option.username} • ${option.email}`}
                   </Typography>
                 </Box>
               </Box>
@@ -148,13 +210,13 @@ const ShareDialog = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Search groups to share with"
-                placeholder="Type to search groups..."
+                label="Search groups and users to share with"
+                placeholder="Type to search groups and users..."
                 InputProps={{
                   ...params.InputProps,
                   endAdornment: (
                     <>
-                      {groupsLoading ? (
+                      {optionsLoading ? (
                         <CircularProgress color="inherit" size={20} />
                       ) : null}
                       {params.InputProps.endAdornment}

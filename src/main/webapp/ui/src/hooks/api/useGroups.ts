@@ -33,26 +33,9 @@ export default function useGroups(): {
    * Fetches all groups that the current user is a member of.
    */
   getGroups: () => Promise<ReadonlyArray<Group>>;
-
-  /**
-   * Groups state - stores the fetched groups
-   */
-  groups: ReadonlyArray<Group> | null;
-
-  /**
-   * Loading state for group fetching
-   */
-  loading: boolean;
-
-  /**
-   * Fetches groups and stores them in state
-   */
-  fetchGroups: () => void;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
-  const [groups, setGroups] = React.useState<ReadonlyArray<Group> | null>(null);
-  const [loading, setLoading] = React.useState(false);
 
   const getGroups = React.useCallback(async (): Promise<
     ReadonlyArray<Group>
@@ -78,19 +61,5 @@ export default function useGroups(): {
     }
   }, [getToken, addAlert]);
 
-  const fetchGroups = React.useCallback(() => {
-    setLoading(true);
-    getGroups()
-      .then((data) => {
-        setGroups(data);
-      })
-      .catch((error) => {
-        console.error("Failed to fetch groups:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [getGroups]);
-
-  return { getGroups, groups, loading, fetchGroups };
+  return { getGroups };
 }

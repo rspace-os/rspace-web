@@ -36,11 +36,14 @@ export default function useUserDetails(): {
     ReadonlyArray<GroupMember>
   > => {
     try {
-      const { data } = await axios.get<ReadonlyArray<GroupMember>>(`/api/v1/userDetails/groupMembers`, {
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
+      const { data } = await axios.get<ReadonlyArray<GroupMember>>(
+        `/api/v1/userDetails/groupMembers`,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
         },
-      });
+      );
       return data;
     } catch (e) {
       addAlert(
