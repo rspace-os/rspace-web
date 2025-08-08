@@ -17,7 +17,7 @@ import { useDroppable, useDraggable, useDndContext } from "@dnd-kit/core";
 import Box from "@mui/material/Box";
 import { runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
-import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
+import { useFileImportDropZone } from "../../../hooks/browser/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import PlaceholderLabel from "./PlaceholderLabel";
 import { Optional } from "../../../util/optional";
@@ -103,7 +103,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
        * - path will not meaningfully change
        * - file will not meaningfully change
        */
-      [section]
+      [section],
     );
 
     const { galleryListing, refreshListing: refreshingThisListing } =
@@ -170,7 +170,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
                   disabled={filter(f) === "disabled"}
                   refeshing={refeshing}
                 />
-              ) : null
+              ) : null,
             )}
             {listing.loadMore
               .map((loadMore) => (
@@ -180,7 +180,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
           </>
         ) : null,
     });
-  }
+  },
 );
 
 const CustomTreeItem = observer(
@@ -256,7 +256,7 @@ const CustomTreeItem = observer(
     });
     const dndContext = useDndContext();
     const [dndDebounce, setDndDebounce] = React.useState<null | NodeJS.Timeout>(
-      null
+      null,
     );
     const dndInProgress = Boolean(dndContext.active);
 
@@ -333,7 +333,7 @@ const CustomTreeItem = observer(
             setDndDebounce(
               setTimeout(() => {
                 listeners?.onMouseDown(...args);
-              }, 500)
+              }, 500),
             );
           }}
           onMouseUp={() => {
@@ -343,7 +343,7 @@ const CustomTreeItem = observer(
             setDndDebounce(
               setTimeout(() => {
                 listeners?.onTouchStart(...args);
-              }, 500)
+              }, 500),
             );
           }}
           onTouchEnd={() => {
@@ -379,7 +379,7 @@ const CustomTreeItem = observer(
         </StyledTreeItem>
       </Box>
     );
-  }
+  },
 );
 
 type TreeViewArgs = {
@@ -477,8 +477,8 @@ const TreeView = ({
               {listing.refreshing
                 ? "Refreshing..."
                 : listing.tag === "empty"
-                ? listing.reason
-                : "There are no folders."}
+                  ? listing.reason
+                  : "There are no folders."}
             </PlaceholderLabel>
           </div>
         </Fade>
@@ -501,7 +501,7 @@ const TreeView = ({
       onItemSelectionToggle={(
         event,
         itemId: string | ReadonlyArray<string>,
-        selected
+        selected,
       ) => {
         /*
          * If there are multiple files selected and the user taps any file
@@ -535,7 +535,7 @@ const TreeView = ({
                 message:
                   "Either use command/ctrl to select each in turn, or use grid view.",
                 variant: "warning",
-              })
+              }),
             );
           }
           return;
@@ -633,7 +633,7 @@ const TreeView = ({
               disabled={filter(file) === "disabled"}
               refeshing={listing.refreshing}
             />
-          ) : null
+          ) : null,
         )}
       </GallerySelection>
       {listing.loadMore
