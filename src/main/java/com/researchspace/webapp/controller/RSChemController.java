@@ -4,7 +4,6 @@ import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
-import com.researchspace.model.Stoichiometry;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
 import com.researchspace.model.dtos.chemistry.ChemElementDataDto;
@@ -15,10 +14,12 @@ import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.ChemistryService;
-import com.researchspace.service.exceptions.StoichiometryAlreadyExistsException;
+import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -439,11 +440,13 @@ public class RSChemController extends BaseController {
     Optional<Stoichiometry> stoichiometry =
         chemistryService.getStoichiometry(chemId, revision, subject);
     if (stoichiometry.isEmpty()) {
-      log.info("No chem element found for id {} and revision {}", chemId, revision);
-      return new AjaxReturnObject<>(ErrorList.of("No chem element with id " + chemId));
+      String message =
+          String.format(
+              "No stoichiometry found for chemical with id %s and revision %s", chemId, revision);
+      log.info(message);
+      return new AjaxReturnObject<>(ErrorList.of(message));
     }
-    StoichiometryDTO stoichiometryDTO =
-        chemistryService.convertStoichiometryToDTO(stoichiometry.get());
+    StoichiometryDTO stoichiometryDTO = StoichiometryMapper.toDTO(stoichiometry.get());
     return new AjaxReturnObject<>(stoichiometryDTO);
   }
 
@@ -456,17 +459,12 @@ public class RSChemController extends BaseController {
     User subject = getUserByUsername(principal.getName());
     try {
       Stoichiometry stoichiometry = chemistryService.createStoichiometry(chemId, revision, subject);
-      if (stoichiometry == null) {
-        log.info("Couldn't save stoichiometry for chemId {} and revision {}", chemId, revision);
-        return new AjaxReturnObject<>(
-            ErrorList.of("Couldn't save stoichiometry for chemId: " + chemId));
-      }
-      StoichiometryDTO stoichiometryDTO = chemistryService.convertStoichiometryToDTO(stoichiometry);
+      StoichiometryDTO stoichiometryDTO = StoichiometryMapper.toDTO(stoichiometry);
       return new AjaxReturnObject<>(stoichiometryDTO);
-    } catch (StoichiometryAlreadyExistsException e) {
-      log.info("Stoichiometry already exists for chemId {}", chemId);
-      return new AjaxReturnObject<>(
-          ErrorList.of("Stoichiometry already exists for chemId: " + chemId));
+    } catch (StoichiometryException e) {
+      String message = String.format("Problem creating stoichiometry for chemId: %s. %s", chemId, e.getMessage());
+      log.error(message, e);
+      return new AjaxReturnObject<>(ErrorList.of(message));
     }
   }
 
@@ -480,13 +478,12 @@ public class RSChemController extends BaseController {
     try {
       Stoichiometry stoichiometry =
           chemistryService.updateStoichiometry(stoichiometryUpdateDTO, subject);
-      StoichiometryDTO updatedStoichiometryDTO =
-          chemistryService.convertStoichiometryToDTO(stoichiometry);
+      StoichiometryDTO updatedStoichiometryDTO = StoichiometryMapper.toDTO(stoichiometry);
       return new AjaxReturnObject<>(updatedStoichiometryDTO);
-    } catch (Exception e) {
-      log.error("Error updating stoichiometry with id {}: {}", stoichiometryId, e.getMessage());
-      return new AjaxReturnObject<>(
-          ErrorList.of("Error updating stoichiometry: " + e.getMessage()));
+    } catch (StoichiometryException e) {
+      String message = e.getMessage();
+      log.error("Stoichiometry error updating id {}: {}", stoichiometryId, message);
+      return new AjaxReturnObject<>(ErrorList.of("Error updating stoichiometry: " + message));
     }
   }
 

@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos.chemistry;
 
+import com.researchspace.model.stoichiometry.MoleculeRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

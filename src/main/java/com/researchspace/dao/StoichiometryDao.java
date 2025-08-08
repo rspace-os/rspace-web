@@ -1,8 +1,9 @@
 package com.researchspace.dao;
 
-import com.researchspace.model.Stoichiometry;
+import com.researchspace.model.stoichiometry.Stoichiometry;
+import java.util.Optional;
 
 public interface StoichiometryDao extends GenericDao<Stoichiometry, Long> {
 
-  Stoichiometry findByParentReactionId(Long parentReactionId);
+  Optional<Stoichiometry> findByParentReactionId(Long parentReactionId);
 }

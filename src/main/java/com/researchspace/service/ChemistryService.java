@@ -2,7 +2,6 @@ package com.researchspace.service;
 
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
-import com.researchspace.model.Stoichiometry;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
 import com.researchspace.model.dtos.chemistry.ChemElementDataDto;
@@ -11,9 +10,8 @@ import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
-import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
-import com.researchspace.service.exceptions.StoichiometryAlreadyExistsException;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import java.io.IOException;
@@ -21,8 +19,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ChemistryService {
-
-  boolean deleteStoichiometry(long stoichiometryId, User user);
 
   RSChemElement saveChemicalElement(ChemicalDataDTO chemicalData, User user) throws IOException;
 
@@ -55,14 +51,13 @@ public interface ChemistryService {
 
   Optional<Stoichiometry> getStoichiometry(long chemId, Integer revision, User user);
 
-  Stoichiometry createStoichiometry(long chemId, Integer revision, User user)
-      throws StoichiometryAlreadyExistsException;
+  Stoichiometry createStoichiometry(long chemId, Integer revision, User user);
 
   Stoichiometry updateStoichiometry(StoichiometryUpdateDTO stoichiometryUpdateDTO, User user);
+
+  boolean deleteStoichiometry(long stoichiometryId, User user);
 
   String getChemicalFileContents(long chemId, Integer revision, User subject);
 
   List<RSChemElement> getAllChemicalsByFormat(ChemElementsFormat format);
-
-  StoichiometryDTO convertStoichiometryToDTO(Stoichiometry stoichiometry);
 }

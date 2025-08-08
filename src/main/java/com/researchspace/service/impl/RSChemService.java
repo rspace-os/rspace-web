@@ -4,7 +4,6 @@ import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.RSChemElement;
-import com.researchspace.model.Stoichiometry;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
 import com.researchspace.model.dtos.chemistry.ChemElementDataDto;
@@ -16,11 +15,11 @@ import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
-import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.record.Breadcrumb;
 import com.researchspace.model.record.BreadcrumbGenerator;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.EcatChemistryFileManager;
@@ -28,7 +27,7 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
-import com.researchspace.service.exceptions.StoichiometryAlreadyExistsException;
+import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -258,35 +257,37 @@ public class RSChemService implements ChemistryService {
 
   @Override
   public Optional<Stoichiometry> getStoichiometry(long chemId, Integer revision, User user) {
-    Stoichiometry existingStoichiometry = stoichiometryManager.findByParentReactionId(chemId);
-    if (existingStoichiometry == null) {
-      return Optional.empty();
-    }
-    return Optional.of(existingStoichiometry);
+    return stoichiometryManager.findByParentReactionId(chemId);
   }
 
   @Override
-  public Stoichiometry createStoichiometry(long chemId, Integer revision, User user)
-      throws StoichiometryAlreadyExistsException {
+  public Stoichiometry createStoichiometry(long chemId, Integer revision, User user) {
     RSChemElement chemical = getChemicalElementByRevision(chemId, revision, user);
     if (chemical == null) {
-      return null;
+      throw new StoichiometryException("Chemical element with ID " + chemId + " not found.");
     }
 
-    Stoichiometry existingStoichiometry = stoichiometryManager.findByParentReactionId(chemId);
-    if (existingStoichiometry != null) {
-      throw new StoichiometryAlreadyExistsException(chemId);
+    Optional<Stoichiometry> existingStoichiometryOpt =
+        stoichiometryManager.findByParentReactionId(chemId);
+    if (existingStoichiometryOpt.isPresent()) {
+      Stoichiometry existingStoichiometry = existingStoichiometryOpt.get();
+      throw new com.researchspace.service.chemistry.StoichiometryException(
+          "Stoichiometry already exists for reaction chemId="
+              + chemId
+              + ", stoichId="
+              + existingStoichiometry.getId());
     }
 
     Optional<ElementalAnalysisDTO> analysis = chemistryProvider.getStoichiometry(chemical);
-    if (analysis.isEmpty()) {
-      return null;
-    }
 
     try {
+      if (analysis.isEmpty()) {
+        throw new StoichiometryException("Unable to generate stoichiometry: problem generating analysis for chemical with ID " + chemId);
+      }
       return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user);
     } catch (IOException e) {
-      throw new RuntimeException("Failed to create stoichiometry", e);
+      throw new StoichiometryException(
+          "Problem while creating new Stoichiometry: ", e);
     }
   }
 
@@ -315,11 +316,6 @@ public class RSChemService implements ChemistryService {
     } catch (Exception e) {
       return false;
     }
-  }
-
-  @Override
-  public StoichiometryDTO convertStoichiometryToDTO(Stoichiometry stoichiometry) {
-    return stoichiometryManager.toDTO(stoichiometry);
   }
 
   @Data

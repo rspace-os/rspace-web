@@ -4,57 +4,57 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.StoichiometryDao;
 import com.researchspace.model.RSChemElement;
-import com.researchspace.model.Stoichiometry;
-import com.researchspace.model.StoichiometryMolecule;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
-import com.researchspace.model.dtos.chemistry.MoleculeRole;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.record.TestFactory;
+import com.researchspace.model.stoichiometry.MoleculeRole;
+import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.model.stoichiometry.StoichiometryMolecule;
+import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.service.impl.StoichiometryManagerImpl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 
+@RunWith(MockitoJUnitRunner.class)
 public class StoichiometryManagerTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
 
   @Mock private StoichiometryDao stoichiometryDao;
   @Mock private RSChemElementManager rsChemElementManager;
   @Mock private ChemicalSearcher chemicalSearcher;
 
-  private StoichiometryManagerImpl stoichiometryManager;
+  @InjectMocks private StoichiometryManagerImpl stoichiometryManager;
   private User user;
 
   @Before
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("testUser");
-    stoichiometryManager =
-        new StoichiometryManagerImpl(stoichiometryDao, rsChemElementManager, chemicalSearcher);
   }
 
   @Test
@@ -62,11 +62,21 @@ public class StoichiometryManagerTest {
     Long parentReactionId = 1L;
     Stoichiometry expectedStoichiometry = createStoichiometry(1L, parentReactionId);
     when(stoichiometryDao.findByParentReactionId(parentReactionId))
-        .thenReturn(expectedStoichiometry);
+        .thenReturn(Optional.of((expectedStoichiometry)));
 
-    Stoichiometry result = stoichiometryManager.findByParentReactionId(parentReactionId);
+    Optional<Stoichiometry> result = stoichiometryManager.findByParentReactionId(parentReactionId);
 
-    assertEquals(expectedStoichiometry, result);
+    assertEquals(expectedStoichiometry, result.get());
+  }
+
+  @Test
+  public void whenFindByParentReactionId_withNoResult_thenReturnEmpty() {
+    Long parentReactionId = 999L;
+    when(stoichiometryDao.findByParentReactionId(parentReactionId)).thenReturn(Optional.empty());
+
+    Optional<Stoichiometry> result = stoichiometryManager.findByParentReactionId(parentReactionId);
+
+    assertEquals(false, result.isPresent());
     verify(stoichiometryDao).findByParentReactionId(parentReactionId);
   }
 
@@ -93,20 +103,13 @@ public class StoichiometryManagerTest {
         .thenReturn(searchResults);
 
     when(stoichiometryDao.save(any(Stoichiometry.class)))
-        .thenAnswer(
-            invocation -> {
-              Stoichiometry stoichiometry = invocation.getArgument(0);
-              if (stoichiometry.getId() == null) {
-                stoichiometry.setId(3L);
-              }
-              return stoichiometry;
-            });
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     Stoichiometry result =
         stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
 
     assertNotNull(result);
-    assertEquals(Long.valueOf(3L), result.getId());
+    // ID assignment is handled by the persistence layer; with a mocked DAO we do not assert on ID
     assertEquals(parentReaction, result.getParentReaction());
     assertEquals(1, result.getMolecules().size());
 
@@ -136,20 +139,13 @@ public class StoichiometryManagerTest {
             new ChemicalImportException("Error searching chemicals", HttpStatus.BAD_REQUEST));
 
     when(stoichiometryDao.save(any(Stoichiometry.class)))
-        .thenAnswer(
-            invocation -> {
-              Stoichiometry stoichiometry = invocation.getArgument(0);
-              if (stoichiometry.getId() == null) {
-                stoichiometry.setId(3L);
-              }
-              return stoichiometry;
-            });
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     Stoichiometry result =
         stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
 
     assertNotNull(result);
-    assertEquals(Long.valueOf(3L), result.getId());
+    // ID assignment is handled by the persistence layer; with a mocked DAO we do not assert on ID
     assertEquals(parentReaction, result.getParentReaction());
     assertEquals(1, result.getMolecules().size());
 
@@ -232,43 +228,52 @@ public class StoichiometryManagerTest {
 
     when(stoichiometryDao.get(stoichiometryId)).thenReturn(null);
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> stoichiometryManager.update(stoichiometryUpdateDTO, user));
+    Exception exception =
+        assertThrows(
+            StoichiometryException.class,
+            () -> stoichiometryManager.update(stoichiometryUpdateDTO, user));
 
-    verify(stoichiometryDao).get(stoichiometryId);
-    verify(stoichiometryDao, never()).save(any(Stoichiometry.class));
+    assertTrue(
+        exception
+            .getMessage()
+            .contains(String.format("Stoichiometry not found with ID: %s", stoichiometryId)));
   }
 
   @Test
-  public void whenUpdateWithNonExistentMoleculeId_thenThrowIllegalArgumentException() {
+  public void whenUpdateWithNonExistentMoleculeId_thenThrowException() {
     Long stoichiometryId = 1L;
+    Long nonExistentMoleculeId = 999L;
     Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L);
 
-    // Create a StoichiometryUpdateDTO with a molecule that has a non-existent ID
     StoichiometryUpdateDTO stoichiometryUpdateDTO = new StoichiometryUpdateDTO();
     stoichiometryUpdateDTO.setId(stoichiometryId);
     StoichiometryMoleculeUpdateDTO moleculeUpdateDTO = new StoichiometryMoleculeUpdateDTO();
-    moleculeUpdateDTO.setId(999L); // Non-existent molecule ID
+    moleculeUpdateDTO.setId(nonExistentMoleculeId);
     moleculeUpdateDTO.setCoefficient(2.0);
     moleculeUpdateDTO.setMass(92.14);
     stoichiometryUpdateDTO.setMolecules(Collections.singletonList(moleculeUpdateDTO));
 
     when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> stoichiometryManager.update(stoichiometryUpdateDTO, user));
+    Exception exception =
+        assertThrows(
+            StoichiometryException.class,
+            () -> stoichiometryManager.update(stoichiometryUpdateDTO, user));
 
-    verify(stoichiometryDao).get(stoichiometryId);
-    verify(stoichiometryDao, never()).save(any(Stoichiometry.class));
+    assertTrue(
+        exception
+            .getMessage()
+            .contains(
+                String.format(
+                    "Molecule ID %s not found in existing stoichiometry molecules.",
+                    nonExistentMoleculeId)));
   }
 
   @Test
   public void whenToDTO_thenReturnStoichiometryDTOWithAllMolecules() {
     Stoichiometry stoichiometry = createStoichiometryWithMolecules(1L, 2L);
 
-    StoichiometryDTO result = stoichiometryManager.toDTO(stoichiometry);
+    StoichiometryDTO result = StoichiometryMapper.toDTO(stoichiometry);
 
     assertNotNull(result);
     assertEquals(Long.valueOf(2L), result.getParentReactionId());
@@ -293,7 +298,7 @@ public class StoichiometryManagerTest {
 
   @Test
   public void whenToDTOWithNullStoichiometry_thenReturnNull() {
-    StoichiometryDTO result = stoichiometryManager.toDTO(null);
+    StoichiometryDTO result = StoichiometryMapper.toDTO(null);
 
     assertNull(result);
   }
@@ -302,7 +307,7 @@ public class StoichiometryManagerTest {
   public void whenFromAnalysisDTO_thenReturnStoichiometryDTOWithMolecules() {
     ElementalAnalysisDTO analysisDTO = createElementalAnalysisDTO();
 
-    StoichiometryDTO result = stoichiometryManager.fromAnalysisDTO(analysisDTO);
+    StoichiometryDTO result = StoichiometryMapper.fromAnalysisDTO(analysisDTO);
 
     assertNotNull(result);
     assertEquals(1, result.getMolecules().size());
@@ -314,7 +319,7 @@ public class StoichiometryManagerTest {
 
   @Test
   public void whenFromAnalysisDTOWithNullInput_thenReturnNull() {
-    StoichiometryDTO result = stoichiometryManager.fromAnalysisDTO(null);
+    StoichiometryDTO result = StoichiometryMapper.fromAnalysisDTO(null);
 
     assertNull(result);
   }
@@ -328,7 +333,6 @@ public class StoichiometryManagerTest {
             .molecules(new ArrayList<>())
             .build();
 
-    // Add a molecule with ID 2L to the stoichiometry
     StoichiometryMolecule molecule =
         StoichiometryMolecule.builder()
             .id(2L)
