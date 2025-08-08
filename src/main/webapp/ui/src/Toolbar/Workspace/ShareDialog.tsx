@@ -22,6 +22,9 @@ import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import Divider from "@mui/material/Divider";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
 import Analytics from "../../components/Analytics";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
@@ -76,6 +79,8 @@ const ShareDialog = () => {
     React.useState<ShareOptionWithState | null>(null);
   const [shareOptions, setShareOptions] = React.useState<ShareOption[]>([]);
   const [optionsLoading, setOptionsLoading] = React.useState(false);
+  // Track permission changes: Map<shareId, newPermission>
+  const [permissionChanges, setPermissionChanges] = React.useState<Map<string, string>>(new Map());
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { getShareInfoForMultiple } = useShare();
   const { getGroups } = useGroups();
@@ -193,6 +198,25 @@ const ShareDialog = () => {
     });
   }, [shareOptions, shareData, globalIds, names]);
 
+  // Check if there are any permission changes
+  const hasChanges = permissionChanges.size > 0;
+
+  // Handle permission change
+  function handlePermissionChange(shareId: string, newPermission: string) {
+    const newChanges = new Map(permissionChanges);
+    if (newPermission === "UNSHARE") {
+      newChanges.set(shareId, "UNSHARE");
+    } else {
+      newChanges.set(shareId, newPermission);
+    }
+    setPermissionChanges(newChanges);
+  }
+
+  // Get the current permission value (either from changes or original)
+  function getCurrentPermission(share: ShareInfo): string {
+    return permissionChanges.get(share.id) || share.permission;
+  }
+
   function handleClose() {
     setOpen(false);
     setGlobalIds([]);
@@ -202,6 +226,11 @@ const ShareDialog = () => {
     setSelectedOption(null);
     setShareOptions([]);
     setOptionsLoading(false);
+    setPermissionChanges(new Map());
+  }
+
+  function handleCancel() {
+    setPermissionChanges(new Map());
   }
 
   return (
@@ -400,16 +429,21 @@ const ShareDialog = () => {
                                   />
                                 </TableCell>
                                 <TableCell>
-                                  <Chip
-                                    size="small"
-                                    label={share.permission}
-                                    color={
-                                      share.permission === "EDIT"
-                                        ? "success"
-                                        : "default"
-                                    }
-                                    variant="filled"
-                                  />
+                                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                                    <Select
+                                      value={getCurrentPermission(share)}
+                                      onChange={(e) => {
+                                        handlePermissionChange(share.id, e.target.value);
+                                      }}
+                                      size="small"
+                                    >
+                                      <MenuItem value="READ">Read</MenuItem>
+                                      <MenuItem value="EDIT">Edit</MenuItem>
+                                      <MenuItem value="UNSHARE" sx={{ color: "error.main" }}>
+                                        Unshare
+                                      </MenuItem>
+                                    </Select>
+                                  </FormControl>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -431,16 +465,26 @@ const ShareDialog = () => {
         )}
       </DialogContent>
       <DialogActions>
+        {hasChanges && (
+          <Button onClick={handleCancel}>
+            Cancel
+          </Button>
+        )}
         <ValidatingSubmitButton
           loading={false}
           onClick={() => {
-            // TODO: Implement sharing logic
-            trackEvent("user:opens:share_dialog:workspace");
+            if (hasChanges) {
+              // TODO: Implement saving logic
+              console.log("Saving changes:", permissionChanges);
+              trackEvent("user:saves:share_changes:workspace");
+            } else {
+              trackEvent("user:closes:share_dialog:workspace");
+            }
             handleClose();
           }}
           validationResult={Result.Ok(null)}
         >
-          Done
+          {hasChanges ? "Save" : "Done"}
         </ValidatingSubmitButton>
       </DialogActions>
     </Dialog>
