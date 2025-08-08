@@ -60,7 +60,7 @@ public class ProtocolsIOController extends BaseController {
       StructuredDocument converted =
           converter.generateFromProtocol(protocol, subject, finalParentFolderId);
       results.add(converted.toRecordInfo());
-      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
           subject, originalParentFolder)) {
         recordShareHandler.shareIntoSharedFolderOrNotebook(
             subject, originalParentFolder, converted.getId());

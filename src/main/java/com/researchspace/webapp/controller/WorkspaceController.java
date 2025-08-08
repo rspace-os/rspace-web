@@ -609,7 +609,7 @@ public class WorkspaceController extends BaseController {
         moveResult = folderManager.move(recordIdToMove, target.getId(), sourceFolder.getId(), user);
       } else {
         BaseRecord baseRecordToMove = recordManager.get(recordIdToMove);
-        if (target.isNotebook() && target.isShared()) {
+        if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
           try {
             Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder);
             SharingResult sharingResult =
