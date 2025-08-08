@@ -174,7 +174,15 @@ const ShareDialog = () => {
       maxWidth="md"
       fullWidth
     >
-      <DialogTitle>Share</DialogTitle>
+      <DialogTitle>
+        {names.length === 1 ? (
+          <>
+            Share <strong>{names[0]}</strong>
+          </>
+        ) : (
+          `Share ${names.length} items`
+        )}
+      </DialogTitle>
       <DialogContent>
         <Box mb={3}>
           <Autocomplete
