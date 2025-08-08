@@ -96,6 +96,9 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from BasketItem");
     jdbcTemplate.update("delete from Basket");
 
+    jdbcTemplate.update("delete from StoichiometryMolecule");
+    jdbcTemplate.update("delete from Stoichiometry");
+
     // Add to this list if more tables are used in the tests. Order is
     // important to avoid referential integrity problems.
     // This is a list of tables that are audited
