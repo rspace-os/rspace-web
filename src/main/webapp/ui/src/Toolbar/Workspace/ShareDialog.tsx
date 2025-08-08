@@ -33,6 +33,8 @@ import UserDetails from "../../Inventory/components/UserDetails";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/workspace";
+import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
+import Stack from "@mui/material/Stack";
 
 // Combined type for autocomplete options
 type ShareOption =
@@ -225,6 +227,9 @@ const ShareDialog = () => {
       </DialogTitle>
       <DialogContent>
         <Box mb={3}>
+          <VisuallyHiddenHeading variant="h3">
+            Add users or groups to share with
+          </VisuallyHiddenHeading>
           <Autocomplete
             options={shareOptionsWithState}
             loading={optionsLoading}
@@ -273,8 +278,8 @@ const ShareDialog = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Search groups and users to share with"
-                placeholder="Type to search groups and users..."
+                label="Add RSpace users or groups"
+                placeholder="Type to filter groups and users..."
                 InputProps={{
                   ...params.InputProps,
                   endAdornment: (
@@ -295,7 +300,6 @@ const ShareDialog = () => {
           />
         </Box>
 
-        <Divider sx={{ mb: 3 }} />
         {loading ? (
           <Box
             display="flex"
@@ -306,129 +310,127 @@ const ShareDialog = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <Box>
-            {globalIds.map((globalId, index) => {
-              const shares = shareData.get(globalId) || [];
-              const documentName = names[index] || `Document ${globalId}`;
+          <Stack spacing={2}>
+            <Typography variant="h3" gutterBottom>
+              Shared with:
+            </Typography>
+            <Box>
+              {globalIds.map((globalId, index) => {
+                const shares = shareData.get(globalId) || [];
+                const documentName = names[index] || `Document ${globalId}`;
 
-              return (
-                <Box key={globalId} mb={3}>
-                  <Typography variant="h6" gutterBottom>
-                    {documentName}
-                  </Typography>
-
-                  {shares.length === 0 ? (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      style={{ fontStyle: "italic" }}
-                    >
-                      This document is not shared with anyone.
+                return (
+                  <Box key={globalId} mb={3}>
+                    <Typography variant="h6" gutterBottom component="h4">
+                      {documentName}
                     </Typography>
-                  ) : (
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table size="small" sx={{ mb: 0 }}>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>Shared With</TableCell>
-                            <TableCell>Type</TableCell>
-                            <TableCell>Permission</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {shares.map((share) => (
-                            <TableRow key={share.id}>
-                              <TableCell>
-                                <Box>
-                                  {share.sharedTargetType === "USER" ? (
-                                    <UserDetails
-                                      userId={share.sharedTargetId}
-                                      fullName={share.sharedTargetDisplayName}
-                                      position={["bottom", "right"]}
-                                    />
-                                  ) : (
-                                    <Link
-                                      component="button"
-                                      variant="body2"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        window.open(
-                                          `/groups/view/${share.sharedTargetId}`,
-                                          "_blank",
-                                        );
-                                      }}
-                                      sx={{
-                                        fontWeight: "medium",
-                                        textAlign: "left",
-                                        textDecoration: "none",
-                                        "&:hover": {
-                                          textDecoration: "underline",
-                                        },
-                                      }}
-                                    >
-                                      {share.sharedTargetDisplayName}
-                                    </Link>
-                                  )}
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    display="block"
-                                  >
-                                    {share.sharedTargetName}
-                                  </Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  size="small"
-                                  label={share.sharedTargetType}
-                                  color={
-                                    share.sharedTargetType === "USER"
-                                      ? "primary"
-                                      : "secondary"
-                                  }
-                                  variant="outlined"
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  size="small"
-                                  label={share.permission}
-                                  color={
-                                    share.permission === "EDIT"
-                                      ? "success"
-                                      : "default"
-                                  }
-                                  variant="filled"
-                                />
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  )}
-                </Box>
-              );
-            })}
 
-            {globalIds.length === 0 && (
-              <Typography variant="body2" color="text.secondary">
-                No documents selected.
-              </Typography>
-            )}
-          </Box>
+                    {shares.length === 0 ? (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        style={{ fontStyle: "italic" }}
+                      >
+                        This document is not shared with anyone.
+                      </Typography>
+                    ) : (
+                      <TableContainer component={Paper} variant="outlined">
+                        <Table size="small" sx={{ mb: 0 }}>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Shared With</TableCell>
+                              <TableCell>Type</TableCell>
+                              <TableCell>Permission</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {shares.map((share) => (
+                              <TableRow key={share.id}>
+                                <TableCell>
+                                  <Box>
+                                    {share.sharedTargetType === "USER" ? (
+                                      <UserDetails
+                                        userId={share.sharedTargetId}
+                                        fullName={share.sharedTargetDisplayName}
+                                        position={["bottom", "right"]}
+                                      />
+                                    ) : (
+                                      <Link
+                                        component="button"
+                                        variant="body2"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          window.open(
+                                            `/groups/view/${share.sharedTargetId}`,
+                                            "_blank",
+                                          );
+                                        }}
+                                        sx={{
+                                          fontWeight: "medium",
+                                          textAlign: "left",
+                                          textDecoration: "none",
+                                          "&:hover": {
+                                            textDecoration: "underline",
+                                          },
+                                        }}
+                                      >
+                                        {share.sharedTargetDisplayName}
+                                      </Link>
+                                    )}
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      display="block"
+                                    >
+                                      {share.sharedTargetName}
+                                    </Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    size="small"
+                                    label={share.sharedTargetType}
+                                    color={
+                                      share.sharedTargetType === "USER"
+                                        ? "primary"
+                                        : "secondary"
+                                    }
+                                    variant="outlined"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    size="small"
+                                    label={share.permission}
+                                    color={
+                                      share.permission === "EDIT"
+                                        ? "success"
+                                        : "default"
+                                    }
+                                    variant="filled"
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                  </Box>
+                );
+              })}
+
+              {globalIds.length === 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  No documents selected.
+                </Typography>
+              )}
+            </Box>
+          </Stack>
         )}
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={() => {
-            handleClose();
-          }}
-        >
-          Cancel
-        </Button>
         <ValidatingSubmitButton
           loading={false}
           onClick={() => {
@@ -438,7 +440,7 @@ const ShareDialog = () => {
           }}
           validationResult={Result.Ok(null)}
         >
-          Share
+          Done
         </ValidatingSubmitButton>
       </DialogActions>
     </Dialog>
