@@ -1,6 +1,6 @@
 import React from "react";
-import axios from "../common/axios";
-import * as FetchingData from "../util/fetchingData";
+import axios from "../../common/axios";
+import * as FetchingData from "../../util/fetchingData";
 
 /**
  * Custom hook to fetch the application version from the /public/version endpoint.
@@ -32,4 +32,3 @@ function useApplicationVersion(): FetchingData.Fetched<string> {
 }
 
 export default useApplicationVersion;
-
