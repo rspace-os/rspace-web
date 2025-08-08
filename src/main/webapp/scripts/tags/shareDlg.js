@@ -496,6 +496,7 @@ $(document).on('click', '#shareRecord', function (e) {
       $(this).find("span").data("cloud");
 
     const selected = typeof getSelectedIdsNamesAndTypes === 'function' ? getSelectedIdsNamesAndTypes():galleries_getSelectedIdsNamesAndTypes();
+    const globalIds = typeof getSelectedGlobalIds === 'function' ? getSelectedGlobalIds() : [];
     
     // Dispatch event for React ShareDialog
     window.dispatchEvent(
@@ -504,6 +505,7 @@ $(document).on('click', '#shareRecord', function (e) {
           ids: selected.ids, 
           names: selected.names,
           types: selected.types,
+          globalIds: globalIds,
           isCloud: isCloud 
         },
       }),
