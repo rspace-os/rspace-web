@@ -47,7 +47,7 @@ import {
   type User,
   type UserListing,
   type UserId,
-} from "./useUserListing";
+} from "../../../hooks/api/useUserListing";
 import * as FetchingData from "../../../util/fetchingData";
 import { formatFileSize } from "../../../util/files";
 import { DataGridColumn, paginationOptions } from "../../../util/table";
