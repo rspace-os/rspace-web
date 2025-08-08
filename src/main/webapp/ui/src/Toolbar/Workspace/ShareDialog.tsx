@@ -230,6 +230,7 @@ const ShareDialog = () => {
                 }}
               />
             )}
+            noOptionsText="No matches found. You can only share with groups you are in, and users in groups you are in."
             fullWidth
             clearOnBlur
             handleHomeEndKeys
