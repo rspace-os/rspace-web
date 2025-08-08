@@ -85,7 +85,7 @@ import createAccentedTheme from "../../../accentedTheme";
 import UserAliasIcon from "@mui/icons-material/ContactEmergency";
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
-import useCheckVerificationPasswordNeeded from "../../../common/useCheckVerificationPasswordNeeded";
+import useCheckVerificationPasswordNeeded from "../../../hooks/api/useCheckVerificationPasswordNeeded";
 import useUiPreference, {
   PREFERENCES,
   UiPreferences,
