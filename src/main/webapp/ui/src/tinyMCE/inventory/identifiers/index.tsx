@@ -12,7 +12,7 @@ import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import { Optional } from "../../../util/optional";
 import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManagementPage";
 import Button from "@mui/material/Button";
-import useOauthToken from "../../../common/useOauthToken";
+import useOauthToken from "../../../hooks/api/useOauthToken";
 import axios from "@/common/axios";
 import { toTitleCase } from "../../../util/Util";
 import {
@@ -42,18 +42,18 @@ type Editor = {
     registry: {
       addMenuItem: (
         menuItemIdentifier: string,
-        options: { text: string; icon: string; onAction: () => void }
+        options: { text: string; icon: string; onAction: () => void },
       ) => void;
       addButton: (
         buttonIdentifier: string,
-        options: { tooltip: string; icon: string; onAction: () => void }
+        options: { tooltip: string; icon: string; onAction: () => void },
       ) => void;
     };
   };
   execCommand: (
     command: string,
     someFlag: boolean,
-    htmlContent: string
+    htmlContent: string,
   ) => void;
 };
 
@@ -67,7 +67,7 @@ function IdentifiersDialog({
   editor: Editor;
 }) {
   const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
-    new RsSet([])
+    new RsSet([]),
   );
   const { getToken } = useOauthToken();
 
@@ -131,15 +131,15 @@ function IdentifiersDialog({
                 fetchBarcodeUrl(igsn).then((barcodeUrl) => ({
                   igsn,
                   barcodeUrl,
-                }))
-              )
+                })),
+              ),
             ).then((data) => {
               editor.execCommand(
                 "mceInsertContent",
                 false,
                 tableHtml({
                   data,
-                }).outerHTML
+                }).outerHTML,
               );
             });
             onClose();
@@ -160,7 +160,7 @@ type IdentifiersDialogProps = {
 class IdentifiersPlugin {
   constructor(editor: Editor) {
     function* renderIdentifiers(
-      domContainer: HTMLElement
+      domContainer: HTMLElement,
     ): Generator<IdentifiersDialogProps, void, IdentifiersDialogProps> {
       const root = createRoot(domContainer);
       let newProps: IdentifiersDialogProps = {
@@ -181,13 +181,13 @@ class IdentifiersPlugin {
                 />
               </Alerts>
             </ThemeProvider>
-          </StyledEngineProvider>
+          </StyledEngineProvider>,
         );
       }
     }
 
     const element = Optional.fromNullable(
-      document.getElementById("tinymce-inventory-identifiers")
+      document.getElementById("tinymce-inventory-identifiers"),
     ).orElseGet(() => {
       const div = document.createElement("div");
       div.id = "tinymce-inventory-identifiers";

@@ -20,7 +20,7 @@ import { observable, action, makeObservable } from "mobx";
 import { Optional } from "../../util/optional";
 import { type URL as UrlType } from "../../util/types";
 import { take, incrementForever } from "../../util/iterators";
-import useOauthToken from "../../common/useOauthToken";
+import useOauthToken from "../../hooks/api/useOauthToken";
 import { useFilestoreLogin } from "./components/FilestoreLoginDialog";
 import { LinkedDocumentsPanel } from "./components/LinkedDocumentsPanel";
 import EXT_BY_TYPE from "./fileExtensionsByType.json";

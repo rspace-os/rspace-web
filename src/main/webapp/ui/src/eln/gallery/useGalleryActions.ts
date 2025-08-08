@@ -13,7 +13,7 @@ import {
   type Id,
 } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import useOauthToken from "../../common/useOauthToken";
+import useOauthToken from "../../hooks/api/useOauthToken";
 import { partitionAllSettled } from "../../util/Util";
 import { type GallerySection } from "./common";
 import AnalyticsContext from "../../stores/contexts/Analytics";
@@ -63,7 +63,7 @@ export function useGalleryActions(): {
   uploadFiles: (
     parentId: Id,
     files: ReadonlyArray<File>,
-    options?: { originalImageId: Id }
+    options?: { originalImageId: Id },
   ) => Promise<void>;
 
   /**
@@ -89,7 +89,7 @@ export function useGalleryActions(): {
   moveFiles: (
     section: GallerySection,
     destination: Destination,
-    files: RsSet<GalleryFile>
+    files: RsSet<GalleryFile>,
   ) => Promise<void>;
 
   /**
@@ -123,7 +123,7 @@ export function useGalleryActions(): {
   uploadNewVersion: (
     folderId: Id,
     file: GalleryFile,
-    newFile: File
+    newFile: File,
   ) => Promise<void>;
 
   /**
@@ -134,7 +134,7 @@ export function useGalleryActions(): {
    */
   changeDescription: (
     file: GalleryFile,
-    newDescription: Description
+    newDescription: Description,
   ) => Promise<void>;
 
   /**
@@ -164,7 +164,7 @@ export function useGalleryActions(): {
   async function uploadFiles(
     parentId: Id,
     files: ReadonlyArray<File>,
-    options?: { originalImageId: Id }
+    options?: { originalImageId: Id },
   ) {
     const uploadingAlert = mkAlert({
       message: "Uploading...",
@@ -189,23 +189,23 @@ export function useGalleryActions(): {
           if (options?.originalImageId)
             formData.append(
               "originalImageId",
-              idToString(options.originalImageId).elseThrow()
+              idToString(options.originalImageId).elseThrow(),
             );
           return api.post<unknown>("/", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
           });
-        })
+        }),
       );
 
       addAlert(
         Result.any(
           ...data.map((d) =>
             Parsers.objectPath(["data", "exceptionMessage"], d).flatMap(
-              Parsers.isString
-            )
-          )
+              Parsers.isString,
+            ),
+          ),
         )
           .map((exceptionMessages) =>
             mkAlert({
@@ -215,7 +215,7 @@ export function useGalleryActions(): {
                 title: m,
                 variant: "error",
               })),
-            })
+            }),
           )
           .orElse(
             mkAlert({
@@ -223,8 +223,8 @@ export function useGalleryActions(): {
                 files.length === 1 ? "" : "s"
               }.`,
               variant: "success",
-            })
-          )
+            }),
+          ),
       );
     } catch (e) {
       if (e instanceof Error) {
@@ -237,7 +237,7 @@ export function useGalleryActions(): {
             variant: "error",
             title: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
             message,
-          })
+          }),
         );
         throw e;
       } else {
@@ -268,14 +268,14 @@ export function useGalleryActions(): {
               title: `Failed to create new folder.`,
               message: exceptionMessage,
               variant: "error",
-            })
+            }),
           )
           .orElse(
             mkAlert({
               message: `Successfully created new folder.`,
               variant: "success",
-            })
-          )
+            }),
+          ),
       );
     } catch (e) {
       if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
@@ -284,7 +284,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: `Failed to create new folder.`,
           message: e.message,
-        })
+        }),
       );
       throw e;
     }
@@ -293,7 +293,7 @@ export function useGalleryActions(): {
   async function moveFiles(
     section: GallerySection,
     destination: Destination,
-    files: RsSet<GalleryFile>
+    files: RsSet<GalleryFile>,
   ): Promise<void> {
     if (files.some((f) => f.canBeMoved.isError)) {
       addAlert(
@@ -301,7 +301,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: "Failed to move files.",
           message: "Some of the selected files cannot be moved.",
-        })
+        }),
       );
       throw new Error("Some of the files cannot be moved");
     }
@@ -312,7 +312,7 @@ export function useGalleryActions(): {
           title: "Cannot move files into SNIPPETS folders.",
           message:
             "Share them and they will automatically appear in these folders.",
-        })
+        }),
       );
       return;
     }
@@ -328,7 +328,7 @@ export function useGalleryActions(): {
         "target",
         destination.key === "root"
           ? "0"
-          : idToString(destination.folder.id).elseThrow()
+          : idToString(destination.folder.id).elseThrow(),
       );
       for (const file of files)
         formData.append("filesId[]", idToString(file.id).elseThrow());
@@ -341,14 +341,14 @@ export function useGalleryActions(): {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
             Parsers.objectPath(["data", "error", "errorMessages"], data)
               .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head)
+              .flatMap(ArrayUtils.head),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -356,14 +356,14 @@ export function useGalleryActions(): {
               title: `Failed to move item.`,
               message: exceptionMessage,
               variant: "error",
-            })
+            }),
           )
           .orElse(
             mkAlert({
               message: `Successfully moved item${files.size > 0 ? "s" : ""}.`,
               variant: "success",
-            })
-          )
+            }),
+          ),
       );
     } catch (e) {
       if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
@@ -372,7 +372,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: `Failed to move item${files.size > 0 ? "s" : ""}.`,
           message: e.message,
-        })
+        }),
       );
       throw e;
     } finally {
@@ -398,14 +398,14 @@ export function useGalleryActions(): {
           headers: {
             "content-type": "multipart/form-data",
           },
-        }
+        },
       );
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
             Parsers.objectPath(["data", "error", "errorMessages"], data)
               .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head)
+              .flatMap(ArrayUtils.head),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -413,14 +413,14 @@ export function useGalleryActions(): {
               title: `Failed to delete item.`,
               message: exceptionMessage,
               variant: "error",
-            })
+            }),
           )
           .orElse(
             mkAlert({
               message: `Successfully deleted item${files.size > 0 ? "s" : ""}.`,
               variant: "success",
-            })
-          )
+            }),
+          ),
       );
     } finally {
       removeAlert(deletingAlert);
@@ -436,13 +436,13 @@ export function useGalleryActions(): {
     });
     try {
       await api.delete<unknown>(
-        `filestores/${idToString(filestore.id).elseThrow()}`
+        `filestores/${idToString(filestore.id).elseThrow()}`,
       );
       addAlert(
         mkAlert({
           message: "Successfully deleted filestore.",
           variant: "success",
-        })
+        }),
       );
     } catch (e) {
       if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
@@ -451,7 +451,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: "Failed to delete filestore.",
           message: e.message,
-        })
+        }),
       );
       throw e;
     }
@@ -464,7 +464,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: "Failed to delete files.",
           message: "Some of the selected files cannot be deleted.",
-        })
+        }),
       );
       throw new Error("Some of the files cannot be deleted");
     }
@@ -483,7 +483,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: `Failed to delete item${files.size > 0 ? "s" : ""}.`,
           message: e.message,
-        })
+        }),
       );
       throw e;
     }
@@ -496,7 +496,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: "Failed to duplicate files.",
           message: "Some of the selected files cannot be duplicated.",
-        })
+        }),
       );
       throw new Error("Some of the files cannot be duplicated");
     }
@@ -505,7 +505,7 @@ export function useGalleryActions(): {
       formData.append("idToCopy[]", idToString(file.id).elseThrow());
       formData.append(
         "newName[]",
-        file.transformFilename((name) => name + "_copy")
+        file.transformFilename((name) => name + "_copy"),
       );
     }
     const duplicatingAlert = mkAlert({
@@ -525,7 +525,7 @@ export function useGalleryActions(): {
           .orElseTry(() =>
             Parsers.objectPath(["data", "error", "errorMessages"], data)
               .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head)
+              .flatMap(ArrayUtils.head),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -533,7 +533,7 @@ export function useGalleryActions(): {
               title: `Failed to duplicate item.`,
               message: exceptionMessage,
               variant: "error",
-            })
+            }),
           )
           .orElse(
             mkAlert({
@@ -541,8 +541,8 @@ export function useGalleryActions(): {
                 files.size > 0 ? "s" : ""
               }.`,
               variant: "success",
-            })
-          )
+            }),
+          ),
       );
     } catch (e) {
       if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
@@ -551,7 +551,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: `Failed to duplicate item${files.size > 0 ? "s" : ""}.`,
           message: e.message,
-        })
+        }),
       );
       throw e;
     } finally {
@@ -566,7 +566,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: "Failed to rename file.",
           message: "The selected file cannot be renamed.",
-        })
+        }),
       );
       throw new Error("The file cannot be renamed");
     }
@@ -579,7 +579,7 @@ export function useGalleryActions(): {
     formData.append("recordId", idToString(file.id).elseThrow());
     formData.append(
       "newName",
-      file.transformFilename(() => newName)
+      file.transformFilename(() => newName),
     );
     try {
       addAlert(renamingAlert);
@@ -593,7 +593,7 @@ export function useGalleryActions(): {
           headers: {
             "content-type": "multipart/form-data",
           },
-        }
+        },
       );
 
       Parsers.objectPath(["data", "exceptionMessage"], data)
@@ -606,7 +606,7 @@ export function useGalleryActions(): {
         mkAlert({
           message: `Successfully renamed item.`,
           variant: "success",
-        })
+        }),
       );
 
       setName(file.transformFilename(() => newName));
@@ -617,7 +617,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: `Failed to rename item.`,
           message: e.message,
-        })
+        }),
       );
       throw e;
     } finally {
@@ -628,7 +628,7 @@ export function useGalleryActions(): {
   async function uploadNewVersion(
     folderId: Id,
     file: GalleryFile,
-    newFile: File
+    newFile: File,
   ) {
     if (file.canUploadNewVersion.isError) {
       addAlert(
@@ -636,7 +636,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: "Failed to upload new version for the file.",
           message: "A new version for this file cannot be set.",
-        })
+        }),
       );
       throw new Error("The selected file cannot be updated with a new version");
     }
@@ -661,22 +661,22 @@ export function useGalleryActions(): {
           .flatMap(Parsers.isString)
           .orElseTry(() =>
             Parsers.objectPath(["exceptionMessage"], data).flatMap(
-              Parsers.isString
-            )
+              Parsers.isString,
+            ),
           )
           .map((exceptionMessage) =>
             mkAlert({
               title: `Failed to upload new version.`,
               message: exceptionMessage,
               variant: "error",
-            })
+            }),
           )
           .orElse(
             mkAlert({
               message: `Successfully uploaded new version.`,
               variant: "success",
-            })
-          )
+            }),
+          ),
       );
     } catch (e) {
       if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
@@ -685,7 +685,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: `Failed to upload new version.`,
           message: e.message,
-        })
+        }),
       );
       throw e;
     } finally {
@@ -695,7 +695,7 @@ export function useGalleryActions(): {
 
   async function changeDescription(
     file: GalleryFile,
-    newDescription: Description
+    newDescription: Description,
   ) {
     if (
       !file.description.match({
@@ -709,7 +709,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: "Failed to change file description.",
           message: "The file does not have a description.",
-        })
+        }),
       );
       throw new Error("The file does not have a description");
     }
@@ -723,7 +723,7 @@ export function useGalleryActions(): {
         },
         empty: () => "",
         present: (d) => d,
-      })
+      }),
     );
     try {
       if (typeof file.setDescription === "undefined")
@@ -736,7 +736,7 @@ export function useGalleryActions(): {
           headers: {
             "content-type": "multipart/form-data",
           },
-        }
+        },
       );
 
       Parsers.objectPath(["data", "exceptionMessage"], data)
@@ -749,7 +749,7 @@ export function useGalleryActions(): {
         mkAlert({
           message: `Successfully updated description.`,
           variant: "success",
-        })
+        }),
       );
 
       trackEvent("user:edit:description:gallery");
@@ -762,7 +762,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: `Failed to update description.`,
           message: e.message,
-        })
+        }),
       );
       throw e;
     }
@@ -780,8 +780,8 @@ export function useGalleryActions(): {
             link.download = file.name;
             link.click();
             return file;
-          })
-        )
+          }),
+        ),
       );
       if (fulfilled.length > 0) {
         addAlert(
@@ -798,7 +798,7 @@ export function useGalleryActions(): {
                   })),
                 }
               : {}),
-          })
+          }),
         );
       }
       if (rejected.length > 0) {
@@ -807,7 +807,7 @@ export function useGalleryActions(): {
             try {
               const data = Parsers.objectPath(
                 ["response", "data"],
-                response
+                response,
               ).elseThrow();
               if (!(data instanceof Blob))
                 throw new Error("Response is not a blob");
@@ -821,7 +821,7 @@ export function useGalleryActions(): {
               }
               return Promise.resolve("Unknown error");
             }
-          })
+          }),
         );
         addAlert(
           mkAlert({
@@ -833,7 +833,7 @@ export function useGalleryActions(): {
               variant: "error",
               title: errorMsg,
             })),
-          })
+          }),
         );
       }
     } catch (e) {
@@ -843,7 +843,7 @@ export function useGalleryActions(): {
           variant: "error",
           title: "Failed to download all the files.",
           message: e.message,
-        })
+        }),
       );
     }
   }

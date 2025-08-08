@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import useOauthToken from "../common/useOauthToken";
+import useOauthToken from "../hooks/api/useOauthToken";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
@@ -26,8 +26,8 @@ function getErrorMessage(error: unknown): Result<string> {
       Parsers.isObject(error).flatMap((e) =>
         e instanceof Error
           ? Result.Ok(e.message)
-          : Result.Error([new Error("Unknown error")])
-      )
+          : Result.Error([new Error("Unknown error")]),
+      ),
     );
 }
 
@@ -62,7 +62,7 @@ export function useIdentifiers(): {
    */
   assignIdentifier: (
     identifier: Identifier,
-    record: InventoryRecord
+    record: InventoryRecord,
   ) => Promise<void>;
 } {
   const { getToken } = useOauthToken();
@@ -96,7 +96,7 @@ export function useIdentifiers(): {
             Authorization: `Bearer ${token}`,
           },
           params: searchParams,
-        }
+        },
       );
       return Parsers.isArray(response.data)
         .flatMap((array) =>
@@ -119,17 +119,17 @@ export function useIdentifiers(): {
                       .elseThrow();
 
                     const associatedGlobalId = Parsers.getValueWithKey(
-                      "associatedGlobalId"
+                      "associatedGlobalId",
                     )(data)
                       .flatMap<string | null>((gId) =>
                         Parsers.isString(gId).orElseTry(() =>
-                          Parsers.isNull(gId)
-                        )
+                          Parsers.isNull(gId),
+                        ),
                       )
                       .elseThrow();
 
                     const creatorName = Parsers.getValueWithKey("creatorName")(
-                      data
+                      data,
                     )
                       .flatMap(Parsers.isString)
                       .elseThrow();
@@ -155,9 +155,9 @@ export function useIdentifiers(): {
                     }
                     return Result.Error<Identifier>([e]);
                   }
-                })
-            )
-          )
+                }),
+            ),
+          ),
         )
         .elseThrow();
     } catch (e) {
@@ -167,7 +167,7 @@ export function useIdentifiers(): {
             variant: "error",
             title: "Error fetching identifiers",
             message: getErrorMessage(e).elseThrow(),
-          })
+          }),
         );
         throw e;
       }
@@ -185,13 +185,13 @@ export function useIdentifiers(): {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       addAlert(
         mkAlert({
           variant: "success",
           message: `Successfully registered ${count} identifiers`,
-        })
+        }),
       );
     } catch (e) {
       if (e instanceof Error) {
@@ -200,7 +200,7 @@ export function useIdentifiers(): {
             variant: "error",
             title: "Error registering identifiers",
             message: getErrorMessage(e).elseThrow(),
-          })
+          }),
         );
         throw e;
       }
@@ -220,7 +220,7 @@ export function useIdentifiers(): {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-            }
+            },
           );
           success.push(identifier.doi);
         } catch {
@@ -237,7 +237,7 @@ export function useIdentifiers(): {
               title: `Failed to delete "${doi}"`,
               variant: "error",
             })),
-          })
+          }),
         );
       }
       if (success.length > 0) {
@@ -249,7 +249,7 @@ export function useIdentifiers(): {
               title: `Deleted "${doi}"`,
               variant: "success",
             })),
-          })
+          }),
         );
       }
     } catch (e) {
@@ -259,7 +259,7 @@ export function useIdentifiers(): {
             variant: "error",
             title: "Error deleting identifiers",
             message: e.message,
-          })
+          }),
         );
         throw e;
       }
@@ -268,7 +268,7 @@ export function useIdentifiers(): {
 
   async function assignIdentifier(
     identifier: Identifier,
-    record: InventoryRecord
+    record: InventoryRecord,
   ) {
     try {
       const token = await getToken();
@@ -279,13 +279,13 @@ export function useIdentifiers(): {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       addAlert(
         mkAlert({
           variant: "success",
           message: `Successfully assigned ${identifier.doi} to ${record.globalId}`,
-        })
+        }),
       );
     } catch (e) {
       if (e instanceof Error) {
@@ -294,7 +294,7 @@ export function useIdentifiers(): {
             variant: "error",
             title: "Error assigning identifier",
             message: getErrorMessage(e).elseThrow(),
-          })
+          }),
         );
         throw e;
       }

@@ -54,7 +54,7 @@ import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
 import * as Parsers from "../../util/parsers";
 import axios from "@/common/axios";
-import useOauthToken from "../../common/useOauthToken";
+import useOauthToken from "../../hooks/api/useOauthToken";
 import RsSet from "../../util/set";
 import docLinks from "../../assets/DocLinks";
 import Stack from "@mui/material/Stack";

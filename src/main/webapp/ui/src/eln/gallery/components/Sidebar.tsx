@@ -46,7 +46,7 @@ import ValidatingSubmitButton, {
 import Result from "../../../util/result";
 import DnsIcon from "@mui/icons-material/Dns";
 import axios from "@/common/axios";
-import useOauthToken from "../../../common/useOauthToken";
+import useOauthToken from "../../../hooks/api/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import AddFilestoreDialog from "./AddFilestoreDialog";
