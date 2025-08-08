@@ -118,11 +118,12 @@ describe("calculateUpdatedMolecules", () => {
       const result = calculateUpdatedMolecules(allMolecules, editedRow);
       const updatedMolecule = result.find((m) => m.id === 1);
 
+      // When a molecule becomes the limiting reagent, its coefficient gets scaled to 1
       expect(updatedMolecule).toMatchObject({
         mass: 300,
         moles: 3,
         notes: "Test note",
-        coefficient: 3,
+        coefficient: 1, // Scaled from 3 to 1 since it's the limiting reagent
         limitingReagent: true,
       });
     });
@@ -654,6 +655,96 @@ describe("calculateUpdatedMolecules", () => {
       // Ratio: 5/2 = 2.5
       expect(result.find((m) => m.id === 1)?.moles).toBe(2.5); // 2.5 * 1
       expect(result.find((m) => m.id === 3)?.moles).toBe(2.5); // 2.5 * 1
+    });
+
+    test("scales all equivalent values when limiting reagent changes to ensure new limiting reagent has coefficient of 1", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          role: "reactant",
+          coefficient: 2,
+          moles: 4,
+          molecularWeight: 100,
+          limitingReagent: true,
+        }),
+        createMockMolecule({
+          id: 2,
+          role: "reactant",
+          coefficient: 3,
+          moles: 6,
+          molecularWeight: 50,
+          limitingReagent: false,
+        }),
+        createMockMolecule({
+          id: 3,
+          role: "product",
+          coefficient: 4,
+          moles: 0,
+          molecularWeight: 150,
+        }),
+      ];
+
+      // Change limiting reagent to second reactant (coefficient 3)
+      const editedRow = createMockMolecule({
+        id: 2,
+        role: "reactant",
+        coefficient: 3,
+        moles: 6,
+        molecularWeight: 50,
+        limitingReagent: true,
+      });
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+
+      // All coefficients should be scaled by 1/3 so the new limiting reagent has coefficient of 1
+      expect(result.find((m) => m.id === 1)?.coefficient).toBe(0.666667); // 2 * (1/3) = 2/3 rounded to 6 decimals
+      expect(result.find((m) => m.id === 2)?.coefficient).toBe(1); // 3 * (1/3) = 1
+      expect(result.find((m) => m.id === 3)?.coefficient).toBe(1.333333); // 4 * (1/3) = 4/3 rounded to 6 decimals
+    });
+
+    test("does not scale coefficients when new limiting reagent already has coefficient of 1", () => {
+      const allMolecules = [
+        createMockMolecule({
+          id: 1,
+          role: "reactant",
+          coefficient: 2,
+          moles: 4,
+          molecularWeight: 100,
+          limitingReagent: true,
+        }),
+        createMockMolecule({
+          id: 2,
+          role: "reactant",
+          coefficient: 1, // Already coefficient of 1
+          moles: 2,
+          molecularWeight: 50,
+          limitingReagent: false,
+        }),
+        createMockMolecule({
+          id: 3,
+          role: "product",
+          coefficient: 3,
+          moles: 0,
+          molecularWeight: 150,
+        }),
+      ];
+
+      // Change limiting reagent to second reactant (coefficient 1)
+      const editedRow = createMockMolecule({
+        id: 2,
+        role: "reactant",
+        coefficient: 1,
+        moles: 2,
+        molecularWeight: 50,
+        limitingReagent: true,
+      });
+
+      const result = calculateUpdatedMolecules(allMolecules, editedRow);
+
+      // Coefficients should remain unchanged since new limiting reagent already has coefficient of 1
+      expect(result.find((m) => m.id === 1)?.coefficient).toBe(2);
+      expect(result.find((m) => m.id === 2)?.coefficient).toBe(1);
+      expect(result.find((m) => m.id === 3)?.coefficient).toBe(3);
     });
   });
 });

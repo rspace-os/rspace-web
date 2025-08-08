@@ -87,6 +87,16 @@ export function calculateUpdatedMolecules(
         molecule.limitingReagent = false;
       }
     });
+
+    // Scale coefficients so the new limiting reagent has coefficient of 1
+    const newLimitingReagentCoeff = editedMolecule.coefficient || 1;
+    if (newLimitingReagentCoeff !== 1) {
+      const scalingFactor = 1 / newLimitingReagentCoeff;
+      updatedMolecules.forEach((molecule) => {
+        const currentCoeff = molecule.coefficient || 1;
+        molecule.coefficient = Number((currentCoeff * scalingFactor).toFixed(6));
+      });
+    }
   }
 
   // Perform stoichiometric calculations if there's a limiting reagent
