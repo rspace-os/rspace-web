@@ -15,7 +15,7 @@ import ListItemText from "@mui/material/ListItemText";
 import {
   fetchIntegrationInfo,
   type IntegrationInfo,
-} from "../../common/integrationHelpers";
+} from "../../hooks/api/integrationHelpers";
 import { mapNullable } from "../../util/Util";
 import Alerts from "../../components/Alerts/Alerts";
 import ErrorBoundary from "../../components/ErrorBoundary";
@@ -48,7 +48,7 @@ export default function DMPToolMenuItem({
     fetchIntegrationInfo("DMPTOOL")
       .then((r) => setDmpToolIntegrationInfo(r))
       .catch((e) =>
-        console.error("Cannot establish if DMPTool app is enabled", e)
+        console.error("Cannot establish if DMPTool app is enabled", e),
       );
   }, []);
 
