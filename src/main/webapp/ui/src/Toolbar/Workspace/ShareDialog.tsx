@@ -39,6 +39,11 @@ type ShareOption =
   | (Group & { optionType: "group" })
   | (GroupMember & { optionType: "user" });
 
+// Extended type with sharing state
+type ShareOptionWithState = ShareOption & {
+  isDisabled: boolean;
+};
+
 export default function Wrapper(): React.ReactNode {
   return (
     <Analytics>
@@ -66,7 +71,7 @@ const ShareDialog = () => {
   );
   const [loading, setLoading] = React.useState(false);
   const [selectedOption, setSelectedOption] =
-    React.useState<ShareOption | null>(null);
+    React.useState<ShareOptionWithState | null>(null);
   const [shareOptions, setShareOptions] = React.useState<ShareOption[]>([]);
   const [optionsLoading, setOptionsLoading] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -148,6 +153,44 @@ const ShareDialog = () => {
     }
   }, [open, getGroups, getGroupMembers]);
 
+  // Compute share options with disabled state based on current shares
+  const shareOptionsWithState: ShareOptionWithState[] = React.useMemo(() => {
+    return shareOptions.map((option) => {
+      // Count how many documents are already shared with this user/group
+      let sharedDocumentCount = 0;
+
+      globalIds.forEach((globalId) => {
+        const shares = shareData.get(globalId) || [];
+        const isAlreadyShared = shares.some((share) => {
+          if (option.optionType === "group") {
+            return (
+              share.sharedTargetType === "GROUP" &&
+              share.sharedTargetId === option.id
+            );
+          } else {
+            return (
+              share.sharedTargetType === "USER" &&
+              share.sharedTargetId === option.id
+            );
+          }
+        });
+
+        if (isAlreadyShared) {
+          sharedDocumentCount++;
+        }
+      });
+
+      // Only disable if ALL documents are already shared with this option
+      const isDisabled =
+        sharedDocumentCount === globalIds.length && globalIds.length > 0;
+
+      return {
+        ...option,
+        isDisabled,
+      };
+    });
+  }, [shareOptions, shareData, globalIds, names]);
+
   function handleClose() {
     setOpen(false);
     setGlobalIds([]);
@@ -183,7 +226,7 @@ const ShareDialog = () => {
       <DialogContent>
         <Box mb={3}>
           <Autocomplete
-            options={shareOptions}
+            options={shareOptionsWithState}
             loading={optionsLoading}
             value={selectedOption}
             onChange={(event, newValue) => {
@@ -196,18 +239,33 @@ const ShareDialog = () => {
                 return `${option.firstName} ${option.lastName} (${option.username})`;
               }
             }}
+            getOptionDisabled={(option) => option.isDisabled}
             renderOption={(props, option) => (
-              <Box component="li" {...props}>
-                <Box>
+              <Box
+                component="li"
+                {...props}
+                sx={{
+                  ...props.sx,
+                  opacity: option.isDisabled ? 0.5 : 1,
+                  cursor: option.isDisabled ? "not-allowed" : "pointer",
+                }}
+              >
+                <Box sx={{ width: "100%" }}>
                   <Typography variant="body2" fontWeight="medium">
                     {option.optionType === "group"
                       ? option.name
                       : `${option.firstName} ${option.lastName}`}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {option.optionType === "group"
-                      ? `${option.type} • ${option.members?.length || 0} members`
-                      : `User • ${option.username} • ${option.email}`}
+                    {option.isDisabled
+                      ? `All of the documents have already been shared with ${
+                          option.optionType === "group"
+                            ? option.name
+                            : `${option.firstName} ${option.lastName}`
+                        }`
+                      : option.optionType === "group"
+                        ? `${option.type} • ${option.members?.length || 0} members`
+                        : `User • ${option.username} • ${option.email}`}
                   </Typography>
                 </Box>
               </Box>
