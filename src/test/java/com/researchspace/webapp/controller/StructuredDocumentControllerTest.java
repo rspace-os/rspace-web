@@ -594,7 +594,7 @@ public class StructuredDocumentControllerTest {
     when(permissionUtils.isRecordAccessPermitted(user, parentFolder, PermissionType.READ))
         .thenReturn(TRUE);
     whenCreatingDoc(multipart).thenReturn(created);
-    when(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, parentFolder))
+    when(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermission(user, parentFolder))
         .thenReturn(false);
 
     AjaxReturnObject<List<RecordInformation>> res =
@@ -636,7 +636,7 @@ public class StructuredDocumentControllerTest {
     when(permissionUtils.isRecordAccessPermitted(user, parentFolder, PermissionType.READ))
         .thenReturn(TRUE);
     whenCreatingDoc(multipart).thenReturn(created);
-    when(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermssion(user, parentFolder))
+    when(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermission(user, parentFolder))
         .thenReturn(true);
 
     AjaxReturnObject<List<RecordInformation>> res =

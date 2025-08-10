@@ -1232,6 +1232,39 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void testMoveIntoNotebookMVC() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User piUser = group.getPi();
+    initUser(piUser);
+    RSpaceTestUtils.login(piUser.getUsername(), TESTPASSWD);
+    Folder piRootFolder = piUser.getRootFolder();
+
+    // pi create a regular notebook in workspace
+    Notebook nb = createNotebookWithNEntries(piRootFolder.getId(), "nb", 1, piUser);
+    assertEquals(1, nb.getEntryCount());
+    assertFalse(nb.isShared());
+
+    // create new doc and move it into notebook
+    StructuredDocument doc1 = createBasicDocumentInFolder(piUser, piRootFolder, "test1");
+    MvcResult mvcResult = moveRecordIntoNotebook(piUser, piRootFolder.getId(), nb, doc1);
+    assertNull(mvcResult.getResolvedException());
+    nb = folderMgr.getNotebook(nb.getId());
+    assertEquals(2, nb.getEntryCount());
+
+    // share a notebook, with write permission
+    shareNotebookWithGroup(piUser, nb, group.getGroup(), "write");
+    nb = folderMgr.getNotebook(nb.getId());
+    assertTrue(nb.isShared());
+
+    // try adding a document into own, shared, notebook (RSDEV-775)
+    StructuredDocument doc2 = createBasicDocumentInFolder(piUser, piRootFolder, "test2");
+    mvcResult = moveRecordIntoNotebook(piUser, piRootFolder.getId(), nb, doc2);
+    assertNull(mvcResult.getResolvedException());
+    nb = folderMgr.getNotebook(nb.getId());
+    assertEquals(3, nb.getEntryCount());
+  }
+
+  @Test
   public void testCreateNotebookIntoSharedFolderMVC() throws Exception {
     TestGroup group = createTestGroup(2);
     User user = group.u1();
@@ -1278,7 +1311,6 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     User piUser = group.getPi();
     initUser(piUser);
     RSpaceTestUtils.login(piUser.getUsername(), TESTPASSWD);
-    Folder piRootFolder = folderMgr.getRootRecordForUser(piUser, piUser);
 
     openTransaction();
     Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
@@ -1327,14 +1359,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertTrue(docParentFolders.contains(regularUserRoot));
 
     // pi moves the Doc from Group_shared_folder into SharedNotebook
-    mockMvc
-        .perform(
-            post("/workspace/ajax/move")
-                .param("parentFolderId", sharedFolderId + "")
-                .param("toMove[]", sharedDocument.getId() + "")
-                .param("target", sharedNotebook.getId() + "")
-                .principal(piUser::getUsername))
-        .andReturn();
+    moveRecordIntoNotebook(piUser, sharedFolderId, sharedNotebook, sharedDocument);
     logoutCurrentUser();
 
     Record newSharedDocument = recordMgr.get(sharedDocument.getId());
@@ -1342,6 +1367,19 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals(2, docParentFolders.size());
     assertTrue(docParentFolders.contains(sharedNotebook));
     assertTrue(docParentFolders.contains(regularUserRoot));
+  }
+
+  private MvcResult moveRecordIntoNotebook(
+      User user, Long parentFolderId, Notebook targetNotebook, Record recordToMove)
+      throws Exception {
+    return mockMvc
+        .perform(
+            post("/workspace/ajax/move")
+                .param("parentFolderId", parentFolderId + "")
+                .param("toMove[]", recordToMove.getId() + "")
+                .param("target", targetNotebook.getId() + "")
+                .principal(user::getUsername))
+        .andReturn();
   }
 
   private SharePost createValidSharePostWithGroup(

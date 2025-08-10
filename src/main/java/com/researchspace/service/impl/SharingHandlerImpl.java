@@ -97,7 +97,7 @@ public class SharingHandlerImpl implements SharingHandler {
 
   public List<RecordGroupSharing> shareIntoSharedFolderOrNotebook(
       User user, Folder sharedFolderOrNotebook, Long recordId) {
-    if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+    if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
         user, sharedFolderOrNotebook)) {
       ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult;
       if (sharedFolderOrNotebook.isNotebook()) {
