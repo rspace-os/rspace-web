@@ -140,7 +140,6 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
     return save(stoichiometry);
   }
 
-  @NotNull
   private static Map<Long, StoichiometryMolecule> buildExistingMoleculesMap(
       List<StoichiometryMolecule> current) {
     Map<Long, StoichiometryMolecule> byId = new HashMap<>();
