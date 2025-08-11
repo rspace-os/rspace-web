@@ -21,7 +21,6 @@ import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
-import Divider from "@mui/material/Divider";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -38,15 +37,28 @@ import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/workspace";
 import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
 import Stack from "@mui/material/Stack";
+import RsSet, { flattenWithIntersectionWithEq } from "@/util/set";
+import WarningBar from "@/components/WarningBar";
 
 // Combined type for autocomplete options
 type ShareOption =
-  | (Group & { optionType: "group" })
-  | (GroupMember & { optionType: "user" });
+  | (Group & { optionType: "GROUP" })
+  | (GroupMember & { optionType: "USER" });
 
 // Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
   isDisabled: boolean;
+};
+
+// Type for new shares being added
+type NewShare = {
+  id: string; // temporary ID for React keys
+  sharedTargetId: number;
+  sharedTargetName: string;
+  sharedTargetDisplayName: string;
+  sharedTargetType: "USER" | "GROUP";
+  permission: "READ" | "EDIT";
+  sharedFolderPath: string | null;
 };
 
 export default function Wrapper(): React.ReactNode {
@@ -75,14 +87,16 @@ const ShareDialog = () => {
     new Map(),
   );
   const [loading, setLoading] = React.useState(false);
-  const [selectedOption, setSelectedOption] =
-    React.useState<ShareOptionWithState | null>(null);
   const [shareOptions, setShareOptions] = React.useState<ShareOption[]>([]);
   const [optionsLoading, setOptionsLoading] = React.useState(false);
   // Track permission changes: Map<shareId, newPermission>
   const [permissionChanges, setPermissionChanges] = React.useState<
     Map<string, string>
   >(new Map());
+  // Track new shares to be added: Map<globalId, NewShare[]>
+  const [newShares, setNewShares] = React.useState<Map<string, NewShare[]>>(
+    new Map(),
+  );
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { getShareInfoForMultiple } = useShare();
   const { getGroups } = useGroups();
@@ -130,12 +144,12 @@ const ShareDialog = () => {
           // Combine groups and users into a single options array
           const groupOptions: ShareOption[] = groups.map((group) => ({
             ...group,
-            optionType: "group" as const,
+            optionType: "GROUP" as const,
           }));
 
           const userOptions: ShareOption[] = groupMembers.map((user) => ({
             ...user,
-            optionType: "user" as const,
+            optionType: "USER" as const,
           }));
 
           setShareOptions([...groupOptions, ...userOptions]);
@@ -147,7 +161,7 @@ const ShareDialog = () => {
             .then((groups) => {
               const groupOptions: ShareOption[] = groups.map((group) => ({
                 ...group,
-                optionType: "group" as const,
+                optionType: "GROUP" as const,
               }));
               setShareOptions(groupOptions);
             })
@@ -162,46 +176,52 @@ const ShareDialog = () => {
     }
   }, [open, getGroups, getGroupMembers]);
 
-  // Compute share options with disabled state based on current shares
+  // Compute share options with disabled state based on current shares and new shares
   const shareOptionsWithState: ShareOptionWithState[] = React.useMemo(() => {
-    return shareOptions.map((option) => {
-      // Count how many documents are already shared with this user/group
-      let sharedDocumentCount = 0;
-
-      globalIds.forEach((globalId) => {
-        const shares = shareData.get(globalId) || [];
-        const isAlreadyShared = shares.some((share) => {
-          if (option.optionType === "group") {
-            return (
-              share.sharedTargetType === "GROUP" &&
-              share.sharedTargetId === option.id
-            );
-          } else {
-            return (
-              share.sharedTargetType === "USER" &&
-              share.sharedTargetId === option.id
-            );
-          }
-        });
-
-        if (isAlreadyShared) {
-          sharedDocumentCount++;
+    type ShareIdentifier = {
+      sharedTargetType: ShareInfo["sharedTargetType"];
+      sharedTargetId: ShareInfo["sharedTargetId"];
+    };
+    const eqFunc = (a: ShareIdentifier, b: ShareIdentifier) =>
+      a.sharedTargetType === b.sharedTargetType &&
+      a.sharedTargetId === b.sharedTargetId;
+    const commonShares = flattenWithIntersectionWithEq(
+      new RsSet(
+        globalIds.map((gId) => {
+          const alreadySharedWith = shareData.get(gId) ?? [];
+          const toBeSharedWith = newShares.get(gId) ?? [];
+          return new RsSet([
+            ...alreadySharedWith.map(
+              ({ sharedTargetType, sharedTargetId }) => ({
+                sharedTargetType,
+                sharedTargetId,
+              }),
+            ),
+            ...toBeSharedWith.map(({ sharedTargetType, sharedTargetId }) => ({
+              sharedTargetType,
+              sharedTargetId,
+            })),
+          ]);
+        }),
+      ),
+      eqFunc,
+    );
+    return shareOptions.map(
+      (option) => (
+        console.debug(option.optionType, option.id),
+        {
+          ...option,
+          isDisabled: commonShares.hasWithEq(
+            { sharedTargetType: option.optionType, sharedTargetId: option.id },
+            eqFunc,
+          ),
         }
-      });
+      ),
+    );
+  }, [shareOptions, shareData, newShares, globalIds]);
 
-      // Only disable if ALL documents are already shared with this option
-      const isDisabled =
-        sharedDocumentCount === globalIds.length && globalIds.length > 0;
-
-      return {
-        ...option,
-        isDisabled,
-      };
-    });
-  }, [shareOptions, shareData, globalIds, names]);
-
-  // Check if there are any permission changes
-  const hasChanges = permissionChanges.size > 0;
+  // Check if there are any permission changes or new shares
+  const hasChanges = permissionChanges.size > 0 || newShares.size > 0;
 
   // Handle permission change
   function handlePermissionChange(shareId: string, newPermission: string) {
@@ -216,7 +236,39 @@ const ShareDialog = () => {
 
   // Get the current permission value (either from changes or original)
   function getCurrentPermission(share: ShareInfo): string {
-    return permissionChanges.get(share.id) || share.permission;
+    return permissionChanges.get(share.id.toString()) || share.permission;
+  }
+
+  // Handle permission change for new shares
+  function handleNewSharePermissionChange(
+    globalId: string,
+    newShareId: string,
+    newPermission: string,
+  ) {
+    const updatedNewShares = new Map(newShares);
+    const docNewShares = updatedNewShares.get(globalId) || [];
+
+    if (newPermission === "UNSHARE") {
+      // Remove the share if marked for unshare
+      const updatedDocNewShares = docNewShares.filter(
+        (share) => share.id !== newShareId,
+      );
+      if (updatedDocNewShares.length === 0) {
+        updatedNewShares.delete(globalId);
+      } else {
+        updatedNewShares.set(globalId, updatedDocNewShares);
+      }
+    } else {
+      // Update the permission
+      const updatedDocNewShares = docNewShares.map((share) =>
+        share.id === newShareId
+          ? { ...share, permission: newPermission as "READ" | "EDIT" }
+          : share,
+      );
+      updatedNewShares.set(globalId, updatedDocNewShares);
+    }
+
+    setNewShares(updatedNewShares);
   }
 
   function handleClose() {
@@ -225,14 +277,15 @@ const ShareDialog = () => {
     setNames([]);
     setShareData(new Map());
     setLoading(false);
-    setSelectedOption(null);
     setShareOptions([]);
     setOptionsLoading(false);
     setPermissionChanges(new Map());
+    setNewShares(new Map());
   }
 
   function handleCancel() {
     setPermissionChanges(new Map());
+    setNewShares(new Map());
   }
 
   return (
@@ -264,12 +317,45 @@ const ShareDialog = () => {
           <Autocomplete
             options={shareOptionsWithState}
             loading={optionsLoading}
-            value={selectedOption}
+            value={null}
             onChange={(event, newValue) => {
-              setSelectedOption(newValue);
+              if (newValue && !newValue.isDisabled) {
+                // Add this option to each document's new shares
+                const updatedNewShares = new Map(newShares);
+
+                globalIds.forEach((globalId) => {
+                  const existingNewShares =
+                    updatedNewShares.get(globalId) || [];
+
+                  // Create a new share entry
+                  const newShare: NewShare = {
+                    id: `new-${newValue.id}-${Date.now()}`, // temporary ID
+                    sharedTargetId: newValue.id,
+                    sharedTargetName:
+                      newValue.optionType === "GROUP"
+                        ? newValue.name
+                        : newValue.username,
+                    sharedTargetDisplayName:
+                      newValue.optionType === "GROUP"
+                        ? newValue.name
+                        : `${newValue.firstName} ${newValue.lastName}`,
+                    sharedTargetType: newValue.optionType,
+                    permission: "READ", // default permission
+                    sharedFolderPath:
+                      newValue.optionType === "GROUP" ? "/" : null, // root for groups, empty for users
+                  };
+
+                  updatedNewShares.set(globalId, [
+                    ...existingNewShares,
+                    newShare,
+                  ]);
+                });
+
+                setNewShares(updatedNewShares);
+              }
             }}
             getOptionLabel={(option) => {
-              if (option.optionType === "group") {
+              if (option.optionType === "GROUP") {
                 return option.name;
               } else {
                 return `${option.firstName} ${option.lastName} (${option.username})`;
@@ -281,25 +367,24 @@ const ShareDialog = () => {
                 component="li"
                 {...props}
                 sx={{
-                  ...props.sx,
                   opacity: option.isDisabled ? 0.5 : 1,
                   cursor: option.isDisabled ? "not-allowed" : "pointer",
                 }}
               >
                 <Box sx={{ width: "100%" }}>
                   <Typography variant="body2" fontWeight="medium">
-                    {option.optionType === "group"
+                    {option.optionType === "GROUP"
                       ? option.name
                       : `${option.firstName} ${option.lastName}`}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {option.isDisabled
                       ? `All of the documents have already been shared with ${
-                          option.optionType === "group"
+                          option.optionType === "GROUP"
                             ? option.name
                             : `${option.firstName} ${option.lastName}`
                         }`
-                      : option.optionType === "group"
+                      : option.optionType === "GROUP"
                         ? `${option.type} • ${option.members?.length || 0} members`
                         : `User • ${option.username} • ${option.email}`}
                   </Typography>
@@ -348,7 +433,9 @@ const ShareDialog = () => {
             <Box>
               {globalIds.map((globalId, index) => {
                 const shares = shareData.get(globalId) || [];
+                const docNewShares = newShares.get(globalId) || [];
                 const documentName = names[index] || `Document ${globalId}`;
+                const allShares = [...shares, ...docNewShares];
 
                 return (
                   <Box key={globalId} mb={3}>
@@ -356,7 +443,7 @@ const ShareDialog = () => {
                       {documentName}
                     </Typography>
 
-                    {shares.length === 0 ? (
+                    {allShares.length === 0 ? (
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -376,6 +463,7 @@ const ShareDialog = () => {
                             </TableRow>
                           </TableHead>
                           <TableBody>
+                            {/* Existing shares */}
                             {shares.map((share) => (
                               <TableRow key={share.id}>
                                 <TableCell>
@@ -433,7 +521,7 @@ const ShareDialog = () => {
                                       value={getCurrentPermission(share)}
                                       onChange={(e) => {
                                         handlePermissionChange(
-                                          share.id,
+                                          share.id.toString(),
                                           e.target.value,
                                         );
                                       }}
@@ -464,6 +552,90 @@ const ShareDialog = () => {
                                 </TableCell>
                               </TableRow>
                             ))}
+                            {/* New shares */}
+                            {docNewShares.map((newShare) => (
+                              <TableRow
+                                key={newShare.id}
+                                sx={{
+                                  backgroundColor: "action.hover",
+                                }}
+                              >
+                                <TableCell>
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1,
+                                    }}
+                                  >
+                                    {newShare.sharedTargetType === "USER" ? (
+                                      <Typography variant="body2">
+                                        {newShare.sharedTargetDisplayName}
+                                      </Typography>
+                                    ) : (
+                                      <Typography
+                                        variant="body2"
+                                        color="success.dark"
+                                        sx={{ fontWeight: "medium" }}
+                                      >
+                                        {newShare.sharedTargetDisplayName}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    size="small"
+                                    label={newShare.sharedTargetType}
+                                    color={
+                                      newShare.sharedTargetType === "USER"
+                                        ? "primary"
+                                        : "secondary"
+                                    }
+                                    variant="outlined"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <FormControl
+                                    size="small"
+                                    sx={{ minWidth: 120 }}
+                                  >
+                                    <Select
+                                      value={newShare.permission}
+                                      onChange={(e) => {
+                                        handleNewSharePermissionChange(
+                                          globalId,
+                                          newShare.id,
+                                          e.target.value,
+                                        );
+                                      }}
+                                      size="small"
+                                    >
+                                      <MenuItem value="READ">Read</MenuItem>
+                                      <MenuItem value="EDIT">Edit</MenuItem>
+                                      <MenuItem
+                                        value="UNSHARE"
+                                        sx={{ color: "error.main" }}
+                                      >
+                                        Remove
+                                      </MenuItem>
+                                    </Select>
+                                  </FormControl>
+                                </TableCell>
+                                <TableCell>
+                                  {newShare.sharedTargetType === "USER" ? (
+                                    <>&mdash;</>
+                                  ) : (
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                    >
+                                      {newShare.sharedFolderPath || "/"}
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
                           </TableBody>
                         </Table>
                       </TableContainer>
@@ -481,6 +653,7 @@ const ShareDialog = () => {
           </Stack>
         )}
       </DialogContent>
+      {newShares.size > 0 && <WarningBar />}
       <DialogActions>
         {hasChanges && <Button onClick={handleCancel}>Cancel</Button>}
         <ValidatingSubmitButton
