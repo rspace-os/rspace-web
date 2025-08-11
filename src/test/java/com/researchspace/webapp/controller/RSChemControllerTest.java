@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +29,7 @@ import com.researchspace.service.ChemistryService;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPage;
@@ -296,39 +298,19 @@ public class RSChemControllerTest {
   @Test
   public void whenSaveStoichiometryFails_thenReturnError() {
     when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
-    when(chemicalService.createStoichiometry(2L, null, user)).thenReturn(null);
-
-    AjaxReturnObject<StoichiometryDTO> response =
-        rsChemController.saveStoichiometry(2L, null, mockPrincipal);
-
-    assertNotNull(response.getError());
-    assertFalse(response.isSuccess());
-  }
-
-  @Test
-  public void whenSaveStoichiometryAlreadyExists_thenReturnError() {
-    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
     when(chemicalService.createStoichiometry(2L, null, user))
-        .thenThrow(new IllegalArgumentException("Stoichiometry already exists"));
+        .thenThrow(new StoichiometryException("Error creating stoichiometry"));
 
     AjaxReturnObject<StoichiometryDTO> response =
         rsChemController.saveStoichiometry(2L, null, mockPrincipal);
 
-    assertNotNull(response);
-    assertNull(response.getData());
-    assertNotNull(response.getError());
-    assertEquals(false, response.isSuccess());
     assertEquals(
-        true,
-        response
-            .getError()
-            .getAllErrorMessagesAsStringsSeparatedBy(" ")
-            .contains("already exists"));
+        "Problem creating stoichiometry for chemId: 2. Error creating stoichiometry",
+        response.getError().getAllErrorMessagesAsStringsSeparatedBy(" "));
   }
 
   @Test
-  public void whenUpdateStoichiometryWithUpdateDTO_thenReturnUpdatedStoichiometry()
-      throws IOException {
+  public void whenUpdateStoichiometry_thenReturnUpdatedStoichiometry() throws IOException {
     Stoichiometry stoichiometry = new Stoichiometry();
     stoichiometry.setId(1L);
     RSChemElement parentReaction = TestFactory.createChemElement(1L, 2L);
@@ -371,7 +353,7 @@ public class RSChemControllerTest {
   }
 
   @Test
-  public void whenUpdateStoichiometryWithUpdateDTOFails_thenReturnError() {
+  public void whenUpdateStoichiometryFails_thenReturnError() {
     StoichiometryMoleculeUpdateDTO moleculeUpdateDTO =
         StoichiometryMoleculeUpdateDTO.builder()
             .id(1L)
@@ -393,15 +375,14 @@ public class RSChemControllerTest {
 
     when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
     when(chemicalService.updateStoichiometry(stoichiometryUpdateDTO, user))
-        .thenThrow(new RuntimeException("Update failed"));
+        .thenThrow(new StoichiometryException("Update failed"));
 
     AjaxReturnObject<StoichiometryDTO> response =
         rsChemController.updateStoichiometry(1L, stoichiometryUpdateDTO, mockPrincipal);
 
-    assertNotNull(response);
-    assertNull(response.getData());
-    assertNotNull(response.getError());
-    assertEquals(false, response.isSuccess());
+    assertEquals(
+        "Error updating stoichiometry: Update failed",
+        response.getError().getAllErrorMessagesAsStringsSeparatedBy(" "));
   }
 
   @Test
@@ -411,10 +392,8 @@ public class RSChemControllerTest {
 
     AjaxReturnObject<Boolean> response = rsChemController.deleteStoichiometry(1L, mockPrincipal);
 
-    assertNotNull(response);
-    assertNotNull(response.getData());
     assertEquals(true, response.getData());
-    assertEquals(true, response.isSuccess());
+    assertTrue(response.isSuccess());
   }
 
   @Test
@@ -423,9 +402,6 @@ public class RSChemControllerTest {
 
     AjaxReturnObject<Boolean> response = rsChemController.deleteStoichiometry(999L, mockPrincipal);
 
-    assertNotNull(response);
-    assertNull(response.getData());
-    assertNotNull(response.getError());
-    assertEquals(false, response.isSuccess());
+    assertFalse(response.isSuccess());
   }
 }

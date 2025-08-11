@@ -282,12 +282,13 @@ public class RSChemService implements ChemistryService {
 
     try {
       if (analysis.isEmpty()) {
-        throw new StoichiometryException("Unable to generate stoichiometry: problem generating analysis for chemical with ID " + chemId);
+        throw new StoichiometryException(
+            "Unable to generate stoichiometry: problem generating analysis for chemical with ID "
+                + chemId);
       }
       return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user);
     } catch (IOException e) {
-      throw new StoichiometryException(
-          "Problem while creating new Stoichiometry: ", e);
+      throw new StoichiometryException("Problem while creating new Stoichiometry: ", e);
     }
   }
 

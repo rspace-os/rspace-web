@@ -20,11 +20,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.linkedelements.FieldParser;
+import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
+import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
@@ -32,6 +34,7 @@ import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
@@ -40,6 +43,7 @@ import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPage;
+import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,29 +51,26 @@ import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.hamcrest.Matchers;
+import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
- @Ignore(
-    "Requires chemistry service to run. See"
-        + " https://documentation.researchspace.com/article/1jbygguzoa")
+// @Ignore(
+//    "Requires chemistry service to run. See"
+//        + " https://documentation.researchspace.com/article/1jbygguzoa")
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
     properties = {"chemistry.service.url=http://localhost:8090", "chemistry.provider=indigo"})
 public class RSChemControllerMVCIT extends MVCTestBase {
-
-  @Autowired private MockServletContext servletContext;
 
   private Principal principal;
   private User user;
@@ -408,30 +409,23 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   @Test
   public void testGetStoichiometry() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
-    Field fld = doc1.getFields().get(0);
+    Field docField = doc1.getFields().get(0);
 
-    RSChemElement element = addChemStructureToField("CCO>>CC=O", fld, user);
+    RSChemElement reaction = addReactionToField(docField, user);
 
-    MvcResult createResult =
-        mockMvc
-            .perform(
-                post("/chemical/stoichiometry")
-                    .param("chemId", element.getId().toString())
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
-            .andReturn();
+    MvcResult createResult = createStoichiometry(reaction);
 
     StoichiometryDTO createdStoichiometry =
         getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
     assertNotNull(createdStoichiometry);
     assertNotNull(createdStoichiometry.getId());
-    assertEquals(element.getId(), createdStoichiometry.getParentReactionId());
+    assertEquals(reaction.getId(), createdStoichiometry.getParentReactionId());
 
     MvcResult getResult =
         mockMvc
             .perform(
                 get("/chemical/stoichiometry")
-                    .param("chemId", element.getId().toString())
+                    .param("chemId", reaction.getId().toString())
                     .principal(principal))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
@@ -440,41 +434,31 @@ public class RSChemControllerMVCIT extends MVCTestBase {
         getFromJsonAjaxReturnObject(getResult, StoichiometryDTO.class);
     assertNotNull(retrievedStoichiometry);
     assertEquals(createdStoichiometry.getId(), retrievedStoichiometry.getId());
-    assertEquals(element.getId(), retrievedStoichiometry.getParentReactionId());
+    assertEquals(reaction.getId(), retrievedStoichiometry.getParentReactionId());
+  }
+
+  @NotNull
+  private MvcResult createStoichiometry(RSChemElement reaction) throws Exception {
+    return mockMvc
+        .perform(
+            post("/chemical/stoichiometry")
+                .param("chemId", reaction.getId().toString())
+                .principal(principal))
+        .andExpect(status().is2xxSuccessful())
+        .andReturn();
   }
 
   @Test
-  public void testSaveStoichiometry() throws Exception {
+  public void testSaveStoichiometryAlreadyExists() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
-    Field fld = doc1.getFields().get(0);
+    Field docField = doc1.getFields().get(0);
 
-    RSChemElement element = addChemStructureToField(fld, user);
+    RSChemElement reaction = addReactionToField(docField, user);
 
-    MvcResult result =
-        mockMvc
-            .perform(
-                post("/chemical/stoichiometry")
-                    .param("chemId", element.getId().toString())
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
-            .andReturn();
+    createStoichiometry(reaction);
 
-    StoichiometryDTO stoichiometryDTO = getFromJsonAjaxReturnObject(result, StoichiometryDTO.class);
-    assertNotNull(stoichiometryDTO);
-    assertNotNull(stoichiometryDTO.getId());
-    assertEquals(element.getId(), stoichiometryDTO.getParentReactionId());
-
-    assertNotNull(stoichiometryDTO.getMolecules());
-    assertFalse(stoichiometryDTO.getMolecules().isEmpty());
-
-    MvcResult failResult =
-        mockMvc
-            .perform(
-                post("/chemical/stoichiometry")
-                    .param("chemId", element.getId().toString())
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
-            .andReturn();
+    // attempt to create stoichiometry again for the same reaction in the same field
+    MvcResult failResult = createStoichiometry(reaction);
 
     String responseContent = failResult.getResponse().getContentAsString();
     assertTrue(responseContent.contains("already exists"));
@@ -483,23 +467,14 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   @Test
   public void testUpdateStoichiometry() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
-    Field fld = doc1.getFields().get(0);
+    Field docField = doc1.getFields().get(0);
 
-    RSChemElement element = addChemStructureToField(fld, user);
+    RSChemElement reaction = addReactionToField(docField, user);
 
-    MvcResult createResult =
-        mockMvc
-            .perform(
-                post("/chemical/stoichiometry")
-                    .param("chemId", element.getId().toString())
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
-            .andReturn();
+    MvcResult createResult = createStoichiometry(reaction);
 
     StoichiometryDTO createdStoichiometry =
         getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
-    assertNotNull(createdStoichiometry);
-    assertNotNull(createdStoichiometry.getId());
 
     StoichiometryMoleculeDTO molecule = createdStoichiometry.getMolecules().get(0);
 
@@ -543,12 +518,13 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     assertTrue(foundMolecule.isPresent());
     StoichiometryMoleculeDTO updatedMol = foundMolecule.get();
 
-    assertEquals(2.0, updatedMol.getCoefficient(), 0.001);
-    assertEquals(100.0, updatedMol.getMass(), 0.001);
-    assertEquals(0.5, updatedMol.getMoles(), 0.001);
-    assertEquals(200.0, updatedMol.getExpectedAmount(), 0.001);
-    assertEquals(180.0, updatedMol.getActualAmount(), 0.001);
-    assertEquals(90.0, updatedMol.getActualYield(), 0.001);
+    double delta = 0.001;
+    assertEquals(2.0, updatedMol.getCoefficient(), delta);
+    assertEquals(100.0, updatedMol.getMass(), delta);
+    assertEquals(0.5, updatedMol.getMoles(), delta);
+    assertEquals(200.0, updatedMol.getExpectedAmount(), delta);
+    assertEquals(180.0, updatedMol.getActualAmount(), delta);
+    assertEquals(90.0, updatedMol.getActualYield(), delta);
     assertTrue(updatedMol.getLimitingReagent());
     assertEquals("Updated notes", updatedMol.getNotes());
   }
@@ -556,23 +532,14 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   @Test
   public void testDeleteStoichiometry() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
-    Field fld = doc1.getFields().get(0);
+    Field docField = doc1.getFields().get(0);
 
-    RSChemElement element = addChemStructureToField(fld, user);
+    RSChemElement reaction = addReactionToField(docField, user);
 
-    MvcResult createResult =
-        mockMvc
-            .perform(
-                post("/chemical/stoichiometry")
-                    .param("chemId", element.getId().toString())
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
-            .andReturn();
+    MvcResult createResult = createStoichiometry(reaction);
 
     StoichiometryDTO createdStoichiometry =
         getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
-    assertNotNull(createdStoichiometry);
-    assertNotNull(createdStoichiometry.getId());
 
     MvcResult deleteResult =
         mockMvc
@@ -583,19 +550,44 @@ public class RSChemControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
 
-    String responseContent = deleteResult.getResponse().getContentAsString();
-    assertTrue(responseContent.contains("true") || responseContent.contains("success"));
+    boolean deleteSuccess = getFromJsonAjaxReturnObject(deleteResult, Boolean.class);
+    assertTrue(deleteSuccess);
 
     MvcResult getResult =
         mockMvc
             .perform(
                 get("/chemical/stoichiometry")
-                    .param("chemId", element.getId().toString())
+                    .param("chemId", reaction.getId().toString())
                     .principal(principal))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
 
     String getResponseContent = getResult.getResponse().getContentAsString();
     assertTrue(getResponseContent.contains("No stoichiometry found"));
+  }
+
+  private RSChemElement addReactionToField(Field field, User owner) throws IOException {
+    String reactionString = "C1C=CC=CC=1.C1C=CC=C1>>C1CCCCC1";
+    String imageBytes = RSpaceTestUtils.getChemImage();
+    ChemicalDataDTO chemicalData =
+        ChemicalDataDTO.builder()
+            .chemElements(reactionString)
+            .fieldId(field.getId())
+            .imageBase64(imageBytes)
+            .fieldId(field.getId())
+            .chemElementsFormat(ChemElementsFormat.MOL.getLabel())
+            .build();
+
+    RSChemElement chem = rsChemElementManager.saveChemElement(chemicalData, owner);
+
+    String chemLink =
+        richTextUpdater.generateURLStringForRSChemElementLink(
+            chem.getId(), chem.getParentId(), 50, 50);
+    String fieldData = field.getFieldData() + chemLink;
+    field.setFieldData(fieldData);
+    field.getStructuredDocument().notifyDelta(DeltaType.FIELD_CHG);
+    recordMgr.save(field.getStructuredDocument(), user);
+
+    return chem;
   }
 }

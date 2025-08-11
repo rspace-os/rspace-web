@@ -462,7 +462,9 @@ public class RSChemController extends BaseController {
       StoichiometryDTO stoichiometryDTO = StoichiometryMapper.toDTO(stoichiometry);
       return new AjaxReturnObject<>(stoichiometryDTO);
     } catch (StoichiometryException e) {
-      String message = String.format("Problem creating stoichiometry for chemId: %s. %s", chemId, e.getMessage());
+      String message =
+          String.format(
+              "Problem creating stoichiometry for chemId: %s. %s", chemId, e.getMessage());
       log.error(message, e);
       return new AjaxReturnObject<>(ErrorList.of(message));
     }
