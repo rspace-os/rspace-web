@@ -19,7 +19,6 @@ import * as FetchingData from "../util/fetchingData";
 
 const useStyles = makeStyles()((theme) => ({
   wrapper: {
-    border: "1px solid rgb(200,200,200)",
     margin: "10px 0px",
   },
 }));
@@ -34,7 +33,11 @@ export default function PreviewInfo(props) {
   const theme = createAccentedTheme(ACCENT_COLOR);
   return (
     <span className={classes.wrapper}>
-      <Stack>
+      <Stack sx={{
+        border: `2px solid ${theme.palette.primary.background}`,
+        borderRadius: 1,
+        backgroundColor: "#fafafa",
+      }}>
         <div
           style={{ display: "flex", minHeight: "200px", maxHeight: "334px" }}
         >
@@ -63,9 +66,6 @@ export default function PreviewInfo(props) {
                     <Box
                       my={3}
                       sx={{
-                        border: `2px solid ${theme.palette.primary.background}`,
-                        borderRadius: 1,
-                        backgroundColor: "#fafafa",
                         overflow: "hidden",
                       }}
                     >
