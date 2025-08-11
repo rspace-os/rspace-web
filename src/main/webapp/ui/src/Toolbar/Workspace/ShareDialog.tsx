@@ -80,7 +80,9 @@ const ShareDialog = () => {
   const [shareOptions, setShareOptions] = React.useState<ShareOption[]>([]);
   const [optionsLoading, setOptionsLoading] = React.useState(false);
   // Track permission changes: Map<shareId, newPermission>
-  const [permissionChanges, setPermissionChanges] = React.useState<Map<string, string>>(new Map());
+  const [permissionChanges, setPermissionChanges] = React.useState<
+    Map<string, string>
+  >(new Map());
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { getShareInfoForMultiple } = useShare();
   const { getGroups } = useGroups();
@@ -370,6 +372,7 @@ const ShareDialog = () => {
                               <TableCell>Shared With</TableCell>
                               <TableCell>Type</TableCell>
                               <TableCell>Permission</TableCell>
+                              <TableCell>Location</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -407,13 +410,6 @@ const ShareDialog = () => {
                                         {share.sharedTargetDisplayName}
                                       </Link>
                                     )}
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                      display="block"
-                                    >
-                                      {share.sharedTargetName}
-                                    </Typography>
                                   </Box>
                                 </TableCell>
                                 <TableCell>
@@ -429,21 +425,42 @@ const ShareDialog = () => {
                                   />
                                 </TableCell>
                                 <TableCell>
-                                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                                  <FormControl
+                                    size="small"
+                                    sx={{ minWidth: 120 }}
+                                  >
                                     <Select
                                       value={getCurrentPermission(share)}
                                       onChange={(e) => {
-                                        handlePermissionChange(share.id, e.target.value);
+                                        handlePermissionChange(
+                                          share.id,
+                                          e.target.value,
+                                        );
                                       }}
                                       size="small"
                                     >
                                       <MenuItem value="READ">Read</MenuItem>
                                       <MenuItem value="EDIT">Edit</MenuItem>
-                                      <MenuItem value="UNSHARE" sx={{ color: "error.main" }}>
+                                      <MenuItem
+                                        value="UNSHARE"
+                                        sx={{ color: "error.main" }}
+                                      >
                                         Unshare
                                       </MenuItem>
                                     </Select>
                                   </FormControl>
+                                </TableCell>
+                                <TableCell>
+                                  {share.sharedTargetType === "USER" ? (
+                                    <>&mdash;</>
+                                  ) : (
+                                    <>
+                                      UserGroup_SHARED/foo/bar
+                                      <Button size="small" sx={{ ml: 1 }}>
+                                        Change
+                                      </Button>
+                                    </>
+                                  )}
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -465,11 +482,7 @@ const ShareDialog = () => {
         )}
       </DialogContent>
       <DialogActions>
-        {hasChanges && (
-          <Button onClick={handleCancel}>
-            Cancel
-          </Button>
-        )}
+        {hasChanges && <Button onClick={handleCancel}>Cancel</Button>}
         <ValidatingSubmitButton
           loading={false}
           onClick={() => {
