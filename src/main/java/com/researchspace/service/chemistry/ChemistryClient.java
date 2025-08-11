@@ -87,7 +87,6 @@ public class ChemistryClient {
     return postForElementalAnalysis(chemicalElement, body, url);
   }
 
-  @NotNull
   private Optional<ElementalAnalysisDTO> postForElementalAnalysis(
       RSChemElement chemicalElement, Map<String, Object> body, String url) {
     HttpHeaders headers = new HttpHeaders();

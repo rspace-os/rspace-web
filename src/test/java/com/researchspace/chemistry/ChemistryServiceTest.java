@@ -58,8 +58,6 @@ public class ChemistryServiceTest {
 
   @Mock EcatChemistryFileManager fileManager;
 
-  @Mock StoichiometryManager stoichiometryManager;
-
   @InjectMocks RSChemService chemistryService;
 
   User user;
@@ -245,32 +243,5 @@ public class ChemistryServiceTest {
       searchResults.add(searchResult);
     }
     return searchResults;
-  }
-
-  @Test
-  public void whenDeleteStoichiometry_thenReturnTrue() {
-    long stoichiometryId = 1L;
-    long parentReactionId = 2L;
-
-    Stoichiometry stoichiometry = new Stoichiometry();
-    stoichiometry.setId(stoichiometryId);
-    RSChemElement parentReaction = new RSChemElement();
-    parentReaction.setId(parentReactionId);
-    stoichiometry.setParentReaction(parentReaction);
-
-    RSChemElement chemical = new RSChemElement();
-    chemical.setId(parentReactionId);
-    Record parentRecord = TestFactory.createAnyRecord(user);
-    chemical.setRecord(parentRecord);
-
-    when(stoichiometryManager.get(stoichiometryId)).thenReturn(stoichiometry);
-
-    when(chemElementManager.get(parentReactionId, user)).thenReturn(chemical);
-
-    boolean result = chemistryService.deleteStoichiometry(stoichiometryId, user);
-
-    verify(stoichiometryManager).remove(stoichiometryId);
-
-    assertTrue(result);
   }
 }

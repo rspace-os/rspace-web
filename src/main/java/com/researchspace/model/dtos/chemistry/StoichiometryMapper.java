@@ -6,10 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Static mapper for converting between Stoichiometry entities and their DTO counterparts.
- * Centralizes conversion logic used across services and managers.
- */
 public final class StoichiometryMapper {
 
   private StoichiometryMapper() {}
