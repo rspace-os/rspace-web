@@ -82,9 +82,36 @@ public final class StoichiometryMapper {
     }
     return StoichiometryMoleculeDTO.builder()
         .role(moleculeInfo.getRole())
-        // In ElementalAnalysisDTO, name holds SMILES (as per existing logic)
         .smiles(moleculeInfo.getName())
         .molecularWeight(moleculeInfo.getMass())
         .build();
+  }
+
+  public static StoichiometryMoleculeUpdateDTO toUpdateDTO(StoichiometryMoleculeDTO dto) {
+    if (dto == null) {
+      return null;
+    }
+    return StoichiometryMoleculeUpdateDTO.builder()
+        .id(dto.getId())
+        .role(dto.getRole())
+        .smiles(dto.getSmiles())
+        .name(dto.getName())
+        .coefficient(dto.getCoefficient())
+        .mass(dto.getMass())
+        .moles(dto.getMoles())
+        .expectedAmount(dto.getExpectedAmount())
+        .actualAmount(dto.getActualAmount())
+        .actualYield(dto.getActualYield())
+        .limitingReagent(dto.getLimitingReagent())
+        .notes(dto.getNotes())
+        .build();
+  }
+
+  public static List<StoichiometryMoleculeUpdateDTO> toUpdateDTOs(
+      List<StoichiometryMoleculeDTO> dtos) {
+    if (dtos == null) {
+      return new ArrayList<>();
+    }
+    return dtos.stream().map(StoichiometryMapper::toUpdateDTO).collect(Collectors.toList());
   }
 }

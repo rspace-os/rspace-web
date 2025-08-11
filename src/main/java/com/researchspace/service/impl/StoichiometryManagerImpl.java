@@ -8,12 +8,14 @@ import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
+import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
+import com.researchspace.service.chemistry.ChemistryClient;
 import com.researchspace.service.chemistry.StoichiometryException;
 import java.io.IOException;
 import java.util.HashMap;
@@ -22,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,16 +36,19 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   private final StoichiometryDao stoichiometryDao;
   private final RSChemElementManager rsChemElementManager;
   private final ChemicalSearcher chemicalSearcher;
+  private final ChemistryClient chemistryClient;
 
   @Autowired
   public StoichiometryManagerImpl(
       StoichiometryDao stoichiometryDao,
       RSChemElementManager rsChemElementManager,
-      ChemicalSearcher chemicalSearcher) {
+      ChemicalSearcher chemicalSearcher,
+      ChemistryClient chemistryClient) {
     super(stoichiometryDao);
     this.stoichiometryDao = stoichiometryDao;
     this.rsChemElementManager = rsChemElementManager;
     this.chemicalSearcher = chemicalSearcher;
+    this.chemistryClient = chemistryClient;
   }
 
   @Override
@@ -106,38 +110,96 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
           "Stoichiometry not found with ID: " + stoichiometryUpdate.getId());
     }
 
-    List<StoichiometryMolecule> existingMolecules = stoichiometry.getMolecules();
-    Map<Long, StoichiometryMolecule> idToMol = buildExistingMoleculesMap(existingMolecules);
+    Set<Long> keepIds = processUpdates(stoichiometry, stoichiometryUpdate.getMolecules(), user);
 
+    removeMoleculesNotInKeep(stoichiometry.getMolecules(), keepIds);
+
+    return save(stoichiometry);
+  }
+
+  private Set<Long> processUpdates(
+      Stoichiometry stoichiometry, List<StoichiometryMoleculeUpdateDTO> updates, User user) {
     Set<Long> keepIds = new HashSet<>();
-
-    if (stoichiometryUpdate.getMolecules() != null
-        && !stoichiometryUpdate.getMolecules().isEmpty()) {
-      for (StoichiometryMoleculeUpdateDTO u : stoichiometryUpdate.getMolecules()) {
-        StoichiometryMolecule existing = idToMol.get(u.getId());
-        if (existing == null) {
-          throw new com.researchspace.service.chemistry.StoichiometryException(
-              "Molecule ID " + u.getId() + " not found in existing stoichiometry molecules.");
-        }
-
-        existing.setCoefficient(u.getCoefficient());
-        existing.setMass(u.getMass());
-        existing.setMoles(u.getMoles());
-        existing.setExpectedAmount(u.getExpectedAmount());
-        existing.setActualAmount(u.getActualAmount());
-        existing.setActualYield(u.getActualYield());
-        existing.setLimitingReagent(u.getLimitingReagent());
-        existing.setNotes(u.getNotes());
-
-        keepIds.add(existing.getId());
-      }
+    if (updates == null || updates.isEmpty()) {
+      return keepIds;
     }
 
+    Map<Long, StoichiometryMolecule> idToMol =
+        buildExistingMoleculesMap(stoichiometry.getMolecules());
+
+    for (StoichiometryMoleculeUpdateDTO u : updates) {
+      if (u.getId() == null) {
+        addNewAgent(stoichiometry, u, user);
+        continue;
+      }
+
+      StoichiometryMolecule existing = idToMol.get(u.getId());
+      if (existing == null) {
+        throw new StoichiometryException(
+            "Molecule ID " + u.getId() + " not found in existing stoichiometry molecules.");
+      }
+
+      applyFieldUpdates(existing, u);
+      keepIds.add(existing.getId());
+    }
+
+    return keepIds;
+  }
+
+  private void addNewAgent(
+      Stoichiometry stoichiometry, StoichiometryMoleculeUpdateDTO updateMol, User user) {
+    if (updateMol.getRole() != MoleculeRole.AGENT) {
+      throw new StoichiometryException("Only AGENT molecules can be added on update without an ID");
+    }
+    if (updateMol.getSmiles() == null || updateMol.getSmiles().isBlank()) {
+      throw new StoichiometryException("New AGENT molecule requires a SMILES string");
+    }
+
+    RSChemElement molecule = RSChemElement.builder().chemElements(updateMol.getSmiles()).build();
+    try {
+      molecule = rsChemElementManager.save(molecule, user);
+    } catch (IOException e) {
+      throw new StoichiometryException("Problem saving new AGENT molecule from SMILES", e);
+    }
+
+    Optional<ElementalAnalysisDTO> analysis = chemistryClient.extract(molecule);
+
+    if (analysis.isPresent()) {
+      MoleculeInfoDTO agent = analysis.get().getMolecules().get(0);
+
+      StoichiometryMolecule newMol =
+          StoichiometryMolecule.builder()
+              .stoichiometry(stoichiometry)
+              .rsChemElement(molecule)
+              .role(MoleculeRole.AGENT)
+              .smiles(updateMol.getSmiles())
+              .name(updateMol.getName())
+              .coefficient(null)
+              .molecularWeight(agent.getMass())
+              .formula(agent.getFormula())
+              .limitingReagent(null)
+              .build();
+
+      stoichiometry.addMolecule(newMol);
+    }
+  }
+
+  private void applyFieldUpdates(StoichiometryMolecule existing, StoichiometryMoleculeUpdateDTO u) {
+    existing.setCoefficient(u.getCoefficient());
+    existing.setMass(u.getMass());
+    existing.setMoles(u.getMoles());
+    existing.setExpectedAmount(u.getExpectedAmount());
+    existing.setActualAmount(u.getActualAmount());
+    existing.setActualYield(u.getActualYield());
+    existing.setLimitingReagent(u.getLimitingReagent());
+    existing.setNotes(u.getNotes());
+  }
+
+  private void removeMoleculesNotInKeep(
+      List<StoichiometryMolecule> existingMolecules, Set<Long> keepIds) {
     if (existingMolecules != null) {
       existingMolecules.removeIf(m -> m.getId() != null && !keepIds.contains(m.getId()));
     }
-
-    return save(stoichiometry);
   }
 
   private static Map<Long, StoichiometryMolecule> buildExistingMoleculesMap(

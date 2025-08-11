@@ -62,7 +62,6 @@
                 <constraints nullable="true"/>
             </column>
             <column name="limiting_reagent" type="BIT(1)" defaultValueBoolean="0">
-                <constraints nullable="false"/>
             </column>
             <column name="notes" type="TEXT">
                 <constraints nullable="true"/>
