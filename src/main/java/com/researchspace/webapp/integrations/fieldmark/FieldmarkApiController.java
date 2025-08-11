@@ -74,7 +74,6 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
               + notebookId
               + "\" because "
               + dataciteEx.getMessage());
-
     } finally {
       throwBindExceptionIfErrors(errors);
     }

@@ -3,6 +3,7 @@ package com.researchspace.service.fieldmark.impl;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 
 import com.researchspace.fieldmark.client.FieldmarkClient;
+import com.researchspace.fieldmark.model.FieldmarkFieldDetail;
 import com.researchspace.fieldmark.model.FieldmarkNotebook;
 import com.researchspace.fieldmark.model.FieldmarkRecord;
 import com.researchspace.fieldmark.model.FieldmarkRecordsCsvExport;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -29,6 +31,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
@@ -90,6 +93,7 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
 
     FieldmarkRecordsJsonExport jsonRecords =
         fieldmarkClient.getNotebookRecords(existingConnection.getAccessToken(), notebookId);
+    jsonRecords.setFieldTypes(buildFieldTypeMap(fieldmarkNotebook));
 
     // Create DTO
     FieldmarkNotebookDTO notebookDTO =
@@ -139,6 +143,16 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
     return notebookDTO;
   }
 
+  @NotNull
+  private static Map<String, String> buildFieldTypeMap(FieldmarkNotebook fieldmarkNotebook) {
+    Map<String, String> recordFieldTypes = new HashMap<>();
+    for (Entry<String, FieldmarkFieldDetail> typeByFieldName :
+        fieldmarkNotebook.getUiSpecification().getFields().entrySet()) {
+      recordFieldTypes.put(typeByFieldName.getKey(), typeByFieldName.getValue().getFieldType());
+    }
+    return recordFieldTypes;
+  }
+
   private UserConnection getExistingConnection(User user) {
     return userConnectionManager
         .findByUserNameProviderName(user.getUsername(), FIELDMARK_APP_NAME)
@@ -164,8 +178,12 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
         // grab the path from CSV
         String filePath = csvRecords.getStringFieldValue(currentRecordDTO.getRecordId(), fieldName);
         if (StringUtils.isNotBlank(filePath)) {
+          if (filePath.contains(";")) {
+            filePath = filePath.split(";")[0]; // only supports 1 attachement per field
+          }
           // grab the file from the ZIP and attach it to the extractor
-          typeExtractor.setFieldValue(filesInRecords.get(filePath));
+          typeExtractor.setFieldValue(
+              filesInRecords.get(filePath)); // file path could be a list of path
           ((FieldmarkFileExtractor) typeExtractor).setFileName(filePath);
         }
       }

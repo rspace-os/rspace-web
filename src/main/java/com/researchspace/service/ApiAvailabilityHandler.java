@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import com.researchspace.model.User;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -36,4 +37,6 @@ public interface ApiAvailabilityHandler {
   boolean isDataCiteConnectorEnabled();
 
   boolean isInventoryAvailable(User user);
+
+  void setDataCiteConnector(DataCiteConnector dataCiteConnector); // testing purposes
 }
