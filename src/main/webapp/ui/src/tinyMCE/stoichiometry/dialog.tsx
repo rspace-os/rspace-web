@@ -144,10 +144,24 @@ function StandaloneDialogInner({
     }
   };
 
+  async function handleClose() {
+    if (
+      hasTableChanges &&
+      !(await confirm(
+        "Discard changes?",
+        "Closing the dialog will discard the unsaved changes.",
+        "Discard",
+        "Cancel",
+      ))
+    )
+      return;
+    onClose();
+  }
+
   return (
     <Dialog
       open={actuallyOpen}
-      onClose={onClose}
+      onClose={doNotAwait(handleClose)}
       aria-labelledby={titleId}
       maxWidth="xl"
       fullWidth
@@ -212,7 +226,7 @@ function StandaloneDialogInner({
             Delete
           </Button>
         )}
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={doNotAwait(handleClose)}>Close</Button>
       </DialogActions>
     </Dialog>
   );
