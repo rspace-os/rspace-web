@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef } from "react";
+import React, { createContext, useContext, useRef, forwardRef } from "react";
 import MuiDialog from "@mui/material/Dialog";
 import MuiMenu from "@mui/material/Menu";
 import MuiDrawer from "@mui/material/Drawer";
@@ -104,7 +104,7 @@ export function DialogBoundary({
  * the logic for wiring up the `aria-labelledby` attribute correctly.
  */
 export function Dialog(
-  props: Omit<React.ComponentProps<typeof MuiDialog>, "container">
+  props: Omit<React.ComponentProps<typeof MuiDialog>, "container">,
 ): React.ReactNode {
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
@@ -130,7 +130,7 @@ export function Dialog(
  * A Menu that is rendered within the boundary defined by DialogBoundary.
  */
 export function Menu(
-  props: Omit<React.ComponentProps<typeof MuiMenu>, "container">
+  props: Omit<React.ComponentProps<typeof MuiMenu>, "container">,
 ): React.ReactNode {
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
@@ -155,36 +155,40 @@ export function Menu(
 /**
  * A Drawer that is rendered within the boundary defined by DialogBoundary.
  */
-export function Drawer(
-  props: Omit<React.ComponentProps<typeof MuiDrawer>, "container">
-): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
-  const { children, open, ...rest } = props;
+export const Drawer = forwardRef(
+  (
+    props: Omit<React.ComponentProps<typeof MuiDrawer>, "container">,
+    ref: React.Ref<HTMLDivElement>,
+  ): React.ReactNode => {
+    const { modalContainer } = useContext(DialogBoundaryContext);
+    const { children, open, ...rest } = props;
 
-  React.useEffect(() => {
-    if (document.body) {
-      if (open) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "unset";
+    React.useEffect(() => {
+      if (document.body) {
+        if (open) {
+          document.body.style.overflow = "hidden";
+        } else {
+          document.body.style.overflow = "unset";
+        }
       }
-    }
-  }, [open]);
+    }, [open]);
 
-  return (
-    <MuiDrawer
-      /*
-       * Only temporary drawers are modal and require the dialog boundary.
-       * Including the superfluous prop otherwise results in a console error.
-       * See https://mui.com/material-ui/api/drawer/
-       */
-      {...(props.variant === "temporary"
-        ? { container: () => modalContainer.current }
-        : {})}
-      open={open}
-      {...rest}
-    >
-      {children}
-    </MuiDrawer>
-  );
-}
+    return (
+      <MuiDrawer
+        /*
+         * Only temporary drawers are modal and require the dialog boundary.
+         * Including the superfluous prop otherwise results in a console error.
+         * See https://mui.com/material-ui/api/drawer/
+         */
+        {...(props.variant === "temporary"
+          ? { container: () => modalContainer.current }
+          : {})}
+        open={open}
+        ref={ref}
+        {...rest}
+      >
+        {children}
+      </MuiDrawer>
+    );
+  },
+);

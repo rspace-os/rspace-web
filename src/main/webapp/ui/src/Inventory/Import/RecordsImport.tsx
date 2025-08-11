@@ -22,6 +22,7 @@ import clsx from "clsx";
 import { capitaliseJustFirstChar } from "../../util/Util";
 import { type URL } from "../../util/types";
 import { Link } from "react-router-dom";
+import { useLandmark } from "../../components/LandmarksContext";
 
 const useStyles = makeStyles()((theme) => ({
   bold: {
@@ -86,6 +87,7 @@ const useStyles = makeStyles()((theme) => ({
 function RecordsImport(): React.ReactNode {
   const { importStore } = useStores();
   const importData = importStore.importData;
+  const mainContentRef = useLandmark("Import main content");
 
   const onTypeSelect = (newValue: ImportRecordType): URL => {
     return `/inventory/import?recordType=${newValue}`;
@@ -165,7 +167,7 @@ function RecordsImport(): React.ReactNode {
   }
 
   return (
-    <Box className={classes.headWrapper}>
+    <Box className={classes.headWrapper} ref={mainContentRef} role="main" aria-label="Import main content">
       <ImportTabs />
       <Grid container className={classes.fileButtonWrapper}>
         <FileForImport loadedFile={loadedFileByRecordType} />

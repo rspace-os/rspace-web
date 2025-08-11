@@ -22,11 +22,14 @@ import { type Theme } from "@mui/material/styles";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 import { UserCancelledAction } from "../../util/error";
+import { useLandmark } from "../../components/LandmarksContext";
+import styled from "@mui/material/styles/styled";
+import Box from "@mui/material/Box";
 
 const border = (
   theme: Theme,
   isMobile: boolean,
-  recordType: RecordType | "mixed" | null
+  recordType: RecordType | "mixed" | null,
 ): string => {
   const width = 4 + (isMobile ? 2 : 0);
   const color =
@@ -36,55 +39,57 @@ const border = (
   return `${width}px solid ${color}`;
 };
 
-const BorderContainer = withStyles<
-  { recordType: RecordType | "mixed" | null; children: ReactNode },
-  { root: string; notMobile: string; mobile: string }
->((theme, { recordType }) => ({
-  root: {
+const BorderContainer = styled(
+  React.forwardRef(
+    (
+      {
+        recordType,
+        children,
+        ...props
+      }: {
+        recordType: RecordType | "mixed" | null;
+        children: React.ReactNode;
+      },
+      ref,
+    ) => (
+      <Box {...props} ref={ref}>
+        {children}
+      </Box>
+    ),
+  ),
+)<{
+  recordType: RecordType | "mixed" | null;
+  children: ReactNode;
+  role?: string;
+  "aria-label"?: string;
+}>(({ theme, recordType }) => {
+  const isSingleColumnLayout = useIsSingleColumnLayout();
+
+  return {
     backgroundColor: theme.palette.background.alt,
     position: "relative",
     height: "100%",
     display: "flex",
     flexDirection: "column",
-  },
-  notMobile: {
-    borderLeft: border(theme, false, recordType),
-    background: recordType
-      ? `linear-gradient(${theme.palette.record[recordType].lighter} 30%, #fff 31%)`
-      : "initial",
-  },
-  mobile: {
-    borderLeft: border(theme, true, recordType),
-    borderRight: border(theme, true, recordType),
-    borderTopRightRadius: theme.spacing(1),
-    borderTopLeftRadius: theme.spacing(1),
-  },
-}))(
-  ({
-    classes,
-    children,
-  }: {
-    classes: { root: string; notMobile: string; mobile: string };
-    children: ReactNode;
-  }) => {
-    const isSingleColumnLayout = useIsSingleColumnLayout();
-    return (
-      <div
-        className={clsx(
-          classes.root,
-          isSingleColumnLayout ? classes.mobile : classes.notMobile
-        )}
-        data-testid="MainActiveResult"
-      >
-        {children}
-      </div>
-    );
-  }
-);
+    borderLeft: border(theme, isSingleColumnLayout, recordType),
+    ...(isSingleColumnLayout && {
+      borderRight: border(theme, true, recordType),
+      borderTopRightRadius: theme.spacing(1),
+      borderTopLeftRadius: theme.spacing(1),
+    }),
+    ...(!isSingleColumnLayout && {
+      background:
+        recordType && recordType !== "mixed"
+          ? `linear-gradient(${theme.palette.record[recordType].lighter} 30%, #fff 31%)`
+          : "initial",
+    }),
+  };
+});
 
 function RightPanelView(): ReactNode {
   const { searchStore, uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
+  const mainContentRef = useLandmark("Details Panel");
 
   React.useEffect(() => {
     void (async () => {
@@ -172,6 +177,8 @@ function RightPanelView(): ReactNode {
   return (
     <ErrorBoundary>
       <BorderContainer
+        data-testid="MainActiveResult"
+        ref={mainContentRef as React.RefObject<HTMLDivElement>}
         recordType={
           searchStore.activeResult?.recordType ??
           searchStore.search.batchEditingRecordsByType?.type ??

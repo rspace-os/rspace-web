@@ -15,7 +15,7 @@ import RsSet from "../../../util/set";
 export default function IGSN(): React.ReactNode {
   const sidebarId = React.useId();
   const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
-    new RsSet([])
+    new RsSet([]),
   );
 
   React.useEffect(() => {

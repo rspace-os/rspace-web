@@ -15,6 +15,7 @@ import { BrowserRouter } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { dummyId } from "../useGalleryListing";
 import Alerts from "@/components/Alerts/Alerts";
+import { LandmarksProvider } from "@/components/LandmarksContext";
 
 export function DefaultSidebar(): React.ReactNode {
   return (
@@ -28,7 +29,8 @@ export function DefaultSidebar(): React.ReactNode {
                 <UiPreferences>
                   <DisableDragAndDropByDefault>
                     <Alerts>
-                      <Sidebar
+                      <LandmarksProvider>
+                        <Sidebar
                         selectedSection="Images"
                         setSelectedSection={() => {}}
                         drawerOpen={true}
@@ -36,7 +38,8 @@ export function DefaultSidebar(): React.ReactNode {
                         folderId={{ tag: "success", value: dummyId() }}
                         refreshListing={() => Promise.resolve()}
                         id="1"
-                      />
+                        />
+                      </LandmarksProvider>
                     </Alerts>
                   </DisableDragAndDropByDefault>
                 </UiPreferences>

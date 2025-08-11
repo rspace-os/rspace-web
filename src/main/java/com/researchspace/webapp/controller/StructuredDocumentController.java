@@ -251,7 +251,7 @@ public class StructuredDocumentController extends BaseController {
         }
         if (createdOrUpdated != null) {
           rc.add(createdOrUpdated.toRecordInfo());
-          if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+          if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
               user, originalParentFolder)) {
             recordShareHandler.shareIntoSharedFolderOrNotebook(
                 user, originalParentFolder, createdOrUpdated.getId());
@@ -322,7 +322,7 @@ public class StructuredDocumentController extends BaseController {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Form", formid));
       }
       Folder originalParentFolder = folderManager.getFolder(parentRecordId, user);
-      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermssion(
+      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
           user, originalParentFolder)) {
         sharedWithGroup =
             recordShareHandler.shareIntoSharedFolderOrNotebook(

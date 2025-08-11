@@ -279,8 +279,32 @@ export default function FieldmarkImportDialog({
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not import notebook.",
-            message: e.message,
+            ...Parsers.objectPath(
+              ["response", "data", "data", "validationErrors"],
+              e,
+            )
+              .flatMap(Parsers.isArray)
+              .flatMap((array) =>
+                Result.all(
+                  ...array.map((x) =>
+                    Parsers.isObject(x)
+                      .flatMap(Parsers.isNotNull)
+                      .flatMap(Parsers.getValueWithKey("message"))
+                      .flatMap(Parsers.isString),
+                  ),
+                ),
+              )
+              .map((errors) => ({
+                message: "Could not import notebook.",
+                details: errors.map((error) => ({
+                  variant: "error" as const,
+                  title: error,
+                })),
+              }))
+              .orElse({
+                title: "Could not import notebook.",
+                message: e.message,
+              }),
           }),
         );
       throw e;

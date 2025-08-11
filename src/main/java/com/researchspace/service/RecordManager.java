@@ -646,5 +646,7 @@ public interface RecordManager {
    */
   boolean forceMoveDocumentToOwnerWorkspace(StructuredDocument userDoc);
 
-  boolean isSharedFolderOrSharedNotebookWithoutCreatePermssion(User user, Folder parentFolder);
+  boolean isSharedNotebookWithoutCreatePermission(User user, Folder folder);
+
+  boolean isSharedFolderOrSharedNotebookWithoutCreatePermission(User user, Folder folder);
 }

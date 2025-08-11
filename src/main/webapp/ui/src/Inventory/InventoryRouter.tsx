@@ -14,6 +14,8 @@ import Alerts from "./components/Alerts";
 import Analytics from "./Analytics";
 import Box from "@mui/material/Box";
 import IdentifiersRouter from "./Identifiers/Router";
+import SkipToContentMenu from "../components/SkipToContentMenu";
+import { LandmarksProvider } from "../components/LandmarksContext";
 
 const RedirectToBench = () => {
   const {
@@ -34,39 +36,46 @@ function InventoryRouter(): React.ReactNode {
   return (
     <Analytics>
       <ErrorBoundary>
-        <Alerts>
-          <Box height="100%">
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  !uiStore.isVerySmall ? <RedirectToBench /> : <InitialScreen />
-                }
-              />
-              <Route
-                path="/container/:id"
-                element={<PermalinkRouter type="container" />}
-              />
-              <Route
-                path="/sample/:id"
-                element={<PermalinkRouter type="sample" />}
-              />
-              <Route
-                path="/subsample/:id"
-                element={<PermalinkRouter type="subsample" />}
-              />
-              <Route
-                path="/sampletemplate/:id"
-                element={<PermalinkRouter type="sampletemplate" />}
-              />
-              <Route path="/search/*" element={<SearchRouter />} />
-              <Route path="/import/*" element={<ImportRouter />} />
-              <Route path="/identifiers/*" element={<IdentifiersRouter />} />
-              <Route path="*" element={<PageNotFoundScreen />} />
-            </Routes>
-          </Box>
-          <MoveDialog />
-        </Alerts>
+        <LandmarksProvider>
+          <SkipToContentMenu />
+          <Alerts>
+            <Box height="100%">
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    !uiStore.isVerySmall ? (
+                      <RedirectToBench />
+                    ) : (
+                      <InitialScreen />
+                    )
+                  }
+                />
+                <Route
+                  path="/container/:id"
+                  element={<PermalinkRouter type="container" />}
+                />
+                <Route
+                  path="/sample/:id"
+                  element={<PermalinkRouter type="sample" />}
+                />
+                <Route
+                  path="/subsample/:id"
+                  element={<PermalinkRouter type="subsample" />}
+                />
+                <Route
+                  path="/sampletemplate/:id"
+                  element={<PermalinkRouter type="sampletemplate" />}
+                />
+                <Route path="/search/*" element={<SearchRouter />} />
+                <Route path="/import/*" element={<ImportRouter />} />
+                <Route path="/identifiers/*" element={<IdentifiersRouter />} />
+                <Route path="*" element={<PageNotFoundScreen />} />
+              </Routes>
+            </Box>
+            <MoveDialog />
+          </Alerts>
+        </LandmarksProvider>
       </ErrorBoundary>
     </Analytics>
   );
