@@ -4,6 +4,27 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.13.0 2025-08-11
+
+### ELN Features
+
+- RSDEV-639 new integration with Galaxy platform
+- RSDEV-701 new "About RSpace" page
+- RSDEV-558 better ordering of subgallery icons on the new Gallery page
+- RSDEV-734 generic skip-to-content button (for keyboard navigation)
+
+### ELN Bugfix
+
+- RSDEV-775 fix problem with moving document into owned shared notebook
+
+### Inventory Features
+
+- RSDEV-520 Fieldmark integration can now link imported data with pre-registered IGSN IDs
+
+### Inventory Bugfix
+
+- RSDEV-761 fix problem with duplicated network calls when navigating Inventory sections
+
 # 2.12.0 2025-07-15
 
 ### ELN Features
