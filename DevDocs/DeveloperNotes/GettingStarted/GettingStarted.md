@@ -250,8 +250,8 @@ following to your mvn launch command:
 
 Enterprise Standalone: this is the default, no extra configuration is needed.
 
-Enterprise Institutional SSO: `-Ddeployment.sso.type=TEST -Dmock.remote.username=user -Ddeployment.standalone=false`
-(where the username is for a user already in the database)
+Enterprise Institutional SSO: `-Ddeployment.sso.type=TEST -Dmock.remote.username=<existing_username> -Ddeployment.standalone=false`
+(where `existing_username` is for a user already in the database)
 
 Community: `-Ddeployment.cloud=true`
 

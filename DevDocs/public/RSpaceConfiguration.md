@@ -404,13 +404,13 @@ These optional settings will enable you to import user data from LDAP, or enable
 ### SSO configuration
 Set these properties to configure RSpace to run in SSO mode e.g. for Shibboleth integration. There may be further integration work needed with Apache headers/redirects etc. to get this working.
 * **deployment.standalone** true /false. Set to false to enable SSO integration. Default is true.
-* **deployment.sso.type** if single sign-on is configured (if deployment.standalone=false), this property must switch authentication filter to 'SAML' (default) or 'openid'.
+* **deployment.sso.type** if single sign-on is configured (if deployment.standalone=false), this property must switch authentication filter to 'SAML' or 'openid'.
 * **deployment.sso.logout.url** the URL to redirect to after logout from RSpace. Default is 'You're logged out' page.
 * **deployment.sso.idp.logout.url** the URL presented to the user on 'You're logged out' page, which should point to a link that ends the global SSO session with IDP. No default. 
-* **user.signup.acceptedDomains**  restricts self sign-up for users in SSO environments.
+* **user.signup.acceptedDomains** restricts self sign-up for users in SSO environments. Only users with a username ending with the accepted domain will be allowed to sign up, and other users will be redirected to an information page. There is no default. E.g., @uni.ac.uk.
+* **deployment.sso.signup.usernameSuffixReplacement** optional, comma-separated string pair defining SSO username suffix that should be replaced with other suffix when signing up a new RSpace user; the original SSO username will be saved as username alias
 * **deployment.sso.ssoInfoVariant** Sets a custom "RSpace doesn't know you " page when self-signup is disabled. Default is unset. Requires custom page for RSpace.
 * **deployment.sso.adminEmail** Sets the support email address for matters relating to accounts managed by SSO.
-* Only users with a username ending with the accepted domain will be allowed to sign up, and other users will be redirected to an information page. There is no default. E.g., @uni.ac.uk.
 
 #### SSO configuration - backdoor admin login functionality
 The following two properties can be enabled to allow creation and use of special System Admin backdoor account(s), i.e. accounts that work independently from SSO identity.

@@ -175,23 +175,27 @@
         <c:set var="signup_info">
             <spring:message code="pi.signup.info"/>
         </c:set>
-        <rst:hasDeploymentProperty name="picreateGroupOnSignupEnabled" value="true">
-          <c:set var="showPiCreateGroupOnSignup" value="true" />
 
+        <rst:hasDeploymentProperty name="picreateGroupOnSignupEnabled" value="true">
+          <c:set var="allowPiCreateGroupOnSignup" value="true" />
           <rst:hasDeploymentProperty name="SSOSelfDeclarePiEnabled" value="true">
             <c:if test="${not isAllowedPiRole}">
-              <c:set var="showPiCreateGroupOnSignup" value="false"/>
+              <c:set var="allowPiCreateGroupOnSignup" value="false"/>
             </c:if>
           </rst:hasDeploymentProperty>
 
-          <c:if test="${showPiCreateGroupOnSignup}">
-            <div class="form-group col-lg-12 rs-field rs-field--input pi-create-group-on-signup">        
-              <form:checkbox id="picreateGroupOnSignup" 
-                          path="picreateGroupOnSignup"              
-                          class="form-control rs-field__input checkbox" label="${signup_info}"/>
-              <form:errors class="rs-tooltip error" path="picreateGroupOnSignup"></form:errors>
-            </div>
-          </c:if>
+          <div class="form-group col-lg-12 rs-field rs-field--input pi-create-group-on-signup">
+            <c:if test="${allowPiCreateGroupOnSignup}">
+                <form:checkbox id="picreateGroupOnSignup"
+                            path="picreateGroupOnSignup"
+                            class="form-control rs-field__input checkbox" label="${signup_info}"/>
+                <form:errors class="rs-tooltip error" path="picreateGroupOnSignup"></form:errors>
+            </c:if>
+            <c:if test="${not allowPiCreateGroupOnSignup}">
+              Based on your status at ${applicationScope['RS_DEPLOY_PROPS']['customerNameShort']},
+              you cannot become a PI unless a system administrator manually enables this for you.
+            </c:if>
+          </div>
         </rst:hasDeploymentProperty>
         
         <rst:hasDeploymentProperty name="cloud" value="true">
