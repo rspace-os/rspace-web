@@ -241,7 +241,7 @@ const feature = test.extend<{
         const searchRequest = networkRequests.find(
           (request) =>
             request.url.pathname === "/api/v1/pubchem/search" &&
-            request.postData?.includes('"searchType":"SMILES"')
+            request.postData?.includes('"searchType":"SMILES"'),
         );
         expect(searchRequest).toBeDefined();
       },
@@ -292,10 +292,10 @@ const feature = test.extend<{
         await expect(compoundCard).toBeVisible();
 
         await expect(
-          compoundCard.getByRole("term").filter({ hasText: /PubChem ID/i })
+          compoundCard.getByRole("term").filter({ hasText: /PubChem ID/i }),
         ).toBeVisible();
         await expect(
-          compoundCard.getByRole("term").filter({ hasText: /Formula/i })
+          compoundCard.getByRole("term").filter({ hasText: /Formula/i }),
         ).toBeVisible();
 
         const casTerms = compoundCard
@@ -306,7 +306,7 @@ const feature = test.extend<{
       },
       "no results error message should be displayed": async () => {
         const errorMessage = page.getByText(
-          /No compounds found for "noresults"/i
+          /No compounds found for "noresults"/i,
         );
         await expect(errorMessage).toBeVisible();
       },
@@ -512,7 +512,7 @@ test.describe("ImportDialog", () => {
       await Given["that the ImportDialog is mounted"]();
       await When["a search is performed"]();
       await Then["the mocked results are shown"]();
-    }
+    },
   );
 
   feature("searchType is passed in API call", async ({ Given, When, Then }) => {
@@ -534,7 +534,7 @@ test.describe("ImportDialog", () => {
        * the friction to inserting compounds, especially when paired with
        * the slash menu command.
        */
-    }
+    },
   );
 
   feature(
@@ -543,7 +543,7 @@ test.describe("ImportDialog", () => {
       await Given["that the ImportDialog is mounted"]();
       await When["a search is performed that returns multiple results"]();
       await Then["multiple results should not be selected by default"]();
-    }
+    },
   );
 
   feature(
@@ -554,7 +554,7 @@ test.describe("ImportDialog", () => {
       await When["a compound is selected"]();
       await When["a selected compound is clicked again"]();
       await Then["the compound should not be selected"]();
-    }
+    },
   );
 
   feature(
@@ -565,7 +565,7 @@ test.describe("ImportDialog", () => {
       await When["tab key is used to navigate to a compound card"]();
       await When["enter key is pressed"]();
       await Then["the compound should be selected"]();
-    }
+    },
   );
 
   feature(
@@ -576,7 +576,7 @@ test.describe("ImportDialog", () => {
       await When["tab key is used to navigate to a compound checkbox"]();
       await When["space key is pressed"]();
       await Then["the compound should be selected"]();
-    }
+    },
   );
 
   feature(
@@ -595,7 +595,7 @@ test.describe("ImportDialog", () => {
        * was not considered worth foregoing the convenience of having the link
        * inside the card.
        */
-    }
+    },
   );
 
   feature(
@@ -614,7 +614,7 @@ test.describe("ImportDialog", () => {
       await Then[
         "the validation warning should disappear after selecting a compound"
       ]();
-    }
+    },
   );
 
   feature(
@@ -623,7 +623,7 @@ test.describe("ImportDialog", () => {
       await Given["that the ImportDialog is mounted"]();
       await When["a search fails"]();
       await Then["an error alert should be shown"]();
-    }
+    },
   );
 
   feature(
@@ -636,7 +636,7 @@ test.describe("ImportDialog", () => {
       await Then["there should be a search input"]();
       await Then["the search input should be empty"]();
       await Then["there should be no search results visible"]();
-    }
+    },
   );
 
   feature(
@@ -647,7 +647,7 @@ test.describe("ImportDialog", () => {
         "a search is performed that returns a compound with empty CAS"
       ]();
       await Then["the CAS number should not be displayed"]();
-    }
+    },
   );
 
   feature(
@@ -660,6 +660,6 @@ test.describe("ImportDialog", () => {
       await Then[
         "no results error message should not be visible after modifying search term"
       ]();
-    }
+    },
   );
 });
