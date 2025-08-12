@@ -691,9 +691,6 @@ const StoichiometryTable = React.forwardRef<
           backgroundColor: `${lighten(theme.palette.primary.background, 0.3)} !important`,
           color: `${theme.palette.primary.contrastText} !important`,
           fontStyle: "italic",
-          "&:hover": {
-            backgroundColor: `${theme.palette.action.hover} !important`,
-          },
         },
       }}
     />
