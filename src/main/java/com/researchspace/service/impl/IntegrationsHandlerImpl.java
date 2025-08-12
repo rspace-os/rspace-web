@@ -30,6 +30,8 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.integrations.galaxy.GalaxyController;
+import com.researchspace.webapp.integrations.galaxy.GalaxyController.GalaxyAliasToServer;
 import com.researchspace.webapp.integrations.pyrat.PyratClient;
 import com.researchspace.webapp.integrations.pyrat.PyratServerDTO;
 import java.util.ArrayList;
@@ -78,6 +80,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private @Autowired UserConnectionManager userConnManager;
   private @Autowired IPropertyHolder propertyHolder;
   private @Autowired PyratClient pyratClient;
+  @Autowired private GalaxyController galaxyController;
 
   private final Map<SystemProperty, List<SystemProperty>> parent2ChildMap = new HashMap<>();
 
@@ -126,7 +129,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   @Override
   // if method arguments change, remember to update the 'key' attribute
-  @Cacheable(value = INTEGRATION_INFO, key = "#user.username + #integrationName")
+    @Cacheable(value = INTEGRATION_INFO, key = "#user.username + #integrationName")
   public IntegrationInfo getIntegration(User user, String integrationName) {
 
     checkValidIntegration(integrationName);
@@ -186,7 +189,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         setSingleUserToken(info, user, FIELDMARK_APP_NAME, FIELDMARK_USER_TOKEN);
         return;
       case GALAXY_APP_NAME:
-        setSingleUserToken(info, user, GALAXY_APP_NAME, GALAXY_API_KEY);
+        setMultipleUserTokens(
+            info, user, GALAXY_APP_NAME, GALAXY_CONFIGURED_SERVERS, GALAXY_ALIAS, GALAXY_APIKEY);
         return;
       case DIGITAL_COMMONS_DATA_APP_NAME:
         setSingleUserToken(
@@ -286,6 +290,12 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
               pyratServerByAliasMap.entrySet()) {
             pyratConfiguredServers.add(createServerEntry(pyratServerByAlias));
           }
+        }
+      } else if (info.getName().equals(GALAXY_APP_NAME)) {
+        List<GalaxyAliasToServer> galaxyControllerServerByAlias =
+            galaxyController.getAliasServerPairs();
+        if (!galaxyControllerServerByAlias.isEmpty()) {
+          options.put(GALAXY_CONFIGURED_SERVERS, galaxyControllerServerByAlias);
         }
       }
 
@@ -406,10 +416,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         saveNewUserConnectionForSingleOptionApp(
             newInfo.getOptions().get(FIELDMARK_USER_TOKEN).toString(), user, FIELDMARK_APP_NAME);
         break;
-      case GALAXY_APP_NAME:
-        saveNewUserConnectionForSingleOptionApp(
-            newInfo.getOptions().get(GALAXY_API_KEY).toString(), user, GALAXY_APP_NAME);
-        break;
       case JOVE_APP_NAME:
         // Jove doesn't currently fit well into our existing integration handler, so we just get the
         // global api key from properties file
@@ -426,6 +432,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     if (PYRAT_APP_NAME.equals(appName) && optionsId != null) {
       saveNewUserConnectionForMultipleOptionApp(
           options.get(PYRAT_APIKEY), user, PYRAT_APP_NAME, options.get(PYRAT_ALIAS));
+    } else if (GALAXY_APP_NAME.equals(appName) && optionsId != null) {
+      saveNewUserConnectionForMultipleOptionApp(
+          options.get(GALAXY_APIKEY), user, GALAXY_APP_NAME, options.get(GALAXY_ALIAS));
     }
   }
 

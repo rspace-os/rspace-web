@@ -7,7 +7,7 @@ import axios from "@/common/axios";
 import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
-import ExternalWorkflowInvocations from "../ExternalWorkflowInvocations";
+import ExternalWorkflowInvocations, {InvocationsAndDataCount} from "../ExternalWorkflowInvocations";
 const mockAxios = new MockAdapter(axios);
 const GalaxyDataSummary = {
   "rspaceFieldName" : "Data",
@@ -20,6 +20,10 @@ const GalaxyDataSummary = {
   "galaxyBaseUrl" : "https://usegalaxy.eu",
   "createdOn" : 1752834698272
 }
+const GalaxyInvocationsAndDataCount :InvocationsAndDataCount= {
+  dataCount: 2,
+  invocationCount: 1
+}
 describe("Renders with table of  data ", () => {
   beforeEach(() => {
     mockAxios
@@ -28,6 +32,9 @@ describe("Renders with table of  data ", () => {
     mockAxios
     .onGet("/apps/galaxy/getSummaryGalaxyDataForRSpaceField/1")
     .reply(200, [GalaxyDataSummary]);
+    mockAxios
+    .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
+    .reply(200, GalaxyInvocationsAndDataCount);
   });
 
   it("displays WorkFlow Data table headers", async () => {
@@ -70,7 +77,7 @@ describe("Handles errors", () => {
   });
   it("displays error message if 404 returned", async () => {
     mockAxios
-    .onGet("/apps/galaxy/getSummaryGalaxyDataForRSpaceField/1")
+    .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(404, []);
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
     expect(await screen.findByText("Error")).toBeInTheDocument();
@@ -80,7 +87,7 @@ describe("Handles errors", () => {
   });
   it("displays error message if 403 returned", async () => {
     mockAxios
-    .onGet("/apps/galaxy/getSummaryGalaxyDataForRSpaceField/1")
+    .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(403, []);
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
     expect(await screen.findByText("Error")).toBeInTheDocument();
@@ -91,12 +98,12 @@ describe("Handles errors", () => {
 
   it("displays error message if 500 returned", async () => {
     mockAxios
-    .onGet("/apps/galaxy/getSummaryGalaxyDataForRSpaceField/1")
+    .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(500, []);
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
     expect(await screen.findByText("Error")).toBeInTheDocument();
     expect(
-        await screen.findByText(/Unknown issue, please investigate whether your Galaxy Server is running/i)
+        await screen.findByText(/Unknown issue, please investigate whether your Galaxy Server/i)
     ).toBeInTheDocument();
   })
 });

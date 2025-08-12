@@ -10,8 +10,7 @@ import IconButton from "@mui/material/IconButton";
 
 export default function ErrorView({
   errorReason,
-  errorMessage,
-    WorkFlowIcon
+  errorMessage, WorkFlowIcon
 }: {
   errorReason: (typeof ErrorReason)[keyof typeof ErrorReason];
   errorMessage: string;
@@ -33,24 +32,6 @@ export default function ErrorView({
       >
         <CloseIcon fontSize="inherit" />
       </IconButton>
-      {errorReason === ErrorReason.NetworkError && (
-        <>
-          The Galaxy server at{" "}
-          <a
-            // @ts-expect-error -- tinymce is defined in the parent window
-            href={parent.tinymce.activeEditor.settings.galaxy_web_url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {/* @ts-expect-error -- tinymce is defined in the parent window */}
-            {parent.tinymce.activeEditor.settings.galaxy_web_url}
-          </a>{" "}
-          is down. If
-          you are responsible for setting up the Galaxy integration, open
-          developer tools and have a look at the console and/or the network tab
-          to find out what the issue is. Error message is: {errorMessage}
-        </>
-      )}
       {/* When Galaxy API KEY is invalid Galaxy API responds with 403 */}
       {errorReason === ErrorReason.Unauthorized && (
         <>Invalid Galaxy API Key Please re-enter your API Key on the Apps page.</>
@@ -61,7 +42,7 @@ export default function ErrorView({
       )}
 
       {errorReason === ErrorReason.UNKNOWN && (
-        <>Unknown issue, please investigate whether your Galaxy Server is running. Error message was: {errorMessage}</>
+        <>Unknown issue, please investigate whether your Galaxy Server(s) is/are running. Error message was: {errorMessage}</>
       )}
     </Alert>
       </Collapse>

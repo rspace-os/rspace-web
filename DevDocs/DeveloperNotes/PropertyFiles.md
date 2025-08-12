@@ -13,6 +13,11 @@ value.
 A `defaultDeployment.properties` file, always on the classpath provides default values for all properties.
 Properties can be overridden and customised in a second file, which can also be on the classpath, or external.
 
+-- Note if spring el is used to give default values to properties using @Value annotations, those properties
+must not be defined in the defaultDeployment.properties file - they will be overriden by the default value
+set using Spring EL. For example, using `@Value(“${pyrat.server.config:#{null}}“)` will always override
+any value set for `pyrat.server.config` if it is in the pyrat.server.config. For local rSpace use dev/deployment.properties.
+
 Some properties are used in JSPs - for example, some UI features may
 only be accessible for particular deployments. These properties are
 loaded up by StartUpListener class and made available in JSPs through

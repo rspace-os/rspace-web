@@ -105,8 +105,17 @@ export type IntegrationStates = {
     ACCESS_TOKEN: Optional<string>;
   }>;
   GALAXY: IntegrationState<{
-    GALAXY_API_KEY: Optional<string>;
+    configuredServers: ReadonlyArray<{
+      url: string;
+      alias: string;
     }>;
+    authenticatedServers: ReadonlyArray<{
+      url: string;
+      alias: string;
+      apiKey: string;
+      optionsId: OptionsId;
+    }>;
+  }>;
   GITHUB: IntegrationState<
     Array<
       Optional<{
@@ -410,7 +419,76 @@ function decodeGalaxy(data: FetchedState): IntegrationStates["GALAXY"] {
   return {
     mode: parseState(data),
     credentials: {
-      GALAXY_API_KEY: parseCredentialString(data.options, "GALAXY_API_KEY"),
+      configuredServers: Parsers.objectPath(
+          ["options", "GALAXY_CONFIGURED_SERVERS"],
+          data
+      )
+      .flatMap(Parsers.isObject)
+      .flatMap(Parsers.isNotNull)
+      .flatMap((configuredServers) =>
+          Result.all(
+              ...Object.values(configuredServers).map((config: unknown) => {
+                try {
+                  const server = Parsers.isObject(config)
+                  .flatMap(Parsers.isNotNull)
+                  .elseThrow();
+                  const alias = Parsers.getValueWithKey("alias")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                  const url = Parsers.getValueWithKey("url")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                  return Result.Ok({ alias, url });
+                } catch {
+                  return Result.Error<{
+                    url: string;
+                    alias: string;
+                  }>([new Error("Could not parse out galaxy configured server")]);
+                }
+              })
+          )
+      )
+      .orElse([]),
+      authenticatedServers: Parsers.objectPath(["options"], data)
+      .flatMap(Parsers.isObject)
+      .flatMap(Parsers.isNotNull)
+      .map((servers) =>
+          Object.entries(servers).filter(
+              ([k]) => k !== "GALAXY_CONFIGURED_SERVERS"
+          )
+      )
+      .flatMap((servers) =>
+          Result.all(
+              ...servers.map(([key, config]: [string, unknown]) => {
+                try {
+                  const server = Parsers.isObject(config)
+                  .flatMap(Parsers.isNotNull)
+                  .elseThrow();
+                  const alias = Parsers.getValueWithKey("GALAXY_ALIAS")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                  const url = Parsers.getValueWithKey("GALAXY_URL")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                  const apiKey = Parsers.getValueWithKey("GALAXY_APIKEY")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                  const optionsId = Parsers.isString(key).elseThrow();
+                  return Result.Ok({ alias, url, apiKey, optionsId });
+                } catch {
+                  return Result.Error<{
+                    url: string;
+                    alias: string;
+                    apiKey: string;
+                    optionsId: OptionsId;
+                  }>([
+                    new Error("Could not parse out Galaxy authenticated server"),
+                  ]);
+                }
+              })
+          )
+      )
+      .orElse([]),
     },
   };
 }
@@ -936,13 +1014,16 @@ const encodeIntegrationState = <I extends Integration>(
       name: "GALAXY",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      options: {
-        ...creds.GALAXY_API_KEY.map((key) => ({
-          GALAXY_API_KEY: key,
-        })).orElse({
-          GALAXY_API_KEY: "",
-        }),
-      },
+      options: Object.fromEntries(
+          creds.authenticatedServers.map(({ alias, url, apiKey, optionsId }) => [
+            optionsId,
+            {
+              GALAXY_ALIAS: alias,
+              GALAXY_URL: url,
+              GALAXY_APIKEY: apiKey,
+            },
+          ])
+      ),
     };
   }
   if (integration === "GITHUB") {

@@ -10,11 +10,14 @@ import {DataGrid, GridRowSelectionModel} from "@mui/x-data-grid";
 import CssBaseline from "@mui/material/CssBaseline";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid";
-import {Modal} from "@mui/material";
+import {FormControlLabel, Modal} from "@mui/material";
 import DOMPurify from "dompurify";
 import {ErrorReason} from "@/eln/eln-external-workflows/Enums";
 import ErrorView from "@/eln/eln-external-workflows/ErrorView";
 import {WorkFlowIcon} from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
+import RadioGroup from "@mui/material/RadioGroup";
+import Radio from "@mui/material/Radio";
+import useLocalStorage from "@/util/useLocalStorage";
 export type AttachedRecords = {
   id: string;
   html: HTMLElement;
@@ -23,15 +26,13 @@ export type GalaxyArgs = {
   fieldId: string | undefined;
   recordId: string;
   attachedFileInfo: AttachedRecords [];
-  galaxy_web_url: string;
 };
 export type  RSpaceErrorResponse = { data: { exceptionMessage?: string, errorId?: string } };
 export type RSpaceError ={ message: string, response: RSpaceErrorResponse };
 function Galaxy({
     fieldId,
     recordId,
-    attachedFileInfo,
-    galaxy_web_url
+    attachedFileInfo
 } : GalaxyArgs) {
 
   parent.tinymce.activeEditor?.on("galaxy-used",  function () {
@@ -74,13 +75,16 @@ function Galaxy({
       );
     }
   }
-
-  const setUpGalaxyData = async () => {
-    return axios.post("/apps/galaxy/setUpDataInGalaxyFor",null,{ params: {
-        recordId,fieldId,
-        selectedAttachmentIds : selectedAttachmentIds.join(",")
-      }});
-  }
+  const defaultServerAlias = "galaxy eu server";
+  /**
+   * Set default to EU as this is the domain of most RSpace users?
+   **/
+  const [targetAlias, setTargetAlias] = useLocalStorage(
+      "galaxyServerChoice",
+      defaultServerAlias
+  );
+  type GalaxyServer = {GALAXY_ALIAS: string, GALAXY_URL: string};
+  const [servers, setServers] = React.useState<Array<GalaxyServer>>([]);
   const [attachedFiles, setAttachedFiles] = useState<Array<AttachedRecords>>([]);
   const [selectedAttachmentIds, setSelectedAttachmentIds] =
       useState<GridRowSelectionModel>([]);
@@ -94,6 +98,43 @@ function Galaxy({
   useEffect(() => {
     void  setAttachedFiles(attachedFileInfo);
   }, []);
+  useEffect(() => {
+    async function getGalaxyIntegrationInfo() {
+      try {
+        const galaxyIntegrationInfo = ((await axios
+        .get("/integration/integrationInfo", {
+          params: new URLSearchParams({name: "GALAXY"}),
+          responseType: "json",
+        })).data);
+        const authenticatedServers =Object.entries(galaxyIntegrationInfo.data.options).filter(
+                    ([k]) => k !== "GALAXY_CONFIGURED_SERVERS"
+                ).flatMap(auth=>auth[1] as GalaxyServer);
+        setServers(authenticatedServers);
+      } catch (error) {
+        setErrorMessage((error as RSpaceError).message);
+        console.error("Failed to fetch servers", error);
+      }
+    }
+
+    getGalaxyIntegrationInfo();
+  }, []);
+  const handleDataTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const datatype = e.target.value;
+    setTargetAlias(datatype);
+  };
+
+  const getGalaxyUrl = (): string => {
+    const targetServer= servers.find((server) => targetAlias === server.GALAXY_ALIAS);
+    return targetServer ? targetServer.GALAXY_URL : "";
+  }
+
+  const setUpGalaxyData = async () => {
+
+    return axios.post("/apps/galaxy/setUpDataInGalaxyFor",null,{ params: {
+        targetAlias,recordId,fieldId,
+        selectedAttachmentIds : selectedAttachmentIds.join(",")
+      }});
+  }
   /**
    * If tinymce event calls upload code directly, blocking modal does not wait for full upload before it closes.
    * Having tinymce event set a react state which then triggers the upload code resolves this issue.
@@ -151,12 +192,12 @@ function Galaxy({
                     <Stack spacing={2} alignItems="flex-start">
                       <p>Your new history can be viewed here:{" "}</p>
                        <p> <a
-                            href={`${galaxy_web_url}/histories/view?id=${historyId}`}
+                            href={`${getGalaxyUrl()}/histories/view?id=${historyId}`}
                             target="galaxyWithHistory"
                             rel="noreferrer noopener"
                         >
                           {historyName}
-                        </a>{" "}(opens in new tab){" "}</p>
+                        </a>{" "}(Opens in new tab.){" "}{" "}(You must be logged into Galaxy or you will see 'Unnamed History'){" "}</p>
                         <p>
                           <b> The data you have uploaded to Galaxy has links back to RSpace present
                           in its 'annotation' metadata.
@@ -179,6 +220,28 @@ function Galaxy({
             {!historyId && ( <>
           <TitledBox title="Choose Data" border>
             <Stack spacing={2} alignItems="flex-start">
+              {servers && (
+                  <>
+                    <label htmlFor="serverChoice">Choose a Galaxy Server</label>
+                    <RadioGroup
+                        id="serverChoice"
+                        row
+                        aria-label="Choose Galaxy Server"
+                        name="Choose Galaxy Server"
+                        defaultValue={targetAlias}
+                        onChange={handleDataTypeChange}
+                    >
+                      {servers.map((server) => (
+                          <FormControlLabel
+                              key={server.GALAXY_ALIAS}
+                              value={server.GALAXY_ALIAS}
+                              control={<Radio color="primary" />}
+                              label={server.GALAXY_ALIAS}
+                          />
+                      ))}
+                    </RadioGroup>
+                  </>
+              )}
                <p>Choose attached files to be uploaded to Galaxy.</p>
                 All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:
                 <p><b>"RSPACE_" + document name + "_" + global ID of document + "_" + name of field data was attached to + "_" + global ID of that field.</b></p>

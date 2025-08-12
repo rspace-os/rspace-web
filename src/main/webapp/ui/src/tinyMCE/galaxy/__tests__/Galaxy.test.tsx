@@ -39,31 +39,60 @@ describe("Galaxy Upload Data tests ", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     windowParentPostMessageSpy = jest.spyOn(window.parent, "postMessage")
+    mockAxios.onGet("/integration/integrationInfo").reply(200, {
+      data: {
+        name: "GALAXY",
+        displayName: "Galaxy",
+        available: true,
+        enabled: true,
+        oauthConnected: false,
+        "options" : {
+          "GALAXY_CONFIGURED_SERVERS" : [ {
+            "alias" : "galaxy eu server",
+            "url" : "https://usegalaxy.eu"
+          }, {
+            "alias" : "galaxy us server",
+            "url" : "https://usegalaxy.org"
+          } ],
+          "7" : {
+            "GALAXY_URL" : "https://usegalaxy.org",
+            "GALAXY_ALIAS" : "galaxy us server",
+            "GALAXY_APIKEY" : "USKEY"
+          },
+          "8" : {
+            "GALAXY_URL" : "https://usegalaxy.eu",
+            "GALAXY_APIKEY" : "EUKEY",
+            "GALAXY_ALIAS" : "galaxy eu server"
+          }
+        }
+      },
+      error: null,
+      success: true,
+      errorMsg: null,
+    });
   });
   describe("displays attached data with select checkboxes ", () => {
-
+    it("renders radio button server choice with eu as default ", async () => {
+      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]}/>);
+      expect(await screen.findByRole("radio", { name: /galaxy eu server/ }));
+    });
     it("displays empty table when there is no attached data ", async () => {
-      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]}
-                     galaxy_web_url={"galaxy_web_url"}/>);
+      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]}/>);
       const columnHeadings = await screen.findAllByRole("columnheader");
       expect(columnHeadings[1]).toHaveTextContent('File');
     });
     it("displays attached data ", async () => {
-      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}
-                     galaxy_web_url={"galaxy_web_url"}/>);
+      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
       const gridCells = screen.getAllByRole("gridcell");
       expect(gridCells[1]).toContainHTML(attachedRecords[0].html.outerHTML);
     });
     it("initial rendering posts no data selected ", async () => {
-      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}
-                     galaxy_web_url={"galaxy_web_url"}/>);
-      const checkBox = await screen.getAllByRole("checkbox")[0];
+      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "no-data-selected"}, "*");
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({"mceAction": "data-selected"}, "*");
     });
     it("selecting data posts  data selected ", async () => {
-      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}
-                     galaxy_web_url={"galaxy_web_url"}/>);
+      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
       const checkBox = await screen.getAllByRole("checkbox")[0];
       fireEvent.click(checkBox);
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "data-selected"}, "*");
@@ -74,8 +103,7 @@ describe("Galaxy Upload Data tests ", () => {
       mockAxios
       .onPost("/apps/galaxy/setUpDataInGalaxyFor")
       .reply(200, createdGalaxyHistory);
-      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}
-                     galaxy_web_url={"galaxy_web_url"}/>);
+      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
       const checkBox = await screen.getAllByRole("checkbox")[0];
       fireEvent.click(checkBox);
 
@@ -96,7 +124,7 @@ describe("Galaxy Upload Data tests ", () => {
       });
       expect(await screen.findByText(/Your new history can be viewed here/i)).toBeInTheDocument();
       expect(await screen.findByRole('link', {name: 'RSPACE_Untitled document_SD375v4_Data_FD229379_1'}))
-      .toHaveAttribute('href', 'galaxy_web_url/histories/view?id=f8e722da311b8793');
+      .toHaveAttribute('href', 'https://usegalaxy.eu/histories/view?id=f8e722da311b8793');
     });
     it("once upload complete events are dispatched", async () => {
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({"mceAction": "uploading-complete"}, "*");
@@ -112,8 +140,7 @@ describe("Galaxy Upload Data tests ", () => {
 
   describe("Handles errors", () => {
     beforeEach(async () => {
-      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}
-                     galaxy_web_url={"galaxy_web_url"}/>);
+      render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
       const checkBox = await screen.getAllByRole("checkbox")[0];
       fireEvent.click(checkBox);
 
@@ -140,7 +167,7 @@ describe("Galaxy Upload Data tests ", () => {
       });
       expect(await screen.findByText("Error")).toBeInTheDocument();
       expect(
-          await screen.findByText(/Unknown issue, please investigate whether your Galaxy Server is running/i)
+          await screen.findByText(/Unknown issue, please investigate whether your Galaxy Server/i)
       ).toBeInTheDocument();
     });
   });

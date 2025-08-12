@@ -22,6 +22,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.BaseRecordManager;
@@ -30,6 +31,8 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.webapp.integrations.galaxy.GalaxyController.GalaxyAliasToServer;
+import com.researchspace.webapp.integrations.galaxy.GalaxyController.GalaxyInvocationAndDataCounts;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,10 +43,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -54,9 +57,6 @@ public class GalaxyService {
   private final FileStore fileStore;
   private final RecordManager recordManager;
   private final FieldManager fieldManager;
-
-  @Value("${galaxy.web.url}")
-  private String baseUrl;
 
   @Autowired private UserConnectionManager userConnectionManager;
   @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
@@ -94,9 +94,14 @@ public class GalaxyService {
    * page and a download link using the uploaded file's globalID.
    */
   public History setUpDataInGalaxyFor(
-      User user, long recordId, long fieldId, long[] selectedAttachmentIds, String serverAddress)
+      User user,
+      long recordId,
+      long fieldId,
+      long[] selectedAttachmentIds,
+      String rspaceServerAddress,
+      List<GalaxyAliasToServer> aliasServerPairs,
+      String targetAlias)
       throws IOException {
-    String apiKey = getApiKeyForUser(user);
     BaseRecord theDocument = recordManager.getRecordWithFields(recordId, user);
     Field field = fieldManager.get(fieldId, user).get();
     String fieldName = field.getName();
@@ -104,14 +109,17 @@ public class GalaxyService {
     String globalID = ((StructuredDocument) theDocument).getOidWithVersion().toString();
     String docName = theDocument.getEditInfo().getName();
     String metaData = generateUniqueMetaData(fieldId, docName, globalID, fieldName, fieldGlobalID);
-    History history = client.createNewHistory(apiKey, metaData);
+    Map<String, String> keyByAlias = findApiKeyByGalaxyServerForUser(user);
+    String galaxyUrl = getGalaxyUrlFrom(aliasServerPairs, targetAlias) + "/api";
+    String apiKey = keyByAlias.get(targetAlias);
+    History history = client.createNewHistory(apiKey, metaData, galaxyUrl);
     Map<String, String> uploadedFileNamesToIds = new HashMap<>();
     for (long attachmentId : selectedAttachmentIds) {
       EcatMediaFile ecatMediaFile =
           baseRecordManager.retrieveMediaFile(user, attachmentId, null, null, null);
       File attachmentFile = fileStore.findFile(ecatMediaFile.getFileProperty());
       UploadFileResponse uploadFileResponse =
-          client.uploadFile(history.getId(), apiKey, attachmentFile);
+          client.uploadFile(history.getId(), apiKey, attachmentFile, galaxyUrl);
       String uploadedFileGalaxyID = uploadFileResponse.getOutputs().get(0).getDatasetId();
       String uploadedUUID = uploadFileResponse.getOutputs().get(0).getUuid();
       uploadedFileNamesToIds.put(
@@ -129,17 +137,20 @@ public class GalaxyService {
               uploadedUUID,
               history.getId(),
               history.getName(),
-              baseUrl);
+              getGalaxyUrlFrom(aliasServerPairs, targetAlias));
       externalWorkFlowDataManager.save(externalWorkFlowData);
       String documentLink =
-          serverAddress + "/workspace/editor/structuredDocument/" + theDocument.getId();
-      String galleryLink = serverAddress + "/gallery/item/" + ecatMediaFile.getId();
-      String downloadLink = serverAddress + "/globalId/" + ecatMediaFile.getGlobalIdentifier();
+          rspaceServerAddress + "/workspace/editor/structuredDocument/" + theDocument.getId();
+      String galleryLink = rspaceServerAddress + "/gallery/item/" + ecatMediaFile.getId();
+      String downloadLink =
+          rspaceServerAddress + "/globalId/" + ecatMediaFile.getGlobalIdentifier();
       String annotation =
           "Document: " + documentLink + " Data: " + galleryLink + " Download: " + downloadLink;
-      client.putAnnotationOnDataset(history.getId(), uploadedFileGalaxyID, annotation, apiKey);
+      client.putAnnotationOnDataset(
+          history.getId(), uploadedFileGalaxyID, annotation, apiKey, galaxyUrl);
     }
-    client.createDatasetCollection(apiKey, history.getId(), metaData, uploadedFileNamesToIds);
+    client.createDatasetCollection(
+        apiKey, history.getId(), metaData, uploadedFileNamesToIds, galaxyUrl);
 
     return history;
   }
@@ -162,13 +173,15 @@ public class GalaxyService {
     return metaData;
   }
 
-  private String getApiKeyForUser(User user) {
-    String apiKey =
-        userConnectionManager
-            .findByUserNameProviderName(user.getUsername(), IntegrationsHandler.GALAXY_APP_NAME)
-            .get()
-            .getAccessToken();
-    return apiKey;
+  private Map<String, String> findApiKeyByGalaxyServerForUser(User user) {
+    Map<String, String> apiKeyByGalaxyServer = new HashMap<>();
+    List<UserConnection> connectionsToGalaxy =
+        userConnectionManager.findListByUserNameProviderName(
+            user.getUsername(), IntegrationsHandler.GALAXY_APP_NAME);
+    for (UserConnection connection : connectionsToGalaxy) {
+      apiKeyByGalaxyServer.put(connection.getId().getProviderUserId(), connection.getAccessToken());
+    }
+    return apiKeyByGalaxyServer;
   }
 
   /**
@@ -186,69 +199,144 @@ public class GalaxyService {
    *
    * @return List<GalaxySummaryStatusReport> may be null
    */
-  public List<GalaxySummaryStatusReport> getSummaryGalaxyDataForRSpaceField(long fieldId, User user)
-      throws IOException {
+  public List<GalaxySummaryStatusReport> getSummaryGalaxyDataForRSpaceField(
+      long fieldId, User user, List<GalaxyAliasToServer> aliasServerPairs) throws IOException {
     Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField =
         externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             fieldId, GALAXY);
     if (!allDataUploadedToGalaxyForThisRSpaceField.isEmpty()) {
-      Set<String> historyIds =
-          findAllHistoryIdsForThisData(allDataUploadedToGalaxyForThisRSpaceField);
-      String apiKey = getApiKeyForUser(user);
-      List<WorkflowInvocationResponse> allTopLevelInvocationsForThisData = new ArrayList<>();
-      for (String historyId : historyIds) {
-        List<WorkflowInvocationResponse> topLevelInvocationsInAHistory =
-            getTopLevelInvocationsInAHistory(historyId, apiKey);
-        allTopLevelInvocationsForThisData.addAll(topLevelInvocationsInAHistory);
-      }
-      if (!allTopLevelInvocationsForThisData.isEmpty()) {
-        // check if any invocations have been persisted for this RSpace field
-        Set<ExternalWorkFlowInvocation> persistedInvocations =
-            findInvocationsFromData(allDataUploadedToGalaxyForThisRSpaceField);
-        Set<GalaxyInvocationDetails> allInvocationDetails = new LinkedHashSet<>();
-        allTopLevelInvocationsForThisData.forEach(
-            (invocation) -> {
-              GalaxyInvocationDetails thisGalaxyInvocationDetails = new GalaxyInvocationDetails();
-              Optional<ExternalWorkFlowInvocation> existing =
-                  persistedInvocations.stream()
-                      .filter(
-                          persistedInvocation ->
-                              persistedInvocation.getExtId().equals(invocation.getInvocationId()))
-                      .findFirst();
-              String finalCalculatedState = calculateStateFor(invocation, apiKey);
-              thisGalaxyInvocationDetails.setState(finalCalculatedState);
-              if (existing.isPresent()) {
-                ExternalWorkFlowInvocation persistedInvocation = existing.get();
-                allInvocationDetails.add(thisGalaxyInvocationDetails);
-                thisGalaxyInvocationDetails.setPersistedInvocation(persistedInvocation);
-                thisGalaxyInvocationDetails.setInvocation(invocation);
-                if (!persistedInvocation.getStatus().equals(finalCalculatedState)) {
-                  persistedInvocation.setStatus(finalCalculatedState);
-                  externalWorkFlowDataManager.save(persistedInvocation);
-                }
 
-              } else {
-                getLatestInvocationDataFromGalaxy(
-                    invocation,
-                    apiKey,
-                    allDataUploadedToGalaxyForThisRSpaceField,
-                    allInvocationDetails,
-                    thisGalaxyInvocationDetails);
-              }
-            });
-        return GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
-            allInvocationDetails, allDataUploadedToGalaxyForThisRSpaceField);
+      Map<String, String> keyByAlias = findApiKeyByGalaxyServerForUser(user);
+      List<GalaxySummaryStatusReport> allServers = new ArrayList<>();
+      for (String alias : keyByAlias.keySet()) {
+        String baseUrl = getGalaxyUrlFrom(aliasServerPairs, alias);
+        Set<ExternalWorkFlowData> dataUploadedForThisGalaxyServer =
+            allDataUploadedToGalaxyForThisRSpaceField.stream()
+                .filter(data -> data.getBaseUrl().equals(baseUrl))
+                .collect(Collectors.toSet());
+        if (!dataUploadedForThisGalaxyServer.isEmpty()) {
+          Set<String> historyIds = findAllHistoryIdsForThisData(dataUploadedForThisGalaxyServer);
+          String apiKey = keyByAlias.get(alias);
+          String galaxyUrl = baseUrl + "/api";
+          allServers.addAll(
+              getGalaxySummaryForServer(
+                  historyIds, apiKey, dataUploadedForThisGalaxyServer, galaxyUrl));
+        }
       }
-      // no invocations were present
-      return GalaxySummaryStatusReport.createPerHistoryForDataUnusedByAnyInvocation(
-          allDataUploadedToGalaxyForThisRSpaceField);
+      return allServers;
     }
     return new ArrayList<>();
   }
 
-  private String calculateStateFor(WorkflowInvocationResponse invocation, String apiKey) {
+  public GalaxyInvocationAndDataCounts getGalaxyInvocationCountForRSpaceField(
+      long fieldId, User user, List<GalaxyAliasToServer> aliasServerPairs) throws IOException {
+    GalaxyInvocationAndDataCounts giadc = new GalaxyInvocationAndDataCounts();
+    Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField =
+        externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
+            fieldId, GALAXY);
+    if (!allDataUploadedToGalaxyForThisRSpaceField.isEmpty()) {
+
+      Map<String, String> keyByAlias = findApiKeyByGalaxyServerForUser(user);
+      List<WorkflowInvocationResponse> allInvocations = new ArrayList<>();
+      for (String alias : keyByAlias.keySet()) {
+        String baseUrl = getGalaxyUrlFrom(aliasServerPairs, alias);
+        Set<ExternalWorkFlowData> dataUploadedForThisGalaxyServer =
+            allDataUploadedToGalaxyForThisRSpaceField.stream()
+                .filter(data -> data.getBaseUrl().equals(baseUrl))
+                .collect(Collectors.toSet());
+        if (!dataUploadedForThisGalaxyServer.isEmpty()) {
+          giadc.setDataCount(giadc.getDataCount() + dataUploadedForThisGalaxyServer.size());
+          Set<String> historyIds = findAllHistoryIdsForThisData(dataUploadedForThisGalaxyServer);
+          String apiKey = keyByAlias.get(alias);
+          String galaxyUrl = getGalaxyUrlFrom(aliasServerPairs, alias) + "/api";
+          allInvocations.addAll(getGalaxyInvocationsForServer(historyIds, apiKey, galaxyUrl));
+        }
+      }
+      giadc.setInvocationCount(allInvocations.size());
+    } else {
+      giadc.setInvocationCount(0);
+    }
+    return giadc;
+  }
+
+  private static String getGalaxyUrlFrom(List<GalaxyAliasToServer> aliasServerPairs, String alias) {
+    return aliasServerPairs.stream()
+        .filter(sp -> sp.getAlias().equals(alias))
+        .findFirst()
+        .get()
+        .getUrl();
+  }
+
+  @NotNull
+  private List<WorkflowInvocationResponse> getGalaxyInvocationsForServer(
+      Set<String> historyIds, String apiKey, String galaxyUrl) throws IOException {
+    List<WorkflowInvocationResponse> allTopLevelInvocationsForThisData = new ArrayList<>();
+    for (String historyId : historyIds) {
+      List<WorkflowInvocationResponse> topLevelInvocationsInAHistory =
+          getTopLevelInvocationsInAHistory(historyId, apiKey, galaxyUrl);
+      allTopLevelInvocationsForThisData.addAll(topLevelInvocationsInAHistory);
+    }
+    return allTopLevelInvocationsForThisData;
+  }
+
+  @NotNull
+  private List<GalaxySummaryStatusReport> getGalaxySummaryForServer(
+      Set<String> historyIds,
+      String apiKey,
+      Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField,
+      String galaxyUrl)
+      throws IOException {
+    List<WorkflowInvocationResponse> allTopLevelInvocationsForThisData =
+        getGalaxyInvocationsForServer(historyIds, apiKey, galaxyUrl);
+
+    if (!allTopLevelInvocationsForThisData.isEmpty()) {
+      // check if any invocations have been persisted for this RSpace field
+      Set<ExternalWorkFlowInvocation> persistedInvocations =
+          findInvocationsFromData(allDataUploadedToGalaxyForThisRSpaceField);
+      Set<GalaxyInvocationDetails> allInvocationDetails = new LinkedHashSet<>();
+      allTopLevelInvocationsForThisData.forEach(
+          (invocation) -> {
+            GalaxyInvocationDetails thisGalaxyInvocationDetails = new GalaxyInvocationDetails();
+            Optional<ExternalWorkFlowInvocation> existing =
+                persistedInvocations.stream()
+                    .filter(
+                        persistedInvocation ->
+                            persistedInvocation.getExtId().equals(invocation.getInvocationId()))
+                    .findFirst();
+            String finalCalculatedState = calculateStateFor(invocation, apiKey, galaxyUrl);
+            thisGalaxyInvocationDetails.setState(finalCalculatedState);
+            if (existing.isPresent()) {
+              ExternalWorkFlowInvocation persistedInvocation = existing.get();
+              allInvocationDetails.add(thisGalaxyInvocationDetails);
+              thisGalaxyInvocationDetails.setPersistedInvocation(persistedInvocation);
+              thisGalaxyInvocationDetails.setInvocation(invocation);
+              if (!persistedInvocation.getStatus().equals(finalCalculatedState)) {
+                persistedInvocation.setStatus(finalCalculatedState);
+                externalWorkFlowDataManager.save(persistedInvocation);
+              }
+
+            } else {
+              getLatestInvocationDataFromGalaxy(
+                  invocation,
+                  apiKey,
+                  allDataUploadedToGalaxyForThisRSpaceField,
+                  allInvocationDetails,
+                  thisGalaxyInvocationDetails,
+                  galaxyUrl);
+            }
+          });
+      return GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
+          allInvocationDetails, allDataUploadedToGalaxyForThisRSpaceField);
+    }
+    // no invocations were present
+    return GalaxySummaryStatusReport.createPerHistoryForDataUnusedByAnyInvocation(
+        allDataUploadedToGalaxyForThisRSpaceField);
+  }
+
+  private String calculateStateFor(
+      WorkflowInvocationResponse invocation, String apiKey, String galaxyUrl) {
     WorkflowInvocationSummaryStatusResponse summary =
-        client.getWorkflowInvocatioSummaryStatus(apiKey, invocation.getInvocationId());
+        client.getWorkflowInvocatioSummaryStatus(apiKey, invocation.getInvocationId(), galaxyUrl);
     WorkflowOverallStates jobStates = summary.getStates();
     String jobStatesStatus = jobStates.getState().toString();
     String populatedState = summary.getPopulatedState();
@@ -266,9 +354,10 @@ public class GalaxyService {
       String apiKey,
       Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField,
       Set<GalaxyInvocationDetails> allInvocationDetails,
-      GalaxyInvocationDetails thisGalaxyInvocationDetails) {
+      GalaxyInvocationDetails thisGalaxyInvocationDetails,
+      String galaxyUrl) {
     WorkflowInvocationStepStatusResponse details =
-        client.getWorkflowInvocationData(apiKey, invocation.getInvocationId());
+        client.getWorkflowInvocationData(apiKey, invocation.getInvocationId(), galaxyUrl);
     Map<String, WorkflowInvocationStepInput> inputs = details.getInputs();
     List<ExternalWorkFlowData> allMatchingDataForThisInvocation = new ArrayList<>();
     inputs
@@ -281,7 +370,7 @@ public class GalaxyService {
               if (input.getSrc().equals("hdca")) {
                 HistoryDatasetCollectionAssociation underlyingDataHDCA =
                     client.getDataSetCollectionDetails(
-                        apiKey, invocation.getHistoryId(), input.getId());
+                        apiKey, invocation.getHistoryId(), input.getId(), galaxyUrl);
                 List<DatasetCollectionElement> elements = underlyingDataHDCA.getElements();
                 List<String> elementUUIDs = new ArrayList<>();
                 searchElementsForMatchesToRSpaceData(
@@ -292,11 +381,12 @@ public class GalaxyService {
                     thisGalaxyInvocationDetails,
                     allMatchingDataForThisInvocation,
                     elements,
-                    elementUUIDs);
+                    elementUUIDs,
+                    galaxyUrl);
               } else if (input
                   .getSrc()
                   .equals("hda")) { // data that is not part of any 'Collection' is HDA type
-                DataSet dataset = client.getDataSetDetails(apiKey, input.getId());
+                DataSet dataset = client.getDataSetDetails(apiKey, input.getId(), galaxyUrl);
                 String uuid = dataset.getUuid();
                 Optional<ExternalWorkFlowData> matchingData =
                     allDataUploadedToGalaxyForThisRSpaceField.stream()
@@ -311,7 +401,8 @@ public class GalaxyService {
                       thisGalaxyInvocationDetails,
                       dataset,
                       allMatchingDataForThisInvocation,
-                      matchingData);
+                      matchingData,
+                      galaxyUrl);
                 }
               }
             });
@@ -328,7 +419,8 @@ public class GalaxyService {
       GalaxyInvocationDetails thisGalaxyInvocationDetails,
       List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
       List<DatasetCollectionElement> elements,
-      List<String> elementUUIDs) {
+      List<String> elementUUIDs,
+      String galaxyUrl) {
     for (DatasetCollectionElement element : elements) {
       if (element.getObject().getModelClass().equals("DatasetCollection")) {
         searchElementsForMatchesToRSpaceData(
@@ -339,11 +431,12 @@ public class GalaxyService {
             thisGalaxyInvocationDetails,
             allMatchingDataForThisInvocation,
             element.getObject().getElements(),
-            elementUUIDs);
+            elementUUIDs,
+            galaxyUrl);
       } else {
         elementUUIDs.add(element.getObject().getUuid());
       }
-      boolean dataMatched = false;
+      boolean dataMatched;
       for (String elementUuid : elementUUIDs) {
         Optional<ExternalWorkFlowData> matchingData =
             allDataUploadedToGalaxyForThisRSpaceField.stream()
@@ -358,7 +451,8 @@ public class GalaxyService {
               thisGalaxyInvocationDetails,
               element,
               allMatchingDataForThisInvocation,
-              matchingData);
+              matchingData,
+              galaxyUrl);
         }
       }
     }
@@ -371,7 +465,8 @@ public class GalaxyService {
       GalaxyInvocationDetails thisGalaxyInvocationDetails,
       DatasetCollectionElement element,
       List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
-      Optional<ExternalWorkFlowData> matchingData) {
+      Optional<ExternalWorkFlowData> matchingData,
+      String galaxyUrl) {
     addDataDetailsForDataSetOrDataSetCollection(
         invocation,
         apiKey,
@@ -380,7 +475,8 @@ public class GalaxyService {
         allMatchingDataForThisInvocation,
         matchingData,
         element,
-        null);
+        null,
+        galaxyUrl);
   }
 
   private void addDataDetailsForDataSetOrDataSetCollection(
@@ -391,7 +487,8 @@ public class GalaxyService {
       List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
       Optional<ExternalWorkFlowData> matchingData,
       DatasetCollectionElement element,
-      DataSet dataset) {
+      DataSet dataset,
+      String galaxyUrl) {
     allMatchingDataForThisInvocation.add(matchingData.get());
     thisGalaxyInvocationDetails.setInvocation(invocation);
     allInvocationDetails.add(thisGalaxyInvocationDetails);
@@ -407,7 +504,7 @@ public class GalaxyService {
       thisGalaxyInvocationDetails.getDataSetsUsedInInvocation().add(dataset);
     }
     WorkflowInvocationReport workflowInvocationReport =
-        client.getWorkflowInvocationReport(apiKey, invocation.getInvocationId());
+        client.getWorkflowInvocationReport(apiKey, invocation.getInvocationId(), galaxyUrl);
     thisGalaxyInvocationDetails.setWorkflowName(workflowInvocationReport.getTitle());
   }
 
@@ -418,7 +515,8 @@ public class GalaxyService {
       GalaxyInvocationDetails thisGalaxyInvocationDetails,
       DataSet dataset,
       List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
-      Optional<ExternalWorkFlowData> matchingData) {
+      Optional<ExternalWorkFlowData> matchingData,
+      String galaxyUrl) {
     addDataDetailsForDataSetOrDataSetCollection(
         invocation,
         apiKey,
@@ -427,7 +525,8 @@ public class GalaxyService {
         allMatchingDataForThisInvocation,
         matchingData,
         null,
-        dataset);
+        dataset,
+        galaxyUrl);
   }
 
   private Set<ExternalWorkFlowInvocation> findInvocationsFromData(
@@ -461,7 +560,7 @@ public class GalaxyService {
   }
 
   public List<WorkflowInvocationResponse> getTopLevelInvocationsInAHistory(
-      String historyId, String apiKey) throws IOException {
-    return client.getTopLevelInvocationsInAHistory(apiKey, historyId);
+      String historyId, String apiKey, String galaxyUrl) throws IOException {
+    return client.getTopLevelInvocationsInAHistory(apiKey, historyId, galaxyUrl);
   }
 }
