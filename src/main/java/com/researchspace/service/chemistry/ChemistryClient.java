@@ -69,25 +69,16 @@ public class ChemistryClient {
     }
   }
 
-  public Optional<ElementalAnalysisDTO> extract(RSChemElement chemicalElement) {
+  public Optional<ElementalAnalysisDTO> extract(String chem) {
     Map<String, Object> body = new HashMap<>();
-
-    String chemString = chemicalElement.getChemElements();
-    if (StringUtils.isNotEmpty(chemicalElement.getSmilesString())) {
-      log.info(
-          "rsChemElement "
-              + chemicalElement.getId()
-              + " has smiles representation, using it for extraction");
-      chemString = chemicalElement.getSmilesString();
-    }
-    body.put("input", chemString);
+    body.put("input", chem);
     String url = chemistryServiceUrl + "/chemistry/extract";
 
-    return postForElementalAnalysis(chemicalElement, body, url);
+    return postForElementalAnalysis(body, url);
   }
 
   private Optional<ElementalAnalysisDTO> postForElementalAnalysis(
-      RSChemElement chemicalElement, Map<String, Object> body, String url) {
+      Map<String, Object> body, String url) {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
@@ -99,18 +90,11 @@ public class ChemistryClient {
         return Optional.ofNullable(response.getBody());
       } else {
         log.warn(
-            "Unsuccessful request for chemElement {} to: {}. Response code: {}",
-            chemicalElement.getId(),
-            url,
-            response.getStatusCodeValue());
+            "Unsuccessful request to: {}. Response code: {}", url, response.getStatusCodeValue());
         return Optional.empty();
       }
     } catch (RestClientException e) {
-      log.warn(
-          "Error while making request for chemElement {} to {}: {}",
-          chemicalElement.getId(),
-          url,
-          e.getMessage());
+      log.warn("Error while making request to {}: {}", url, e.getMessage());
       return Optional.empty();
     }
   }
@@ -129,7 +113,7 @@ public class ChemistryClient {
     body.put("input", chemString);
     String url = chemistryServiceUrl + "/chemistry/stoichiometry";
 
-    return postForElementalAnalysis(chemicalElement, body, url);
+    return postForElementalAnalysis(body, url);
   }
 
   public byte[] exportImage(

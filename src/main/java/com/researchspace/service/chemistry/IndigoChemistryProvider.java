@@ -53,8 +53,8 @@ public class IndigoChemistryProvider implements ChemistryProvider {
   }
 
   @Override
-  public Optional<ElementalAnalysisDTO> getProperties(RSChemElement chemicalElement) {
-    return chemistryClient.extract(chemicalElement);
+  public Optional<ElementalAnalysisDTO> getProperties(String chemical) {
+    return chemistryClient.extract(chemical);
   }
 
   @Override

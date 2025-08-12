@@ -8,7 +8,6 @@ import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
-import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemicalImportException;
@@ -129,7 +128,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
 
     for (StoichiometryMoleculeUpdateDTO u : updates) {
       if (u.getId() == null) {
-        addNewAgent(stoichiometry, u, user);
+        addNewMoleculeFromDto(stoichiometry, u, user);
         continue;
       }
 
@@ -146,42 +145,39 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
     return keepIds;
   }
 
-  private void addNewAgent(
+  private void addNewMoleculeFromDto(
       Stoichiometry stoichiometry, StoichiometryMoleculeUpdateDTO updateMol, User user) {
-    if (updateMol.getRole() != MoleculeRole.AGENT) {
-      throw new StoichiometryException("Only AGENT molecules can be added on update without an ID");
-    }
     if (updateMol.getSmiles() == null || updateMol.getSmiles().isBlank()) {
-      throw new StoichiometryException("New AGENT molecule requires a SMILES string");
+      throw new StoichiometryException("New molecule requires a SMILES string");
     }
 
     RSChemElement molecule = RSChemElement.builder().chemElements(updateMol.getSmiles()).build();
     try {
       molecule = rsChemElementManager.save(molecule, user);
     } catch (IOException e) {
-      throw new StoichiometryException("Problem saving new AGENT molecule from SMILES", e);
+      throw new StoichiometryException("Problem saving new molecule from SMILES", e);
     }
 
-    Optional<ElementalAnalysisDTO> analysis = chemistryClient.extract(molecule);
+    StoichiometryMolecule newMol =
+        StoichiometryMolecule.builder()
+            .stoichiometry(stoichiometry)
+            .rsChemElement(molecule)
+            .role(updateMol.getRole())
+            .smiles(updateMol.getSmiles())
+            .name(updateMol.getName())
+            .coefficient(updateMol.getCoefficient())
+            .molecularWeight(updateMol.getMolecularWeight())
+            .formula(updateMol.getFormula())
+            .limitingReagent(updateMol.getLimitingReagent())
+            .mass(updateMol.getMass())
+            .moles(updateMol.getMoles())
+            .expectedAmount(updateMol.getExpectedAmount())
+            .actualAmount(updateMol.getActualAmount())
+            .actualYield(updateMol.getActualYield())
+            .notes(updateMol.getNotes())
+            .build();
 
-    if (analysis.isPresent()) {
-      MoleculeInfoDTO agent = analysis.get().getMolecules().get(0);
-
-      StoichiometryMolecule newMol =
-          StoichiometryMolecule.builder()
-              .stoichiometry(stoichiometry)
-              .rsChemElement(molecule)
-              .role(MoleculeRole.AGENT)
-              .smiles(updateMol.getSmiles())
-              .name(updateMol.getName())
-              .coefficient(null)
-              .molecularWeight(agent.getMass())
-              .formula(agent.getFormula())
-              .limitingReagent(null)
-              .build();
-
-      stoichiometry.addMolecule(newMol);
-    }
+    stoichiometry.addMolecule(newMol);
   }
 
   private void applyFieldUpdates(StoichiometryMolecule existing, StoichiometryMoleculeUpdateDTO u) {

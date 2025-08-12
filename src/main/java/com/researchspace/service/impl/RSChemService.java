@@ -226,7 +226,8 @@ public class RSChemService implements ChemistryService {
     if (chemical == null) {
       return null;
     }
-    Optional<ElementalAnalysisDTO> analysis = rsChemElementManager.getInfo(chemical);
+    Optional<ElementalAnalysisDTO> analysis =
+        rsChemElementManager.getInfo(chemical.getChemElements());
     if (analysis.isPresent()) {
       ElementalAnalysisDTO elementalAnalysis = analysis.get();
       if (elementalAnalysis.isReaction()) {
@@ -238,6 +239,14 @@ public class RSChemService implements ChemistryService {
       }
     }
     return analysis;
+  }
+
+  @Override
+  public Optional<ElementalAnalysisDTO> getMoleculeInfo(String smiles) {
+    if (smiles == null || smiles.isBlank()) {
+      return Optional.empty();
+    }
+    return rsChemElementManager.getInfo(smiles);
   }
 
   @Override

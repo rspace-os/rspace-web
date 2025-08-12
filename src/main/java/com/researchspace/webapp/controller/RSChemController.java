@@ -13,8 +13,10 @@ import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
+import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
+import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.stoichiometry.Stoichiometry;
@@ -427,6 +429,37 @@ public class RSChemController extends BaseController {
       log.info(
           "Couldn't retrieve elementalAnalysis for chemId {} and revision {}", chemId, revision);
       return new AjaxReturnObject<>(ErrorList.of("Couldn't retrieve info for chemId: " + chemId));
+    }
+  }
+
+  @Data
+  public static class ChemicalDTO {
+    private String chemical;
+  }
+
+  @PostMapping("stoichiometry/molecule/info")
+  @ResponseBody
+  public AjaxReturnObject<StoichiometryMoleculeDTO> getMoleculeInfo(
+      @RequestBody ChemicalDTO chemicalDTO) {
+    Optional<ElementalAnalysisDTO> analysis =
+        chemistryService.getMoleculeInfo(chemicalDTO.getChemical());
+    if (analysis.isPresent()) {
+      ElementalAnalysisDTO dto = analysis.get();
+      MoleculeInfoDTO molInfo = null;
+      if (dto.getMoleculeInfo() != null && !dto.getMoleculeInfo().isEmpty()) {
+        molInfo = dto.getMoleculeInfo().get(0);
+      }
+      if (molInfo != null) {
+        StoichiometryMoleculeDTO molDto = StoichiometryMapper.moleculeInfoToDTO(molInfo);
+        return new AjaxReturnObject<>(molDto);
+      }
+      log.info(
+          "Molecule analysis present but no molecule entries for smiles: {}",
+          chemicalDTO.getChemical());
+      return new AjaxReturnObject<>(ErrorList.of("Couldn't retrieve info for provided structure"));
+    } else {
+      log.info("Couldn't retrieve molecule info for smiles: {}", chemicalDTO.getChemical());
+      return new AjaxReturnObject<>(ErrorList.of("Couldn't retrieve info for provided structure"));
     }
   }
 

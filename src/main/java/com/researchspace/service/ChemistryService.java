@@ -49,6 +49,8 @@ public interface ChemistryService {
 
   Optional<ElementalAnalysisDTO> getElementalAnalysis(long chemId, Integer revision, User user);
 
+  Optional<ElementalAnalysisDTO> getMoleculeInfo(String smiles);
+
   Optional<Stoichiometry> getStoichiometry(long chemId, Integer revision, User user);
 
   Stoichiometry createStoichiometry(long chemId, Integer revision, User user);

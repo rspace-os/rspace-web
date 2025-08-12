@@ -46,7 +46,7 @@ public class DefaultChemistryProvider implements ChemistryProvider {
   }
 
   @Override
-  public Optional<ElementalAnalysisDTO> getProperties(RSChemElement chemicalElement) {
+  public Optional<ElementalAnalysisDTO> getProperties(String chemical) {
     return Optional.of(new ElementalAnalysisDTO());
   }
 

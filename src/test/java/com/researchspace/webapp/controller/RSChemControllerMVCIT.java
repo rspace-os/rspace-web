@@ -66,16 +66,16 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
- @Ignore(
+@Ignore(
     "Requires chemistry service to run. See"
         + " https://documentation.researchspace.com/article/1jbygguzoa")
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
-        properties = {
-                "chemistry.service.url=http://your-chem-service:8090",
-                "chemistry.provider=indigo"
-        })
+    properties = {
+      "chemistry.service.url=http://your-chem-service:8090",
+      "chemistry.provider=indigo"
+    })
 public class RSChemControllerMVCIT extends MVCTestBase {
 
   private Principal principal;
@@ -249,6 +249,29 @@ public class RSChemControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertThat(getJsonPathValue(result, "$.data.reaction"), Matchers.is(false));
     assertEquals(1, getJsonPathValue(result, "$.data.molecules.size()"));
+  }
+
+  @Test
+  public void testGetMoleculeInfoBySmiles() throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/chemical/stoichiometry/molecule/info")
+                    .content("{\"chemical\": \"CCC\"}")
+                    .contentType(APPLICATION_JSON)
+                    .principal(principal))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    assertFalse(result.getResponse().getContentAsString().contains("Error"));
+
+    StoichiometryMoleculeDTO molecule =
+        getFromJsonAjaxReturnObject(result, StoichiometryMoleculeDTO.class);
+    assertEquals("CCC", molecule.getSmiles());
+    assertEquals("C3 H8", molecule.getFormula());
+    assertEquals(44.1, molecule.getMolecularWeight(), 0.01);
+    // should be null as entities haven't been saved yet
+    assertNull(molecule.getId());
+    assertNull(molecule.getRsChemElementId());
   }
 
   @Test
@@ -733,7 +756,8 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void updateStoichiometry_addNonAgentWithoutId_returnsError() throws Exception {
+  public void updateStoichiometry_addNonAgentWithoutId_addsMoleculeWhenInfoProvided()
+      throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field docField = doc1.getFields().get(0);
     RSChemElement reaction = addReactionToField(docField, user);
@@ -743,6 +767,10 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     StoichiometryMoleculeUpdateDTO newNonAgent = new StoichiometryMoleculeUpdateDTO();
     newNonAgent.setRole(MoleculeRole.REACTANT);
     newNonAgent.setSmiles("CC");
+    newNonAgent.setName("Ethane");
+    newNonAgent.setCoefficient(1.0);
+    newNonAgent.setMolecularWeight(30.07);
+    newNonAgent.setFormula("C2H6");
 
     List<StoichiometryMoleculeUpdateDTO> updates =
         StoichiometryMapper.toUpdateDTOs(created.getMolecules());
@@ -763,9 +791,9 @@ public class RSChemControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
 
-    String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("Error updating stoichiometry: "));
-    assertTrue(body.contains("Only AGENT molecules can be added on update without an ID"));
+    StoichiometryDTO afterUpdate = getFromJsonAjaxReturnObject(result, StoichiometryDTO.class);
+    assertNotNull(afterUpdate);
+    assertTrue(afterUpdate.getMolecules().stream().anyMatch(m -> "CC".equals(m.getSmiles())));
   }
 
   @Test
@@ -801,7 +829,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
 
     String body = result.getResponse().getContentAsString();
     assertTrue(body.contains("Error updating stoichiometry: "));
-    assertTrue(body.contains("New AGENT molecule requires a SMILES string"));
+    assertTrue(body.contains("New molecule requires a SMILES string"));
   }
 
   @Test

@@ -15,6 +15,8 @@ public class StoichiometryMoleculeUpdateDTO {
   private MoleculeRole role;
   private String smiles;
   private String name;
+  private String formula;
+  private Double molecularWeight;
   private Double coefficient;
   private Double mass;
   private Double moles;
