@@ -24,7 +24,7 @@ export type StoichiometryMolecule = {
   rsChemElement: RsChemElement;
   role: string;
   formula: string;
-  name: string;
+  name: string | null;
   smiles: string;
   coefficient: number;
   molecularWeight: number;
@@ -57,6 +57,17 @@ export type StoichiometryResponse = {
   id: number;
   parentReaction: ParentReaction;
   molecules: ReadonlyArray<StoichiometryMolecule>;
+};
+
+type NewReagant = {
+  role: "AGENT";
+  smiles: string;
+  name: string | null;
+};
+
+export type StoichiometryRequest = {
+  id: number;
+  molecules: ReadonlyArray<StoichiometryMolecule | NewReagant>;
 };
 
 /**
@@ -93,7 +104,7 @@ export default function useStoichiometry(): {
     stoichiometryData,
   }: {
     stoichiometryId: number;
-    stoichiometryData: StoichiometryResponse;
+    stoichiometryData: StoichiometryRequest;
   }) => Promise<StoichiometryResponse>;
 
   /**
@@ -163,7 +174,7 @@ export default function useStoichiometry(): {
     stoichiometryData,
   }: {
     stoichiometryId: number;
-    stoichiometryData: StoichiometryResponse;
+    stoichiometryData: StoichiometryRequest;
   }): Promise<StoichiometryResponse> {
     try {
       const { data } = await axios.put<{ data: StoichiometryResponse }>(

@@ -13,6 +13,8 @@ import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import Radio from "@mui/material/Radio";
 import MenuItem from "@mui/material/MenuItem";
+import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
 import { lighten, useTheme } from "@mui/material/styles";
 import {
   calculateUpdatedMolecules,
@@ -21,13 +23,18 @@ import {
 import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
+  type RsChemElement,
+  StoichiometryRequest,
 } from "../../hooks/api/useStoichiometry";
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
+import AddReagentDialog from "./AddReagentDialog";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
     setColumnsMenuAnchorEl: (anchorEl: HTMLElement | null) => void;
+    onAddReagent: (smilesString: string, name: string | null) => void;
+    editable: boolean;
   }
 }
 
@@ -75,9 +82,12 @@ const RoleChip = ({ role }: { role: string }) => {
 
 function Toolbar({
   setColumnsMenuAnchorEl,
+  onAddReagent,
+  editable,
 }: GridSlotProps["toolbar"]): React.ReactNode {
   const apiRef = useGridApiContext();
   const theme = useTheme();
+  const [addReagentDialogOpen, setAddReagentDialogOpen] = React.useState(false);
 
   /**
    * The columns menu can be opened by either tapping the "Columns" toolbar
@@ -94,25 +104,42 @@ function Toolbar({
   }, [setColumnsMenuAnchorEl]);
 
   return (
-    <GridToolbarContainer sx={{ mr: `${theme.spacing(0.5)} !important` }}>
-      <Box flexGrow={1}></Box>
-      <GridToolbarColumnsButton
-        ref={(node) => {
-          if (node) columnMenuRef.current = node;
-        }}
-      />
-      <GridToolbarExportContainer>
-        <MenuItem
-          onClick={() => {
-            apiRef.current?.exportDataAsCsv({
-              allColumns: true,
-            });
+    <>
+      <GridToolbarContainer sx={{ mr: `${theme.spacing(0.5)} !important` }}>
+        {editable && (
+          <Button
+            startIcon={<AddIcon />}
+            onClick={() => setAddReagentDialogOpen(true)}
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            Add Reagent
+          </Button>
+        )}
+        <Box flexGrow={1}></Box>
+        <GridToolbarColumnsButton
+          ref={(node) => {
+            if (node) columnMenuRef.current = node;
           }}
-        >
-          Export to CSV
-        </MenuItem>
-      </GridToolbarExportContainer>
-    </GridToolbarContainer>
+        />
+        <GridToolbarExportContainer>
+          <MenuItem
+            onClick={() => {
+              apiRef.current?.exportDataAsCsv({
+                allColumns: true,
+              });
+            }}
+          >
+            Export to CSV
+          </MenuItem>
+        </GridToolbarExportContainer>
+      </GridToolbarContainer>
+      <AddReagentDialog
+        open={addReagentDialogOpen}
+        setOpen={setAddReagentDialogOpen}
+        onAddReagent={onAddReagent}
+      />
+    </>
   );
 }
 
@@ -191,9 +218,15 @@ const StoichiometryTable = React.forwardRef<
           throw new Error("No stoichiometry data to save");
         }
 
-        const updatedData: StoichiometryResponse = {
+        const updatedData: StoichiometryRequest = {
           ...data,
-          molecules: allMolecules,
+          molecules: allMolecules.map((m) => {
+            if (m.id >= 0) return m;
+            const smiles = m.rsChemElement.smilesString;
+            if (!smiles)
+              throw new Error("New reagents must have a SMILES string");
+            return { role: "AGENT", smiles, name: m.name };
+          }),
         };
 
         await updateStoichiometry({
@@ -215,54 +248,53 @@ const StoichiometryTable = React.forwardRef<
     [data, allMolecules, updateStoichiometry],
   );
 
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        alignItems="center"
-        minHeight={100}
-        my={2}
-        gap={1}
-      >
-        <CircularProgress size={24} />
-        <Typography variant="body2" color="textSecondary">
-          Loading stoichiometry table...
-        </Typography>
-      </Box>
-    );
-  }
+  const handleAddReagent = useCallback(
+    (smilesString: string, name: string | null) => {
+      // Generate a temporary unique ID for the new molecule (negative to distinguish from server IDs)
+      const tempId = -(allMolecules.length + 1);
 
-  if (error) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight={100}
-        my={2}
-      >
-        <Typography color="error" variant="body2">
-          {error}
-        </Typography>
-      </Box>
-    );
-  }
+      // Create a mock RsChemElement for the new reagent
+      const mockRsChemElement: RsChemElement = {
+        id: tempId,
+        parentId: null,
+        ecatChemFileId: null,
+        dataImage: null,
+        chemElements: smilesString,
+        smilesString: smilesString,
+        chemId: null,
+        reactionId: null,
+        rgroupId: null,
+        metadata: null,
+        chemElementsFormat: "SMILES",
+        creationDate: Date.now(),
+        imageFileProperty: null,
+      };
 
-  if (!data || !data.molecules?.length) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight={100}
-        my={2}
-      >
-        <Typography variant="body2">No stoichiometry data available</Typography>
-      </Box>
-    );
-  }
+      // Create new molecule with empty molecular weight (will be filled after save)
+      const newMolecule: StoichiometryMolecule = {
+        id: tempId,
+        rsChemElement: mockRsChemElement,
+        role: "agent",
+        formula: "", // Will be calculated when saved
+        name: name,
+        smiles: smilesString,
+        coefficient: 1,
+        molecularWeight: 0, // Empty until save
+        mass: null,
+        moles: null,
+        expectedAmount: null,
+        actualAmount: null,
+        actualYield: null,
+        limitingReagent: false,
+        notes: null,
+      };
+
+      const updatedMolecules = [...allMolecules, newMolecule];
+      setAllMolecules(updatedMolecules);
+      onChangesUpdate?.(true);
+    },
+    [allMolecules, onChangesUpdate],
+  );
 
   const limitingReagent = allMolecules.find(
     (m) => m.limitingReagent && m.role.toLowerCase() === "reactant",
@@ -275,6 +307,14 @@ const StoichiometryTable = React.forwardRef<
         headerName: "Name",
         sortable: false,
         flex: 1.5,
+        renderCell: (params) => {
+          if (params.row.id < 0 && params.row.name === null)
+            return "New reagent";
+          /* I think this is a bug; the server should be assigning missing names */
+          // if (params.row.name === null)
+          // throw new Error("Name should not be missing");
+          return params.row.name ?? "MISSING";
+        },
       },
     ),
     DataGridColumn.newColumnWithFieldName<"role", StoichiometryMolecule>(
@@ -470,6 +510,55 @@ const StoichiometryTable = React.forwardRef<
     ),
   ];
 
+  if (loading) {
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        minHeight={100}
+        my={2}
+        gap={1}
+      >
+        <CircularProgress size={24} />
+        <Typography variant="body2" color="textSecondary">
+          Loading stoichiometry table...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight={100}
+        my={2}
+      >
+        <Typography color="error" variant="body2">
+          {error}
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!data || !data.molecules?.length) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight={100}
+        my={2}
+      >
+        <Typography variant="body2">No stoichiometry data available</Typography>
+      </Box>
+    );
+  }
+
   return (
     <DataGrid
       rows={allMolecules ?? []}
@@ -490,6 +579,8 @@ const StoichiometryTable = React.forwardRef<
       slotProps={{
         toolbar: {
           setColumnsMenuAnchorEl,
+          onAddReagent: handleAddReagent,
+          editable,
         },
         panel: {
           anchorEl: columnsMenuAnchorEl,
