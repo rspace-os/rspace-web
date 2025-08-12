@@ -1,5 +1,5 @@
 "use strict";
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import ChemCard from "./chemCard";
 import { createRoot } from "react-dom/client";
 import { makeStyles } from "tss-react/mui";
@@ -17,7 +17,7 @@ import Alert from "@mui/material/Alert";
 import { useIntegrationIsAllowedAndEnabled } from "../hooks/api/integrationHelpers";
 import * as FetchingData from "../util/fetchingData";
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(() => ({
   wrapper: {
     margin: "10px 0px",
   },
