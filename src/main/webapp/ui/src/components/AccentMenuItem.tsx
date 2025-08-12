@@ -80,7 +80,7 @@ export default styled(
         href,
         current,
       },
-      ref
+      ref,
     ) => (
       <MenuItem
         ref={ref}
@@ -116,76 +116,74 @@ export default styled(
           }}
         />
       </MenuItem>
-    )
-  )
-)(
-  ({
-    theme,
-    backgroundColor = theme.palette.primary.main,
-    foregroundColor = theme.palette.primary.contrastText,
-    compact,
-  }) => {
-    const prefersMoreContrast = window.matchMedia(
-      "(prefers-contrast: more)"
-    ).matches;
-    const fg =
-      typeof foregroundColor === "string"
-        ? foregroundColor
-        : `hsl(${foregroundColor.hue}deg, ${foregroundColor.saturation}%, ${foregroundColor.lightness}%, 100%)`;
-    const bg =
-      typeof backgroundColor === "string"
-        ? backgroundColor
-        : `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
-    return {
-      margin: theme.spacing(1),
-      padding: 0,
-      borderRadius: "2px",
-      border: prefersMoreContrast ? "2px solid #000" : "none",
-      backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.12),
-      transition: "background-color ease-in-out .2s",
+    ),
+  ),
+)(({
+  theme,
+  backgroundColor = theme.palette.primary.main,
+  foregroundColor = theme.palette.primary.contrastText,
+  compact,
+}) => {
+  const prefersMoreContrast = window.matchMedia(
+    "(prefers-contrast: more)",
+  ).matches;
+  const fg =
+    typeof foregroundColor === "string"
+      ? foregroundColor
+      : `hsl(${foregroundColor.hue}deg, ${foregroundColor.saturation}%, ${foregroundColor.lightness}%, 100%)`;
+  const bg =
+    typeof backgroundColor === "string"
+      ? backgroundColor
+      : `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
+  return {
+    margin: theme.spacing(1),
+    padding: 0,
+    borderRadius: "2px",
+    border: prefersMoreContrast ? "2px solid #000" : "none",
+    backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.12),
+    transition: "background-color ease-in-out .2s",
+    "&:hover": {
+      backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.36),
+    },
+    "&.Mui-selected": {
+      backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.5),
       "&:hover": {
-        backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.36),
+        backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.72),
       },
-      "&.Mui-selected": {
-        backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.5),
-        "&:hover": {
-          backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.72),
-        },
+    },
+    "& .MuiCardHeader-root": {
+      padding: theme.spacing(compact ? 1 : 2),
+    },
+    "& .MuiCardHeader-avatar": {
+      border: `${compact ? 3 : 4}px solid ${bg}`,
+      borderRadius: `${compact ? 4 : 6}px`,
+      backgroundColor: bg,
+      "& svg": {
+        margin: "2px",
       },
-      "& .MuiCardHeader-root": {
-        padding: theme.spacing(compact ? 1 : 2),
-      },
-      "& .MuiCardHeader-avatar": {
-        border: `${compact ? 3 : 4}px solid ${bg}`,
-        borderRadius: `${compact ? 4 : 6}px`,
-        backgroundColor: bg,
-        "& svg": {
-          margin: "2px",
-        },
-      },
-      "& .MuiCardMedia-root": {
-        width: compact ? 28 : 36,
-        height: compact ? 28 : 36,
-        borderRadius: "4px",
-        margin: theme.spacing(0.25),
-      },
-      "& .MuiSvgIcon-root": {
-        width: compact ? 28 : 36,
-        height: compact ? 28 : 36,
-        background: bg,
-        padding: theme.spacing(0.5),
-        color: fg,
-      },
-      "& .MuiTypography-root": {
-        color: prefersMoreContrast ? "#000" : fg,
-      },
-      "& .MuiCardHeader-content": {
-        marginRight: theme.spacing(2),
-      },
-      "& .MuiCardHeader-title": {
-        fontSize: "1rem",
-        fontWeight: 500,
-      },
-    };
-  }
-);
+    },
+    "& .MuiCardMedia-root": {
+      width: compact ? 28 : 36,
+      height: compact ? 28 : 36,
+      borderRadius: "4px",
+      margin: theme.spacing(0.25),
+    },
+    "& .MuiSvgIcon-root": {
+      width: compact ? 28 : 28,
+      height: compact ? 28 : 28,
+      padding: compact ? 0 : theme.spacing(0.5),
+      background: bg,
+      color: fg,
+    },
+    "& .MuiTypography-root": {
+      color: prefersMoreContrast ? "#000" : fg,
+    },
+    "& .MuiCardHeader-content": {
+      marginRight: theme.spacing(2),
+    },
+    "& .MuiCardHeader-title": {
+      fontSize: "1rem",
+      fontWeight: 500,
+    },
+  };
+});

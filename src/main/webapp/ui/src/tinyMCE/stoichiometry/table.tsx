@@ -15,7 +15,7 @@ import Radio from "@mui/material/Radio";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
-import { lighten, useTheme } from "@mui/material/styles";
+import { lighten, styled, ThemeProvider, useTheme } from "@mui/material/styles";
 import {
   calculateUpdatedMolecules,
   calculateActualMoles,
@@ -29,6 +29,17 @@ import useStoichiometry, {
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
 import AddReagentDialog from "./AddReagentDialog";
+import { ACCENT_COLOR as PUBCHEM_ACCENT_COLOR } from "@/assets/branding/pubchem";
+import Menu from "@mui/material/Menu";
+import AccentMenuItem from "@/components/AccentMenuItem";
+import CardMedia from "@mui/material/CardMedia";
+import { ACCENT_COLOR as GALLERY_COLOR } from "@/assets/branding/rspace/gallery";
+import { ACCENT_COLOR as CHEMISTRY_COLOR } from "@/assets/branding/chemistry";
+import FileIcon from "@mui/icons-material/InsertDriveFile";
+import EditIcon from "@mui/icons-material/Edit";
+import PubChemLogo from "../../assets/branding/pubchem/logo.svg";
+import CompoundSearchDialog from "../pubchem/CompoundSearchDialog";
+import createAccentedTheme from "@/accentedTheme";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
@@ -42,6 +53,16 @@ export interface StoichiometryTableRef {
   save: () => Promise<void>;
   delete: () => Promise<void>;
 }
+
+const StyledMenu = styled(Menu)(({ open }) => ({
+  "& .MuiPaper-root": {
+    ...(open
+      ? {
+          transform: "translate(0px, 4px) !important",
+        }
+      : {}),
+  },
+}));
 
 const RoleChip = ({ role }: { role: string }) => {
   const getRoleColor = (role: string) => {
@@ -87,7 +108,11 @@ function Toolbar({
 }: GridSlotProps["toolbar"]): React.ReactNode {
   const apiRef = useGridApiContext();
   const theme = useTheme();
-  const [addReagentDialogOpen, setAddReagentDialogOpen] = React.useState(false);
+  const [addReagantMenuAnchorEl, setAddReagentMenuAnchorEl] =
+    React.useState<HTMLButtonElement | null>(null);
+  const [addReagentSmilesDialogOpen, setAddReagentSmilesDialogOpen] =
+    React.useState(false);
+  const [pubchemDialogOpen, setPubchemDialogOpen] = React.useState(false);
 
   /**
    * The columns menu can be opened by either tapping the "Columns" toolbar
@@ -107,14 +132,83 @@ function Toolbar({
     <>
       <GridToolbarContainer sx={{ mr: `${theme.spacing(0.5)} !important` }}>
         {editable && (
-          <Button
-            startIcon={<AddIcon />}
-            onClick={() => setAddReagentDialogOpen(true)}
-            size="small"
-            sx={{ mr: 1 }}
-          >
-            Add Reagent
-          </Button>
+          <>
+            <Button
+              startIcon={<AddIcon />}
+              onClick={(e) => setAddReagentMenuAnchorEl(e.currentTarget)}
+              size="small"
+              sx={{ mr: 1 }}
+            >
+              Add Reagent
+            </Button>
+            <StyledMenu
+              open={Boolean(addReagantMenuAnchorEl)}
+              anchorEl={addReagantMenuAnchorEl}
+              onClose={() => setAddReagentMenuAnchorEl(null)}
+              MenuListProps={{
+                disablePadding: true,
+                "aria-label": "add reagent menu",
+              }}
+            >
+              <AccentMenuItem
+                title="PubChem"
+                subheader="Import compound from PubChem"
+                backgroundColor={PUBCHEM_ACCENT_COLOR.background}
+                foregroundColor={PUBCHEM_ACCENT_COLOR.backgroundContrastText}
+                avatar={<CardMedia image={PubChemLogo} />}
+                onClick={() => {
+                  setPubchemDialogOpen(true);
+                  setAddReagentMenuAnchorEl(null);
+                }}
+              />
+
+              <AccentMenuItem
+                title="Gallery"
+                subheader="Import compound from Gallery"
+                backgroundColor={GALLERY_COLOR.main}
+                foregroundColor={GALLERY_COLOR.contrastText}
+                avatar={<FileIcon sx={{ width: "28px", height: "28px" }} />}
+                onClick={() => {
+                  //TODO: open Gallery picker
+                  setAddReagentMenuAnchorEl(null);
+                }}
+              />
+              <AccentMenuItem
+                title="Manually"
+                subheader="Manually enter SMILES"
+                backgroundColor={CHEMISTRY_COLOR.background}
+                foregroundColor={CHEMISTRY_COLOR.backgroundContrastText}
+                avatar={<EditIcon />}
+                onClick={() => {
+                  setAddReagentSmilesDialogOpen(true);
+                  setAddReagentMenuAnchorEl(null);
+                }}
+              />
+            </StyledMenu>
+            <AddReagentDialog
+              open={addReagentSmilesDialogOpen}
+              onClose={() => {
+                setAddReagentSmilesDialogOpen(false);
+              }}
+              onAddReagent={onAddReagent}
+            />
+            <ThemeProvider theme={createAccentedTheme(PUBCHEM_ACCENT_COLOR)}>
+              <CompoundSearchDialog
+                open={pubchemDialogOpen}
+                onClose={() => {
+                  setPubchemDialogOpen(false);
+                  setAddReagentMenuAnchorEl(null);
+                }}
+                onCompoundsSelected={() => {
+                  //TODO: save compound
+                }}
+                title="Insert from PubChem"
+                submitButtonText="Insert"
+                showPubChemInfo
+                allowMultipleSelection
+              />
+            </ThemeProvider>
+          </>
         )}
         <Box flexGrow={1}></Box>
         <GridToolbarColumnsButton
@@ -134,11 +228,6 @@ function Toolbar({
           </MenuItem>
         </GridToolbarExportContainer>
       </GridToolbarContainer>
-      <AddReagentDialog
-        open={addReagentDialogOpen}
-        setOpen={setAddReagentDialogOpen}
-        onAddReagent={onAddReagent}
-      />
     </>
   );
 }

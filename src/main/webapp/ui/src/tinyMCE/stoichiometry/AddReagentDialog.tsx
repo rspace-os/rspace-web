@@ -14,13 +14,13 @@ import ValidatingSubmitButton, {
 
 export type AddReagentDialogArgs = {
   open: boolean;
-  setOpen: (newOpen: boolean) => void;
+  onClose: () => void;
   onAddReagent: (smilesString: string, name: string | null) => void;
 };
 
 const AddReagentDialog = ({
   open,
-  setOpen,
+  onClose,
   onAddReagent,
 }: AddReagentDialogArgs): React.ReactNode => {
   const [smilesString, setSmilesString] = useState<string>("");
@@ -34,7 +34,7 @@ const AddReagentDialog = ({
   const handleClose = () => {
     setSmilesString("");
     setName("");
-    setOpen(false);
+    onClose();
   };
 
   const onSubmitHandler = (e: React.FormEvent) => {
