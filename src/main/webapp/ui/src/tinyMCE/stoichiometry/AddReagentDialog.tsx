@@ -11,11 +11,13 @@ import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "@/components/ValidatingSubmitButton";
+import Result from "../../util/result";
+import Stack from "@mui/material/Stack";
 
 export type AddReagentDialogArgs = {
   open: boolean;
   onClose: () => void;
-  onAddReagent: (smilesString: string, name: string | null) => void;
+  onAddReagent: (smilesString: string, name: string) => void;
 };
 
 const AddReagentDialog = ({
@@ -27,8 +29,12 @@ const AddReagentDialog = ({
   const [name, setName] = useState<string>("");
 
   const validate = () => {
-    if (smilesString.length === 0) return IsInvalid("Invalid SMILES");
-    return IsValid();
+    return Result.all(
+      smilesString.length === 0
+        ? IsInvalid("SMILES string is required")
+        : IsValid(),
+      name.length === 0 ? IsInvalid("Name is required") : IsValid(),
+    ).map(() => null);
   };
 
   const handleClose = () => {
@@ -39,7 +45,7 @@ const AddReagentDialog = ({
 
   const onSubmitHandler = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddReagent(smilesString, name.length === 0 ? null : name);
+    onAddReagent(smilesString, name.trim());
     handleClose();
   };
 
@@ -49,36 +55,30 @@ const AddReagentDialog = ({
         <DialogTitle>Add New Reagent</DialogTitle>
         <DialogContent>
           <FormControl component="fieldset" sx={{ width: "100%", mt: 1 }}>
-            <TextField
-              name="SMILES String"
-              label="SMILES String"
-              autoFocus
-              value={smilesString}
-              onChange={(e) => setSmilesString(e.target.value)}
-              variant="outlined"
-              size="small"
-              fullWidth
-              onFocus={(e) => e.target.select()}
-              sx={{ mb: 1 }}
-            />
-            <FormHelperText sx={{ mb: 2 }}>
-              Enter the SMILES string for the chemical compound
-            </FormHelperText>
-
-            <TextField
-              name="Name (Optional)"
-              label="Name (Optional)"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              variant="outlined"
-              size="small"
-              fullWidth
-              sx={{ mb: 1 }}
-            />
-            <FormHelperText>
-              Optional: Provide a custom name for the reagent (will be
-              auto-generated if left empty)
-            </FormHelperText>
+            <Stack spacing={2}>
+              <TextField
+                name="Name"
+                label="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                variant="outlined"
+                size="small"
+                fullWidth
+                sx={{ mb: 1 }}
+              />
+              <TextField
+                name="SMILES String"
+                label="SMILES String"
+                autoFocus
+                value={smilesString}
+                onChange={(e) => setSmilesString(e.target.value)}
+                variant="outlined"
+                size="small"
+                fullWidth
+                onFocus={(e) => e.target.select()}
+                sx={{ mb: 1 }}
+              />
+            </Stack>
           </FormControl>
         </DialogContent>
         <DialogActions>

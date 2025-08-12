@@ -44,7 +44,7 @@ import createAccentedTheme from "@/accentedTheme";
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
     setColumnsMenuAnchorEl: (anchorEl: HTMLElement | null) => void;
-    onAddReagent: (smilesString: string, name: string | null) => void;
+    onAddReagent: (smilesString: string, name: string) => void;
     editable: boolean;
   }
 }
@@ -314,6 +314,7 @@ const StoichiometryTable = React.forwardRef<
             const smiles = m.rsChemElement.smilesString;
             if (!smiles)
               throw new Error("New reagents must have a SMILES string");
+            if (!m.name) throw new Error("New reagents must have a name");
             return { role: "AGENT", smiles, name: m.name };
           }),
         };
@@ -338,7 +339,7 @@ const StoichiometryTable = React.forwardRef<
   );
 
   const handleAddReagent = useCallback(
-    (smilesString: string, name: string | null) => {
+    (smilesString: string, name: string) => {
       // Generate a temporary unique ID for the new molecule (negative to distinguish from server IDs)
       const tempId = -(allMolecules.length + 1);
 
@@ -396,14 +397,6 @@ const StoichiometryTable = React.forwardRef<
         headerName: "Name",
         sortable: false,
         flex: 1.5,
-        renderCell: (params) => {
-          if (params.row.id < 0 && params.row.name === null)
-            return "New reagent";
-          /* I think this is a bug; the server should be assigning missing names */
-          // if (params.row.name === null)
-          // throw new Error("Name should not be missing");
-          return params.row.name ?? "MISSING";
-        },
       },
     ),
     DataGridColumn.newColumnWithFieldName<"role", StoichiometryMolecule>(

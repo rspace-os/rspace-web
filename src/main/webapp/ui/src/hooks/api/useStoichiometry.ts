@@ -62,7 +62,7 @@ export type StoichiometryResponse = {
 type NewReagant = {
   role: "AGENT";
   smiles: string;
-  name: string | null;
+  name: string;
 };
 
 export type StoichiometryRequest = {
