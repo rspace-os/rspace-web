@@ -16,4 +16,6 @@ public interface StoichiometryManager extends GenericManager<Stoichiometry, Long
       ElementalAnalysisDTO analysisDTO, RSChemElement parentReaction, User user) throws IOException;
 
   Stoichiometry update(StoichiometryUpdateDTO stoichiometryUpdateDTO, User user);
+
+  Stoichiometry copyForReaction(Long sourceParentReactionId, RSChemElement newParentReaction, User user);
 }

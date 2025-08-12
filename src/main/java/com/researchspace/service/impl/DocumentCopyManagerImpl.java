@@ -38,6 +38,7 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.FileDuplicateStrategy;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RequiresActiveLicense;
+import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.ThumbnailManager;
 import com.researchspace.service.exceptions.RecordCopyException;
 import java.io.FileInputStream;
@@ -65,6 +66,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
   private @Autowired EcatCommentDao ecatCommentDao;
   private @Autowired EcatImageAnnotationDao imageAnnotationDao;
   private @Autowired RSChemElementManager rsChemElementManager;
+  private @Autowired StoichiometryManager stoichiometryManager;
   private @Autowired RSMathDao mathDao;
   private @Autowired FieldDao fieldDao;
   private @Autowired FieldManager fieldMgr;
@@ -156,6 +158,21 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
           rsChemElementManager.save(copyChem, user);
         } catch (IOException e) {
           log.error("Problem saving chemical in document with id {}.", destRecord.getId(), e);
+        }
+
+        if (destFieldId != null) { // skip for snippets
+          try {
+            if (stoichiometryManager.findByParentReactionId(origChem.getId()).isPresent()) {
+              stoichiometryManager.copyForReaction(origChem.getId(), copyChem, user);
+            }
+          } catch (Exception e) {
+            log.error(
+                "Problem copying stoichiometry for reaction {} -> {} in document {}.",
+                origChem.getId(),
+                copyChem.getId(),
+                destRecord.getId(),
+                e);
+          }
         }
 
         chemOldKey2NewKey.put(origChem.getId(), copyChem.getId());

@@ -116,6 +116,56 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
     return save(stoichiometry);
   }
 
+  @Override
+  public Stoichiometry copyForReaction(
+      Long sourceParentReactionId, RSChemElement newParentReaction, User user) {
+    Stoichiometry source =
+        findByParentReactionId(sourceParentReactionId)
+            .orElseThrow(
+                () ->
+                    new StoichiometryException(
+                        "No stoichiometry found for reaction id " + sourceParentReactionId));
+
+    Stoichiometry target = Stoichiometry.builder().parentReaction(newParentReaction).build();
+    target = save(target);
+
+    if (source.getMolecules() != null) {
+      for (StoichiometryMolecule sourceMol : source.getMolecules()) {
+        RSChemElement newMol;
+        try {
+          newMol = rsChemElementManager.save(
+              RSChemElement.builder().chemElements(sourceMol.getSmiles()).build(), user);
+        } catch (IOException e) {
+          throw new StoichiometryException(
+              "Problem saving molecule from SMILES during stoichiometry copy", e);
+        }
+
+        StoichiometryMolecule copy =
+            StoichiometryMolecule.builder()
+                .stoichiometry(target)
+                .rsChemElement(newMol)
+                .role(sourceMol.getRole())
+                .smiles(sourceMol.getSmiles())
+                .name(sourceMol.getName())
+                .formula(sourceMol.getFormula())
+                .molecularWeight(sourceMol.getMolecularWeight())
+                .coefficient(sourceMol.getCoefficient())
+                .mass(sourceMol.getMass())
+                .moles(sourceMol.getMoles())
+                .expectedAmount(sourceMol.getExpectedAmount())
+                .actualAmount(sourceMol.getActualAmount())
+                .actualYield(sourceMol.getActualYield())
+                .limitingReagent(sourceMol.getLimitingReagent())
+                .notes(sourceMol.getNotes())
+                .build();
+
+        target.addMolecule(copy);
+      }
+    }
+
+    return save(target);
+  }
+
   private Set<Long> processUpdates(
       Stoichiometry stoichiometry, List<StoichiometryMoleculeUpdateDTO> updates, User user) {
     Set<Long> keepIds = new HashSet<>();
