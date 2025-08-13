@@ -10,7 +10,7 @@ export function StoichiometryTableWithDataStory(): React.ReactNode {
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Alerts>
-          <StoichiometryTable chemId={12345} />
+          <StoichiometryTable chemId={12345} editable />
         </Alerts>
       </ThemeProvider>
     </StyledEngineProvider>

@@ -132,18 +132,23 @@ const feature = test.extend<{
         expect(headers).toContain("Moles (mol)");
         expect(headers).toContain("Notes");
       },
-      "the first reactant should be selected as the default limiting reagent": async () => {
-        // Find all rows with reactant role
-        const dataRows = page.getByRole("row").filter({ hasNot: page.getByRole("columnheader") });
-        
-        // Get the first row (should be Benzene based on mock data)
-        const firstRow = dataRows.first();
-        await expect(firstRow).toContainText("Benzene");
-        
-        // Check that the radio button in the Limiting Reagent column is checked for the first reactant
-        const limitingReagentRadio = firstRow.getByRole("radio", { name: /Select Benzene as limiting reagent/ });
-        await expect(limitingReagentRadio).toBeChecked();
-      },
+      "the first reactant should be selected as the default limiting reagent":
+        async () => {
+          // Find all rows with reactant role
+          const dataRows = page
+            .getByRole("row")
+            .filter({ hasNot: page.getByRole("columnheader") });
+
+          // Get the first row (should be Benzene based on mock data)
+          const firstRow = dataRows.first();
+          await expect(firstRow).toContainText("Benzene");
+
+          // Check that the radio button in the Limiting Reagent column is checked for the first reactant
+          const limitingReagentRadio = firstRow.getByRole("radio", {
+            name: /Select Benzene as limiting reagent/,
+          });
+          await expect(limitingReagentRadio).toBeChecked();
+        },
       "there should be a menu for exporting the stoichiometry table to CSV":
         async () => {
           const menuButton = page.getByRole("button", { name: "Export" });
@@ -159,25 +164,29 @@ const feature = test.extend<{
       },
       "the first row should NOT have a yield value": async () => {
         // Find the yield/excess column and check first row
-        const dataRows = page.getByRole("row").filter({ hasNot: page.getByRole("columnheader") });
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
         const firstRow = dataRows.first();
-        
-        // Get all cells in first row and find yield column (should be index 8 based on headers)
+
+        // Get all cells in first row and find yield column (should be index 9 based on headers)
         const cells = firstRow.getByRole("gridcell");
-        const yieldCell = cells.nth(8); // Yield/Excess column is typically the 9th column (0-indexed = 8)
-        
+        const yieldCell = cells.nth(9); // Yield/Excess column is typically the 10th column (0-indexed = 9)
+
         // Check that the yield cell contains dash (—) indicating no yield value
         await expect(yieldCell).toContainText("—");
       },
       "the second row should have a yield value": async () => {
         // Find the yield/excess column and check second row
-        const dataRows = page.getByRole("row").filter({ hasNot: page.getByRole("columnheader") });
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
         const secondRow = dataRows.nth(1);
-        
+
         // Get all cells in second row and find yield column
         const cells = secondRow.getByRole("gridcell");
-        const yieldCell = cells.nth(8); // Yield/Excess column
-        
+        const yieldCell = cells.nth(9); // Yield/Excess column
+
         // Check that the yield cell contains a percentage or dash (since mock data has no actualAmount)
         const cellContent = await yieldCell.textContent();
         // Since mock data has no actualAmount, it should show dash, but structure should be there for yield
@@ -185,26 +194,30 @@ const feature = test.extend<{
       },
       "the first row should have a yield value": async () => {
         // Find the yield/excess column and check first row (when it's no longer limiting reagent)
-        const dataRows = page.getByRole("row").filter({ hasNot: page.getByRole("columnheader") });
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
         const firstRow = dataRows.first();
-        
+
         // Get all cells in first row and find yield column
         const cells = firstRow.getByRole("gridcell");
-        const yieldCell = cells.nth(8); // Yield/Excess column
-        
+        const yieldCell = cells.nth(9); // Yield/Excess column
+
         // Check that the yield cell contains a percentage or dash (since mock data has no actualAmount)
         const cellContent = await yieldCell.textContent();
         expect(cellContent).toMatch(/—|\d+%/);
       },
       "the second row should NOT have a yield value": async () => {
         // Find the yield/excess column and check second row (when it becomes limiting reagent)
-        const dataRows = page.getByRole("row").filter({ hasNot: page.getByRole("columnheader") });
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
         const secondRow = dataRows.nth(1);
-        
+
         // Get all cells in second row and find yield column
         const cells = secondRow.getByRole("gridcell");
-        const yieldCell = cells.nth(8); // Yield/Excess column
-        
+        const yieldCell = cells.nth(9); // Yield/Excess column
+
         // Check that the yield cell contains dash (—) indicating no yield value
         await expect(yieldCell).toContainText("—");
       },
@@ -260,7 +273,7 @@ feature.beforeEach(async ({ router }) => {
             mass: 78.11, // 1 mole of benzene
             moles: 1.0,
             expectedAmount: null,
-            actualAmount: 70.30, // 90% yield (70.30 / 78.11 = 0.90)
+            actualAmount: 70.3, // 90% yield (70.30 / 78.11 = 0.90)
             actualYield: null,
             limitingReagent: false,
             notes: null,
@@ -362,11 +375,16 @@ test.describe("Stoichiometry Table", () => {
     await Then["the default columns should be visible"]();
   });
 
-  feature("Sets first reactant as default limiting reagent when none is selected", async ({ Given, Once, Then }) => {
-    await Given["the table is loaded with data"]();
-    await Once["the table has loaded"]();
-    await Then["the first reactant should be selected as the default limiting reagent"]();
-  });
+  feature(
+    "Sets first reactant as default limiting reagent when none is selected",
+    async ({ Given, Once, Then }) => {
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      await Then[
+        "the first reactant should be selected as the default limiting reagent"
+      ]();
+    },
+  );
 
   feature(
     "There should be a menu for exporting the stoichiometry table to CSV",
@@ -375,7 +393,7 @@ test.describe("Stoichiometry Table", () => {
       await Then[
         "there should be a menu for exporting the stoichiometry table to CSV"
       ]();
-    }
+    },
   );
 
   feature(
@@ -385,7 +403,7 @@ test.describe("Stoichiometry Table", () => {
       await Once["the table has loaded"]();
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should have {count} rows"]({ csv, count: 3 }); // 3 molecules in mock data
-    }
+    },
   );
 
   feature(
@@ -396,7 +414,7 @@ test.describe("Stoichiometry Table", () => {
       // First row is automatically selected as limiting reagent by default
       await Then["the first row should NOT have a yield value"]();
       await Then["the second row should have a yield value"]();
-    }
+    },
   );
 
   feature(
@@ -407,13 +425,13 @@ test.describe("Stoichiometry Table", () => {
       // Initially first row is limiting reagent, verify initial state
       await Then["the first row should NOT have a yield value"]();
       await Then["the second row should have a yield value"]();
-      
+
       // Change limiting reagent to second row
       await When["the user taps the limiting reagent cell of the second row"]();
-      
+
       // Now verify the yield values have switched
       await Then["the first row should have a yield value"]();
       await Then["the second row should NOT have a yield value"]();
-    }
+    },
   );
 });
