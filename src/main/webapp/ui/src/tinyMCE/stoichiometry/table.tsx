@@ -421,7 +421,7 @@ const StoichiometryTable = React.forwardRef<
       },
       delete: async () => {
         if (!data || !data.id) {
-          throw new Error("No stoichiometry data to delete");
+          return;
         }
         await deleteStoichiometry({ stoichiometryId: data.id });
         setData(null);

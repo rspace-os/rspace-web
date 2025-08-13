@@ -47,7 +47,6 @@ declare const tinymce: {
   activeEditor: Editor;
 };
 
-
 class StoichiometryPlugin {
   constructor(editor: Editor) {
     function* renderDialog(
@@ -126,6 +125,13 @@ class StoichiometryPlugin {
         editor.setDirty(true);
       };
 
+      const unmarkElementWithStoichiometry = () => {
+        const currentNode = editor.selection.getNode();
+        currentNode.removeAttribute("data-has-stoichiometry-table");
+        editor.execCommand("mceReplaceContent", false, currentNode.outerHTML);
+        editor.setDirty(false);
+      };
+
       dialogRenderer.next({
         open: true,
         onClose: () => {
@@ -139,7 +145,18 @@ class StoichiometryPlugin {
         },
         chemId,
         hasStoichiometryTable: hasStoichiometryTable === "true",
-        onTableCreated: !hasStoichiometryTable ? markElementWithStoichiometry : undefined,
+        onTableCreated: !hasStoichiometryTable
+          ? markElementWithStoichiometry
+          : undefined,
+        onDelete: () => {
+          unmarkElementWithStoichiometry();
+          dialogRenderer.next({
+            open: false,
+            onClose: () => {},
+            chemId: null,
+            hasStoichiometryTable: false,
+          });
+        },
       });
     });
   }
