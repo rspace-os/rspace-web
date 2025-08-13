@@ -44,9 +44,10 @@ describe("useGalleryActions", () => {
                   thumbnailId: null,
                   gallerySection: "Images",
                   originalImageId: null,
+                  metadata: {},
                   token: "",
                 }),
-              ])
+              ]),
             );
           }}
         >
@@ -73,7 +74,7 @@ describe("useGalleryActions", () => {
       render(
         <Alerts>
           <TestingDuplicateComponent />
-        </Alerts>
+        </Alerts>,
       );
 
       await act(async () => {
@@ -97,7 +98,7 @@ describe("useGalleryActions", () => {
       render(
         <Alerts>
           <TestingDuplicateComponent />
-        </Alerts>
+        </Alerts>,
       );
 
       await act(async () => {
@@ -133,9 +134,10 @@ describe("useGalleryActions", () => {
                   thumbnailId: null,
                   gallerySection: "Images",
                   originalImageId: null,
+                  metadata: {},
                   token: "",
                 }),
-              ])
+              ]),
             );
           }}
         >
@@ -162,7 +164,7 @@ describe("useGalleryActions", () => {
       render(
         <Alerts>
           <TestingDeleteComponent />
-        </Alerts>
+        </Alerts>,
       );
 
       await act(async () => {
@@ -186,7 +188,7 @@ describe("useGalleryActions", () => {
       render(
         <Alerts>
           <TestingDeleteComponent />
-        </Alerts>
+        </Alerts>,
       );
 
       await act(async () => {
@@ -224,9 +226,10 @@ describe("useGalleryActions", () => {
                   thumbnailId: null,
                   gallerySection: "Images",
                   originalImageId: null,
+                  metadata: {},
                   token: "",
                 }),
-              ])
+              ]),
             );
           }}
         >
@@ -253,7 +256,7 @@ describe("useGalleryActions", () => {
       render(
         <Alerts>
           <TestingMoveComponent />
-        </Alerts>
+        </Alerts>,
       );
 
       await act(async () => {
@@ -277,7 +280,7 @@ describe("useGalleryActions", () => {
       render(
         <Alerts>
           <TestingMoveComponent />
-        </Alerts>
+        </Alerts>,
       );
 
       await act(async () => {

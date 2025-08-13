@@ -1,4 +1,4 @@
-import Dialog from "@mui/material/Dialog";
+import { Dialog } from "../../../components/DialogBoundary";
 import React from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
 import AppBar from "../../../components/AppBar";
@@ -30,7 +30,6 @@ import OpenFolderProvider from "../components/OpenFolderProvider";
 import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
-  zIndex: 1100, // less than the SwipeableDrawer so that mobile info panel is shown
   "& .MuiDialog-container > .MuiPaper-root": {
     height: "calc(100% - 32px)", // 16px margin above and below dialog
     [theme.breakpoints.down("md")]: {
@@ -150,7 +149,7 @@ const Picker = observer(
                   height: {
                     xs:
                       selection.size > 0
-                        ? `calc(100% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`
+                        ? `calc(100% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px) !important`
                         : "100%",
                     md: "unset",
                   },

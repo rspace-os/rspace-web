@@ -1,5 +1,5 @@
 import React from "react";
-import { Dialog } from "../../components/DialogBoundary";
+import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import AppBar from "../../components/AppBar";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
@@ -236,8 +236,10 @@ export default function StandaloneDialog(
   props: React.ComponentProps<typeof StandaloneDialogInner>,
 ): React.ReactNode {
   return (
-    <ConfirmProvider>
-      <StandaloneDialogInner {...props} />
-    </ConfirmProvider>
+    <DialogBoundary>
+      <ConfirmProvider>
+        <StandaloneDialogInner {...props} />
+      </ConfirmProvider>
+    </DialogBoundary>
   );
 }

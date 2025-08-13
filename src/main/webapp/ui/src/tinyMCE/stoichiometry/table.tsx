@@ -42,6 +42,12 @@ import CompoundSearchDialog from "../pubchem/CompoundSearchDialog";
 import createAccentedTheme from "@/accentedTheme";
 import { Dialog } from "../../components/DialogBoundary";
 import DialogContent from "@mui/material/DialogContent";
+import Result from "@/util/result";
+import { LandmarksProvider } from "@/components/LandmarksContext";
+import GalleryPicker from "../../eln/gallery/picker";
+import { MemoryRouter } from "react-router-dom";
+import * as Parsers from "../../util/parsers";
+import { filenameExceptExtension } from "@/util/files";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
@@ -115,6 +121,7 @@ function Toolbar({
   const [addReagentSmilesDialogOpen, setAddReagentSmilesDialogOpen] =
     React.useState(false);
   const [pubchemDialogOpen, setPubchemDialogOpen] = React.useState(false);
+  const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
 
   /**
    * The columns menu can be opened by either tapping the "Columns" toolbar
@@ -171,7 +178,7 @@ function Toolbar({
                 foregroundColor={GALLERY_COLOR.contrastText}
                 avatar={<FileIcon sx={{ width: "28px", height: "28px" }} />}
                 onClick={() => {
-                  //TODO: open Gallery picker
+                  setGalleryDialogOpen(true);
                   setAddReagentMenuAnchorEl(null);
                 }}
               />
@@ -212,6 +219,42 @@ function Toolbar({
                 allowMultipleSelection
               />
             </ThemeProvider>
+            {galleryDialogOpen && (
+              <MemoryRouter>
+                <LandmarksProvider>
+                  <GalleryPicker
+                    open={true}
+                    onClose={() => {
+                      setGalleryDialogOpen(false);
+                    }}
+                    onSubmit={doNotAwait(async (files) => {
+                      for (const file of files) {
+                        await Parsers.getValueWithKey("chemString")(
+                          file.metadata,
+                        )
+                          .flatMap(Parsers.isString)
+                          .doAsync((smiles) => {
+                            return onAddReagent(
+                              smiles,
+                              filenameExceptExtension(file.name),
+                            );
+                          });
+                      }
+                      setGalleryDialogOpen(false);
+                    })}
+                    validateSelection={(file) => {
+                      if (file.type !== "Chemistry")
+                        return Result.Error([
+                          new Error(
+                            "Only chemistry files can be added to stoichiometry tables",
+                          ),
+                        ]);
+                      return Result.Ok(null);
+                    }}
+                  />
+                </LandmarksProvider>
+              </MemoryRouter>
+            )}
           </>
         )}
         <Box flexGrow={1}></Box>
