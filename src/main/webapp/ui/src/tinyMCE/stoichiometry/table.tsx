@@ -199,8 +199,8 @@ function Toolbar({
                   setPubchemDialogOpen(false);
                   setAddReagentMenuAnchorEl(null);
                 }}
-                onCompoundsSelected={() => {
-                  //TODO: save compound
+                onCompoundsSelected={(compounds) => {
+                  compounds.forEach((c) => onAddReagent(c.smiles, c.name));
                 }}
                 title="Insert from PubChem"
                 submitButtonText="Insert"
