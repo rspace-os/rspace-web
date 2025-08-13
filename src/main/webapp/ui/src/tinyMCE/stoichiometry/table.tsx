@@ -15,7 +15,13 @@ import Radio from "@mui/material/Radio";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
-import { lighten, styled, ThemeProvider, useTheme } from "@mui/material/styles";
+import {
+  darken,
+  lighten,
+  styled,
+  ThemeProvider,
+  useTheme,
+} from "@mui/material/styles";
 import {
   calculateUpdatedMolecules,
   calculateActualMoles,
@@ -785,8 +791,8 @@ const StoichiometryTable = React.forwardRef<
             backgroundColor: "#f8f9fa",
           },
           "& .stoichiometry-disabled-cell": {
-            backgroundColor: `${lighten(theme.palette.primary.background, 0.3)} !important`,
-            color: `${theme.palette.primary.contrastText} !important`,
+            backgroundColor: `${lighten(theme.palette.primary.background, 0.7)} !important`,
+            color: `${darken(theme.palette.primary.contrastText, 0.2)} !important`,
             fontStyle: "italic",
           },
         }}
