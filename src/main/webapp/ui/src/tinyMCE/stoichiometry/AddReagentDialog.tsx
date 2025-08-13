@@ -69,7 +69,6 @@ const AddReagentDialog = ({
               <TextField
                 name="SMILES String"
                 label="SMILES String"
-                autoFocus
                 value={smilesString}
                 onChange={(e) => setSmilesString(e.target.value)}
                 variant="outlined"
