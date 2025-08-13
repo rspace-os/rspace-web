@@ -10,4 +10,4 @@ const ErrorReason = {
 };
 Object.freeze(ErrorReason);
 
-export { ErrorReason };
+export {ErrorReason};

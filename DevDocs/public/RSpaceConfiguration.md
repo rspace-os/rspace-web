@@ -328,14 +328,24 @@ The following optional properties enable RSpace to connect to Slack (if this int
 
 The following optional property enables RSpace to connect to your PyRAT database instance (if this integration is enabled):
 * **pyrat.server.config** configures the pyrat server alias associated to *server url* and server *access token* (API-Client-Token provided by Scionics - developers of PyRAT).
-  For example:
+  **pyrat.server.config** should be configured (for local use) in dev/deployment.properties as we have no  central pyrat server common to all RSpace isntances.
+* For example:
   ```
   pyrat.server.config={ \
       "mice server": {"url": "https://mice.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"}, \
       "frogs server": {"url": "https://frogs.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"} \
   }
   ```
-4
+
+The following optional property enables RSpace to connect to GALAXY server instances (if this integration is enabled):
+* **galaxy.server.config** configures the galaxy server alias(es) associated to a *url* for the server).
+* RSpace users will see the value of the *alias* when they are configuring their API tokens for accessing Galaxy instances.
+* For example:
+  ```
+  galaxy.server.config=[{"alias": "galaxy eu server", "url": "https://usegalaxy.eu"}, {"alias": "galaxy us server", "url": "https://usegalaxy.org"}]
+  
+  ```
+
 The following optional properties enable RSpace to connect to Clustermarket :
 * **clustermarket.api.url** URL of the exposed Clustermarket API. For example
   `https://api.staging.clustermarket.com/v1/`.
