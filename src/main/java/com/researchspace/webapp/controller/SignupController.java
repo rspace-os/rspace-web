@@ -235,7 +235,15 @@ public class SignupController extends BaseController {
       if (!isSsoSignupAllowed(remoteUser)) {
         return returnToSignupPage(user);
       }
+
       setUsernameAndAliasFromRemoteUserInSsoMode(user, remoteUser);
+      if (user.getUsernameAlias() != null) {
+        log.info(
+            "Signing up SSO remote user '{}' with username '{}' and usernameAlias '{}'",
+            remoteUser,
+            user.getUsername(),
+            user.getUsernameAlias());
+      }
       user.setPassword(pwd);
       user.setConfirmPassword(pwd);
     }
