@@ -102,6 +102,8 @@
       <AppenderRef ref="HttpRequestLogger"/>
     </Logger>
 
+    <Logger name="com.researchspace.webapp.controller.SignupController" level="INFO"/>
+
     <Logger name="com.researchspace.auth" level="INFO"/>
 
     <Logger name="com.researchspace.admin.service.impl.SysAdminGroupsManagerImpl" level="INFO"/>
