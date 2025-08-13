@@ -129,7 +129,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   @Override
   // if method arguments change, remember to update the 'key' attribute
-    @Cacheable(value = INTEGRATION_INFO, key = "#user.username + #integrationName")
+  @Cacheable(value = INTEGRATION_INFO, key = "#user.username + #integrationName")
   public IntegrationInfo getIntegration(User user, String integrationName) {
 
     checkValidIntegration(integrationName);

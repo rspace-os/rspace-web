@@ -1,24 +1,27 @@
 import Grid from "@mui/material/Grid";
-import IntegrationCard from "../IntegrationCard";
 import React, { useState } from "react";
+import IntegrationCard from "../IntegrationCard";
+import {
+  useIntegrationsEndpoint,
+  type IntegrationStates,
+} from "../useIntegrationsEndpoint";
 import TextField from "@mui/material/TextField";
-import { Optional } from "@/util/optional";
+import { Optional } from "../../../util/optional";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
 import GalaxyIcon from "../../../assets/branding/galaxy/logo.svg";
-import { LOGO_COLOR } from "@/assets/branding/galaxy";
-import {IntegrationStates, useIntegrationsEndpoint} from "@/eln/apps/useIntegrationsEndpoint";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import AlertContext, {mkAlert} from "@/stores/contexts/Alert";
-import {runInAction} from "mobx";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import RsSet from "@/util/set";
 import ListItemText from "@mui/material/ListItemText";
-import {observer, useLocalObservable} from "mobx-react";
+import Stack from "@mui/material/Stack";
+import { useLocalObservable, observer } from "mobx-react-lite";
+import { runInAction } from "mobx";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import Typography from "@mui/material/Typography";
+import RsSet from "../../../util/set";
+import { LOGO_COLOR } from "@/assets/branding/galaxy";
 
 type GalaxyArgs = {
   integrationState: IntegrationStates["GALAXY"];
