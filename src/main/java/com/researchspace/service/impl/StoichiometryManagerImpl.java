@@ -133,8 +133,9 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       for (StoichiometryMolecule sourceMol : source.getMolecules()) {
         RSChemElement newMol;
         try {
-          newMol = rsChemElementManager.save(
-              RSChemElement.builder().chemElements(sourceMol.getSmiles()).build(), user);
+          newMol =
+              rsChemElementManager.save(
+                  RSChemElement.builder().chemElements(sourceMol.getSmiles()).build(), user);
         } catch (IOException e) {
           throw new StoichiometryException(
               "Problem saving molecule from SMILES during stoichiometry copy", e);
