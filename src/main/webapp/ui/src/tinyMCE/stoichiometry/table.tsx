@@ -96,9 +96,18 @@ const RoleChip = ({ role }: { role: string }) => {
 
   const { color, backgroundColor } = getRoleColor(role);
 
+  const getRoleLabel = (role: string) => {
+    switch (role.toLowerCase()) {
+      case "agent":
+        return "reagent";
+      default:
+        return role.toLowerCase();
+    }
+  };
+
   return (
     <Chip
-      label={role.toLowerCase()}
+      label={getRoleLabel(role)}
       size="small"
       sx={{
         color: `${color} !important`,
