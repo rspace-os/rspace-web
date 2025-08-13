@@ -70,6 +70,12 @@ export type StoichiometryRequest = {
   molecules: ReadonlyArray<StoichiometryMolecule | NewReagant>;
 };
 
+export type MoleculeInfo = {
+  molecularWeight: number;
+  formula: string;
+  // Add other properties as they become available from the API
+};
+
 /**
  * This custom hook provides functionality for stoichiometry calculations
  * and data retrieval using the `/chemical/stoichiometry` endpoints.
@@ -116,6 +122,16 @@ export default function useStoichiometry(): {
   }: {
     stoichiometryId: number;
   }) => Promise<void>;
+
+  /**
+   * Gets additional molecule information for a SMILES string.
+   * This performs a POST request to retrieve molecular weight, formula, etc.
+   */
+  getMoleculeInfo: ({
+    smiles,
+  }: {
+    smiles: string;
+  }) => Promise<MoleculeInfo>;
 } {
   const { addAlert } = React.useContext(AlertContext);
 
@@ -231,10 +247,34 @@ export default function useStoichiometry(): {
     }
   }
 
+  async function getMoleculeInfo({
+    smiles,
+  }: {
+    smiles: string;
+  }): Promise<MoleculeInfo> {
+    try {
+      const { data } = await axios.post<{ data: MoleculeInfo }>(
+        "/chemical/stoichiometry/molecule/info",
+        { chemical: smiles },
+      );
+      return data.data;
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error retrieving molecule information",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        }),
+      );
+      throw new Error("Could not retrieve molecule information", { cause: e });
+    }
+  }
+
   return {
     calculateStoichiometry,
     getStoichiometry,
     updateStoichiometry,
     deleteStoichiometry,
+    getMoleculeInfo,
   };
 }

@@ -40,11 +40,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import PubChemLogo from "../../assets/branding/pubchem/logo.svg";
 import CompoundSearchDialog from "../pubchem/CompoundSearchDialog";
 import createAccentedTheme from "@/accentedTheme";
+import { Dialog } from "../../components/DialogBoundary";
+import DialogContent from "@mui/material/DialogContent";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
     setColumnsMenuAnchorEl: (anchorEl: HTMLElement | null) => void;
-    onAddReagent: (smilesString: string, name: string) => void;
+    onAddReagent: (smilesString: string, name: string) => Promise<void>;
     editable: boolean;
   }
 }
@@ -199,9 +201,11 @@ function Toolbar({
                   setPubchemDialogOpen(false);
                   setAddReagentMenuAnchorEl(null);
                 }}
-                onCompoundsSelected={(compounds) => {
-                  compounds.forEach((c) => onAddReagent(c.smiles, c.name));
-                }}
+                onCompoundsSelected={doNotAwait(async (compounds) => {
+                  for (const c of compounds) {
+                    await onAddReagent(c.smiles, c.name);
+                  }
+                })}
                 title="Insert from PubChem"
                 submitButtonText="Insert"
                 showPubChemInfo
@@ -232,6 +236,42 @@ function Toolbar({
   );
 }
 
+function LoadingDialog({
+  open,
+  message = "Loading molecule information...",
+}: {
+  open: boolean;
+  message?: string;
+}): React.ReactNode {
+  return (
+    <Dialog
+      open={open}
+      disableEscapeKeyDown
+      sx={{
+        "& .MuiDialog-paper": {
+          minWidth: 300,
+        },
+      }}
+    >
+      <DialogContent>
+        <Box
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
+          py={3}
+          gap={2}
+        >
+          <CircularProgress size={40} />
+          <Typography variant="body1" textAlign="center">
+            {message}
+          </Typography>
+        </Box>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const StoichiometryTable = React.forwardRef<
   StoichiometryTableRef,
   {
@@ -243,8 +283,12 @@ const StoichiometryTable = React.forwardRef<
   { chemId, editable = false, onChangesUpdate },
   ref,
 ) {
-  const { getStoichiometry, updateStoichiometry, deleteStoichiometry } =
-    useStoichiometry();
+  const {
+    getStoichiometry,
+    updateStoichiometry,
+    deleteStoichiometry,
+    getMoleculeInfo,
+  } = useStoichiometry();
   const theme = useTheme();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -254,6 +298,7 @@ const StoichiometryTable = React.forwardRef<
   >([]);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
+  const [moleculeInfoLoading, setMoleculeInfoLoading] = React.useState(false);
 
   React.useEffect(() => {
     setLoading(true);
@@ -339,51 +384,66 @@ const StoichiometryTable = React.forwardRef<
   );
 
   const handleAddReagent = useCallback(
-    (smilesString: string, name: string) => {
-      // Generate a temporary unique ID for the new molecule (negative to distinguish from server IDs)
-      const tempId = -(allMolecules.length + 1);
+    async (smilesString: string, name: string) => {
+      // Prevent concurrent requests
+      if (moleculeInfoLoading) {
+        throw new Error(
+          "Please wait for the current reagent to be processed before adding another.",
+        );
+      }
 
-      // Create a mock RsChemElement for the new reagent
-      const mockRsChemElement: RsChemElement = {
-        id: tempId,
-        parentId: null,
-        ecatChemFileId: null,
-        dataImage: null,
-        chemElements: smilesString,
-        smilesString: smilesString,
-        chemId: null,
-        reactionId: null,
-        rgroupId: null,
-        metadata: null,
-        chemElementsFormat: "SMILES",
-        creationDate: Date.now(),
-        imageFileProperty: null,
-      };
+      setMoleculeInfoLoading(true);
 
-      // Create new molecule with empty molecular weight (will be filled after save)
-      const newMolecule: StoichiometryMolecule = {
-        id: tempId,
-        rsChemElement: mockRsChemElement,
-        role: "agent",
-        formula: "", // Will be calculated when saved
-        name: name,
-        smiles: smilesString,
-        coefficient: 1,
-        molecularWeight: 0, // Empty until save
-        mass: null,
-        moles: null,
-        expectedAmount: null,
-        actualAmount: null,
-        actualYield: null,
-        limitingReagent: false,
-        notes: null,
-      };
+      try {
+        const moleculeInfo = await getMoleculeInfo({ smiles: smilesString });
 
-      const updatedMolecules = [...allMolecules, newMolecule];
-      setAllMolecules(updatedMolecules);
-      onChangesUpdate?.(true);
+        // Generate a temporary unique ID for the new molecule (negative to distinguish from server IDs)
+        const tempId = -(allMolecules.length + 1);
+
+        const mockRsChemElement: RsChemElement = {
+          id: tempId,
+          parentId: null,
+          ecatChemFileId: null,
+          dataImage: null,
+          chemElements: smilesString,
+          smilesString: smilesString,
+          chemId: null,
+          reactionId: null,
+          rgroupId: null,
+          metadata: null,
+          chemElementsFormat: "SMILES",
+          creationDate: Date.now(),
+          imageFileProperty: null,
+        };
+
+        const newMolecule: StoichiometryMolecule = {
+          id: tempId,
+          rsChemElement: mockRsChemElement,
+          role: "agent",
+          formula: moleculeInfo.formula,
+          name: name,
+          smiles: smilesString,
+          coefficient: 1,
+          molecularWeight: moleculeInfo.molecularWeight,
+          mass: null,
+          moles: null,
+          expectedAmount: null,
+          actualAmount: null,
+          actualYield: null,
+          limitingReagent: false,
+          notes: null,
+        };
+
+        setAllMolecules((prev) => [...prev, newMolecule]);
+        onChangesUpdate?.(true);
+      } catch (error) {
+        // Error handling is done by getMoleculeInfo hook, just log it here
+        console.error("Failed to fetch molecule information:", error);
+      } finally {
+        setMoleculeInfoLoading(false);
+      }
     },
-    [allMolecules, onChangesUpdate],
+    [allMolecules, moleculeInfoLoading, getMoleculeInfo, onChangesUpdate],
   );
 
   const limitingReagent = allMolecules.find(
@@ -642,51 +702,54 @@ const StoichiometryTable = React.forwardRef<
   }
 
   return (
-    <DataGrid
-      rows={allMolecules ?? []}
-      columns={columns}
-      autoHeight
-      hideFooter
-      disableColumnFilter
-      getRowId={(row) => row.id}
-      processRowUpdate={(newRow) => {
-        const newMolecules = calculateUpdatedMolecules(allMolecules, newRow);
-        setAllMolecules(newMolecules);
-        onChangesUpdate?.(true);
-        return newMolecules.find((m) => m.id === newRow.id) || newRow;
-      }}
-      slots={{
-        toolbar: Toolbar,
-      }}
-      slotProps={{
-        toolbar: {
-          setColumnsMenuAnchorEl,
-          onAddReagent: handleAddReagent,
-          editable,
-        },
-        panel: {
-          anchorEl: columnsMenuAnchorEl,
-        },
-      }}
-      sx={{
-        border: "none",
-        "& .MuiDataGrid-columnHeaders": {
-          backgroundColor: "#f8f9fa",
-          borderBottom: "2px solid #e0e0e0",
-        },
-        "& .MuiDataGrid-cell": {
-          borderBottom: "1px solid #f0f0f0",
-        },
-        "& .MuiDataGrid-row:hover": {
-          backgroundColor: "#f8f9fa",
-        },
-        "& .stoichiometry-disabled-cell": {
-          backgroundColor: `${lighten(theme.palette.primary.background, 0.3)} !important`,
-          color: `${theme.palette.primary.contrastText} !important`,
-          fontStyle: "italic",
-        },
-      }}
-    />
+    <>
+      <DataGrid
+        rows={allMolecules ?? []}
+        columns={columns}
+        autoHeight
+        hideFooter
+        disableColumnFilter
+        getRowId={(row) => row.id}
+        processRowUpdate={(newRow) => {
+          const newMolecules = calculateUpdatedMolecules(allMolecules, newRow);
+          setAllMolecules(newMolecules);
+          onChangesUpdate?.(true);
+          return newMolecules.find((m) => m.id === newRow.id) || newRow;
+        }}
+        slots={{
+          toolbar: Toolbar,
+        }}
+        slotProps={{
+          toolbar: {
+            setColumnsMenuAnchorEl,
+            onAddReagent: handleAddReagent,
+            editable,
+          },
+          panel: {
+            anchorEl: columnsMenuAnchorEl,
+          },
+        }}
+        sx={{
+          border: "none",
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: "#f8f9fa",
+            borderBottom: "2px solid #e0e0e0",
+          },
+          "& .MuiDataGrid-cell": {
+            borderBottom: "1px solid #f0f0f0",
+          },
+          "& .MuiDataGrid-row:hover": {
+            backgroundColor: "#f8f9fa",
+          },
+          "& .stoichiometry-disabled-cell": {
+            backgroundColor: `${lighten(theme.palette.primary.background, 0.3)} !important`,
+            color: `${theme.palette.primary.contrastText} !important`,
+            fontStyle: "italic",
+          },
+        }}
+      />
+      <LoadingDialog open={moleculeInfoLoading} />
+    </>
   );
 });
 
