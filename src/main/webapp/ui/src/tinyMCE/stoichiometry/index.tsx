@@ -8,6 +8,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import StoichiometryDialog from "./dialog";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
+import CssBaseline from "@mui/material/CssBaseline";
 
 // Define types for external interfaces
 type ButtonConfig = {
@@ -58,6 +59,7 @@ class StoichiometryPlugin {
           yield;
         root.render(
           <StyledEngineProvider injectFirst>
+            <CssBaseline />
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <Analytics>
                 <ErrorBoundary>

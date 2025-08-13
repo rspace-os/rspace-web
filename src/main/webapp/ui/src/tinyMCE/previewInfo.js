@@ -16,6 +16,7 @@ import Box from "@mui/material/Box";
 import Alert from "@mui/material/Alert";
 import { useIntegrationIsAllowedAndEnabled } from "../hooks/api/integrationHelpers";
 import * as FetchingData from "../util/fetchingData";
+import CssBaseline from "@mui/material/CssBaseline";
 
 const useStyles = makeStyles()(() => ({
   wrapper: {
@@ -33,11 +34,13 @@ export default function PreviewInfo(props) {
   const theme = createAccentedTheme(ACCENT_COLOR);
   return (
     <span className={classes.wrapper}>
-      <Stack sx={{
-        border: `2px solid ${theme.palette.primary.background}`,
-        borderRadius: 1,
-        backgroundColor: "#fafafa",
-      }}>
+      <Stack
+        sx={{
+          border: `2px solid ${theme.palette.primary.background}`,
+          borderRadius: 1,
+          backgroundColor: "#fafafa",
+        }}
+      >
         <div
           style={{ display: "flex", minHeight: "200px", maxHeight: "334px" }}
         >
@@ -59,6 +62,7 @@ export default function PreviewInfo(props) {
         </div>
         {props.item["data-has-stoichiometry-table"] && (
           <StyledEngineProvider injectFirst>
+            <CssBaseline />
             <ThemeProvider theme={theme}>
               <Analytics>
                 <ErrorBoundary>
