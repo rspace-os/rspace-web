@@ -16,7 +16,9 @@ Properties can be overridden and customised in a second file, which can also be 
 -- Note if spring el is used to give default values to properties using @Value annotations, those properties
 must not be defined in the defaultDeployment.properties file - they will be overriden by the default value
 set using Spring EL. For example, using `@Value(“${pyrat.server.config:#{null}}“)` will always override
-any value set for `pyrat.server.config` if it is in the pyrat.server.config. For local rSpace use dev/deployment.properties.
+any value set for `pyrat.server.config` with null if pyrat.server.config` is defined in defaultDeployment.properties.
+For local rSpace use dev/deployment.properties. Properties defined here will override any value such as null in the above example.
+If you do not use a default value in spring-el, then you may define the property value in defaultDeployment.properties.
 
 Some properties are used in JSPs - for example, some UI features may
 only be accessible for particular deployments. These properties are
