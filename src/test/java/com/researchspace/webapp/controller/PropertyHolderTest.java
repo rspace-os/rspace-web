@@ -58,5 +58,4 @@ public class PropertyHolderTest {
 
     assertEquals("https://base.fieldmark.com", holder.getFieldmarkBaseUrl());
   }
-
 }

@@ -104,7 +104,7 @@ public class GalaxyServiceTest {
   @Mock private UploadFileResponse uploadFileResponse2;
   private HistoryDatasetAssociation historyDatasetAssociation1;
   private HistoryDatasetAssociation historyDatasetAssociation2;
-  private String baseUrl =  "default-baseurl";
+  private String baseUrl = "default-baseurl";
   private String galaxyUrl = "default-baseurl/api";
   private String galaxyAlias = "galaxyAlias";
   private final List<GalaxyAliasToServer> aliasToServerList =

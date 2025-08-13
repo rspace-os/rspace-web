@@ -292,8 +292,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
           }
         }
       } else if (info.getName().equals(GALAXY_APP_NAME)) {
-        List<GalaxyAliasToServer> galaxyServerByAlias =
-            galaxyService.getAliasServerPairs();
+        List<GalaxyAliasToServer> galaxyServerByAlias = galaxyService.getAliasServerPairs();
         if (!galaxyServerByAlias.isEmpty()) {
           options.put(GALAXY_CONFIGURED_SERVERS, galaxyServerByAlias);
         }
