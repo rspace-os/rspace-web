@@ -328,8 +328,7 @@ The following optional properties enable RSpace to connect to Slack (if this int
 
 The following optional property enables RSpace to connect to your PyRAT database instance (if this integration is enabled):
 * **pyrat.server.config** configures the pyrat server alias associated to *server url* and server *access token* (API-Client-Token provided by Scionics - developers of PyRAT).
-  **pyrat.server.config** should be configured (for local use) in dev/deployment.properties as we have no
-* central pyrat sever common to all RSpace isntances.
+  **pyrat.server.config** should be configured (for local use) in dev/deployment.properties as we have no  central pyrat server common to all RSpace isntances.
 * For example:
   ```
   pyrat.server.config={ \

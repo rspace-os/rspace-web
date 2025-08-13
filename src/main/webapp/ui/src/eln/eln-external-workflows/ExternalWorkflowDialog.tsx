@@ -61,7 +61,8 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWo
                           renderCell: ({row}) =>
                               <Link
                                   href={row.galaxyBaseUrl + "/histories/view?id=" + row.galaxyHistoryId}
-                                  target="_blank" rel="noreferrer">{row.galaxyBaseUrl + ": " +row.galaxyHistoryName}</Link>,
+                                  target="_blank"
+                                  rel="noreferrer">{row.galaxyBaseUrl + ": " + row.galaxyHistoryName}</Link>,
                         }),
                     DataGridColumn.newColumnWithValueGetter("Invocation",
                         (wf: GalaxyDataSummary) => wf.galaxyInvocationName,

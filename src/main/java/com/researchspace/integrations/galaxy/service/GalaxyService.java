@@ -4,6 +4,9 @@ import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.Ext
 import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceContainerType.FIELD;
 import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceDataType.LOCAL;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.galaxy.client.GalaxyClient;
 import com.researchspace.galaxy.model.output.history.History;
@@ -31,8 +34,6 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserConnectionManager;
-import com.researchspace.webapp.integrations.galaxy.GalaxyController.GalaxyAliasToServer;
-import com.researchspace.webapp.integrations.galaxy.GalaxyController.GalaxyInvocationAndDataCounts;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,9 +45,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
+import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -60,6 +65,22 @@ public class GalaxyService {
 
   @Autowired private UserConnectionManager userConnectionManager;
   @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
+
+  @Value("${galaxy.server.config}")
+  private String mapString;
+
+  @Getter private List<GalaxyAliasToServer> aliasServerPairs;
+
+  @PostConstruct
+  private void init() throws JsonProcessingException {
+    if (StringUtils.isBlank(mapString)) {
+      this.aliasServerPairs = new ArrayList<>();
+    } else {
+      ObjectMapper objectMapper = new ObjectMapper();
+      aliasServerPairs =
+          objectMapper.readValue(mapString, new TypeReference<List<GalaxyAliasToServer>>() {});
+    }
+  }
 
   public GalaxyService(
       GalaxyClient client,
@@ -99,7 +120,6 @@ public class GalaxyService {
       long fieldId,
       long[] selectedAttachmentIds,
       String rspaceServerAddress,
-      List<GalaxyAliasToServer> aliasServerPairs,
       String targetAlias)
       throws IOException {
     BaseRecord theDocument = recordManager.getRecordWithFields(recordId, user);
@@ -199,8 +219,8 @@ public class GalaxyService {
    *
    * @return List<GalaxySummaryStatusReport> may be null
    */
-  public List<GalaxySummaryStatusReport> getSummaryGalaxyDataForRSpaceField(
-      long fieldId, User user, List<GalaxyAliasToServer> aliasServerPairs) throws IOException {
+  public List<GalaxySummaryStatusReport> getSummaryGalaxyDataForRSpaceField(long fieldId, User user)
+      throws IOException {
     Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField =
         externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
             fieldId, GALAXY);
@@ -229,7 +249,7 @@ public class GalaxyService {
   }
 
   public GalaxyInvocationAndDataCounts getGalaxyInvocationCountForRSpaceField(
-      long fieldId, User user, List<GalaxyAliasToServer> aliasServerPairs) throws IOException {
+      long fieldId, User user) throws IOException {
     GalaxyInvocationAndDataCounts giadc = new GalaxyInvocationAndDataCounts();
     Set<ExternalWorkFlowData> allDataUploadedToGalaxyForThisRSpaceField =
         externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(

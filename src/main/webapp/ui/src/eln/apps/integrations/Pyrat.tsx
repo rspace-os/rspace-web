@@ -65,7 +65,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                 Request a user access token by going to Administration → API →
                 Request access in PyRAT.
               </li>
-              <li>Chose the corresponding server from the add menu below.</li>
+              <li>Choose the corresponding server from the add menu below.</li>
               <li>
                 Enter the access token into the field that appears, and save.
               </li>

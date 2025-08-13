@@ -10,6 +10,8 @@ import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang.StringUtils.join;
 
+import com.researchspace.integrations.galaxy.service.GalaxyAliasToServer;
+import com.researchspace.integrations.galaxy.service.GalaxyService;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.apps.AppConfigElement;
@@ -30,8 +32,6 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
-import com.researchspace.webapp.integrations.galaxy.GalaxyController;
-import com.researchspace.webapp.integrations.galaxy.GalaxyController.GalaxyAliasToServer;
 import com.researchspace.webapp.integrations.pyrat.PyratClient;
 import com.researchspace.webapp.integrations.pyrat.PyratServerDTO;
 import java.util.ArrayList;
@@ -80,7 +80,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private @Autowired UserConnectionManager userConnManager;
   private @Autowired IPropertyHolder propertyHolder;
   private @Autowired PyratClient pyratClient;
-  @Autowired private GalaxyController galaxyController;
+  @Autowired private GalaxyService galaxyService;
 
   private final Map<SystemProperty, List<SystemProperty>> parent2ChildMap = new HashMap<>();
 
@@ -292,10 +292,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
           }
         }
       } else if (info.getName().equals(GALAXY_APP_NAME)) {
-        List<GalaxyAliasToServer> galaxyControllerServerByAlias =
-            galaxyController.getAliasServerPairs();
-        if (!galaxyControllerServerByAlias.isEmpty()) {
-          options.put(GALAXY_CONFIGURED_SERVERS, galaxyControllerServerByAlias);
+        List<GalaxyAliasToServer> galaxyServerByAlias =
+            galaxyService.getAliasServerPairs();
+        if (!galaxyServerByAlias.isEmpty()) {
+          options.put(GALAXY_CONFIGURED_SERVERS, galaxyServerByAlias);
         }
       }
 

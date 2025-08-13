@@ -61,7 +61,6 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserConnectionManager;
-import com.researchspace.webapp.integrations.galaxy.GalaxyController.GalaxyAliasToServer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -105,10 +104,11 @@ public class GalaxyServiceTest {
   @Mock private UploadFileResponse uploadFileResponse2;
   private HistoryDatasetAssociation historyDatasetAssociation1;
   private HistoryDatasetAssociation historyDatasetAssociation2;
-  private String galaxyUrl = "galaxyUrl";
+  private String baseUrl =  "default-baseurl";
+  private String galaxyUrl = "default-baseurl/api";
   private String galaxyAlias = "galaxyAlias";
   private final List<GalaxyAliasToServer> aliasToServerList =
-      List.of(new GalaxyAliasToServer(galaxyAlias, galaxyUrl));
+      List.of(new GalaxyAliasToServer(galaxyAlias, baseUrl));
   private static final String API_KEY = "apiKey";
   @Captor private ArgumentCaptor<ExternalWorkFlowData> externalWorkFlowDataArgumentCaptor;
 
@@ -133,7 +133,7 @@ public class GalaxyServiceTest {
     ReflectionTestUtils.setField(galaxyService, "userConnectionManager", userConnectionManager);
     ReflectionTestUtils.setField(
         galaxyService, "externalWorkFlowDataManager", externalWorkFlowDataManager);
-    ReflectionTestUtils.setField(galaxyService, "baseUrl", "https://galaxy.eu");
+    ReflectionTestUtils.setField(galaxyService, "aliasServerPairs", aliasToServerList);
     when(userConnectionManager.findListByUserNameProviderName(anyString(), eq("GALAXY")))
         .thenReturn(List.of(userConnection));
     when(userConnection.getAccessToken()).thenReturn(API_KEY);
@@ -180,7 +180,7 @@ public class GalaxyServiceTest {
   @Test
   public void shouldUploadDataToGalaxyWhenSetUpDataInGalaxy() throws IOException {
     galaxyService.setUpDataInGalaxyFor(
-        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", aliasToServerList, galaxyAlias);
+        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", galaxyAlias);
     verify(client).createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY), eq(galaxyUrl));
     verify(client).uploadFile(eq(HISTORY_ID_1), eq(API_KEY), eq(attachmentFile1), eq(galaxyUrl));
   }
@@ -199,7 +199,7 @@ public class GalaxyServiceTest {
     when(client.createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY + "_1"), eq(galaxyUrl)))
         .thenReturn(history);
     galaxyService.setUpDataInGalaxyFor(
-        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", aliasToServerList, galaxyAlias);
+        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", galaxyAlias);
     verify(client).createNewHistory(eq(API_KEY), eq(HISTORY_NAME_ON_GALAXY + "_1"), eq(galaxyUrl));
     verify(client).uploadFile(eq(HISTORY_ID_1), eq(API_KEY), eq(attachmentFile1), eq(galaxyUrl));
   }
@@ -207,7 +207,7 @@ public class GalaxyServiceTest {
   @Test
   public void shouldSaveDataWhenUploadToGalaxyIsCompleteWhenSetUpDataInGalaxy() throws IOException {
     galaxyService.setUpDataInGalaxyFor(
-        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", aliasToServerList, galaxyAlias);
+        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", galaxyAlias);
     verify(externalWorkFlowDataManager, times(2))
         .save(externalWorkFlowDataArgumentCaptor.capture());
     ExternalWorkFlowData externalWorkFlowData1 =
@@ -219,7 +219,7 @@ public class GalaxyServiceTest {
     assertEquals(ExternalService.GALAXY, externalWorkFlowData1.getExternalService());
     assertEquals("test1.txt", externalWorkFlowData1.getExtName());
     assertEquals(HISTORY_ID_1, externalWorkFlowData1.getExtContainerID());
-    assertEquals("https://galaxy.eu", externalWorkFlowData1.getBaseUrl());
+    assertEquals("default-baseurl", externalWorkFlowData1.getBaseUrl());
     assertEquals("field1", externalWorkFlowData1.getRspacecontainerName());
     assertEquals(HISTORY_NAME_ON_GALAXY, externalWorkFlowData1.getExtContainerName());
     assertEquals("historyDatasetAssociationUuid1", externalWorkFlowData1.getExtSecondaryId());
@@ -232,7 +232,7 @@ public class GalaxyServiceTest {
   @Test
   public void shouldCreateDataSetCollectionInGalaxyWhenSetUpDataInGalaxy() throws IOException {
     galaxyService.setUpDataInGalaxyFor(
-        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", aliasToServerList, galaxyAlias);
+        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", galaxyAlias);
     Map<String, String> uploadedFileNamesToIds = new HashMap<>();
     uploadedFileNamesToIds.put(
         "historyDatasetAssociationName1", "historyDatasetAssociationDataSetId1");
@@ -250,7 +250,7 @@ public class GalaxyServiceTest {
   @Test
   public void shouldPutAnnotationsInGalaxyWhenSetUpDataInGalaxy() throws IOException {
     galaxyService.setUpDataInGalaxyFor(
-        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", aliasToServerList, galaxyAlias);
+        user, 1L, 1L, new long[] {1L, 2L}, "serverAddress", galaxyAlias);
     verify(client)
         .putAnnotationOnDataset(
             eq(HISTORY_ID_1),
@@ -270,7 +270,7 @@ public class GalaxyServiceTest {
         .thenReturn(Collections.emptySet());
 
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
 
     assertEquals(0, result.size());
     verify(externalWorkFlowDataManager)
@@ -294,7 +294,7 @@ public class GalaxyServiceTest {
         .thenReturn(Collections.emptyList());
 
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
 
     assertEquals(1, result.size());
     verify(externalWorkFlowDataManager)
@@ -326,7 +326,7 @@ public class GalaxyServiceTest {
     when(client.getDataSetCollectionDetails(API_KEY, HISTORY_ID_1, "inputId", galaxyUrl))
         .thenReturn(createNonMatchingHDCA());
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
 
     assertEquals(1, result.size());
     verify(externalWorkFlowDataManager)
@@ -360,7 +360,7 @@ public class GalaxyServiceTest {
     when(client.getWorkflowInvocationReport(API_KEY, INVOCATION_ID_1, galaxyUrl))
         .thenReturn(createWorkFlowInvocationReport());
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(1, result.size());
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
@@ -397,7 +397,7 @@ public class GalaxyServiceTest {
     when(client.getWorkflowInvocationReport(API_KEY, INVOCATION_ID_1, galaxyUrl))
         .thenReturn(createWorkFlowInvocationReport());
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(1, result.size());
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
@@ -434,7 +434,7 @@ public class GalaxyServiceTest {
     when(client.getWorkflowInvocationReport(API_KEY, INVOCATION_ID_1, galaxyUrl))
         .thenReturn(createWorkFlowInvocationReport());
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(1, result.size());
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
@@ -472,7 +472,7 @@ public class GalaxyServiceTest {
         .thenReturn(Collections.singletonList(workflowInvocationResponse));
     verifyNoMoreInteractions(client);
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(1, result.size());
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
@@ -500,7 +500,7 @@ public class GalaxyServiceTest {
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1, galaxyUrl))
         .thenReturn(Collections.singletonList(workflowInvocationResponse));
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     verify(externalWorkFlowDataManager).save(externalWorkFlowInvocationArgumentCaptor.capture());
     ExternalWorkFlowInvocation savedInvocation =
         externalWorkFlowInvocationArgumentCaptor.getValue();
@@ -509,7 +509,7 @@ public class GalaxyServiceTest {
         .thenReturn(
             createWorkflowInvocationSummaryStatusResponseForState(
                 OverAllState.Failed, "Cancelled"));
-    result = galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+    result = galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     verify(externalWorkFlowDataManager).save(externalWorkFlowInvocationArgumentCaptor.capture());
     savedInvocation = externalWorkFlowInvocationArgumentCaptor.getValue();
     assertEquals("Cancelled", savedInvocation.getStatus());
@@ -530,7 +530,7 @@ public class GalaxyServiceTest {
     when(client.getTopLevelInvocationsInAHistory(API_KEY, HISTORY_ID_1, galaxyUrl))
         .thenReturn(Collections.singletonList(workflowInvocationResponse));
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     verify(externalWorkFlowDataManager).save(externalWorkFlowInvocationArgumentCaptor.capture());
     ExternalWorkFlowInvocation savedInvocation =
         externalWorkFlowInvocationArgumentCaptor.getValue();
@@ -538,7 +538,7 @@ public class GalaxyServiceTest {
     when(client.getWorkflowInvocatioSummaryStatus(API_KEY, INVOCATION_ID_1, galaxyUrl))
         .thenReturn(
             createWorkflowInvocationSummaryStatusResponseForState(OverAllState.Running, "Failed"));
-    result = galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+    result = galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     verify(externalWorkFlowDataManager).save(externalWorkFlowInvocationArgumentCaptor.capture());
     savedInvocation = externalWorkFlowInvocationArgumentCaptor.getValue();
     assertEquals("Failed", savedInvocation.getStatus());
@@ -593,7 +593,7 @@ public class GalaxyServiceTest {
     when(client.getWorkflowInvocatioSummaryStatus(API_KEY, INVOCATION_ID_1 + "_not_pre", galaxyUrl))
         .thenReturn(workflowInvocationSummaryStatusResponse);
     List<GalaxySummaryStatusReport> result =
-        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user, aliasToServerList);
+        galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(2, result.size());
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(

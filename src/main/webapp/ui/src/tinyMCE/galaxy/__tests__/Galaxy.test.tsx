@@ -9,12 +9,14 @@ import {fireEvent, render, screen} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
 import {act} from "react-dom/test-utils";
+
 const mockAxios = new MockAdapter(axios);
 // simulating the actual events fired in plugin.min.js code for galaxy upload button
 const activeEditorMock = {
-  storedEventName:"",
-  storedFunction: ()=>{},
-  on: function (eventName: string, targetFunction: ()=>{}) {
+  storedEventName: "",
+  storedFunction: () => {
+  },
+  on: function (eventName: string, targetFunction: () => {}) {
     this.storedEventName = eventName;
     this.storedFunction = targetFunction;
   },
@@ -25,14 +27,14 @@ const activeEditorMock = {
   }
 };
 const tinymceMock = {activeEditor: activeEditorMock};
-Object.defineProperty(parent, "tinymce", { value: tinymceMock });
-const attachedRecords : Array<AttachedRecords> = [{
+Object.defineProperty(parent, "tinymce", {value: tinymceMock});
+const attachedRecords: Array<AttachedRecords> = [{
   id: 'attachedID',
   html: document.createElement('div')
 }]
 const createdGalaxyHistory = {
-  "id" : "f8e722da311b8793",
-  "name" : "RSPACE_Untitled document_SD375v4_Data_FD229379_1",
+  "id": "f8e722da311b8793",
+  "name": "RSPACE_Untitled document_SD375v4_Data_FD229379_1",
 }
 let windowParentPostMessageSpy: jest.SpyInstance;
 describe("Galaxy Upload Data tests ", () => {
@@ -46,23 +48,23 @@ describe("Galaxy Upload Data tests ", () => {
         available: true,
         enabled: true,
         oauthConnected: false,
-        "options" : {
-          "GALAXY_CONFIGURED_SERVERS" : [ {
-            "alias" : "galaxy eu server",
-            "url" : "https://usegalaxy.eu"
+        "options": {
+          "GALAXY_CONFIGURED_SERVERS": [{
+            "alias": "galaxy eu server",
+            "url": "https://usegalaxy.eu"
           }, {
-            "alias" : "galaxy us server",
-            "url" : "https://usegalaxy.org"
-          } ],
-          "7" : {
-            "GALAXY_URL" : "https://usegalaxy.org",
-            "GALAXY_ALIAS" : "galaxy us server",
-            "GALAXY_APIKEY" : "USKEY"
+            "alias": "galaxy us server",
+            "url": "https://usegalaxy.org"
+          }],
+          "7": {
+            "GALAXY_URL": "https://usegalaxy.org",
+            "GALAXY_ALIAS": "galaxy us server",
+            "GALAXY_APIKEY": "USKEY"
           },
-          "8" : {
-            "GALAXY_URL" : "https://usegalaxy.eu",
-            "GALAXY_APIKEY" : "EUKEY",
-            "GALAXY_ALIAS" : "galaxy eu server"
+          "8": {
+            "GALAXY_URL": "https://usegalaxy.eu",
+            "GALAXY_APIKEY": "EUKEY",
+            "GALAXY_ALIAS": "galaxy eu server"
           }
         }
       },
@@ -74,7 +76,7 @@ describe("Galaxy Upload Data tests ", () => {
   describe("displays attached data with select checkboxes ", () => {
     it("renders radio button server choice with eu as default ", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]}/>);
-      expect(await screen.findByRole("radio", { name: /galaxy eu server/ }));
+      expect(await screen.findByRole("radio", {name: /galaxy eu server/}));
     });
     it("displays empty table when there is no attached data ", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]}/>);

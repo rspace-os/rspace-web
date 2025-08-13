@@ -8,19 +8,20 @@ import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
 import ExternalWorkflowInvocations, {InvocationsAndDataCount} from "../ExternalWorkflowInvocations";
+
 const mockAxios = new MockAdapter(axios);
 const GalaxyDataSummary = {
-  "rspaceFieldName" : "Data",
-  "galaxyHistoryName" : "RSPACE_Untitled document_SD375v3_Data_FD229379",
-  "galaxyHistoryId" : "473f68f2250fb0ff",
-  "galaxyDataNames" : "Galaxy1-_anaphase_1750407920234.jpg__1753183694203.jpg",
-  "galaxyInvocationName" : 'Invocation Name',
-  "galaxyInvocationStatus" : 'FAILED',
-  "galaxyInvocationId" : null,
-  "galaxyBaseUrl" : "https://usegalaxy.eu",
-  "createdOn" : 1752834698272
+  "rspaceFieldName": "Data",
+  "galaxyHistoryName": "RSPACE_Untitled document_SD375v3_Data_FD229379",
+  "galaxyHistoryId": "473f68f2250fb0ff",
+  "galaxyDataNames": "Galaxy1-_anaphase_1750407920234.jpg__1753183694203.jpg",
+  "galaxyInvocationName": 'Invocation Name',
+  "galaxyInvocationStatus": 'FAILED',
+  "galaxyInvocationId": null,
+  "galaxyBaseUrl": "https://usegalaxy.eu",
+  "createdOn": 1752834698272
 }
-const GalaxyInvocationsAndDataCount :InvocationsAndDataCount= {
+const GalaxyInvocationsAndDataCount: InvocationsAndDataCount = {
   dataCount: 2,
   invocationCount: 1
 }
