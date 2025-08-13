@@ -489,8 +489,6 @@ function initTinyMCE(selector) {
 		}
 		if (galaxyEnabled) {
 			localTinymcesetup.external_plugins["galaxy"] = "/scripts/externalTinymcePlugins/galaxy/plugin.min.js";
-			localTinymcesetup.galaxy_url = properties["galaxy.api.url"];
-			localTinymcesetup.galaxy_web_url = properties["galaxy.web.url"];
 			enabledFileRepositories += " galaxy";
 			fileRepositoriesMenu += " optGalaxy";
 		}

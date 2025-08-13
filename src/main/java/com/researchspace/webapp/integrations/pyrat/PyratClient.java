@@ -50,7 +50,7 @@ public class PyratClient {
     }
   }
 
-  @Value("${pyrat.server.config:#{null}}")
+  @Value("${pyrat.server.config}")
   private String mapString;
 
   @Getter private Map<String, PyratServerDTO> serverByAlias;

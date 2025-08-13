@@ -2,14 +2,13 @@ package com.researchspace.webapp.integrations.galaxy;
 
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.galaxy.model.output.history.History;
-import com.researchspace.integrations.galaxy.service.GalaxyService;
+import com.researchspace.integrations.galaxy.service.GalaxyInvocationAndDataCounts;
 import com.researchspace.integrations.galaxy.service.GalaxySummaryStatusReport;
 import com.researchspace.model.User;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.BaseController;
 import com.researchspace.webapp.controller.SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor;
 import java.io.IOException;
-import java.security.Principal;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -29,7 +28,7 @@ public class GalaxyController extends BaseController {
 
   private final UserManager userManager;
 
-  @Autowired private GalaxyService galaxyService;
+  @Autowired private com.researchspace.integrations.galaxy.service.GalaxyService galaxyService;
   private SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor exceptionHandlerVisitor =
       new SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor();
 
@@ -46,7 +45,7 @@ public class GalaxyController extends BaseController {
 
   @PostMapping("/setUpDataInGalaxyFor")
   public History setUpDataInGalaxyFor(
-      Principal principal,
+      @RequestParam() String targetAlias,
       @RequestParam() long recordId,
       @RequestParam() long fieldId,
       @RequestParam() long[] selectedAttachmentIds,
@@ -56,7 +55,7 @@ public class GalaxyController extends BaseController {
     String serverAddress = RequestUtil.getAppURL(request);
     History galaxyHistory =
         galaxyService.setUpDataInGalaxyFor(
-            user, recordId, fieldId, selectedAttachmentIds, serverAddress);
+            user, recordId, fieldId, selectedAttachmentIds, serverAddress, targetAlias);
     return galaxyHistory;
   }
 
@@ -65,6 +64,13 @@ public class GalaxyController extends BaseController {
       @PathVariable long fieldId) throws IOException {
     User user = userManager.getAuthenticatedUserInSession();
     return galaxyService.getSummaryGalaxyDataForRSpaceField(fieldId, user);
+  }
+
+  @GetMapping("/getGalaxyInvocationCountForRSpaceField/{fieldId}")
+  public GalaxyInvocationAndDataCounts getGalaxyInvocationCountForRSpaceField(
+      @PathVariable long fieldId) throws IOException {
+    User user = userManager.getAuthenticatedUserInSession();
+    return galaxyService.getGalaxyInvocationCountForRSpaceField(fieldId, user);
   }
 
   @GetMapping("/galaxyDataExists/{fieldId}")
