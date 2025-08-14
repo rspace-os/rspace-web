@@ -351,9 +351,9 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     long cached = sw.getTime();
     System.err.println("Cached time is " + cached);
 
-    double SPEEDUP = 1.5; // is around 2 on new jenkins, but 1.5 is conservative estimate
+    double SPEEDUP = 1.33; // is around 1.5 on new jenkins, but 1.33 is conservative estimate
     assertTrue(
-        "cache speedup should be min 33%, was: " + cached + "-" + uncached,
+        "cache speedup should be min 25%, was: " + cached + "-" + uncached,
         cached * SPEEDUP < uncached);
   }
 
