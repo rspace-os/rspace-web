@@ -10,8 +10,6 @@ import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
-import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
-import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import java.io.IOException;
@@ -48,16 +46,6 @@ public interface ChemistryService {
   ChemEditorInputDto getChemicalEditorInput(long chemId, Integer revision, User user);
 
   Optional<ElementalAnalysisDTO> getElementalAnalysis(long chemId, Integer revision, User user);
-
-  Optional<ElementalAnalysisDTO> getMoleculeInfo(String smiles);
-
-  Optional<Stoichiometry> getStoichiometry(long chemId, Integer revision, User user);
-
-  Stoichiometry createStoichiometry(long chemId, Integer revision, User user);
-
-  Stoichiometry updateStoichiometry(StoichiometryUpdateDTO stoichiometryUpdateDTO, User user);
-
-  boolean deleteStoichiometry(long stoichiometryId, User user);
 
   String getChemicalFileContents(long chemId, Integer revision, User subject);
 

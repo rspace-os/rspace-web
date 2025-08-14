@@ -14,7 +14,6 @@ import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
-import com.researchspace.service.chemistry.ChemistryClient;
 import com.researchspace.service.chemistry.StoichiometryException;
 import java.io.IOException;
 import java.util.HashMap;

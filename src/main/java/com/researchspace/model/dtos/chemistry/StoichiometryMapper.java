@@ -81,6 +81,7 @@ public final class StoichiometryMapper {
       return null;
     }
     return StoichiometryMoleculeDTO.builder()
+        .role(moleculeInfo.getRole())
         .smiles(moleculeInfo.getSmiles())
         .molecularWeight(moleculeInfo.getMass())
         .formula(moleculeInfo.getFormula())

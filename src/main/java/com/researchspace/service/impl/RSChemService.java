@@ -15,19 +15,15 @@ import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
-import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.record.Breadcrumb;
 import com.researchspace.model.record.BreadcrumbGenerator;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
-import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
-import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,8 +54,6 @@ public class RSChemService implements ChemistryService {
 
   private final AuditManager auditManager;
 
-  private final StoichiometryManager stoichiometryManager;
-
   @Autowired
   public RSChemService(
       RSChemElementManager rsChemElementManager,
@@ -67,15 +61,13 @@ public class RSChemService implements ChemistryService {
       BreadcrumbGenerator breadcrumbGenerator,
       ChemistryProvider chemistryProvider,
       EcatChemistryFileManager chemistryFileManager,
-      AuditManager auditManager,
-      StoichiometryManager stoichiometryManager) {
+      AuditManager auditManager) {
     this.rsChemElementManager = rsChemElementManager;
     this.folderManager = folderManager;
     this.breadcrumbGenerator = breadcrumbGenerator;
     this.chemistryProvider = chemistryProvider;
     this.chemistryFileManager = chemistryFileManager;
     this.auditManager = auditManager;
-    this.stoichiometryManager = stoichiometryManager;
   }
 
   @Override
@@ -242,14 +234,6 @@ public class RSChemService implements ChemistryService {
   }
 
   @Override
-  public Optional<ElementalAnalysisDTO> getMoleculeInfo(String smiles) {
-    if (smiles == null || smiles.isBlank()) {
-      return Optional.empty();
-    }
-    return rsChemElementManager.getInfo(smiles);
-  }
-
-  @Override
   public String getChemicalFileContents(long chemId, Integer revision, User subject) {
     RSChemElement chemical = getChemicalElementByRevision(chemId, revision, subject);
     EcatChemistryFile file = chemistryFileManager.get(chemical.getEcatChemFileId(), subject);
@@ -262,70 +246,6 @@ public class RSChemService implements ChemistryService {
   @Override
   public List<RSChemElement> getAllChemicalsByFormat(ChemElementsFormat format) {
     return rsChemElementManager.getAllChemElementsByFormat(format);
-  }
-
-  @Override
-  public Optional<Stoichiometry> getStoichiometry(long chemId, Integer revision, User user) {
-    return stoichiometryManager.findByParentReactionId(chemId);
-  }
-
-  @Override
-  public Stoichiometry createStoichiometry(long chemId, Integer revision, User user) {
-    RSChemElement chemical = getChemicalElementByRevision(chemId, revision, user);
-    if (chemical == null) {
-      throw new StoichiometryException("Chemical element with ID " + chemId + " not found.");
-    }
-
-    Optional<Stoichiometry> existingStoichiometryOpt =
-        stoichiometryManager.findByParentReactionId(chemId);
-    if (existingStoichiometryOpt.isPresent()) {
-      Stoichiometry existingStoichiometry = existingStoichiometryOpt.get();
-      throw new com.researchspace.service.chemistry.StoichiometryException(
-          "Stoichiometry already exists for reaction chemId="
-              + chemId
-              + ", stoichId="
-              + existingStoichiometry.getId());
-    }
-
-    Optional<ElementalAnalysisDTO> analysis = chemistryProvider.getStoichiometry(chemical);
-
-    try {
-      if (analysis.isEmpty()) {
-        throw new StoichiometryException(
-            "Unable to generate stoichiometry: problem generating analysis for chemical with ID "
-                + chemId);
-      }
-      return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user);
-    } catch (IOException e) {
-      throw new StoichiometryException("Problem while creating new Stoichiometry: ", e);
-    }
-  }
-
-  @Override
-  public Stoichiometry updateStoichiometry(
-      StoichiometryUpdateDTO stoichiometryUpdateDTO, User user) {
-    return stoichiometryManager.update(stoichiometryUpdateDTO, user);
-  }
-
-  @Override
-  public boolean deleteStoichiometry(long stoichiometryId, User user) {
-    try {
-      Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
-      if (stoichiometry == null) {
-        return false;
-      }
-
-      RSChemElement parentReaction = stoichiometry.getParentReaction();
-      RSChemElement chemical = getChemicalElementByRevision(parentReaction.getId(), null, user);
-      if (chemical == null) {
-        return false;
-      }
-
-      stoichiometryManager.remove(stoichiometryId);
-      return true;
-    } catch (Exception e) {
-      return false;
-    }
   }
 
   @Data

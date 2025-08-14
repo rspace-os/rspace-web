@@ -6,7 +6,6 @@ import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import org.springframework.web.bind.annotation.*;
 
-/** Stoichiometry endpoints */
 @RequestMapping("/api/v1/stoichiometry")
 public interface StoichiometryApi {
 
