@@ -2,6 +2,7 @@ import React from "react";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
+import useOauthToken from "../auth/useOauthToken";
 
 export type RsChemElement = {
   id: number;
@@ -127,13 +128,10 @@ export default function useStoichiometry(): {
    * Gets additional molecule information for a SMILES string.
    * This performs a POST request to retrieve molecular weight, formula, etc.
    */
-  getMoleculeInfo: ({
-    smiles,
-  }: {
-    smiles: string;
-  }) => Promise<MoleculeInfo>;
+  getMoleculeInfo: ({ smiles }: { smiles: string }) => Promise<MoleculeInfo>;
 } {
   const { addAlert } = React.useContext(AlertContext);
+  const { getToken } = useOauthToken();
 
   async function calculateStoichiometry({
     chemId,
@@ -143,11 +141,16 @@ export default function useStoichiometry(): {
     try {
       const formData = new FormData();
       formData.append("chemId", chemId.toString());
-      const { data } = await axios.post<{ data: StoichiometryResponse }>(
-        "/chemical/stoichiometry",
+      const { data } = await axios.post<StoichiometryResponse>(
+        "/api/v1/stoichiometry",
         formData,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        },
       );
-      return data.data;
+      return data;
     } catch (e) {
       addAlert(
         mkAlert({
@@ -166,13 +169,16 @@ export default function useStoichiometry(): {
     chemId: number;
   }): Promise<StoichiometryResponse> {
     try {
-      const { data } = await axios.get<{ data: StoichiometryResponse }>(
-        "/chemical/stoichiometry",
+      const { data } = await axios.get<StoichiometryResponse>(
+        "/api/v1/stoichiometry",
         {
           params: { chemId },
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
         },
       );
-      return data.data;
+      return data;
     } catch (e) {
       addAlert(
         mkAlert({
@@ -193,11 +199,14 @@ export default function useStoichiometry(): {
     stoichiometryData: StoichiometryRequest;
   }): Promise<StoichiometryResponse> {
     try {
-      const { data } = await axios.put<{ data: StoichiometryResponse }>(
-        "/chemical/stoichiometry",
+      const { data } = await axios.put<StoichiometryResponse>(
+        "/api/v1/stoichiometry",
         stoichiometryData,
         {
           params: { stoichiometryId },
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
         },
       );
       addAlert(
@@ -206,7 +215,7 @@ export default function useStoichiometry(): {
           message: "Successfully updated stoichiometry table",
         }),
       );
-      return data.data;
+      return data;
     } catch (e) {
       addAlert(
         mkAlert({
@@ -225,8 +234,11 @@ export default function useStoichiometry(): {
     stoichiometryId: number;
   }): Promise<void> {
     try {
-      await axios.delete(`/chemical/stoichiometry`, {
+      await axios.delete(`/api/v1/stoichiometry`, {
         params: { stoichiometryId },
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
       });
       addAlert(
         mkAlert({
@@ -253,11 +265,16 @@ export default function useStoichiometry(): {
     smiles: string;
   }): Promise<MoleculeInfo> {
     try {
-      const { data } = await axios.post<{ data: MoleculeInfo }>(
-        "/chemical/stoichiometry/molecule/info",
+      const { data } = await axios.post<MoleculeInfo>(
+        "/api/v1/stoichiometry/molecule/info",
         { chemical: smiles },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        },
       );
-      return data.data;
+      return data;
     } catch (e) {
       addAlert(
         mkAlert({

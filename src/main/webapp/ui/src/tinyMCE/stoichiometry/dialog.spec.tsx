@@ -4,6 +4,7 @@ import {
   StoichiometryDialogWithCalculateButtonStory,
   StoichiometryDialogWithTableStory,
 } from "./dialog.story";
+import * as Jwt from "jsonwebtoken";
 
 const createOnTableCreatedSpy = () => {
   let called = false;
@@ -204,7 +205,7 @@ const feature = test.extend<{
         () => {
           const postRequest = networkRequests.find(
             (request) =>
-              request.url.pathname.includes("/chemical/stoichiometry") &&
+              request.url.pathname.includes("/api/v1/stoichiometry") &&
               request.postData !== null,
           );
           expect(postRequest).toBeDefined();
@@ -221,7 +222,7 @@ const feature = test.extend<{
         () => {
           const putRequest = networkRequests.find(
             (request) =>
-              request.url.pathname.includes("/chemical/stoichiometry") &&
+              request.url.pathname.includes("/api/v1/stoichiometry") &&
               request.method === "PUT",
           );
           expect(putRequest).toBeDefined();
@@ -230,7 +231,7 @@ const feature = test.extend<{
         () => {
           const deleteRequest = networkRequests.find(
             (request) =>
-              request.url.pathname.includes("/chemical/stoichiometry") &&
+              request.url.pathname.includes("/api/v1/stoichiometry") &&
               request.method === "DELETE",
           );
           expect(deleteRequest).toBeDefined();
@@ -257,126 +258,140 @@ const feature = test.extend<{
 });
 
 feature.beforeEach(async ({ router, page, networkRequests }) => {
+  await router.route("/userform/ajax/inventoryOauthToken", (route) => {
+    const payload = {
+      iss: "http://localhost:8080",
+      iat: new Date().getTime(),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      refreshTokenHash:
+        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+    };
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: Jwt.sign(payload, "dummySecretKey"),
+      }),
+    });
+  });
+
   const mockResponse = {
-    data: {
-      id: 3,
-      parentReaction: {
-        id: 32769,
-        parentId: 226,
-        ecatChemFileId: null,
-        dataImage: "mock-image-data",
-        chemElements: "mock-chem-elements",
-        smilesString: "C1=CC=CC=C1.C1C=CC=C1>>C1CCCCC1",
-        chemId: null,
-        reactionId: null,
-        rgroupId: null,
-        metadata: "{}",
-        chemElementsFormat: "KET",
-        creationDate: 1753964538000,
-        imageFileProperty: {},
-      },
-      molecules: [
-        {
-          id: 4,
-          rsChemElement: {
-            id: 32770,
-            parentId: null,
-            ecatChemFileId: null,
-            dataImage: null,
-            chemElements: "C1=CC=CC=C1",
-            smilesString: null,
-            chemId: null,
-            reactionId: null,
-            rgroupId: null,
-            metadata: null,
-            chemElementsFormat: "MOL",
-            creationDate: 1753964548124,
-            imageFileProperty: null,
-          },
-          role: "REACTANT",
-          formula: "C6 H6",
-          name: "Benzene",
-          smiles: "C1=CC=CC=C1",
-          coefficient: 1.0,
-          molecularWeight: 78.11,
-          mass: null,
-          moles: null,
-          expectedAmount: null,
-          actualAmount: null,
-          actualYield: null,
-          limitingReagent: false,
-          notes: null,
-        },
-        {
-          id: 5,
-          rsChemElement: {
-            id: 32771,
-            parentId: null,
-            ecatChemFileId: null,
-            dataImage: null,
-            chemElements: "C1C=CC=C1",
-            smilesString: null,
-            chemId: null,
-            reactionId: null,
-            rgroupId: null,
-            metadata: null,
-            chemElementsFormat: "MOL",
-            creationDate: 1753964548126,
-            imageFileProperty: null,
-          },
-          role: "REACTANT",
-          formula: "C5 H6",
-          name: "Cyclopentadiene",
-          smiles: "C1C=CC=C1",
-          coefficient: 1.0,
-          molecularWeight: 66.1,
-          mass: null,
-          moles: null,
-          expectedAmount: null,
-          actualAmount: null,
-          actualYield: null,
-          limitingReagent: false,
-          notes: null,
-        },
-        {
-          id: 6,
-          rsChemElement: {
-            id: 32772,
-            parentId: null,
-            ecatChemFileId: null,
-            dataImage: null,
-            chemElements: "C1CCCCC1",
-            smilesString: null,
-            chemId: null,
-            reactionId: null,
-            rgroupId: null,
-            metadata: null,
-            chemElementsFormat: "MOL",
-            creationDate: 1753964548127,
-            imageFileProperty: null,
-          },
-          role: "PRODUCT",
-          formula: "C6 H12",
-          name: "Cyclohexane",
-          smiles: "C1CCCCC1",
-          coefficient: 1.0,
-          molecularWeight: 84.16,
-          mass: null,
-          moles: null,
-          expectedAmount: null,
-          actualAmount: null,
-          actualYield: null,
-          limitingReagent: false,
-          notes: null,
-        },
-      ],
+    id: 3,
+    parentReaction: {
+      id: 32769,
+      parentId: 226,
+      ecatChemFileId: null,
+      dataImage: "mock-image-data",
+      chemElements: "mock-chem-elements",
+      smilesString: "C1=CC=CC=C1.C1C=CC=C1>>C1CCCCC1",
+      chemId: null,
+      reactionId: null,
+      rgroupId: null,
+      metadata: "{}",
+      chemElementsFormat: "KET",
+      creationDate: 1753964538000,
+      imageFileProperty: {},
     },
+    molecules: [
+      {
+        id: 4,
+        rsChemElement: {
+          id: 32770,
+          parentId: null,
+          ecatChemFileId: null,
+          dataImage: null,
+          chemElements: "C1=CC=CC=C1",
+          smilesString: null,
+          chemId: null,
+          reactionId: null,
+          rgroupId: null,
+          metadata: null,
+          chemElementsFormat: "MOL",
+          creationDate: 1753964548124,
+          imageFileProperty: null,
+        },
+        role: "REACTANT",
+        formula: "C6 H6",
+        name: "Benzene",
+        smiles: "C1=CC=CC=C1",
+        coefficient: 1.0,
+        molecularWeight: 78.11,
+        mass: null,
+        moles: null,
+        expectedAmount: null,
+        actualAmount: null,
+        actualYield: null,
+        limitingReagent: false,
+        notes: null,
+      },
+      {
+        id: 5,
+        rsChemElement: {
+          id: 32771,
+          parentId: null,
+          ecatChemFileId: null,
+          dataImage: null,
+          chemElements: "C1C=CC=C1",
+          smilesString: null,
+          chemId: null,
+          reactionId: null,
+          rgroupId: null,
+          metadata: null,
+          chemElementsFormat: "MOL",
+          creationDate: 1753964548126,
+          imageFileProperty: null,
+        },
+        role: "REACTANT",
+        formula: "C5 H6",
+        name: "Cyclopentadiene",
+        smiles: "C1C=CC=C1",
+        coefficient: 1.0,
+        molecularWeight: 66.1,
+        mass: null,
+        moles: null,
+        expectedAmount: null,
+        actualAmount: null,
+        actualYield: null,
+        limitingReagent: false,
+        notes: null,
+      },
+      {
+        id: 6,
+        rsChemElement: {
+          id: 32772,
+          parentId: null,
+          ecatChemFileId: null,
+          dataImage: null,
+          chemElements: "C1CCCCC1",
+          smilesString: null,
+          chemId: null,
+          reactionId: null,
+          rgroupId: null,
+          metadata: null,
+          chemElementsFormat: "MOL",
+          creationDate: 1753964548127,
+          imageFileProperty: null,
+        },
+        role: "PRODUCT",
+        formula: "C6 H12",
+        name: "Cyclohexane",
+        smiles: "C1CCCCC1",
+        coefficient: 1.0,
+        molecularWeight: 84.16,
+        mass: null,
+        moles: null,
+        expectedAmount: null,
+        actualAmount: null,
+        actualYield: null,
+        limitingReagent: false,
+        notes: null,
+      },
+    ],
   };
 
-  // Handle all /chemical/stoichiometry requests (GET, POST, PUT, DELETE)
-  await router.route("/chemical/stoichiometry*", (route) => {
+  await router.route("/api/v1/stoichiometry*", (route) => {
     const method = route.request().method();
-    
+
     if (method === "GET" || method === "POST" || method === "PUT") {
       return route.fulfill({
         status: 200,
@@ -384,7 +399,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         body: JSON.stringify(mockResponse),
       });
     }
-    
+
     if (method === "DELETE") {
       return route.fulfill({
         status: 200,
@@ -392,9 +407,8 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         body: JSON.stringify({ success: true }),
       });
     }
-    
-    // Continue to next handler for other methods
-    return route.continue();
+
+    throw new Error("Other methods are not supported");
   });
 
   await router.route("/integration/integrationInfo?name=CHEMISTRY", (route) => {

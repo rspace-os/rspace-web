@@ -397,122 +397,120 @@ const feature = test.extend<{
 });
 
 feature.beforeEach(async ({ router }) => {
-  await router.route("/chemical/stoichiometry*", (route) => {
+  await router.route("/api/v1/stoichiometry*", (route) => {
     // Mock data with all limitingReagent values set to false to test default selection behavior
     const mockResponse = {
-      data: {
-        id: 3,
-        parentReaction: {
-          id: 32769,
-          parentId: 226,
-          ecatChemFileId: null,
-          dataImage: "mock-image-data",
-          chemElements: "mock-chem-elements",
-          smilesString: "C1=CC=CC=C1.C1C=CC=C1>>C1CCCCC1",
-          chemId: null,
-          reactionId: null,
-          rgroupId: null,
-          metadata: "{}",
-          chemElementsFormat: "KET",
-          creationDate: 1753964538000,
-          imageFileProperty: {},
-        },
-        molecules: [
-          {
-            id: 4,
-            rsChemElement: {
-              id: 32770,
-              parentId: null,
-              ecatChemFileId: null,
-              dataImage: null,
-              chemElements: "C1=CC=CC=C1",
-              smilesString: null,
-              chemId: null,
-              reactionId: null,
-              rgroupId: null,
-              metadata: null,
-              chemElementsFormat: "MOL",
-              creationDate: 1753964548124,
-              imageFileProperty: null,
-            },
-            role: "REACTANT",
-            formula: "C6 H6",
-            name: "Benzene",
-            smiles: "C1=CC=CC=C1",
-            coefficient: 1.0,
-            molecularWeight: 78.11,
-            mass: 78.11, // 1 mole of benzene
-            moles: 1.0,
-            expectedAmount: null,
-            actualAmount: 70.3, // 90% yield (70.30 / 78.11 = 0.90)
-            actualYield: null,
-            limitingReagent: false,
-            notes: null,
-          },
-          {
-            id: 5,
-            rsChemElement: {
-              id: 32771,
-              parentId: null,
-              ecatChemFileId: null,
-              dataImage: null,
-              chemElements: "C1C=CC=C1",
-              smilesString: null,
-              chemId: null,
-              reactionId: null,
-              rgroupId: null,
-              metadata: null,
-              chemElementsFormat: "MOL",
-              creationDate: 1753964548126,
-              imageFileProperty: null,
-            },
-            role: "REACTANT",
-            formula: "C5 H6",
-            name: "Cyclopentadiene",
-            smiles: "C1C=CC=C1",
-            coefficient: 1.0,
-            molecularWeight: 66.1,
-            mass: 66.1, // 1 mole of cyclopentadiene
-            moles: 1.0,
-            expectedAmount: null,
-            actualAmount: 52.88, // 80% yield (52.88 / 66.1 = 0.80)
-            actualYield: null,
-            limitingReagent: false,
-            notes: null,
-          },
-          {
-            id: 6,
-            rsChemElement: {
-              id: 32772,
-              parentId: null,
-              ecatChemFileId: null,
-              dataImage: null,
-              chemElements: "C1CCCCC1",
-              smilesString: null,
-              chemId: null,
-              reactionId: null,
-              rgroupId: null,
-              metadata: null,
-              chemElementsFormat: "MOL",
-              creationDate: 1753964548127,
-              imageFileProperty: null,
-            },
-            role: "PRODUCT",
-            formula: "C6 H12",
-            name: "Cyclohexane",
-            smiles: "C1CCCCC1",
-            coefficient: 1.0,
-            molecularWeight: 84.16,
-            mass: 84.16, // 1 mole of cyclohexane
-            moles: 1.0,
-            expectedAmount: null,
-            actualAmount: 67.33, // 80% yield (67.33 / 84.16 = 0.80)
-            actualYield: null,
-            limitingReagent: false,
-            notes: null,
-          },
-        ],
+      id: 3,
+      parentReaction: {
+        id: 32769,
+        parentId: 226,
+        ecatChemFileId: null,
+        dataImage: "mock-image-data",
+        chemElements: "mock-chem-elements",
+        smilesString: "C1=CC=CC=C1.C1C=CC=C1>>C1CCCCC1",
+        chemId: null,
+        reactionId: null,
+        rgroupId: null,
+        metadata: "{}",
+        chemElementsFormat: "KET",
+        creationDate: 1753964538000,
+        imageFileProperty: {},
       },
+      molecules: [
+        {
+          id: 4,
+          rsChemElement: {
+            id: 32770,
+            parentId: null,
+            ecatChemFileId: null,
+            dataImage: null,
+            chemElements: "C1=CC=CC=C1",
+            smilesString: null,
+            chemId: null,
+            reactionId: null,
+            rgroupId: null,
+            metadata: null,
+            chemElementsFormat: "MOL",
+            creationDate: 1753964548124,
+            imageFileProperty: null,
+          },
+          role: "REACTANT",
+          formula: "C6 H6",
+          name: "Benzene",
+          smiles: "C1=CC=CC=C1",
+          coefficient: 1.0,
+          molecularWeight: 78.11,
+          mass: 78.11, // 1 mole of benzene
+          moles: 1.0,
+          expectedAmount: null,
+          actualAmount: 70.3, // 90% yield (70.30 / 78.11 = 0.90)
+          actualYield: null,
+          limitingReagent: false,
+          notes: null,
+        },
+        {
+          id: 5,
+          rsChemElement: {
+            id: 32771,
+            parentId: null,
+            ecatChemFileId: null,
+            dataImage: null,
+            chemElements: "C1C=CC=C1",
+            smilesString: null,
+            chemId: null,
+            reactionId: null,
+            rgroupId: null,
+            metadata: null,
+            chemElementsFormat: "MOL",
+            creationDate: 1753964548126,
+            imageFileProperty: null,
+          },
+          role: "REACTANT",
+          formula: "C5 H6",
+          name: "Cyclopentadiene",
+          smiles: "C1C=CC=C1",
+          coefficient: 1.0,
+          molecularWeight: 66.1,
+          mass: 66.1, // 1 mole of cyclopentadiene
+          moles: 1.0,
+          expectedAmount: null,
+          actualAmount: 52.88, // 80% yield (52.88 / 66.1 = 0.80)
+          actualYield: null,
+          limitingReagent: false,
+          notes: null,
+        },
+        {
+          id: 6,
+          rsChemElement: {
+            id: 32772,
+            parentId: null,
+            ecatChemFileId: null,
+            dataImage: null,
+            chemElements: "C1CCCCC1",
+            smilesString: null,
+            chemId: null,
+            reactionId: null,
+            rgroupId: null,
+            metadata: null,
+            chemElementsFormat: "MOL",
+            creationDate: 1753964548127,
+            imageFileProperty: null,
+          },
+          role: "PRODUCT",
+          formula: "C6 H12",
+          name: "Cyclohexane",
+          smiles: "C1CCCCC1",
+          coefficient: 1.0,
+          molecularWeight: 84.16,
+          mass: 84.16, // 1 mole of cyclohexane
+          moles: 1.0,
+          expectedAmount: null,
+          actualAmount: 67.33, // 80% yield (67.33 / 84.16 = 0.80)
+          actualYield: null,
+          limitingReagent: false,
+          notes: null,
+        },
+      ],
     };
 
     return route.fulfill({
@@ -539,7 +537,7 @@ feature.beforeEach(async ({ router }) => {
     });
   });
 
-  await router.route("/chemical/stoichiometry/molecule/info", (route) => {
+  await router.route("/api/v1/stoichiometry/molecule/info", (route) => {
     const requestBody = route.request().postDataJSON();
     const smiles = requestBody?.chemical;
 
@@ -567,7 +565,7 @@ feature.beforeEach(async ({ router }) => {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ data: mockInfo }),
+      body: JSON.stringify(mockInfo),
     });
   });
 
