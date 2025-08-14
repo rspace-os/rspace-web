@@ -85,13 +85,10 @@ public class StoichiometryServiceImplTest {
     assertEquals(stoich, result);
   }
 
-  // create
   @Test
   void create_whenOwningRecordMissing_throwsNotFound() {
     when(chemistryService.getChemicalElementByRevision(2L, null, user))
         .thenReturn(mock(RSChemElement.class));
-    // chemical has null record by default
-
     NotFoundException ex =
         assertThrows(NotFoundException.class, () -> service.create(2L, null, user));
 
@@ -185,13 +182,11 @@ public class StoichiometryServiceImplTest {
     assertEquals(chem, result.getParentReaction());
   }
 
-  // update
   @Test
   void update_whenOwningRecordMissing_throwsNotFound() throws Exception {
     Stoichiometry existing = new Stoichiometry();
     existing.setId(3L);
     RSChemElement parent = TestFactory.createChemElement(null, 123L);
-    // no record set
     existing.setParentReaction(parent);
     when(stoichiometryManager.get(3L)).thenReturn(existing);
 
@@ -238,7 +233,6 @@ public class StoichiometryServiceImplTest {
     assertEquals(updated, result);
   }
 
-  // delete
   @Test
   void delete_whenNoWritePermission_throwsAuthz() throws Exception {
     Stoichiometry existing = makeStoichiometryWithRecord(5L);
@@ -303,7 +297,6 @@ public class StoichiometryServiceImplTest {
     assertThrows(NotFoundException.class, () -> service.getMoleculeInfo("CCO"));
   }
 
-  // helpers
   private Stoichiometry makeStoichiometryWithRecord(Long reactionId) throws Exception {
     RSChemElement parent = TestFactory.createChemElement(null, reactionId);
     parent.setRecord(TestFactory.createAnySD());
