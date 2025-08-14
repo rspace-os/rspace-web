@@ -28,7 +28,12 @@ import Analytics from "../../components/Analytics";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
 import Result from "../../util/result";
-import useShare, { ShareInfo } from "../../hooks/api/useShare";
+import useShare, {
+  ShareInfo,
+  ShareOption,
+  NewShare,
+} from "../../hooks/api/useShare";
+import { doNotAwait } from "../../util/Util";
 import useGroups, { Group } from "../../hooks/api/useGroups";
 import useUserDetails, { GroupMember } from "../../hooks/api/useUserDetails";
 import UserDetails from "../../Inventory/components/UserDetails";
@@ -40,25 +45,9 @@ import Stack from "@mui/material/Stack";
 import RsSet, { flattenWithIntersectionWithEq } from "@/util/set";
 import WarningBar from "@/components/WarningBar";
 
-// Combined type for autocomplete options
-type ShareOption =
-  | (Group & { optionType: "GROUP" })
-  | (GroupMember & { optionType: "USER" });
-
 // Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
   isDisabled: boolean;
-};
-
-// Type for new shares being added
-type NewShare = {
-  id: string; // temporary ID for React keys
-  sharedTargetId: number;
-  sharedTargetName: string;
-  sharedTargetDisplayName: string;
-  sharedTargetType: "USER" | "GROUP";
-  permission: "READ" | "EDIT";
-  sharedFolderPath: string | null;
 };
 
 export default function Wrapper(): React.ReactNode {
@@ -87,6 +76,7 @@ const ShareDialog = () => {
     new Map(),
   );
   const [loading, setLoading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
   const [shareOptions, setShareOptions] = React.useState<ShareOption[]>([]);
   const [optionsLoading, setOptionsLoading] = React.useState(false);
   // Track permission changes: Map<shareId, newPermission>
@@ -98,7 +88,7 @@ const ShareDialog = () => {
     new Map(),
   );
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { getShareInfoForMultiple } = useShare();
+  const { getShareInfoForMultiple, createShare } = useShare();
   const { getGroups } = useGroups();
   const { getGroupMembers } = useUserDetails();
 
@@ -286,6 +276,49 @@ const ShareDialog = () => {
   function handleCancel() {
     setPermissionChanges(new Map());
     setNewShares(new Map());
+  }
+
+  const validationResult = React.useMemo((): Result<null> => {
+    const hasGroupShares = Array.from(newShares.values()).some((shares) =>
+      shares.some((share) => share.sharedTargetType === "GROUP"),
+    );
+    if (hasGroupShares) {
+      return Result.Error<null>([
+        new Error("Group sharing is not supported yet"),
+      ]);
+    }
+    return Result.Ok<null>(null);
+  }, [newShares]);
+
+  async function handleSave() {
+    if (!hasChanges) {
+      trackEvent("user:closes:share_dialog:workspace");
+      handleClose();
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await Promise.all(
+        Array.from(newShares.entries())
+          .map(([globalId, shares]) => ({
+            id: parseInt(globalId.replace(/\D/g, ""), 10),
+            shares,
+          }))
+          .filter(({ id, shares }) => !isNaN(id) && shares.length > 0)
+          .map(({ id, shares }) => createShare(id, shares)),
+      );
+      trackEvent("user:saves:share_changes:workspace");
+      setPermissionChanges(new Map());
+      setNewShares(new Map());
+      setLoading(true);
+      setShareData(await getShareInfoForMultiple(globalIds));
+    } catch (error) {
+      console.error("Failed to save shares:", error);
+    } finally {
+      setSaving(false);
+      setLoading(false);
+    }
   }
 
   return (
@@ -657,18 +690,9 @@ const ShareDialog = () => {
       <DialogActions>
         {hasChanges && <Button onClick={handleCancel}>Cancel</Button>}
         <ValidatingSubmitButton
-          loading={false}
-          onClick={() => {
-            if (hasChanges) {
-              // TODO: Implement saving logic
-              console.log("Saving changes:", permissionChanges);
-              trackEvent("user:saves:share_changes:workspace");
-            } else {
-              trackEvent("user:closes:share_dialog:workspace");
-            }
-            handleClose();
-          }}
-          validationResult={Result.Ok(null)}
+          loading={saving}
+          onClick={doNotAwait(handleSave)}
+          validationResult={validationResult}
         >
           {hasChanges ? "Save" : "Done"}
         </ValidatingSubmitButton>

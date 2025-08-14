@@ -3,6 +3,22 @@ import axios from "@/common/axios";
 import useOauthToken from "../auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
+import { Group } from "./useGroups";
+import { GroupMember } from "./useUserDetails";
+
+export type ShareOption =
+  | (Group & { optionType: "GROUP" })
+  | (GroupMember & { optionType: "USER" });
+
+export type NewShare = {
+  id: string; // temporary ID for React keys
+  sharedTargetId: number;
+  sharedTargetName: string;
+  sharedTargetDisplayName: string;
+  sharedTargetType: "USER" | "GROUP";
+  permission: "READ" | "EDIT";
+  sharedFolderPath: string | null;
+};
 
 export type ShareInfo = {
   id: number;
@@ -16,6 +32,19 @@ export type ShareInfo = {
   _links: Array<{
     link: string;
     rel: string;
+  }>;
+};
+
+type CreateShareRequest = {
+  itemsToShare: number[];
+  users: Array<{
+    id: number;
+    permission: "READ" | "EDIT";
+  }>;
+  groups: Array<{
+    id: number;
+    permission: "READ" | "EDIT";
+    sharedFolderId: number;
   }>;
 };
 
@@ -45,6 +74,11 @@ export default function useShare(): {
   getShareInfoForMultiple: (
     globalIds: string[],
   ) => Promise<Map<string, ShareInfo[]>>;
+
+  /**
+   * Creates new shares for an item.
+   */
+  createShare: (itemId: number, newShares: NewShare[]) => Promise<void>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -110,5 +144,49 @@ export default function useShare(): {
     }
   }
 
-  return { getShareInfo, getShareInfoForMultiple };
+  async function createShare(
+    itemId: number,
+    newShares: NewShare[],
+  ): Promise<void> {
+    // Check for group shares and throw error
+    const hasGroupShares = newShares.some(
+      (share) => share.sharedTargetType === "GROUP",
+    );
+    if (hasGroupShares) {
+      throw new Error("Group sharing is not supported yet");
+    }
+
+    try {
+      const requestData: CreateShareRequest = {
+        itemsToShare: [itemId],
+        users: newShares
+          .filter((share) => share.sharedTargetType === "USER")
+          .map((share) => ({
+            id: share.sharedTargetId,
+            permission: share.permission,
+          })),
+        groups: [],
+      };
+
+      await axios.post("/api/v1/share", requestData, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error creating share",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        }),
+      );
+      throw new Error("Could not create share", {
+        cause: e,
+      });
+    }
+  }
+
+  return { getShareInfo, getShareInfoForMultiple, createShare };
 }
