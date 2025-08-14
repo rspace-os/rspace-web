@@ -4242,26 +4242,35 @@ definitions:
         type: string
       name:
         type: string
+        example: 'Acetate'
       smiles:
         type: string
+        example: 'CC(=O)O'
       molecularWeight:
         type: number
+        example: 44.068
       coefficient:
         type: number
+        example: 1.0
       mass:
         type: number
+        example: 44.068
       moles:
         type: number
+        example: 1.0
       expectedAmount:
         type: number
+        example: 1.0
       actualAmount:
         type: number
+        example: 1.0
       actualYield:
         type: number
       limitingReagent:
         type: boolean
       notes:
         type: string
+        example: 'some notes'
   StoichiometryDTO:
     description: Stoichiometry data for a reaction
     properties:
@@ -4283,6 +4292,9 @@ definitions:
         format: int64
       coefficient:
         type: number
+      role:
+        type: string
+        enum: [ REACTANT, PRODUCT, AGENT ]
       mass:
         type: number
       moles:
