@@ -3,7 +3,7 @@
  */
 /* eslint-env jest */
 import React from "react";
-import { DeploymentPropertyContext } from "../../eln/useDeploymentProperty";
+import { DeploymentPropertyContext } from "../../hooks/api/useDeploymentProperty";
 import { render, cleanup, screen, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import FormatChoice from "../FormatChoice";
@@ -40,13 +40,13 @@ describe("FormatChoice", () => {
           allVersions={false}
           updateFileStores={() => {}}
           validator={mkValidator()}
-        />
+        />,
       );
 
       expect(
         await screen.findByRole("checkbox", {
           name: "You have not setup a repository, to do so please activate them within Apps",
-        })
+        }),
       ).toBeDisabled();
     });
 
@@ -99,11 +99,11 @@ describe("FormatChoice", () => {
           allVersions={false}
           updateFileStores={() => {}}
           validator={mkValidator()}
-        />
+        />,
       );
 
       expect(
-        await screen.findByRole("checkbox", { name: "Export to a repository" })
+        await screen.findByRole("checkbox", { name: "Export to a repository" }),
       ).toBeEnabled();
     });
   });
@@ -130,8 +130,8 @@ describe("FormatChoice", () => {
               updateFileStores={() => {}}
               validator={mkValidator()}
             />
-          </DeploymentPropertyContext.Provider>
-        )
+          </DeploymentPropertyContext.Provider>,
+        ),
       );
 
       const wordElement = screen.getByText(".DOC file");
@@ -159,8 +159,8 @@ describe("FormatChoice", () => {
               updateFileStores={() => {}}
               validator={mkValidator()}
             />
-          </DeploymentPropertyContext.Provider>
-        )
+          </DeploymentPropertyContext.Provider>,
+        ),
       );
 
       const wordElement = screen.queryAllByText(".DOC file");
@@ -195,14 +195,14 @@ describe("FormatChoice", () => {
               updateFileStores={() => {}}
               validator={mkValidator()}
             />
-          </DeploymentPropertyContext.Provider>
-        )
+          </DeploymentPropertyContext.Provider>,
+        ),
       );
 
       expect(
         screen.getByRole("radio", {
           name: ".DOC file Word export is only available for a single document, and you have selected more than one.",
-        })
+        }),
       ).toBeDisabled();
     });
 
@@ -227,14 +227,14 @@ describe("FormatChoice", () => {
               updateFileStores={() => {}}
               validator={mkValidator()}
             />
-          </DeploymentPropertyContext.Provider>
-        )
+          </DeploymentPropertyContext.Provider>,
+        ),
       );
 
       expect(
         screen.getByRole("radio", {
           name: ".DOC file Word export is only available for a single document, and you've selected a folder.",
-        })
+        }),
       ).toBeDisabled();
     });
 
@@ -259,14 +259,14 @@ describe("FormatChoice", () => {
               updateFileStores={() => {}}
               validator={mkValidator()}
             />
-          </DeploymentPropertyContext.Provider>
-        )
+          </DeploymentPropertyContext.Provider>,
+        ),
       );
 
       expect(
         screen.getByRole("radio", {
           name: ".DOC file Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
-        })
+        }),
       ).toBeDisabled();
     });
 
@@ -291,14 +291,14 @@ describe("FormatChoice", () => {
               updateFileStores={() => {}}
               validator={mkValidator()}
             />
-          </DeploymentPropertyContext.Provider>
-        )
+          </DeploymentPropertyContext.Provider>,
+        ),
       );
 
       expect(
         screen.getAllByRole("radio", {
           name: ".DOC file All selected items are attachments — there are no RSpace documents to export.",
-        })[0]
+        })[0],
       ).toBeDisabled();
     });
   });
@@ -321,15 +321,15 @@ describe("FormatChoice", () => {
             allVersions={false}
             updateFileStores={() => {}}
             validator={mkValidator()}
-          />
-        )
+          />,
+        ),
       );
 
       expect(
         screen.getAllByRole("radio", {
           name: "PDF file All selected items are attachments — there are no RSpace documents to export.",
           // selecting first such radio because second will be for .doc export
-        })[0]
+        })[0],
       ).toBeDisabled();
     });
   });

@@ -20,7 +20,7 @@ import {
   folderDestination,
 } from "../useGalleryActions";
 import RsSet from "../../../util/set";
-import useViewportDimensions from "../../../util/useViewportDimensions";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import { type GallerySection } from "../common";
 import { observer } from "mobx-react-lite";
 import PlaceholderLabel from "./PlaceholderLabel";

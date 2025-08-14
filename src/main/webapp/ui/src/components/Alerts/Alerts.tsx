@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { makeStyles } from "tss-react/mui";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import { preventEventBubbling } from "../../util/Util";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
 import { runInAction } from "mobx";
 import { DialogBoundary } from "../DialogBoundary";
@@ -18,7 +18,7 @@ const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
       left: verySmallLayout ? theme.spacing(6.25) : "initial",
       zIndex: 1400,
     },
-  })
+  }),
 );
 
 type AlertsArgs = {
@@ -55,7 +55,7 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - alerts will not change as it is a local observable
      */
-    []
+    [],
   );
 
   return (

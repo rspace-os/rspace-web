@@ -19,7 +19,7 @@ import DismissButton from "./Buttons/Dismiss";
 import ExpandButton from "./Buttons/Expand";
 import RetryButton from "./Buttons/Retry";
 import { observer } from "mobx-react-lite";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import { type Alert as AlertType } from "../../stores/contexts/Alert";
 
 declare module "@mui/material/Alert" {
@@ -79,7 +79,7 @@ const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
     detailedText: {
       wordBreak: "break-word",
     },
-  })
+  }),
 );
 
 const variantIcon = {
@@ -112,7 +112,7 @@ const SnackbarContentWrapper = forwardRef<
       onInteraction,
       ...other
     }: SnackbarContentWrapperArgs,
-    ref
+    ref,
   ) => {
     const { isViewportVerySmall } = useViewportDimensions();
     const { classes } = useStyles({ verySmallLayout: isViewportVerySmall });
@@ -128,7 +128,7 @@ const SnackbarContentWrapper = forwardRef<
               classes={{
                 badge: clsx(
                   classes.badge,
-                  alert.variant === "success" && classes.successBadge
+                  alert.variant === "success" && classes.successBadge,
                 ),
               }}
               color="error"
@@ -278,7 +278,7 @@ const SnackbarContentWrapper = forwardRef<
         }
       />
     );
-  }
+  },
 );
 
 SnackbarContentWrapper.displayName = "SnackbarContentWrapper";

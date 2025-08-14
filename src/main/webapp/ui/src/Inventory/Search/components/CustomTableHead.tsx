@@ -21,7 +21,7 @@ import {
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
-import useViewportDimensions from "../../../util/useViewportDimensions";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 
 const useStyles = makeStyles()((theme) => ({
   iconCell: {

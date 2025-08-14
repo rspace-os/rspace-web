@@ -9,7 +9,7 @@ import StepLabel from "@mui/material/StepLabel";
 import StepContent from "@mui/material/StepContent";
 import axios from "@/common/axios";
 import Result from "../../../util/result";
-import useOauthToken from "../../../common/useOauthToken";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -74,7 +74,7 @@ function FilesystemSelectionStep(props: {
           Authorization: "Bearer " + (await getToken()),
         },
       });
-    })()
+    })(),
   );
 
   React.useEffect(() => {
@@ -105,9 +105,9 @@ function FilesystemSelectionStep(props: {
                       url: string;
                     }>([e instanceof Error ? e : new Error("Unknown error")]);
                   }
-                })
-            )
-          )
+                }),
+            ),
+          ),
         )
         .do((newFilesystems) => setFilesystems(newFilesystems));
     })();
@@ -135,7 +135,7 @@ function FilesystemSelectionStep(props: {
             const chosenId = parseInt(value, 10);
             Optional.fromNullable(filesystems)
               .flatMap((fss) =>
-                ArrayUtils.find(({ id }) => id === chosenId, fss)
+                ArrayUtils.find(({ id }) => id === chosenId, fss),
               )
               .do((fs) => {
                 setChosenFilesysem(fs);
@@ -197,7 +197,7 @@ function TreeListing({
           Authorization: "Bearer " + (await getToken()),
         },
       });
-    })()
+    })(),
   );
 
   const [listing, setListing] = React.useState<FilesystemListing>([]);
@@ -208,7 +208,7 @@ function TreeListing({
         const { data } = await (
           await api.current
         ).get<{ content: FilesystemListing }>(
-          `filesystems/${fsId}/browse?remotePath=${path}`
+          `filesystems/${fsId}/browse?remotePath=${path}`,
         );
         if (!data.content) throw new Error("No content");
         setListing(data.content);
@@ -239,10 +239,10 @@ function TreeListing({
                       message: Parsers.objectPath(["data", "message"], response)
                         .flatMap(Parsers.isString)
                         .orElse(e.message),
-                    })
+                    }),
                   );
                 }
-              })
+              }),
         );
       }
     }
@@ -271,7 +271,7 @@ function TreeListing({
                 onFailToAuthenticate={onFailToAuthenticate}
               />
             </TreeItem>
-          )
+          ),
       )}
     </>
   );
@@ -308,7 +308,7 @@ function FolderSelectionStep(props: {
           onItemSelectionToggle={(
             event,
             itemId: string | ReadonlyArray<string>,
-            selected
+            selected,
           ) => {
             if (!(typeof itemId === "string")) return;
             const selectedFolder: string = itemId;
@@ -439,7 +439,7 @@ export default function AddFilestoreDialog({
           Authorization: "Bearer " + (await getToken()),
         },
       });
-    })()
+    })(),
   );
   async function addFilestore(name: string) {
     try {
@@ -457,13 +457,13 @@ export default function AddFilestoreDialog({
             name,
             pathToSave: pathOfSelectedFolder,
           },
-        }
+        },
       );
       addAlert(
         mkAlert({
           variant: "success",
           message: "Successfully added new filestore",
-        })
+        }),
       );
       onClose(true);
     } catch (e) {
@@ -477,7 +477,7 @@ export default function AddFilestoreDialog({
             variant: "error",
             title: "Failed to add new filestore",
             message,
-          })
+          }),
         );
       }
     }

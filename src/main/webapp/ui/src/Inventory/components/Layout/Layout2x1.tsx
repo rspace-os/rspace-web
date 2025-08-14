@@ -5,8 +5,10 @@ import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-import useViewportDimensions from "../../../util/useViewportDimensions";
-import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
+import useUiPreference, {
+  PREFERENCES,
+} from "../../../hooks/api/useUiPreference";
 
 /**
  * The main Inventory UI is divided into two column on large viewports and a
@@ -42,7 +44,7 @@ const UserHiddenRightPanelContext = React.createContext<{
 export function useIsSingleColumnLayout(): boolean {
   const { isViewportSmall } = useViewportDimensions();
   const { userHiddenRightPanel } = React.useContext(
-    UserHiddenRightPanelContext
+    UserHiddenRightPanelContext,
   );
   return isViewportSmall || userHiddenRightPanel;
 }
@@ -57,7 +59,7 @@ export function useIsSingleColumnLayout(): boolean {
  */
 export const RightPanelToggle = observer(() => {
   const { userHiddenRightPanel, setUserHiddenRightPanel } = React.useContext(
-    UserHiddenRightPanelContext
+    UserHiddenRightPanelContext,
   );
   const { uiStore } = useStores();
 
@@ -141,8 +143,8 @@ const Layout2x1 = observer((props: Layout2x1Args) => {
         isSingleColumnLayout
           ? classes.paper
           : props.isDialog
-          ? classes.dialogWrapper
-          : classes.wrapper
+            ? classes.dialogWrapper
+            : classes.wrapper
       }
     >
       <Grid
@@ -168,11 +170,11 @@ const Layout2x1 = observer((props: Layout2x1Args) => {
 });
 
 export default function Layout2x1Wrapper(
-  props: Layout2x1Args
+  props: Layout2x1Args,
 ): React.ReactNode {
   const [userHiddenRightPanel, setUserHiddenRightPanel] = useUiPreference(
     PREFERENCES.INVENTORY_HIDDEN_RIGHT_PANEL,
-    { defaultValue: false }
+    { defaultValue: false },
   );
   return (
     <UserHiddenRightPanelContext.Provider

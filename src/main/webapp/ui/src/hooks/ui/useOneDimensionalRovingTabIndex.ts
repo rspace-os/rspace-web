@@ -1,5 +1,5 @@
 import React from "react";
-import { modulo } from "../util/Util";
+import { modulo } from "../../util/Util";
 
 /**
  * A roving tab index is a pattern used to allow a keyboard-centric user to
@@ -31,7 +31,7 @@ import { modulo } from "../util/Util";
  *  - https://www.youtube.com/watch?v=uCIC2LNt0bk
  */
 export default function useOneDimensionalRovingTabIndex<
-  RefComponent extends HTMLElement
+  RefComponent extends HTMLElement,
 >({
   max,
   direction = "column",

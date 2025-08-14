@@ -33,7 +33,7 @@ import Result from "../util/result";
 import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
 import Divider from "@mui/material/Divider";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
-import useViewportDimensions from "../util/useViewportDimensions";
+import useViewportDimensions from "../hooks/browser/useViewportDimensions";
 import { type ExportSelection } from "./common";
 import { doNotAwait } from "../util/Util";
 import { PdfExportDetails } from "./PdfExport";

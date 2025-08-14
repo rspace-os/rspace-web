@@ -1,11 +1,11 @@
 import React from "react";
-import * as FetchingData from "../../../util/fetchingData";
-import * as Parsers from "../../../util/parsers";
+import * as FetchingData from "../../util/fetchingData";
+import * as Parsers from "../../util/parsers";
 import axios from "@/common/axios";
-import { Optional } from "../../../util/optional";
-import Result from "../../../util/result";
-import RsSet from "../../../util/set";
-import { getErrorMessage } from "../../../util/error";
+import { Optional } from "../../util/optional";
+import Result from "../../util/result";
+import RsSet from "../../util/set";
+import { getErrorMessage } from "../../util/error";
 
 export type UserId = number;
 
@@ -126,7 +126,7 @@ export type UserListing = {
   setTags: (
     users: ReadonlyArray<User>,
     addedTags: ReadonlyArray<string>,
-    deletedTags: ReadonlyArray<string>
+    deletedTags: ReadonlyArray<string>,
   ) => Promise<void>;
 };
 
@@ -178,7 +178,7 @@ export function useUserListing(): {
 
   const listingConstructor = (
     apiParameters: ApiParameters,
-    fetchedData: FetchedData
+    fetchedData: FetchedData,
   ): UserListing => {
     const userConstructor = (fetchedUser: FetchedUser): User => {
       const id = fetchedUser.userInfo.id;
@@ -292,7 +292,7 @@ export function useUserListing(): {
         try {
           const { data } = await axios.post<unknown>(
             "/system/ajax/removeUserAccount/",
-            formData
+            formData,
           );
           Parsers.isObject(data)
             .flatMap(Parsers.isNotNull)
@@ -316,7 +316,7 @@ export function useUserListing(): {
             {
               userId: id,
               usernameAlias: alias,
-            }
+            },
           );
           Parsers.isObject(data)
             .flatMap(Parsers.isNotNull)
@@ -352,10 +352,10 @@ export function useUserListing(): {
         recordCount: fetchedUser.recordCount,
         fileUsage: fetchedUser.fileUsage,
         lastLogin: Optional.fromNullable(fetchedUser.lastLogin).map(
-          (l) => new Date(l)
+          (l) => new Date(l),
         ),
         created: Optional.fromNullable(fetchedUser.creationDate).map(
-          (l) => new Date(l)
+          (l) => new Date(l),
         ),
         enabled: fetchedUser.userInfo.enabled,
         locked: fetchedUser.userInfo.accountLocked,
@@ -390,7 +390,7 @@ export function useUserListing(): {
     const getSearchParameters = () => apiParameters;
 
     const setSearchParameters = (
-      newApiParameters: ApiParameters
+      newApiParameters: ApiParameters,
     ): Promise<void> => listUsers(newApiParameters);
 
     const setPage = (newPage: number): Promise<void> =>
@@ -408,7 +408,7 @@ export function useUserListing(): {
 
     const setOrdering = (
       newOrderBy: string,
-      newSortOrder: "asc" | "desc"
+      newSortOrder: "asc" | "desc",
     ): Promise<void> =>
       listUsers({
         ...apiParameters,
@@ -473,7 +473,7 @@ export function useUserListing(): {
               searchTerm,
               tags,
             },
-            data
+            data,
           );
           setUserListing({
             tag: "success",
@@ -490,14 +490,14 @@ export function useUserListing(): {
     function getById(id: UserId): Result<User> {
       return Result.fromNullable(
         users.find((u) => u.id === id),
-        new Error(`Could not find User with id ${id}.`)
+        new Error(`Could not find User with id ${id}.`),
       );
     }
 
     async function setTags(
       usersToBeTagged: ReadonlyArray<User>,
       addedTags: ReadonlyArray<string>,
-      deletedTags: ReadonlyArray<string>
+      deletedTags: ReadonlyArray<string>,
     ): Promise<void> {
       try {
         const { data } = await axios.post<
@@ -513,7 +513,7 @@ export function useUserListing(): {
               .union(new RsSet(addedTags))
               .subtract(new RsSet(deletedTags))
               .toArray(),
-          }))
+          })),
         );
         if (typeof data === "object") throw new Error(data.exceptionMessage);
         await listUsers(apiParameters);

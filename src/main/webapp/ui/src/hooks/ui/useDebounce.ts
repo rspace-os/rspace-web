@@ -18,7 +18,7 @@ import React from "react";
  */
 export default function useDebounce<T>(
   callback: (value: T) => void,
-  delay: number
+  delay: number,
 ) {
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -39,6 +39,6 @@ export default function useDebounce<T>(
         callback(value);
       }, delay);
     },
-    [callback, delay]
+    [callback, delay],
   );
 }
