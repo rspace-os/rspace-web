@@ -690,7 +690,7 @@ const ShareDialog = () => {
           </Stack>
         )}
       </DialogContent>
-      {newShares.size > 0 && <WarningBar />}
+      {hasChanges && <WarningBar />}
       <DialogActions>
         {hasChanges && <Button onClick={handleCancel}>Cancel</Button>}
         <ValidatingSubmitButton
