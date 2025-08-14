@@ -163,15 +163,15 @@ export default styled(
       },
     },
     "& .MuiCardMedia-root": {
-      width: compact ? 28 : 36,
-      height: compact ? 28 : 36,
+      width: compact ? 28 : 28,
+      height: compact ? 28 : 28,
       borderRadius: "4px",
       margin: theme.spacing(0.25),
     },
     "& .MuiSvgIcon-root": {
       width: compact ? 28 : 28,
       height: compact ? 28 : 28,
-      padding: compact ? 0 : theme.spacing(0.5),
+      padding: compact ? 0 : theme.spacing(0.25),
       background: bg,
       color: fg,
     },
