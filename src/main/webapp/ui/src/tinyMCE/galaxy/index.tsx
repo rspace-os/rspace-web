@@ -18,10 +18,6 @@ document.addEventListener("DOMContentLoaded", function () {
           // @ts-expect-error
           parent.tinymce.activeEditor?.attachedFileRecordIdsToHtml
         }
-      galaxy_web_url={
-        // @ts-expect-error
-        parent.tinymce.activeEditor?.settings?.galaxy_web_url
-      }
     />
   );
   }

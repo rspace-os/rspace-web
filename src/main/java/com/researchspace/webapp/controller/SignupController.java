@@ -83,6 +83,14 @@ public class SignupController extends BaseController {
   @Setter(AccessLevel.PACKAGE) // for testing
   private Boolean deploymentSsoRecodeNamesToUft8;
 
+  @Value("${deployment.sso.signup.username.suffixToReplace}")
+  @Setter(AccessLevel.PACKAGE) // for testing
+  private String deploymentSsoSignupUsernameSuffixToReplace;
+
+  @Value("${deployment.sso.signup.username.suffixReplacement}")
+  @Setter(AccessLevel.PACKAGE) // for testing
+  private String deploymentSsoSignupUsernameSuffixReplacement;
+
   public SignupController() {
     setCancelView("redirect:login");
     setSuccessView("redirect:workspace");
@@ -114,7 +122,7 @@ public class SignupController extends BaseController {
         model.setViewName("redirect:" + SSOShiroFormAuthFilterExt.SSOINFO_URL);
         return model;
       }
-      user.setUsername(remoteUser);
+      setUsernameAndAliasFromRemoteUserInSsoMode(user, remoteUser);
       // if these aren't set remotely they will set empty string.
       // if they are set, then the signup form will be pre-populated
       user.setEmail(getEmailFromRemote(request));
@@ -127,6 +135,22 @@ public class SignupController extends BaseController {
     model.addObject(user);
     model.setViewName("signup");
     return model;
+  }
+
+  protected User setUsernameAndAliasFromRemoteUserInSsoMode(User user, String remoteUser) {
+    if (StringUtils.isNotEmpty(deploymentSsoSignupUsernameSuffixToReplace)
+        && remoteUser.endsWith(deploymentSsoSignupUsernameSuffixToReplace)) {
+      /* RSDEV-669 - replace suffix in main username, set original SSO username as alias */
+      String newUsername =
+          remoteUser.substring(
+                  0, remoteUser.length() - deploymentSsoSignupUsernameSuffixToReplace.length())
+              + deploymentSsoSignupUsernameSuffixReplacement;
+      user.setUsername(newUsername);
+      user.setUsernameAlias(remoteUser);
+    } else {
+      user.setUsername(remoteUser);
+    }
+    return user;
   }
 
   private String getEmailFromRemote(HttpServletRequest req) {
@@ -211,7 +235,15 @@ public class SignupController extends BaseController {
       if (!isSsoSignupAllowed(remoteUser)) {
         return returnToSignupPage(user);
       }
-      user.setUsername(remoteUser);
+
+      setUsernameAndAliasFromRemoteUserInSsoMode(user, remoteUser);
+      if (user.getUsernameAlias() != null) {
+        log.info(
+            "Signing up SSO remote user '{}' with username '{}' and usernameAlias '{}'",
+            remoteUser,
+            user.getUsername(),
+            user.getUsernameAlias());
+      }
       user.setPassword(pwd);
       user.setConfirmPassword(pwd);
     }

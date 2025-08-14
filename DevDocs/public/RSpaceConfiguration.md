@@ -328,14 +328,24 @@ The following optional properties enable RSpace to connect to Slack (if this int
 
 The following optional property enables RSpace to connect to your PyRAT database instance (if this integration is enabled):
 * **pyrat.server.config** configures the pyrat server alias associated to *server url* and server *access token* (API-Client-Token provided by Scionics - developers of PyRAT).
-  For example:
+  **pyrat.server.config** should be configured (for local use) in dev/deployment.properties as we have no  central pyrat server common to all RSpace isntances.
+* For example:
   ```
   pyrat.server.config={ \
       "mice server": {"url": "https://mice.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"}, \
       "frogs server": {"url": "https://frogs.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"} \
   }
   ```
-4
+
+The following optional property enables RSpace to connect to GALAXY server instances (if this integration is enabled):
+* **galaxy.server.config** configures the galaxy server alias(es) associated to a *url* for the server).
+* RSpace users will see the value of the *alias* when they are configuring their API tokens for accessing Galaxy instances.
+* For example:
+  ```
+  galaxy.server.config=[{"alias": "galaxy eu server", "url": "https://usegalaxy.eu"}, {"alias": "galaxy us server", "url": "https://usegalaxy.org"}]
+  
+  ```
+
 The following optional properties enable RSpace to connect to Clustermarket :
 * **clustermarket.api.url** URL of the exposed Clustermarket API. For example
   `https://api.staging.clustermarket.com/v1/`.
@@ -404,13 +414,14 @@ These optional settings will enable you to import user data from LDAP, or enable
 ### SSO configuration
 Set these properties to configure RSpace to run in SSO mode e.g. for Shibboleth integration. There may be further integration work needed with Apache headers/redirects etc. to get this working.
 * **deployment.standalone** true /false. Set to false to enable SSO integration. Default is true.
-* **deployment.sso.type** if single sign-on is configured (if deployment.standalone=false), this property must switch authentication filter to 'SAML' (default) or 'openid'.
+* **deployment.sso.type** if single sign-on is configured (if deployment.standalone=false), this property must switch authentication filter to 'SAML' or 'openid'.
 * **deployment.sso.logout.url** the URL to redirect to after logout from RSpace. Default is 'You're logged out' page.
 * **deployment.sso.idp.logout.url** the URL presented to the user on 'You're logged out' page, which should point to a link that ends the global SSO session with IDP. No default. 
-* **user.signup.acceptedDomains**  restricts self sign-up for users in SSO environments.
+* **user.signup.acceptedDomains** restricts self sign-up for users in SSO environments. Only users with a username ending with the accepted domain will be allowed to sign up, and other users will be redirected to an information page. There is no default. E.g., @uni.ac.uk.
+* **deployment.sso.signup.username.suffixToReplace** optional, SSO username suffix that should be replaced by suffix defined in **.suffixReplacement** deployment property, when signing up a new RSpace user; the original SSO username will be saved as username alias 
+* **deployment.sso.signup.username.suffixReplacement** optional, a replacement suffix that should be used when signing up a new RSpace user with SSO username matching suffix defined in **.suffixToReplace** deployment property     
 * **deployment.sso.ssoInfoVariant** Sets a custom "RSpace doesn't know you " page when self-signup is disabled. Default is unset. Requires custom page for RSpace.
 * **deployment.sso.adminEmail** Sets the support email address for matters relating to accounts managed by SSO.
-* Only users with a username ending with the accepted domain will be allowed to sign up, and other users will be redirected to an information page. There is no default. E.g., @uni.ac.uk.
 
 #### SSO configuration - backdoor admin login functionality
 The following two properties can be enabled to allow creation and use of special System Admin backdoor account(s), i.e. accounts that work independently from SSO identity.

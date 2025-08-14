@@ -280,8 +280,6 @@ public interface IPropertyHolder extends Versionable {
 
   String getFieldmarkBaseUrl();
 
-  String getGalaxyBaseUrl();
-
   boolean isAsposeEnabled();
 
   String getChemistryProvider();

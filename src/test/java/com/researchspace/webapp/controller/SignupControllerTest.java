@@ -114,4 +114,43 @@ public class SignupControllerTest {
     assertEquals("MÃ¦ck", signupCtrller.getFirstNameFromRemote(mockIso8859Request));
     assertEquals("SchÃ¸dt-Å»Ä\u0099bski", signupCtrller.getLastNameFromRemote(mockIso8859Request));
   }
+
+  @Test
+  public void testIncomingSsoUsernameSuffixReplacement_RSDEV_669() {
+
+    // suffix deployment props not configured
+    User user =
+        signupCtrller.setUsernameAndAliasFromRemoteUserInSsoMode(new User(), "test#EXT#something");
+    assertEquals("test#EXT#something", user.getUsername());
+    assertEquals(null, user.getUsernameAlias());
+
+    // configure deployment props
+    signupCtrller.setDeploymentSsoSignupUsernameSuffixToReplace("#EXT#toReplace");
+    signupCtrller.setDeploymentSsoSignupUsernameSuffixReplacement("#EXT#replacement");
+
+    // incoming username not matching suffix replacement prop
+    user = signupCtrller.setUsernameAndAliasFromRemoteUserInSsoMode(new User(), "test#EXT#other");
+    assertEquals("test#EXT#other", user.getUsername());
+    assertEquals(null, user.getUsernameAlias());
+
+    // incoming username containing toReplace string, but not as suffix
+    user =
+        signupCtrller.setUsernameAndAliasFromRemoteUserInSsoMode(
+            new User(), "test#EXT#toReplace#EXT#other");
+    assertEquals("test#EXT#toReplace#EXT#other", user.getUsername());
+    assertEquals(null, user.getUsernameAlias());
+
+    // incoming username matching suffix replacement prop
+    user =
+        signupCtrller.setUsernameAndAliasFromRemoteUserInSsoMode(new User(), "test#EXT#toReplace");
+    assertEquals("test#EXT#replacement", user.getUsername());
+    assertEquals("test#EXT#toReplace", user.getUsernameAlias());
+
+    // chained suffix also works fine
+    user =
+        signupCtrller.setUsernameAndAliasFromRemoteUserInSsoMode(
+            new User(), "test#EXT#toReplace#EXT#toReplace");
+    assertEquals("test#EXT#toReplace#EXT#replacement", user.getUsername());
+    assertEquals("test#EXT#toReplace#EXT#toReplace", user.getUsernameAlias());
+  }
 }

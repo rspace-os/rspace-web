@@ -128,7 +128,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(OMERO_APP_NAME, new String[] {});
     expectedOptions.put(DIGITAL_COMMONS_DATA_APP_NAME, new String[] {});
     expectedOptions.put(FIELDMARK_APP_NAME, new String[] {});
-    expectedOptions.put(GALAXY_APP_NAME, new String[] {});
+    expectedOptions.put(GALAXY_APP_NAME, new String[] {"GALAXY_CONFIGURED_SERVERS"});
     expectedOptions.put(ASCENSCIA_APP_NAME, new String[] {});
 
     for (var info : infos.values()) {
