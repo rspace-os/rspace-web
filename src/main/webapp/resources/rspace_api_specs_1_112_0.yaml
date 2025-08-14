@@ -2676,6 +2676,100 @@ paths:
               error:
                 type: string
                 example: "PubChem API timeout or connection error"
+
+  /stoichiometry:
+    get:
+      summary: Get stoichiometry for a chemical
+      tags:
+        - Chemistry
+      parameters:
+        - name: chemId
+          in: query
+          required: true
+          type: integer
+          format: int64
+        - name: revision
+          in: query
+          required: false
+          type: integer
+      responses:
+        200:
+          description: Stoichiometry
+          schema:
+            $ref: '#/definitions/StoichiometryDTO'
+    post:
+      summary: Create stoichiometry for a chemical
+      tags:
+        - Chemistry
+      parameters:
+        - name: chemId
+          in: query
+          required: true
+          type: integer
+          format: int64
+        - name: revision
+          in: query
+          required: false
+          type: integer
+      responses:
+        200:
+          description: Stoichiometry
+          schema:
+            $ref: '#/definitions/StoichiometryDTO'
+    put:
+      summary: Update stoichiometry
+      tags:
+        - Chemistry
+      parameters:
+        - name: stoichiometryId
+          in: query
+          required: true
+          type: integer
+          format: int64
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/StoichiometryUpdateDTO'
+      responses:
+        200:
+          description: Updated stoichiometry
+          schema:
+            $ref: '#/definitions/StoichiometryDTO'
+    delete:
+      summary: Delete stoichiometry
+      tags:
+        - Chemistry
+      parameters:
+        - name: stoichiometryId
+          in: query
+          required: true
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: Deletion result
+          schema:
+            type: boolean
+  /stoichiometry/molecule/info:
+    post:
+      summary: Get molecule info for stoichiometry
+      tags:
+        - Chemistry
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            properties:
+              chemical:
+                type: string
+      responses:
+        200:
+          description: Molecule info
+          schema:
+            $ref: '#/definitions/StoichiometryMoleculeDTO'
   /status:
     get:
       summary: Get API status
@@ -2984,7 +3078,6 @@ parameters:
     required: false
     items:
       type: integer
-
 
 definitions:
   ChemicalSearchRequest:
@@ -4036,6 +4129,88 @@ definitions:
       httpCode: 422
       internalCode: 42201
       message: Query could not be processed.
+
+  StoichiometryMoleculeDTO:
+    description: Molecule details used in stoichiometry calculations
+    properties:
+      id:
+        type: integer
+        format: int64
+      rsChemElementId:
+        type: integer
+        format: int64
+      role:
+        type: string
+        enum: [REACTANT, PRODUCT, AGENT]
+      formula:
+        type: string
+      name:
+        type: string
+      smiles:
+        type: string
+      molecularWeight:
+        type: number
+      coefficient:
+        type: number
+      mass:
+        type: number
+      moles:
+        type: number
+      expectedAmount:
+        type: number
+      actualAmount:
+        type: number
+      actualYield:
+        type: number
+      limitingReagent:
+        type: boolean
+      notes:
+        type: string
+  StoichiometryDTO:
+    description: Stoichiometry data for a reaction
+    properties:
+      id:
+        type: integer
+        format: int64
+      parentReactionId:
+        type: integer
+        format: int64
+      molecules:
+        type: array
+        items:
+          $ref: '#/definitions/StoichiometryMoleculeDTO'
+  StoichiometryMoleculeUpdateDTO:
+    description: Update payload for a molecule within stoichiometry
+    properties:
+      id:
+        type: integer
+        format: int64
+      coefficient:
+        type: number
+      mass:
+        type: number
+      moles:
+        type: number
+      expectedAmount:
+        type: number
+      actualAmount:
+        type: number
+      actualYield:
+        type: number
+      limitingReagent:
+        type: boolean
+      notes:
+        type: string
+  StoichiometryUpdateDTO:
+    description: Update payload for stoichiometry
+    properties:
+      id:
+        type: integer
+        format: int64
+      molecules:
+        type: array
+        items:
+          $ref: '#/definitions/StoichiometryMoleculeUpdateDTO'
 responses:
   UnprocessableQuery:
     description: Query could not be processed.

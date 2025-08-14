@@ -13,15 +13,8 @@ import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
-import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
-import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
-import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
-import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
-import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.ChemistryService;
-import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -44,11 +37,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -429,110 +420,6 @@ public class RSChemController extends BaseController {
       log.info(
           "Couldn't retrieve elementalAnalysis for chemId {} and revision {}", chemId, revision);
       return new AjaxReturnObject<>(ErrorList.of("Couldn't retrieve info for chemId: " + chemId));
-    }
-  }
-
-  @Data
-  public static class ChemicalDTO {
-    private String chemical;
-  }
-
-  @PostMapping("stoichiometry/molecule/info")
-  @ResponseBody
-  public AjaxReturnObject<StoichiometryMoleculeDTO> getMoleculeInfo(
-      @RequestBody ChemicalDTO chemicalDTO) {
-    Optional<ElementalAnalysisDTO> analysis =
-        chemistryService.getMoleculeInfo(chemicalDTO.getChemical());
-    if (analysis.isPresent()) {
-      ElementalAnalysisDTO dto = analysis.get();
-      MoleculeInfoDTO molInfo = null;
-      if (dto.getMoleculeInfo() != null && !dto.getMoleculeInfo().isEmpty()) {
-        molInfo = dto.getMoleculeInfo().get(0);
-      }
-      if (molInfo != null) {
-        StoichiometryMoleculeDTO molDto = StoichiometryMapper.moleculeInfoToDTO(molInfo);
-        return new AjaxReturnObject<>(molDto);
-      }
-      log.info(
-          "Molecule analysis present but no molecule entries for smiles: {}",
-          chemicalDTO.getChemical());
-      return new AjaxReturnObject<>(ErrorList.of("Couldn't retrieve info for provided structure"));
-    } else {
-      log.info("Couldn't retrieve molecule info for smiles: {}", chemicalDTO.getChemical());
-      return new AjaxReturnObject<>(ErrorList.of("Couldn't retrieve info for provided structure"));
-    }
-  }
-
-  @GetMapping("stoichiometry")
-  @ResponseBody
-  public AjaxReturnObject<StoichiometryDTO> getStoichiometry(
-      @RequestParam("chemId") long chemId,
-      @RequestParam(value = "revision", required = false) Integer revision,
-      Principal principal) {
-    User subject = getUserByUsername(principal.getName());
-    Optional<Stoichiometry> stoichiometry =
-        chemistryService.getStoichiometry(chemId, revision, subject);
-    if (stoichiometry.isEmpty()) {
-      String message =
-          String.format(
-              "No stoichiometry found for chemical with id %s and revision %s", chemId, revision);
-      log.info(message);
-      return new AjaxReturnObject<>(ErrorList.of(message));
-    }
-    StoichiometryDTO stoichiometryDTO = StoichiometryMapper.toDTO(stoichiometry.get());
-    return new AjaxReturnObject<>(stoichiometryDTO);
-  }
-
-  @PostMapping("stoichiometry")
-  @ResponseBody
-  public AjaxReturnObject<StoichiometryDTO> saveStoichiometry(
-      @RequestParam("chemId") long chemId,
-      @RequestParam(value = "revision", required = false) Integer revision,
-      Principal principal) {
-    User subject = getUserByUsername(principal.getName());
-    try {
-      Stoichiometry stoichiometry = chemistryService.createStoichiometry(chemId, revision, subject);
-      StoichiometryDTO stoichiometryDTO = StoichiometryMapper.toDTO(stoichiometry);
-      return new AjaxReturnObject<>(stoichiometryDTO);
-    } catch (StoichiometryException e) {
-      String message =
-          String.format(
-              "Problem creating stoichiometry for chemId: %s. %s", chemId, e.getMessage());
-      log.error(message, e);
-      return new AjaxReturnObject<>(ErrorList.of(message));
-    }
-  }
-
-  @PutMapping("stoichiometry")
-  @ResponseBody
-  public AjaxReturnObject<StoichiometryDTO> updateStoichiometry(
-      @RequestParam("stoichiometryId") long stoichiometryId,
-      @RequestBody StoichiometryUpdateDTO stoichiometryUpdateDTO,
-      Principal principal) {
-    User subject = getUserByUsername(principal.getName());
-    try {
-      Stoichiometry stoichiometry =
-          chemistryService.updateStoichiometry(stoichiometryUpdateDTO, subject);
-      StoichiometryDTO updatedStoichiometryDTO = StoichiometryMapper.toDTO(stoichiometry);
-      return new AjaxReturnObject<>(updatedStoichiometryDTO);
-    } catch (StoichiometryException e) {
-      String message = e.getMessage();
-      log.error("Stoichiometry error updating id {}: {}", stoichiometryId, message);
-      return new AjaxReturnObject<>(ErrorList.of("Error updating stoichiometry: " + message));
-    }
-  }
-
-  @DeleteMapping("stoichiometry")
-  @ResponseBody
-  public AjaxReturnObject<Boolean> deleteStoichiometry(
-      @RequestParam("stoichiometryId") long stoichiometryId, Principal principal) {
-    User subject = getUserByUsername(principal.getName());
-    boolean success = chemistryService.deleteStoichiometry(stoichiometryId, subject);
-    if (success) {
-      return new AjaxReturnObject<>(Boolean.TRUE);
-    } else {
-      return new AjaxReturnObject<>(
-          ErrorList.of("Error deleting stoichiometry with id " + stoichiometryId));
     }
   }
 

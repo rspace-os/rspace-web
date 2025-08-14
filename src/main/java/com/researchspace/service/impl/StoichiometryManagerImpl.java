@@ -35,19 +35,16 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   private final StoichiometryDao stoichiometryDao;
   private final RSChemElementManager rsChemElementManager;
   private final ChemicalSearcher chemicalSearcher;
-  private final ChemistryClient chemistryClient;
 
   @Autowired
   public StoichiometryManagerImpl(
       StoichiometryDao stoichiometryDao,
       RSChemElementManager rsChemElementManager,
-      ChemicalSearcher chemicalSearcher,
-      ChemistryClient chemistryClient) {
+      ChemicalSearcher chemicalSearcher) {
     super(stoichiometryDao);
     this.stoichiometryDao = stoichiometryDao;
     this.rsChemElementManager = rsChemElementManager;
     this.chemicalSearcher = chemicalSearcher;
-    this.chemistryClient = chemistryClient;
   }
 
   @Override
