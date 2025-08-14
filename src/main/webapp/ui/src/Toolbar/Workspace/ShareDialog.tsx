@@ -88,7 +88,7 @@ const ShareDialog = () => {
     new Map(),
   );
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { getShareInfoForMultiple, createShare } = useShare();
+  const { getShareInfoForMultiple, createShare, deleteShare } = useShare();
   const { getGroups } = useGroups();
   const { getGroupMembers } = useUserDetails();
 
@@ -283,11 +283,9 @@ const ShareDialog = () => {
       shares.some((share) => share.sharedTargetType === "GROUP"),
     );
     if (hasGroupShares) {
-      return Result.Error<null>([
-        new Error("Group sharing is not supported yet"),
-      ]);
+      return Result.Error([new Error("Group sharing is not supported yet")]);
     }
-    return Result.Ok<null>(null);
+    return Result.Ok(null);
   }, [newShares]);
 
   async function handleSave() {
@@ -299,15 +297,20 @@ const ShareDialog = () => {
 
     setSaving(true);
     try {
-      await Promise.all(
-        Array.from(newShares.entries())
-          .map(([globalId, shares]) => ({
-            id: parseInt(globalId.replace(/\D/g, ""), 10),
-            shares,
-          }))
-          .filter(({ id, shares }) => !isNaN(id) && shares.length > 0)
-          .map(({ id, shares }) => createShare(id, shares)),
-      );
+      const deletionPromises = Array.from(permissionChanges.entries())
+        .filter(([_, permission]) => permission === "UNSHARE")
+        .map(([shareId, _]) => deleteShare(parseInt(shareId, 10)));
+
+      const creationPromises = Array.from(newShares.entries())
+        .map(([globalId, shares]) => ({
+          id: parseInt(globalId.replace(/\D/g, ""), 10),
+          shares,
+        }))
+        .filter(({ id, shares }) => !isNaN(id) && shares.length > 0)
+        .map(({ id, shares }) => createShare(id, shares));
+
+      await Promise.all([...deletionPromises, ...creationPromises]);
+
       trackEvent("user:saves:share_changes:workspace");
       setPermissionChanges(new Map());
       setNewShares(new Map());
@@ -649,8 +652,9 @@ const ShareDialog = () => {
                                       <MenuItem
                                         value="UNSHARE"
                                         sx={{ color: "error.main" }}
+                                        disabled
                                       >
-                                        Remove
+                                        Unshare
                                       </MenuItem>
                                     </Select>
                                   </FormControl>

@@ -79,6 +79,11 @@ export default function useShare(): {
    * Creates new shares for an item.
    */
   createShare: (itemId: number, newShares: NewShare[]) => Promise<void>;
+
+  /**
+   * Deletes a single share by its ID.
+   */
+  deleteShare: (shareId: number) => Promise<void>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -188,5 +193,26 @@ export default function useShare(): {
     }
   }
 
-  return { getShareInfo, getShareInfoForMultiple, createShare };
+  async function deleteShare(shareId: number): Promise<void> {
+    try {
+      await axios.delete(`/api/v1/share/${shareId}`, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error deleting share",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        }),
+      );
+      throw new Error("Could not delete share", {
+        cause: e,
+      });
+    }
+  }
+
+  return { getShareInfo, getShareInfoForMultiple, createShare, deleteShare };
 }
