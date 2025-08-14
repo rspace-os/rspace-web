@@ -18,6 +18,7 @@ export type NewShare = {
   sharedTargetType: "USER" | "GROUP";
   permission: "READ" | "EDIT";
   sharedFolderPath: string | null;
+  sharedFolderId?: number; // For group shares
 };
 
 export type ShareInfo = {
@@ -154,12 +155,7 @@ export default function useShare(): {
     newShares: NewShare[],
   ): Promise<void> {
     // Check for group shares and throw error
-    const hasGroupShares = newShares.some(
-      (share) => share.sharedTargetType === "GROUP",
-    );
-    if (hasGroupShares) {
-      throw new Error("Group sharing is not supported yet");
-    }
+    // Group shares are now supported
 
     try {
       const requestData: CreateShareRequest = {
@@ -170,7 +166,13 @@ export default function useShare(): {
             id: share.sharedTargetId,
             permission: share.permission,
           })),
-        groups: [],
+        groups: newShares
+          .filter((share) => share.sharedTargetType === "GROUP")
+          .map((share) => ({
+            id: share.sharedTargetId,
+            permission: share.permission,
+            sharedFolderId: share.sharedFolderId || share.sharedTargetId, // Use group's shared folder ID
+          })),
       };
 
       await axios.post("/api/v1/share", requestData, {

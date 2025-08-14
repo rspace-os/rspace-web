@@ -22,6 +22,7 @@ type FolderTreeNodeData = FolderRecord & {
 type FolderTreeProps = {
   onFolderSelect?: (folder: FolderRecord) => void;
   selectedFolderId?: number;
+  rootFolderId?: number;
 };
 
 const PAGE_SIZE = 20;
@@ -29,6 +30,7 @@ const PAGE_SIZE = 20;
 export default function FolderTree({
   onFolderSelect,
   selectedFolderId,
+  rootFolderId,
 }: FolderTreeProps): React.ReactNode {
   const { getFolderTree } = useFolders();
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
@@ -119,8 +121,8 @@ export default function FolderTree({
   );
 
   React.useEffect(() => {
-    doNotAwait(loadFolderContents());
-  }, [loadFolderContents]);
+    void loadFolderContents(rootFolderId);
+  }, [loadFolderContents, rootFolderId]);
 
   const handleToggle = React.useCallback(
     (event: React.SyntheticEvent, itemIds: string[]) => {
@@ -131,7 +133,7 @@ export default function FolderTree({
       newlyExpanded.forEach((itemId) => {
         const folderId = parseInt(itemId, 10);
         if (!isNaN(folderId)) {
-          doNotAwait(loadFolderContents(folderId));
+          doNotAwait(() => loadFolderContents(folderId));
         }
       });
     },
@@ -192,7 +194,7 @@ export default function FolderTree({
       const node = folderId ? findNode(treeData, folderId) : null;
       const nextPage = node ? (node.currentPage || 0) + 1 : 1;
 
-      doNotAwait(loadFolderContents(folderId, nextPage, true));
+      doNotAwait(() => loadFolderContents(folderId, nextPage, true));
     },
     [treeData, loadFolderContents],
   );
@@ -255,7 +257,7 @@ export default function FolderTree({
   return (
     <SimpleTreeView
       expandedItems={expandedItems}
-      selectedItems={selectedFolderId ? [selectedFolderId.toString()] : []}
+      selectedItems={selectedFolderId ? selectedFolderId.toString() : undefined}
       onExpandedItemsChange={handleToggle}
       onSelectedItemsChange={handleSelect}
       slots={{
