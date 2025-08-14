@@ -36,6 +36,7 @@ import useShare, {
 import { doNotAwait } from "../../util/Util";
 import useGroups, { Group } from "../../hooks/api/useGroups";
 import useUserDetails, { GroupMember } from "../../hooks/api/useUserDetails";
+import useWhoAmI from "../../hooks/api/useWhoAmI";
 import UserDetails from "../../Inventory/components/UserDetails";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
@@ -91,6 +92,7 @@ const ShareDialog = () => {
   const { getShareInfoForMultiple, createShare, deleteShare } = useShare();
   const { getGroups } = useGroups();
   const { getGroupMembers } = useUserDetails();
+  const currentUser = useWhoAmI();
 
   React.useEffect(() => {
     function handler(event: Event) {
@@ -137,10 +139,15 @@ const ShareDialog = () => {
             optionType: "GROUP" as const,
           }));
 
-          const userOptions: ShareOption[] = groupMembers.map((user) => ({
-            ...user,
-            optionType: "USER" as const,
-          }));
+          const userOptions: ShareOption[] = groupMembers
+            .filter((user) => {
+              if (currentUser.tag !== "success") return true;
+              return user.id !== currentUser.value.id;
+            })
+            .map((user) => ({
+              ...user,
+              optionType: "USER" as const,
+            }));
 
           setShareOptions([...groupOptions, ...userOptions]);
         })
@@ -164,7 +171,7 @@ const ShareDialog = () => {
           setOptionsLoading(false);
         });
     }
-  }, [open, getGroups, getGroupMembers]);
+  }, [open, getGroups, getGroupMembers, currentUser]);
 
   // Compute share options with disabled state based on current shares and new shares
   const shareOptionsWithState: ShareOptionWithState[] = React.useMemo(() => {
