@@ -131,7 +131,7 @@ class StoichiometryPlugin {
         const currentNode = editor.selection.getNode();
         currentNode.removeAttribute("data-has-stoichiometry-table");
         editor.execCommand("mceReplaceContent", false, currentNode.outerHTML);
-        editor.setDirty(false);
+        editor.setDirty(true);
       };
 
       dialogRenderer.next({
