@@ -236,6 +236,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
     existing.setActualYield(u.getActualYield());
     existing.setLimitingReagent(u.getLimitingReagent());
     existing.setNotes(u.getNotes());
+    existing.setRole(u.getRole());
   }
 
   private void removeMoleculesNotInKeep(

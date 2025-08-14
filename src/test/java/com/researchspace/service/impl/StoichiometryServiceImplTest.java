@@ -66,8 +66,12 @@ public class StoichiometryServiceImplTest {
     when(stoichiometryManager.findByParentReactionId(1L)).thenReturn(Optional.of(stoich));
     when(permissionUtils.isPermitted(any(), eq(PermissionType.READ), eq(user))).thenReturn(false);
 
-    Exception ex = assertThrows(AuthorizationException.class, () -> service.getByParentChemical(1L, null, user));
-    assertEquals("User does not have read permissions on document containing stoichiometry", ex.getMessage());
+    Exception ex =
+        assertThrows(
+            AuthorizationException.class, () -> service.getByParentChemical(1L, null, user));
+    assertEquals(
+        "User does not have read permissions on document containing stoichiometry",
+        ex.getMessage());
   }
 
   @Test
