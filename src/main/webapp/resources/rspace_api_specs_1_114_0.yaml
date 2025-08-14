@@ -2693,10 +2693,34 @@ paths:
           required: false
           type: integer
       responses:
-        200:
+        '200':
           description: Stoichiometry
           schema:
             $ref: '#/definitions/StoichiometryDTO'
+        '401':
+          description: You should have view permissions on the document containing the stoichiometry table.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have read permissions on document containing stoichiometry"
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found for chemical with id 1 and revision 2"
+        '500':
+          description: An issue while retrieving the stoichiometry.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Error retrieving stoichiometry."
     post:
       summary: Create stoichiometry for a chemical
       tags:
@@ -2712,10 +2736,34 @@ paths:
           required: false
           type: integer
       responses:
-        200:
+        '200':
           description: Stoichiometry
           schema:
             $ref: '#/definitions/StoichiometryDTO'
+        '401':
+          description: You should have write permissions on the document containing the stoichiometry table.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have write permissions on document containing stoichiometry"
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found for chemical with id 1 and revision 2"
+        '500':
+          description: An issue while creating the stoichiometry.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Stoichiometry already exists for reaction chemId=1, stoichId=2"
     put:
       summary: Update stoichiometry
       tags:
@@ -2732,10 +2780,26 @@ paths:
           schema:
             $ref: '#/definitions/StoichiometryUpdateDTO'
       responses:
-        200:
+        '200':
           description: Updated stoichiometry
           schema:
             $ref: '#/definitions/StoichiometryDTO'
+        '401':
+          description: You should have write permissions on the document containing the stoichiometry table.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have write permissions on document containing stoichiometry"
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found for chemical with id 1 and revision 2"
     delete:
       summary: Delete stoichiometry
       tags:
@@ -2747,10 +2811,26 @@ paths:
           type: integer
           format: int64
       responses:
-        200:
+        '200':
           description: Deletion result
           schema:
             type: boolean
+        '401':
+          description: You should have write permissions on the document containing the stoichiometry table.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have write permissions on document containing stoichiometry"
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found for chemical with id 1 and revision 2"
   /stoichiometry/molecule/info:
     post:
       summary: Get molecule info for stoichiometry
@@ -2766,10 +2846,26 @@ paths:
               chemical:
                 type: string
       responses:
-        200:
+        '200':
           description: Molecule info
           schema:
             $ref: '#/definitions/StoichiometryMoleculeDTO'
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found for chemical with id 1 and revision 2"
+        '500':
+          description: An issue while creating the stoichiometry.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Couldn't retrieve molecule info for provided structure"
   /status:
     get:
       summary: Get API status

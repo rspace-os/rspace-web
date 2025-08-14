@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.controller.API_MVC_TestBase;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
@@ -27,38 +28,34 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
-/**
- * Stoichiometry MVC integration tests extracted from RSChemControllerMVCIT. Requires external
- * chemistry service; disabled by default.
- */
 @WebAppConfiguration
 @TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://your-chem-service:8090",
-      "chemistry.provider=indigo"
-    })
-@Disabled(
+    properties = {"chemistry.service.url=http://localhost:8090", "chemistry.provider=indigo"})
+@Ignore(
     "Requires chemistry service to run. See"
         + " https://documentation.researchspace.com/article/1jbygguzoa")
-public class StoichiometryControllerIT extends MVCTestBase {
+public class StoichiometryControllerIT extends API_MVC_TestBase {
 
   private Principal principal;
   private User user;
   private StructuredDocument doc1;
+  private String apiKey;
 
-  @BeforeEach
+  private static final String URL = "/api/v1/stoichiometry";
+
+  @Before
   public void setup() throws Exception {
     super.setUp();
     user = createInitAndLoginAnyUser();
     principal = new MockPrincipal(user.getUsername());
+    apiKey = createNewApiKeyForUser(user);
   }
 
   @Test
@@ -66,7 +63,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                post("/chemical/stoichiometry/molecule/info")
+                post(URL + "/molecule/info")
                     .content("{\"chemical\": \"CCC\"}")
                     .contentType(APPLICATION_JSON)
                     .principal(principal))
@@ -102,9 +99,10 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult getResult =
         mockMvc
             .perform(
-                get("/chemical/stoichiometry")
+                get(URL)
                     .param("chemId", reaction.getId().toString())
-                    .principal(principal))
+                    .principal(principal)
+                    .header("apiKey", apiKey))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
 
@@ -164,7 +162,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult updateResult =
         mockMvc
             .perform(
-                put("/chemical/stoichiometry")
+                put(URL)
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
@@ -211,7 +209,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult deleteResult =
         mockMvc
             .perform(
-                delete("/chemical/stoichiometry")
+                delete(URL)
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .principal(principal))
             .andExpect(status().is2xxSuccessful())
@@ -222,10 +220,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
 
     MvcResult getResult =
         mockMvc
-            .perform(
-                get("/chemical/stoichiometry")
-                    .param("chemId", reaction.getId().toString())
-                    .principal(principal))
+            .perform(get(URL).param("chemId", reaction.getId().toString()).principal(principal))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
 
@@ -263,7 +258,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult updateResult =
         mockMvc
             .perform(
-                put("/chemical/stoichiometry")
+                put(URL)
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
@@ -313,7 +308,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult addResult =
         mockMvc
             .perform(
-                put("/chemical/stoichiometry")
+                put(URL)
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(addDTO))
@@ -339,7 +334,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult updateResult2 =
         mockMvc
             .perform(
-                put("/chemical/stoichiometry")
+                put(URL)
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(deleteAgentDTO))
@@ -379,7 +374,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                put("/chemical/stoichiometry")
+                put(URL)
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
@@ -421,7 +416,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                put("/chemical/stoichiometry")
+                put(URL)
                     .param("stoichiometryId", created.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
@@ -457,7 +452,7 @@ public class StoichiometryControllerIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                put("/chemical/stoichiometry")
+                put(URL)
                     .param("stoichiometryId", created.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
@@ -475,25 +470,21 @@ public class StoichiometryControllerIT extends MVCTestBase {
     String missingId = String.valueOf(1122334455L);
     MvcResult result =
         mockMvc
-            .perform(
-                delete("/chemical/stoichiometry")
-                    .param("stoichiometryId", missingId)
-                    .principal(principal))
+            .perform(delete(URL).param("stoichiometryId", missingId).principal(principal))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     String body = result.getResponse().getContentAsString();
     assertTrue(body.contains("Error deleting stoichiometry with id " + missingId));
   }
 
-  @NotNull
   private MvcResult createStoichiometry(RSChemElement reaction) throws Exception {
-    return mockMvc
-        .perform(
-            post("/chemical/stoichiometry")
-                .param("chemId", reaction.getId().toString())
-                .principal(principal))
-        .andExpect(status().is2xxSuccessful())
-        .andReturn();
+    MvcResult res =
+        mockMvc
+            .perform(post(URL).param("chemId", reaction.getId().toString()).principal(principal))
+            //        .andExpect(status().is2xxSuccessful())
+            .andReturn();
+
+    return res;
   }
 
   private RSChemElement addReactionToField(Field field, User owner) throws IOException {

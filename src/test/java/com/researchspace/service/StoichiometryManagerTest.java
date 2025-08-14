@@ -8,8 +8,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.StoichiometryDao;
@@ -124,7 +122,7 @@ public class StoichiometryManagerTest {
             new ChemicalImportException("Error searching chemicals", HttpStatus.BAD_REQUEST));
 
     when(stoichiometryDao.save(any(Stoichiometry.class)))
-            .thenReturn(Stoichiometry.builder().id(1L).parentReaction(parentReaction).build());
+        .thenReturn(Stoichiometry.builder().id(1L).parentReaction(parentReaction).build());
 
     Stoichiometry result =
         stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);

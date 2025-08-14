@@ -3,12 +3,14 @@ package com.researchspace.service.impl;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
+import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
@@ -62,7 +64,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       throw new NotFoundException(message);
     } else if (!hasPermissions(
         stoichiometryOpt.get().getParentReaction().getRecord(), user, PermissionType.READ)) {
-      throw new AuthorizationException("User does not have permission to read stoichiometry");
+      throw new AuthorizationException("User does not have read permissions on document containing stoichiometry");
     }
     return stoichiometryOpt.get();
   }
@@ -75,9 +77,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       throw new NotFoundException("Record containing chemical with id " + chemId + " not found");
     }
     if (!permissionUtils.isPermitted((BaseRecord) owningRecord, PermissionType.WRITE, user)) {
-      throw new AuthorizationException(
-          "User not authorised to create stoichiometry for record with id: "
-              + owningRecord.getId());
+      throw new AuthorizationException("User does not have write permissions on document containing stoichiometry");
     }
     ;
 
@@ -112,7 +112,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
           "Record containing stoichiometry with id " + stoichiometryId + " not found");
     }
     if (!hasPermissions(owningRecord, user, PermissionType.WRITE)) {
-      throw new AuthorizationException("User does not have permission to update stoichiometry");
+      throw new AuthorizationException("User does not have write permissions on document containing stoichiometry");
     }
 
     return stoichiometryManager.update(stoichiometryUpdateDTO, user);
@@ -123,7 +123,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
     Record owningRecord = stoichiometry.getParentReaction().getRecord();
     if (!hasPermissions(owningRecord, user, PermissionType.WRITE)) {
-      throw new AuthorizationException("User does not have permission to delete stoichiometry");
+      throw new AuthorizationException("User does not have write permissions on document containing stoichiometry");
     }
     try {
       stoichiometryManager.remove(stoichiometryId);
@@ -133,18 +133,15 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   }
 
   @Override
-  public com.researchspace.model.stoichiometry.StoichiometryMolecule getMoleculeInfo(
+  public StoichiometryMolecule getMoleculeInfo(
       String smiles) {
     if (smiles == null || smiles.isBlank()) {
-      throw new javax.ws.rs.NotFoundException("Couldn't retrieve info for provided structure");
+      throw new StoichiometryException("Couldn't retrieve molecule info for provided structure");
     }
     Optional<ElementalAnalysisDTO> analysis = rsChemElementManager.getInfo(smiles);
-    if (analysis.isPresent()
-        && analysis.get().getMoleculeInfo() != null
-        && !analysis.get().getMoleculeInfo().isEmpty()) {
-      com.researchspace.model.dtos.chemistry.MoleculeInfoDTO molInfo =
+    if (analysisExists(analysis)) {
+     MoleculeInfoDTO molInfo =
           analysis.get().getMoleculeInfo().get(0);
-      // Build a transient StoichiometryMolecule with available fields; do not persist here
       return com.researchspace.model.stoichiometry.StoichiometryMolecule.builder()
           .role(molInfo.getRole())
           .smiles(molInfo.getSmiles())
@@ -153,6 +150,12 @@ public class StoichiometryServiceImpl implements StoichiometryService {
           .limitingReagent(false)
           .build();
     }
-    throw new javax.ws.rs.NotFoundException("Couldn't retrieve info for provided structure");
+    throw new NotFoundException("Couldn't retrieve molecule info for provided structure");
+  }
+
+  private static boolean analysisExists(Optional<ElementalAnalysisDTO> analysis) {
+    return analysis.isPresent()
+            && analysis.get().getMoleculeInfo() != null
+            && !analysis.get().getMoleculeInfo().isEmpty();
   }
 }
