@@ -37,6 +37,7 @@ import { doNotAwait } from "../../util/Util";
 import useGroups, { Group } from "../../hooks/api/useGroups";
 import useUserDetails, { GroupMember } from "../../hooks/api/useUserDetails";
 import useWhoAmI from "../../hooks/api/useWhoAmI";
+import useFolders from "../../hooks/api/useFolders";
 import UserDetails from "../../Inventory/components/UserDetails";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
@@ -88,10 +89,15 @@ const ShareDialog = () => {
   const [newShares, setNewShares] = React.useState<Map<string, NewShare[]>>(
     new Map(),
   );
+  // Track folder names for group shares: Map<sharedTargetId, folderName>
+  const [groupFolderNames, setGroupFolderNames] = React.useState<
+    Map<number, string>
+  >(new Map());
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { getShareInfoForMultiple, createShare, deleteShare } = useShare();
   const { getGroups } = useGroups();
   const { getGroupMembers } = useUserDetails();
+  const { getFolder } = useFolders();
   const currentUser = useWhoAmI();
 
   React.useEffect(() => {
@@ -113,8 +119,44 @@ const ShareDialog = () => {
     if (open && globalIds.length > 0) {
       setLoading(true);
       getShareInfoForMultiple(globalIds)
-        .then((data) => {
+        .then(async (data) => {
           setShareData(data);
+
+          // Collect all unique group IDs that need folder names
+          const groupIds = new Set<number>();
+          for (const shares of data.values()) {
+            for (const share of shares) {
+              if (share.sharedTargetType === "GROUP") {
+                groupIds.add(share.sharedTargetId);
+              }
+            }
+          }
+
+          // Fetch folder names for all groups
+          if (groupIds.size > 0) {
+            const folderNameMap = new Map<number, string>();
+            const groups = await getGroups();
+
+            await Promise.allSettled(
+              Array.from(groupIds).map(async (groupId) => {
+                const group = groups.find((g) => g.id === groupId);
+                if (group?.sharedFolderId) {
+                  try {
+                    const folder = await getFolder(group.sharedFolderId);
+                    folderNameMap.set(groupId, folder.name);
+                  } catch (error) {
+                    console.error(
+                      `Failed to fetch folder for group ${groupId}:`,
+                      error,
+                    );
+                    folderNameMap.set(groupId, "Unknown folder");
+                  }
+                }
+              }),
+            );
+
+            setGroupFolderNames(folderNameMap);
+          }
         })
         .catch((error) => {
           console.error("Failed to fetch sharing information:", error);
@@ -132,7 +174,7 @@ const ShareDialog = () => {
 
       // Fetch both groups and group members simultaneously
       Promise.all([getGroups(), getGroupMembers()])
-        .then(([groups, groupMembers]) => {
+        .then(async ([groups, groupMembers]) => {
           // Combine groups and users into a single options array
           const groupOptions: ShareOption[] = groups.map((group) => ({
             ...group,
@@ -150,17 +192,67 @@ const ShareDialog = () => {
             }));
 
           setShareOptions([...groupOptions, ...userOptions]);
+
+          // Fetch folder names for all groups in options
+          if (groups.length > 0) {
+            const folderNameMap = new Map<number, string>();
+
+            await Promise.allSettled(
+              groups.map(async (group) => {
+                if (group.sharedFolderId) {
+                  try {
+                    const folder = await getFolder(group.sharedFolderId);
+                    folderNameMap.set(group.id, folder.name);
+                  } catch (error) {
+                    console.error(
+                      `Failed to fetch folder for group ${group.id}:`,
+                      error,
+                    );
+                    folderNameMap.set(group.id, "Unknown folder");
+                  }
+                }
+              }),
+            );
+
+            setGroupFolderNames((prev) => new Map([...prev, ...folderNameMap]));
+          }
         })
         .catch((error) => {
           console.error("Failed to fetch share options:", error);
           // Try to fetch just groups as fallback
           getGroups()
-            .then((groups) => {
+            .then(async (groups) => {
               const groupOptions: ShareOption[] = groups.map((group) => ({
                 ...group,
                 optionType: "GROUP" as const,
               }));
               setShareOptions(groupOptions);
+
+              // Fetch folder names for groups in fallback
+              if (groups.length > 0) {
+                const folderNameMap = new Map<number, string>();
+
+                await Promise.allSettled(
+                  groups.map(async (group) => {
+                    if (group.sharedFolderId) {
+                      try {
+                        const folder = await getFolder(group.sharedFolderId);
+                        folderNameMap.set(group.id, folder.name);
+                      } catch (error) {
+                        console.error(
+                          `Failed to fetch folder for group ${group.id}:`,
+                          error,
+                        );
+                        folderNameMap.set(group.id, "Unknown folder");
+                      }
+                    }
+                  }),
+                );
+
+                setGroupFolderNames(
+                  (prev) => new Map([...prev, ...folderNameMap]),
+                );
+              }
             })
             .catch((groupError) => {
               console.error("Failed to fetch groups as fallback:", groupError);
@@ -171,7 +263,7 @@ const ShareDialog = () => {
           setOptionsLoading(false);
         });
     }
-  }, [open, getGroups, getGroupMembers, currentUser]);
+  }, [open, currentUser]);
 
   // Compute share options with disabled state based on current shares and new shares
   const shareOptionsWithState: ShareOptionWithState[] = React.useMemo(() => {
@@ -278,6 +370,7 @@ const ShareDialog = () => {
     setOptionsLoading(false);
     setPermissionChanges(new Map());
     setNewShares(new Map());
+    setGroupFolderNames(new Map());
   }
 
   function handleCancel() {
@@ -322,7 +415,43 @@ const ShareDialog = () => {
       setPermissionChanges(new Map());
       setNewShares(new Map());
       setLoading(true);
-      setShareData(await getShareInfoForMultiple(globalIds));
+      const data = await getShareInfoForMultiple(globalIds);
+      setShareData(data);
+
+      // Refresh folder names for any new group shares
+      const groupIds = new Set<number>();
+      for (const shares of data.values()) {
+        for (const share of shares) {
+          if (share.sharedTargetType === "GROUP") {
+            groupIds.add(share.sharedTargetId);
+          }
+        }
+      }
+
+      if (groupIds.size > 0) {
+        const folderNameMap = new Map<number, string>();
+        const groups = await getGroups();
+
+        await Promise.allSettled(
+          Array.from(groupIds).map(async (groupId) => {
+            const group = groups.find((g) => g.id === groupId);
+            if (group?.sharedFolderId) {
+              try {
+                const folder = await getFolder(group.sharedFolderId);
+                folderNameMap.set(groupId, folder.name);
+              } catch (error) {
+                console.error(
+                  `Failed to fetch folder for group ${groupId}:`,
+                  error,
+                );
+                folderNameMap.set(groupId, "Unknown folder");
+              }
+            }
+          }),
+        );
+
+        setGroupFolderNames(folderNameMap);
+      }
     } catch (error) {
       console.error("Failed to save shares:", error);
     } finally {
@@ -385,7 +514,9 @@ const ShareDialog = () => {
                     sharedTargetType: newValue.optionType,
                     permission: "READ", // default permission
                     sharedFolderPath:
-                      newValue.optionType === "GROUP" ? "/" : null, // root for groups, empty for users
+                      newValue.optionType === "GROUP"
+                        ? groupFolderNames.get(newValue.id) || "Loading..."
+                        : null,
                   };
 
                   updatedNewShares.set(globalId, [
@@ -586,7 +717,9 @@ const ShareDialog = () => {
                                     <>&mdash;</>
                                   ) : (
                                     <>
-                                      UserGroup_SHARED/foo/bar
+                                      {groupFolderNames.get(
+                                        share.sharedTargetId,
+                                      ) || "Loading..."}
                                       <Button size="small" sx={{ ml: 1 }}>
                                         Change
                                       </Button>

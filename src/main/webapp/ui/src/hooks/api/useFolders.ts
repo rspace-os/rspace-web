@@ -17,6 +17,22 @@ export type FolderTreeResponse = {
   records: ReadonlyArray<FolderRecord>;
 };
 
+export type FolderResponse = {
+  id: number;
+  globalId: string;
+  name: string;
+  created: string;
+  lastModified: string;
+  parentFolderId: number | null;
+  notebook: boolean;
+  mediaType: string | null;
+  pathToRootFolder: string | null;
+  _links: Array<{
+    link: string;
+    rel: string;
+  }>;
+};
+
 type InternalFolderTreeResponse = {
   totalHits: number;
   pageNumber: number;
@@ -59,6 +75,7 @@ export default function useFolders(): {
     pageNumber?: number,
     pageSize?: number,
   ) => Promise<FolderTreeResponse>;
+  getFolder: (id: number) => Promise<FolderResponse>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -117,5 +134,37 @@ export default function useFolders(): {
     [getToken, addAlert],
   );
 
-  return { getFolderTree };
+  const getFolder = React.useCallback(
+    async (id: number): Promise<FolderResponse> => {
+      try {
+        const { data } = await axios.get<FolderResponse>(
+          `/api/v1/folders/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
+            },
+            params: {
+              includePathToRootFolder: "true",
+            },
+          },
+        );
+
+        return data;
+      } catch (e) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error fetching folder",
+            message: getErrorMessage(e, "An unknown error occurred."),
+          }),
+        );
+        throw new Error("Could not fetch folder", {
+          cause: e,
+        });
+      }
+    },
+    [getToken, addAlert],
+  );
+
+  return { getFolderTree, getFolder };
 }
