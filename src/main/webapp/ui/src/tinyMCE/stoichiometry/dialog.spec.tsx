@@ -5,6 +5,7 @@ import {
   StoichiometryDialogWithTableStory,
 } from "./dialog.story";
 import * as Jwt from "jsonwebtoken";
+import AxeBuilder from "@axe-core/playwright";
 
 const createOnTableCreatedSpy = () => {
   let called = false;
@@ -111,6 +112,7 @@ const feature = test.extend<{
     "the delete button should be visible": () => Promise<void>;
     "the confirmation dialog should be displayed": () => Promise<void>;
     "the table should be hidden": () => Promise<void>;
+    "there shouldn't be any axe violations": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
 }>({
@@ -249,6 +251,32 @@ const feature = test.extend<{
       "the table should be hidden": async () => {
         const table = page.getByRole("grid");
         await expect(table).not.toBeVisible();
+      },
+      "there shouldn't be any axe violations": async () => {
+        const accessibilityScanResults = await new AxeBuilder({
+          page,
+        }).analyze();
+        expect(
+          accessibilityScanResults.violations.filter((v) => {
+            /*
+             * These violations are expected in component tests as we're not rendering
+             * a complete page with proper document structure:
+             *
+             * 1. MUI DataGrid renders its immediate children with role=presentation,
+             *    which Firefox considers to be a violation
+             * 2. Component tests don't have main landmarks as they're isolated components
+             * 3. Component tests typically don't have h1 headings as they're not full pages
+             * 4. Content not in landmarks is expected in component testing context
+             */
+            return (
+              v.description !==
+                "Ensure elements with an ARIA role that require child roles contain them" &&
+              v.id !== "landmark-one-main" &&
+              v.id !== "page-has-heading-one" &&
+              v.id !== "region"
+            );
+          }),
+        ).toEqual([]);
       },
     });
   },
@@ -460,6 +488,17 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the table is displayed"]();
     },
   );
+
+  feature("Has no accessibility violations", async ({ Given, Then }) => {
+    await Given["the dialog is open with a stoichiometry table"]();
+    await Then["there shouldn't be any axe violations"]();
+  });
+
+  feature("supports high-contrast mode", async ({ Given, Then, page }) => {
+    page.emulateMedia({ contrast: "more" });
+    await Given["the dialog is open with a stoichiometry table"]();
+    await Then["there shouldn't be any axe violations"]();
+  });
 
   feature(
     "invokes callback when table is successfully created",

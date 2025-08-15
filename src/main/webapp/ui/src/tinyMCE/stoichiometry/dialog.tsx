@@ -166,7 +166,13 @@ function StandaloneDialogInner({
       maxWidth="xl"
       fullWidth
     >
-      <AppBar variant="dialog" currentPage="Chemistry" accessibilityTips={{}} />
+      <AppBar
+        variant="dialog"
+        currentPage="Chemistry"
+        accessibilityTips={{
+          supportsHighContrastMode: true,
+        }}
+      />
       <DialogTitle id={titleId} component="h3">
         Reaction Table
       </DialogTitle>

@@ -630,6 +630,16 @@ test.describe("Stoichiometry Table", () => {
   });
 
   feature(
+    "supports high-contrast mode",
+    async ({ Given, Then, Once, page }) => {
+      page.emulateMedia({ contrast: "more" });
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      await Then["there shouldn't be any axe violations"]();
+    },
+  );
+
+  feature(
     "Renders and displays data correctly",
     async ({ Given, Once, Then }) => {
       await Given["the table is loaded with data"]();

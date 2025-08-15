@@ -800,8 +800,8 @@ const StoichiometryTable = React.forwardRef<
             backgroundColor: "#f8f9fa",
           },
           "& .stoichiometry-disabled-cell": {
-            backgroundColor: `${lighten(theme.palette.primary.background, 0.7)} !important`,
-            color: `${darken(theme.palette.primary.contrastText, 0.2)} !important`,
+            backgroundColor: `${lighten(theme.palette.primary.background, 0.3)} !important`,
+            color: `${theme.palette.primary.contrastText} !important`,
             fontStyle: "italic",
           },
         }}
