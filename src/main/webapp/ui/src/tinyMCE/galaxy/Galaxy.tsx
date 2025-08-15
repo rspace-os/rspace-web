@@ -17,26 +17,23 @@ import ErrorView from "@/eln/eln-external-workflows/ErrorView";
 import {WorkFlowIcon} from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
 import RadioGroup from "@mui/material/RadioGroup";
 import Radio from "@mui/material/Radio";
-import useLocalStorage from "@/util/useLocalStorage";
+import useLocalStorage from "../../hooks/browser/useLocalStorage";
 
 export type AttachedRecords = {
   id: string;
   html: HTMLElement;
-}
+};
 export type GalaxyArgs = {
   fieldId: string | undefined;
   recordId: string;
   attachedFileInfo: AttachedRecords [];
 };
-export type  RSpaceErrorResponse = { data: { exceptionMessage?: string, errorId?: string } };
-export type RSpaceError = { message: string, response: RSpaceErrorResponse };
+export type RSpaceErrorResponse = {
+  data: { exceptionMessage?: string; errorId?: string };
+};
+export type RSpaceError = { message: string; response: RSpaceErrorResponse };
 
-function Galaxy({
-                  fieldId,
-                  recordId,
-                  attachedFileInfo
-                }: GalaxyArgs) {
-
+function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
   parent.tinymce.activeEditor?.on("galaxy-used", function () {
     setDoUpload(true);
   });
@@ -46,12 +43,12 @@ function Galaxy({
     setUploading(true);
     window.parent.postMessage(
         {
-          mceAction: "uploading"
+        mceAction: "uploading",
         },
-        "*"
+      "*",
     );
     try {
-      const createdGalaxyHistoryHistory = ((await setUpGalaxyData()).data);
+      const createdGalaxyHistoryHistory = (await setUpGalaxyData()).data;
       handleUploadComplete();
       const historyId = createdGalaxyHistoryHistory.id;
       setHistoryId(historyId);
@@ -65,29 +62,31 @@ function Galaxy({
       setUploading(false);
       window.parent.postMessage(
           {
-            mceAction: "uploading-complete"
+          mceAction: "uploading-complete",
           },
-          "*"
+        "*",
       );
       window.parent.postMessage(
           {
-            mceAction: "enableClose"
+          mceAction: "enableClose",
           },
-          "*"
+        "*",
       );
     }
-  }
+  };
   const defaultServerAlias = "galaxy eu server";
   /**
    * Set default to EU as this is the domain of most RSpace users?
    **/
   const [targetAlias, setTargetAlias] = useLocalStorage(
       "galaxyServerChoice",
-      defaultServerAlias
+    defaultServerAlias,
   );
-  type GalaxyServer = { GALAXY_ALIAS: string, GALAXY_URL: string };
+  type GalaxyServer = { GALAXY_ALIAS: string; GALAXY_URL: string };
   const [servers, setServers] = React.useState<Array<GalaxyServer>>([]);
-  const [attachedFiles, setAttachedFiles] = useState<Array<AttachedRecords>>([]);
+  const [attachedFiles, setAttachedFiles] = useState<Array<AttachedRecords>>(
+    [],
+  );
   const [selectedAttachmentIds, setSelectedAttachmentIds] =
       useState<GridRowSelectionModel>([]);
   const [historyId, setHistoryId] = useState(null);
@@ -95,7 +94,8 @@ function Galaxy({
   const [uploading, setUploading] = useState(false);
   const [doUpload, setDoUpload] = useState(false);
   const [errorReason, setErrorReason] = useState<
-      (typeof ErrorReason)[keyof typeof ErrorReason]>(ErrorReason.None);
+    (typeof ErrorReason)[keyof typeof ErrorReason]
+  >(ErrorReason.None);
   const [errorMessage, setErrorMessage] = useState("");
   useEffect(() => {
     void setAttachedFiles(attachedFileInfo);
@@ -103,14 +103,17 @@ function Galaxy({
   useEffect(() => {
     async function getGalaxyIntegrationInfo() {
       try {
-        const galaxyIntegrationInfo = ((await axios
-        .get("/integration/integrationInfo", {
+        const galaxyIntegrationInfo = (
+          await axios.get("/integration/integrationInfo", {
           params: new URLSearchParams({name: "GALAXY"}),
           responseType: "json",
-        })).data);
-        const authenticatedServers = Object.entries(galaxyIntegrationInfo.data.options).filter(
-            ([k]) => k !== "GALAXY_CONFIGURED_SERVERS"
-        ).flatMap(auth => auth[1] as GalaxyServer);
+          })
+        ).data;
+        const authenticatedServers = Object.entries(
+          galaxyIntegrationInfo.data.options,
+        )
+          .filter(([k]) => k !== "GALAXY_CONFIGURED_SERVERS")
+          .flatMap((auth) => auth[1] as GalaxyServer);
         setServers(authenticatedServers);
         if (!authenticatedServers || authenticatedServers.length === 0) {
           throw new Error("You must configure at least one Galaxy server to use this feature. Please go to the Galaxy integration settings to do this. " +
@@ -134,19 +137,22 @@ function Galaxy({
   };
 
   const getGalaxyUrl = (): string => {
-    const targetServer = servers.find((server) => targetAlias === server.GALAXY_ALIAS);
+    const targetServer = servers.find(
+      (server) => targetAlias === server.GALAXY_ALIAS,
+    );
     return targetServer ? targetServer.GALAXY_URL : "";
-  }
+  };
 
   const setUpGalaxyData = async () => {
-
     return axios.post("/apps/galaxy/setUpDataInGalaxyFor", null, {
       params: {
-        targetAlias, recordId, fieldId,
-        selectedAttachmentIds: selectedAttachmentIds.join(",")
-      }
+        targetAlias,
+        recordId,
+        fieldId,
+        selectedAttachmentIds: selectedAttachmentIds.join(","),
+      },
     });
-  }
+  };
   /**
    * If tinymce event calls upload code directly, blocking modal does not wait for full upload before it closes.
    * Having tinymce event set a react state which then triggers the upload code resolves this issue.
@@ -157,9 +163,9 @@ function Galaxy({
         await sendDataToGalaxy();
         window.parent.postMessage(
             {
-              mceAction: "no-data-selected"
+            mceAction: "no-data-selected",
             },
-            "*"
+          "*",
         );
       }
     }
@@ -179,8 +185,12 @@ function Galaxy({
 
   function handleRequestError(error: RSpaceError) {
     // error.message is generated by axios and contains user unfriendly response codes, therefore only use as a last resort
-    let responseError = error.response.data.exceptionMessage ? error.response.data.exceptionMessage : error.message;
-    responseError += error.response.data.errorId ? ` (errorId: ${error.response.data.errorId})` : "";
+    let responseError = error.response.data.exceptionMessage
+      ? error.response.data.exceptionMessage
+      : error.message;
+    responseError += error.response.data.errorId
+      ? ` (errorId: ${error.response.data.errorId})`
+      : "";
     setErrorMessage(responseError);
     if (error.message.slice(error.message.length - 3) === "408") {
       setErrorReason(ErrorReason.Timeout);
@@ -197,43 +207,51 @@ function Galaxy({
 
   return (
       <StyledEngineProvider injectFirst>
-        <link rel="stylesheet" href='/styles/simplicity/typo.css'/>
-        <link rel="stylesheet" href='/styles/simplicity/typoEdit.css'/>
+      <link rel="stylesheet" href="/styles/simplicity/typo.css" />
+      <link rel="stylesheet" href="/styles/simplicity/typoEdit.css" />
         <CssBaseline/>
         <ThemeProvider theme={materialTheme}>
           {historyId && (
               <>
                 <TitledBox title="View Workflow in Galaxy" border>
                   <Stack spacing={2} alignItems="flex-start">
-                    <p>Your new history can be viewed here:{" "}</p>
-                    <p><a
+                <p>Your new history can be viewed here: </p>
+                <p>
+                  <a
                         href={`${getGalaxyUrl()}/histories/view?id=${historyId}`}
                         target="galaxyWithHistory"
                         rel="noreferrer noopener"
                     >
                       {historyName}
-                    </a>{" "}(Opens in new tab.){" "}{" "}(You must be logged into Galaxy or you
-                      will see 'Unnamed History'){" "}</p>
+                  </a>{" "}
+                  (Opens in new tab.) (You must be logged into Galaxy or you
+                  will see 'Unnamed History'){" "}
+                </p>
                     <p>
-                      <b> The data you have uploaded to Galaxy has links back to RSpace present
-                        in its 'annotation' metadata.
+                  <b>
+                    {" "}
+                    The data you have uploaded to Galaxy has links back to
+                    RSpace present in its 'annotation' metadata.
                       </b>
                     </p>
                     <p>
-                      <b> Data uploaded to this history is now viewable by clicking on the
-                        'workflow' icon which will appear in your document. Any invocations in
-                        Galaxy which use
-                        this data will be tracked in RSpace, the data being updated whenever you
-                        click on this 'workflow' icon. The badge count on the workflow icon
-                        indicates
-                        how many Galaxy Invocations are using the uploaded data.
+                  <b>
+                    {" "}
+                    Data uploaded to this history is now viewable by clicking on
+                    the 'workflow' icon which will appear in your document. Any
+                    invocations in Galaxy which use this data will be tracked in
+                    RSpace, the data being updated whenever you click on this
+                    'workflow' icon. The badge count on the workflow icon
+                    indicates how many Galaxy Invocations are using the uploaded
+                    data.
                       </b>
                     </p>
                   </Stack>
                 </TitledBox>
               </>
           )}
-          {!historyId && (<>
+        {!historyId && (
+          <>
             <TitledBox title="Choose Data" border>
               <Stack spacing={2} alignItems="flex-start">
                 {servers && (
@@ -281,7 +299,7 @@ function Galaxy({
                 <Modal
                     open={uploading}
                     aria-label="Please wait, uploading data to galaxy is in progress"
-                    title={'Galaxy Upload In Progress'}
+                  title={"Galaxy Upload In Progress"}
                 >
                   <Grid
                       container
@@ -289,11 +307,16 @@ function Galaxy({
                       direction="column"
                       alignItems="center"
                       justifyContent="center"
-                      sx={{minHeight: '100vh'}}
+                    sx={{ minHeight: "100vh" }}
                   >
                     <Grid item xs={3}>
-                      {uploading &&
-                          <CircularProgress variant="indeterminate" value={1} size="8rem"/>}
+                      {uploading && (
+                        <CircularProgress
+                          variant="indeterminate"
+                          value={1}
+                          size="8rem"
+                        />
+                      )}
                     </Grid>
                   </Grid>
                 </Modal>
@@ -302,7 +325,7 @@ function Galaxy({
             <DataGrid
                 onRowSelectionModelChange={(
                     newRowSelectionModel: GridRowSelectionModel,
-                    _details
+                _details,
                 ) => {
                   setSelectedAttachmentIds(newRowSelectionModel);
                 }}
@@ -310,18 +333,22 @@ function Galaxy({
                 rows={attachedFiles}
                 disableColumnSelector={true}
                 columns={[
-                  DataGridColumn.newColumnWithFieldName<"html", AttachedRecords>("html",
+                DataGridColumn.newColumnWithFieldName<"html", AttachedRecords>(
+                  "html",
                       {
                         maxWidth: 370,
                         headerName: "File",
                         flex: 1,
                         sortable: false,
-                        renderCell: ({row}) => <div
+                    renderCell: ({ row }) => (
+                      <div
                             dangerouslySetInnerHTML={{
-                              __html: DOMPurify.sanitize(row.html)
+                          __html: DOMPurify.sanitize(row.html),
                             }}
-                        />,
-                      }),
+                      />
+                    ),
+                  },
+                ),
                 ]}
                 loading={false}
                 checkboxSelection
@@ -336,12 +363,12 @@ function Galaxy({
                 localeText={{
                   noRowsLabel: "No Data is attached to this document",
                 }}
-            /></>)}
+            />
+          </>
+        )}
         </ThemeProvider>
       </StyledEngineProvider>
-
   );
-
 }
 
 export default Galaxy;
