@@ -260,6 +260,16 @@ public class GalaxyService {
       List<WorkflowInvocationResponse> allInvocations = new ArrayList<>();
       for (String alias : keyByAlias.keySet()) {
         String baseUrl = getGalaxyUrlFrom(aliasServerPairs, alias);
+        if (baseUrl.equals("")) {
+          // an alias exists in the DB that does not match the values in the property file  for
+          // 'galaxy.server.config'
+          throw new RuntimeException(
+              "You must configure at least one Galaxy server to use this feature. Please go to the"
+                  + " Galaxy integration settings to do this.  If you have configured a Galaxy"
+                  + " server, please check with your Sysadmin that your server is listed in RSpace"
+                  + " Properties under the key 'galaxy.configured.servers' as an 'alias' and"
+                  + " 'url'.");
+        }
         Set<ExternalWorkFlowData> dataUploadedForThisGalaxyServer =
             allDataUploadedToGalaxyForThisRSpaceField.stream()
                 .filter(data -> data.getBaseUrl().equals(baseUrl))
@@ -283,7 +293,7 @@ public class GalaxyService {
     return aliasServerPairs.stream()
         .filter(sp -> sp.getAlias().equals(alias))
         .findFirst()
-        .get()
+        .orElse(GalaxyAliasToServer.NONE)
         .getUrl();
   }
 
