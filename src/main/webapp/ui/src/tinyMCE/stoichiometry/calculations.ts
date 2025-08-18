@@ -15,6 +15,23 @@ export function calculateMoles(
   return mass / molecularWeight;
 }
 
+function normaliseCoefficients(
+  molecules: ReadonlyArray<EditableMolecule>,
+  limitingReagent: EditableMolecule,
+): ReadonlyArray<EditableMolecule> {
+  /*
+   * This function normalises the coefficients of the molecules based on the
+   * limiting reagent. It ensures that all coefficients are relative to the
+   * limiting reagent's coefficient.
+   */
+  const limitingCoefficient = limitingReagent.coefficient;
+
+  return molecules.map((molecule) => ({
+    ...molecule,
+    coefficient: molecule.coefficient / limitingCoefficient,
+  }));
+}
+
 /**
  * Calculates updated molecules based on stoichiometric relationships.
  *
@@ -31,6 +48,8 @@ export function calculateMoles(
  * - Storing changes to notes
  * - Update mass when mass is changed
  * - Update mass when moles are changed
+ * - Update limiting reagent when it is changed, normalising coefficients
+ * - Update coefficients when they are changed, normalising coefficients
  *
  * Note that this function assumes that only one property of one molecule has
  * been edited. This is imporant because some properties are interdependent,
@@ -46,8 +65,11 @@ export function calculateUpdatedMolecules(
    * new array where just the edited molecule has been updated with the new
    * value for the specified key, leaveing all other molecules unchanged.
    */
-  function applyChanges(newProperties: Partial<EditableMolecule>) {
-    return allMolecules.map((molecule) =>
+  function applyChanges(
+    newProperties: Partial<EditableMolecule>,
+    molecules = allMolecules,
+  ) {
+    return molecules.map((molecule) =>
       molecule.id === editedRow.id
         ? { ...molecule, ...newProperties }
         : molecule,
@@ -104,6 +126,31 @@ export function calculateUpdatedMolecules(
           ? null
           : editedRow.moles * beforeMolecule.molecularWeight,
     });
+  }
+
+  if (beforeMolecule.limitingReagent !== editedRow.limitingReagent) {
+    const updatedMolecules = applyChanges(
+      {
+        limitingReagent: editedRow.limitingReagent,
+      },
+      allMolecules.map((m) => ({ ...m, limitingReagent: false })),
+    );
+    const newLimitingReagent = updatedMolecules.find((m) => m.limitingReagent);
+    if (!newLimitingReagent) {
+      throw new Error("No limiting reagent found after update");
+    }
+    return normaliseCoefficients(updatedMolecules, newLimitingReagent);
+  }
+
+  if (beforeMolecule.coefficient !== editedRow.coefficient) {
+    const updatedMolecules = applyChanges({
+      coefficient: editedRow.coefficient,
+    });
+    const newLimitingReagent = updatedMolecules.find((m) => m.limitingReagent);
+    if (!newLimitingReagent) {
+      throw new Error("No limiting reagent found after update");
+    }
+    return normaliseCoefficients(updatedMolecules, newLimitingReagent);
   }
 
   return allMolecules;
