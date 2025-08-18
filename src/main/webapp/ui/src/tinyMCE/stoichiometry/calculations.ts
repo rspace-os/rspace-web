@@ -58,6 +58,34 @@ export function calculateUpdatedMolecules(
   const beforeMolecule =
     allMolecules[allMolecules.findIndex((m) => m.id === editedRow.id)];
 
+  if (beforeMolecule.id !== editedRow.id)
+    throw new Error(
+      "ID is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (beforeMolecule.name !== editedRow.name)
+    throw new Error(
+      "Name is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (beforeMolecule.molecularWeight !== editedRow.molecularWeight)
+    throw new Error(
+      "Molecula weight is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (beforeMolecule.formula !== editedRow.formula)
+    throw new Error(
+      "Chemical formula is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (beforeMolecule.smiles !== editedRow.smiles)
+    throw new Error(
+      "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
+    );
+
+  if (beforeMolecule.role !== editedRow.role)
+    throw new Error("Modifying the role of a molecule is not supported");
+  if (beforeMolecule.rsChemElement !== editedRow.rsChemElement)
+    throw new Error(
+      "Modifying the rsChemElement of a molecule is not supported",
+    );
+
   if (beforeMolecule.notes !== editedRow.notes) {
     return applyChange("notes", editedRow.notes);
   }
