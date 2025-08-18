@@ -29,6 +29,8 @@ export function calculateMoles(
  *
  * This function handles:
  * - Storing changes to notes
+ * - Update mass when mass is changed
+ * - Update mass when moles are changed
  *
  * Note that this function assumes that only one property of one molecule has
  * been edited. This is imporant because some properties are interdependent,
@@ -44,13 +46,10 @@ export function calculateUpdatedMolecules(
    * new array where just the edited molecule has been updated with the new
    * value for the specified key, leaveing all other molecules unchanged.
    */
-  function applyChange<Key extends keyof EditableMolecule>(
-    key: Key,
-    newValue: EditableMolecule[Key],
-  ) {
+  function applyChanges(newProperties: Partial<EditableMolecule>) {
     return allMolecules.map((molecule) =>
       molecule.id === editedRow.id
-        ? { ...molecule, [key]: newValue }
+        ? { ...molecule, ...newProperties }
         : molecule,
     );
   }
@@ -87,7 +86,24 @@ export function calculateUpdatedMolecules(
     );
 
   if (beforeMolecule.notes !== editedRow.notes) {
-    return applyChange("notes", editedRow.notes);
+    return applyChanges({
+      notes: editedRow.notes,
+    });
+  }
+
+  if (beforeMolecule.mass !== editedRow.mass) {
+    return applyChanges({
+      mass: editedRow.mass,
+    });
+  }
+
+  if (editedRow.moles !== null) {
+    return applyChanges({
+      mass:
+        editedRow.moles === null
+          ? null
+          : editedRow.moles * beforeMolecule.molecularWeight,
+    });
   }
 
   return allMolecules;
