@@ -56,6 +56,10 @@ export type EditableMolecule = StoichiometryMolecule & {
   actualMoles: number | null;
 };
 
+function roundToThreeDecimals(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
 export function calculateMoles(
   mass: EditableMolecule["mass"],
   molecularWeight: EditableMolecule["molecularWeight"],
@@ -63,7 +67,7 @@ export function calculateMoles(
   if (mass === null || molecularWeight === null || molecularWeight <= 0) {
     return null;
   }
-  return mass / molecularWeight;
+  return roundToThreeDecimals(mass / molecularWeight);
 }
 
 function calculateActualYieldOrExcess(
@@ -80,17 +84,14 @@ function calculateActualYieldOrExcess(
     if (theoreticalMass <= 0) {
       return null;
     }
-    return Number((molecule.actualAmount / theoreticalMass).toFixed(2));
+    return roundToThreeDecimals(molecule.actualAmount / theoreticalMass);
   } else if (molecule.role === "REACTANT" && !molecule.limitingReagent) {
     // For non-limiting reactants, calculate excess using molar ratio formula
     if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
       return null;
     }
-    return Number(
-      (
-        molecule.actualAmount / molecule.coefficient / limitingReagentMoles -
-        1
-      ).toFixed(2),
+    return roundToThreeDecimals(
+      molecule.actualAmount / molecule.coefficient / limitingReagentMoles - 1,
     );
   }
   return null;
@@ -131,7 +132,9 @@ function normaliseCoefficients(
 
   return molecules.map((molecule) => ({
     ...molecule,
-    coefficient: molecule.coefficient / limitingCoefficient,
+    coefficient: roundToThreeDecimals(
+      molecule.coefficient / limitingCoefficient,
+    ),
   }));
 }
 
@@ -229,7 +232,9 @@ export function calculateUpdatedMolecules(
         mass:
           editedRow.moles === null
             ? null
-            : editedRow.moles * beforeMolecule.molecularWeight,
+            : roundToThreeDecimals(
+                editedRow.moles * beforeMolecule.molecularWeight,
+              ),
       }),
     );
   }
@@ -248,7 +253,9 @@ export function calculateUpdatedMolecules(
         actualAmount:
           editedRow.actualMoles === null
             ? null
-            : editedRow.actualMoles * beforeMolecule.molecularWeight,
+            : roundToThreeDecimals(
+                editedRow.actualMoles * beforeMolecule.molecularWeight,
+              ),
       }),
     );
   }
