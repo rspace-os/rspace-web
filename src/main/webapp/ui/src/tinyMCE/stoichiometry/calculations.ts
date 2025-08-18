@@ -48,6 +48,8 @@ function normaliseCoefficients(
  * - Storing changes to notes
  * - Update mass when mass is changed
  * - Update mass when moles are changed
+ * - Update actual amount when actual amount is changed
+ * - Update actual amount when actual moles are changed
  * - Update limiting reagent when it is changed, normalising coefficients
  * - Update coefficients when they are changed, normalising coefficients
  *
@@ -125,6 +127,21 @@ export function calculateUpdatedMolecules(
         editedRow.moles === null
           ? null
           : editedRow.moles * beforeMolecule.molecularWeight,
+    });
+  }
+
+  if (beforeMolecule.actualAmount !== editedRow.actualAmount) {
+    return applyChanges({
+      actualAmount: editedRow.actualAmount,
+    });
+  }
+
+  if (editedRow.actualMoles !== null) {
+    return applyChanges({
+      actualAmount:
+        editedRow.actualMoles === null
+          ? null
+          : editedRow.actualMoles * beforeMolecule.molecularWeight,
     });
   }
 
