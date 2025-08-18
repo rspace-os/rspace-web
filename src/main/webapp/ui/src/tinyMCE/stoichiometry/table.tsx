@@ -22,7 +22,11 @@ import {
   ThemeProvider,
   useTheme,
 } from "@mui/material/styles";
-import { calculateUpdatedMolecules, calculateMoles } from "./calculations";
+import {
+  calculateUpdatedMolecules,
+  calculateMoles,
+  EditableMolecule,
+} from "./calculations";
 import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
@@ -349,7 +353,7 @@ const StoichiometryTable = React.forwardRef<
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [allMolecules, setAllMolecules] = React.useState<
-    ReadonlyArray<StoichiometryMolecule>
+    ReadonlyArray<EditableMolecule>
   >([]);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
@@ -374,7 +378,16 @@ const StoichiometryTable = React.forwardRef<
 
   React.useEffect(() => {
     if (data?.molecules) {
-      const molecules = data.molecules;
+      const molecules = data.molecules.map((molecule) => ({
+        ...molecule,
+        /*
+         * We add these properties to facilitate editing the computed values;
+         * they will only ever not be null during the onChange event handler.
+         * The displayed value for these field is always computed on the fly.
+         */
+        moles: null,
+        actualMoles: null,
+      }));
       const hasLimitingReagent = molecules.some(
         (m) => m.limitingReagent && m.role.toLowerCase() === "reactant",
       );
@@ -471,7 +484,7 @@ const StoichiometryTable = React.forwardRef<
           imageFileProperty: null,
         };
 
-        const newMolecule: StoichiometryMolecule = {
+        const newMolecule: EditableMolecule = {
           id: tempId,
           rsChemElement: mockRsChemElement,
           role: "agent",
@@ -484,6 +497,7 @@ const StoichiometryTable = React.forwardRef<
           moles: null,
           expectedAmount: null,
           actualAmount: null,
+          actualMoles: null,
           actualYield: null,
           limitingReagent: false,
           notes: null,
@@ -506,56 +520,50 @@ const StoichiometryTable = React.forwardRef<
   );
 
   const columns = [
-    DataGridColumn.newColumnWithFieldName<"name", StoichiometryMolecule>(
-      "name",
-      {
-        headerName: "Name",
-        sortable: false,
-        flex: 1.5,
-      },
-    ),
-    DataGridColumn.newColumnWithFieldName<"role", StoichiometryMolecule>(
-      "role",
-      {
-        headerName: "Role",
-        sortable: false,
-        flex: 1,
-        renderCell: (params) => <RoleChip role={params.value || ""} />,
-      },
-    ),
-    DataGridColumn.newColumnWithFieldName<
-      "limitingReagent",
-      StoichiometryMolecule
-    >("limitingReagent", {
-      headerName: "Limiting Reagent",
+    DataGridColumn.newColumnWithFieldName<"name", EditableMolecule>("name", {
+      headerName: "Name",
+      sortable: false,
+      flex: 1.5,
+    }),
+    DataGridColumn.newColumnWithFieldName<"role", EditableMolecule>("role", {
+      headerName: "Role",
       sortable: false,
       flex: 1,
-      align: "center",
-      renderCell: (params) =>
-        params.row.role.toLowerCase() === "reactant" ? (
-          <Radio
-            checked={params.row.limitingReagent || false}
-            disabled={!editable}
-            inputProps={{
-              "aria-label": `Select ${params.row.name} as limiting reagent`,
-            }}
-            onChange={(e) => {
-              if (e.target.checked && editable) {
-                const updatedRow = { ...params.row, limitingReagent: true };
-                const newMolecules = calculateUpdatedMolecules(
-                  allMolecules,
-                  updatedRow,
-                );
-                setAllMolecules(newMolecules);
-                onChangesUpdate?.(true);
-              }
-            }}
-          />
-        ) : (
-          <>&mdash;</>
-        ),
+      renderCell: (params) => <RoleChip role={params.value || ""} />,
     }),
-    DataGridColumn.newColumnWithFieldName<"coefficient", StoichiometryMolecule>(
+    DataGridColumn.newColumnWithFieldName<"limitingReagent", EditableMolecule>(
+      "limitingReagent",
+      {
+        headerName: "Limiting Reagent",
+        sortable: false,
+        flex: 1,
+        align: "center",
+        renderCell: (params) =>
+          params.row.role.toLowerCase() === "reactant" ? (
+            <Radio
+              checked={params.row.limitingReagent || false}
+              disabled={!editable}
+              inputProps={{
+                "aria-label": `Select ${params.row.name} as limiting reagent`,
+              }}
+              onChange={(e) => {
+                if (e.target.checked && editable) {
+                  const updatedRow = { ...params.row, limitingReagent: true };
+                  const newMolecules = calculateUpdatedMolecules(
+                    allMolecules,
+                    updatedRow,
+                  );
+                  setAllMolecules(newMolecules);
+                  onChangesUpdate?.(true);
+                }
+              }}
+            />
+          ) : (
+            <>&mdash;</>
+          ),
+      },
+    ),
+    DataGridColumn.newColumnWithFieldName<"coefficient", EditableMolecule>(
       "coefficient",
       {
         headerName: "Equivalent",
@@ -578,48 +586,44 @@ const StoichiometryTable = React.forwardRef<
         },
       },
     ),
-    DataGridColumn.newColumnWithFieldName<
+    DataGridColumn.newColumnWithFieldName<"molecularWeight", EditableMolecule>(
       "molecularWeight",
-      StoichiometryMolecule
-    >("molecularWeight", {
-      headerName: "Molecular Weight (g/mol)",
-      sortable: false,
-      flex: 1.2,
-      type: "number",
-      headerAlign: "left",
-    }),
-    DataGridColumn.newColumnWithFieldName<"mass", StoichiometryMolecule>(
-      "mass",
       {
-        headerName: "Mass (g)",
+        headerName: "Molecular Weight (g/mol)",
         sortable: false,
-        flex: 1,
-        headerAlign: "left",
-        // @ts-expect-error It's not documented or typed, but editable can be a function
-        editable: (params) => {
-          if (limitingReagent) {
-            return editable && params.id === limitingReagent.id;
-          }
-          return editable;
-        },
+        flex: 1.2,
         type: "number",
-        renderCell: (params) => params.value ?? <>&#8212;</>,
-        cellClassName: (params) => {
-          if (limitingReagent && params.id !== limitingReagent.id) {
-            return "stoichiometry-disabled-cell";
-          }
-          return "";
-        },
+        headerAlign: "left",
       },
     ),
+    DataGridColumn.newColumnWithFieldName<"mass", EditableMolecule>("mass", {
+      headerName: "Mass (g)",
+      sortable: false,
+      flex: 1,
+      headerAlign: "left",
+      // @ts-expect-error It's not documented or typed, but editable can be a function
+      editable: (params) => {
+        if (limitingReagent) {
+          return editable && params.id === limitingReagent.id;
+        }
+        return editable;
+      },
+      type: "number",
+      renderCell: (params) => params.value ?? <>&#8212;</>,
+      cellClassName: (params) => {
+        if (limitingReagent && params.id !== limitingReagent.id) {
+          return "stoichiometry-disabled-cell";
+        }
+        return "";
+      },
+    }),
     DataGridColumn.newColumnWithValueGetter<
       "moles",
-      StoichiometryMolecule,
+      EditableMolecule,
       number | null
     >(
       "moles",
-      (row: StoichiometryMolecule) =>
-        calculateMoles(row.mass, row.molecularWeight),
+      (row: EditableMolecule) => calculateMoles(row.mass, row.molecularWeight),
       {
         headerName: "Moles (mol)",
         sortable: false,
@@ -642,25 +646,25 @@ const StoichiometryTable = React.forwardRef<
         },
       },
     ),
-    DataGridColumn.newColumnWithFieldName<
+    DataGridColumn.newColumnWithFieldName<"actualAmount", EditableMolecule>(
       "actualAmount",
-      StoichiometryMolecule
-    >("actualAmount", {
-      headerName: "Actual Mass (g)",
-      sortable: false,
-      flex: 1,
-      headerAlign: "left",
-      editable: editable,
-      type: "number",
-      renderCell: (params) => params.value ?? <>&mdash;</>,
-    }),
+      {
+        headerName: "Actual Mass (g)",
+        sortable: false,
+        flex: 1,
+        headerAlign: "left",
+        editable: editable,
+        type: "number",
+        renderCell: (params) => params.value ?? <>&mdash;</>,
+      },
+    ),
     DataGridColumn.newColumnWithValueGetter<
       "actualMoles",
-      StoichiometryMolecule,
+      EditableMolecule,
       number | null
     >(
       "actualMoles",
-      (row: StoichiometryMolecule) =>
+      (row: EditableMolecule) =>
         calculateMoles(row.actualAmount, row.molecularWeight),
       {
         headerName: "Actual Moles (mol)",
@@ -680,7 +684,7 @@ const StoichiometryTable = React.forwardRef<
         },
       },
     ),
-    DataGridColumn.newColumnWithFieldName<"actualYield", StoichiometryMolecule>(
+    DataGridColumn.newColumnWithFieldName<"actualYield", EditableMolecule>(
       "actualYield",
       {
         headerName: "Yield/Excess (%)",
@@ -703,17 +707,14 @@ const StoichiometryTable = React.forwardRef<
         },
       },
     ),
-    DataGridColumn.newColumnWithFieldName<"notes", StoichiometryMolecule>(
-      "notes",
-      {
-        headerName: "Notes",
-        sortable: false,
-        flex: 1.5,
-        editable: editable,
-        type: "string",
-        renderCell: (params) => params.value ?? <>&mdash;</>,
-      },
-    ),
+    DataGridColumn.newColumnWithFieldName<"notes", EditableMolecule>("notes", {
+      headerName: "Notes",
+      sortable: false,
+      flex: 1.5,
+      editable: editable,
+      type: "string",
+      renderCell: (params) => params.value ?? <>&mdash;</>,
+    }),
   ];
 
   if (loading) {

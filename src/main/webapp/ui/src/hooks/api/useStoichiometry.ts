@@ -30,7 +30,6 @@ export type StoichiometryMolecule = {
   coefficient: number;
   molecularWeight: number;
   mass: number | null;
-  moles: number | null;
   expectedAmount: number | null;
   actualAmount: number | null;
   actualYield: number | null;

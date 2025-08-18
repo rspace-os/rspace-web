@@ -1,9 +1,14 @@
 import { type StoichiometryMolecule } from "../../hooks/api/useStoichiometry";
 
+export type EditableMolecule = StoichiometryMolecule & {
+  moles: number | null;
+  actualMoles: number | null;
+};
+
 export function calculateMoles(
-  mass: number | null,
-  molecularWeight: number | null,
-): number | null {
+  mass: EditableMolecule["mass"],
+  molecularWeight: EditableMolecule["molecularWeight"],
+): EditableMolecule["moles"] {
   if (mass === null || molecularWeight === null || molecularWeight <= 0) {
     return null;
   }
@@ -30,18 +35,18 @@ export function calculateMoles(
  * such as mass, moles, and molecular weight.
  */
 export function calculateUpdatedMolecules(
-  allMolecules: ReadonlyArray<StoichiometryMolecule>,
-  editedRow: StoichiometryMolecule,
-): ReadonlyArray<StoichiometryMolecule> {
+  allMolecules: ReadonlyArray<EditableMolecule>,
+  editedRow: EditableMolecule,
+): ReadonlyArray<EditableMolecule> {
   /*
    * This function applies a single change to the edited molecule in the
    * allMolecules array. It takes a key and a new value, and returns a
    * new array where just the edited molecule has been updated with the new
    * value for the specified key, leaveing all other molecules unchanged.
    */
-  function applyChange<Key extends keyof StoichiometryMolecule>(
+  function applyChange<Key extends keyof EditableMolecule>(
     key: Key,
-    newValue: StoichiometryMolecule[Key],
+    newValue: EditableMolecule[Key],
   ) {
     return allMolecules.map((molecule) =>
       molecule.id === editedRow.id
