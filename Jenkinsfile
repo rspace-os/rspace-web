@@ -272,6 +272,8 @@ pipeline {
                     expression { return params.DOCKER_AWS_DEPLOY }
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
+                    changeset '**/*.ts'
+                    changeset '**/*.tsx'
                     changeset '**/*.jsp'
                     changeset '**/*.css'
                     changeset '**/*.json'
