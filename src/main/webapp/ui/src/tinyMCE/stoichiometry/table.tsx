@@ -303,6 +303,7 @@ declare module "@mui/x-data-grid" {
     setColumnsMenuAnchorEl: (anchorEl: HTMLElement | null) => void;
     onAddReagent: (smilesString: string, name: string) => Promise<void>;
     editable: boolean;
+    allMolecules: ReadonlyArray<EditableMolecule>;
   }
 }
 
@@ -371,6 +372,7 @@ function Toolbar({
   setColumnsMenuAnchorEl,
   onAddReagent,
   editable,
+  allMolecules,
 }: GridSlotProps["toolbar"]): React.ReactNode {
   const apiRef = useGridApiContext();
   const theme = useTheme();
@@ -526,6 +528,8 @@ function Toolbar({
             onClick={() => {
               apiRef.current?.exportDataAsCsv({
                 allColumns: true,
+                getRowsToExport: () =>
+                  allMolecules.map((molecule) => molecule.id),
               });
             }}
           >
@@ -1031,6 +1035,7 @@ const StoichiometryTable = React.forwardRef<
             setColumnsMenuAnchorEl,
             onAddReagent: handleAddReagent,
             editable,
+            allMolecules,
           },
           panel: {
             anchorEl: columnsMenuAnchorEl,
