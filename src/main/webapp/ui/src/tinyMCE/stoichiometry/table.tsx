@@ -700,7 +700,7 @@ const StoichiometryTable = React.forwardRef<
           }
           const value = params.value;
           return value !== null && value !== undefined ? (
-            `${value}%`
+            `${value * 100}%`
           ) : (
             <>&#8212;</>
           );

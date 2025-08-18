@@ -15,15 +15,67 @@ export function calculateMoles(
   return mass / molecularWeight;
 }
 
+function calculateActualYieldOrExcess(
+  molecule: EditableMolecule,
+  limitingReagentMoles: number,
+): number | null {
+  if (molecule.role === "PRODUCT") {
+    // For products, calculate yield percentage based on theoretical yield from limiting reagent
+    if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
+      return null;
+    }
+    const theoreticalMoles = limitingReagentMoles * molecule.coefficient;
+    const theoreticalMass = theoreticalMoles * molecule.molecularWeight;
+    if (theoreticalMass <= 0) {
+      return null;
+    }
+    return Number((molecule.actualAmount / theoreticalMass).toFixed(2));
+  } else if (molecule.role === "REACTANT" && !molecule.limitingReagent) {
+    // For non-limiting reactants, calculate excess using molar ratio formula
+    if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
+      return null;
+    }
+    return Number(
+      (
+        molecule.actualAmount / molecule.coefficient / limitingReagentMoles -
+        1
+      ).toFixed(2),
+    );
+  }
+  return null;
+}
+
+function updateYieldAndExcess(
+  molecules: ReadonlyArray<EditableMolecule>,
+): ReadonlyArray<EditableMolecule> {
+  const limitingReagent = molecules.find((m) => m.limitingReagent);
+  if (!limitingReagent || limitingReagent.actualAmount === null) {
+    return molecules;
+  }
+
+  const limitingReagentMoles =
+    limitingReagent.actualAmount / limitingReagent.coefficient;
+  if (limitingReagentMoles <= 0) {
+    return molecules;
+  }
+
+  return molecules.map((molecule) => {
+    const actualYield = calculateActualYieldOrExcess(
+      molecule,
+      limitingReagentMoles,
+    );
+
+    return {
+      ...molecule,
+      actualYield,
+    };
+  });
+}
+
 function normaliseCoefficients(
   molecules: ReadonlyArray<EditableMolecule>,
   limitingReagent: EditableMolecule,
 ): ReadonlyArray<EditableMolecule> {
-  /*
-   * This function normalises the coefficients of the molecules based on the
-   * limiting reagent. It ensures that all coefficients are relative to the
-   * limiting reagent's coefficient.
-   */
   const limitingCoefficient = limitingReagent.coefficient;
 
   return molecules.map((molecule) => ({
@@ -52,6 +104,7 @@ function normaliseCoefficients(
  * - Update actual amount when actual moles are changed
  * - Update limiting reagent when it is changed, normalising coefficients
  * - Update coefficients when they are changed, normalising coefficients
+ * - Update yield/excess calculations for all molecules
  *
  * Note that this function assumes that only one property of one molecule has
  * been edited. This is imporant because some properties are interdependent,
@@ -61,12 +114,6 @@ export function calculateUpdatedMolecules(
   allMolecules: ReadonlyArray<EditableMolecule>,
   editedRow: EditableMolecule,
 ): ReadonlyArray<EditableMolecule> {
-  /*
-   * This function applies a single change to the edited molecule in the
-   * allMolecules array. It takes a key and a new value, and returns a
-   * new array where just the edited molecule has been updated with the new
-   * value for the specified key, leaveing all other molecules unchanged.
-   */
   function applyChanges(
     newProperties: Partial<EditableMolecule>,
     molecules = allMolecules,
@@ -110,39 +157,49 @@ export function calculateUpdatedMolecules(
     );
 
   if (beforeMolecule.notes !== editedRow.notes) {
-    return applyChanges({
-      notes: editedRow.notes,
-    });
+    return updateYieldAndExcess(
+      applyChanges({
+        notes: editedRow.notes,
+      }),
+    );
   }
 
   if (beforeMolecule.mass !== editedRow.mass) {
-    return applyChanges({
-      mass: editedRow.mass,
-    });
+    return updateYieldAndExcess(
+      applyChanges({
+        mass: editedRow.mass,
+      }),
+    );
   }
 
   if (editedRow.moles !== null) {
-    return applyChanges({
-      mass:
-        editedRow.moles === null
-          ? null
-          : editedRow.moles * beforeMolecule.molecularWeight,
-    });
+    return updateYieldAndExcess(
+      applyChanges({
+        mass:
+          editedRow.moles === null
+            ? null
+            : editedRow.moles * beforeMolecule.molecularWeight,
+      }),
+    );
   }
 
   if (beforeMolecule.actualAmount !== editedRow.actualAmount) {
-    return applyChanges({
-      actualAmount: editedRow.actualAmount,
-    });
+    return updateYieldAndExcess(
+      applyChanges({
+        actualAmount: editedRow.actualAmount,
+      }),
+    );
   }
 
   if (editedRow.actualMoles !== null) {
-    return applyChanges({
-      actualAmount:
-        editedRow.actualMoles === null
-          ? null
-          : editedRow.actualMoles * beforeMolecule.molecularWeight,
-    });
+    return updateYieldAndExcess(
+      applyChanges({
+        actualAmount:
+          editedRow.actualMoles === null
+            ? null
+            : editedRow.actualMoles * beforeMolecule.molecularWeight,
+      }),
+    );
   }
 
   if (beforeMolecule.limitingReagent !== editedRow.limitingReagent) {
@@ -156,7 +213,9 @@ export function calculateUpdatedMolecules(
     if (!newLimitingReagent) {
       throw new Error("No limiting reagent found after update");
     }
-    return normaliseCoefficients(updatedMolecules, newLimitingReagent);
+    return updateYieldAndExcess(
+      normaliseCoefficients(updatedMolecules, newLimitingReagent),
+    );
   }
 
   if (beforeMolecule.coefficient !== editedRow.coefficient) {
@@ -167,7 +226,9 @@ export function calculateUpdatedMolecules(
     if (!newLimitingReagent) {
       throw new Error("No limiting reagent found after update");
     }
-    return normaliseCoefficients(updatedMolecules, newLimitingReagent);
+    return updateYieldAndExcess(
+      normaliseCoefficients(updatedMolecules, newLimitingReagent),
+    );
   }
 
   return allMolecules;
