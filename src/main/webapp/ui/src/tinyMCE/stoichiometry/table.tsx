@@ -91,7 +91,10 @@ function calculateActualYieldOrExcess(
       return null;
     }
     return roundToThreeDecimals(
-      molecule.actualAmount / molecule.coefficient / limitingReagentMoles - 1,
+      (calculateMoles(molecule.actualAmount, molecule.molecularWeight) ?? 0) /
+        molecule.coefficient /
+        limitingReagentMoles -
+        1,
     );
   }
   return null;
@@ -106,7 +109,10 @@ function updateYieldAndExcess(
   }
 
   const limitingReagentMoles =
-    limitingReagent.actualAmount / limitingReagent.coefficient;
+    (calculateMoles(
+      limitingReagent.actualAmount,
+      limitingReagent.molecularWeight,
+    ) ?? 0) / limitingReagent.coefficient;
   if (limitingReagentMoles <= 0) {
     return molecules;
   }
