@@ -22,10 +22,7 @@ import {
   ThemeProvider,
   useTheme,
 } from "@mui/material/styles";
-import {
-  calculateUpdatedMolecules,
-  calculateActualMoles,
-} from "./calculations";
+import { calculateUpdatedMolecules, calculateMoles } from "./calculations";
 import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
@@ -615,8 +612,14 @@ const StoichiometryTable = React.forwardRef<
         },
       },
     ),
-    DataGridColumn.newColumnWithFieldName<"moles", StoichiometryMolecule>(
+    DataGridColumn.newColumnWithValueGetter<
       "moles",
+      StoichiometryMolecule,
+      number | null
+    >(
+      "moles",
+      (row: StoichiometryMolecule) =>
+        calculateMoles(row.mass, row.molecularWeight),
       {
         headerName: "Moles (mol)",
         sortable: false,
@@ -658,17 +661,20 @@ const StoichiometryTable = React.forwardRef<
     >(
       "actualMoles",
       (row: StoichiometryMolecule) =>
-        calculateActualMoles({
-          actualAmount: row.actualAmount,
-          molecularWeight: row.molecularWeight,
-        }),
+        calculateMoles(row.actualAmount, row.molecularWeight),
       {
         headerName: "Actual Moles (mol)",
         sortable: false,
         headerAlign: "left",
         flex: 1,
         type: "number",
-        editable: false,
+        // @ts-expect-error It's not documented or typed, but editable can be a function
+        editable: (params) => {
+          if (limitingReagent) {
+            return editable && params.id === limitingReagent.id;
+          }
+          return editable;
+        },
         renderCell: (params) => {
           return params.value !== null ? params.value : <>&mdash;</>;
         },

@@ -1,5 +1,15 @@
 import { type StoichiometryMolecule } from "../../hooks/api/useStoichiometry";
 
+export function calculateMoles(
+  mass: number | null,
+  molecularWeight: number | null,
+): number | null {
+  if (mass === null || molecularWeight === null || molecularWeight <= 0) {
+    return null;
+  }
+  return mass / molecularWeight;
+}
+
 /**
  * Calculates updated molecules based on stoichiometric relationships.
  *
