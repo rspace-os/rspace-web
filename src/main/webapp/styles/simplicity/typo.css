@@ -490,10 +490,6 @@ p.chem-attachment-css-wrapper span {
   border-top: 0px;
 }
 
-p.chem-attachment-css-wrapper div.MuiCard-root {
-  border-left: 1px;
-}
-
 .chemImageViewModePanel .imageInfoBtnDiv {
   cursor: pointer;
   padding: 4px;

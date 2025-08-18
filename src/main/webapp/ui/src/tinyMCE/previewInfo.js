@@ -4,7 +4,7 @@ import ChemCard from "./chemCard";
 import { createRoot } from "react-dom/client";
 import { makeStyles } from "tss-react/mui";
 import Stack from "@mui/material/Stack";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider, styled } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import createAccentedTheme from "../accentedTheme";
 import { ACCENT_COLOR } from "../assets/branding/chemistry";
@@ -24,6 +24,8 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
+const Div = styled("div")(() => {});
+
 export default function PreviewInfo(props) {
   const { classes } = useStyles();
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
@@ -33,42 +35,44 @@ export default function PreviewInfo(props) {
   }, []);
   const theme = createAccentedTheme(ACCENT_COLOR);
   return (
-    <span className={classes.wrapper}>
-      <Stack
-        sx={{
-          border: `2px solid ${theme.palette.primary.background}`,
-          borderRadius: 1,
-          backgroundColor: "#fafafa",
-        }}
-      >
-        <div
-          style={{ display: "flex", minHeight: "200px", maxHeight: "334px" }}
-        >
-          <div style={{ alignSelf: "center" }}>
-            <img
-              id={props.item.id}
-              className={props.item.class}
-              src={props.item.src}
-              width={props.item.width}
-              height={props.item.height}
-              data-rsrevision={props.item["data-rsrevision"]}
-              data-fullwidth={props.item["data-fullwidth"]}
-              data-fullheight={props.item["data-fullheight"]}
-              data-chemfileid={props.item["data-chemfileid"]}
-              data-foo={props.item["data-has-stoichiometry-table"]}
-            />
-          </div>
-          <ChemCard item={props.item} inline />
-        </div>
-        {props.item["data-has-stoichiometry-table"] && (
-          <StyledEngineProvider injectFirst>
-            <CssBaseline />
-            <ThemeProvider theme={theme}>
+    <StyledEngineProvider injectFirst>
+      <CssBaseline />
+      <ThemeProvider theme={theme}>
+        <span className={classes.wrapper}>
+          <Stack
+            sx={{
+              border: `2px solid ${theme.palette.primary.background}`,
+              borderRadius: 1,
+              backgroundColor: "#fafafa",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                minHeight: "200px",
+                maxHeight: "334px",
+              }}
+            >
+              <Div sx={{ alignSelf: "center", mx: "auto" }}>
+                <img
+                  id={props.item.id}
+                  className={props.item.class}
+                  src={props.item.src}
+                  width={props.item.width}
+                  height={props.item.height}
+                  data-rsrevision={props.item["data-rsrevision"]}
+                  data-fullwidth={props.item["data-fullwidth"]}
+                  data-fullheight={props.item["data-fullheight"]}
+                  data-chemfileid={props.item["data-chemfileid"]}
+                />
+              </Div>
+              <ChemCard item={props.item} inline />
+            </div>
+            {props.item["data-has-stoichiometry-table"] && (
               <Analytics>
                 <ErrorBoundary>
                   <Alerts>
                     <Box
-                      my={3}
                       sx={{
                         overflow: "hidden",
                       }}
@@ -104,11 +108,11 @@ export default function PreviewInfo(props) {
                   </Alerts>
                 </ErrorBoundary>
               </Analytics>
-            </ThemeProvider>
-          </StyledEngineProvider>
-        )}
-      </Stack>
-    </span>
+            )}
+          </Stack>
+        </span>
+      </ThemeProvider>
+    </StyledEngineProvider>
   );
 }
 
