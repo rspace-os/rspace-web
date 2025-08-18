@@ -38,6 +38,41 @@ const feature = test.extend<{
     "the user adds the manual reagent": () => Promise<void>;
     "the user selects the first chemistry file from Gallery": () => Promise<void>;
     "the user adds the selected files from Gallery": () => Promise<void>;
+    "the user edits mass in row {row} to {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
+    "the user edits moles in row {row} to {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
+    "the user edits actual mass in row {row} to {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
+    "the user edits actual moles in row {row} to {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
+    "the user edits equivalent in row {row} to {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
   };
   Then: {
     "the table should be visible": () => Promise<void>;
@@ -80,6 +115,48 @@ const feature = test.extend<{
     }) => Promise<void>;
     "the loading dialog should be visible": () => Promise<void>;
     "the loading dialog should not be visible": () => Promise<void>;
+    "row {row} should have mass {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
+    "row {row} should have moles {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
+    "row {row} should have actual mass {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
+    "row {row} should have actual moles {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
+    "row {row} should have equivalent {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
+    "row {row} should have yield {value}": ({
+      row,
+      value,
+    }: {
+      row: number;
+      value: string;
+    }) => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -181,6 +258,88 @@ const feature = test.extend<{
       },
       "the user adds the selected files from Gallery": async () => {
         await page.getByRole("button", { name: /add/i }).click();
+      },
+      "the user edits mass in row {row} to {value}": async ({ row, value }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const massCell = targetRow.getByRole("gridcell").nth(5); // Mass column
+        await massCell.dblclick();
+
+        // Wait for input to appear and be focused
+        const input = page.locator('input[type="number"]');
+        await input.waitFor({ state: "visible" });
+        await input.fill(value);
+        await input.press("Enter");
+      },
+      "the user edits moles in row {row} to {value}": async ({
+        row,
+        value,
+      }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const molesCell = targetRow.getByRole("gridcell").nth(6); // Moles column
+        await molesCell.dblclick();
+
+        // Wait for input to appear and be focused
+        const input = page.locator('input[type="number"]');
+        await input.waitFor({ state: "visible" });
+        await input.fill(value);
+        await input.press("Enter");
+      },
+      "the user edits actual mass in row {row} to {value}": async ({
+        row,
+        value,
+      }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const actualMassCell = targetRow.getByRole("gridcell").nth(7); // Actual Mass column
+        await actualMassCell.dblclick();
+
+        // Wait for input to appear and be focused
+        const input = page.locator('input[type="number"]');
+        await input.waitFor({ state: "visible" });
+        await input.fill(value);
+        await input.press("Enter");
+      },
+      "the user edits actual moles in row {row} to {value}": async ({
+        row,
+        value,
+      }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const actualMolesCell = targetRow.getByRole("gridcell").nth(8); // Actual Moles column
+        await actualMolesCell.dblclick();
+
+        // Wait for input to appear and be focused
+        const input = page.locator('input[type="number"]');
+        await input.waitFor({ state: "visible" });
+        await input.fill(value);
+        await input.press("Enter");
+      },
+      "the user edits equivalent in row {row} to {value}": async ({
+        row,
+        value,
+      }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const equivalentCell = targetRow.getByRole("gridcell").nth(3); // Equivalent column
+        await equivalentCell.dblclick();
+
+        // Wait for input to appear and be focused
+        const input = page.locator('input[type="number"]');
+        await input.waitFor({ state: "visible" });
+        await input.fill(value);
+        await input.press("Enter");
       },
     });
   },
@@ -392,13 +551,61 @@ const feature = test.extend<{
           page.getByText("Loading molecule information..."),
         ).not.toBeVisible();
       },
+      "row {row} should have mass {value}": async ({ row, value }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const massCell = targetRow.getByRole("gridcell").nth(5); // Mass column
+        await expect(massCell).toContainText(value);
+      },
+      "row {row} should have moles {value}": async ({ row, value }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const molesCell = targetRow.getByRole("gridcell").nth(6); // Moles column
+        await expect(molesCell).toContainText(value);
+      },
+      "row {row} should have actual mass {value}": async ({ row, value }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const actualMassCell = targetRow.getByRole("gridcell").nth(7); // Actual Mass column
+        await expect(actualMassCell).toContainText(value);
+      },
+      "row {row} should have actual moles {value}": async ({ row, value }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const actualMolesCell = targetRow.getByRole("gridcell").nth(8); // Actual Moles column
+        await expect(actualMolesCell).toContainText(value);
+      },
+      "row {row} should have equivalent {value}": async ({ row, value }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const equivalentCell = targetRow.getByRole("gridcell").nth(3); // Equivalent column
+        await expect(equivalentCell).toContainText(value);
+      },
+      "row {row} should have yield {value}": async ({ row, value }) => {
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+        const targetRow = dataRows.nth(row);
+        const yieldCell = targetRow.getByRole("gridcell").nth(9); // Yield column
+        await expect(yieldCell).toContainText(value);
+      },
     });
   },
 });
 
 feature.beforeEach(async ({ router }) => {
   await router.route("/api/v1/stoichiometry*", (route) => {
-    // Mock data with all limitingReagent values set to false to test default selection behavior
+    // Mock data based on CSV with calculation relationships
     const mockResponse = {
       id: 3,
       parentReaction: {
@@ -439,13 +646,13 @@ feature.beforeEach(async ({ router }) => {
           name: "Benzene",
           smiles: "C1=CC=CC=C1",
           coefficient: 1.0,
-          molecularWeight: 78.11,
-          mass: 78.11, // 1 mole of benzene
-          moles: 1.0,
+          molecularWeight: 1.0, // From CSV
+          mass: 10.0, // From CSV
+          moles: 10.0, // From CSV
           expectedAmount: null,
-          actualAmount: 70.3, // 90% yield (70.30 / 78.11 = 0.90)
-          actualYield: null,
-          limitingReagent: false,
+          actualAmount: 2.0, // From CSV actual mass
+          actualYield: 2.0, // From CSV actual moles
+          limitingReagent: true, // From CSV
           notes: null,
         },
         {
@@ -469,14 +676,14 @@ feature.beforeEach(async ({ router }) => {
           formula: "C5 H6",
           name: "Cyclopentadiene",
           smiles: "C1C=CC=C1",
-          coefficient: 1.0,
-          molecularWeight: 66.1,
-          mass: 66.1, // 1 mole of cyclopentadiene
-          moles: 1.0,
+          coefficient: 2.0, // From CSV equivalent
+          molecularWeight: 1.0, // From CSV
+          mass: 10.0, // From CSV
+          moles: 10.0, // From CSV
           expectedAmount: null,
-          actualAmount: 52.88, // 80% yield (52.88 / 66.1 = 0.80)
-          actualYield: null,
-          limitingReagent: false,
+          actualAmount: 5.0, // From CSV actual mass
+          actualYield: 5.0, // From CSV actual moles
+          limitingReagent: false, // From CSV
           notes: null,
         },
         {
@@ -498,16 +705,16 @@ feature.beforeEach(async ({ router }) => {
           },
           role: "PRODUCT",
           formula: "C6 H12",
-          name: "Cyclohexane",
+          name: "Cyclopentane", // From CSV
           smiles: "C1CCCCC1",
-          coefficient: 1.0,
-          molecularWeight: 84.16,
-          mass: 84.16, // 1 mole of cyclohexane
-          moles: 1.0,
+          coefficient: 3.0, // From CSV equivalent
+          molecularWeight: 1.0, // From CSV
+          mass: 10.0, // From CSV
+          moles: 10.0, // From CSV
           expectedAmount: null,
-          actualAmount: 67.33, // 80% yield (67.33 / 84.16 = 0.80)
-          actualYield: null,
-          limitingReagent: false,
+          actualAmount: 5.0, // From CSV actual mass
+          actualYield: 5.0, // From CSV actual moles
+          limitingReagent: false, // From CSV
           notes: null,
         },
       ],
@@ -851,6 +1058,272 @@ test.describe("Stoichiometry Table", () => {
           name: "Caffeine",
         });
         await Then["there should be {count} molecules in total"]({ count: 5 }); // 3 original + 2 new
+      },
+    );
+  });
+
+  test.describe("Calculation Logic", () => {
+    feature(
+      "Editing actual mass updates actual moles correctly",
+      async ({ Given, Once, When, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Edit actual mass of second row (Cyclopentadiene) from 5 to 8
+        await When["the user edits actual mass in row {row} to {value}"]({
+          row: 1,
+          value: "8",
+        });
+
+        // Actual moles should update: 8 / 1 = 8 moles
+        await Then["row {row} should have actual moles {value}"]({
+          row: 1,
+          value: "8",
+        });
+      },
+    );
+
+    feature(
+      "Editing actual moles updates actual mass correctly",
+      async ({ Given, Once, When, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Edit actual moles of second row (Cyclopentadiene) from 5 to 6
+        await When["the user edits actual moles in row {row} to {value}"]({
+          row: 1,
+          value: "6",
+        });
+
+        // Actual mass should update: 6 * 1 = 6 grams
+        await Then["row {row} should have actual mass {value}"]({
+          row: 1,
+          value: "6",
+        });
+      },
+    );
+
+    feature(
+      "Editing actual mass updates yield correctly for non-limiting reactants",
+      async ({ Given, Once, When, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Edit actual mass of second row (Cyclopentadiene) from 5 to 10
+        await When["the user edits actual mass in row {row} to {value}"]({
+          row: 1,
+          value: "10",
+        });
+
+        // Actual moles should update: 10 / 1 = 10 moles
+        await Then["row {row} should have actual moles {value}"]({
+          row: 1,
+          value: "10",
+        });
+
+        // Yield should be calculated based on excess formula
+        await Then["row {row} should have yield {value}"]({
+          row: 1,
+          value: "150%",
+        });
+      },
+    );
+
+    feature(
+      "Multiple actual mass edits work correctly",
+      async ({ Given, Once, When, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Edit actual mass of product (Cyclopentane) from 5 to 7
+        await When["the user edits actual mass in row {row} to {value}"]({
+          row: 2,
+          value: "7",
+        });
+
+        // Actual moles should update: 7 / 1 = 7 moles
+        await Then["row {row} should have actual moles {value}"]({
+          row: 2,
+          value: "7",
+        });
+      },
+    );
+
+    feature(
+      "Changing limiting reagent adjusts equivalent values",
+      async ({ Given, Once, When, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Initially Benzene is limiting reagent (equivalent = 1)
+        await Then["row {row} should have equivalent {value}"]({
+          row: 0,
+          value: "1",
+        });
+
+        // Cyclopentadiene should have equivalent = 2
+        await Then["row {row} should have equivalent {value}"]({
+          row: 1,
+          value: "2",
+        });
+
+        // Change limiting reagent to Cyclopentadiene
+        await When[
+          "the user taps the limiting reagent cell of the second row"
+        ]();
+
+        // Now Cyclopentadiene should have equivalent = 1
+        await Then["row {row} should have equivalent {value}"]({
+          row: 1,
+          value: "1",
+        });
+
+        // Benzene should have equivalent = 0.5 (1/2)
+        await Then["row {row} should have equivalent {value}"]({
+          row: 0,
+          value: "0.5",
+        });
+      },
+    );
+
+    feature(
+      "Changing limiting reagent updates mass/moles editability and yield calculations",
+      async ({ Given, Once, When, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Initially Benzene is limiting reagent, should show "—" for yield
+        await Then["row {row} should have yield {value}"]({
+          row: 0,
+          value: "—",
+        });
+
+        // Cyclopentadiene (non-limiting) should show a yield percentage
+        await Then["row {row} should have yield {value}"]({
+          row: 1,
+          value: "500%",
+        });
+
+        // Change limiting reagent to Cyclopentadiene (second row)
+        await When[
+          "the user taps the limiting reagent cell of the second row"
+        ]();
+
+        // Now Benzene should show a yield percentage (no longer limiting)
+        await Then["row {row} should have yield {value}"]({
+          row: 0,
+          value: "20%",
+        });
+
+        // Cyclopentadiene should now show "—" (is limiting reagent)
+        await Then["row {row} should have yield {value}"]({
+          row: 1,
+          value: "—",
+        });
+
+        // Product yield should be recalculated based on new limiting reagent
+        await Then["row {row} should have yield {value}"]({
+          row: 2,
+          value: "66.7%",
+        });
+      },
+    );
+
+    feature(
+      "Changing limiting reagent updates mass/moles editability",
+      async ({ Given, Once, When, Then, page }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Initially only Benzene (limiting reagent) mass should be editable
+        const dataRows = page
+          .getByRole("row")
+          .filter({ hasNot: page.getByRole("columnheader") });
+
+        // Try editing mass of Benzene (should work - it's limiting reagent)
+        const benzeneRow = dataRows.nth(0);
+        const benzeneMassCell = benzeneRow.getByRole("gridcell").nth(5);
+        await benzeneMassCell.dblclick();
+
+        let input = page.locator('input[type="number"]');
+        await input.waitFor({ state: "visible" });
+        await input.fill("15");
+        await input.press("Enter");
+
+        // Verify mass was updated
+        await Then["row {row} should have mass {value}"]({
+          row: 0,
+          value: "15",
+        });
+
+        // Change limiting reagent to Cyclopentadiene
+        await When[
+          "the user taps the limiting reagent cell of the second row"
+        ]();
+
+        // Now try editing mass of Cyclopentadiene (should work - new limiting reagent)
+        await When["the user edits mass in row {row} to {value}"]({
+          row: 1,
+          value: "25",
+        });
+
+        // Verify mass was updated
+        await Then["row {row} should have mass {value}"]({
+          row: 1,
+          value: "25",
+        });
+
+        // Moles should also update: 25 / 1 = 25
+        await Then["row {row} should have moles {value}"]({
+          row: 1,
+          value: "25",
+        });
+      },
+    );
+
+    feature(
+      "Yield is computed correctly for products",
+      async ({ Given, Once, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Product (Cyclopentane) shows actual calculated yield
+        await Then["row {row} should have yield {value}"]({
+          row: 2,
+          value: "500%",
+        });
+      },
+    );
+
+    feature(
+      "Editing equivalent normalizes all coefficients correctly",
+      async ({ Given, Once, When, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Edit equivalent of Cyclopentadiene from 2 to 4
+        await When["the user edits equivalent in row {row} to {value}"]({
+          row: 1,
+          value: "4",
+        });
+
+        // Benzene (limiting reagent) should still have equivalent = 1
+        await Then["row {row} should have equivalent {value}"]({
+          row: 0,
+          value: "1",
+        });
+
+        // Cyclopentadiene should now have equivalent = 4
+        await Then["row {row} should have equivalent {value}"]({
+          row: 1,
+          value: "4",
+        });
+
+        // Cyclopentane coefficient remains unchanged at 3
+        await Then["row {row} should have equivalent {value}"]({
+          row: 2,
+          value: "3",
+        });
       },
     );
   });
