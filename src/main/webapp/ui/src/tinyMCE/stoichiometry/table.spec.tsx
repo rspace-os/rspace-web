@@ -1,10 +1,47 @@
 import { test, expect } from "@playwright/experimental-ct-react";
-import { Download } from "playwright-core";
+import { Download, Locator, Page } from "playwright-core";
 import React from "react";
 import { StoichiometryTableWithDataStory } from "./table.story";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "fs/promises";
 import * as Jwt from "jsonwebtoken";
+
+async function getColumnIndexByHeader(table: Locator, headerText: string) {
+  const allHeaders = table.getByRole("columnheader");
+  const count = await allHeaders.count();
+
+  for (let i = 0; i < count; i++) {
+    const text = await allHeaders.nth(i).textContent();
+    if (text?.trim() === headerText) {
+      return i;
+    }
+  }
+  return -1; // Not found
+}
+
+async function getRowByColumnValue(
+  page: Page,
+  table: Locator,
+  columnHeaderText: string,
+  cellValue: string,
+) {
+  // First get the column index
+  const columnIndex = await getColumnIndexByHeader(table, columnHeaderText);
+  if (columnIndex === -1) {
+    throw new Error(`Column "${columnHeaderText}" not found`);
+  }
+
+  // Find the row where that column has the specified value
+  return table
+    .getByRole("row")
+    .filter({ hasNot: table.getByRole("columnheader") })
+    .filter({
+      has: page
+        .getByRole("gridcell")
+        .nth(columnIndex)
+        .filter({ hasText: cellValue }),
+    });
+}
 
 const feature = test.extend<{
   Given: {
@@ -115,46 +152,14 @@ const feature = test.extend<{
     }) => Promise<void>;
     "the loading dialog should be visible": () => Promise<void>;
     "the loading dialog should not be visible": () => Promise<void>;
-    "row {row} should have mass {value}": ({
-      row,
+
+    "Compound {name} has {column} of {value}": ({
+      name,
+      column,
       value,
     }: {
-      row: number;
-      value: string;
-    }) => Promise<void>;
-    "row {row} should have moles {value}": ({
-      row,
-      value,
-    }: {
-      row: number;
-      value: string;
-    }) => Promise<void>;
-    "row {row} should have actual mass {value}": ({
-      row,
-      value,
-    }: {
-      row: number;
-      value: string;
-    }) => Promise<void>;
-    "row {row} should have actual moles {value}": ({
-      row,
-      value,
-    }: {
-      row: number;
-      value: string;
-    }) => Promise<void>;
-    "row {row} should have equivalent {value}": ({
-      row,
-      value,
-    }: {
-      row: number;
-      value: string;
-    }) => Promise<void>;
-    "row {row} should have yield {value}": ({
-      row,
-      value,
-    }: {
-      row: number;
+      name: string;
+      column: string;
       value: string;
     }) => Promise<void>;
   };
@@ -551,53 +556,25 @@ const feature = test.extend<{
           page.getByText("Loading molecule information..."),
         ).not.toBeVisible();
       },
-      "row {row} should have mass {value}": async ({ row, value }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const massCell = targetRow.getByRole("gridcell").nth(5); // Mass column
-        await expect(massCell).toContainText(value);
-      },
-      "row {row} should have moles {value}": async ({ row, value }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const molesCell = targetRow.getByRole("gridcell").nth(6); // Moles column
-        await expect(molesCell).toContainText(value);
-      },
-      "row {row} should have actual mass {value}": async ({ row, value }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const actualMassCell = targetRow.getByRole("gridcell").nth(7); // Actual Mass column
-        await expect(actualMassCell).toContainText(value);
-      },
-      "row {row} should have actual moles {value}": async ({ row, value }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const actualMolesCell = targetRow.getByRole("gridcell").nth(8); // Actual Moles column
-        await expect(actualMolesCell).toContainText(value);
-      },
-      "row {row} should have equivalent {value}": async ({ row, value }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const equivalentCell = targetRow.getByRole("gridcell").nth(3); // Equivalent column
-        await expect(equivalentCell).toContainText(value);
-      },
-      "row {row} should have yield {value}": async ({ row, value }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const yieldCell = targetRow.getByRole("gridcell").nth(9); // Yield column
-        await expect(yieldCell).toContainText(value);
+      "Compound {name} has {column} of {value}": async ({
+        name,
+        column,
+        value,
+      }) => {
+        const colIndex = await getColumnIndexByHeader(
+          page.getByRole("grid"),
+          column,
+        );
+
+        const row = await getRowByColumnValue(
+          page,
+          page.getByRole("grid"),
+          "Name",
+          name,
+        );
+        await expect(row.getByRole("gridcell").nth(colIndex)).toContainText(
+          value,
+        );
       },
     });
   },
@@ -1075,9 +1052,9 @@ test.describe("Stoichiometry Table", () => {
           value: "8",
         });
 
-        // Actual moles should update: 8 / 1 = 8 moles
-        await Then["row {row} should have actual moles {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Actual Moles (mol)",
           value: "8",
         });
       },
@@ -1095,9 +1072,9 @@ test.describe("Stoichiometry Table", () => {
           value: "6",
         });
 
-        // Actual mass should update: 6 * 1 = 6 grams
-        await Then["row {row} should have actual mass {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Actual Mass (g)",
           value: "6",
         });
       },
@@ -1115,15 +1092,15 @@ test.describe("Stoichiometry Table", () => {
           value: "10",
         });
 
-        // Actual moles should update: 10 / 1 = 10 moles
-        await Then["row {row} should have actual moles {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Actual Moles (mol)",
           value: "10",
         });
 
-        // Yield should be calculated based on excess formula
-        await Then["row {row} should have yield {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Yield/Excess (%)",
           value: "150%",
         });
       },
@@ -1141,9 +1118,9 @@ test.describe("Stoichiometry Table", () => {
           value: "7",
         });
 
-        // Actual moles should update: 7 / 1 = 7 moles
-        await Then["row {row} should have actual moles {value}"]({
-          row: 2,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentane",
+          column: "Actual Moles (mol)",
           value: "7",
         });
       },
@@ -1155,32 +1132,31 @@ test.describe("Stoichiometry Table", () => {
         await Given["the table is loaded with data"]();
         await Once["the table has loaded"]();
 
-        // Initially Benzene is limiting reagent (equivalent = 1)
-        await Then["row {row} should have equivalent {value}"]({
-          row: 0,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Benzene",
+          column: "Equivalent",
           value: "1",
         });
 
-        // Cyclopentadiene should have equivalent = 2
-        await Then["row {row} should have equivalent {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Equivalent",
           value: "2",
         });
 
-        // Change limiting reagent to Cyclopentadiene
         await When[
           "the user taps the limiting reagent cell of the second row"
         ]();
 
-        // Now Cyclopentadiene should have equivalent = 1
-        await Then["row {row} should have equivalent {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Equivalent",
           value: "1",
         });
 
-        // Benzene should have equivalent = 0.5 (1/2)
-        await Then["row {row} should have equivalent {value}"]({
-          row: 0,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Benzene",
+          column: "Equivalent",
           value: "0.5",
         });
       },
@@ -1192,38 +1168,37 @@ test.describe("Stoichiometry Table", () => {
         await Given["the table is loaded with data"]();
         await Once["the table has loaded"]();
 
-        // Initially Benzene is limiting reagent, should show "—" for yield
-        await Then["row {row} should have yield {value}"]({
-          row: 0,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Benzene",
+          column: "Yield/Excess (%)",
           value: "—",
         });
 
-        // Cyclopentadiene (non-limiting) should show a yield percentage
-        await Then["row {row} should have yield {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Yield/Excess (%)",
           value: "500%",
         });
 
-        // Change limiting reagent to Cyclopentadiene (second row)
         await When[
           "the user taps the limiting reagent cell of the second row"
         ]();
 
-        // Now Benzene should show a yield percentage (no longer limiting)
-        await Then["row {row} should have yield {value}"]({
-          row: 0,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Benzene",
+          column: "Yield/Excess (%)",
           value: "20%",
         });
 
-        // Cyclopentadiene should now show "—" (is limiting reagent)
-        await Then["row {row} should have yield {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Yield/Excess (%)",
           value: "—",
         });
 
-        // Product yield should be recalculated based on new limiting reagent
-        await Then["row {row} should have yield {value}"]({
-          row: 2,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentane",
+          column: "Yield/Excess (%)",
           value: "66.7%",
         });
       },
@@ -1250,9 +1225,9 @@ test.describe("Stoichiometry Table", () => {
         await input.fill("15");
         await input.press("Enter");
 
-        // Verify mass was updated
-        await Then["row {row} should have mass {value}"]({
-          row: 0,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Benzene",
+          column: "Mass (g)",
           value: "15",
         });
 
@@ -1267,15 +1242,15 @@ test.describe("Stoichiometry Table", () => {
           value: "25",
         });
 
-        // Verify mass was updated
-        await Then["row {row} should have mass {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Mass (g)",
           value: "25",
         });
 
-        // Moles should also update: 25 / 1 = 25
-        await Then["row {row} should have moles {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Moles (mol)",
           value: "25",
         });
       },
@@ -1287,9 +1262,9 @@ test.describe("Stoichiometry Table", () => {
         await Given["the table is loaded with data"]();
         await Once["the table has loaded"]();
 
-        // Product (Cyclopentane) shows actual calculated yield
-        await Then["row {row} should have yield {value}"]({
-          row: 2,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentane",
+          column: "Yield/Excess (%)",
           value: "500%",
         });
       },
@@ -1307,21 +1282,21 @@ test.describe("Stoichiometry Table", () => {
           value: "4",
         });
 
-        // Benzene (limiting reagent) should still have equivalent = 1
-        await Then["row {row} should have equivalent {value}"]({
-          row: 0,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Benzene",
+          column: "Equivalent",
           value: "1",
         });
 
-        // Cyclopentadiene should now have equivalent = 4
-        await Then["row {row} should have equivalent {value}"]({
-          row: 1,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Equivalent",
           value: "4",
         });
 
-        // Cyclopentane coefficient remains unchanged at 3
-        await Then["row {row} should have equivalent {value}"]({
-          row: 2,
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentane",
+          column: "Equivalent",
           value: "3",
         });
       },
