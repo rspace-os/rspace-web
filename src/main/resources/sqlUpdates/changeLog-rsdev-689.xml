@@ -49,12 +49,6 @@
             <column name="mass" type="DOUBLE">
                 <constraints nullable="true"/>
             </column>
-            <column name="moles" type="DOUBLE">
-                <constraints nullable="true"/>
-            </column>
-            <column name="expected_amount" type="DOUBLE">
-                <constraints nullable="true"/>
-            </column>
             <column name="actual_amount" type="DOUBLE">
                 <constraints nullable="true"/>
             </column>

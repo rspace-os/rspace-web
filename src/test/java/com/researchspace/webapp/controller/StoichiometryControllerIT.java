@@ -150,9 +150,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     updatedMolecule.setId(molecule.getId());
     updatedMolecule.setCoefficient(2.0);
     updatedMolecule.setMass(100.0);
-    updatedMolecule.setMoles(0.5);
-    updatedMolecule.setExpectedAmount(200.0);
-    updatedMolecule.setActualAmount(180.0);
+    updatedMolecule.setActualAmount(200.0);
     updatedMolecule.setActualYield(90.0);
     updatedMolecule.setLimitingReagent(true);
     updatedMolecule.setNotes("Updated notes");
@@ -186,9 +184,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     double delta = 0.001;
     assertEquals(2.0, updatedMol.getCoefficient(), delta);
     assertEquals(100.0, updatedMol.getMass(), delta);
-    assertEquals(0.5, updatedMol.getMoles(), delta);
-    assertEquals(200.0, updatedMol.getExpectedAmount(), delta);
-    assertEquals(180.0, updatedMol.getActualAmount(), delta);
+    assertEquals(200.0, updatedMol.getActualAmount(), delta);
     assertEquals(90.0, updatedMol.getActualYield(), delta);
     assertTrue(updatedMol.getLimitingReagent());
     assertEquals("Updated notes", updatedMol.getNotes());

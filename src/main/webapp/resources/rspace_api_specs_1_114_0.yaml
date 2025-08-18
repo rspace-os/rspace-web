@@ -4255,12 +4255,6 @@ definitions:
       mass:
         type: number
         example: 44.068
-      moles:
-        type: number
-        example: 1.0
-      expectedAmount:
-        type: number
-        example: 1.0
       actualAmount:
         type: number
         example: 1.0
@@ -4296,10 +4290,6 @@ definitions:
         type: string
         enum: [ REACTANT, PRODUCT, AGENT ]
       mass:
-        type: number
-      moles:
-        type: number
-      expectedAmount:
         type: number
       actualAmount:
         type: number

@@ -148,8 +148,6 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
                 .molecularWeight(sourceMol.getMolecularWeight())
                 .coefficient(sourceMol.getCoefficient())
                 .mass(sourceMol.getMass())
-                .moles(sourceMol.getMoles())
-                .expectedAmount(sourceMol.getExpectedAmount())
                 .actualAmount(sourceMol.getActualAmount())
                 .actualYield(sourceMol.getActualYield())
                 .limitingReagent(sourceMol.getLimitingReagent())
@@ -217,8 +215,6 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
             .formula(updateMol.getFormula())
             .limitingReagent(updateMol.getLimitingReagent())
             .mass(updateMol.getMass())
-            .moles(updateMol.getMoles())
-            .expectedAmount(updateMol.getExpectedAmount())
             .actualAmount(updateMol.getActualAmount())
             .actualYield(updateMol.getActualYield())
             .notes(updateMol.getNotes())
@@ -230,8 +226,6 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   private void applyFieldUpdates(StoichiometryMolecule existing, StoichiometryMoleculeUpdateDTO u) {
     existing.setCoefficient(u.getCoefficient());
     existing.setMass(u.getMass());
-    existing.setMoles(u.getMoles());
-    existing.setExpectedAmount(u.getExpectedAmount());
     existing.setActualAmount(u.getActualAmount());
     existing.setActualYield(u.getActualYield());
     existing.setLimitingReagent(u.getLimitingReagent());

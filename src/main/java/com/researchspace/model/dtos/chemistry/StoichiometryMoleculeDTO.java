@@ -20,8 +20,6 @@ public class StoichiometryMoleculeDTO {
   private Double coefficient;
   private Double molecularWeight;
   private Double mass;
-  private Double moles;
-  private Double expectedAmount;
   private Double actualAmount;
   private Double actualYield;
   private Boolean limitingReagent;
