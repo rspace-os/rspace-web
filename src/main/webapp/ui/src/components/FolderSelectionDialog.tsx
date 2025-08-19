@@ -63,7 +63,12 @@ export default function FolderSelectionDialog({
           />
         </Box>
         {selectedFolder && (
-          <Box sx={{ mt: 2, p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
+          <Box
+            sx={{ mt: 2, p: 2, bgcolor: "action.hover", borderRadius: 1 }}
+            role="status"
+            aria-live="polite"
+            aria-label="Selected folder"
+          >
             <Typography variant="subtitle2">Selected folder:</Typography>
             <Typography variant="body2" color="text.secondary">
               {selectedFolder.name}
