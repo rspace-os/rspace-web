@@ -16,10 +16,7 @@ export function TestFolderTreeExample() {
   return (
     <ThemeProvider theme={materialTheme}>
       <Box sx={{ p: 2 }}>
-        <FolderTree
-          onFolderSelect={setSelectedFolder}
-          selectedFolderId={selectedFolder?.id}
-        />
+        <FolderTree onFolderSelect={setSelectedFolder} />
         {selectedFolder && (
           <div data-testid="selected-folder">
             <span data-testid="folder-name">{selectedFolder.name}</span>
@@ -46,10 +43,7 @@ export function SimpleFolderTreeExample() {
         </Typography>
         <Box sx={{ display: "flex", gap: 2 }}>
           <Box sx={{ width: 300, border: 1, borderColor: "grey.300", p: 1 }}>
-            <FolderTree
-              onFolderSelect={setSelectedFolder}
-              selectedFolderId={selectedFolder?.id}
-            />
+            <FolderTree onFolderSelect={setSelectedFolder} />
           </Box>
           <Box sx={{ flex: 1, p: 2, border: 1, borderColor: "grey.300" }}>
             <Typography variant="h6">Selected Folder:</Typography>
