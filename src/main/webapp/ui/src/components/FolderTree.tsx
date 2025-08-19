@@ -240,7 +240,7 @@ export default function FolderTree({
             ),
           );
         }}
-        selectedItems={selectedFolder?.id.toString()}
+        selectedItems={selectedFolder?.id.toString() ?? ""}
         onItemSelectionToggle={(_event, idAsString) => {
           const folder = Parsers.parseInteger(idAsString)
             .toOptional()
