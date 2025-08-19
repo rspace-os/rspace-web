@@ -8,6 +8,7 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
 import useFolders, {
   folderDetailsAsTreeNode,
   type FolderTreeNode,
@@ -17,7 +18,6 @@ import * as MapUtils from "../util/MapUtils";
 import * as ArrayUtils from "../util/ArrayUtils";
 import * as Parsers from "../util/parsers";
 
-// TODO: error handling
 // TODO: create abstraction?
 
 const TreeItemContent = ({
@@ -34,10 +34,12 @@ const TreeItemContent = ({
   const [currentPage, setCurrentPage] = React.useState(0);
   const [totalHits, setTotalHits] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<boolean>(false);
 
   const loadFolders = React.useCallback(
     async (pageNumber: number, append: boolean = false) => {
       setIsLoading(true);
+      setError(false);
       try {
         const response = await getFolderTree({
           id: folder.id,
@@ -57,6 +59,8 @@ const TreeItemContent = ({
         response.records.forEach((folder) => {
           onNewFolder(folder);
         });
+      } catch (err) {
+        setError(true);
       } finally {
         setIsLoading(false);
       }
@@ -79,6 +83,24 @@ const TreeItemContent = ({
           onNewFolder={onNewFolder}
         />
       ))}
+      {error && (
+        <Box sx={{ p: 1 }}>
+          <Alert
+            severity="error"
+            action={
+              <Button
+                size="small"
+                onClick={doNotAwait(() => loadFolders(currentPage))}
+                disabled={isLoading}
+              >
+                Retry
+              </Button>
+            }
+          >
+            Failed to load subfolders
+          </Alert>
+        </Box>
+      )}
       {hasMorePages && (
         <Box sx={{ p: 1 }}>
           <Button
@@ -117,10 +139,12 @@ export default function FolderTree({
   const [currentPage, setCurrentPage] = React.useState(0);
   const [totalHits, setTotalHits] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<boolean>(false);
 
   const loadRootFolders = React.useCallback(
     async (pageNumber: number, append: boolean = false) => {
       setIsLoading(true);
+      setError(false);
       try {
         const response = await getFolderTree({
           typesToInclude: "folder",
@@ -139,6 +163,8 @@ export default function FolderTree({
         response.records.forEach((folder) => {
           allFoldersInTree.set(folder.id, folder);
         });
+      } catch (err) {
+        setError(true);
       } finally {
         setIsLoading(false);
       }
@@ -148,11 +174,16 @@ export default function FolderTree({
 
   React.useEffect(() => {
     if (rootFolderId) {
-      getFolder(rootFolderId).then((response) => {
-        const newFolder = folderDetailsAsTreeNode(response);
-        setRootFolders([newFolder]);
-        allFoldersInTree.set(newFolder.id, newFolder);
-      });
+      setError(false);
+      getFolder(rootFolderId)
+        .then((response) => {
+          const newFolder = folderDetailsAsTreeNode(response);
+          setRootFolders([newFolder]);
+          allFoldersInTree.set(newFolder.id, newFolder);
+        })
+        .catch((err) => {
+          setError(true);
+        });
     } else {
       void loadRootFolders(0);
     }
@@ -162,6 +193,39 @@ export default function FolderTree({
 
   return (
     <Box>
+      {error && (
+        <Box sx={{ mb: 2 }}>
+          <Alert
+            severity="error"
+            action={
+              <Button
+                size="small"
+                onClick={() => {
+                  if (rootFolderId) {
+                    setError(false);
+                    getFolder(rootFolderId)
+                      .then((response) => {
+                        const newFolder = folderDetailsAsTreeNode(response);
+                        setRootFolders([newFolder]);
+                        allFoldersInTree.set(newFolder.id, newFolder);
+                      })
+                      .catch((err) => {
+                        setError(true);
+                      });
+                  } else {
+                    loadRootFolders(0);
+                  }
+                }}
+                disabled={isLoading}
+              >
+                Retry
+              </Button>
+            }
+          >
+            Failed to load folders
+          </Alert>
+        </Box>
+      )}
       <SimpleTreeView
         aria-label="tree view of shared folder"
         expandedItems={[...expandedFolders].map((folder) =>
