@@ -61,7 +61,7 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void getByParentChemical_whenNoPermission_throwsAuthz() throws Exception {
+  void getByParentChemical_whenNoPermission_throwsAuth() throws Exception {
     Stoichiometry stoich = makeStoichiometryWithRecord(10L);
     when(stoichiometryManager.findByParentReactionId(1L)).thenReturn(Optional.of(stoich));
     when(permissionUtils.isPermitted(any(), eq(PermissionType.READ), eq(user))).thenReturn(false);
@@ -96,7 +96,7 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void create_whenNoWritePermission_throwsAuthz() throws Exception {
+  void create_whenNoWritePermission_throwsAuth() throws Exception {
     RSChemElement chem = TestFactory.createChemElement(null, 2L);
     Record record = TestFactory.createAnySD();
     chem.setRecord(record);

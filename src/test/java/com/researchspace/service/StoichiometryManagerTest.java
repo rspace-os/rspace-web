@@ -8,6 +8,8 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.StoichiometryDao;
@@ -36,6 +38,8 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -49,15 +53,21 @@ public class StoichiometryManagerTest {
   @Mock private ChemicalSearcher chemicalSearcher;
 
   @InjectMocks private StoichiometryManagerImpl stoichiometryManager;
+
+  @Captor
+  private ArgumentCaptor<Stoichiometry> stoichiometryCaptor;
+
   private User user;
 
   @Before
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("testUser");
+    when(stoichiometryDao.save(stoichiometryCaptor.capture()))
+            .thenAnswer(invocation -> invocation.getArgument(0, Stoichiometry.class));
   }
 
   @Test
-  public void whenFindByParentReactionId_thenReturnMatchingStoichiometry() {
+  public void whenFindByParentReactionId_thenReturnsFromDao() {
     Long parentReactionId = 1L;
     Stoichiometry expectedStoichiometry = createStoichiometry(1L, parentReactionId);
     when(stoichiometryDao.findByParentReactionId(parentReactionId))
@@ -92,18 +102,18 @@ public class StoichiometryManagerTest {
     ChemicalImportSearchResult searchResult =
         ChemicalImportSearchResult.builder().name(name).smiles(smiles).formula(formula).build();
     searchResults.add(searchResult);
+
     when(chemicalSearcher.searchChemicals(any(ChemicalImportSearchType.class), anyString()))
         .thenReturn(searchResults);
+    stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
 
-    when(stoichiometryDao.save(any(Stoichiometry.class)))
-        .thenReturn(Stoichiometry.builder().id(1L).parentReaction(parentReaction).build());
+    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
+    List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
 
-    Stoichiometry result =
-        stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
-
-    assertEquals(parentReaction, result.getParentReaction());
-    assertEquals(1, result.getMolecules().size());
-    StoichiometryMolecule molecule = result.getMolecules().get(0);
+    Stoichiometry finalSave = savedStoichiometries.get(1);
+    assertEquals(parentReaction, finalSave.getParentReaction());
+    assertEquals(1, finalSave.getMolecules().size());
+    StoichiometryMolecule molecule = finalSave.getMolecules().get(0);
     assertEquals(name, molecule.getName());
     assertEquals(smiles, molecule.getSmiles());
     assertEquals(formula, molecule.getFormula());
@@ -121,18 +131,19 @@ public class StoichiometryManagerTest {
         .thenThrow(
             new ChemicalImportException("Error searching chemicals", HttpStatus.BAD_REQUEST));
 
-    when(stoichiometryDao.save(any(Stoichiometry.class)))
-        .thenReturn(Stoichiometry.builder().id(1L).parentReaction(parentReaction).build());
-
     Stoichiometry result =
         stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
 
-    assertNotNull(result);
-    assertEquals(parentReaction, result.getParentReaction());
-    assertEquals(1, result.getMolecules().size());
+    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
+    List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
 
-    StoichiometryMolecule molecule = result.getMolecules().get(0);
+    Stoichiometry finalSave = savedStoichiometries.get(1);
+    assertEquals(parentReaction, finalSave.getParentReaction());
+    assertEquals(1, finalSave.getMolecules().size());
+    StoichiometryMolecule molecule = finalSave.getMolecules().get(0);
     assertNull(molecule.getName());
+
+    assertEquals(finalSave, result);
   }
 
   @Test
@@ -184,30 +195,217 @@ public class StoichiometryManagerTest {
   }
 
   @Test
-  public void whenToDTO_thenReturnStoichiometryDTOWithAllMolecules() {
-    Stoichiometry stoichiometry = createStoichiometryWithMolecules(1L, 2L);
+  public void whenUpdateMoleculeWithValidData_thenUpdatesSuccessfully() {
+    Long stoichiometryId = 1L;
+    Stoichiometry existingStoichiometry = createStoichiometryWith2Molecules(stoichiometryId, 1L);
+    Long existingMoleculeId = existingStoichiometry.getMolecules().get(0).getId();
 
-    StoichiometryDTO result = StoichiometryMapper.toDTO(stoichiometry);
+    StoichiometryUpdateDTO stoichiometryUpdateDTO = new StoichiometryUpdateDTO();
+    stoichiometryUpdateDTO.setId(stoichiometryId);
 
-    assertNotNull(result);
-    assertEquals(Long.valueOf(2L), result.getParentReactionId());
-    assertEquals(3, result.getMolecules().size());
+    StoichiometryMoleculeUpdateDTO moleculeUpdateDTO = new StoichiometryMoleculeUpdateDTO();
+    moleculeUpdateDTO.setId(existingMoleculeId);
+    moleculeUpdateDTO.setCoefficient(2.5);
+    moleculeUpdateDTO.setMass(100.0);
+    moleculeUpdateDTO.setRole(MoleculeRole.PRODUCT);
+    moleculeUpdateDTO.setNotes("Updated notes");
+    stoichiometryUpdateDTO.setMolecules(Collections.singletonList(moleculeUpdateDTO));
 
-    StoichiometryMoleculeDTO reactant =
+    when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
+
+    Stoichiometry result = stoichiometryManager.update(stoichiometryUpdateDTO, user);
+
+    verify(stoichiometryDao, times(1)).save(any(Stoichiometry.class));
+
+    Stoichiometry savedStoichiometry = stoichiometryCaptor.getValue();
+    assertEquals(1, savedStoichiometry.getMolecules().size());
+    StoichiometryMolecule updatedMolecule = savedStoichiometry.getMolecules().get(0);
+    assertEquals(2.5, updatedMolecule.getCoefficient(), 0.001);
+    assertEquals(100.0, updatedMolecule.getMass(), 0.001);
+    assertEquals(MoleculeRole.PRODUCT, updatedMolecule.getRole());
+    assertEquals("Updated notes", updatedMolecule.getNotes());
+
+    assertEquals(savedStoichiometry, result);
+  }
+
+  @Test
+  public void whenUpdate_withNewMolecules_thenAddsThemCorrectly() throws Exception {
+    Long stoichiometryId = 1L;
+    Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L);
+    Long existingMoleculeId = existingStoichiometry.getMolecules().get(0).getId();
+    RSChemElement newMolecule = createRSChemElement(99L);
+
+    StoichiometryUpdateDTO stoichiometryUpdateDTO = new StoichiometryUpdateDTO();
+    stoichiometryUpdateDTO.setId(stoichiometryId);
+
+    List<StoichiometryMoleculeUpdateDTO> updates = new ArrayList<>();
+
+    // Keep existing molecule
+    StoichiometryMoleculeUpdateDTO existingMoleculeUpdate = new StoichiometryMoleculeUpdateDTO();
+    existingMoleculeUpdate.setId(existingMoleculeId);
+    updates.add(existingMoleculeUpdate);
+
+    // Add new molecule
+    StoichiometryMoleculeUpdateDTO newMoleculeUpdateDTO = new StoichiometryMoleculeUpdateDTO();
+    newMoleculeUpdateDTO.setId(null);
+    newMoleculeUpdateDTO.setSmiles("C6H6");
+    newMoleculeUpdateDTO.setName("Benzene");
+    newMoleculeUpdateDTO.setFormula("C6H6");
+    newMoleculeUpdateDTO.setRole(MoleculeRole.REACTANT);
+    newMoleculeUpdateDTO.setCoefficient(1.0);
+    newMoleculeUpdateDTO.setMolecularWeight(78.11);
+    updates.add(newMoleculeUpdateDTO);
+
+    stoichiometryUpdateDTO.setMolecules(updates);
+
+    when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
+    when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
+        .thenReturn(newMolecule);
+
+    Stoichiometry result = stoichiometryManager.update(stoichiometryUpdateDTO, user);
+
+    verify(stoichiometryDao, times(1)).save(any(Stoichiometry.class));
+
+    Stoichiometry savedStoichiometry = stoichiometryCaptor.getValue();
+    assertEquals(2, savedStoichiometry.getMolecules().size());
+
+    StoichiometryMolecule addedMolecule =
         result.getMolecules().stream()
-            .filter(m -> m.getRole().equals(MoleculeRole.REACTANT))
+            .filter(m -> "Benzene".equals(m.getName()))
             .findFirst()
-            .get();
-    assertEquals("C2H6O", reactant.getFormula());
-    assertEquals("Ethanol", reactant.getName());
+            .orElse(null);
+    assertEquals("C6H6", addedMolecule.getSmiles());
+    assertEquals(MoleculeRole.REACTANT, addedMolecule.getRole());
+  }
 
-    StoichiometryMoleculeDTO product =
+  @Test
+  public void whenUpdate_withMultipleOperations_thenHandlesAllCorrectly() throws Exception {
+    Long stoichiometryId = 1L;
+    Stoichiometry existingStoichiometry = createStoichiometryWith2Molecules(stoichiometryId, 1L);
+    Long existingMoleculeId = existingStoichiometry.getMolecules().get(0).getId();
+    RSChemElement newMolecule = createRSChemElement(99L);
+
+    StoichiometryUpdateDTO stoichiometryUpdateDTO = new StoichiometryUpdateDTO();
+    stoichiometryUpdateDTO.setId(stoichiometryId);
+
+    List<StoichiometryMoleculeUpdateDTO> updates = new ArrayList<>();
+
+    // Update existing molecule
+    StoichiometryMoleculeUpdateDTO existingMoleculeUpdate = new StoichiometryMoleculeUpdateDTO();
+    existingMoleculeUpdate.setId(existingMoleculeId);
+    existingMoleculeUpdate.setCoefficient(3.0);
+    existingMoleculeUpdate.setMass(150.0);
+    updates.add(existingMoleculeUpdate);
+
+    // Add new molecule
+    StoichiometryMoleculeUpdateDTO newMoleculeUpdate = new StoichiometryMoleculeUpdateDTO();
+    newMoleculeUpdate.setId(null);
+    newMoleculeUpdate.setSmiles("CH4");
+    newMoleculeUpdate.setName("Methane");
+    newMoleculeUpdate.setRole(MoleculeRole.AGENT);
+    updates.add(newMoleculeUpdate);
+
+    stoichiometryUpdateDTO.setMolecules(updates);
+
+    when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
+    when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
+        .thenReturn(newMolecule);
+
+    Stoichiometry result = stoichiometryManager.update(stoichiometryUpdateDTO, user);
+
+    verify(stoichiometryDao, times(1)).save(any(Stoichiometry.class));
+
+    Stoichiometry savedStoichiometry = stoichiometryCaptor.getValue();
+    assertEquals(2, savedStoichiometry.getMolecules().size());
+
+    StoichiometryMolecule updatedMolecule =
         result.getMolecules().stream()
-            .filter(m -> m.getRole().equals(MoleculeRole.PRODUCT))
+            .filter(m -> existingMoleculeId.equals(m.getId()))
             .findFirst()
-            .get();
-    assertEquals("C2H4O", product.getFormula());
-    assertEquals("Acetaldehyde", product.getName());
+            .orElse(null);
+    assertEquals(3.0, updatedMolecule.getCoefficient(), 0.001);
+    assertEquals(150.0, updatedMolecule.getMass(), 0.001);
+
+    StoichiometryMolecule newMol =
+        result.getMolecules().stream()
+            .filter(m -> "Methane".equals(m.getName()))
+            .findFirst()
+            .orElse(null);
+    assertEquals(MoleculeRole.AGENT, newMol.getRole());
+  }
+
+  @Test
+  public void whenCopyForReaction_withValidSource_thenCreatesCopyWithNewParent() throws Exception {
+    Long sourceParentReactionId = 1L;
+    Long targetParentReactionId = 2L;
+    Stoichiometry sourceStoichiometry =
+        createStoichiometryWith2Molecules(1L, sourceParentReactionId);
+    RSChemElement targetParentReaction = createRSChemElement(targetParentReactionId);
+    RSChemElement newMolecule = createRSChemElement(99L);
+
+    when(stoichiometryDao.findByParentReactionId(sourceParentReactionId))
+        .thenReturn(Optional.of(sourceStoichiometry));
+
+    when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
+        .thenReturn(newMolecule);
+
+    stoichiometryManager.copyForReaction(sourceParentReactionId, targetParentReaction, user);
+
+    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
+    List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
+
+    Stoichiometry finalSave = savedStoichiometries.get(1);
+    assertEquals(targetParentReaction, finalSave.getParentReaction());
+    assertEquals(3, finalSave.getMolecules().size());
+  }
+
+  @Test
+  public void whenCopyForReaction_withNonExistentSource_thenThrowsException() {
+    Long sourceParentReactionId = 999L;
+    RSChemElement targetParentReaction = createRSChemElement(2L);
+
+    when(stoichiometryDao.findByParentReactionId(sourceParentReactionId))
+        .thenReturn(Optional.empty());
+
+    Exception exception =
+        assertThrows(
+            StoichiometryException.class,
+            () ->
+                stoichiometryManager.copyForReaction(
+                    sourceParentReactionId, targetParentReaction, user));
+
+    assertTrue(
+        exception
+            .getMessage()
+            .contains("No stoichiometry found for reaction id " + sourceParentReactionId));
+  }
+
+  @Test
+  public void whenCopyForReaction_withIOException_thenThrowsStoichiometryException()
+      throws Exception {
+    Long sourceParentReactionId = 1L;
+    Long targetParentReactionId = 2L;
+    Stoichiometry sourceStoichiometry =
+        createStoichiometryWith2Molecules(1L, sourceParentReactionId);
+    RSChemElement targetParentReaction = createRSChemElement(targetParentReactionId);
+
+    when(stoichiometryDao.findByParentReactionId(sourceParentReactionId))
+        .thenReturn(Optional.of(sourceStoichiometry));
+
+    when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
+        .thenThrow(new IOException("Failed to save molecule"));
+
+    Exception exception =
+        assertThrows(
+            StoichiometryException.class,
+            () ->
+                stoichiometryManager.copyForReaction(
+                    sourceParentReactionId, targetParentReaction, user));
+
+    assertTrue(
+        exception
+            .getMessage()
+            .contains("Problem saving molecule from SMILES during stoichiometry copy"));
   }
 
   @Test
@@ -249,7 +447,7 @@ public class StoichiometryManagerTest {
     return stoichiometry;
   }
 
-  private Stoichiometry createStoichiometryWithMolecules(Long id, Long parentReactionId) {
+  private Stoichiometry createStoichiometryWith2Molecules(Long id, Long parentReactionId) {
     Stoichiometry stoichiometry = createStoichiometry(id, parentReactionId);
 
     StoichiometryMolecule reactant =

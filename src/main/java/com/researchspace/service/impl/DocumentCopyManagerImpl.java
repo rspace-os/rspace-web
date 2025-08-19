@@ -160,7 +160,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
           log.error("Problem saving chemical in document with id {}.", destRecord.getId(), e);
         }
 
-        if (destFieldId != null) { // skip for snippets
+        if (destFieldId != null) {
           try {
             if (stoichiometryManager.findByParentReactionId(origChem.getId()).isPresent()) {
               stoichiometryManager.copyForReaction(origChem.getId(), copyChem, user);
