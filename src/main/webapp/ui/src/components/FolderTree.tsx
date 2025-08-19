@@ -17,7 +17,6 @@ import * as MapUtils from "../util/MapUtils";
 import * as ArrayUtils from "../util/ArrayUtils";
 import * as Parsers from "../util/parsers";
 
-// TODO: pagination
 // TODO: error handling
 // TODO: create abstraction?
 
@@ -32,17 +31,44 @@ const TreeItemContent = ({
   const [folders, setFolders] = React.useState<ReadonlyArray<FolderTreeNode>>(
     [],
   );
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const [totalHits, setTotalHits] = React.useState(0);
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  React.useEffect(() => {
-    getFolderTree({ id: folder.id, typesToInclude: "folder" }).then(
-      (response) => {
-        setFolders(response.records);
+  const loadFolders = React.useCallback(
+    async (pageNumber: number, append: boolean = false) => {
+      setIsLoading(true);
+      try {
+        const response = await getFolderTree({
+          id: folder.id,
+          typesToInclude: "folder",
+          pageNumber,
+        });
+
+        if (append) {
+          setFolders((prev) => [...prev, ...response.records]);
+        } else {
+          setFolders(response.records);
+        }
+
+        setTotalHits(response.totalHits);
+        setCurrentPage(pageNumber);
+
         response.records.forEach((folder) => {
           onNewFolder(folder);
         });
-      },
-    );
-  }, [folder]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [folder.id, getFolderTree],
+  );
+
+  React.useEffect(() => {
+    void loadFolders(0);
+  }, [loadFolders]);
+
+  const hasMorePages = folders.length < totalHits;
 
   return (
     <TreeItem itemId={folder.id.toString()} label={folder.name} role="treeitem">
@@ -53,6 +79,18 @@ const TreeItemContent = ({
           onNewFolder={onNewFolder}
         />
       ))}
+      {hasMorePages && (
+        <Box sx={{ p: 1 }}>
+          <Button
+            size="small"
+            onClick={doNotAwait(() => loadFolders(currentPage + 1, true))}
+            disabled={isLoading}
+            startIcon={isLoading ? <CircularProgress size={16} /> : null}
+          >
+            {isLoading ? "Loading..." : "Load More"}
+          </Button>
+        </Box>
+      )}
     </TreeItem>
   );
 };
@@ -76,6 +114,37 @@ export default function FolderTree({
   const [allFoldersInTree] = React.useState<
     Map<FolderTreeNode["id"], FolderTreeNode>
   >(new Map());
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const [totalHits, setTotalHits] = React.useState(0);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const loadRootFolders = React.useCallback(
+    async (pageNumber: number, append: boolean = false) => {
+      setIsLoading(true);
+      try {
+        const response = await getFolderTree({
+          typesToInclude: "folder",
+          pageNumber,
+        });
+
+        if (append) {
+          setRootFolders((prev) => [...prev, ...response.records]);
+        } else {
+          setRootFolders(response.records);
+        }
+
+        setTotalHits(response.totalHits);
+        setCurrentPage(pageNumber);
+
+        response.records.forEach((folder) => {
+          allFoldersInTree.set(folder.id, folder);
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getFolderTree, allFoldersInTree],
+  );
 
   React.useEffect(() => {
     if (rootFolderId) {
@@ -85,51 +154,63 @@ export default function FolderTree({
         allFoldersInTree.set(newFolder.id, newFolder);
       });
     } else {
-      getFolderTree({ typesToInclude: "folder" }).then((response) => {
-        setRootFolders(response.records);
-        response.records.forEach((folder) => {
-          allFoldersInTree.set(folder.id, folder);
-        });
-      });
+      void loadRootFolders(0);
     }
-  }, [rootFolderId]);
+  }, [rootFolderId, loadRootFolders, getFolder, allFoldersInTree]);
+
+  const hasMorePages = !rootFolderId && rootFolders.length < totalHits;
 
   return (
-    <SimpleTreeView
-      aria-label="tree view of shared folder"
-      expandedItems={[...expandedFolders].map((folder) => folder.id.toString())}
-      onExpandedItemsChange={(_event, nodeIds) => {
-        setExpandedFolders(
-          new Set(
-            ArrayUtils.mapOptional(
-              (idString) =>
-                Parsers.parseInteger(idString)
-                  .toOptional()
-                  .flatMap((id) => MapUtils.get(allFoldersInTree, id)),
-              nodeIds,
+    <Box>
+      <SimpleTreeView
+        aria-label="tree view of shared folder"
+        expandedItems={[...expandedFolders].map((folder) =>
+          folder.id.toString(),
+        )}
+        onExpandedItemsChange={(_event, nodeIds) => {
+          setExpandedFolders(
+            new Set(
+              ArrayUtils.mapOptional(
+                (idString) =>
+                  Parsers.parseInteger(idString)
+                    .toOptional()
+                    .flatMap((id) => MapUtils.get(allFoldersInTree, id)),
+                nodeIds,
+              ),
             ),
-          ),
-        );
-      }}
-      selectedItems={selectedFolder?.id.toString()}
-      onItemSelectionToggle={(_event, idAsString) => {
-        const folder = Parsers.parseInteger(idAsString)
-          .toOptional()
-          .flatMap((id) => MapUtils.get(allFoldersInTree, id))
-          .orElse(null);
-        setSelectedFolder(folder);
-        onFolderSelect?.(folder);
-      }}
-    >
-      {rootFolders.map((folder) => (
-        <TreeItemContent
-          key={folder.id}
-          folder={folder}
-          onNewFolder={(folder) => {
-            allFoldersInTree.set(folder.id, folder);
-          }}
-        />
-      ))}
-    </SimpleTreeView>
+          );
+        }}
+        selectedItems={selectedFolder?.id.toString()}
+        onItemSelectionToggle={(_event, idAsString) => {
+          const folder = Parsers.parseInteger(idAsString)
+            .toOptional()
+            .flatMap((id) => MapUtils.get(allFoldersInTree, id))
+            .orElse(null);
+          setSelectedFolder(folder);
+          onFolderSelect?.(folder);
+        }}
+      >
+        {rootFolders.map((folder) => (
+          <TreeItemContent
+            key={folder.id}
+            folder={folder}
+            onNewFolder={(folder) => {
+              allFoldersInTree.set(folder.id, folder);
+            }}
+          />
+        ))}
+      </SimpleTreeView>
+      {hasMorePages && (
+        <Box sx={{ p: 1, textAlign: "center" }}>
+          <Button
+            onClick={doNotAwait(() => loadRootFolders(currentPage + 1, true))}
+            disabled={isLoading}
+            startIcon={isLoading ? <CircularProgress size={16} /> : null}
+          >
+            {isLoading ? "Loading..." : "Load More"}
+          </Button>
+        </Box>
+      )}
+    </Box>
   );
 }
