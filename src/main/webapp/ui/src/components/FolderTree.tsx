@@ -22,41 +22,37 @@ import * as Parsers from "../util/parsers";
 // TODO: create abstraction?
 
 const TreeItemContent = ({
-  id,
+  folder,
   onNewFolder,
 }: {
-  id: number;
+  folder: FolderTreeNode;
   onNewFolder: (folder: FolderTreeNode) => void;
-}) => {
+}): React.ReactNode => {
   const { getFolderTree } = useFolders();
   const [folders, setFolders] = React.useState<ReadonlyArray<FolderTreeNode>>(
     [],
   );
 
   React.useEffect(() => {
-    getFolderTree({ id, typesToInclude: "folder" }).then((response) => {
-      setFolders(response.records);
-      response.records.forEach((folder) => {
-        onNewFolder(folder);
-      });
-    });
-  }, [id]);
+    getFolderTree({ id: folder.id, typesToInclude: "folder" }).then(
+      (response) => {
+        setFolders(response.records);
+        response.records.forEach((folder) => {
+          onNewFolder(folder);
+        });
+      },
+    );
+  }, [folder]);
 
-  return folders.map((folder) => (
-    <CustomTreeItem key={folder.id} folder={folder} onNewFolder={onNewFolder} />
-  ));
-};
-
-const CustomTreeItem = ({
-  folder,
-  onNewFolder,
-}: {
-  folder: FolderTreeNode;
-  onNewFolder: (folder: FolderTreeNode) => void;
-}) => {
   return (
     <TreeItem itemId={folder.id.toString()} label={folder.name} role="treeitem">
-      <TreeItemContent id={folder.id} onNewFolder={onNewFolder} />
+      {folders.map((folder) => (
+        <TreeItemContent
+          key={folder.id}
+          folder={folder}
+          onNewFolder={onNewFolder}
+        />
+      ))}
     </TreeItem>
   );
 };
@@ -126,7 +122,7 @@ export default function FolderTree({
       }}
     >
       {rootFolders.map((folder) => (
-        <CustomTreeItem
+        <TreeItemContent
           key={folder.id}
           folder={folder}
           onNewFolder={(folder) => {
