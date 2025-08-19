@@ -74,6 +74,7 @@ export default function FolderSelectionDialog({
       <DialogActions>
         <Button onClick={handleCancel}>Cancel</Button>
         <Button
+          color="callToAction"
           onClick={handleConfirm}
           variant="contained"
           disabled={!selectedFolder}
