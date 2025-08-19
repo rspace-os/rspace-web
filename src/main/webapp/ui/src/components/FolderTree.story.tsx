@@ -2,7 +2,7 @@ import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../theme";
 import FolderTree from "./FolderTree";
-import { type FolderRecord } from "../hooks/api/useFolders";
+import { type FolderTreeNode } from "../hooks/api/useFolders";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
  */
 export function TestFolderTreeExample() {
   const [selectedFolder, setSelectedFolder] =
-    React.useState<FolderRecord | null>(null);
+    React.useState<FolderTreeNode | null>(null);
 
   return (
     <ThemeProvider theme={materialTheme}>
@@ -36,7 +36,7 @@ export function TestFolderTreeExample() {
  */
 export function SimpleFolderTreeExample() {
   const [selectedFolder, setSelectedFolder] =
-    React.useState<FolderRecord | null>(null);
+    React.useState<FolderTreeNode | null>(null);
 
   return (
     <ThemeProvider theme={materialTheme}>

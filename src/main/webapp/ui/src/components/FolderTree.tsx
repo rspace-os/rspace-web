@@ -8,264 +8,132 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
-import useFolders, { type FolderRecord } from "../hooks/api/useFolders";
+import useFolders, {
+  folderDetailsAsTreeNode,
+  type FolderTreeNode,
+} from "../hooks/api/useFolders";
 import { doNotAwait } from "../util/Util";
+import * as MapUtils from "../util/MapUtils";
+import * as ArrayUtils from "../util/ArrayUtils";
+import * as Parsers from "../util/parsers";
 
-type FolderTreeNodeData = FolderRecord & {
-  children?: FolderTreeNodeData[];
-  hasMore?: boolean;
-  totalHits?: number;
-  currentPage?: number;
-  loading?: boolean;
-};
+// TODO: pagination
+// TODO: error handling
+// TODO: create abstraction?
 
-type FolderTreeProps = {
-  onFolderSelect?: (folder: FolderRecord) => void;
-  selectedFolderId?: number;
-  rootFolderId?: number;
-};
-
-const PAGE_SIZE = 20;
-
-export default function FolderTree({
-  onFolderSelect,
-  selectedFolderId,
-  rootFolderId,
-}: FolderTreeProps): React.ReactNode {
+const TreeItemContent = ({
+  id,
+  onNewFolder,
+}: {
+  id: number;
+  onNewFolder: (folder: FolderTreeNode) => void;
+}) => {
   const { getFolderTree } = useFolders();
-  const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
-  const [treeData, setTreeData] = React.useState<FolderTreeNodeData[]>([]);
-  const [loading, setLoading] = React.useState(false);
-
-  const loadFolderContents = React.useCallback(
-    async (
-      folderId?: number,
-      pageNumber: number = 0,
-      append: boolean = false,
-    ) => {
-      setLoading(true);
-      try {
-        const response = await getFolderTree(
-          folderId,
-          "folder",
-          pageNumber,
-          PAGE_SIZE,
-        );
-
-        const updateTreeData = (
-          nodes: FolderTreeNodeData[],
-        ): FolderTreeNodeData[] => {
-          if (folderId === undefined) {
-            const newNodes: FolderTreeNodeData[] = response.records.map(
-              (folder) => ({
-                ...folder,
-                children: [],
-                hasMore: response.totalHits > response.records.length,
-                totalHits: response.totalHits,
-                currentPage: 0,
-              }),
-            );
-
-            if (append) {
-              return [...nodes, ...newNodes];
-            }
-            return newNodes;
-          }
-
-          return nodes.map((node) => {
-            if (node.id === folderId) {
-              const newChildren: FolderTreeNodeData[] = response.records.map(
-                (folder) => ({
-                  ...folder,
-                  children: [],
-                  hasMore: false,
-                  currentPage: 0,
-                }),
-              );
-
-              const existingChildren = node.children || [];
-              const updatedTotalHits = response.totalHits;
-              const newTotalChildren = append
-                ? existingChildren.length + newChildren.length
-                : newChildren.length;
-
-              return {
-                ...node,
-                children: append
-                  ? [...existingChildren, ...newChildren]
-                  : newChildren,
-                currentPage: pageNumber,
-                loading: false,
-                hasMore: updatedTotalHits > newTotalChildren,
-                totalHits: updatedTotalHits,
-              };
-            }
-
-            if (node.children) {
-              return {
-                ...node,
-                children: updateTreeData(node.children),
-              };
-            }
-
-            return node;
-          });
-        };
-
-        setTreeData((prevData) => updateTreeData(prevData));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [getFolderTree],
+  const [folders, setFolders] = React.useState<ReadonlyArray<FolderTreeNode>>(
+    [],
   );
 
   React.useEffect(() => {
-    void loadFolderContents(rootFolderId);
-  }, [loadFolderContents, rootFolderId]);
-
-  const handleToggle = React.useCallback(
-    (event: React.SyntheticEvent, itemIds: string[]) => {
-      const newlyExpanded = itemIds.filter((id) => !expandedItems.includes(id));
-
-      setExpandedItems(itemIds);
-
-      newlyExpanded.forEach((itemId) => {
-        const folderId = parseInt(itemId, 10);
-        if (!isNaN(folderId)) {
-          doNotAwait(() => loadFolderContents(folderId));
-        }
+    getFolderTree({ id, typesToInclude: "folder" }).then((response) => {
+      setFolders(response.records);
+      response.records.forEach((folder) => {
+        onNewFolder(folder);
       });
-    },
-    [expandedItems, loadFolderContents],
-  );
-
-  const handleSelect = React.useCallback(
-    (event: React.SyntheticEvent, itemId: string | null) => {
-      if (itemId && onFolderSelect) {
-        const findFolder = (
-          nodes: FolderTreeNodeData[],
-          id: string,
-        ): FolderRecord | null => {
-          for (const node of nodes) {
-            if (node.id.toString() === id) {
-              return {
-                id: node.id,
-                globalId: node.globalId,
-                name: node.name,
-                type: node.type,
-              };
-            }
-            if (node.children) {
-              const found = findFolder(node.children, id);
-              if (found) return found;
-            }
-          }
-          return null;
-        };
-
-        const folder = findFolder(treeData, itemId);
-        if (folder) {
-          onFolderSelect(folder);
-        }
-      }
-    },
-    [treeData, onFolderSelect],
-  );
-
-  const handleLoadMore = React.useCallback(
-    (folderId?: number) => {
-      const findNode = (
-        nodes: FolderTreeNodeData[],
-        id?: number,
-      ): FolderTreeNodeData | null => {
-        if (id === undefined) return null;
-
-        for (const node of nodes) {
-          if (node.id === id) return node;
-          if (node.children) {
-            const found = findNode(node.children, id);
-            if (found) return found;
-          }
-        }
-        return null;
-      };
-
-      const node = folderId ? findNode(treeData, folderId) : null;
-      const nextPage = node ? (node.currentPage || 0) + 1 : 1;
-
-      doNotAwait(() => loadFolderContents(folderId, nextPage, true));
-    },
-    [treeData, loadFolderContents],
-  );
-
-  const renderTreeItems = (nodes: FolderTreeNodeData[]): React.ReactNode => {
-    return nodes.map((node) => {
-      const hasChildren =
-        (node.children && node.children.length > 0) || node.hasMore;
-      const currentTotal = node.children ? node.children.length : 0;
-      const shouldShowLoadMore =
-        node.totalHits && node.totalHits > currentTotal;
-
-      return (
-        <TreeItem
-          key={node.id}
-          itemId={node.id.toString()}
-          label={
-            <Box display="flex" alignItems="center" gap={1}>
-              <FolderIcon fontSize="small" />
-              <Typography variant="body2">{node.name}</Typography>
-              {node.loading && <CircularProgress size={16} />}
-            </Box>
-          }
-        >
-          {node.children && renderTreeItems(node.children)}
-          {shouldShowLoadMore && (
-            <TreeItem
-              key={`load-more-${node.id}`}
-              itemId={`load-more-${node.id}`}
-              label={
-                <Button
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLoadMore(node.id);
-                  }}
-                  disabled={loading}
-                >
-                  Load More...
-                </Button>
-              }
-            />
-          )}
-        </TreeItem>
-      );
     });
-  };
+  }, [id]);
 
-  if (loading && treeData.length === 0) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" p={2}>
-        <CircularProgress size={24} />
-        <Typography variant="body2" ml={1}>
-          Loading folders...
-        </Typography>
-      </Box>
-    );
-  }
+  return folders.map((folder) => (
+    <CustomTreeItem key={folder.id} folder={folder} onNewFolder={onNewFolder} />
+  ));
+};
+
+const CustomTreeItem = ({
+  folder,
+  onNewFolder,
+}: {
+  folder: FolderTreeNode;
+  onNewFolder: (folder: FolderTreeNode) => void;
+}) => {
+  return (
+    <TreeItem itemId={folder.id.toString()} label={folder.name} role="treeitem">
+      <TreeItemContent id={folder.id} onNewFolder={onNewFolder} />
+    </TreeItem>
+  );
+};
+
+export default function FolderTree({
+  rootFolderId,
+  onFolderSelect,
+}: {
+  rootFolderId?: number;
+  onFolderSelect?: (folder: FolderTreeNode | null) => void;
+}): React.ReactNode {
+  const { getFolderTree, getFolder } = useFolders();
+  const [rootFolders, setRootFolders] = React.useState<
+    ReadonlyArray<FolderTreeNode>
+  >([]);
+  const [expandedFolders, setExpandedFolders] = React.useState<
+    Set<FolderTreeNode>
+  >(new Set());
+  const [selectedFolder, setSelectedFolder] =
+    React.useState<FolderTreeNode | null>(null);
+  const [allFoldersInTree] = React.useState<
+    Map<FolderTreeNode["id"], FolderTreeNode>
+  >(new Map());
+
+  React.useEffect(() => {
+    if (rootFolderId) {
+      getFolder(rootFolderId).then((response) => {
+        const newFolder = folderDetailsAsTreeNode(response);
+        setRootFolders([newFolder]);
+        allFoldersInTree.set(newFolder.id, newFolder);
+      });
+    } else {
+      getFolderTree({ typesToInclude: "folder" }).then((response) => {
+        setRootFolders(response.records);
+        response.records.forEach((folder) => {
+          allFoldersInTree.set(folder.id, folder);
+        });
+      });
+    }
+  }, [rootFolderId]);
 
   return (
     <SimpleTreeView
-      expandedItems={expandedItems}
-      selectedItems={selectedFolderId ? selectedFolderId.toString() : undefined}
-      onExpandedItemsChange={handleToggle}
-      onSelectedItemsChange={handleSelect}
-      slots={{
-        expandIcon: ChevronRightIcon,
-        collapseIcon: ExpandMoreIcon,
+      aria-label="tree view of shared folder"
+      expandedItems={[...expandedFolders].map((folder) => folder.id.toString())}
+      onExpandedItemsChange={(_event, nodeIds) => {
+        setExpandedFolders(
+          new Set(
+            ArrayUtils.mapOptional(
+              (idString) =>
+                Parsers.parseInteger(idString)
+                  .toOptional()
+                  .flatMap((id) => MapUtils.get(allFoldersInTree, id)),
+              nodeIds,
+            ),
+          ),
+        );
+      }}
+      selectedItems={selectedFolder?.id.toString()}
+      onItemSelectionToggle={(_event, idAsString) => {
+        const folder = Parsers.parseInteger(idAsString)
+          .toOptional()
+          .flatMap((id) => MapUtils.get(allFoldersInTree, id))
+          .orElse(null);
+        setSelectedFolder(folder);
+        onFolderSelect?.(folder);
       }}
     >
-      {renderTreeItems(treeData)}
+      {rootFolders.map((folder) => (
+        <CustomTreeItem
+          key={folder.id}
+          folder={folder}
+          onNewFolder={(folder) => {
+            allFoldersInTree.set(folder.id, folder);
+          }}
+        />
+      ))}
     </SimpleTreeView>
   );
 }

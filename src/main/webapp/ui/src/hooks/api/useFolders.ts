@@ -4,7 +4,7 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
 import useOauthToken from "../auth/useOauthToken";
 
-export type FolderRecord = {
+export type FolderTreeNode = {
   id: number;
   globalId: string;
   name: string;
@@ -14,10 +14,10 @@ export type FolderRecord = {
 export type FolderTreeResponse = {
   totalHits: number;
   pageNumber: number;
-  records: ReadonlyArray<FolderRecord>;
+  records: ReadonlyArray<FolderTreeNode>;
 };
 
-export type FolderResponse = {
+export type FolderDetails = {
   id: number;
   globalId: string;
   name: string;
@@ -32,6 +32,15 @@ export type FolderResponse = {
     rel: string;
   }>;
 };
+
+export function folderDetailsAsTreeNode(folder: FolderDetails): FolderTreeNode {
+  return {
+    id: folder.id,
+    globalId: folder.globalId,
+    name: folder.name,
+    type: "folder",
+  };
+}
 
 type InternalFolderTreeResponse = {
   totalHits: number;
@@ -69,24 +78,29 @@ type InternalFolderTreeResponse = {
 };
 
 export default function useFolders(): {
-  getFolderTree: (
-    id?: number,
-    typesToInclude?: "document" | "notebook" | "folder",
-    pageNumber?: number,
-    pageSize?: number,
-  ) => Promise<FolderTreeResponse>;
-  getFolder: (id: number) => Promise<FolderResponse>;
+  getFolderTree: (options: {
+    id?: number;
+    typesToInclude?: "document" | "notebook" | "folder";
+    pageNumber?: number;
+    pageSize?: number;
+  }) => Promise<FolderTreeResponse>;
+  getFolder: (id: number) => Promise<FolderDetails>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
 
   const getFolderTree = React.useCallback(
-    async (
-      id?: number,
-      typesToInclude?: "document" | "notebook" | "folder",
-      pageNumber?: number,
-      pageSize: number = 20,
-    ): Promise<FolderTreeResponse> => {
+    async ({
+      id,
+      typesToInclude,
+      pageNumber,
+      pageSize = 20,
+    }: {
+      id?: number;
+      typesToInclude?: "document" | "notebook" | "folder";
+      pageNumber?: number;
+      pageSize?: number;
+    }): Promise<FolderTreeResponse> => {
       try {
         const endpoint = id
           ? `/api/v1/folders/tree/${id}`
@@ -135,9 +149,9 @@ export default function useFolders(): {
   );
 
   const getFolder = React.useCallback(
-    async (id: number): Promise<FolderResponse> => {
+    async (id: number): Promise<FolderDetails> => {
       try {
-        const { data } = await axios.get<FolderResponse>(
+        const { data } = await axios.get<FolderDetails>(
           `/api/v1/folders/${id}`,
           {
             headers: {

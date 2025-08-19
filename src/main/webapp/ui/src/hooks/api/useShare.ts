@@ -5,6 +5,8 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
 import { Group } from "./useGroups";
 import { GroupMember } from "./useUserDetails";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import { Optional } from "../../util/optional";
 
 export type ShareOption =
   | (Group & { optionType: "GROUP" })
@@ -154,9 +156,6 @@ export default function useShare(): {
     itemId: number,
     newShares: NewShare[],
   ): Promise<void> {
-    // Check for group shares and throw error
-    // Group shares are now supported
-
     try {
       const requestData: CreateShareRequest = {
         itemsToShare: [itemId],
@@ -166,13 +165,18 @@ export default function useShare(): {
             id: share.sharedTargetId,
             permission: share.permission,
           })),
-        groups: newShares
-          .filter((share) => share.sharedTargetType === "GROUP")
-          .map((share) => ({
-            id: share.sharedTargetId,
-            permission: share.permission,
-            sharedFolderId: share.sharedFolderId || share.sharedTargetId, // Use group's shared folder ID
-          })),
+        groups: ArrayUtils.mapOptional<NewShare, [NewShare, number]>(
+          (share) =>
+            share.sharedTargetType === "GROUP" &&
+            share.sharedFolderId !== undefined
+              ? Optional.present([share, share.sharedFolderId])
+              : Optional.empty(),
+          newShares,
+        ).map(([share, sharedFolderId]) => ({
+          id: share.sharedTargetId,
+          permission: share.permission,
+          sharedFolderId,
+        })),
       };
 
       await axios.post("/api/v1/share", requestData, {

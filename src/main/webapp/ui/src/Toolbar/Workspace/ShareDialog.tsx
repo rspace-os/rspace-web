@@ -39,7 +39,7 @@ import useUserDetails, { GroupMember } from "../../hooks/api/useUserDetails";
 import useWhoAmI from "../../hooks/api/useWhoAmI";
 import useFolders from "../../hooks/api/useFolders";
 import FolderSelectionDialog from "../../components/FolderSelectionDialog";
-import { FolderRecord } from "../../hooks/api/useFolders";
+import { FolderTreeNode } from "../../hooks/api/useFolders";
 import UserDetails from "../../Inventory/components/UserDetails";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
@@ -909,36 +909,27 @@ const ShareDialog = () => {
           setFolderSelectionOpen(false);
           setSelectedShareForFolderChange(null);
         }}
-        onFolderSelect={(folder: FolderRecord, folderPath: string) => {
-          if (selectedShareForFolderChange) {
-            const shareId = selectedShareForFolderChange.shareId;
+        onFolderSelect={(folder: FolderTreeNode) => {
+          if (!selectedShareForFolderChange) return;
 
-            // Check if this is an existing share or new share
-            if (shareId.startsWith("new-")) {
-              // Update new share folder path
-              setNewShares((prev) => {
-                const updated = new Map(prev);
-                const globalId = selectedShareForFolderChange.globalId;
-                const docShares = updated.get(globalId) || [];
-                const updatedDocShares = docShares.map((share) =>
-                  share.id === shareId
-                    ? {
-                        ...share,
-                        sharedFolderPath: folderPath,
-                        sharedFolderId: folder.id,
-                      }
-                    : share,
-                );
-                updated.set(globalId, updatedDocShares);
-                return updated;
-              });
-            } else {
-              // Update existing share folder path
-              setShareFolderChanges((prev) =>
-                new Map(prev).set(shareId, folderPath),
-              );
-            }
-          }
+          const { shareId, globalId } = selectedShareForFolderChange;
+          const updatedNewShares = new Map(newShares);
+          const docNewShares = updatedNewShares.get(globalId) || [];
+
+          const updatedDocNewShares = docNewShares.map((share) =>
+            share.id === shareId
+              ? {
+                  ...share,
+                  sharedFolderPath: folder.name,
+                  sharedFolderId: folder.id,
+                }
+              : share,
+          );
+
+          updatedNewShares.set(globalId, updatedDocNewShares);
+          setNewShares(updatedNewShares);
+          setFolderSelectionOpen(false);
+          setSelectedShareForFolderChange(null);
         }}
         rootFolderId={selectedShareForFolderChange?.sharedFolderId}
         title="Select Shared Folder Location"
