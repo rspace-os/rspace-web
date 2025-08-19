@@ -104,9 +104,9 @@ const ShareDialog = () => {
       globalId: string;
       sharedFolderId: number;
     } | null>(null);
-  // Track folder path changes for existing shares: Map<shareId, folderPath>
+  // Track folder path changes for existing shares: Map<shareId, {name, id}>
   const [shareFolderChanges, setShareFolderChanges] = React.useState<
-    Map<string, string>
+    Map<string, { name: string; id: number }>
   >(new Map());
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { getShareInfoForMultiple, createShare, deleteShare } = useShare();
@@ -319,8 +319,11 @@ const ShareDialog = () => {
     }));
   }, [shareOptions, shareData, newShares, globalIds]);
 
-  // Check if there are any permission changes or new shares
-  const hasChanges = permissionChanges.size > 0 || newShares.size > 0;
+  // Check if there are any permission changes, new shares, or folder changes
+  const hasChanges =
+    permissionChanges.size > 0 ||
+    newShares.size > 0 ||
+    shareFolderChanges.size > 0;
 
   // Handle permission change
   function handlePermissionChange(shareId: string, newPermission: string) {
@@ -405,10 +408,75 @@ const ShareDialog = () => {
 
     setSaving(true);
     try {
+      // Handle deletions (unshare)
       const deletionPromises = Array.from(permissionChanges.entries())
         .filter(([_, permission]) => permission === "UNSHARE")
         .map(([shareId, _]) => deleteShare(parseInt(shareId, 10)));
 
+      // Handle permission modifications (delete and recreate)
+      const modificationPromises: Promise<void>[] = [];
+      for (const [shareId, newPermission] of permissionChanges.entries()) {
+        if (newPermission !== "UNSHARE") {
+          // Find the original share to get its details
+          const originalShare = Array.from(shareData.values())
+            .flat()
+            .find((share) => share.id.toString() === shareId);
+
+          if (originalShare) {
+            // Delete the old share and create a new one with updated permission
+            const deletePromise = deleteShare(parseInt(shareId, 10));
+            const recreatePromise = deletePromise.then(() => {
+              const newShare: NewShare = {
+                id: `modified_${shareId}`,
+                sharedTargetId: originalShare.sharedTargetId,
+                sharedTargetName: originalShare.sharedTargetName,
+                sharedTargetDisplayName: originalShare.sharedTargetDisplayName,
+                sharedTargetType: originalShare.sharedTargetType,
+                permission: newPermission as "READ" | "EDIT",
+                sharedFolderName: shareFolderChanges.get(shareId)?.name || null,
+                sharedFolderId:
+                  originalShare.sharedTargetType === "GROUP"
+                    ? shareFolderChanges.get(shareId)?.id
+                    : undefined,
+              };
+              return createShare(originalShare.sharedItemId, [newShare]);
+            });
+            modificationPromises.push(recreatePromise);
+          }
+        }
+      }
+
+      // Handle folder changes for group shares (without permission changes)
+      const folderChangePromises: Promise<void>[] = [];
+      for (const [shareId, newFolderInfo] of shareFolderChanges.entries()) {
+        // Only process if this share wasn't already handled in modifications
+        if (!permissionChanges.has(shareId)) {
+          const originalShare = Array.from(shareData.values())
+            .flat()
+            .find((share) => share.id.toString() === shareId);
+
+          if (originalShare && originalShare.sharedTargetType === "GROUP") {
+            // Delete and recreate with new folder
+            const deletePromise = deleteShare(parseInt(shareId, 10));
+            const recreatePromise = deletePromise.then(() => {
+              const newShare: NewShare = {
+                id: `folder_changed_${shareId}`,
+                sharedTargetId: originalShare.sharedTargetId,
+                sharedTargetName: originalShare.sharedTargetName,
+                sharedTargetDisplayName: originalShare.sharedTargetDisplayName,
+                sharedTargetType: originalShare.sharedTargetType,
+                permission: originalShare.permission,
+                sharedFolderName: newFolderInfo.name,
+                sharedFolderId: newFolderInfo.id,
+              };
+              return createShare(originalShare.sharedItemId, [newShare]);
+            });
+            folderChangePromises.push(recreatePromise);
+          }
+        }
+      }
+
+      // Handle new share creations
       const creationPromises = Array.from(newShares.entries())
         .map(([globalId, shares]) => ({
           id: parseInt(globalId.replace(/\D/g, ""), 10),
@@ -417,11 +485,17 @@ const ShareDialog = () => {
         .filter(({ id, shares }) => !isNaN(id) && shares.length > 0)
         .map(({ id, shares }) => createShare(id, shares));
 
-      await Promise.all([...deletionPromises, ...creationPromises]);
+      await Promise.all([
+        ...deletionPromises,
+        ...modificationPromises,
+        ...folderChangePromises,
+        ...creationPromises,
+      ]);
 
       trackEvent("user:saves:share_changes:workspace");
       setPermissionChanges(new Map());
       setNewShares(new Map());
+      setShareFolderChanges(new Map());
       setLoading(true);
       const data = await getShareInfoForMultiple(globalIds);
       setShareData(data);
@@ -521,7 +595,7 @@ const ShareDialog = () => {
                         : `${newValue.firstName} ${newValue.lastName}`,
                     sharedTargetType: newValue.optionType,
                     permission: "READ", // default permission
-                    sharedFolderPath:
+                    sharedFolderName:
                       newValue.optionType === "GROUP"
                         ? groupFolderNames.get(newValue.id) || "Loading..."
                         : null,
@@ -732,7 +806,7 @@ const ShareDialog = () => {
                                     <>
                                       {shareFolderChanges.get(
                                         share.id.toString(),
-                                      ) ||
+                                      )?.name ||
                                         groupFolderNames.get(
                                           share.sharedTargetId,
                                         ) ||
@@ -850,7 +924,7 @@ const ShareDialog = () => {
                                         variant="body2"
                                         color="text.secondary"
                                       >
-                                        {newShare.sharedFolderPath || "/"}
+                                        {newShare.sharedFolderName || "/"}
                                       </Typography>
                                       <Button
                                         size="small"
@@ -913,21 +987,35 @@ const ShareDialog = () => {
           if (!selectedShareForFolderChange) return;
 
           const { shareId, globalId } = selectedShareForFolderChange;
+
+          // Check if this is a new share or existing share
           const updatedNewShares = new Map(newShares);
           const docNewShares = updatedNewShares.get(globalId) || [];
+          const isNewShare = docNewShares.some((share) => share.id === shareId);
 
-          const updatedDocNewShares = docNewShares.map((share) =>
-            share.id === shareId
-              ? {
-                  ...share,
-                  sharedFolderPath: folder.name,
-                  sharedFolderId: folder.id,
-                }
-              : share,
-          );
+          if (isNewShare) {
+            // Handle new shares
+            const updatedDocNewShares = docNewShares.map((share) =>
+              share.id === shareId
+                ? {
+                    ...share,
+                    sharedFolderName: folder.name,
+                    sharedFolderId: folder.id,
+                  }
+                : share,
+            );
+            updatedNewShares.set(globalId, updatedDocNewShares);
+            setNewShares(updatedNewShares);
+          } else {
+            // Handle existing shares - track folder changes
+            const updatedFolderChanges = new Map(shareFolderChanges);
+            updatedFolderChanges.set(shareId, {
+              id: folder.id,
+              name: folder.name,
+            });
+            setShareFolderChanges(updatedFolderChanges);
+          }
 
-          updatedNewShares.set(globalId, updatedDocNewShares);
-          setNewShares(updatedNewShares);
           setFolderSelectionOpen(false);
           setSelectedShareForFolderChange(null);
         }}

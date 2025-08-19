@@ -19,7 +19,7 @@ export type NewShare = {
   sharedTargetDisplayName: string;
   sharedTargetType: "USER" | "GROUP";
   permission: "READ" | "EDIT";
-  sharedFolderPath: string | null;
+  sharedFolderName: string | null;
   sharedFolderId?: number; // For group shares
 };
 
