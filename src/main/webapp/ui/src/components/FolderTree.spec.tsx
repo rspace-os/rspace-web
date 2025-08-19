@@ -240,9 +240,9 @@ const feature = test.extend<{
       },
       "the user clicks the Load More button": async () => {
         const loadMoreButton = page.getByRole("button", {
-          name: "Load More...",
+          name: "Load More",
         });
-        await loadMoreButton.click();
+        await loadMoreButton.first().click();
       },
     });
   },
@@ -282,7 +282,7 @@ const feature = test.extend<{
       },
       "a Load More button should be visible": async () => {
         await expect(
-          page.getByRole("button", { name: "Load More..." }),
+          page.getByRole("button", { name: "Load More" }).first(),
         ).toBeVisible();
       },
       "additional folders should be loaded": async () => {
