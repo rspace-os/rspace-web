@@ -311,7 +311,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   @Test
   @RunIfSystemPropertyDefined("nightly")
   public void cachingPerformanceOfChemImages() throws Exception {
-    final int NUM_CHEMS = 20;
+    final int NUM_CHEMS = 30;
     // set up
     List<StructuredDocument> created = new ArrayList<>();
     List<RSChemElement> chems = new ArrayList<>();
