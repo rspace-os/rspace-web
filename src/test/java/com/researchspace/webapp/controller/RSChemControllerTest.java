@@ -16,9 +16,6 @@ import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.TestFactory;
-import com.researchspace.model.stoichiometry.MoleculeRole;
-import com.researchspace.model.stoichiometry.Stoichiometry;
-import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
@@ -152,40 +149,5 @@ public class RSChemControllerTest {
     when(chemicalService.getChemicalElementByRevision(2L, null, user)).thenReturn(chem);
     ResponseEntity<byte[]> response = rsChemController.getImageChem(2L, 123L, mockPrincipal, null);
     assertEquals(HttpStatus.OK, response.getStatusCode());
-  }
-
-  @NotNull
-  private static Stoichiometry makeStoichiometry(RSChemElement parentReaction) throws IOException {
-    Stoichiometry stoichiometry = new Stoichiometry();
-    stoichiometry.setId(1L);
-    stoichiometry.setParentReaction(parentReaction);
-
-    StoichiometryMolecule reactant =
-        StoichiometryMolecule.builder()
-            .id(2L)
-            .stoichiometry(stoichiometry)
-            .rsChemElement(TestFactory.createChemElement(3L, 3L))
-            .role(MoleculeRole.REACTANT)
-            .formula("C2H6O")
-            .name("Ethanol")
-            .smiles("CCO")
-            .molecularWeight(46.07)
-            .build();
-
-    StoichiometryMolecule product =
-        StoichiometryMolecule.builder()
-            .id(3L)
-            .stoichiometry(stoichiometry)
-            .rsChemElement(TestFactory.createChemElement(4L, 4L))
-            .role(MoleculeRole.PRODUCT)
-            .formula("C2H4O")
-            .name("Acetaldehyde")
-            .smiles("CC=O")
-            .molecularWeight(44.05)
-            .build();
-
-    stoichiometry.addMolecule(reactant);
-    stoichiometry.addMolecule(product);
-    return stoichiometry;
   }
 }
