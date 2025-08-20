@@ -130,7 +130,12 @@ export function TreeNode<Item, Id extends string>({
  * </Tree>
  * ```
  */
-export default function Tree<Item, Id extends string>({
+export default function Tree<
+  Item,
+  Id extends string,
+  MultiSelect extends boolean = false,
+>({
+  multiSelect,
   expandedItems,
   onExpandedItemsChange,
   selectedItems,
@@ -139,27 +144,31 @@ export default function Tree<Item, Id extends string>({
   ...rest
 }: Omit<
   React.ComponentProps<typeof SimpleTreeView>,
+  | "multiSelect"
   | "expandedItems"
   | "onExpandedItemsChange"
   | "selectedItems"
   | "onItemSelectionToggle"
+  | "defaultSelectedItems"
 > & {
   getId: (item: Item) => Id;
+  multiSelect?: MultiSelect;
   expandedItems?: Array<Item>;
   onExpandedItemsChange?: (
     event: React.SyntheticEvent,
     items: Array<Item>,
   ) => void;
-  selectedItems?: Item | Array<Item>;
+  selectedItems?: MultiSelect extends true ? Array<Item> : Item | null;
   onItemSelectionToggle?: (
     event: React.SyntheticEvent,
-    item: Item | Array<Item>,
+    item: MultiSelect extends true ? Array<Item> : Item | null,
   ) => void;
 }): React.ReactNode {
   const [idMap] = React.useState<Map<Id, Item>>(new Map());
   return (
     <TreeProvider idMap={idMap} getId={getId}>
       <SimpleTreeView
+        multiSelect={multiSelect}
         {...(expandedItems
           ? {
               expandedItems: expandedItems.map((item) => getId(item)),
@@ -185,22 +194,23 @@ export default function Tree<Item, Id extends string>({
           : {})}
         {...(selectedItems
           ? {
-              selectedItems: Array.isArray(selectedItems)
-                ? selectedItems.map((item) => getId(item))
-                : [getId(selectedItems)],
+              selectedItems: (multiSelect && Array.isArray(selectedItems)
+                ? (selectedItems as Array<Item>).map((item) => getId(item))
+                : (selectedItems as Item | null) === null
+                  ? ""
+                  : getId(selectedItems as Item)) as MultiSelect extends true
+                ? Array<string>
+                : string,
             }
           : {})}
         {...(onItemSelectionToggle
           ? {
-              onItemSelectionToggle: (
-                event,
-                itemIds: string | Array<string>,
-              ) => {
+              onItemSelectionToggle: (event, itemIds) => {
                 onItemSelectionToggle(
                   event,
-                  Array.isArray(itemIds)
-                    ? itemIds.map((id) => {
-                        const item = idMap.get(id as Id);
+                  Array.isArray(itemIds as any)
+                    ? (itemIds as any).map((id: any) => {
+                        const item = idMap.get(id);
                         if (!item) {
                           throw new Error(
                             `Item with id ${id} has not previously been rendered as TreeNode`,
