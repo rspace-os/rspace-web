@@ -132,7 +132,8 @@ public class StoichiometryServiceImpl implements StoichiometryService {
     try {
       stoichiometryManager.remove(stoichiometryId);
     } catch (Exception e) {
-      throw new StoichiometryException("Error deleting stoichiometry with id " + stoichiometryId, e);
+      throw new StoichiometryException(
+          "Error deleting stoichiometry with id " + stoichiometryId, e);
     }
   }
 

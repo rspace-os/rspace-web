@@ -250,7 +250,8 @@ public class StoichiometryServiceImplTest {
 
     doThrow(new RuntimeException("problem removing")).when(stoichiometryManager).remove(5L);
 
-    StoichiometryException ex = assertThrows(StoichiometryException.class, () -> service.delete(5L, user));
+    StoichiometryException ex =
+        assertThrows(StoichiometryException.class, () -> service.delete(5L, user));
     assertTrue(ex.getMessage().contains("Error deleting stoichiometry with id 5"));
   }
 

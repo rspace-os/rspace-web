@@ -478,7 +478,10 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
             .andExpect(status().isInternalServerError())
             .andReturn();
     String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("Object of class [com.researchspace.model.stoichiometry.Stoichiometry] with identifier [-999]: not found"));
+    assertTrue(
+        body.contains(
+            "Object of class [com.researchspace.model.stoichiometry.Stoichiometry] with identifier"
+                + " [-999]: not found"));
   }
 
   @Test
@@ -500,24 +503,28 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
 
   @Test
   public void createStoichiometry_withInvalidChemId_returnsBadRequest() throws Exception {
-    MvcResult result = mockMvc
-        .perform(post(URL).param("chemId", "-999").principal(principal).header("apiKey", apiKey))
-        .andExpect(status().isInternalServerError())
-        .andReturn();
+    MvcResult result =
+        mockMvc
+            .perform(
+                post(URL).param("chemId", "-999").principal(principal).header("apiKey", apiKey))
+            .andExpect(status().isInternalServerError())
+            .andReturn();
 
     String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("Object of class [com.researchspace.model.RSChemElement] with identifier [-999]: not found"));
+    assertTrue(
+        body.contains(
+            "Object of class [com.researchspace.model.RSChemElement] with identifier [-999]: not"
+                + " found"));
   }
 
   private MvcResult createStoichiometry(RSChemElement reaction) throws Exception {
-    return
-        mockMvc
-            .perform(
-                post(URL)
-                    .param("chemId", reaction.getId().toString())
-                    .principal(principal)
-                    .header("apiKey", apiKey))
-            .andReturn();
+    return mockMvc
+        .perform(
+            post(URL)
+                .param("chemId", reaction.getId().toString())
+                .principal(principal)
+                .header("apiKey", apiKey))
+        .andReturn();
   }
 
   private RSChemElement addReactionToField(Field field, User owner) throws IOException {
