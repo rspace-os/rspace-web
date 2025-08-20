@@ -243,14 +243,14 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void delete_whenRemoveThrows_wrapsAsNotFound() throws Exception {
+  void delete_whenRemoveFails_throwsStoich() throws Exception {
     Stoichiometry existing = makeStoichiometryWithRecord(5L);
     when(stoichiometryManager.get(5L)).thenReturn(existing);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
-    doThrow(new RuntimeException("boom")).when(stoichiometryManager).remove(5L);
+    doThrow(new RuntimeException("problem removing")).when(stoichiometryManager).remove(5L);
 
-    NotFoundException ex = assertThrows(NotFoundException.class, () -> service.delete(5L, user));
+    StoichiometryException ex = assertThrows(StoichiometryException.class, () -> service.delete(5L, user));
     assertTrue(ex.getMessage().contains("Error deleting stoichiometry with id 5"));
   }
 
