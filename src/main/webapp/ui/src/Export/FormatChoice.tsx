@@ -11,7 +11,7 @@ import { type Validator } from "../util/Validator";
 import { observer } from "mobx-react-lite";
 import { type Repo } from "./repositories/common";
 import { Optional } from "../util/optional";
-import { useDeploymentProperty } from "../eln/useDeploymentProperty";
+import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../util/fetchingData";
 import * as Parsers from "../util/parsers";
 import {
@@ -58,7 +58,7 @@ function FormatChoice({
   updateFileStores,
 }: FormatChoiceArgs): React.ReactNode {
   const [msgBlockingRepoChoice, setMsgBlockingRepoChoice] = useState(
-    Optional.present("Loading")
+    Optional.present("Loading"),
   );
   const [pdfAvailable, setPdfAvailable] = useState(false);
   const [wordAvailable, setWordAvailable] = useState(false);
@@ -79,8 +79,8 @@ function FormatChoice({
         if (repos.length === 0) {
           setMsgBlockingRepoChoice(
             Optional.present(
-              "You have not setup a repository, to do so please activate them within Apps"
-            )
+              "You have not setup a repository, to do so please activate them within Apps",
+            ),
           );
           return;
         }
@@ -106,7 +106,7 @@ function FormatChoice({
                       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                       label: repo.options[k]._label,
                       ...repo,
-                    } as Repo)
+                    }) as Repo,
                 );
               }
               return [];
@@ -117,14 +117,14 @@ function FormatChoice({
              * just copy the object from the API
              */
             return [{ repoCfg: -1, ...repo }];
-          })
+          }),
         );
       })
       .catch(() => {
         setMsgBlockingRepoChoice(
           Optional.present(
-            "Export to repository is not available because there was an error fetching repository configurations."
-          )
+            "Export to repository is not available because there was an error fetching repository configurations.",
+          ),
         );
       });
   };
@@ -172,7 +172,7 @@ function FormatChoice({
     }
     if (exportSelection.type === "selection") {
       disabledBecauseAllMedia = exportSelection.exportTypes.every(
-        (n) => n === "MEDIA_FILE"
+        (n) => n === "MEDIA_FILE",
       );
     }
 

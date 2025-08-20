@@ -1,7 +1,7 @@
 import React from "react";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import Portal from "@mui/material/Portal";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import { withStyles } from "Styles";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
@@ -48,7 +48,7 @@ const useStyles = makeStyles<{ listing: FetchingData.Fetched<unknown> }>()(
               success: () => "flex",
             }),
     },
-  })
+  }),
 );
 
 const CustomDialog = withStyles<
@@ -111,7 +111,7 @@ const DMPDialogContent = ({
       headerName: "Contact Affiliation",
       renderCell: (params: { row: DmpSummary }) =>
         params.row.contactAffiliationName.orElse(
-          <NoValue label="Not Specified" />
+          <NoValue label="Not Specified" />,
         ),
     },
     DataGridColumn.newColumnWithFieldName<"created", DmpSummary>("created", {

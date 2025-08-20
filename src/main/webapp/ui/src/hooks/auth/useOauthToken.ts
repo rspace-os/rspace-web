@@ -1,5 +1,5 @@
 import axios from "@/common/axios";
-import JwtService from "./JwtService";
+import JwtService from "../../common/JwtService";
 import React from "react";
 
 /**
@@ -57,7 +57,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    */
   async function fetchToken(): Promise<string> {
     const response = await axios.get<{ data: string }>(
-      "/userform/ajax/inventoryOauthToken"
+      "/userform/ajax/inventoryOauthToken",
     );
     const newToken = response.data.data;
     JwtService.saveToken(newToken);
@@ -72,9 +72,12 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
   async function refreshToken(): Promise<void> {
     const newToken = await fetchToken();
     setToken(newToken);
-    setTimeout(() => {
-      void refreshToken();
-    }, JwtService.secondsToExpiry(newToken) * 1000);
+    setTimeout(
+      () => {
+        void refreshToken();
+      },
+      JwtService.secondsToExpiry(newToken) * 1000,
+    );
   }
 
   return {
@@ -103,9 +106,12 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
        * in session storage, and the current page and all subsequent ones in
        * the next temporal window will continue to work.
        */
-      setTimeout(() => {
-        void refreshToken();
-      }, JwtService.secondsToExpiry(savedToken) * 1000);
+      setTimeout(
+        () => {
+          void refreshToken();
+        },
+        JwtService.secondsToExpiry(savedToken) * 1000,
+      );
       return savedToken;
     },
   };

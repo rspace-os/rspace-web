@@ -10,7 +10,7 @@ import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
 import ScopeField, { type Scope } from "./ScopeField";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import Portal from "@mui/material/Portal";
 import createAccentedTheme from "../../accentedTheme";
@@ -100,12 +100,12 @@ function DMPDialogContent({
               title: "Fetch failed.",
               message: r.data?.error?.errorMessages[0] ?? "Could not get DMPs",
               variant: "error",
-            })
+            }),
           );
         }
       } else {
         console.info(
-          "The response from this request is being discarded because a different listing of plans has been requested whilst this network call was in flight."
+          "The response from this request is being discarded because a different listing of plans has been requested whilst this network call was in flight.",
         );
       }
     } catch (e) {
@@ -116,7 +116,7 @@ function DMPDialogContent({
             title: "Fetch failed.",
             message: `Could not get DMPs: ${e.message}`,
             variant: "error",
-          })
+          }),
         );
       if (thisId === fetchingId.current) {
         setFetching(false);
@@ -139,10 +139,10 @@ function DMPDialogContent({
       const selectedPlanId = Number(selectedPlan?.id);
       if (selectedPlan) {
         await axios
-          .post<{ success: true; error?: { errorMessages: string[] } }>(
-            `/apps/dmptool/pdfById/${selectedPlanId}`,
-            {}
-          )
+          .post<{
+            success: true;
+            error?: { errorMessages: string[] };
+          }>(`/apps/dmptool/pdfById/${selectedPlanId}`, {})
           .then((r) => {
             addAlert(
               mkAlert(
@@ -158,8 +158,8 @@ function DMPDialogContent({
                         r.data.error?.errorMessages[0] ||
                         "Could not import DMP",
                       variant: "error",
-                    }
-              )
+                    },
+              ),
             );
             setSelectedPlan(null);
           });
@@ -206,7 +206,7 @@ function DMPDialogContent({
                     from <strong>{host}</strong>{" "}
                   </>
                 ),
-                DMPHost
+                DMPHost,
               ) ?? ""}
               will make it available to view and reference within RSpace.
             </Typography>
@@ -237,7 +237,7 @@ function DMPDialogContent({
                   {
                     renderCell: (params: { row: Plan }) => {
                       const sanitized = DOMPurify.sanitize(
-                        params.row.description
+                        params.row.description,
                       );
                       return (
                         <span
@@ -253,7 +253,7 @@ function DMPDialogContent({
                     display: "flex",
                     flex: 1,
                     sortable: false,
-                  }
+                  },
                 ),
                 DataGridColumn.newColumnWithValueMapper<"created", Plan>(
                   "created",
@@ -262,7 +262,7 @@ function DMPDialogContent({
                     headerName: "Created At",
                     flex: 1,
                     sortable: false,
-                  }
+                  },
                 ),
                 DataGridColumn.newColumnWithValueMapper<"modified", Plan>(
                   "modified",
@@ -271,7 +271,7 @@ function DMPDialogContent({
                     headerName: "Modified At",
                     flex: 1,
                     sortable: false,
-                  }
+                  },
                 ),
               ]}
               rows={fetching ? [] : DMPs}

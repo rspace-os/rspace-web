@@ -242,6 +242,7 @@ pipeline {
                 echo 'Running Playwright tests'
                 dir('src/main/webapp/ui') {
                     sh 'npx playwright install'
+                    sh 'rm -r playwright/.cache'
                     sh 'npm run test-ct -- --only-changed=main'
                 }
             }
@@ -261,6 +262,7 @@ pipeline {
                 echo 'Running Playwright tests'
                 dir('src/main/webapp/ui') {
                     sh 'npx playwright install'
+                    sh 'rm -r playwright/.cache'
                     sh 'npm run test-ct'
                 }
             }
@@ -272,6 +274,8 @@ pipeline {
                     expression { return params.DOCKER_AWS_DEPLOY }
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
+                    changeset '**/*.ts'
+                    changeset '**/*.tsx'
                     changeset '**/*.jsp'
                     changeset '**/*.css'
                     changeset '**/*.json'

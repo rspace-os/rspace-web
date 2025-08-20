@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class GalaxyAliasToServer {
+  public static final GalaxyAliasToServer NONE = new GalaxyAliasToServer("", "");
 
   private String alias;
   private String url;

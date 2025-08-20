@@ -1,5 +1,5 @@
 import { useRef, useState, useLayoutEffect } from "react";
-import { Optional } from "./optional";
+import { Optional } from "../../util/optional";
 
 /**
  * This custom hook is for detecting when the text within an input field is
@@ -24,7 +24,7 @@ export default function useIsTextWiderThanField(): {
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
       setWidth(entries[0].contentRect.width);
-    })
+    }),
   );
 
   useLayoutEffect(() => {
@@ -63,7 +63,7 @@ export default function useIsTextWiderThanField(): {
 
   return {
     textTooWide: Optional.fromNullable(ref.current).map(
-      (inputElement) => getTextWidth(inputElement) > width
+      (inputElement) => getTextWidth(inputElement) > width,
     ),
     inputRef: ref,
   };

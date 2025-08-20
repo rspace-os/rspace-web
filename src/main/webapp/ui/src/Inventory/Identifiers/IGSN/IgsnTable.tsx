@@ -29,7 +29,7 @@ import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
 import RsSet from "../../../util/set";
-import useDebounce from "../../../util/useDebounce";
+import useDebounce from "../../../hooks/ui/useDebounce";
 import Popover from "@mui/material/Popover";
 import Button from "@mui/material/Button";
 import BarcodeScanner from "../../components/BarcodeScanner/AllBarcodeScanner";
@@ -329,10 +329,10 @@ export default function IgsnTable({
     "draft" | "findable" | "registered" | null
   >(controlDefaults?.state ?? null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(
-    controlDefaults?.isAssociated ?? null
+    controlDefaults?.isAssociated ?? null,
   );
   const [searchTerm, setSearchTerm] = React.useState<string>(
-    controlDefaults?.searchTerm ?? ""
+    controlDefaults?.searchTerm ?? "",
   );
   const { identifiers, loading, refreshListing } = useIdentifiersListing({
     state,
@@ -382,7 +382,7 @@ export default function IgsnTable({
               />
             );
           },
-        }
+        },
       ),
     ],
     loading,
@@ -441,7 +441,7 @@ export default function IgsnTable({
       rowSelectionModel={selectedIgsns.map((id) => id.doi).toArray()}
       onRowSelectionModelChange={(ids: GridRowSelectionModel) => {
         const selectedIdentifiers = identifiers.filter((id) =>
-          ids.includes(id.doi)
+          ids.includes(id.doi),
         );
         setSelectedIgsns(new RsSet(selectedIdentifiers));
       }}

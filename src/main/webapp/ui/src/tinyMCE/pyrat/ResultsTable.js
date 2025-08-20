@@ -11,7 +11,7 @@ import { makeStyles } from "tss-react/mui";
 import TablePagination from "@mui/material/TablePagination";
 import Typography from "@mui/material/Typography";
 import { Order } from "./Enums";
-import useLocalStorage from "../../util/useLocalStorage";
+import useLocalStorage from "../../hooks/browser/useLocalStorage";
 
 const useStyles = makeStyles()(() => ({
   tableContainer: {
@@ -74,7 +74,7 @@ export default function ResultsTable({
     } else if (selectedIndex > 0) {
       newSelected = newSelected.concat(
         selectedAnimalIds.slice(0, selectedIndex),
-        selectedAnimalIds.slice(selectedIndex + 1)
+        selectedAnimalIds.slice(selectedIndex + 1),
       );
     }
 
@@ -111,7 +111,7 @@ export default function ResultsTable({
             onSelectAllClick={(event) => {
               if (event.target.checked) {
                 const newSelected = animals.map(
-                  (animal) => animal.eartag_or_id
+                  (animal) => animal.eartag_or_id,
                 );
                 return setSelectedAnimalIds(newSelected);
               }
@@ -154,7 +154,7 @@ export default function ResultsTable({
                     ))}
                   </TableRow>
                 );
-              }
+              },
             )}
           </TableBody>
         </Table>

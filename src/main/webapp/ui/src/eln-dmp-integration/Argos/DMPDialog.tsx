@@ -22,7 +22,7 @@ import { importPlan } from "./ImportIntoGallery";
 import TablePagination from "@mui/material/TablePagination";
 import { paginationOptions, DataGridColumn } from "../../util/table";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import Portal from "@mui/material/Portal";
 import ValidatingSubmitButton, {
   IsInvalid,
@@ -172,7 +172,7 @@ const CustomChip = withStyles<ChipArgs, { label: string; root: string }>(
     root: {
       maxWidth: "100%",
     },
-  })
+  }),
 )(({ name, value, onDelete, classes }) => {
   if (!value) return null;
   return (
@@ -224,14 +224,14 @@ const SearchControls = ({
     collaboratorsLike: null as string | null,
   });
   const modifySearchParameters = (
-    newSearchParameters: Omit<SearchParameters, "page" | "pageSize">
+    newSearchParameters: Omit<SearchParameters, "page" | "pageSize">,
   ) => {
     setSearchParameters(newSearchParameters);
     setPage(0);
   };
 
   const getDMPs = async (
-    newSearchParameters: Omit<SearchParameters, "page" | "pageSize">
+    newSearchParameters: Omit<SearchParameters, "page" | "pageSize">,
   ) => {
     setFetching(true);
     setDMPs([]);
@@ -252,7 +252,7 @@ const SearchControls = ({
           title: "Fetch failed.",
           message: errorMsg,
           variant: "error",
-        })
+        }),
       );
     } finally {
       setFetching(false);
@@ -442,7 +442,7 @@ function DMPDialogContent({
           title: "Success.",
           message: `DMP ${selectedPlanId} was successfully imported.`,
           variant: "success",
-        })
+        }),
       );
 
       /*
@@ -459,7 +459,7 @@ function DMPDialogContent({
           title: "Import failed.",
           message: "Could not import DMP",
           variant: "error",
-        })
+        }),
       );
     } finally {
       setImporting(false);
@@ -521,7 +521,7 @@ function DMPDialogContent({
                     headerName: "Label",
                     flex: 1,
                     sortable: false,
-                  }
+                  },
                 ),
                 DataGridColumn.newColumnWithFieldName<"id", PlanSummary>("id", {
                   headerName: "Id",
@@ -534,7 +534,7 @@ function DMPDialogContent({
                     headerName: "Grant",
                     flex: 1,
                     sortable: false,
-                  }
+                  },
                 ),
                 DataGridColumn.newColumnWithValueMapper<
                   "createdAt",
@@ -546,7 +546,7 @@ function DMPDialogContent({
                     headerName: "Created At",
                     flex: 1,
                     sortable: false,
-                  }
+                  },
                 ),
                 DataGridColumn.newColumnWithValueMapper<
                   "modifiedAt",
@@ -558,13 +558,15 @@ function DMPDialogContent({
                     headerName: "Modified At",
                     flex: 1,
                     sortable: false,
-                  }
+                  },
                 ),
               ]}
               rows={fetching ? [] : DMPs}
               selectedRowId={selectedPlan?.id}
               onSelectionChange={(newSelectionId: GridRowId) => {
-                setSelectedPlan(DMPs.find((d) => d.id === newSelectionId) ?? null);
+                setSelectedPlan(
+                  DMPs.find((d) => d.id === newSelectionId) ?? null,
+                );
               }}
               selectRadioAriaLabelFunc={(row) => `Select plan: ${row.label}`}
               initialState={{

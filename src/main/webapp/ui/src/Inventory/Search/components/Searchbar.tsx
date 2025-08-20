@@ -8,7 +8,7 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
 import CloseIcon from "@mui/icons-material/Close";
-import useIsTextWiderThanField from "../../../util/useIsTextWiderThanField";
+import useIsTextWiderThanField from "../../../hooks/ui/useIsTextWiderThanField";
 import SearchDialog from "../../../components/SearchDialog";
 import { runInAction } from "mobx";
 

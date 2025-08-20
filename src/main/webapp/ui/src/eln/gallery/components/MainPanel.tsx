@@ -20,7 +20,7 @@ import {
   SxProps,
   useTheme,
 } from "@mui/material/styles";
-import useViewportDimensions from "../../../util/useViewportDimensions";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import Avatar from "@mui/material/Avatar";
@@ -53,7 +53,7 @@ import Menu from "@mui/material/Menu";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
+import { useFileImportDropZone } from "../../../hooks/ui/useFileImportDragAndDrop";
 import ActionsMenu from "./ActionsMenu";
 import RsSet from "../../../util/set";
 import TreeView from "./TreeView";
@@ -63,10 +63,12 @@ import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import { Link as ReactRouterLink } from "react-router-dom";
-import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
+import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
-import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
+import useUiPreference, {
+  PREFERENCES,
+} from "../../../hooks/api/useUiPreference";
 import Divider from "@mui/material/Divider";
 import {
   InfoPanelForSmallViewports,

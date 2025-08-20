@@ -3,7 +3,7 @@ import axios from "@/common/axios";
 import { Person, PersonAttrs } from "@/stores/definitions/Person";
 import { Fetched } from "@/util/fetchingData";
 import { doNotAwait } from "@/util/Util";
-import useOauthToken from "@/common/useOauthToken";
+import useOauthToken from "../auth/useOauthToken";
 
 /**
  * Get the current user's information from the /api/v1/userDetails/whoami endpoint.
@@ -23,7 +23,7 @@ export default function useWhoAmI(): Fetched<Person> {
             headers: {
               Authorization: `Bearer ${await getToken.getToken()}`,
             },
-          }
+          },
         );
         setCurrentUser({
           tag: "success",
@@ -39,7 +39,7 @@ export default function useWhoAmI(): Fetched<Person> {
             workbenchId: data.workbenchId,
             getBench: () =>
               Promise.reject(
-                new Error("Not implemented by this Person implementation")
+                new Error("Not implemented by this Person implementation"),
               ),
             isCurrentUser: true,
             fullName: `${data.firstName} ${data.lastName}`,
@@ -53,7 +53,7 @@ export default function useWhoAmI(): Fetched<Person> {
         });
       }
     }),
-    []
+    [],
   );
 
   return currentUser;

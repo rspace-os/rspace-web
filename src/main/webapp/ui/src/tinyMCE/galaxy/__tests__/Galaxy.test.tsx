@@ -90,11 +90,13 @@ describe("Galaxy Upload Data tests ", () => {
     });
     it("initial rendering posts no data selected ", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
+      expect(await screen.findByRole("radio", {name: /galaxy eu server/}));
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "no-data-selected"}, "*");
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({"mceAction": "data-selected"}, "*");
     });
     it("selecting data posts  data selected ", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
+      expect(await screen.findByRole("radio", {name: /galaxy eu server/}));
       const checkBox = await screen.getAllByRole("checkbox")[0];
       fireEvent.click(checkBox);
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "data-selected"}, "*");
@@ -106,6 +108,7 @@ describe("Galaxy Upload Data tests ", () => {
       .onPost("/apps/galaxy/setUpDataInGalaxyFor")
       .reply(200, createdGalaxyHistory);
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
+      expect(await screen.findByRole("radio", {name: /galaxy eu server/}));
       const checkBox = await screen.getAllByRole("checkbox")[0];
       fireEvent.click(checkBox);
 
@@ -121,12 +124,13 @@ describe("Galaxy Upload Data tests ", () => {
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "no-data-selected"}, "*");
     });
     it("once upload complete displays link to new Galaxy History", async () => {
+
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
       expect(await screen.findByText(/Your new history can be viewed here/i)).toBeInTheDocument();
       expect(await screen.findByRole('link', {name: 'RSPACE_Untitled document_SD375v4_Data_FD229379_1'}))
-      .toHaveAttribute('href', 'https://usegalaxy.eu/histories/view?id=f8e722da311b8793');
+      .toHaveAttribute('href', 'https://usegalaxy.org/histories/view?id=f8e722da311b8793');
     });
     it("once upload complete events are dispatched", async () => {
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({"mceAction": "uploading-complete"}, "*");

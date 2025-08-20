@@ -16,7 +16,7 @@ import {
   GridToolbarColumnsButton,
   GridRowId,
 } from "@mui/x-data-grid";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import Stack from "@mui/material/Stack";
@@ -39,7 +39,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormHelperText from "@mui/material/FormHelperText";
 import { useConfirm } from "@/components/ConfirmProvider";
-import useOauthToken from "@/common/useOauthToken";
+import useOauthToken from "@/hooks/auth/useOauthToken";
 import axios from "@/common/axios";
 
 /**

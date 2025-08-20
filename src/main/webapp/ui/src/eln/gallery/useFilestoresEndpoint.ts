@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import useOauthToken from "../../common/useOauthToken";
+import useOauthToken from "../../hooks/auth/useOauthToken";
 import { type Filestore } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
@@ -19,13 +19,13 @@ export default function useFilestoresEndpoint(): {
           headers: {
             Authorization: `Bearer ${await getToken()}`,
           },
-        }
+        },
       );
       addAlert(
         mkAlert({
           variant: "success",
           message: `Logged out of ${filestore.name}`,
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -33,7 +33,7 @@ export default function useFilestoresEndpoint(): {
         mkAlert({
           variant: "error",
           message: `Failed to log out of ${filestore.name}`,
-        })
+        }),
       );
     }
   };

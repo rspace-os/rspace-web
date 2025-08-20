@@ -22,7 +22,7 @@ import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
 import UploadIcon from "@mui/icons-material/Publish";
 import BigIconButton from "../BigIconButton";
 import Result from "../../util/result";
-import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
+import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parser from "../../util/parsers";
 
@@ -68,7 +68,7 @@ function AttachmentField<
     image: BlobUrl | null;
     newBase64Image: string | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   attachment,
   disableFileUpload,
@@ -86,7 +86,7 @@ function AttachmentField<
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
 
   const chemistryProvider = FetchingData.getSuccessValue(
-    useDeploymentProperty("chemistry.provider")
+    useDeploymentProperty("chemistry.provider"),
   )
     .flatMap(Parser.isString)
     .orElse("");
@@ -203,7 +203,7 @@ function AttachmentField<
                     file.isSnippet
                       ? Result.Error([
                           new Error(
-                            "Snippets cannot be attached to Inventory records."
+                            "Snippets cannot be attached to Inventory records.",
                           ),
                         ])
                       : Result.Ok(null)

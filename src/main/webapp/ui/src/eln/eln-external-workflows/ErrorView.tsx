@@ -45,6 +45,8 @@ export default function ErrorView({
                 <>Unknown issue, please investigate whether your Galaxy Server(s) is/are running.
                   Error message was: {errorMessage}</>
             )}
+            { errorReason === ErrorReason.None && errorMessage && (
+            <> {errorMessage}</>)}
           </Alert>
         </Collapse>
         <Button

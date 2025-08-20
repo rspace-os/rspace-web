@@ -4,11 +4,11 @@
  */
 
 import axios from "@/common/axios";
-import * as FetchingData from "../util/fetchingData";
-import { doNotAwait } from "../util/Util";
+import * as FetchingData from "../../util/fetchingData";
+import { doNotAwait } from "../../util/Util";
 import React from "react";
-import * as Parsers from "../util/parsers";
-import Result from "../util/result";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
 
 /**
  * A title-case name for displaying in the UI.
@@ -39,14 +39,14 @@ export type IntegrationInfo = {
  * whether they are authenticated (if applicable).
  */
 export async function fetchIntegrationInfo(
-  name: IntegrationName
+  name: IntegrationName,
 ): Promise<IntegrationInfo> {
   const { data } = await axios.get<{ data: IntegrationInfo }>(
     "/integration/integrationInfo",
     {
       params: new URLSearchParams({ name }),
       responseType: "json",
-    }
+    },
   );
   return Parsers.isObject(data)
     .flatMap(Parsers.isNotNull)
@@ -108,7 +108,7 @@ export async function fetchIntegrationInfo(
  * https://mui.com/material-ui/api/modal/#modal-prop-keepMounted
  */
 export function useIntegrationIsAllowedAndEnabled(
-  name: IntegrationName
+  name: IntegrationName,
 ): FetchingData.Fetched<boolean> {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -125,7 +125,7 @@ export function useIntegrationIsAllowedAndEnabled(
         setLoading(false);
       }
     }),
-    []
+    [],
   );
 
   if (loading) return { tag: "loading" };

@@ -33,9 +33,9 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
-import { useIntegrationIsAllowedAndEnabled } from "../../../common/integrationHelpers";
-import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
-import useViewportDimensions from "../../../util/useViewportDimensions";
+import { useIntegrationIsAllowedAndEnabled } from "../../../hooks/api/integrationHelpers";
+import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import { observer } from "mobx-react-lite";
 import { autorun } from "mobx";
 import EventBoundary from "../../../components/EventBoundary";
@@ -46,9 +46,9 @@ import ValidatingSubmitButton, {
 import Result from "../../../util/result";
 import DnsIcon from "@mui/icons-material/Dns";
 import axios from "@/common/axios";
-import useOauthToken from "../../../common/useOauthToken";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
 import * as Parsers from "../../../util/parsers";
-import { useDeploymentProperty } from "../../useDeploymentProperty";
+import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import AddFilestoreDialog from "./AddFilestoreDialog";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 

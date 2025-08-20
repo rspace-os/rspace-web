@@ -5,7 +5,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { search, type Article, type ArticleId } from "./JoveClient";
 import ErrorView from "./ErrorView";
 import { ErrorReason, Order, SearchParam } from "./Enums";
-import useLocalStorage from "../../util/useLocalStorage";
+import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import materialTheme from "../../theme";
 import ResultsTable from "./ResultsTable";
 import JoveSearchBar from "./JoveSearchBar";
@@ -30,7 +30,7 @@ export const getOrder = (): OrderType => {
   const order = mapNullable(JSON.parse, storedJson) ?? Order.asc;
   if (order !== "asc" && order !== "desc")
     throw new InvalidLocalStorageState(
-      `Expected "asc" or "desc", found ${storedJson ?? "nothing"}`
+      `Expected "asc" or "desc", found ${storedJson ?? "nothing"}`,
     );
   return order;
 };
@@ -50,7 +50,7 @@ export const getOrderBy = (): keyof Article | "" => {
     throw new InvalidLocalStorageState("Expected a key of Article, found null");
   if (validKeys.has(orderBy)) return orderBy;
   throw new InvalidLocalStorageState(
-    `Expected a key of Article, found ${orderBy}`
+    `Expected a key of Article, found ${orderBy}`,
   );
 };
 
@@ -69,7 +69,7 @@ export default function Jove(): React.ReactNode {
   const [selectedJoveIds, setSelectedJoveIds] = useState<Array<ArticleId>>([]);
   const [order, setOrder] = useLocalStorage<OrderType>(
     "joveSearchOrder",
-    Order.asc
+    Order.asc,
   );
   const [orderBy, setOrderBy] = useLocalStorage<
     "" | "thumbnail" | "title" | "section"
@@ -108,7 +108,7 @@ export default function Jove(): React.ReactNode {
     searchParam: (typeof SearchParam)[keyof typeof SearchParam],
     searchQuery: string,
     page: number,
-    rowsPerPage: number
+    rowsPerPage: number,
   ) => {
     setSearchDone(false);
     setSearchResults([]);
@@ -119,12 +119,12 @@ export default function Jove(): React.ReactNode {
         searchParam,
         searchQuery,
         page,
-        rowsPerPage
+        rowsPerPage,
       );
       if (searchResult) {
         // Only populate the search results array with results that have videos.
         setSearchResults(
-          searchResult.data.articlelist.filter((article) => article.hasvideo)
+          searchResult.data.articlelist.filter((article) => article.hasvideo),
         );
         setCount(searchResult.data.countall);
       } else {
@@ -158,14 +158,14 @@ export default function Jove(): React.ReactNode {
 
   SELECTED_RESULTS = useMemo(() => {
     const selected_searchResults = searchResults.filter((results) =>
-      selectedJoveIds.includes(results.id)
+      selectedJoveIds.includes(results.id),
     );
 
     window.parent.postMessage(
       {
         mceAction: selected_searchResults.length > 0 ? "enable" : "disable",
       },
-      "*"
+      "*",
     );
 
     return selected_searchResults;

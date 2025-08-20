@@ -1,7 +1,7 @@
 import React, { type Context } from "react";
 import axios from "@/common/axios";
-import * as FetchingData from "../util/fetchingData";
-import * as MapUtils from "../util/MapUtils";
+import * as FetchingData from "../../util/fetchingData";
+import * as MapUtils from "../../util/MapUtils";
 
 /**
  * This context acts as a cache for the fetched deployment properties so that
@@ -83,13 +83,13 @@ export const DeploymentPropertyContext: Context<Map<string, unknown>> =
  *   }
  */
 export function useDeploymentProperty(
-  name: string
+  name: string,
 ): FetchingData.Fetched<unknown> {
   const map = React.useContext(DeploymentPropertyContext);
   const [value, setValue] = React.useState<FetchingData.Fetched<unknown>>(
     MapUtils.get<string, unknown>(map, name)
       .map((v) => ({ tag: "success" as const, value: v }))
-      .orElse({ tag: "loading" })
+      .orElse({ tag: "loading" }),
   );
 
   React.useEffect(() => {
@@ -101,7 +101,7 @@ export function useDeploymentProperty(
       try {
         const { data } = await axios.get<unknown>(
           `/deploymentproperties/ajax/property`,
-          { params: new URLSearchParams({ name }) }
+          { params: new URLSearchParams({ name }) },
         );
         setValue({ tag: "success", value: data });
         map.set(name, data);
