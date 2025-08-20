@@ -111,7 +111,7 @@ export function TreeItem<Item, Id extends string>({
  * @param selectedItems         Single data item or array of items that should be selected
  *                              selected (optional). Can be single item for single selection or array for
  *                              multi-selection.
- * @param onItemSelectionToggle Callback when selection changes, receives data objects.
+ * @param onSelectedItemsChange Callback when selection changes, receives data objects.
  *                              Returns single item or array depending on selection mode.
  * @param rest                  All other props are passed through to the underlying MUI SimpleTreeView
  *
@@ -122,7 +122,7 @@ export function TreeItem<Item, Id extends string>({
  * <Tree<File, string>
  *   getId={(file) => file.id}
  *   selectedItems={selectedFile}
- *   onItemSelectionToggle={(event, item) => setSelectedFile(item)}
+ *   onSelectedItemsChange={(event, item) => setSelectedFile(item)}
  * >
  *   {files.map(file => (
  *     <TreeNode key={file.id} item={file} label={file.name} />
@@ -139,7 +139,7 @@ export function Tree<
   expandedItems,
   onExpandedItemsChange,
   selectedItems,
-  onItemSelectionToggle,
+  onSelectedItemsChange,
   getId,
   ...rest
 }: Omit<
@@ -148,7 +148,7 @@ export function Tree<
   | "expandedItems"
   | "onExpandedItemsChange"
   | "selectedItems"
-  | "onItemSelectionToggle"
+  | "onSelectedItemsChange"
   | "defaultSelectedItems"
 > & {
   getId: (item: Item) => Id;
@@ -159,7 +159,7 @@ export function Tree<
     items: Array<Item>,
   ) => void;
   selectedItems?: MultiSelect extends true ? Array<Item> : Item | null;
-  onItemSelectionToggle?: (
+  onSelectedItemsChange?: (
     event: React.SyntheticEvent,
     item: MultiSelect extends true ? Array<Item> : Item | null,
   ) => void;
@@ -168,7 +168,7 @@ export function Tree<
   return (
     <TreeProvider idMap={idMap} getId={getId}>
       <SimpleTreeView
-        multiSelect={multiSelect}
+        multiSelect={multiSelect ?? false}
         {...(expandedItems !== undefined
           ? {
               expandedItems: expandedItems.map((item) => getId(item)),
@@ -203,10 +203,21 @@ export function Tree<
                 : string,
             }
           : {})}
-        {...(onItemSelectionToggle !== undefined
+        onItemSelectionToggle={(...args) => {
+          console.debug("onItemSelectionToggle", args);
+        }}
+        {...(onSelectedItemsChange !== undefined
           ? {
-              onItemSelectionToggle: (event, itemIds) => {
-                onItemSelectionToggle(
+              onSelectedItemsChange: (
+                event,
+                itemIds: string[] | string | null,
+              ) => {
+                console.debug(
+                  "onSelectedItemsChange",
+                  itemIds,
+                  Array.isArray(itemIds),
+                );
+                onSelectedItemsChange(
                   event,
                   Array.isArray(itemIds as any)
                     ? (itemIds as any).map((id: any) => {

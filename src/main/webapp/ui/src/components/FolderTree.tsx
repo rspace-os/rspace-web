@@ -205,7 +205,7 @@ export default function FolderTree({
           setExpandedFolders(new Set(newlyExpandedFolders));
         }}
         selectedItems={selectedFolder}
-        onItemSelectionToggle={(_event, newlySelectedFolder) => {
+        onSelectedItemsChange={(_event, newlySelectedFolder) => {
           setSelectedFolder(newlySelectedFolder);
           onFolderSelect?.(newlySelectedFolder);
         }}
