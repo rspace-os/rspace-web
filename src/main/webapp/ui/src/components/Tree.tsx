@@ -1,5 +1,5 @@
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { TreeItem } from "@mui/x-tree-view/TreeItem";
+import { TreeItem as MuiTreeItem } from "@mui/x-tree-view/TreeItem";
 import React from "react";
 
 /*
@@ -78,10 +78,10 @@ function TreeProvider<Item, Id extends string>({
  * />
  * ```
  */
-export function TreeNode<Item, Id extends string>({
+export function TreeItem<Item, Id extends string>({
   item,
   ...rest
-}: Omit<React.ComponentProps<typeof TreeItem>, "itemId"> & {
+}: Omit<React.ComponentProps<typeof MuiTreeItem>, "itemId"> & {
   item: Item;
 }): React.ReactNode {
   const { idMap, getId } = useTreeContext<Item, Id>();
@@ -96,7 +96,7 @@ export function TreeNode<Item, Id extends string>({
     };
   }, []);
 
-  return <TreeItem itemId={getId(item)} {...rest} />;
+  return <MuiTreeItem itemId={getId(item)} {...rest} />;
 }
 
 /**
@@ -130,7 +130,7 @@ export function TreeNode<Item, Id extends string>({
  * </Tree>
  * ```
  */
-export default function Tree<
+export function Tree<
   Item,
   Id extends string,
   MultiSelect extends boolean = false,
@@ -169,12 +169,12 @@ export default function Tree<
     <TreeProvider idMap={idMap} getId={getId}>
       <SimpleTreeView
         multiSelect={multiSelect}
-        {...(expandedItems
+        {...(expandedItems !== undefined
           ? {
               expandedItems: expandedItems.map((item) => getId(item)),
             }
           : {})}
-        {...(onExpandedItemsChange
+        {...(onExpandedItemsChange !== undefined
           ? {
               onExpandedItemsChange: (event, itemIds) => {
                 onExpandedItemsChange(
@@ -192,7 +192,7 @@ export default function Tree<
               },
             }
           : {})}
-        {...(selectedItems
+        {...(selectedItems !== undefined
           ? {
               selectedItems: (multiSelect && Array.isArray(selectedItems)
                 ? (selectedItems as Array<Item>).map((item) => getId(item))
@@ -203,7 +203,7 @@ export default function Tree<
                 : string,
             }
           : {})}
-        {...(onItemSelectionToggle
+        {...(onItemSelectionToggle !== undefined
           ? {
               onItemSelectionToggle: (event, itemIds) => {
                 onItemSelectionToggle(
@@ -219,6 +219,7 @@ export default function Tree<
                         return item;
                       })
                     : (() => {
+                        if (itemIds === "") return null;
                         const item = idMap.get(itemIds as Id);
                         if (!item) {
                           throw new Error(

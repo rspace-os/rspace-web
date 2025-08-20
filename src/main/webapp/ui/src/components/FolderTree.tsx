@@ -1,6 +1,4 @@
 import React from "react";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -10,18 +8,12 @@ import useFolders, {
   type FolderTreeNode,
 } from "../hooks/api/useFolders";
 import { doNotAwait } from "../util/Util";
-import * as MapUtils from "../util/MapUtils";
-import * as ArrayUtils from "../util/ArrayUtils";
-import * as Parsers from "../util/parsers";
-
-// TODO: create abstraction?
+import { Tree, TreeItem } from "./Tree";
 
 const TreeItemContent = ({
   folder,
-  onNewFolder,
 }: {
   folder: FolderTreeNode;
-  onNewFolder: (folder: FolderTreeNode) => void;
 }): React.ReactNode => {
   const { getFolderTree } = useFolders();
   const [folders, setFolders] = React.useState<ReadonlyArray<FolderTreeNode>>(
@@ -51,10 +43,6 @@ const TreeItemContent = ({
 
         setTotalHits(response.totalHits);
         setCurrentPage(pageNumber);
-
-        response.records.forEach((folder) => {
-          onNewFolder(folder);
-        });
       } catch (err) {
         setError(true);
       } finally {
@@ -71,13 +59,9 @@ const TreeItemContent = ({
   const hasMorePages = folders.length < totalHits;
 
   return (
-    <TreeItem itemId={folder.id.toString()} label={folder.name} role="treeitem">
+    <TreeItem item={folder} label={folder.name} role="treeitem">
       {folders.map((folder) => (
-        <TreeItemContent
-          key={folder.id}
-          folder={folder}
-          onNewFolder={onNewFolder}
-        />
+        <TreeItemContent key={folder.id} folder={folder} />
       ))}
       {error && (
         <Box sx={{ p: 1 }}>
@@ -129,9 +113,6 @@ export default function FolderTree({
   >(new Set());
   const [selectedFolder, setSelectedFolder] =
     React.useState<FolderTreeNode | null>(null);
-  const [allFoldersInTree] = React.useState<
-    Map<FolderTreeNode["id"], FolderTreeNode>
-  >(new Map());
   const [currentPage, setCurrentPage] = React.useState(0);
   const [totalHits, setTotalHits] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -155,17 +136,13 @@ export default function FolderTree({
 
         setTotalHits(response.totalHits);
         setCurrentPage(pageNumber);
-
-        response.records.forEach((folder) => {
-          allFoldersInTree.set(folder.id, folder);
-        });
       } catch (err) {
         setError(true);
       } finally {
         setIsLoading(false);
       }
     },
-    [getFolderTree, allFoldersInTree],
+    [getFolderTree],
   );
 
   React.useEffect(() => {
@@ -175,7 +152,6 @@ export default function FolderTree({
         .then((response) => {
           const newFolder = folderDetailsAsTreeNode(response);
           setRootFolders([newFolder]);
-          allFoldersInTree.set(newFolder.id, newFolder);
         })
         .catch((err) => {
           setError(true);
@@ -183,7 +159,7 @@ export default function FolderTree({
     } else {
       void loadRootFolders(0);
     }
-  }, [rootFolderId, loadRootFolders, getFolder, allFoldersInTree]);
+  }, [rootFolderId, loadRootFolders, getFolder]);
 
   const hasMorePages = !rootFolderId && rootFolders.length < totalHits;
 
@@ -203,7 +179,6 @@ export default function FolderTree({
                       .then((response) => {
                         const newFolder = folderDetailsAsTreeNode(response);
                         setRootFolders([newFolder]);
-                        allFoldersInTree.set(newFolder.id, newFolder);
                       })
                       .catch((err) => {
                         setError(true);
@@ -222,44 +197,23 @@ export default function FolderTree({
           </Alert>
         </Box>
       )}
-      <SimpleTreeView
+      <Tree<FolderTreeNode, string>
         aria-label="tree view of shared folder"
-        expandedItems={[...expandedFolders].map((folder) =>
-          folder.id.toString(),
-        )}
-        onExpandedItemsChange={(_event, nodeIds) => {
-          setExpandedFolders(
-            new Set(
-              ArrayUtils.mapOptional(
-                (idString) =>
-                  Parsers.parseInteger(idString)
-                    .toOptional()
-                    .flatMap((id) => MapUtils.get(allFoldersInTree, id)),
-                nodeIds,
-              ),
-            ),
-          );
+        getId={(item) => item.id.toString()}
+        expandedItems={[...expandedFolders]}
+        onExpandedItemsChange={(_event, newlyExpandedFolders) => {
+          setExpandedFolders(new Set(newlyExpandedFolders));
         }}
-        selectedItems={selectedFolder?.id.toString() ?? ""}
-        onItemSelectionToggle={(_event, idAsString) => {
-          const folder = Parsers.parseInteger(idAsString)
-            .toOptional()
-            .flatMap((id) => MapUtils.get(allFoldersInTree, id))
-            .orElse(null);
-          setSelectedFolder(folder);
-          onFolderSelect?.(folder);
+        selectedItems={selectedFolder}
+        onItemSelectionToggle={(_event, newlySelectedFolder) => {
+          setSelectedFolder(newlySelectedFolder);
+          onFolderSelect?.(newlySelectedFolder);
         }}
       >
         {rootFolders.map((folder) => (
-          <TreeItemContent
-            key={folder.id}
-            folder={folder}
-            onNewFolder={(folder) => {
-              allFoldersInTree.set(folder.id, folder);
-            }}
-          />
+          <TreeItemContent key={folder.id} folder={folder} />
         ))}
-      </SimpleTreeView>
+      </Tree>
       {hasMorePages && (
         <Box sx={{ p: 1, textAlign: "center" }}>
           <Button
