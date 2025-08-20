@@ -54,8 +54,7 @@ public class StoichiometryManagerTest {
 
   @InjectMocks private StoichiometryManagerImpl stoichiometryManager;
 
-  @Captor
-  private ArgumentCaptor<Stoichiometry> stoichiometryCaptor;
+  @Captor private ArgumentCaptor<Stoichiometry> stoichiometryCaptor;
 
   private User user;
 
@@ -63,7 +62,7 @@ public class StoichiometryManagerTest {
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("testUser");
     when(stoichiometryDao.save(stoichiometryCaptor.capture()))
-            .thenAnswer(invocation -> invocation.getArgument(0, Stoichiometry.class));
+        .thenAnswer(invocation -> invocation.getArgument(0, Stoichiometry.class));
   }
 
   @Test

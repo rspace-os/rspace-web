@@ -31,6 +31,7 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -66,13 +67,13 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
                 post(URL + "/molecule/info")
                     .content("{\"chemical\": \"CCC\"}")
                     .contentType(APPLICATION_JSON)
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
             .andReturn();
-    assertFalse(result.getResponse().getContentAsString().contains("Error"));
 
     StoichiometryMoleculeDTO molecule =
-        getFromJsonAjaxReturnObject(result, StoichiometryMoleculeDTO.class);
+        getFromJsonResponseBody(result, StoichiometryMoleculeDTO.class);
     assertEquals("CCC", molecule.getSmiles());
     assertEquals("C3 H8", molecule.getFormula());
     assertEquals(44.1, molecule.getMolecularWeight(), 0.01);
@@ -91,8 +92,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     MvcResult createResult = createStoichiometry(reaction);
 
     StoichiometryDTO createdStoichiometry =
-        getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
-    assertNotNull(createdStoichiometry);
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
     assertNotNull(createdStoichiometry.getId());
     assertEquals(reaction.getId(), createdStoichiometry.getParentReactionId());
 
@@ -103,12 +103,11 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
                     .param("chemId", reaction.getId().toString())
                     .principal(principal)
                     .header("apiKey", apiKey))
-            .andExpect(status().is2xxSuccessful())
+            .andExpect(status().isOk())
             .andReturn();
 
     StoichiometryDTO retrievedStoichiometry =
-        getFromJsonAjaxReturnObject(getResult, StoichiometryDTO.class);
-    assertNotNull(retrievedStoichiometry);
+        getFromJsonResponseBody(getResult, StoichiometryDTO.class);
     assertEquals(createdStoichiometry.getId(), retrievedStoichiometry.getId());
     assertEquals(reaction.getId(), retrievedStoichiometry.getParentReactionId());
   }
@@ -121,12 +120,12 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     RSChemElement reaction = addReactionToField(docField, user);
 
     createStoichiometry(reaction);
-
     // attempt to create stoichiometry again for the same reaction in the same field
     MvcResult failResult = createStoichiometry(reaction);
 
     String responseContent = failResult.getResponse().getContentAsString();
-    assertTrue(responseContent.contains("already exists"));
+    assertEquals(HttpStatus.BAD_REQUEST.value(), failResult.getResponse().getStatus());
+    assertTrue(responseContent.contains("Stoichiometry already exists for reaction chemId="));
   }
 
   @Test
@@ -139,7 +138,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     MvcResult createResult = createStoichiometry(reaction);
 
     StoichiometryDTO createdStoichiometry =
-        getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
 
     StoichiometryMoleculeDTO molecule = createdStoichiometry.getMolecules().get(0);
 
@@ -154,6 +153,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     updatedMolecule.setActualYield(90.0);
     updatedMolecule.setLimitingReagent(true);
     updatedMolecule.setNotes("Updated notes");
+    updatedMolecule.setRole(MoleculeRole.REACTANT);
 
     updateDTO.setMolecules(List.of(updatedMolecule));
 
@@ -164,13 +164,13 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
             .andReturn();
 
     StoichiometryDTO updatedStoichiometry =
-        getFromJsonAjaxReturnObject(updateResult, StoichiometryDTO.class);
-    assertNotNull(updatedStoichiometry);
+        getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
     assertEquals(createdStoichiometry.getId(), updatedStoichiometry.getId());
 
     Optional<StoichiometryMoleculeDTO> foundMolecule =
@@ -178,14 +178,12 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
             .filter(m -> m.getId().equals(molecule.getId()))
             .findFirst();
 
-    assertTrue(foundMolecule.isPresent());
     StoichiometryMoleculeDTO updatedMol = foundMolecule.get();
 
-    double delta = 0.001;
-    assertEquals(2.0, updatedMol.getCoefficient(), delta);
-    assertEquals(100.0, updatedMol.getMass(), delta);
-    assertEquals(200.0, updatedMol.getActualAmount(), delta);
-    assertEquals(90.0, updatedMol.getActualYield(), delta);
+    assertEquals(2.0, updatedMol.getCoefficient());
+    assertEquals(100.0, updatedMol.getMass());
+    assertEquals(200.0, updatedMol.getActualAmount());
+    assertEquals(90.0, updatedMol.getActualYield());
     assertTrue(updatedMol.getLimitingReagent());
     assertEquals("Updated notes", updatedMol.getNotes());
   }
@@ -200,24 +198,30 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     MvcResult createResult = createStoichiometry(reaction);
 
     StoichiometryDTO createdStoichiometry =
-        getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
 
     MvcResult deleteResult =
         mockMvc
             .perform(
                 delete(URL)
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
-                    .principal(principal))
+                    .principal(principal)
+                    .header("apiKey", apiKey))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
 
-    boolean deleteSuccess = getFromJsonAjaxReturnObject(deleteResult, Boolean.class);
+    boolean deleteSuccess = getFromJsonResponseBody(deleteResult, Boolean.class);
     assertTrue(deleteSuccess);
 
+    // check it no longer exists
     MvcResult getResult =
         mockMvc
-            .perform(get(URL).param("chemId", reaction.getId().toString()).principal(principal))
-            .andExpect(status().is2xxSuccessful())
+            .perform(
+                get(URL)
+                    .param("chemId", reaction.getId().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isNotFound())
             .andReturn();
 
     String getResponseContent = getResult.getResponse().getContentAsString();
@@ -234,7 +238,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     // create initial stoichiometry
     MvcResult createResult = createStoichiometry(reaction);
     StoichiometryDTO createdStoichiometry =
-        getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
 
     // add an agent
     StoichiometryMoleculeUpdateDTO newAgent = new StoichiometryMoleculeUpdateDTO();
@@ -258,15 +262,15 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
             .andReturn();
 
     // check agent added
     StoichiometryDTO updatedAfterAdd =
-        getFromJsonAjaxReturnObject(updateResult, StoichiometryDTO.class);
+        getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
     assertEquals(4, updatedAfterAdd.getMolecules().size());
-
     StoichiometryMoleculeDTO agent =
         updatedAfterAdd.getMolecules().stream()
             .filter(m -> "CCO".equals(m.getSmiles()))
@@ -285,7 +289,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
 
     MvcResult createResult = createStoichiometry(reaction);
     StoichiometryDTO createdStoichiometry =
-        getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
 
     int originalCount = createdStoichiometry.getMolecules().size();
     StoichiometryMoleculeUpdateDTO newAgent = new StoichiometryMoleculeUpdateDTO();
@@ -301,6 +305,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     existingMols.add(newAgent);
     addDTO.setMolecules(existingMols);
 
+    // add new agent
     MvcResult addResult =
         mockMvc
             .perform(
@@ -308,12 +313,12 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(addDTO))
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
             .andReturn();
 
-    StoichiometryDTO afterAdd = getFromJsonAjaxReturnObject(addResult, StoichiometryDTO.class);
-    assertNotNull(afterAdd);
+    StoichiometryDTO afterAdd = getFromJsonResponseBody(addResult, StoichiometryDTO.class);
     assertEquals(originalCount + 1, afterAdd.getMolecules().size());
 
     // Remove the added agent by keeping only the original molecule(s)
@@ -327,20 +332,20 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
             .collect(java.util.stream.Collectors.toList());
     deleteAgentDTO.setMolecules(keepMolecules);
 
-    MvcResult updateResult2 =
+    MvcResult removeAgentResult =
         mockMvc
             .perform(
                 put(URL)
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(deleteAgentDTO))
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
             .andReturn();
 
     StoichiometryDTO updatedAfterDelete =
-        getFromJsonAjaxReturnObject(updateResult2, StoichiometryDTO.class);
-    assertNotNull(updatedAfterDelete);
+        getFromJsonResponseBody(removeAgentResult, StoichiometryDTO.class);
     assertEquals(originalCount, updatedAfterDelete.getMolecules().size());
     assertFalse(
         updatedAfterDelete.getMolecules().stream().anyMatch(m -> "CCO".equals(m.getSmiles())));
@@ -353,10 +358,10 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     RSChemElement reaction = addReactionToField(docField, user);
     MvcResult createResult = createStoichiometry(reaction);
     StoichiometryDTO createdStoichiometry =
-        getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
 
     StoichiometryMoleculeUpdateDTO bogusUpdate = new StoichiometryMoleculeUpdateDTO();
-    bogusUpdate.setId(4242424242L);
+    bogusUpdate.setId(-999L);
     bogusUpdate.setCoefficient(1.0);
 
     List<StoichiometryMoleculeUpdateDTO> updates =
@@ -374,14 +379,13 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isBadRequest())
             .andReturn();
 
     String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("Error updating stoichiometry: "));
-    assertTrue(body.contains("Molecule ID "));
-    assertTrue(body.contains(" not found in existing stoichiometry molecules"));
+    assertTrue(body.contains("Molecule ID -999 not found in existing stoichiometry molecules"));
   }
 
   @Test
@@ -391,7 +395,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     Field docField = doc1.getFields().get(0);
     RSChemElement reaction = addReactionToField(docField, user);
     MvcResult createResult = createStoichiometry(reaction);
-    StoichiometryDTO created = getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
+    StoichiometryDTO created = getFromJsonResponseBody(createResult, StoichiometryDTO.class);
 
     StoichiometryMoleculeUpdateDTO newNonAgent = new StoichiometryMoleculeUpdateDTO();
     newNonAgent.setRole(MoleculeRole.REACTANT);
@@ -416,12 +420,12 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
                     .param("stoichiometryId", created.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
             .andReturn();
 
-    StoichiometryDTO afterUpdate = getFromJsonAjaxReturnObject(result, StoichiometryDTO.class);
-    assertNotNull(afterUpdate);
+    StoichiometryDTO afterUpdate = getFromJsonResponseBody(result, StoichiometryDTO.class);
     assertTrue(afterUpdate.getMolecules().stream().anyMatch(m -> "CC".equals(m.getSmiles())));
   }
 
@@ -431,7 +435,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     Field docField = doc1.getFields().get(0);
     RSChemElement reaction = addReactionToField(docField, user);
     MvcResult createResult = createStoichiometry(reaction);
-    StoichiometryDTO created = getFromJsonAjaxReturnObject(createResult, StoichiometryDTO.class);
+    StoichiometryDTO created = getFromJsonResponseBody(createResult, StoichiometryDTO.class);
 
     StoichiometryMoleculeUpdateDTO agentMissingSmiles = new StoichiometryMoleculeUpdateDTO();
     agentMissingSmiles.setRole(MoleculeRole.AGENT);
@@ -452,35 +456,68 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
                     .param("stoichiometryId", created.getId().toString())
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
-                    .principal(principal))
-            .andExpect(status().is2xxSuccessful())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isBadRequest())
             .andReturn();
 
     String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("Error updating stoichiometry: "));
     assertTrue(body.contains("New molecule requires a SMILES string"));
   }
 
   @Test
   public void deleteStoichiometry_withNonexistentId_returnsError() throws Exception {
-    String missingId = String.valueOf(1122334455L);
+    String missingId = String.valueOf(-999L);
     MvcResult result =
         mockMvc
-            .perform(delete(URL).param("stoichiometryId", missingId).principal(principal))
-            .andExpect(status().is2xxSuccessful())
+            .perform(
+                delete(URL)
+                    .param("stoichiometryId", missingId)
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isInternalServerError())
             .andReturn();
     String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("Error deleting stoichiometry with id " + missingId));
+    assertTrue(body.contains("Object of class [com.researchspace.model.stoichiometry.Stoichiometry] with identifier [-999]: not found"));
+  }
+
+  @Test
+  public void updateStoichiometry_withInvalidStoichiometryId_returnsBadRequest() throws Exception {
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(-999L);
+    updateDTO.setMolecules(List.of());
+
+    mockMvc
+        .perform(
+            put(URL)
+                .param("stoichiometryId", "-999")
+                .contentType(APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(updateDTO))
+                .principal(principal)
+                .header("apiKey", apiKey))
+        .andExpect(status().isInternalServerError());
+  }
+
+  @Test
+  public void createStoichiometry_withInvalidChemId_returnsBadRequest() throws Exception {
+    MvcResult result = mockMvc
+        .perform(post(URL).param("chemId", "-999").principal(principal).header("apiKey", apiKey))
+        .andExpect(status().isInternalServerError())
+        .andReturn();
+
+    String body = result.getResponse().getContentAsString();
+    assertTrue(body.contains("Object of class [com.researchspace.model.RSChemElement] with identifier [-999]: not found"));
   }
 
   private MvcResult createStoichiometry(RSChemElement reaction) throws Exception {
-    MvcResult res =
+    return
         mockMvc
-            .perform(post(URL).param("chemId", reaction.getId().toString()).principal(principal))
-            //        .andExpect(status().is2xxSuccessful())
+            .perform(
+                post(URL)
+                    .param("chemId", reaction.getId().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
             .andReturn();
-
-    return res;
   }
 
   private RSChemElement addReactionToField(Field field, User owner) throws IOException {
