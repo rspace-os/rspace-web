@@ -72,7 +72,15 @@ const AssociatedInventoryRecords = observer(
       <>
         <button
           onClick={() => {
-            setOpen(!open);
+            const willOpen = !open;
+            setOpen(willOpen);
+            if (typeof window.RS?.trackEvent === 'function') {
+              if (willOpen) {
+                window.RS.trackEvent("user:open:inventory_attachment_listing:document_editor");
+              } else {
+                window.RS.trackEvent("user:close:inventory_attachment_listing:document_editor");
+              }
+            }
           }}
           className="btn btn-primary"
         >

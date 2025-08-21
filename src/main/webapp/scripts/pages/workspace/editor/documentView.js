@@ -170,8 +170,12 @@ function initAttachmentButton() {
     });
   }
   $(".attachmentButton").click(function () {
-    if ($(".attachmentList").is(":hidden")) {
-      _scanAllTextFieldsForAttachments();
+    _scanAllTextFieldsForAttachments();
+    const isHidden = $(".attachmentList").is(":hidden");
+    if (isHidden) {
+      RS.trackEvent("user:open:attachment_listing:document_editor");
+    } else {
+      RS.trackEvent("user:close:attachment_listing:document_editor");
     }
     $(".attachmentList").slideToggle();
   });
