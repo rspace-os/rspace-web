@@ -28,9 +28,9 @@ library.add(
   faFolder,
   faShareAlt,
   faEye,
-  faTimes
+  faTimes,
 );
-import ShareDialog from "../Workspace/ShareDialog";
+import ShareDialog from "../../components/ShareDialog";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import CreateMenu from "../ToolbarCreateMenu";
@@ -41,7 +41,7 @@ class NotebookToolbar extends React.Component {
     super(props);
     this.state = {
       workspaceFolderId: props.domContainer.getAttribute(
-        "data-workspace-folder-id"
+        "data-workspace-folder-id",
       ),
       settingsKey: props.domContainer.getAttribute("data-settings-key"),
       canCreateRecord:
@@ -221,7 +221,7 @@ window.renderToolbar = (newProps) => {
     },
   };
   rootNode.render(
-    <NotebookToolbar domContainer={domContainer} {...prevProps} />
+    <NotebookToolbar domContainer={domContainer} {...prevProps} />,
   );
 };
 

@@ -31,7 +31,7 @@ library.add(
   faEye,
   faTimes,
 );
-import ShareDialog from "../Workspace/ShareDialog";
+import ShareDialog from "../../components/ShareDialog";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import SaveMenu from "./ToolbarSaveMenu";

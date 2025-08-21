@@ -1,8 +1,8 @@
 import React from "react";
 import Portal from "@mui/material/Portal";
-import ErrorBoundary from "../../components/ErrorBoundary";
-import Alerts from "../../components/Alerts/Alerts";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import ErrorBoundary from "./ErrorBoundary";
+import Alerts from "./Alerts/Alerts";
+import { Dialog, DialogBoundary } from "./DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -24,30 +24,30 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
-import Analytics from "../../components/Analytics";
-import AnalyticsContext from "../../stores/contexts/Analytics";
-import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
-import Result from "../../util/result";
+import Analytics from "./Analytics";
+import AnalyticsContext from "../stores/contexts/Analytics";
+import ValidatingSubmitButton from "./ValidatingSubmitButton";
+import Result from "../util/result";
 import useShare, {
   ShareInfo,
   ShareOption,
   NewShare,
-} from "../../hooks/api/useShare";
-import { doNotAwait } from "../../util/Util";
-import useGroups, { Group } from "../../hooks/api/useGroups";
-import useUserDetails, { GroupMember } from "../../hooks/api/useUserDetails";
-import useWhoAmI from "../../hooks/api/useWhoAmI";
-import useFolders from "../../hooks/api/useFolders";
-import FolderSelectionDialog from "../../components/FolderSelectionDialog";
-import { FolderTreeNode } from "../../hooks/api/useFolders";
-import UserDetails from "../../Inventory/components/UserDetails";
+} from "../hooks/api/useShare";
+import { doNotAwait } from "../util/Util";
+import useGroups, { Group } from "../hooks/api/useGroups";
+import useUserDetails, { GroupMember } from "../hooks/api/useUserDetails";
+import useWhoAmI from "../hooks/api/useWhoAmI";
+import useFolders from "../hooks/api/useFolders";
+import FolderSelectionDialog from "./FolderSelectionDialog";
+import { FolderTreeNode } from "../hooks/api/useFolders";
+import UserDetails from "../Inventory/components/UserDetails";
 import { ThemeProvider } from "@mui/material/styles";
-import createAccentedTheme from "../../accentedTheme";
-import { ACCENT_COLOR } from "../../assets/branding/rspace/workspace";
-import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
+import createAccentedTheme from "../accentedTheme";
+import { ACCENT_COLOR } from "../assets/branding/rspace/workspace";
+import VisuallyHiddenHeading from "./VisuallyHiddenHeading";
 import Stack from "@mui/material/Stack";
-import RsSet, { flattenWithIntersectionWithEq } from "@/util/set";
-import WarningBar from "@/components/WarningBar";
+import RsSet, { flattenWithIntersectionWithEq } from "../util/set";
+import WarningBar from "./WarningBar";
 
 // Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
