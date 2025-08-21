@@ -60,6 +60,7 @@ export default function TreeSort(props) {
   function applySettings(order, sort) {
     updateClientUISetting("treeSort", order + "." + sort);
     sortFileTreeBrowser(order, sort);
+    RS.trackEvent("user:sorts:file_tree:document_editor", { order, sort });
   }
 
   useEffect(() => {
