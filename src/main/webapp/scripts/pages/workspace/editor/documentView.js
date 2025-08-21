@@ -250,26 +250,31 @@ function initTopBarButtonsForEditableDoc() {
   $('#save').click(function (e) {
     e.preventDefault();
     saveStructuredDocument(false, false);
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save" });
   });
 
   $('#saveClose').click(function (e) {
     e.preventDefault();
     saveStructuredDocument(true, true);
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save & Close" });
   });
 
   $('#saveView').click(function (e) {
     e.preventDefault();
     saveStructuredDocument(false, true);
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save & View" });
   });
 
   $('#saveClone').click(function (e) {
     e.preventDefault();
     saveCopyStructuredDocument();
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save & Clone" });
   });
 
   $('#saveNew').click(function (e) {
     e.preventDefault();
     saveNewStructuredDocument();
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save & New" });
   });
 
   $('#cancel').click(function (e) {
@@ -284,6 +289,7 @@ function initTopBarButtonsForEditableDoc() {
 
   initSaveAsTemplateDlg();
   $('#saveAsTemplateSaveMenuBtn, #saveAsTemplateBtn').click(function () {
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save as Template" });
     openSaveAsTemplateDlg();
   });
 
