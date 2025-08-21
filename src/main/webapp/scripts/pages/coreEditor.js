@@ -1629,6 +1629,7 @@ function saveRecordTags(tags) {
   };
   var jqxhr = $.post("/workspace/editor/structuredDocument/tagRecord", data, function (data) {
     if (data.data != null) {
+      RS.trackEvent("user:tag:document:document_editor");
     } else if (data.errorMsg != null) {
         $('#tag-info-dialog-content').html(getValidationErrorString(data.errorMsg));
         openDialog("#tag-info-dialog");
