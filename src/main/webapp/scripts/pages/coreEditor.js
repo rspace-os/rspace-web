@@ -1091,6 +1091,7 @@ function makeRenameRequest(data) {
       $(formSelector).find("#renameRecordEdit").show(fadeTime);
       $(formSelector).find("#renameRecordSubmit").hide(fadeTime);
       nameEditMode = false;
+      RS.trackEvent("user:rename:document:document_editor");
     }
   }).fail(function () {
     RS.ajaxFailed("Renaming record", false, jqxhr);
