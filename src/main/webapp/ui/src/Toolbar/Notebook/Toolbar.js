@@ -30,6 +30,7 @@ library.add(
   faEye,
   faTimes
 );
+import ShareDialog from "../Workspace/ShareDialog";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import CreateMenu from "../ToolbarCreateMenu";
@@ -58,107 +59,110 @@ class NotebookToolbar extends React.Component {
 
   content = () => {
     return (
-      <span style={{ display: "flex", width: "100%" }}>
-        <Tooltip title="Back" enterDelay={300}>
-          <IconButton
-            id="close"
-            data-test-id="structured-document-back"
-            href={`/workspace/${this.state.workspaceFolderId}?settingsKey=${this.state.settingsKey}`}
-          >
-            <FontAwesomeIcon icon="times" />
-          </IconButton>
-        </Tooltip>
-        <span
-          style={{
-            borderRight: "1px solid transparent",
-            margin: "0px 10px",
-            height: "100%",
-          }}
-        ></span>
-        {this.state.canCreateRecord && (
-          <CreateMenu
-            pioEnabled={this.state.pioEnabled}
-            evernoteEnabled={this.state.evernoteEnabled}
-            asposeEnabled={this.state.asposeEnabled}
+      <>
+        <span style={{ display: "flex", width: "100%" }}>
+          <Tooltip title="Back" enterDelay={300}>
+            <IconButton
+              id="close"
+              data-test-id="structured-document-back"
+              href={`/workspace/${this.state.workspaceFolderId}?settingsKey=${this.state.settingsKey}`}
+            >
+              <FontAwesomeIcon icon="times" />
+            </IconButton>
+          </Tooltip>
+          <span
+            style={{
+              borderRight: "1px solid transparent",
+              margin: "0px 10px",
+              height: "100%",
+            }}
+          ></span>
+          {this.state.canCreateRecord && (
+            <CreateMenu
+              pioEnabled={this.state.pioEnabled}
+              evernoteEnabled={this.state.evernoteEnabled}
+              asposeEnabled={this.state.asposeEnabled}
+            />
+          )}
+          <Tooltip title="Edit" enterDelay={300}>
+            <IconButton
+              data-test-id="notebooktoolbar-edit"
+              color="inherit"
+              id="editEntry"
+            >
+              <FontAwesomeIcon icon="edit" />
+            </IconButton>
+          </Tooltip>
+          {this.state.canDelete && (
+            <Tooltip title="Delete" enterDelay={300}>
+              <IconButton
+                data-test-id="notebooktoolbar-delete"
+                color="inherit"
+                id="deleteEntry"
+              >
+                <FontAwesomeIcon icon="trash-alt" />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title="Sign" enterDelay={300}>
+            <IconButton
+              data-test-id="notebooktoolbar-sign"
+              color="inherit"
+              id="signDocument"
+            >
+              <FontAwesomeIcon icon="file-signature" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Witness" enterDelay={300}>
+            <IconButton
+              data-test-id="notebooktoolbar-witness"
+              color="inherit"
+              id="witnessDocument"
+            >
+              <FontAwesomeIcon icon="eye" />
+            </IconButton>
+          </Tooltip>
+          {this.state.canShare && (
+            <Tooltip title="Share" enterDelay={300}>
+              <IconButton
+                data-test-id="notebooktoolbar-share"
+                color="inherit"
+                id="shareRecord"
+              >
+                <FontAwesomeIcon icon="share-alt" />
+              </IconButton>
+            </Tooltip>
+          )}
+          <span
+            style={{
+              borderRight: "1px solid transparent",
+              margin: "0px 10px",
+              height: "100%",
+            }}
+          ></span>
+          {this.props.conditionalRender.export && (
+            <Tooltip title="Export" enterDelay={300}>
+              <IconButton
+                data-test-id="notebooktoolbar-export"
+                color="inherit"
+                id="exportDocument"
+                onClick={this.props.eventHandlers.onExportDocument}
+              >
+                <FontAwesomeIcon icon="cloud-download-alt" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {this.props.conditionalRender.print && (
+            <PrintButton dataTestId="notebooktoolbar-print" />
+          )}
+          <SocialActions
+            showExternal={true}
+            style={{ flexGrow: "1", justifyContent: "flex-end" }}
+            onCreateRequest={this.props.eventHandlers.onCreateRequest}
           />
-        )}
-        <Tooltip title="Edit" enterDelay={300}>
-          <IconButton
-            data-test-id="notebooktoolbar-edit"
-            color="inherit"
-            id="editEntry"
-          >
-            <FontAwesomeIcon icon="edit" />
-          </IconButton>
-        </Tooltip>
-        {this.state.canDelete && (
-          <Tooltip title="Delete" enterDelay={300}>
-            <IconButton
-              data-test-id="notebooktoolbar-delete"
-              color="inherit"
-              id="deleteEntry"
-            >
-              <FontAwesomeIcon icon="trash-alt" />
-            </IconButton>
-          </Tooltip>
-        )}
-        <Tooltip title="Sign" enterDelay={300}>
-          <IconButton
-            data-test-id="notebooktoolbar-sign"
-            color="inherit"
-            id="signDocument"
-          >
-            <FontAwesomeIcon icon="file-signature" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Witness" enterDelay={300}>
-          <IconButton
-            data-test-id="notebooktoolbar-witness"
-            color="inherit"
-            id="witnessDocument"
-          >
-            <FontAwesomeIcon icon="eye" />
-          </IconButton>
-        </Tooltip>
-        {this.state.canShare && (
-          <Tooltip title="Share" enterDelay={300}>
-            <IconButton
-              data-test-id="notebooktoolbar-share"
-              color="inherit"
-              id="shareRecord"
-            >
-              <FontAwesomeIcon icon="share-alt" />
-            </IconButton>
-          </Tooltip>
-        )}
-        <span
-          style={{
-            borderRight: "1px solid transparent",
-            margin: "0px 10px",
-            height: "100%",
-          }}
-        ></span>
-        {this.props.conditionalRender.export && (
-          <Tooltip title="Export" enterDelay={300}>
-            <IconButton
-              data-test-id="notebooktoolbar-export"
-              color="inherit"
-              id="exportDocument"
-              onClick={this.props.eventHandlers.onExportDocument}
-            >
-              <FontAwesomeIcon icon="cloud-download-alt" />
-            </IconButton>
-          </Tooltip>
-        )}
-        {this.props.conditionalRender.print && (
-          <PrintButton dataTestId="notebooktoolbar-print" />
-        )}
-        <SocialActions
-          showExternal={true}
-          style={{ flexGrow: "1", justifyContent: "flex-end" }}
-          onCreateRequest={this.props.eventHandlers.onCreateRequest}
-        />
-      </span>
+        </span>
+        <ShareDialog />
+      </>
     );
   };
 

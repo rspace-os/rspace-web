@@ -500,7 +500,7 @@ $(document).on('click', '#shareRecord', function (e) {
         ? getSelectedIdsNamesAndTypes()
         : galleries_getSelectedIdsNamesAndTypes();
     let globalIds;
-    if (/editor\/structuredDocument/.test(window.location.href)) {
+    if (/editor\/structuredDocument/.test(window.location.href) || /notebookEditor/.test(window.location.href)) {
       globalIds = [`SD${selected.ids[0]}`];
     } else {
       globalIds =
