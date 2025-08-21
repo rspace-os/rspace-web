@@ -193,6 +193,7 @@ function setUpWorkspaceBreadcrumbs() {
     return '/workspace/' + folderId;
   }).click(function (e) {
     e.preventDefault();
+    RS.trackEvent("user:click:breadcrumb");
     var folderId = $(this).attr('id').split('_')[1];
     navigateToFolder(folderId);
   });
