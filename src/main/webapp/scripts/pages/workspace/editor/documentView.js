@@ -753,6 +753,15 @@ $(document).ready(function () {
     showCommentDialog(this, false);
   });
 
+  // Analytics tracking for field editing
+  $(document).on('click', '.editButton', function () {
+    RS.trackEvent("user:start_edit:field:document_editor");
+  });
+
+  $(document).on('click', '.stopEditButton', function () {
+    RS.trackEvent("user:save:field:document_editor");
+  });
+
   if (!isSigned && !isWitnessed) {
     displayStatus(editable);
   }
