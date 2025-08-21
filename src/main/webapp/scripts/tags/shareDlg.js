@@ -495,8 +495,20 @@ $(document).on('click', '#shareRecord', function (e) {
       $(this).data("cloud") ||
       $(this).find("span").data("cloud");
 
-    const selected = typeof getSelectedIdsNamesAndTypes === 'function' ? getSelectedIdsNamesAndTypes():galleries_getSelectedIdsNamesAndTypes();
-    const globalIds = typeof getSelectedGlobalIds === 'function' ? getSelectedGlobalIds() : [];
+    const selected =
+      typeof getSelectedIdsNamesAndTypes === "function"
+        ? getSelectedIdsNamesAndTypes()
+        : galleries_getSelectedIdsNamesAndTypes();
+    let globalIds;
+    if (/editor\/structuredDocument/.test(window.location.href)) {
+      globalIds = [`SD${selected.ids[0]}`];
+    } else {
+      globalIds =
+        typeof getSelectedGlobalIds === "function" ? getSelectedGlobalIds() : [];
+    }
+    if (globalIds.length === 0) {
+      throw new Error("No global IDs found for sharing");
+    }
     
     // Dispatch event for React ShareDialog
     window.dispatchEvent(
