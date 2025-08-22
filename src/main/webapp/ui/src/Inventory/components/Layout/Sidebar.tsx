@@ -65,7 +65,6 @@ const CustomDrawer = withStyles<
   drawerOpen: {
     overflow: "visible",
     width: drawerWidth,
-    backgroundColor: "#fafafa !important",
     borderRight: "0px !important",
     transition: theme.transitions.create("width", {
       easing: theme.transitions.easing.sharp,
@@ -78,8 +77,6 @@ const CustomDrawer = withStyles<
       duration: theme.transitions.duration.leavingScreen,
     }),
     overflowX: "hidden",
-    backgroundColor: `${theme.palette.background.default} !important`,
-    borderRight: "0px !important",
     width: theme.spacing(5),
     [theme.breakpoints.up("sm")]: {
       width: theme.spacing(7.75),
