@@ -1,11 +1,11 @@
 {
-  "id": 98304,
-  "globalId": "IT98304",
-  "name": "Sample Template RSpace IGSN Demo - 2024-11-20 18:24:03",
+  "id": 65536,
+  "globalId": "IT65536",
+  "name": "Sample Template RSpace IGSN Demo - 2025-08-20 11:23:26",
   "description": null,
-  "created": "2024-11-20T18:24:10.572Z",
+  "created": "2025-08-20T10:24:10.000Z",
   "createdBy": "sysadmin1",
-  "lastModified": "2024-11-20T18:24:10.572Z",
+  "lastModified": "2025-08-20T10:24:10.387Z",
   "modifiedBy": "sysadmin1",
   "modifiedByFullName": "System Admin",
   "deleted": false,
@@ -57,13 +57,13 @@
   "expiryDate": null,
   "fields": [
     {
-      "id": 98304,
-      "globalId": "SF98304",
+      "id": 65536,
+      "globalId": "SF65536",
       "name": "Field-ID",
       "type": "text",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 1,
       "definition": null,
       "selectedOptions": null,
@@ -71,13 +71,13 @@
       "_links": []
     },
     {
-      "id": 98305,
-      "globalId": "SF98305",
+      "id": 65537,
+      "globalId": "SF65537",
       "name": "hridPrimary-Next-Section",
       "type": "text",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 2,
       "definition": null,
       "selectedOptions": null,
@@ -85,13 +85,13 @@
       "_links": []
     },
     {
-      "id": 98306,
-      "globalId": "SF98306",
+      "id": 65538,
+      "globalId": "SF65538",
       "name": "Survey-Number",
       "type": "number",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 3,
       "definition": null,
       "selectedOptions": null,
@@ -99,13 +99,13 @@
       "_links": []
     },
     {
-      "id": 98307,
-      "globalId": "SF98307",
+      "id": 65539,
+      "globalId": "SF65539",
       "name": "IGSN-QR-Code",
       "type": "text",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 4,
       "definition": null,
       "selectedOptions": null,
@@ -113,13 +113,13 @@
       "_links": []
     },
     {
-      "id": 98308,
-      "globalId": "SF98308",
+      "id": 65540,
+      "globalId": "SF65540",
       "name": "Sample-Location_latitude",
       "type": "number",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 5,
       "definition": null,
       "selectedOptions": null,
@@ -127,13 +127,13 @@
       "_links": []
     },
     {
-      "id": 98309,
-      "globalId": "SF98309",
+      "id": 65541,
+      "globalId": "SF65541",
       "name": "Sample-Location_longitude",
       "type": "number",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 6,
       "definition": null,
       "selectedOptions": null,
@@ -141,13 +141,13 @@
       "_links": []
     },
     {
-      "id": 98310,
-      "globalId": "SF98310",
+      "id": 65542,
+      "globalId": "SF65542",
       "name": "New-Text-Field",
       "type": "text",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 7,
       "definition": null,
       "selectedOptions": null,
@@ -155,13 +155,13 @@
       "_links": []
     },
     {
-      "id": 98311,
-      "globalId": "SF98311",
+      "id": 65543,
+      "globalId": "SF65543",
       "name": "Item-Description",
       "type": "text",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 8,
       "definition": null,
       "selectedOptions": null,
@@ -169,13 +169,13 @@
       "_links": []
     },
     {
-      "id": 98312,
-      "globalId": "SF98312",
+      "id": 65544,
+      "globalId": "SF65544",
       "name": "Sample-Photograph",
       "type": "attachment",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 9,
       "definition": null,
       "selectedOptions": null,
@@ -183,13 +183,13 @@
       "_links": []
     },
     {
-      "id": 98313,
-      "globalId": "SF98313",
+      "id": 65545,
+      "globalId": "SF65545",
       "name": "Length-mm",
       "type": "number",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 10,
       "definition": null,
       "selectedOptions": null,
@@ -197,13 +197,13 @@
       "_links": []
     },
     {
-      "id": 98314,
-      "globalId": "SF98314",
+      "id": 65546,
+      "globalId": "SF65546",
       "name": "Width-mm",
       "type": "number",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 11,
       "definition": null,
       "selectedOptions": null,
@@ -211,13 +211,13 @@
       "_links": []
     },
     {
-      "id": 98315,
-      "globalId": "SF98315",
+      "id": 65547,
+      "globalId": "SF65547",
       "name": "Thickness-mm",
       "type": "number",
       "mandatory": false,
       "content": null,
-      "lastModified": "2024-11-20T18:24:10.573Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "columnIndex": 12,
       "definition": null,
       "selectedOptions": null,
@@ -228,13 +228,13 @@
   "extraFields": [],
   "subSamples": [
     {
-      "id": 98304,
-      "globalId": "SS98304",
-      "name": "Sample Template RSpace IGSN Demo - 2024-11-20 18:24:03",
+      "id": 65536,
+      "globalId": "SS65536",
+      "name": "Sample Template RSpace IGSN Demo - 2025-08-20 11:23:26",
       "description": null,
-      "created": "2024-11-20T18:24:10.572Z",
+      "created": "2025-08-20T10:24:10.000Z",
       "createdBy": "sysadmin1",
-      "lastModified": "2024-11-20T18:24:10.572Z",
+      "lastModified": "2025-08-20T10:24:10.387Z",
       "modifiedBy": "sysadmin1",
       "modifiedByFullName": null,
       "deleted": false,
@@ -272,15 +272,15 @@
       "storedInContainer": false,
       "_links": [
         {
-          "link": "http://localhost:8080/api/inventory/v1/subSamples/98304",
+          "link": "http://localhost:8080/api/inventory/v1/subSamples/65536",
           "rel": "self"
         },
         {
-          "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+          "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/65536/icon/-1",
           "rel": "image"
         },
         {
-          "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+          "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/65536/icon/-1",
           "rel": "thumbnail"
         }
       ]
@@ -288,19 +288,19 @@
   ],
   "_links": [
     {
-      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304",
+      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/65536",
       "rel": "self"
     },
     {
-      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/65536/icon/-1",
       "rel": "icon"
     },
     {
-      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/65536/icon/-1",
       "rel": "thumbnail"
     },
     {
-      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/65536/icon/-1",
       "rel": "image"
     }
   ],

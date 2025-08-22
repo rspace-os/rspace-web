@@ -102,7 +102,7 @@ public class FieldmarkApiControllerTest extends SpringTransactionalTest {
     List<FieldmarkNotebook> result = fieldmarkApiController.getNotebooks(goodUser);
     assertNotNull(result);
     assertEquals(1, result.size());
-    assertEquals("1726126204618-rspace-igsn-demo", result.get(0).getNonUniqueProjectId());
+    assertEquals("1726126204618-rspace-igsn-demo", result.get(0).getProjectId());
   }
 
   @Test
