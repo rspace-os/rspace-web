@@ -603,42 +603,58 @@ const ShareDialog = () => {
             value={null}
             onChange={(event, newValue) => {
               if (newValue && !newValue.isDisabled) {
-                // Add this option to each document's new shares
                 const updatedNewShares = new Map(newShares);
 
                 globalIds.forEach((globalId) => {
+                  const existingShares = shareData.get(globalId) || [];
                   const existingNewShares =
                     updatedNewShares.get(globalId) || [];
 
-                  // Create a new share entry
-                  const newShare: NewShare = {
-                    id: `new-${newValue.id}-${Date.now()}`, // temporary ID
-                    sharedTargetId: newValue.id,
-                    sharedTargetName:
-                      newValue.optionType === "GROUP"
-                        ? newValue.name
-                        : newValue.username,
-                    sharedTargetDisplayName:
-                      newValue.optionType === "GROUP"
-                        ? newValue.name
-                        : `${newValue.firstName} ${newValue.lastName}`,
-                    sharedTargetType: newValue.optionType,
-                    permission: "READ", // default permission
-                    sharedFolderName:
-                      newValue.optionType === "GROUP"
-                        ? groupFolderNames.get(newValue.id) || "Loading..."
-                        : null,
-                    sharedFolderId:
-                      newValue.optionType === "GROUP" &&
-                      "sharedFolderId" in newValue
-                        ? newValue.sharedFolderId
-                        : undefined,
-                  };
+                  // Check if this user/group is already shared with this document
+                  const alreadyShared = existingShares.find(
+                    (share) =>
+                      share.sharedTargetId === newValue.id &&
+                      share.sharedTargetType === newValue.optionType,
+                  );
 
-                  updatedNewShares.set(globalId, [
-                    ...existingNewShares,
-                    newShare,
-                  ]);
+                  // Check if this user/group is already in new shares for this document
+                  const alreadyInNewShares = existingNewShares.find(
+                    (share) =>
+                      share.sharedTargetId === newValue.id &&
+                      share.sharedTargetType === newValue.optionType,
+                  );
+
+                  // Only add new share if not already shared and not already in new shares
+                  if (!alreadyShared && !alreadyInNewShares) {
+                    const newShare: NewShare = {
+                      id: `new-${newValue.id}-${Date.now()}`, // temporary ID
+                      sharedTargetId: newValue.id,
+                      sharedTargetName:
+                        newValue.optionType === "GROUP"
+                          ? newValue.name
+                          : newValue.username,
+                      sharedTargetDisplayName:
+                        newValue.optionType === "GROUP"
+                          ? newValue.name
+                          : `${newValue.firstName} ${newValue.lastName}`,
+                      sharedTargetType: newValue.optionType,
+                      permission: "READ", // default permission
+                      sharedFolderName:
+                        newValue.optionType === "GROUP"
+                          ? groupFolderNames.get(newValue.id) || "Loading..."
+                          : null,
+                      sharedFolderId:
+                        newValue.optionType === "GROUP" &&
+                        "sharedFolderId" in newValue
+                          ? newValue.sharedFolderId
+                          : undefined,
+                    };
+
+                    updatedNewShares.set(globalId, [
+                      ...existingNewShares,
+                      newShare,
+                    ]);
+                  }
                 });
 
                 setNewShares(updatedNewShares);
