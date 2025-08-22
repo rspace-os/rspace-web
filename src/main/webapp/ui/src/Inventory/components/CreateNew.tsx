@@ -106,9 +106,9 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
             }}
           />
         }
-        sx={{ minWidth: "unset", overflow: "hidden" }}
+        sx={{ minWidth: "unset", overflowX: "hidden", height: "32px" }}
       >
-        {uiStore.sidebarOpen && <span>Create</span>}
+        {uiStore.sidebarOpen && <div>Create</div>}
       </Button>
       <StyledMenu
         open={Boolean(anchorEl)}
