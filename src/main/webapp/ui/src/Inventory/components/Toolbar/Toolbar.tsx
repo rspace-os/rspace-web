@@ -36,6 +36,8 @@ const useStyles = makeStyles<{
     padding: `${theme.spacing(0.5)} !important`,
     minHeight: "auto",
     overflow: "hidden",
+    backgroundColor: "unset !important",
+    color: "inherit !important",
   },
   growTitle: {
     flexGrow: 1,
@@ -62,6 +64,7 @@ const useStyles = makeStyles<{
     right: 0,
   },
   typeLabel: {
+    color: "inherit",
     whiteSpace: "nowrap",
     paddingBottom: theme.spacing(0.25),
   },

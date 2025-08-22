@@ -26,7 +26,7 @@ const useStyles = makeStyles<{ variant: "color" | "white" }>({
     paddingLeft: theme.spacing(1.5),
     backgroundColor:
       variant === "white" ? "rgba(255,255,255,0.15)" : theme.palette.grey[200],
-    color: variant === "white" ? "white" : theme.palette.grey[800],
+    color: variant === "white" ? "white !important" : theme.palette.grey[800],
     height: theme.spacing(3),
     fontWeight: theme.typography.fontWeightRegular,
     "&:hover, &:focus": {

@@ -40,7 +40,7 @@ type WrapperProps = {
 };
 
 const Wrapper = React.forwardRef<HTMLDivElement, WrapperProps>(
-  ({ children }, ref) => <div ref={ref}>{children}</div>
+  ({ children }, ref) => <div ref={ref}>{children}</div>,
 );
 Wrapper.displayName = "Wrapper";
 
@@ -143,8 +143,9 @@ function _Stepper({
         component="h2"
         className={clsx(
           classes.rightSpacing,
-          needsTruncating && classes.truncatedTitle
+          needsTruncating && classes.truncatedTitle,
         )}
+        sx={{ color: "unset !important" }}
       >
         {titleText}
       </Typography>
@@ -167,9 +168,9 @@ function _Stepper({
             await activeResult.create();
             navigate(
               generateUrlFromCoreFetcherArgs(
-                activeResult.showNewlyCreatedRecordSearchParams
+                activeResult.showNewlyCreatedRecordSearchParams,
               ),
-              { modifyVisiblePanel: false }
+              { modifyVisiblePanel: false },
             );
           })}
         />
