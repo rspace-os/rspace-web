@@ -485,43 +485,56 @@ const clearPublishLinkFields = () => {
     updateSelection(".publishLinkSelected", 'publish', true);
 }
 
-$(document).on('click', '#shareRecord', function (e) {
-    e.preventDefault();
+$(document).on("click", "#shareRecord", function (e) {
+  e.preventDefault();
 
-    // the data-cloud attribute can be in a span or an a tag RSPAC-1629
-    // depending if sharing workspace or document
-    const isCloud =
-      $(this).find("a").data("cloud") ||
-      $(this).data("cloud") ||
-      $(this).find("span").data("cloud");
+  // the data-cloud attribute can be in a span or an a tag RSPAC-1629
+  // depending if sharing workspace or document
+  const isCloud =
+    $(this).find("a").data("cloud") ||
+    $(this).data("cloud") ||
+    $(this).find("span").data("cloud");
 
-    const selected =
-      typeof getSelectedIdsNamesAndTypes === "function"
-        ? getSelectedIdsNamesAndTypes()
-        : galleries_getSelectedIdsNamesAndTypes();
-    let globalIds;
-    if (/editor\/structuredDocument/.test(window.location.href) || /notebookEditor/.test(window.location.href)) {
-      globalIds = [`SD${selected.ids[0]}`];
-    } else {
-      globalIds =
-        typeof getSelectedGlobalIds === "function" ? getSelectedGlobalIds() : [];
-    }
-    if (globalIds.length === 0) {
-      throw new Error("No global IDs found for sharing");
-    }
-    
-    // Dispatch event for React ShareDialog
-    window.dispatchEvent(
-      new CustomEvent("OPEN_SHARE_DIALOG", {
-        detail: { 
-          ids: selected.ids, 
-          names: selected.names,
-          types: selected.types,
-          globalIds: globalIds,
-          isCloud: isCloud 
-        },
-      }),
-    );
+  let selected;
+  if (typeof getSelectedIdsNamesAndTypes === "function") {
+    selected = getSelectedIdsNamesAndTypes();
+  } else if (/oldGallery/.test(window.location.href)) {
+    selected = { ids: [], names: [], types: [] };
+    $("input[class='inputCheckbox']:checked").each(function () {
+      var recordID = $(this).attr("data-recordid");
+      var name = $(this).attr("data-recordname");
+      selected.ids.push(recordID);
+      selected.names.push(name);
+    });
+  }
+
+  let globalIds;
+  if (
+    /editor\/structuredDocument/.test(window.location.href) ||
+    /notebookEditor/.test(window.location.href)
+  ) {
+    globalIds = [`SD${selected.ids[0]}`];
+  } else if (/oldGallery/.test(window.location.href)) {
+    globalIds = selected.ids.map((id) => `ST${id}`);
+  } else {
+    globalIds =
+      typeof getSelectedGlobalIds === "function" ? getSelectedGlobalIds() : [];
+  }
+  if (globalIds.length === 0) {
+    throw new Error("No global IDs found for sharing");
+  }
+
+  // Dispatch event for React ShareDialog
+  window.dispatchEvent(
+    new CustomEvent("OPEN_SHARE_DIALOG", {
+      detail: {
+        ids: selected.ids,
+        names: selected.names,
+        globalIds: globalIds,
+        isCloud: isCloud,
+      },
+    }),
+  );
 });
 
 $(document).on('click', '#publishRecord', function (e) {
