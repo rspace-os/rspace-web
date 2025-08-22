@@ -935,10 +935,10 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
         MuiFormLabel: {
           styleOverrides: {
             root: {
-              fontWeight: 700,
-              fontSize: "1rem",
-              letterSpacing: "0.02em",
               marginBottom: baseTheme.spacing(0.5),
+              fontWeight: 700,
+              fontSize: "0.9rem",
+              letterSpacing: "0.02em",
               color: backgroundContrastTextColor,
               [`&.${formLabelClasses.focused}`]: {
                 color: backgroundContrastTextColor,

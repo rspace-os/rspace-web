@@ -8,6 +8,7 @@ import { type Record } from "../../../stores/definitions/Record";
 import FormField from "../../../components/Inputs/FormField";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
+import { Heading } from "@/components/DynamicHeadingLevel";
 
 const MIN = 2;
 const MAX = 255;
@@ -16,7 +17,7 @@ function Name<
   Fields extends {
     name: string;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   record,
@@ -36,7 +37,7 @@ function Name<
     fieldOwner.setFieldsDirty({ name });
     setInitial(false);
     onErrorStateChange(
-      name.length > MAX || name.length < MIN || name.trim().length === 0
+      name.length > MAX || name.length < MIN || name.trim().length === 0,
     );
   };
 
@@ -65,9 +66,9 @@ function Name<
          * as there is no interactable HTMLInputElement to attach it to. A
          * heading is more appropriate when the form is not ediable.
          */}
-        <FormLabel component="h4" sx={{ mt: 0 }} id={labelId}>
+        <Heading sx={{ mt: 0 }} id={labelId}>
           Name
-        </FormLabel>
+        </Heading>
         <div style={{ wordBreak: "break-all" }}>
           {fieldOwner.fieldValues.name}
           {globalId}
