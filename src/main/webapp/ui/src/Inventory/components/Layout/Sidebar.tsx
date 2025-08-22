@@ -29,6 +29,8 @@ import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/igsn";
 import { useLandmark } from "../../../components/LandmarksContext";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);
@@ -65,7 +67,6 @@ const CustomDrawer = withStyles<
   drawerOpen: {
     overflow: "visible",
     width: drawerWidth,
-    borderRight: "0px !important",
     transition: theme.transitions.create("width", {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
@@ -500,35 +501,26 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
 
   return (
     <CustomDrawer id={id}>
-      <nav
-        ref={sidebarRef}
-        role="navigation"
-        aria-label="Inventory Sidebar Navigation"
-      >
-        <div className={classes.drawerContainer}>
-          <List component="nav" aria-label="Create new Inventory items">
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <CreateNew onClick={afterClick} />
-            </ThemeProvider>
-          </List>
-          <List
-            component="nav"
-            onClick={afterClick}
-            aria-label="List existing Inventory items"
-          >
-            <MyBenchNavItem />
-            <ContainersNavItem />
-            <SampleNavItem />
-            <SubsampleNavItem />
-            <TemplateNavItem />
-            <IgsnNavItem />
-          </List>
-          <List component="nav" aria-label="Other places and action">
-            <ExportNavItem />
-            {isSysAdmin && <SettingsNavItem />}
-          </List>
-        </div>
-      </nav>
+      <Box ref={sidebarRef} aria-label="Inventory Sidebar Navigation">
+        <CreateNew onClick={afterClick} />
+        <List
+          component="nav"
+          onClick={afterClick}
+          aria-label="List existing Inventory items"
+        >
+          <MyBenchNavItem />
+          <ContainersNavItem />
+          <SampleNavItem />
+          <SubsampleNavItem />
+          <TemplateNavItem />
+          <IgsnNavItem />
+        </List>
+        <Divider />
+        <List component="nav" aria-label="Other places and action">
+          <ExportNavItem />
+          {isSysAdmin && <SettingsNavItem />}
+        </List>
+      </Box>
     </CustomDrawer>
   );
 }

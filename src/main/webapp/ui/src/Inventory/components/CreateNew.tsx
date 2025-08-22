@@ -91,7 +91,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
 
   const controls = React.useId();
   return (
-    <Box sx={{ p: 1.5, pt: 0 }}>
+    <Box sx={{ p: 1.5 }}>
       <Button
         variant="contained"
         color="callToAction"
