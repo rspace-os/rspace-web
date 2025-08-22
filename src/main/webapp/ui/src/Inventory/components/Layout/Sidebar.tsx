@@ -503,6 +503,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
     <CustomDrawer id={id}>
       <Box ref={sidebarRef} aria-label="Inventory Sidebar Navigation">
         <CreateNew onClick={afterClick} />
+        <Divider />
         <Box
           {...eventHandlers}
           sx={{
