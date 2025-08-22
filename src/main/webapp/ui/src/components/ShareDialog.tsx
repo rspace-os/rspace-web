@@ -561,6 +561,8 @@ const ShareDialog = () => {
 
         setGroupFolderNames(folderNameMap);
       }
+
+      handleClose();
     } catch (error) {
       console.error("Failed to save shares:", error);
     } finally {
