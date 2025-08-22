@@ -135,14 +135,10 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
               style={{
                 width: "18px",
                 height: "18px",
-                backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
-                color: "hsl(198 13% 25% / 1)",
               }}
             />
           }
-          backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
-          foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
             void handleCreate("sample");
           }}
@@ -160,14 +156,10 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
               style={{
                 width: "18px",
                 height: "18px",
-                backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
-                color: "hsl(198 13% 25% / 1)",
               }}
             />
           }
-          backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
-          foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
             void handleCreate("container");
           }}
@@ -185,16 +177,12 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
               style={{
                 width: "28px",
                 height: "28px",
-                backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "2px",
                 paddingTop: "5px",
                 paddingLeft: "5px",
-                color: "hsl(198 13% 25% / 1)",
               }}
             />
           }
-          backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
-          foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
             void handleCreate("template");
           }}
@@ -215,14 +203,10 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
               style={{
                 width: "18px",
                 height: "18px",
-                backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
-                color: "hsl(198 13% 25% / 1)",
               }}
             />
           }
-          backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
-          foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
             void handleImport("SAMPLES");
           }}
@@ -240,14 +224,10 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
               style={{
                 width: "18px",
                 height: "18px",
-                backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
-                color: "hsl(198 13% 25% / 1)",
               }}
             />
           }
-          backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
-          foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
             void handleImport("SUBSAMPLES");
           }}
@@ -265,14 +245,10 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
               style={{
                 width: "18px",
                 height: "18px",
-                backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
-                color: "hsl(198 13% 25% / 1)",
               }}
             />
           }
-          backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
-          foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
             void handleImport("CONTAINERS");
           }}
