@@ -23,6 +23,8 @@ import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import DrawerTab from "../../../components/DrawerTab";
 import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
+import { mapNullable } from "@/util/Util";
+import { InvalidState } from "@/util/error";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);
@@ -132,6 +134,15 @@ const MyBenchNavItem = observer(
     const { peopleStore, searchStore, uiStore } = useStores();
     const { navigateToSearch } = useNavigateHelpers();
     const currentUser = peopleStore.currentUser;
+    const benchContentSummary = peopleStore.currentUser?.bench?.contentSummary;
+    const benchContentCount: number | null =
+      mapNullable((summary) => {
+        if (!summary.isAccessible)
+          throw new InvalidState(
+            "A user should always be able to access a summary of the contents of their own bench.",
+          );
+        return summary.value.totalCount;
+      }, benchContentSummary) ?? null;
 
     return (
       <DrawerTab
@@ -147,6 +158,7 @@ const MyBenchNavItem = observer(
         tabIndex={tabIndex}
         ref={getRef(index)}
         drawerOpen={uiStore.sidebarOpen}
+        badge={Math.min(benchContentCount ?? 0, largestFittingCount)}
         onClick={() => {
           navigateToSearch(
             currentUser
