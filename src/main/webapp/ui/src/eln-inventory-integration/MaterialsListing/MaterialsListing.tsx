@@ -134,6 +134,10 @@ const MaterialsLauncher = observer(
                   disabled={!materialsStore.canEdit && fieldListCount === 0}
                   color="callToAction"
                   onClick={({ currentTarget }) => {
+                    // @ts-expect-error global
+                    RS.trackEvent("user:open:menu:list_of_materials", {
+                      fieldListCount,
+                    }); //eslint-disable-line
                     setShowMenu(true);
                     setAnchorEl(currentTarget);
                   }}
@@ -168,6 +172,8 @@ const MaterialsLauncher = observer(
                             <WrappingMenuItem
                               key={i}
                               onClick={() => {
+                                // @ts-expect-error global
+                                RS.trackEvent("user:open:list_of_materials"); //eslint-disable-line
                                 materialsStore.setCurrentList(list);
                                 setShowDialog(true);
                                 handleClose();
@@ -276,6 +282,8 @@ const NewMaterialsListing = observer(
                     marginRight: "8px",
                   }}
                   onClick={({ currentTarget }) => {
+                    // @ts-expect-error global
+                    RS.trackEvent("user:create:list_of_materials"); //eslint-disable-line
                     setShowDialog(true);
                     currentTarget.blur();
                     materialsStore.newListOfMaterials(parseInt(elnFieldId, 10));

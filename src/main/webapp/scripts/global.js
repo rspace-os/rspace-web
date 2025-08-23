@@ -2518,8 +2518,10 @@ if ($(".displayRevisions")) {
   $(this).click(function () {
     if ($(".displayRevisions").is(":checked")) {
       $(".lastModified").show('slow');
+      RS.trackEvent("user:show:last_modified:document_editor");
     } else {
       $(".lastModified").hide('slow');
+      RS.trackEvent("user:hide:last_modified:document_editor");
     }
 
   });
