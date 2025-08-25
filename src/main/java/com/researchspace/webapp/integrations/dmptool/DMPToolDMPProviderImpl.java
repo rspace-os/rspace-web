@@ -27,8 +27,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -93,7 +95,18 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   @Override
   public DMPList listPlans(DMPPlanScope scope, String accessToken)
       throws MalformedURLException, URISyntaxException {
-    return this.dmpToolClient.listPlans(scope, accessToken);
+    try {
+      return this.dmpToolClient.listPlans(scope, accessToken);
+    } catch (HttpClientErrorException cex) {
+      if (cex.getStatusCode().equals(HttpStatus.NOT_FOUND)
+          && cex.getMessage().contains("\"items\": []")) { // DMPTool side known issue
+        throw new UnsupportedOperationException(
+            "Unable to load your DMPs. "
+                + "For more information visit "
+                + "https://documentation.researchspace.com/article/o0wlhlgxnr-dmptool-integration");
+      }
+    }
+    return null;
   }
 
   @Override
