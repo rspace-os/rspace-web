@@ -910,7 +910,22 @@ public class WorkspaceController extends BaseController {
     Folder parentFolder = folderManager.getFolder(parentFolderId, user);
     listFilesInFolder(settings, model, session, user, parentFolder);
     setPublicationAllowed(model, principal.getName());
+    addErrorMsgIfProblematicFolder(model, parentFolder);
     return new ModelAndView(WORKSPACE_AJAX);
+  }
+
+  private void addErrorMsgIfProblematicFolder(Model model, Folder parentFolder) {
+    // SUPPORT-526 shared folder moved outside sharing hierarchy
+    if (parentFolder.isSharedFolder() && !parentFolder.isShared()) {
+      model.addAttribute(
+          "errorMsg",
+          "The folder you're browsing seems "
+              + "to have inconsistent sharing status. Please contact your System Admin "
+              + "(citing folder ID: "
+              + parentFolder.getOid()
+              + "), or check RSpace documentation for steps to fix the folder ("
+              + "https://researchspace.helpdocs.io/article/2toicmq4iu)");
+    }
   }
 
   /** Widely used function to simply list files in a folder */

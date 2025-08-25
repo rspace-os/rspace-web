@@ -111,22 +111,22 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
     if (parentFolder.hasType(SHARED_GROUP_FOLDER_ROOT)) {
       movetargetRoot = parentFolder.getId() + "";
     } else if (parentFolder.hasType(SHARED_FOLDER) && !parentFolder.isNotebook()) {
-      Folder grpSharedFolder =
+      movetargetRoot =
           fMger
               .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(parentFolder.getId(), usr)
-              .get();
-      movetargetRoot = grpSharedFolder.getId() + "";
+              .map(folder -> folder.getId() + "")
+              .orElse("INVALID");
     } else if (parentFolder.hasType(SHARED_FOLDER)
         && parentFolder.isNotebook()
         && previousFolderId != null) {
       // this seems redundant, we only use the ID, which we already have.
       Folder previousFolder = fMger.getFolder(previousFolderId, usr);
       // this will be a shared folder above the notebook
-      Folder grpSharedFolder =
+      movetargetRoot =
           fMger
               .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(previousFolder.getId(), usr)
-              .get();
-      movetargetRoot = grpSharedFolder.getId() + "";
+              .map(folder -> folder.getId() + "")
+              .orElse("INVALID");
     } else if (parentFolder.hasAncestorOfType(TEMPLATE, true)) {
       movetargetRoot = fMger.getTemplateFolderForUser(usr).getId() + "";
     }

@@ -313,6 +313,11 @@ function createMoveDialog(onmove, moveparams) {
     title: "Select target folder",
     open: function () {
       var moveTargetRoot = $("#movetargetRoot").val()
+      if (moveTargetRoot === "INVALID") {
+        apprise("Cannot calculate valid move targets for content of the current folder.");
+        $(this).dialog('close');
+        return;
+      }
       var scriptUrl = '/fileTree/ajax/directoriesInModel';
       var types = $(this).data('toMoveTypes');
       if (onlyNormalDocsOnTypesList(types)) {

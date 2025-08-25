@@ -220,9 +220,9 @@ public class FileTreeController extends BaseController {
     User user = userManager.getUserByUsername(principal.getName());
     dir = java.net.URLDecoder.decode(dir, "UTF-8");
 
-    // if it's '/' or a group folder , we're loading for the first time and just show home folder
+    // if it's '/' or a group folder, we're loading for the first time and just show home folder
     if (initialLoad) {
-      Folder targetFolder = null;
+      Folder targetFolder;
       if ("/".equals(dir)) {
         targetFolder = folderManager.getRootFolderForUser(user);
         targetFolder.setName("Home");
@@ -230,24 +230,22 @@ public class FileTreeController extends BaseController {
         Long folderId = getFolderIdFromDir(dir);
         targetFolder = folderManager.getFolder(folderId, user);
       }
-      List<BaseRecord> rc = new ArrayList<>();
-      rc.add(targetFolder);
-      return rc;
-    } else {
-      Long targetFolderId = getFolderIdFromDir(dir);
-      RecordTypeFilter moveDialogFilter =
-          showNotebooks || showNotebooksForShare
-              ? RecordTypeFilter.MOVE_DIALOGFILTER_PLUS_NOTEBOOKS
-              : RecordTypeFilter.MOVE_DIALOGFILTER;
-      List<BaseRecord> results =
-          recordManager
-              .listFolderRecords(targetFolderId, DEFAULT_TREE_PAGINATION, moveDialogFilter)
-              .getResults();
-      if (showNotebooksForShare) {
-        filterOutNotebooksForShare(results, user);
-      }
-      return results;
+      return new ArrayList<>(List.of(targetFolder));
     }
+
+    Long targetFolderId = getFolderIdFromDir(dir);
+    RecordTypeFilter moveDialogFilter =
+        showNotebooks || showNotebooksForShare
+            ? RecordTypeFilter.MOVE_DIALOGFILTER_PLUS_NOTEBOOKS
+            : RecordTypeFilter.MOVE_DIALOGFILTER;
+    List<BaseRecord> results =
+        recordManager
+            .listFolderRecords(targetFolderId, DEFAULT_TREE_PAGINATION, moveDialogFilter)
+            .getResults();
+    if (showNotebooksForShare) {
+      filterOutNotebooksForShare(results, user);
+    }
+    return results;
   }
 
   private void filterOutNotebooksForShare(List<BaseRecord> results, User user) {
