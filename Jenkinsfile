@@ -262,7 +262,7 @@ pipeline {
                 echo 'Running Playwright tests'
                 dir('src/main/webapp/ui') {
                     sh 'npx playwright install'
-                    sh 'rm -r playwright/.cache'
+                    sh 'rm -rf playwright/.cache'
                     sh 'npm run test-ct'
                 }
             }
