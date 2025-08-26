@@ -23,14 +23,14 @@ import lombok.NoArgsConstructor;
       "permission",
       "shareeId",
       "shareeName",
-      "groupFolderId",
+      "sharedToFolderId",
       "_links"
     })
 public class ApiShareInfo extends LinkableApiObject implements IdentifiableObject {
 
   private Long id, sharedItemId;
   private String sharedTargetType, permission, shareItemName;
-  private Long shareeId, groupFolderId;
+  private Long shareeId, sharedToFolderId;
   private String shareeName;
 
   public ApiShareInfo(RecordGroupSharing rgs) {
@@ -41,6 +41,8 @@ public class ApiShareInfo extends LinkableApiObject implements IdentifiableObjec
     this.sharedTargetType = rgs.getSharee().isUser() ? "USER" : "GROUP";
     this.shareeId = rgs.getSharee().getId();
     this.shareeName = rgs.getSharee().getDisplayName();
-    this.groupFolderId = rgs.getTargetFolder().getId();
+    if (rgs.getTargetFolder() != null) {
+      this.sharedToFolderId = rgs.getTargetFolder().getId();
+    }
   }
 }
