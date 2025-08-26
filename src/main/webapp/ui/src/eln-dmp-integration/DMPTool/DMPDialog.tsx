@@ -95,6 +95,28 @@ function DMPDialogContent({
         if (r.data.success) {
           setDMPs(r.data.data.items.map((item) => item.dmp));
         } else {
+          if (
+            /Unable to load your DMPs. For more information/.test(
+              r.data.error?.errorMessages[0] ?? "",
+            )
+          ) {
+            addAlert(
+              mkAlert({
+                title: "Unable to load DMPs.",
+                message: (
+                  <>
+                    For more information{" "}
+                    <a href={docLinks.dmptool} rel="noreferrer">
+                      visit our docs
+                    </a>
+                    .
+                  </>
+                ),
+                variant: "error",
+              }),
+            );
+            return;
+          }
           addAlert(
             mkAlert({
               title: "Fetch failed.",
@@ -110,7 +132,7 @@ function DMPDialogContent({
       }
     } catch (e) {
       console.error("Could not get DMPs for scope", e);
-      if (e instanceof Error)
+      if (e instanceof Error) {
         addAlert(
           mkAlert({
             title: "Fetch failed.",
@@ -118,6 +140,7 @@ function DMPDialogContent({
             variant: "error",
           }),
         );
+      }
       if (thisId === fetchingId.current) {
         setFetching(false);
       }
