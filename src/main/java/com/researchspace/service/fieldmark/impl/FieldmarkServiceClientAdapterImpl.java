@@ -1,5 +1,6 @@
 package com.researchspace.service.fieldmark.impl;
 
+import static com.researchspace.fieldmark.model.utils.FieldmarkUtils.buildFieldTypeMap;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 
 import com.researchspace.fieldmark.client.FieldmarkClient;
@@ -90,6 +91,7 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
 
     FieldmarkRecordsJsonExport jsonRecords =
         fieldmarkClient.getNotebookRecords(existingConnection.getAccessToken(), notebookId);
+    jsonRecords.setFieldTypes(buildFieldTypeMap(fieldmarkNotebook));
 
     // Create DTO
     FieldmarkNotebookDTO notebookDTO =
@@ -164,6 +166,9 @@ public class FieldmarkServiceClientAdapterImpl implements FieldmarkServiceClient
         // grab the path from CSV
         String filePath = csvRecords.getStringFieldValue(currentRecordDTO.getRecordId(), fieldName);
         if (StringUtils.isNotBlank(filePath)) {
+          if (filePath.contains(";")) { // if file path is a list of path ";" separated
+            filePath = filePath.split(";")[0]; // only supports 1 attachement per field
+          }
           // grab the file from the ZIP and attach it to the extractor
           typeExtractor.setFieldValue(filesInRecords.get(filePath));
           ((FieldmarkFileExtractor) typeExtractor).setFileName(filePath);
