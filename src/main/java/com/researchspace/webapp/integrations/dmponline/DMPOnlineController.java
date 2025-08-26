@@ -4,12 +4,16 @@ import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
-import com.researchspace.model.dmps.DMP;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.rda.model.DMP;
+import com.researchspace.rda.model.DMPList;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;
@@ -58,7 +62,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.RedirectView;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Slf4j
 @Controller
@@ -68,6 +71,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
   @Autowired private MediaManager mediaManager;
   @Autowired private UserManager userManager;
   @Autowired private DMPManager dmpManager;
+  @Autowired private DMPOnlineProvider dmpOnlineProvider;
 
   @Value("${dmponline.base.url}")
   private String baseUrl;
@@ -90,7 +94,6 @@ public class DMPOnlineController extends BaseOAuth2Controller {
   private static String URL_AUTH_END_POINT;
   private static String URL_AUTH_TOKEN_INFO;
   private static String URL_TOKEN_END_POINT;
-  private static String URL_DMP_PLANS;
   private static String URL_CALLBACK;
   private static final String TEMP_TOKEN = "TEMP";
 
@@ -106,7 +109,6 @@ public class DMPOnlineController extends BaseOAuth2Controller {
     URL_AUTH_END_POINT = this.baseUrl + "/oauth/authorize";
     URL_TOKEN_END_POINT = this.baseUrl + "/oauth/token";
     URL_AUTH_TOKEN_INFO = this.baseUrl + "/oauth/token/info";
-    URL_DMP_PLANS = this.baseUrl + "/api/v2/plans";
     URL_CALLBACK = getCallbackUrl() + "/apps/dmponline/callback";
     URL_CALLBACK = new URI(URL_CALLBACK).normalize().toString();
     clientId = clientId == null ? "" : StringUtils.strip(clientId);
@@ -227,19 +229,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       Principal principal) {
     try {
       String accessToken = getExistingAccessToken(model, principal);
-      return new AjaxReturnObject(
-          restTemplate
-              .exchange(
-                  UriComponentsBuilder.fromUriString(URL_DMP_PLANS)
-                      .queryParam("page", page)
-                      .queryParam("per_page", per_page)
-                      .build()
-                      .toUri(),
-                  HttpMethod.GET,
-                  new HttpEntity<>(getHttpHeadersWithToken(accessToken)),
-                  JsonNode.class)
-              .getBody(),
-          null);
+      return new AjaxReturnObject(dmpOnlineProvider.listPlans(page, per_page, accessToken), null);
     } catch (HttpClientErrorException | URISyntaxException | MalformedURLException e) {
       log.warn("error connecting to DMPonline", e);
       return new AjaxReturnObject<>(null, ErrorList.of("Error connecting to DMPonline."));
@@ -249,7 +239,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
   @PostMapping("/importPlan")
   @ResponseBody
   public AjaxReturnObject<JsonNode> importDmp(
-      @RequestParam(name = "id") String id, // url to dmp
+      @RequestParam(name = "id") String id,
       @RequestParam(name = "filename") String filename,
       Model model,
       Principal principal)
@@ -258,34 +248,35 @@ public class DMPOnlineController extends BaseOAuth2Controller {
     User user = userManager.getAuthenticatedUserInSession();
     String accessToken = getExistingAccessToken(model, principal);
 
-    var dmps =
-        restTemplate
-            .exchange(
-                new URL(id).toURI(),
-                HttpMethod.GET,
-                new HttpEntity<>(getHttpHeadersWithToken(accessToken)),
-                JsonNode.class)
-            .getBody()
-            .get("items")
-            .elements();
-    var dmpWrappedObject = dmps.next();
-    var dmpObject = dmpWrappedObject.get("dmp");
+    DMPList dmpList = dmpOnlineProvider.getPlanByUrlId(id, accessToken);
 
     ObjectMapper objectMapper = new ObjectMapper();
-    String json = objectMapper.writeValueAsString(dmpObject);
+    String json = objectMapper.writeValueAsString(dmpList);
     InputStream is = new ByteArrayInputStream(json.getBytes());
-    var file = mediaManager.saveNewDMP(filename, is, user, null);
+    EcatDocumentFile file = mediaManager.saveNewDMP(filename, is, user, null);
 
-    DMP dmp = new DMP(id, filename);
-    var dmpUser = dmpManager.findByDmpId(dmp.getDmpId(), user).orElse(new DMPUser(user, dmp));
-    if (file != null) {
-      dmpUser.setDmpDownloadPdf(file);
-    } else {
-      log.warn("Unexpected null DMP PDF - did download work?");
+    Optional<DMPUser> dmpUser = dmpManager.findByDmpId(id, user);
+    DMP currentDmp = dmpList.getItems().get(0).getDmp();
+    if (dmpUser.isEmpty()) {
+      dmpUser =
+          Optional.of(
+              new DMPUser(
+                  user,
+                  new DmpDto(
+                      currentDmp.getId() + "",
+                      currentDmp.getTitle(),
+                      DMPSource.DMP_ONLINE,
+                      currentDmp.getDoiLink(),
+                      currentDmp.getDmpLink())));
     }
-    dmpManager.save(dmpUser);
+    if (file != null) {
+      dmpUser.get().setDmpDownloadFile(file);
+    } else {
+      log.warn("Unexpected null DMP File - did download work?");
+    }
+    dmpManager.save(dmpUser.get());
 
-    return new AjaxReturnObject(dmpObject, null);
+    return new AjaxReturnObject(currentDmp, null);
   }
 
   private String getExistingAccessToken(Model model, Principal principal)

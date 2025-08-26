@@ -255,7 +255,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           }
 
           DMPUser selectedDMP = dmpsToUpdate.get(0);
-          EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadPdf();
+          EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadFile();
           File file = fileStore.findFile(jsonFile.getFileProperty());
 
           // read json from file
@@ -335,7 +335,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       }
 
       DMPUser selectedDMP = dmpsToUpdate.get(0);
-      EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadPdf();
+      EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadFile();
       File file = fileStore.findFile(jsonFile.getFileProperty());
 
       ObjectMapper objectMapper = new ObjectMapper();

@@ -1,11 +1,11 @@
 package com.researchspace.webapp.integrations.dmptool;
 
-import com.researchspace.dmptool.model.DMPList;
 import com.researchspace.dmptool.model.DMPPlanScope;
-import com.researchspace.dmptool.model.DMPToolDMP;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.rda.model.DMP;
+import com.researchspace.rda.model.DMPList;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -38,20 +38,20 @@ public interface DMPToolDMPProvider {
   /**
    * Downloads a PDF of the DMP, creating a new DMP entry in RSpace if one does not already exist.
    *
-   * @param id the DMP ID
+   * @param dmp the DMP
    * @param title The title of the DMP
    * @param accessToken
    * @return
    * @throws URISyntaxException
    * @throws IOException
    */
-  DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
+  DMPUser doJsonDownload(DMP dmp, String title, String accessToken)
       throws URISyntaxException, IOException;
 
   /**
    * Downloads a PDF of the DMP, creating a new DMP entry in RSpace if one does not already exist.
    *
-   * @param id the DMP ID
+   * @param dmp the DMP
    * @param title The title of the DMP
    * @param user User. Assumes this user has performed OAUth flow and can retrieve an accessToken
    *     from UserConnection table
@@ -59,7 +59,7 @@ public interface DMPToolDMPProvider {
    * @throws URISyntaxException
    * @throws IOException
    */
-  ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
+  ServiceOperationResult<DMPUser> doJsonDownload(DMP dmp, String title, User user)
       throws URISyntaxException, IOException;
 
   /**
@@ -97,7 +97,7 @@ public interface DMPToolDMPProvider {
    * @throws MalformedURLException
    * @throws URISyntaxException
    */
-  ServiceOperationResult<DMPToolDMP> getPlanById(String dmpId, User user)
+  ServiceOperationResult<DMP> getPlanById(String dmpId, User user)
       throws MalformedURLException, URISyntaxException;
 
   /**
@@ -109,7 +109,7 @@ public interface DMPToolDMPProvider {
    * @throws MalformedURLException
    * @throws URISyntaxException
    */
-  DMPToolDMP getPlanById(String dmpId, String accessToken)
+  DMP getPlanById(String dmpId, String accessToken)
       throws MalformedURLException, URISyntaxException;
 
   /**
