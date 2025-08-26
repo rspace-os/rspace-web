@@ -46,6 +46,6 @@ public interface ShareApi {
       User user)
       throws BindException;
 
-  @GetMapping("/{id}")
+  @GetMapping("/document/{id}")
   List<ApiShareInfo> getAllSharesForDoc(@PathVariable("id") Long docId, User user);
 }
