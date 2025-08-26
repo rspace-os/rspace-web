@@ -920,11 +920,10 @@ public class WorkspaceController extends BaseController {
       model.addAttribute(
           "errorMsg",
           "The folder you're browsing seems "
-              + "to have inconsistent sharing status. Please contact your System Admin "
-              + "(citing folder ID: "
+              + "to have inconsistent sharing status. Please contact your System Admin, "
+              + "citing folder ID: "
               + parentFolder.getOid()
-              + "), or check RSpace documentation for steps to fix the folder ("
-              + "https://researchspace.helpdocs.io/article/2toicmq4iu)");
+              + ". More details at https://researchspace.helpdocs.io/article/2toicmq4iu)");
     }
   }
 
