@@ -15,11 +15,23 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @JsonPropertyOrder(
-    value = {"id", "sharedItemId", "shareItemName", "sharedTargetType", "permission", "_links"})
+    value = {
+      "id",
+      "sharedItemId",
+      "shareItemName",
+      "sharedTargetType",
+      "permission",
+      "shareeId",
+      "shareeName",
+      "groupFolderId",
+      "_links"
+    })
 public class ApiShareInfo extends LinkableApiObject implements IdentifiableObject {
 
   private Long id, sharedItemId;
   private String sharedTargetType, permission, shareItemName;
+  private Long shareeId, groupFolderId;
+  private String shareeName;
 
   public ApiShareInfo(RecordGroupSharing rgs) {
     this.id = rgs.getId();
@@ -27,5 +39,10 @@ public class ApiShareInfo extends LinkableApiObject implements IdentifiableObjec
     this.shareItemName = rgs.getShared().getName();
     this.permission = PermissionType.WRITE.equals(rgs.getPermType()) ? "EDIT" : "READ";
     this.sharedTargetType = rgs.getSharee().isUser() ? "USER" : "GROUP";
+    this.shareeId = rgs.getSharee().getId();
+    this.shareeName = rgs.getSharee().getDisplayName();
+    if (rgs.getSharee().isGroup() && rgs.getTargetFolder() != null) {
+      this.groupFolderId = rgs.getTargetFolder().getId();
+    }
   }
 }

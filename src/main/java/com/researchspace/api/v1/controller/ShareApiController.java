@@ -93,6 +93,24 @@ public class ShareApiController extends BaseApiController implements ShareApi {
   }
 
   @Override
+  public ApiSharingResult updateShare(
+      @PathVariable("id") Long id,
+      @Valid @RequestBody SharePost shareConfig,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+    throwBindExceptionIfErrors(errors);
+
+    try {
+      recordShareHandler.unshare(id, user);
+    } catch (DataAccessException e) {
+      throw new NotFoundException(createNotFoundMessage("Share", id), e);
+    }
+
+    return shareItems(shareConfig, errors, user);
+  }
+
+  @Override
   public ApiShareSearchResult getShares(
       @Valid DocumentApiPaginationCriteria pgCrit,
       @Valid ApiGenericSearchConfig apiSrchConfig,

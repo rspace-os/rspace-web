@@ -12,6 +12,7 @@ import com.researchspace.service.GroupManager;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -52,13 +53,14 @@ public class GroupApiController extends BaseApiController implements GroupApi {
         .collect(Collectors.toList());
   }
 
-  /**
-   * Groups ordered by display name
-   *
-   * @param i1
-   * @param i2
-   * @return
-   */
+  @Override
+  public ApiGroupInfo getGroupById(
+      @PathVariable("id") Long id, @RequestAttribute(name = "user") User user) {
+    Group group = groupManager.getGroup(id);
+    return new ApiGroupInfo(group);
+  }
+
+  /** Groups ordered by display name */
   int orderByName(ApiGroupInfo i1, ApiGroupInfo i2) {
     return i1.getName().compareTo(i2.getName());
   }
