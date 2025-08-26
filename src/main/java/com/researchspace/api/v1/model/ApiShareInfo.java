@@ -41,8 +41,6 @@ public class ApiShareInfo extends LinkableApiObject implements IdentifiableObjec
     this.sharedTargetType = rgs.getSharee().isUser() ? "USER" : "GROUP";
     this.shareeId = rgs.getSharee().getId();
     this.shareeName = rgs.getSharee().getDisplayName();
-    if (rgs.getSharee().isGroup() && rgs.getTargetFolder() != null) {
-      this.groupFolderId = rgs.getTargetFolder().getId();
-    }
+    this.groupFolderId = rgs.getTargetFolder().getId();
   }
 }

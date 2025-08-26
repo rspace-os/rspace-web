@@ -139,6 +139,14 @@ public class ShareApiController extends BaseApiController implements ShareApi {
     return apiShareSearchResults;
   }
 
+  @Override
+  public List<ApiShareInfo> getAllSharesForDoc(Long docId, User user) {
+    if (docId == null) {
+      throw new IllegalArgumentException("Document id cannot be null");
+    }
+    return entityToSharedInfo(recordShareMgr.getRecordSharingInfo(docId));
+  }
+
   private void configureSearch(
       ApiGenericSearchConfig apiSrchConfig, PaginationCriteria<RecordGroupSharing> internalPgCrit) {
     if (!StringUtils.isEmpty(apiSrchConfig.getQuery())) {

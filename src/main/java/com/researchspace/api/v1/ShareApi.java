@@ -2,10 +2,12 @@ package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.controller.ApiGenericSearchConfig;
 import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
+import com.researchspace.api.v1.model.ApiShareInfo;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.model.User;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -43,4 +45,7 @@ public interface ShareApi {
       BindingResult errors,
       User user)
       throws BindException;
+
+  @GetMapping("/{id}")
+  List<ApiShareInfo> getAllSharesForDoc(@PathVariable("id") Long docId, User user);
 }
