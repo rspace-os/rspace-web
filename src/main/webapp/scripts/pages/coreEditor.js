@@ -2122,14 +2122,14 @@ $(document).ready(function () {
     var showTreeInEditor = isWindowWideEnoughForFileTreeBrowser() ? 'y' : 'a';
     updateClientUISetting('showTreeInEditor', showTreeInEditor);
     _updateNotebookRibbonVisibility();
-    RS.trackEvent('ShowTreeInEditor', { showTreeInEditor: showTreeInEditor });
+    RS.trackEvent("user:open:sidebar_tree:document:editor", { "default": isWindowWideEnoughForFileTreeBrowser() ? "open" : "closed" });
   });
   $(document).on('click', '#hideFileTreeSmall', function (e) {
     e.preventDefault();
     collapsePageAndHideFileTreeBrowser();
     updateClientUISetting('showTreeInEditor', 'n');
     _updateNotebookRibbonVisibility();
-    RS.trackEvent('ShowTreeInEditor', { showTreeInEditor: 'n' });
+    RS.trackEvent("user:close:sidebar_tree:document_editor");
   });
 
   /* let's start with narrow view */
