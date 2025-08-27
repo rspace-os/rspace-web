@@ -923,7 +923,7 @@ public class WorkspaceController extends BaseController {
               + "to have inconsistent sharing status. Please contact your System Admin, "
               + "citing folder ID: "
               + parentFolder.getOid()
-              + ". More details at https://researchspace.helpdocs.io/article/2toicmq4iu)");
+              + ". More details at https://researchspace.helpdocs.io/article/2toicmq4iu");
     }
   }
 
