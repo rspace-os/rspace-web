@@ -52,6 +52,7 @@ import WarningBar from "./WarningBar";
 type DocumentGlobalId = string;
 type DocumentName = string;
 type ShareId = string;
+type Permission = "READ" | "EDIT" | "UNSHARE";
 
 // Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
@@ -130,9 +131,8 @@ const ShareDialog = () => {
   const [saving, setSaving] = React.useState(false);
   const [shareOptions, setShareOptions] = React.useState<ShareOption[]>([]);
   const [optionsLoading, setOptionsLoading] = React.useState(false);
-  // Track permission changes: Map<shareId, newPermission>
   const [permissionChanges, setPermissionChanges] = React.useState<
-    Map<ShareId, string>
+    Map<ShareId, Permission>
   >(new Map());
   // Track new shares to be added: Map<globalId, NewShare[]>
   const [newShares, setNewShares] = React.useState<Map<DocumentGlobalId, NewShare[]>>(
@@ -358,7 +358,7 @@ const ShareDialog = () => {
     shareFolderChanges.size > 0;
 
   // Handle permission change
-  function handlePermissionChange(shareId: ShareId, newPermission: string) {
+  function handlePermissionChange(shareId: ShareId, newPermission: Permission) {
     const newChanges = new Map(permissionChanges);
     if (newPermission === "UNSHARE") {
       newChanges.set(shareId, "UNSHARE");
@@ -369,7 +369,7 @@ const ShareDialog = () => {
   }
 
   // Get the current permission value (either from changes or original)
-  function getCurrentPermission(share: ShareInfo): string {
+  function getCurrentPermission(share: ShareInfo): Permission {
     return permissionChanges.get(share.id.toString()) || share.permission;
   }
 
@@ -377,7 +377,7 @@ const ShareDialog = () => {
   function handleNewSharePermissionChange(
     globalId: DocumentGlobalId,
     newShareId: ShareId,
-    newPermission: string,
+    newPermission: Permission,
   ) {
     const updatedNewShares = new Map(newShares);
     const docNewShares = updatedNewShares.get(globalId) || [];
@@ -847,9 +847,12 @@ const ShareDialog = () => {
                                         <Select
                                           value={getCurrentPermission(share)}
                                           onChange={(e) => {
+                                            const newValue = e.target.value;
+                                            if (!(["EDIT", "READ", "UNSHARE"].includes(newValue)))
+                                              throw new Error("Impossible");
                                             handlePermissionChange(
                                               share.id.toString(),
-                                              e.target.value,
+                                              newValue as Permission,
                                             );
                                           }}
                                           size="small"
@@ -968,10 +971,13 @@ const ShareDialog = () => {
                                         <Select
                                           value={newShare.permission}
                                           onChange={(e) => {
+                                            const newValue = e.target.value;
+                                            if (!(["EDIT", "READ", "UNSHARE"].includes(newValue)))
+                                              throw new Error("Impossible");
                                             handleNewSharePermissionChange(
                                               globalId,
                                               newShare.id,
-                                              e.target.value,
+                                              newValue as Permission,
                                             );
                                           }}
                                           size="small"
