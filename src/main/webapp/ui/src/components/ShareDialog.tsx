@@ -604,6 +604,7 @@ const ShareDialog = () => {
             onChange={(event, newValue) => {
               if (newValue && !newValue.isDisabled) {
                 const updatedNewShares = new Map(newShares);
+                const updatedPermissionChanges = new Map(permissionChanges);
 
                 globalIds.forEach((globalId) => {
                   const existingShares = shareData.get(globalId) || [];
@@ -624,40 +625,58 @@ const ShareDialog = () => {
                       share.sharedTargetType === newValue.optionType,
                   );
 
-                  // Only add new share if not already shared and not already in new shares
-                  if (!alreadyShared && !alreadyInNewShares) {
-                    const newShare: NewShare = {
-                      id: `new-${newValue.id}-${Date.now()}`, // temporary ID
-                      sharedTargetId: newValue.id,
-                      sharedTargetName:
-                        newValue.optionType === "GROUP"
-                          ? newValue.name
-                          : newValue.username,
-                      sharedTargetDisplayName:
-                        newValue.optionType === "GROUP"
-                          ? newValue.name
-                          : `${newValue.firstName} ${newValue.lastName}`,
-                      sharedTargetType: newValue.optionType,
-                      permission: "READ", // default permission
-                      sharedFolderName:
-                        newValue.optionType === "GROUP"
-                          ? groupFolderNames.get(newValue.id) || "Loading..."
-                          : null,
-                      sharedFolderId:
-                        newValue.optionType === "GROUP" &&
-                        "sharedFolderId" in newValue
-                          ? newValue.sharedFolderId
-                          : undefined,
-                    };
-
-                    updatedNewShares.set(globalId, [
-                      ...existingNewShares,
-                      newShare,
-                    ]);
+                  // If already shared, mark the existing share for deletion (unshare)
+                  if (alreadyShared) {
+                    updatedPermissionChanges.set(
+                      alreadyShared.id.toString(),
+                      "UNSHARE"
+                    );
                   }
+
+                  // Remove from new shares if already there
+                  if (alreadyInNewShares) {
+                    const filteredNewShares = existingNewShares.filter(
+                      (share) =>
+                        !(share.sharedTargetId === newValue.id &&
+                          share.sharedTargetType === newValue.optionType)
+                    );
+                    updatedNewShares.set(globalId, filteredNewShares);
+                  }
+
+                  // Always add the new share (this replaces any existing one)
+                  const newShare: NewShare = {
+                    id: `new-${newValue.id}-${Date.now()}`, // temporary ID
+                    sharedTargetId: newValue.id,
+                    sharedTargetName:
+                      newValue.optionType === "GROUP"
+                        ? newValue.name
+                        : newValue.username,
+                    sharedTargetDisplayName:
+                      newValue.optionType === "GROUP"
+                        ? newValue.name
+                        : `${newValue.firstName} ${newValue.lastName}`,
+                    sharedTargetType: newValue.optionType,
+                    permission: "READ", // default permission
+                    sharedFolderName:
+                      newValue.optionType === "GROUP"
+                        ? groupFolderNames.get(newValue.id) || "Loading..."
+                        : null,
+                    sharedFolderId:
+                      newValue.optionType === "GROUP" &&
+                      "sharedFolderId" in newValue
+                        ? newValue.sharedFolderId
+                        : undefined,
+                  };
+
+                  const currentNewShares = updatedNewShares.get(globalId) || [];
+                  updatedNewShares.set(globalId, [
+                    ...currentNewShares,
+                    newShare,
+                  ]);
                 });
 
                 setNewShares(updatedNewShares);
+                setPermissionChanges(updatedPermissionChanges);
               }
             }}
             getOptionLabel={(option) => {
