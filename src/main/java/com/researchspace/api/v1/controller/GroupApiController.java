@@ -10,7 +10,6 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GroupSearchCriteria;
 import com.researchspace.service.GroupManager;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
