@@ -75,7 +75,7 @@ export default function useShare(): {
    * Fetches sharing information for multiple global IDs.
    */
   getShareInfoForMultiple: (
-    globalIds: string[],
+    globalIds: ReadonlyArray<string>,
   ) => Promise<Map<string, ShareInfo[]>>;
 
   /**
@@ -117,7 +117,7 @@ export default function useShare(): {
   }
 
   async function getShareInfoForMultiple(
-    globalIds: string[],
+    globalIds: ReadonlyArray<string>,
   ): Promise<Map<string, ShareInfo[]>> {
     try {
       // Make parallel requests for all global IDs

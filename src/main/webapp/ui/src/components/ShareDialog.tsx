@@ -49,6 +49,8 @@ import Stack from "@mui/material/Stack";
 import RsSet, { flattenWithIntersectionWithEq } from "../util/set";
 import WarningBar from "./WarningBar";
 
+type DocumentGlobalId = string;
+
 // Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
   isDisabled: boolean;
@@ -82,13 +84,13 @@ export default function Wrapper(): React.ReactNode {
  * event will not be dispatched again whilst the dialog is open.
  */
 function useSetup(): {
-  globalIds: ReadonlyArray<string>;
+  globalIds: ReadonlyArray<DocumentGlobalId>;
   open: boolean;
   onClose: () => void;
   names: ReadonlyArray<string>;
 } {
   const [open, setOpen] = React.useState(false);
-  const [globalIds, setGlobalIds] = React.useState<string[]>([]);
+  const [globalIds, setGlobalIds] = React.useState<ReadonlyArray<DocumentGlobalId>>([]);
   const [names, setNames] = React.useState<string[]>([]);
 
   React.useEffect(() => {
@@ -119,7 +121,7 @@ function useSetup(): {
 
 const ShareDialog = () => {
   const { open, onClose, globalIds, names } = useSetup();
-  const [shareData, setShareData] = React.useState<Map<string, ShareInfo[]>>(
+  const [shareData, setShareData] = React.useState<Map<DocumentGlobalId, ShareInfo[]>>(
     new Map(),
   );
   const [loading, setLoading] = React.useState(false);
@@ -131,7 +133,7 @@ const ShareDialog = () => {
     Map<string, string>
   >(new Map());
   // Track new shares to be added: Map<globalId, NewShare[]>
-  const [newShares, setNewShares] = React.useState<Map<string, NewShare[]>>(
+  const [newShares, setNewShares] = React.useState<Map<DocumentGlobalId, NewShare[]>>(
     new Map(),
   );
   // Track folder names for group shares: Map<sharedTargetId, folderName>
@@ -144,7 +146,7 @@ const ShareDialog = () => {
     React.useState<{
       shareId: string;
       groupId: number;
-      globalId: string;
+      globalId: DocumentGlobalId;
       sharedFolderId: number;
     } | null>(null);
   // Track folder path changes for existing shares: Map<shareId, {name, id}>
@@ -371,7 +373,7 @@ const ShareDialog = () => {
 
   // Handle permission change for new shares
   function handleNewSharePermissionChange(
-    globalId: string,
+    globalId: DocumentGlobalId,
     newShareId: string,
     newPermission: string,
   ) {
@@ -1067,7 +1069,7 @@ const ShareDialog = () => {
                       {/* Get unique shares across all documents */}
                       {(() => {
                         const uniqueShares = new Map<
-                          string,
+                          DocumentGlobalId,
                           {
                             share: NewShare;
                             documentCount: number;
