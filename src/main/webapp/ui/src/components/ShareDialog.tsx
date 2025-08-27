@@ -1042,12 +1042,6 @@ const ShareDialog = () => {
                     );
                   })()}
                 </Stack>
-
-                {globalIds.length === 0 && (
-                  <Typography variant="body2" color="text.secondary">
-                    No documents selected.
-                  </Typography>
-                )}
               </Box>
             ) : (
               <>
