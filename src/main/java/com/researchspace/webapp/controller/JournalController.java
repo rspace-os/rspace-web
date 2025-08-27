@@ -168,7 +168,7 @@ public class JournalController extends BaseController {
     }
     UserSessionTracker activeUsers = getCurrentActiveUsers();
     journalEntry.setEditStatus(
-        recordManager.requestRecordView(currentRecord.getId(), user, activeUsers));
+        recordManager.requestRecordView(currentRecord.getId(), user));
     signingManager.updateSigningAttributes(journalEntry, doc.getId(), user);
 
     boolean canShare =

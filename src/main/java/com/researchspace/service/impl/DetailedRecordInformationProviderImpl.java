@@ -175,7 +175,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
         detailedInfo.setStatus(EditStatus.CAN_NEVER_EDIT.toString());
       } else {
         EditStatus status =
-            recordManager.requestRecordView(baseRecord.getId(), user, userSessionTracker);
+            recordManager.requestRecordView(baseRecord.getId(), user);
         detailedInfo.setStatus(status.toString());
         if (EditStatus.CANNOT_EDIT_OTHER_EDITING.equals(status)) {
           String editor = tracker.getEditingUserForRecord(baseRecord.getId());

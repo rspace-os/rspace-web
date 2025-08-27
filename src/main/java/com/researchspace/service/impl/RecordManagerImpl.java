@@ -437,7 +437,7 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
-  public EditStatus requestRecordView(Long recordId, User user, UserSessionTracker activeUsers) {
+  public EditStatus requestRecordView(Long recordId, User user) {
     EditStatus basicStatus = checkBasicEditStatusForRecordAndUser(recordId, user);
     if (basicStatus != null) {
       return basicStatus;
