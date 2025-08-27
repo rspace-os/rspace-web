@@ -83,7 +83,7 @@ public class FieldmarkToRSpaceApiConverterTest {
     ApiContainer underTest = createContainerRequest(notebookDTO, user);
     assertNotNull(underTest);
     assertEquals(user.getUsername(), underTest.getOwner().getUsername());
-    assertEquals(underTest.getName(), "Container RSpace IGSN Demo - 2024-11-20 18:24:03");
+    assertEquals(underTest.getName(), "Container RSpace IGSN Demo - 2025-08-20 10:53:26");
 
     assertEquals(13, underTest.getExtraFields().size());
     assertEquals("item name", underTest.getExtraFields().get(0).getName());
@@ -106,7 +106,7 @@ public class FieldmarkToRSpaceApiConverterTest {
     ApiSampleTemplate sampleTemplate = getPreBuiltSampleTemplate(notebookDTO);
     ApiSampleWithFullSubSamples underTest =
         createSampleRequest(
-            notebookDTO.getRecord("rec-ae48f602-c9c4-4e9e-ae3b-6ecf65706e87"),
+            notebookDTO.getRecord("rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2"),
             sampleTemplate,
             CONTAINER_ID);
     assertNotNull(underTest);
@@ -158,7 +158,7 @@ public class FieldmarkToRSpaceApiConverterTest {
     ObjectMapper mapper = new ObjectMapper();
     String sampleJson =
         IOUtils.resourceToString(
-            "/TestResources/fieldmark/api-sample-response-10.json", Charset.defaultCharset());
+            "/TestResources/fieldmark/api-sample-response-63-00050.json", Charset.defaultCharset());
 
     for (Entry<String, FieldmarkRecordDTO> fieldmarkRecordDTOEntry :
         notebookDTO.getRecords().entrySet()) {

@@ -65,8 +65,8 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
       new FieldmarkApiImportRequest(NOTEBOOK_ID, GOOD_IDENTIFIER_FIELD_NAME);
   private static final FieldmarkApiImportRequest WRONG_NOTEBOOK_REQ =
       new FieldmarkApiImportRequest("wrong_notebookId", WRONG_IDENTIFIER_FIELD_NAME);
-  private static final String FIELD_GLOBAL_IDENTIFIER = "SA98307";
-  private static final String RECORD_ID = "rec-ae48f602-c9c4-4e9e-ae3b-6ecf65706e87";
+  private static final String FIELD_GLOBAL_IDENTIFIER = "SA32771";
+  private static final String RECORD_ID = "rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2";
 
   private @InjectMocks FieldmarkServiceManagerImpl fieldmarkServiceManagerImpl;
   private @Mock FieldmarkServiceClientAdapter fieldmarkServiceClientAdapter;
@@ -178,7 +178,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
     List<FieldmarkNotebook> result = fieldmarkServiceManagerImpl.getFieldmarkNotebookList(goodUser);
     assertNotNull(result);
     assertEquals(1, result.size());
-    assertEquals("1726126204618-rspace-igsn-demo", result.get(0).getNonUniqueProjectId());
+    assertEquals("1726126204618-rspace-igsn-demo", result.get(0).getProjectId());
   }
 
   @Test
@@ -262,9 +262,9 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
         .attachNewInventoryFileToInventoryRecord(any(), any(), any(), any());
 
     assertNotNull(result);
-    assertEquals("IC98304", result.getContainerGlobalId());
-    assertEquals("IT98304", result.getSampleTemplateGlobalId());
-    assertEquals("Container RSpace IGSN Demo - 2024-11-20 18:24:03", result.getContainerName());
+    assertEquals("IC32777", result.getContainerGlobalId());
+    assertEquals("IT65536", result.getSampleTemplateGlobalId());
+    assertEquals("Container RSpace IGSN Demo - 2025-08-20 10:53:26", result.getContainerName());
     assertEquals(1, result.getSampleGlobalIds().size());
     assertEquals(FIELD_GLOBAL_IDENTIFIER, result.getSampleGlobalIds().stream().findFirst().get());
   }
