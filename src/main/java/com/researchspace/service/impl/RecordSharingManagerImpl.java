@@ -551,8 +551,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         if (docOrNotebook.getParentNotebooks().contains(selectedTargetFolder)) {
           return Collections.emptyList();
         }
+        rgs.setTargetFolder(selectedTargetFolder);
       }
-      rgs.setTargetFolder(selectedTargetFolder);
       rgs = groupshareRecordDao.save(rgs);
       PermissionType permType = permissnUtils.createFromString(groupShareCfg.getOperation());
       rgs.setPermType(permType);
