@@ -26,7 +26,6 @@ import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.RecordSigningManager;
-import com.researchspace.session.UserSessionTracker;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,11 +51,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
 
   @Override
   public DetailedRecordInformation getDetailedRecordInformation(
-      Long recordId,
-      UserSessionTracker userSessionTracker,
-      User subject,
-      Long revision,
-      Long userVersion) {
+      Long recordId, User subject, Long revision, Long userVersion) {
 
     BaseRecord baseRecord = baseRecordManager.get(recordId, subject);
 
@@ -92,8 +87,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
     }
 
     addSharingInfo(recordId, baseRecord, detailedInfo);
-    addStrucDocDetailedInfo(
-        subject, baseRecord, detailedInfo, isDocVersionInfo, userSessionTracker);
+    addStrucDocDetailedInfo(subject, baseRecord, detailedInfo, isDocVersionInfo);
 
     if (!isMediaRevisionInfo && !isDocVersionInfo) {
       if (baseRecord.isMediaRecord()
@@ -158,8 +152,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
       User user,
       BaseRecord baseRecord,
       DetailedRecordInformation detailedInfo,
-      boolean isDocVersionInfo,
-      UserSessionTracker userSessionTracker) {
+      boolean isDocVersionInfo) {
     if (baseRecord.isStructuredDocument()) {
       StructuredDocument sd = (StructuredDocument) baseRecord;
 
@@ -174,8 +167,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
       if (isDocVersionInfo) {
         detailedInfo.setStatus(EditStatus.CAN_NEVER_EDIT.toString());
       } else {
-        EditStatus status =
-            recordManager.requestRecordView(baseRecord.getId(), user);
+        EditStatus status = recordManager.requestRecordView(baseRecord.getId(), user);
         detailedInfo.setStatus(status.toString());
         if (EditStatus.CANNOT_EDIT_OTHER_EDITING.equals(status)) {
           String editor = tracker.getEditingUserForRecord(baseRecord.getId());

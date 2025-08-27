@@ -1235,8 +1235,7 @@ public class WorkspaceController extends BaseController {
     User user = userManager.getAuthenticatedUserInSession();
 
     DetailedRecordInformation detailedInfo =
-        infoProvider.getDetailedRecordInformation(
-            recordId, getCurrentActiveUsers(), user, revision, userVersion);
+        infoProvider.getDetailedRecordInformation(recordId, user, revision, userVersion);
     return new AjaxReturnObject<>(detailedInfo, null);
   }
 

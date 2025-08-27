@@ -1498,11 +1498,9 @@ public class RecordManagerTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(any, "text3");
     recordDeletionMgr.deleteRecord(doc.getParent().getId(), doc.getId(), any);
     UserSessionTracker otherUsers = anySessionTracker();
-    assertEquals(
-        EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), any));
+    assertEquals(EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), any));
     User sysadmin = logoutAndLoginAsSysAdmin();
-    assertEquals(
-        EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), sysadmin));
+    assertEquals(EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), sysadmin));
   }
 
   @Test

@@ -167,8 +167,7 @@ public class JournalController extends BaseController {
       journalEntry.setTagMetaData(doc.getTagMetaData().replaceAll(RSPACTAGS_FORSL__, "/"));
     }
     UserSessionTracker activeUsers = getCurrentActiveUsers();
-    journalEntry.setEditStatus(
-        recordManager.requestRecordView(currentRecord.getId(), user));
+    journalEntry.setEditStatus(recordManager.requestRecordView(currentRecord.getId(), user));
     signingManager.updateSigningAttributes(journalEntry, doc.getId(), user);
 
     boolean canShare =
