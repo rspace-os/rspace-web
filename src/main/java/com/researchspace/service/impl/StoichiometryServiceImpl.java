@@ -81,7 +81,6 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       throw new AuthorizationException(
           "User does not have write permissions on document containing stoichiometry");
     }
-    ;
 
     Optional<Stoichiometry> existing = stoichiometryManager.findByParentReactionId(chemId);
     if (existing.isPresent()) {
