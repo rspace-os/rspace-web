@@ -134,7 +134,6 @@ const ShareDialog = () => {
   const [permissionChanges, setPermissionChanges] = React.useState<
     Map<ShareId, Permission>
   >(new Map());
-  // Track new shares to be added: Map<globalId, NewShare[]>
   const [newShares, setNewShares] = React.useState<Map<DocumentGlobalId, NewShare[]>>(
     new Map(),
   );
