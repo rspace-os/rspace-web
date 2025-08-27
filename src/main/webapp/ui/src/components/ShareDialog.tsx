@@ -1114,6 +1114,11 @@ const ShareDialog = () => {
                                   ? `All ${globalIds.length} documents` 
                                   : `${documentCount} of ${globalIds.length} documents`}
                               </Typography>
+                              {share.sharedTargetType === "GROUP" && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                                  Location: {share.sharedFolderName || "/"}
+                                </Typography>
+                              )}
                             </Box>
                             
                             <Chip
