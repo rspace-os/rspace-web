@@ -72,10 +72,53 @@ export default function Wrapper(): React.ReactNode {
   );
 }
 
-const ShareDialog = () => {
+/**
+ * Share dialog component is rendered on parts of the product that are not
+ * wholly on a React tech stack, so this custom hook configures a global event
+ * that any code can call to setup and open this dialog, provided it is
+ * rendered somewhere on the page.
+ *
+ * The rest of the code in this module assumes that the OPEN_SHARE_DIALOG
+ * event will not be dispatched again whilst the dialog is open.
+ */
+function useSetup(): {
+  globalIds: ReadonlyArray<string>;
+  open: boolean;
+  onClose: () => void;
+  names: ReadonlyArray<string>;
+} {
   const [open, setOpen] = React.useState(false);
   const [globalIds, setGlobalIds] = React.useState<string[]>([]);
   const [names, setNames] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    function handler(event: Event) {
+      // @ts-expect-error there will be a detail
+      const { globalIds, names } = event.detail;
+      setOpen(true);
+      setGlobalIds(globalIds || []);
+      setNames(names || []);
+    }
+    window.addEventListener("OPEN_SHARE_DIALOG", handler);
+    return () => {
+      window.removeEventListener("OPEN_SHARE_DIALOG", handler);
+    };
+  }, []);
+
+  return {
+    open,
+    onClose: () => {
+      setOpen(false);
+      setGlobalIds([]);
+      setNames([]);
+    },
+    globalIds,
+    names,
+  };
+}
+
+const ShareDialog = () => {
+  const { open, onClose, globalIds, names } = useSetup();
   const [shareData, setShareData] = React.useState<Map<string, ShareInfo[]>>(
     new Map(),
   );
@@ -114,21 +157,6 @@ const ShareDialog = () => {
   const { getGroupMembers } = useUserDetails();
   const { getFolder } = useFolders();
   const currentUser = useWhoAmI();
-
-  React.useEffect(() => {
-    function handler(event: Event) {
-      // @ts-expect-error there will be a detail
-      const { globalIds, names } = event.detail;
-      setOpen(true);
-      setGlobalIds(globalIds || []);
-      setNames(names || []);
-      setShareData(new Map());
-    }
-    window.addEventListener("OPEN_SHARE_DIALOG", handler);
-    return () => {
-      window.removeEventListener("OPEN_SHARE_DIALOG", handler);
-    };
-  }, []);
 
   React.useEffect(() => {
     if (open && globalIds.length > 0) {
@@ -374,9 +402,7 @@ const ShareDialog = () => {
   }
 
   function handleClose() {
-    setOpen(false);
-    setGlobalIds([]);
-    setNames([]);
+    onClose();
     setShareData(new Map());
     setLoading(false);
     setShareOptions([]);
