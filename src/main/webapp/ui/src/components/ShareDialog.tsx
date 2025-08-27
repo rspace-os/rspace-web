@@ -51,6 +51,7 @@ import WarningBar from "./WarningBar";
 
 type DocumentGlobalId = string;
 type DocumentName = string;
+type ShareId = string;
 
 // Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
@@ -131,7 +132,7 @@ const ShareDialog = () => {
   const [optionsLoading, setOptionsLoading] = React.useState(false);
   // Track permission changes: Map<shareId, newPermission>
   const [permissionChanges, setPermissionChanges] = React.useState<
-    Map<string, string>
+    Map<ShareId, string>
   >(new Map());
   // Track new shares to be added: Map<globalId, NewShare[]>
   const [newShares, setNewShares] = React.useState<Map<DocumentGlobalId, NewShare[]>>(
@@ -145,14 +146,14 @@ const ShareDialog = () => {
   const [folderSelectionOpen, setFolderSelectionOpen] = React.useState(false);
   const [selectedShareForFolderChange, setSelectedShareForFolderChange] =
     React.useState<{
-      shareId: string;
+      shareId: ShareId;
       groupId: number;
       globalId: DocumentGlobalId;
       sharedFolderId: number;
     } | null>(null);
   // Track folder path changes for existing shares: Map<shareId, {name, id}>
   const [shareFolderChanges, setShareFolderChanges] = React.useState<
-    Map<string, { name: string; id: number }>
+    Map<ShareId, { name: string; id: number }>
   >(new Map());
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { getShareInfoForMultiple, createShare, deleteShare } = useShare();
@@ -241,7 +242,7 @@ const ShareDialog = () => {
 
           // Fetch folder names for all groups in options
           if (groups.length > 0) {
-            const folderNameMap = new Map<number, string>();
+            const folderNameMap = new Map<number, ShareId>();
 
             await Promise.allSettled(
               groups.map(async (group) => {
@@ -357,7 +358,7 @@ const ShareDialog = () => {
     shareFolderChanges.size > 0;
 
   // Handle permission change
-  function handlePermissionChange(shareId: string, newPermission: string) {
+  function handlePermissionChange(shareId: ShareId, newPermission: string) {
     const newChanges = new Map(permissionChanges);
     if (newPermission === "UNSHARE") {
       newChanges.set(shareId, "UNSHARE");
@@ -375,7 +376,7 @@ const ShareDialog = () => {
   // Handle permission change for new shares
   function handleNewSharePermissionChange(
     globalId: DocumentGlobalId,
-    newShareId: string,
+    newShareId: ShareId,
     newPermission: string,
   ) {
     const updatedNewShares = new Map(newShares);
