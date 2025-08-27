@@ -34,7 +34,9 @@ public class DevOpsManagerImpl implements DevOpsManager {
       result = checkFolderFixes(oid, subject, runFix);
     } else {
       result =
-          String.format("No checks currently running for records of type '%s'.", oid.getPrefix());
+          String.format(
+              "No checks nor fixes currently implemented for records of type '%s'.",
+              oid.getPrefix());
     }
     return result;
   }
@@ -47,7 +49,7 @@ public class DevOpsManagerImpl implements DevOpsManager {
       result +=
           "This is a shared folder, but is outside of 'Shared' hierarchy, which seems"
               + " wrong.<br/>\n";
-      result += runSharedFolderFix(runFix, folder);
+      result += runSharedFolderMovedIntoWorkspaceFix(runFix, folder);
     } else {
       result += "It seems fine.<br/>\n";
     }
@@ -58,16 +60,18 @@ public class DevOpsManagerImpl implements DevOpsManager {
     return folder.hasType(RecordType.SHARED_FOLDER) && !folder.getParent().isSharedFolder();
   }
 
-  private String runSharedFolderFix(boolean runFix, Folder folder) {
+  private String runSharedFolderMovedIntoWorkspaceFix(boolean runFix, Folder folder) {
     String result = "";
 
+    /* check if user who now has the shared folder on their Workspace has access to any better location */
     User parentFolderOwner = folder.getParent().getOwner();
     List<Folder> correctTargetFolders =
         findAcceptableTargetFoldersForUser(parentFolderOwner, folder);
 
+    /* as a precaution, automatic fix will run only if there is exactly one possible move target */
     Folder correctTarget = null;
     if (correctTargetFolders.isEmpty()) {
-      result += "No good locations for the folder were found.<br/>\n";
+      result += "Couldn't find any good new location for the folder.<br/>\n";
     } else if (correctTargetFolders.size() > 1) {
       result += "Seems like there is more than one possible group to move the folder back.<br/>\n";
     } else {
@@ -104,8 +108,10 @@ public class DevOpsManagerImpl implements DevOpsManager {
   }
 
   private List<Folder> findAcceptableTargetFoldersForUser(User user, Folder folder) {
-    Set<Group> ownerGroups = user.getGroups();
     List<Folder> results = new ArrayList<>();
+
+    /* for each of the user's groups, check if group's folder is a good location */
+    Set<Group> ownerGroups = user.getGroups();
     for (Group currentGroup : ownerGroups) {
       List<BaseRecord> recordsSharedWithGroup =
           recordGroupSharingDao.getRecordsSharedByGroup(currentGroup.getId());
@@ -119,7 +125,7 @@ public class DevOpsManagerImpl implements DevOpsManager {
   private boolean isSharedFolderOrRecordSharedWithGroup(
       BaseRecord recordToCheck, List<BaseRecord> recordsSharedWithGroup, User user) {
     if (recordToCheck.isFolder() && !recordToCheck.isNotebook()) {
-      // for folders, confirm it's a shared folder & check subfolders
+      // for folders, confirm it's a shared folder & trigger the check for subfolders
       Folder folderToCheck = (Folder) recordToCheck;
       if (!folderToCheck.isSharedFolder()) {
         return false;

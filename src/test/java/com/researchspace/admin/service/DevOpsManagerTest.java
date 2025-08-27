@@ -32,7 +32,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(user);
     StructuredDocument testDoc = createBasicDocumentInRootFolderWithText(user, "test");
     assertEquals(
-        "No checks currently running for records of type 'SD'.",
+        "No checks nor fixes currently implemented for records of type 'SD'.",
         devOpsMgr.fixRecord(testDoc.getOid(), user, false));
 
     Folder userWorkspace = testDoc.getParent();
@@ -113,7 +113,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
         "Found a folder 'ToShareInto' (type: FOLDER:SHARED_FOLDER).<br/>\n"
             + "This is a shared folder, but is outside of 'Shared' hierarchy, which seems"
             + " wrong.<br/>\n"
-            + "No good locations for the folder were found.<br/>\n",
+            + "Couldn't find any good new location for the folder.<br/>\n",
         fixMethodMessage);
 
     // move docC out of the moved folder
