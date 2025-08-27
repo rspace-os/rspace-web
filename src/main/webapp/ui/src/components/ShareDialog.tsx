@@ -50,6 +50,7 @@ import RsSet, { flattenWithIntersectionWithEq } from "../util/set";
 import WarningBar from "./WarningBar";
 
 type DocumentGlobalId = string;
+type DocumentName = string;
 
 // Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
@@ -87,11 +88,11 @@ function useSetup(): {
   globalIds: ReadonlyArray<DocumentGlobalId>;
   open: boolean;
   onClose: () => void;
-  names: ReadonlyArray<string>;
+  names: ReadonlyArray<DocumentName>;
 } {
   const [open, setOpen] = React.useState(false);
   const [globalIds, setGlobalIds] = React.useState<ReadonlyArray<DocumentGlobalId>>([]);
-  const [names, setNames] = React.useState<string[]>([]);
+  const [names, setNames] = React.useState<ReadonlyArray<DocumentName>>([]);
 
   React.useEffect(() => {
     function handler(event: Event) {
