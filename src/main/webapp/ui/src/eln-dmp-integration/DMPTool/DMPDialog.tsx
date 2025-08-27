@@ -106,7 +106,7 @@ function DMPDialogContent({
                 message: (
                   <>
                     For more information{" "}
-                    <a href={docLinks.dmptool} rel="noreferrer">
+                    <a href={docLinks.dmptoolImportingDmps} rel="noreferrer">
                       visit our docs
                     </a>
                     .
