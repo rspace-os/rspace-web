@@ -12,7 +12,9 @@
     "serve": "webpack --watch --mode development --devtool eval-cheap-module-source-map",
     "depcruise": "npx depcruise src",
     "tsc": "tsc --noEmit",
-    "test-ct": "playwright test -c playwright-ct.config.ts"
+    "test-ct": "playwright test -c playwright-ct.config.ts",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
   "keywords": [],
   "author": "",
