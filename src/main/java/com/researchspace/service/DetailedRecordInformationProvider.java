@@ -4,7 +4,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DetailedRecordInformation;
 import com.researchspace.model.record.RecordInformation;
-import com.researchspace.session.UserSessionTracker;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +19,7 @@ public interface DetailedRecordInformationProvider {
    * @return
    */
   DetailedRecordInformation getDetailedRecordInformation(
-      Long recordId, UserSessionTracker tracker, User subject, Long revision, Long userVersion);
+      Long recordId, User subject, Long revision, Long userVersion);
 
   void addSharingInfo(Long recordId, BaseRecord baseRecord, DetailedRecordInformation detailedInfo);
 

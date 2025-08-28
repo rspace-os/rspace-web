@@ -86,4 +86,19 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(jsonPath("$.length()", is(0)))
             .andReturn();
   }
+
+  @Test
+  public void testGetGroupById() throws Exception {
+    TestGroup group = createTestGroup(2);
+    String apiKey = createNewApiKeyForUser(group.getPi());
+    Long groupId = group.getGroup().getId();
+
+    mockMvc
+        .perform(get(createUrl(API_VERSION.ONE, "/groups/" + groupId)).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id", is(groupId.intValue())))
+        .andExpect(jsonPath("$.name", is(group.getGroup().getDisplayName())))
+        .andExpect(jsonPath("$.type", is("LAB_GROUP")))
+        .andReturn();
+  }
 }

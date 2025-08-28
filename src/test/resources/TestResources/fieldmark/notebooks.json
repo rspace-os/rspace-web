@@ -1,10 +1,8 @@
 [
   {
     "name": "RSpace IGSN Demo",
-    "status": "published",
-    "project_id": "default||1726126204618-rspace-igsn-demo",
-    "listing_id": "default",
-    "non_unique_project_id": "1726126204618-rspace-igsn-demo",
+    "is_admin": true,
+    "project_id": "1726126204618-rspace-igsn-demo",
     "metadata": {
       "Age": "123",
       "Size": "Large",
@@ -27,6 +25,7 @@
       "sections": {},
       "showQRCodeButton": "true",
       "project_id": "1726126204618-rspace-igsn-demo"
-    }
+    },
+    "status": "OPEN"
   }
 ]

@@ -1474,19 +1474,19 @@ public class RecordManagerTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(grpMember, "text3");
     UserSessionTracker users = anySessionTracker();
 
-    EditStatus memberViewStatus = recordMgr.requestRecordView(doc.getId(), grpMember, users);
+    EditStatus memberViewStatus = recordMgr.requestRecordView(doc.getId(), grpMember);
     assertEquals(EditStatus.VIEW_MODE, memberViewStatus);
-    EditStatus piViewStatus = recordMgr.requestRecordView(doc.getId(), pi, users);
+    EditStatus piViewStatus = recordMgr.requestRecordView(doc.getId(), pi);
     assertEquals(EditStatus.VIEW_MODE, piViewStatus);
 
     // user starts editing
     EditStatus memberEditStatus = recordMgr.requestRecordEdit(doc.getId(), grpMember, users);
     assertEquals(EditStatus.EDIT_MODE, memberEditStatus);
     // they can see the document being edited by themselves
-    EditStatus memberViewStatus2 = recordMgr.requestRecordView(doc.getId(), grpMember, users);
+    EditStatus memberViewStatus2 = recordMgr.requestRecordView(doc.getId(), grpMember);
     assertEquals(EditStatus.EDIT_MODE, memberViewStatus2);
     // pi sees document as edited
-    EditStatus piEditStatus = recordMgr.requestRecordView(doc.getId(), pi, users);
+    EditStatus piEditStatus = recordMgr.requestRecordView(doc.getId(), pi);
     assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, piEditStatus);
   }
 
@@ -1498,11 +1498,9 @@ public class RecordManagerTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(any, "text3");
     recordDeletionMgr.deleteRecord(doc.getParent().getId(), doc.getId(), any);
     UserSessionTracker otherUsers = anySessionTracker();
-    assertEquals(
-        EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), any, otherUsers));
+    assertEquals(EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), any));
     User sysadmin = logoutAndLoginAsSysAdmin();
-    assertEquals(
-        EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), sysadmin, otherUsers));
+    assertEquals(EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), sysadmin));
   }
 
   @Test

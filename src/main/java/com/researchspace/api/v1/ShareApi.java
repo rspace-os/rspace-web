@@ -2,16 +2,20 @@ package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.controller.ApiGenericSearchConfig;
 import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
+import com.researchspace.api.v1.model.ApiShareInfo;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.model.User;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -19,13 +23,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @RequestMapping("/api/v1/share")
 public interface ShareApi {
 
-  /**
-   * Lists groups to which user belongs
-   *
-   * @param user
-   * @return
-   * @throws BindException
-   */
   @PostMapping
   @ResponseStatus(code = HttpStatus.CREATED)
   ApiSharingResult shareItems(SharePost shareConfig, BindingResult errors, User user)
@@ -33,13 +30,22 @@ public interface ShareApi {
 
   @DeleteMapping("/{id}")
   @ResponseStatus(code = HttpStatus.NO_CONTENT)
-  void deleteShare(Long id, User user);
+  void deleteShare(@PathVariable("id") Long id, User user);
+
+  @PutMapping("/{id}")
+  @ResponseStatus(code = HttpStatus.OK)
+  ApiSharingResult updateShare(
+      @PathVariable("id") Long id, SharePost shareConfig, BindingResult errors, User user)
+      throws BindException;
 
   @GetMapping
-  public ApiShareSearchResult getShares(
+  ApiShareSearchResult getShares(
       DocumentApiPaginationCriteria pgCrit,
       ApiGenericSearchConfig apiSrchConfig,
       BindingResult errors,
       User user)
       throws BindException;
+
+  @GetMapping("/document/{id}")
+  List<ApiShareInfo> getAllSharesForDoc(@PathVariable("id") Long docId, User user);
 }

@@ -1,9 +1,7 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
-import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,17 +21,17 @@ import lombok.NoArgsConstructor;
       "shareItemName",
       "sharedTargetType",
       "permission",
-      "sharedTargetId",
-      "sharedTargetName",
-      "sharedTargetDisplayName",
+      "shareeId",
+      "shareeName",
+      "sharedToFolderId",
       "_links"
     })
 public class ApiShareInfo extends LinkableApiObject implements IdentifiableObject {
 
   private Long id, sharedItemId;
   private String sharedTargetType, permission, shareItemName;
-  private Long sharedTargetId;
-  private String sharedTargetName, sharedTargetDisplayName;
+  private Long shareeId, sharedToFolderId;
+  private String shareeName;
 
   public ApiShareInfo(RecordGroupSharing rgs) {
     this.id = rgs.getId();
@@ -41,16 +39,10 @@ public class ApiShareInfo extends LinkableApiObject implements IdentifiableObjec
     this.shareItemName = rgs.getShared().getName();
     this.permission = PermissionType.WRITE.equals(rgs.getPermType()) ? "EDIT" : "READ";
     this.sharedTargetType = rgs.getSharee().isUser() ? "USER" : "GROUP";
-    this.sharedTargetId = rgs.getSharee().getId();
-    this.sharedTargetDisplayName = rgs.getSharee().getDisplayName();
-
-    // Set username for users and unique name for groups
-    if (rgs.getSharee().isUser()) {
-      User user = (User) rgs.getSharee();
-      this.sharedTargetName = user.getUsername();
-    } else {
-      Group group = (Group) rgs.getSharee();
-      this.sharedTargetName = group.getUniqueName();
+    this.shareeId = rgs.getSharee().getId();
+    this.shareeName = rgs.getSharee().getDisplayName();
+    if (rgs.getTargetFolder() != null) {
+      this.sharedToFolderId = rgs.getTargetFolder().getId();
     }
   }
 }

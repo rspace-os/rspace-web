@@ -225,7 +225,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
                 new DocumentFieldInitializationPolicy(
                     new DocumentFieldAttachmentInitializationPolicy()),
                 false);
-        EditStatus res = recordManager.requestRecordView(id, user, getCurrentActiveUsers());
+        EditStatus res = recordManager.requestRecordView(id, user);
         if (EditStatus.ACCESS_DENIED.equals(res)) {
           throw new NotFoundException(createNotFoundMessage(id));
         }

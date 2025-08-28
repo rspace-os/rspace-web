@@ -14,9 +14,8 @@ export type ShareOption =
 
 export type NewShare = {
   id: string; // temporary ID for React keys
-  sharedTargetId: number;
-  sharedTargetName: string;
-  sharedTargetDisplayName: string;
+  shareeId: ShareInfo["shareeId"];
+  shareeName: ShareInfo["shareeName"];
   sharedTargetType: "USER" | "GROUP";
   permission: "READ" | "EDIT";
   sharedFolderName: string | null;
@@ -29,13 +28,9 @@ export type ShareInfo = {
   shareItemName: string;
   sharedTargetType: "USER" | "GROUP";
   permission: "READ" | "EDIT";
-  sharedTargetId: number;
-  sharedTargetName: string;
-  sharedTargetDisplayName: string;
-  _links: Array<{
-    link: string;
-    rel: string;
-  }>;
+  sharedToFolderId: number | null;
+  shareeId: number;
+  shareeName: string;
 };
 
 type CreateShareRequest = {
@@ -51,16 +46,6 @@ type CreateShareRequest = {
   }>;
 };
 
-export type ShareResponse = {
-  totalHits: number;
-  pageNumber: number;
-  shares: ShareInfo[];
-  _links: Array<{
-    link: string;
-    rel: string;
-  }>;
-};
-
 /**
  * This custom hook provides functionality to fetch sharing information
  * using the `/api/v1/share` endpoint.
@@ -69,14 +54,14 @@ export default function useShare(): {
   /**
    * Fetches sharing information for a specific global ID.
    */
-  getShareInfo: (globalId: string) => Promise<ShareResponse>;
+  getShareInfo: (globalId: string) => Promise<ReadonlyArray<ShareInfo>>;
 
   /**
    * Fetches sharing information for multiple global IDs.
    */
   getShareInfoForMultiple: (
     globalIds: ReadonlyArray<string>,
-  ) => Promise<Map<string, ShareInfo[]>>;
+  ) => Promise<Map<string, ReadonlyArray<ShareInfo>>>;
 
   /**
    * Creates new shares for an item.
@@ -91,16 +76,18 @@ export default function useShare(): {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
 
-  async function getShareInfo(globalId: string): Promise<ShareResponse> {
+  async function getShareInfo(
+    globalId: string,
+  ): Promise<ReadonlyArray<ShareInfo>> {
     try {
-      const { data } = await axios.get<ShareResponse>(`/api/v1/share`, {
-        params: {
-          query: globalId,
+      const { data } = await axios.get<ReadonlyArray<ShareInfo>>(
+        `/api/v1/share/document/${globalId.slice(2)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
         },
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-        },
-      });
+      );
       return data;
     } catch (e) {
       addAlert(
@@ -118,18 +105,18 @@ export default function useShare(): {
 
   async function getShareInfoForMultiple(
     globalIds: ReadonlyArray<string>,
-  ): Promise<Map<string, ShareInfo[]>> {
+  ): Promise<Map<string, ReadonlyArray<ShareInfo>>> {
     try {
       // Make parallel requests for all global IDs
       const promises = globalIds.map(async (globalId) => {
-        const response = await getShareInfo(globalId);
-        return { globalId, shares: response.shares };
+        const shares = await getShareInfo(globalId);
+        return { globalId, shares };
       });
 
       const results = await Promise.all(promises);
 
       // Convert to Map for easy lookup
-      const shareMap = new Map<string, ShareInfo[]>();
+      const shareMap = new Map<string, ReadonlyArray<ShareInfo>>();
       results.forEach(({ globalId, shares }) => {
         shareMap.set(globalId, shares);
       });
@@ -162,7 +149,7 @@ export default function useShare(): {
         users: newShares
           .filter((share) => share.sharedTargetType === "USER")
           .map((share) => ({
-            id: share.sharedTargetId,
+            id: share.shareeId,
             permission: share.permission,
           })),
         groups: ArrayUtils.mapOptional<NewShare, [NewShare, number]>(
@@ -173,7 +160,7 @@ export default function useShare(): {
               : Optional.empty(),
           newShares,
         ).map(([share, sharedFolderId]) => ({
-          id: share.sharedTargetId,
+          id: share.shareeId,
           permission: share.permission,
           sharedFolderId,
         })),

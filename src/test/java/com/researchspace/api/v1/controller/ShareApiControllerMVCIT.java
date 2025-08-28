@@ -5,14 +5,19 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiFolder;
+import com.researchspace.api.v1.model.ApiShareInfo;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
 import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.SharePost;
+import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.EcatMediaFile;
@@ -24,6 +29,7 @@ import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.TreeViewItem;
 import com.researchspace.testutils.TestGroup;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -47,11 +53,10 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     EcatMediaFile anyMediaFile = addAudioFileToGallery(sharer);
     SharePost toPost = createValidSharePostWithGroup(testGrp1, anyMediaFile, "EDIT");
     String apiKey = createNewApiKeyForUser(sharer);
-    MvcResult result =
-        mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "/share", sharer, toPost))
-            .andExpect(status().is4xxClientError())
-            .andReturn();
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/share", sharer, toPost))
+        .andExpect(status().is4xxClientError())
+        .andReturn();
   }
 
   @Test
@@ -134,13 +139,12 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
   private void unshare(
       User sharer, String apiKey, ApiSharingResult shareResponse, ResultMatcher expectedCode)
       throws Exception {
-    MvcResult deleted =
-        mockMvc
-            .perform(
-                createBuilderForDelete(
-                    apiKey, "/share/{id}", sharer, shareResponse.getShareInfos().get(0).getId()))
-            .andExpect(expectedCode)
-            .andReturn();
+    mockMvc
+        .perform(
+            createBuilderForDelete(
+                apiKey, "/share/{id}", sharer, shareResponse.getShareInfos().get(0).getId()))
+        .andExpect(expectedCode)
+        .andReturn();
   }
 
   private ResultMatcher nFailedItems(int n) {
@@ -199,7 +203,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     // wrong group
     // doc will be shared into top-level group folder of specified group.
     TestGroup otherGroup = createTestGroup(2);
-    addUsersToGroup(testGrp1.getPi(), otherGroup.getGroup(), new User[] {});
+    addUsersToGroup(testGrp1.getPi(), otherGroup.getGroup());
     logoutAndLoginAs(testGrp1.getPi());
     StructuredDocument piDocToShare =
         createBasicDocumentInRootFolderWithText(testGrp1.getPi(), "anytext");
@@ -208,12 +212,11 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
         .getGroupSharePostItems()
         .get(0)
         .setSharedFolderId(otherGroup.getGroup().getCommunalGroupFolderId());
-    result =
-        mockMvc
-            .perform(createBuilderForPostWithJSONBody(piApiKey, "/share", testGrp1.getPi(), toPost))
-            .andExpect(status().isCreated())
-            .andExpect(nSharedItemsInResponse(1))
-            .andReturn();
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(piApiKey, "/share", testGrp1.getPi(), toPost))
+        .andExpect(status().isCreated())
+        .andExpect(nSharedItemsInResponse(1))
+        .andReturn();
 
     logoutAndLoginAs(testGrp1.getPi());
     assertEquals(
@@ -224,8 +227,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     return folderMgr
         .getFolderListingForTreeView(
             folderId, PaginationCriteria.createDefaultForClass(TreeViewItem.class), user)
-        .getHits()
-        .intValue();
+        .getHits();
   }
 
   private MvcResult postAndExpectUnauthorized(User other, SharePost toPost, String group1PIKey)
@@ -248,30 +250,189 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
   private SharePost createValidSharePostWithGroup(
       TestGroup testGrp1, BaseRecord toShare, String permission) {
-    SharePost toPost =
-        SharePost.builder()
-            .itemToShare(toShare.getId())
-            .groupSharePostItem(
-                GroupSharePostItem.builder()
-                    .id(testGrp1.getGroup().getId())
-                    .permission(permission)
-                    .build())
-            .build();
-    return toPost;
+    return SharePost.builder()
+        .itemToShare(toShare.getId())
+        .groupSharePostItem(
+            GroupSharePostItem.builder()
+                .id(testGrp1.getGroup().getId())
+                .permission(permission)
+                .build())
+        .build();
   }
 
   private SharePost createSharePostWithGroupAndFolder(
       TestGroup testGrp1, Long sharingTargetFolder, StructuredDocument toShare, String permission) {
-    SharePost toPost =
+    return SharePost.builder()
+        .itemToShare(toShare.getId())
+        .groupSharePostItem(
+            GroupSharePostItem.builder()
+                .id(testGrp1.getGroup().getId())
+                .permission(permission)
+                .sharedFolderId(sharingTargetFolder)
+                .build())
+        .build();
+  }
+
+  @Test
+  public void testUpdateSharePermissions() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User user = group.getPi();
+    StructuredDocument toShare = createBasicDocumentInRootFolderWithText(user, "test");
+    String apiKey = createNewApiKeyForUser(user);
+
+    SharePost sharePost = createValidSharePostWithGroup(group, toShare, "READ");
+    MvcResult createResult =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/share", user, sharePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    ApiSharingResult shareResult = getFromJsonResponseBody(createResult, ApiSharingResult.class);
+    Long shareId = shareResult.getShareInfos().get(0).getId();
+
+    SharePost updatePost = createValidSharePostWithGroup(group, toShare, "EDIT");
+    MvcResult updateResult =
+        mockMvc
+            .perform(createBuilderForPutWithJSONBody(apiKey, "/share/" + shareId, user, updatePost))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiSharingResult updateResultBody =
+        getFromJsonResponseBody(updateResult, ApiSharingResult.class);
+    assertEquals(1, updateResultBody.getShareInfos().size());
+    assertEquals("EDIT", updateResultBody.getShareInfos().get(0).getPermission());
+  }
+
+  @Test
+  public void testUpdateShareWithInvalidPayload() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User sharer = group.getPi();
+    StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "test");
+    String apiKey = createNewApiKeyForUser(sharer);
+
+    SharePost sharePost = createValidSharePostWithGroup(group, toShare, "READ");
+    MvcResult createResult =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/share", sharer, sharePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    ApiSharingResult shareResult = getFromJsonResponseBody(createResult, ApiSharingResult.class);
+    Long shareId = shareResult.getShareInfos().get(0).getId();
+
+    SharePost invalidPost = SharePost.builder().build();
+    mockMvc
+        .perform(createBuilderForPutWithJSONBody(apiKey, "/share/" + shareId, sharer, invalidPost))
+        .andExpect(status().isBadRequest())
+        .andReturn();
+  }
+
+  @Test
+  public void testUpdateGroupShareFolderId() throws Exception {
+    TestGroup testGrp = createTestGroup(2);
+    User sharer = testGrp.getPi();
+    StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "test");
+    String apiKey = createNewApiKeyForUser(sharer);
+
+    ApiFolder subfolder =
+        createSubfolderOfFolder(testGrp.getGroup().getCommunalGroupFolderId(), sharer, apiKey);
+
+    SharePost sharePost = createValidSharePostWithGroup(testGrp, toShare, "READ");
+    MvcResult createResult =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/share", sharer, sharePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    ApiSharingResult shareResult = getFromJsonResponseBody(createResult, ApiSharingResult.class);
+    Long shareId = shareResult.getShareInfos().get(0).getId();
+
+    SharePost updatePost =
+        createSharePostWithGroupAndFolder(testGrp, subfolder.getId(), toShare, "READ");
+    mockMvc
+        .perform(createBuilderForPutWithJSONBody(apiKey, "/share/" + shareId, sharer, updatePost))
+        .andExpect(status().isOk())
+        .andReturn();
+  }
+
+  @Test
+  public void testGetAllSharesForDocument() throws Exception {
+    // Create first group
+    TestGroup group = createTestGroup(2);
+    User sharer = group.getPi();
+    logoutAndLoginAs(sharer);
+
+    // Create second group and add sharer as PI
+    TestGroup secondGroup = createTestGroup(1);
+    addUsersToGroup(sharer, secondGroup.getGroup());
+    User userToShareWith = secondGroup.getUserByPrefix("u1");
+
+    StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "test document");
+    String apiKey = createNewApiKeyForUser(sharer);
+
+    // Share doc with the group
+    SharePost sharePost = createValidSharePostWithGroup(group, toShare, "READ");
+    MvcResult createResult =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/share", sharer, sharePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    ApiSharingResult shareResult = getFromJsonResponseBody(createResult, ApiSharingResult.class);
+    assertEquals(1, shareResult.getShareInfos().size());
+
+    // Share doc with user from 2nd group
+    SharePost userSharePost =
         SharePost.builder()
             .itemToShare(toShare.getId())
-            .groupSharePostItem(
-                GroupSharePostItem.builder()
-                    .id(testGrp1.getGroup().getId())
-                    .permission(permission)
-                    .sharedFolderId(sharingTargetFolder)
-                    .build())
+            .userSharePostItem(
+                UserSharePostItem.builder().id(userToShareWith.getId()).permission("EDIT").build())
             .build();
-    return toPost;
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/share", sharer, userSharePost))
+        .andExpect(status().isCreated())
+        .andReturn();
+
+    // Get all shares for the document
+    MvcResult getAllSharesResult =
+        mockMvc
+            .perform(get("/api/v1/share/document/" + toShare.getId()).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    List<ApiShareInfo> sharesList =
+        new ObjectMapper()
+            .readValue(
+                getAllSharesResult.getResponse().getContentAsString(), new TypeReference<>() {});
+
+    assertEquals(2, sharesList.size());
+
+    ApiShareInfo groupShare =
+        sharesList.stream()
+            .filter(s -> s.getSharedTargetType().equals("GROUP"))
+            .findFirst()
+            .orElse(null);
+
+    ApiShareInfo userShare =
+        sharesList.stream()
+            .filter(s -> s.getSharedTargetType().equals("USER"))
+            .findFirst()
+            .orElse(null);
+
+    // Verify group share
+    assertEquals(toShare.getId(), groupShare.getSharedItemId());
+    assertEquals(toShare.getName(), groupShare.getShareItemName());
+    assertEquals("READ", groupShare.getPermission());
+    assertEquals("GROUP", groupShare.getSharedTargetType());
+    assertEquals(group.getGroup().getId(), groupShare.getShareeId());
+    assertEquals(group.getGroup().getDisplayName(), groupShare.getShareeName());
+
+    // Verify user share
+    assertEquals(toShare.getId(), userShare.getSharedItemId());
+    assertEquals(toShare.getName(), userShare.getShareItemName());
+    assertEquals("EDIT", userShare.getPermission());
+    assertEquals("USER", userShare.getSharedTargetType());
+    assertEquals(userToShareWith.getId(), userShare.getShareeId());
+    assertEquals(userToShareWith.getDisplayName(), userShare.getShareeName());
   }
 }

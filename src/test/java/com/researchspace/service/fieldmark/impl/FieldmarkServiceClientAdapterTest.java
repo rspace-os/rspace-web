@@ -229,12 +229,13 @@ public class FieldmarkServiceClientAdapterTest {
         "Sample-12-00009", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
     assertEquals(12, currentRecord.getField("Survey-Number").getFieldValue());
     assertEquals(
-        new FieldmarkDoiIdentifier(""),
+        new FieldmarkDoiIdentifier("1"),
         currentRecord.getField(IGSN_CANDIDATE_FIELD_NAME).getFieldValue());
     assertNull(currentRecord.getField("Sample-Location").getFieldValue());
-    assertEquals("Rome", currentRecord.getField("New-Text-Field").getFieldValue());
+    assertEquals("Roma", currentRecord.getField("New-Text-Field").getFieldValue());
     assertEquals(
-        "Arcdheological interest area", currentRecord.getField("Item-Description").getFieldValue());
+        "https://doi.org/10.82316/rzqc-0n83",
+        currentRecord.getField("Item-Description").getFieldValue());
     assertEquals(
         "Sample-Photograph/Sample-12-00009-Sample-Photograph.jpg",
         ((FieldmarkFileExtractor) currentRecord.getField("Sample-Photograph")).getFileName());
@@ -244,38 +245,36 @@ public class FieldmarkServiceClientAdapterTest {
     assertEquals(5, currentRecord.getField("Thickness-mm").getFieldValue());
 
     // record 2
-    assertTrue(recordsUnderTest.containsKey("rec-ae48f602-c9c4-4e9e-ae3b-6ecf65706e87"));
-    currentRecord = recordsUnderTest.get("rec-ae48f602-c9c4-4e9e-ae3b-6ecf65706e87");
-    assertEquals("rec-ae48f602-c9c4-4e9e-ae3b-6ecf65706e87", currentRecord.getRecordId());
-    assertEquals("Sample-45-00010", currentRecord.getIdentifier());
+    assertTrue(recordsUnderTest.containsKey("rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2"));
+    currentRecord = recordsUnderTest.get("rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2");
+    assertEquals("rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2", currentRecord.getRecordId());
+    assertEquals("Sample-63-00050", currentRecord.getIdentifier());
     assertEquals(notebookDTOTimestamp, currentRecord.getTimestamp());
     assertEquals(11, currentRecord.getFields().size());
-    assertEquals("00010", currentRecord.getField("Field-ID").getFieldValue());
+    assertEquals("00050", currentRecord.getField("Field-ID").getFieldValue());
     assertEquals(
-        "Sample-45-00010", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
-    assertEquals(45, currentRecord.getField("Survey-Number").getFieldValue());
+        "Sample-63-00050", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
+    assertEquals(63, currentRecord.getField("Survey-Number").getFieldValue());
     assertEquals(
-        new FieldmarkDoiIdentifier(""),
+        new FieldmarkDoiIdentifier("1"),
         currentRecord.getField(IGSN_CANDIDATE_FIELD_NAME).getFieldValue());
     assertEquals(
-        "-4.290634804694207",
+        "14.036364239998946",
         ((FieldmarkLocationExtractor) currentRecord.getField("Sample-Location"))
             .getLatitudeStringValue());
     assertEquals(
-        "55.88700753938906",
+        "42.250294200498814",
         ((FieldmarkLocationExtractor) currentRecord.getField("Sample-Location"))
             .getLongitudeStringValue());
-    assertEquals("In glasgow mryhill", currentRecord.getField("New-Text-Field").getFieldValue());
+    assertEquals("homeS", currentRecord.getField("New-Text-Field").getFieldValue());
+    assertEquals("10.82316/8vmr-be22", currentRecord.getField("Item-Description").getFieldValue());
     assertEquals(
-        "This is the stone with the fossil inside ",
-        currentRecord.getField("Item-Description").getFieldValue());
-    assertEquals(
-        "Sample-Photograph/Sample-45-00010-Sample-Photograph.jpg",
+        "Sample-Photograph/Sample-63-00050-Sample-Photograph.jpg",
         ((FieldmarkFileExtractor) currentRecord.getField("Sample-Photograph")).getFileName());
     assertEquals(byte[].class, currentRecord.getField("Sample-Photograph").getFieldType());
-    assertEquals(15, currentRecord.getField("Length-mm").getFieldValue());
-    assertEquals(10, currentRecord.getField("Width-mm").getFieldValue());
-    assertEquals(3, currentRecord.getField("Thickness-mm").getFieldValue());
+    assertEquals(50, currentRecord.getField("Length-mm").getFieldValue());
+    assertEquals(22, currentRecord.getField("Width-mm").getFieldValue());
+    assertEquals(56, currentRecord.getField("Thickness-mm").getFieldValue());
 
     // record 3
     assertTrue(recordsUnderTest.containsKey("rec-e881323c-d3cb-4393-9784-07b86585675b"));
@@ -289,19 +288,21 @@ public class FieldmarkServiceClientAdapterTest {
         "Sample-1-00008", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
     assertEquals(1, currentRecord.getField("Survey-Number").getFieldValue());
     assertEquals(
-        "10.12345/asdf-good",
+        "1",
         ((FieldmarkDoiIdentifier) currentRecord.getField("IGSN-QR-Code").getFieldValue())
             .getDoiIdentifier());
     assertNull(currentRecord.getField("Sample-Location").getFieldValue());
-    assertEquals("glasgow", currentRecord.getField("New-Text-Field").getFieldValue());
-    assertEquals("rock hard", currentRecord.getField("Item-Description").getFieldValue());
+    assertEquals(
+        "Glasgow or PAISLEY (Scotland)", currentRecord.getField("New-Text-Field").getFieldValue());
+    assertEquals(
+        "doi.org/10.82316/731r-r253", currentRecord.getField("Item-Description").getFieldValue());
     assertEquals(
         "Sample-Photograph/Sample-1-00008-Sample-Photograph.jpg",
         ((FieldmarkFileExtractor) currentRecord.getField("Sample-Photograph")).getFileName());
     assertEquals(byte[].class, currentRecord.getField("Sample-Photograph").getFieldType());
-    assertEquals(15, currentRecord.getField("Length-mm").getFieldValue());
+    assertEquals(22, currentRecord.getField("Length-mm").getFieldValue());
     assertEquals(54, currentRecord.getField("Width-mm").getFieldValue());
-    assertEquals(3, currentRecord.getField("Thickness-mm").getFieldValue());
+    assertEquals(32, currentRecord.getField("Thickness-mm").getFieldValue());
   }
 
   @Test

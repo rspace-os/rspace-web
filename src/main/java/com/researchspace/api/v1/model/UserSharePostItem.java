@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 public class UserSharePostItem {
 
   @NotNull(message = "Must specify id of the user")
-  // @Min(1) // Temporarily removed to allow negative user IDs
   private Long id;
 
   @Pattern(regexp = "(READ|EDIT|read|edit)")

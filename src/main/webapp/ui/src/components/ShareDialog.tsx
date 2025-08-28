@@ -93,7 +93,9 @@ function useSetup(): {
   names: ReadonlyArray<DocumentName>;
 } {
   const [open, setOpen] = React.useState(false);
-  const [globalIds, setGlobalIds] = React.useState<ReadonlyArray<DocumentGlobalId>>([]);
+  const [globalIds, setGlobalIds] = React.useState<
+    ReadonlyArray<DocumentGlobalId>
+  >([]);
   const [names, setNames] = React.useState<ReadonlyArray<DocumentName>>([]);
 
   React.useEffect(() => {
@@ -124,9 +126,9 @@ function useSetup(): {
 
 const ShareDialog = () => {
   const { open, onClose, globalIds, names } = useSetup();
-  const [shareData, setShareData] = React.useState<Map<DocumentGlobalId, ShareInfo[]>>(
-    new Map(),
-  );
+  const [shareData, setShareData] = React.useState<
+    Map<DocumentGlobalId, ReadonlyArray<ShareInfo>>
+  >(new Map());
   const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [shareOptions, setShareOptions] = React.useState<ShareOption[]>([]);
@@ -134,9 +136,9 @@ const ShareDialog = () => {
   const [permissionChanges, setPermissionChanges] = React.useState<
     Map<ShareId, Permission>
   >(new Map());
-  const [newShares, setNewShares] = React.useState<Map<DocumentGlobalId, NewShare[]>>(
-    new Map(),
-  );
+  const [newShares, setNewShares] = React.useState<
+    Map<DocumentGlobalId, NewShare[]>
+  >(new Map());
   // Track folder names for group shares: Map<sharedTargetId, folderName>
   const [groupFolderNames, setGroupFolderNames] = React.useState<
     Map<number, string>
@@ -173,7 +175,7 @@ const ShareDialog = () => {
           for (const shares of data.values()) {
             for (const share of shares) {
               if (share.sharedTargetType === "GROUP") {
-                groupIds.add(share.sharedTargetId);
+                groupIds.add(share.shareeId);
               }
             }
           }
@@ -313,30 +315,19 @@ const ShareDialog = () => {
 
   // Compute share options with disabled state based on current shares and new shares
   const shareOptionsWithState: ShareOptionWithState[] = React.useMemo(() => {
-    type ShareIdentifier = {
+    interface ShareIdentifier {
       sharedTargetType: ShareInfo["sharedTargetType"];
-      sharedTargetId: ShareInfo["sharedTargetId"];
-    };
+      shareeId: ShareInfo["shareeId"];
+    }
     const eqFunc = (a: ShareIdentifier, b: ShareIdentifier) =>
-      a.sharedTargetType === b.sharedTargetType &&
-      a.sharedTargetId === b.sharedTargetId;
+      a.sharedTargetType === b.sharedTargetType && a.shareeId === b.shareeId;
     const commonShares = flattenWithIntersectionWithEq(
       new RsSet(
         globalIds.map((gId) => {
-          const alreadySharedWith = shareData.get(gId) ?? [];
-          const toBeSharedWith = newShares.get(gId) ?? [];
-          return new RsSet([
-            ...alreadySharedWith.map(
-              ({ sharedTargetType, sharedTargetId }) => ({
-                sharedTargetType,
-                sharedTargetId,
-              }),
-            ),
-            ...toBeSharedWith.map(({ sharedTargetType, sharedTargetId }) => ({
-              sharedTargetType,
-              sharedTargetId,
-            })),
-          ]);
+          const alreadySharedWith: ReadonlyArray<ShareIdentifier> =
+            shareData.get(gId) ?? [];
+          const toBeSharedWith: ShareIdentifier[] = newShares.get(gId) ?? [];
+          return new RsSet([...alreadySharedWith, ...toBeSharedWith]);
         }),
       ),
       eqFunc,
@@ -344,7 +335,7 @@ const ShareDialog = () => {
     return shareOptions.map((option) => ({
       ...option,
       isDisabled: commonShares.hasWithEq(
-        { sharedTargetType: option.optionType, sharedTargetId: option.id },
+        { sharedTargetType: option.optionType, shareeId: option.id },
         eqFunc,
       ),
     }));
@@ -457,9 +448,8 @@ const ShareDialog = () => {
             const recreatePromise = deletePromise.then(() => {
               const newShare: NewShare = {
                 id: `modified_${shareId}`,
-                sharedTargetId: originalShare.sharedTargetId,
-                sharedTargetName: originalShare.sharedTargetName,
-                sharedTargetDisplayName: originalShare.sharedTargetDisplayName,
+                shareeId: originalShare.shareeId,
+                shareeName: originalShare.shareeName,
                 sharedTargetType: originalShare.sharedTargetType,
                 permission: newPermission as "READ" | "EDIT",
                 sharedFolderName: shareFolderChanges.get(shareId)?.name || null,
@@ -490,9 +480,8 @@ const ShareDialog = () => {
             const recreatePromise = deletePromise.then(() => {
               const newShare: NewShare = {
                 id: `folder_changed_${shareId}`,
-                sharedTargetId: originalShare.sharedTargetId,
-                sharedTargetName: originalShare.sharedTargetName,
-                sharedTargetDisplayName: originalShare.sharedTargetDisplayName,
+                shareeId: originalShare.shareeId,
+                shareeName: originalShare.shareeName,
                 sharedTargetType: originalShare.sharedTargetType,
                 permission: originalShare.permission,
                 sharedFolderName: newFolderInfo.name,
@@ -534,7 +523,7 @@ const ShareDialog = () => {
       for (const shares of data.values()) {
         for (const share of shares) {
           if (share.sharedTargetType === "GROUP") {
-            groupIds.add(share.sharedTargetId);
+            groupIds.add(share.shareeId);
           }
         }
       }
@@ -616,14 +605,14 @@ const ShareDialog = () => {
                   // Check if this user/group is already shared with this document
                   const alreadyShared = existingShares.find(
                     (share) =>
-                      share.sharedTargetId === newValue.id &&
+                      share.shareeId === newValue.id &&
                       share.sharedTargetType === newValue.optionType,
                   );
 
                   // Check if this user/group is already in new shares for this document
                   const alreadyInNewShares = existingNewShares.find(
                     (share) =>
-                      share.sharedTargetId === newValue.id &&
+                      share.shareeId === newValue.id &&
                       share.sharedTargetType === newValue.optionType,
                   );
 
@@ -640,7 +629,7 @@ const ShareDialog = () => {
                     const filteredNewShares = existingNewShares.filter(
                       (share) =>
                         !(
-                          share.sharedTargetId === newValue.id &&
+                          share.shareeId === newValue.id &&
                           share.sharedTargetType === newValue.optionType
                         ),
                     );
@@ -650,15 +639,11 @@ const ShareDialog = () => {
                   // Always add the new share (this replaces any existing one)
                   const newShare: NewShare = {
                     id: `new-${newValue.id}-${Date.now()}`, // temporary ID
-                    sharedTargetId: newValue.id,
-                    sharedTargetName:
+                    shareeId: newValue.id,
+                    shareeName:
                       newValue.optionType === "GROUP"
                         ? newValue.name
                         : newValue.username,
-                    sharedTargetDisplayName:
-                      newValue.optionType === "GROUP"
-                        ? newValue.name
-                        : `${newValue.firstName} ${newValue.lastName}`,
                     sharedTargetType: newValue.optionType,
                     permission: "READ", // default permission
                     sharedFolderName:
@@ -794,10 +779,8 @@ const ShareDialog = () => {
                                       <Box>
                                         {share.sharedTargetType === "USER" ? (
                                           <UserDetails
-                                            userId={share.sharedTargetId}
-                                            fullName={
-                                              share.sharedTargetDisplayName
-                                            }
+                                            userId={share.shareeId}
+                                            fullName={share.shareeName}
                                             position={["bottom", "right"]}
                                           />
                                         ) : (
@@ -808,7 +791,7 @@ const ShareDialog = () => {
                                               e.preventDefault();
                                               e.stopPropagation();
                                               window.open(
-                                                `/groups/view/${share.sharedTargetId}`,
+                                                `/groups/view/${share.shareeId}`,
                                                 "_blank",
                                               );
                                             }}
@@ -821,7 +804,7 @@ const ShareDialog = () => {
                                               },
                                             }}
                                           >
-                                            {share.sharedTargetDisplayName}
+                                            {share.shareeName}
                                           </Link>
                                         )}
                                       </Box>
@@ -847,7 +830,13 @@ const ShareDialog = () => {
                                           value={getCurrentPermission(share)}
                                           onChange={(e) => {
                                             const newValue = e.target.value;
-                                            if (!(["EDIT", "READ", "UNSHARE"].includes(newValue)))
+                                            if (
+                                              ![
+                                                "EDIT",
+                                                "READ",
+                                                "UNSHARE",
+                                              ].includes(newValue)
+                                            )
                                               throw new Error("Impossible");
                                             handlePermissionChange(
                                               share.id.toString(),
@@ -876,7 +865,7 @@ const ShareDialog = () => {
                                             share.id.toString(),
                                           )?.name ||
                                             groupFolderNames.get(
-                                              share.sharedTargetId,
+                                              share.shareeId,
                                             ) ||
                                             "Loading..."}
                                           <Button
@@ -889,8 +878,7 @@ const ShareDialog = () => {
                                                     opt.optionType === "GROUP",
                                                 );
                                               const group = groups.find(
-                                                (g) =>
-                                                  g.id === share.sharedTargetId,
+                                                (g) => g.id === share.shareeId,
                                               );
                                               if (
                                                 group &&
@@ -900,8 +888,7 @@ const ShareDialog = () => {
                                                   {
                                                     shareId:
                                                       share.id.toString(),
-                                                    groupId:
-                                                      share.sharedTargetId,
+                                                    groupId: share.shareeId,
                                                     globalId,
                                                     sharedFolderId:
                                                       group.sharedFolderId,
@@ -937,7 +924,7 @@ const ShareDialog = () => {
                                         {newShare.sharedTargetType ===
                                         "USER" ? (
                                           <Typography variant="body2">
-                                            {newShare.sharedTargetDisplayName}
+                                            {newShare.shareeName}
                                           </Typography>
                                         ) : (
                                           <Typography
@@ -945,7 +932,7 @@ const ShareDialog = () => {
                                             color="success.dark"
                                             sx={{ fontWeight: "medium" }}
                                           >
-                                            {newShare.sharedTargetDisplayName}
+                                            {newShare.shareeName}
                                           </Typography>
                                         )}
                                       </Box>
@@ -971,7 +958,13 @@ const ShareDialog = () => {
                                           value={newShare.permission}
                                           onChange={(e) => {
                                             const newValue = e.target.value;
-                                            if (!(["EDIT", "READ", "UNSHARE"].includes(newValue)))
+                                            if (
+                                              ![
+                                                "EDIT",
+                                                "READ",
+                                                "UNSHARE",
+                                              ].includes(newValue)
+                                            )
                                               throw new Error("Impossible");
                                             handleNewSharePermissionChange(
                                               globalId,
@@ -1015,8 +1008,7 @@ const ShareDialog = () => {
                                                 );
                                               const group = groups.find(
                                                 (g) =>
-                                                  g.id ===
-                                                  newShare.sharedTargetId,
+                                                  g.id === newShare.shareeId,
                                               );
                                               if (
                                                 group &&
@@ -1025,8 +1017,7 @@ const ShareDialog = () => {
                                                 setSelectedShareForFolderChange(
                                                   {
                                                     shareId: newShare.id,
-                                                    groupId:
-                                                      newShare.sharedTargetId,
+                                                    groupId: newShare.shareeId,
                                                     globalId,
                                                     sharedFolderId:
                                                       group.sharedFolderId,
@@ -1087,7 +1078,7 @@ const ShareDialog = () => {
                         Array.from(newShares.entries()).forEach(
                           ([globalId, docNewShares]) => {
                             docNewShares.forEach((share) => {
-                              const key = `${share.sharedTargetType}-${share.sharedTargetId}`;
+                              const key = `${share.sharedTargetType}-${share.shareeId}`;
                               if (uniqueShares.has(key)) {
                                 uniqueShares.get(key)!.documentCount++;
                               } else {
@@ -1103,7 +1094,7 @@ const ShareDialog = () => {
                         return Array.from(uniqueShares.values()).map(
                           ({ share, documentCount }) => (
                             <Box
-                              key={`${share.sharedTargetType}-${share.sharedTargetId}`}
+                              key={`${share.sharedTargetType}-${share.shareeId}`}
                               sx={{
                                 display: "flex",
                                 alignItems: "center",
@@ -1115,7 +1106,7 @@ const ShareDialog = () => {
                             >
                               <Box sx={{ flexGrow: 1 }}>
                                 <Typography variant="body2" fontWeight="medium">
-                                  {share.sharedTargetDisplayName}
+                                  {share.shareeName}
                                 </Typography>
                                 <Typography
                                   variant="caption"
@@ -1165,8 +1156,7 @@ const ShareDialog = () => {
                                             !(
                                               s.sharedTargetType ===
                                                 share.sharedTargetType &&
-                                              s.sharedTargetId ===
-                                                share.sharedTargetId
+                                              s.shareeId === share.shareeId
                                             ),
                                         );
                                         if (filteredShares.length === 0) {
@@ -1191,8 +1181,7 @@ const ShareDialog = () => {
                                           (s) =>
                                             s.sharedTargetType ===
                                               share.sharedTargetType &&
-                                            s.sharedTargetId ===
-                                              share.sharedTargetId
+                                            s.shareeId === share.shareeId
                                               ? {
                                                   ...s,
                                                   permission: newPermission as
@@ -1230,13 +1219,13 @@ const ShareDialog = () => {
                                       (opt) => opt.optionType === "GROUP",
                                     );
                                     const group = groups.find(
-                                      (g) => g.id === share.sharedTargetId,
+                                      (g) => g.id === share.shareeId,
                                     );
                                     if (group && "sharedFolderId" in group) {
                                       // Use the first globalId as a placeholder
                                       setSelectedShareForFolderChange({
                                         shareId: share.id,
-                                        groupId: share.sharedTargetId,
+                                        groupId: share.shareeId,
                                         globalId: globalIds[0],
                                         sharedFolderId: group.sharedFolderId,
                                       });
@@ -1277,8 +1266,7 @@ const ShareDialog = () => {
             globalIds.forEach((globalId) => {
               const docShares = updatedNewShares.get(globalId) || [];
               const updatedDocShares = docShares.map((share) =>
-                share.sharedTargetType === "GROUP" &&
-                share.sharedTargetId === groupId
+                share.sharedTargetType === "GROUP" && share.shareeId === groupId
                   ? {
                       ...share,
                       sharedFolderName: folder.name,
