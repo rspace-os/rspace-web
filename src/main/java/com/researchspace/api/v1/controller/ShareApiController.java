@@ -11,13 +11,17 @@ import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.FolderDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.dtos.SharedRecordSearchCriteria;
+import com.researchspace.model.record.DetailedRecordInformation;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.views.ServiceOperationResultCollection;
+import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
 import java.util.ArrayList;
@@ -26,6 +30,8 @@ import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.validation.BindException;
@@ -37,8 +43,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 @ApiController
 public class ShareApiController extends BaseApiController implements ShareApi {
 
+  private static final Logger log = LoggerFactory.getLogger(ShareApiController.class);
+
   private @Autowired SharingHandler recordShareHandler;
   private @Autowired RecordSharingManager recordShareMgr;
+  @Autowired private DetailedRecordInformationProvider detailedRecordInformationProvider;
+  @Autowired private FolderDao folderDao;
 
   /** */
   @Override
@@ -144,7 +154,34 @@ public class ShareApiController extends BaseApiController implements ShareApi {
     if (docId == null) {
       throw new IllegalArgumentException("Document id cannot be null");
     }
-    return entityToSharedInfo(recordShareMgr.getRecordSharingInfo(docId));
+    List<RecordGroupSharing> shared = recordShareMgr.getRecordSharingInfo(docId);
+
+    for (RecordGroupSharing rgs : shared) {
+      if (rgs.getTargetFolder() == null) {
+        try {
+          Folder targetFolder;
+          if (rgs.getSharee().isGroup()) {
+            if (rgs.getShared().isSnippet()) {
+              targetFolder = folderDao.getSharedSnippetFolderForGroup(rgs.getSharee().asGroup());
+            } else {
+              targetFolder = folderDao.getSharedFolderForGroup(rgs.getSharee().asGroup());
+            }
+          } else {
+            targetFolder =
+                folderDao.getIndividualSharedFolderForUsers(
+                    rgs.getSharedBy(), rgs.getSharee().asUser(), rgs.getShared());
+          }
+          if (targetFolder != null) {
+            rgs.setTargetFolder(targetFolder);
+          }
+        } catch (Exception e) {
+          log.warn(
+              "Failed to populate target folder for sharing {}: {}", rgs.getId(), e.getMessage());
+        }
+      }
+    }
+
+    return entityToSharedInfo(shared);
   }
 
   private void configureSearch(
