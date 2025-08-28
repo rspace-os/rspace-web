@@ -85,6 +85,11 @@ export default function useFolders(): {
     pageSize?: number;
   }) => Promise<FolderTreeResponse>;
   getFolder: (id: number) => Promise<FolderDetails>;
+  createFolder: (options: {
+    name: string;
+    parentFolderId: number;
+    notebook?: boolean;
+  }) => Promise<FolderDetails>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -180,5 +185,47 @@ export default function useFolders(): {
     [getToken, addAlert],
   );
 
-  return { getFolderTree, getFolder };
+  const createFolder = React.useCallback(
+    async ({
+      name,
+      parentFolderId,
+      notebook = false,
+    }: {
+      name: string;
+      parentFolderId: number;
+      notebook?: boolean;
+    }): Promise<FolderDetails> => {
+      try {
+        const { data } = await axios.post<FolderDetails>(
+          `/api/v1/folders`,
+          {
+            name,
+            parentFolderId,
+            notebook: notebook.toString(),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
+            },
+          },
+        );
+
+        return data;
+      } catch (e) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error creating folder",
+            message: getErrorMessage(e, "An unknown error occurred."),
+          }),
+        );
+        throw new Error("Could not create folder", {
+          cause: e,
+        });
+      }
+    },
+    [getToken, addAlert],
+  );
+
+  return { getFolderTree, getFolder, createFolder };
 }

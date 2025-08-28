@@ -3,6 +3,18 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import IconButton from "@mui/material/IconButton";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import TextField from "@mui/material/TextField";
+import AddIcon from "@mui/icons-material/Add";
+import { styled } from "@mui/material/styles";
+import ValidatingSubmitButton, {
+  IsValid,
+  IsInvalid,
+} from "./ValidatingSubmitButton";
 import useFolders, {
   folderDetailsAsTreeNode,
   type FolderTreeNode,
@@ -10,12 +22,101 @@ import useFolders, {
 import { doNotAwait } from "../util/Util";
 import { Tree, TreeItem } from "./Tree";
 
+const StyledTreeItemContent = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  "& .folder-actions": {
+    opacity: 0,
+    transition: "opacity 0.2s",
+  },
+  "&:hover .folder-actions": {
+    opacity: 1,
+  },
+});
+
+type CreateFolderDialogProps = {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (name: string) => void;
+  isLoading: boolean;
+};
+
+const CreateFolderDialog = ({
+  open,
+  onClose,
+  onSubmit,
+  isLoading,
+}: CreateFolderDialogProps): React.ReactNode => {
+  const [folderName, setFolderName] = React.useState("");
+
+  const isValidName = folderName.length > 0;
+
+  const handleSubmit = (
+    e: React.FormEvent | React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    e.preventDefault();
+    if (isValidName) {
+      onSubmit(folderName);
+    }
+  };
+
+  const handleClose = () => {
+    setFolderName("");
+    onClose();
+  };
+
+  React.useEffect(() => {
+    if (!open) {
+      setFolderName("");
+    }
+  }, [open]);
+
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Create New Folder</DialogTitle>
+      <DialogContent>
+        <TextField
+          autoFocus
+          label="Folder Name"
+          fullWidth
+          variant="outlined"
+          value={folderName}
+          onChange={(e) => setFolderName(e.target.value)}
+          disabled={isLoading}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && isValidName) {
+              handleSubmit(e);
+            }
+          }}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} disabled={isLoading}>
+          Cancel
+        </Button>
+        <ValidatingSubmitButton
+          loading={isLoading}
+          validationResult={
+            isValidName ? IsValid() : IsInvalid("Folder name is required")
+          }
+          onClick={handleSubmit}
+        >
+          Create
+        </ValidatingSubmitButton>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const TreeItemContent = ({
   folder,
+  onFolderCreated,
 }: {
   folder: FolderTreeNode;
+  onFolderCreated?: (newFolder: FolderTreeNode, parentId: number) => void;
 }): React.ReactNode => {
-  const { getFolderTree } = useFolders();
+  const { getFolderTree, createFolder } = useFolders();
   const [folders, setFolders] = React.useState<ReadonlyArray<FolderTreeNode>>(
     [],
   );
@@ -23,6 +124,20 @@ const TreeItemContent = ({
   const [totalHits, setTotalHits] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<boolean>(false);
+
+  const handleChildFolderCreated = React.useCallback(
+    (newFolder: FolderTreeNode, parentId: number) => {
+      // If this folder is the parent, add the new folder to our children
+      if (parentId === folder.id) {
+        setFolders((prev) => [newFolder, ...prev]);
+      }
+      // Propagate up to parent
+      onFolderCreated?.(newFolder, parentId);
+    },
+    [folder.id, onFolderCreated],
+  );
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = React.useState(false);
 
   const loadFolders = React.useCallback(
     async (pageNumber: number, append: boolean = false) => {
@@ -56,44 +171,94 @@ const TreeItemContent = ({
     void loadFolders(0);
   }, [loadFolders]);
 
+  const handleCreateFolder = React.useCallback(
+    async (name: string) => {
+      setIsCreatingFolder(true);
+      try {
+        const newFolderDetails = await createFolder({
+          name,
+          parentFolderId: folder.id,
+        });
+        const newFolder = folderDetailsAsTreeNode(newFolderDetails);
+        setFolders((prev) => [newFolder, ...prev]);
+        onFolderCreated?.(newFolder, folder.id);
+        setIsDialogOpen(false);
+      } catch (err) {
+        // Error is handled by the hook
+      } finally {
+        setIsCreatingFolder(false);
+      }
+    },
+    [folder.id, createFolder, onFolderCreated],
+  );
+
   const hasMorePages = folders.length < totalHits;
 
+  const labelContent = (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <span>{folder.name}</span>
+      <IconButton
+        size="small"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsDialogOpen(true);
+        }}
+        aria-label={`Add subfolder to ${folder.name}`}
+        sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}
+      >
+        <AddIcon fontSize="small" />
+      </IconButton>
+    </Box>
+  );
+
   return (
-    <TreeItem item={folder} label={folder.name} role="treeitem">
-      {folders.map((folder) => (
-        <TreeItemContent key={folder.id} folder={folder} />
-      ))}
-      {error && (
-        <Box sx={{ p: 1 }}>
-          <Alert
-            severity="error"
-            action={
-              <Button
-                size="small"
-                onClick={doNotAwait(() => loadFolders(currentPage))}
-                disabled={isLoading}
-              >
-                Retry
-              </Button>
-            }
-          >
-            Failed to load subfolders
-          </Alert>
-        </Box>
-      )}
-      {hasMorePages && (
-        <Box sx={{ p: 1 }}>
-          <Button
-            size="small"
-            onClick={doNotAwait(() => loadFolders(currentPage + 1, true))}
-            disabled={isLoading}
-            startIcon={isLoading ? <CircularProgress size={16} /> : null}
-          >
-            {isLoading ? "Loading..." : "Load More"}
-          </Button>
-        </Box>
-      )}
-    </TreeItem>
+    <>
+      <TreeItem item={folder} label={labelContent} role="treeitem">
+        {folders.map((subFolder) => (
+          <TreeItemContent
+            key={subFolder.id}
+            folder={subFolder}
+            onFolderCreated={handleChildFolderCreated}
+          />
+        ))}
+        {error && (
+          <Box sx={{ p: 1 }}>
+            <Alert
+              severity="error"
+              action={
+                <Button
+                  size="small"
+                  onClick={doNotAwait(() => loadFolders(currentPage))}
+                  disabled={isLoading}
+                >
+                  Retry
+                </Button>
+              }
+            >
+              Failed to load subfolders
+            </Alert>
+          </Box>
+        )}
+        {hasMorePages && (
+          <Box sx={{ p: 1 }}>
+            <Button
+              size="small"
+              onClick={doNotAwait(() => loadFolders(currentPage + 1, true))}
+              disabled={isLoading}
+              startIcon={isLoading ? <CircularProgress size={16} /> : null}
+            >
+              {isLoading ? "Loading..." : "Load More"}
+            </Button>
+          </Box>
+        )}
+      </TreeItem>
+      <CreateFolderDialog
+        open={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onSubmit={handleCreateFolder}
+        isLoading={isCreatingFolder}
+      />
+    </>
   );
 };
 
@@ -104,7 +269,7 @@ export default function FolderTree({
   rootFolderId?: number;
   onFolderSelect?: (folder: FolderTreeNode | null) => void;
 }): React.ReactNode {
-  const { getFolderTree, getFolder } = useFolders();
+  const { getFolderTree, getFolder, createFolder } = useFolders();
   const [rootFolders, setRootFolders] = React.useState<
     ReadonlyArray<FolderTreeNode>
   >([]);
@@ -117,6 +282,8 @@ export default function FolderTree({
   const [totalHits, setTotalHits] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<boolean>(false);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = React.useState(false);
 
   const loadRootFolders = React.useCallback(
     async (pageNumber: number, append: boolean = false) => {
@@ -160,6 +327,44 @@ export default function FolderTree({
       void loadRootFolders(0);
     }
   }, [rootFolderId, loadRootFolders, getFolder]);
+
+  const handleFolderCreated = React.useCallback(
+    (newFolder: FolderTreeNode, parentId: number) => {
+      // Select the newly created folder
+      setSelectedFolder(newFolder);
+      onFolderSelect?.(newFolder);
+      // Expand the parent folder if it's in expandedFolders
+      const parentFolder = rootFolders.find((f) => f.id === parentId);
+      if (parentFolder) {
+        setExpandedFolders((prev) => new Set([...prev, parentFolder]));
+      }
+    },
+    [onFolderSelect, rootFolders],
+  );
+
+  const handleCreateRootFolder = React.useCallback(
+    async (name: string) => {
+      if (rootFolderId) return; // Only allow root folder creation when no specific root is set
+
+      setIsCreatingFolder(true);
+      try {
+        const newFolderDetails = await createFolder({
+          name,
+          parentFolderId: 0, // Root folder
+        });
+        const newFolder = folderDetailsAsTreeNode(newFolderDetails);
+        setRootFolders((prev) => [newFolder, ...prev]);
+        setSelectedFolder(newFolder);
+        onFolderSelect?.(newFolder);
+        setIsDialogOpen(false);
+      } catch (err) {
+        // Error is handled by the hook
+      } finally {
+        setIsCreatingFolder(false);
+      }
+    },
+    [rootFolderId, createFolder, onFolderSelect],
+  );
 
   const hasMorePages = !rootFolderId && rootFolders.length < totalHits;
 
@@ -211,7 +416,11 @@ export default function FolderTree({
         }}
       >
         {rootFolders.map((folder) => (
-          <TreeItemContent key={folder.id} folder={folder} />
+          <TreeItemContent
+            key={folder.id}
+            folder={folder}
+            onFolderCreated={handleFolderCreated}
+          />
         ))}
       </Tree>
       {hasMorePages && (
@@ -225,6 +434,12 @@ export default function FolderTree({
           </Button>
         </Box>
       )}
+      <CreateFolderDialog
+        open={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onSubmit={handleCreateRootFolder}
+        isLoading={isCreatingFolder}
+      />
     </Box>
   );
 }

@@ -18,6 +18,18 @@ const feature = test.extend<{
       folderName: string;
     }) => Promise<void>;
     "the user clicks the Load More button": () => Promise<void>;
+    "the user hovers over a folder": (params: {
+      folderName: string;
+    }) => Promise<void>;
+    "the user clicks the add folder button for a folder": (params: {
+      folderName: string;
+    }) => Promise<void>;
+    "the user clicks the Add Folder button": () => Promise<void>;
+    "the user enters a folder name": (params: {
+      folderName: string;
+    }) => Promise<void>;
+    "the user submits the create folder dialog": () => Promise<void>;
+    "the user clicks the create button without entering a name": () => Promise<void>;
   };
   Then: {
     "the folder tree should display the root folders": () => Promise<void>;
@@ -33,6 +45,17 @@ const feature = test.extend<{
     }) => Promise<void>;
     "a Load More button should be visible": () => Promise<void>;
     "additional folders should be loaded": () => Promise<void>;
+    "the add folder button should be visible": (params: {
+      folderName: string;
+    }) => Promise<void>;
+    "the create folder dialog should be open": () => Promise<void>;
+    "the new folder should appear in the tree": (params: {
+      folderName: string;
+    }) => Promise<void>;
+    "the new folder should be selected": (params: {
+      folderName: string;
+    }) => Promise<void>;
+    "a validation error should be displayed": () => Promise<void>;
   };
 }>({
   Given: async ({ mount, router }, use) => {
@@ -217,6 +240,34 @@ const feature = test.extend<{
             }
           });
 
+          await router.route("**/api/v1/folders", async (route) => {
+            if (route.request().method() === "POST") {
+              const requestBody = await route.request().postDataJSON();
+              const newFolderId = 999;
+              await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                  id: newFolderId,
+                  globalId: `FL${newFolderId}`,
+                  name: requestBody.name,
+                  created: "2025-01-01T10:00:00.000Z",
+                  lastModified: "2025-01-01T10:00:00.000Z",
+                  parentFolderId: requestBody.parentFolderId,
+                  notebook: false,
+                  mediaType: null,
+                  pathToRootFolder: null,
+                  _links: [
+                    {
+                      link: `http://localhost:8080/api/v1/folders/${newFolderId}`,
+                      rel: "self",
+                    },
+                  ],
+                }),
+              });
+            }
+          });
+
           await mount(<TestFolderTreeExample />);
         },
     });
@@ -230,7 +281,7 @@ const feature = test.extend<{
         const treeItem = page.getByRole("treeitem", {
           name: new RegExp(folderName),
         });
-        await treeItem.locator("svg").first().click();
+        await treeItem.click();
       },
       "the user clicks on a folder": async ({ folderName }) => {
         const treeItem = page.getByRole("treeitem", {
@@ -243,6 +294,40 @@ const feature = test.extend<{
           name: "Load More",
         });
         await loadMoreButton.first().click();
+      },
+      "the user hovers over a folder": async ({ folderName }) => {
+        const treeItem = page.getByRole("treeitem", {
+          name: new RegExp(folderName),
+        });
+        await treeItem.hover();
+      },
+      "the user clicks the add folder button for a folder": async ({
+        folderName,
+      }) => {
+        const treeItem = page.getByRole("treeitem", {
+          name: new RegExp(folderName),
+        });
+        await treeItem.hover();
+        const addButton = treeItem.getByRole("button", {
+          name: `Add subfolder to ${folderName}`,
+        });
+        await addButton.click();
+      },
+      "the user clicks the Add Folder button": async () => {
+        const addButton = page.getByRole("button", { name: "Add Folder" });
+        await addButton.click();
+      },
+      "the user enters a folder name": async ({ folderName }) => {
+        const nameInput = page.getByLabel("Folder Name");
+        await nameInput.fill(folderName);
+      },
+      "the user submits the create folder dialog": async () => {
+        const createButton = page.getByRole("button", { name: "Create" });
+        await createButton.click();
+      },
+      "the user clicks the create button without entering a name": async () => {
+        const createButton = page.getByRole("button", { name: "Create" });
+        await createButton.click();
       },
     });
   },
@@ -289,6 +374,37 @@ const feature = test.extend<{
         await expect(
           page.getByRole("treeitem", { name: /Subfolder 21/ }),
         ).toBeVisible();
+      },
+      "the add folder button should be visible": async ({ folderName }) => {
+        const treeItem = page.getByRole("treeitem", {
+          name: new RegExp(folderName),
+        });
+        await treeItem.hover();
+        const addButton = treeItem.getByRole("button", {
+          name: `Add subfolder to ${folderName}`,
+        });
+        await expect(addButton).toBeVisible();
+      },
+      "the create folder dialog should be open": async () => {
+        const dialog = page.getByRole("dialog", { name: "Create New Folder" });
+        await expect(dialog).toBeVisible();
+      },
+      "the new folder should appear in the tree": async ({ folderName }) => {
+        const newFolder = page.getByRole("treeitem", {
+          name: new RegExp(folderName),
+        });
+        await expect(newFolder).toBeVisible();
+      },
+      "the new folder should be selected": async ({ folderName }) => {
+        const newFolder = page.getByRole("treeitem", {
+          name: new RegExp(folderName),
+        });
+        await expect(newFolder).toHaveAttribute("aria-selected", "true");
+      },
+      "a validation error should be displayed": async () => {
+        const errorAlert = page.getByLabel("Warning");
+        await expect(errorAlert).toBeVisible();
+        await expect(page.getByText("Folder name is required")).toBeVisible();
       },
     });
   },
@@ -357,6 +473,53 @@ test.describe("FolderTree", () => {
       });
       await When["the user clicks the Load More button"]();
       await Then["additional folders should be loaded"]();
+    },
+  );
+
+  feature("Shows add folder button on hover", async ({ Given, When, Then }) => {
+    await Given[
+      "the FolderTree component is rendered with mocked API responses"
+    ]();
+    await When["the user hovers over a folder"]({
+      folderName: "Research Projects",
+    });
+    await Then["the add folder button should be visible"]({
+      folderName: "Research Projects",
+    });
+  });
+
+  feature("Allows creating new folders", async ({ Given, When, Then }) => {
+    await Given[
+      "the FolderTree component is rendered with mocked API responses"
+    ]();
+    await When["the user clicks the add folder button for a folder"]({
+      folderName: "Research Projects",
+    });
+    await Then["the create folder dialog should be open"]();
+    await When["the user enters a folder name"]({
+      folderName: "New Test Folder",
+    });
+    await When["the user submits the create folder dialog"]();
+    await Then["the new folder should appear in the tree"]({
+      folderName: "New Test Folder",
+    });
+    await Then["the new folder should be selected"]({
+      folderName: "New Test Folder",
+    });
+  });
+
+  feature(
+    "Prevents creating folders with empty names",
+    async ({ Given, When, Then }) => {
+      await Given[
+        "the FolderTree component is rendered with mocked API responses"
+      ]();
+      await When["the user clicks the add folder button for a folder"]({
+        folderName: "Research Projects",
+      });
+      await Then["the create folder dialog should be open"]();
+      await When["the user clicks the create button without entering a name"]();
+      await Then["a validation error should be displayed"]();
     },
   );
 });
