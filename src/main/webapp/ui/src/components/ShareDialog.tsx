@@ -41,6 +41,7 @@ import useFolders from "../hooks/api/useFolders";
 import FolderSelectionDialog from "./FolderSelectionDialog";
 import { FolderTreeNode } from "../hooks/api/useFolders";
 import UserDetails from "../Inventory/components/UserDetails";
+import GroupDetails from "./GroupDetails";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../accentedTheme";
 import { ACCENT_COLOR } from "../assets/branding/rspace/workspace";
@@ -784,28 +785,11 @@ const ShareDialog = () => {
                                             position={["bottom", "right"]}
                                           />
                                         ) : (
-                                          <Link
-                                            component="button"
-                                            variant="body2"
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              window.open(
-                                                `/groups/view/${share.shareeId}`,
-                                                "_blank",
-                                              );
-                                            }}
-                                            sx={{
-                                              fontWeight: "medium",
-                                              textAlign: "left",
-                                              textDecoration: "none",
-                                              "&:hover": {
-                                                textDecoration: "underline",
-                                              },
-                                            }}
-                                          >
-                                            {share.shareeName}
-                                          </Link>
+                                          <GroupDetails
+                                            groupId={share.shareeId}
+                                            groupName={share.shareeName}
+                                            position={["bottom", "right"]}
+                                          />
                                         )}
                                       </Box>
                                     </TableCell>

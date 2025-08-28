@@ -24,6 +24,24 @@ export type Group = {
   }>;
 };
 
+export type GroupDetail = {
+  id: number;
+  globalId: string;
+  name: string;
+  type: string;
+  sharedFolderId: number;
+  members: Array<{
+    id: number;
+    username: string;
+    role: "PI" | "USER";
+  }>;
+  uniqueName: string;
+  _links: ReadonlyArray<{
+    link: string;
+    rel: string;
+  }>;
+};
+
 /**
  * This custom hook provides functionality to fetch groups that the current user is a member of
  * using the `/groups` endpoint.
@@ -33,6 +51,10 @@ export default function useGroups(): {
    * Fetches all groups that the current user is a member of.
    */
   getGroups: () => Promise<ReadonlyArray<Group>>;
+  /**
+   * Fetches a specific group by ID.
+   */
+  getGroup: (groupId: number) => Promise<GroupDetail>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -61,5 +83,33 @@ export default function useGroups(): {
     }
   }, [getToken, addAlert]);
 
-  return { getGroups };
+  const getGroup = React.useCallback(
+    async (groupId: number): Promise<GroupDetail> => {
+      try {
+        const { data } = await axios.get<GroupDetail>(
+          `/api/v1/groups/${groupId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
+            },
+          },
+        );
+        return data;
+      } catch (e) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error fetching group",
+            message: getErrorMessage(e, "An unknown error occurred."),
+          }),
+        );
+        throw new Error("Could not fetch group", {
+          cause: e,
+        });
+      }
+    },
+    [getToken, addAlert],
+  );
+
+  return { getGroups, getGroup };
 }
