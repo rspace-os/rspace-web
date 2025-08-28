@@ -355,6 +355,12 @@ function CardListing({
       {integrationStates.BOX.mode === mode && (
         <Box integrationState={integrationStates.BOX} update={boxUpdate} />
       )}
+      {integrationStates.CHEMISTRY.mode === mode && (
+        <Chemistry
+          integrationState={integrationStates.CHEMISTRY}
+          update={chemistryUpdate}
+        />
+      )}
       {integrationStates.CLUSTERMARKET.mode === mode && (
         <Clustermarket
           integrationState={integrationStates.CLUSTERMARKET}
@@ -441,12 +447,6 @@ function CardListing({
       )}
       {integrationStates.JOVE.mode === mode && (
         <Jove integrationState={integrationStates.JOVE} update={joveUpdate} />
-      )}
-      {integrationStates.CHEMISTRY.mode === mode && (
-        <Chemistry
-          integrationState={integrationStates.CHEMISTRY}
-          update={chemistryUpdate}
-        />
       )}
       {integrationStates.NEXTCLOUD.mode === mode && (
         <NextCloud
