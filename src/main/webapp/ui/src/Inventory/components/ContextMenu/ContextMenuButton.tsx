@@ -1,4 +1,4 @@
-import Chip from "@mui/material/Chip";
+import Button from "@mui/material/Button";
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -11,10 +11,30 @@ import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Tooltip from "@mui/material/Tooltip";
 
 const useStyles = makeStyles()((theme) => ({
-  chip: {
+  button: {
     borderRadius: 4,
     marginBottom: 4,
-    cursor: "default",
+    minWidth: "auto",
+    fontSize: "0.8125rem",
+    "& .MuiButton-startIcon": {
+      "& svg": {
+        fontSize: "1rem !important",
+      },
+    },
+  },
+  active: {
+    backgroundColor: theme.palette.callToAction.main,
+    color: theme.palette.callToAction.contrastText,
+    "&:hover": {
+      backgroundColor: theme.palette.callToAction.dark,
+    },
+  },
+  filled: {
+    backgroundColor: theme.palette.callToAction.main,
+    color: theme.palette.callToAction.contrastText,
+    "&:hover": {
+      backgroundColor: theme.palette.callToAction.dark,
+    },
   },
 }));
 
@@ -24,9 +44,10 @@ type ContextMenuButtonArgs = {
   variant?: "filled" | "default";
   disabledHelp?: string;
   active?: boolean;
+  label?: string;
 } & Omit<
-  React.ComponentProps<typeof Chip>,
-  "icon" | "loading" | "variant" | "disabledHelp" | "color" | "active"
+  React.ComponentProps<typeof Button>,
+  "icon" | "loading" | "variant" | "disabledHelp" | "color" | "active" | "label"
 >;
 
 function ContextMenuButton({
@@ -35,6 +56,8 @@ function ContextMenuButton({
   variant = "default",
   disabledHelp = "",
   active = false,
+  label,
+  className,
   ...props
 }: ContextMenuButtonArgs): React.ReactNode {
   const { classes } = useStyles();
@@ -45,6 +68,16 @@ function ContextMenuButton({
   };
 
   const inContrast = active || (variant === "filled" && disabledHelp === "");
+
+  const buttonClassName = clsx(
+    classes.button,
+    {
+      [classes.active]: active,
+      [classes.filled]: variant === "filled" && disabledHelp === "",
+    },
+    className,
+  );
+
   return (
     <ClickAwayListener onClickAway={handleTooltipClose}>
       <div onClick={() => disabledHelp !== "" && setOpen(true)}>
@@ -55,12 +88,11 @@ function ContextMenuButton({
           title={disabledHelp}
         >
           <div>
-            <Chip
-              className={classes.chip}
+            <Button
+              className={buttonClassName}
               size="medium"
-              variant={inContrast ? "filled" : "outlined"}
-              role="button"
-              icon={
+              variant={inContrast ? "contained" : "outlined"}
+              startIcon={
                 loading ? (
                   <FontAwesomeIcon icon="spinner" spin size="sm" />
                 ) : (
@@ -68,11 +100,11 @@ function ContextMenuButton({
                 )
               }
               disabled={disabledHelp !== ""}
-              clickable={disabledHelp === ""}
-              color={inContrast ? "callToAction" : "default"}
               aria-disabled={disabledHelp !== ""}
               {...props}
-            />
+            >
+              {label}
+            </Button>
           </div>
         </Tooltip>
       </div>
