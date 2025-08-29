@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
 /** Unit tests covering DevOps fixes. */
-@TestPropertySource(properties = {"rs.dev.unsafeMove.allowed=true"})
+//@TestPropertySource(properties = {"rs.dev.unsafeMove.allowed=true"})
 public class DevOpsManagerTest extends SpringTransactionalTest {
 
   @Autowired private DevOpsManager devOpsMgr;
