@@ -3,7 +3,7 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
-import IconButton from "@mui/material/IconButton";
+import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -197,17 +197,16 @@ const TreeItemContent = ({
   const labelContent = (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <span>{folder.name}</span>
-      <IconButton
+      <IconButtonWithTooltip
+        title={`Add subfolder to ${folder.name}`}
+        icon={<AddIcon fontSize="small" />}
         size="small"
         onClick={(e) => {
           e.stopPropagation();
           setIsDialogOpen(true);
         }}
-        aria-label={`Add subfolder to ${folder.name}`}
         sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}
-      >
-        <AddIcon fontSize="small" />
-      </IconButton>
+      />
     </Box>
   );
 
