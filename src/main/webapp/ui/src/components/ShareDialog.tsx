@@ -158,7 +158,8 @@ const ShareDialog = () => {
     Map<ShareId, { name: string; id: number }>
   >(new Map());
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { getShareInfoForMultiple, createShare, deleteShare } = useShare();
+  const { getShareInfoForMultiple, createShare, deleteShare, updateShare } =
+    useShare();
   const { getGroups } = useGroups();
   const { getGroupMembers } = useUserDetails();
   const { getFolder } = useFolders();
@@ -434,9 +435,15 @@ const ShareDialog = () => {
         .filter(([_, permission]) => permission === "UNSHARE")
         .map(([shareId, _]) => deleteShare(parseInt(shareId, 10)));
 
-      // Handle permission modifications (delete and recreate)
-      const modificationPromises: Promise<void>[] = [];
-      for (const [shareId, newPermission] of permissionChanges.entries()) {
+      // Handle permission and folder modifications using updateShare
+      const updatePromises: Promise<ShareInfo>[] = [];
+      const allChangedShareIds = new Set([
+        ...permissionChanges.keys(),
+        ...shareFolderChanges.keys(),
+      ]);
+
+      for (const shareId of allChangedShareIds) {
+        const newPermission = permissionChanges.get(shareId);
         if (newPermission !== "UNSHARE") {
           // Find the original share to get its details
           const originalShare = Array.from(shareData.values())
@@ -444,53 +451,15 @@ const ShareDialog = () => {
             .find((share) => share.id.toString() === shareId);
 
           if (originalShare) {
-            // Delete the old share and create a new one with updated permission
-            const deletePromise = deleteShare(parseInt(shareId, 10));
-            const recreatePromise = deletePromise.then(() => {
-              const newShare: NewShare = {
-                id: `modified_${shareId}`,
-                shareeId: originalShare.shareeId,
-                shareeName: originalShare.shareeName,
-                sharedTargetType: originalShare.sharedTargetType,
-                permission: newPermission as "READ" | "EDIT",
-                sharedFolderName: shareFolderChanges.get(shareId)?.name || null,
-                sharedFolderId:
-                  originalShare.sharedTargetType === "GROUP"
-                    ? shareFolderChanges.get(shareId)?.id
-                    : undefined,
-              };
-              return createShare(originalShare.sharedItemId, [newShare]);
-            });
-            modificationPromises.push(recreatePromise);
-          }
-        }
-      }
-
-      // Handle folder changes for group shares (without permission changes)
-      const folderChangePromises: Promise<void>[] = [];
-      for (const [shareId, newFolderInfo] of shareFolderChanges.entries()) {
-        // Only process if this share wasn't already handled in modifications
-        if (!permissionChanges.has(shareId)) {
-          const originalShare = Array.from(shareData.values())
-            .flat()
-            .find((share) => share.id.toString() === shareId);
-
-          if (originalShare && originalShare.sharedTargetType === "GROUP") {
-            // Delete and recreate with new folder
-            const deletePromise = deleteShare(parseInt(shareId, 10));
-            const recreatePromise = deletePromise.then(() => {
-              const newShare: NewShare = {
-                id: `folder_changed_${shareId}`,
-                shareeId: originalShare.shareeId,
-                shareeName: originalShare.shareeName,
-                sharedTargetType: originalShare.sharedTargetType,
-                permission: originalShare.permission,
-                sharedFolderName: newFolderInfo.name,
-                sharedFolderId: newFolderInfo.id,
-              };
-              return createShare(originalShare.sharedItemId, [newShare]);
-            });
-            folderChangePromises.push(recreatePromise);
+            const updatedShare: ShareInfo = {
+              ...originalShare,
+              permission:
+                (newPermission as "READ" | "EDIT") || originalShare.permission,
+              sharedToFolderId:
+                shareFolderChanges.get(shareId)?.id ??
+                originalShare.sharedToFolderId,
+            };
+            updatePromises.push(updateShare(updatedShare));
           }
         }
       }
@@ -506,8 +475,7 @@ const ShareDialog = () => {
 
       await Promise.all([
         ...deletionPromises,
-        ...modificationPromises,
-        ...folderChangePromises,
+        ...updatePromises,
         ...creationPromises,
       ]);
 
