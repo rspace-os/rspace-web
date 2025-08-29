@@ -76,20 +76,22 @@ const CreateFolderDialog = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create New Folder</DialogTitle>
       <DialogContent>
-        <TextField
-          autoFocus
-          label="Folder Name"
-          fullWidth
-          variant="outlined"
-          value={folderName}
-          onChange={(e) => setFolderName(e.target.value)}
-          disabled={isLoading}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && isValidName) {
-              handleSubmit(e);
-            }
-          }}
-        />
+        <Box mt={0.75}>
+          <TextField
+            autoFocus
+            label="Folder Name"
+            fullWidth
+            variant="outlined"
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            disabled={isLoading}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && isValidName) {
+                handleSubmit(e);
+              }
+            }}
+          />
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={isLoading}>
