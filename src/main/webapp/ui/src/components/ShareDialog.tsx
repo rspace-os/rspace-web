@@ -585,52 +585,67 @@ const ShareDialog = () => {
                       share.sharedTargetType === newValue.optionType,
                   );
 
-                  // If already shared, mark the existing share for deletion (unshare)
                   if (alreadyShared) {
+                    // Update the existing share's permission to READ and set new folder location
                     updatedPermissionChanges.set(
                       alreadyShared.id.toString(),
-                      "UNSHARE",
+                      "READ",
                     );
-                  }
 
-                  // Remove from new shares if already there
-                  if (alreadyInNewShares) {
-                    const filteredNewShares = existingNewShares.filter(
-                      (share) =>
-                        !(
-                          share.shareeId === newValue.id &&
-                          share.sharedTargetType === newValue.optionType
-                        ),
-                    );
-                    updatedNewShares.set(globalId, filteredNewShares);
-                  }
-
-                  // Always add the new share (this replaces any existing one)
-                  const newShare: NewShare = {
-                    id: `new-${newValue.id}-${Date.now()}`, // temporary ID
-                    shareeId: newValue.id,
-                    shareeName:
-                      newValue.optionType === "GROUP"
-                        ? newValue.name
-                        : newValue.username,
-                    sharedTargetType: newValue.optionType,
-                    permission: "READ", // default permission
-                    sharedFolderName:
-                      newValue.optionType === "GROUP"
-                        ? groupFolderNames.get(newValue.id) || "Loading..."
-                        : null,
-                    sharedFolderId:
+                    // Set the new folder location if it's a group share
+                    if (
                       newValue.optionType === "GROUP" &&
-                      "sharedFolderId" in newValue
-                        ? newValue.sharedFolderId
-                        : undefined,
-                  };
+                      "sharedFolderId" in newValue &&
+                      newValue.sharedFolderId
+                    ) {
+                      const currentFolderChanges = new Map(shareFolderChanges);
+                      currentFolderChanges.set(alreadyShared.id.toString(), {
+                        id: newValue.sharedFolderId,
+                        name: groupFolderNames.get(newValue.id) || "Loading...",
+                      });
+                      setShareFolderChanges(currentFolderChanges);
+                    }
+                  } else {
+                    // Remove from new shares if already there
+                    if (alreadyInNewShares) {
+                      const filteredNewShares = existingNewShares.filter(
+                        (share) =>
+                          !(
+                            share.shareeId === newValue.id &&
+                            share.sharedTargetType === newValue.optionType
+                          ),
+                      );
+                      updatedNewShares.set(globalId, filteredNewShares);
+                    }
 
-                  const currentNewShares = updatedNewShares.get(globalId) || [];
-                  updatedNewShares.set(globalId, [
-                    ...currentNewShares,
-                    newShare,
-                  ]);
+                    // Add as new share only if not already an existing share
+                    const newShare: NewShare = {
+                      id: `new-${newValue.id}-${Date.now()}`, // temporary ID
+                      shareeId: newValue.id,
+                      shareeName:
+                        newValue.optionType === "GROUP"
+                          ? newValue.name
+                          : newValue.username,
+                      sharedTargetType: newValue.optionType,
+                      permission: "READ", // default permission
+                      sharedFolderName:
+                        newValue.optionType === "GROUP"
+                          ? groupFolderNames.get(newValue.id) || "Loading..."
+                          : null,
+                      sharedFolderId:
+                        newValue.optionType === "GROUP" &&
+                        "sharedFolderId" in newValue
+                          ? newValue.sharedFolderId
+                          : undefined,
+                    };
+
+                    const currentNewShares =
+                      updatedNewShares.get(globalId) || [];
+                    updatedNewShares.set(globalId, [
+                      ...currentNewShares,
+                      newShare,
+                    ]);
+                  }
                 });
 
                 setNewShares(updatedNewShares);
