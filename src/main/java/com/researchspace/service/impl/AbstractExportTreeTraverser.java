@@ -16,24 +16,20 @@ public abstract class AbstractExportTreeTraverser {
 
   private IExportConfig exportConfig;
 
-  protected boolean isSharedFolder(BaseRecord rc) {
-    return rc.getName().equals(SHARED_FOLDER_NAME);
+  protected boolean isSharedFolder(Folder fld) {
+    return fld.isTopLevelSharedFolder();
   }
 
-  protected boolean isTemplateFolder(BaseRecord rc) {
-    return rc.getName().equals(Folder.TEMPLATE_MEDIA_FOLDER_NAME) && ((Folder) rc).isSystemFolder();
+  protected boolean isTemplateFolder(Folder fld) {
+    return fld.getName().equals(Folder.TEMPLATE_MEDIA_FOLDER_NAME) && fld.isSystemFolder();
   }
 
-  protected boolean isExamplesFolder(BaseRecord rc) {
-    return rc.getName().equals(EXAMPLES_FOLDER) && ((Folder) rc).isSystemFolder();
+  protected boolean isExamplesFolder(Folder fld) {
+    return fld.getName().equals(EXAMPLES_FOLDER) && fld.isSystemFolder();
   }
 
   protected boolean isRootFolder(BaseRecord rc) {
     return rc.hasType(RecordType.ROOT_MEDIA);
-  }
-
-  protected boolean isMediaFile(BaseRecord rc) {
-    return rc.isMediaRecord();
   }
 
   protected boolean isUndeletedNonFolder(BaseRecord rc) {
@@ -44,11 +40,11 @@ public abstract class AbstractExportTreeTraverser {
     if (!rc.isFolder()) {
       return false;
     }
-    if (isSharedFolder(rc)) {
+    if (isSharedFolder((Folder) rc)) {
       return false;
-    } else if (isExamplesFolder(rc)) {
+    } else if (isExamplesFolder((Folder) rc)) {
       return exportConfig.isSelectionScope();
-    } else if (isTemplateFolder(rc)) {
+    } else if (isTemplateFolder((Folder) rc)) {
       return exportConfig.isSelectionScope();
     }
 

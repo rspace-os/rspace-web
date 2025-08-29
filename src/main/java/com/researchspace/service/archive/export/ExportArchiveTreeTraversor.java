@@ -55,11 +55,11 @@ public class ExportArchiveTreeTraversor implements RecordContainerProcessor {
     if (!rc.isFolder()) {
       return false;
     }
-    if (isSharedFolder(rc)) {
+    if (isSharedFolder((Folder) rc)) {
       return false;
-    } else if (isExamplesFolder(rc)) {
+    } else if (isExamplesFolder((Folder) rc)) {
       return exportCfg.isSelectionScope();
-    } else if (isTemplateFolder(rc)) {
+    } else if (isTemplateFolder((Folder) rc)) {
       return exportCfg.isSelectionScope()
           || exportCfg.getArchiveType().equals(ArchiveExportConfig.XML);
     }
@@ -67,16 +67,16 @@ public class ExportArchiveTreeTraversor implements RecordContainerProcessor {
     return true;
   }
 
-  private boolean isSharedFolder(BaseRecord rc) {
-    return rc.getName().equals(SHARED_FOLDER_NAME);
+  private boolean isSharedFolder(Folder fld) {
+    return fld.isTopLevelSharedFolder();
   }
 
-  private boolean isTemplateFolder(BaseRecord rc) {
-    return rc.getName().equals(Folder.TEMPLATE_MEDIA_FOLDER_NAME) && ((Folder) rc).isSystemFolder();
+  private boolean isTemplateFolder(Folder fld) {
+    return fld.getName().equals(Folder.TEMPLATE_MEDIA_FOLDER_NAME) && fld.isSystemFolder();
   }
 
-  private boolean isExamplesFolder(BaseRecord rc) {
-    return rc.getName().equals(EXAMPLES_FOLDER) && ((Folder) rc).isSystemFolder();
+  private boolean isExamplesFolder(Folder fld) {
+    return fld.getName().equals(EXAMPLES_FOLDER) && fld.isSystemFolder();
   }
 
   private boolean isRootFolder(BaseRecord rc) {
