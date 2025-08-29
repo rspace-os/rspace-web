@@ -164,6 +164,7 @@ const ShareDialog = () => {
   const { getGroupMembers } = useUserDetails();
   const { getFolder } = useFolders();
   const currentUser = useWhoAmI();
+  const [autocompleteInput, setAutocompleteInput] = React.useState("");
 
   React.useEffect(() => {
     if (open && globalIds.length > 0) {
@@ -563,8 +564,20 @@ const ShareDialog = () => {
             options={shareOptionsWithState}
             loading={optionsLoading}
             value={null}
+            inputValue={autocompleteInput}
+            onInputChange={(_, value, reason) => {
+              if (reason === "input") {
+                setAutocompleteInput(value);
+              } else if (reason === "clear") {
+                setAutocompleteInput("");
+              } else if (reason === "reset") {
+                setAutocompleteInput("");
+              }
+            }}
+            selectOnFocus
             onChange={(event, newValue) => {
               if (newValue && !newValue.isDisabled) {
+                setAutocompleteInput("");
                 const updatedNewShares = new Map(newShares);
                 const updatedPermissionChanges = new Map(permissionChanges);
 
