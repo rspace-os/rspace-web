@@ -495,17 +495,21 @@ $(document).on("click", "#shareRecord", function (e) {
     $(this).data("cloud") ||
     $(this).find("span").data("cloud");
 
+  if (/oldGallery/.test(window.location.href)) {
+    const selected = typeof getSelectedIdsNamesAndTypes === 'function' ? getSelectedIdsNamesAndTypes() : galleries_getSelectedIdsNamesAndTypes();
+    $('#share-dialog')
+          .data("isCloud", isCloud)
+          .data("selectedTypes", selected.types).data("publish-only", false)
+          .dialog("open");
+    
+    applyAutocomplete(".email");
+    applyGroupAutocomplete(3, ".externalGroupId");
+    return;
+  }
+  
   let selected;
   if (typeof getSelectedIdsNamesAndTypes === "function") {
     selected = getSelectedIdsNamesAndTypes();
-  } else if (/oldGallery/.test(window.location.href)) {
-    selected = { ids: [], names: [], types: [] };
-    $("input[class='inputCheckbox']:checked").each(function () {
-      var recordID = $(this).attr("data-recordid");
-      var name = $(this).attr("data-recordname");
-      selected.ids.push(recordID);
-      selected.names.push(name);
-    });
   }
 
   let globalIds;
@@ -514,8 +518,6 @@ $(document).on("click", "#shareRecord", function (e) {
     /notebookEditor/.test(window.location.href)
   ) {
     globalIds = [`SD${selected.ids[0]}`];
-  } else if (/oldGallery/.test(window.location.href)) {
-    globalIds = selected.ids.map((id) => `ST${id}`);
   } else {
     globalIds =
       typeof getSelectedGlobalIds === "function" ? getSelectedGlobalIds() : [];
