@@ -15,8 +15,10 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.TestPropertySource;
 
 /** Unit tests covering DevOps fixes. */
+@TestPropertySource(properties = {"rs.dev.unsafeMove.allowed=true"})
 public class DevOpsManagerTest extends SpringTransactionalTest {
 
   @Autowired private DevOpsManager devOpsMgr;
@@ -76,7 +78,6 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
         folderMgr.move(
             sharedSubfolder.getId(), pi.getRootFolder().getId(), groupFolder.getId(), pi);
     assertTrue(folderMoveResult.isSucceeded());
-
     sharedSubfolder = folderMgr.getFolder(sharedSubfolder.getId(), pi);
     assertTrue(sharedSubfolder.isSharedFolder());
     assertFalse(sharedSubfolder.isShared());

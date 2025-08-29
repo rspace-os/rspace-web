@@ -396,14 +396,22 @@ public class FolderManagerImpl implements FolderManager {
     return createNewNotebook(parentId, notebookName, context, subject, null);
   }
 
+  @Value("${rs.dev.unsafeMove.allowed}")
+  private String unsafeMoveAllowed;
+
   @Override
   public ServiceOperationResult<Folder> move(Long toMove, Long target, Long srcFolderId, User user)
       throws IllegalAddChildOperation {
-    Folder newparent = folderDao.get(target);
+    Folder newParent = folderDao.get(target);
     Folder oldParent = folderDao.get(srcFolderId);
     Folder original = getFolder(toMove, user);
-    boolean moved = original.move(oldParent, newparent, user);
-    recursiveSave(newparent);
+    boolean moved;
+    if ("true".equals(unsafeMoveAllowed)) {
+      moved = original.unsafeMove(oldParent, newParent, user);
+    } else {
+      moved = original.move(oldParent, newParent, user);
+    }
+    recursiveSave(newParent);
     folderDao.save(oldParent);
     return new ServiceOperationResult<Folder>(original, moved);
   }

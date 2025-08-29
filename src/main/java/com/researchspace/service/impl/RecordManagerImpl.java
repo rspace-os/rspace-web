@@ -102,6 +102,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
@@ -244,6 +245,9 @@ public class RecordManagerImpl implements RecordManager {
     return movePermissionChecker.checkMovePermissions(user, targetParent, original);
   }
 
+  @Value("${rs.dev.unsafeMove.allowed}")
+  private String unsafeMoveAllowed;
+
   public ServiceOperationResult<BaseRecord> move(
       Long id, Long targetParent, Long currParentId, User user) {
     Record toMove = get(id);
@@ -253,7 +257,12 @@ public class RecordManagerImpl implements RecordManager {
       if (!movePermissionChecker.checkMovePermissions(user, newparent, toMove)) {
         return new ServiceOperationResult<>(null, false);
       }
-      boolean moved = toMove.move(currparent, newparent, user);
+      boolean moved;
+      if ("true".equals(unsafeMoveAllowed)) {
+        moved = toMove.unsafeMove(currparent, newparent, user);
+      } else {
+        moved = toMove.move(currparent, newparent, user);
+      }
       if (moved) {
         if (currparent.isFolder()) {
           folderDao.save(currparent);

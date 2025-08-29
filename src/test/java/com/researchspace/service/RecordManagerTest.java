@@ -318,7 +318,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     long numb4InDB =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     anyForm = formDao.getAll().get(0);
-    Folder cf1 = root.getSubFolderByName(Folder.SHARED_FOLDER_NAME);
+    Folder cf1 = root.getSystemSubFolderByName(Folder.SHARED_FOLDER_NAME);
     String newName = "newname";
     Folder copied = folderMgr.copy(cf1.getId(), user, newName).getParentCopy();
     flushDatabaseState();
