@@ -2845,6 +2845,8 @@ paths:
             properties:
               chemical:
                 type: string
+                example: "C1=CC=CC=C1"
+                description: Representation of the reaction in a supported format e.g. SMILES
       responses:
         '200':
           description: Molecule info
