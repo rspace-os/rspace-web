@@ -12,6 +12,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.testutils.SpringTransactionalTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,11 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
   @Before
   public void setUp() throws Exception {
     super.setUp();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    super.tearDown();
   }
 
   @Test
