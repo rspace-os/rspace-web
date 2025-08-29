@@ -69,6 +69,11 @@ export default function useShare(): {
   createShare: (itemId: number, newShares: NewShare[]) => Promise<void>;
 
   /**
+   * Updates an existing share.
+   */
+  updateShare: (shareInfo: ShareInfo) => Promise<ShareInfo>;
+
+  /**
    * Deletes a single share by its ID.
    */
   deleteShare: (shareId: number) => Promise<void>;
@@ -186,6 +191,56 @@ export default function useShare(): {
     }
   }
 
+  async function updateShare(shareInfo: ShareInfo): Promise<ShareInfo> {
+    try {
+      const requestData: CreateShareRequest = {
+        itemsToShare: [shareInfo.sharedItemId],
+        users:
+          shareInfo.sharedTargetType === "USER"
+            ? [
+                {
+                  id: shareInfo.shareeId,
+                  permission: shareInfo.permission,
+                },
+              ]
+            : [],
+        groups:
+          shareInfo.sharedTargetType === "GROUP"
+            ? [
+                {
+                  id: shareInfo.shareeId,
+                  permission: shareInfo.permission,
+                  sharedFolderId: shareInfo.sharedToFolderId!,
+                },
+              ]
+            : [],
+      };
+
+      const { data } = await axios.put<ShareInfo>(
+        `/api/v1/share/${shareInfo.id}`,
+        requestData,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      return data;
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error updating share",
+          message: getErrorMessage(e, "An unknown error occurred."),
+        }),
+      );
+      throw new Error("Could not update share", {
+        cause: e,
+      });
+    }
+  }
+
   async function deleteShare(shareId: number): Promise<void> {
     try {
       await axios.delete(`/api/v1/share/${shareId}`, {
@@ -207,5 +262,11 @@ export default function useShare(): {
     }
   }
 
-  return { getShareInfo, getShareInfoForMultiple, createShare, deleteShare };
+  return {
+    getShareInfo,
+    getShareInfoForMultiple,
+    createShare,
+    updateShare,
+    deleteShare,
+  };
 }
