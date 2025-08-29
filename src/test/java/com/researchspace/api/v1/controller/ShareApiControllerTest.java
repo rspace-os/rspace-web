@@ -10,15 +10,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiShareInfo;
+import com.researchspace.api.v1.model.ApiSharingResult;
 import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.core.testutil.JavaxValidatorTest;
 import com.researchspace.dao.FolderDao;
+import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DetailedRecordInformation;
 import com.researchspace.model.record.Folder;
@@ -40,6 +43,7 @@ public class ShareApiControllerTest extends JavaxValidatorTest {
   @Mock RecordSharingManager recordShareMgr;
   @Mock DetailedRecordInformationProvider detailedRecordInformationProvider;
   @Mock FolderDao folderDao;
+  @Mock RecordGroupSharingDao recordGroupSharingDao;
 
   @InjectMocks ShareApiController controller;
   User sharer = TestFactory.createAnyUserWithRole("any", Role.PI_ROLE.getName());
@@ -263,5 +267,273 @@ public class ShareApiControllerTest extends JavaxValidatorTest {
             GroupSharePostItem.builder().id(2L).permission("READ").sharedFolderId(3L).build())
         .userSharePostItem(UserSharePostItem.builder().id(2L).permission("EDIT").build())
         .build();
+  }
+
+  // Tests for intelligent share updates
+
+  @Test
+  public void testUpdateSharePermissionOnlyForGroupShare() throws Exception {
+    Long shareId = 100L;
+    Long docId = 123L;
+    Long groupId = 456L;
+
+    // Create existing group share with READ permission
+    Group mockGroup = TestFactory.createAnyGroup(sharer, new User[] {});
+    mockGroup.setId(groupId);
+    BaseRecord mockRecord = mock(BaseRecord.class);
+    when(mockRecord.getId()).thenReturn(docId);
+
+    RecordGroupSharing existingShare = new RecordGroupSharing(mockGroup, mockRecord);
+    existingShare.setId(shareId);
+    existingShare.setSharedBy(sharer);
+
+    // Create update request changing permission to EDIT
+    SharePost updateRequest =
+        SharePost.builder()
+            .itemToShare(docId)
+            .groupSharePostItem(GroupSharePostItem.builder().id(groupId).permission("EDIT").build())
+            .build();
+
+    // Mock the service calls
+    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
+    when(recordShareMgr.updatePermissionForRecord(shareId, "EDIT", sharer.getUsername()))
+        .thenReturn(null); // null means no errors
+    when(recordShareMgr.get(shareId)).thenReturn(existingShare); // return updated share
+
+    // Perform the update
+    ApiSharingResult result =
+        controller.updateShare(
+            shareId,
+            updateRequest,
+            new org.springframework.validation.BeanPropertyBindingResult(
+                updateRequest, "sharePost"),
+            sharer);
+
+    // Verify result
+    assertNotNull(result);
+    assertEquals(1, result.getShareInfos().size());
+    assertEquals(0, result.getFailedShares().size());
+  }
+
+  @Test
+  public void testUpdateSharePermissionOnlyForUserShare() throws Exception {
+    Long shareId = 100L;
+    Long docId = 123L;
+    Long userId = 456L;
+
+    // Create existing user share with READ permission
+    User mockUser = TestFactory.createAnyUser("testuser");
+    mockUser.setId(userId);
+    BaseRecord mockRecord = mock(BaseRecord.class);
+    when(mockRecord.getId()).thenReturn(docId);
+
+    RecordGroupSharing existingShare = new RecordGroupSharing(mockUser, mockRecord);
+    existingShare.setId(shareId);
+    existingShare.setSharedBy(sharer);
+
+    // Create update request changing permission to EDIT
+    SharePost updateRequest =
+        SharePost.builder()
+            .itemToShare(docId)
+            .userSharePostItem(UserSharePostItem.builder().id(userId).permission("EDIT").build())
+            .build();
+
+    // Mock the service calls
+    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
+    when(recordShareMgr.updatePermissionForRecord(shareId, "EDIT", sharer.getUsername()))
+        .thenReturn(null); // null means no errors
+    when(recordShareMgr.get(shareId)).thenReturn(existingShare); // return updated share
+
+    // Perform the update
+    ApiSharingResult result =
+        controller.updateShare(
+            shareId,
+            updateRequest,
+            new org.springframework.validation.BeanPropertyBindingResult(
+                updateRequest, "sharePost"),
+            sharer);
+
+    // Verify result
+    assertNotNull(result);
+    assertEquals(1, result.getShareInfos().size());
+    assertEquals(0, result.getFailedShares().size());
+  }
+
+  @Test
+  public void testUpdateShareFolderLocationForGroupShare() throws Exception {
+    Long shareId = 100L;
+    Long docId = 123L;
+    Long groupId = 456L;
+    Long oldFolderId = 700L;
+    Long newFolderId = 800L;
+
+    // Create existing group share with old folder
+    Group mockGroup = TestFactory.createAnyGroup(sharer, new User[] {});
+    mockGroup.setId(groupId);
+    BaseRecord mockRecord = mock(BaseRecord.class);
+    when(mockRecord.getId()).thenReturn(docId);
+
+    Folder oldFolder = new Folder();
+    oldFolder.setId(oldFolderId);
+
+    RecordGroupSharing existingShare = new RecordGroupSharing(mockGroup, mockRecord);
+    existingShare.setId(shareId);
+    existingShare.setSharedBy(sharer);
+    existingShare.setTargetFolder(oldFolder);
+
+    // Create new target folder
+    Folder newFolder = new Folder();
+    newFolder.setId(newFolderId);
+    newFolder.setName("New Target Folder");
+
+    // Create update request changing folder location
+    SharePost updateRequest =
+        SharePost.builder()
+            .itemToShare(docId)
+            .groupSharePostItem(
+                GroupSharePostItem.builder()
+                    .id(groupId)
+                    .permission("READ")
+                    .sharedFolderId(newFolderId)
+                    .build())
+            .build();
+
+    // Mock the service calls
+    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
+    when(folderDao.get(newFolderId)).thenReturn(newFolder);
+    when(recordGroupSharingDao.save(existingShare)).thenReturn(existingShare);
+
+    // Perform the update
+    ApiSharingResult result =
+        controller.updateShare(
+            shareId,
+            updateRequest,
+            new org.springframework.validation.BeanPropertyBindingResult(
+                updateRequest, "sharePost"),
+            sharer);
+
+    // Verify result
+    assertNotNull(result);
+    assertEquals(1, result.getShareInfos().size());
+    assertEquals(0, result.getFailedShares().size());
+    assertEquals(newFolder, existingShare.getTargetFolder());
+  }
+
+  @Test
+  public void testUpdateSharePermissionError() throws Exception {
+    Long shareId = 100L;
+    Long docId = 123L;
+    Long groupId = 456L;
+
+    // Create existing group share
+    Group mockGroup = TestFactory.createAnyGroup(sharer, new User[] {});
+    mockGroup.setId(groupId);
+    BaseRecord mockRecord = mock(BaseRecord.class);
+    when(mockRecord.getId()).thenReturn(docId);
+
+    RecordGroupSharing existingShare = new RecordGroupSharing(mockGroup, mockRecord);
+    existingShare.setId(shareId);
+    existingShare.setSharedBy(sharer);
+
+    // Create update request
+    SharePost updateRequest =
+        SharePost.builder()
+            .itemToShare(docId)
+            .groupSharePostItem(GroupSharePostItem.builder().id(groupId).permission("EDIT").build())
+            .build();
+
+    // Mock service calls with error
+    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
+    ErrorList errorList = new ErrorList();
+    errorList.addErrorMsg("Permission update failed");
+    when(recordShareMgr.updatePermissionForRecord(shareId, "EDIT", sharer.getUsername()))
+        .thenReturn(errorList);
+
+    // Perform the update and expect exception
+    try {
+      controller.updateShare(
+          shareId,
+          updateRequest,
+          new org.springframework.validation.BeanPropertyBindingResult(updateRequest, "sharePost"),
+          sharer);
+      assertEquals("Expected IllegalArgumentException", true, false);
+    } catch (IllegalArgumentException e) {
+      assertEquals(true, e.getMessage().contains("Could not update permission"));
+    }
+  }
+
+  @Test
+  public void testUpdateShareNonExistentShare() throws Exception {
+    Long shareId = 999L;
+    Long docId = 123L;
+    Long groupId = 456L;
+
+    // Create update request
+    SharePost updateRequest =
+        SharePost.builder()
+            .itemToShare(docId)
+            .groupSharePostItem(GroupSharePostItem.builder().id(groupId).permission("EDIT").build())
+            .build();
+
+    // Mock service calls - share not found
+    when(recordShareMgr.get(shareId)).thenReturn(null);
+
+    // Perform the update and expect NotFoundException
+    try {
+      controller.updateShare(
+          shareId,
+          updateRequest,
+          new org.springframework.validation.BeanPropertyBindingResult(updateRequest, "sharePost"),
+          sharer);
+      assertEquals("Expected NotFoundException", true, false);
+    } catch (javax.ws.rs.NotFoundException e) {
+      assertEquals(true, e.getMessage().contains("Share with id 999 not found"));
+    }
+  }
+
+  @Test
+  public void testUpdateShareFolderNotFound() throws Exception {
+    Long shareId = 100L;
+    Long docId = 123L;
+    Long groupId = 456L;
+    Long nonExistentFolderId = 999L;
+
+    // Create existing group share
+    Group mockGroup = TestFactory.createAnyGroup(sharer, new User[] {});
+    mockGroup.setId(groupId);
+    BaseRecord mockRecord = mock(BaseRecord.class);
+    when(mockRecord.getId()).thenReturn(docId);
+
+    RecordGroupSharing existingShare = new RecordGroupSharing(mockGroup, mockRecord);
+    existingShare.setId(shareId);
+    existingShare.setSharedBy(sharer);
+
+    // Create update request with non-existent folder
+    SharePost updateRequest =
+        SharePost.builder()
+            .itemToShare(docId)
+            .groupSharePostItem(
+                GroupSharePostItem.builder()
+                    .id(groupId)
+                    .permission("READ")
+                    .sharedFolderId(nonExistentFolderId)
+                    .build())
+            .build();
+
+    // Mock the service calls - folder not found
+    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
+    when(folderDao.get(nonExistentFolderId)).thenReturn(null);
+
+    // Perform the update and expect exception
+    try {
+      controller.updateShare(
+          shareId,
+          updateRequest,
+          new org.springframework.validation.BeanPropertyBindingResult(updateRequest, "sharePost"),
+          sharer);
+      assertEquals("Expected IllegalArgumentException", true, false);
+    } catch (IllegalArgumentException e) {
+      assertEquals(true, e.getMessage().contains("Target folder with id 999 not found"));
+    }
   }
 }

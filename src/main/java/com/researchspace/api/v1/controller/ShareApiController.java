@@ -12,13 +12,14 @@ import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.FolderDao;
+import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.dtos.SharedRecordSearchCriteria;
-import com.researchspace.model.record.DetailedRecordInformation;
+import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.DetailedRecordInformationProvider;
@@ -26,6 +27,7 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +51,7 @@ public class ShareApiController extends BaseApiController implements ShareApi {
   private @Autowired RecordSharingManager recordShareMgr;
   @Autowired private DetailedRecordInformationProvider detailedRecordInformationProvider;
   @Autowired private FolderDao folderDao;
+  @Autowired private RecordGroupSharingDao recordGroupSharingDao;
 
   /** */
   @Override
@@ -112,12 +115,141 @@ public class ShareApiController extends BaseApiController implements ShareApi {
     throwBindExceptionIfErrors(errors);
 
     try {
-      recordShareHandler.unshare(id, user);
+      // Get the existing share
+      RecordGroupSharing existingShare = recordShareMgr.get(id);
+      if (existingShare == null) {
+        throw new NotFoundException(createNotFoundMessage("Share", id));
+      }
+
+      return performUpdate(existingShare, shareConfig, user);
     } catch (DataAccessException e) {
       throw new NotFoundException(createNotFoundMessage("Share", id), e);
     }
+  }
 
-    return shareItems(shareConfig, errors, user);
+  private ApiSharingResult performUpdate(
+      RecordGroupSharing existingShare, SharePost shareConfig, User user) {
+
+    // For permission updates only
+    if (isPermissionOnlyUpdate(existingShare, shareConfig)) {
+      return updatePermissionsOnly(existingShare, shareConfig, user);
+    }
+
+    // For folder location changes
+    if (isFolderLocationUpdate(existingShare, shareConfig)) {
+      return updateFolderLocation(existingShare, shareConfig, user);
+    }
+    return null;
+  }
+
+  /** Determines if this is a permission-only update */
+  private boolean isPermissionOnlyUpdate(RecordGroupSharing existingShare, SharePost shareConfig) {
+    // Check if we're updating exactly one sharee and only the permission changed
+    if (!shareConfig.getItemsToShare().contains(existingShare.getShared().getId())) {
+      return false;
+    }
+
+    if (existingShare.getSharee().isGroup()) {
+      GroupSharePostItem groupItem = shareConfig.getGroupSharePostItems().get(0);
+
+      boolean sameId = groupItem.getId().equals(existingShare.getSharee().getId());
+      boolean noSharedFolderId = groupItem.getSharedFolderId() == null;
+      boolean sharedFolderMatches =
+          existingShare.getTargetFolder() != null
+              && groupItem.getSharedFolderId().equals(existingShare.getTargetFolder().getId());
+
+      return sameId && (noSharedFolderId || sharedFolderMatches);
+    }
+
+    // For user shares
+    if (existingShare.getSharee().isUser()) {
+      UserSharePostItem userItem = shareConfig.getUserSharePostItems().get(0);
+      return userItem.getId().equals(existingShare.getSharee().getId());
+    }
+
+    return false;
+  }
+
+  private boolean isFolderLocationUpdate(RecordGroupSharing existingShare, SharePost shareConfig) {
+    if (!existingShare.getSharee().isGroup()) {
+      return false;
+    }
+
+    GroupSharePostItem groupItem = shareConfig.getGroupSharePostItems().get(0);
+    if (!groupItem.getId().equals(existingShare.getSharee().getId())
+        || shareConfig.getItemsToShare().size() != 1
+        || !shareConfig.getItemsToShare().contains(existingShare.getShared().getId())) {
+      return false;
+    }
+
+    // Check if only folder changed
+    Long currentFolderId =
+        existingShare.getTargetFolder() != null ? existingShare.getTargetFolder().getId() : null;
+    return !Objects.equals(currentFolderId, groupItem.getSharedFolderId());
+  }
+
+  /** Updates only the permission of an existing share */
+  private ApiSharingResult updatePermissionsOnly(
+      RecordGroupSharing existingShare, SharePost shareConfig, User user) {
+
+    String newPermission = extractNewPermission(shareConfig, existingShare);
+
+    ErrorList errors =
+        recordShareMgr.updatePermissionForRecord(
+            existingShare.getId(), newPermission.toUpperCase(), user.getUsername());
+
+    if (errors != null && errors.hasErrorMessages()) {
+      throw new IllegalArgumentException(
+          "Could not update permission: " + errors.getAllErrorMessagesAsStringsSeparatedBy(", "));
+    }
+
+    // Return updated share information
+    RecordGroupSharing updatedShare = recordShareMgr.get(existingShare.getId());
+    return new ApiSharingResult(List.of(new ApiShareInfo(updatedShare)), List.of());
+  }
+
+  /** Updates the folder location for group shares */
+  private ApiSharingResult updateFolderLocation(
+      RecordGroupSharing existingShare, SharePost shareConfig, User user) {
+
+    GroupSharePostItem groupItem = shareConfig.getGroupSharePostItems().get(0);
+    Long newFolderId = groupItem.getSharedFolderId();
+
+    try {
+      // Get the new target folder
+      Folder newTargetFolder = null;
+      if (newFolderId != null) {
+        newTargetFolder = folderDao.get(newFolderId);
+        if (newTargetFolder == null) {
+          throw new IllegalArgumentException("Target folder with id " + newFolderId + " not found");
+        }
+      }
+
+      // Update the target folder in the sharing record
+      existingShare.setTargetFolder(newTargetFolder);
+      recordGroupSharingDao.save(existingShare);
+
+      return new ApiSharingResult(List.of(new ApiShareInfo(existingShare)), List.of());
+
+    } catch (Exception e) {
+      log.error(
+          "Failed to update folder location for share {}: {}",
+          existingShare.getId(),
+          e.getMessage());
+      throw new IllegalArgumentException("Could not update folder location: " + e.getMessage());
+    }
+  }
+
+  /** Extracts the new permission from the share configuration */
+  private String extractNewPermission(SharePost shareConfig, RecordGroupSharing existingShare) {
+    if (existingShare.getSharee().isGroup() && !shareConfig.getGroupSharePostItems().isEmpty()) {
+      return shareConfig.getGroupSharePostItems().get(0).getPermission();
+    } else if (existingShare.getSharee().isUser()
+        && !shareConfig.getUserSharePostItems().isEmpty()) {
+      return shareConfig.getUserSharePostItems().get(0).getPermission();
+    }
+    throw new IllegalArgumentException(
+        "Could not determine new permission from share configuration");
   }
 
   @Override
