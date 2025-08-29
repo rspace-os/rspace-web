@@ -523,6 +523,8 @@ const ShareDialog = () => {
       }
 
       handleClose();
+      // @ts-ignore
+      getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
     } catch (error) {
       console.error("Failed to save shares:", error);
     } finally {
