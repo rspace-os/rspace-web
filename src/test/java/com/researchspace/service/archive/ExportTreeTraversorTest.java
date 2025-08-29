@@ -91,6 +91,7 @@ public class ExportTreeTraversorTest {
     // ignore system folders
     f1.addType(RecordType.SYSTEM);
     f1.setName(Folder.SHARED_FOLDER_NAME);
+    f1.setSystemFolder(true);
     f1.process(traversor);
     // f1 not processed, and neither are children
     assertEquals(0, folderTreeSize());
