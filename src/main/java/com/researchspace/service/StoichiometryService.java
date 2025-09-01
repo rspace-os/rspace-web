@@ -8,8 +8,6 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 
 public interface StoichiometryService {
 
-  Stoichiometry getByParentChemical(long chemId, Integer revision, User user);
-
   StoichiometryDTO getById(long stoichiometryId, Long revision, User user);
 
   Stoichiometry create(long chemId, Integer revision, User user);

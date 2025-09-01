@@ -13,12 +13,6 @@ public interface StoichiometryApi {
   StoichiometryMoleculeDTO getMoleculeInfo(@RequestBody ChemicalDTO chemicalDTO);
 
   @GetMapping
-  StoichiometryDTO getStoichiometry(
-      @RequestParam("chemId") long chemId,
-      @RequestParam(value = "revision", required = false) Integer revision,
-      @RequestAttribute(name = "user") User user);
-
-  @GetMapping("/byId")
   StoichiometryDTO getStoichiometryById(
       @RequestParam("stoichiometryId") long stoichiometryId,
       @RequestParam(value = "revision", required = false) Long revision,

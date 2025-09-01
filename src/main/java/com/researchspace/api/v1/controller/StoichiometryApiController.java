@@ -34,12 +34,6 @@ public class StoichiometryApiController extends BaseApiController implements Sto
   }
 
   @Override
-  public StoichiometryDTO getStoichiometry(long chemId, Integer revision, User user) {
-    Stoichiometry stoichiometry = stoichiometryService.getByParentChemical(chemId, revision, user);
-    return StoichiometryMapper.toDTO(stoichiometry);
-  }
-
-  @Override
   public StoichiometryDTO getStoichiometryById(long stoichiometryId, Long revision, User user) {
     return stoichiometryService.getById(stoichiometryId, revision, user);
   }

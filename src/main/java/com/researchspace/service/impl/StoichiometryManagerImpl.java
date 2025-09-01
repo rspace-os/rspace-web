@@ -18,7 +18,6 @@ import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.chemistry.StoichiometryException;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -122,7 +121,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
     Set<Long> keepIds = processUpdates(stoichiometry, stoichiometryUpdate.getMolecules(), user);
 
     removeMoleculesNotInKeep(stoichiometry.getMolecules(), keepIds);
-    stoichiometry.setLastModified(new Date()); // trigger audit
+    stoichiometry.touchForAudit();
     return save(stoichiometry);
   }
 

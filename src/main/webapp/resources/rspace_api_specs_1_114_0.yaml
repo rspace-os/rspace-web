@@ -2678,49 +2678,7 @@ paths:
                 example: "PubChem API timeout or connection error"
 
   /stoichiometry:
-    get:
-      summary: Get stoichiometry for a chemical
-      tags:
-        - Chemistry
-      parameters:
-        - name: chemId
-          in: query
-          required: true
-          type: integer
-          format: int64
-        - name: revision
-          in: query
-          required: false
-          type: integer
-      responses:
-        '200':
-          description: Stoichiometry
-          schema:
-            $ref: '#/definitions/StoichiometryDTO'
-        '401':
-          description: You should have view permissions on the document containing the stoichiometry table.
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "User does not have read permissions on document containing stoichiometry"
-        '404':
-          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "No stoichiometry found for chemical with id 1 and revision 2"
-        '500':
-          description: An issue while retrieving the stoichiometry.
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Error retrieving stoichiometry."
+
     post:
       summary: Create stoichiometry for a chemical
       tags:
@@ -2868,14 +2826,14 @@ paths:
               message:
                 type: string
                 example: "Couldn't retrieve molecule info for provided structure"
-  /stoichiometry/{stoichiometryId}:
+  /stoichiometry/byId:
     get:
       summary: Get stoichiometry by ID with optional revision
       tags:
         - Chemistry
       parameters:
         - name: stoichiometryId
-          in: path
+          in: query
           required: true
           type: integer
           format: int64

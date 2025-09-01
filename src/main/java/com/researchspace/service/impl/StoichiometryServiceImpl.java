@@ -59,22 +59,6 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   }
 
   @Override
-  public Stoichiometry getByParentChemical(long chemId, Integer revision, User user) {
-    Optional<Stoichiometry> stoichiometryOpt = stoichiometryManager.findByParentReactionId(chemId);
-    if (stoichiometryOpt.isEmpty()) {
-      String message =
-          String.format(
-              "No stoichiometry found for chemical with id %s and revision %s", chemId, revision);
-      throw new NotFoundException(message);
-    } else if (!hasPermissions(
-        stoichiometryOpt.get().getParentReaction().getRecord(), user, PermissionType.READ)) {
-      throw new AuthorizationException(
-          "User does not have read permissions on document containing stoichiometry");
-    }
-    return stoichiometryOpt.get();
-  }
-
-  @Override
   @Transactional
   public StoichiometryDTO getById(long stoichiometryId, Long revision, User user) {
     AuditedEntity<Stoichiometry> stoichiometryRevision =
