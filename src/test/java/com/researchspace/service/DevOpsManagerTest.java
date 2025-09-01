@@ -57,7 +57,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
     User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
     User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
     initialiseContentWithEmptyContent(pi, user);
-    Group group = createGroup("g1", pi);
+    Group group = createGroup(getRandomAlphabeticString("g1"), pi);
     addUsersToGroup(pi, group, user);
 
     // create shared subfolder with content shared by  pi and user
