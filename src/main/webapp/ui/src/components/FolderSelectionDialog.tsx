@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import FolderTree from "./FolderTree";
-import useFolders, { type FolderTreeNode } from "../hooks/api/useFolders";
+import { type FolderTreeNode } from "../hooks/api/useFolders";
 
 type FolderSelectionDialogProps = {
   open: boolean;

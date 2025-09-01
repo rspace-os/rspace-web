@@ -148,7 +148,7 @@ const TreeItemContent = ({
       try {
         const response = await getFolderTree({
           id: folder.id,
-          typesToInclude: "folder",
+          typesToInclude: new Set(["folder", "notebook"]),
           pageNumber,
         });
 
@@ -292,7 +292,7 @@ export default function FolderTree({
       setError(false);
       try {
         const response = await getFolderTree({
-          typesToInclude: "folder",
+          typesToInclude: new Set(["folder", "notebook"]),
           pageNumber,
         });
 

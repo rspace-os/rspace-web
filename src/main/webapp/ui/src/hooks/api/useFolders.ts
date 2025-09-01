@@ -80,7 +80,7 @@ type InternalFolderTreeResponse = {
 export default function useFolders(): {
   getFolderTree: (options: {
     id?: number;
-    typesToInclude?: "document" | "notebook" | "folder";
+    typesToInclude?: Set<"document" | "notebook" | "folder">;
     pageNumber?: number;
     pageSize?: number;
   }) => Promise<FolderTreeResponse>;
@@ -102,7 +102,7 @@ export default function useFolders(): {
       pageSize = 20,
     }: {
       id?: number;
-      typesToInclude?: "document" | "notebook" | "folder";
+      typesToInclude?: Set<"document" | "notebook" | "folder">;
       pageNumber?: number;
       pageSize?: number;
     }): Promise<FolderTreeResponse> => {
@@ -113,7 +113,7 @@ export default function useFolders(): {
 
         const params = new URLSearchParams();
         if (typesToInclude) {
-          params.append("typesToInclude", typesToInclude);
+          params.append("typesToInclude", [...typesToInclude].join(","));
         }
         if (pageNumber !== undefined) {
           params.append("pageNumber", pageNumber.toString());

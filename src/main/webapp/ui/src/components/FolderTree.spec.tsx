@@ -95,7 +95,7 @@ const feature = test.extend<{
             const url = new URL(route.request().url());
             const typesToInclude = url.searchParams.get("typesToInclude");
 
-            if (typesToInclude === "folder") {
+            if (/folder/.test(typesToInclude ?? "")) {
               await route.fulfill({
                 status: 200,
                 contentType: "application/json",
