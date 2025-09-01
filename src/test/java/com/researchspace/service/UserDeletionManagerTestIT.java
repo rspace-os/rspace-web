@@ -608,7 +608,6 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     stoichiometry.addMolecule(molecule);
     stoichiometryMgr.save(stoichiometry);
 
-    // Now attempt to delete the user
     User sysadmin = logoutAndLoginAsSysAdmin();
     UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> result =
