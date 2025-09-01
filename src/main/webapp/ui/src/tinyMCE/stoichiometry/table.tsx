@@ -220,22 +220,72 @@ export function calculateUpdatedMolecules(
   }
 
   if (beforeMolecule.mass !== editedRow.mass) {
-    return updateYieldAndExcess(
-      applyChanges({
-        mass: editedRow.mass,
-      }),
-    );
+    if (editedRow.limitingReagent) {
+      const limitingReagent = allMolecules.find((m) => m.limitingReagent);
+      if (!limitingReagent) throw new Error("No limiting reagent defined");
+      const limitingReagentMoles = calculateMoles(
+        editedRow.mass,
+        limitingReagent.molecularWeight,
+      );
+      const ratio =
+        limitingReagentMoles === null
+          ? null
+          : limitingReagentMoles / limitingReagent.coefficient;
+      return updateYieldAndExcess(
+        applyChanges(
+          {
+            mass: editedRow.mass,
+          },
+          allMolecules.map((m) => ({
+            ...m,
+            ...(ratio === null
+              ? {}
+              : {
+                  mass: m.coefficient * ratio * m.molecularWeight,
+                }),
+          })),
+        ),
+      );
+    } else {
+      return updateYieldAndExcess(
+        applyChanges({
+          mass: editedRow.mass,
+        }),
+      );
+    }
   }
 
   if (editedRow.moles !== null) {
-    return updateYieldAndExcess(
-      applyChanges({
-        mass:
-          editedRow.moles === null
-            ? null
-            : editedRow.moles * beforeMolecule.molecularWeight,
-      }),
-    );
+    if (editedRow.limitingReagent) {
+      const limitingReagent = allMolecules.find((m) => m.limitingReagent);
+      if (!limitingReagent) throw new Error("No limiting reagent defined");
+      const limitingReagentMoles = editedRow.moles;
+      const ratio =
+        limitingReagentMoles === null
+          ? null
+          : limitingReagentMoles / limitingReagent.coefficient;
+      return updateYieldAndExcess(
+        applyChanges(
+          {
+            mass: editedRow.moles * beforeMolecule.molecularWeight,
+          },
+          allMolecules.map((m) => ({
+            ...m,
+            ...(ratio === null
+              ? {}
+              : {
+                  mass: m.coefficient * ratio * m.molecularWeight,
+                }),
+          })),
+        ),
+      );
+    } else {
+      return updateYieldAndExcess(
+        applyChanges({
+          mass: editedRow.moles * beforeMolecule.molecularWeight,
+        }),
+      );
+    }
   }
 
   if (beforeMolecule.actualAmount !== editedRow.actualAmount) {
