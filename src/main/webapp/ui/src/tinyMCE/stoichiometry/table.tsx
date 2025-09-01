@@ -153,9 +153,9 @@ function normaliseCoefficients(
  *
  * This function handles:
  * - Storing changes to notes
- * - Update mass when mass is changed
+ * - Update moles when mass is changed
  * - Update mass when moles are changed
- * - Update actual amount when actual amount is changed
+ * - Update actual moles when actual amount is changed
  * - Update actual amount when actual moles are changed
  * - Update limiting reagent when it is changed, normalising coefficients
  * - Update coefficients when they are changed, normalising coefficients
