@@ -79,7 +79,10 @@ function calculateActualYieldOrExcess(
       return null;
     }
     return molecule.actualAmount / theoreticalMass;
-  } else if (molecule.role === "REACTANT" && !molecule.limitingReagent) {
+  } else if (
+    (molecule.role === "REACTANT" || molecule.role === "AGENT") &&
+    !molecule.limitingReagent
+  ) {
     // For non-limiting reactants, calculate excess using molar ratio formula
     if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
       return null;
@@ -721,7 +724,7 @@ const StoichiometryTable = React.forwardRef<
         const newMolecule: EditableMolecule = {
           id: tempId,
           rsChemElement: mockRsChemElement,
-          role: "agent",
+          role: "AGENT",
           formula: moleculeInfo.formula,
           name: name,
           smiles: smilesString,
