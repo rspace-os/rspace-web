@@ -15,13 +15,7 @@ import Radio from "@mui/material/Radio";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
-import {
-  darken,
-  lighten,
-  styled,
-  ThemeProvider,
-  useTheme,
-} from "@mui/material/styles";
+import { lighten, styled, ThemeProvider, useTheme } from "@mui/material/styles";
 import useStoichiometry, {
   type StoichiometryResponse,
   type StoichiometryMolecule,
@@ -67,7 +61,7 @@ export function calculateMoles(
   if (mass === null || molecularWeight === null || molecularWeight <= 0) {
     return null;
   }
-  return roundToThreeDecimals(mass / molecularWeight);
+  return mass / molecularWeight;
 }
 
 function calculateActualYieldOrExcess(
@@ -84,17 +78,17 @@ function calculateActualYieldOrExcess(
     if (theoreticalMass <= 0) {
       return null;
     }
-    return roundToThreeDecimals(molecule.actualAmount / theoreticalMass);
+    return molecule.actualAmount / theoreticalMass;
   } else if (molecule.role === "REACTANT" && !molecule.limitingReagent) {
     // For non-limiting reactants, calculate excess using molar ratio formula
     if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
       return null;
     }
-    return roundToThreeDecimals(
+    return (
       (calculateMoles(molecule.actualAmount, molecule.molecularWeight) ?? 0) /
         molecule.coefficient /
         limitingReagentMoles -
-        1,
+      1
     );
   }
   return null;
@@ -138,9 +132,7 @@ function normaliseCoefficients(
 
   return molecules.map((molecule) => ({
     ...molecule,
-    coefficient: roundToThreeDecimals(
-      molecule.coefficient / limitingCoefficient,
-    ),
+    coefficient: molecule.coefficient / limitingCoefficient,
   }));
 }
 
@@ -238,9 +230,7 @@ export function calculateUpdatedMolecules(
         mass:
           editedRow.moles === null
             ? null
-            : roundToThreeDecimals(
-                editedRow.moles * beforeMolecule.molecularWeight,
-              ),
+            : editedRow.moles * beforeMolecule.molecularWeight,
       }),
     );
   }
@@ -259,9 +249,7 @@ export function calculateUpdatedMolecules(
         actualAmount:
           editedRow.actualMoles === null
             ? null
-            : roundToThreeDecimals(
-                editedRow.actualMoles * beforeMolecule.molecularWeight,
-              ),
+            : editedRow.actualMoles * beforeMolecule.molecularWeight,
       }),
     );
   }
@@ -840,6 +828,7 @@ const StoichiometryTable = React.forwardRef<
         flex: 1.2,
         type: "number",
         headerAlign: "left",
+        renderCell: (params) => roundToThreeDecimals(params.value),
       },
     ),
     DataGridColumn.newColumnWithFieldName<"mass", EditableMolecule>("mass", {
@@ -855,7 +844,8 @@ const StoichiometryTable = React.forwardRef<
         return editable;
       },
       type: "number",
-      renderCell: (params) => params.value ?? <>&#8212;</>,
+      renderCell: (params) =>
+        roundToThreeDecimals(params.value) ?? <>&#8212;</>,
       cellClassName: (params) => {
         if (limitingReagent && params.id !== limitingReagent.id) {
           return "stoichiometry-disabled-cell";
@@ -883,7 +873,8 @@ const StoichiometryTable = React.forwardRef<
           return editable;
         },
         type: "number",
-        renderCell: (params) => params.value ?? <>&#8212;</>,
+        renderCell: (params) =>
+          roundToThreeDecimals(params.value) ?? <>&#8212;</>,
         cellClassName: (params) => {
           if (limitingReagent && params.id !== limitingReagent.id) {
             return "stoichiometry-disabled-cell";
@@ -901,7 +892,8 @@ const StoichiometryTable = React.forwardRef<
         headerAlign: "left",
         editable: editable,
         type: "number",
-        renderCell: (params) => params.value ?? <>&mdash;</>,
+        renderCell: (params) =>
+          roundToThreeDecimals(params.value) ?? <>&mdash;</>,
       },
     ),
     DataGridColumn.newColumnWithValueGetter<
@@ -926,7 +918,11 @@ const StoichiometryTable = React.forwardRef<
           return editable;
         },
         renderCell: (params) => {
-          return params.value !== null ? params.value : <>&mdash;</>;
+          return params.value !== null ? (
+            roundToThreeDecimals(params.value)
+          ) : (
+            <>&mdash;</>
+          );
         },
       },
     ),
@@ -946,7 +942,7 @@ const StoichiometryTable = React.forwardRef<
           }
           const value = params.value;
           return value !== null && value !== undefined ? (
-            `${value * 100}%`
+            `${roundToThreeDecimals(value) * 100}%`
           ) : (
             <>&#8212;</>
           );
