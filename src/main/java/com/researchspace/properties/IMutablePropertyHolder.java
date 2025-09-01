@@ -67,4 +67,7 @@ public interface IMutablePropertyHolder extends IPropertyHolder {
   void setJoveApiUrl(String joveApiUrl);
 
   void setJoveApiKey(String joveApiKey);
+
+  void setRsDevUnsafeMoveAllowed(String unsafeMoveAllowed);
+
 }

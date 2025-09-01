@@ -11,20 +11,27 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.TestPropertySource;
 
 /** Unit tests covering DevOps fixes. */
-@TestPropertySource(properties = "rs.dev.unsafeMove.allowed=true")
 public class DevOpsManagerTest extends SpringTransactionalTest {
 
   @Autowired private DevOpsManager devOpsMgr;
+
+  @Before
+  public void setUp() throws Exception {
+    super.setUp();
+    propertyHolder.setRsDevUnsafeMoveAllowed("true");
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    propertyHolder.setRsDevUnsafeMoveAllowed("false");
+  }
 
   @Test
   public void checkRecordFixNoProblemFound() {
