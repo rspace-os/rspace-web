@@ -113,6 +113,104 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
   }
 
   @Test
+  public void testGetStoichiometryByIdWithoutRevisionGetsLatest() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+    Field docField = doc1.getFields().get(0);
+
+    RSChemElement reaction = addReactionToField(docField, user);
+    MvcResult createResult = createStoichiometry(reaction);
+
+    StoichiometryDTO createdStoichiometry =
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+
+    MvcResult getResult =
+        mockMvc
+            .perform(
+                get(URL + "/byId")
+                    .param("stoichiometryId", createdStoichiometry.getId().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StoichiometryDTO retrievedStoichiometry =
+        getFromJsonResponseBody(getResult, StoichiometryDTO.class);
+    assertEquals(createdStoichiometry.getId(), retrievedStoichiometry.getId());
+    assertEquals(reaction.getId(), retrievedStoichiometry.getParentReactionId());
+  }
+
+  @Test
+  public void testCreateUpdateAndGetOriginalRevisionStoichiometry() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+    Field docField = doc1.getFields().get(0);
+
+    RSChemElement reaction = addReactionToField(docField, user);
+
+    // Create stoichiometry v1
+    MvcResult createResult = createStoichiometry(reaction);
+    StoichiometryDTO originalStoichiometry =
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+
+    StoichiometryMoleculeDTO originalMolecule = originalStoichiometry.getMolecules().get(0);
+    Double originalCoefficient = originalMolecule.getCoefficient();
+    Double originalMass = originalMolecule.getMass();
+    String originalNotes = originalMolecule.getNotes();
+
+    // Update stoichiometry to create a new revision
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(originalStoichiometry.getId());
+
+    StoichiometryMoleculeUpdateDTO updatedMolecule = new StoichiometryMoleculeUpdateDTO();
+    updatedMolecule.setId(originalMolecule.getId());
+    updatedMolecule.setCoefficient(5.0);
+    updatedMolecule.setMass(250.0);
+    updatedMolecule.setNotes("Updated in test");
+    updateDTO.setMolecules(List.of(updatedMolecule));
+
+    // Perform update
+    MvcResult updateResult =
+        mockMvc
+            .perform(
+                put(URL)
+                    .param("stoichiometryId", originalStoichiometry.getId().toString())
+                    .contentType(APPLICATION_JSON)
+                    .content(new ObjectMapper().writeValueAsString(updateDTO))
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StoichiometryDTO updateResponse = getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
+
+    // Verify update response
+    StoichiometryMoleculeDTO updatedMol = updateResponse.getMolecules().get(0);
+    assertEquals(5.0, updatedMol.getCoefficient());
+    assertEquals(250.0, updatedMol.getMass());
+    assertEquals("Updated in test", updatedMol.getNotes());
+
+    // Retrieve original version
+    MvcResult getOriginalResult =
+        mockMvc
+            .perform(
+                get(URL + "/byId")
+                    .param("stoichiometryId", originalStoichiometry.getId().toString())
+                    .param("revision", originalStoichiometry.getRevision().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StoichiometryDTO retrievedOriginal =
+        getFromJsonResponseBody(getOriginalResult, StoichiometryDTO.class);
+
+    // Verify retrieved is the original version
+    StoichiometryMoleculeDTO retrievedOriginalMol = retrievedOriginal.getMolecules().get(0);
+    assertEquals(originalCoefficient, retrievedOriginalMol.getCoefficient());
+    assertEquals(originalMass, retrievedOriginalMol.getMass());
+    assertEquals(originalNotes, retrievedOriginalMol.getNotes());
+  }
+
+  @Test
   public void testSaveStoichiometryAlreadyExists() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field docField = doc1.getFields().get(0);

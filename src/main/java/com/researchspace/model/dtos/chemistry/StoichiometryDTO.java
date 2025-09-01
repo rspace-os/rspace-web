@@ -13,5 +13,6 @@ import lombok.NoArgsConstructor;
 public class StoichiometryDTO {
   private Long id;
   private Long parentReactionId;
+  private Long revision;
   private List<StoichiometryMoleculeDTO> molecules;
 }

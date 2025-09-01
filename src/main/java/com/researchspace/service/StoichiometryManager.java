@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
@@ -19,4 +20,6 @@ public interface StoichiometryManager extends GenericManager<Stoichiometry, Long
 
   Stoichiometry copyForReaction(
       Long sourceParentReactionId, RSChemElement newParentReaction, User user);
+
+  AuditedEntity<Stoichiometry> getRevision(long id, Long revisionId, User user);
 }

@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.dao.StoichiometryDao;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
@@ -10,12 +11,14 @@ import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
+import com.researchspace.service.AuditManager;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.chemistry.StoichiometryException;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,28 +30,40 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
+@Transactional // todo: needed?
 public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, Long>
     implements StoichiometryManager {
 
   private final StoichiometryDao stoichiometryDao;
   private final RSChemElementManager rsChemElementManager;
   private final ChemicalSearcher chemicalSearcher;
+  private final AuditManager auditManager;
 
   @Autowired
   public StoichiometryManagerImpl(
       StoichiometryDao stoichiometryDao,
       RSChemElementManager rsChemElementManager,
-      ChemicalSearcher chemicalSearcher) {
+      ChemicalSearcher chemicalSearcher,
+      AuditManager auditManager) {
     super(stoichiometryDao);
     this.stoichiometryDao = stoichiometryDao;
     this.rsChemElementManager = rsChemElementManager;
     this.chemicalSearcher = chemicalSearcher;
+    this.auditManager = auditManager;
   }
 
   @Override
   public Optional<Stoichiometry> findByParentReactionId(Long parentReactionId) {
     return stoichiometryDao.findByParentReactionId(parentReactionId);
+  }
+
+  @Override
+  @Transactional(readOnly = true) // todo: needeed?
+  public AuditedEntity<Stoichiometry> getRevision(long id, Long revision, User user) {
+    if (revision == null) {
+      return auditManager.getNewestRevisionForEntity(Stoichiometry.class, id);
+    }
+    return auditManager.getObjectForRevision(Stoichiometry.class, id, revision);
   }
 
   @Override
@@ -104,11 +119,10 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       throw new StoichiometryException(
           "Stoichiometry not found with ID: " + stoichiometryUpdate.getId());
     }
-
     Set<Long> keepIds = processUpdates(stoichiometry, stoichiometryUpdate.getMolecules(), user);
 
     removeMoleculesNotInKeep(stoichiometry.getMolecules(), keepIds);
-
+    stoichiometry.setLastModified(new Date()); // trigger audit
     return save(stoichiometry);
   }
 
