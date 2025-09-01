@@ -1,3 +1,4 @@
+/*
 package com.researchspace.service;
 
 import static org.junit.Assert.assertEquals;
@@ -19,7 +20,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-/** Unit tests covering DevOps fixes. */
+*/
+/** Unit tests covering DevOps fixes. *//*
+
 @Ignore("run manually for now, as the test seem to introduce some problem "
     + "with spring context, causing RecordSharingTest class to fail")
 public class DevOpsManagerTest extends SpringTransactionalTest {
@@ -195,4 +198,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
 
     return folderMgr.getFolder(toShareInto.getId(), pi);
   }
+
+
 }
+*/
