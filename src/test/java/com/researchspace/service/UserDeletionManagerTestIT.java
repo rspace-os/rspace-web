@@ -585,21 +585,14 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "Chemistry doc");
 
-    RSChemElement chemElement =
-        RSChemElement.builder()
-            .chemElements("CCO")
-            .record(doc)
-            .build();
+    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
     chemElement = rsChemElementMgr.save(chemElement, userToDelete);
 
     Stoichiometry stoichiometry = Stoichiometry.builder().parentReaction(chemElement).build();
     stoichiometry = stoichiometryMgr.save(stoichiometry);
 
     RSChemElement moleculeChemElement =
-        RSChemElement.builder()
-            .chemElements("C2H6O")
-            .record(doc)
-            .build();
+        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
     moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, userToDelete);
 
     StoichiometryMolecule molecule =
