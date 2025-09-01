@@ -539,28 +539,19 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               },
             },
             containedCallToAction: {
-              border: `2px solid ${
-                prefersMoreContrast
-                  ? "black"
-                  : (
-                      baseTheme.palette
-                        .callToAction as SimplePaletteColorOptions
-                    ).main
-              }`,
+              border: "none",
+              paddingTop: baseTheme.spacing(0.5),
+              paddingBottom: baseTheme.spacing(0.5),
               backgroundColor: prefersMoreContrast
                 ? "black"
                 : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
                     .main,
-              color: (
-                baseTheme.palette.callToAction as SimplePaletteColorOptions
-              ).contrastText,
+              color: prefersMoreContrast
+                ? "white"
+                : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
+                    .contrastText,
               "&:hover": {
-                borderColor: (
-                  baseTheme.palette.callToAction as SimplePaletteColorOptions
-                ).main,
-              },
-              [`&.${buttonClasses.disabled}`]: {
-                borderColor: darken(disabledColor, 0.1),
+                backgroundColor: prefersMoreContrast ? "black" : null,
               },
             },
             containedPrimary: {

@@ -38,6 +38,12 @@ public class ShareConfigElement {
     this.operation = operation;
   }
 
+  public ShareConfigElement(Long groupId, Long groupFolderId, String operation) {
+    this.groupid = groupId;
+    this.groupFolderId = groupFolderId;
+    this.operation = operation;
+  }
+
   /**
    * Alternate constructor that will set user or group id properly depending on the
    *

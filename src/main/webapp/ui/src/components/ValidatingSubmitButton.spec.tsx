@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
-import { ProgressExample, SimpleExample } from "./ValidatingSubmitButton.story";
+import {
+  ProgressExample,
+  SimpleExample,
+  HighContrastExample,
+} from "./ValidatingSubmitButton.story";
 import AxeBuilder from "@axe-core/playwright";
 
 const createOnClickSpy = () => {
@@ -26,6 +30,9 @@ const feature = test.extend<{
     "the ValidatingSubmitButton with progress is rendered": () => Promise<{
       onClickSpy: ReturnType<typeof createOnClickSpy>;
     }>;
+    "the ValidatingSubmitButton with high contrast is rendered": () => Promise<{
+      onClickSpy: ReturnType<typeof createOnClickSpy>;
+    }>;
   };
   When: {
     "the loading state is triggered": () => Promise<void>;
@@ -47,6 +54,7 @@ const feature = test.extend<{
     "the progress indicator should disappear after completion": () => Promise<void>;
     "the button should have the label 'Submit'": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
+    "there shouldn't be any contrast violations at AAA level": () => Promise<void>;
     "the button should have type 'submit'": () => Promise<void>;
     "the validation error popover should contain a warning alert with the correct aria-label": () => Promise<void>;
   };
@@ -61,6 +69,11 @@ const feature = test.extend<{
       "the ValidatingSubmitButton with progress is rendered": async () => {
         const onClickSpy = createOnClickSpy();
         await mount(<ProgressExample onClick={onClickSpy.handler} />);
+        return { onClickSpy };
+      },
+      "the ValidatingSubmitButton with high contrast is rendered": async () => {
+        const onClickSpy = createOnClickSpy();
+        await mount(<HighContrastExample onClick={onClickSpy.handler} />);
         return { onClickSpy };
       },
     });
@@ -139,12 +152,41 @@ const feature = test.extend<{
               v.id !== "page-has-heading-one" &&
               v.id !== "region"
             );
-          })
+          }),
         ).toEqual([]);
+      },
+      "there shouldn't be any contrast violations at AAA level": async () => {
+        /*
+         * The MUI Button ripple disrupts Axe from being able to properly
+         * determine the contrast of the button text. We remove it here
+         * before performing the analysis.
+         */
+        await page.evaluate(() => {
+          const button = Array.from(document.querySelectorAll("button")).find(
+            (btn) => btn.textContent === "Submit",
+          );
+          if (!button) return;
+          const ripple = button.querySelector(".MuiTouchRipple-root");
+          if (ripple) {
+            ripple.remove();
+          }
+        });
+
+        const { violations } = await new AxeBuilder({
+          page,
+        })
+          /*
+           * We need to assert both because color-contrast-enhanced only
+           * checks for elements that already meet AA, whereas color-contrast
+           * checks all elements. We want to ensure that all elements meet AAA.
+           */
+          .withRules(["color-contrast", "color-contrast-enhanced"])
+          .analyze();
+        expect(violations).toEqual([]);
       },
       "the button should have type 'submit'": async () => {
         await expect(
-          page.getByRole("button", { name: /Submit/ })
+          page.getByRole("button", { name: /Submit/ }),
         ).toHaveAttribute("type", "submit");
       },
       "the validation error popover should contain a warning alert with the correct aria-label":
@@ -173,7 +215,7 @@ test.describe("ValidatingSubmitButton", () => {
       await Given["the ValidatingSubmitButton is rendered"]();
       await When["the loading state is triggered"]();
       await Then["the button should be disabled"]();
-    }
+    },
   );
 
   feature(
@@ -181,7 +223,7 @@ test.describe("ValidatingSubmitButton", () => {
     async ({ Given, Then }) => {
       await Given["the ValidatingSubmitButton is rendered"]();
       await Then["the button should be enabled"]();
-    }
+    },
   );
 
   feature(
@@ -191,7 +233,7 @@ test.describe("ValidatingSubmitButton", () => {
       await When["an invalid state is triggered"]();
       await When["the user clicks the button"]();
       await Then["the validation error popover should be visible"]();
-    }
+    },
   );
 
   feature(
@@ -200,20 +242,19 @@ test.describe("ValidatingSubmitButton", () => {
       await Given["the ValidatingSubmitButton is rendered"]();
       await When["the user clicks the button"]();
       await Then["the validation error popover should not be visible"]();
-    }
+    },
   );
 
   feature(
     "When validation passes, the onClick handler should be called",
     async ({ Given, When, Then }) => {
-      const { onClickSpy } = await Given[
-        "the ValidatingSubmitButton is rendered"
-      ]();
+      const { onClickSpy } =
+        await Given["the ValidatingSubmitButton is rendered"]();
       await When["the user clicks the button"]();
       Then["the {onClickSpy} should have been triggered"]({
         onClickSpy,
       });
-    }
+    },
   );
 
   test.describe("Progress prop", () => {
@@ -222,7 +263,7 @@ test.describe("ValidatingSubmitButton", () => {
       async ({ Given, Then }) => {
         await Given["the ValidatingSubmitButton is rendered"]();
         await Then["the progress indicator should not be visible"]();
-      }
+      },
     );
 
     feature(
@@ -231,7 +272,7 @@ test.describe("ValidatingSubmitButton", () => {
         await Given["the ValidatingSubmitButton with progress is rendered"]();
         await When["the user clicks the button"]();
         await Then["the progress indicator should be visible"]();
-      }
+      },
     );
 
     feature(
@@ -242,7 +283,7 @@ test.describe("ValidatingSubmitButton", () => {
         await Then[
           "the progress indicator should disappear after completion"
         ]();
-      }
+      },
     );
   });
 
@@ -268,7 +309,17 @@ test.describe("ValidatingSubmitButton", () => {
         await Then[
           "the validation error popover should contain a warning alert with the correct aria-label"
         ]();
-      }
+      },
+    );
+
+    feature(
+      "When user prefers more contrast, button should meet WCAG AAA contrast requirements",
+      async ({ Given, Then }) => {
+        await Given[
+          "the ValidatingSubmitButton with high contrast is rendered"
+        ]();
+        await Then["there shouldn't be any contrast violations at AAA level"]();
+      },
     );
   });
 });
