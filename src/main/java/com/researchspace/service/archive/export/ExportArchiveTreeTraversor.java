@@ -1,7 +1,6 @@
 package com.researchspace.service.archive.export;
 
 import static com.researchspace.model.record.Folder.EXAMPLES_FOLDER;
-import static com.researchspace.model.record.Folder.SHARED_FOLDER_NAME;
 
 import com.researchspace.archive.ArchiveFolder;
 import com.researchspace.archive.ExportRecordList;

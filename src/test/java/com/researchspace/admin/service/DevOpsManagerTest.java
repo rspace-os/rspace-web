@@ -25,7 +25,6 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    propertyHolder.setRsDevUnsafeMoveAllowed("true");
   }
 
   @After
@@ -68,7 +67,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
     assertEquals(2, folderMgr.getRecordIds(sharedSubfolder).size());
     String originalAcl = sharedSubfolder.getSharingACL().getAcl();
 
-    // operate as pi, from now on
+    // from now on operate as pi
     logoutAndLoginAs(pi);
 
     // call fix method for shared subfolder - should say nothing is wrong
@@ -78,11 +77,25 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
             + "It seems fine.<br/>\n",
         fixMethodMessage);
 
-    // move shared subfolder folder into pi's workspace (SUPPORT-526)
+    // attempt to move shared subfolder folder into pi's workspace (SUPPORT-526)
     ServiceOperationResult<Folder> folderMoveResult =
         folderMgr.move(
             sharedSubfolder.getId(), pi.getRootFolder().getId(), groupFolder.getId(), pi);
+    // shouldn't succeed anymore, in default setup
+    assertFalse(folderMoveResult.isSucceeded());
+    // everything should be like it was
+    sharedSubfolder = folderMgr.getFolder(sharedSubfolder.getId(), pi);
+    assertTrue(sharedSubfolder.isSharedFolder());
+    assertTrue(sharedSubfolder.isShared());
+    assertTrue(sharedSubfolder.getParent().isSharedFolder());
+
+    // override deployment property to allow unsafe moves, then try moving shared subfolder again
+    propertyHolder.setRsDevUnsafeMoveAllowed("true");
+    folderMoveResult =
+        folderMgr.move(
+            sharedSubfolder.getId(), pi.getRootFolder().getId(), groupFolder.getId(), pi);
     assertTrue(folderMoveResult.isSucceeded());
+    // move was successful, folder should now be in pi's Workspace
     sharedSubfolder = folderMgr.getFolder(sharedSubfolder.getId(), pi);
     assertTrue(sharedSubfolder.isSharedFolder());
     assertFalse(sharedSubfolder.isShared());

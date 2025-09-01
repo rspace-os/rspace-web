@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.model.record.Folder.EXAMPLES_FOLDER;
-import static com.researchspace.model.record.Folder.SHARED_FOLDER_NAME;
 
 import com.researchspace.archive.model.IExportConfig;
 import com.researchspace.model.core.RecordType;
