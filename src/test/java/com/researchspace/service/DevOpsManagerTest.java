@@ -1,4 +1,4 @@
-package com.researchspace.admin.service;
+package com.researchspace.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -11,6 +11,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.DevOpsManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.After;
 import org.junit.Before;

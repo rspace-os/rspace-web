@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import com.researchspace.admin.service.DevOpsManager;
+import com.researchspace.service.DevOpsManager;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.record.Folder;
