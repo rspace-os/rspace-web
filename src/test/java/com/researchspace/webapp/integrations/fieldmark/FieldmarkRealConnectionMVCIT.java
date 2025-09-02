@@ -17,14 +17,15 @@ import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MvcResult;
 
-// @Ignore(
-//    "We leave the test Ignored so we can potentially run it manually "
-//        + "by pasting the bearer token")
+@Ignore(
+    "We leave the test Ignored so we can potentially run it manually "
+        + "by pasting the bearer token")
 public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
 
   private static final FieldmarkApiImportRequest IMPORT_REQUEST =
