@@ -719,7 +719,13 @@ const StoichiometryTable = React.forwardRef<
             if (!smiles)
               throw new Error("New reagents must have a SMILES string");
             if (!m.name) throw new Error("New reagents must have a name");
-            return { role: "AGENT", smiles, name: m.name };
+            /*
+             * Remove the temporary ID we assigned to new molecules; the server
+             * will assign a proper ID when it creates the new molecule.
+             */
+            const copy = { ...m };
+            delete (copy as Partial<EditableMolecule>).id;
+            return copy;
           }),
         };
 

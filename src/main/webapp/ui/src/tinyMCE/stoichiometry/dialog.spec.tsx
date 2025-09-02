@@ -305,6 +305,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
 
   const mockResponse = {
     id: 3,
+    revision: 1,
     parentReaction: {
       id: 32769,
       parentId: 226,

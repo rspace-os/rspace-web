@@ -11,6 +11,18 @@ export function StoichiometryDialogWithCalculateButtonStory({
   onTableCreated?: () => void;
 } = {}): React.ReactNode {
   const [open, setOpen] = React.useState(true);
+  const [stoichiometryId, setStoichiometryId] = React.useState<
+    number | undefined
+  >(undefined);
+  const [stoichiometryRevision, setStoichiometryRevision] = React.useState<
+    number | undefined
+  >(undefined);
+
+  const handleTableCreated = () => {
+    setStoichiometryId(1);
+    setStoichiometryRevision(1);
+    onTableCreated?.();
+  };
 
   return (
     <StyledEngineProvider injectFirst>
@@ -20,15 +32,15 @@ export function StoichiometryDialogWithCalculateButtonStory({
             open={open}
             onClose={() => setOpen(false)}
             chemId={12345}
-            hasStoichiometryTable={false}
-            onTableCreated={onTableCreated}
+            stoichiometryId={stoichiometryId}
+            stoichiometryRevision={stoichiometryRevision}
+            onTableCreated={handleTableCreated}
           />
         </Alerts>
       </ThemeProvider>
     </StyledEngineProvider>
   );
 }
-
 export function StoichiometryDialogWithTableStory({
   onChangesUpdate,
   onSave,
@@ -48,7 +60,8 @@ export function StoichiometryDialogWithTableStory({
             open={open}
             onClose={() => setOpen(false)}
             chemId={12345}
-            hasStoichiometryTable={true}
+            stoichiometryId={1}
+            stoichiometryRevision={1}
             onSave={onSave}
             onDelete={onDelete}
           />
@@ -59,6 +72,18 @@ export function StoichiometryDialogWithTableStory({
 }
 
 export function StoichiometryDialogClosedStory(): React.ReactNode {
+  const [stoichiometryId, setStoichiometryId] = React.useState<
+    number | undefined
+  >(undefined);
+  const [stoichiometryRevision, setStoichiometryRevision] = React.useState<
+    number | undefined
+  >(undefined);
+
+  const handleTableCreated = () => {
+    setStoichiometryId(1);
+    setStoichiometryRevision(1);
+  };
+
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -68,7 +93,9 @@ export function StoichiometryDialogClosedStory(): React.ReactNode {
             open={false}
             onClose={() => {}}
             chemId={12345}
-            hasStoichiometryTable={false}
+            stoichiometryId={stoichiometryId}
+            stoichiometryRevision={stoichiometryRevision}
+            onTableCreated={handleTableCreated}
           />
         </Alerts>
       </ThemeProvider>
