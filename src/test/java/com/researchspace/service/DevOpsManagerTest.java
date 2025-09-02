@@ -1,4 +1,4 @@
-package com.researchspace.admin.service;
+package com.researchspace.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -12,11 +12,12 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.testutils.SpringTransactionalTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-/** Unit tests covering DevOps fixes. */
+/* Unit tests covering DevOps fixes. */
 public class DevOpsManagerTest extends SpringTransactionalTest {
 
   @Autowired private DevOpsManager devOpsMgr;
@@ -24,6 +25,11 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
   @Before
   public void setUp() throws Exception {
     super.setUp();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    propertyHolder.setRsDevUnsafeMoveAllowed("false");
   }
 
   @Test
@@ -61,7 +67,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
     assertEquals(2, folderMgr.getRecordIds(sharedSubfolder).size());
     String originalAcl = sharedSubfolder.getSharingACL().getAcl();
 
-    // operate as pi, from now on
+    // from now on operate as pi
     logoutAndLoginAs(pi);
 
     // call fix method for shared subfolder - should say nothing is wrong
@@ -71,12 +77,25 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
             + "It seems fine.<br/>\n",
         fixMethodMessage);
 
-    // move shared subfolder folder into pi's workspace (SUPPORT-526)
+    // attempt to move shared subfolder folder into pi's workspace (SUPPORT-526)
     ServiceOperationResult<Folder> folderMoveResult =
         folderMgr.move(
             sharedSubfolder.getId(), pi.getRootFolder().getId(), groupFolder.getId(), pi);
-    assertTrue(folderMoveResult.isSucceeded());
+    // shouldn't succeed anymore, in default setup
+    assertFalse(folderMoveResult.isSucceeded());
+    // everything should be like it was
+    sharedSubfolder = folderMgr.getFolder(sharedSubfolder.getId(), pi);
+    assertTrue(sharedSubfolder.isSharedFolder());
+    assertTrue(sharedSubfolder.isShared());
+    assertTrue(sharedSubfolder.getParent().isSharedFolder());
 
+    // override deployment property to allow unsafe moves, then try moving shared subfolder again
+    propertyHolder.setRsDevUnsafeMoveAllowed("true");
+    folderMoveResult =
+        folderMgr.move(
+            sharedSubfolder.getId(), pi.getRootFolder().getId(), groupFolder.getId(), pi);
+    assertTrue(folderMoveResult.isSucceeded());
+    // move was successful, folder should now be in pi's Workspace
     sharedSubfolder = folderMgr.getFolder(sharedSubfolder.getId(), pi);
     assertTrue(sharedSubfolder.isSharedFolder());
     assertFalse(sharedSubfolder.isShared());
@@ -170,7 +189,6 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
             .asStrucDoc();
     assertTrue(userDoc.isShared());
 
-    logoutCurrentUser();
     return folderMgr.getFolder(toShareInto.getId(), pi);
   }
 }

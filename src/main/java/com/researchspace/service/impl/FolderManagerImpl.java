@@ -43,6 +43,7 @@ import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
@@ -83,6 +84,7 @@ public class FolderManagerImpl implements FolderManager {
   private RecordDao recordDao;
   private UserManager userManager;
   private IPermissionUtils permissionUtils;
+  private IPropertyHolder properties;
   private OperationFailedMessageGenerator messages;
   private ApplicationEventPublisher publisher;
   private CommunityServiceManager communityServiceManager;
@@ -96,6 +98,7 @@ public class FolderManagerImpl implements FolderManager {
       RecordDao recordDao,
       UserManager userManager,
       IPermissionUtils permissionUtils,
+      IPropertyHolder properties,
       OperationFailedMessageGenerator messages,
       ApplicationEventPublisher publisher,
       CommunityServiceManager communityServiceManager) {
@@ -105,6 +108,7 @@ public class FolderManagerImpl implements FolderManager {
     this.recordDao = recordDao;
     this.userManager = userManager;
     this.permissionUtils = permissionUtils;
+    this.properties = properties;
     this.messages = messages;
     this.publisher = publisher;
     this.communityServiceManager = communityServiceManager;
@@ -396,14 +400,22 @@ public class FolderManagerImpl implements FolderManager {
     return createNewNotebook(parentId, notebookName, context, subject, null);
   }
 
+  @Value("${rs.dev.unsafeMove.allowed}")
+  private String unsafeMoveAllowed;
+
   @Override
   public ServiceOperationResult<Folder> move(Long toMove, Long target, Long srcFolderId, User user)
       throws IllegalAddChildOperation {
-    Folder newparent = folderDao.get(target);
+    Folder newParent = folderDao.get(target);
     Folder oldParent = folderDao.get(srcFolderId);
     Folder original = getFolder(toMove, user);
-    boolean moved = original.move(oldParent, newparent, user);
-    recursiveSave(newparent);
+    boolean moved;
+    if (properties.isRsDevUnsafeMoveAllowed()) {
+      moved = original.unsafeMove(oldParent, newParent, user);
+    } else {
+      moved = original.move(oldParent, newParent, user);
+    }
+    recursiveSave(newParent);
     folderDao.save(oldParent);
     return new ServiceOperationResult<Folder>(original, moved);
   }
