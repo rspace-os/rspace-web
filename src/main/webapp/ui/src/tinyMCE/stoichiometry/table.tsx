@@ -782,6 +782,17 @@ const StoichiometryTable = React.forwardRef<
           imageFileProperty: null,
         };
 
+        const limitingReagent = allMolecules.find((m) => m.limitingReagent);
+        if (!limitingReagent) throw new Error("No limiting reagent defined");
+        const limitingReagentMoles = calculateMoles(
+          limitingReagent.mass,
+          limitingReagent.molecularWeight,
+        );
+        const ratio =
+          limitingReagentMoles === null
+            ? null
+            : limitingReagentMoles / limitingReagent.coefficient;
+
         const newMolecule: EditableMolecule = {
           id: tempId,
           rsChemElement: mockRsChemElement,
@@ -791,7 +802,7 @@ const StoichiometryTable = React.forwardRef<
           smiles: smilesString,
           coefficient: 1,
           molecularWeight: moleculeInfo.molecularWeight,
-          mass: null,
+          mass: ratio ? ratio * moleculeInfo.molecularWeight : 0,
           moles: null,
           expectedAmount: null,
           actualAmount: null,
