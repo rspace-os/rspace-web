@@ -17,6 +17,7 @@ import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
@@ -35,6 +36,9 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
+import com.researchspace.model.stoichiometry.MoleculeRole;
+import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
 import com.researchspace.service.cloud.CloudNotificationManager;
@@ -75,6 +79,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired RecordFavoritesManager favMgr;
   private @Autowired UserConnectionManager userConn;
   private @Autowired JdbcTemplate jdbcTemplate;
+  private @Autowired StoichiometryManager stoichiometryMgr;
+  private @Autowired RSChemElementManager rsChemElementMgr;
 
   @Before
   public void setUp() throws Exception {
@@ -571,6 +577,44 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     // check u1 form has been deleted (and exception is thrown trying to retrieve) since the form
     // wasn't used by any other users
     assertThrows(ObjectRetrievalFailureException.class, () -> formMgr.get(u1Form.getId()));
+  }
+
+  @Test
+  public void testDeleteUserWithRSChemElementAndStoichiometry() throws Exception {
+    User userToDelete = createInitAndLoginAnyUser();
+
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "Chemistry doc");
+
+    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
+    chemElement = rsChemElementMgr.save(chemElement, userToDelete);
+
+    Stoichiometry stoichiometry = Stoichiometry.builder().parentReaction(chemElement).build();
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+
+    RSChemElement moleculeChemElement =
+        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
+    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, userToDelete);
+
+    StoichiometryMolecule molecule =
+        StoichiometryMolecule.builder()
+            .stoichiometry(stoichiometry)
+            .rsChemElement(moleculeChemElement)
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .molecularWeight(46.07)
+            .build();
+    stoichiometry.addMolecule(molecule);
+    stoichiometryMgr.save(stoichiometry);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(userToDelete.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(userToDelete);
   }
 
   private UserDeletionPolicy getDeleteTempUserPolicy() {

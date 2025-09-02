@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos.chemistry;
 
+import com.researchspace.model.stoichiometry.MoleculeRole;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;

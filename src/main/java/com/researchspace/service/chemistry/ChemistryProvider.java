@@ -41,7 +41,9 @@ public interface ChemistryProvider {
     return convert(chemical, outputFormat);
   }
 
-  Optional<ElementalAnalysisDTO> getProperties(RSChemElement chemicalElement);
+  Optional<ElementalAnalysisDTO> getProperties(String chemical);
+
+  Optional<ElementalAnalysisDTO> getStoichiometry(RSChemElement chemicalElement);
 
   ChemicalSearchResultsDTO search(String chemQuery, String chemicalSearchType);
 

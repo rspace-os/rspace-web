@@ -55,10 +55,10 @@ public interface RSChemElementManager extends GenericManager<RSChemElement, Long
   /**
    * Gets chemical info about a particular RSChemElement
    *
-   * @param chemElement
+   * @param chemical the chemical to get info about in any supported format e.g. a SMILES string
    * @return an ElementalAnalysis containing metadata about a molecule or reaction
    */
-  Optional<ElementalAnalysisDTO> getInfo(RSChemElement chemElement);
+  Optional<ElementalAnalysisDTO> getInfo(String chemical);
 
   /**
    * Method used to save a Chem structured Element in the database.

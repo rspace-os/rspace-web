@@ -218,7 +218,8 @@ public class RSChemService implements ChemistryService {
     if (chemical == null) {
       return null;
     }
-    Optional<ElementalAnalysisDTO> analysis = rsChemElementManager.getInfo(chemical);
+    Optional<ElementalAnalysisDTO> analysis =
+        rsChemElementManager.getInfo(chemical.getChemElements());
     if (analysis.isPresent()) {
       ElementalAnalysisDTO elementalAnalysis = analysis.get();
       if (elementalAnalysis.isReaction()) {
