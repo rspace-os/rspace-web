@@ -1,4 +1,3 @@
-/*
 package com.researchspace.service;
 
 import static org.junit.Assert.assertEquals;
@@ -12,19 +11,13 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.service.DevOpsManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-*/
-/** Unit tests covering DevOps fixes. *//*
-
-@Ignore("run manually for now, as the test seem to introduce some problem "
-    + "with spring context, causing RecordSharingTest class to fail")
+/* Unit tests covering DevOps fixes. */
 public class DevOpsManagerTest extends SpringTransactionalTest {
 
   @Autowired private DevOpsManager devOpsMgr;
@@ -63,7 +56,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
     User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
     User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
     initialiseContentWithEmptyContent(pi, user);
-    Group group = createGroup(getRandomAlphabeticString("g1"), pi);
+    Group group = createGroup("g1", pi);
     addUsersToGroup(pi, group, user);
 
     // create shared subfolder with content shared by  pi and user
@@ -199,6 +192,4 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
     return folderMgr.getFolder(toShareInto.getId(), pi);
   }
 
-
 }
-*/
