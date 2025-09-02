@@ -40,7 +40,7 @@ const useStyles = makeStyles<{ progress: Progress }>()(
       position: "relative",
       overflow: "hidden",
     },
-  })
+  }),
 );
 
 type SubmitSpinnerButtonArgs = {
