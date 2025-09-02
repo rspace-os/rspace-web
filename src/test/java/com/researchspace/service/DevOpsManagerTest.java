@@ -191,5 +191,4 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
 
     return folderMgr.getFolder(toShareInto.getId(), pi);
   }
-
 }
