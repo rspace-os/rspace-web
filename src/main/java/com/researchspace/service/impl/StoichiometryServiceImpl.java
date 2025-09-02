@@ -2,8 +2,11 @@ package com.researchspace.service.impl;
 
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -19,6 +22,7 @@ import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.chemistry.StoichiometryException;
 import java.io.IOException;
 import java.util.Optional;
+import javax.transaction.Transactional;
 import javax.ws.rs.NotFoundException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,19 +59,17 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   }
 
   @Override
-  public Stoichiometry getByParentChemical(long chemId, Integer revision, User user) {
-    Optional<Stoichiometry> stoichiometryOpt = stoichiometryManager.findByParentReactionId(chemId);
-    if (stoichiometryOpt.isEmpty()) {
-      String message =
-          String.format(
-              "No stoichiometry found for chemical with id %s and revision %s", chemId, revision);
-      throw new NotFoundException(message);
-    } else if (!hasPermissions(
-        stoichiometryOpt.get().getParentReaction().getRecord(), user, PermissionType.READ)) {
+  @Transactional
+  public StoichiometryDTO getById(long stoichiometryId, Long revision, User user) {
+    AuditedEntity<Stoichiometry> stoichiometryRevision =
+        stoichiometryManager.getRevision(stoichiometryId, revision, user);
+    Stoichiometry stoichiometry = stoichiometryRevision.getEntity();
+    if (!hasPermissions(stoichiometry.getParentReaction().getRecord(), user, PermissionType.READ)) {
       throw new AuthorizationException(
           "User does not have read permissions on document containing stoichiometry");
     }
-    return stoichiometryOpt.get();
+    return StoichiometryMapper.toDTO(
+        stoichiometry, stoichiometryRevision.getRevision().longValue());
   }
 
   @Override
@@ -81,7 +83,6 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       throw new AuthorizationException(
           "User does not have write permissions on document containing stoichiometry");
     }
-    ;
 
     Optional<Stoichiometry> existing = stoichiometryManager.findByParentReactionId(chemId);
     if (existing.isPresent()) {
@@ -145,7 +146,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
     Optional<ElementalAnalysisDTO> analysis = rsChemElementManager.getInfo(smiles);
     if (analysisExists(analysis)) {
       MoleculeInfoDTO molInfo = analysis.get().getMoleculeInfo().get(0);
-      return com.researchspace.model.stoichiometry.StoichiometryMolecule.builder()
+      return StoichiometryMolecule.builder()
           .role(molInfo.getRole())
           .smiles(molInfo.getSmiles())
           .molecularWeight(molInfo.getMass())

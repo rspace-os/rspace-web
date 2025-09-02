@@ -52,11 +52,27 @@ class StoichiometryPlugin {
   constructor(editor: Editor) {
     function* renderDialog(
       domContainer: HTMLElement,
-    ): Generator<void, void, React.ComponentProps<typeof StoichiometryDialog>> {
+    ): Generator<
+      void,
+      void,
+      Partial<React.ComponentProps<typeof StoichiometryDialog>>
+    > {
       const root = createRoot(domContainer);
+      let props: React.ComponentProps<typeof StoichiometryDialog> = {
+        open: false,
+        onClose: () => {},
+        chemId: null,
+        stoichiometryId: undefined,
+        stoichiometryRevision: undefined,
+        onTableCreated: () => {},
+        onSave: () => {},
+        onDelete: () => {},
+      };
       while (true) {
-        const newProps: React.ComponentProps<typeof StoichiometryDialog> =
-          yield;
+        props = {
+          ...props,
+          ...(yield),
+        };
         root.render(
           <StyledEngineProvider injectFirst>
             <CssBaseline />
@@ -64,7 +80,7 @@ class StoichiometryPlugin {
               <Analytics>
                 <ErrorBoundary>
                   <Alerts>
-                    <StoichiometryDialog {...newProps} />
+                    <StoichiometryDialog {...props} />
                   </Alerts>
                 </ErrorBoundary>
               </Analytics>
@@ -90,7 +106,8 @@ class StoichiometryPlugin {
       open: false,
       onClose: () => {},
       chemId: null,
-      hasStoichiometryTable: false,
+      stoichiometryId: undefined,
+      stoichiometryRevision: undefined,
       onTableCreated: () => {},
     };
     dialogRenderer.next(initialProps);
@@ -110,26 +127,42 @@ class StoichiometryPlugin {
         );
       }
 
-      const hasStoichiometryTable = node.getAttribute(
-        "data-has-stoichiometry-table",
-      );
-
-      const markElementWithStoichiometry = () => {
-        const currentNode = editor.selection.getNode();
-        const currentHtml = currentNode.outerHTML;
-        const modifiedHtml = currentHtml.replace(
-          /(\<img[^\>]*)/,
-          '$1 data-has-stoichiometry-table="true"',
+      let stoichiometryId: number | undefined;
+      let stoichiometryRevision: number | undefined;
+      try {
+        const { id, revision } = JSON.parse(
+          node.getAttribute("data-stoichiometry-table") ?? "{}",
         );
+        stoichiometryId = id;
+        stoichiometryRevision = revision;
+      } catch {}
 
+      const markElementWithStoichiometry = (id: number, revision: number) => {
+        const currentNode = editor.selection.getNode();
+        currentNode.setAttribute(
+          "data-stoichiometry-table",
+          JSON.stringify({ id, revision }),
+        );
         editor.selection.select(currentNode);
-        editor.execCommand("mceReplaceContent", false, modifiedHtml);
+        editor.execCommand("mceReplaceContent", false, currentNode.outerHTML);
+        editor.setDirty(true);
+      };
+
+      const updateElementWithStoichiometry = (id: number, revision: number) => {
+        const currentNode = editor.selection.getNode();
+        currentNode.setAttribute(
+          "data-stoichiometry-table",
+          JSON.stringify({ id, revision }),
+        );
+        editor.selection.select(currentNode);
+        editor.execCommand("mceReplaceContent", false, currentNode.outerHTML);
         editor.setDirty(true);
       };
 
       const unmarkElementWithStoichiometry = () => {
         const currentNode = editor.selection.getNode();
-        currentNode.removeAttribute("data-has-stoichiometry-table");
+        currentNode.removeAttribute("data-stoichiometry-table");
+        editor.selection.select(currentNode);
         editor.execCommand("mceReplaceContent", false, currentNode.outerHTML);
         editor.setDirty(true);
       };
@@ -141,22 +174,36 @@ class StoichiometryPlugin {
             open: false,
             onClose: () => {},
             chemId: null,
-            hasStoichiometryTable: false,
+            stoichiometryId: undefined,
+            stoichiometryRevision: undefined,
             onTableCreated: () => {},
           });
         },
         chemId,
-        hasStoichiometryTable: hasStoichiometryTable === "true",
-        onTableCreated: !hasStoichiometryTable
-          ? markElementWithStoichiometry
-          : undefined,
+        stoichiometryId,
+        stoichiometryRevision,
+        onTableCreated: (id: number, revision) => {
+          markElementWithStoichiometry(id, revision);
+          dialogRenderer.next({
+            stoichiometryId: id,
+            stoichiometryRevision: revision,
+          });
+        },
+        onSave: (id, version) => {
+          updateElementWithStoichiometry(id, version);
+          dialogRenderer.next({
+            stoichiometryId: id,
+            stoichiometryRevision: version,
+          });
+        },
         onDelete: () => {
           unmarkElementWithStoichiometry();
           dialogRenderer.next({
             open: false,
             onClose: () => {},
             chemId: null,
-            hasStoichiometryTable: false,
+            stoichiometryId: undefined,
+            stoichiometryRevision: undefined,
           });
         },
       });

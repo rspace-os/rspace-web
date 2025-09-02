@@ -35,6 +35,32 @@ public final class StoichiometryMapper {
         .build();
   }
 
+  public static StoichiometryDTO toDTO(Stoichiometry stoichiometry, Long revision) {
+    if (stoichiometry == null) {
+      return null;
+    }
+
+    List<StoichiometryMoleculeDTO> moleculeDTOs = new ArrayList<>();
+    if (stoichiometry.getMolecules() != null) {
+      moleculeDTOs =
+          stoichiometry.getMolecules().stream()
+              .map(StoichiometryMapper::moleculeToDTO)
+              .collect(Collectors.toList());
+    }
+
+    Long parentReactionId = null;
+    if (stoichiometry.getParentReaction() != null) {
+      parentReactionId = stoichiometry.getParentReaction().getId();
+    }
+
+    return StoichiometryDTO.builder()
+        .id(stoichiometry.getId())
+        .molecules(moleculeDTOs)
+        .parentReactionId(parentReactionId)
+        .revision(revision)
+        .build();
+  }
+
   public static StoichiometryDTO fromAnalysisDTO(ElementalAnalysisDTO analysisDTO) {
     if (analysisDTO == null) {
       return null;

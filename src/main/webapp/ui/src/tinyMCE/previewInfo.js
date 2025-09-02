@@ -68,7 +68,7 @@ export default function PreviewInfo(props) {
               </Div>
               <ChemCard item={props.item} inline />
             </div>
-            {props.item["data-has-stoichiometry-table"] && (
+            {props.item["data-stoichiometry-table"] && (
               <Analytics>
                 <ErrorBoundary>
                   <Alerts>
@@ -92,9 +92,22 @@ export default function PreviewInfo(props) {
                             </Alert>
                           </Box>
                         ),
-                        success: (isEnabled) =>
-                          isEnabled ? (
-                            <StoichiometryTable chemId={props.item.id} />
+                        success: (isEnabled) => {
+                          let stoichiometryId;
+                          let stoichiometryVersion;
+                          try {
+                            const { id, revision } = JSON.parse(
+                              props.item["data-stoichiometry-table"],
+                            );
+                            stoichiometryId = id;
+                            stoichiometryVersion = revision;
+                          } catch {}
+                          return isEnabled ? (
+                            <StoichiometryTable
+                              chemId={props.item.id}
+                              stoichiometryId={stoichiometryId}
+                              stoichiometryVersion={stoichiometryVersion}
+                            />
                           ) : (
                             <Box p={2}>
                               <Alert severity="warning">
@@ -102,7 +115,8 @@ export default function PreviewInfo(props) {
                                 contact your administrator to enable it.
                               </Alert>
                             </Box>
-                          ),
+                          );
+                        },
                       })}
                     </Box>
                   </Alerts>

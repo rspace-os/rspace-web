@@ -13,7 +13,9 @@ import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -28,11 +30,13 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
 
   private static final FieldmarkApiImportRequest IMPORT_REQUEST =
       new FieldmarkApiImportRequest("1726126204618-rspace-igsn-demo");
-  private static final String ACCESS_TOKEN = "_______PASTE_TOKEN_HERE_________";
+  private static final String LONG_LIVED_TOKEN =
+      "wDor74KSJe5ZZzeNE2jnGT7S5RYtYa9cWTi6f3wfBv0yjigQwFjQbodLlGwSKGAW";
 
   private User user;
   private String apiKey;
   private @Autowired UserConnectionManager userConnectionManager;
+  private @Autowired ApiAvailabilityHandler apiHandler;
 
   @Before
   public void setUp() throws Exception {
@@ -42,11 +46,13 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
     UserConnection actualConnection = new UserConnection();
     actualConnection.setId(
         new UserConnectionId(user.getUsername(), FIELDMARK_APP_NAME, "ProviderUserIdNotNeeded"));
-    actualConnection.setAccessToken(ACCESS_TOKEN);
+    actualConnection.setAccessToken(LONG_LIVED_TOKEN);
     actualConnection.setRefreshToken("REFRESH_TOKEN");
     actualConnection.setExpireTime(299L);
     actualConnection.setDisplayName("Fieldmark access token");
     userConnectionManager.save(actualConnection);
+
+    apiHandler.setDataCiteConnector(new DataCiteConnectorDummy());
   }
 
   @Test

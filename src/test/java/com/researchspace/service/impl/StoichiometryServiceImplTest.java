@@ -50,42 +50,6 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void getByParentChemical_whenNotFound_throwsNotFound() {
-    when(stoichiometryManager.findByParentReactionId(1L)).thenReturn(Optional.empty());
-
-    NotFoundException ex =
-        assertThrows(NotFoundException.class, () -> service.getByParentChemical(1L, 2, user));
-
-    assertTrue(
-        ex.getMessage().contains("No stoichiometry found for chemical with id 1 and revision 2"));
-  }
-
-  @Test
-  void getByParentChemical_whenNoPermission_throwsAuth() throws Exception {
-    Stoichiometry stoich = makeStoichiometryWithRecord(10L);
-    when(stoichiometryManager.findByParentReactionId(1L)).thenReturn(Optional.of(stoich));
-    when(permissionUtils.isPermitted(any(), eq(PermissionType.READ), eq(user))).thenReturn(false);
-
-    Exception ex =
-        assertThrows(
-            AuthorizationException.class, () -> service.getByParentChemical(1L, null, user));
-    assertEquals(
-        "User does not have read permissions on document containing stoichiometry",
-        ex.getMessage());
-  }
-
-  @Test
-  void getByParentChemical_whenOk_returnsStoichiometry() throws Exception {
-    Stoichiometry stoich = makeStoichiometryWithRecord(10L);
-    when(stoichiometryManager.findByParentReactionId(1L)).thenReturn(Optional.of(stoich));
-    when(permissionUtils.isPermitted(any(), eq(PermissionType.READ), eq(user))).thenReturn(true);
-
-    Stoichiometry result = service.getByParentChemical(1L, null, user);
-
-    assertEquals(stoich, result);
-  }
-
-  @Test
   void create_whenOwningRecordMissing_throwsNotFound() {
     when(chemistryService.getChemicalElementByRevision(2L, null, user))
         .thenReturn(mock(RSChemElement.class));

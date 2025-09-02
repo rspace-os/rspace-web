@@ -55,6 +55,7 @@ export type ParentReaction = {
 
 export type StoichiometryResponse = {
   id: number;
+  revision: number;
   parentReaction: ParentReaction;
   molecules: ReadonlyArray<StoichiometryMolecule>;
 };
@@ -96,9 +97,11 @@ export default function useStoichiometry(): {
    * This performs a GET request to retrieve previously calculated data.
    */
   getStoichiometry: ({
-    chemId,
+    stoichiometryId,
+    revision,
   }: {
-    chemId: number;
+    stoichiometryId: number;
+    revision?: number;
   }) => Promise<StoichiometryResponse>;
 
   /**
@@ -163,15 +166,17 @@ export default function useStoichiometry(): {
   }
 
   async function getStoichiometry({
-    chemId,
+    stoichiometryId,
+    revision,
   }: {
-    chemId: number;
+    stoichiometryId: number;
+    revision?: number;
   }): Promise<StoichiometryResponse> {
     try {
       const { data } = await axios.get<StoichiometryResponse>(
         "/api/v1/stoichiometry",
         {
-          params: { chemId },
+          params: { stoichiometryId, revision },
           headers: {
             Authorization: `Bearer ${await getToken()}`,
           },

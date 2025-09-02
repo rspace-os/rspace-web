@@ -7,6 +7,7 @@ import static com.researchspace.api.v1.model.ApiField.ApiFieldType.RADIO;
 import static com.researchspace.api.v1.model.ApiField.ApiFieldType.TEXT;
 import static com.researchspace.api.v1.model.ApiField.ApiFieldType.TIME;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
@@ -44,8 +45,8 @@ public class FieldmarkToRSpaceApiConverter {
 
   private FieldmarkToRSpaceApiConverter() {}
 
-  public static ApiSampleTemplatePost createSampleTemplateRequest(
-      FieldmarkNotebookDTO notebookDTO) {
+  public static ApiSampleTemplatePost createSampleTemplateRequest(FieldmarkNotebookDTO notebookDTO)
+      throws JsonProcessingException {
     ApiSampleTemplatePost sampleTemplatePost = new ApiSampleTemplatePost();
     sampleTemplatePost.setName(
         "Sample Template " + notebookDTO.getName() + " - " + notebookDTO.getTimestamp());
@@ -167,7 +168,8 @@ public class FieldmarkToRSpaceApiConverter {
   }
 
   public static ApiSampleWithFullSubSamples createSampleRequest(
-      FieldmarkRecordDTO recordDTO, ApiSampleTemplate sampleTemplate, Long containerId) {
+      FieldmarkRecordDTO recordDTO, ApiSampleTemplate sampleTemplate, Long containerId)
+      throws JsonProcessingException {
     ApiSampleWithFullSubSamples samplePost =
         new ApiSampleWithFullSubSamples(
             recordDTO.getIdentifier() + " - " + recordDTO.getTimestamp());
@@ -198,7 +200,6 @@ public class FieldmarkToRSpaceApiConverter {
 
     samplePost.setTemplate(false);
     samplePost.setTemplateId(sampleTemplate.getId());
-
     return samplePost;
   }
 

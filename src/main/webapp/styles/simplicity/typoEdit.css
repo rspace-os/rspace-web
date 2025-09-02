@@ -530,7 +530,7 @@ img[data-chemfileid] {
  * with stoichiometry tables are denoted with an icon in
  * the top left corner.
  */
-p:has(img[data-has-stoichiometry-table]) {
+p:has(img[data-stoichiometry-table]) {
     position: relative;
     &::after {
         content: '';

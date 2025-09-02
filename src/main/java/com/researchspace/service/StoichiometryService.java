@@ -1,13 +1,14 @@
 package com.researchspace.service;
 
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 
 public interface StoichiometryService {
 
-  Stoichiometry getByParentChemical(long chemId, Integer revision, User user);
+  StoichiometryDTO getById(long stoichiometryId, Long revision, User user);
 
   Stoichiometry create(long chemId, Integer revision, User user);
 

@@ -27,7 +27,8 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
     this.systemPropertyManager = systemPropertyManager;
   }
 
-  void setDataCiteConnector(DataCiteConnector dataciteConnector) {
+  @Override
+  public void setDataCiteConnector(DataCiteConnector dataciteConnector) {
     this.dataCiteConnector = dataciteConnector;
   }
 

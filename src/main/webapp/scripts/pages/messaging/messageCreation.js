@@ -120,6 +120,8 @@ function initialiseRequestDlg(options) {
             form$.find("input[name=recordId]").val(_getRecordId());
             var json = form$.serialize();
 
+            const messageType = form$.find("#messageType").val();
+
             RS.blockPage('Sending...', false, dlgWindow$);
             var jqxhr = $.post(createURL('/messaging/ajax/create'), json);
             jqxhr.always(function() {
@@ -143,6 +145,7 @@ function initialiseRequestDlg(options) {
               text$.fadeOut(2000, function() {
                 dlg$.dialog('close');
               });
+              RS.trackEvent("user:send:message:document_editor", { messageType });
             });
             jqxhr.fail(function() {
               RS.ajaxFailed("Sending message", false, jqxhr);

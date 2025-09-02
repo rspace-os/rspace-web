@@ -24,7 +24,8 @@ function StandaloneDialogInner({
   open,
   onClose,
   chemId,
-  hasStoichiometryTable,
+  stoichiometryId,
+  stoichiometryRevision,
   onTableCreated,
   onSave,
   onDelete,
@@ -32,9 +33,10 @@ function StandaloneDialogInner({
   open: boolean;
   onClose: () => void;
   chemId: number | null;
-  hasStoichiometryTable: boolean;
-  onTableCreated?: () => void;
-  onSave?: () => void;
+  stoichiometryId: number | undefined;
+  stoichiometryRevision: number | undefined;
+  onTableCreated?: (id: number, version: number) => void;
+  onSave?: (id: number, version: number) => void;
   onDelete?: () => void;
 }): React.ReactNode {
   const titleId = React.useId();
@@ -42,7 +44,9 @@ function StandaloneDialogInner({
   const { addAlert } = React.useContext(AlertContext);
   const confirm = useConfirm();
   const tableRef = React.useRef<StoichiometryTableRef>(null);
-  const [showTable, setShowTable] = React.useState(hasStoichiometryTable);
+  const [showTable, setShowTable] = React.useState(
+    stoichiometryId !== undefined,
+  );
   const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [hasTableChanges, setHasTableChanges] = React.useState(false);
@@ -70,7 +74,7 @@ function StandaloneDialogInner({
         success: (isEnabled) => {
           if (isEnabled) {
             setActuallyOpen(true);
-            setShowTable(hasStoichiometryTable);
+            setShowTable(stoichiometryId !== undefined);
             setLoading(false);
             setHasTableChanges(false);
           } else {
@@ -89,16 +93,16 @@ function StandaloneDialogInner({
     } else {
       setActuallyOpen(false);
     }
-  }, [open, hasStoichiometryTable, chemistryStatus, addAlert]);
+  }, [open, stoichiometryId, chemistryStatus]);
 
   const handleCalculate = () => {
     setLoading(true);
     doNotAwait(async () => {
       try {
         if (!chemId) throw new Error("chemId is required");
-        await calculateStoichiometry({ chemId });
+        const { id, revision } = await calculateStoichiometry({ chemId });
         setShowTable(true);
-        onTableCreated?.();
+        onTableCreated?.(id, revision);
       } catch (e) {
         console.error("Calculation failed", e);
       } finally {
@@ -109,10 +113,12 @@ function StandaloneDialogInner({
 
   const handleSave = () => {
     setSaving(true);
+    if (!stoichiometryId)
+      throw new Error("stoichiometryId is required to save");
     doNotAwait(async () => {
       try {
-        await tableRef.current?.save();
-        onSave?.();
+        const newRevision = await tableRef.current?.save();
+        onSave?.(stoichiometryId, newRevision!);
         console.log("Stoichiometry data saved successfully");
       } catch (e) {
         console.error("Save failed", e);
@@ -177,7 +183,7 @@ function StandaloneDialogInner({
         Reaction Table
       </DialogTitle>
       <DialogContent>
-        {actuallyOpen && !showTable && (
+        {actuallyOpen && stoichiometryId === undefined && (
           <Box
             display="flex"
             flexDirection="column"
@@ -199,23 +205,26 @@ function StandaloneDialogInner({
             </Button>
           </Box>
         )}
-        {actuallyOpen && showTable && (
-          <Stack spacing={2} flexWrap="nowrap">
-            <Box>
-              <Typography variant="body2">
-                Double-click to edit Equivalent, Mass, Moles, Actual Mass,
-                Actual Moles, or Notes. Yield/Excess values are calculated
-                automatically, as are each pairing of moles and mass.
-              </Typography>
-              <StoichiometryTable
-                ref={tableRef}
-                chemId={chemId}
-                editable
-                onChangesUpdate={setHasTableChanges}
-              />
-            </Box>
-          </Stack>
-        )}
+        {actuallyOpen &&
+          stoichiometryId !== undefined &&
+          stoichiometryRevision !== undefined && (
+            <Stack spacing={2} flexWrap="nowrap">
+              <Box>
+                <Typography variant="body2">
+                  Double-click to edit Equivalent, Mass, Moles, Actual Mass,
+                  Actual Moles, or Notes. Yield/Excess values are calculated
+                  automatically, as are each pairing of moles and mass.
+                </Typography>
+                <StoichiometryTable
+                  ref={tableRef}
+                  editable
+                  onChangesUpdate={setHasTableChanges}
+                  stoichiometryId={stoichiometryId}
+                  stoichiometryRevision={stoichiometryRevision}
+                />
+              </Box>
+            </Stack>
+          )}
       </DialogContent>
       <DialogActions>
         {showTable && hasTableChanges && (

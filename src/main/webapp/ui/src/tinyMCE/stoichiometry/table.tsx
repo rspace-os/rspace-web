@@ -349,7 +349,7 @@ declare module "@mui/x-data-grid" {
 }
 
 export interface StoichiometryTableRef {
-  save: () => Promise<void>;
+  save: () => Promise<number>;
   delete: () => Promise<void>;
 }
 
@@ -621,12 +621,13 @@ function LoadingDialog({
 const StoichiometryTable = React.forwardRef<
   StoichiometryTableRef,
   {
-    chemId: number | null;
+    stoichiometryId: number;
+    stoichiometryRevision: number;
     editable?: boolean;
     onChangesUpdate?: (hasChanges: boolean) => void;
   }
 >(function StoichiometryTable(
-  { chemId, editable = false, onChangesUpdate },
+  { editable = false, onChangesUpdate, stoichiometryId, stoichiometryRevision },
   ref,
 ) {
   const {
@@ -651,8 +652,11 @@ const StoichiometryTable = React.forwardRef<
     setError(null);
     doNotAwait(async () => {
       try {
-        if (!chemId) throw new Error("chemId is required");
-        const result = await getStoichiometry({ chemId });
+        if (!stoichiometryId) throw new Error("stoichiometryId is required");
+        const result = await getStoichiometry({
+          stoichiometryId,
+          revision: stoichiometryRevision,
+        });
         setData(result);
       } catch (e) {
         console.error(e);
@@ -661,7 +665,7 @@ const StoichiometryTable = React.forwardRef<
         setLoading(false);
       }
     })();
-  }, [chemId]);
+  }, [stoichiometryId]);
 
   React.useEffect(() => {
     if (data?.molecules) {
@@ -719,11 +723,12 @@ const StoichiometryTable = React.forwardRef<
           }),
         };
 
-        await updateStoichiometry({
+        const { revision } = await updateStoichiometry({
           stoichiometryId: data.id,
           stoichiometryData: updatedData,
         });
         onChangesUpdate?.(false);
+        return revision;
       },
       delete: async () => {
         if (!data || !data.id) {
