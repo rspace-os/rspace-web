@@ -142,7 +142,6 @@ public class ShareApiController extends BaseApiController implements ShareApi {
     return null;
   }
 
-  /** Determines if this is a permission-only update */
   private boolean isPermissionOnlyUpdate(RecordGroupSharing existingShare, SharePost shareConfig) {
     // Check if we're updating exactly one sharee and only the permission changed
     if (!shareConfig.getItemsToShare().contains(existingShare.getShared().getId())) {

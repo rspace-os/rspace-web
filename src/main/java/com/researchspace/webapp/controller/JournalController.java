@@ -166,7 +166,6 @@ public class JournalController extends BaseController {
     if (doc.getTagMetaData() != null) {
       journalEntry.setTagMetaData(doc.getTagMetaData().replaceAll(RSPACTAGS_FORSL__, "/"));
     }
-    UserSessionTracker activeUsers = getCurrentActiveUsers();
     journalEntry.setEditStatus(recordManager.requestRecordView(currentRecord.getId(), user));
     signingManager.updateSigningAttributes(journalEntry, doc.getId(), user);
 
