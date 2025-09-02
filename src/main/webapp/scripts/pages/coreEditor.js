@@ -214,7 +214,6 @@ function showRecordInfo(id, revision, version, $infoArea) {
   var jqxhr = _loadRSpaceElementInfo(id, version, url, $infoArea, isInfoDialog, generate$RecordInfoPanel);
   return jqxhr;
 }
-
 function _loadRSpaceElementInfo(id, version, url, $infoArea, isInfoDialog, infoPanelConstructor) {
   if (!id) {
     // RSPAC-1648 don't call server if id not found
@@ -229,6 +228,7 @@ function _loadRSpaceElementInfo(id, version, url, $infoArea, isInfoDialog, infoP
       $infoArea.find('.recordInfoPanel').replaceWith($recordInfoPanel);
       if (isInfoDialog) {
         $infoArea.dialog('open');
+        RS.trackEvent("user:open:info_panel:document_editor");
       }
     }
   });
@@ -1091,6 +1091,7 @@ function makeRenameRequest(data) {
       $(formSelector).find("#renameRecordEdit").show(fadeTime);
       $(formSelector).find("#renameRecordSubmit").hide(fadeTime);
       nameEditMode = false;
+      RS.trackEvent("user:rename:document:document_editor");
     }
   }).fail(function () {
     RS.ajaxFailed("Renaming record", false, jqxhr);
@@ -1628,6 +1629,7 @@ function saveRecordTags(tags) {
   };
   var jqxhr = $.post("/workspace/editor/structuredDocument/tagRecord", data, function (data) {
     if (data.data != null) {
+      RS.trackEvent("user:tag:document:document_editor");
     } else if (data.errorMsg != null) {
         $('#tag-info-dialog-content').html(getValidationErrorString(data.errorMsg));
         openDialog("#tag-info-dialog");
@@ -2120,14 +2122,14 @@ $(document).ready(function () {
     var showTreeInEditor = isWindowWideEnoughForFileTreeBrowser() ? 'y' : 'a';
     updateClientUISetting('showTreeInEditor', showTreeInEditor);
     _updateNotebookRibbonVisibility();
-    RS.trackEvent('ShowTreeInEditor', { showTreeInEditor: showTreeInEditor });
+    RS.trackEvent("user:open:sidebar_tree:document:editor", { "default": isWindowWideEnoughForFileTreeBrowser() ? "open" : "closed" });
   });
   $(document).on('click', '#hideFileTreeSmall', function (e) {
     e.preventDefault();
     collapsePageAndHideFileTreeBrowser();
     updateClientUISetting('showTreeInEditor', 'n');
     _updateNotebookRibbonVisibility();
-    RS.trackEvent('ShowTreeInEditor', { showTreeInEditor: 'n' });
+    RS.trackEvent("user:close:sidebar_tree:document_editor");
   });
 
   /* let's start with narrow view */

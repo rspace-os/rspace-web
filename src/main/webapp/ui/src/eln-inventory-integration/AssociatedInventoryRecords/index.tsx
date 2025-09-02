@@ -56,13 +56,13 @@ const AssociatedInventoryRecords = observer(
 
       window.addEventListener(
         "listOfMaterialsOpened",
-        handleListOfMaterialsOpened
+        handleListOfMaterialsOpened,
       );
 
       return () => {
         window.removeEventListener(
           "listOfMaterialsOpened",
-          handleListOfMaterialsOpened
+          handleListOfMaterialsOpened,
         );
       };
     }, []);
@@ -72,7 +72,22 @@ const AssociatedInventoryRecords = observer(
       <>
         <button
           onClick={() => {
-            setOpen(!open);
+            const willOpen = !open;
+            setOpen(willOpen);
+            // @ts-expect-error ignore
+            if (typeof window.RS?.trackEvent === "function") {
+              if (willOpen) {
+                // @ts-expect-error ignore
+                window.RS.trackEvent(
+                  "user:open:inventory_attachment_listing:document_editor",
+                );
+              } else {
+                // @ts-expect-error ignore
+                window.RS.trackEvent(
+                  "user:close:inventory_attachment_listing:document_editor",
+                );
+              }
+            }
           }}
           className="btn btn-primary"
         >
@@ -88,7 +103,7 @@ const AssociatedInventoryRecords = observer(
         </Collapse>
       </>
     );
-  }
+  },
 );
 
 const wrapperDiv = document.getElementById("inventoryRecordList");
@@ -97,7 +112,7 @@ if (wrapperDiv) {
   root.render(
     <AssociatedInventoryRecords
       elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)}
-    />
+    />,
   );
 }
 

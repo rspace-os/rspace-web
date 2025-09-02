@@ -246,6 +246,7 @@ function _adjustFileTreeBrowserDiv() {
 }
 
 function _defaultRecordClickHandler(node) {
+  RS.trackEvent("user:click:node:file_tree", { action: "navigation" });
   // photos get downloaded
   isPhoto = node.data.globalId.startsWith("GL");
   if (isPhoto) {
