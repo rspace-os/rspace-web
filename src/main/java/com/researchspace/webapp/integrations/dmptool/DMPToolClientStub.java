@@ -1,11 +1,11 @@
 package com.researchspace.webapp.integrations.dmptool;
 
 import com.researchspace.dmptool.model.DMPPlanScope;
+import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.rda.model.DMP;
-import com.researchspace.rda.model.DMPList;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -22,19 +22,19 @@ import org.springframework.beans.factory.annotation.Value;
  * Stub implementation of DMP web client returns hard-coded DMP lists Use -Ddmp.pdf=/full/path/toPDF
  * to set a PDF to download.
  */
-public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
+public class DMPToolClientStub extends AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
 
-  private static final Logger LOG = LoggerFactory.getLogger(DMPClientStub.class);
+  private static final Logger LOG = LoggerFactory.getLogger(DMPToolClientStub.class);
 
   @Value("${dmp.pdf}")
   private String pdfPath;
 
-  public DMPClientStub(URL baseUrl) {
+  public DMPToolClientStub(URL baseUrl) {
     super(baseUrl);
   }
 
-  private DMP mkDMP(Long id, String title, String description) {
-    var dmp = new DMP();
+  private DMPToolDMP mkDMP(Long id, String title, String description) {
+    DMPToolDMP dmp = new DMPToolDMP();
     dmp.setTitle(title);
     dmp.setDescription(description);
     dmp.setLinks(
@@ -57,13 +57,13 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
   }
 
   @Override
-  public DMPUser doJsonDownload(DMP dmp, String title, String accessToken)
+  public DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
       throws URISyntaxException, IOException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public ServiceOperationResult<DMPUser> doJsonDownload(DMP dmp, String title, User user)
+  public ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
       throws URISyntaxException, IOException {
     String jsonString = getJson(dmp, "");
     if (assertIsNewDMP(dmp, user)) {
@@ -78,7 +78,7 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
     return new ServiceOperationResult<>("Success", true);
   }
 
-  String getJson(DMP dmp, String accessToken) {
+  String getJson(DMPToolDMP dmp, String accessToken) {
     try (FileInputStream fis = new FileInputStream(pdfPath)) {
       return fis.toString();
     } catch (IOException e) {
@@ -88,17 +88,17 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
   }
 
   @Override
-  public DMPList listPlans(DMPPlanScope scope, String accessToken)
+  public DMPToolList listPlans(DMPPlanScope scope, String accessToken)
       throws MalformedURLException, URISyntaxException {
-    List<DMP> mine =
+    List<DMPToolDMP> mine =
         List.of(
             mkDMP(1L, "DMP title1 ", "DMP 1 description"),
             mkDMP(2L, "DMP title2 ", "DMP 2 description"));
-    List<DMP> publicDMPs =
+    List<DMPToolDMP> publicDMPs =
         List.of(
             mkDMP(3L, "Public DMP title1 ", "Public DMP 1 description"),
             mkDMP(4L, "Public DMP title2 ", "Public DMP 2 description"));
-    DMPList rc = new DMPList();
+    DMPToolList rc = new DMPToolList();
     switch (scope) {
       case MINE:
         rc.setDmpItems(mine);
@@ -117,22 +117,22 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
   }
 
   @Override
-  public ServiceOperationResult<DMPList> listPlans(DMPPlanScope scope, User user)
+  public ServiceOperationResult<DMPToolList> listPlans(DMPPlanScope scope, User user)
       throws MalformedURLException, URISyntaxException {
     return new ServiceOperationResult<>(listPlans(scope, user.getUsername()), true);
   }
 
   @Override
-  public ServiceOperationResult<DMP> getPlanById(String dmpId, User user)
+  public ServiceOperationResult<DMPToolDMP> getPlanById(String dmpId, User user)
       throws MalformedURLException, URISyntaxException {
-    var dmp = getPlanById(dmpId, "");
+    DMPToolDMP dmp = getPlanById(dmpId, "");
     return new ServiceOperationResult<>(dmp, true);
   }
 
   @Override
-  public DMP getPlanById(String dmpId, String accessToken)
+  public DMPToolDMP getPlanById(String dmpId, String accessToken)
       throws MalformedURLException, URISyntaxException {
-    var dmp = mkDMP(1L, "DMP title " + dmpId, "DMP 1 description");
+    DMPToolDMP dmp = mkDMP(1L, "DMP title " + dmpId, "DMP 1 description");
     return dmp;
   }
 

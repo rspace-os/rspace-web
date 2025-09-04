@@ -1,11 +1,11 @@
 package com.researchspace.webapp.integrations.dmptool;
 
+import com.researchspace.dmptool.model.DMPToolDMP;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
-import com.researchspace.rda.model.DMP;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;
@@ -40,7 +40,8 @@ public abstract class AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
     }
   }
 
-  protected DMPUser saveJsonDMP(DMP dmp, String title, User user, String json) throws IOException {
+  protected DMPUser saveJsonDMP(DMPToolDMP dmp, String title, User user, String json)
+      throws IOException {
     EcatDocumentFile dmpJson = null;
     String abbreviatedTitle = abbreviateTitle(title);
     try (InputStream is = new ByteArrayInputStream(json.getBytes())) {
@@ -53,7 +54,7 @@ public abstract class AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
     return title.length() > 3 ? StringUtils.abbreviate(title, 250) : title;
   }
 
-  private DMPUser saveNewDMP(DMP dmp, String title, User user, EcatDocumentFile dmpJson) {
+  private DMPUser saveNewDMP(DMPToolDMP dmp, String title, User user, EcatDocumentFile dmpJson) {
     Optional<DMPUser> dmpUser = dmpManager.findByDmpId(dmp.getId() + "", user);
     if (dmpUser.isEmpty()) {
       dmpUser =
@@ -75,10 +76,10 @@ public abstract class AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
     return dmpManager.save(dmpUser.get());
   }
 
-  abstract String getJson(DMP dmp, String accessToken)
+  abstract String getJson(DMPToolDMP dmp, String accessToken)
       throws URISyntaxException, MalformedURLException;
 
-  boolean assertIsNewDMP(DMP dmp, User user) {
+  boolean assertIsNewDMP(DMPToolDMP dmp, User user) {
     return !dmpManager.findByDmpId(dmp.getId() + "", user).isPresent();
   }
 }

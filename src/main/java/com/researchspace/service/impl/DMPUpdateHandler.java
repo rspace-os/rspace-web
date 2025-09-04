@@ -53,7 +53,8 @@ public class DMPUpdateHandler {
               .collect(Collectors.toList());
 
       for (DMPUser currentDmpToUpdate : dmpsToUpdate) {
-        ServiceOperationResult<String> dmpUpdated = dmpClient.addDoiIdentifierToDMP(currentDmpToUpdate.getDmpId(), doi.toString(), subject);
+        ServiceOperationResult<String> dmpUpdated =
+            dmpClient.addDoiIdentifierToDMP(currentDmpToUpdate.getDmpId(), doi.toString(), subject);
         if (!dmpUpdated.isSucceeded()) {
           log.error("Updating didn't succeed : {}", dmpUpdated.getMessage());
         } else {

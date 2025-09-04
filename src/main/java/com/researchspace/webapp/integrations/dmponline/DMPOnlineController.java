@@ -13,7 +13,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.rda.model.DMP;
-import com.researchspace.rda.model.DMPList;
+import com.researchspace.rda.model.extras.DMPList;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;

@@ -1,11 +1,11 @@
 package com.researchspace.webapp.integrations.dmptool;
 
 import com.researchspace.dmptool.model.DMPPlanScope;
+import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.rda.model.DMP;
-import com.researchspace.rda.model.DMPList;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -45,7 +45,7 @@ public interface DMPToolDMPProvider {
    * @throws URISyntaxException
    * @throws IOException
    */
-  DMPUser doJsonDownload(DMP dmp, String title, String accessToken)
+  DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
       throws URISyntaxException, IOException;
 
   /**
@@ -59,7 +59,7 @@ public interface DMPToolDMPProvider {
    * @throws URISyntaxException
    * @throws IOException
    */
-  ServiceOperationResult<DMPUser> doJsonDownload(DMP dmp, String title, User user)
+  ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
       throws URISyntaxException, IOException;
 
   /**
@@ -71,7 +71,7 @@ public interface DMPToolDMPProvider {
    * @throws MalformedURLException
    * @throws URISyntaxException
    */
-  DMPList listPlans(DMPPlanScope scope, String accessToken)
+  DMPToolList listPlans(DMPPlanScope scope, String accessToken)
       throws MalformedURLException, URISyntaxException;
 
   /**
@@ -84,7 +84,7 @@ public interface DMPToolDMPProvider {
    * @throws MalformedURLException
    * @throws URISyntaxException
    */
-  ServiceOperationResult<DMPList> listPlans(DMPPlanScope scope, User user)
+  ServiceOperationResult<DMPToolList> listPlans(DMPPlanScope scope, User user)
       throws MalformedURLException, URISyntaxException;
 
   /**
@@ -97,7 +97,7 @@ public interface DMPToolDMPProvider {
    * @throws MalformedURLException
    * @throws URISyntaxException
    */
-  ServiceOperationResult<DMP> getPlanById(String dmpId, User user)
+  ServiceOperationResult<DMPToolDMP> getPlanById(String dmpId, User user)
       throws MalformedURLException, URISyntaxException;
 
   /**
@@ -109,7 +109,7 @@ public interface DMPToolDMPProvider {
    * @throws MalformedURLException
    * @throws URISyntaxException
    */
-  DMP getPlanById(String dmpId, String accessToken)
+  DMPToolDMP getPlanById(String dmpId, String accessToken)
       throws MalformedURLException, URISyntaxException;
 
   /**
@@ -123,6 +123,6 @@ public interface DMPToolDMPProvider {
    * @throws URISyntaxException
    * @throws MalformedURLException
    */
-  public <T> T doGet(String accessToken, String path, Class<T> clazz)
+  <T> T doGet(String accessToken, String path, Class<T> clazz)
       throws URISyntaxException, MalformedURLException;
 }

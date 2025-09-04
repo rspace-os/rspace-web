@@ -3,13 +3,13 @@ package com.researchspace.webapp.integrations.dmptool;
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 
 import com.researchspace.dmptool.model.DMPPlanScope;
+import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.rda.model.DMP;
-import com.researchspace.rda.model.DMPList;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -176,7 +176,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
 
     User user = userManager.getAuthenticatedUserInSession();
     try {
-      ServiceOperationResult<DMP> dmpDetails = dmpToolDMPProvider.getPlanById(id + "", user);
+      ServiceOperationResult<DMPToolDMP> dmpDetails = dmpToolDMPProvider.getPlanById(id + "", user);
       if (dmpDetails.isSucceeded()) {
         var dmpUserServiceOperationResult =
             dmpToolDMPProvider.doJsonDownload(
@@ -197,14 +197,14 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
 
     } catch (URISyntaxException | IOException | RuntimeException e) {
       log.error("Failure on downloading DMP", e);
-      return new AjaxReturnObject<>(null, ErrorList.of("Couldn't download DMP pdf for id: " + id));
+      return new AjaxReturnObject<>(null, ErrorList.of("Couldn't download DMP file for id: " + id));
     }
     return new AjaxReturnObject<Boolean>(Boolean.TRUE, null);
   }
 
   @GetMapping("/plans")
   @ResponseBody
-  public AjaxReturnObject<DMPList> listDMPs(
+  public AjaxReturnObject<DMPToolList> listDMPs(
       @RequestParam(name = "scope", required = false) String scopeParam) {
 
     DMPPlanScope scope = DMPPlanScope.MINE;
@@ -214,7 +214,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
 
     User user = userManager.getAuthenticatedUserInSession();
     try {
-      ServiceOperationResult<DMPList> result = dmpToolDMPProvider.listPlans(scope, user);
+      ServiceOperationResult<DMPToolList> result = dmpToolDMPProvider.listPlans(scope, user);
       if (result.isSucceeded()) {
         return new AjaxReturnObject<>(result.getEntity(), null);
       } else {

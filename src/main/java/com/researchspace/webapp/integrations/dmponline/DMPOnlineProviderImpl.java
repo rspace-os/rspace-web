@@ -1,7 +1,7 @@
 package com.researchspace.webapp.integrations.dmponline;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.researchspace.rda.model.DMPList;
+import com.researchspace.rda.model.extras.DMPList;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;

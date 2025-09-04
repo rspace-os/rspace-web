@@ -11,9 +11,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.dmptool.client.DMPToolClient;
 import com.researchspace.dmptool.client.DMPToolClientImpl;
 import com.researchspace.dmptool.model.DMPPlanScope;
+import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.dmps.DMPUser;
-import com.researchspace.rda.model.DMP;
-import com.researchspace.rda.model.DMPList;
 import com.researchspace.rda.model.DmpId;
 import com.researchspace.rda.model.DmpId.DmpIdType;
 import com.researchspace.service.impl.ConditionalTestRunner;
@@ -180,8 +180,8 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
     dmpToolClient = new DMPToolClientImpl(new URL(realBaseUrl, "/api/v2/"));
   }
 
-  private DMP mkDMP(Long id, String title) {
-    var dmp = new DMP();
+  private DMPToolDMP mkDMP(Long id, String title) {
+    DMPToolDMP dmp = new DMPToolDMP();
     dmp.setDmpId(new DmpId("http://doi.org/10.12345/asdfr-ertgd", DmpIdType.DOI));
     dmp.setTitle(title);
     dmp.setLinks(
@@ -229,11 +229,11 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
     DMPToolOAuthController.AccessToken clientCredentialToken = getClientCredentialToken();
 
     // try conversion to API response object
-    DMPList plansList =
+    DMPToolList plansList =
         dmpToolProvider.listPlans(DMPPlanScope.MINE, clientCredentialToken.getAccessToken());
     assertFalse(plansList.getItems().isEmpty());
     assertFalse(plansList.getItems().isEmpty());
-    DMP firstPlan = (DMP) plansList.getItems().get(0).getDmp();
+    DMPToolDMP firstPlan = plansList.getItems().get(0).getDmp();
     assertNotNull(firstPlan.getId());
     assertNotNull(firstPlan.getTitle());
     assertNotNull(firstPlan.getDescription());
@@ -243,7 +243,7 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   @Test
   @RunIfSystemPropertyDefined("nightly")
   public void downloadPublicDMPPlan() throws Exception {
-    var dmp = mkDMP(PUBLIC_DMP_ID, PUBLIC_DMP_TITLE);
+    DMPToolDMP dmp = mkDMP(PUBLIC_DMP_ID, PUBLIC_DMP_TITLE);
 
     int initialDocCount = getCountOfEntityTable("EcatDocumentFile").intValue();
     int initialDMPUserCount = getCountOfEntityTable("DMPUser").intValue();
@@ -286,8 +286,8 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
     ObjectMapper mapper = new ObjectMapper();
 
     // this also tests that the JSON deserialization works correctly
-    DMP dmpPlan = mapper.readValue(jsonDmpTool, DMPList.class).getItems().get(0).getDmp();
-
+    DMPToolList dmpList = mapper.readValue(jsonDmpTool, DMPToolList.class);
+    DMPToolDMP dmpPlan = dmpList.getItems().get(0).getDmp();
     assertTrue(dmpPlan.getLinks().get("get").contains("https://https/api/v2/plans/"));
     dmpPlan = ((DMPToolDMPProviderImpl) dmpToolProvider).sanitizeDMPLinks(dmpPlan);
     assertFalse(dmpPlan.getLinks().get("get").contains("https://https/api/v2/plans/"));

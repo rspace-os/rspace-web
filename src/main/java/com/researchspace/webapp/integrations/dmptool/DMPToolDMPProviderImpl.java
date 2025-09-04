@@ -7,13 +7,13 @@ import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.dmptool.client.DMPToolClient;
 import com.researchspace.dmptool.client.DMPToolClientImpl;
 import com.researchspace.dmptool.model.DMPPlanScope;
+import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.dmptool.model.RelatedIdentifier;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.rda.model.DMP;
-import com.researchspace.rda.model.DMPList;
 import com.researchspace.service.UserConnectionManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -86,14 +86,14 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
     return result;
   }
 
-  protected String getJson(DMP dmp, String accessToken)
+  protected String getJson(DMPToolDMP dmp, String accessToken)
       throws URISyntaxException, MalformedURLException {
     String json = this.dmpToolClient.getJson(dmp, accessToken);
     return sanitizeDMPLinks(json);
   }
 
   @Override
-  public DMPList listPlans(DMPPlanScope scope, String accessToken)
+  public DMPToolList listPlans(DMPPlanScope scope, String accessToken)
       throws MalformedURLException, URISyntaxException {
     try {
       return this.dmpToolClient.listPlans(scope, accessToken);
@@ -110,30 +110,30 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   }
 
   @Override
-  public ServiceOperationResult<DMPList> listPlans(DMPPlanScope scope, User user)
+  public ServiceOperationResult<DMPToolList> listPlans(DMPPlanScope scope, User user)
       throws MalformedURLException, URISyntaxException {
     Optional<UserConnection> optConn = getUserConnection(user.getUsername());
     if (!optConn.isPresent()) {
       return new ServiceOperationResult<>(null, false, noAccessTokenMsg());
     }
-    var apiDMPlanList = listPlans(scope, optConn.get().getAccessToken());
+    DMPToolList apiDMPlanList = listPlans(scope, optConn.get().getAccessToken());
     analyticsManager.dmpsViewed(user);
     return new ServiceOperationResult<>(apiDMPlanList, true);
   }
 
   @Override
-  public ServiceOperationResult<DMP> getPlanById(String dmpId, User user)
+  public ServiceOperationResult<DMPToolDMP> getPlanById(String dmpId, User user)
       throws MalformedURLException, URISyntaxException {
     Optional<UserConnection> optConn = getUserConnection(user.getUsername());
     if (!optConn.isPresent()) {
-      return noAccessTokenFailure(DMP.class);
+      return noAccessTokenFailure(DMPToolDMP.class);
     }
-    DMP apiDMPlan = getPlanById(dmpId, optConn.get().getAccessToken());
+    DMPToolDMP apiDMPlan = getPlanById(dmpId, optConn.get().getAccessToken());
     apiDMPlan = sanitizeDMPLinks(apiDMPlan);
     return new ServiceOperationResult<>(apiDMPlan, true);
   }
 
-  public DMP sanitizeDMPLinks(DMP apiDMPlan) {
+  public DMPToolDMP sanitizeDMPLinks(DMPToolDMP apiDMPlan) {
     String url = apiDMPlan.getLinks().get("get");
     StringBuilder sanitizedHost =
         new StringBuilder("://").append(dmpToolClient.getApiUrlBase().getHost()).append("/");
@@ -151,9 +151,10 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   }
 
   @Override
-  public DMP getPlanById(String dmpId, String accessToken)
+  public DMPToolDMP getPlanById(String dmpId, String accessToken)
       throws MalformedURLException, URISyntaxException {
-    return this.dmpToolClient.getPlanById(dmpId, accessToken);
+    DMPToolDMP dmp = this.dmpToolClient.getPlanById(dmpId, accessToken);
+    return dmp;
   }
 
   private String noAccessTokenMsg() {
@@ -176,7 +177,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   }
 
   @Override
-  public DMPUser doJsonDownload(DMP dmp, String title, String accessToken)
+  public DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
       throws URISyntaxException, IOException {
     User user = userManager.getAuthenticatedUserInSession();
     if (!assertIsNewDMP(dmp, user)) {
@@ -186,7 +187,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   }
 
   @Override
-  public ServiceOperationResult<DMPUser> doJsonDownload(DMP dmp, String title, User user)
+  public ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
       throws URISyntaxException, IOException {
     Optional<UserConnection> optConn = getUserConnection(user.getUsername());
     if (!optConn.isPresent()) {
