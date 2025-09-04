@@ -117,7 +117,9 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
   @Override
   public RecordGroupSharing get(Long id) {
-    return groupshareRecordDao.get(id);
+    RecordGroupSharing rgs = groupshareRecordDao.get(id);
+    populateSharingPermissionType(Collections.singletonList(rgs));
+    return rgs;
   }
 
   @Override

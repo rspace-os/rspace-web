@@ -32,6 +32,7 @@ import com.researchspace.testutils.TestGroup;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
@@ -348,10 +349,15 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
     SharePost updatePost =
         createSharePostWithGroupAndFolder(testGrp, subfolder.getId(), toShare, "READ");
-    mockMvc
-        .perform(createBuilderForPutWithJSONBody(apiKey, "/share/" + shareId, sharer, updatePost))
-        .andExpect(status().isOk())
-        .andReturn();
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(apiKey, "/share/" + shareId, sharer, updatePost))
+            //        .andExpect(status().isOk())
+            .andReturn();
+
+    result.getResponse().getContentAsString();
+    assertEquals(HttpStatus.OK.value(), result.getResponse().getStatus());
   }
 
   @Test

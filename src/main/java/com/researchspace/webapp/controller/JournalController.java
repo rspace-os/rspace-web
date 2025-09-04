@@ -21,7 +21,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.JournalEntry;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
-import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;

@@ -2532,6 +2532,32 @@ paths:
       responses:
         '204':
           description: 'Item was deleted, no response body'
+    put:
+      summary: Update a share configuration
+      description: >-
+        Updates an existing share. You can change the permission (READ/EDIT) for the sharee, or move a group share to a different folder within the group's Shared Folder tree. To update permission, provide the same target (user or group) as the existing share with the new permission. To move a group share, specify the group's id and a new sharedFolderId.
+      produces:
+        - application/json
+      tags:
+        - Share
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int64
+          description: The Id of the ShareInfo to update
+          required: true
+        - name: share
+          in: body
+          description: Updated sharing configuration
+          required: true
+          schema:
+            $ref: '#/definitions/SharePost'
+      responses:
+        '200':
+          description: Result of update operation
+          schema:
+            $ref: '#/definitions/ShareResult'
 
   /units:
     get:
