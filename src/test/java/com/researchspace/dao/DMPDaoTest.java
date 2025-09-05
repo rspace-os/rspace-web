@@ -1,10 +1,13 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
-import com.researchspace.model.dmps.DMP;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,16 +26,16 @@ public class DMPDaoTest extends SpringTransactionalTest {
 
   @Test
   public void saveDMPUser() {
-    DMP dmp = createDMP();
-    DMPUser dmpUser = saveDMPUser(dmp, anyUser);
+    DmpDto dmpDto = createDMP();
+    DMPUser dmpUser = saveDMPUser(dmpDto, anyUser);
     assertNotNull(dmpUser.getTimestamp());
     assertNotNull(dmpUser.getId());
   }
 
   @Test
   public void findDMPsForUser() {
-    DMP dmp = createDMP();
-    DMPUser dmpUser = saveDMPUser(dmp, anyUser);
+    DmpDto dmpDto = createDMP();
+    DMPUser dmpUser = saveDMPUser(dmpDto, anyUser);
     assertEquals(1, dmpDao.findDMPsForUser(dmpUser.getUser()).size());
     User another = createAndSaveUserIfNotExists("another");
     assertEquals(0, dmpDao.findDMPsForUser(another).size());
@@ -40,20 +43,20 @@ public class DMPDaoTest extends SpringTransactionalTest {
 
   @Test
   public void findDMPByDmpId() {
-    DMP dmp = createDMP();
-    DMPUser dmpUser = saveDMPUser(dmp, anyUser);
-    assertTrue(dmpDao.findByDmpId(dmp.getDmpId(), anyUser).isPresent());
+    DmpDto dmpDto = createDMP();
+    DMPUser dmpUser = saveDMPUser(dmpDto, anyUser);
+    assertTrue(dmpDao.findByDmpId(dmpDto.getDmpId(), anyUser).isPresent());
     assertFalse(dmpDao.findByDmpId("xxxx", anyUser).isPresent());
   }
 
-  private DMPUser saveDMPUser(DMP dmp, User user) {
-    DMPUser dmpUser = new DMPUser(user, dmp);
+  private DMPUser saveDMPUser(DmpDto dmpDto, User user) {
+    DMPUser dmpUser = new DMPUser(user, dmpDto);
     dmpUser = dmpDao.save(dmpUser);
     return dmpUser;
   }
 
-  private DMP createDMP() {
-    DMP dmp = new DMP("id", "title");
-    return dmp;
+  private DmpDto createDMP() {
+    DmpDto dmpDto = new DmpDto("id", "title");
+    return dmpDto;
   }
 }

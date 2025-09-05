@@ -30,7 +30,7 @@ public class DMPManagerImpl extends GenericManagerImpl<DMPUser, Long> implements
   }
 
   @Override
-  public List<DMPUser> findDMPsByPDF(User subject, Long ecatDocument_id) {
-    return dmpDao.findDMPsByPDF(subject, ecatDocument_id);
+  public List<DMPUser> findDMPsByFile(User subject, Long ecatDocument_id) {
+    return dmpDao.findDMPsByFile(subject, ecatDocument_id);
   }
 }
