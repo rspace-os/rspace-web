@@ -1913,7 +1913,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>dmptool-java-client</artifactId>
-        <version>RSDEV-563-dmptool-client-SNAPSHOT</version>
+        <version>0.3.0</version>
         <exclusions>
             <exclusion>
                 <groupId>com.fasterxml.jackson.core</groupId>
