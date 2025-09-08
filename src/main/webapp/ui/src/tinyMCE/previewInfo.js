@@ -106,7 +106,7 @@ export default function PreviewInfo(props) {
                             <StoichiometryTable
                               chemId={props.item.id}
                               stoichiometryId={stoichiometryId}
-                              stoichiometryVersion={stoichiometryVersion}
+                              stoichiometryRevision={stoichiometryVersion}
                             />
                           ) : (
                             <Box p={2}>
