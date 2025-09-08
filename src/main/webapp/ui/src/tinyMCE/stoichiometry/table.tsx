@@ -884,14 +884,8 @@ const StoichiometryTable = React.forwardRef<
         headerName: "Equivalent",
         sortable: false,
         flex: 1,
-        // @ts-expect-error It's not documented or typed, but editable can be a function
-        editable: (params) => {
-          if (limitingReagent && params.id === limitingReagent.id) {
-            return false;
-          }
-          return editable;
-        },
         type: "number",
+        editable,
         headerAlign: "left",
         cellClassName: (params) => {
           if (limitingReagent && params.id === limitingReagent.id) {
@@ -917,14 +911,8 @@ const StoichiometryTable = React.forwardRef<
       sortable: false,
       flex: 1,
       headerAlign: "left",
-      // @ts-expect-error It's not documented or typed, but editable can be a function
-      editable: (params) => {
-        if (limitingReagent) {
-          return editable && params.id === limitingReagent.id;
-        }
-        return editable;
-      },
       type: "number",
+      editable,
       renderCell: (params) =>
         roundToThreeDecimals(params.value) ?? <>&#8212;</>,
       cellClassName: (params) => {
@@ -946,14 +934,8 @@ const StoichiometryTable = React.forwardRef<
         sortable: false,
         flex: 1,
         headerAlign: "left",
-        // @ts-expect-error It's not documented or typed, but editable can be a function
-        editable: (params) => {
-          if (limitingReagent) {
-            return editable && params.id === limitingReagent.id;
-          }
-          return editable;
-        },
         type: "number",
+        editable,
         renderCell: (params) =>
           roundToThreeDecimals(params.value) ?? <>&#8212;</>,
         cellClassName: (params) => {
@@ -971,7 +953,7 @@ const StoichiometryTable = React.forwardRef<
         sortable: false,
         flex: 1,
         headerAlign: "left",
-        editable: editable,
+        editable,
         type: "number",
         renderCell: (params) =>
           roundToThreeDecimals(params.value) ?? <>&mdash;</>,
@@ -989,15 +971,9 @@ const StoichiometryTable = React.forwardRef<
         headerName: "Actual Moles (mol)",
         sortable: false,
         headerAlign: "left",
+        editable,
         flex: 1,
         type: "number",
-        // @ts-expect-error It's not documented or typed, but editable can be a function
-        editable: (params) => {
-          if (limitingReagent) {
-            return editable && params.id === limitingReagent.id;
-          }
-          return editable;
-        },
         renderCell: (params) => {
           return params.value !== null ? (
             roundToThreeDecimals(params.value)
@@ -1034,8 +1010,8 @@ const StoichiometryTable = React.forwardRef<
       headerName: "Notes",
       sortable: false,
       flex: 1.5,
-      editable: editable,
       type: "string",
+      editable,
       renderCell: (params) => params.value ?? <>&mdash;</>,
     }),
   ];
@@ -1094,6 +1070,20 @@ const StoichiometryTable = React.forwardRef<
       <DataGrid
         rows={allMolecules ?? []}
         columns={columns}
+        isCellEditable={({ field, row }) => {
+          /*
+           * When a limiting reagent is defined, the user may only edit its
+           * mass or moles, with the other masses and moles being computed
+           * based on the coefficients. As such, we're preventing those cells
+           * from being editable here. All other cells of all other editable
+           * columns are unaffected with MUI applying an implicit conjunction
+           * between the result of this function and the column's `editable`
+           * property.
+           */
+          if (limitingReagent && (field === "mass" || field === "moles"))
+            return row.id === limitingReagent.id;
+          return true;
+        }}
         autoHeight
         hideFooter
         disableColumnFilter
