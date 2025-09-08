@@ -324,8 +324,14 @@ export function calculateUpdatedMolecules(
   }
 
   if (beforeMolecule.coefficient !== editedRow.coefficient) {
+    const changeInCoefficient =
+      editedRow.coefficient / beforeMolecule.coefficient;
     const updatedMolecules = applyChanges({
       coefficient: editedRow.coefficient,
+      mass:
+        beforeMolecule.mass === null
+          ? null
+          : beforeMolecule.mass * changeInCoefficient,
     });
     const newLimitingReagent = updatedMolecules.find((m) => m.limitingReagent);
     if (!newLimitingReagent) {
