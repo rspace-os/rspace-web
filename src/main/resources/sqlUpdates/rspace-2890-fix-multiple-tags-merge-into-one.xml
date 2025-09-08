@@ -1,0 +1,23 @@
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Update null tagMetaData with docTag -->
+    <changeSet id="2025-09-08-backfill-tagMetaData" author="nebay">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="structureddocument"/>
+            <columnExists tableName="structureddocument" columnName="docTag"/>
+            <columnExists tableName="structureddocument" columnName="tagMetaData"/>
+        </preConditions>
+        <comment>Copy tags from docTag into tagMetaData when tagMetaData is NULL or empty.</comment>
+        <sql>
+            UPDATE structureddocument
+            SET tagMetaData = docTag
+            WHERE (tagMetaData IS NULL OR tagMetaData = '')
+              AND docTag IS NOT NULL;
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>
