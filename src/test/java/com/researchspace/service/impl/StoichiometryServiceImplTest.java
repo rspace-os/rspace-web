@@ -53,8 +53,7 @@ public class StoichiometryServiceImplTest {
   void create_whenOwningRecordMissing_throwsNotFound() {
     when(chemistryService.getChemicalElementByRevision(2L, null, user))
         .thenReturn(mock(RSChemElement.class));
-    NotFoundException ex =
-        assertThrows(NotFoundException.class, () -> service.create(2L, null, user));
+    NotFoundException ex = assertThrows(NotFoundException.class, () -> service.create(2L, user));
 
     assertTrue(ex.getMessage().contains("Record containing chemical with id 2 not found"));
   }
@@ -68,7 +67,7 @@ public class StoichiometryServiceImplTest {
     when(chemistryService.getChemicalElementByRevision(2L, null, user)).thenReturn(chem);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(false);
 
-    assertThrows(AuthorizationException.class, () -> service.create(2L, null, user));
+    assertThrows(AuthorizationException.class, () -> service.create(2L, user));
   }
 
   @Test
@@ -84,7 +83,7 @@ public class StoichiometryServiceImplTest {
     when(stoichiometryManager.findByParentReactionId(2L)).thenReturn(Optional.of(existing));
 
     StoichiometryException ex =
-        assertThrows(StoichiometryException.class, () -> service.create(2L, null, user));
+        assertThrows(StoichiometryException.class, () -> service.create(2L, user));
     assertTrue(ex.getMessage().contains("Stoichiometry already exists for reaction chemId=2"));
   }
 
@@ -100,7 +99,7 @@ public class StoichiometryServiceImplTest {
     when(chemistryProvider.getStoichiometry(chem)).thenReturn(Optional.empty());
 
     StoichiometryException ex =
-        assertThrows(StoichiometryException.class, () -> service.create(2L, null, user));
+        assertThrows(StoichiometryException.class, () -> service.create(2L, user));
     assertTrue(ex.getMessage().contains("Unable to generate stoichiometry"));
   }
 
@@ -119,7 +118,7 @@ public class StoichiometryServiceImplTest {
         .thenThrow(new IOException("IO fail"));
 
     StoichiometryException ex =
-        assertThrows(StoichiometryException.class, () -> service.create(2L, null, user));
+        assertThrows(StoichiometryException.class, () -> service.create(2L, user));
     assertTrue(ex.getMessage().contains("Problem while creating new Stoichiometry: IO fail"));
   }
 
@@ -141,7 +140,7 @@ public class StoichiometryServiceImplTest {
     when(stoichiometryManager.createFromAnalysis(eq(analysis), eq(chem), eq(user)))
         .thenReturn(created);
 
-    Stoichiometry result = service.create(2L, null, user);
+    Stoichiometry result = service.create(2L, user);
     assertEquals(7L, result.getId().longValue());
     assertEquals(chem, result.getParentReaction());
   }

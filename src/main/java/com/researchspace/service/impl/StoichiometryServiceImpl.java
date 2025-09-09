@@ -73,8 +73,8 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   }
 
   @Override
-  public Stoichiometry create(long chemId, Integer revision, User user) {
-    RSChemElement chemical = chemistryService.getChemicalElementByRevision(chemId, revision, user);
+  public Stoichiometry create(long chemId, User user) {
+    RSChemElement chemical = chemistryService.getChemicalElementByRevision(chemId, null, user);
     Record owningRecord = chemical != null ? chemical.getRecord() : null;
     if (owningRecord == null) {
       throw new NotFoundException("Record containing chemical with id " + chemId + " not found");
