@@ -193,7 +193,7 @@ export function calculateUpdatedMolecules(
     );
   if (beforeMolecule.molecularWeight !== editedRow.molecularWeight)
     throw new Error(
-      "Molecula weight is an intrinsic property of the chemical and cannot be modified",
+      "Molecular weight is an intrinsic property of the chemical and cannot be modified",
     );
   if (beforeMolecule.formula !== editedRow.formula)
     throw new Error(
