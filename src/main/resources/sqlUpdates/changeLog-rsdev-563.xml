@@ -1,0 +1,33 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2025-08-27a" context="run" author="nico">
+    <comment>Extend User.usernameAlias column to 255 chars</comment>
+    <renameColumn tableName="DMPUser" columnDataType="BIGINT(20)"
+      newColumnName="dmpDownloadFile_id" oldColumnName="dmpDownloadPdf_id" />
+
+    <addColumn tableName="DMPUser">
+      <column name="source" type="VARCHAR(20)" defaultValue="UNKNOWN">
+        <constraints nullable="true" />
+      </column>
+    </addColumn>
+
+    <addColumn tableName="DMPUser">
+      <column name="doiLink" type="VARCHAR(255)">
+        <constraints nullable="true" />
+      </column>
+    </addColumn>
+
+    <addColumn tableName="DMPUser">
+      <column name="dmpLink" type="VARCHAR(255)">
+        <constraints nullable="true" />
+      </column>
+    </addColumn>
+
+  </changeSet>
+
+
+</databaseChangeLog>

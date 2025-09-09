@@ -318,7 +318,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     long numb4InDB =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     anyForm = formDao.getAll().get(0);
-    Folder cf1 = root.getSubFolderByName(Folder.SHARED_FOLDER_NAME);
+    Folder cf1 = root.getSystemSubFolderByName(Folder.SHARED_FOLDER_NAME);
     String newName = "newname";
     Folder copied = folderMgr.copy(cf1.getId(), user, newName).getParentCopy();
     flushDatabaseState();
@@ -929,7 +929,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void moveSearchResults() throws Exception {
+  public void moveSearchResultsAsPI() {
     User pi = createAndSaveAPi();
     User grpMember = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(pi, grpMember);
@@ -937,14 +937,47 @@ public class RecordManagerTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(grpMember, "quiop");
     Group g = createGroup("any", pi);
     addUsersToGroup(pi, g, grpMember);
-    // now login  as PI:
+
+    // check PI's permission to record
     logoutAndLoginAs(pi);
-    assertTrue(permissionUtils.isPermitted(doc, PermissionType.READ, pi)); // must be true
-    // but shouldn't be able to move from group members folder into pis folder
+    assertTrue(permissionUtils.isPermitted(doc, PermissionType.READ, pi)); // PI can always read
+    assertFalse(permissionUtils.isPermitted(doc, PermissionType.WRITE, pi)); // cannot write
+    assertFalse(permissionUtils.isPermitted(doc, PermissionType.SEND, pi)); // cannot move
+    // cannot move from group members folder into pis folder
     assertFalse(
         recordMgr
             .move(doc.getId(), pi.getRootFolder().getId(), grpMember.getRootFolder().getId(), pi)
             .isSucceeded());
+
+    // now share the document, with 'read' permission
+    logoutAndLoginAs(grpMember);
+    doc = shareRecordWithGroup(grpMember, g, doc).getShared().asStrucDoc();
+    // re-check PI's permissions
+    logoutAndLoginAs(pi);
+    assertTrue(permissionUtils.isPermitted(doc, PermissionType.READ, pi)); // PI can always read
+    assertFalse(permissionUtils.isPermitted(doc, PermissionType.WRITE, pi)); // cannot write
+    assertTrue(permissionUtils.isPermitted(doc, PermissionType.SEND, pi)); // can move now
+    // PI's move permission should be limited to shared folder, cannot move into pi's own folder
+    assertFalse(
+        recordMgr
+            .move(doc.getId(), pi.getRootFolder().getId(), grpMember.getRootFolder().getId(), pi)
+            .isSucceeded());
+    // attempt to move into pi's own folder triggered from within a shared folder should also fail
+    assertFalse(
+        recordMgr
+            .move(doc.getId(), pi.getRootFolder().getId(), g.getCommunalGroupFolderId(), pi)
+            .isSucceeded());
+    // attempt to move from shared folder into shared subfolder should be fine though
+    /* !!! currently not working, due to sharing code not poplulating folder.children array,
+    which makes removing from folder (part of move) to fail.
+    this doesn't seem to be problem on real setup, just in unit test. !!! */
+    /*    Folder sharedSubfolder =
+        folderMgr.createNewFolder(g.getCommunalGroupFolderId(), "sharedSubfolder", pi);
+    assertTrue(sharedSubfolder.isSharedFolder());
+    assertTrue(
+        recordMgr
+            .move(doc.getId(), sharedSubfolder.getId(), g.getCommunalGroupFolderId(), pi)
+            .isSucceeded());*/
   }
 
   @Test

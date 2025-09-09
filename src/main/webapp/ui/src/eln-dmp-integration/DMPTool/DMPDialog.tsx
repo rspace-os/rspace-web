@@ -165,7 +165,7 @@ function DMPDialogContent({
           .post<{
             success: true;
             error?: { errorMessages: string[] };
-          }>(`/apps/dmptool/pdfById/${selectedPlanId}`, {})
+          }>(`/apps/dmptool/jsonById/${selectedPlanId}`, {})
           .then((r) => {
             addAlert(
               mkAlert(

@@ -17,7 +17,7 @@ public interface DMPDao extends GenericDao<DMPUser, Long> {
    * @param ecatDocument_id
    * @return
    */
-  List<DMPUser> findDMPsByPDF(User subject, Long ecatDocument_id);
+  List<DMPUser> findDMPsByFile(User subject, Long ecatDocument_id);
 
   Optional<DMPUser> findByDmpId(String dmpId, User user);
 }

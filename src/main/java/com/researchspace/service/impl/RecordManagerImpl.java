@@ -70,6 +70,7 @@ import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
@@ -131,6 +132,7 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired MovePermissionChecker movePermissionChecker;
   private @Autowired IPermissionUtils permissnUtils;
   private @Autowired RecordDao recordDao;
+  private @Autowired IPropertyHolder properties;
   private @Autowired UserManager userManager;
   private @Autowired UserDao userDao;
   private @Autowired AuditDao auditDao;
@@ -253,7 +255,12 @@ public class RecordManagerImpl implements RecordManager {
       if (!movePermissionChecker.checkMovePermissions(user, newparent, toMove)) {
         return new ServiceOperationResult<>(null, false);
       }
-      boolean moved = toMove.move(currparent, newparent, user);
+      boolean moved;
+      if (properties.isRsDevUnsafeMoveAllowed()) {
+        moved = toMove.unsafeMove(currparent, newparent, user);
+      } else {
+        moved = toMove.move(currparent, newparent, user);
+      }
       if (moved) {
         if (currparent.isFolder()) {
           folderDao.save(currparent);

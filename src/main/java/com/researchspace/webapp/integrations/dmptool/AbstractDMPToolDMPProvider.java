@@ -3,8 +3,9 @@ package com.researchspace.webapp.integrations.dmptool;
 import com.researchspace.dmptool.model.DMPToolDMP;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
-import com.researchspace.model.dmps.DMP;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /** Common methods to both stub and real implementations */
 @Slf4j
 public abstract class AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
+
   URL baseUrl;
   URL apiBaseUrl;
 
@@ -52,16 +55,25 @@ public abstract class AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
   }
 
   private DMPUser saveNewDMP(DMPToolDMP dmp, String title, User user, EcatDocumentFile dmpJson) {
-    var dmpUser =
-        dmpManager
-            .findByDmpId(dmp.getId() + "", user)
-            .orElse(new DMPUser(user, new DMP(dmp.getId() + "", title)));
-    if (dmpJson != null) {
-      dmpUser.setDmpDownloadPdf(dmpJson);
-    } else {
-      log.warn("Unexpected null DMP PDF - did download work?");
+    Optional<DMPUser> dmpUser = dmpManager.findByDmpId(dmp.getId() + "", user);
+    if (dmpUser.isEmpty()) {
+      dmpUser =
+          Optional.of(
+              new DMPUser(
+                  user,
+                  new DmpDto(
+                      dmp.getId() + "",
+                      title,
+                      DMPSource.DMP_TOOL,
+                      dmp.getDoiLink(),
+                      dmp.getDmpLink())));
     }
-    return dmpManager.save(dmpUser);
+    if (dmpJson != null) {
+      dmpUser.get().setDmpDownloadFile(dmpJson);
+    } else {
+      log.warn("Unexpected null DMP Json - did download work?");
+    }
+    return dmpManager.save(dmpUser.get());
   }
 
   abstract String getJson(DMPToolDMP dmp, String accessToken)
