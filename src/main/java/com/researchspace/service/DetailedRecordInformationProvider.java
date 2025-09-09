@@ -3,6 +3,7 @@ package com.researchspace.service;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DetailedRecordInformation;
+import com.researchspace.model.record.RecordInfoSharingInfo;
 import com.researchspace.model.record.RecordInformation;
 import java.util.List;
 import java.util.Map;
@@ -44,4 +45,6 @@ public interface DetailedRecordInformationProvider {
    * @return
    */
   Map<String, RecordInformation> getRecordInformation(Long[] ids, Long[] revisions, User user);
+
+  RecordInfoSharingInfo getRecordSharingInfo(BaseRecord baseRecord);
 }

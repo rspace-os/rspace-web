@@ -2,12 +2,12 @@ package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.controller.ApiGenericSearchConfig;
 import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
-import com.researchspace.api.v1.model.ApiShareInfo;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
+import com.researchspace.api.v1.model.DocumentShares;
+import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.model.User;
-import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -32,10 +33,10 @@ public interface ShareApi {
   @ResponseStatus(code = HttpStatus.NO_CONTENT)
   void deleteShare(@PathVariable("id") Long id, User user);
 
-  @PutMapping("/{id}")
-  @ResponseStatus(code = HttpStatus.OK)
-  ApiSharingResult updateShare(
-      @PathVariable("id") Long id, SharePost shareConfig, BindingResult errors, User user)
+  @PutMapping
+  @ResponseStatus(code = HttpStatus.NO_CONTENT)
+  void updateShare(
+      @RequestBody SharePermissionUpdate sharePermissionUpdate, BindingResult errors, User user)
       throws BindException;
 
   @GetMapping
@@ -47,5 +48,10 @@ public interface ShareApi {
       throws BindException;
 
   @GetMapping("/document/{id}")
-  List<ApiShareInfo> getAllSharesForDoc(@PathVariable("id") Long docId, User user);
+  DocumentShares getAllSharesForDoc(@PathVariable("id") Long docId, User user);
+
+  /**
+   * id sharedItemId sharedItemName sharedTargetType (Group or User) permission shareeId shareeName
+   * sharedToFolderId _links
+   */
 }

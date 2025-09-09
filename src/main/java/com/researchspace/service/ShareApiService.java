@@ -2,12 +2,12 @@ package com.researchspace.service;
 
 import com.researchspace.api.v1.controller.ApiGenericSearchConfig;
 import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
-import com.researchspace.api.v1.model.ApiShareInfo;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
+import com.researchspace.api.v1.model.DocumentShares;
+import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.model.User;
-import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 
@@ -38,19 +38,17 @@ public interface ShareApiService {
   void deleteShare(Long id, User user);
 
   /**
-   * Updates an existing share with new configuration.
+   * Updates permissions on an existing share.
    *
-   * @param id The ID of the share to update
-   * @param shareConfig The new sharing configuration
+   * @param permissionUpdate The new share permission
    * @param user The user performing the update
-   * @return ApiSharingResult containing the updated share information
    * @throws BindException if validation errors occur
    */
   @Transactional
-  ApiSharingResult updateShare(Long id, SharePost shareConfig, User user) throws BindException;
+  void updateShare(SharePermissionUpdate permissionUpdate, User user) throws BindException;
 
   /**
-   * Retrieves paginated list of shares for a user.
+   * Retrieves a paginated list of shares for a user.
    *
    * @param pgCrit Pagination criteria
    * @param apiSrchConfig Search configuration
@@ -71,5 +69,5 @@ public interface ShareApiService {
    * @return List of share information for the document
    */
   @Transactional(readOnly = true)
-  List<ApiShareInfo> getAllSharesForDoc(Long docId, User user);
+  DocumentShares getAllSharesForDoc(Long docId, User user);
 }

@@ -120,8 +120,15 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
   @Override
   public void addSharingInfo(
       Long recordId, BaseRecord baseRecord, DetailedRecordInformation detailedInfo) {
+    RecordInfoSharingInfo sharingInfo = getRecordSharingInfo(baseRecord);
+    detailedInfo.calculateSharedStatuses(sharingInfo);
+  }
+
+  @Override
+  public RecordInfoSharingInfo getRecordSharingInfo(BaseRecord baseRecord) {
     if (baseRecord.isStructuredDocument() || baseRecord.isNotebook()) {
-      List<RecordGroupSharing> sharingsList = sharingManager.getRecordSharingInfo(recordId);
+      List<RecordGroupSharing> sharingsList =
+          sharingManager.getRecordSharingInfo(baseRecord.getId());
       sharingsList =
           sharingsList.stream()
               .filter(rgs -> rgs.getPublicLink() == null)
@@ -143,9 +150,10 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
           implicitSharingList.stream()
               .filter(rgs -> rgs.getPublicLink() == null)
               .collect(Collectors.toList());
-      detailedInfo.calculateSharedStatuses(
-          new RecordInfoSharingInfo(sharingsList, implicitSharingList));
+
+      return new RecordInfoSharingInfo(sharingsList, implicitSharingList);
     }
+    return null;
   }
 
   private void addStrucDocDetailedInfo(

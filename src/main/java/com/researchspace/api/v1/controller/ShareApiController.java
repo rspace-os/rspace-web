@@ -1,13 +1,13 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.ShareApi;
-import com.researchspace.api.v1.model.ApiShareInfo;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
+import com.researchspace.api.v1.model.DocumentShares;
+import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.model.User;
 import com.researchspace.service.ShareApiService;
-import java.util.List;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
@@ -37,14 +37,13 @@ public class ShareApiController extends BaseApiController implements ShareApi {
   }
 
   @Override
-  public ApiSharingResult updateShare(
-      @PathVariable("id") Long id,
-      @Valid @RequestBody SharePost shareConfig,
+  public void updateShare(
+      @Valid @RequestBody SharePermissionUpdate permissionUpdate,
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
     throwBindExceptionIfErrors(errors);
-    return shareApiService.updateShare(id, shareConfig, user);
+    shareApiService.updateShare(permissionUpdate, user);
   }
 
   @Override
@@ -59,7 +58,7 @@ public class ShareApiController extends BaseApiController implements ShareApi {
   }
 
   @Override
-  public List<ApiShareInfo> getAllSharesForDoc(Long docId, User user) {
+  public DocumentShares getAllSharesForDoc(Long docId, User user) {
     return shareApiService.getAllSharesForDoc(docId, user);
   }
 }

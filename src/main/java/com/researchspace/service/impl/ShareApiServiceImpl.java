@@ -9,12 +9,13 @@ import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
 import com.researchspace.api.v1.model.ApiShareInfo;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
+import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.api.v1.model.GroupSharePostItem;
+import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.FolderDao;
-import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
@@ -22,8 +23,11 @@ import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.dtos.SharedRecordSearchCriteria;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.RecordInfoSharingInfo;
 import com.researchspace.model.views.ServiceOperationResultCollection;
+import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareApiService;
 import com.researchspace.service.SharingHandler;
@@ -51,7 +55,8 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   @Autowired private SharingHandler recordShareHandler;
   @Autowired private RecordSharingManager recordShareMgr;
   @Autowired private FolderDao folderDao;
-  @Autowired private RecordGroupSharingDao recordGroupSharingDao;
+  @Autowired private DetailedRecordInformationProvider recordInformationProvider;
+  @Autowired private DetailedRecordInformationProvider detailedRecordInformationProvider;
 
   @Override
   public ApiSharingResult shareItems(SharePost shareConfig, User user) throws BindException {
@@ -83,23 +88,17 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   }
 
   @Override
-  public ApiSharingResult updateShare(Long id, SharePost shareConfig, User user)
-      throws BindException {
-    RecordGroupSharing existingShare = getExistingShareOrThrow(id);
+  public void updateShare(SharePermissionUpdate permissionUpdate, User user) throws BindException {
+    Long id = permissionUpdate.getShareId();
 
-    if (isPermissionOnlyUpdate(existingShare, shareConfig)) {
-      return updatePermissionsOnly(existingShare, shareConfig, user);
+    ErrorList errors =
+        recordShareMgr.updatePermissionForRecord(
+            id, permissionUpdate.getPermission().toUpperCase(), user.getUsername());
+
+    if (errors != null && errors.hasErrorMessages()) {
+      throw new IllegalArgumentException(
+          "Could not update permission: " + errors.getAllErrorMessagesAsStringsSeparatedBy(", "));
     }
-
-    if (isFolderLocationUpdate(existingShare, shareConfig)) {
-      // moving a shared file is the same as moving a non-shared file. There's no rest api for
-      // moving files yet
-      // therefore, as a convenience, we can just delete and re-share
-      deleteShare(id, user);
-      return shareItems(shareConfig, user);
-    }
-
-    return null;
   }
 
   @Override
@@ -117,14 +116,20 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   }
 
   @Override
-  public List<ApiShareInfo> getAllSharesForDoc(Long docId, User user) {
-    validateDocumentId(docId);
-    List<RecordGroupSharing> shared = recordShareMgr.getRecordSharingInfo(docId);
-    populateTargetFolders(shared);
-    return entityToSharedInfo(shared);
+  public DocumentShares getAllSharesForDoc(Long docId, User user) {
+    if (docId == null) {
+      throw new IllegalArgumentException("Document id cannot be null");
+    }
+    BaseRecord record = recordManager.get(docId);
+    RecordInfoSharingInfo sharingInfo =
+        detailedRecordInformationProvider.getRecordSharingInfo(record);
+    DocumentShares shares = new DocumentShares();
+    shares.setDirectShares(sharingInfo.getDirectShares());
+    shares.setImplicitShares(sharingInfo.getImplicitShares());
+    //    populateTargetFolders(sharingInfo.getImplicitShares());
+    //    populateTargetFolders(sharingInfo.getDirectShares());
+    return shares;
   }
-
-  // Private helper methods moved from controller
 
   private void initializeNullCollections(SharePost shareConfig) {
     if (shareConfig.getGroupSharePostItems() == null) {
@@ -208,53 +213,6 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     return !Objects.equals(currentFolderId, groupItem.getSharedFolderId());
   }
 
-  private ApiSharingResult updatePermissionsOnly(
-      RecordGroupSharing existingShare, SharePost shareConfig, User user) {
-
-    String newPermission = extractNewPermission(shareConfig, existingShare);
-
-    ErrorList errors =
-        recordShareMgr.updatePermissionForRecord(
-            existingShare.getId(), newPermission.toUpperCase(), user.getUsername());
-
-    if (errors != null && errors.hasErrorMessages()) {
-      throw new IllegalArgumentException(
-          "Could not update permission: " + errors.getAllErrorMessagesAsStringsSeparatedBy(", "));
-    }
-
-    RecordGroupSharing updatedShare = recordShareMgr.get(existingShare.getId());
-    return new ApiSharingResult(List.of(new ApiShareInfo(updatedShare)), List.of());
-  }
-
-  private ApiSharingResult updateFolderLocation(
-      RecordGroupSharing existingShare, SharePost shareConfig, User user) {
-
-    GroupSharePostItem groupItem = shareConfig.getGroupSharePostItems().get(0);
-    Long newFolderId = groupItem.getSharedFolderId();
-
-    try {
-      // Get the new target folder
-      Folder newTargetFolder = null;
-      if (newFolderId != null) {
-        newTargetFolder = folderDao.get(newFolderId);
-        if (newTargetFolder == null) {
-          throw new IllegalArgumentException("Target folder with id " + newFolderId + " not found");
-        }
-      }
-
-      recordGroupSharingDao.save(existingShare);
-
-      return new ApiSharingResult(List.of(new ApiShareInfo(existingShare)), List.of());
-
-    } catch (Exception e) {
-      log.error(
-          "Failed to update folder location for share {}: {}",
-          existingShare.getId(),
-          e.getMessage());
-      throw new IllegalArgumentException("Could not update folder location: " + e.getMessage());
-    }
-  }
-
   private String extractNewPermission(SharePost shareConfig, RecordGroupSharing existingShare) {
     if (existingShare.getSharee().isGroup() && !shareConfig.getGroupSharePostItems().isEmpty()) {
       return shareConfig.getGroupSharePostItems().get(0).getPermission();
@@ -298,12 +256,6 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
         ApiShareInfo::new,
         share -> buildAndAddSelfLink(SHARE_ENDPOINT, share));
     return apiShareSearchResults;
-  }
-
-  private void validateDocumentId(Long docId) {
-    if (docId == null) {
-      throw new IllegalArgumentException("Document id cannot be null");
-    }
   }
 
   private void populateTargetFolders(List<RecordGroupSharing> shared) {

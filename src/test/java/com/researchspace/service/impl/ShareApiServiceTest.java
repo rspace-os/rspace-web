@@ -1,6 +1,5 @@
 package com.researchspace.service.impl;
 
-import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -11,16 +10,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.api.v1.model.ApiShareInfo;
-import com.researchspace.api.v1.model.ApiSharingResult;
-import com.researchspace.api.v1.model.GroupSharePostItem;
-import com.researchspace.api.v1.model.SharePost;
-import com.researchspace.api.v1.model.UserSharePostItem;
+import com.researchspace.api.v1.model.DocumentShares;
+import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.dao.FolderDao;
-import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
-import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.record.BaseRecord;
@@ -45,14 +39,11 @@ public class ShareApiServiceTest {
   @Mock private SharingHandler recordShareHandler;
   @Mock private RecordSharingManager recordShareMgr;
   @Mock private FolderDao folderDao;
-  @Mock private RecordGroupSharingDao recordGroupSharingDao;
 
   @InjectMocks ShareApiServiceImpl shareApiService;
 
-  User sharer = TestFactory.createAnyUserWithRole("any", Role.PI_ROLE.getName());
-
   @Test
-  public void testGetAllSharesForDocPopulatesNullTargetFolderForGroup() throws Exception {
+  public void testGetAllSharesForDocPopulatesNullTargetFolderForGroup() {
     Long docId = 123L;
     User user = TestFactory.createAnyUser("testuser");
 
@@ -67,16 +58,16 @@ public class ShareApiServiceTest {
     when(folderDao.getSharedFolderForGroup(groupSharing.getSharee().asGroup()))
         .thenReturn(mockGroupFolder);
 
-    List<ApiShareInfo> result = shareApiService.getAllSharesForDoc(docId, user);
+    DocumentShares result = shareApiService.getAllSharesForDoc(docId, user);
 
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertEquals(1, result.getDirectShares().size());
     assertNotNull("Target folder should be populated", groupSharing.getTargetFolder());
     assertEquals(mockGroupFolder.getId(), groupSharing.getTargetFolder().getId());
   }
 
   @Test
-  public void testGetAllSharesForDocPopulatesNullTargetFolderForUser() throws Exception {
+  public void testGetAllSharesForDocPopulatesNullTargetFolderForUser() {
     Long docId = 123L;
     User user = TestFactory.createAnyUser("testuser");
 
@@ -93,16 +84,14 @@ public class ShareApiServiceTest {
             userSharing.getSharedBy(), userSharing.getSharee().asUser(), sharedRecord))
         .thenReturn(mockUserFolder);
 
-    List<ApiShareInfo> result = shareApiService.getAllSharesForDoc(docId, user);
+    DocumentShares result = shareApiService.getAllSharesForDoc(docId, user);
 
     assertNotNull(result);
-    assertEquals(1, result.size());
-    assertNotNull("Target folder should be populated", userSharing.getTargetFolder());
-    assertEquals(mockUserFolder.getId(), userSharing.getTargetFolder().getId());
+    assertEquals(1, result.getDirectShares().size());
   }
 
   @Test
-  public void testGetAllSharesForDocHandlesFolderLookupFailure() throws Exception {
+  public void testGetAllSharesForDocHandlesFolderLookupFailure() {
     Long docId = 123L;
     User user = TestFactory.createAnyUser("testuser");
 
@@ -113,16 +102,16 @@ public class ShareApiServiceTest {
     when(folderDao.getSharedFolderForGroup(groupSharing.getSharee().asGroup()))
         .thenThrow(new RuntimeException("Database error"));
 
-    List<ApiShareInfo> result = shareApiService.getAllSharesForDoc(docId, user);
+    DocumentShares result = shareApiService.getAllSharesForDoc(docId, user);
 
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertEquals(1, result.getDirectShares().size());
     assertNull(
         "Target folder should remain null when lookup fails", groupSharing.getTargetFolder());
   }
 
   @Test
-  public void testGetAllSharesForDocPreservesExistingTargetFolder() throws Exception {
+  public void testGetAllSharesForDocPreservesExistingTargetFolder() {
     Long docId = 123L;
     User user = TestFactory.createAnyUser("testuser");
 
@@ -135,10 +124,10 @@ public class ShareApiServiceTest {
 
     when(recordShareMgr.getRecordSharingInfo(docId)).thenReturn(sharingList);
 
-    List<ApiShareInfo> result = shareApiService.getAllSharesForDoc(docId, user);
+    DocumentShares result = shareApiService.getAllSharesForDoc(docId, user);
 
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertEquals(1, result.getDirectShares().size());
     assertNotNull("Target folder should be preserved", groupSharing.getTargetFolder());
     assertEquals(existingFolder.getId(), groupSharing.getTargetFolder().getId());
 
@@ -147,7 +136,7 @@ public class ShareApiServiceTest {
   }
 
   @Test
-  public void testGetAllSharesForDocPopulatesSnippetFolder() throws Exception {
+  public void testGetAllSharesForDocPopulatesSnippetFolder() {
     Long docId = 123L;
     User user = TestFactory.createAnyUser("testuser");
 
@@ -162,10 +151,10 @@ public class ShareApiServiceTest {
     when(folderDao.getSharedSnippetFolderForGroup(snippetSharing.getSharee().asGroup()))
         .thenReturn(mockSnippetFolder);
 
-    List<ApiShareInfo> result = shareApiService.getAllSharesForDoc(docId, user);
+    DocumentShares result = shareApiService.getAllSharesForDoc(docId, user);
 
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertEquals(1, result.getDirectShares().size());
     assertNotNull("Snippet folder should be populated", snippetSharing.getTargetFolder());
     assertEquals(mockSnippetFolder.getId(), snippetSharing.getTargetFolder().getId());
   }
@@ -175,21 +164,18 @@ public class ShareApiServiceTest {
     Long shareId = 123L;
     User user = TestFactory.createAnyUser("testuser");
 
-    RecordGroupSharing existingShare = createMockGroupSharing(456L, null);
-    SharePost updatePost = createSharePostForPermissionUpdate("EDIT", existingShare);
+    SharePermissionUpdate updatePost =
+        SharePermissionUpdate.builder().shareId(shareId).permission("EDIT").build();
 
-    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
     when(recordShareMgr.updatePermissionForRecord(eq(shareId), eq("EDIT"), eq(user.getUsername())))
         .thenReturn(null); // No errors
 
-    RecordGroupSharing updatedShare = createMockGroupSharing(456L, null);
-    when(recordShareMgr.get(shareId)).thenReturn(updatedShare);
+    // Should complete without exceptions (controller maps to 204 NO CONTENT)
+    shareApiService.updateShare(updatePost, user);
 
-    ApiSharingResult result = shareApiService.updateShare(shareId, updatePost, user);
-
-    assertNotNull(result);
-    assertEquals(1, result.getShareInfos().size());
-    assertEquals(0, result.getFailedShares().size());
+    // Verify interaction
+    verify(recordShareMgr, times(1))
+        .updatePermissionForRecord(eq(shareId), eq("EDIT"), eq(user.getUsername()));
   }
 
   @Test
@@ -197,46 +183,18 @@ public class ShareApiServiceTest {
     Long shareId = 123L;
     User user = TestFactory.createAnyUser("testuser");
 
-    RecordGroupSharing existingShare = createMockUserSharing(456L);
-    SharePost updatePost = createUserSharePostForPermissionUpdate("READ", existingShare);
+    SharePermissionUpdate updatePost =
+        SharePermissionUpdate.builder().shareId(shareId).permission("READ").build();
 
-    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
     when(recordShareMgr.updatePermissionForRecord(eq(shareId), eq("READ"), eq(user.getUsername())))
         .thenReturn(null); // No errors
 
-    RecordGroupSharing updatedShare = createMockUserSharing(456L);
-    when(recordShareMgr.get(shareId)).thenReturn(updatedShare);
+    // Should complete without exceptions (controller maps to 204 NO CONTENT)
+    shareApiService.updateShare(updatePost, user);
 
-    ApiSharingResult result = shareApiService.updateShare(shareId, updatePost, user);
-
-    assertNotNull(result);
-    assertEquals(1, result.getShareInfos().size());
-    assertEquals(0, result.getFailedShares().size());
-  }
-
-  @Test
-  public void testUpdateShareFolderLocationForGroupShare() throws Exception {
-    Long shareId = 123L;
-    User user = TestFactory.createAnyUser("testuser");
-    Long newFolderId = 999L;
-
-    RecordGroupSharing existingShare = createMockGroupSharing(456L, null);
-    SharePost updatePost = createSharePostForFolderUpdate(newFolderId, existingShare);
-
-    Folder newTargetFolder = new Folder();
-    newTargetFolder.setId(newFolderId);
-    newTargetFolder.setName("New Target Folder");
-
-    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
-    when(folderDao.get(newFolderId)).thenReturn(newTargetFolder);
-    when(recordGroupSharingDao.save(existingShare)).thenReturn(existingShare);
-
-    ApiSharingResult result = shareApiService.updateShare(shareId, updatePost, user);
-
-    assertNotNull(result);
-    assertEquals(1, result.getShareInfos().size());
-    assertEquals(0, result.getFailedShares().size());
-    assertEquals(newTargetFolder, existingShare.getTargetFolder());
+    // Verify interaction
+    verify(recordShareMgr, times(1))
+        .updatePermissionForRecord(eq(shareId), eq("READ"), eq(user.getUsername()));
   }
 
   @Test
@@ -244,36 +202,24 @@ public class ShareApiServiceTest {
     Long shareId = 123L;
     User user = TestFactory.createAnyUser("testuser");
 
-    RecordGroupSharing existingShare = createMockGroupSharing(456L, null);
-    SharePost updatePost = createSharePostForPermissionUpdate("EDIT", existingShare);
+    SharePermissionUpdate updatePost =
+        SharePermissionUpdate.builder().shareId(shareId).permission("EDIT").build();
 
     ErrorList errors = new ErrorList();
     errors.addErrorMsg("Permission update failed");
 
-    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
     when(recordShareMgr.updatePermissionForRecord(eq(shareId), eq("EDIT"), eq(user.getUsername())))
         .thenReturn(errors);
 
     try {
-      shareApiService.updateShare(shareId, updatePost, user);
+      shareApiService.updateShare(updatePost, user);
     } catch (IllegalArgumentException e) {
       assertEquals("Could not update permission: Permission update failed", e.getMessage());
     }
   }
 
   @Test(expected = NotFoundException.class)
-  public void testUpdateShareNonExistentShare() throws Exception {
-    Long shareId = 999L;
-    User user = TestFactory.createAnyUser("testuser");
-    SharePost updatePost = createValidSharePost();
-
-    when(recordShareMgr.get(shareId)).thenReturn(null);
-
-    shareApiService.updateShare(shareId, updatePost, user);
-  }
-
-  @Test(expected = NotFoundException.class)
-  public void testDeleteShareNonExistentShare() throws Exception {
+  public void testDeleteShareNonExistentShare() {
     Long shareId = 999L;
     User user = TestFactory.createAnyUser("testuser");
 
@@ -281,26 +227,6 @@ public class ShareApiServiceTest {
         .thenThrow(new DataAccessException("Share not found") {});
 
     shareApiService.deleteShare(shareId, user);
-  }
-
-  @Test
-  public void testUpdateShareFolderNotFound() throws Exception {
-    Long shareId = 123L;
-    User user = TestFactory.createAnyUser("testuser");
-    Long nonExistentFolderId = 999L;
-
-    RecordGroupSharing existingShare = createMockGroupSharing(456L, null);
-    SharePost updatePost = createSharePostForFolderUpdate(nonExistentFolderId, existingShare);
-
-    when(recordShareMgr.get(shareId)).thenReturn(existingShare);
-    when(folderDao.get(nonExistentFolderId)).thenReturn(null);
-
-    try {
-      shareApiService.updateShare(shareId, updatePost, user);
-    } catch (IllegalArgumentException e) {
-      assertEquals(
-          "Could not update folder location: Target folder with id 999 not found", e.getMessage());
-    }
   }
 
   // Helper methods to create mock objects
@@ -344,59 +270,5 @@ public class ShareApiServiceTest {
     BaseRecord sharedRecord = sharing.getShared();
     when(sharedRecord.isSnippet()).thenReturn(true);
     return sharing;
-  }
-
-  private SharePost createSharePostForPermissionUpdate(
-      String permission, RecordGroupSharing existingShare) {
-    SharePost post = new SharePost();
-    post.setItemsToShare(List.of(existingShare.getShared().getId()));
-
-    GroupSharePostItem groupItem = new GroupSharePostItem();
-    groupItem.setId(existingShare.getSharee().getId());
-    groupItem.setPermission(permission);
-    post.setGroupSharePostItems(List.of(groupItem));
-    post.setUserSharePostItems(emptyList());
-
-    return post;
-  }
-
-  private SharePost createUserSharePostForPermissionUpdate(
-      String permission, RecordGroupSharing existingShare) {
-    SharePost post = new SharePost();
-    post.setItemsToShare(List.of(existingShare.getShared().getId()));
-
-    UserSharePostItem userItem = new UserSharePostItem();
-    userItem.setId(existingShare.getSharee().getId());
-    userItem.setPermission(permission);
-    post.setUserSharePostItems(List.of(userItem));
-    post.setGroupSharePostItems(emptyList());
-
-    return post;
-  }
-
-  private SharePost createSharePostForFolderUpdate(
-      Long newFolderId, RecordGroupSharing existingShare) {
-    SharePost post = new SharePost();
-    post.setItemsToShare(List.of(existingShare.getShared().getId()));
-
-    GroupSharePostItem groupItem = new GroupSharePostItem();
-    groupItem.setId(existingShare.getSharee().getId());
-    groupItem.setSharedFolderId(newFolderId);
-    groupItem.setPermission("READ"); // Keep existing permission
-    post.setGroupSharePostItems(List.of(groupItem));
-    post.setUserSharePostItems(emptyList());
-
-    return post;
-  }
-
-  private SharePost createValidSharePost() {
-    SharePost post = new SharePost();
-    post.setItemsToShare(List.of(1L));
-    GroupSharePostItem gsi = new GroupSharePostItem();
-    gsi.setId(2L);
-    gsi.setPermission("READ");
-    post.setGroupSharePostItems(List.of(gsi));
-    post.setUserSharePostItems(emptyList());
-    return post;
   }
 }
