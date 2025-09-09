@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.model.RSChemElement;
 import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalExportType;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
@@ -49,11 +48,10 @@ public class IndigoChemistryProviderTest {
 
   @Test
   public void whenSuccessfulGetProperties_thenPropertiesReturned() {
-    RSChemElement chemElement = new RSChemElement();
     Optional<ElementalAnalysisDTO> analysis = Optional.of(new ElementalAnalysisDTO());
-    when(chemistryClient.extract(chemElement)).thenReturn(analysis);
+    when(chemistryClient.extract(CC)).thenReturn(analysis);
 
-    Optional<ElementalAnalysisDTO> actual = indigoChemistryProvider.getProperties(chemElement);
+    Optional<ElementalAnalysisDTO> actual = indigoChemistryProvider.getProperties(CC);
 
     assertEquals(analysis, actual);
   }

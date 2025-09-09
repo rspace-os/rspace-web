@@ -391,6 +391,31 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     executeDeleteByRecordOwner(userId, session, "ecatImageAnnotation", RECORD_ID);
     executeDeleteByRecordOwner(
         userId, session, "ecatImageAnnotation_AUD", "id", "ecatImageAnnotation", "id", RECORD_ID);
+
+    // Delete StoichiometryMolecule first, then Stoichiometry before deleting RSChemElement
+    execute(
+        userId,
+        session,
+        "delete sm from StoichiometryMolecule_AUD sm left join Stoichiometry s on"
+            + " sm.stoichiometry_id = s.id left join RSChemElement rsce on s.parent_reaction_id ="
+            + " rsce.id left join BaseRecord br on rsce.record_id = br.id where br.owner_id=:id");
+    execute(
+        userId,
+        session,
+        "delete sm from StoichiometryMolecule sm left join Stoichiometry s on sm.stoichiometry_id ="
+            + " s.id left join RSChemElement rsce on s.parent_reaction_id = rsce.id left join"
+            + " BaseRecord br on rsce.record_id = br.id where br.owner_id=:id");
+    executeDeleteByRecordOwner(
+        userId,
+        session,
+        "Stoichiometry_AUD",
+        "parent_reaction_id",
+        "RSChemElement",
+        "id",
+        RECORD_ID);
+    executeDeleteByRecordOwner(
+        userId, session, "Stoichiometry", "parent_reaction_id", "RSChemElement", "id", RECORD_ID);
+
     executeDeleteByRecordOwner(userId, session, "RSChemElement", RECORD_ID);
     executeDeleteByRecordOwner(
         userId, session, "RSChemElement_AUD", "id", "RSChemElement", "id", RECORD_ID);
