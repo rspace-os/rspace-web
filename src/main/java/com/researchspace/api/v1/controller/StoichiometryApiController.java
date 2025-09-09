@@ -39,8 +39,8 @@ public class StoichiometryApiController extends BaseApiController implements Sto
   }
 
   @Override
-  public StoichiometryDTO saveStoichiometry(long chemId, Integer revision, User user) {
-    Stoichiometry stoichiometry = stoichiometryService.create(chemId, revision, user);
+  public StoichiometryDTO saveStoichiometry(long chemId, User user) {
+    Stoichiometry stoichiometry = stoichiometryService.create(chemId, user);
     // Get latest revision number after save
     AuditedEntity<Stoichiometry> latestRevision =
         auditManager.getNewestRevisionForEntity(Stoichiometry.class, stoichiometry.getId());

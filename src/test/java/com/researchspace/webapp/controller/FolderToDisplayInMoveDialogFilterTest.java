@@ -43,6 +43,7 @@ public class FolderToDisplayInMoveDialogFilterTest {
     assertFalse(filter.filter(f3));
 
     Folder shared = TestFactory.createAFolder(Folder.SHARED_FOLDER_NAME, user);
+    shared.setSystemFolder(true);
     Folder root = TestFactory.createAFolder("ROOt", user);
     user.setRootFolder(root);
     root.addType(RecordType.ROOT);

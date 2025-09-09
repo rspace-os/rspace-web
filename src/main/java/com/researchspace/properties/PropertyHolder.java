@@ -236,6 +236,9 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${chemistry.provider}")
   private String chemistryProvider;
 
+  @Value("${rs.dev.unsafeMove.allowed}")
+  private String rsDevUnsafeMoveAllowed;
+
   @Override
   public Key getJwtKey() {
     if (this.jwtKey == null) {
@@ -337,6 +340,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public void setJoveApiKey(String joveApiKey) {
     this.joveApiKey = joveApiKey;
+  }
+
+  @Override
+  public void setRsDevUnsafeMoveAllowed(String unsafeMoveAllowed) {
+    rsDevUnsafeMoveAllowed = unsafeMoveAllowed;
   }
 
   public String getDryadBaseUrl() {
@@ -544,6 +552,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public String getDeploymentHelpEmail() {
     return deploymentHelpEmail;
+  }
+
+  @Override
+  public boolean isRsDevUnsafeMoveAllowed() {
+    return "true".equals(rsDevUnsafeMoveAllowed);
   }
 
   /*

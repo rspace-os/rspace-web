@@ -1,8 +1,8 @@
 package com.researchspace.webapp.integrations.dmptool;
 
-import com.researchspace.dmptool.model.DMPList;
 import com.researchspace.dmptool.model.DMPPlanScope;
 import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.views.ServiceOperationResult;
@@ -22,18 +22,19 @@ import org.springframework.beans.factory.annotation.Value;
  * Stub implementation of DMP web client returns hard-coded DMP lists Use -Ddmp.pdf=/full/path/toPDF
  * to set a PDF to download.
  */
-public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
-  private static final Logger LOG = LoggerFactory.getLogger(DMPClientStub.class);
+public class DMPToolClientStub extends AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
+
+  private static final Logger LOG = LoggerFactory.getLogger(DMPToolClientStub.class);
 
   @Value("${dmp.pdf}")
   private String pdfPath;
 
-  public DMPClientStub(URL baseUrl) {
+  public DMPToolClientStub(URL baseUrl) {
     super(baseUrl);
   }
 
   private DMPToolDMP mkDMP(Long id, String title, String description) {
-    var dmp = new DMPToolDMP();
+    DMPToolDMP dmp = new DMPToolDMP();
     dmp.setTitle(title);
     dmp.setDescription(description);
     dmp.setLinks(
@@ -87,7 +88,7 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
   }
 
   @Override
-  public DMPList listPlans(DMPPlanScope scope, String accessToken)
+  public DMPToolList listPlans(DMPPlanScope scope, String accessToken)
       throws MalformedURLException, URISyntaxException {
     List<DMPToolDMP> mine =
         List.of(
@@ -97,18 +98,18 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
         List.of(
             mkDMP(3L, "Public DMP title1 ", "Public DMP 1 description"),
             mkDMP(4L, "Public DMP title2 ", "Public DMP 2 description"));
-    DMPList rc = new DMPList();
+    DMPToolList rc = new DMPToolList();
     switch (scope) {
       case MINE:
-        rc.setItems(mine);
+        rc.setDmpItems(mine);
         return rc;
       case PUBLIC:
-        rc.setItems(publicDMPs);
+        rc.setDmpItems(publicDMPs);
         return rc;
       case BOTH:
         var both = new ArrayList<>(mine);
         both.addAll(publicDMPs);
-        rc.setItems(both);
+        rc.setDmpItems(both);
         return rc;
       default:
         throw new IllegalArgumentException("Unknown scope [" + scope + "]");
@@ -116,7 +117,7 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
   }
 
   @Override
-  public ServiceOperationResult<DMPList> listPlans(DMPPlanScope scope, User user)
+  public ServiceOperationResult<DMPToolList> listPlans(DMPPlanScope scope, User user)
       throws MalformedURLException, URISyntaxException {
     return new ServiceOperationResult<>(listPlans(scope, user.getUsername()), true);
   }
@@ -124,14 +125,14 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
   @Override
   public ServiceOperationResult<DMPToolDMP> getPlanById(String dmpId, User user)
       throws MalformedURLException, URISyntaxException {
-    var dmp = getPlanById(dmpId, "");
+    DMPToolDMP dmp = getPlanById(dmpId, "");
     return new ServiceOperationResult<>(dmp, true);
   }
 
   @Override
   public DMPToolDMP getPlanById(String dmpId, String accessToken)
       throws MalformedURLException, URISyntaxException {
-    var dmp = mkDMP(1L, "DMP title " + dmpId, "DMP 1 description");
+    DMPToolDMP dmp = mkDMP(1L, "DMP title " + dmpId, "DMP 1 description");
     return dmp;
   }
 

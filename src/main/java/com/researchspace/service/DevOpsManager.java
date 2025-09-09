@@ -1,4 +1,4 @@
-package com.researchspace.admin.service;
+package com.researchspace.service;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
