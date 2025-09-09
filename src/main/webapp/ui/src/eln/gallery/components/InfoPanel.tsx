@@ -33,6 +33,8 @@ import { useAsposePreview } from "./CallableAsposePreview";
 import { Optional } from "../../../util/optional";
 import { useFolderOpen } from "./OpenFolderProvider";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import Link from "@mui/material/Link";
+import Chip from "@mui/material/Chip";
 
 /**
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -461,6 +463,21 @@ const DescriptionField = styled(
   },
 }));
 
+const formatDmpSource = (source: string): string => {
+  switch (source) {
+    case "UNKNOWN":
+      return "Unknown";
+    case "DMP_TOOL":
+      return "DMP Tool";
+    case "DMP_ONLINE":
+      return "DMP Online";
+    case "ARGOS":
+      return "ARGOS";
+    default:
+      return source;
+  }
+};
+
 const InfoPanelContent = observer(
   ({
     file,
@@ -512,6 +529,52 @@ const InfoPanelContent = observer(
                   reducedPadding?: boolean;
                 }>,
               ),
+            ...(file.metadata.dmpLink
+              ? [
+                  {
+                    label: "DMP Link",
+                    value: (
+                      <Link
+                        href={file.metadata.dmpLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {file.metadata.dmpLink}
+                      </Link>
+                    ),
+                  },
+                ]
+              : []),
+            ...(file.metadata.dmpSource
+              ? [
+                  {
+                    label: "DMP Source",
+                    value: (
+                      <Chip
+                        label={formatDmpSource(file.metadata.dmpSource)}
+                        size="small"
+                        variant="outlined"
+                      />
+                    ),
+                  },
+                ]
+              : []),
+            ...(file.metadata.doiLink
+              ? [
+                  {
+                    label: "DOI Link",
+                    value: (
+                      <Link
+                        href={file.metadata.doiLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {file.metadata.doiLink}
+                      </Link>
+                    ),
+                  },
+                ]
+              : []),
           ]}
           sx={{
             pl: 2,
