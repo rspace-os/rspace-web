@@ -2702,6 +2702,201 @@ paths:
               error:
                 type: string
                 example: "PubChem API timeout or connection error"
+
+  /stoichiometry:
+
+    post:
+      summary: Create stoichiometry for a chemical
+      tags:
+        - Chemistry
+      parameters:
+        - name: chemId
+          in: query
+          required: true
+          type: integer
+          format: int64
+        - name: revision
+          in: query
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: Stoichiometry
+          schema:
+            $ref: '#/definitions/StoichiometryDTO'
+        '401':
+          description: You should have write permissions on the document containing the stoichiometry table.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have write permissions on document containing stoichiometry"
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found for chemical with id 1 and revision 2"
+        '500':
+          description: An issue while creating the stoichiometry.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Stoichiometry already exists for reaction chemId=1, stoichId=2"
+    get:
+      summary: Get stoichiometry by ID with optional revision
+      tags:
+        - Chemistry
+      parameters:
+        - name: stoichiometryId
+          in: query
+          required: true
+          type: integer
+          format: int64
+          description: The ID of the stoichiometry to retrieve
+        - name: revision
+          in: query
+          required: false
+          type: integer
+          description: Optional revision number to retrieve a specific version
+      responses:
+        '200':
+          description: Stoichiometry
+          schema:
+            $ref: '#/definitions/StoichiometryDTO'
+        '401':
+          description: You should have view permissions on the document containing the stoichiometry table.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have read permissions on document containing stoichiometry"
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found with id 1 and revision 2"
+        '500':
+          description: An issue while retrieving the stoichiometry.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Error retrieving stoichiometry."
+    put:
+      summary: Update stoichiometry
+      tags:
+        - Chemistry
+      parameters:
+        - name: stoichiometryId
+          in: query
+          required: true
+          type: integer
+          format: int64
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/StoichiometryUpdateDTO'
+      responses:
+        '200':
+          description: Updated stoichiometry
+          schema:
+            $ref: '#/definitions/StoichiometryDTO'
+        '401':
+          description: You should have write permissions on the document containing the stoichiometry table.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have write permissions on document containing stoichiometry"
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found for chemical with id 1 and revision 2"
+    delete:
+      summary: Delete stoichiometry
+      tags:
+        - Chemistry
+      parameters:
+        - name: stoichiometryId
+          in: query
+          required: true
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Deletion result
+          schema:
+            type: boolean
+        '401':
+          description: You should have write permissions on the document containing the stoichiometry table.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have write permissions on document containing stoichiometry"
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found for chemical with id 1 and revision 2"
+  /stoichiometry/molecule/info:
+    post:
+      summary: Get molecule info for stoichiometry
+      tags:
+        - Chemistry
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            properties:
+              chemical:
+                type: string
+                example: "C1=CC=CC=C1"
+                description: Representation of the reaction in a supported format e.g. SMILES
+      responses:
+        '200':
+          description: Molecule info
+          schema:
+            $ref: '#/definitions/StoichiometryMoleculeDTO'
+        '404':
+          description: An entity (Stoichiometry, Chemical or Document) cannot be found.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "No stoichiometry found for chemical with id 1 and revision 2"
+        '500':
+          description: An issue while creating the stoichiometry.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Couldn't retrieve molecule info for provided structure"
   /status:
     get:
       summary: Get API status
@@ -3010,7 +3205,6 @@ parameters:
     required: false
     items:
       type: integer
-
 
 definitions:
   ChemicalSearchRequest:
@@ -4062,6 +4256,93 @@ definitions:
       httpCode: 422
       internalCode: 42201
       message: Query could not be processed.
+
+  StoichiometryMoleculeDTO:
+    description: Molecule details used in stoichiometry calculations
+    properties:
+      id:
+        type: integer
+        format: int64
+      rsChemElementId:
+        type: integer
+        format: int64
+      role:
+        type: string
+        enum: [REACTANT, PRODUCT, AGENT]
+      formula:
+        type: string
+      name:
+        type: string
+        example: 'Acetate'
+      smiles:
+        type: string
+        example: 'CC(=O)O'
+      molecularWeight:
+        type: number
+        example: 44.068
+      coefficient:
+        type: number
+        example: 1.0
+      mass:
+        type: number
+        example: 44.068
+      actualAmount:
+        type: number
+        example: 1.0
+      actualYield:
+        type: number
+      limitingReagent:
+        type: boolean
+      notes:
+        type: string
+        example: 'some notes'
+  StoichiometryDTO:
+    description: Stoichiometry data for a reaction
+    properties:
+      id:
+        type: integer
+        format: int64
+      revision:
+        type: integer
+        format: int64
+      parentReactionId:
+        type: integer
+        format: int64
+      molecules:
+        type: array
+        items:
+          $ref: '#/definitions/StoichiometryMoleculeDTO'
+  StoichiometryMoleculeUpdateDTO:
+    description: Update payload for a molecule within stoichiometry
+    properties:
+      id:
+        type: integer
+        format: int64
+      coefficient:
+        type: number
+      role:
+        type: string
+        enum: [ REACTANT, PRODUCT, AGENT ]
+      mass:
+        type: number
+      actualAmount:
+        type: number
+      actualYield:
+        type: number
+      limitingReagent:
+        type: boolean
+      notes:
+        type: string
+  StoichiometryUpdateDTO:
+    description: Update payload for stoichiometry
+    properties:
+      id:
+        type: integer
+        format: int64
+      molecules:
+        type: array
+        items:
+          $ref: '#/definitions/StoichiometryMoleculeUpdateDTO'
 responses:
   UnprocessableQuery:
     description: Query could not be processed.

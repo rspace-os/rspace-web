@@ -10,13 +10,17 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MoleculeInfoDTO {
-  private int atomCount;
-  private int bondCount;
-  private int formalCharge;
-  private double exactMass, mass;
-  private String formula, name;
+public class StoichiometryMoleculeUpdateDTO {
+  private Long id;
   private MoleculeRole role;
-  private String additionalMetadata;
   private String smiles;
+  private String name;
+  private String formula;
+  private Double molecularWeight;
+  private Double coefficient;
+  private Double mass;
+  private Double actualAmount;
+  private Double actualYield;
+  private Boolean limitingReagent;
+  private String notes;
 }

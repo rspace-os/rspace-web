@@ -107,7 +107,7 @@ class ChemistryClientTest {
     when(restTemplate.postForEntity(anyString(), any(), any()))
         .thenReturn(new ResponseEntity<>(extractionInfo, HttpStatus.OK));
 
-    Optional<ElementalAnalysisDTO> actual = chemistryClient.extract(new RSChemElement());
+    Optional<ElementalAnalysisDTO> actual = chemistryClient.extract("CCC");
 
     assertEquals(Optional.of(extractionInfo), actual);
   }
@@ -120,7 +120,7 @@ class ChemistryClientTest {
     when(restTemplate.postForEntity(anyString(), any(), any()))
         .thenReturn(new ResponseEntity<>("", errorStatus));
 
-    Optional<ElementalAnalysisDTO> actual = chemistryClient.extract(new RSChemElement());
+    Optional<ElementalAnalysisDTO> actual = chemistryClient.extract("CCC");
     assertEquals(Optional.empty(), actual);
   }
 
@@ -129,7 +129,7 @@ class ChemistryClientTest {
     when(restTemplate.postForEntity(anyString(), any(), any()))
         .thenThrow(new RestClientException(""));
 
-    Optional<ElementalAnalysisDTO> actual = chemistryClient.extract(new RSChemElement());
+    Optional<ElementalAnalysisDTO> actual = chemistryClient.extract("CCC");
     assertEquals(Optional.empty(), actual);
   }
 
