@@ -38,6 +38,7 @@ export interface Editor {
     getNode: () => HTMLElement;
     select: (node: HTMLElement) => void;
   };
+  getDoc: () => Document;
 }
 
 // Declare the global tinymce object
@@ -138,32 +139,38 @@ class StoichiometryPlugin {
       } catch {}
 
       const markElementWithStoichiometry = (id: number, revision: number) => {
-        const currentNode = editor.selection.getNode();
-        currentNode.setAttribute(
+        const targetNode = editor.getDoc().getElementById(node.id);
+        if (!targetNode)
+          throw new Error("Could not find the target node in the document.");
+        targetNode.setAttribute(
           "data-stoichiometry-table",
           JSON.stringify({ id, revision }),
         );
-        editor.selection.select(currentNode);
-        editor.execCommand("mceReplaceContent", false, currentNode.outerHTML);
+        editor.selection.select(targetNode);
+        editor.execCommand("mceReplaceContent", false, targetNode.outerHTML);
         editor.setDirty(true);
       };
 
       const updateElementWithStoichiometry = (id: number, revision: number) => {
-        const currentNode = editor.selection.getNode();
-        currentNode.setAttribute(
+        const targetNode = editor.getDoc().getElementById(node.id);
+        if (!targetNode)
+          throw new Error("Could not find the target node in the document.");
+        targetNode.setAttribute(
           "data-stoichiometry-table",
           JSON.stringify({ id, revision }),
         );
-        editor.selection.select(currentNode);
-        editor.execCommand("mceReplaceContent", false, currentNode.outerHTML);
+        editor.selection.select(targetNode);
+        editor.execCommand("mceReplaceContent", false, targetNode.outerHTML);
         editor.setDirty(true);
       };
 
       const unmarkElementWithStoichiometry = () => {
-        const currentNode = editor.selection.getNode();
-        currentNode.removeAttribute("data-stoichiometry-table");
-        editor.selection.select(currentNode);
-        editor.execCommand("mceReplaceContent", false, currentNode.outerHTML);
+        const targetNode = editor.getDoc().getElementById(node.id);
+        if (!targetNode)
+          throw new Error("Could not find the target node in the document.");
+        targetNode.removeAttribute("data-stoichiometry-table");
+        editor.selection.select(targetNode);
+        editor.execCommand("mceReplaceContent", false, targetNode.outerHTML);
         editor.setDirty(true);
       };
 
