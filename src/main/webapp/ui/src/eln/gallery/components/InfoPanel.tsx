@@ -529,52 +529,6 @@ const InfoPanelContent = observer(
                   reducedPadding?: boolean;
                 }>,
               ),
-            ...(file.metadata.dmpLink
-              ? [
-                  {
-                    label: "DMP Link",
-                    value: (
-                      <Link
-                        href={file.metadata.dmpLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {file.metadata.dmpLink}
-                      </Link>
-                    ),
-                  },
-                ]
-              : []),
-            ...(file.metadata.dmpSource
-              ? [
-                  {
-                    label: "DMP Source",
-                    value: (
-                      <Chip
-                        label={formatDmpSource(file.metadata.dmpSource)}
-                        size="small"
-                        variant="outlined"
-                      />
-                    ),
-                  },
-                ]
-              : []),
-            ...(file.metadata.doiLink
-              ? [
-                  {
-                    label: "DOI Link",
-                    value: (
-                      <Link
-                        href={file.metadata.doiLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {file.metadata.doiLink}
-                      </Link>
-                    ),
-                  },
-                ]
-              : []),
           ]}
           sx={{
             pl: 2,
@@ -584,6 +538,72 @@ const InfoPanelContent = observer(
             },
           }}
         />
+        {(file.metadata.doiLink ||
+          file.metadata.dmpLink ||
+          file.metadata.dmpSource) && (
+          <Box component="section" sx={{ mt: 0.5 }}>
+            <Typography variant="h4" component="h4">
+              DMP Details
+            </Typography>
+            <DescriptionList
+              content={[
+                ...(file.metadata.dmpLink
+                  ? [
+                      {
+                        label: "Link",
+                        value: (
+                          <Link
+                            href={file.metadata.dmpLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {file.metadata.dmpLink}
+                          </Link>
+                        ),
+                      },
+                    ]
+                  : []),
+                ...(file.metadata.dmpSource
+                  ? [
+                      {
+                        label: "Source",
+                        value: (
+                          <Chip
+                            label={formatDmpSource(file.metadata.dmpSource)}
+                            size="small"
+                            variant="outlined"
+                          />
+                        ),
+                      },
+                    ]
+                  : []),
+                ...(file.metadata.doiLink
+                  ? [
+                      {
+                        label: "DOI Link",
+                        value: (
+                          <Link
+                            href={file.metadata.doiLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {file.metadata.doiLink}
+                          </Link>
+                        ),
+                      },
+                    ]
+                  : []),
+              ]}
+              sx={{
+                pl: 2,
+                "& dd.below": {
+                  justifySelf: "start",
+                  width: "100%",
+                },
+              }}
+            />
+          </Box>
+        )}
         <Box component="section" sx={{ mt: 0.5 }}>
           <Typography variant="h4" component="h4">
             Details
