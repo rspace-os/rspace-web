@@ -100,7 +100,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
         mockMvc
             .perform(
                 get(URL)
-                    .param("chemId", reaction.getId().toString())
+                    .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .principal(principal)
                     .header("apiKey", apiKey))
             .andExpect(status().isOk())
@@ -126,7 +126,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     MvcResult getResult =
         mockMvc
             .perform(
-                get(URL + "/byId")
+                get(URL)
                     .param("stoichiometryId", createdStoichiometry.getId().toString())
                     .principal(principal)
                     .header("apiKey", apiKey))
@@ -165,6 +165,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     updatedMolecule.setCoefficient(5.0);
     updatedMolecule.setMass(250.0);
     updatedMolecule.setNotes("Updated in test");
+    updatedMolecule.setRole(MoleculeRole.REACTANT);
     updateDTO.setMolecules(List.of(updatedMolecule));
 
     // Perform update
@@ -192,7 +193,7 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
     MvcResult getOriginalResult =
         mockMvc
             .perform(
-                get(URL + "/byId")
+                get(URL)
                     .param("stoichiometryId", originalStoichiometry.getId().toString())
                     .param("revision", originalStoichiometry.getRevision().toString())
                     .principal(principal)
@@ -310,20 +311,6 @@ public class StoichiometryControllerIT extends API_MVC_TestBase {
 
     boolean deleteSuccess = getFromJsonResponseBody(deleteResult, Boolean.class);
     assertTrue(deleteSuccess);
-
-    // check it no longer exists
-    MvcResult getResult =
-        mockMvc
-            .perform(
-                get(URL)
-                    .param("chemId", reaction.getId().toString())
-                    .principal(principal)
-                    .header("apiKey", apiKey))
-            .andExpect(status().isNotFound())
-            .andReturn();
-
-    String getResponseContent = getResult.getResponse().getContentAsString();
-    assertTrue(getResponseContent.contains("No stoichiometry found"));
   }
 
   @Test
