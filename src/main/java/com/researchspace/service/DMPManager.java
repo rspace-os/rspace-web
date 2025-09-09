@@ -25,5 +25,5 @@ public interface DMPManager extends GenericManager<DMPUser, Long> {
    */
   Optional<DMPUser> findByDmpId(String dmpId, User user);
 
-  List<DMPUser> findDMPsByPDF(User subject, Long ecatDocument_id);
+  List<DMPUser> findDMPsByFile(User subject, Long ecatDocument_id);
 }

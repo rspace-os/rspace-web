@@ -6,9 +6,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.dmptool.client.DMPToolClient;
 import com.researchspace.dmptool.client.DMPToolClientImpl;
-import com.researchspace.dmptool.model.DMPList;
 import com.researchspace.dmptool.model.DMPPlanScope;
 import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.dmptool.model.RelatedIdentifier;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
@@ -93,7 +93,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   }
 
   @Override
-  public DMPList listPlans(DMPPlanScope scope, String accessToken)
+  public DMPToolList listPlans(DMPPlanScope scope, String accessToken)
       throws MalformedURLException, URISyntaxException {
     try {
       return this.dmpToolClient.listPlans(scope, accessToken);
@@ -110,13 +110,13 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   }
 
   @Override
-  public ServiceOperationResult<DMPList> listPlans(DMPPlanScope scope, User user)
+  public ServiceOperationResult<DMPToolList> listPlans(DMPPlanScope scope, User user)
       throws MalformedURLException, URISyntaxException {
     Optional<UserConnection> optConn = getUserConnection(user.getUsername());
     if (!optConn.isPresent()) {
       return new ServiceOperationResult<>(null, false, noAccessTokenMsg());
     }
-    var apiDMPlanList = listPlans(scope, optConn.get().getAccessToken());
+    DMPToolList apiDMPlanList = listPlans(scope, optConn.get().getAccessToken());
     analyticsManager.dmpsViewed(user);
     return new ServiceOperationResult<>(apiDMPlanList, true);
   }
@@ -153,7 +153,8 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   @Override
   public DMPToolDMP getPlanById(String dmpId, String accessToken)
       throws MalformedURLException, URISyntaxException {
-    return this.dmpToolClient.getPlanById(dmpId, accessToken);
+    DMPToolDMP dmp = this.dmpToolClient.getPlanById(dmpId, accessToken);
+    return dmp;
   }
 
   private String noAccessTokenMsg() {

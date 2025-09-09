@@ -287,4 +287,6 @@ public interface IPropertyHolder extends Versionable {
   String getDeploymentDescription();
 
   String getDeploymentHelpEmail();
+
+  boolean isRsDevUnsafeMoveAllowed();
 }

@@ -9,9 +9,11 @@ import com.researchspace.argos.model.ArgosDMPListing;
 import com.researchspace.argos.model.Criteria;
 import com.researchspace.argos.model.DataTableData;
 import com.researchspace.argos.model.TableRequest;
+import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
-import com.researchspace.model.dmps.DMP;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;
@@ -78,20 +80,22 @@ public class ArgosDMPProvider {
   public Boolean importDmp(String id)
       throws URISyntaxException, MalformedURLException, JsonProcessingException, IOException {
     User user = userManager.getAuthenticatedUserInSession();
-    var dmpDetails = getPlanById(id);
+    ArgosDMP dmpDetails = getPlanById(id);
     log.info("Importing DMP: " + id + ", " + dmpDetails.getLabel());
 
     ObjectMapper objectMapper = new ObjectMapper();
     String json = objectMapper.writeValueAsString(dmpDetails);
     InputStream is = new ByteArrayInputStream(json.getBytes());
-    var file = mediaManager.saveNewDMP(dmpDetails.getLabel() + ".json", is, user, null);
+    EcatDocumentFile file =
+        mediaManager.saveNewDMP(dmpDetails.getLabel() + ".json", is, user, null);
 
-    DMP dmp = new DMP(id, dmpDetails.getLabel());
-    var dmpUser = dmpManager.findByDmpId(dmp.getDmpId(), user).orElse(new DMPUser(user, dmp));
+    DmpDto dmpDto = new DmpDto(id, dmpDetails.getLabel(), DMPSource.ARGOS, null, null);
+    DMPUser dmpUser =
+        dmpManager.findByDmpId(dmpDto.getDmpId(), user).orElse(new DMPUser(user, dmpDto));
     if (file != null) {
-      dmpUser.setDmpDownloadPdf(file);
+      dmpUser.setDmpDownloadFile(file);
     } else {
-      log.warn("Unexpected null DMP PDF - did download work?");
+      log.warn("Unexpected null DMP File - did download work?");
     }
     dmpManager.save(dmpUser);
 

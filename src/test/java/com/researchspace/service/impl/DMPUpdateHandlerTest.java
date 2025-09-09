@@ -8,8 +8,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
-import com.researchspace.model.dmps.DMP;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
@@ -124,7 +124,7 @@ public class DMPUpdateHandlerTest {
   List<DMPUser> createMultipleDMPusers(List<Long> ids) {
     List<DMPUser> rc = new ArrayList<>();
     for (Long id : ids) {
-      DMPUser dmpUser = new DMPUser(anyUser, new DMP("id" + id, "title" + id));
+      DMPUser dmpUser = new DMPUser(anyUser, new DmpDto("id" + id, "title" + id));
       ReflectionTestUtils.setField(dmpUser, "id", id);
       rc.add(dmpUser);
     }

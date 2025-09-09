@@ -266,7 +266,7 @@ public class RecordDeletionManagerImpl implements RecordDeletionManager {
     if (toDelete.isEcatDocument()) {
       EcatDocumentFile doc = (EcatDocumentFile) toDelete;
       if (doc.getDocumentType().equals(MediaUtils.DMP_MEDIA_FLDER_NAME)) {
-        var dmpUsers = dmpManager.findDMPsByPDF(deleting, doc.getId());
+        var dmpUsers = dmpManager.findDMPsByFile(deleting, doc.getId());
         log.info("deleting {} DMPS - ", dmpUsers.size());
         for (DMPUser dmpu : dmpUsers) {
           dmpManager.remove(dmpu.getId());

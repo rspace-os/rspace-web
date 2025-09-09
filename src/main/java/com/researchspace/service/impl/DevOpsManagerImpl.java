@@ -1,6 +1,5 @@
-package com.researchspace.admin.service.impl;
+package com.researchspace.service.impl;
 
-import com.researchspace.admin.service.DevOpsManager;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
@@ -11,6 +10,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.DevOpsManager;
 import com.researchspace.service.FolderManager;
 import java.util.ArrayList;
 import java.util.List;
