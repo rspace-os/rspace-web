@@ -1146,6 +1146,21 @@ export function useGalleryListing({
         metadata["chemString"] = str;
       });
     });
+    Parsers.getValueWithKey("dmpLink")(obj).do((dmpLink) => {
+      Parsers.isString(dmpLink).do((str) => {
+        metadata["dmpLink"] = str;
+      });
+    });
+    Parsers.getValueWithKey("dmpSource")(obj).do((dmpSource) => {
+      Parsers.isString(dmpSource).do((str) => {
+        metadata["dmpSource"] = str;
+      });
+    });
+    Parsers.getValueWithKey("doiLink")(obj).do((doiLink) => {
+      Parsers.isString(doiLink).do((str) => {
+        metadata["doiLink"] = str;
+      });
+    });
     return metadata;
   }
 
