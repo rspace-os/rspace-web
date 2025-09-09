@@ -162,7 +162,7 @@ function normaliseCoefficients(
  * - Update yield/excess calculations for all molecules
  *
  * Note that this function assumes that only one property of one molecule has
- * been edited. This is imporant because some properties are interdependent,
+ * been edited. This is important because some properties are interdependent,
  * such as mass, moles, and molecular weight.
  */
 export function calculateUpdatedMolecules(
