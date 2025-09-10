@@ -29,6 +29,7 @@ import { formLabelClasses } from "@mui/material/FormLabel";
 import { inputLabelClasses } from "@mui/material/InputLabel";
 import { inputAdornmentClasses } from "@mui/material/InputAdornment";
 import { linkClasses } from "@mui/material/Link";
+import { selectClasses } from "@mui/material/Select";
 
 /**
  * Represents an HSL color.
@@ -627,7 +628,6 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                    * components want to override the hover effect too, they too
                    * can use !important
                    */
-                  border: `${accentedBorder} !important`,
                   borderColor: `${darken(
                     accentedBackground,
                     hoverDarkenCoefficient,
@@ -655,6 +655,10 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                   paddingLeft: baseTheme.spacing(1.5),
                   borderLeft: accentedBorder,
                   marginLeft: 0,
+                  [`&:has(.${selectClasses.select})`]: {
+                    paddingRight: 0,
+                    paddingLeft: 0,
+                  },
                 },
                 [`& .${typographyClasses.root}`]: {
                   textTransform: "uppercase",
