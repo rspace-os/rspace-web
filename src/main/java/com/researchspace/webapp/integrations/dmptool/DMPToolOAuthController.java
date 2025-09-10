@@ -2,9 +2,9 @@ package com.researchspace.webapp.integrations.dmptool;
 
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 
-import com.researchspace.dmptool.model.DMPList;
 import com.researchspace.dmptool.model.DMPPlanScope;
 import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
@@ -63,7 +63,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
 
   private final RestTemplate restTemplate;
 
-  private @Autowired DMPToolDMPProvider client;
+  private @Autowired DMPToolDMPProvider dmpToolDMPProvider;
 
   public DMPToolOAuthController() {
     this.restTemplate = new RestTemplate();
@@ -74,7 +74,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     String redirectUrl = String.valueOf(new URL(getServerUrl(), "/apps/dmptool/callback"));
     String pathAndQuery =
         String.format(
-            "/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=read_dmps+edit_dmps",
+            "/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=read_dmps",
             clientId, URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8));
     String dmptoolAuthUrl = String.valueOf(new URL(baseUrl, pathAndQuery));
     return new RedirectView(dmptoolAuthUrl);
@@ -170,21 +170,22 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     return new ServiceOperationResult<String>(optConn.get().getAccessToken(), true);
   }
 
-  @PostMapping("/pdfById/{id}")
+  @PostMapping("/jsonById/{id}")
   @ResponseBody
   public AjaxReturnObject<Boolean> getPdfById(@PathVariable("id") Integer id) {
 
     User user = userManager.getAuthenticatedUserInSession();
     try {
-      ServiceOperationResult<DMPToolDMP> dmpDetails = client.getPlanById(id + "", user);
+      ServiceOperationResult<DMPToolDMP> dmpDetails = dmpToolDMPProvider.getPlanById(id + "", user);
       if (dmpDetails.isSucceeded()) {
         var dmpUserServiceOperationResult =
-            client.doJsonDownload(dmpDetails.getEntity(), dmpDetails.getEntity().getTitle(), user);
+            dmpToolDMPProvider.doJsonDownload(
+                dmpDetails.getEntity(), dmpDetails.getEntity().getTitle(), user);
         if (!dmpUserServiceOperationResult.isSucceeded()) {
           return new AjaxReturnObject<>(
               null,
               ErrorList.of(
-                  "Couldn't download DMP pdf for id: "
+                  "Couldn't download DMP for id: "
                       + id
                       + ". "
                       + dmpUserServiceOperationResult.getMessage()));
@@ -195,15 +196,15 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
       }
 
     } catch (URISyntaxException | IOException | RuntimeException e) {
-      log.error("Failure on downloading DMP pdf", e);
-      return new AjaxReturnObject<>(null, ErrorList.of("Couldn't download DMP pdf for id: " + id));
+      log.error("Failure on downloading DMP", e);
+      return new AjaxReturnObject<>(null, ErrorList.of("Couldn't download DMP file for id: " + id));
     }
     return new AjaxReturnObject<Boolean>(Boolean.TRUE, null);
   }
 
   @GetMapping("/plans")
   @ResponseBody
-  public AjaxReturnObject<DMPList> listDMPs(
+  public AjaxReturnObject<DMPToolList> listDMPs(
       @RequestParam(name = "scope", required = false) String scopeParam) {
 
     DMPPlanScope scope = DMPPlanScope.MINE;
@@ -213,12 +214,15 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
 
     User user = userManager.getAuthenticatedUserInSession();
     try {
-      ServiceOperationResult<DMPList> result = client.listPlans(scope, user);
+      ServiceOperationResult<DMPToolList> result = dmpToolDMPProvider.listPlans(scope, user);
       if (result.isSucceeded()) {
         return new AjaxReturnObject<>(result.getEntity(), null);
       } else {
         return new AjaxReturnObject<>(null, ErrorList.of(result.getMessage()));
       }
+    } catch (UnsupportedOperationException se) {
+      log.error("Failure on listing DMPs", se);
+      return new AjaxReturnObject<>(null, ErrorList.of(se.getMessage()));
     } catch (Exception e) {
       log.error("Failure on listing DMPs", e);
       return new AjaxReturnObject<>(null, ErrorList.of("Couldn't list DMPs"));
@@ -238,9 +242,8 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
 
     log.info("doi: " + doi);
     log.info("dmpId: " + dmpId);
-
     User user = userManager.getAuthenticatedUserInSession();
-    client.addDoiIdentifierToDMP(dmpId, doi, user);
+    dmpToolDMPProvider.addDoiIdentifierToDMP(dmpId, doi, user);
   }
 
   private Optional<UserConnection> getUserConnection(Principal principal) {

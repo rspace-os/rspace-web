@@ -13,13 +13,13 @@ const docLinks: { [name: string]: URL } = {
   createTemplate: mkDocLink("c8sxesdqpy"),
   updateAllSamplesOfTemplate: mkDocLink(
     "c8sxesdqpy",
-    "update_all_of_your_samples_to_latest_template_version"
+    "update_all_of_your_samples_to_latest_template_version",
   ),
   createDialog: mkDocLink("x4y02hje72-edit-a-sample-or-container", "create"),
   createSample: mkDocLink("gb3r1lgm5g"),
   createTemplateFromSample: mkDocLink(
     "c8sxesdqpy",
-    "create_a_template_from_a_sample"
+    "create_a_template_from_a_sample",
   ),
   search: mkDocLink("e0fngo8a5s"),
   import: mkDocLink("a5zm2c3vtw"),
@@ -27,17 +27,17 @@ const docLinks: { [name: string]: URL } = {
   permissions: mkDocLink("n09nmg4ax7"),
   barcodesPrinting: mkDocLink(
     "nr29uf0fdr-scan-and-use-barcodes",
-    "barcode_printing"
+    "barcode_printing",
   ),
   zebraPrinter: mkDocLink(
     "nr29uf0fdr-scan-and-use-barcodes",
-    "using_a_zebra_printer"
+    "using_a_zebra_printer",
   ),
   luceneSyntax: mkDocLink("k919di8naq", "expert_lucene_query_syntax"),
   controlledVocabularies: mkDocLink("8ujmvpa1no"),
   IGSNIdentifiers: mkDocLink(
     "0wh5ziurr5",
-    "add-igsn-identifiers-to-your-samples"
+    "add-igsn-identifiers-to-your-samples",
   ),
   pyratCors: mkDocLink("9kkeooveia", "cors"),
   panelAdjuster: mkDocLink("bt6kx098eq", "panel_adjuster"),
@@ -47,6 +47,7 @@ const docLinks: { [name: string]: URL } = {
   clustermarket: mkDocLink("e6pb7y8ak1"),
   dataverse: mkDocLink("h14qd5tvjj"),
   dmptool: mkDocLink("o0wlhlgxnr"),
+  dmptoolImportingDmps: mkDocLink("o0wlhlgxnr", "importing_dm_ps_into_r_space"),
   dryad: mkDocLink("i1xvubndhm"),
   evernote: mkDocLink("9ckpmfdq8m"),
   figshare: mkDocLink("ir4ybsamcn"),
@@ -57,7 +58,7 @@ const docLinks: { [name: string]: URL } = {
   chemistry: mkDocLink("wfxm4xwtio"),
   pubchem: mkDocLink(
     "wfxm4xwtio",
-    "importing_chemical_structures_from_external_databases"
+    "importing_chemical_structures_from_external_databases",
   ),
   nextcloud: mkDocLink("na3hn8ilee"),
   omero: mkDocLink("bwwbpkll90"),

@@ -16,10 +16,12 @@ import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+@Ignore("historical changeset, no longer works as relies on folderMgr.move() allowing unsafe moves")
 public class MoveTemplateFolderFromGalleryToHomeFolderRSPAC921_1_36IT
     extends RealTransactionSpringTestBase {
 

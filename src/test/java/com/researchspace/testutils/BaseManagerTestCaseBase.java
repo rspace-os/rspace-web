@@ -1151,6 +1151,19 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
         .get(0);
   }
 
+  protected RecordGroupSharing shareRecordIntoGroupSubfolder(
+      final User user, StructuredDocument sd, Group group, Folder subfolder, String operation) {
+    return sharingMgr
+        .shareRecord(
+            user,
+            sd.getId(),
+            new ShareConfigElement[] {
+              new ShareConfigElement(group.getId(), subfolder.getId(), operation)
+            })
+        .getEntity()
+        .get(0);
+  }
+
   /**
    * Shares record into a group notebook
    *

@@ -1,9 +1,12 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.DevOpsManager;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,8 +80,23 @@ public class SysAdminDevOpsController extends BaseController {
     return result;
   }
 
-  private void assertSubjectIsSysadmin() {
+  @Autowired private DevOpsManager devOpsManager;
+
+  @GetMapping("/ajax/fixRecord/{globalId}")
+  @ResponseBody
+  public String getFixRecordPage(
+      @PathVariable GlobalIdentifier globalId,
+      @RequestParam(value = "update", required = false) boolean update) {
+
+    User subject = assertSubjectIsSysadmin();
+    String result = devOpsManager.fixRecord(globalId, subject, update);
+    result += "<br/>If that doesn't seem right, please contact RSpace Support.";
+    return result;
+  }
+
+  private User assertSubjectIsSysadmin() {
     User user = userManager.getAuthenticatedUserInSession();
     assertUserIsSysAdmin(user);
+    return user;
   }
 }

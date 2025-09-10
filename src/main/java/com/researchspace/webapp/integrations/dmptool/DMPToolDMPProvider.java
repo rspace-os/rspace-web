@@ -1,8 +1,8 @@
 package com.researchspace.webapp.integrations.dmptool;
 
-import com.researchspace.dmptool.model.DMPList;
 import com.researchspace.dmptool.model.DMPPlanScope;
 import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.views.ServiceOperationResult;
@@ -38,7 +38,7 @@ public interface DMPToolDMPProvider {
   /**
    * Downloads a PDF of the DMP, creating a new DMP entry in RSpace if one does not already exist.
    *
-   * @param id the DMP ID
+   * @param dmp the DMP
    * @param title The title of the DMP
    * @param accessToken
    * @return
@@ -51,7 +51,7 @@ public interface DMPToolDMPProvider {
   /**
    * Downloads a PDF of the DMP, creating a new DMP entry in RSpace if one does not already exist.
    *
-   * @param id the DMP ID
+   * @param dmp the DMP
    * @param title The title of the DMP
    * @param user User. Assumes this user has performed OAUth flow and can retrieve an accessToken
    *     from UserConnection table
@@ -71,7 +71,7 @@ public interface DMPToolDMPProvider {
    * @throws MalformedURLException
    * @throws URISyntaxException
    */
-  DMPList listPlans(DMPPlanScope scope, String accessToken)
+  DMPToolList listPlans(DMPPlanScope scope, String accessToken)
       throws MalformedURLException, URISyntaxException;
 
   /**
@@ -84,7 +84,7 @@ public interface DMPToolDMPProvider {
    * @throws MalformedURLException
    * @throws URISyntaxException
    */
-  ServiceOperationResult<DMPList> listPlans(DMPPlanScope scope, User user)
+  ServiceOperationResult<DMPToolList> listPlans(DMPPlanScope scope, User user)
       throws MalformedURLException, URISyntaxException;
 
   /**
@@ -123,6 +123,6 @@ public interface DMPToolDMPProvider {
    * @throws URISyntaxException
    * @throws MalformedURLException
    */
-  public <T> T doGet(String accessToken, String path, Class<T> clazz)
+  <T> T doGet(String accessToken, String path, Class<T> clazz)
       throws URISyntaxException, MalformedURLException;
 }

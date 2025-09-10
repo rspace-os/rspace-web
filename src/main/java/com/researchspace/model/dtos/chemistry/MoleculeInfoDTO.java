@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos.chemistry;
 
+import com.researchspace.model.stoichiometry.MoleculeRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,4 +18,5 @@ public class MoleculeInfoDTO {
   private String formula, name;
   private MoleculeRole role;
   private String additionalMetadata;
+  private String smiles;
 }

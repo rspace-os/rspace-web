@@ -2514,16 +2514,21 @@ RS.sendJsonPostRequestToUrl = function (url, jsonObject) {
 }
 
 //If the page has display modifications, apply a function which will show/hide date modified on each field
-if ($(".displayRevisions")) {
-  $(this).click(function () {
+$(this).click(function (e) {
+  if ($(".displayRevisions").length > 0) {
     if ($(".displayRevisions").is(":checked")) {
-      $(".lastModified").show('slow');
+      $(".lastModified").show("slow");
+      if (e.target && e.target.matches('input.displayRevisions')) {
+        RS.trackEvent("user:show:last_modified:document_editor");
+      }
     } else {
-      $(".lastModified").hide('slow');
+      $(".lastModified").hide("slow");
+      if (e.target && e.target.matches('input.displayRevisions')) {
+        RS.trackEvent("user:hide:last_modified:document_editor");
+      }
     }
-
-  });
-}
+  }
+});
 
 RS.getGlobalIdWithoutVersionId = function (globalId) {
   return globalId.split('v')[0];

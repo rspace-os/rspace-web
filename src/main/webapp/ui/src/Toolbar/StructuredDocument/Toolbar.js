@@ -31,11 +31,11 @@ library.add(
   faEye,
   faTimes,
 );
-import ShareDialog from "../../components/ShareDialog";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import SaveMenu from "./ToolbarSaveMenu";
 import SocialActions from "../ToolbarSocial";
+import ShareDialog from "../../components/ShareDialog";
 
 class StructuredDocumentToolbar extends React.Component {
   constructor(props) {
@@ -130,6 +130,9 @@ class StructuredDocumentToolbar extends React.Component {
                     data-test-id="structured-delete"
                     color="inherit"
                     id="delete"
+                    onClick={() => {
+                      RS.trackEvent("user:delete:document:document_editor");
+                    }}
                   >
                     <FontAwesomeIcon icon="trash-alt" />
                   </IconButton>
@@ -141,7 +144,10 @@ class StructuredDocumentToolbar extends React.Component {
                     data-test-id="structured-sign"
                     color="inherit"
                     id="signDocument"
-                    onClick={this.props.eventHandlers.onCanSign}
+                    onClick={() => {
+                      this.props.eventHandlers.onCanSign();
+                      RS.trackEvent("user:sign:document:document_editor");
+                    }}
                   >
                     <FontAwesomeIcon icon="file-signature" />
                   </IconButton>
@@ -153,6 +159,9 @@ class StructuredDocumentToolbar extends React.Component {
                     data-test-id="structured-witness"
                     color="inherit"
                     id="witnessDocument"
+                    onClick={() => {
+                      RS.trackEvent("user:witness:document:document_editor");
+                    }}
                   >
                     <FontAwesomeIcon icon="eye" />
                   </IconButton>
@@ -165,6 +174,9 @@ class StructuredDocumentToolbar extends React.Component {
                     data-test-id="notebooktoolbar-share"
                     color="inherit"
                     id="shareRecord"
+                    onClick={() => {
+                      RS.trackEvent("user:share:document:document_editor");
+                    }}
                   >
                     <FontAwesomeIcon icon="share-alt" />
                   </IconButton>
@@ -186,12 +198,20 @@ class StructuredDocumentToolbar extends React.Component {
                   data-test-id="notebooktoolbar-export"
                   color="inherit"
                   id="exportDocument"
-                  onClick={this.props.eventHandlers.onExportDocument}
+                  onClick={() => {
+                    this.props.eventHandlers.onExportDocument();
+                    RS.trackEvent("user:export:document:document_editor");
+                  }}
                 >
                   <FontAwesomeIcon icon="cloud-download-alt" />
                 </IconButton>
               </Tooltip>
-              <PrintButton dataTestId="notebooktoolbar-print" />
+              <PrintButton
+                onClick={() => {
+                  RS.trackEvent("user:print:document:document_editor");
+                }}
+                dataTestId="notebooktoolbar-print"
+              />
               <span
                 style={{
                   borderRight: "1px solid transparent",

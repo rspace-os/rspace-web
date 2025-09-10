@@ -30,8 +30,8 @@ export type AlertDetails = {
 };
 
 type AlertParams = {
-  title?: string | null;
-  message: string;
+  title?: React.ReactNode | null;
+  message: React.ReactNode;
   variant?: AlertVariant;
   duration?: number;
   isInfinite?: boolean;
@@ -50,8 +50,8 @@ type AlertParams = {
  * an action button, a retry button, a number of details, and an icon.
  */
 export type Alert = {
-  title: string | null | undefined;
-  message: string;
+  title: React.ReactNode | null | undefined;
+  message: React.ReactNode;
   id: number;
   variant: AlertVariant;
   duration: number;
@@ -147,7 +147,7 @@ const DEFAULT_ALERT_CONTEXT: AlertContextType = {
 };
 
 const AlertContext: Context<AlertContextType> = createContext(
-  DEFAULT_ALERT_CONTEXT
+  DEFAULT_ALERT_CONTEXT,
 );
 
 /**

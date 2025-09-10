@@ -23,13 +23,13 @@ public class DMPDaoHibernate extends GenericDaoHibernate<DMPUser, Long> implemen
   }
 
   @Override
-  public List<DMPUser> findDMPsByPDF(User subject, Long ecatDocument_id) {
+  public List<DMPUser> findDMPsByFile(User subject, Long ecatDocument_id) {
     return getSession()
         .createQuery(
-            "from DMPUser du where du.user = :user and du.dmpDownloadPdf.id=:pdfIid ",
+            "from DMPUser du where du.user = :user and du.dmpDownloadFile.id=:fileId ",
             DMPUser.class)
         .setParameter("user", subject)
-        .setParameter("pdfIid", ecatDocument_id)
+        .setParameter("fileId", ecatDocument_id)
         .list();
   }
 

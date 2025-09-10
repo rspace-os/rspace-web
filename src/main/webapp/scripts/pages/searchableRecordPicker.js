@@ -94,8 +94,12 @@ $(document).ready(function() {
      */
     var clickHandler = function(clickedNode) {
         if (!onlyDocuments || !clickedNode.folder) {
+            if("trackEvent" in RS)
+              RS.trackEvent("user:click:node:file_tree", { action: "selection" });
             fileSelected(clickedNode.data.globalId, clickedNode.data.name);
         } else {
+            if("trackEvent" in RS)
+              RS.trackEvent("user:click:node:file_tree", { action: "deselection" });
             fileUnselected();
         }
     };

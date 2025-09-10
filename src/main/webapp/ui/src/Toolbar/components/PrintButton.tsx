@@ -8,10 +8,12 @@ library.add(faPrint);
 
 type PrintButtonArgs = {
   dataTestId: string;
+  onClick?: () => void;
 };
 
 export default function PrintButton({
   dataTestId,
+  onClick,
 }: PrintButtonArgs): React.ReactNode {
   return (
     <Tooltip title="Print" enterDelay={300}>
@@ -20,6 +22,7 @@ export default function PrintButton({
         color="inherit"
         onClick={(e) => {
           e.preventDefault();
+          onClick?.();
           window.print();
         }}
       >

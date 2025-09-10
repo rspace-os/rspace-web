@@ -1,7 +1,11 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.core.util.MediaUtils.DMP_MEDIA_FLDER_NAME;
+import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
+import static com.researchspace.core.util.MediaUtils.MISC_MEDIA_FLDER_NAME;
 import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUMENT_EDITED;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
+import static com.researchspace.model.record.Folder.EXPORTS_FOLDER_NAME;
 import static java.lang.String.format;
 import static org.apache.commons.lang.StringUtils.abbreviate;
 import static org.apache.commons.lang.StringUtils.trim;
@@ -13,6 +17,7 @@ import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.AuditDao;
+import com.researchspace.dao.DMPDao;
 import com.researchspace.dao.EcatImageDao;
 import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.FolderDao;
@@ -39,6 +44,7 @@ import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
 import com.researchspace.model.dtos.WorkspaceFilters;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
@@ -62,6 +68,7 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
+import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
@@ -70,6 +77,7 @@ import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
@@ -121,6 +129,7 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired FieldDao fieldDao;
   private @Autowired FolderDao folderDao;
   private @Autowired EcatImageDao imageDao;
+  private @Autowired DMPDao dmpDao;
   private @Autowired FormUsageDao formUsageDao;
   private @Autowired RecordEditorTracker tracker;
   private @Autowired FieldLinksEntitiesSynchronizer fieldContentSynchroniser;
@@ -131,6 +140,7 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired MovePermissionChecker movePermissionChecker;
   private @Autowired IPermissionUtils permissnUtils;
   private @Autowired RecordDao recordDao;
+  private @Autowired IPropertyHolder properties;
   private @Autowired UserManager userManager;
   private @Autowired UserDao userDao;
   private @Autowired AuditDao auditDao;
@@ -253,7 +263,12 @@ public class RecordManagerImpl implements RecordManager {
       if (!movePermissionChecker.checkMovePermissions(user, newparent, toMove)) {
         return new ServiceOperationResult<>(null, false);
       }
-      boolean moved = toMove.move(currparent, newparent, user);
+      boolean moved;
+      if (properties.isRsDevUnsafeMoveAllowed()) {
+        moved = toMove.unsafeMove(currparent, newparent, user);
+      } else {
+        moved = toMove.move(currparent, newparent, user);
+      }
       if (moved) {
         if (currparent.isFolder()) {
           folderDao.save(currparent);
@@ -1377,5 +1392,44 @@ public class RecordManagerImpl implements RecordManager {
       User user, Folder folderOrNotebook) {
     return folderOrNotebook.isSharedFolder()
         || isSharedNotebookWithoutCreatePermission(user, folderOrNotebook);
+  }
+
+  @Override
+  public RecordInformation decorateRecordInfo(
+      RecordInformation recordInfo,
+      User user,
+      Folder parentFolder,
+      boolean isOnRoot,
+      BaseRecord baseRecord,
+      String mediaType) {
+    if (baseRecord instanceof EcatDocumentFile) {
+      EcatDocumentFile doc = (EcatDocumentFile) baseRecord;
+      recordInfo.addType(getEcatDocumentFileType(mediaType, doc.getDocumentType()));
+    }
+
+    if ("DMPs".equals(mediaType)) {
+      DMPUser dmpSaved = dmpDao.findDMPsByFile(user, baseRecord.getId()).get(0);
+      recordInfo.setDmpLink(dmpSaved.getDmpLink());
+      recordInfo.setDoiLink(dmpSaved.getDoiLink());
+      recordInfo.setDmpSource(dmpSaved.getSource());
+    }
+
+    recordInfo.setParentId(parentFolder.getId());
+    recordInfo.setOnRoot(isOnRoot);
+
+    return recordInfo;
+  }
+
+  private String getEcatDocumentFileType(String mediatype, String documentType) {
+    if (EXPORTS_FOLDER_NAME.equalsIgnoreCase(mediatype)) {
+      return EXPORTS_FOLDER_NAME;
+    }
+    if (MISC_MEDIA_FLDER_NAME.equalsIgnoreCase(documentType)) {
+      return MISC_MEDIA_FLDER_NAME;
+    }
+    if (DMP_MEDIA_FLDER_NAME.equalsIgnoreCase(documentType)) {
+      return DMP_MEDIA_FLDER_NAME;
+    }
+    return DOCUMENT_MEDIA_FLDER_NAME;
   }
 }
