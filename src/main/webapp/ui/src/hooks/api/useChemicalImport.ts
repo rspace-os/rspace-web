@@ -16,62 +16,6 @@ export type ChemicalCompound = {
 
 export type RspaceCompoundId = string;
 
-export type RsChemElement = {
-  id: number;
-  parentId: number | null;
-  ecatChemFileId: string | null;
-  dataImage: string | null;
-  chemElements: string;
-  smilesString: string | null;
-  chemId: string | null;
-  reactionId: string | null;
-  rgroupId: string | null;
-  metadata: string | null;
-  chemElementsFormat: string;
-  creationDate: number;
-  imageFileProperty: any | null;
-};
-
-export type StoichiometryMolecule = {
-  id: number;
-  rsChemElement: RsChemElement;
-  role: string;
-  formula: string;
-  name: string;
-  smiles: string;
-  coefficient: number;
-  molecularWeight: number;
-  mass: number | null;
-  moles: number | null;
-  expectedAmount: number | null;
-  actualAmount: number | null;
-  actualYield: number | null;
-  limitingReagent: boolean;
-  notes: string | null;
-};
-
-export type ParentReaction = {
-  id: number;
-  parentId: number;
-  ecatChemFileId: string | null;
-  dataImage: string;
-  chemElements: string;
-  smilesString: string;
-  chemId: string | null;
-  reactionId: string | null;
-  rgroupId: string | null;
-  metadata: string;
-  chemElementsFormat: string;
-  creationDate: number;
-  imageFileProperty: any;
-};
-
-export type StoichiometryResponse = {
-  id: number;
-  parentReaction: ParentReaction;
-  molecules: ReadonlyArray<StoichiometryMolecule>;
-};
-
 /**
  * This custom hook provides functionality to search for chemical compounds,
  * using the `/chemical/*` endpoints.
