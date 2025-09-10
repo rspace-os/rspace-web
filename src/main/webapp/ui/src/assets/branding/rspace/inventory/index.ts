@@ -10,7 +10,7 @@ export const ACCENT_COLOR = {
   darker: {
     hue: 120,
     saturation: 18,
-    lightness: 50,
+    lightness: 35,
   },
   contrastText: {
     hue: 120,
