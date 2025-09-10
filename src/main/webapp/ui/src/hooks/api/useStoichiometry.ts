@@ -79,11 +79,11 @@ export type MoleculeInfo = {
 
 /**
  * This custom hook provides functionality for stoichiometry calculations
- * and data retrieval using the `/chemical/stoichiometry` endpoints.
+ * and data retrieval using the `/api/v1/stoichiometry` endpoints.
  */
 export default function useStoichiometry(): {
   /**
-   * Calculates stoichiometry information for a chemical compound.
+   * Calculates stoichiometry information for a chemical reaction.
    * This performs a POST request to generate/calculate the data.
    */
   calculateStoichiometry: ({
