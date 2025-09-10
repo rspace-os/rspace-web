@@ -1409,7 +1409,9 @@ public class RecordManagerImpl implements RecordManager {
 
     if ("DMPs".equals(mediaType)) {
       DMPUser dmpSaved = dmpDao.findDMPsByFile(user, baseRecord.getId()).get(0);
-      recordInfo.setDmpLink(dmpSaved.getDmpLink());
+      String dmpLink =
+          dmpSaved.getDmpLink() == null ? null : dmpSaved.getDmpLink().replace("/api/v2/", "/");
+      recordInfo.setDmpLink(dmpLink);
       recordInfo.setDoiLink(dmpSaved.getDoiLink());
       recordInfo.setDmpSource(dmpSaved.getSource());
     }
