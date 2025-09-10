@@ -585,7 +585,6 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
             },
             outlinedPrimary: {
               color: interactiveColor,
-              borderColor: interactiveColor,
               "&:hover": {
                 /*
                  * we have to replicate specifying the border width here
@@ -594,7 +593,6 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                  * then our width gets unset
                  */
                 border: accentedBorder,
-                borderColor: darken(interactiveColor, hoverDarkenCoefficient),
               },
             },
             outlinedError: {
