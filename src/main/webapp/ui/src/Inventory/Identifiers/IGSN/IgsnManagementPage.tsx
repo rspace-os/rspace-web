@@ -56,12 +56,12 @@ export default function IgsnManagementPage({
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Main
-        sx={{ overflowY: "auto" }}
+        sx={{ overflowY: "auto", p: 2 }}
         ref={mainContentRef}
         role="main"
         aria-label="IGSN management main content"
       >
-        <Stack spacing={2} sx={{ my: 2, mr: 1 }}>
+        <Stack spacing={2}>
           <TitledBox title="IGSN IDs" border>
             <Typography>
               The RSpace IGSN ID integration enables researchers to create,
