@@ -8,13 +8,13 @@
     <changeSet id="2025-09-08-backfill-tagMetaData" context="run" author="nebay">
         <comment>Copy tags from docTag into tagMetaData when tagMetaData is NULL or empty.</comment>
         <sql>
-            UPDATE structureddocument
+            UPDATE StructuredDocument
             SET tagMetaData = docTag
             WHERE (tagMetaData IS NULL OR tagMetaData = '')
               AND docTag IS NOT NULL;
         </sql>
         <sql>
-            UPDATE structureddocument_aud
+            UPDATE StructuredDocument_AUD
             SET tagMetaData = docTag
             WHERE (tagMetaData IS NULL OR tagMetaData = '')
               AND docTag IS NOT NULL;
