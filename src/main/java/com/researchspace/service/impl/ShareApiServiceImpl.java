@@ -36,7 +36,6 @@ import com.researchspace.service.ShareApiService;
 import com.researchspace.service.SharingHandler;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
@@ -60,12 +59,11 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   @Autowired private SharingHandler recordShareHandler;
   @Autowired private RecordSharingManager recordShareMgr;
   @Autowired private FolderDao folderDao;
-  @Autowired private DetailedRecordInformationProvider recordInformationProvider;
   @Autowired private DetailedRecordInformationProvider detailedRecordInformationProvider;
   @Autowired private RecordManager recordManager;
 
   @Override
-  public ApiSharingResult shareItems(SharePost shareConfig, User user) throws BindException {
+  public ApiSharingResult shareItems(SharePost shareConfig, User user) {
     ShareConfigCommand command = convertApiCfgToInternalCfg(shareConfig);
     initializeNullCollections(shareConfig);
 
@@ -186,11 +184,12 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
 
     if (rgs.getSharee().isGroup()) {
       Folder groupRoot = folderDao.getSharedFolderForGroup(rgs.getSharee().asGroup());
-        return rgs.getShared().getParents().stream()
-            .map(RecordToFolder::getFolder)
-            .filter(folder -> folder.getAllAncestors().contains(groupRoot) || folder.equals(groupRoot))
-            .findFirst()
-            .orElse(null);
+      return rgs.getShared().getParents().stream()
+          .map(RecordToFolder::getFolder)
+          .filter(
+              folder -> folder.getAllAncestors().contains(groupRoot) || folder.equals(groupRoot))
+          .findFirst()
+          .orElse(null);
     }
 
     for (RecordToFolder rtf : parentSharedFolders) {
@@ -283,33 +282,6 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
         ApiShareInfo::new,
         share -> buildAndAddSelfLink(SHARE_ENDPOINT, share));
     return apiShareSearchResults;
-  }
-
-  private void populateTargetFolders(List<RecordGroupSharing> shared) {
-    for (RecordGroupSharing rgs : shared) {
-      if (rgs.getTargetFolder() == null) {
-        try {
-          Folder targetFolder;
-          if (rgs.getSharee().isGroup()) {
-            if (rgs.getShared().isSnippet()) {
-              targetFolder = folderDao.getSharedSnippetFolderForGroup(rgs.getSharee().asGroup());
-            } else {
-              targetFolder = folderDao.getSharedFolderForGroup(rgs.getSharee().asGroup());
-            }
-          } else {
-            targetFolder =
-                folderDao.getIndividualSharedFolderForUsers(
-                    rgs.getSharedBy(), rgs.getSharee().asUser(), rgs.getShared());
-          }
-          if (targetFolder != null) {
-            rgs.setTargetFolder(targetFolder);
-          }
-        } catch (Exception e) {
-          log.warn(
-              "Failed to populate target folder for sharing {}: {}", rgs.getId(), e.getMessage());
-        }
-      }
-    }
   }
 
   private List<Long> failuresToIds(List<RecordGroupSharing> failures) {
