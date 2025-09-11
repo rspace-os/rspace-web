@@ -23,17 +23,22 @@ import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.dtos.SharedRecordSearchCriteria;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RecordInfoSharingInfo;
+import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.DetailedRecordInformationProvider;
+import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareApiService;
 import com.researchspace.service.SharingHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -57,6 +62,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   @Autowired private FolderDao folderDao;
   @Autowired private DetailedRecordInformationProvider recordInformationProvider;
   @Autowired private DetailedRecordInformationProvider detailedRecordInformationProvider;
+  @Autowired private RecordManager recordManager;
 
   @Override
   public ApiSharingResult shareItems(SharePost shareConfig, User user) throws BindException {
@@ -123,12 +129,103 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     BaseRecord record = recordManager.get(docId);
     RecordInfoSharingInfo sharingInfo =
         detailedRecordInformationProvider.getRecordSharingInfo(record);
-    DocumentShares shares = new DocumentShares();
-    shares.setDirectShares(sharingInfo.getDirectShares());
-    shares.setImplicitShares(sharingInfo.getImplicitShares());
-    //    populateTargetFolders(sharingInfo.getImplicitShares());
-    //    populateTargetFolders(sharingInfo.getDirectShares());
-    return shares;
+    return buildDocumentShares(record, sharingInfo);
+  }
+
+  private DocumentShares buildDocumentShares(BaseRecord record, RecordInfoSharingInfo sharingInfo) {
+    return DocumentShares.builder()
+        .sharedDocId(record.getId())
+        .sharedDocName(record.getName())
+        .directShares(buildShares(record, sharingInfo.getDirectShares()))
+        .notebookShares(buildShares(record, sharingInfo.getImplicitShares()))
+        .build();
+  }
+
+  private List<DocumentShares.Share> buildShares(
+      BaseRecord record, List<RecordGroupSharing> shares) {
+    return shares.stream()
+        .map(
+            share -> {
+              boolean isUserShare = share.getSharee().isUser();
+              BaseRecord sharedLocation = getSharedLocation(share, record);
+              Long locationId = sharedLocation != null ? sharedLocation.getId() : 0L;
+              String locationName = sharedLocation != null ? sharedLocation.getName() : null;
+              return DocumentShares.Share.builder()
+                  .shareId(share.getId())
+                  .sharerId(share.getSharedBy().getId())
+                  .sharerName(share.getSharedBy().getDisplayName())
+                  .recipientName(share.getSharee().getDisplayName())
+                  .recipientType(
+                      isUserShare
+                          ? DocumentShares.RecipientType.USER
+                          : DocumentShares.RecipientType.GROUP)
+                  .permission(
+                      PermissionType.WRITE.equals(share.getPermType())
+                          ? DocumentShares.PermissionType.EDIT
+                          : DocumentShares.PermissionType.READ)
+                  .locationId(locationId)
+                  .locationName(locationName)
+                  .build();
+            })
+        .collect(Collectors.toList());
+  }
+
+  private BaseRecord getSharedLocation(RecordGroupSharing rgs, BaseRecord record) {
+    if (rgs.getShared().isNotebook()) {
+      List<RecordToFolder> parentNotebooks =
+          record.getParents().stream()
+              .filter(r -> r.getFolder().isNotebook())
+              .collect(Collectors.toList());
+      return parentNotebooks.isEmpty() ? null : parentNotebooks.get(0).getFolder();
+    }
+
+    List<RecordToFolder> parentSharedFolders =
+        record.getParents().stream()
+            .filter(r -> r.getFolder().isSharedFolder())
+            .collect(Collectors.toList());
+
+    if (rgs.getSharee().isGroup()) {
+      Folder groupRoot = folderDao.getSharedFolderForGroup(rgs.getSharee().asGroup());
+      if (rgs.getShared().getAllAncestors().contains(groupRoot)) {
+        return rgs.getShared().getAllAncestors().stream()
+            .filter(f -> f.equals(groupRoot))
+            .findFirst()
+            .orElse(null);
+      }
+    }
+
+    // For user shares there's no specific shared location surfaced
+    for (RecordToFolder rtf : parentSharedFolders) {
+      if (isSharedFolderBetweenSharerAndRecipient(rgs, rtf)) {
+        return rtf.getFolder();
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Checks if the given RecordToFolder represents a shared folder between the sharer and recipient,
+   * by checking it's a shared folder named in the format "user1-user2"
+   *
+   * @param rgs The RecordGroupSharing object.
+   * @param rtf The RecordToFolder object.
+   * @return True if the folder is shared between the sharer and recipient, false otherwise.
+   */
+  private static boolean isSharedFolderBetweenSharerAndRecipient(
+      RecordGroupSharing rgs, RecordToFolder rtf) {
+    String sharerUsername = rgs.getSharedBy().getUsername();
+    String recipientUsername = rgs.getSharee().asUser().getUsername();
+    if (!rtf.getFolder().isSharedFolder() || !rtf.getFolder().getName().contains("-")) {
+      return false;
+    }
+
+    String[] parts = rtf.getFolder().getName().split("-", 2);
+    if (parts.length != 2) {
+      return false;
+    }
+
+    Set<String> folderUsers = Set.of(parts[0], parts[1]);
+    return folderUsers.contains(sharerUsername) && folderUsers.contains(recipientUsername);
   }
 
   private void initializeNullCollections(SharePost shareConfig) {

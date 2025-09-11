@@ -1,18 +1,38 @@
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.researchspace.model.RecordGroupSharing;
 import java.util.List;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
-@EqualsAndHashCode(callSuper = false)
-@NoArgsConstructor
-@JsonPropertyOrder(
-    value = {"id", "sharedItemId", "shareItemName", "sharedTargetType", "permission", "_links"})
-public class DocumentShares extends LinkableApiObject {
-  List<RecordGroupSharing> implicitShares;
-  List<RecordGroupSharing> directShares;
+@Builder
+public class DocumentShares {
+  private long sharedDocId;
+  private String sharedDocName;
+
+  private List<Share> notebookShares;
+  private List<Share> directShares;
+
+  @Data
+  @Builder
+  public static class Share {
+    private long shareId;
+    private Long sharerId;
+    private String sharerName;
+    private String recipientName;
+    private RecipientType recipientType;
+    private PermissionType permission;
+    private long locationId;
+    private String locationName;
+  }
+
+  public enum PermissionType {
+    READ,
+    EDIT
+  }
+
+  public enum RecipientType {
+    USER,
+    GROUP
+  }
 }

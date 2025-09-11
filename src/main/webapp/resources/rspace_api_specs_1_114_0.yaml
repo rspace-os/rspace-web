@@ -2558,6 +2558,29 @@ paths:
           description: Result of update operation
           schema:
             $ref: '#/definitions/ShareResult'
+  '/share/document/{id}':
+    get:
+      summary: Get all shares for a document
+      description: >-
+        Returns all sharing information for the specified document, including direct shares and
+        implicit shares (e.g. via groups). Each share entry includes the share id, target type,
+        permission, and related identifiers.
+      produces:
+        - application/json
+      tags:
+        - Share
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int64
+          description: The id of the document or notebook to retrieve share information for
+          required: true
+      responses:
+        '200':
+          description: Sharing information for the document
+          schema:
+            $ref: '#/definitions/DocumentShares'
 
   /units:
     get:
@@ -4028,6 +4051,17 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/ShareInfo'
+  DocumentShares:
+    description: All shares for a document, grouped by direct and implicit shares
+    properties:
+      directShares:
+        type: array
+        items:
+          $ref: '#/definitions/ShareInfo'
+      implicitShares:
+        type: array
+        items:
+          $ref: '#/definitions/ShareInfo'
   ActivityList:
     description: List of activities
     type: array

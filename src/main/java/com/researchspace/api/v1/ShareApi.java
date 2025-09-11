@@ -49,9 +49,4 @@ public interface ShareApi {
 
   @GetMapping("/document/{id}")
   DocumentShares getAllSharesForDoc(@PathVariable("id") Long docId, User user);
-
-  /**
-   * id sharedItemId sharedItemName sharedTargetType (Group or User) permission shareeId shareeName
-   * sharedToFolderId _links
-   */
 }
