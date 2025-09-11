@@ -34,8 +34,8 @@ import useShare, {
   NewShare,
 } from "../hooks/api/useShare";
 import { doNotAwait } from "../util/Util";
-import useGroups, { Group } from "../hooks/api/useGroups";
-import useUserDetails, { GroupMember } from "../hooks/api/useUserDetails";
+import useGroups from "../hooks/api/useGroups";
+import useUserDetails from "../hooks/api/useUserDetails";
 import useWhoAmI from "../hooks/api/useWhoAmI";
 import useFolders from "../hooks/api/useFolders";
 import FolderSelectionDialog from "./FolderSelectionDialog";
@@ -389,7 +389,7 @@ const ShareDialog = () => {
       // Update the permission
       const updatedDocNewShares = docNewShares.map((share) =>
         share.id === newShareId
-          ? { ...share, permission: newPermission as "READ" | "EDIT" }
+          ? { ...share, permission: newPermission }
           : share,
       );
       updatedNewShares.set(globalId, updatedDocNewShares);
@@ -524,7 +524,7 @@ const ShareDialog = () => {
       }
 
       handleClose();
-      // @ts-ignore
+      // @ts-expect-error global function
       getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
     } catch (error) {
       console.error("Failed to save shares:", error);
@@ -748,7 +748,6 @@ const ShareDialog = () => {
                     const shares = shareData.get(globalId) ?? [];
                     const docNewShares = newShares.get(globalId) ?? [];
                     const allShares = [...shares, ...docNewShares];
-                    const documentName = names[0] ?? "ERROR";
                     return (
                       <Box>
                         {allShares.length === 0 ? (
@@ -1058,7 +1057,7 @@ const ShareDialog = () => {
 
                         // Collect all unique shares
                         Array.from(newShares.entries()).forEach(
-                          ([globalId, docNewShares]) => {
+                          ([_globalId, docNewShares]) => {
                             docNewShares.forEach((share) => {
                               const key = `${share.sharedTargetType}-${share.shareeId}`;
                               if (uniqueShares.has(key)) {
