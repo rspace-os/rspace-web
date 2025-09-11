@@ -395,7 +395,7 @@ function ExportRepo({
               tags={state.tags}
               fetchingTags={fetchingTags}
               metadataLanguage={state.metadataLanguage}
-              handleMetadataLanguageChange={handleMetadataLanguageChange}/>
+              handleMetadataLanguageChange={handleMetadataLanguageChange} />
           </>
         )}
         {repo.repoName === "app.figshare" && (
