@@ -189,27 +189,15 @@ Unzip and follow the installation instructions in the file `Usage.md`.
 
 There are several deployment properties relating to document preview generation. These three are **mandatory** if you want document previewing enabled:
 
-* **aspose.license** 	 	Absolute file path to Aspose license E.g.
-
-  aspose.license=/etc/rspace/aspose/Aspose-Total-Java.lic
-
-* **aspose.app** 	 	Absolute file path to Aspose standalone document converter E.g.
-
-  aspose.app=/etc/rspace/aspose/aspose-app.jar
-
-* **aspose.logfile**      Absolute path to Aspose document converter's log file. E.g.
-
-  aspose.logfile=/etc/rspace/aspose/logs.txt
+* **aspose.enabled**  Needs to be set to 'true'
+* **aspose.license**  Absolute file path to Aspose license E.g. aspose.license=/etc/rspace/aspose/Aspose-Total-Java.lic
+* **aspose.app**      Absolute file path to Aspose standalone document converter E.g. aspose.app=/etc/rspace/aspose/aspose-app.jar
+* **aspose.logfile**  Absolute path to Aspose document converter's log file. E.g. aspose.logfile=/etc/rspace/aspose/logs.txt
 
 ##### Optional Aspose logging
 
-* **aspose.logLevel** The log level (default is INFO) e.g.
-
-    aspose.logLevel=WARN
-
-* **aspose.jvmArgs**  Optional jvm args to pass to application. E.g.
-
-    aspose.jvmArgs=-Xmx1024m
+* **aspose.logLevel** The log level (default is INFO) e.g. aspose.logLevel=WARN
+* **aspose.jvmArgs**  Optional jvm args to pass to application. E.g. aspose.jvmArgs=-Xmx1024m
 
 #### As a Docker service
 
