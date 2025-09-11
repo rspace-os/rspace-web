@@ -193,7 +193,6 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
             .orElse(null);
     }
 
-    // For user shares there's no specific shared location surfaced
     for (RecordToFolder rtf : parentSharedFolders) {
       if (isSharedFolderBetweenSharerAndRecipient(rgs, rtf)) {
         return rtf.getFolder();
@@ -250,74 +249,6 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     return result.getExceptionCount() > 0
         && result.getResultCount() == 0
         && result.getExceptions().stream().allMatch(e -> e instanceof AuthorizationException);
-  }
-
-  private RecordGroupSharing getExistingShareOrThrow(Long id) {
-    try {
-      RecordGroupSharing existingShare = recordShareMgr.get(id);
-      if (existingShare == null) {
-        throw new NotFoundException(createNotFoundMessage("Share", id));
-      }
-      return existingShare;
-    } catch (DataAccessException e) {
-      throw new NotFoundException(createNotFoundMessage("Share", id), e);
-    }
-  }
-
-  private boolean isPermissionOnlyUpdate(RecordGroupSharing existingShare, SharePost shareConfig) {
-    // Check if we're updating exactly one sharee and only the permission changed
-    if (!shareConfig.getItemsToShare().contains(existingShare.getShared().getId())) {
-      return false;
-    }
-
-    if (existingShare.getSharee().isGroup()) {
-      GroupSharePostItem groupItem = shareConfig.getGroupSharePostItems().get(0);
-
-      boolean sameId = groupItem.getId().equals(existingShare.getSharee().getId());
-      boolean noSharedFolderId = groupItem.getSharedFolderId() == null;
-      boolean sharedFolderMatches =
-          existingShare.getTargetFolder() != null
-              && groupItem.getSharedFolderId().equals(existingShare.getTargetFolder().getId());
-
-      return sameId && (noSharedFolderId || sharedFolderMatches);
-    }
-
-    // For user shares
-    if (existingShare.getSharee().isUser()) {
-      UserSharePostItem userItem = shareConfig.getUserSharePostItems().get(0);
-      return userItem.getId().equals(existingShare.getSharee().getId());
-    }
-
-    return false;
-  }
-
-  private boolean isFolderLocationUpdate(RecordGroupSharing existingShare, SharePost shareConfig) {
-    if (!existingShare.getSharee().isGroup()) {
-      return false;
-    }
-
-    GroupSharePostItem groupItem = shareConfig.getGroupSharePostItems().get(0);
-    if (!groupItem.getId().equals(existingShare.getSharee().getId())
-        || shareConfig.getItemsToShare().size() != 1
-        || !shareConfig.getItemsToShare().contains(existingShare.getShared().getId())) {
-      return false;
-    }
-
-    // Check if only folder changed
-    Long currentFolderId =
-        existingShare.getTargetFolder() != null ? existingShare.getTargetFolder().getId() : null;
-    return !Objects.equals(currentFolderId, groupItem.getSharedFolderId());
-  }
-
-  private String extractNewPermission(SharePost shareConfig, RecordGroupSharing existingShare) {
-    if (existingShare.getSharee().isGroup() && !shareConfig.getGroupSharePostItems().isEmpty()) {
-      return shareConfig.getGroupSharePostItems().get(0).getPermission();
-    } else if (existingShare.getSharee().isUser()
-        && !shareConfig.getUserSharePostItems().isEmpty()) {
-      return shareConfig.getUserSharePostItems().get(0).getPermission();
-    }
-    throw new IllegalArgumentException(
-        "Could not determine new permission from share configuration");
   }
 
   private PaginationCriteria<RecordGroupSharing> createInternalPaginationCriteria(
