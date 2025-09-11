@@ -108,7 +108,19 @@ export default function useShare(): {
         sharedDocId: parseInt(globalId.slice(2), 10),
         sharedDocName: data.length > 0 ? data[0].shareItemName : "Unknown",
         directShares: data,
-        notebookShares: [],
+        notebookShares: [
+          // Placeholder for future notebook shares
+          {
+            id: 0,
+            sharedItemId: 0,
+            shareItemName: "Notebook Share Placeholder",
+            sharedTargetType: "GROUP",
+            permission: "READ",
+            shareeId: 1,
+            shareeName: "userGroup",
+            sharedToFolderId: null,
+          },
+        ],
       };
     } catch (e) {
       addAlert(

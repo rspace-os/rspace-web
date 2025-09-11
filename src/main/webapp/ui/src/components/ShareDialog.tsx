@@ -187,6 +187,11 @@ const ShareDialog = () => {
                 groupIds.add(share.shareeId);
               }
             }
+            for (const share of shares.notebookShares) {
+              if (share.sharedTargetType === "GROUP") {
+                groupIds.add(share.shareeId);
+              }
+            }
           }
 
           // Fetch folder names for all groups
@@ -753,281 +758,396 @@ const ShareDialog = () => {
                 <Stack spacing={3}>
                   {(() => {
                     const globalId = globalIds[0];
+                    const docName = names[0] || "this document";
                     const directShares =
                       shareData.get(globalId)?.directShares ?? [];
+                    const notebookShares =
+                      shareData.get(globalId)?.notebookShares ?? [];
                     const docNewShares = newShares.get(globalId) ?? [];
                     const allDirectShares = [...directShares, ...docNewShares];
                     return (
                       <Box>
-                        {allDirectShares.length === 0 ? (
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            style={{ fontStyle: "italic" }}
-                          >
-                            This document is not shared with anyone.
-                          </Typography>
-                        ) : (
-                          <TableContainer component={Paper} variant="outlined">
-                            <Table size="small" sx={{ mb: 0 }}>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>Shared With</TableCell>
-                                  <TableCell>Type</TableCell>
-                                  <TableCell>Permission</TableCell>
-                                  <TableCell>Location</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {/* Existing shares */}
-                                {directShares.map((share) => (
-                                  <TableRow key={share.id}>
-                                    <TableCell>
-                                      <Box>
-                                        {share.sharedTargetType === "USER" ? (
-                                          <UserDetails
-                                            userId={share.shareeId}
-                                            fullName={share.shareeName}
-                                            position={["bottom", "right"]}
-                                          />
-                                        ) : (
-                                          <GroupDetails
-                                            groupId={share.shareeId}
-                                            groupName={share.shareeName}
-                                            position={["bottom", "right"]}
-                                          />
-                                        )}
-                                      </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Chip
-                                        size="small"
-                                        label={share.sharedTargetType}
-                                        color={
-                                          share.sharedTargetType === "USER"
-                                            ? "primary"
-                                            : "secondary"
-                                        }
-                                        variant="outlined"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <FormControl
-                                        size="small"
-                                        sx={{ minWidth: 120 }}
-                                      >
-                                        <Select
-                                          value={getCurrentPermission(share)}
-                                          onChange={(e) => {
-                                            const newValue = e.target.value;
-                                            if (
-                                              ![
-                                                "EDIT",
-                                                "READ",
-                                                "UNSHARE",
-                                              ].includes(newValue)
-                                            )
-                                              throw new Error("Impossible");
-                                            handlePermissionChange(
-                                              share.id.toString(),
-                                              newValue as Permission,
-                                            );
-                                          }}
-                                          size="small"
-                                        >
-                                          <MenuItem value="READ">Read</MenuItem>
-                                          <MenuItem value="EDIT">Edit</MenuItem>
-                                          <MenuItem
-                                            value="UNSHARE"
-                                            sx={{ color: "error.main" }}
-                                          >
-                                            Unshare
-                                          </MenuItem>
-                                        </Select>
-                                      </FormControl>
-                                    </TableCell>
-                                    <TableCell>
-                                      {share.sharedTargetType === "USER" ? (
-                                        <>&mdash;</>
-                                      ) : (
-                                        <>
-                                          {shareFolderChanges.get(
-                                            share.id.toString(),
-                                          )?.name ||
-                                            groupFolderNames.get(
-                                              share.shareeId,
-                                            ) ||
-                                            "Loading..."}
-                                          <Button
-                                            size="small"
-                                            sx={{ ml: 1 }}
-                                            onClick={() => {
-                                              const groups =
-                                                shareOptions.filter(
-                                                  (opt) =>
-                                                    opt.optionType === "GROUP",
-                                                );
-                                              const group = groups.find(
-                                                (g) => g.id === share.shareeId,
-                                              );
-                                              if (
-                                                group &&
-                                                "sharedFolderId" in group
-                                              ) {
-                                                setSelectedShareForFolderChange(
-                                                  {
-                                                    shareId:
-                                                      share.id.toString(),
-                                                    groupId: share.shareeId,
-                                                    globalId,
-                                                    sharedFolderId:
-                                                      group.sharedFolderId,
-                                                  },
-                                                );
-                                                setFolderSelectionOpen(true);
-                                              }
-                                            }}
-                                          >
-                                            Change
-                                          </Button>
-                                        </>
-                                      )}
-                                    </TableCell>
+                        <Stack spacing={3}>
+                          {allDirectShares.length === 0 ? (
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              style={{ fontStyle: "italic" }}
+                            >
+                              This document is not directly shared with anyone.
+                            </Typography>
+                          ) : (
+                            <TableContainer
+                              component={Paper}
+                              variant="outlined"
+                            >
+                              <Table size="small" sx={{ mb: 0 }}>
+                                <TableHead>
+                                  <TableRow>
+                                    <TableCell>Shared With</TableCell>
+                                    <TableCell>Type</TableCell>
+                                    <TableCell>Permission</TableCell>
+                                    <TableCell>Location</TableCell>
                                   </TableRow>
-                                ))}
-                                {/* New shares */}
-                                {docNewShares.map((newShare) => (
-                                  <TableRow
-                                    key={newShare.id}
-                                    sx={{
-                                      backgroundColor: "action.hover",
-                                    }}
-                                  >
-                                    <TableCell>
-                                      <Box
-                                        sx={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: 1,
-                                        }}
-                                      >
+                                </TableHead>
+                                <TableBody>
+                                  {/* Existing shares */}
+                                  {directShares.map((share) => (
+                                    <TableRow key={share.id}>
+                                      <TableCell>
+                                        <Box>
+                                          {share.sharedTargetType === "USER" ? (
+                                            <UserDetails
+                                              userId={share.shareeId}
+                                              fullName={share.shareeName}
+                                              position={["bottom", "right"]}
+                                            />
+                                          ) : (
+                                            <GroupDetails
+                                              groupId={share.shareeId}
+                                              groupName={share.shareeName}
+                                              position={["bottom", "right"]}
+                                            />
+                                          )}
+                                        </Box>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Chip
+                                          size="small"
+                                          label={share.sharedTargetType}
+                                          color={
+                                            share.sharedTargetType === "USER"
+                                              ? "primary"
+                                              : "secondary"
+                                          }
+                                          variant="outlined"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <FormControl
+                                          size="small"
+                                          sx={{ minWidth: 120 }}
+                                        >
+                                          <Select
+                                            value={getCurrentPermission(share)}
+                                            onChange={(e) => {
+                                              const newValue = e.target.value;
+                                              if (
+                                                ![
+                                                  "EDIT",
+                                                  "READ",
+                                                  "UNSHARE",
+                                                ].includes(newValue)
+                                              )
+                                                throw new Error("Impossible");
+                                              handlePermissionChange(
+                                                share.id.toString(),
+                                                newValue as Permission,
+                                              );
+                                            }}
+                                            size="small"
+                                          >
+                                            <MenuItem value="READ">
+                                              Read
+                                            </MenuItem>
+                                            <MenuItem value="EDIT">
+                                              Edit
+                                            </MenuItem>
+                                            <MenuItem
+                                              value="UNSHARE"
+                                              sx={{ color: "error.main" }}
+                                            >
+                                              Unshare
+                                            </MenuItem>
+                                          </Select>
+                                        </FormControl>
+                                      </TableCell>
+                                      <TableCell>
+                                        {share.sharedTargetType === "USER" ? (
+                                          <>&mdash;</>
+                                        ) : (
+                                          <>
+                                            {shareFolderChanges.get(
+                                              share.id.toString(),
+                                            )?.name ||
+                                              groupFolderNames.get(
+                                                share.shareeId,
+                                              ) ||
+                                              "Loading..."}
+                                            <Button
+                                              size="small"
+                                              sx={{ ml: 1 }}
+                                              onClick={() => {
+                                                const groups =
+                                                  shareOptions.filter(
+                                                    (opt) =>
+                                                      opt.optionType ===
+                                                      "GROUP",
+                                                  );
+                                                const group = groups.find(
+                                                  (g) =>
+                                                    g.id === share.shareeId,
+                                                );
+                                                if (
+                                                  group &&
+                                                  "sharedFolderId" in group
+                                                ) {
+                                                  setSelectedShareForFolderChange(
+                                                    {
+                                                      shareId:
+                                                        share.id.toString(),
+                                                      groupId: share.shareeId,
+                                                      globalId,
+                                                      sharedFolderId:
+                                                        group.sharedFolderId,
+                                                    },
+                                                  );
+                                                  setFolderSelectionOpen(true);
+                                                }
+                                              }}
+                                            >
+                                              Change
+                                            </Button>
+                                          </>
+                                        )}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                  {/* New shares */}
+                                  {docNewShares.map((newShare) => (
+                                    <TableRow
+                                      key={newShare.id}
+                                      sx={{
+                                        backgroundColor: "action.hover",
+                                      }}
+                                    >
+                                      <TableCell>
+                                        <Box
+                                          sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 1,
+                                          }}
+                                        >
+                                          {newShare.sharedTargetType ===
+                                          "USER" ? (
+                                            <Typography variant="body2">
+                                              {newShare.shareeName}
+                                            </Typography>
+                                          ) : (
+                                            <Typography
+                                              variant="body2"
+                                              color="success.dark"
+                                              sx={{ fontWeight: "medium" }}
+                                            >
+                                              {newShare.shareeName}
+                                            </Typography>
+                                          )}
+                                        </Box>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Chip
+                                          size="small"
+                                          label={newShare.sharedTargetType}
+                                          color={
+                                            newShare.sharedTargetType === "USER"
+                                              ? "primary"
+                                              : "secondary"
+                                          }
+                                          variant="outlined"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <FormControl
+                                          size="small"
+                                          sx={{ minWidth: 120 }}
+                                        >
+                                          <Select
+                                            value={newShare.permission}
+                                            onChange={(e) => {
+                                              const newValue = e.target.value;
+                                              if (
+                                                ![
+                                                  "EDIT",
+                                                  "READ",
+                                                  "UNSHARE",
+                                                ].includes(newValue)
+                                              )
+                                                throw new Error("Impossible");
+                                              handleNewSharePermissionChange(
+                                                globalId,
+                                                newShare.id,
+                                                newValue as Permission,
+                                              );
+                                            }}
+                                            size="small"
+                                          >
+                                            <MenuItem value="READ">
+                                              Read
+                                            </MenuItem>
+                                            <MenuItem value="EDIT">
+                                              Edit
+                                            </MenuItem>
+                                            <MenuItem
+                                              value="UNSHARE"
+                                              sx={{ color: "error.main" }}
+                                              disabled
+                                            >
+                                              Unshare
+                                            </MenuItem>
+                                          </Select>
+                                        </FormControl>
+                                      </TableCell>
+                                      <TableCell>
                                         {newShare.sharedTargetType ===
                                         "USER" ? (
-                                          <Typography variant="body2">
-                                            {newShare.shareeName}
-                                          </Typography>
+                                          <>&mdash;</>
                                         ) : (
-                                          <Typography
-                                            variant="body2"
-                                            color="success.dark"
-                                            sx={{ fontWeight: "medium" }}
-                                          >
-                                            {newShare.shareeName}
-                                          </Typography>
+                                          <>
+                                            <Typography
+                                              variant="body2"
+                                              color="text.secondary"
+                                            >
+                                              {newShare.sharedFolderName || "/"}
+                                            </Typography>
+                                            <Button
+                                              size="small"
+                                              sx={{ ml: 1 }}
+                                              onClick={() => {
+                                                const groups =
+                                                  shareOptions.filter(
+                                                    (opt) =>
+                                                      opt.optionType ===
+                                                      "GROUP",
+                                                  );
+                                                const group = groups.find(
+                                                  (g) =>
+                                                    g.id === newShare.shareeId,
+                                                );
+                                                if (
+                                                  group &&
+                                                  "sharedFolderId" in group
+                                                ) {
+                                                  setSelectedShareForFolderChange(
+                                                    {
+                                                      shareId: newShare.id,
+                                                      groupId:
+                                                        newShare.shareeId,
+                                                      globalId,
+                                                      sharedFolderId:
+                                                        group.sharedFolderId,
+                                                    },
+                                                  );
+                                                  setFolderSelectionOpen(true);
+                                                }
+                                              }}
+                                            >
+                                              Change
+                                            </Button>
+                                          </>
                                         )}
-                                      </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Chip
-                                        size="small"
-                                        label={newShare.sharedTargetType}
-                                        color={
-                                          newShare.sharedTargetType === "USER"
-                                            ? "primary"
-                                            : "secondary"
-                                        }
-                                        variant="outlined"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <FormControl
-                                        size="small"
-                                        sx={{ minWidth: 120 }}
-                                      >
-                                        <Select
-                                          value={newShare.permission}
-                                          onChange={(e) => {
-                                            const newValue = e.target.value;
-                                            if (
-                                              ![
-                                                "EDIT",
-                                                "READ",
-                                                "UNSHARE",
-                                              ].includes(newValue)
-                                            )
-                                              throw new Error("Impossible");
-                                            handleNewSharePermissionChange(
-                                              globalId,
-                                              newShare.id,
-                                              newValue as Permission,
-                                            );
-                                          }}
-                                          size="small"
-                                        >
-                                          <MenuItem value="READ">Read</MenuItem>
-                                          <MenuItem value="EDIT">Edit</MenuItem>
-                                          <MenuItem
-                                            value="UNSHARE"
-                                            sx={{ color: "error.main" }}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+                          )}
+                          {notebookShares.length > 0 && (
+                            <Box>
+                              <Typography
+                                variant="body1"
+                                component="h3"
+                                gutterBottom
+                              >
+                                As {docName} is shared into Notebooks, it is
+                                also shared with:
+                              </Typography>
+                              <TableContainer
+                                component={Paper}
+                                variant="outlined"
+                                sx={{ my: 1 }}
+                              >
+                                <Table size="small" sx={{ mb: 0 }}>
+                                  <TableHead>
+                                    <TableRow>
+                                      <TableCell>Notebook</TableCell>
+                                      <TableCell>Shared With</TableCell>
+                                      <TableCell>Type</TableCell>
+                                      <TableCell>Permission</TableCell>
+                                    </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                    {notebookShares.map((share) => (
+                                      <TableRow key={share.id}>
+                                        <TableCell>NOTEBOOK NAME</TableCell>
+                                        <TableCell>
+                                          <Box>
+                                            {share.sharedTargetType ===
+                                            "USER" ? (
+                                              <UserDetails
+                                                userId={share.shareeId}
+                                                fullName={share.shareeName}
+                                                position={["bottom", "right"]}
+                                              />
+                                            ) : (
+                                              <GroupDetails
+                                                groupId={share.shareeId}
+                                                groupName={share.shareeName}
+                                                position={["bottom", "right"]}
+                                              />
+                                            )}
+                                          </Box>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Chip
+                                            size="small"
+                                            label={share.sharedTargetType}
+                                            color={
+                                              share.sharedTargetType === "USER"
+                                                ? "primary"
+                                                : "secondary"
+                                            }
+                                            variant="outlined"
+                                          />
+                                        </TableCell>
+                                        <TableCell>
+                                          <FormControl
+                                            size="small"
+                                            sx={{ minWidth: 120 }}
                                             disabled
                                           >
-                                            Unshare
-                                          </MenuItem>
-                                        </Select>
-                                      </FormControl>
-                                    </TableCell>
-                                    <TableCell>
-                                      {newShare.sharedTargetType === "USER" ? (
-                                        <>&mdash;</>
-                                      ) : (
-                                        <>
-                                          <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                          >
-                                            {newShare.sharedFolderName || "/"}
-                                          </Typography>
-                                          <Button
-                                            size="small"
-                                            sx={{ ml: 1 }}
-                                            onClick={() => {
-                                              const groups =
-                                                shareOptions.filter(
-                                                  (opt) =>
-                                                    opt.optionType === "GROUP",
-                                                );
-                                              const group = groups.find(
-                                                (g) =>
-                                                  g.id === newShare.shareeId,
-                                              );
-                                              if (
-                                                group &&
-                                                "sharedFolderId" in group
-                                              ) {
-                                                setSelectedShareForFolderChange(
-                                                  {
-                                                    shareId: newShare.id,
-                                                    groupId: newShare.shareeId,
-                                                    globalId,
-                                                    sharedFolderId:
-                                                      group.sharedFolderId,
-                                                  },
-                                                );
-                                                setFolderSelectionOpen(true);
-                                              }
-                                            }}
-                                          >
-                                            Change
-                                          </Button>
-                                        </>
-                                      )}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        )}
+                                            <Select
+                                              value={share.permission}
+                                              onChange={() => {
+                                                /* Read-only for notebook shares */
+                                              }}
+                                              size="small"
+                                            >
+                                              <MenuItem value="READ">
+                                                Read
+                                              </MenuItem>
+                                              <MenuItem value="EDIT">
+                                                Edit
+                                              </MenuItem>
+                                            </Select>
+                                          </FormControl>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </TableContainer>
+                              <Typography
+                                variant="body1"
+                                color="text.secondary"
+                              >
+                                To edit permissions or change location, edit the
+                                Notebook’s sharing permissions or location.
+                              </Typography>
+                            </Box>
+                          )}
+                        </Stack>
                       </Box>
                     );
                   })()}
