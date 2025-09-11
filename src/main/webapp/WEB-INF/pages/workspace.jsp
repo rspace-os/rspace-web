@@ -8,6 +8,7 @@
     var workspaceSettings = $.parseJSON(RS.unescape('${workspaceConfigJson}'));
     workspaceSettings.resultsPerPage = ${numberRecords};
     workspaceSettings.searchMode = false;
+    console.log(workspaceSettings)
     var settingsKey = '${settingsKey}';
     var isSysAdmin = false;
     <shiro:hasAnyRoles name="ROLE_SYSADMIN">
