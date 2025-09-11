@@ -64,6 +64,7 @@ export default function PreviewInfo(props) {
                   data-fullwidth={props.item["data-fullwidth"]}
                   data-fullheight={props.item["data-fullheight"]}
                   data-chemfileid={props.item["data-chemfileid"]}
+                  data-stoichiometry-table={props.item["data-stoichiometry-table"]}
                 />
               </Div>
               <ChemCard item={props.item} inline />

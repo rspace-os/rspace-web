@@ -435,6 +435,10 @@ img.commentIcon {
   line-height: 12px;
 }
 
+.imageViewModePanel:has(img[data-stoichiometry-table]) {
+  display: unset;
+}
+
 .imageViewModePanel .imageData {
   display: flex;
   align-items: baseline;  
