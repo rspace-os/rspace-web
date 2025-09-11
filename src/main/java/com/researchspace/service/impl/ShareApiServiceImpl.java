@@ -186,12 +186,11 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
 
     if (rgs.getSharee().isGroup()) {
       Folder groupRoot = folderDao.getSharedFolderForGroup(rgs.getSharee().asGroup());
-      if (rgs.getShared().getAllAncestors().contains(groupRoot)) {
-        return rgs.getShared().getAllAncestors().stream()
-            .filter(f -> f.equals(groupRoot))
+        return rgs.getShared().getParents().stream()
+            .map(RecordToFolder::getFolder)
+            .filter(folder -> folder.getAllAncestors().contains(groupRoot) || folder.equals(groupRoot))
             .findFirst()
             .orElse(null);
-      }
     }
 
     // For user shares there's no specific shared location surfaced
