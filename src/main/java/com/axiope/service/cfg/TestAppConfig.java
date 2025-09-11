@@ -8,6 +8,11 @@ import com.researchspace.admin.service.IServerlogRetriever;
 import com.researchspace.admin.service.impl.FileLocationBasedLogRetriever;
 import com.researchspace.core.util.cache.DefaultTimeLimitedMemoryCache;
 import com.researchspace.core.util.cache.TimeLimitedMemoryCache;
+import com.researchspace.dataverse.api.v1.DataverseAPI;
+import com.researchspace.dataverse.http.DataverseAPIImpl;
+import com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository;
+import com.researchspace.dataverse.rspaceadapter.DataverseRepoConfigurer;
+import com.researchspace.dataverse.spring.config.DataverseSpringConfig;
 import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.document.importer.MSWordImporter;
 import com.researchspace.documentconversion.spi.CompositeDocumentConvertor;
@@ -16,6 +21,7 @@ import com.researchspace.dryad.rspaceadapter.DryadRSpaceRepository;
 import com.researchspace.figshare.rspaceadapter.FigshareRSpaceRepository;
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.repository.spi.IRepository;
+import com.researchspace.repository.spi.RepositoryConfigurer;
 import com.researchspace.repository.spi.StubRepositoryImpl;
 import com.researchspace.service.Broadcaster;
 import com.researchspace.service.CommunicationManager;
@@ -42,10 +48,13 @@ import java.util.List;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
  * Run profile spring configuration used for running the web application in test/dev environments.
@@ -56,6 +65,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @Configuration
 @Profile("run")
 @EnableAsync
+@Import(value = DataverseSpringConfig.class)
 public class TestAppConfig extends BaseConfig {
 
   @Bean(name = "postUserCreate")
@@ -249,5 +259,38 @@ public class TestAppConfig extends BaseConfig {
     DryadRSpaceRepository rc = new DryadRSpaceRepository();
     log.info("Setting in repository implementation {}", rc);
     return rc;
+  }
+
+  @Bean
+  @Scope(value = "prototype")
+  public DataverseAPI dataverseAPI() {
+    return new DataverseAPIImpl();
+  }
+
+  @Bean(name = "configurerDataverse")
+  public RepositoryConfigurer dataverseRepoConfigurer() {
+    DataverseRepoConfigurer rc = new DataverseRepoConfigurer();
+    ClassPathResource subjects = new ClassPathResource("subjects.txt");
+    rc.setResource(subjects);
+    return rc;
+  }
+
+  /**
+   * Create a new stateful repository adapter per request. <br>
+   * The name is created from appName+'Repository' as IRepository beans are created on-demand at
+   * export time.
+   */
+  @Bean(name = "dataverseRepository")
+  @Scope(value = WebApplicationContext.SCOPE_REQUEST)
+  public IRepository dataverseRepository() {
+    DataverseRSpaceRepository repo = new DataverseRSpaceRepository();
+    repo.setConfigurer(dataverseRepoConfigurer());
+    repo.setDvAPI(dataverseAPI());
+    logSettingRepositoryImplementation(repo);
+    return repo;
+  }
+
+  private void logSettingRepositoryImplementation(IRepository repo) {
+    log.info("Setting in repository implementation {}", repo);
   }
 }
