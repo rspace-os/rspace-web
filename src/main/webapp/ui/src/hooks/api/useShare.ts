@@ -33,6 +33,13 @@ export type ShareInfo = {
   shareeName: string;
 };
 
+export type ShareInfoResponse = {
+  sharedDocId: number;
+  sharedDocName: string;
+  directShares: ReadonlyArray<ShareInfo>;
+  notebookShares: ReadonlyArray<ShareInfo>;
+};
+
 type CreateShareRequest = {
   itemsToShare: number[];
   users: Array<{
@@ -54,14 +61,20 @@ export default function useShare(): {
   /**
    * Fetches sharing information for a specific global ID.
    */
-  getShareInfo: (globalId: string) => Promise<ReadonlyArray<ShareInfo>>;
+  getShareInfo: (globalId: string) => Promise<ShareInfoResponse>;
 
   /**
    * Fetches sharing information for multiple global IDs.
    */
-  getShareInfoForMultiple: (
-    globalIds: ReadonlyArray<string>,
-  ) => Promise<Map<string, ReadonlyArray<ShareInfo>>>;
+  getShareInfoForMultiple: (globalIds: ReadonlyArray<string>) => Promise<
+    Map<
+      string,
+      {
+        directShares: ReadonlyArray<ShareInfo>;
+        notebookShares: ReadonlyArray<ShareInfo>;
+      }
+    >
+  >;
 
   /**
    * Creates new shares for an item.
@@ -81,9 +94,7 @@ export default function useShare(): {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
 
-  async function getShareInfo(
-    globalId: string,
-  ): Promise<ReadonlyArray<ShareInfo>> {
+  async function getShareInfo(globalId: string): Promise<ShareInfoResponse> {
     try {
       const { data } = await axios.get<ReadonlyArray<ShareInfo>>(
         `/api/v1/share/document/${globalId.slice(2)}`,
@@ -93,7 +104,12 @@ export default function useShare(): {
           },
         },
       );
-      return data;
+      return {
+        sharedDocId: parseInt(globalId.slice(2), 10),
+        sharedDocName: data.length > 0 ? data[0].shareItemName : "Unknown",
+        directShares: data,
+        notebookShares: [],
+      };
     } catch (e) {
       addAlert(
         mkAlert({
@@ -110,20 +126,34 @@ export default function useShare(): {
 
   async function getShareInfoForMultiple(
     globalIds: ReadonlyArray<string>,
-  ): Promise<Map<string, ReadonlyArray<ShareInfo>>> {
+  ): Promise<
+    Map<
+      string,
+      {
+        directShares: ReadonlyArray<ShareInfo>;
+        notebookShares: ReadonlyArray<ShareInfo>;
+      }
+    >
+  > {
     try {
       // Make parallel requests for all global IDs
       const promises = globalIds.map(async (globalId) => {
-        const shares = await getShareInfo(globalId);
-        return { globalId, shares };
+        const { directShares, notebookShares } = await getShareInfo(globalId);
+        return { globalId, directShares, notebookShares };
       });
 
       const results = await Promise.all(promises);
 
       // Convert to Map for easy lookup
-      const shareMap = new Map<string, ReadonlyArray<ShareInfo>>();
-      results.forEach(({ globalId, shares }) => {
-        shareMap.set(globalId, shares);
+      const shareMap = new Map<
+        string,
+        {
+          directShares: ReadonlyArray<ShareInfo>;
+          notebookShares: ReadonlyArray<ShareInfo>;
+        }
+      >();
+      results.forEach(({ globalId, directShares, notebookShares }) => {
+        shareMap.set(globalId, { directShares, notebookShares });
       });
 
       return shareMap;

@@ -128,7 +128,13 @@ function useSetup(): {
 const ShareDialog = () => {
   const { open, onClose, globalIds, names } = useSetup();
   const [shareData, setShareData] = React.useState<
-    Map<DocumentGlobalId, ReadonlyArray<ShareInfo>>
+    Map<
+      DocumentGlobalId,
+      {
+        directShares: ReadonlyArray<ShareInfo>;
+        notebookShares: ReadonlyArray<ShareInfo>;
+      }
+    >
   >(new Map());
   const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -176,7 +182,7 @@ const ShareDialog = () => {
           // Collect all unique group IDs that need folder names
           const groupIds = new Set<number>();
           for (const shares of data.values()) {
-            for (const share of shares) {
+            for (const share of shares.directShares) {
               if (share.sharedTargetType === "GROUP") {
                 groupIds.add(share.shareeId);
               }
@@ -328,7 +334,7 @@ const ShareDialog = () => {
       new RsSet(
         globalIds.map((gId) => {
           const alreadySharedWith: ReadonlyArray<ShareIdentifier> =
-            shareData.get(gId) ?? [];
+            shareData.get(gId)?.directShares ?? [];
           const toBeSharedWith: ShareIdentifier[] = newShares.get(gId) ?? [];
           return new RsSet([...alreadySharedWith, ...toBeSharedWith]);
         }),
@@ -448,6 +454,7 @@ const ShareDialog = () => {
         if (newPermission !== "UNSHARE") {
           // Find the original share to get its details
           const originalShare = Array.from(shareData.values())
+            .map((s) => s.directShares)
             .flat()
             .find((share) => share.id.toString() === shareId);
 
@@ -491,7 +498,7 @@ const ShareDialog = () => {
       // Refresh folder names for any new group shares
       const groupIds = new Set<number>();
       for (const shares of data.values()) {
-        for (const share of shares) {
+        for (const share of shares.directShares) {
           if (share.sharedTargetType === "GROUP") {
             groupIds.add(share.shareeId);
           }
@@ -582,7 +589,8 @@ const ShareDialog = () => {
                 const updatedPermissionChanges = new Map(permissionChanges);
 
                 globalIds.forEach((globalId) => {
-                  const existingShares = shareData.get(globalId) || [];
+                  const existingShares =
+                    shareData.get(globalId)?.directShares || [];
                   const existingNewShares =
                     updatedNewShares.get(globalId) || [];
 
@@ -745,12 +753,13 @@ const ShareDialog = () => {
                 <Stack spacing={3}>
                   {(() => {
                     const globalId = globalIds[0];
-                    const shares = shareData.get(globalId) ?? [];
+                    const directShares =
+                      shareData.get(globalId)?.directShares ?? [];
                     const docNewShares = newShares.get(globalId) ?? [];
-                    const allShares = [...shares, ...docNewShares];
+                    const allDirectShares = [...directShares, ...docNewShares];
                     return (
                       <Box>
-                        {allShares.length === 0 ? (
+                        {allDirectShares.length === 0 ? (
                           <Typography
                             variant="body2"
                             color="text.secondary"
@@ -771,7 +780,7 @@ const ShareDialog = () => {
                               </TableHead>
                               <TableBody>
                                 {/* Existing shares */}
-                                {shares.map((share) => (
+                                {directShares.map((share) => (
                                   <TableRow key={share.id}>
                                     <TableCell>
                                       <Box>
