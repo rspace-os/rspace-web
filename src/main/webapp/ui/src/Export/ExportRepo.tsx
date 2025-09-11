@@ -147,6 +147,7 @@ function ExportRepo({
       crossrefFunders: [] as Array<{ name: string }>,
       selectedFunder: {},
       tags: [] as Array<Tag>,
+      metadataLanguage: "",
     })
   );
   const [fetchingTags, setFetchingTags] = useState(false);
@@ -234,6 +235,16 @@ function ExportRepo({
   }) => {
     runInAction(() => {
       state[event.target.name] = event.target.value;
+    });
+    updateRemoteConfig();
+  };
+
+  const handleMetadataLanguageChange = (event: {
+    target: { name: string; value: string };
+  }) => {
+    runInAction(() => {
+      state.otherProperties = { metadataLanguage: event.target.value };
+      state.metadataLanguage = event.target.value;
     });
     updateRemoteConfig();
   };
@@ -388,7 +399,8 @@ function ExportRepo({
               }}
               tags={state.tags}
               fetchingTags={fetchingTags}
-            />
+              metadataLanguage={state.metadataLanguage}
+              handleMetadataLanguageChange={handleMetadataLanguageChange} />
           </>
         )}
         {repo.repoName === "app.figshare" && (
