@@ -172,6 +172,9 @@ public class FolderManagerImpl implements FolderManager {
   public Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
       Long srcRecordId, User user) {
     Folder src = folderDao.get(srcRecordId);
+    //    if(src.isNotebook()){
+    //      src = folderDao.get(288L);
+    //    }
     Folder target = folderDao.getUserSharedFolder(user);
     RSPath path =
         src.getShortestPathToParent(

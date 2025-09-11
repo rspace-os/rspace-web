@@ -310,6 +310,7 @@ public class StructuredDocumentController extends BaseController {
   public String createSD(
       @PathVariable("recordid") Long parentRecordId,
       @RequestParam(value = "template") long formid,
+      @RequestParam(value = "grandParentId") Long grandParentId,
       Principal principal)
       throws RecordAccessDeniedException {
 

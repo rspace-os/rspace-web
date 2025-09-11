@@ -187,6 +187,7 @@ function navigateToFolder(folderId) {
 
 function setUpWorkspaceBreadcrumbs() {
   var $breadcrumbTag = $('#breadcrumbTag_workspaceBcrumb');
+  // workspaceSettings.grandparentFolderId = $breadcrumbTag.find(".breadcrumbLink").get(-1).getAttribute('id').split('_')[1];
   $breadcrumbTag.find(".breadcrumbLink")
   .attr('href', function () {
     var folderId = $(this).attr('id').split('_')[1];
@@ -313,6 +314,11 @@ function toolbarButtonsEventHandler() {
     var url = $(this).attr('href');
     var $form = $(this).closest('form');
     $form.attr('action', url);
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = "grandparentId";
+    input.value = document.getElementsByClassName("breadcrumbLink")[-1].getAttribute("id").split("_")[1];
+    $form.append(input);
     $form.submit();
   });
 
