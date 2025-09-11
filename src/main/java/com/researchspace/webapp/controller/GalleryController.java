@@ -8,7 +8,6 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.EcatChemistryFile;
-import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
@@ -274,13 +273,9 @@ public class GalleryController extends BaseController {
     List<RecordInformation> results = new ArrayList<RecordInformation>();
     for (BaseRecord baseRecord : records.getResults()) {
       RecordInformation recordInfo = baseRecord.toRecordInfo();
-      if (baseRecord instanceof EcatDocumentFile) {
-        EcatDocumentFile doc = (EcatDocumentFile) baseRecord;
-        recordInfo.addType(getEcatDocumentFileType(mediatype, doc.getDocumentType()));
-      }
-
-      recordInfo.setParentId(galleryItemParent.getId());
-      recordInfo.setOnRoot(isOnRoot);
+      recordInfo =
+          recordManager.decorateRecordInfo(
+              recordInfo, user, galleryItemParent, isOnRoot, baseRecord, mediatype);
       results.add(recordInfo);
     }
 
@@ -335,19 +330,6 @@ public class GalleryController extends BaseController {
       numberOfRecords--;
     }
     return numberOfRecords;
-  }
-
-  private String getEcatDocumentFileType(String mediatype, String documentType) {
-    if (mediatype.equals(Folder.EXPORTS_FOLDER_NAME)) {
-      return Folder.EXPORTS_FOLDER_NAME;
-    }
-    if (documentType.equalsIgnoreCase(MediaUtils.MISC_MEDIA_FLDER_NAME)) {
-      return MediaUtils.MISC_MEDIA_FLDER_NAME;
-    }
-    if (documentType.equalsIgnoreCase(MediaUtils.DMP_MEDIA_FLDER_NAME)) {
-      return MediaUtils.DMP_MEDIA_FLDER_NAME;
-    }
-    return MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
   }
 
   /**

@@ -288,8 +288,8 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
   }
 
   @Override
-  public Optional<ElementalAnalysisDTO> getInfo(RSChemElement chemElement) {
-    return chemistryProvider.getProperties(chemElement);
+  public Optional<ElementalAnalysisDTO> getInfo(String chem) {
+    return chemistryProvider.getProperties(chem);
   }
 
   @Override

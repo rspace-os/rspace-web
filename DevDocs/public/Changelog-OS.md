@@ -4,6 +4,17 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.14.0 2025-09-08
+
+### ELN Features
+
+- RSDEV-776 Fieldmark integration using latest Fieldmark API
+- RSDEV-794 better error handling for DMPTool integration
+
+### ELN Bugfix
+
+- RSDEV-796 block scenarios where PI/LabAdmin could accidentally move shared records out Shared folder
+
 # 2.13.0 2025-08-11
 
 ### ELN Features

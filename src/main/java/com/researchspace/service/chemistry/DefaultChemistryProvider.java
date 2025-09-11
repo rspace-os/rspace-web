@@ -46,7 +46,7 @@ public class DefaultChemistryProvider implements ChemistryProvider {
   }
 
   @Override
-  public Optional<ElementalAnalysisDTO> getProperties(RSChemElement chemicalElement) {
+  public Optional<ElementalAnalysisDTO> getProperties(String chemical) {
     return Optional.of(new ElementalAnalysisDTO());
   }
 
@@ -58,6 +58,11 @@ public class DefaultChemistryProvider implements ChemistryProvider {
   @Override
   public List<String> getSupportedFileTypes() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public Optional<ElementalAnalysisDTO> getStoichiometry(RSChemElement chemicalElement) {
+    return Optional.of(new ElementalAnalysisDTO());
   }
 
   @Override
