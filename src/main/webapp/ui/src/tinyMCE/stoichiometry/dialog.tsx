@@ -19,6 +19,7 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { useConfirm } from "../../components/ConfirmProvider";
 import ConfirmProvider from "../../components/ConfirmProvider";
 import useStoichiometry from "@/hooks/api/useStoichiometry";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 function StandaloneDialogInner({
   open,
@@ -42,6 +43,7 @@ function StandaloneDialogInner({
   const titleId = React.useId();
   const { calculateStoichiometry } = useStoichiometry();
   const { addAlert } = React.useContext(AlertContext);
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
   const tableRef = React.useRef<StoichiometryTableRef>(null);
   const [showTable, setShowTable] = React.useState(
@@ -96,6 +98,7 @@ function StandaloneDialogInner({
   }, [open, stoichiometryId, chemistryStatus]);
 
   const handleCalculate = () => {
+    trackEvent("user:create:stoichiometry_table:document_editor");
     setLoading(true);
     doNotAwait(async () => {
       try {
@@ -112,6 +115,7 @@ function StandaloneDialogInner({
   };
 
   const handleSave = () => {
+    trackEvent("user:save:stoichiometry_table:document_editor");
     setSaving(true);
     if (!stoichiometryId)
       throw new Error("stoichiometryId is required to save");
@@ -139,6 +143,7 @@ function StandaloneDialogInner({
     );
 
     if (shouldDelete) {
+      trackEvent("user:delete:stoichiometry_table:document_editor");
       try {
         await tableRef.current?.delete();
         onDelete?.();

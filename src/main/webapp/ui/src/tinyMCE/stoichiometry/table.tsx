@@ -44,6 +44,7 @@ import GalleryPicker from "../../eln/gallery/picker";
 import { MemoryRouter } from "react-router-dom";
 import * as Parsers from "../../util/parsers";
 import { filenameExceptExtension } from "@/util/files";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 export type EditableMolecule = StoichiometryMolecule & {
   moles: number | null;
@@ -348,7 +349,7 @@ export function calculateUpdatedMolecules(
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
     setColumnsMenuAnchorEl: (anchorEl: HTMLElement | null) => void;
-    onAddReagent: (smilesString: string, name: string) => Promise<void>;
+    onAddReagent: (smilesString: string, name: string, source: string) => Promise<void>;
     editable: boolean;
     allMolecules: ReadonlyArray<EditableMolecule>;
   }
@@ -506,7 +507,7 @@ function Toolbar({
               onClose={() => {
                 setAddReagentSmilesDialogOpen(false);
               }}
-              onAddReagent={onAddReagent}
+              onAddReagent={(smilesString, name) => onAddReagent(smilesString, name, "manual")}
             />
             <ThemeProvider theme={createAccentedTheme(PUBCHEM_ACCENT_COLOR)}>
               <CompoundSearchDialog
@@ -517,7 +518,7 @@ function Toolbar({
                 }}
                 onCompoundsSelected={doNotAwait(async (compounds) => {
                   for (const c of compounds) {
-                    await onAddReagent(c.smiles, c.name);
+                    await onAddReagent(c.smiles, c.name, "pubchem");
                   }
                 })}
                 title="Insert from PubChem"
@@ -544,6 +545,7 @@ function Toolbar({
                             return onAddReagent(
                               smiles,
                               filenameExceptExtension(file.name),
+                              "gallery",
                             );
                           });
                       }
@@ -642,6 +644,7 @@ const StoichiometryTable = React.forwardRef<
     deleteStoichiometry,
     getMoleculeInfo,
   } = useStoichiometry();
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const theme = useTheme();
   const [data, setData] = React.useState<StoichiometryResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -756,7 +759,11 @@ const StoichiometryTable = React.forwardRef<
   );
 
   const handleAddReagent = useCallback(
-    async (smilesString: string, name: string) => {
+    async (smilesString: string, name: string, source: string) => {
+      trackEvent("user:add:stoichiometry_reagent:document_editor", {
+        source,
+      });
+      
       // Prevent concurrent requests
       if (moleculeInfoLoading) {
         throw new Error(
@@ -827,7 +834,7 @@ const StoichiometryTable = React.forwardRef<
         setMoleculeInfoLoading(false);
       }
     },
-    [allMolecules, moleculeInfoLoading, getMoleculeInfo, onChangesUpdate],
+    [allMolecules, moleculeInfoLoading, getMoleculeInfo, onChangesUpdate, trackEvent],
   );
 
   const limitingReagent = allMolecules.find(
