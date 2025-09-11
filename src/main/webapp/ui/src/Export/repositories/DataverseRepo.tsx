@@ -117,10 +117,9 @@ export default function DataverseRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={1}></Grid>
-      <Grid item xs={2}>
+      <Grid item xs={4}>
         <TextField
-          //deal with validation later
+          //TODO: deal with validation
           //error={submitAttempt && !inputValidations.subject}
           name="metadataLanguage"
           select
@@ -140,7 +139,6 @@ export default function DataverseRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={1}></Grid>
       <Grid item xs={4}>
         <TextField
           name="license"
