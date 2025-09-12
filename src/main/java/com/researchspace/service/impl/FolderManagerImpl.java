@@ -76,6 +76,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class FolderManagerImpl implements FolderManager {
+
   private Logger log = LoggerFactory.getLogger(getClass());
 
   private FolderDao folderDao;
@@ -170,11 +171,12 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long srcRecordId, User user) {
-    Folder src = folderDao.get(srcRecordId);
-    //    if(src.isNotebook()){
-    //      src = folderDao.get(288L);
-    //    }
+      Long parentId, Long grandParentId, User user) {
+    Folder src = folderDao.get(parentId);
+    if (src.isNotebook()) {
+      assert grandParentId != null;
+      src = folderDao.get(grandParentId);
+    }
     Folder target = folderDao.getUserSharedFolder(user);
     RSPath path =
         src.getShortestPathToParent(

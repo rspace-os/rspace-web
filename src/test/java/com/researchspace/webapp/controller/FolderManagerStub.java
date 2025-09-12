@@ -9,7 +9,13 @@ import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.RecordSharingACL;
-import com.researchspace.model.record.*;
+import com.researchspace.model.record.ACLPropagationPolicy;
+import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.ImportOverride;
+import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RSPath;
+import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;
@@ -121,7 +127,7 @@ public class FolderManagerStub implements FolderManager {
 
   @Override
   public Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long srcRecordId, User user) {
+      Long srcRecordId, Long grandParentId, User user) {
     return null;
   }
 

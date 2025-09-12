@@ -116,7 +116,8 @@ public class WorkspacePermissionsDTOBuilderTest {
 
     Mockito.when(results.getResults()).thenReturn(new ArrayList<BaseRecord>());
     Mockito.verify(folderMger, Mockito.never())
-        .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(Mockito.anyLong(), any(User.class));
+        .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+            Mockito.anyLong(), Mockito.anyLong(), any(User.class));
 
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
@@ -130,7 +131,8 @@ public class WorkspacePermissionsDTOBuilderTest {
     final long SHAREDSUBFOLDER_ID = 1;
     grandparentFolder.addType(RecordType.SHARED_GROUP_FOLDER_ROOT);
     parentFolder.addType(RecordType.SHARED_FOLDER);
-    when(folderMger.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(SHAREDSUBFOLDER_ID, user))
+    when(folderMger.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+            SHAREDSUBFOLDER_ID, null, user))
         .thenReturn(Optional.of(grandparentFolder));
 
     result =

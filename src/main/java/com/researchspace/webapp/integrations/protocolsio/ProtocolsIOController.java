@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Controller for handling import of data from external sources as RSpaceDocuments */
@@ -42,7 +43,9 @@ public class ProtocolsIOController extends BaseController {
 
   @PostMapping(value = "/{parentFolderId}")
   public AjaxReturnObject<PIOResponse> importExternalData(
-      @PathVariable("parentFolderId") Long parentFolderId, @RequestBody List<Protocol> protocols) {
+      @PathVariable("parentFolderId") Long parentFolderId,
+      @RequestParam(value = "grandParentId") Long grandParentId,
+      @RequestBody List<Protocol> protocols) {
     log.info("Importing {} protocols", protocols.size());
     List<RecordInformation> results = new ArrayList<>();
 
@@ -63,7 +66,7 @@ public class ProtocolsIOController extends BaseController {
       if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
           subject, originalParentFolder)) {
         recordShareHandler.shareIntoSharedFolderOrNotebook(
-            subject, originalParentFolder, converted.getId());
+            subject, originalParentFolder, converted.getId(), grandParentId);
       }
     }
     PIOResponse response = new PIOResponse(results, finalParentFolderId);
