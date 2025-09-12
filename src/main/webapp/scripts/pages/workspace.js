@@ -314,11 +314,6 @@ function toolbarButtonsEventHandler() {
     var url = $(this).attr('href');
     var $form = $(this).closest('form');
     $form.attr('action', url);
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = "grandparentId";
-    input.value = document.getElementsByClassName("breadcrumbLink")[-1].getAttribute("id").split("_")[1];
-    $form.append(input);
     $form.submit();
   });
 
@@ -327,6 +322,12 @@ function toolbarButtonsEventHandler() {
     var $form = $("#createPopularSD");
     var $input = $(this).find('input');
     $form.append($input);
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = "grandParentId";
+    const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+    input.value = breadcrumbs[breadcrumbs.length - 1].getAttribute("id").split("_")[1];
+    $form.append(input);
     $form.submit();
   });
 
