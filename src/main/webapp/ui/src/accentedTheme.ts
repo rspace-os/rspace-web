@@ -643,10 +643,15 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               [`& .${inputAdornmentClasses.root}`]: {
                 height: "100%",
                 [`&.${inputAdornmentClasses.positionStart}`]: {
-                  paddingLeft: baseTheme.spacing(1.5),
-                  paddingRight: baseTheme.spacing(1.5),
+                  paddingLeft: baseTheme.spacing(1),
+                  paddingRight: baseTheme.spacing(0.5),
+                  marginTop: baseTheme.spacing(0.5),
+                  marginBottom: baseTheme.spacing(0.5),
                   borderRight: accentedBorder,
                   marginRight: 0,
+                  [`& .${iconButtonClasses.root}`]: {
+                    padding: baseTheme.spacing(0.25),
+                  },
                 },
                 [`&.${inputAdornmentClasses.positionEnd}`]: {
                   paddingRight: baseTheme.spacing(1.5),
