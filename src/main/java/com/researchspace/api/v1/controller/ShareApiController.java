@@ -58,7 +58,7 @@ public class ShareApiController extends BaseApiController implements ShareApi {
   }
 
   @Override
-  public DocumentShares getAllSharesForDoc(Long docId, User user) {
+  public DocumentShares getAllSharesForDoc(@PathVariable("id") Long docId, User user) {
     return shareApiService.getAllSharesForDoc(docId, user);
   }
 }
