@@ -21,7 +21,7 @@ public interface SharingHandler {
   SharingResult shareRecordsWithResult(ShareConfigCommand shareConfig, User sharer);
 
   List<RecordGroupSharing> shareIntoSharedFolderOrNotebook(
-      User user, Folder sharedFolderOrNotebook, Long recordId);
+      User user, Folder sharedFolderOrNotebook, Long recordId, Long recordGrandParentId);
 
   SharingResult moveIntoSharedNotebook(
       Group group, BaseRecord baseRecordToMove, Notebook targetSharedNotebook);

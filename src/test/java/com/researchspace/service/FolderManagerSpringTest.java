@@ -124,12 +124,13 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
     assertEquals(
         grpFolder,
         folderMgr
-            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(grpSubFolder.getId(), user)
+            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(grpSubFolder.getId(), null, user)
             .get());
     // a folder not a subfolder of group folder will return null.
     assertFalse(
         folderMgr
-            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(userLabGroupFolder.getId(), user)
+            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+                userLabGroupFolder.getId(), null, user)
             .isPresent());
 
     // now check the same type of assertion, but for individual shared folders
@@ -143,7 +144,7 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
     assertEquals(
         individSharedFolder,
         folderMgr
-            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(sharedWork.getId(), user)
+            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(sharedWork.getId(), null, user)
             .get());
   }
 

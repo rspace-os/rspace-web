@@ -1487,7 +1487,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     // now lets log in as U2 and check the notebook can be accessed from the shared folder
     logoutAndLoginAs(u2);
     Optional<Folder> indivSFolder =
-        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(nb.getId(), u2);
+        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(nb.getId(), null, u2);
     assertTrue(indivSFolder.isPresent());
 
     // now we'll browse to notebook from this folder as if navigating from the shared root

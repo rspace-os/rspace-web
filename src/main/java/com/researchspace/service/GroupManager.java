@@ -82,9 +82,10 @@ public interface GroupManager {
    *
    * @param user
    * @param sharedFolder
+   * @param grandParentId
    * @return Returns the group
    */
-  Group getGroupFromAnyLevelOfSharedFolder(User user, Folder sharedFolder);
+  Group getGroupFromAnyLevelOfSharedFolder(User user, Folder sharedFolder, Long grandParentId);
 
   /**
    * Changes the role in a group for the specified user

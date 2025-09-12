@@ -195,12 +195,21 @@ $(document).ready(function(e) {
         RS.trackEvent('CreateFromProtocolsIo');
         openProtocolsIoChooserDlg();
       });
-
+      
+    function appendGrandParentIdToForm($form) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = "grandParentId";
+      input.value = getGrandParentFolderId();
+      $form.append(input);
+    }
+    
     // Clicking on the document (directly) in the menu to create the document.
     $(document).on('click', '.directList', function (e){
       var form$=$("#createPopularSD"); 
       var input$=$(this).find('input');
       form$.append(input$);
+      appendGrandParentIdToForm(form$);
       form$.submit();
       e.preventDefault();
     });
@@ -216,7 +225,9 @@ $(document).ready(function(e) {
   // this is clicking on a create -> other document
   $(document).on('click','.createSDFromFormLink', function (e){
     e.preventDefault();
-    $(this).closest('form').submit();
+    const form = $(this).closest('form');
+    appendGrandParentIdToForm(form);
+    form.submit();
   });
 
   $(document).on('click', '#deleteEntry', function (e){
@@ -272,3 +283,8 @@ $(document).ready(function(e) {
 
   displayStatus(editable);
 });
+
+function getGrandParentFolderId() {
+  const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+  return breadcrumbs[breadcrumbs.length - 2].getAttribute("id").split("_")[1];
+}

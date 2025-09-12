@@ -6,7 +6,13 @@ import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.SearchDepth;
 import com.researchspace.model.User;
-import com.researchspace.model.record.*;
+import com.researchspace.model.record.ACLPropagationPolicy;
+import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.ImportOverride;
+import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;
@@ -223,12 +229,13 @@ public interface FolderManager {
    * If the folder identified by the argument srcRecordId is not a sub folder of the group folder,
    * this method return <code>null</code>.
    *
-   * @param srcRecordId
+   * @param parentId of the folder where the record is located
+   * @param grandParentId
    * @param user The authenticated user
    * @return The shared group folder, or <code>Optional.empty</code> if this couldn't be found.
    */
   Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long srcRecordId, User user);
+      Long parentId, Long grandParentId, User user);
 
   /**
    * Ease of use method returns the root record always
