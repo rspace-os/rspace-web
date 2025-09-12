@@ -205,7 +205,7 @@ export interface GalleryFile {
 
   readonly linkedDocuments: React.ReactNode;
 
-  readonly metadata: Record<string, unknown>;
+  readonly metadata: Record<string, string>;
 
   readonly canOpen: Result<null>;
   readonly canDuplicate: Result<null>;
@@ -319,7 +319,7 @@ export class LocalGalleryFile implements GalleryFile {
    * Gallery files of various types can each have metadata,
    * which we model as a generic key-value store.
    */
-  readonly metadata: Record<string, unknown>;
+  readonly metadata: Record<string, string>;
 
   constructor({
     id,
@@ -355,7 +355,7 @@ export class LocalGalleryFile implements GalleryFile {
     version: number;
     thumbnailId: number | null;
     originalImageId: string | null;
-    metadata: Record<string, unknown>;
+    metadata: Record<string, string>;
     token: string;
   }) {
     makeObservable(this, {
@@ -540,7 +540,7 @@ export class Filestore implements GalleryFile {
   readonly isFolder: boolean;
   readonly size: number;
   readonly path: ReadonlyArray<GalleryFile>;
-  readonly metadata: Record<string, unknown>;
+  readonly metadata: Record<string, string>;
 
   constructor({
     id,
@@ -662,7 +662,7 @@ class RemoteFile implements GalleryFile {
   remotePath: string;
   private cachedDownloadHref?: UrlType;
   readonly extension: string | null;
-  readonly metadata: Record<string, unknown>;
+  readonly metadata: Record<string, string>;
 
   constructor({
     nfsId,
@@ -1139,10 +1139,27 @@ export function useGalleryListing({
     setGalleryListing(list);
   }
 
-  function parseMetadata(obj: object): Record<string, unknown> {
-    const metadata = {} as Record<string, unknown>;
+  function parseMetadata(obj: object): Record<string, string> {
+    const metadata = {} as Record<string, string>;
     Parsers.getValueWithKey("chemString")(obj).do((chemString) => {
-      metadata["chemString"] = chemString;
+      Parsers.isString(chemString).do((str) => {
+        metadata["chemString"] = str;
+      });
+    });
+    Parsers.getValueWithKey("dmpLink")(obj).do((dmpLink) => {
+      Parsers.isString(dmpLink).do((str) => {
+        metadata["dmpLink"] = str;
+      });
+    });
+    Parsers.getValueWithKey("dmpSource")(obj).do((dmpSource) => {
+      Parsers.isString(dmpSource).do((str) => {
+        metadata["dmpSource"] = str;
+      });
+    });
+    Parsers.getValueWithKey("doiLink")(obj).do((doiLink) => {
+      Parsers.isString(doiLink).do((str) => {
+        metadata["doiLink"] = str;
+      });
     });
     return metadata;
   }
