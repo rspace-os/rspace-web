@@ -204,8 +204,7 @@ $(document).ready(function(e) {
       const input = document.createElement('input');
       input.type = 'hidden';
       input.name = "grandParentId";
-      const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
-      input.value = breadcrumbs[breadcrumbs.length - 2].getAttribute("id").split("_")[1];
+      input.value = getGrandParentFolderId();
       form$.append(input);
       form$.submit();
       e.preventDefault();
@@ -278,3 +277,8 @@ $(document).ready(function(e) {
 
   displayStatus(editable);
 });
+
+function getGrandParentFolderId() {
+  const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+  return breadcrumbs[breadcrumbs.length - 2].getAttribute("id").split("_")[1];
+}

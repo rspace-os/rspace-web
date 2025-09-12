@@ -315,7 +315,7 @@ function toolbarButtonsEventHandler() {
     $form.attr('action', url);
     $form.submit();
   });
-
+  
   $('body').on('click', '.directList', function (e) {
     e.preventDefault();
     var $form = $("#createPopularSD");
@@ -324,8 +324,7 @@ function toolbarButtonsEventHandler() {
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = "grandParentId";
-    const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
-    input.value = breadcrumbs[breadcrumbs.length - 1].getAttribute("id").split("_")[1];
+    input.value = getGrandParentFolderId();
     $form.append(input);
     $form.submit();
   });
@@ -623,3 +622,8 @@ var getLongestCellContent = function (cells) {
 }
 
 var resetToolbar;
+
+function getGrandParentFolderId() {
+  const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+  return breadcrumbs[breadcrumbs.length - 1].getAttribute("id").split("_")[1];
+}
