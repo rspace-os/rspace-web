@@ -482,7 +482,7 @@ public class StructuredDocumentControllerTest {
     when(recordMgr.get(recordToReplaceId)).thenReturn(toReplace);
     when(permissionUtils.isPermitted(toReplace, PermissionType.WRITE, user)).thenReturn(true);
     AjaxReturnObject<List<RecordInformation>> resp =
-        strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, session);
+        strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, null, session);
     assertNotNull(resp.getErrorMsg());
     assertTrue(resp.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy("").contains("toomany"));
   }
@@ -503,14 +503,14 @@ public class StructuredDocumentControllerTest {
     when(recordMgr.get(recordToReplaceId)).thenReturn(toReplace);
     when(permissionUtils.isPermitted(toReplace, PermissionType.WRITE, user)).thenReturn(true);
     AjaxReturnObject<List<RecordInformation>> resp =
-        strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, session);
+        strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, null, session);
     assertNotNull(resp.getErrorMsg());
     assertTrue(resp.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy("").contains("basic"));
 
     Record nonDocument = TestFactory.createEcatImage(3L);
     when(recordMgr.get(recordToReplaceId)).thenReturn(nonDocument);
     when(permissionUtils.isPermitted(nonDocument, PermissionType.WRITE, user)).thenReturn(true);
-    resp = strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, session);
+    resp = strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, null, session);
     assertNotNull(resp.getErrorMsg());
     assertTrue(resp.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy("").contains("notadoc"));
 
@@ -528,7 +528,7 @@ public class StructuredDocumentControllerTest {
     when(recordMgr.get(recordToReplaceId)).thenReturn(null);
     List<MultipartFile> files = getOKFilesToUpload();
     AjaxReturnObject<List<RecordInformation>> resp =
-        strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, session);
+        strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, null, session);
     assertNotNull(resp.getErrorMsg());
     assertTrue(
         resp.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy("").contains("not permitted"));
@@ -537,7 +537,7 @@ public class StructuredDocumentControllerTest {
     toReplace.setId(2L);
     when(recordMgr.get(recordToReplaceId)).thenReturn(toReplace);
     when(permissionUtils.isPermitted(toReplace, PermissionType.WRITE, user)).thenReturn(false);
-    resp = strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, session);
+    resp = strucDocCtrller.createSDFromWordFile(1L, files, recordToReplaceId, null, session);
     assertNotNull(resp.getErrorMsg());
     assertTrue(
         resp.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy("").contains("not permitted"));
@@ -574,7 +574,7 @@ public class StructuredDocumentControllerTest {
     parentFolder.setId(1L);
 
     AjaxReturnObject<List<RecordInformation>> resp =
-        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     verifyWordImportNotAttempted();
     assertNull(resp.getData());
     assertNotNull(resp.getErrorMsg());
@@ -598,19 +598,19 @@ public class StructuredDocumentControllerTest {
         .thenReturn(false);
 
     AjaxReturnObject<List<RecordInformation>> res =
-        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     verifyFileImporterCalled(multipart);
     assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenThrow(new RuntimeException());
-    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     assertEquals(0, res.getData().size());
     assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenReturn(null);
-    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     assertEquals(0, res.getData().size());
     assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
     verifyNoInteractions(recordShareHandler);
@@ -640,10 +640,11 @@ public class StructuredDocumentControllerTest {
         .thenReturn(true);
 
     AjaxReturnObject<List<RecordInformation>> res =
-        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     verifyFileImporterCalled(multipart);
     assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
-    verify(recordShareHandler).shareIntoSharedFolderOrNotebook(user, parentFolder, created.getId());
+    verify(recordShareHandler)
+        .shareIntoSharedFolderOrNotebook(user, parentFolder, created.getId(), null);
   }
 
   private void verifyFileImporterCalled(MultipartFile multipart) throws IOException {

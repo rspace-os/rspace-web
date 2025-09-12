@@ -40,6 +40,7 @@ import lombok.NoArgsConstructor;
       "size",
       "version",
       "parentFolderId",
+      "grandParentId",
       "_links"
     })
 public class ApiFile extends IdentifiableNameableApiObject {
@@ -65,6 +66,9 @@ public class ApiFile extends IdentifiableNameableApiObject {
   @JsonProperty("parentFolderId")
   private Long parentFolderId;
 
+  @JsonProperty("grandParentId")
+  private Long grandParentId;
+
   public ApiFile(EcatMediaFile emf) {
     setId(emf.getId());
     setGlobalId(emf.getGlobalIdentifier());
@@ -77,6 +81,7 @@ public class ApiFile extends IdentifiableNameableApiObject {
     Optional<Folder> ownerParent = emf.getOwnerParent();
     if (ownerParent.isPresent()) {
       setParentFolderId(ownerParent.get().getId());
+      setParentFolderId(ownerParent.get().getParent().getId());
     }
   }
 }
