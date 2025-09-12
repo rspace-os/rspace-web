@@ -1,4 +1,4 @@
-package com.researchspace.service.mapping;
+package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -16,6 +16,8 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.researchspace.service.mapping.ShareLocationResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
