@@ -204,7 +204,8 @@ $(document).ready(function(e) {
       const input = document.createElement('input');
       input.type = 'hidden';
       input.name = "grandParentId";
-      input.value = document.getElementsByClassName("breadcrumbLink")[-1].getAttribute("id").split("_")[1];
+      const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+      input.value = breadcrumbs[breadcrumbs.length - 1].getAttribute("id").split("_")[1];
       form$.append(input);
       form$.submit();
       e.preventDefault();
