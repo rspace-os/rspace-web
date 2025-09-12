@@ -303,6 +303,7 @@ function journal($, extensions = default_extensions) {
 
         window.dispatchEvent(new CustomEvent("listOfMaterialInit"));
         window.dispatchEvent(new CustomEvent("extWorkFlows-init"));
+        window.dispatchEvent(new CustomEvent("jupyterNotebooks-init"));
       }, 800);
     },
 

@@ -12,6 +12,10 @@ import { ACCENT_COLOR as GALLERY_COLOR } from "../assets/branding/rspace/gallery
 import { ACCENT_COLOR as WORKSPACE_COLOR } from "../assets/branding/rspace/workspace";
 import { ACCENT_COLOR as OTHER_COLOR } from "../assets/branding/rspace/other";
 import Analytics from "../components/Analytics";
+import NotebookJson from "./notebook.json"
+import { IpynbRenderer } from "react-ipynb-renderer";
+import "react-ipynb-renderer/dist/styles/monokai.css";
+import DOMPurify from "dompurify";
 
 function currentPage(): string {
   const pages: Record<string, string> = {
