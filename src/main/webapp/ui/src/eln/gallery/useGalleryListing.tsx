@@ -205,6 +205,8 @@ export interface GalleryFile {
 
   readonly linkedDocuments: React.ReactNode;
 
+  readonly metadata: Record<string, unknown>;
+
   readonly canOpen: Result<null>;
   readonly canDuplicate: Result<null>;
   readonly canDelete: Result<null>;
@@ -313,6 +315,12 @@ export class LocalGalleryFile implements GalleryFile {
   readonly setName: (newName: string) => void;
   readonly setDescription: (newDescription: Description) => void;
 
+  /*
+   * Gallery files of various types can each have metadata,
+   * which we model as a generic key-value store.
+   */
+  readonly metadata: Record<string, unknown>;
+
   constructor({
     id,
     globalId,
@@ -329,6 +337,7 @@ export class LocalGalleryFile implements GalleryFile {
     version,
     thumbnailId,
     originalImageId,
+    metadata,
     token,
   }: {
     id: Id;
@@ -346,6 +355,7 @@ export class LocalGalleryFile implements GalleryFile {
     version: number;
     thumbnailId: number | null;
     originalImageId: string | null;
+    metadata: Record<string, unknown>;
     token: string;
   }) {
     makeObservable(this, {
@@ -390,6 +400,7 @@ export class LocalGalleryFile implements GalleryFile {
       };
     }
     this.originalImageId = originalImageId;
+    this.metadata = metadata;
   }
 
   get key(): string {
@@ -529,6 +540,7 @@ export class Filestore implements GalleryFile {
   readonly isFolder: boolean;
   readonly size: number;
   readonly path: ReadonlyArray<GalleryFile>;
+  readonly metadata: Record<string, unknown>;
 
   constructor({
     id,
@@ -549,6 +561,7 @@ export class Filestore implements GalleryFile {
     this.filesystemId = filesystemId;
     this.filesystemName = filesystemName;
     this.path = [];
+    this.metadata = {};
   }
 
   deconstructor() {}
@@ -649,6 +662,7 @@ class RemoteFile implements GalleryFile {
   remotePath: string;
   private cachedDownloadHref?: UrlType;
   readonly extension: string | null;
+  readonly metadata: Record<string, unknown>;
 
   constructor({
     nfsId,
@@ -678,6 +692,7 @@ class RemoteFile implements GalleryFile {
     this.path = path;
     this.logicPath = logicPath;
     this.remotePath = logicPath.split(":").slice(1).join(":");
+    this.metadata = {};
     if (!this.isFolder) {
       const filestoreId = path[0].id;
       this.downloadHref = async () => {
@@ -890,6 +905,7 @@ function parseGalleryFileFromFolderApiResponse(
         version: 1,
         thumbnailId: null,
         originalImageId: null,
+        metadata: {},
         token: "",
       }),
     );
@@ -1123,6 +1139,14 @@ export function useGalleryListing({
     setGalleryListing(list);
   }
 
+  function parseMetadata(obj: object): Record<string, unknown> {
+    const metadata = {} as Record<string, unknown>;
+    Parsers.getValueWithKey("chemString")(obj).do((chemString) => {
+      metadata["chemString"] = chemString;
+    });
+    return metadata;
+  }
+
   function parseGalleryFiles(
     data: unknown,
     token: string,
@@ -1238,6 +1262,7 @@ export function useGalleryListing({
                       version,
                       thumbnailId,
                       originalImageId,
+                      metadata: parseMetadata(obj),
                       token,
                     }),
                   );

@@ -97,6 +97,7 @@ const ActionButton = ({
 
 const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
   () => ({
+    zIndex: 1400, // higher than the dialog when Gallery is inside a picker
     [`& .${paperClasses.root}`]: {
       /*
        * When open, the floating info panel takes up 90% of the height of
@@ -109,7 +110,7 @@ const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
       height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
       overflow: "visible",
     },
-  })
+  }),
 );
 
 /**
@@ -267,7 +268,7 @@ const NameFieldForLargeViewports = styled(
         </form>
       </Stack>
     );
-  })
+  }),
 )(({ theme }) => ({
   "&.modified": {
     [`& .${outlinedInputClasses.root}`]: {
@@ -350,7 +351,7 @@ const DescriptionField = styled(
         React.useState<string>(initialDescription);
 
       const prefersMoreContrast = window.matchMedia(
-        "(prefers-contrast: more)"
+        "(prefers-contrast: more)",
       ).matches;
 
       return (
@@ -363,7 +364,7 @@ const DescriptionField = styled(
             className={clsx(
               className,
               minimalStyling && !prefersMoreContrast && MINIMAL_STYLING_CLASS,
-              description !== initialDescription && "modified"
+              description !== initialDescription && "modified",
             )}
             onChange={({ target: { value } }) => setDescription(value)}
             multiline
@@ -399,7 +400,7 @@ const DescriptionField = styled(
                 onClick={() => {
                   void changeDescription(
                     file,
-                    Description.Present(description)
+                    Description.Present(description),
                   );
                 }}
               >
@@ -409,8 +410,8 @@ const DescriptionField = styled(
           </Collapse>
         </Stack>
       );
-    }
-  )
+    },
+  ),
 )(({ theme }) => ({
   [`& .${outlinedInputClasses.root}`]: {
     borderRadius: "4px",
@@ -509,7 +510,7 @@ const InfoPanelContent = observer(
                   value: React.ReactNode;
                   below?: boolean;
                   reducedPadding?: boolean;
-                }>
+                }>,
               ),
           ]}
           sx={{
@@ -579,7 +580,7 @@ const InfoPanelContent = observer(
         {file.linkedDocuments}
       </Stack>
     );
-  }
+  },
 );
 
 const InfoPanelMultipleContent = (): React.ReactNode => {
@@ -589,7 +590,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
     .mapOptional((file) =>
       typeof file.creationDate === "undefined"
         ? Optional.empty<Date>()
-        : Optional.present(file.creationDate)
+        : Optional.present(file.creationDate),
     )
     .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
   const sortedByModified = selection
@@ -597,7 +598,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
     .mapOptional((file) =>
       typeof file.modificationDate === "undefined"
         ? Optional.empty<Date>()
-        : Optional.present(file.modificationDate)
+        : Optional.present(file.modificationDate),
     )
     .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
   return (
@@ -606,7 +607,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
         {
           label: "Total size",
           value: formatFileSize(
-            selection.asSet().reduce((sum, file) => sum + file.size, 0)
+            selection.asSet().reduce((sum, file) => sum + file.size, 0),
           ),
         },
         ...Result.lift2<
@@ -625,7 +626,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
           },
         ])(
           ArrayUtils.head(sortedByCreated),
-          ArrayUtils.last(sortedByCreated)
+          ArrayUtils.last(sortedByCreated),
         ).orElse([]),
         ...Result.lift2<
           Date,
@@ -643,7 +644,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
           },
         ])(
           ArrayUtils.head(sortedByModified),
-          ArrayUtils.last(sortedByModified)
+          ArrayUtils.last(sortedByModified),
         ).orElse([]),
       ]}
     />
@@ -727,7 +728,7 @@ export function InfoPanelForLargeViewports() {
                   .only.map((f) => f.name)
                   .orElse(null)}
                 {selection.size > 1 && selection.label}
-              </Typography>
+              </Typography>,
             )}
         </Grid>
         {selection
@@ -862,7 +863,7 @@ export function InfoPanelForLargeViewports() {
                     />
                   </Grid>
                 );
-              })
+              }),
           )
           .orElse(null)}
       </Grid>
@@ -896,10 +897,10 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
 }> = ({ file }) => {
   const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
-    null
+    null,
   );
   const [previewImageUrl, setPreviewImageUrl] = React.useState<null | string>(
-    null
+    null,
   );
   const selection = useGallerySelection();
   const mobileInfoPanelId = React.useId();

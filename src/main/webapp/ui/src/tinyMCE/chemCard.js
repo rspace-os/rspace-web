@@ -31,7 +31,10 @@ const useStyles = makeStyles()((theme) => ({
     borderRadius: "0px",
     marginBottom: "10px",
     zIndex: 1,
-    backgroundColor: "rgb(240,240,240)",
+    borderTop: "none",
+    borderRight: "none",
+    borderBottomLeftRadius: "4px",
+    backgroundColor: "unset",
   },
   cardHeader: {
     padding: "7px",
@@ -80,7 +83,7 @@ export default function ChemCard(props) {
         } else {
           console.warn(
             "error when retrieving info for chem elem " + props.item.id,
-            response.data.error
+            response.data.error,
           );
         }
       })
@@ -180,7 +183,7 @@ export default function ChemCard(props) {
                 )}
               </TableCell>
             </TableRow>
-          )
+          ),
         )}
       </React.Fragment>
     );
@@ -261,7 +264,7 @@ export default function ChemCard(props) {
                     )}
                   </TableCell>
                 </TableRow>
-              )
+              ),
             )}
           </TableBody>
         </Table>

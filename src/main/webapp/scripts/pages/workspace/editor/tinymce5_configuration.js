@@ -554,6 +554,8 @@ function initTinyMCE(selector) {
 			addToToolbarIfNotPresent(localTinymcesetup, " | pyrat");
 			addToMenuIfNotPresent(localTinymcesetup, " | optPyrat");
 		}
+		// always load tinymceStoichiometry as it handles the case of chemistry not being enabled
+		localTinymcesetup.external_plugins["stoichiometry"] = "/ui/dist/tinymceStoichiometry.js";
 		if (chemistryEnabled) {
 			localTinymcesetup.external_plugins["cheminfo"] = "/scripts/externalTinymcePlugins/chemInfo/plugin.min.js";
 			localTinymcesetup.external_plugins["ketcher"] = "/scripts/externalTinymcePlugins/ketcher/plugin.min.js";

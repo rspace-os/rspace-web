@@ -596,6 +596,10 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 borderColor: darken(interactiveColor, hoverDarkenCoefficient),
               },
             },
+            outlinedError: {
+              color: baseTheme.palette.error.main,
+              borderColor: baseTheme.palette.error.main,
+            },
           },
         },
         MuiOutlinedInput: {
