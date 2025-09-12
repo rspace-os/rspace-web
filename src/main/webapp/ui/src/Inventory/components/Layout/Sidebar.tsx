@@ -525,7 +525,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
           }}
         >
           <List
-            component="nav"
+            component="ul"
             onClick={afterClick}
             aria-label="List existing Inventory items"
           >
@@ -557,7 +557,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
             <IgsnNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
           </List>
           <Divider />
-          <List component="nav" aria-label="Other places and action">
+          <List component="ul" aria-label="Other places and action">
             <ExportNavItem
               index={6}
               tabIndex={getTabIndex(6)}

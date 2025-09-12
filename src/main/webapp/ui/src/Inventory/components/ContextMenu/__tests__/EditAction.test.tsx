@@ -40,6 +40,7 @@ describe("EditAction", () => {
           search: {
             setActiveResult: () => {},
             setEditLoading: () => {},
+            editLoading: "no",
           },
           activeResult: {
             setEditing: () => {},
@@ -56,12 +57,12 @@ describe("EditAction", () => {
               closeMenu={() => {}}
             />
           </storesContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
 
       const setVisiblePanelSpy = jest.spyOn(
         rootStore.uiStore,
-        "setVisiblePanel"
+        "setVisiblePanel",
       );
 
       await waitFor(() => {
