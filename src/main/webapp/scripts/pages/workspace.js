@@ -316,16 +316,20 @@ function toolbarButtonsEventHandler() {
     $form.submit();
   });
   
-  $('body').on('click', '.directList', function (e) {
-    e.preventDefault();
-    var $form = $("#createPopularSD");
-    var $input = $(this).find('input');
-    $form.append($input);
+  function appendGrandParentIdToForm($form) {
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = "grandParentId";
     input.value = getGrandParentFolderId();
     $form.append(input);
+  }
+  
+  $('body').on('click', '.directList', function (e) {
+    e.preventDefault();
+    var $form = $("#createPopularSD");
+    var $input = $(this).find('input');
+    $form.append($input);
+    appendGrandParentIdToForm($form);
     $form.submit();
   });
 
@@ -337,7 +341,9 @@ function toolbarButtonsEventHandler() {
 
   $(document).on('click', '.createSDFromFormLink', function (e) {
     e.preventDefault();
-    $(this).closest('form').submit();
+    const form = $(this).closest('form');
+    appendGrandParentIdToForm(form);
+    form.submit();
   });
 
   $("#list_view").click(function () {
