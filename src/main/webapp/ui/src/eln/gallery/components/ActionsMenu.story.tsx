@@ -46,6 +46,7 @@ const nonFolderFile: GalleryFile = {
   canBeLoggedOutOf: Result.Ok(null),
   treeViewItemId: "GF1",
   key: "GF1",
+  metadata: {},
 };
 
 const folderFile: GalleryFile = {
@@ -86,6 +87,7 @@ const folderFile: GalleryFile = {
   canBeLoggedOutOf: Result.Ok(null),
   treeViewItemId: "GF2",
   key: "GF2",
+  metadata: {},
 };
 
 function ActionsMenuWrapper({ files }: { files: Array<GalleryFile> }) {

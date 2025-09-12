@@ -17,6 +17,7 @@ import com.researchspace.model.record.DocumentInitializationPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.Record;
+import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
@@ -419,6 +420,17 @@ public class RecordManagerStub implements RecordManager {
   @Override
   public boolean isSharedFolderOrSharedNotebookWithoutCreatePermission(User user, Folder folder) {
     return true;
+  }
+
+  @Override
+  public RecordInformation decorateRecordInfo(
+      RecordInformation recordInfo,
+      User user,
+      Folder parentFolder,
+      boolean isOnRoot,
+      BaseRecord baseRecord,
+      String mediaType) {
+    return recordInfo;
   }
 
   @Override

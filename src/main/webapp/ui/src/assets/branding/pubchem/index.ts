@@ -23,13 +23,13 @@ export const ACCENT_COLOR = {
   },
   contrastText: {
     hue: 213,
-    saturation: 0,
-    lightness: 100,
+    saturation: 36,
+    lightness: 21,
   },
   background: {
     hue: 213,
-    saturation: 52,
-    lightness: 55,
+    saturation: 37,
+    lightness: 68,
   },
   backgroundContrastText: {
     hue: 213,
