@@ -187,7 +187,6 @@ function navigateToFolder(folderId) {
 
 function setUpWorkspaceBreadcrumbs() {
   var $breadcrumbTag = $('#breadcrumbTag_workspaceBcrumb');
-  // workspaceSettings.grandparentFolderId = $breadcrumbTag.find(".breadcrumbLink").get(-1).getAttribute('id').split('_')[1];
   $breadcrumbTag.find(".breadcrumbLink")
   .attr('href', function () {
     var folderId = $(this).attr('id').split('_')[1];
