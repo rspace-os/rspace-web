@@ -2511,6 +2511,33 @@ paths:
           description: A listing of shared resources resulting from this post action. If any items couldn't be shared, the ids are returned in the `failedShares` list
           schema:
             $ref: '#/definitions/ShareResult'
+    put:
+      summary: Update a share configuration
+      description: >-
+        Updates an existing share's permission. Provide the id of the existing share (shareId) and the new permission (READ/EDIT).
+      produces:
+        - application/json
+      tags:
+        - Share
+      parameters:
+        - name: update
+          in: body
+          description: Updated sharing configuration
+          required: true
+          schema:
+            type: object
+            properties:
+              shareId:
+                type: integer
+                format: int64
+                description: The id of the existing ShareInfo to update
+              permission:
+                type: string
+                description: New permission to set for the share
+                enum: [READ, EDIT]
+      responses:
+        '204':
+          description: 'Share updated, no response body'
   '/share/{id}':
     delete:
       summary: Unshares a shared resource
@@ -2532,32 +2559,6 @@ paths:
       responses:
         '204':
           description: 'Item was deleted, no response body'
-    put:
-      summary: Update a share configuration
-      description: >-
-        Updates an existing share. You can change the permission (READ/EDIT) for the sharee, or move a group share to a different folder within the group's Shared Folder tree. To update permission, provide the same target (user or group) as the existing share with the new permission. To move a group share, specify the group's id and a new sharedFolderId.
-      produces:
-        - application/json
-      tags:
-        - Share
-      parameters:
-        - name: id
-          in: path
-          type: integer
-          format: int64
-          description: The Id of the ShareInfo to update
-          required: true
-        - name: share
-          in: body
-          description: Updated sharing configuration
-          required: true
-          schema:
-            $ref: '#/definitions/SharePost'
-      responses:
-        '200':
-          description: Result of update operation
-          schema:
-            $ref: '#/definitions/ShareResult'
   '/share/document/{id}':
     get:
       summary: Get all shares for a document
@@ -4014,7 +4015,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/ShareInfo'
-      failedShareIds:
+      failedShares:
         type: array
         description: >-
           List of Ids of documents/notebooks that weren't shared (e.g. because
@@ -4052,16 +4053,52 @@ definitions:
     items:
       $ref: '#/definitions/ShareInfo'
   DocumentShares:
-    description: All shares for a document, grouped by direct and implicit shares
+    description: All shares for a document, including direct shares and shares via notebooks
     properties:
+      sharedDocId:
+        type: integer
+        format: int64
+        description: The id of the document the shares relate to
+      sharedDocName:
+        type: string
+        description: The name of the document the shares relate to
+      notebookShares:
+        type: array
+        description: Shares that apply via a containing notebook (implicit)
+        items:
+          $ref: '#/definitions/DocumentShareEntry'
       directShares:
         type: array
+        description: Shares directly applied to the document
         items:
-          $ref: '#/definitions/ShareInfo'
-      implicitShares:
-        type: array
-        items:
-          $ref: '#/definitions/ShareInfo'
+          $ref: '#/definitions/DocumentShareEntry'
+  DocumentShareEntry:
+    description: Details of a single share entry for a document
+    properties:
+      shareId:
+        type: integer
+        format: int64
+      sharerId:
+        type: integer
+        format: int64
+        description: The id of the user who created the share
+      sharerName:
+        type: string
+      recipientName:
+        type: string
+      recipientType:
+        type: string
+        enum: [USER, GROUP]
+      permission:
+        type: string
+        enum: [READ, EDIT]
+      locationId:
+        type: integer
+        format: int64
+        description: Optional id of the shared folder location
+      locationName:
+        type: string
+        description: Optional name of the shared folder location
   ActivityList:
     description: List of activities
     type: array
@@ -4400,3 +4437,20 @@ responses:
     description: License expired or not active.
     schema:
       $ref: '#/definitions/Error'
+
+  SharePermissionUpdate:
+    description: Update the permission for an existing share
+    properties:
+      shareId:
+        type: integer
+        format: int64
+        description: The id of the existing ShareInfo to update
+      permission:
+        type: string
+        description: New permission to set for the share
+        enum:
+          - READ
+          - EDIT
+    example:
+      shareId: 123456
+      permission: EDIT
