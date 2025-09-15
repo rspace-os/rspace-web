@@ -14,10 +14,9 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
+import com.researchspace.service.mapping.ShareLocationResolver;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.researchspace.service.mapping.ShareLocationResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
