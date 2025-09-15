@@ -44,6 +44,12 @@ $(document).ready(function () {
 					}
 				}));
 			});
+			
+			function getGrandParentFolderId() {
+        const breadcrumbs = [...window.parent.document.getElementsByClassName("breadcrumbLink")];
+        return breadcrumbs[breadcrumbs.length - 1].getAttribute("id").split("_")[1];
+      }
+			
 			//wait for all pio_Requests to come back
 			$.when.apply($, pio_requests).done(function (resp) {
 				// submit all protocols
