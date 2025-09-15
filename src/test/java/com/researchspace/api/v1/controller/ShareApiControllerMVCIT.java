@@ -312,6 +312,25 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
     assertEquals(
         DocumentShares.PermissionType.EDIT, updated.getDirectShares().get(0).getPermission());
+
+    // change permission back to READ
+    update.setPermission("READ");
+    mockMvc
+        .perform(createBuilderForPutWithJSONBody(apiKey, "/share/", user, update))
+        .andExpect(status().isNoContent())
+        .andReturn();
+
+    MvcResult update2Result =
+        mockMvc
+            .perform(get("/api/v1/share/document/" + toShare.getId()).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    DocumentShares updated2 =
+        new ObjectMapper()
+            .readValue(update2Result.getResponse().getContentAsString(), new TypeReference<>() {});
+    assertEquals(
+        DocumentShares.PermissionType.READ, updated2.getDirectShares().get(0).getPermission());
   }
 
   @Test
