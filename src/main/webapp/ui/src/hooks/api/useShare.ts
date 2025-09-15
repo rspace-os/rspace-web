@@ -14,23 +14,26 @@ export type ShareOption =
 
 export type NewShare = {
   id: string; // temporary ID for React keys
-  shareeId: ShareInfo["shareeId"];
-  shareeName: ShareInfo["shareeName"];
-  sharedTargetType: "USER" | "GROUP";
+  recipientType: "USER" | "GROUP";
+  recipientId: ShareInfo["recipientId"];
+  recipientName: ShareInfo["recipientName"];
   permission: "READ" | "EDIT";
-  sharedFolderName: string | null;
-  sharedFolderId?: number; // For group shares
+  locationName: string | null; // For group shares
+  locationId: number | null; // For group shares
 };
 
 export type ShareInfo = {
-  id: number;
-  sharedItemId: number;
-  shareItemName: string;
-  sharedTargetType: "USER" | "GROUP";
+  shareId: number;
+  sharedDocId: number;
+  sharedDocName: string;
+  sharerId: number;
+  sharerName: string;
   permission: "READ" | "EDIT";
-  sharedToFolderId: number | null;
-  shareeId: number;
-  shareeName: string;
+  recipientType: "USER" | "GROUP";
+  recipientId: number;
+  recipientName: string;
+  locationId: number | null;
+  locationName: string | null;
 };
 
 export type ShareInfoResponse = {
@@ -96,7 +99,7 @@ export default function useShare(): {
 
   async function getShareInfo(globalId: string): Promise<ShareInfoResponse> {
     try {
-      const { data } = await axios.get<ReadonlyArray<ShareInfo>>(
+      const { data } = await axios.get<ShareInfoResponse>(
         `/api/v1/share/document/${globalId.slice(2)}`,
         {
           headers: {
@@ -104,24 +107,7 @@ export default function useShare(): {
           },
         },
       );
-      return {
-        sharedDocId: parseInt(globalId.slice(2), 10),
-        sharedDocName: data.length > 0 ? data[0].shareItemName : "Unknown",
-        directShares: data,
-        notebookShares: [
-          // Placeholder for future notebook shares
-          {
-            id: 0,
-            sharedItemId: 0,
-            shareItemName: "Notebook Share Placeholder",
-            sharedTargetType: "GROUP",
-            permission: "READ",
-            shareeId: 1,
-            shareeName: "userGroup",
-            sharedToFolderId: null,
-          },
-        ],
-      };
+      return data;
     } catch (e) {
       addAlert(
         mkAlert({
@@ -194,20 +180,19 @@ export default function useShare(): {
       const requestData: CreateShareRequest = {
         itemsToShare: [itemId],
         users: newShares
-          .filter((share) => share.sharedTargetType === "USER")
+          .filter((share) => share.recipientType === "USER")
           .map((share) => ({
-            id: share.shareeId,
+            id: share.recipientId,
             permission: share.permission,
           })),
         groups: ArrayUtils.mapOptional<NewShare, [NewShare, number]>(
           (share) =>
-            share.sharedTargetType === "GROUP" &&
-            share.sharedFolderId !== undefined
-              ? Optional.present([share, share.sharedFolderId])
+            share.recipientType === "GROUP" && share.locationId !== null
+              ? Optional.present([share, share.locationId])
               : Optional.empty(),
           newShares,
         ).map(([share, sharedFolderId]) => ({
-          id: share.shareeId,
+          id: share.recipientId,
           permission: share.permission,
           sharedFolderId,
         })),
@@ -236,30 +221,30 @@ export default function useShare(): {
   async function updateShare(shareInfo: ShareInfo): Promise<ShareInfo> {
     try {
       const requestData: CreateShareRequest = {
-        itemsToShare: [shareInfo.sharedItemId],
+        itemsToShare: [shareInfo.sharedDocId],
         users:
-          shareInfo.sharedTargetType === "USER"
+          shareInfo.recipientType === "USER"
             ? [
                 {
-                  id: shareInfo.shareeId,
+                  id: shareInfo.recipientId,
                   permission: shareInfo.permission,
                 },
               ]
             : [],
         groups:
-          shareInfo.sharedTargetType === "GROUP"
+          shareInfo.recipientType === "GROUP"
             ? [
                 {
-                  id: shareInfo.shareeId,
+                  id: shareInfo.recipientId,
                   permission: shareInfo.permission,
-                  sharedFolderId: shareInfo.sharedToFolderId!,
+                  sharedFolderId: shareInfo.locationId!,
                 },
               ]
             : [],
       };
 
       const { data } = await axios.put<ShareInfo>(
-        `/api/v1/share/${shareInfo.id}`,
+        `/api/v1/share/${shareInfo.shareId}`,
         requestData,
         {
           headers: {

@@ -183,13 +183,13 @@ const ShareDialog = () => {
           const groupIds = new Set<number>();
           for (const shares of data.values()) {
             for (const share of shares.directShares) {
-              if (share.sharedTargetType === "GROUP") {
-                groupIds.add(share.shareeId);
+              if (share.recipientType === "GROUP") {
+                groupIds.add(share.recipientId);
               }
             }
             for (const share of shares.notebookShares) {
-              if (share.sharedTargetType === "GROUP") {
-                groupIds.add(share.shareeId);
+              if (share.recipientType === "GROUP") {
+                groupIds.add(share.recipientId);
               }
             }
           }
@@ -330,11 +330,11 @@ const ShareDialog = () => {
   // Compute share options with disabled state based on current shares and new shares
   const shareOptionsWithState: ShareOptionWithState[] = React.useMemo(() => {
     interface ShareIdentifier {
-      sharedTargetType: ShareInfo["sharedTargetType"];
-      shareeId: ShareInfo["shareeId"];
+      recipientType: ShareInfo["recipientType"];
+      recipientId: ShareInfo["recipientId"];
     }
     const eqFunc = (a: ShareIdentifier, b: ShareIdentifier) =>
-      a.sharedTargetType === b.sharedTargetType && a.shareeId === b.shareeId;
+      a.recipientType === b.recipientType && a.recipientId === b.recipientId;
     const commonShares = flattenWithIntersectionWithEq(
       new RsSet(
         globalIds.map((gId) => {
@@ -349,7 +349,7 @@ const ShareDialog = () => {
     return shareOptions.map((option) => ({
       ...option,
       isDisabled: commonShares.hasWithEq(
-        { sharedTargetType: option.optionType, shareeId: option.id },
+        { recipientType: option.optionType, recipientId: option.id },
         eqFunc,
       ),
     }));
@@ -374,7 +374,7 @@ const ShareDialog = () => {
 
   // Get the current permission value (either from changes or original)
   function getCurrentPermission(share: ShareInfo): Permission {
-    return permissionChanges.get(share.id.toString()) || share.permission;
+    return permissionChanges.get(share.shareId.toString()) || share.permission;
   }
 
   // Handle permission change for new shares
@@ -461,16 +461,15 @@ const ShareDialog = () => {
           const originalShare = Array.from(shareData.values())
             .map((s) => s.directShares)
             .flat()
-            .find((share) => share.id.toString() === shareId);
+            .find((share) => share.shareId.toString() === shareId);
 
           if (originalShare) {
             const updatedShare: ShareInfo = {
               ...originalShare,
               permission:
                 (newPermission as "READ" | "EDIT") || originalShare.permission,
-              sharedToFolderId:
-                shareFolderChanges.get(shareId)?.id ??
-                originalShare.sharedToFolderId,
+              locationId:
+                shareFolderChanges.get(shareId)?.id ?? originalShare.locationId,
             };
             updatePromises.push(updateShare(updatedShare));
           }
@@ -504,8 +503,8 @@ const ShareDialog = () => {
       const groupIds = new Set<number>();
       for (const shares of data.values()) {
         for (const share of shares.directShares) {
-          if (share.sharedTargetType === "GROUP") {
-            groupIds.add(share.shareeId);
+          if (share.recipientType === "GROUP") {
+            groupIds.add(share.recipientId);
           }
         }
       }
@@ -602,21 +601,21 @@ const ShareDialog = () => {
                   // Check if this user/group is already shared with this document
                   const alreadyShared = existingShares.find(
                     (share) =>
-                      share.shareeId === newValue.id &&
-                      share.sharedTargetType === newValue.optionType,
+                      share.recipientId === newValue.id &&
+                      share.recipientType === newValue.optionType,
                   );
 
                   // Check if this user/group is already in new shares for this document
                   const alreadyInNewShares = existingNewShares.find(
                     (share) =>
-                      share.shareeId === newValue.id &&
-                      share.sharedTargetType === newValue.optionType,
+                      share.recipientId === newValue.id &&
+                      share.recipientType === newValue.optionType,
                   );
 
                   if (alreadyShared) {
                     // Update the existing share's permission to READ and set new folder location
                     updatedPermissionChanges.set(
-                      alreadyShared.id.toString(),
+                      alreadyShared.shareId.toString(),
                       "READ",
                     );
 
@@ -627,10 +626,14 @@ const ShareDialog = () => {
                       newValue.sharedFolderId
                     ) {
                       const currentFolderChanges = new Map(shareFolderChanges);
-                      currentFolderChanges.set(alreadyShared.id.toString(), {
-                        id: newValue.sharedFolderId,
-                        name: groupFolderNames.get(newValue.id) || "Loading...",
-                      });
+                      currentFolderChanges.set(
+                        alreadyShared.shareId.toString(),
+                        {
+                          id: newValue.sharedFolderId,
+                          name:
+                            groupFolderNames.get(newValue.id) || "Loading...",
+                        },
+                      );
                       setShareFolderChanges(currentFolderChanges);
                     }
                   } else {
@@ -639,8 +642,8 @@ const ShareDialog = () => {
                       const filteredNewShares = existingNewShares.filter(
                         (share) =>
                           !(
-                            share.shareeId === newValue.id &&
-                            share.sharedTargetType === newValue.optionType
+                            share.recipientId === newValue.id &&
+                            share.recipientType === newValue.optionType
                           ),
                       );
                       updatedNewShares.set(globalId, filteredNewShares);
@@ -649,22 +652,22 @@ const ShareDialog = () => {
                     // Add as new share only if not already an existing share
                     const newShare: NewShare = {
                       id: `new-${newValue.id}-${Date.now()}`, // temporary ID
-                      shareeId: newValue.id,
-                      shareeName:
+                      recipientId: newValue.id,
+                      recipientName:
                         newValue.optionType === "GROUP"
                           ? newValue.name
                           : newValue.username,
-                      sharedTargetType: newValue.optionType,
+                      recipientType: newValue.optionType,
                       permission: "READ", // default permission
-                      sharedFolderName:
+                      locationName:
                         newValue.optionType === "GROUP"
                           ? groupFolderNames.get(newValue.id) || "Loading..."
                           : null,
-                      sharedFolderId:
+                      locationId:
                         newValue.optionType === "GROUP" &&
                         "sharedFolderId" in newValue
                           ? newValue.sharedFolderId
-                          : undefined,
+                          : null,
                     };
 
                     const currentNewShares =
@@ -793,19 +796,19 @@ const ShareDialog = () => {
                                 <TableBody>
                                   {/* Existing shares */}
                                   {directShares.map((share) => (
-                                    <TableRow key={share.id}>
+                                    <TableRow key={share.shareId}>
                                       <TableCell>
                                         <Box>
-                                          {share.sharedTargetType === "USER" ? (
+                                          {share.recipientType === "USER" ? (
                                             <UserDetails
-                                              userId={share.shareeId}
-                                              fullName={share.shareeName}
+                                              userId={share.recipientId}
+                                              fullName={share.recipientName}
                                               position={["bottom", "right"]}
                                             />
                                           ) : (
                                             <GroupDetails
-                                              groupId={share.shareeId}
-                                              groupName={share.shareeName}
+                                              groupId={share.recipientId}
+                                              groupName={share.recipientName}
                                               position={["bottom", "right"]}
                                             />
                                           )}
@@ -814,9 +817,9 @@ const ShareDialog = () => {
                                       <TableCell>
                                         <Chip
                                           size="small"
-                                          label={share.sharedTargetType}
+                                          label={share.recipientType}
                                           color={
-                                            share.sharedTargetType === "USER"
+                                            share.recipientType === "USER"
                                               ? "primary"
                                               : "secondary"
                                           }
@@ -841,7 +844,7 @@ const ShareDialog = () => {
                                               )
                                                 throw new Error("Impossible");
                                               handlePermissionChange(
-                                                share.id.toString(),
+                                                share.shareId.toString(),
                                                 newValue as Permission,
                                               );
                                             }}
@@ -863,15 +866,15 @@ const ShareDialog = () => {
                                         </FormControl>
                                       </TableCell>
                                       <TableCell>
-                                        {share.sharedTargetType === "USER" ? (
+                                        {share.recipientType === "USER" ? (
                                           <>&mdash;</>
                                         ) : (
                                           <>
                                             {shareFolderChanges.get(
-                                              share.id.toString(),
+                                              share.shareId.toString(),
                                             )?.name ||
                                               groupFolderNames.get(
-                                                share.shareeId,
+                                                share.recipientId,
                                               ) ||
                                               "Loading..."}
                                             <Button
@@ -886,7 +889,7 @@ const ShareDialog = () => {
                                                   );
                                                 const group = groups.find(
                                                   (g) =>
-                                                    g.id === share.shareeId,
+                                                    g.id === share.recipientId,
                                                 );
                                                 if (
                                                   group &&
@@ -895,8 +898,9 @@ const ShareDialog = () => {
                                                   setSelectedShareForFolderChange(
                                                     {
                                                       shareId:
-                                                        share.id.toString(),
-                                                      groupId: share.shareeId,
+                                                        share.shareId.toString(),
+                                                      groupId:
+                                                        share.recipientId,
                                                       globalId,
                                                       sharedFolderId:
                                                         group.sharedFolderId,
@@ -929,10 +933,9 @@ const ShareDialog = () => {
                                             gap: 1,
                                           }}
                                         >
-                                          {newShare.sharedTargetType ===
-                                          "USER" ? (
+                                          {newShare.recipientType === "USER" ? (
                                             <Typography variant="body2">
-                                              {newShare.shareeName}
+                                              {newShare.recipientName}
                                             </Typography>
                                           ) : (
                                             <Typography
@@ -940,7 +943,7 @@ const ShareDialog = () => {
                                               color="success.dark"
                                               sx={{ fontWeight: "medium" }}
                                             >
-                                              {newShare.shareeName}
+                                              {newShare.recipientName}
                                             </Typography>
                                           )}
                                         </Box>
@@ -948,9 +951,9 @@ const ShareDialog = () => {
                                       <TableCell>
                                         <Chip
                                           size="small"
-                                          label={newShare.sharedTargetType}
+                                          label={newShare.recipientType}
                                           color={
-                                            newShare.sharedTargetType === "USER"
+                                            newShare.recipientType === "USER"
                                               ? "primary"
                                               : "secondary"
                                           }
@@ -999,8 +1002,7 @@ const ShareDialog = () => {
                                         </FormControl>
                                       </TableCell>
                                       <TableCell>
-                                        {newShare.sharedTargetType ===
-                                        "USER" ? (
+                                        {newShare.recipientType === "USER" ? (
                                           <>&mdash;</>
                                         ) : (
                                           <>
@@ -1008,7 +1010,7 @@ const ShareDialog = () => {
                                               variant="body2"
                                               color="text.secondary"
                                             >
-                                              {newShare.sharedFolderName || "/"}
+                                              {newShare.locationName || "/"}
                                             </Typography>
                                             <Button
                                               size="small"
@@ -1022,7 +1024,8 @@ const ShareDialog = () => {
                                                   );
                                                 const group = groups.find(
                                                   (g) =>
-                                                    g.id === newShare.shareeId,
+                                                    g.id ===
+                                                    newShare.recipientId,
                                                 );
                                                 if (
                                                   group &&
@@ -1032,7 +1035,7 @@ const ShareDialog = () => {
                                                     {
                                                       shareId: newShare.id,
                                                       groupId:
-                                                        newShare.shareeId,
+                                                        newShare.recipientId,
                                                       globalId,
                                                       sharedFolderId:
                                                         group.sharedFolderId,
@@ -1079,21 +1082,20 @@ const ShareDialog = () => {
                                   </TableHead>
                                   <TableBody>
                                     {notebookShares.map((share) => (
-                                      <TableRow key={share.id}>
+                                      <TableRow key={share.shareId}>
                                         <TableCell>NOTEBOOK NAME</TableCell>
                                         <TableCell>
                                           <Box>
-                                            {share.sharedTargetType ===
-                                            "USER" ? (
+                                            {share.recipientType === "USER" ? (
                                               <UserDetails
-                                                userId={share.shareeId}
-                                                fullName={share.shareeName}
+                                                userId={share.recipientId}
+                                                fullName={share.recipientName}
                                                 position={["bottom", "right"]}
                                               />
                                             ) : (
                                               <GroupDetails
-                                                groupId={share.shareeId}
-                                                groupName={share.shareeName}
+                                                groupId={share.recipientId}
+                                                groupName={share.recipientName}
                                                 position={["bottom", "right"]}
                                               />
                                             )}
@@ -1102,9 +1104,9 @@ const ShareDialog = () => {
                                         <TableCell>
                                           <Chip
                                             size="small"
-                                            label={share.sharedTargetType}
+                                            label={share.recipientType}
                                             color={
-                                              share.sharedTargetType === "USER"
+                                              share.recipientType === "USER"
                                                 ? "primary"
                                                 : "secondary"
                                             }
@@ -1188,7 +1190,7 @@ const ShareDialog = () => {
                         Array.from(newShares.entries()).forEach(
                           ([_globalId, docNewShares]) => {
                             docNewShares.forEach((share) => {
-                              const key = `${share.sharedTargetType}-${share.shareeId}`;
+                              const key = `${share.recipientType}-${share.recipientId}`;
                               if (uniqueShares.has(key)) {
                                 uniqueShares.get(key)!.documentCount++;
                               } else {
@@ -1204,7 +1206,7 @@ const ShareDialog = () => {
                         return Array.from(uniqueShares.values()).map(
                           ({ share, documentCount }) => (
                             <Box
-                              key={`${share.sharedTargetType}-${share.shareeId}`}
+                              key={`${share.recipientType}-${share.recipientId}`}
                               sx={{
                                 display: "flex",
                                 alignItems: "center",
@@ -1216,7 +1218,7 @@ const ShareDialog = () => {
                             >
                               <Box sx={{ flexGrow: 1 }}>
                                 <Typography variant="body2" fontWeight="medium">
-                                  {share.shareeName}
+                                  {share.recipientName}
                                 </Typography>
                                 <Typography
                                   variant="caption"
@@ -1226,22 +1228,22 @@ const ShareDialog = () => {
                                     ? `All ${globalIds.length} documents`
                                     : `${documentCount} of ${globalIds.length} documents`}
                                 </Typography>
-                                {share.sharedTargetType === "GROUP" && (
+                                {share.recipientType === "GROUP" && (
                                   <Typography
                                     variant="caption"
                                     color="text.secondary"
                                     sx={{ display: "block" }}
                                   >
-                                    Location: {share.sharedFolderName || "/"}
+                                    Location: {share.locationName || "/"}
                                   </Typography>
                                 )}
                               </Box>
 
                               <Chip
                                 size="small"
-                                label={share.sharedTargetType}
+                                label={share.recipientType}
                                 color={
-                                  share.sharedTargetType === "USER"
+                                  share.recipientType === "USER"
                                     ? "primary"
                                     : "secondary"
                                 }
@@ -1264,9 +1266,10 @@ const ShareDialog = () => {
                                         const filteredShares = docShares.filter(
                                           (s) =>
                                             !(
-                                              s.sharedTargetType ===
-                                                share.sharedTargetType &&
-                                              s.shareeId === share.shareeId
+                                              s.recipientType ===
+                                                share.recipientType &&
+                                              s.recipientId ===
+                                                share.recipientId
                                             ),
                                         );
                                         if (filteredShares.length === 0) {
@@ -1289,9 +1292,9 @@ const ShareDialog = () => {
                                           updatedNewShares.get(globalId) || [];
                                         const updatedDocShares = docShares.map(
                                           (s) =>
-                                            s.sharedTargetType ===
-                                              share.sharedTargetType &&
-                                            s.shareeId === share.shareeId
+                                            s.recipientType ===
+                                              share.recipientType &&
+                                            s.recipientId === share.recipientId
                                               ? {
                                                   ...s,
                                                   permission: newPermission as
@@ -1321,7 +1324,7 @@ const ShareDialog = () => {
                                 </Select>
                               </FormControl>
 
-                              {share.sharedTargetType === "GROUP" && (
+                              {share.recipientType === "GROUP" && (
                                 <Button
                                   size="small"
                                   onClick={() => {
@@ -1329,13 +1332,13 @@ const ShareDialog = () => {
                                       (opt) => opt.optionType === "GROUP",
                                     );
                                     const group = groups.find(
-                                      (g) => g.id === share.shareeId,
+                                      (g) => g.id === share.recipientId,
                                     );
                                     if (group && "sharedFolderId" in group) {
                                       // Use the first globalId as a placeholder
                                       setSelectedShareForFolderChange({
                                         shareId: share.id,
-                                        groupId: share.shareeId,
+                                        groupId: share.recipientId,
                                         globalId: globalIds[0],
                                         sharedFolderId: group.sharedFolderId,
                                       });
@@ -1376,11 +1379,11 @@ const ShareDialog = () => {
             globalIds.forEach((globalId) => {
               const docShares = updatedNewShares.get(globalId) || [];
               const updatedDocShares = docShares.map((share) =>
-                share.sharedTargetType === "GROUP" && share.shareeId === groupId
+                share.recipientType === "GROUP" && share.recipientId === groupId
                   ? {
                       ...share,
-                      sharedFolderName: folder.name,
-                      sharedFolderId: folder.id,
+                      locationName: folder.name,
+                      locationId: folder.id,
                     }
                   : share,
               );
@@ -1402,8 +1405,8 @@ const ShareDialog = () => {
                 share.id === shareId
                   ? {
                       ...share,
-                      sharedFolderName: folder.name,
-                      sharedFolderId: folder.id,
+                      locationName: folder.name,
+                      locationId: folder.id,
                     }
                   : share,
               );
