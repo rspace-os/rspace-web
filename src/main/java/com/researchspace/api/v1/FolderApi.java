@@ -33,7 +33,7 @@ public interface FolderApi {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   ApiFolder createNewFolder(
-      @RequestParam(value = "grandParentId") Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       @RequestBody @Valid ApiFolder folder,
       BindingResult errors,
       User user)

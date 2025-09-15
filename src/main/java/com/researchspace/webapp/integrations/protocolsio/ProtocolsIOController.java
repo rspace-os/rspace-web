@@ -42,12 +42,13 @@ public class ProtocolsIOController extends BaseController {
   private @Autowired SharingHandler recordShareHandler;
   private @Autowired IPermissionUtils permissnUtils;
 
-    @PostMapping(value = "/{parentFolderId}",
-        produces = MediaType.APPLICATION_JSON_VALUE,
-        consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(
+      value = "/{parentFolderId}",
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE)
   public AjaxReturnObject<PIOResponse> importExternalData(
       @PathVariable("parentFolderId") Long parentFolderId,
-      @RequestParam(value = "grandParentId") Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       @RequestBody List<Protocol> protocols) {
     log.info("Importing {} protocols", protocols.size());
     List<RecordInformation> results = new ArrayList<>();

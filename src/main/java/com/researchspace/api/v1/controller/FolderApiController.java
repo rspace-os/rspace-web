@@ -52,7 +52,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   /** Only name field of folder is required. */
   @Override
   public ApiFolder createNewFolder(
-      @RequestParam(value = "grandParentId") Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       @RequestBody @Valid ApiFolder toCreate,
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
