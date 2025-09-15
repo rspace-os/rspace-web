@@ -3,7 +3,8 @@ import {createRoot} from "react-dom/client";
 import ExternalWorkflowInvocations
   from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
 import { IpynbRenderer } from "react-ipynb-renderer";
-import notebook from "./notebook.json"
+import axios from "@/common/axios";
+import {idToString} from "@/eln/gallery/useGalleryListing";
 
 /**
  * Renders a view of an attached jupyter notebook
@@ -24,14 +25,21 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
       (wrapperDiv) => {
         const fieldId = wrapperDiv.getAttribute("data-field-id");
         const attachedFiles = getAttachedFilesByParsingEmbeddedText("rtf_"+fieldId);
-        if (isForNotebookPage) {
-          // @ts-expect-error style does exist on HTMLDivElement
-          wrapperDiv.style.position = "relative"
-        }
-        const root = createRoot(wrapperDiv);
-        root.render(
-            <IpynbRenderer ipynb={notebook} />
-        );
+        (async () =>
+        {
+          const {data} = await axios.get<unknown>(
+              "/Streamfile/" +
+              attachedFiles[0]
+          );
+          if (isForNotebookPage) {
+            // @ts-expect-error style does exist on HTMLDivElement
+            wrapperDiv.style.position = "relative"
+          }
+          const root = createRoot(wrapperDiv);
+          root.render(
+              <IpynbRenderer ipynb={data}/>
+          );
+        })();
       }
   );
 }
@@ -42,16 +50,17 @@ loadUIOnPageLoad();
 /*
  * we are only interested in embedded jupyter links
  */
-function getAttachedFilesByParsingEmbeddedText(selector) {
-  const recordIDToHtml = [];
+function getAttachedFilesByParsingEmbeddedText(selector: string): string[] {
+  const recordIds: string [] = [];
   $('<div>' + $('#' + selector).val()).find('.attachmentDiv').each(
       function (index) {
-        const attachedRecordId = $(this).find('.attachmentInfoDiv').attr(
-            'id').substring(18);
+        const record :string = $(this).find('.attachmentInfoDiv').attr('id').substring(18);
         const html = $(this).html();
-        recordIDToHtml.push({id: attachedRecordId, html: html});
+        if (html.includes("ipynb")) {
+          recordIds.push(record);
+        }
       });
-  return recordIDToHtml;
+  return recordIds;
 }
 
 
