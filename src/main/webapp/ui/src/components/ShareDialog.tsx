@@ -1083,7 +1083,9 @@ const ShareDialog = () => {
                                   <TableBody>
                                     {notebookShares.map((share) => (
                                       <TableRow key={share.shareId}>
-                                        <TableCell>NOTEBOOK NAME</TableCell>
+                                        <TableCell>
+                                          {share.locationName}
+                                        </TableCell>
                                         <TableCell>
                                           <Box>
                                             {share.recipientType === "USER" ? (
