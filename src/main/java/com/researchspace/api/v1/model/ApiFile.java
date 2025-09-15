@@ -81,7 +81,9 @@ public class ApiFile extends IdentifiableNameableApiObject {
     Optional<Folder> ownerParent = emf.getOwnerParent();
     if (ownerParent.isPresent()) {
       setParentFolderId(ownerParent.get().getId());
-      setParentFolderId(ownerParent.get().getParent().getId());
+      if (ownerParent.get().getParent() != null) {
+        setGrandParentId(ownerParent.get().getParent().getId());
+      }
     }
   }
 }
