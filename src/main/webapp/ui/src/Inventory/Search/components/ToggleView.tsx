@@ -14,14 +14,14 @@ import {
   TYPE_LABEL,
 } from "../../../stores/definitions/Search";
 
-const Icon = ({ type }: { type: SearchView }) =>
+const Icon = ({ type, className }: { type: SearchView; className?: string }) =>
   ({
-    LIST: <ListOutlinedIcon />,
-    TREE: <AccountTreeOutlinedIcon />,
-    CARD: <DnsOutlinedIcon />,
-    GRID: <AppsOutlinedIcon />,
-    IMAGE: <ImageOutlinedIcon />,
-  }[type]);
+    LIST: <ListOutlinedIcon className={className} />,
+    TREE: <AccountTreeOutlinedIcon className={className} />,
+    CARD: <DnsOutlinedIcon className={className} />,
+    GRID: <AppsOutlinedIcon className={className} />,
+    IMAGE: <ImageOutlinedIcon className={className} />,
+  })[type];
 
 const useStyles = makeStyles()((theme) => ({
   container: {
@@ -29,6 +29,7 @@ const useStyles = makeStyles()((theme) => ({
   },
   icon: {
     borderRadius: theme.spacing(1),
+    color: theme.palette.standardIcon.main,
   },
 }));
 
@@ -62,7 +63,7 @@ export default function ToggleView({
   return (
     <div className={classes.container}>
       <DropdownButton
-        name={<Icon type={currentView} />}
+        name={<Icon type={currentView} className={classes.icon} />}
         onClick={handleClick}
         title="Change view"
       >
