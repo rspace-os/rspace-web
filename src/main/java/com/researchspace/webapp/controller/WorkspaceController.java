@@ -401,7 +401,7 @@ public class WorkspaceController extends BaseController {
   public String createNotebookAndRedirect(
       @PathVariable("recordid") long parentRecordId,
       @RequestParam("notebookNameField") String notebookName,
-      @RequestParam("grandParentId") Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       Principal principal) {
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;

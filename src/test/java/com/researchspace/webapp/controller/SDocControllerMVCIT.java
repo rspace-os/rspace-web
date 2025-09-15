@@ -47,6 +47,7 @@ import com.researchspace.model.record.EditInfo;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
+import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.RecordCopyResult;
@@ -639,6 +640,8 @@ public class SDocControllerMVCIT extends MVCTestBase {
     Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
     commitTransaction();
     Long rootFolderId = folderMgr.getRootRecordForUser(u, u).getId();
+    //    Long grantParentId = folderMgr.getFolder(sharedFolderId, u).getParentFolders().stream()
+    //        .filter(folder -> folder.getOwner().equals(u)).findFirst().get().getId();
     final int initialRecordsCount = (int) getRecordCountInFolderForUser(rootFolderId);
     MvcResult resultUrl =
         this.mockMvc
@@ -663,14 +666,24 @@ public class SDocControllerMVCIT extends MVCTestBase {
                             + "/create/{recordId}",
                         notebookId)
                     .param("template", form.getId() + "")
+                    .param("grandParentId", sharedFolderId + "")
                     .principal(new MockPrincipal(u.getUsername())))
             .andExpect(status().is3xxRedirection())
             .andReturn();
 
     redirectUrl = resultUrl.getResponse().getHeader("Location");
-
     assertEquals(1, getRecordCountInFolderForUser(Long.valueOf(notebookId)));
     assertTrue(redirectUrl.contains("fromNotebook=" + notebookId));
+
+    Long newDocumentId = Long.valueOf(redirectUrl.split("\\?")[0].split("\\/")[4]);
+    Record newDocument = recordMgr.get(newDocumentId);
+    assertEquals(
+        sharedFolderId,
+        newDocument.getParent().getParentFolders().stream()
+            .filter(folder -> folder.getName().endsWith("_SHARED"))
+            .findFirst()
+            .get()
+            .getId());
   }
 
   @Test

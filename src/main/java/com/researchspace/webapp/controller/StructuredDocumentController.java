@@ -178,7 +178,7 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("parentId") Long parentFolderId,
       @RequestParam("wordXfile") List<MultipartFile> mswordOrEvernoteFile,
       @RequestParam(value = "recordToReplaceId", required = false) Long recordToReplaceId,
-      @RequestParam("grandParentId") Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       HttpSession session)
       throws IOException {
 
@@ -382,7 +382,7 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("recordid") Long parentRecordId,
       @RequestParam(value = "template") long templateid,
       @RequestParam(value = "newname", required = false) String newname,
-      @RequestParam("grandParentId") Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       Principal principal)
       throws RecordAccessDeniedException {
     User user = getUserByUsername(principal.getName());
