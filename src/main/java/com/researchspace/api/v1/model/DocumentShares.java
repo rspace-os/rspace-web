@@ -25,6 +25,7 @@ public class DocumentShares {
     private long shareId;
     private Long sharerId;
     private String sharerName;
+    private long recipientId;
     private String recipientName;
     private RecipientType recipientType;
     private PermissionType permission;

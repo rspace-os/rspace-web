@@ -42,6 +42,7 @@ public class DocumentSharesBuilder {
         .shareId(share.getId())
         .sharerId(share.getSharedBy().getId())
         .sharerName(share.getSharedBy().getDisplayName())
+        .recipientId(share.getSharee().getId())
         .recipientName(share.getSharee().getDisplayName())
         .recipientType(
             isUser ? DocumentShares.RecipientType.USER : DocumentShares.RecipientType.GROUP)
