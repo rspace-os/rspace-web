@@ -37,8 +37,10 @@ public class DocumentSharesBuilderTest {
 
     // recipients
     User recipientUser = TestFactory.createAnyUser("recipient");
+    recipientUser.setId(2L);
     User pi = TestFactory.createAnyUserWithRole("pi", "ROLE_PI");
     Group recipientGroup = TestFactory.createAnyGroup(pi, sharer);
+    recipientGroup.setId(3L);
 
     // direct user share
     RecordGroupSharing groupShare = new RecordGroupSharing();
