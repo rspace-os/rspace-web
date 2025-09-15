@@ -228,7 +228,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
             .main,
         } as PaletteColorOptions,
         standardIcon: {
-          main: interactiveColor,
+          main: darken(interactiveColor, 0.5),
         } as PaletteColorOptions,
       } as PaletteOptions,
       borders: {
@@ -479,7 +479,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 },
                 [`& .${listItemIconClasses.root}`]: {
                   minWidth: baseTheme.spacing(4),
-                  color: prefersMoreContrast ? "rgb(0,0,0)" : linkColor,
+                  color: prefersMoreContrast
+                    ? "rgb(0,0,0)"
+                    : darken(interactiveColor, 0.5),
                 },
                 [`& .${typographyClasses.body1}`]: {
                   fontWeight: 700,
