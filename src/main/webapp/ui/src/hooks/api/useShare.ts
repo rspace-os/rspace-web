@@ -87,7 +87,7 @@ export default function useShare(): {
   /**
    * Updates an existing share.
    */
-  updateShare: (shareInfo: ShareInfo) => Promise<ShareInfo>;
+  updateShare: (shareInfo: ShareInfo) => Promise<void>;
 
   /**
    * Deletes a single share by its ID.
@@ -218,34 +218,11 @@ export default function useShare(): {
     }
   }
 
-  async function updateShare(shareInfo: ShareInfo): Promise<ShareInfo> {
+  async function updateShare(shareInfo: ShareInfo): Promise<void> {
     try {
-      const requestData: CreateShareRequest = {
-        itemsToShare: [shareInfo.sharedDocId],
-        users:
-          shareInfo.recipientType === "USER"
-            ? [
-                {
-                  id: shareInfo.recipientId,
-                  permission: shareInfo.permission,
-                },
-              ]
-            : [],
-        groups:
-          shareInfo.recipientType === "GROUP"
-            ? [
-                {
-                  id: shareInfo.recipientId,
-                  permission: shareInfo.permission,
-                  sharedFolderId: shareInfo.locationId!,
-                },
-              ]
-            : [],
-      };
-
-      const { data } = await axios.put<ShareInfo>(
-        `/api/v1/share/${shareInfo.shareId}`,
-        requestData,
+      await axios.put<void>(
+        `/api/v1/share`,
+        { shareId: shareInfo.shareId, permission: shareInfo.permission },
         {
           headers: {
             Authorization: `Bearer ${await getToken()}`,
@@ -253,7 +230,6 @@ export default function useShare(): {
           },
         },
       );
-      return data;
     } catch (e) {
       addAlert(
         mkAlert({

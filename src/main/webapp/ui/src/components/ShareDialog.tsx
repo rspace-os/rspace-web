@@ -448,7 +448,7 @@ const ShareDialog = () => {
         .map(([shareId, _]) => deleteShare(parseInt(shareId, 10)));
 
       // Handle permission and folder modifications using updateShare
-      const updatePromises: Promise<ShareInfo>[] = [];
+      const updatePromises: Promise<void>[] = [];
       const allChangedShareIds = new Set([
         ...permissionChanges.keys(),
         ...shareFolderChanges.keys(),
