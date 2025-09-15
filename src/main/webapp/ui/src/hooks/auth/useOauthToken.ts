@@ -38,14 +38,18 @@ import React from "react";
  */
 export default function useOauthToken(): { getToken: () => Promise<string> } {
   /*
-   * We memoise the token, even if all we've done is pull it from the session
-   * storage, so that every call to `getToken` does not set up a new
-   * `setTimeout`.  The first call to this hook will get the token either from
-   * the API endpoint or from the session storage and set up the logic to
-   * ensure that a new token is fetched when that one expires, and all
-   * subsequent calls will simply get it from this variable.
+   * We use a ref instead of useState to store the token because we need the
+   * `getToken` function to have a stable reference. If we used useState, then
+   * every time the token changes, the `getToken` useCallback would be
+   * recreated (since it would depend on the token state). This would cause
+   * any components using `getToken` to recreate their own useCallbacks that
+   * depend on it, leading to duplicate API calls as useEffects re-run.
+   *
+   * With a ref, the token value can change without affecting the stability of
+   * the `getToken` function reference, preventing this cascade of re-renders
+   * and duplicate network requests.
    */
-  const [token, setToken] = React.useState<null | string>(null);
+  const tokenRef = React.useRef<string | null>(null);
 
   /*
    * As part of fetching a new token, we save it into session storage so that
@@ -71,7 +75,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    */
   async function refreshToken(): Promise<void> {
     const newToken = await fetchToken();
-    setToken(newToken);
+    tokenRef.current = newToken;
     setTimeout(
       () => {
         void refreshToken();
@@ -80,39 +84,41 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
     );
   }
 
+  const getToken = React.useCallback(async () => {
+    /*
+     * If this hook has been called previously and we've either already
+     * fetched a token or pulled it from the session storage, then we can
+     * just return it; thereby ensuring that we don't setup a new
+     * `setTimeout` with each call to `getToken`.
+     */
+    if (tokenRef.current) return tokenRef.current;
+
+    /*
+     * If this hook has not been previously called then we preferably get the
+     * token from session storage or else get it from the API endpoint.
+     */
+    const savedToken = JwtService.getToken() ?? (await fetchToken());
+    tokenRef.current = savedToken;
+
+    /*
+     * Whether the token is fetched from the API or got from the session
+     * storage, we set up a timer to trigger the continuous refreshing of the
+     * token. As the user navigates around and refreshes the page throughout
+     * the window in which the token is valid, we want to keep setting up the
+     * refresh logic so that when the token expires we get a new one, put it
+     * in session storage, and the current page and all subsequent ones in
+     * the next temporal window will continue to work.
+     */
+    setTimeout(
+      () => {
+        void refreshToken();
+      },
+      JwtService.secondsToExpiry(savedToken) * 1000,
+    );
+    return savedToken;
+  }, []);
+
   return {
-    getToken: async () => {
-      /*
-       * If this hook has been called previously and we've either already
-       * fetched a token or pulled it from the session storage, then we can
-       * just return it; thereby ensuring that we don't setup a new
-       * `setTimeout` with each call to `getToken`.
-       */
-      if (token) return token;
-
-      /*
-       * If this hook has not been previously called then we preferably get the
-       * token from session storage or else get it from the API endpoint.
-       */
-      const savedToken = JwtService.getToken() ?? (await fetchToken());
-      setToken(savedToken);
-
-      /*
-       * Whether the token is fetched from the API or got from the session
-       * storage, we set up a timer to trigger the continuous refreshing of the
-       * token. As the user navigates around and refreshes the page throughout
-       * the window in which the token is valid, we want to keep setting up the
-       * refresh logic so that when the token expires we get a new one, put it
-       * in session storage, and the current page and all subsequent ones in
-       * the next temporal window will continue to work.
-       */
-      setTimeout(
-        () => {
-          void refreshToken();
-        },
-        JwtService.secondsToExpiry(savedToken) * 1000,
-      );
-      return savedToken;
-    },
+    getToken,
   };
 }

@@ -16,6 +16,7 @@ import DMPOnlineMenuItem from "../../eln-dmp-integration/DMPOnline/DMPOnlineMenu
 import IrodsWrapper from "./IrodsWrapper";
 import Alerts from "../../components/Alerts/Alerts";
 import CssBaseline from "@mui/material/CssBaseline";
+import ShareDialog from "../../components/ShareDialog";
 
 const ButtonWrapper = styled.div`
   button {
@@ -210,6 +211,7 @@ export default function GalleryToolbar(): React.ReactNode {
         <BaseToolbar content={Content} />
         <Alerts>
           <IrodsWrapper />
+          <ShareDialog />
         </Alerts>
       </ThemeProvider>
     </StyledEngineProvider>
