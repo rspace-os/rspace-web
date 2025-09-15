@@ -55,7 +55,7 @@ $(document).ready(function () {
 				// submit all protocols
         const targetFolderId = window.parent.document.querySelector("#protocolsIoChooserDlgIframe").dataset.parentid;
 				$.ajax({
-					url: `/importer/generic/protocols_io/${targetFolderId}?grandParentFolderId=${getGrandParentFolderId()}`, dataType: 'json',
+					url: `/importer/generic/protocols_io/${targetFolderId}?grandParentId=${getGrandParentFolderId()}`, dataType: 'json',
 					"data": JSON.stringify(pio_results), type: "POST", contentType: "application/json;"
 				})
 					.done(function (response) {

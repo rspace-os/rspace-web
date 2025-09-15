@@ -17,6 +17,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,7 +42,9 @@ public class ProtocolsIOController extends BaseController {
   private @Autowired SharingHandler recordShareHandler;
   private @Autowired IPermissionUtils permissnUtils;
 
-  @PostMapping(value = "/{parentFolderId}")
+    @PostMapping(value = "/{parentFolderId}",
+        produces = MediaType.APPLICATION_JSON_VALUE,
+        consumes = MediaType.APPLICATION_JSON_VALUE)
   public AjaxReturnObject<PIOResponse> importExternalData(
       @PathVariable("parentFolderId") Long parentFolderId,
       @RequestParam(value = "grandParentId") Long grandParentId,
