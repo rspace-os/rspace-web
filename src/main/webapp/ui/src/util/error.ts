@@ -61,11 +61,14 @@ export class InvalidLocalStorageState extends Error {
  */
 export function getErrorMessage(error: unknown, fallback: string): string {
   return Parsers.objectPath(["response", "data", "message"], error)
+    .orElseTry(() =>
+      Parsers.objectPath(["response", "data", "exceptionMessage"], error),
+    )
     .flatMap(Parsers.isString)
     .orElseTry(() =>
       Parsers.isObject(error).flatMap((e) =>
-        e instanceof Error ? Result.Ok(e.message) : Result.Error<string>([])
-      )
+        e instanceof Error ? Result.Ok(e.message) : Result.Error<string>([]),
+      ),
     )
     .orElse(fallback);
 }
