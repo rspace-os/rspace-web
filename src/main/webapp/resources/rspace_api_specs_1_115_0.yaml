@@ -4084,6 +4084,9 @@ definitions:
         description: The id of the user who created the share
       sharerName:
         type: string
+      recipientId:
+        type: integer
+        format: int64
       recipientName:
         type: string
       recipientType:

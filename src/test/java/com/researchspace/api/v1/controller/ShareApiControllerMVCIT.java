@@ -386,12 +386,14 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(DocumentShares.PermissionType.READ, groupShare.getPermission());
     assertEquals(DocumentShares.RecipientType.GROUP, groupShare.getRecipientType());
     assertEquals(sharer.getId(), groupShare.getSharerId());
+    assertEquals(group.getGroup().getId(), groupShare.getRecipientId(), 0L);
     assertEquals(group.getGroup().getDisplayName(), groupShare.getRecipientName());
     assertEquals(group.getGroup().getCommunalGroupFolderId(), groupShare.getLocationId());
 
     assertEquals(DocumentShares.PermissionType.EDIT, userShare.getPermission());
     assertEquals(DocumentShares.RecipientType.USER, userShare.getRecipientType());
     assertEquals(sharer.getId(), userShare.getSharerId());
+    assertEquals(group.getGroup().getId(), groupShare.getRecipientId(), 0L);
     assertEquals(userToShareWith.getDisplayName(), userShare.getRecipientName());
     assertEquals(
         sharer.getUsername() + "-" + userToShareWith.getUsername(), userShare.getLocationName());
