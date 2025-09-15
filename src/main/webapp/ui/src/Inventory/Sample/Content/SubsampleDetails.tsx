@@ -115,7 +115,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
   if (subsample === null || typeof subsample === "undefined")
     return <Wrapper>No subsamples</Wrapper>;
   const index = search.filteredResults.findIndex(
-    (x) => x.globalId === subsample.globalId
+    (x) => x.globalId === subsample.globalId,
   );
 
   if (!(subsample instanceof SubSampleModel))
@@ -146,7 +146,16 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
               variant="dense"
               disableGutters
               sx={{
-                px: 1.5,
+                /*
+                 * CSS Layers would be a better approach, but those are only
+                 * supported with MUI v6. Instead we use this hack: we repeat
+                 * the class selector twice thereby giving it a higher
+                 * specificity than any other class-based selector used in the
+                 * theme.
+                 */
+                "&&": {
+                  px: 1.5,
+                },
               }}
             >
               {subsample.name}
@@ -214,7 +223,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
                   await search.setActiveResult(
                     search.filteredResults[
                       (index + 1) % search.fetcher.pageSize
-                    ]
+                    ],
                   );
                 } finally {
                   setProcessingCardNav(false);
@@ -242,7 +251,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
                   await search.setActiveResult(
                     search.filteredResults[
                       modulo(index - 1, search.fetcher.pageSize)
-                    ]
+                    ],
                   );
                 } finally {
                   setProcessingCardNav(false);
