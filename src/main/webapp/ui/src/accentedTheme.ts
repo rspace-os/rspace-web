@@ -32,6 +32,7 @@ import { linkClasses } from "@mui/material/Link";
 import { selectClasses } from "@mui/material/Select";
 import { checkboxClasses } from "@mui/material/Checkbox";
 import { radioClasses } from "@mui/material/Radio";
+import { buttonGroupClasses } from "@mui/material/ButtonGroup";
 
 /**
  * Represents an HSL color.
@@ -602,6 +603,16 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
             outlinedError: {
               color: baseTheme.palette.error.main,
               borderColor: baseTheme.palette.error.main,
+            },
+          },
+        },
+        MuiButtonGroup: {
+          styleOverrides: {
+            root: {
+              [`& .${buttonGroupClasses.firstButton}, & .${buttonGroupClasses.middleButton}`]:
+                {
+                  borderRight: "none",
+                },
             },
           },
         },

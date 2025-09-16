@@ -99,7 +99,7 @@ function ContentContextMenu(): React.ReactNode {
           color="primary"
           max={Infinity}
         >
-          <SelectAllIcon />
+          <SelectAllIcon fontSize="small" />
         </Badge>
       ),
       disabledHelp: "",
