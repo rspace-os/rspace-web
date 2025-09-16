@@ -29,7 +29,7 @@ const CustomAutocomplete = withStyles<
 type RecipientTextFieldArgs = {
   InputProps: { endAdornment: React.ReactNode };
   loading: boolean;
-  label: string;
+  label?: string;
 } & React.ComponentProps<typeof TextField>;
 
 const RecipientTextField = ({
@@ -44,9 +44,13 @@ const RecipientTextField = ({
     autoFocus
     InputProps={{
       ...InputProps,
-      startAdornment: (
-        <InputAdornment position="start">&nbsp;{label}</InputAdornment>
-      ),
+      ...(label !== undefined
+        ? {
+            startAdornment: (
+              <InputAdornment position="start">&nbsp;{label}</InputAdornment>
+            ),
+          }
+        : {}),
       endAdornment: (
         <>
           {loading && <CircularProgress color="inherit" size={20} />}
@@ -60,9 +64,9 @@ const RecipientTextField = ({
 type PeopleFieldArgs = {
   onSelection: (
     person: Person | null,
-    doSearch?: boolean | null
+    doSearch?: boolean | null,
   ) => Promise<void> | void;
-  label: string;
+  label?: string;
   outsideGroup?: boolean;
   recipient: PersonModel | null;
   excludedUsernames?: RsSet<Username>;
@@ -85,7 +89,7 @@ function PeopleField({
   const { addAlert } = useContext(AlertContext);
 
   const [searchResults, setSearchResults] = useState<RsSet<PersonModel>>(
-    new RsSet<PersonModel>()
+    new RsSet<PersonModel>(),
   );
 
   const handleUserChange = (user: Person | null, doSearch?: boolean) => {
@@ -116,7 +120,7 @@ function PeopleField({
                 title: "Could not get members of your groups",
                 message: e.message,
                 variant: "error",
-              })
+              }),
             );
           }
         });
@@ -148,13 +152,13 @@ function PeopleField({
           peopleStore.groupMembers ?? new RsSet<PersonModel>(),
           searchResults,
           nullishToSingleton(peopleStore.currentUser),
-        ]
+        ],
       ).filter(
         (u: PersonModel) =>
-          !(excludedUsernames ?? new RsSet<Username>()).has(u.username)
+          !(excludedUsernames ?? new RsSet<Username>()).has(u.username),
       ),
     ],
-    { placeCurrentFirst: true }
+    { placeCurrentFirst: true },
   );
 
   return (
