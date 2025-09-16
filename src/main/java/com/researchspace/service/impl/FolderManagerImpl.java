@@ -173,8 +173,11 @@ public class FolderManagerImpl implements FolderManager {
   public Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
       Long parentId, Long grandParentId, User user) {
     Folder src = folderDao.get(parentId);
-    if (src.isNotebook()) {
-      assert grandParentId != null;
+    if (src.isNotebook() && src.isShared()) {
+      if (grandParentId == null) {
+        throw new IllegalArgumentException(
+            "\"grandParentId\" must be set when dealing with a shared notebook");
+      }
       src = folderDao.get(grandParentId);
     }
     Folder target = folderDao.getUserSharedFolder(user);
