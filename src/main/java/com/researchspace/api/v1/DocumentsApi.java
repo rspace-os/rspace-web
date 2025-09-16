@@ -86,9 +86,6 @@ public interface DocumentsApi {
 
   @PostMapping(value = "/move")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  void moveDocuments(
-      @RequestBody @Valid MoveRequest request,
-      BindingResult errors,
-      User user)
+  void moveDocuments(@RequestBody @Valid MoveRequest request, BindingResult errors, User user)
       throws BindException;
 }

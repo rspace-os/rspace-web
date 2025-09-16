@@ -12,12 +12,15 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiDocument;
 import com.researchspace.api.v1.model.ApiDocumentField;
 import com.researchspace.api.v1.model.ApiDocumentSearchResult;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiFile;
+import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
@@ -26,13 +29,10 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSearchQuery;
 import com.researchspace.api.v1.model.ApiSearchTerm;
-import com.researchspace.apiutils.ApiError;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.SharePost;
+import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatChemistryFile;
@@ -957,7 +957,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         "unexpected number of chem replacements, actual content: \n" + actual, 1, elements.size());
     assertTrue(elements.first().select("img.chem").hasAttr("data-chemfileid"));
   }
-  
+
   @Test
   public void moveDocFromOneSharedFolderToAnother() throws Exception {
     // 1) Create a group with shared folders enabled and pick a regular user and the PI
@@ -973,8 +973,10 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     // 2) Create two subfolders under the group's communal folder
     Long communalGroupFolderId = group.getGroup().getCommunalGroupFolderId();
 
-    ApiFolder subfolderA = createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedA");
-    ApiFolder subfolderB = createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedB");
+    ApiFolder subfolderA =
+        createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedA");
+    ApiFolder subfolderB =
+        createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedB");
 
     // 3) Share the document into subfolderA as the regular user
     shareDocumentToGroupFolder(sharer, sharerApiKey, group, toShare, subfolderA.getId(), "EDIT");
@@ -986,7 +988,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     logoutAndLoginAs(pi);
     String piApiKey = createNewApiKeyForUser(pi);
 
-    com.researchspace.api.v1.model.MoveRequest moveReq = new com.researchspace.api.v1.model.MoveRequest();
+    com.researchspace.api.v1.model.MoveRequest moveReq =
+        new com.researchspace.api.v1.model.MoveRequest();
     moveReq.setDocId(toShare.getId());
     moveReq.setSourceFolderId(subfolderA.getId());
     moveReq.setTargetFolderId(subfolderB.getId());
@@ -1014,14 +1017,17 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     // 2) Create two subfolders under the group's communal folder
     Long communalGroupFolderId = group.getGroup().getCommunalGroupFolderId();
 
-    ApiFolder subfolderA = createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedA");
-    ApiFolder subfolderB = createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedB");
+    ApiFolder subfolderA =
+        createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedA");
+    ApiFolder subfolderB =
+        createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedB");
 
     // 3) Share the document into subfolderA as the regular user
     shareDocumentToGroupFolder(sharer, sharerApiKey, group, toShare, subfolderA.getId(), "EDIT");
 
     // 4) Attempt to move the document from subfolderA to subfolderB as the regular user
-    com.researchspace.api.v1.model.MoveRequest moveReq = new com.researchspace.api.v1.model.MoveRequest();
+    com.researchspace.api.v1.model.MoveRequest moveReq =
+        new com.researchspace.api.v1.model.MoveRequest();
     moveReq.setDocId(toShare.getId());
     moveReq.setSourceFolderId(subfolderA.getId());
     moveReq.setTargetFolderId(subfolderB.getId());
@@ -1036,7 +1042,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   // Helper methods extracted to reduce duplication between move tests
-  private ApiFolder createSharedSubfolder(User user, String apiKey, Long parentFolderId, String name) throws Exception {
+  private ApiFolder createSharedSubfolder(
+      User user, String apiKey, Long parentFolderId, String name) throws Exception {
     ApiFolder folder = new ApiFolder();
     folder.setParentFolderId(parentFolderId);
     folder.setName(name);
@@ -1045,7 +1052,12 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   private void shareDocumentToGroupFolder(
-      User sharer, String apiKey, TestGroup group, StructuredDocument doc, Long sharedFolderId, String permission)
+      User sharer,
+      String apiKey,
+      TestGroup group,
+      StructuredDocument doc,
+      Long sharedFolderId,
+      String permission)
       throws Exception {
     SharePost sharePost =
         SharePost.builder()
@@ -1064,7 +1076,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         .andReturn();
   }
 
-  private void assertGroupShareLocation(Long docId, String apiKey, Long expectedLocationId) throws Exception {
+  private void assertGroupShareLocation(Long docId, String apiKey, Long expectedLocationId)
+      throws Exception {
     MvcResult sharesResult =
         this.mockMvc
             .perform(get("/api/v1/share/document/" + docId).header("apiKey", apiKey))
