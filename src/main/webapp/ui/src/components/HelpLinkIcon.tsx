@@ -25,7 +25,7 @@ const IconLink = withStyles<
 >((theme, { color }) => ({
   root: {
     color: `${
-      color === "primary" ? theme.palette.primary.main : color
+      color === "primary" ? theme.palette.primary.dark : color
     } !important`,
     cursor: "pointer",
     transition: "all .15s ease",
@@ -33,7 +33,7 @@ const IconLink = withStyles<
       filter: "brightness(0.9)",
       // have to re-state to prevent ELN's a:hover red style from taking effect
       color: `${
-        color === "primary" ? theme.palette.primary.main : color
+        color === "primary" ? theme.palette.primary.dark : color
       } !important`,
     },
     transform: "translateY(-2px)",

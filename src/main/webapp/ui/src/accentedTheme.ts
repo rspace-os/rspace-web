@@ -30,6 +30,8 @@ import { inputLabelClasses } from "@mui/material/InputLabel";
 import { inputAdornmentClasses } from "@mui/material/InputAdornment";
 import { linkClasses } from "@mui/material/Link";
 import { selectClasses } from "@mui/material/Select";
+import { checkboxClasses } from "@mui/material/Checkbox";
+import { radioClasses } from "@mui/material/Radio";
 
 /**
  * Represents an HSL color.
@@ -600,6 +602,33 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
             outlinedError: {
               color: baseTheme.palette.error.main,
               borderColor: baseTheme.palette.error.main,
+            },
+          },
+        },
+        MuiIconButton: {
+          styleOverrides: {
+            colorPrimary: {
+              color: prefersMoreContrast ? "rgb(0,0,0)" : linkColor,
+            },
+          },
+        },
+        MuiCheckbox: {
+          styleOverrides: {
+            root: {
+              color: prefersMoreContrast ? "rgb(0,0,0)" : interactiveColor,
+              [`&.${checkboxClasses.checked}`]: {
+                color: prefersMoreContrast ? "rgb(0,0,0)" : interactiveColor,
+              },
+            },
+          },
+        },
+        MuiRadio: {
+          styleOverrides: {
+            root: {
+              color: prefersMoreContrast ? "rgb(0,0,0)" : interactiveColor,
+              [`&.${radioClasses.checked}`]: {
+                color: prefersMoreContrast ? "rgb(0,0,0)" : interactiveColor,
+              },
             },
           },
         },
