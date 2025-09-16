@@ -17,6 +17,7 @@ import useOauthToken from "../../hooks/auth/useOauthToken";
 import { partitionAllSettled } from "../../util/Util";
 import { type GallerySection } from "./common";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import { getErrorMessage } from "@/util/error";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -761,7 +762,7 @@ export function useGalleryActions(): {
         mkAlert({
           variant: "error",
           title: `Failed to update description.`,
-          message: e.message,
+          message: getErrorMessage(e, "An unknown error occurred."),
         }),
       );
       throw e;
