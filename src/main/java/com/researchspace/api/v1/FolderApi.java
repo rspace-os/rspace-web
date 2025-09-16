@@ -37,7 +37,7 @@ public interface FolderApi {
       @RequestBody @Valid ApiFolder folder,
       BindingResult errors,
       User user)
-      throws BindException; // TODO[nik]: add this to SWAGGER
+      throws BindException;
 
   /**
    * Gets a folder by given Id

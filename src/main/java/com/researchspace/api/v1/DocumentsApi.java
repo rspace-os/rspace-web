@@ -43,7 +43,7 @@ public interface DocumentsApi {
   @ResponseStatus(HttpStatus.CREATED)
   ApiDocument createNewDocument(
       @RequestBody @Valid ApiDocument document, BindingResult errors, User user)
-      throws BindException; // TODO[nik]: update swagger
+      throws BindException;
 
   /**
    * Gets complete document with form and fields populated.
