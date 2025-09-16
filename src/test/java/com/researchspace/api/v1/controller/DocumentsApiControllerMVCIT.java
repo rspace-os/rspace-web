@@ -27,6 +27,12 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSearchQuery;
 import com.researchspace.api.v1.model.ApiSearchTerm;
 import com.researchspace.apiutils.ApiError;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiFolder;
+import com.researchspace.api.v1.model.DocumentShares;
+import com.researchspace.api.v1.model.GroupSharePostItem;
+import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatChemistryFile;
@@ -950,5 +956,132 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(
         "unexpected number of chem replacements, actual content: \n" + actual, 1, elements.size());
     assertTrue(elements.first().select("img.chem").hasAttr("data-chemfileid"));
+  }
+  
+  @Test
+  public void moveDocFromOneSharedFolderToAnother() throws Exception {
+    // 1) Create a group with shared folders enabled and pick a regular user and the PI
+    TestGroup group = createTestGroup(3, new TestGroupConfig(true));
+    User sharer = group.getUserByPrefix("u1");
+    User pi = group.getPi();
+
+    // Login as the regular user and create a document
+    logoutAndLoginAs(sharer);
+    StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "anytext");
+    String sharerApiKey = createNewApiKeyForUser(sharer);
+
+    // 2) Create two subfolders under the group's communal folder
+    Long communalGroupFolderId = group.getGroup().getCommunalGroupFolderId();
+
+    ApiFolder subfolderA = createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedA");
+    ApiFolder subfolderB = createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedB");
+
+    // 3) Share the document into subfolderA as the regular user
+    shareDocumentToGroupFolder(sharer, sharerApiKey, group, toShare, subfolderA.getId(), "EDIT");
+
+    // Verify the share location is subfolderA
+    assertGroupShareLocation(toShare.getId(), sharerApiKey, subfolderA.getId());
+
+    // 4) Move the document from subfolderA to subfolderB as the PI
+    logoutAndLoginAs(pi);
+    String piApiKey = createNewApiKeyForUser(pi);
+
+    com.researchspace.api.v1.model.MoveRequest moveReq = new com.researchspace.api.v1.model.MoveRequest();
+    moveReq.setDocId(toShare.getId());
+    moveReq.setSourceFolderId(subfolderA.getId());
+    moveReq.setTargetFolderId(subfolderB.getId());
+
+    this.mockMvc
+        .perform(createBuilderForPostWithJSONBody(piApiKey, "/documents/move", pi, moveReq))
+        .andExpect(status().isNoContent())
+        .andReturn();
+
+    // 5) Verify the share location is now subfolderB
+    assertGroupShareLocation(toShare.getId(), sharerApiKey, subfolderB.getId());
+  }
+
+  @Test
+  public void moveDocAttemptFailsWith404WhenNotAuthorised() throws Exception {
+    // 1) Create a group with shared folders enabled and pick a regular user
+    TestGroup group = createTestGroup(3, new TestGroupConfig(true));
+    User sharer = group.getUserByPrefix("u1");
+
+    // Login as the regular user and create a document
+    logoutAndLoginAs(sharer);
+    StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "anytext");
+    String sharerApiKey = createNewApiKeyForUser(sharer);
+
+    // 2) Create two subfolders under the group's communal folder
+    Long communalGroupFolderId = group.getGroup().getCommunalGroupFolderId();
+
+    ApiFolder subfolderA = createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedA");
+    ApiFolder subfolderB = createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedB");
+
+    // 3) Share the document into subfolderA as the regular user
+    shareDocumentToGroupFolder(sharer, sharerApiKey, group, toShare, subfolderA.getId(), "EDIT");
+
+    // 4) Attempt to move the document from subfolderA to subfolderB as the regular user
+    com.researchspace.api.v1.model.MoveRequest moveReq = new com.researchspace.api.v1.model.MoveRequest();
+    moveReq.setDocId(toShare.getId());
+    moveReq.setSourceFolderId(subfolderA.getId());
+    moveReq.setTargetFolderId(subfolderB.getId());
+
+    this.mockMvc
+        .perform(createBuilderForPostWithJSONBody(sharerApiKey, "/documents/move", sharer, moveReq))
+        .andExpect(status().isNotFound())
+        .andReturn();
+
+    // 5) Verify the share location is still subfolderA
+    assertGroupShareLocation(toShare.getId(), sharerApiKey, subfolderA.getId());
+  }
+
+  // Helper methods extracted to reduce duplication between move tests
+  private ApiFolder createSharedSubfolder(User user, String apiKey, Long parentFolderId, String name) throws Exception {
+    ApiFolder folder = new ApiFolder();
+    folder.setParentFolderId(parentFolderId);
+    folder.setName(name);
+    MvcResult result = this.mockMvc.perform(folderCreate(user, apiKey, folder)).andReturn();
+    return getFromJsonResponseBody(result, ApiFolder.class);
+  }
+
+  private void shareDocumentToGroupFolder(
+      User sharer, String apiKey, TestGroup group, StructuredDocument doc, Long sharedFolderId, String permission)
+      throws Exception {
+    SharePost sharePost =
+        SharePost.builder()
+            .itemToShare(doc.getId())
+            .groupSharePostItem(
+                GroupSharePostItem.builder()
+                    .id(group.getGroup().getId())
+                    .permission(permission)
+                    .sharedFolderId(sharedFolderId)
+                    .build())
+            .build();
+
+    this.mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/share", sharer, sharePost))
+        .andExpect(status().isCreated())
+        .andReturn();
+  }
+
+  private void assertGroupShareLocation(Long docId, String apiKey, Long expectedLocationId) throws Exception {
+    MvcResult sharesResult =
+        this.mockMvc
+            .perform(get("/api/v1/share/document/" + docId).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    DocumentShares shares =
+        new ObjectMapper()
+            .readValue(sharesResult.getResponse().getContentAsString(), new TypeReference<>() {});
+
+    DocumentShares.Share groupShare =
+        shares.getDirectShares().stream()
+            .filter(s -> s.getRecipientType().equals(DocumentShares.RecipientType.GROUP))
+            .findFirst()
+            .orElse(null);
+
+    assertNotNull(groupShare);
+    assertEquals(expectedLocationId, groupShare.getLocationId());
   }
 }

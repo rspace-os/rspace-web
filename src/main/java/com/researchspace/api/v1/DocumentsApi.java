@@ -8,6 +8,7 @@ import com.researchspace.api.v1.controller.ApiDocSearchConfig;
 import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
 import com.researchspace.api.v1.model.ApiDocument;
 import com.researchspace.api.v1.model.ApiDocumentSearchResult;
+import com.researchspace.api.v1.model.MoveRequest;
 import com.researchspace.model.User;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import javassist.NotFoundException;
@@ -82,4 +83,12 @@ public interface DocumentsApi {
       BindingResult errors,
       User user)
       throws BindException, DocumentAlreadyEditedException;
+
+  @PostMapping(value = "/move")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  void moveDocuments(
+      @RequestBody @Valid MoveRequest request,
+      BindingResult errors,
+      User user)
+      throws BindException;
 }

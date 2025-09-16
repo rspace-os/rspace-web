@@ -30,7 +30,7 @@ public class MovePermissionChecker {
     this.permissionUtils = utils;
   }
 
-  protected boolean checkMovePermissions(User user, Folder newparent, BaseRecord original) {
+  public boolean checkMovePermissions(User user, Folder newparent, BaseRecord original) {
     boolean canCreateInTarget =
         permissionUtils.isPermitted(newparent, PermissionType.FOLDER_RECEIVE, user);
     if (!canCreateInTarget) {

@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiSearchQuery;
 import com.researchspace.api.v1.model.ApiSearchQuery.OperatorEnum;
 import com.researchspace.api.v1.model.ApiSearchTerm;
 import com.researchspace.api.v1.model.ApiSearchTerm.QueryTypeEnum;
+import com.researchspace.api.v1.model.MoveRequest;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.api.v1.service.RecordApiManager;
 import com.researchspace.core.util.ISearchResults;
@@ -39,6 +40,8 @@ import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.service.WorkspaceService;
+import com.researchspace.service.impl.MovePermissionChecker;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
 import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
@@ -69,6 +72,8 @@ public class DocumentsApiController extends BaseApiController implements Documen
   @Autowired private ApiFieldsHelper apiFieldsHelper;
   @Autowired private RecordDeletionManager deletionMgr;
   @Autowired private BaseRecordManager baseRecordMgr;
+  @Autowired private WorkspaceService workspaceService;
+  @Autowired private MovePermissionChecker permissionChecker;
 
   @Override
   public ApiDocumentSearchResult getDocuments(
@@ -407,6 +412,30 @@ public class DocumentsApiController extends BaseApiController implements Documen
       response.setStatus(HttpStatus.NO_CONTENT.value());
     } else {
       throw new RuntimeException(" Unexpected error deleting item " + id);
+    }
+  }
+
+  @Override
+  public void moveDocuments(
+      @RequestBody @Valid MoveRequest request,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+    throwBindExceptionIfErrors(errors);
+    Folder target = folderMgr.getFolder(request.getTargetFolderId(), user);
+    BaseRecord toMove = baseRecordMgr.get(request.getDocId(), user);
+    if (!permissionChecker.checkMovePermissions(user, target, toMove)) {
+      throw new NotFoundException(createNotFoundMessage("Record", request.getDocId()));
+    }
+    boolean success =
+        workspaceService.moveRecords(
+                new Long[] {request.getDocId()},
+                String.valueOf(request.getTargetFolderId()),
+                request.getSourceFolderId(),
+                user)
+            == 1;
+    if (!success) {
+      throw new RuntimeException("Error moving item " + request.getDocId());
     }
   }
 }
