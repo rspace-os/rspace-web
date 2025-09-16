@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
+import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
@@ -22,6 +23,7 @@ import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.dtos.SharedRecordSearchCriteria;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RecordInfoSharingInfo;
 import com.researchspace.model.views.ServiceOperationResultCollection;
@@ -39,6 +41,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
@@ -55,18 +58,21 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   private final DetailedRecordInformationProvider detailedRecordInformationProvider;
   private final RecordManager recordManager;
   private final DocumentSharesBuilder documentSharesBuilder;
+  private final PermissionUtils permissionUtils;
 
   public ShareApiServiceImpl(
       SharingHandler recordShareHandler,
       RecordSharingManager recordShareMgr,
       DetailedRecordInformationProvider detailedRecordInformationProvider,
       RecordManager recordManager,
-      DocumentSharesBuilder documentSharesBuilder) {
+      DocumentSharesBuilder documentSharesBuilder,
+      PermissionUtils permissionUtils) {
     this.recordShareHandler = recordShareHandler;
     this.recordShareMgr = recordShareMgr;
     this.detailedRecordInformationProvider = detailedRecordInformationProvider;
     this.recordManager = recordManager;
     this.documentSharesBuilder = documentSharesBuilder;
+    this.permissionUtils = permissionUtils;
   }
 
   @Override
@@ -91,6 +97,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
 
   @Override
   public void deleteShare(Long id, User user) {
+    assertUserHasSharePermission(id, user);
     try {
       recordShareHandler.unshare(id, user);
     } catch (DataAccessException e) {
@@ -98,9 +105,20 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     }
   }
 
+  private void assertUserHasSharePermission(Long id, User user) {
+    RecordGroupSharing rgs;
+    try {
+      rgs = recordShareMgr.get(id);
+      permissionUtils.assertIsPermitted(rgs.getShared(), PermissionType.SHARE, user, "unshare doc");
+    } catch (ObjectRetrievalFailureException | AuthorizationException e) {
+      throw new NotFoundException(createNotFoundMessage("Share", id), e);
+    }
+  }
+
   @Override
   public void updateShare(SharePermissionUpdate permissionUpdate, User user) throws BindException {
     Long id = permissionUpdate.getShareId();
+    assertUserHasSharePermission(id, user);
 
     ErrorList errors =
         recordShareMgr.updatePermissionForRecord(
@@ -132,6 +150,11 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
       throw new IllegalArgumentException("Document id cannot be null");
     }
     BaseRecord record = recordManager.get(docId);
+    if (record == null
+        || record.getOwner() == null
+        || !record.getOwner().getId().equals(user.getId())) {
+      throw new NotFoundException(createNotFoundMessage("Record", docId));
+    }
     RecordInfoSharingInfo sharingInfo =
         detailedRecordInformationProvider.getRecordSharingInfo(record);
     return documentSharesBuilder.assemble(record, sharingInfo);
