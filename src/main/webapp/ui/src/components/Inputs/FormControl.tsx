@@ -6,10 +6,9 @@ import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
 import { makeStyles } from "tss-react/mui";
 import { withStyles } from "Styles";
-import clsx from "clsx";
 
 const useStyles = makeStyles()(() => ({
-  formGroup: {
+  formControl: {
     "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled":
       {
         color: "black",
@@ -62,11 +61,12 @@ export type FormControlArgs = {
   helperText?: string;
   inline?: boolean;
   actions?: React.ReactNode;
-  classes?: { formLabel?: string; formControl?: string };
+  classes?: { formLabel?: string };
   dataTestId?: string;
   required?: boolean;
   explanation?: React.ReactNode;
   "aria-label"?: string;
+  flexWrap?: "nowrap" | "wrap" | "wrap-reverse" | "initial" | "inherit";
 };
 
 function CustomFormControl({
@@ -81,6 +81,7 @@ function CustomFormControl({
   required,
   explanation,
   ["aria-label"]: ariaLabel,
+  flexWrap = "initial",
 }: FormControlArgs): React.ReactNode {
   const { classes: additionalClasses } = useStyles();
   const explanationId = useId();
@@ -104,7 +105,7 @@ function CustomFormControl({
       aria-label={ariaLabel ?? label}
       {...(explanation ? { "aria-describedby": explanationId } : {})}
       fullWidth
-      className={clsx(additionalClasses.formGroup, classes.formControl)}
+      className={additionalClasses.formControl}
     >
       <div className={additionalClasses.label}>
         {typeof label !== "undefined" && (
@@ -118,7 +119,7 @@ function CustomFormControl({
         )}
         {actions}
       </div>
-      <FormGroup style={{ display: inline ? "inline" : "inherit" }}>
+      <FormGroup style={{ display: inline ? "inline" : "inherit", flexWrap }}>
         {children}
       </FormGroup>
       {error && <FormHelperText>{helperText}</FormHelperText>}
