@@ -254,7 +254,7 @@ paths:
         ## Rules for parsing POST request body
 
         Provided request body must match #definitions/Document model (see the
-        bottom of the page). Only `name`, `tags`, `form`, `parentFolderId` and
+        bottom of the page). Only `name`, `tags`, `form`, `parentFolderId`, `grandParentFolderId` and
         `fields` properties are processed, other properties are skipped.
 
         ### When parsing `name` and `tags` properties:
