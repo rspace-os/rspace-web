@@ -56,10 +56,10 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   /**
-   * Left original implementation which returns a count of the success. In the case of the REST api
-   * method, we only move 1 at a time, so can assert success based on that. Once other workspace
-   * methods are moved to this service layer, this method should be looked at again and updated to
-   * return something more meaningful in line with the rest of the class.
+   * Left as the original implementation which returns a count of the successful moves. Only
+   * returning the count hides any actual information as to what went wrong when there's a failure.
+   * When other workspace methods are moved to this service layer, this method can be revisited and
+   * updated to return something more meaningful in line with the rest of the class.
    */
   @Override
   public int moveRecords(Long[] idsToMove, String targetFolderId, Long sourceFolderId, User user) {
@@ -89,7 +89,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   private Folder resolveTargetFolder(String targetFolderId, User user, Folder usersRootFolder) {
-    // handle input which might contain a '/'
     if ("/".equals(targetFolderId)) {
       return usersRootFolder;
     }
