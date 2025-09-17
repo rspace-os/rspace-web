@@ -31,6 +31,7 @@ import com.researchspace.api.v1.model.ApiSearchQuery;
 import com.researchspace.api.v1.model.ApiSearchTerm;
 import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.api.v1.model.GroupSharePostItem;
+import com.researchspace.api.v1.model.MoveRequest;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.JacksonUtil;
@@ -960,17 +961,14 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
   @Test
   public void moveDocFromOneSharedFolderToAnother() throws Exception {
-    // 1) Create a group with shared folders enabled and pick a regular user and the PI
     TestGroup group = createTestGroup(3, new TestGroupConfig(true));
     User sharer = group.getUserByPrefix("u1");
     User pi = group.getPi();
 
-    // Login as the regular user and create a document
     logoutAndLoginAs(sharer);
     StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "anytext");
     String sharerApiKey = createNewApiKeyForUser(sharer);
 
-    // 2) Create two subfolders under the group's communal folder
     Long communalGroupFolderId = group.getGroup().getCommunalGroupFolderId();
 
     ApiFolder subfolderA =
@@ -978,18 +976,14 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     ApiFolder subfolderB =
         createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedB");
 
-    // 3) Share the document into subfolderA as the regular user
     shareDocumentToGroupFolder(sharer, sharerApiKey, group, toShare, subfolderA.getId(), "EDIT");
 
-    // Verify the share location is subfolderA
     assertGroupShareLocation(toShare.getId(), sharerApiKey, subfolderA.getId());
 
-    // 4) Move the document from subfolderA to subfolderB as the PI
     logoutAndLoginAs(pi);
     String piApiKey = createNewApiKeyForUser(pi);
 
-    com.researchspace.api.v1.model.MoveRequest moveReq =
-        new com.researchspace.api.v1.model.MoveRequest();
+    MoveRequest moveReq = new MoveRequest();
     moveReq.setDocId(toShare.getId());
     moveReq.setSourceFolderId(subfolderA.getId());
     moveReq.setTargetFolderId(subfolderB.getId());
@@ -999,22 +993,18 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         .andExpect(status().isNoContent())
         .andReturn();
 
-    // 5) Verify the share location is now subfolderB
     assertGroupShareLocation(toShare.getId(), sharerApiKey, subfolderB.getId());
   }
 
   @Test
   public void moveDocAttemptFailsWith404WhenNotAuthorised() throws Exception {
-    // 1) Create a group with shared folders enabled and pick a regular user
     TestGroup group = createTestGroup(3, new TestGroupConfig(true));
     User sharer = group.getUserByPrefix("u1");
 
-    // Login as the regular user and create a document
     logoutAndLoginAs(sharer);
     StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "anytext");
     String sharerApiKey = createNewApiKeyForUser(sharer);
 
-    // 2) Create two subfolders under the group's communal folder
     Long communalGroupFolderId = group.getGroup().getCommunalGroupFolderId();
 
     ApiFolder subfolderA =
@@ -1022,12 +1012,9 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     ApiFolder subfolderB =
         createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedB");
 
-    // 3) Share the document into subfolderA as the regular user
     shareDocumentToGroupFolder(sharer, sharerApiKey, group, toShare, subfolderA.getId(), "EDIT");
 
-    // 4) Attempt to move the document from subfolderA to subfolderB as the regular user
-    com.researchspace.api.v1.model.MoveRequest moveReq =
-        new com.researchspace.api.v1.model.MoveRequest();
+    MoveRequest moveReq = new MoveRequest();
     moveReq.setDocId(toShare.getId());
     moveReq.setSourceFolderId(subfolderA.getId());
     moveReq.setTargetFolderId(subfolderB.getId());
@@ -1037,11 +1024,9 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         .andExpect(status().isNotFound())
         .andReturn();
 
-    // 5) Verify the share location is still subfolderA
     assertGroupShareLocation(toShare.getId(), sharerApiKey, subfolderA.getId());
   }
 
-  // Helper methods extracted to reduce duplication between move tests
   private ApiFolder createSharedSubfolder(
       User user, String apiKey, Long parentFolderId, String name) throws Exception {
     ApiFolder folder = new ApiFolder();
@@ -1094,7 +1079,6 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .findFirst()
             .orElse(null);
 
-    assertNotNull(groupShare);
     assertEquals(expectedLocationId, groupShare.getLocationId());
   }
 }
