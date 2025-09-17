@@ -5,7 +5,6 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Router from "./Router";
 import useStores from "./stores/use-stores";
-import materialTheme from "./theme";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import Analytics from "./components/Analytics";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";

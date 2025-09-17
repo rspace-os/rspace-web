@@ -32,6 +32,7 @@ type ValidatingSubmitButtonArgs = {
   validationResult: ValidationResult;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   progress?: Progress;
+  color?: "primary" | "callToAction";
 };
 
 const StyledPopover = styled(Popover)(() => ({
@@ -88,6 +89,7 @@ export default function ValidatingSubmitButton({
   validationResult,
   onClick,
   progress,
+  color = "callToAction",
 }: ValidatingSubmitButtonArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   const [playAnimation, setPlayAnimation] = React.useState(false);
@@ -120,6 +122,7 @@ export default function ValidatingSubmitButton({
           }, 1000);
         }}
         animating={playAnimation}
+        color={color}
       />
       <StyledPopover
         open={Boolean(anchorEl)}

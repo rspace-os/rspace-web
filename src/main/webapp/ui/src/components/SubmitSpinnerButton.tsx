@@ -53,6 +53,7 @@ type SubmitSpinnerButtonArgs = {
   type?: "button" | "submit";
   size?: "small" | "medium" | "large";
   className?: string;
+  color?: "primary" | "callToAction";
 };
 
 function SubmitSpinnerButton({
@@ -65,11 +66,12 @@ function SubmitSpinnerButton({
   type = "button",
   size = "medium",
   className,
+  color = "callToAction",
 }: SubmitSpinnerButtonArgs): React.ReactNode {
   const { classes } = useStyles({ progress: progress ?? 0 });
   return (
     <Button
-      color="callToAction"
+      color={color}
       onClick={onClick}
       variant="contained"
       disabled={disabled}
