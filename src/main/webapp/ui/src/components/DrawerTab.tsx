@@ -5,8 +5,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Badge from "@mui/material/Badge";
-import { darken } from "@mui/system";
-import { ACCENT_COLOR } from "../assets/branding/rspace/gallery";
+import { darken, alpha } from "@mui/system";
 
 type DrawerTabProps = {
   drawerOpen: boolean;
@@ -76,7 +75,7 @@ const DrawerTab = styled(
       </ListItem>
     ),
   ),
-)(({ drawerOpen }) => ({
+)(({ drawerOpen, theme }) => ({
   position: "static",
   "& .MuiListItemText-root": {
     transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -88,17 +87,11 @@ const DrawerTab = styled(
   },
   "& .MuiListItemButton-root": {
     "&:hover": {
-      backgroundColor: darken(
-        `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 100%)`,
-        0.05,
-      ),
+      backgroundColor: alpha(theme.palette.primary.background, 0.25),
     },
     "&.Mui-selected": {
       "&:hover": {
-        backgroundColor: darken(
-          `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 100%)`,
-          0.05,
-        ),
+        backgroundColor: darken(theme.palette.primary.background, 0.1),
       },
     },
   },
