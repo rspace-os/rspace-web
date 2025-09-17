@@ -147,7 +147,7 @@ function CustomToolbar({
                 >
                   {record.recordTypeLabel.toUpperCase()}
                 </Typography>
-                <GlobalId record={record} variant="white" />
+                <GlobalId record={record} />
               </Grid>
             </Grid>
           )}

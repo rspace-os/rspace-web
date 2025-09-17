@@ -947,12 +947,13 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               letterSpacing: "0.03em",
               color: backgroundContrastTextColor,
               [`&.${chipClasses.filled}`]: {
-                backgroundColor: `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, ${accent.background.lightness}%, 60%)`,
+                backgroundColor: accentedBackground,
+                color: contrastTextColor,
                 [`& .${chipClasses.deleteIcon}`]: {
                   color: contrastTextColor,
                 },
               },
-              [`&.${chipClasses.filled}${chipClasses.clickable}`]: {
+              [`&.${chipClasses.filled}.${chipClasses.clickable}`]: {
                 backgroundColor: lighterInteractiveColor,
                 color: linkColor,
                 border: prefersMoreContrast ? accentedBorder : "none",

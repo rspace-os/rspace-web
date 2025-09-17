@@ -7,9 +7,9 @@ import NavigateContext from "../stores/contexts/Navigate";
 import AnalyticsContext from "../stores/contexts/Analytics";
 import { type LinkableRecord } from "../stores/definitions/LinkableRecord";
 
-const useStyles = makeStyles<{ variant: "color" | "white" }>({
+const useStyles = makeStyles({
   name: "GlobalId",
-})((theme, { variant }) => ({
+})((theme) => ({
   globalId: {
     display: "flex",
     flexDirection: "row",
@@ -24,17 +24,8 @@ const useStyles = makeStyles<{ variant: "color" | "white" }>({
     userSelect: "unset",
 
     paddingLeft: theme.spacing(1.5),
-    backgroundColor:
-      variant === "white" ? "rgba(255,255,255,0.15)" : theme.palette.grey[200],
-    color: variant === "white" ? "white !important" : theme.palette.grey[800],
     height: theme.spacing(3),
     fontWeight: theme.typography.fontWeightRegular,
-    "&:hover, &:focus": {
-      backgroundColor:
-        variant === "white"
-          ? "rgba(255,255,255,0.22)"
-          : theme.palette.grey[300],
-    },
     "&:focus-visible": {
       outline: `2px solid ${theme.palette.primary.main}`,
     },
@@ -45,16 +36,11 @@ const useStyles = makeStyles<{ variant: "color" | "white" }>({
 type GlobalIdArgs = {
   record: LinkableRecord;
   size?: "medium" | "small";
-  variant?: "color" | "white";
   onClick?: () => void;
 };
 
-function GlobalId({
-  record,
-  variant = "color",
-  onClick,
-}: GlobalIdArgs): React.ReactNode {
-  const { classes } = useStyles({ variant });
+function GlobalId({ record, onClick }: GlobalIdArgs): React.ReactNode {
+  const { classes } = useStyles();
   const { useNavigate } = useContext(NavigateContext);
   const { trackEvent } = useContext(AnalyticsContext);
   const navigate = useNavigate();
@@ -79,13 +65,8 @@ function GlobalId({
       /* this is how right-click copy works */
       {...(record.permalinkURL !== null ? { href: record.permalinkURL } : {})}
       label={record.globalId}
-      icon={
-        <RecordIcon
-          color={variant === "white" ? "white" : null}
-          record={record}
-          aria-hidden={true}
-        />
-      }
+      icon={<RecordIcon record={record} aria-hidden={true} />}
+      clickable
       onClick={handleClick}
       color="default"
     />
