@@ -18,6 +18,7 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/CoreFetcher";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
+import Stack from "@mui/material/Stack";
 
 const useStyles = makeStyles()((theme) => ({
   relativeBox: {
@@ -137,7 +138,7 @@ function _Stepper({
   }, [onScroll]);
 
   const Title = (
-    <>
+    <Stack direction="row" spacing={1}>
       <Typography
         variant="h5"
         component="h2"
@@ -154,10 +155,10 @@ function _Stepper({
           link={helpLink.link}
           title={helpLink.title}
           size="small"
-          color="primary"
+          color="white"
         />
       )}
-    </>
+    </Stack>
   );
 
   const FooterActions = observer(() => (
