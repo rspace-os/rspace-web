@@ -9,6 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Breadcrumb;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
@@ -54,9 +55,20 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
     boolean createFolder =
         parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE_FOLDER);
 
-    boolean isParentFolderInSharedTree =
-        parentFolder.hasAncestorOfType(INDIVIDUAL_SHARED_FOLDER_ROOT, true)
-            || parentFolder.hasAncestorOfType(SHARED_GROUP_FOLDER_ROOT, true);
+    boolean isParentFolderInSharedTree = false;
+    if (parentFolder.isNotebook()) {
+      Folder grandParentFolder =
+          fMger.getFolder(
+              ((Breadcrumb) model.getAttribute("bcrumb"))
+                  .getElements()
+                  .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
+                  .getId(),
+              usr);
+      isParentFolderInSharedTree = grandParentFolder.isSharedFolder();
+    } else {
+      isParentFolderInSharedTree = parentFolder.isSharedFolder();
+    }
+
     ActionPermissionsDTO dto = new ActionPermissionsDTO();
     if (records != null) {
       // allowed options per record in page.

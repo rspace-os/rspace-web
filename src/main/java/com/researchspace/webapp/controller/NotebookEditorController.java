@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.model.core.RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT;
+import static com.researchspace.model.core.RecordType.SHARED_GROUP_FOLDER_ROOT;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAllowBioOntologies;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
 
@@ -98,10 +100,14 @@ public class NotebookEditorController extends BaseController {
       }
     }
 
+    boolean isNotebookInSharedTree =
+        notebook.hasAncestorOfType(INDIVIDUAL_SHARED_FOLDER_ROOT, true)
+            || notebook.hasAncestorOfType(SHARED_GROUP_FOLDER_ROOT, true);
+
     ActionPermissionsDTO permDTO = new ActionPermissionsDTO();
     permDTO.setCreateRecord(
-        permissionUtils.isPermitted(notebook, PermissionType.CREATE, user)
-            || recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(user, notebook));
+        isNotebookInSharedTree
+            && permissionUtils.isPermitted(notebook, PermissionType.CREATE, user));
     // this is a quick fix, we need to hook into permissions system so that
     // shared notebook entries can't be deleted by PI/admin in the way that other shared content
     // can be deleted from shared folders
