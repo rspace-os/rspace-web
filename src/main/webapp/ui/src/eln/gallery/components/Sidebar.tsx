@@ -9,7 +9,6 @@ import {
   type GallerySection,
 } from "../common";
 import DrawerTab from "../../../components/DrawerTab";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import List from "@mui/material/List";
 
 import Divider from "@mui/material/Divider";
@@ -139,8 +138,6 @@ const UploadMenuItem = ({
       <AccentMenuItem
         title="Upload Files"
         avatar={<UploadFileIcon />}
-        backgroundColor={ACCENT_COLOR.background}
-        foregroundColor={ACCENT_COLOR.contrastText}
         onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
           if (e.key === " ") inputRef.current?.click();
         }}
@@ -265,8 +262,6 @@ const NewFolderMenuItem = ({
       <AccentMenuItem
         title="New Folder"
         avatar={<CreateNewFolderIcon />}
-        backgroundColor={ACCENT_COLOR.background}
-        foregroundColor={ACCENT_COLOR.contrastText}
         onClick={() => {
           setOpen(true);
         }}
@@ -370,8 +365,6 @@ const AddFilestoreMenuItem = ({
                 : null
             }
             avatar={<DnsIcon />}
-            backgroundColor={ACCENT_COLOR.background}
-            foregroundColor={ACCENT_COLOR.contrastText}
             onClick={() => {
               setOpen(true);
             }}
