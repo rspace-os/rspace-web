@@ -17,8 +17,6 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-afterEach(cleanup);
-
 describe("useGalleryActions", () => {
   describe("duplicateFiles", () => {
     function TestingDuplicateComponent() {
