@@ -163,7 +163,7 @@ public class WorkspaceController extends BaseController {
 
   @Autowired private SharingHandler recordShareHandler;
 
-  @Autowired private WorkspaceService workspaceService;
+  @Autowired @Setter private WorkspaceService workspaceService;
 
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 
