@@ -29,6 +29,7 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RecordInfoSharingInfo;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.DetailedRecordInformationProvider;
+import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareApiService;
@@ -57,6 +58,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   private final RecordSharingManager recordShareMgr;
   private final DetailedRecordInformationProvider detailedRecordInformationProvider;
   private final RecordManager recordManager;
+  private final FolderManager folderManager;
   private final DocumentSharesBuilder documentSharesBuilder;
   private final PermissionUtils permissionUtils;
 
@@ -65,12 +67,14 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
       RecordSharingManager recordShareMgr,
       DetailedRecordInformationProvider detailedRecordInformationProvider,
       RecordManager recordManager,
+      FolderManager folderManager,
       DocumentSharesBuilder documentSharesBuilder,
       PermissionUtils permissionUtils) {
     this.recordShareHandler = recordShareHandler;
     this.recordShareMgr = recordShareMgr;
     this.detailedRecordInformationProvider = detailedRecordInformationProvider;
     this.recordManager = recordManager;
+    this.folderManager = folderManager;
     this.documentSharesBuilder = documentSharesBuilder;
     this.permissionUtils = permissionUtils;
   }
@@ -149,10 +153,14 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     if (docId == null) {
       throw new IllegalArgumentException("Document id cannot be null");
     }
-    BaseRecord record = recordManager.get(docId);
-    if (record == null
-        || record.getOwner() == null
-        || !record.getOwner().getId().equals(user.getId())) {
+
+    BaseRecord record;
+    if(recordManager.exists(docId)){
+      record = recordManager.get(docId);
+    } else {
+      record = folderManager.getNotebook(docId);
+    }
+    if (record == null || !record.getOwner().getId().equals(user.getId())) {
       throw new NotFoundException(createNotFoundMessage("Record", docId));
     }
     RecordInfoSharingInfo sharingInfo =
