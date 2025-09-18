@@ -34,6 +34,7 @@ import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.CompositeRecordOperationResult;
+import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DocumentAlreadyEditedException;
@@ -47,6 +48,7 @@ import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
@@ -427,15 +429,23 @@ public class DocumentsApiController extends BaseApiController implements Documen
     if (!permissionChecker.checkMovePermissions(user, target, toMove)) {
       throw new NotFoundException(createNotFoundMessage("Record", request.getDocId()));
     }
-    boolean success =
+    List<ServiceOperationResult<? extends BaseRecord>> moveResult =
         workspaceService.moveRecords(
-                new Long[] {request.getDocId()},
+                List.of(request.getDocId()),
                 String.valueOf(request.getTargetFolderId()),
                 request.getSourceFolderId(),
-                user)
-            == 1;
-    if (!success) {
-      throw new RuntimeException("Error moving item " + request.getDocId());
+                user);
+
+    String failedMoves =
+            moveResult.stream()
+            .filter(result -> !result.isSucceeded())
+                    .map(ServiceOperationResult::getMessage)
+                    .collect(Collectors.joining(", "));
+
+    if (StringUtils.isNotEmpty(failedMoves)) {
+      // throw as 500 as a general response as there are various reasons for failure, and we only have the failure
+      // message to understand why, which may or may not be present.
+      throw new RuntimeException("Error moving items: " + failedMoves);
     }
   }
 }

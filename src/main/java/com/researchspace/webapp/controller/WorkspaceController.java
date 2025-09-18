@@ -585,7 +585,7 @@ public class WorkspaceController extends BaseController {
     User user = getUserByUsername(principal.getName());
 
     int moveCounter =
-        workspaceService.moveRecords(toMove, targetFolderId, settings.getParentFolderId(), user);
+        workspaceService.moveRecordsCountSuccess(List.of(toMove), targetFolderId, settings.getParentFolderId(), user);
 
     if (moveCounter == toMove.length) {
       model.addAttribute("successMsg", getText("workspace.move.success"));
@@ -605,23 +605,7 @@ public class WorkspaceController extends BaseController {
     return new ModelAndView(WORKSPACE_AJAX);
   }
 
-  private Folder getMoveSourceFolderId(
-      Long baseRecordId, Long workspaceParentId, User user, Folder usersRootFolder) {
-    /* if workspaceParentId is among parent folders, then use it */
-    BaseRecord baseRecord = baseRecordManager.get(baseRecordId, user);
-    for (RecordToFolder recToFolder : baseRecord.getParents()) {
-      if (recToFolder.getFolder().getId().equals(workspaceParentId)) {
-        return recToFolder.getFolder();
-      }
-    }
-    /* workspace parent may be incorrect i.e. for search results. in that case
-     * return the parent which would appear in getInfo, or after opening the document */
-    RSPath pathToRoot = baseRecord.getShortestPathToParent(usersRootFolder);
-    return pathToRoot
-        .getImmediateParentOf(baseRecord)
-        .orElseThrow(
-            () -> new IllegalAddChildOperation("Attempted to get parent folder of root folder"));
-  }
+
 
   @PostMapping("/ajax/delete")
   public ModelAndView delete(

@@ -433,7 +433,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
       setUpCommonMocks();
       WorkspaceSettings settings = new WorkspaceSettings();
       settings.setParentFolderId(2L);
-      when(workspaceService.moveRecords(any(), any(), any(), any())).thenReturn(1);
+      when(workspaceService.moveRecordsCountSuccess(any(), any(), any(), any())).thenReturn(1);
       ModelAndView mav = basicMove(new Long[] {1L}, "/", settings);
       assertTrue(model.containsAttribute("recordId"));
       assertEquals(WORKSPACE_AJAX_VIEWNAME, mav.getViewName());

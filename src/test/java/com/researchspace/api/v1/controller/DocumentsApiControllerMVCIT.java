@@ -960,6 +960,34 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
+  public void moveDocFromOneFolderToAnother() throws Exception {}
+
+  @Test
+  public void moveDocNoOpToSameFolderReturnsServerError() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // Create a document in the user's root folder
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "anytext");
+    Long rootId = getRootFolderForUser(anyUser).getId();
+
+    // attempt to move from root to root
+    MoveRequest moveReq = new MoveRequest();
+    moveReq.setDocId(doc.getId());
+    moveReq.setSourceFolderId(rootId);
+    moveReq.setTargetFolderId(rootId);
+
+    MvcResult result =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/documents/move", anyUser, moveReq))
+            .andExpect(status().is5xxServerError())
+            .andReturn();
+
+    Exception ex = result.getResolvedException();
+    assertEquals("Error moving items: Record already in target folder", ex.getMessage());
+  }
+
+  @Test
   public void moveDocFromOneSharedFolderToAnother() throws Exception {
     TestGroup group = createTestGroup(3, new TestGroupConfig(true));
     User sharer = group.getUserByPrefix("u1");

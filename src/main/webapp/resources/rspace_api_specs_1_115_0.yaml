@@ -678,10 +678,8 @@ paths:
       responses:
         '204':
           description: No content
-        '422':
-          $ref: '#/responses/UnprocessableQuery'
-        '500':
-          $ref: '#/responses/LicenseProblem'
+        '404':
+          $ref: '#/responses/NotFound'
   /forms:
     get:
       summary: 'List Forms, with optional search'

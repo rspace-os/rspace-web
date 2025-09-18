@@ -2,6 +2,8 @@ package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -18,6 +20,7 @@ import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.impl.WorkspaceServiceImpl;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,11 +67,12 @@ public class WorkspaceServiceTest {
     commonMocks(user, target, doc);
 
     mockMoveSuccess(doc);
-    int moved =
+    var results =
         service.moveRecords(
-            new Long[] {RECORD_ID}, String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
+            List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
 
-    assertEquals(1, moved);
+    assertEquals(1, results.size());
+    assertTrue(results.get(0).isSucceeded());
     verify(recordManager).move(RECORD_ID, TARGET_FOLDER_ID, SOURCE_FOLDER_ID, user);
     verify(auditService).notify(any());
   }
@@ -83,9 +87,10 @@ public class WorkspaceServiceTest {
     when(moveResult.getEntity()).thenReturn(doc);
     when(recordManager.move(RECORD_ID, ROOT_ID, SOURCE_FOLDER_ID, user)).thenReturn(moveResult);
 
-    int moved = service.moveRecords(new Long[] {RECORD_ID}, "/", SOURCE_FOLDER_ID, user);
+    var results = service.moveRecords(List.of(RECORD_ID), "/", SOURCE_FOLDER_ID, user);
 
-    assertEquals(1, moved);
+    assertEquals(1, results.size());
+    assertTrue(results.get(0).isSucceeded());
     verify(recordManager).move(RECORD_ID, root.getId(), SOURCE_FOLDER_ID, user);
     verify(auditService).notify(any());
   }
@@ -96,10 +101,11 @@ public class WorkspaceServiceTest {
     commonMocks(user, target, doc);
     mockMoveSuccess(doc);
 
-    int moved =
-        service.moveRecords(new Long[] {RECORD_ID}, TARGET_FOLDER_ID + "/", SOURCE_FOLDER_ID, user);
+    var results =
+        service.moveRecords(List.of(RECORD_ID), TARGET_FOLDER_ID + "/", SOURCE_FOLDER_ID, user);
 
-    assertEquals(1, moved);
+    assertEquals(1, results.size());
+    assertTrue(results.get(0).isSucceeded());
     verify(recordManager).move(RECORD_ID, TARGET_FOLDER_ID, SOURCE_FOLDER_ID, user);
     verify(auditService).notify(any());
   }
@@ -108,11 +114,11 @@ public class WorkspaceServiceTest {
   public void movingFolderIntoItselfIsSkipped() {
     when(folderManager.getFolder(SOURCE_FOLDER_ID, user)).thenReturn(source);
 
-    int moved =
+    var results =
         service.moveRecords(
-            new Long[] {SOURCE_FOLDER_ID}, String.valueOf(SOURCE_FOLDER_ID), 123L, user);
+            List.of(SOURCE_FOLDER_ID), String.valueOf(SOURCE_FOLDER_ID), 123L, user);
 
-    assertEquals(0, moved);
+    assertEquals(0, results.size());
     verify(auditService, never()).notify(any());
     verify(recordManager, never())
         .move(any(Long.class), any(Long.class), any(Long.class), any(User.class));
@@ -125,11 +131,33 @@ public class WorkspaceServiceTest {
     commonMocks(user, target, doc);
     mockFail();
 
-    int moved =
+    var results =
         service.moveRecords(
-            new Long[] {RECORD_ID}, String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
+            List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
 
-    assertEquals(0, moved);
+    assertEquals(1, results.size());
+    assertFalse(results.get(0).isSucceeded());
+    verify(auditService, never()).notify(any());
+  }
+
+  @Test
+  public void noOpMoveToSameFolderReturnsZeroAndDoesNotInvokeMove() {
+    // Target is the same as the current parent (source)
+    when(folderManager.getFolder(SOURCE_FOLDER_ID, user)).thenReturn(source);
+
+    // Minimal stubbing to avoid unnecessary stubs
+    when(baseRecordManager.get(RECORD_ID, user)).thenReturn(doc);
+    when(recordManager.exists(RECORD_ID)).thenReturn(true);
+    when(recordManager.get(RECORD_ID)).thenReturn(doc);
+
+    var results =
+        service.moveRecords(
+            List.of(RECORD_ID), String.valueOf(SOURCE_FOLDER_ID), SOURCE_FOLDER_ID, user);
+
+    assertEquals(1, results.size());
+    assertFalse(results.get(0).isSucceeded());
+    assertEquals("Record already in target folder", results.get(0).getMessage());
+    verify(recordManager, never()).move(any(Long.class), any(Long.class), any(Long.class), any(User.class));
     verify(auditService, never()).notify(any());
   }
 
@@ -137,12 +165,12 @@ public class WorkspaceServiceTest {
   public void invalidInputThrowsException() {
     assertThrows(IllegalArgumentException.class, () -> service.moveRecords(null, null, 0L, user));
     assertThrows(
-        IllegalArgumentException.class, () -> service.moveRecords(new Long[] {}, null, 0L, user));
+        IllegalArgumentException.class, () -> service.moveRecords(List.of(), null, 0L, user));
     assertThrows(
-        IllegalArgumentException.class, () -> service.moveRecords(new Long[] {1L}, null, 0L, user));
+        IllegalArgumentException.class, () -> service.moveRecords(List.of(1L), null, 0L, user));
     assertThrows(
         IllegalArgumentException.class,
-        () -> service.moveRecords(new Long[] {1L}, "invalid", 0L, user));
+        () -> service.moveRecords(List.of(1L), "invalid", 0L, user));
   }
 
   private void commonMocks(User user, Folder sharedTarget, StructuredDocument doc) {
@@ -181,5 +209,25 @@ public class WorkspaceServiceTest {
     when(moveResultFail.isSucceeded()).thenReturn(false);
     when(recordManager.move(RECORD_ID, TARGET_FOLDER_ID, SOURCE_FOLDER_ID, user))
         .thenReturn(moveResultFail);
+  }
+
+  @Test
+  public void moveRecordsCountSuccess_countsSuccessfulMoves() {
+    when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
+    commonMocks(user, target, doc);
+
+    // success path
+    mockMoveSuccess(doc);
+    int moved =
+        service.moveRecordsCountSuccess(
+            List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
+    assertEquals(1, moved);
+
+    // failure path
+    mockFail();
+    int movedFail =
+        service.moveRecordsCountSuccess(
+            List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
+    assertEquals(0, movedFail);
   }
 }
