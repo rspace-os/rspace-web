@@ -21,7 +21,9 @@ public class ShareLocationResolver {
 
   public BaseRecord resolveLocation(RecordGroupSharing share, BaseRecord record) {
     if (share.getShared().isNotebook()) {
-      return findParentNotebook(record);
+      // If the shared entity is a notebook, that notebook is the intended location regardless of
+      // how many notebooks the document belongs to.
+      return share.getShared();
     }
 
     if (share.getSharee().isGroup()) {
@@ -31,20 +33,8 @@ public class ShareLocationResolver {
     return findUserToUserSharedFolder(share, record);
   }
 
-  BaseRecord findParentNotebook(BaseRecord record) {
-    return record.getParents().stream()
-        .map(RecordToFolder::getFolder)
-        .filter(Folder::isNotebook)
-        .findFirst()
-        .orElse(null);
-  }
-
-  BaseRecord findGroupSharedFolder(RecordGroupSharing share) {
-    try {
+  private BaseRecord findGroupSharedFolder(RecordGroupSharing share) {
       Folder groupRoot = folderDao.getSharedFolderForGroup(share.getSharee().asGroup());
-      if (groupRoot == null) {
-        return firstSharedFolderParentOf(share.getShared());
-      }
       return share.getShared().getParents().stream()
           .map(RecordToFolder::getFolder)
           .filter(
@@ -55,31 +45,32 @@ public class ShareLocationResolver {
                           .orElse(false))
           .map(f -> (BaseRecord) f)
           .findFirst()
-          .orElse(firstSharedFolderParentOf(share.getShared()));
-    } catch (RuntimeException ex) {
-      // fall back to the first shared folder parent if DAO lookup fails
-      return firstSharedFolderParentOf(share.getShared());
-    }
+          .orElse(null);
   }
 
-  BaseRecord firstSharedFolderParentOf(BaseRecord record) {
+  private BaseRecord findUserToUserSharedFolder(RecordGroupSharing share, BaseRecord record) {
     return record.getParents().stream()
         .map(RecordToFolder::getFolder)
         .filter(Folder::isSharedFolder)
+        .filter(folder -> isInUserToUserSharedFolder(share, folder))
+        .map(f -> (BaseRecord) f)
         .findFirst()
         .orElse(null);
   }
 
-  BaseRecord findUserToUserSharedFolder(RecordGroupSharing share, BaseRecord record) {
-    return record.getParents().stream()
-        .map(RecordToFolder::getFolder)
-        .filter(Folder::isSharedFolder)
-        .filter(folder -> isDirectUserToUserSharedFolder(folder, share))
-        .findFirst()
-        .orElse(null);
+  /**
+   * Checks if the record is within the user-to-user shared folder structure.
+   */
+  private static boolean isInUserToUserSharedFolder(RecordGroupSharing share, Folder folder) {
+    return isDirectUserToUserSharedFolder(folder, share)
+            || Optional.ofNullable(folder.getAllAncestors())
+            .map(ancestors -> ancestors.stream()
+                    .filter(Folder::isSharedFolder)
+                    .anyMatch(ancestor -> isDirectUserToUserSharedFolder(ancestor, share)))
+            .orElse(false);
   }
 
-  static boolean isDirectUserToUserSharedFolder(Folder folder, RecordGroupSharing share) {
+  private static boolean isDirectUserToUserSharedFolder(Folder folder, RecordGroupSharing share) {
     String name = folder.getName();
     if (name == null || !name.contains("-")) {
       return false;
