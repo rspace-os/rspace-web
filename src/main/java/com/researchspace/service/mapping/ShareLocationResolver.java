@@ -20,9 +20,8 @@ public class ShareLocationResolver {
   }
 
   public BaseRecord resolveLocation(RecordGroupSharing share, BaseRecord record) {
-    if (share.getShared().isNotebook()) {
-      // If the shared entity is a notebook, that notebook is the intended location regardless of
-      // how many notebooks the document belongs to.
+    // case of implicit share of a document within a notebook, rather than a notebook itself
+    if (share.getShared().isNotebook() && !record.isNotebook()) {
       return share.getShared();
     }
 

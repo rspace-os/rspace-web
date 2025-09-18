@@ -25,9 +25,11 @@ import com.researchspace.model.dtos.SharedRecordSearchCriteria;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RecordInfoSharingInfo;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.DetailedRecordInformationProvider;
+import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareApiService;
@@ -35,6 +37,7 @@ import com.researchspace.service.SharingHandler;
 import com.researchspace.service.mapping.DocumentSharesBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -43,11 +46,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 
 @Service
-@Transactional
 public class ShareApiServiceImpl extends BaseApiController implements ShareApiService {
 
   private static final Logger log = LoggerFactory.getLogger(ShareApiServiceImpl.class);
@@ -57,6 +58,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   private final RecordSharingManager recordShareMgr;
   private final DetailedRecordInformationProvider detailedRecordInformationProvider;
   private final RecordManager recordManager;
+  private final FolderManager folderManager;
   private final DocumentSharesBuilder documentSharesBuilder;
   private final PermissionUtils permissionUtils;
 
@@ -65,12 +67,14 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
       RecordSharingManager recordShareMgr,
       DetailedRecordInformationProvider detailedRecordInformationProvider,
       RecordManager recordManager,
+      FolderManager folderManager,
       DocumentSharesBuilder documentSharesBuilder,
       PermissionUtils permissionUtils) {
     this.recordShareHandler = recordShareHandler;
     this.recordShareMgr = recordShareMgr;
     this.detailedRecordInformationProvider = detailedRecordInformationProvider;
     this.recordManager = recordManager;
+    this.folderManager = folderManager;
     this.documentSharesBuilder = documentSharesBuilder;
     this.permissionUtils = permissionUtils;
   }
@@ -149,10 +153,14 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     if (docId == null) {
       throw new IllegalArgumentException("Document id cannot be null");
     }
-    BaseRecord record = recordManager.get(docId);
-    if (record == null
-        || record.getOwner() == null
-        || !record.getOwner().getId().equals(user.getId())) {
+
+    BaseRecord record;
+    if(recordManager.exists(docId)){
+      record = recordManager.get(docId);
+    } else {
+      record = folderManager.getNotebook(docId);
+    }
+    if (record == null || !record.getOwner().getId().equals(user.getId())) {
       throw new NotFoundException(createNotFoundMessage("Record", docId));
     }
     RecordInfoSharingInfo sharingInfo =
@@ -175,6 +183,16 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
       throw new AuthorizationException(
           "No permissions to share items with group  - ensure that the sharer is the owner of the"
               + " items to be shared. Only Notebooks and Documents can be shared.");
+    }
+
+    if (result.getExceptionCount() > 0 && result.getResultCount() == 0) {
+      String exceptionMessages =
+          result.getExceptions().stream().map(Throwable::getMessage).collect(Collectors.joining());
+      if (result.getExceptions().stream().anyMatch(e -> e instanceof IllegalAddChildOperation)) {
+        throw new IllegalArgumentException("Problem sharing: " + exceptionMessages);
+      } else {
+        throw new RuntimeException("Problem sharing: " + exceptionMessages);
+      }
     }
   }
 
