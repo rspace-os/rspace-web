@@ -665,7 +665,8 @@ paths:
 
         The target is specified as a numeric folder id.
 
-        The item to move must be accessible by the user.
+        The user must have permissions to move the record e.g. it is in their own workspace, or they are the PI of a 
+        shared group and are moving the record within that group shared folder hierarchy.
       tags:
         - Documents
       parameters:
@@ -677,9 +678,9 @@ paths:
             $ref: '#/definitions/MoveRequest'
       responses:
         '204':
-          description: No content
-        '404':
-          $ref: '#/responses/NotFound'
+          description: No content. The document was moved.
+        '500':
+          description: Catch-all for various errors due to legacy error-handling within underlying code. Error message may provide more detail.
   /forms:
     get:
       summary: 'List Forms, with optional search'
