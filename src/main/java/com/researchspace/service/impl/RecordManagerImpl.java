@@ -261,7 +261,7 @@ public class RecordManagerImpl implements RecordManager {
     Folder newparent = folderDao.get(targetParent);
     if (newparent != null && toMove != null) {
       if (!movePermissionChecker.checkMovePermissions(user, newparent, toMove)) {
-        return new ServiceOperationResult<>(null, false);
+        return new ServiceOperationResult<>(null, false, "user not permitted to move record");
       }
       boolean moved;
       if (properties.isRsDevUnsafeMoveAllowed()) {

@@ -50,10 +50,8 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
-import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
@@ -585,7 +583,8 @@ public class WorkspaceController extends BaseController {
     User user = getUserByUsername(principal.getName());
 
     int moveCounter =
-        workspaceService.moveRecordsCountSuccess(List.of(toMove), targetFolderId, settings.getParentFolderId(), user);
+        workspaceService.moveRecordsCountSuccess(
+            List.of(toMove), targetFolderId, settings.getParentFolderId(), user);
 
     if (moveCounter == toMove.length) {
       model.addAttribute("successMsg", getText("workspace.move.success"));
@@ -604,8 +603,6 @@ public class WorkspaceController extends BaseController {
     setPublicationAllowed(model, principal.getName());
     return new ModelAndView(WORKSPACE_AJAX);
   }
-
-
 
   @PostMapping("/ajax/delete")
   public ModelAndView delete(

@@ -42,7 +42,6 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.WorkspaceService;
-import com.researchspace.service.impl.MovePermissionChecker;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
 import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
@@ -75,7 +74,6 @@ public class DocumentsApiController extends BaseApiController implements Documen
   @Autowired private RecordDeletionManager deletionMgr;
   @Autowired private BaseRecordManager baseRecordMgr;
   @Autowired private WorkspaceService workspaceService;
-  @Autowired private MovePermissionChecker permissionChecker;
 
   @Override
   public ApiDocumentSearchResult getDocuments(
@@ -424,28 +422,23 @@ public class DocumentsApiController extends BaseApiController implements Documen
       @RequestAttribute(name = "user") User user)
       throws BindException {
     throwBindExceptionIfErrors(errors);
-    Folder target = folderMgr.getFolder(request.getTargetFolderId(), user);
-    BaseRecord toMove = baseRecordMgr.get(request.getDocId(), user);
-    if (!permissionChecker.checkMovePermissions(user, target, toMove)) {
-      throw new NotFoundException(createNotFoundMessage("Record", request.getDocId()));
-    }
     List<ServiceOperationResult<? extends BaseRecord>> moveResult =
         workspaceService.moveRecords(
-                List.of(request.getDocId()),
-                String.valueOf(request.getTargetFolderId()),
-                request.getSourceFolderId(),
-                user);
+            List.of(request.getDocId()),
+            String.valueOf(request.getTargetFolderId()),
+            request.getSourceFolderId(),
+            user);
 
     String failedMoves =
-            moveResult.stream()
+        moveResult.stream()
             .filter(result -> !result.isSucceeded())
-                    .map(ServiceOperationResult::getMessage)
-                    .collect(Collectors.joining(", "));
+            .map(res -> StringUtils.isEmpty(res.getMessage()) ? "unknown error" : res.getMessage())
+            .collect(Collectors.joining(", "));
 
     if (StringUtils.isNotEmpty(failedMoves)) {
-      // throw as 500 as a general response as there are various reasons for failure, and we only have the failure
-      // message to understand why, which may or may not be present.
-      throw new RuntimeException("Error moving items: " + failedMoves);
+      // throw as 500 as a general response as there are various possible reasons for failure, and we only
+      // have the failure message to understand why, which may or may not be present.`
+      throw new RuntimeException("Error performing move: " + failedMoves);
     }
   }
 }

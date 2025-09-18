@@ -1,9 +1,9 @@
 package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -157,7 +157,8 @@ public class WorkspaceServiceTest {
     assertEquals(1, results.size());
     assertFalse(results.get(0).isSucceeded());
     assertEquals("Record already in target folder", results.get(0).getMessage());
-    verify(recordManager, never()).move(any(Long.class), any(Long.class), any(Long.class), any(User.class));
+    verify(recordManager, never())
+        .move(any(Long.class), any(Long.class), any(Long.class), any(User.class));
     verify(auditService, never()).notify(any());
   }
 

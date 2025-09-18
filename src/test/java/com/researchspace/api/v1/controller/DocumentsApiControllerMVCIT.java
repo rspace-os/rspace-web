@@ -984,7 +984,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     Exception ex = result.getResolvedException();
-    assertEquals("Error moving items: Record already in target folder", ex.getMessage());
+    assertEquals("Error performing move: Record already in target folder", ex.getMessage());
   }
 
   @Test
@@ -1025,7 +1025,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  public void moveDocAttemptFailsWith404WhenNotAuthorised() throws Exception {
+  public void moveDocAttemptFailsWithWhenNotAuthorised() throws Exception {
     TestGroup group = createTestGroup(3, new TestGroupConfig(true));
     User sharer = group.getUserByPrefix("u1");
 
@@ -1049,7 +1049,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
     this.mockMvc
         .perform(createBuilderForPostWithJSONBody(sharerApiKey, "/documents/move", sharer, moveReq))
-        .andExpect(status().isNotFound())
+        .andExpect(status().isInternalServerError())
         .andReturn();
 
     assertGroupShareLocation(toShare.getId(), sharerApiKey, subfolderA.getId());

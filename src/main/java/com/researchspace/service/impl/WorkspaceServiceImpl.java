@@ -18,11 +18,9 @@ import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.WorkspaceService;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,10 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Partial refactoring of WorkspaceController code into the service layer so that it can be used by
  * both legacy and new REST controllers. Only the move operation has been refactored so far to
- * support the share dialog move functionality.
- * Left largely as the original implementation, but added a method to return the ServiceOperationResult
- * of the move operation so there's some feedback when a move fails. For the WorkspaceController, the
- * original implementation of returning a count of the record move successes was kept in place.
+ * support the share dialog move functionality. Left largely as the original implementation, but
+ * added a method to return the ServiceOperationResult of the move operation so there's some
+ * feedback when a move fails. For the WorkspaceController, the original implementation of returning
+ * a count of the record move successes was kept in place.
  */
 @Service
 @Transactional
@@ -63,7 +61,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     this.auditService = auditService;
   }
 
-  public List<ServiceOperationResult<? extends BaseRecord>> moveRecords(List<Long> idsToMove, String targetFolderId, Long sourceFolderId, User user) {
+  public List<ServiceOperationResult<? extends BaseRecord>> moveRecords(
+      List<Long> idsToMove, String targetFolderId, Long sourceFolderId, User user) {
     if (idsToMove == null || idsToMove.isEmpty() || StringUtils.isBlank(targetFolderId)) {
       throw new IllegalArgumentException("No records to move");
     }
@@ -90,10 +89,11 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   @Override
-  public int moveRecordsCountSuccess(List<Long> toMove, String targetFolderId, Long sourceFolderId, User user) {
-    List<ServiceOperationResult<? extends BaseRecord>> results = moveRecords(toMove, targetFolderId, sourceFolderId, user);
-    return (int)
-        results.stream().filter(result -> result != null && result.isSucceeded()).count();
+  public int moveRecordsCountSuccess(
+      List<Long> toMove, String targetFolderId, Long sourceFolderId, User user) {
+    List<ServiceOperationResult<? extends BaseRecord>> results =
+        moveRecords(toMove, targetFolderId, sourceFolderId, user);
+    return (int) results.stream().filter(result -> result != null && result.isSucceeded()).count();
   }
 
   private Folder resolveTargetFolder(String targetFolderId, User user, Folder usersRootFolder) {
@@ -110,7 +110,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return !recordManager.exists(recordId) || recordManager.get(recordId).isFolder();
   }
 
-  private ServiceOperationResult<Folder> moveFolder(Long folderId, Folder sourceFolder, Folder target, User user) {
+  private ServiceOperationResult<Folder> moveFolder(
+      Long folderId, Folder sourceFolder, Folder target, User user) {
     ServiceOperationResult<Folder> result =
         folderManager.move(folderId, target.getId(), sourceFolder.getId(), user);
     if (result != null && result.isSucceeded()) {
@@ -119,12 +120,14 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return result;
   }
 
-  private ServiceOperationResult<? extends BaseRecord> moveDocAndMaybeShare(Long recordId, Folder sourceFolder, Folder target, User user) {
+  private ServiceOperationResult<? extends BaseRecord> moveDocAndMaybeShare(
+      Long recordId, Folder sourceFolder, Folder target, User user) {
     BaseRecord toMove = recordManager.get(recordId);
 
-    boolean alreadyInTarget = toMove.getParents().stream()
-        .map(RecordToFolder::getFolder)
-        .anyMatch(f -> f.getId().equals(target.getId()));
+    boolean alreadyInTarget =
+        toMove.getParents().stream()
+            .map(RecordToFolder::getFolder)
+            .anyMatch(f -> f.getId().equals(target.getId()));
     if (alreadyInTarget && (sourceFolder == null || sourceFolder.getId().equals(target.getId()))) {
       return new ServiceOperationResult<>(null, false, "Record already in target folder");
     }
@@ -148,7 +151,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return result;
   }
 
-  private ServiceOperationResult<BaseRecord> mapShareResultToServiceOperation(SharingResult sharingResult, BaseRecord baseRecordToMove) {
+  private ServiceOperationResult<BaseRecord> mapShareResultToServiceOperation(
+      SharingResult sharingResult, BaseRecord baseRecordToMove) {
     if (sharingResult.getError() != null && sharingResult.getError().hasErrorMessages()) {
       String msg = sharingResult.getError().getAllErrorMessagesAsStringsSeparatedBy(",");
       return new ServiceOperationResult<>(null, false, msg);
@@ -161,7 +165,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   private Folder getMoveSourceFolder(
-          Long baseRecordId, Long workspaceParentId, User user, Folder usersRootFolder) {
+      Long baseRecordId, Long workspaceParentId, User user, Folder usersRootFolder) {
     /* if workspaceParentId is among parent folders, then use it */
     BaseRecord baseRecord = baseRecordManager.get(baseRecordId, user);
     for (RecordToFolder recToFolder : baseRecord.getParents()) {
@@ -173,8 +177,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
      * return the parent which would appear in getInfo, or after opening the document */
     RSPath pathToRoot = baseRecord.getShortestPathToParent(usersRootFolder);
     return pathToRoot
-            .getImmediateParentOf(baseRecord)
-            .orElseThrow(
-                    () -> new IllegalAddChildOperation("Attempted to get parent folder of root folder"));
+        .getImmediateParentOf(baseRecord)
+        .orElseThrow(
+            () -> new IllegalAddChildOperation("Attempted to get parent folder of root folder"));
   }
 }
