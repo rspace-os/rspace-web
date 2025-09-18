@@ -171,15 +171,16 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long parentId, Long grandParentId, User user) {
+      Long parentId, Long grandParentFolderId, User user) {
     Folder src = folderDao.get(parentId);
     if (src.isNotebook() && src.isShared()) {
-      if (grandParentId == null) {
+      if (grandParentFolderId == null) {
         throw new IllegalStateException(
-            "The \"grandParentFolderId\" MUST be set when creating a document into a shared"
-                + " notebook");
+            "Cannot infer shared context for Notebook with ID=["
+                + parentId
+                + "], as \"grandParentFolderId\" param is not set");
       }
-      src = folderDao.get(grandParentId);
+      src = folderDao.get(grandParentFolderId);
     }
     Folder target = folderDao.getUserSharedFolder(user);
     RSPath path =

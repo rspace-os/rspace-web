@@ -40,7 +40,6 @@ import lombok.NoArgsConstructor;
       "size",
       "version",
       "parentFolderId",
-      "grandParentId",
       "_links"
     })
 public class ApiFile extends IdentifiableNameableApiObject {

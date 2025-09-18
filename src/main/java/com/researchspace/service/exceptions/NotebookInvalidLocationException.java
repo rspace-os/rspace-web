@@ -1,6 +1,5 @@
 package com.researchspace.service.exceptions;
 
-
 public class NotebookInvalidLocationException extends RuntimeException {
 
   public NotebookInvalidLocationException(String msg) {
