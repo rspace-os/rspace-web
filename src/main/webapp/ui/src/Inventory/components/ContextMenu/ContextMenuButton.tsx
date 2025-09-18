@@ -24,9 +24,11 @@ const useStyles = makeStyles()((theme) => ({
   },
   active: {
     backgroundColor: theme.palette.callToAction.main,
+    borderColor: theme.palette.callToAction.main,
     color: theme.palette.callToAction.contrastText,
     "&:hover": {
       backgroundColor: theme.palette.callToAction.dark,
+      borderColor: theme.palette.callToAction.dark,
     },
   },
   filled: {
