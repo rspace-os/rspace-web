@@ -436,7 +436,8 @@ public class DocumentsApiController extends BaseApiController implements Documen
             .collect(Collectors.joining(", "));
 
     if (StringUtils.isNotEmpty(failedMoves)) {
-      // throw as 500 as a general response as there are various possible reasons for failure, and we only
+      // throw as 500 as a general response as there are various possible reasons for failure, and
+      // we only
       // have the failure message to understand why, which may or may not be present.`
       throw new RuntimeException("Error performing move: " + failedMoves);
     }

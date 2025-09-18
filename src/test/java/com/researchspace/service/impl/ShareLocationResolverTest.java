@@ -52,7 +52,8 @@ public class ShareLocationResolverTest {
   @Test
   public void groupShareTest() {
     RecordGroupSharing share = makeShare(true);
-    when(folderDao.getSharedFolderForGroup(recipientGroup)).thenReturn(share.getShared().getParent());
+    when(folderDao.getSharedFolderForGroup(recipientGroup))
+        .thenReturn(share.getShared().getParent());
     BaseRecord sharedLocation = resolver.resolveLocation(share, doc);
     assertEquals(recipientGroup.getDisplayName() + "_Shared", sharedLocation.getName());
   }
@@ -110,7 +111,8 @@ public class ShareLocationResolverTest {
 
   @Test
   public void userToUserShareToSubFolderTest() {
-    Folder sharedFolderRoot = newFolder(8000L, sharer.getUsername() + "-" + recipientUser.getUniqueName(), false, true);
+    Folder sharedFolderRoot =
+        newFolder(8000L, sharer.getUsername() + "-" + recipientUser.getUniqueName(), false, true);
     sharedFolderRoot.setType("SHARED_FOLDER");
 
     Folder sharedSubFolder = newFolder(8001L, "u2u_shared_sub_folder", false, true);
@@ -134,7 +136,8 @@ public class ShareLocationResolverTest {
 
   @Test
   public void docWithinMultipleNotebooksTest() {
-    // Document belongs to two notebooks (e.g. one in the users workspace and one in a shared location)
+    // Document belongs to two notebooks (e.g. one in the users workspace and one in a shared
+    // location)
     Notebook nb1 = new Notebook();
     nb1.setId(9001L);
     nb1.setName("Notebook A");

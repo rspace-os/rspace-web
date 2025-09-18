@@ -34,18 +34,18 @@ public class ShareLocationResolver {
   }
 
   private BaseRecord findGroupSharedFolder(RecordGroupSharing share) {
-      Folder groupRoot = folderDao.getSharedFolderForGroup(share.getSharee().asGroup());
-      return share.getShared().getParents().stream()
-          .map(RecordToFolder::getFolder)
-          .filter(
-              folder ->
-                  folder.equals(groupRoot)
-                      || Optional.ofNullable(folder.getAllAncestors())
-                          .map(ancestors -> ancestors.stream().anyMatch(a -> a.equals(groupRoot)))
-                          .orElse(false))
-          .map(f -> (BaseRecord) f)
-          .findFirst()
-          .orElse(null);
+    Folder groupRoot = folderDao.getSharedFolderForGroup(share.getSharee().asGroup());
+    return share.getShared().getParents().stream()
+        .map(RecordToFolder::getFolder)
+        .filter(
+            folder ->
+                folder.equals(groupRoot)
+                    || Optional.ofNullable(folder.getAllAncestors())
+                        .map(ancestors -> ancestors.stream().anyMatch(a -> a.equals(groupRoot)))
+                        .orElse(false))
+        .map(f -> (BaseRecord) f)
+        .findFirst()
+        .orElse(null);
   }
 
   private BaseRecord findUserToUserSharedFolder(RecordGroupSharing share, BaseRecord record) {
@@ -58,15 +58,15 @@ public class ShareLocationResolver {
         .orElse(null);
   }
 
-  /**
-   * Checks if the record is within the user-to-user shared folder structure.
-   */
+  /** Checks if the record is within the user-to-user shared folder structure. */
   private static boolean isInUserToUserSharedFolder(RecordGroupSharing share, Folder folder) {
     return isDirectUserToUserSharedFolder(folder, share)
-            || Optional.ofNullable(folder.getAllAncestors())
-            .map(ancestors -> ancestors.stream()
-                    .filter(Folder::isSharedFolder)
-                    .anyMatch(ancestor -> isDirectUserToUserSharedFolder(ancestor, share)))
+        || Optional.ofNullable(folder.getAllAncestors())
+            .map(
+                ancestors ->
+                    ancestors.stream()
+                        .filter(Folder::isSharedFolder)
+                        .anyMatch(ancestor -> isDirectUserToUserSharedFolder(ancestor, share)))
             .orElse(false);
   }
 
