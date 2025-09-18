@@ -25,7 +25,6 @@ public interface ShareApiService {
    * @return ApiSharingResult containing shared items and any failures
    * @throws BindException if validation errors occur
    */
-  @Transactional
   ApiSharingResult shareItems(SharePost shareConfig, User user) throws BindException;
 
   /**

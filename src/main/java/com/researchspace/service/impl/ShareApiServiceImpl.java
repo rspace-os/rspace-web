@@ -35,6 +35,7 @@ import com.researchspace.service.SharingHandler;
 import com.researchspace.service.mapping.DocumentSharesBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -43,11 +44,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 
 @Service
-@Transactional
 public class ShareApiServiceImpl extends BaseApiController implements ShareApiService {
 
   private static final Logger log = LoggerFactory.getLogger(ShareApiServiceImpl.class);
@@ -175,6 +174,14 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
       throw new AuthorizationException(
           "No permissions to share items with group  - ensure that the sharer is the owner of the"
               + " items to be shared. Only Notebooks and Documents can be shared.");
+    }
+
+    if(result.getExceptionCount() > 0 && result.getResultCount() == 0) {
+      String exceptionMessages =
+          result.getExceptions().stream()
+                          .map(Throwable::getMessage)
+                          .collect(Collectors.joining());
+     throw new IllegalArgumentException("Problem sharing: " + exceptionMessages);
     }
   }
 
