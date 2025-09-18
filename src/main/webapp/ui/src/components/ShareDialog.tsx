@@ -872,11 +872,7 @@ const ShareDialog = () => {
                                           <>
                                             {shareFolderChanges.get(
                                               share.shareId.toString(),
-                                            )?.name ||
-                                              groupFolderNames.get(
-                                                share.recipientId,
-                                              ) ||
-                                              "Loading..."}
+                                            )?.name || share.locationName}
                                             <Button
                                               size="small"
                                               sx={{ ml: 1 }}
