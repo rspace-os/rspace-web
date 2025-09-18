@@ -136,8 +136,9 @@ export default function useShare(): {
     try {
       // Make parallel requests for all global IDs
       const promises = globalIds.map(async (globalId) => {
-        const { directShares, notebookShares } = await getShareInfo(globalId);
-        return { globalId, directShares, notebookShares };
+        const { directShares, notebookShares, sharedDocId } =
+          await getShareInfo(globalId);
+        return { globalId, directShares, notebookShares, sharedDocId };
       });
 
       const results = await Promise.all(promises);
@@ -150,9 +151,20 @@ export default function useShare(): {
           notebookShares: ReadonlyArray<ShareInfo>;
         }
       >();
-      results.forEach(({ globalId, directShares, notebookShares }) => {
-        shareMap.set(globalId, { directShares, notebookShares });
-      });
+      results.forEach(
+        ({ globalId, directShares, notebookShares, sharedDocId }) => {
+          shareMap.set(globalId, {
+            directShares: directShares.map((s) => ({
+              ...s,
+              sharedDocId,
+            })),
+            notebookShares: notebookShares.map((s) => ({
+              ...s,
+              sharedDocId,
+            })),
+          });
+        },
+      );
 
       return shareMap;
     } catch (e) {

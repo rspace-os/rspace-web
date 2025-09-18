@@ -38,6 +38,7 @@ import useGroups from "../hooks/api/useGroups";
 import useUserDetails from "../hooks/api/useUserDetails";
 import useWhoAmI from "../hooks/api/useWhoAmI";
 import useFolders from "../hooks/api/useFolders";
+import useDocuments from "../hooks/api/useDocuments";
 import FolderSelectionDialog from "./FolderSelectionDialog";
 import { FolderTreeNode } from "../hooks/api/useFolders";
 import UserDetails from "../Inventory/components/UserDetails";
@@ -169,6 +170,7 @@ const ShareDialog = () => {
   const { getGroups } = useGroups();
   const { getGroupMembers } = useUserDetails();
   const { getFolder } = useFolders();
+  const { move } = useDocuments();
   const currentUser = useWhoAmI();
   const [autocompleteInput, setAutocompleteInput] = React.useState("");
 
@@ -449,6 +451,7 @@ const ShareDialog = () => {
 
       // Handle permission and folder modifications using updateShare
       const updatePromises: Promise<void>[] = [];
+      const movePromises: Promise<void>[] = [];
       const allChangedShareIds = new Set([
         ...permissionChanges.keys(),
         ...shareFolderChanges.keys(),
@@ -456,6 +459,7 @@ const ShareDialog = () => {
 
       for (const shareId of allChangedShareIds) {
         const newPermission = permissionChanges.get(shareId);
+        const newLocationId = shareFolderChanges.get(shareId)?.id;
         if (newPermission !== "UNSHARE") {
           // Find the original share to get its details
           const originalShare = Array.from(shareData.values())
@@ -464,14 +468,28 @@ const ShareDialog = () => {
             .find((share) => share.shareId.toString() === shareId);
 
           if (originalShare) {
-            const updatedShare: ShareInfo = {
-              ...originalShare,
-              permission:
-                (newPermission as "READ" | "EDIT") || originalShare.permission,
-              locationId:
-                shareFolderChanges.get(shareId)?.id ?? originalShare.locationId,
-            };
-            updatePromises.push(updateShare(updatedShare));
+            if (
+              newPermission !== originalShare.permission &&
+              typeof newPermission !== "undefined"
+            ) {
+              updatePromises.push(
+                updateShare({
+                  ...originalShare,
+                  permission: newPermission,
+                }),
+              );
+              continue;
+            }
+            if (newLocationId !== originalShare.locationId && newLocationId) {
+              movePromises.push(
+                move({
+                  documentId: originalShare.sharedDocId,
+                  sourceFolderId: originalShare.locationId!,
+                  destinationFolderId: newLocationId,
+                }),
+              );
+              continue;
+            }
           }
         }
       }
