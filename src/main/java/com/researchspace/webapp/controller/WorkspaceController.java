@@ -30,7 +30,6 @@ import com.researchspace.model.audittrail.AuditSearchEvent;
 import com.researchspace.model.audittrail.CreateAuditEvent;
 import com.researchspace.model.audittrail.DuplicateAuditEvent;
 import com.researchspace.model.audittrail.HistoricalEvent;
-import com.researchspace.model.audittrail.MoveAuditEvent;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dto.SharingResult;
 import com.researchspace.model.dto.UserPublicInfo;
@@ -51,14 +50,11 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
-import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
-import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DetailedRecordInformationProvider;
@@ -72,6 +68,7 @@ import com.researchspace.service.RecordFavoritesManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.WorkspaceService;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
@@ -163,6 +160,8 @@ public class WorkspaceController extends BaseController {
   @Autowired private DetailedRecordInformationProvider infoProvider;
 
   @Autowired private SharingHandler recordShareHandler;
+
+  @Autowired @Setter private WorkspaceService workspaceService;
 
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 
@@ -582,60 +581,10 @@ public class WorkspaceController extends BaseController {
     }
 
     User user = getUserByUsername(principal.getName());
-    Folder usersRootFolder = folderManager.getRootFolderForUser(user);
-    Folder target = null;
 
-    // handle input which might contain a /
-    if ("/".equals(targetFolderId)) {
-      target = usersRootFolder;
-    } else {
-      if (targetFolderId.endsWith("/")) {
-        targetFolderId = targetFolderId.substring(0, targetFolderId.length() - 1);
-      }
-      target = folderManager.getFolder(Long.parseLong(targetFolderId), user);
-    }
-
-    int moveCounter = 0;
-    for (Long recordIdToMove : toMove) {
-      if (target.getId().equals(recordIdToMove)) {
-        continue;
-      }
-      Folder sourceFolder =
-          getMoveSourceFolderId(
-              recordIdToMove, settings.getParentFolderId(), user, usersRootFolder);
-      boolean isFolder = !isRecord(recordIdToMove) || recordManager.get(recordIdToMove).isFolder();
-      ServiceOperationResult<? extends BaseRecord> moveResult = null;
-      if (isFolder) {
-        moveResult = folderManager.move(recordIdToMove, target.getId(), sourceFolder.getId(), user);
-      } else {
-        BaseRecord baseRecordToMove = recordManager.get(recordIdToMove);
-        if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
-          try {
-            Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder);
-            SharingResult sharingResult =
-                recordShareHandler.moveIntoSharedNotebook(
-                    group, baseRecordToMove, (Notebook) target);
-            if (!sharingResult.getSharedIds().isEmpty()) {
-              moveCounter = moveCounter + sharingResult.getSharedIds().size();
-            }
-          } catch (Exception ex) {
-            log.error(
-                "It was not possible to move the record [{}] into the shared notebook [{}]: {}",
-                baseRecordToMove.getId(),
-                target.getId(),
-                ex.getMessage());
-            break;
-          }
-        } else {
-          moveResult =
-              recordManager.move(recordIdToMove, target.getId(), sourceFolder.getId(), user);
-        }
-      }
-      if (moveResult != null && moveResult.isSucceeded()) {
-        moveCounter++;
-        auditService.notify(new MoveAuditEvent(user, moveResult.getEntity(), sourceFolder, target));
-      }
-    }
+    int moveCounter =
+        workspaceService.moveRecordsCountSuccess(
+            List.of(toMove), targetFolderId, settings.getParentFolderId(), user);
 
     if (moveCounter == toMove.length) {
       model.addAttribute("successMsg", getText("workspace.move.success"));
@@ -653,24 +602,6 @@ public class WorkspaceController extends BaseController {
     relist(settings, settingsKey, model, request, session, response, user, source);
     setPublicationAllowed(model, principal.getName());
     return new ModelAndView(WORKSPACE_AJAX);
-  }
-
-  private Folder getMoveSourceFolderId(
-      Long baseRecordId, Long workspaceParentId, User user, Folder usersRootFolder) {
-    /* if workspaceParentId is among parent folders, then use it */
-    BaseRecord baseRecord = baseRecordManager.get(baseRecordId, user);
-    for (RecordToFolder recToFolder : baseRecord.getParents()) {
-      if (recToFolder.getFolder().getId().equals(workspaceParentId)) {
-        return recToFolder.getFolder();
-      }
-    }
-    /* workspace parent may be incorrect i.e. for search results. in that case
-     * return the parent which would appear in getInfo, or after opening the document */
-    RSPath pathToRoot = baseRecord.getShortestPathToParent(usersRootFolder);
-    return pathToRoot
-        .getImmediateParentOf(baseRecord)
-        .orElseThrow(
-            () -> new IllegalAddChildOperation("Attempted to get parent folder of root folder"));
   }
 
   @PostMapping("/ajax/delete")

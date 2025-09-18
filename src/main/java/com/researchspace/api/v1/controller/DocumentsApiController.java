@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiSearchQuery;
 import com.researchspace.api.v1.model.ApiSearchQuery.OperatorEnum;
 import com.researchspace.api.v1.model.ApiSearchTerm;
 import com.researchspace.api.v1.model.ApiSearchTerm.QueryTypeEnum;
+import com.researchspace.api.v1.model.MoveRequest;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.api.v1.service.RecordApiManager;
 import com.researchspace.core.util.ISearchResults;
@@ -33,17 +34,20 @@ import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.CompositeRecordOperationResult;
+import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.service.WorkspaceService;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
 import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
@@ -69,6 +73,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
   @Autowired private ApiFieldsHelper apiFieldsHelper;
   @Autowired private RecordDeletionManager deletionMgr;
   @Autowired private BaseRecordManager baseRecordMgr;
+  @Autowired private WorkspaceService workspaceService;
 
   @Override
   public ApiDocumentSearchResult getDocuments(
@@ -407,6 +412,34 @@ public class DocumentsApiController extends BaseApiController implements Documen
       response.setStatus(HttpStatus.NO_CONTENT.value());
     } else {
       throw new RuntimeException(" Unexpected error deleting item " + id);
+    }
+  }
+
+  @Override
+  public void moveDocuments(
+      @RequestBody @Valid MoveRequest request,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+    throwBindExceptionIfErrors(errors);
+    List<ServiceOperationResult<? extends BaseRecord>> moveResult =
+        workspaceService.moveRecords(
+            List.of(request.getDocId()),
+            String.valueOf(request.getTargetFolderId()),
+            request.getSourceFolderId(),
+            user);
+
+    String failedMoves =
+        moveResult.stream()
+            .filter(result -> !result.isSucceeded())
+            .map(res -> StringUtils.isEmpty(res.getMessage()) ? "unknown error" : res.getMessage())
+            .collect(Collectors.joining(", "));
+
+    if (StringUtils.isNotEmpty(failedMoves)) {
+      // throw as 500 as a general response as there are various possible reasons for failure, and
+      // we only
+      // have the failure message to understand why, which may or may not be present.`
+      throw new RuntimeException("Error performing move: " + failedMoves);
     }
   }
 }

@@ -4,8 +4,10 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.MoveAuditEvent;
+import com.researchspace.model.dto.SharingResult;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordToFolder;
@@ -16,96 +18,167 @@ import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.WorkspaceService;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Partial refactoring of WorkspaceController code into the service layer so that it can be used by
+ * both legacy and new REST controllers. Only the move operation has been refactored so far to
+ * support the share dialog move functionality. Left largely as the original implementation, but
+ * added a method to return the ServiceOperationResult of the move operation so there's some
+ * feedback when a move fails. For the WorkspaceController, the original implementation of returning
+ * a count of the record move successes was kept in place.
+ */
 @Service
+@Transactional
 public class WorkspaceServiceImpl implements WorkspaceService {
 
-  @Autowired private FolderManager folderManager;
-  @Autowired private RecordManager recordManager;
-  @Autowired private BaseRecordManager baseRecordManager;
-  @Autowired private GroupManager groupManager;
-  @Autowired private SharingHandler recordShareHandler;
-  @Autowired private AuditTrailService auditService;
+  private final FolderManager folderManager;
+  private final RecordManager recordManager;
+  private final BaseRecordManager baseRecordManager;
+  private final GroupManager groupManager;
+  private final SharingHandler recordShareHandler;
+  private final AuditTrailService auditService;
 
-  @Override
-  public int moveRecords(Long[] toMove, String targetFolderId, Long workspaceParentId, User user) {
-    if (toMove == null || toMove.length == 0 || StringUtils.isBlank(targetFolderId)) {
+  @Autowired
+  public WorkspaceServiceImpl(
+      FolderManager folderManager,
+      RecordManager recordManager,
+      BaseRecordManager baseRecordManager,
+      GroupManager groupManager,
+      SharingHandler recordShareHandler,
+      AuditTrailService auditService) {
+    this.folderManager = folderManager;
+    this.recordManager = recordManager;
+    this.baseRecordManager = baseRecordManager;
+    this.groupManager = groupManager;
+    this.recordShareHandler = recordShareHandler;
+    this.auditService = auditService;
+  }
+
+  public List<ServiceOperationResult<? extends BaseRecord>> moveRecords(
+      List<Long> idsToMove, String targetFolderId, Long sourceFolderId, User user) {
+    if (idsToMove == null || idsToMove.isEmpty() || StringUtils.isBlank(targetFolderId)) {
       throw new IllegalArgumentException("No records to move");
     }
 
     Folder usersRootFolder = folderManager.getRootFolderForUser(user);
-    Folder target;
+    Folder target = resolveTargetFolder(targetFolderId, user, usersRootFolder);
 
-    // handle input which might contain a /
-    if ("/".equals(targetFolderId)) {
-      target = usersRootFolder;
-    } else {
-      if (targetFolderId.endsWith("/")) {
-        targetFolderId = targetFolderId.substring(0, targetFolderId.length() - 1);
-      }
-      target = folderManager.getFolder(Long.parseLong(targetFolderId), user);
-    }
-
-    int moveCounter = 0;
-    for (Long recordIdToMove : toMove) {
-      if (Objects.equals(target.getId(), recordIdToMove)) {
+    List<ServiceOperationResult<? extends BaseRecord>> results = new ArrayList<>();
+    for (Long toMove : idsToMove) {
+      // Do not attempt to move a folder into itself
+      if (Objects.equals(target.getId(), toMove)) {
         continue;
       }
-      Folder sourceFolder =
-          getMoveSourceFolder(recordIdToMove, workspaceParentId, user, usersRootFolder);
-      boolean isFolder =
-          !recordManager.exists(recordIdToMove) || recordManager.get(recordIdToMove).isFolder();
-      ServiceOperationResult<? extends BaseRecord> moveResult = null;
-      if (isFolder) {
-        moveResult = folderManager.move(recordIdToMove, target.getId(), sourceFolder.getId(), user);
+
+      Folder sourceFolder = getMoveSourceFolder(toMove, sourceFolderId, user, usersRootFolder);
+
+      if (isFolder(toMove)) {
+        results.add(moveFolder(toMove, sourceFolder, target, user));
       } else {
-        BaseRecord baseRecordToMove = recordManager.get(recordIdToMove);
-        if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
-          try {
-            Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder);
-            var sharingResult =
-                recordShareHandler.moveIntoSharedNotebook(
-                    group, baseRecordToMove, (Notebook) target);
-            if (!sharingResult.getSharedIds().isEmpty()) {
-              moveCounter = moveCounter + sharingResult.getSharedIds().size();
-            }
-          } catch (Exception ex) {
-            // Skip this item on error to allow processing of others
-            continue;
-          }
-        } else {
-          moveResult =
-              recordManager.move(recordIdToMove, target.getId(), sourceFolder.getId(), user);
-        }
-      }
-      if (moveResult != null && moveResult.isSucceeded()) {
-        moveCounter++;
-        auditService.notify(new MoveAuditEvent(user, moveResult.getEntity(), sourceFolder, target));
+        results.add(moveDocAndMaybeShare(toMove, sourceFolder, target, user));
       }
     }
-    return moveCounter;
+    return results;
+  }
+
+  @Override
+  public int moveRecordsCountSuccess(
+      List<Long> toMove, String targetFolderId, Long sourceFolderId, User user) {
+    List<ServiceOperationResult<? extends BaseRecord>> results =
+        moveRecords(toMove, targetFolderId, sourceFolderId, user);
+    return (int) results.stream().filter(result -> result != null && result.isSucceeded()).count();
+  }
+
+  private Folder resolveTargetFolder(String targetFolderId, User user, Folder usersRootFolder) {
+    if ("/".equals(targetFolderId)) {
+      return usersRootFolder;
+    }
+    if (targetFolderId.endsWith("/")) {
+      targetFolderId = targetFolderId.substring(0, targetFolderId.length() - 1);
+    }
+    return folderManager.getFolder(Long.parseLong(targetFolderId), user);
+  }
+
+  private boolean isFolder(Long recordId) {
+    return !recordManager.exists(recordId) || recordManager.get(recordId).isFolder();
+  }
+
+  private ServiceOperationResult<Folder> moveFolder(
+      Long folderId, Folder sourceFolder, Folder target, User user) {
+    ServiceOperationResult<Folder> result =
+        folderManager.move(folderId, target.getId(), sourceFolder.getId(), user);
+    if (result != null && result.isSucceeded()) {
+      auditService.notify(new MoveAuditEvent(user, result.getEntity(), sourceFolder, target));
+    }
+    return result;
+  }
+
+  private ServiceOperationResult<? extends BaseRecord> moveDocAndMaybeShare(
+      Long recordId, Folder sourceFolder, Folder target, User user) {
+    BaseRecord toMove = recordManager.get(recordId);
+
+    boolean alreadyInTarget =
+        toMove.getParents().stream()
+            .map(RecordToFolder::getFolder)
+            .anyMatch(f -> f.getId().equals(target.getId()));
+    if (alreadyInTarget && (sourceFolder == null || sourceFolder.getId().equals(target.getId()))) {
+      return new ServiceOperationResult<>(null, false, "Record already in target folder");
+    }
+
+    if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
+      try {
+        Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder);
+        SharingResult sharingResult =
+            recordShareHandler.moveIntoSharedNotebook(group, toMove, (Notebook) target);
+        return mapShareResultToServiceOperation(sharingResult, toMove);
+      } catch (Exception ex) {
+        return new ServiceOperationResult<>(null, false, ex.getMessage());
+      }
+    }
+
+    ServiceOperationResult<? extends BaseRecord> result =
+        recordManager.move(recordId, target.getId(), sourceFolder.getId(), user);
+    if (result != null && result.isSucceeded()) {
+      auditService.notify(new MoveAuditEvent(user, result.getEntity(), sourceFolder, target));
+    }
+    return result;
+  }
+
+  private ServiceOperationResult<BaseRecord> mapShareResultToServiceOperation(
+      SharingResult sharingResult, BaseRecord baseRecordToMove) {
+    if (sharingResult.getError() != null && sharingResult.getError().hasErrorMessages()) {
+      String msg = sharingResult.getError().getAllErrorMessagesAsStringsSeparatedBy(",");
+      return new ServiceOperationResult<>(null, false, msg);
+    }
+    if (sharingResult.getSharedIds() != null
+        && sharingResult.getSharedIds().contains(baseRecordToMove.getId())) {
+      return new ServiceOperationResult<>(baseRecordToMove, true);
+    }
+    return new ServiceOperationResult<>(null, false, "Move into shared notebook failed");
   }
 
   private Folder getMoveSourceFolder(
       Long baseRecordId, Long workspaceParentId, User user, Folder usersRootFolder) {
     /* if workspaceParentId is among parent folders, then use it */
     BaseRecord baseRecord = baseRecordManager.get(baseRecordId, user);
-    if (workspaceParentId != null) {
-      for (RecordToFolder recToFolder : baseRecord.getParents()) {
-        if (recToFolder.getFolder().getId().equals(workspaceParentId)) {
-          return recToFolder.getFolder();
-        }
+    for (RecordToFolder recToFolder : baseRecord.getParents()) {
+      if (recToFolder.getFolder().getId().equals(workspaceParentId)) {
+        return recToFolder.getFolder();
       }
     }
-    /* workspace parent may be incorrect or null. In that case, return the actual parent */
+    /* workspace parent may be incorrect i.e. for search results. in that case
+     * return the parent which would appear in getInfo, or after opening the document */
     RSPath pathToRoot = baseRecord.getShortestPathToParent(usersRootFolder);
     return pathToRoot
         .getImmediateParentOf(baseRecord)
         .orElseThrow(
-            () -> new IllegalStateException("Attempted to get parent folder of root folder"));
+            () -> new IllegalAddChildOperation("Attempted to get parent folder of root folder"));
   }
 }

@@ -47,6 +47,7 @@ import com.researchspace.service.RecordManager;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.WorkspaceService;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
 import com.researchspace.service.impl.RecordManagerImpl;
@@ -96,6 +97,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   @Mock FormManager formMgr;
   @Mock private RSForm mockOntologyForm;
   @Mock private UserContentUpdater userContentUpdaterMock;
+  @Mock WorkspaceService workspaceService;
   @Autowired private PaginationSettingsPreferences paginationSettingsPreferences;
   private static final String WORKSPACE_AJAX_VIEWNAME = WorkspaceController.WORKSPACE_AJAX;
 
@@ -138,6 +140,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     model = tss;
     workspaceController.setFormManager(formMgr);
     workspaceController.setGroupManager(grpMgr);
+    workspaceController.setWorkspaceService(workspaceService);
     workspaceController.setFolderManager(new FolderManagerStub());
     recordManagerStub = new RecordManagerStub();
     session = new MockHttpSession();
@@ -430,25 +433,13 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
       setUpCommonMocks();
       WorkspaceSettings settings = new WorkspaceSettings();
       settings.setParentFolderId(2L);
+      when(workspaceService.moveRecordsCountSuccess(any(), any(), any(), any())).thenReturn(1);
       ModelAndView mav = basicMove(new Long[] {1L}, "/", settings);
       assertTrue(model.containsAttribute("recordId"));
       assertEquals(WORKSPACE_AJAX_VIEWNAME, mav.getViewName());
       assertTrue((Boolean) model.getAttribute("publish_allowed"));
     } finally {
       workspaceController.setRecordManager(new RecordManagerImpl());
-    }
-  }
-
-  @SuppressWarnings("unused")
-  @Test(expected = Exception.class)
-  public void testMoveChildThrowsISExceptionForEmptyList() throws Exception {
-    try {
-      workspaceController.setRecordManager(recordManagerStub);
-      WorkspaceSettings settings = new WorkspaceSettings();
-      settings.setParentFolderId(2L);
-      ModelAndView mav = basicMove(new Long[] {}, "/", settings);
-    } finally {
-      workspaceController.setRecordManager(recordManager);
     }
   }
 

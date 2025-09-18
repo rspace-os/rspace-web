@@ -656,6 +656,31 @@ paths:
       responses:
         '204':
           description: No content
+  '/documents/move':
+    post:
+      summary: Move a document to a folder
+      description: >-
+
+        Moves a single document (or record) to a target folder in the Workspace.
+
+        The target is specified as a numeric folder id.
+
+        The user must have permissions to move the record e.g. it is in their own workspace, or they are the PI of a 
+        shared group and are moving the record within that group shared folder hierarchy.
+      tags:
+        - Documents
+      parameters:
+        - in: body
+          name: moveRequest
+          description: Request specifying which record to move and the target folder.
+          required: true
+          schema:
+            $ref: '#/definitions/MoveRequest'
+      responses:
+        '204':
+          description: No content. The document was moved.
+        '500':
+          description: Catch-all for various errors due to legacy error-handling within underlying code. Error message may provide more detail.
   /forms:
     get:
       summary: 'List Forms, with optional search'
@@ -4417,6 +4442,25 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/StoichiometryMoleculeUpdateDTO'
+
+  MoveRequest:
+    description: Request to move a single record to a target folder
+    required:
+      - docId
+      - targetFolderId
+    properties:
+      docId:
+        type: integer
+        format: int64
+        description: ID of the record to move
+      sourceFolderId:
+        type: integer
+        format: int64
+        description: Optional source folder id to disambiguate the move when the record has multiple parents
+      targetFolderId:
+        type: integer
+        format: int64
+        description: Target folder id
 responses:
   UnprocessableQuery:
     description: Query could not be processed.

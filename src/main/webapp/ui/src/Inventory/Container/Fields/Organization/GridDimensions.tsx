@@ -121,7 +121,7 @@ function GridDimensions(): React.ReactNode {
   };
 
   const handleChooseCommonSize = (
-    event: SelectChangeEvent<CommonSizeIndex>
+    event: SelectChangeEvent<CommonSizeIndex>,
   ) => {
     const value = event.target.value;
     const size = commonSizes[value];
@@ -141,7 +141,7 @@ function GridDimensions(): React.ReactNode {
 
   const editable = activeResult.isFieldEditable("organization");
   return (
-    <InputWrapper label="Grid Dimensions">
+    <InputWrapper label="Grid Dimensions" flexWrap="nowrap">
       <Box mt={1} mb={0.5}>
         <Typography variant="body2">Choose a common size</Typography>
       </Box>
@@ -156,8 +156,8 @@ function GridDimensions(): React.ReactNode {
                     {size.name}
                   </MenuItem>
                 ),
-                commonSizes
-              )
+                commonSizes,
+              ),
             )}
           </Select>
         </FormControl>

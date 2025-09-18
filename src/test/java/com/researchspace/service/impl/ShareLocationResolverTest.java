@@ -52,6 +52,8 @@ public class ShareLocationResolverTest {
   @Test
   public void groupShareTest() {
     RecordGroupSharing share = makeShare(true);
+    when(folderDao.getSharedFolderForGroup(recipientGroup))
+        .thenReturn(share.getShared().getParent());
     BaseRecord sharedLocation = resolver.resolveLocation(share, doc);
     assertEquals(recipientGroup.getDisplayName() + "_Shared", sharedLocation.getName());
   }
@@ -107,6 +109,75 @@ public class ShareLocationResolverTest {
     assertEquals(notebook.getName(), sharedLocation.getName());
   }
 
+  @Test
+  public void userToUserShareToSubFolderTest() {
+    Folder sharedFolderRoot =
+        newFolder(8000L, sharer.getUsername() + "-" + recipientUser.getUniqueName(), false, true);
+    sharedFolderRoot.setType("SHARED_FOLDER");
+
+    Folder sharedSubFolder = newFolder(8001L, "u2u_shared_sub_folder", false, true);
+    sharedSubFolder.setType("SHARED_FOLDER");
+    sharedFolderRoot.addChild(sharedSubFolder, sharer);
+
+    RecordGroupSharing share = new RecordGroupSharing();
+    share.setSharedBy(sharer);
+    share.setSharee(recipientUser);
+
+    Set<RecordToFolder> parents = new HashSet<>();
+    parents.add(makeRecordToFolder(doc, sharedSubFolder));
+    doc.setParents(parents);
+    doc.setId(7002L);
+    share.setShared(doc);
+
+    BaseRecord sharedLocation = resolver.resolveLocation(share, doc);
+
+    assertEquals(sharedSubFolder.getName(), sharedLocation.getName());
+  }
+
+  @Test
+  public void docWithinMultipleNotebooksTest() {
+    // Document belongs to two notebooks (e.g. one in the users workspace and one in a shared
+    // location)
+    Notebook nb1 = new Notebook();
+    nb1.setId(9001L);
+    nb1.setName("Notebook A");
+    nb1.setSharedStatus(BaseRecord.SharedStatus.SHARED);
+    nb1.setType("NOTEBOOK");
+
+    Notebook nb2 = new Notebook();
+    nb2.setId(9002L);
+    nb2.setName("Notebook B");
+    nb2.setSharedStatus(BaseRecord.SharedStatus.SHARED);
+    nb2.setType("NOTEBOOK");
+
+    nb1.addChild(doc, sharer);
+    nb2.addChild(doc, sharer);
+
+    Set<RecordToFolder> parents = new HashSet<>();
+    parents.add(makeRecordToFolder(doc, nb1));
+    parents.add(makeRecordToFolder(doc, nb2));
+    doc.setParents(parents);
+    doc.setId(7003L);
+
+    RecordGroupSharing nb1Share = new RecordGroupSharing();
+    nb1Share.setSharedBy(sharer);
+    nb1Share.setSharee(recipientGroup);
+    nb1Share.setShared(nb1);
+
+    RecordGroupSharing nb2Share = new RecordGroupSharing();
+    nb2Share.setSharedBy(sharer);
+    nb2Share.setSharee(recipientGroup);
+    nb2Share.setShared(nb2);
+
+    BaseRecord sharedLocation1 = resolver.resolveLocation(nb1Share, doc);
+    assertEquals(nb1.getName(), sharedLocation1.getName());
+    assertEquals(nb1.getId(), sharedLocation1.getId());
+
+    BaseRecord sharedLocation2 = resolver.resolveLocation(nb2Share, doc);
+    assertEquals(nb2.getName(), sharedLocation2.getName());
+    assertEquals(nb2.getId(), sharedLocation2.getId());
+  }
+
   private RecordGroupSharing makeShare(boolean recipientIsGroup) {
     RecordGroupSharing rgs = new RecordGroupSharing();
     rgs.setSharedBy(sharer);
@@ -119,7 +190,7 @@ public class ShareLocationResolverTest {
             ? recipientGroup.getDisplayName() + "_Shared"
             : sharer.getUsername() + "-" + recipientUser.getUniqueName();
     Folder sharedFolderRoot = newFolder(6000L, name, false, true);
-    sharedFolderRoot.setType("SHARED_FOLDER");
+    sharedFolderRoot.setType("SHARED_GROUP_FOLDER_ROOT");
     parents.add(makeRecordToFolder(doc, sharedFolderRoot));
 
     doc.setParents(parents);

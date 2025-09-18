@@ -312,6 +312,25 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
     assertEquals(
         DocumentShares.PermissionType.EDIT, updated.getDirectShares().get(0).getPermission());
+
+    // change permission back to READ
+    update.setPermission("READ");
+    mockMvc
+        .perform(createBuilderForPutWithJSONBody(apiKey, "/share/", user, update))
+        .andExpect(status().isNoContent())
+        .andReturn();
+
+    MvcResult update2Result =
+        mockMvc
+            .perform(get("/api/v1/share/document/" + toShare.getId()).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    DocumentShares updated2 =
+        new ObjectMapper()
+            .readValue(update2Result.getResponse().getContentAsString(), new TypeReference<>() {});
+    assertEquals(
+        DocumentShares.PermissionType.READ, updated2.getDirectShares().get(0).getPermission());
   }
 
   @Test
@@ -327,6 +346,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     User userToShareWith = secondGroup.getUserByPrefix("u1");
 
     StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "test document");
+    toShare.setOwner(sharer);
     String apiKey = createNewApiKeyForUser(sharer);
 
     // Share doc with the group
@@ -397,5 +417,54 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(userToShareWith.getDisplayName(), userShare.getRecipientName());
     assertEquals(
         sharer.getUsername() + "-" + userToShareWith.getUsername(), userShare.getLocationName());
+  }
+
+  @Test
+  public void getAllSharesForDoc_NotOwner_Returns404() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User owner = group.getPi();
+    logoutAndLoginAs(owner);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "test");
+    String ownerKey = createNewApiKeyForUser(owner);
+
+    // Owner shares the doc so that shares exist
+    SharePost sharePost = createValidSharePostWithGroup(group, doc, "READ");
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(ownerKey, "/share", owner, sharePost))
+        .andExpect(status().isCreated());
+
+    // Non-owner attempts to fetch shares
+    User other = createInitAndLoginAnyUser();
+    String otherKey = createNewApiKeyForUser(other);
+
+    mockMvc
+        .perform(get("/api/v1/share/document/" + doc.getId()).header("apiKey", otherKey))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  public void deleteShare_NotSharer_Returns404() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User sharer = group.getPi();
+    logoutAndLoginAs(sharer);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(sharer, "test");
+    String sharerKey = createNewApiKeyForUser(sharer);
+
+    SharePost sharePost = createValidSharePostWithGroup(group, doc, "READ");
+    MvcResult createResult =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(sharerKey, "/share", sharer, sharePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSharingResult created = getFromJsonResponseBody(createResult, ApiSharingResult.class);
+    Long shareId = created.getShareInfos().get(0).getId();
+
+    // Different user attempts to delete
+    User other = createInitAndLoginAnyUser();
+    String otherKey = createNewApiKeyForUser(other);
+
+    mockMvc
+        .perform(createBuilderForDelete(otherKey, "/share/{id}", other, shareId))
+        .andExpect(status().isNotFound());
   }
 }
