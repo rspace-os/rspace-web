@@ -16,11 +16,13 @@ import com.researchspace.model.record.RSPath;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;
+import com.researchspace.service.exceptions.NotebookInvalidLocationException;
 import java.util.List;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 
 public interface FolderManager {
+
   /**
    * Calls to any method which could create an API_INBOX, should be inside a synchronized block
    * which locks on this object.
@@ -30,16 +32,17 @@ public interface FolderManager {
   /**
    * @param folderid
    * @param user
-   * @param depth whether folders should be loaded recursively or not to initialise all subfolder
-   *     trees for use outside session. ZERO = this folder, 1 = load children; infinite = recurse
+   * @param depth    whether folders should be loaded recursively or not to initialise all subfolder
+   *                 trees for use outside session. ZERO = this folder, 1 = load children; infinite
+   *                 = recurse
    * @return
    */
   Folder getFolder(Long folderid, User user, SearchDepth depth);
 
   /**
-   * Equivalent to getFolder(folderID, user, false). <br>
-   * Throws ObjectRetrievalFailureException Runtime Exception is thrown if nothing is found, or
-   * AuthorizationException if user can't read the folder.
+   * Equivalent to getFolder(folderID, user, false). <br> Throws ObjectRetrievalFailureException
+   * Runtime Exception is thrown if nothing is found, or AuthorizationException if user can't read
+   * the folder.
    *
    * @param folderid
    * @param user
@@ -81,17 +84,16 @@ public interface FolderManager {
   /**
    * Actually removes a BaseRecord from the collection of records in this folder.
    *
-   * @param toDelete A BaseRecord
+   * @param toDelete       A BaseRecord
    * @param parentfolderid The id of the parent folder from which toDelete will be removed.
    * @return The parent folder
    */
   Folder removeBaseRecordFromFolder(BaseRecord toDelete, Long parentfolderid);
 
   /**
-   * @param toDelete A BaseRecord
+   * @param toDelete       A BaseRecord
    * @param parentfolderid The id of the parent folder from which toDelete will be removed.
-   * @param aclPolicy an {@link ACLPropagationPolicy} to set ACL behaviour during deletion
-   * @see removeBaseRecordFromFolder (BaseRecord toDelete, Long parentfolderid)
+   * @param aclPolicy      an {@link ACLPropagationPolicy} to set ACL behaviour during deletion
    */
   Folder removeBaseRecordFromFolder(
       BaseRecord toDelete, Long parentfolderid, ACLPropagationPolicy aclPolicy);
@@ -99,7 +101,7 @@ public interface FolderManager {
   /**
    * Creates and persists a new empty Folder
    *
-   * @param parentId The Id of the parent container record
+   * @param parentId   The Id of the parent container record
    * @param user
    * @param folderName A non-emptyFolder Name
    * @return The newly created Folder, or <code>null</code> if creation was not permitted.
@@ -120,9 +122,9 @@ public interface FolderManager {
   /**
    * Creates and persists a new empty notebook
    *
-   * @param parentId The Id of the parent container record
+   * @param parentId     The Id of the parent container record
    * @param notebookName A non-empty Name
-   * @param context a RecordContext
+   * @param context      a RecordContext
    * @param u
    * @return The newly created Notebook.
    */
@@ -150,13 +152,13 @@ public interface FolderManager {
    *
    * @param toCopyFolderid
    * @param user
-   * @param newName A new name, not empty
+   * @param newName        A new name, not empty
    * @return
    */
-  RecordCopyResult copy(Long toCopyFolderid, User u, String newName);
+  RecordCopyResult copy(Long toCopyFolderid, User user, String newName);
 
   /**
-   * @param toMoveId the Id of the folder to be moved.
+   * @param toMoveId       the Id of the folder to be moved.
    * @param targetFolderId The target destination folder Id.
    * @param sourceFolderId The original parent to be removed
    * @param user
@@ -175,8 +177,8 @@ public interface FolderManager {
    * relationships are maintained.
    *
    * @param folderId The id of the parent folder
-   * @param child The {@link BaseRecord} to add as a child. This can be a transient object.
-   * @param owner The owner of the relationship between the
+   * @param child    The {@link BaseRecord} to add as a child. This can be a transient object.
+   * @param owner    The owner of the relationship between the
    * @return The parent folder
    * @throws IllegalAddChildOperation
    */
@@ -193,9 +195,9 @@ public interface FolderManager {
   /**
    * A variant of addChild where client can optionally suppress any IllegalAddChild exception. The
    * use case for invoking this is where adding a child is part of a complex transaction. If the
-   * exception is thrown out of a transactional method, the whole transaction rolls back.<br>
-   * This might be what we want, but not always, e.g. when adding a new group member we want them to
-   * be able to see the Shared Lab folder even if their home folder can't be added to PI's Shared
+   * exception is thrown out of a transactional method, the whole transaction rolls back.<br> This
+   * might be what we want, but not always, e.g. when adding a new group member we want them to be
+   * able to see the Shared Lab folder even if their home folder can't be added to PI's Shared
    * folder to avoid cycles, and throws this exception
    *
    * <p>See RSPAC-1949 for details
@@ -206,9 +208,9 @@ public interface FolderManager {
    * @param aclPolicy
    * @param suppressIllegalAddChild Boolean, if true, this method won't throw an IACO exception
    * @return ServiceOperationResult<Folder>. If IllegalAddChildOperationException is thrown and
-   *     suppressed, then isSucceeded == false.
+   * suppressed, then isSucceeded == false.
    * @throws IllegalAddChildOperation if suppressIllegalAddChild == false and adding a child would
-   *     result in a cycle.
+   *                                  result in a cycle.
    */
   ServiceOperationResult<Folder> addChild(
       Long folderId,
@@ -222,37 +224,52 @@ public interface FolderManager {
   RSPath getShortestPathToSharedRootFolder(Long sharedSubfolderId, User user);
 
   /**
-   * Given the ID of a group-shared folder(i.e., a folder where
+   * This method finds out what is the root GroupSharedFolder or (IndividualShredFolder) having the
+   * ID of a sub-folder ({@code parentSharedFolderId}) located under the root shared folder sub
+   * hierarchy.
+   * <p>
+   * If the {@code parentSharedFolderId} is a shared Notebook, the method needs to know also the
+   * {@code grandParentFolderId} in order to locate the specific group/individual root folder,
+   * otherwise it raises a NotebookInvalidLocationException
    *
-   * <p><code>hasType(RecordType.SHARED_FOLDER) == true </code>, it will retrieve the root
-   * group-shared folder ( or root indivudual shared item folder). <br>
-   * If the folder identified by the argument srcRecordId is not a sub folder of the group folder,
-   * this method return <code>null</code>.
-   *
-   * @param parentId of the folder where the record is located
-   * @param grandParentId
-   * @param user The authenticated user
-   * @return The shared group folder, or <code>Optional.empty</code> if this couldn't be found.
+   * @param parentSharedFolderOrNotebookId is the ID of the folder/notebook where the record is
+   *                                       located
+   * @param grandParentFolderId            is the ID of the parent folder where the main folder
+   *                                       {@code parentSharedFolderId} is located. This parameter
+   *                                       is mandatory when
+   *                                       {@code parentSharedFolderOrNotebookId) is a shared
+   *                                       Notebook
+   * @param user                           The authenticated user
+   * @return The ROOT shared group folder, or <code>Optional.empty</code> if this couldn't be found.
+   * @throws NotebookInvalidLocationException if the {@code grandParentFolderId} id is not passed
+   *                                          when the {@code parentSharedFolderOrNotebookId} is a
+   *                                          Notebook
    */
   Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long parentId, Long grandParentId, User user);
+      Long parentSharedFolderOrNotebookId, Long grandParentFolderId, User user);
 
   /**
    * Ease of use method returns the root record always
    *
    * @param subject autheniticated subject
-   * @param user The user whose root folder is to be accessed.
+   * @param user    The user whose root folder is to be accessed.
    * @return The user's root folder.
    */
   Folder getRootRecordForUser(User subject, User user);
 
-  /** Gets the user's 'home' folder that is at the root of his folder tree. */
+  /**
+   * Gets the user's 'home' folder that is at the root of his folder tree.
+   */
   Folder getRootFolderForUser(User user);
 
-  /** Get's the user's lab groups folder that is in their shared folder. */
+  /**
+   * Get's the user's lab groups folder that is in their shared folder.
+   */
   Folder getLabGroupsFolderForUser(User user);
 
-  /** Get folder ID of the Users' Lab group folder */
+  /**
+   * Get folder ID of the Users' Lab group folder
+   */
   Long getLabGroupFolderIdForUser(User user);
 
   /**
@@ -265,10 +282,10 @@ public interface FolderManager {
 
   /**
    * Used by file tree - returns a record based on a path of names. The ROOT Record is "/" and a
-   * path to its children would be "/child/child/targetRecord". <br>
-   * This method should initialize children collection, filtered by a the collection filter
+   * path to its children would be "/child/child/targetRecord". <br> This method should initialize
+   * children collection, filtered by a the collection filter
    *
-   * @param id
+   * @param path
    * @param user
    * @param filter
    * @return
@@ -300,25 +317,26 @@ public interface FolderManager {
    *       content will be returned. This folder will be created if it does not exist.
    * </ul>
    *
-   * @param contentType The GalleryContent type as returned by {@link
-   *     MediaUtils#extractFileType(String fileSuffix)} or an empty string if the target folder is
-   *     in the Workspace, not the Gallery.
-   * @param subject The current user
-   * @param folderId Optional, can be <code>null</code>. If set, must be a folder Id that is
-   *     consistent with the content type being added
+   * @param contentType    The GalleryContent type as returned by
+   *                       {@link MediaUtils#extractFileType(String fileSuffix)} or an empty string
+   *                       if the target folder is in the Workspace, not the Gallery.
+   * @param subject        The current user
+   * @param targetFolderId Optional, can be <code>null</code>. If set, must be a folder Id that is
+   *                       consistent with the content type being added
    * @return A {@link Folder}
-   * @throws AuthorizationException if a target folder is specified but user does not have
-   *     permission to create content
+   * @throws AuthorizationException   if a target folder is specified but user does not have
+   *                                  permission to create content
    * @throws IllegalArgumentException if the target folder is not in correct locations for the type
-   *     of content being uploaded. E.g if content type is an image then the target folder, if
-   *     specified, must be the Gallery Images folder or a subfolder of the Gallery Images folder.
-   *     Folders cannot be in the Shared folder hierarchy either.
+   *                                  of content being uploaded. E.g if content type is an image
+   *                                  then the target folder, if specified, must be the Gallery
+   *                                  Images folder or a subfolder of the Gallery Images folder.
+   *                                  Folders cannot be in the Shared folder hierarchy either.
    */
   Folder getApiUploadTargetFolder(String contentType, User subject, Long targetFolderId);
 
   /**
-   * Locates a folder in which imports from external sources can be paced by default.<br>
-   * Creates the folder in the user's home folder if necessary.
+   * Locates a folder in which imports from external sources can be paced by default.<br> Creates
+   * the folder in the user's home folder if necessary.
    *
    * @param subject
    * @return
@@ -360,9 +378,9 @@ public interface FolderManager {
   /**
    * Facade method to create subfolder of a Gallery folder.
    *
-   * @param name The name for the new folder
+   * @param name            The name for the new folder
    * @param mediaFolderName The Gallery type (one of the MediaUtils#GALLERY_MEDIA_FOLDERS strings)
-   * @param user The subject
+   * @param user            The subject
    * @return The created subfolder
    * @throws IllegalArgumentException if invalid <code>mediaFolderName</code>
    */

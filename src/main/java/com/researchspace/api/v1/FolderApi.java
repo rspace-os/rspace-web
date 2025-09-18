@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @RequestMapping("/api/v1/folders")
@@ -32,11 +31,7 @@ public interface FolderApi {
    */
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  ApiFolder createNewFolder(
-      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
-      @RequestBody @Valid ApiFolder folder,
-      BindingResult errors,
-      User user)
+  ApiFolder createNewFolder(@RequestBody @Valid ApiFolder folder, BindingResult errors, User user)
       throws BindException;
 
   /**

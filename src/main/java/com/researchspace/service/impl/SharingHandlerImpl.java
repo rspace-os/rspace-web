@@ -105,8 +105,7 @@ public class SharingHandlerImpl implements SharingHandler {
             this.shareIntoSharedNotebook(
                 user, (Notebook) sharedFolderOrNotebook, recordId, recordGrandParentId);
       } else {
-        sharingResult =
-            this.shareIntoSharedFolder(user, sharedFolderOrNotebook, recordId, recordGrandParentId);
+        sharingResult = this.shareIntoSharedFolder(user, sharedFolderOrNotebook, recordId);
       }
       return sharingResult.getResults();
     }
@@ -114,10 +113,8 @@ public class SharingHandlerImpl implements SharingHandler {
   }
 
   private ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
-      shareIntoSharedFolder(
-          User user, Folder sharedFolder, Long recordId, Long recordGrandParentId) {
-    Group sharedGroup =
-        groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedFolder, recordGrandParentId);
+      shareIntoSharedFolder(User user, Folder sharedFolder, Long recordId) {
+    Group sharedGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedFolder, null);
     ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "write");
     shareConfigElement.setGroupFolderId(sharedFolder.getId());
     ShareConfigCommand shareConfig =

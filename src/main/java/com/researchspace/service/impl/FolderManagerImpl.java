@@ -176,7 +176,8 @@ public class FolderManagerImpl implements FolderManager {
     if (src.isNotebook() && src.isShared()) {
       if (grandParentId == null) {
         throw new IllegalStateException(
-            "The \"grandParentFolderId\" MUST be set when creating a document into a shared notebook");
+            "The \"grandParentFolderId\" MUST be set when creating a document into a shared"
+                + " notebook");
       }
       src = folderDao.get(grandParentId);
     }

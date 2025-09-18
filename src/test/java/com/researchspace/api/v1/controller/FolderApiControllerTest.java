@@ -140,7 +140,7 @@ public class FolderApiControllerTest {
     mockBaseUrl();
     ApiFolder created =
         controller.createNewFolder(
-            null, toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
+            toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
     assertEquals(root.getId(), created.getParentFolderId());
     assertTargetFolderNotCalled();
   }
@@ -161,7 +161,7 @@ public class FolderApiControllerTest {
     mockBaseUrl();
     ApiFolder created =
         controller.createNewFolder(
-            null, toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
+            toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
     assertTrue(created.isNotebook());
     assertEquals(existingFolder.getId(), created.getParentFolderId());
     assertGetRootFolderNotCalled();
@@ -185,7 +185,7 @@ public class FolderApiControllerTest {
 
     ApiFolder created =
         controller.createNewFolder(
-            null, toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
+            toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
     assertTrue(created.isNotebook());
     assertEquals(root.getId(), created.getParentFolderId());
     verify(recordShareHandler)
@@ -198,8 +198,7 @@ public class FolderApiControllerTest {
     ApiFolder toCreate = createApiNotebookToPost();
     toCreate.setParentFolderId(existingNotebook.getId()); // this should not be allowed
     when(folderMgr.getFolder(existingNotebook.getId(), subject)).thenReturn(existingNotebook);
-    controller.createNewFolder(
-        null, toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
+    controller.createNewFolder(toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
   }
 
   @Test(expected = BindException.class)
@@ -208,8 +207,7 @@ public class FolderApiControllerTest {
     toCreate.setParentFolderId(topLevelGalleryFolder.getId()); // this should not be allowed
     when(folderMgr.getFolder(topLevelGalleryFolder.getId(), subject))
         .thenReturn(topLevelGalleryFolder);
-    controller.createNewFolder(
-        null, toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
+    controller.createNewFolder(toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
   }
 
   @Test(expected = BindException.class)
@@ -217,8 +215,7 @@ public class FolderApiControllerTest {
     ApiFolder toCreate = createApiFolderToPost();
     toCreate.setParentFolderId(existingNotebook.getId()); // this should not be allowed
     when(folderMgr.getFolder(existingNotebook.getId(), subject)).thenReturn(existingNotebook);
-    controller.createNewFolder(
-        null, toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
+    controller.createNewFolder(toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
   }
 
   @Test(expected = BindException.class)
@@ -228,7 +225,7 @@ public class FolderApiControllerTest {
     toCreate.setName(RandomStringUtils.randomAlphabetic(300));
     BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
     errors.reject("some.value");
-    controller.createNewFolder(null, toCreate, errors, subject);
+    controller.createNewFolder(toCreate, errors, subject);
     verify(folderMgr, never()).createNewFolder(Mockito.anyLong(), Mockito.anyString(), eq(subject));
   }
 
@@ -243,7 +240,7 @@ public class FolderApiControllerTest {
     mockBaseUrl();
     ApiFolder created =
         controller.createNewFolder(
-            null, toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
+            toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
     assertFalse(created.isNotebook());
 
     assertEquals(existingFolder.getId(), created.getParentFolderId());
