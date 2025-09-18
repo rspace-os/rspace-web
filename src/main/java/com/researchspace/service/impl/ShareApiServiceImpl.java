@@ -25,6 +25,7 @@ import com.researchspace.model.dtos.SharedRecordSearchCriteria;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RecordInfoSharingInfo;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.DetailedRecordInformationProvider;
@@ -176,12 +177,14 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
               + " items to be shared. Only Notebooks and Documents can be shared.");
     }
 
-    if(result.getExceptionCount() > 0 && result.getResultCount() == 0) {
+    if (result.getExceptionCount() > 0 && result.getResultCount() == 0) {
       String exceptionMessages =
-          result.getExceptions().stream()
-                          .map(Throwable::getMessage)
-                          .collect(Collectors.joining());
-     throw new IllegalArgumentException("Problem sharing: " + exceptionMessages);
+          result.getExceptions().stream().map(Throwable::getMessage).collect(Collectors.joining());
+      if (result.getExceptions().stream().anyMatch(e -> e instanceof IllegalAddChildOperation)) {
+        throw new IllegalArgumentException("Problem sharing: " + exceptionMessages);
+      } else {
+        throw new RuntimeException("Problem sharing: " + exceptionMessages);
+      }
     }
   }
 

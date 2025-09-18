@@ -630,7 +630,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     if (targetFolder.isNotebook()) {
       assertUserHasWritePermission(subject, targetFolder);
       if (targetFolder.getOwner().equals(docOrNotebook.getOwner())) {
-        throw new IllegalAddChildOperation("can't share document with id " + docOrNotebook.getId() + " into own notebook");
+        throw new IllegalAddChildOperation(
+            "can't share document with id " + docOrNotebook.getId() + " into own notebook");
       }
     }
     return targetFolder;
