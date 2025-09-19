@@ -16,7 +16,7 @@ const MyBenchIcon = withStyles<MyBenchIconArgs, { svg: string; path: string }>(
     path: {
       fill: "#e3e3e3", // appear transparent
     },
-  })
+  }),
 )(({ classes }) => (
   <svg
     version="1.1"
@@ -24,8 +24,8 @@ const MyBenchIcon = withStyles<MyBenchIconArgs, { svg: string; path: string }>(
     xmlns="http://www.w3.org/2000/svg"
     x="0px"
     y="0px"
-    width="24px"
-    height="24px"
+    width="16px"
+    height="16px"
     viewBox="0 0 100 100"
     className={classes.svg}
   >

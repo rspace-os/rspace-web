@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import TextField from "../../../../components/Inputs/TextField";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
-import FormField from "../../../../components/Inputs/FormField";
+import FormField from "../../../components/Inputs/FormField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import ValidatingSubmitButton, {

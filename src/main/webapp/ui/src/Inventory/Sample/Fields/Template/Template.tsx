@@ -98,6 +98,7 @@ function Template(): React.ReactNode {
       <InputWrapper
         label="Sample Template"
         dataTestId="ChooseTemplate"
+        disabled
         explanation={
           activeResult.isFieldEditable("template") ? (
             <>

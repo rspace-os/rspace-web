@@ -23,6 +23,8 @@ import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNa
 library.add(faVial);
 import PrintedMaterialsListing from "./PrintedMaterialsListing";
 import { createRoot } from "react-dom/client";
+import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
+import createAccentedTheme from "../../accentedTheme";
 
 const FAB_SIZE = 48;
 
@@ -75,7 +77,7 @@ const useStyles = makeStyles<{ fabRightPadding: number }>()(
     fab: {
       zIndex: "initial",
     },
-  })
+  }),
 );
 
 const CustomBadge = withStyles<
@@ -196,11 +198,13 @@ const MaterialsLauncher = observer(
             </>
           )}
 
-          <MaterialsDialog open={showDialog} setOpen={setShowDialog} />
+          <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
+            <MaterialsDialog open={showDialog} setOpen={setShowDialog} />
+          </ThemeProvider>
         </div>
       </>
     );
-  }
+  },
 );
 
 type MaterialsListingArgs = {
@@ -254,7 +258,7 @@ const MaterialsListing = observer(
         </ThemeProvider>
       </StyledEngineProvider>
     ) : null;
-  }
+  },
 );
 
 type NewMaterialsListingArgs = {
@@ -291,14 +295,16 @@ const NewMaterialsListing = observer(
                 >
                   New List of Materials
                 </button>
-                <MaterialsDialog open={showDialog} setOpen={setShowDialog} />
+                <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
+                  <MaterialsDialog open={showDialog} setOpen={setShowDialog} />
+                </ThemeProvider>
               </div>
             </AlwaysNewWindowNavigationContext>
           </ThemeProvider>
         </StyledEngineProvider>
       </NewLoMButtonWrapper>
     );
-  }
+  },
 );
 
 function initListOfMaterials({
@@ -330,22 +336,22 @@ function initListOfMaterials({
           elnFieldId={wrapperDiv.dataset.fieldId}
           canEdit={canEdit}
           fabRightPadding={fabRightPadding}
-        />
+        />,
       );
       // @ts-expect-error style does exist on HTMLDivElement
       if (makeWrapperRelative) wrapperDiv.style.position = "relative";
 
       const newButtonWrapper = document.querySelector(
         // @ts-expect-error dataset does exist on HTMLDivElement
-        `.invMaterialsListing_new[data-field-id="${wrapperDiv.dataset.fieldId}"][data-document-id="${wrapperDiv.dataset.documentId}"]`
+        `.invMaterialsListing_new[data-field-id="${wrapperDiv.dataset.fieldId}"][data-document-id="${wrapperDiv.dataset.documentId}"]`,
       );
       if (newButtonWrapper) {
         createRoot(newButtonWrapper).render(
           // @ts-expect-error dataset does exist on HTMLDivElement
-          <NewMaterialsListing elnFieldId={wrapperDiv.dataset.fieldId} />
+          <NewMaterialsListing elnFieldId={wrapperDiv.dataset.fieldId} />,
         );
       }
-    }
+    },
   );
 }
 

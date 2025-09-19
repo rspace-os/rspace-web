@@ -17,7 +17,7 @@ const useStyles = makeStyles<{ disabled: boolean }>()(
       borderRadius: theme.spacing(1),
       color: disabled ? "inherit" : theme.palette.standardIcon.main,
     },
-  })
+  }),
 );
 
 const SortAZIcon = ({ className }: { className?: string }) => (
@@ -56,7 +56,7 @@ function SortControls(): React.ReactNode {
       search.fetcher.isCurrentSort(key)
         ? search.fetcher.invertSortOrder()
         : search.fetcher.defaultSortOrder(key),
-      key
+      key,
     );
     if (adjustColumn) search.setAdjustableColumn(label, 0);
     handleClose();

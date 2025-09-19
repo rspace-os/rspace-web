@@ -9,7 +9,7 @@ type HelpIconProps = {
   link: URL;
   title: string;
   size?: "small" | "medium" | "large";
-  color?: React.ComponentProps<typeof IconButton>["color"];
+  color?: React.ComponentProps<typeof IconButton>["color"] | "white";
 };
 
 type AnchorLinkProps = {
@@ -20,12 +20,15 @@ type AnchorLinkProps = {
 };
 
 const IconLink = withStyles<
-  React.ComponentProps<typeof IconButton> & AnchorLinkProps,
+  Omit<React.ComponentProps<typeof IconButton>, "color"> &
+    AnchorLinkProps & {
+      color: React.ComponentProps<typeof IconButton>["color"] | "white";
+    },
   { root: string }
 >((theme, { color }) => ({
   root: {
     color: `${
-      color === "primary" ? theme.palette.primary.main : color
+      color === "primary" ? theme.palette.primary.dark : color
     } !important`,
     cursor: "pointer",
     transition: "all .15s ease",
@@ -33,14 +36,17 @@ const IconLink = withStyles<
       filter: "brightness(0.9)",
       // have to re-state to prevent ELN's a:hover red style from taking effect
       color: `${
-        color === "primary" ? theme.palette.primary.main : color
+        color === "primary" ? theme.palette.primary.dark : color
       } !important`,
     },
     transform: "translateY(-2px)",
+    "& .MuiSvgIcon-root": {
+      color: `${
+        color === "primary" ? theme.palette.primary.dark : color
+      } !important`,
+    },
   },
-}))((props) => {
-  const rest: React.ComponentProps<typeof IconButton> = { ...props };
-  delete rest.color;
+}))(({ color: _color, ...rest }) => {
   return <IconButton {...rest} />;
 });
 

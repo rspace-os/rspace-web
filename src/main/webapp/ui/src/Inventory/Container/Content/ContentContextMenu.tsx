@@ -24,7 +24,7 @@ function ContentContextMenu(): React.ReactNode {
   const selectedResults = search.selectedResults;
 
   const selectedSubsampleLocations = selectedLocations.filter(
-    (l) => l.content?.recordType === "subSample"
+    (l) => l.content?.recordType === "subSample",
   );
 
   const onSelectOptions: Array<SplitButtonOption> = [
@@ -40,7 +40,7 @@ function ContentContextMenu(): React.ReactNode {
       text: "Siblings of selected subsample",
       selection: () => {
         selectedSubsampleLocations.map((l) =>
-          l.siblings.map((s) => s.toggleSelected(true))
+          l.siblings.map((s) => s.toggleSelected(true)),
         );
       },
     },
@@ -60,7 +60,7 @@ function ContentContextMenu(): React.ReactNode {
       text: "Mine",
       selection: () => {
         locations.map(
-          (l) => l.toggleSelected(l.content?.currentUserIsOwner === true) // if currentUserIsOwner cannot be determined then don't select
+          (l) => l.toggleSelected(l.content?.currentUserIsOwner === true), // if currentUserIsOwner cannot be determined then don't select
         );
       },
     },
@@ -68,7 +68,7 @@ function ContentContextMenu(): React.ReactNode {
       text: "Not Mine",
       selection: () => {
         locations.map(
-          (l) => l.toggleSelected(l.content?.currentUserIsOwner === false) // if currentUserIsOwner cannot be determined then don't select
+          (l) => l.toggleSelected(l.content?.currentUserIsOwner === false), // if currentUserIsOwner cannot be determined then don't select
         );
       },
     },
@@ -77,7 +77,7 @@ function ContentContextMenu(): React.ReactNode {
   const prefixActions = [
     {
       key: "open",
-      onClick: (event: React.MouseEvent<HTMLDivElement>) => {
+      onClick: (event: React.MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         void navigateToRecord(selectedResults[0]);
       },
@@ -99,7 +99,7 @@ function ContentContextMenu(): React.ReactNode {
           color="primary"
           max={Infinity}
         >
-          <SelectAllIcon />
+          <SelectAllIcon fontSize="small" />
         </Badge>
       ),
       disabledHelp: "",

@@ -63,7 +63,7 @@ function SearchParameterControls(): React.ReactNode {
 
   const [typeDropdown, setTypeDropdown] = useState<HTMLElement | null>(null);
   const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(
-    null
+    null,
   );
   const [ownerDropdown, setOwnerDropdown] = useState<HTMLElement | null>(null);
   const [benchDropdown, setBenchDropdown] = useState<HTMLElement | null>(null);
@@ -108,7 +108,6 @@ function SearchParameterControls(): React.ReactNode {
             }}
             recipient={search.fetcher.owner as any}
             outsideGroup={false}
-            label=""
           />
         </Panel>
       </DropdownButton>
@@ -125,7 +124,7 @@ function SearchParameterControls(): React.ReactNode {
               setBenchDropdown(null);
               if (
                 ["SAMPLE", "TEMPLATE"].includes(
-                  search.fetcher.resultType as string
+                  search.fetcher.resultType as string,
                 )
               ) {
                 search.setTypeFilter("ALL");
@@ -134,7 +133,6 @@ function SearchParameterControls(): React.ReactNode {
             }}
             recipient={search.fetcher.benchOwner as any}
             outsideGroup={false}
-            label=""
           />
         </Panel>
       </DropdownButton>
@@ -229,7 +227,7 @@ function SearchParameterControls(): React.ReactNode {
                * faciliating scoped navigation e.g. with the picker.
                */
               const params = search.fetcher.generateNewQuery(
-                dropProperty(savedSearch, "name")
+                dropProperty(savedSearch, "name"),
               );
               navigate(`/inventory/search?${params.toString()}`);
             }

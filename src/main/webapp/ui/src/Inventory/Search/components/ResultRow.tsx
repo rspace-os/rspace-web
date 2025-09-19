@@ -16,7 +16,8 @@ import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { UserCancelledAction } from "../../../util/error";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
-import { Radio } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import Radio from "@mui/material/Radio";
 
 type ResultRowArgs = {
   result: InventoryRecord;
@@ -27,10 +28,13 @@ const useStyles = makeStyles()((theme) => ({
   tableRow: {
     transition: theme.transitions.filterToggle,
     "&.Mui-selected": {
-      backgroundColor: "#e3f2fd",
+      backgroundColor: alpha(theme.palette.primary.background, 0.4),
     },
     "&.Mui-selected:hover": {
-      backgroundColor: "rgba(0, 0, 0, 0.04) !important",
+      backgroundColor: alpha(theme.palette.primary.background, 0.6),
+    },
+    "&:hover": {
+      backgroundColor: `${alpha(theme.palette.primary.background, 0.2)} !important`,
     },
   },
   checkbox: {

@@ -57,6 +57,7 @@ function InputWrapper({
       error={error}
       explanation={explanation}
       flexWrap={flexWrap}
+      disabled={disabled}
     >
       {children}
       {!error && showCharacterCount(value) && (
