@@ -461,7 +461,6 @@ export default createTheme({
         },
         subtitle1: {
           fontSize: "1.05rem",
-          color: "#5482b7",
           letterSpacing: "0.02em",
         },
         body1: {
