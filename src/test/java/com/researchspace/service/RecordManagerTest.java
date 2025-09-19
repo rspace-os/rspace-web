@@ -1712,7 +1712,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
         workspaceController.createNotebook(sharedFolderId, "notebook", new MockPrincipal(admin));
     flushDatabaseState();
 
-    sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedGroupFolder, notebookId);
+    sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedGroupFolder, notebookId, null);
     flushDatabaseState();
 
     final Notebook sharedNotebook = folderMgr.getNotebook(notebookId);

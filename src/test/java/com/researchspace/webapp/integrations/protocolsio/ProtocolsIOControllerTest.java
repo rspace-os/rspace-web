@@ -78,7 +78,8 @@ public class ProtocolsIOControllerTest {
             subject, importsFolder))
         .thenReturn(false);
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
-        ctrller.importExternalData(workspaceRootFolder.getId(), TransformerUtils.toList(protocol));
+        ctrller.importExternalData(
+            workspaceRootFolder.getId(), null, TransformerUtils.toList(protocol));
     assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
     assertEquals(importsFolder.getId(), rc.getData().getImportFolderId());
     verifyNoInteractions(recordShareHandler);
@@ -89,11 +90,11 @@ public class ProtocolsIOControllerTest {
     when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(subject, sharedFolder))
         .thenReturn(true);
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
-        ctrller.importExternalData(sharedFolder.getId(), TransformerUtils.toList(protocol));
+        ctrller.importExternalData(sharedFolder.getId(), null, TransformerUtils.toList(protocol));
     assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
     assertEquals(importsFolder.getId(), rc.getData().getImportFolderId());
     verify(recordShareHandler)
-        .shareIntoSharedFolderOrNotebook(subject, sharedFolder, anyDoc.getId());
+        .shareIntoSharedFolderOrNotebook(subject, sharedFolder, anyDoc.getId(), null);
   }
 
   @Test
@@ -105,7 +106,7 @@ public class ProtocolsIOControllerTest {
         .thenReturn(true);
 
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
-        ctrller.importExternalData(sharedNotebook.getId(), TransformerUtils.toList(protocol));
+        ctrller.importExternalData(sharedNotebook.getId(), null, TransformerUtils.toList(protocol));
     assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
     assertEquals(sharedNotebook.getId(), rc.getData().getImportFolderId());
     verifyNoInteractions(recordShareHandler);
@@ -120,11 +121,11 @@ public class ProtocolsIOControllerTest {
         .thenReturn(false);
 
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
-        ctrller.importExternalData(sharedNotebook.getId(), TransformerUtils.toList(protocol));
+        ctrller.importExternalData(sharedNotebook.getId(), null, TransformerUtils.toList(protocol));
     assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
     assertEquals(importsFolder.getId(), rc.getData().getImportFolderId());
     verify(recordShareHandler)
-        .shareIntoSharedFolderOrNotebook(subject, sharedNotebook, anyDoc.getId());
+        .shareIntoSharedFolderOrNotebook(subject, sharedNotebook, anyDoc.getId(), null);
   }
 
   private Protocol getAProtocol() {

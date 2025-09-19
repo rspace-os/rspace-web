@@ -76,6 +76,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class FolderManagerImpl implements FolderManager {
+
   private Logger log = LoggerFactory.getLogger(getClass());
 
   private FolderDao folderDao;
@@ -170,8 +171,17 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long srcRecordId, User user) {
-    Folder src = folderDao.get(srcRecordId);
+      Long parentId, Long grandParentFolderId, User user) {
+    Folder src = folderDao.get(parentId);
+    if (src.isNotebook() && src.isShared()) {
+      if (grandParentFolderId == null) {
+        throw new IllegalStateException(
+            "Cannot infer shared context for Notebook with ID=["
+                + parentId
+                + "], as \"grandParentFolderId\" param is not set");
+      }
+      src = folderDao.get(grandParentFolderId);
+    }
     Folder target = folderDao.getUserSharedFolder(user);
     RSPath path =
         src.getShortestPathToParent(

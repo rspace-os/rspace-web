@@ -768,9 +768,11 @@ public class GroupManagerImpl implements GroupManager {
     return group;
   }
 
-  public Group getGroupFromAnyLevelOfSharedFolder(User user, Folder sharedFolder) {
+  public Group getGroupFromAnyLevelOfSharedFolder(
+      User user, Folder sharedFolder, Long grandParentId) {
     Optional<Folder> sharedFolderRoot =
-        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(sharedFolder.getId(), user);
+        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+            sharedFolder.getId(), grandParentId, user);
     RSPath path = folderMgr.getShortestPathToSharedRootFolder(sharedFolder.getId(), user);
     if (path.isEmpty() || path.size() <= MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER) {
       String msg =

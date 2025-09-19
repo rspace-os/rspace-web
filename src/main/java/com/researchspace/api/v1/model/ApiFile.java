@@ -56,7 +56,7 @@ public class ApiFile extends IdentifiableNameableApiObject {
   @JsonProperty("version")
   private Integer version = 1;
 
-  /** This is stored as millis and serialised/deserialised to IS0-8601 in UTC time. */
+  /** This is stored as millis and serialised/deserialized to IS0-8601 in UTC time. */
   @JsonProperty("created")
   @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
   @JsonDeserialize(using = ISO8601DateTimeDeserialiser.class)
@@ -75,8 +75,6 @@ public class ApiFile extends IdentifiableNameableApiObject {
     setSize(emf.getSize());
     setVersion(Long.valueOf(emf.getVersion()).intValue());
     Optional<Folder> ownerParent = emf.getOwnerParent();
-    if (ownerParent.isPresent()) {
-      setParentFolderId(ownerParent.get().getId());
-    }
+    ownerParent.ifPresent(folder -> setParentFolderId(folder.getId()));
   }
 }

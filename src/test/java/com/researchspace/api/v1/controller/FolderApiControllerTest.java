@@ -16,6 +16,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -179,7 +180,7 @@ public class FolderApiControllerTest {
         .thenReturn(createdNotebook);
     mockBaseUrl();
     when(recordShareHandler.shareIntoSharedFolderOrNotebook(
-            eq(subject), eq(sharedFolder), eq(createdNotebook.getId())))
+            eq(subject), eq(sharedFolder), eq(createdNotebook.getId()), isNull()))
         .thenReturn(Collections.EMPTY_LIST);
 
     ApiFolder created =
@@ -189,7 +190,7 @@ public class FolderApiControllerTest {
     assertEquals(root.getId(), created.getParentFolderId());
     verify(recordShareHandler)
         .shareIntoSharedFolderOrNotebook(
-            eq(subject), eq(sharedFolder), eq(createdNotebook.getId()));
+            eq(subject), eq(sharedFolder), eq(createdNotebook.getId()), isNull());
   }
 
   @Test(expected = BindException.class)

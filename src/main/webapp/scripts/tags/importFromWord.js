@@ -133,6 +133,7 @@ function _submitWordImportForm(fileType) {
     $('#wordImportFormRecordToReplace').val(recordToReplaceId);
 
     var formData = new FormData($form[0]);
+    formData.append("grandParentId", getGrandParentFolderId());
     var jqxhr = $.ajax({
        url: '/workspace/editor/structuredDocument/ajax/createFromWord/' + targetFolderId,
        type: 'POST',
