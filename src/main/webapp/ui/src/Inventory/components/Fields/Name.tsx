@@ -5,7 +5,7 @@ import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import GlobalId from "../../../components/GlobalId";
 import Box from "@mui/material/Box";
 import { type Record } from "../../../stores/definitions/Record";
-import FormField from "../../../components/Inputs/FormField";
+import FormField from "../../components/Inputs/FormField";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import { Heading } from "@/components/DynamicHeadingLevel";

@@ -52,7 +52,7 @@ const FullLabel = withStyles<
 }))(({ classes, label, explanation, explanationId, disabled }) => {
   return (
     <>
-      {disabled ? <Heading>{label}</Heading> : <label>{label}</label>}
+      <Heading>{label}</Heading>
       {explanation && (
         <div className={classes.explanationText} id={explanationId}>
           {explanation}
