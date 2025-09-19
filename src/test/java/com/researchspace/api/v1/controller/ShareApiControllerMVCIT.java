@@ -19,6 +19,7 @@ import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
+import com.researchspace.api.v1.model.MoveRequest;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.EcatMediaFile;
@@ -181,6 +182,28 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiSharingResult shareResponse = getFromJsonResponseBody(result, ApiSharingResult.class);
     assertEquals(toShare.getId(), shareResponse.getShareInfos().get(0).getSharedItemId());
+  }
+
+  @Test
+  public void movingDocAlreadyInTargetFolderReturnsServerError() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "anytext");
+    Long rootId = getRootFolderForUser(anyUser).getId();
+
+    MoveRequest moveReq = new MoveRequest();
+    moveReq.setDocId(doc.getId());
+    moveReq.setSourceFolderId(rootId + 999); // bogus source not equal to actual parent
+    moveReq.setTargetFolderId(rootId); // actual parent
+
+    MvcResult result =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/documents/move", anyUser, moveReq))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+
+    String body = result.getResponse().getContentAsString();
+    assertTrue(body.contains("already in target folder"));
   }
 
   @Test

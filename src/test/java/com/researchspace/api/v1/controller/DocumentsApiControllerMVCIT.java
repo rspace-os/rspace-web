@@ -980,11 +980,11 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         this.mockMvc
             .perform(createBuilderForPostWithJSONBody(apiKey, "/documents/move", anyUser, moveReq))
-            .andExpect(status().is5xxServerError())
+            .andExpect(status().isUnauthorized())
             .andReturn();
 
     Exception ex = result.getResolvedException();
-    assertEquals("Error performing move: Record already in target folder", ex.getMessage());
+    assertEquals("Source and target folder are the same. Id: " + rootId, ex.getMessage());
   }
 
   @Test
