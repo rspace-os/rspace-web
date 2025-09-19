@@ -432,7 +432,8 @@ public class DocumentsApiController extends BaseApiController implements Documen
     String failedMoves =
         moveResult.stream()
             .filter(result -> !result.isSucceeded())
-            .map(res -> StringUtils.isEmpty(res.getMessage()) ? "unknown error" : res.getMessage())
+            .map(ServiceOperationResult::getMessage)
+            .filter(StringUtils::isNotEmpty)
             .collect(Collectors.joining(", "));
 
     if (StringUtils.isNotEmpty(failedMoves)) {
