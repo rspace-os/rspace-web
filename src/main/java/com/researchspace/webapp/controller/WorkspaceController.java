@@ -400,6 +400,7 @@ public class WorkspaceController extends BaseController {
   public String createNotebookAndRedirect(
       @PathVariable("recordid") long parentRecordId,
       @RequestParam("notebookNameField") String notebookName,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       Principal principal) {
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;
@@ -415,7 +416,7 @@ public class WorkspaceController extends BaseController {
     if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
       sharedWithGroup =
           recordShareHandler.shareIntoSharedFolderOrNotebook(
-              user, originalParentFolder, newNotebookId);
+              user, originalParentFolder, newNotebookId, grandParentId);
     }
 
     return getNotebookRedirectUrl(newNotebookId, sharedWithGroup);

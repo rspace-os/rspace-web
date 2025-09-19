@@ -254,7 +254,7 @@ paths:
         ## Rules for parsing POST request body
 
         Provided request body must match #definitions/Document model (see the
-        bottom of the page). Only `name`, `tags`, `form`, `parentFolderId` and
+        bottom of the page). Only `name`, `tags`, `form`, `parentFolderId`, `grandParentFolderId` and
         `fields` properties are processed, other properties are skipped.
 
         ### When parsing `name` and `tags` properties:
@@ -273,6 +273,11 @@ paths:
 
           * The folder ID must be the id of a folder in the Workspace, *not* a Gallery folder or a subfolder of the 'Shared' folder.
           * If no folderID is provided, document will be created in 'ApiInbox' folder.
+
+        ### When parsing `grandParentFolderId` property (only needed for shared Notebooks):
+
+          * The grand parent folder ID must be the id of the parent of the shared notebook you want to create the document into.
+          * If no `grandParentFolderId` is provided when creating a document into a shared notebook, the creation fails.
 
         ### When parsing `fields` array:
           * `fields` array may be omitted - that will create document without any content.

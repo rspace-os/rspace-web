@@ -92,7 +92,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
           && originalParentFolder.isSharedFolder()
           && toCreate.isNotebook()) {
         recordShareHandler.shareIntoSharedFolderOrNotebook(
-            user, originalParentFolder, newCreatedFolder.getId());
+            user, originalParentFolder, newCreatedFolder.getId(), null);
       }
     } else {
       newCreatedFolder = folderMgr.createNewFolder(targetFolder.getId(), toCreate.getName(), user);

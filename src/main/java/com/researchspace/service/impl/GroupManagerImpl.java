@@ -425,21 +425,21 @@ public class GroupManagerImpl implements GroupManager {
         // If it has then this group shared folder is added as a child to the user's folder
         // 'SNIPPETS/SHARED/LAbGroup or CollaborationGroup
         Folder snippetSharedFolder =
-            snippetFolder.getSubFolderByName(
+            snippetFolder.getSystemSubFolderByName(
                 SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
         if (snippetSharedFolder != null) {
           Folder parentForSharedSnippets = null;
           if (grp.isCollaborationGroup()) {
             parentForSharedSnippets =
-                snippetSharedFolder.getSubFolderByName(
+                snippetSharedFolder.getSystemSubFolderByName(
                     SHARED_SNIPPETS_FOLDER_PREFIX + Folder.COLLABORATION_GROUPS_FLDER_NAME);
           } else if (grp.isProjectGroup()) {
             parentForSharedSnippets =
-                snippetSharedFolder.getSubFolderByName(
+                snippetSharedFolder.getSystemSubFolderByName(
                     SHARED_SNIPPETS_FOLDER_PREFIX + Folder.PROJECT_GROUPS_FOLDER_NAME);
           } else {
             parentForSharedSnippets =
-                snippetSharedFolder.getSubFolderByName(
+                snippetSharedFolder.getSystemSubFolderByName(
                     SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
           }
           folderMgr.addChild(
@@ -491,14 +491,15 @@ public class GroupManagerImpl implements GroupManager {
 
     Folder snippetFolder = recordManager.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, u);
     Folder snippetSharedFolder;
-    if (snippetFolder.getSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
+    if (snippetFolder.getSystemSubFolderByName(
+            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
         == null) {
       snippetSharedFolder =
           recordFactory.createSystemCreatedFolder(
               SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME, u);
     } else {
       snippetSharedFolder =
-          snippetFolder.getSubFolderByName(
+          snippetFolder.getSystemSubFolderByName(
               UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
     }
     Folder projectGroupsSnippets =
@@ -768,9 +769,11 @@ public class GroupManagerImpl implements GroupManager {
     return group;
   }
 
-  public Group getGroupFromAnyLevelOfSharedFolder(User user, Folder sharedFolder) {
+  public Group getGroupFromAnyLevelOfSharedFolder(
+      User user, Folder sharedFolder, Long grandParentId) {
     Optional<Folder> sharedFolderRoot =
-        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(sharedFolder.getId(), user);
+        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+            sharedFolder.getId(), grandParentId, user);
     RSPath path = folderMgr.getShortestPathToSharedRootFolder(sharedFolder.getId(), user);
     if (path.isEmpty() || path.size() <= MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER) {
       String msg =

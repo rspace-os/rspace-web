@@ -101,7 +101,7 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
     Long notebookId =
         Long.valueOf(
             workspaceController.createNotebookAndRedirect(
-                    sharedGroupFolder.getId(), "notebook", new MockPrincipal(admin))
+                    sharedGroupFolder.getId(), "notebook", null, new MockPrincipal(admin))
                 .split("/")[2]
                 .split("\\?")[0]);
 

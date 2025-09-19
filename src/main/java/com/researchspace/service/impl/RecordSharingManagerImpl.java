@@ -796,7 +796,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       Folder sharedTopLevelFolder = null;
       if (toUnshareWith.isUser()) {
         User user = toUnshareWith.asUser();
-        if (user.getSharedFolder() != null) {
+        Folder userSharedFolder = folderDao.getUserSharedFolder(user);
+        if (userSharedFolder != null) {
           sharedTopLevelFolder =
               getTopLevelSharingFolder(subject, toUnshareWith, user, docOrNotebook);
         }

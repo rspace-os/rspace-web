@@ -96,13 +96,14 @@ public class SharingHandlerImpl implements SharingHandler {
   }
 
   public List<RecordGroupSharing> shareIntoSharedFolderOrNotebook(
-      User user, Folder sharedFolderOrNotebook, Long recordId) {
+      User user, Folder sharedFolderOrNotebook, Long recordId, Long recordGrandParentId) {
     if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
         user, sharedFolderOrNotebook)) {
       ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult;
       if (sharedFolderOrNotebook.isNotebook()) {
         sharingResult =
-            this.shareIntoSharedNotebook(user, (Notebook) sharedFolderOrNotebook, recordId);
+            this.shareIntoSharedNotebook(
+                user, (Notebook) sharedFolderOrNotebook, recordId, recordGrandParentId);
       } else {
         sharingResult = this.shareIntoSharedFolder(user, sharedFolderOrNotebook, recordId);
       }
@@ -113,7 +114,7 @@ public class SharingHandlerImpl implements SharingHandler {
 
   private ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
       shareIntoSharedFolder(User user, Folder sharedFolder, Long recordId) {
-    Group sharedGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedFolder);
+    Group sharedGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedFolder, null);
     ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "write");
     shareConfigElement.setGroupFolderId(sharedFolder.getId());
     ShareConfigCommand shareConfig =
@@ -123,8 +124,10 @@ public class SharingHandlerImpl implements SharingHandler {
   }
 
   private ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
-      shareIntoSharedNotebook(User user, Notebook sharedNotebook, Long recordId) {
-    Group sharedGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedNotebook);
+      shareIntoSharedNotebook(
+          User user, Notebook sharedNotebook, Long recordId, Long recordGrandParentId) {
+    Group sharedGroup =
+        groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedNotebook, recordGrandParentId);
     ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "read");
     shareConfigElement.setGroupFolderId(sharedNotebook.getId());
     ShareConfigCommand shareConfig =

@@ -16,7 +16,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    * Ease of use method returns the root record always
    *
    * @return
-   * @see https://ops.researchspace.com/globalId/SD4529
+   * @see https://ops2.researchspace.com/globalId/SD4529
    */
   Folder getRootRecordForUser(User user);
 
