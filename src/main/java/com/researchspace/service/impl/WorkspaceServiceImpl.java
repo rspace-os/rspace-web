@@ -90,23 +90,23 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   private void validateMove(List<Long> idsToMove, Long sourceFolderId, User user, Folder target) {
     if (target.getId().equals(sourceFolderId)) {
       throw new IllegalArgumentException(
-              "Source and target folder are the same. Id: " + sourceFolderId);
+          "Source and target folder are the same. Id: " + sourceFolderId);
     }
 
-    for(long id: idsToMove){
+    for (long id : idsToMove) {
       BaseRecord record = baseRecordManager.get(id, user);
-      if(!permissionChecker.checkMovePermissions(user, target, record)){
-        throw new AuthorizationException("User: "+user.getId()+" does not have permission to move record with ID: " + id);
+      if (!permissionChecker.checkMovePermissions(user, target, record)) {
+        throw new AuthorizationException(
+            "User: " + user.getId() + " does not have permission to move record with ID: " + id);
       }
 
       if (id == target.getId()) {
-        throw new IllegalArgumentException(
-                "Attempt to move record with ID: " + id + " to itself");
+        throw new IllegalArgumentException("Attempt to move record with ID: " + id + " to itself");
       }
 
-      if (record.getParents().stream().anyMatch(p -> p.getFolder().getId().equals(target.getId()))) {
-        throw new IllegalArgumentException(
-                "Record with ID: " + id + " already in target folder");
+      if (record.getParents().stream()
+          .anyMatch(p -> p.getFolder().getId().equals(target.getId()))) {
+        throw new IllegalArgumentException("Record with ID: " + id + " already in target folder");
       }
     }
   }

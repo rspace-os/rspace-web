@@ -64,7 +64,9 @@ public class WorkspaceServiceTest {
   }
 
   private void mockHasMovePermission(boolean hasPermission) {
-    when(permissionChecker.checkMovePermissions(any(User.class), any(Folder.class), any(BaseRecord.class))).thenReturn(hasPermission);
+    when(permissionChecker.checkMovePermissions(
+            any(User.class), any(Folder.class), any(BaseRecord.class)))
+        .thenReturn(hasPermission);
   }
 
   @Test
@@ -168,8 +170,7 @@ public class WorkspaceServiceTest {
                 service.moveRecords(
                     List.of(RECORD_ID), String.valueOf(SOURCE_FOLDER_ID), SOURCE_FOLDER_ID, user));
 
-    assertEquals(
-        "Source and target folder are the same. Id: " + SOURCE_FOLDER_ID, ex.getMessage());
+    assertEquals("Source and target folder are the same. Id: " + SOURCE_FOLDER_ID, ex.getMessage());
     verify(recordManager, never())
         .move(any(Long.class), any(Long.class), any(Long.class), any(User.class));
     verify(auditService, never()).notify(any());
@@ -214,12 +215,12 @@ public class WorkspaceServiceTest {
 
     IllegalArgumentException ex =
         assertThrows(
-          IllegalArgumentException.class,
-          () -> service.moveRecords(List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), 999L, user));
+            IllegalArgumentException.class,
+            () ->
+                service.moveRecords(
+                    List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), 999L, user));
 
-    assertEquals(
-        "Record with ID: " + RECORD_ID + " already in target folder",
-        ex.getMessage());
+    assertEquals("Record with ID: " + RECORD_ID + " already in target folder", ex.getMessage());
   }
 
   private void commonMocks(User user, Folder sharedTarget, StructuredDocument doc) {
