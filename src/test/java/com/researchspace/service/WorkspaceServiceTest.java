@@ -23,7 +23,6 @@ import com.researchspace.service.impl.WorkspaceServiceImpl;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -93,7 +92,6 @@ public class WorkspaceServiceTest {
     commonMocks(user, root, doc);
     mockHasMovePermission(true);
 
-    // successful move to root folder
     ServiceOperationResult<BaseRecord> moveResult = mock(ServiceOperationResult.class);
     when(moveResult.isSucceeded()).thenReturn(true);
     when(moveResult.getEntity()).thenReturn(doc);
@@ -162,7 +160,6 @@ public class WorkspaceServiceTest {
 
   @Test
   public void sameSourceAndTargetFolderThrowsException() {
-    // Target is the same as the provided source
     when(folderManager.getFolder(SOURCE_FOLDER_ID, user)).thenReturn(source);
 
     IllegalArgumentException ex =
@@ -268,14 +265,12 @@ public class WorkspaceServiceTest {
     when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
     commonMocks(user, target, doc);
     mockHasMovePermission(true);
-    // success path
     mockMoveSuccess(doc);
     int moved =
         service.moveRecordsCountSuccess(
             List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
     assertEquals(1, moved);
 
-    // failure path
     mockFail();
     int movedFail =
         service.moveRecordsCountSuccess(

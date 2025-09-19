@@ -57,7 +57,6 @@ public class ShareLocationResolver {
         .orElse(null);
   }
 
-  /** Checks if the record is within the user-to-user shared folder structure. */
   private static boolean isInUserToUserSharedFolder(RecordGroupSharing share, Folder folder) {
     return isDirectUserToUserSharedFolder(folder, share)
         || Optional.ofNullable(folder.getAllAncestors())

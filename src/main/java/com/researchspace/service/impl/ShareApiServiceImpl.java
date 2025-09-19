@@ -28,8 +28,10 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RecordInfoSharingInfo;
 import com.researchspace.model.views.ServiceOperationResultCollection;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareApiService;
@@ -43,6 +45,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
@@ -62,6 +65,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   private final DocumentSharesBuilder documentSharesBuilder;
   private final PermissionUtils permissionUtils;
 
+  @Autowired
   public ShareApiServiceImpl(
       SharingHandler recordShareHandler,
       RecordSharingManager recordShareMgr,
@@ -77,6 +81,28 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     this.folderManager = folderManager;
     this.documentSharesBuilder = documentSharesBuilder;
     this.permissionUtils = permissionUtils;
+  }
+
+  // used to set properties and messages in superclass for testing
+  public ShareApiServiceImpl(
+      SharingHandler recordShareHandler,
+      RecordSharingManager recordShareMgr,
+      DetailedRecordInformationProvider detailedRecordInformationProvider,
+      RecordManager recordManager,
+      FolderManager folderManager,
+      DocumentSharesBuilder documentSharesBuilder,
+      PermissionUtils permissionUtils,
+      IPropertyHolder properties,
+      MessageSourceUtils messages) {
+    this.recordShareHandler = recordShareHandler;
+    this.recordShareMgr = recordShareMgr;
+    this.detailedRecordInformationProvider = detailedRecordInformationProvider;
+    this.recordManager = recordManager;
+    this.folderManager = folderManager;
+    this.documentSharesBuilder = documentSharesBuilder;
+    this.permissionUtils = permissionUtils;
+    this.properties = properties;
+    this.messages = messages;
   }
 
   @Override

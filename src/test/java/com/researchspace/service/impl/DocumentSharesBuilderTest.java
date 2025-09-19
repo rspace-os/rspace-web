@@ -70,7 +70,6 @@ public class DocumentSharesBuilderTest {
     when(resolver.resolveLocation(groupShare, record)).thenReturn(directLocation);
     when(resolver.resolveLocation(sharedViaNotebook, record)).thenReturn(notebookLocation);
 
-    // sharing info split between direct and implicit
     RecordInfoSharingInfo shares =
         new RecordInfoSharingInfo(List.of(groupShare), List.of(sharedViaNotebook));
 

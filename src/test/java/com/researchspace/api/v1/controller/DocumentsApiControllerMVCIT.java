@@ -960,14 +960,10 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  public void moveDocFromOneFolderToAnother() throws Exception {}
-
-  @Test
-  public void moveDocNoOpToSameFolderReturnsServerError() throws Exception {
+  public void moveDocToSameFolderThrows422() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
-    // Create a document in the user's root folder
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "anytext");
     Long rootId = getRootFolderForUser(anyUser).getId();
 
@@ -1091,7 +1087,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
   private void assertGroupShareLocation(Long docId, String apiKey, Long expectedLocationId)
       throws Exception {
-    MvcResult sharesResult =
+    MvcResult getSharesForDocResult =
         this.mockMvc
             .perform(get("/api/v1/share/document/" + docId).header("apiKey", apiKey))
             .andExpect(status().isOk())
@@ -1099,7 +1095,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
     DocumentShares shares =
         new ObjectMapper()
-            .readValue(sharesResult.getResponse().getContentAsString(), new TypeReference<>() {});
+            .readValue(getSharesForDocResult.getResponse().getContentAsString(), new TypeReference<>() {});
 
     DocumentShares.Share groupShare =
         shares.getDirectShares().stream()

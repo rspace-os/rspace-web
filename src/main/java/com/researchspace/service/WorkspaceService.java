@@ -19,7 +19,7 @@ public interface WorkspaceService {
   List<ServiceOperationResult<? extends BaseRecord>> moveRecords(
       List<Long> toMove, String targetFolderId, Long workspaceParentId, User user);
 
-  /*
+  /**
   As above, but counts the number of successful moves, to maintain compatibility with the original methods in WorkspaceController.
    */
   int moveRecordsCountSuccess(

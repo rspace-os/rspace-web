@@ -4461,6 +4461,22 @@ definitions:
         type: integer
         format: int64
         description: Target folder id
+  SharePermissionUpdate:
+    description: Update the permission for an existing share
+    properties:
+      shareId:
+        type: integer
+        format: int64
+        description: The id of the existing ShareInfo to update
+      permission:
+        type: string
+        description: New permission to set for the share
+        enum:
+          - READ
+          - EDIT
+    example:
+      shareId: 123456
+      permission: EDIT
 responses:
   UnprocessableQuery:
     description: Query could not be processed.
@@ -4484,20 +4500,3 @@ responses:
     description: License expired or not active.
     schema:
       $ref: '#/definitions/Error'
-
-  SharePermissionUpdate:
-    description: Update the permission for an existing share
-    properties:
-      shareId:
-        type: integer
-        format: int64
-        description: The id of the existing ShareInfo to update
-      permission:
-        type: string
-        description: New permission to set for the share
-        enum:
-          - READ
-          - EDIT
-    example:
-      shareId: 123456
-      permission: EDIT
