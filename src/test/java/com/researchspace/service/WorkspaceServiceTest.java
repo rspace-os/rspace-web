@@ -18,6 +18,7 @@ import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.impl.MovePermissionChecker;
 import com.researchspace.service.impl.WorkspaceServiceImpl;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +47,7 @@ public class WorkspaceServiceTest {
   @Mock RecordManager recordManager;
   @Mock BaseRecordManager baseRecordManager;
   @Mock AuditTrailService auditService;
+  @Mock MovePermissionChecker permissionChecker;
 
   @InjectMocks WorkspaceServiceImpl service;
 
@@ -61,10 +63,17 @@ public class WorkspaceServiceTest {
     when(folderManager.getRootFolderForUser(any(User.class))).thenReturn(root);
   }
 
+  private void mockHasMovePermission(boolean hasPermission) {
+    when(permissionChecker.checkMovePermissions(
+            any(User.class), any(Folder.class), any(BaseRecord.class)))
+        .thenReturn(hasPermission);
+  }
+
   @Test
   public void moveDocumentToAnotherFolderSuccess() {
     when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
     commonMocks(user, target, doc);
+    mockHasMovePermission(true);
 
     mockMoveSuccess(doc);
     var results =
@@ -80,6 +89,7 @@ public class WorkspaceServiceTest {
   @Test
   public void moveToRootUsingSlash() {
     commonMocks(user, root, doc);
+    mockHasMovePermission(true);
 
     // successful move to root folder
     ServiceOperationResult<BaseRecord> moveResult = mock(ServiceOperationResult.class);
@@ -99,6 +109,7 @@ public class WorkspaceServiceTest {
   public void moveWithTrailingSlashTargetId() {
     when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
     commonMocks(user, target, doc);
+    mockHasMovePermission(true);
     mockMoveSuccess(doc);
 
     var results =
@@ -111,14 +122,20 @@ public class WorkspaceServiceTest {
   }
 
   @Test
-  public void movingFolderIntoItselfIsSkipped() {
+  public void movingFolderIntoItselfThrowsException() {
     when(folderManager.getFolder(SOURCE_FOLDER_ID, user)).thenReturn(source);
+    when(baseRecordManager.get(SOURCE_FOLDER_ID, user)).thenReturn(source);
+    mockHasMovePermission(true);
 
-    var results =
-        service.moveRecords(
-            List.of(SOURCE_FOLDER_ID), String.valueOf(SOURCE_FOLDER_ID), 123L, user);
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                service.moveRecords(
+                    List.of(SOURCE_FOLDER_ID), String.valueOf(SOURCE_FOLDER_ID), 123L, user));
 
-    assertEquals(0, results.size());
+    assertEquals(
+        "Attempt to move record with ID: " + SOURCE_FOLDER_ID + " to itself", ex.getMessage());
     verify(auditService, never()).notify(any());
     verify(recordManager, never())
         .move(any(Long.class), any(Long.class), any(Long.class), any(User.class));
@@ -129,6 +146,7 @@ public class WorkspaceServiceTest {
     when(folderManager.getRootFolderForUser(user)).thenReturn(root);
     when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
     commonMocks(user, target, doc);
+    mockHasMovePermission(true);
     mockFail();
 
     var results =
@@ -141,22 +159,18 @@ public class WorkspaceServiceTest {
   }
 
   @Test
-  public void noOpMoveToSameFolderReturnsZeroAndDoesNotInvokeMove() {
-    // Target is the same as the current parent (source)
+  public void sameSourceAndTargetFolderThrowsException() {
+    // Target is the same as the provided source
     when(folderManager.getFolder(SOURCE_FOLDER_ID, user)).thenReturn(source);
 
-    // Minimal stubbing to avoid unnecessary stubs
-    when(baseRecordManager.get(RECORD_ID, user)).thenReturn(doc);
-    when(recordManager.exists(RECORD_ID)).thenReturn(true);
-    when(recordManager.get(RECORD_ID)).thenReturn(doc);
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                service.moveRecords(
+                    List.of(RECORD_ID), String.valueOf(SOURCE_FOLDER_ID), SOURCE_FOLDER_ID, user));
 
-    var results =
-        service.moveRecords(
-            List.of(RECORD_ID), String.valueOf(SOURCE_FOLDER_ID), SOURCE_FOLDER_ID, user);
-
-    assertEquals(1, results.size());
-    assertFalse(results.get(0).isSucceeded());
-    assertEquals("Record already in target folder", results.get(0).getMessage());
+    assertEquals("Source and target folder are the same. Id: " + SOURCE_FOLDER_ID, ex.getMessage());
     verify(recordManager, never())
         .move(any(Long.class), any(Long.class), any(Long.class), any(User.class));
     verify(auditService, never()).notify(any());
@@ -172,6 +186,41 @@ public class WorkspaceServiceTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> service.moveRecords(List.of(1L), "invalid", 0L, user));
+  }
+
+  @Test
+  public void permissionDenied_throwsIllegalArgumentException() {
+    when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
+    when(baseRecordManager.get(RECORD_ID, user)).thenReturn(doc);
+    mockHasMovePermission(false);
+
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                service.moveRecords(
+                    List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user));
+
+    assertEquals(
+        "User: " + user.getId() + " does not have permission to move record with ID: " + RECORD_ID,
+        ex.getMessage());
+  }
+
+  @Test
+  public void recordAlreadyInTargetFolder_throwsIllegalArgumentException() {
+    when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
+    StructuredDocument docInTarget = docWithParent(RECORD_ID, target, user.getUsername());
+    when(baseRecordManager.get(RECORD_ID, user)).thenReturn(docInTarget);
+    mockHasMovePermission(true);
+
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                service.moveRecords(
+                    List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), 999L, user));
+
+    assertEquals("Record with ID: " + RECORD_ID + " already in target folder", ex.getMessage());
   }
 
   private void commonMocks(User user, Folder sharedTarget, StructuredDocument doc) {
@@ -216,7 +265,7 @@ public class WorkspaceServiceTest {
   public void moveRecordsCountSuccess_countsSuccessfulMoves() {
     when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
     commonMocks(user, target, doc);
-
+    mockHasMovePermission(true);
     // success path
     mockMoveSuccess(doc);
     int moved =

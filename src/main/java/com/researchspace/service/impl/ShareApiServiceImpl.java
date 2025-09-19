@@ -155,7 +155,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     }
 
     BaseRecord record;
-    if(recordManager.exists(docId)){
+    if (recordManager.exists(docId)) {
       record = recordManager.get(docId);
     } else {
       record = folderManager.getNotebook(docId);

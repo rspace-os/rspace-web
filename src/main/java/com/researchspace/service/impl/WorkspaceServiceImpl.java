@@ -20,8 +20,8 @@ import com.researchspace.service.SharingHandler;
 import com.researchspace.service.WorkspaceService;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +44,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   private final GroupManager groupManager;
   private final SharingHandler recordShareHandler;
   private final AuditTrailService auditService;
+  private final MovePermissionChecker permissionChecker;
 
   @Autowired
   public WorkspaceServiceImpl(
@@ -52,31 +53,29 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       BaseRecordManager baseRecordManager,
       GroupManager groupManager,
       SharingHandler recordShareHandler,
-      AuditTrailService auditService) {
+      AuditTrailService auditService,
+      MovePermissionChecker permissionChecker) {
     this.folderManager = folderManager;
     this.recordManager = recordManager;
     this.baseRecordManager = baseRecordManager;
     this.groupManager = groupManager;
     this.recordShareHandler = recordShareHandler;
     this.auditService = auditService;
+    this.permissionChecker = permissionChecker;
   }
 
   public List<ServiceOperationResult<? extends BaseRecord>> moveRecords(
       List<Long> idsToMove, String targetFolderId, Long sourceFolderId, User user) {
     if (idsToMove == null || idsToMove.isEmpty() || StringUtils.isBlank(targetFolderId)) {
-      throw new IllegalArgumentException("No records to move");
+      throw new IllegalArgumentException("Ids to move and target folder are required.");
     }
 
     Folder usersRootFolder = folderManager.getRootFolderForUser(user);
     Folder target = resolveTargetFolder(targetFolderId, user, usersRootFolder);
+    validateMove(idsToMove, sourceFolderId, user, target);
 
     List<ServiceOperationResult<? extends BaseRecord>> results = new ArrayList<>();
     for (Long toMove : idsToMove) {
-      // Do not attempt to move a folder into itself
-      if (Objects.equals(target.getId(), toMove)) {
-        continue;
-      }
-
       Folder sourceFolder = getMoveSourceFolder(toMove, sourceFolderId, user, usersRootFolder);
 
       if (isFolder(toMove)) {
@@ -86,6 +85,30 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       }
     }
     return results;
+  }
+
+  private void validateMove(List<Long> idsToMove, Long sourceFolderId, User user, Folder target) {
+    if (target.getId().equals(sourceFolderId)) {
+      throw new IllegalArgumentException(
+          "Source and target folder are the same. Id: " + sourceFolderId);
+    }
+
+    for (long id : idsToMove) {
+      BaseRecord record = baseRecordManager.get(id, user);
+      if (!permissionChecker.checkMovePermissions(user, target, record)) {
+        throw new AuthorizationException(
+            "User: " + user.getId() + " does not have permission to move record with ID: " + id);
+      }
+
+      if (id == target.getId()) {
+        throw new IllegalArgumentException("Attempt to move record with ID: " + id + " to itself");
+      }
+
+      if (record.getParents().stream()
+          .anyMatch(p -> p.getFolder().getId().equals(target.getId()))) {
+        throw new IllegalArgumentException("Record with ID: " + id + " already in target folder");
+      }
+    }
   }
 
   @Override
@@ -123,14 +146,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   private ServiceOperationResult<? extends BaseRecord> moveDocAndMaybeShare(
       Long recordId, Folder sourceFolder, Folder target, User user) {
     BaseRecord toMove = recordManager.get(recordId);
-
-    boolean alreadyInTarget =
-        toMove.getParents().stream()
-            .map(RecordToFolder::getFolder)
-            .anyMatch(f -> f.getId().equals(target.getId()));
-    if (alreadyInTarget && (sourceFolder == null || sourceFolder.getId().equals(target.getId()))) {
-      return new ServiceOperationResult<>(null, false, "Record already in target folder");
-    }
 
     if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
       try {
