@@ -23,6 +23,8 @@ import com.researchspace.service.impl.WorkspaceServiceImpl;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -194,9 +196,9 @@ public class WorkspaceServiceTest {
     when(baseRecordManager.get(RECORD_ID, user)).thenReturn(doc);
     mockHasMovePermission(false);
 
-    IllegalArgumentException ex =
+    AuthorizationException ex =
         assertThrows(
-            IllegalArgumentException.class,
+            AuthorizationException.class,
             () ->
                 service.moveRecords(
                     List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user));
