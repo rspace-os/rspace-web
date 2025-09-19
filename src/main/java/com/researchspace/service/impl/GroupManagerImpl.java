@@ -491,7 +491,8 @@ public class GroupManagerImpl implements GroupManager {
 
     Folder snippetFolder = recordManager.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, u);
     Folder snippetSharedFolder;
-    if (snippetFolder.getSystemSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
+    if (snippetFolder.getSystemSubFolderByName(
+            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
         == null) {
       snippetSharedFolder =
           recordFactory.createSystemCreatedFolder(
