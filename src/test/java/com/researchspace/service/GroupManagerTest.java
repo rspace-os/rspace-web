@@ -475,11 +475,11 @@ public class GroupManagerTest extends SpringTransactionalTest {
       User aUser, String expectedName, boolean shouldFolderExist) {
     Folder snippetFolder = recordMgr.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, aUser);
     Folder snippetSharedFolder =
-        snippetFolder.getSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
+        snippetFolder.getSystemSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
     Folder snippetLabGroups =
-        snippetSharedFolder.getSubFolderByName(
+        snippetSharedFolder.getSystemSubFolderByName(
             SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
-    Folder sharedSnippetsForGroup = snippetLabGroups.getSubFolderByName(expectedName);
+    Folder sharedSnippetsForGroup = snippetLabGroups.getSystemSubFolderByName(expectedName);
     if (shouldFolderExist) {
       assertNotNull(sharedSnippetsForGroup);
     } else {
