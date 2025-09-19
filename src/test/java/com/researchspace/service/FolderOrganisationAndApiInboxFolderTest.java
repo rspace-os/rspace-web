@@ -90,7 +90,8 @@ public class FolderOrganisationAndApiInboxFolderTest {
         snippet.getSystemSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
     assertTrue(shared.isSystemFolder());
     Folder labGroup =
-        shared.getSystemSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
+        shared.getSystemSubFolderByName(
+            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
     assertNotNull(labGroup);
     Folder collabGrp =
         shared.getSystemSubFolderByName(

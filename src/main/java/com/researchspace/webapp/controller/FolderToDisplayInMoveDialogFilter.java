@@ -5,7 +5,6 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSPath;
-import java.util.Iterator;
 
 /**
  * Filter that does not return any record that is
@@ -38,7 +37,8 @@ public class FolderToDisplayInMoveDialogFilter implements CollectionFilter<BaseR
   private boolean isSharedFolder(BaseRecord br) {
     RSPath ownerParentHierarchy = br.getParentHierarchyForUser(br.getOwner());
     for (BaseRecord rec : ownerParentHierarchy) {
-      if (rec.isFolder() && ((Folder) rec).isTopLevelSharedFolder()
+      if (rec.isFolder()
+          && ((Folder) rec).isTopLevelSharedFolder()
           && rec.getOwner().equals(br.getOwner())) {
         return true;
       }
