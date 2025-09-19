@@ -980,7 +980,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         this.mockMvc
             .perform(createBuilderForPostWithJSONBody(apiKey, "/documents/move", anyUser, moveReq))
-            .andExpect(status().isUnauthorized())
+            .andExpect(status().isUnprocessableEntity())
             .andReturn();
 
     Exception ex = result.getResolvedException();
@@ -1049,7 +1049,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
     this.mockMvc
         .perform(createBuilderForPostWithJSONBody(sharerApiKey, "/documents/move", sharer, moveReq))
-        .andExpect(status().isInternalServerError())
+        .andExpect(status().isUnauthorized())
         .andReturn();
 
     assertGroupShareLocation(toShare.getId(), sharerApiKey, subfolderA.getId());
