@@ -1160,8 +1160,9 @@ const ShareDialog = () => {
                                 variant="body1"
                                 color="text.secondary"
                               >
-                                To edit permissions or change location, edit the
-                                Notebook’s sharing permissions or location.
+                                Items in Notebooks inherit the Notebook's
+                                permissions. Contact the notebook's owner to
+                                alter the notebook's permissions.
                               </Typography>
                             </Box>
                           )}
