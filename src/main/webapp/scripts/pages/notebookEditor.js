@@ -286,5 +286,9 @@ $(document).ready(function(e) {
 
 function getGrandParentFolderId() {
   const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
-  return breadcrumbs[breadcrumbs.length - 2].getAttribute("id").split("_")[1];
+  const grandParent = breadcrumbs[breadcrumbs.length - 2]
+  if(grandParent === undefined){
+    return null;
+  }
+  return grandParent.getAttribute("id").split("_")[1];
 }

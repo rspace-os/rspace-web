@@ -631,5 +631,9 @@ var resetToolbar;
 
 function getGrandParentFolderId() {
   const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
-  return breadcrumbs[breadcrumbs.length - 1].getAttribute("id").split("_")[1];
+  const grandParent = breadcrumbs[breadcrumbs.length - 1]
+  if(grandParent === undefined){
+    return null;
+  }
+  return grandParent.getAttribute("id").split("_")[1];
 }
