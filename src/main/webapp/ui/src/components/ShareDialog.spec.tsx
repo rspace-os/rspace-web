@@ -16,12 +16,13 @@ const feature = test.extend<{
     "the dialog is displayed with a document without previous shares": () => Promise<void>;
     "the dialog is displayed with a document with a previous share with Bob": () => Promise<void>;
     "the dialog is displayed with a document with a previous share with Alice and Bob's group": () => Promise<void>;
-    "the dialog is displated with multiple documents": () => Promise<void>;
+    "the dialog is displayed with multiple documents": () => Promise<void>;
     "the dialog is displayed with a document that has been shared into a notebook": () => Promise<void>;
   };
   Once: emptyObject;
   When: {
     "the user selects Bob from the recipient dropdown": () => Promise<void>;
+    "the user selects Alice and Bob's Group from the recipient dropdown": () => Promise<void>;
     "the user saves the new share": () => Promise<void>;
   };
   Then: {
@@ -50,7 +51,7 @@ const feature = test.extend<{
         async () => {
           await mount(<SharedWithAGroup />);
         },
-      "the dialog is displated with multiple documents": async () => {
+      "the dialog is displayed with multiple documents": async () => {
         await mount(<MultipleDocuments />);
       },
       "the dialog is displayed with a document that has been shared into a notebook":
@@ -72,6 +73,17 @@ const feature = test.extend<{
         const bobOption = page.getByRole("option", { name: /^Bob/ });
         await bobOption.click();
       },
+      "the user selects Alice and Bob's Group from the recipient dropdown":
+        async () => {
+          const recipientDropdown = page.getByRole("combobox", {
+            name: /Add RSpace users or groups/i,
+          });
+          await recipientDropdown.click();
+          const groupOption = page.getByRole("option", {
+            name: /^Alice and Bob's Group/,
+          });
+          await groupOption.click();
+        },
       "the user saves the new share": async () => {
         const saveButton = page.getByRole("button", { name: /Save/i });
         await saveButton.click();
@@ -536,7 +548,7 @@ test.describe("ShareDialog", () => {
     feature(
       "When multiple documents are selected, no table is shown",
       async ({ Given, Then }) => {
-        await Given["the dialog is displated with multiple documents"]();
+        await Given["the dialog is displayed with multiple documents"]();
         await Then["no table should be visible"]();
         await Then["there shouldn't be any axe violations"]();
       },
@@ -564,6 +576,19 @@ test.describe("ShareDialog", () => {
           "the dialog is displayed with a document without previous shares"
         ]();
         await When["the user selects Bob from the recipient dropdown"]();
+        await When["the user saves the new share"]();
+        await Then["the Save button should have changed to Done"]();
+        Then["a POST request should have been made to create the share"]();
+      },
+    );
+
+    feature(
+      "Multiple documents should be sharable with a group",
+      async ({ Given, When, Then }) => {
+        await Given["the dialog is displayed with multiple documents"]();
+        await When[
+          "the user selects Alice and Bob's Group from the recipient dropdown"
+        ]();
         await When["the user saves the new share"]();
         await Then["the Save button should have changed to Done"]();
         Then["a POST request should have been made to create the share"]();
