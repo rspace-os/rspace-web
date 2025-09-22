@@ -27,3 +27,24 @@ export function NoPreviousShares() {
     </ThemeProvider>
   );
 }
+
+export function SharedWithAnotherUser() {
+  return (
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <Portal>
+        <Alerts>
+          <DialogBoundary>
+            <ShareDialog
+              shareDialogConfig={{
+                open: true,
+                onClose: () => {},
+                globalIds: ["SD2"],
+                names: ["A shared document"],
+              }}
+            />
+          </DialogBoundary>
+        </Alerts>
+      </Portal>
+    </ThemeProvider>
+  );
+}
