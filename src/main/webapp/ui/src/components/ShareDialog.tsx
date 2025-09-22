@@ -69,7 +69,7 @@ export default function Wrapper(): React.ReactNode {
           <Portal>
             <Alerts>
               <DialogBoundary>
-                <ShareDialog />
+                <ShareDialog shareDialogConfig="FromGlobalEvent" />
               </DialogBoundary>
             </Alerts>
           </Portal>
@@ -78,6 +78,13 @@ export default function Wrapper(): React.ReactNode {
     </Analytics>
   );
 }
+
+type ShareDialogConfig = {
+  globalIds: ReadonlyArray<DocumentGlobalId>;
+  open: boolean;
+  onClose: () => void;
+  names: ReadonlyArray<DocumentName>;
+};
 
 /**
  * Share dialog component is rendered on parts of the product that are not
@@ -88,12 +95,7 @@ export default function Wrapper(): React.ReactNode {
  * The rest of the code in this module assumes that the OPEN_SHARE_DIALOG
  * event will not be dispatched again whilst the dialog is open.
  */
-function useSetup(): {
-  globalIds: ReadonlyArray<DocumentGlobalId>;
-  open: boolean;
-  onClose: () => void;
-  names: ReadonlyArray<DocumentName>;
-} {
+function useSetup(): ShareDialogConfig {
   const [open, setOpen] = React.useState(false);
   const [globalIds, setGlobalIds] = React.useState<
     ReadonlyArray<DocumentGlobalId>
@@ -103,7 +105,10 @@ function useSetup(): {
   React.useEffect(() => {
     function handler(event: Event) {
       // @ts-expect-error there will be a detail
-      const { globalIds, names } = event.detail;
+      const { globalIds, names } = event.detail as {
+        globalIds: string[];
+        names: string[];
+      };
       setOpen(true);
       setGlobalIds(globalIds || []);
       setNames(names || []);
@@ -126,8 +131,16 @@ function useSetup(): {
   };
 }
 
-const ShareDialog = () => {
-  const { open, onClose, globalIds, names } = useSetup();
+export function ShareDialog({
+  shareDialogConfig,
+}: {
+  shareDialogConfig: ShareDialogConfig | "FromGlobalEvent";
+}) {
+  const shareDialogConfigFromHook = useSetup();
+  const { open, onClose, globalIds, names } =
+    shareDialogConfig === "FromGlobalEvent"
+      ? shareDialogConfigFromHook
+      : shareDialogConfig;
   const [shareData, setShareData] = React.useState<
     Map<
       DocumentGlobalId,
@@ -554,6 +567,7 @@ const ShareDialog = () => {
 
       handleClose();
       // @ts-expect-error global function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
     } catch (error) {
       console.error("Failed to save shares:", error);
@@ -604,7 +618,7 @@ const ShareDialog = () => {
               }
             }}
             selectOnFocus
-            onChange={(event, newValue) => {
+            onChange={(_event, newValue) => {
               if (newValue && !newValue.isDisabled) {
                 setAutocompleteInput("");
                 const updatedNewShares = new Map(newShares);
@@ -1458,4 +1472,4 @@ const ShareDialog = () => {
       </DialogActions>
     </Dialog>
   );
-};
+}
