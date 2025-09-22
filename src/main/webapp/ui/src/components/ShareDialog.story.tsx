@@ -60,7 +60,28 @@ export function SharedWithAGroup() {
                 open: true,
                 onClose: () => {},
                 globalIds: ["SD3"],
-                names: ["A shared document"],
+                names: ["Another shared document"],
+              }}
+            />
+          </DialogBoundary>
+        </Alerts>
+      </Portal>
+    </ThemeProvider>
+  );
+}
+
+export function MultipleDocuments() {
+  return (
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <Portal>
+        <Alerts>
+          <DialogBoundary>
+            <ShareDialog
+              shareDialogConfig={{
+                open: true,
+                onClose: () => {},
+                globalIds: ["SD2", "SD3"],
+                names: ["A shared document", "Another shared document"],
               }}
             />
           </DialogBoundary>

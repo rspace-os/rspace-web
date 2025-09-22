@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import {
+  MultipleDocuments,
   NoPreviousShares,
   SharedWithAGroup,
   SharedWithAnotherUser,
@@ -13,6 +14,7 @@ const feature = test.extend<{
     "the dialog is displayed with a document without previous shares": () => Promise<void>;
     "the dialog is displayed with a document with a previous share with Bob": () => Promise<void>;
     "the dialog is displayed with a document with a previous share with Alice and Bob's group": () => Promise<void>;
+    "the dialog is displated with multiple documents": () => Promise<void>;
   };
   Once: emptyObject;
   When: emptyObject;
@@ -20,6 +22,7 @@ const feature = test.extend<{
     "a dialog should be visible": () => Promise<void>;
     "a table listing Bob as a user with whom the document is shared should be visible": () => Promise<void>;
     "a table listing Alice and Bob's group as a group with whom the document is shared should be visible": () => Promise<void>;
+    "no table should be visible": () => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -36,6 +39,9 @@ const feature = test.extend<{
         async () => {
           await mount(<SharedWithAGroup />);
         },
+      "the dialog is displated with multiple documents": async () => {
+        await mount(<MultipleDocuments />);
+      },
     });
   },
   Once: async ({}, use) => {
@@ -91,6 +97,19 @@ const feature = test.extend<{
             /aliceAndBobGroup_SHARED/,
           );
         },
+      "no table should be visible": async () => {
+        const dialog = page.getByRole("dialog", {
+          name: /Share \d+ items/i,
+        });
+        await expect(dialog).toBeVisible();
+        const table = dialog.getByRole("table");
+        await expect(table).toHaveCount(0);
+        await expect(
+          dialog.getByRole("heading", {
+            name: /adding shares to 2 documents/i,
+          }),
+        ).toBeVisible();
+      },
     });
   },
 });
@@ -332,6 +351,17 @@ test.describe("ShareDialog", () => {
       await Then[
         "a table listing Alice and Bob's group as a group with whom the document is shared should be visible"
       ]();
+    },
+  );
+
+  /*
+   * This is because the UI became too complex to show a table for each document
+   */
+  feature(
+    "When multiple documents are selected, no table is shown",
+    async ({ Given, Then }) => {
+      await Given["the dialog is displated with multiple documents"]();
+      await Then["no table should be visible"]();
     },
   );
 });
