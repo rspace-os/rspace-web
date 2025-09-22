@@ -864,6 +864,9 @@ export function ShareDialog({
                                           sx={{ minWidth: 120 }}
                                         >
                                           <Select
+                                            inputProps={{
+                                              "aria-label": `Set permission for sharing with ${share.recipientName}`,
+                                            }}
                                             value={getCurrentPermission(share)}
                                             onChange={(e) => {
                                               const newValue = e.target.value;
@@ -994,6 +997,9 @@ export function ShareDialog({
                                           sx={{ minWidth: 120 }}
                                         >
                                           <Select
+                                            inputProps={{
+                                              "aria-label": `Set permission for sharing with ${newShare.recipientName}`,
+                                            }}
                                             value={newShare.permission}
                                             onChange={(e) => {
                                               const newValue = e.target.value;
@@ -1150,6 +1156,9 @@ export function ShareDialog({
                                             disabled
                                           >
                                             <Select
+                                              inputProps={{
+                                                "aria-label": `Set permission for sharing with ${share.recipientName}`,
+                                              }}
                                               value={share.permission}
                                               onChange={() => {
                                                 /* Read-only for notebook shares */
@@ -1283,6 +1292,9 @@ export function ShareDialog({
 
                               <FormControl size="small" sx={{ minWidth: 80 }}>
                                 <Select
+                                  inputProps={{
+                                    "aria-label": `Set permission for sharing with ${share.recipientName}`,
+                                  }}
                                   value={share.permission}
                                   onChange={(e) => {
                                     const newPermission = e.target.value;

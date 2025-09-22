@@ -9,6 +9,7 @@ import {
 } from "./ShareDialog.story";
 import { type emptyObject } from "../util/types";
 import * as Jwt from "jsonwebtoken";
+import AxeBuilder from "@axe-core/playwright";
 
 const feature = test.extend<{
   Given: {
@@ -26,6 +27,7 @@ const feature = test.extend<{
     "a table listing Alice and Bob's group as a group with whom the document is shared should be visible": () => Promise<void>;
     "no table should be visible": () => Promise<void>;
     "two tables listing the shared notebook's implicit and explicit shares should be visible": () => Promise<void>;
+    "there shouldn't be any axe violations": () => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -87,7 +89,7 @@ const feature = test.extend<{
       "a table listing Alice and Bob's group as a group with whom the document is shared should be visible":
         async () => {
           const dialog = page.getByRole("dialog", {
-            name: /Share A shared document/i,
+            name: /Share Another shared document/i,
           });
           await expect(dialog).toBeVisible();
           const table = dialog.getByRole("table");
@@ -155,6 +157,22 @@ const feature = test.extend<{
           );
           await expect(notebookShareRow.getByRole("combobox")).toBeDisabled();
         },
+      "there shouldn't be any axe violations": async () => {
+        const accessibilityScanResults = await new AxeBuilder({
+          page,
+        })
+          /*
+           * These violations are expected in component tests as we're not rendering
+           * a complete page with proper document structure:
+           *
+           * 1. Component tests don't have main landmarks as they're isolated components
+           * 2. Component tests typically don't have h1 headings as they're not full pages
+           * 3. Content not in landmarks is expected in component testing context
+           */
+          .disableRules(["landmark-one-main", "page-has-heading-one", "region"])
+          .analyze();
+        expect(accessibilityScanResults.violations).toEqual([]);
+      },
     });
   },
 });
@@ -412,6 +430,7 @@ test.describe("ShareDialog", () => {
         "the dialog is displayed with a document without previous shares"
       ]();
       await Then["a dialog should be visible"]();
+      await Then["there shouldn't be any axe violations"]();
     });
 
     feature(
@@ -423,6 +442,7 @@ test.describe("ShareDialog", () => {
         await Then[
           "a table listing Bob as a user with whom the document is shared should be visible"
         ]();
+        await Then["there shouldn't be any axe violations"]();
       },
     );
 
@@ -435,6 +455,7 @@ test.describe("ShareDialog", () => {
         await Then[
           "a table listing Alice and Bob's group as a group with whom the document is shared should be visible"
         ]();
+        await Then["there shouldn't be any axe violations"]();
       },
     );
 
@@ -446,6 +467,7 @@ test.describe("ShareDialog", () => {
       async ({ Given, Then }) => {
         await Given["the dialog is displated with multiple documents"]();
         await Then["no table should be visible"]();
+        await Then["there shouldn't be any axe violations"]();
       },
     );
 
@@ -458,6 +480,7 @@ test.describe("ShareDialog", () => {
         await Then[
           "two tables listing the shared notebook's implicit and explicit shares should be visible"
         ]();
+        await Then["there shouldn't be any axe violations"]();
       },
     );
   });
