@@ -406,57 +406,59 @@ feature.beforeEach(async ({ router }) => {
 });
 
 test.describe("ShareDialog", () => {
-  feature("Renders a dialog", async ({ Given, Then }) => {
-    await Given[
-      "the dialog is displayed with a document without previous shares"
-    ]();
-    await Then["a dialog should be visible"]();
+  test.describe("Renders correctly", () => {
+    feature("Renders a dialog", async ({ Given, Then }) => {
+      await Given[
+        "the dialog is displayed with a document without previous shares"
+      ]();
+      await Then["a dialog should be visible"]();
+    });
+
+    feature(
+      "When a document has been shared with another user, there's a table",
+      async ({ Given, Then }) => {
+        await Given[
+          "the dialog is displayed with a document with a previous share with Bob"
+        ]();
+        await Then[
+          "a table listing Bob as a user with whom the document is shared should be visible"
+        ]();
+      },
+    );
+
+    feature(
+      "When a document has been shared with another group, there's a table",
+      async ({ Given, Then }) => {
+        await Given[
+          "the dialog is displayed with a document with a previous share with Alice and Bob's group"
+        ]();
+        await Then[
+          "a table listing Alice and Bob's group as a group with whom the document is shared should be visible"
+        ]();
+      },
+    );
+
+    /*
+     * This is because the UI became too complex to show a table for each document
+     */
+    feature(
+      "When multiple documents are selected, no table is shown",
+      async ({ Given, Then }) => {
+        await Given["the dialog is displated with multiple documents"]();
+        await Then["no table should be visible"]();
+      },
+    );
+
+    feature(
+      "When a document has been shared into a notebook, the implicit shares are shown",
+      async ({ Given, Then }) => {
+        await Given[
+          "the dialog is displayed with a document that has been shared into a notebook"
+        ]();
+        await Then[
+          "two tables listing the shared notebook's implicit and explicit shares should be visible"
+        ]();
+      },
+    );
   });
-
-  feature(
-    "When a document has been shared with another user, there's a table",
-    async ({ Given, Then }) => {
-      await Given[
-        "the dialog is displayed with a document with a previous share with Bob"
-      ]();
-      await Then[
-        "a table listing Bob as a user with whom the document is shared should be visible"
-      ]();
-    },
-  );
-
-  feature(
-    "When a document has been shared with another group, there's a table",
-    async ({ Given, Then }) => {
-      await Given[
-        "the dialog is displayed with a document with a previous share with Alice and Bob's group"
-      ]();
-      await Then[
-        "a table listing Alice and Bob's group as a group with whom the document is shared should be visible"
-      ]();
-    },
-  );
-
-  /*
-   * This is because the UI became too complex to show a table for each document
-   */
-  feature(
-    "When multiple documents are selected, no table is shown",
-    async ({ Given, Then }) => {
-      await Given["the dialog is displated with multiple documents"]();
-      await Then["no table should be visible"]();
-    },
-  );
-
-  feature(
-    "When a document has been shared into a notebook, the implicit shares are shown",
-    async ({ Given, Then }) => {
-      await Given[
-        "the dialog is displayed with a document that has been shared into a notebook"
-      ]();
-      await Then[
-        "two tables listing the shared notebook's implicit and explicit shares should be visible"
-      ]();
-    },
-  );
 });
