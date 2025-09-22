@@ -1095,7 +1095,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
     DocumentShares shares =
         new ObjectMapper()
-            .readValue(getSharesForDocResult.getResponse().getContentAsString(), new TypeReference<>() {});
+            .readValue(
+                getSharesForDocResult.getResponse().getContentAsString(), new TypeReference<>() {});
 
     DocumentShares.Share groupShare =
         shares.getDirectShares().stream()

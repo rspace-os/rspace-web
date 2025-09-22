@@ -170,7 +170,7 @@ class ShareApiServiceTest {
 
   @Test
   void deleteShare_success_callsUnshare() {
-    Long id =123L;
+    Long id = 123L;
 
     StructuredDocument shared = new StructuredDocument(TestFactory.createAnyForm());
     RecordGroupSharing rgs = new RecordGroupSharing();

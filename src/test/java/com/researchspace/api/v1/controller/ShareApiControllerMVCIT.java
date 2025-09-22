@@ -202,7 +202,9 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isUnprocessableEntity())
             .andReturn();
 
-    assertEquals("Source and target folder are the same. Id: " + rootId, result.getResolvedException().getMessage());
+    assertEquals(
+        "Source and target folder are the same. Id: " + rootId,
+        result.getResolvedException().getMessage());
   }
 
   @Test

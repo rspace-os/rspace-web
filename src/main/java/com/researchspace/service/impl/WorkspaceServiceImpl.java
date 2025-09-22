@@ -81,7 +81,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       if (isFolder(toMove)) {
         results.add(moveFolder(toMove, sourceFolder, target, user));
       } else {
-        results.add(moveDocAndMaybeShare(toMove, sourceFolder, target, user));
+        results.add(moveDoc(toMove, sourceFolder, target, user));
       }
     }
     return results;
@@ -143,13 +143,13 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     return result;
   }
 
-  private ServiceOperationResult<? extends BaseRecord> moveDocAndMaybeShare(
+  private ServiceOperationResult<? extends BaseRecord> moveDoc(
       Long recordId, Folder sourceFolder, Folder target, User user) {
     BaseRecord toMove = recordManager.get(recordId);
 
     if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
       try {
-        Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder);
+        Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder, null);
         SharingResult sharingResult =
             recordShareHandler.moveIntoSharedNotebook(group, toMove, (Notebook) target);
         return mapShareResultToServiceOperation(sharingResult, toMove);
