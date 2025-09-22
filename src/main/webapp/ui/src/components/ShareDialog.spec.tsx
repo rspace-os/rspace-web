@@ -24,6 +24,7 @@ const feature = test.extend<{
     "the user selects Bob from the recipient dropdown": () => Promise<void>;
     "the user selects Alice and Bob's Group from the recipient dropdown": () => Promise<void>;
     "the user saves the new share": () => Promise<void>;
+    "Alice and Bob's Group is chosen in the recipient dropdown": () => Promise<void>;
   };
   Then: {
     "a dialog should be visible": () => Promise<void>;
@@ -34,8 +35,10 @@ const feature = test.extend<{
     "there shouldn't be any axe violations": () => Promise<void>;
     "the Save button should have changed to Done": () => Promise<void>;
     "a POST request should have been made to create the share": () => void;
+    "a PUT request should have been made to update the existing share": () => void;
+    "Bob is disabled in the recipient dropdown": () => Promise<void>;
   };
-  networkRequests: Array<{ url: URL; postData: string | null }>;
+  networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -88,6 +91,16 @@ const feature = test.extend<{
         const saveButton = page.getByRole("button", { name: /Save/i });
         await saveButton.click();
       },
+      "Alice and Bob's Group is chosen in the recipient dropdown": async () => {
+        const recipientDropdown = page.getByRole("combobox", {
+          name: /Add RSpace users or groups/i,
+        });
+        await recipientDropdown.click();
+        const groupOption = page.getByRole("option", {
+          name: /Alice and Bob's Group/i,
+        });
+        await groupOption.click();
+      },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -132,7 +145,7 @@ const feature = test.extend<{
               .getByRole("cell")
               .getByRole("button", { name: /^Alice and Bob's Group$/ }),
           ).toBeVisible();
-          await expect(row.getByRole("combobox")).toHaveText(/READ/i);
+          await expect(row.getByRole("combobox")).toHaveText(/EDIT/i);
           await expect(row.getByRole("cell").nth(3)).toHaveText(
             /aliceAndBobGroup_SHARED/,
           );
@@ -212,9 +225,37 @@ const feature = test.extend<{
         const shareRequest = networkRequests.find(
           (request) =>
             request.url.pathname === "/api/v1/share" &&
+            request.method === "POST" &&
             request.postData !== null,
         );
         expect(shareRequest).toBeDefined();
+      },
+      "a PUT request should have been made to update the existing share":
+        () => {
+          const updateRequest = networkRequests.find(
+            (request) =>
+              request.url.pathname === "/api/v1/share" &&
+              request.method === "PUT" &&
+              request.postData !== null,
+          );
+          expect(updateRequest).toBeDefined();
+          if (updateRequest != null && updateRequest.postData != null) {
+            const body = JSON.parse(updateRequest.postData) as object;
+            expect(body).toHaveProperty("shareId");
+            expect((body as { shareId: number }).shareId).toEqual(2);
+            expect(body).toHaveProperty("permission");
+            expect(
+              (body as { permission: "EDIT" | "READ" }).permission,
+            ).toEqual("READ");
+          }
+        },
+      "Bob is disabled in the recipient dropdown": async () => {
+        const recipientDropdown = page.getByRole("combobox", {
+          name: /Add RSpace users or groups/i,
+        });
+        await recipientDropdown.click();
+        const bobOption = page.getByRole("option", { name: /^Bob/ });
+        await expect(bobOption).toBeDisabled();
       },
     });
   },
@@ -228,6 +269,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     networkRequests.push({
       url: new URL(request.url()),
       postData: request.postData(),
+      method: request.method(),
     });
   });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
@@ -311,7 +353,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
             sharedDocName: "A shared document",
             sharerId: 1,
             sharerName: "Alice",
-            permission: "READ",
+            permission: "EDIT",
             recipientType: "GROUP",
             recipientId: 1,
             recipientName: "Alice and Bob's Group",
@@ -498,6 +540,28 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
           _links: [],
         }),
       });
+      return;
+    }
+    if (request.method() === "PUT") {
+      const body: any = (await request.postDataJSON()) as any;
+      const shareId = body.shareId as number;
+      const permission = body.permission as string;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          shareInfo: {
+            id: shareId,
+            sharedItemId: 2,
+            shareItemName: "A shared document",
+            sharedTargetType: "USER",
+            permission: permission,
+            _links: [],
+          },
+          _links: [],
+        }),
+      });
+      return;
     }
   });
 });
@@ -592,6 +656,32 @@ test.describe("ShareDialog", () => {
         await When["the user saves the new share"]();
         await Then["the Save button should have changed to Done"]();
         Then["a POST request should have been made to create the share"]();
+      },
+    );
+
+    feature(
+      "The same document shouldn't be shareable twice with the same user",
+      async ({ Given, Then }) => {
+        await Given[
+          "the dialog is displayed with a document with a previous share with Bob"
+        ]();
+        await Then["Bob is disabled in the recipient dropdown"]();
+      },
+    );
+
+    feature(
+      "When sharing multiple documents, choosing a recipient who already has access to one of them will share both with default read permission",
+      async ({ Given, When, Then }) => {
+        await Given["the dialog is displayed with multiple documents"]();
+        await When[
+          "Alice and Bob's Group is chosen in the recipient dropdown"
+        ]();
+        await When["the user saves the new share"]();
+        await Then["the Save button should have changed to Done"]();
+        Then["a POST request should have been made to create the share"]();
+        Then[
+          "a PUT request should have been made to update the existing share"
+        ]();
       },
     );
   });
