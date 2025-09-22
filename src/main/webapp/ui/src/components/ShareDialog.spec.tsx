@@ -26,6 +26,8 @@ const feature = test.extend<{
     "the user saves the new share": () => Promise<void>;
     "Alice and Bob's Group is chosen in the recipient dropdown": () => Promise<void>;
     "the user chooses unshare from the permission menu for Bob": () => Promise<void>;
+    "the user changes Bob's permission from READ to EDIT": () => Promise<void>;
+    "the user changes Alice and Bob's Group permission from EDIT to READ": () => Promise<void>;
   };
   Then: {
     "a dialog should be visible": () => Promise<void>;
@@ -39,6 +41,12 @@ const feature = test.extend<{
     "a PUT request should have been made to update the existing share": () => void;
     "Bob is disabled in the recipient dropdown": () => Promise<void>;
     "a DELETE request should have been made to remove the share": () => void;
+    "a PUT request should have been made to update Bob's permission to EDIT": () => void;
+    "a PUT request should have been made to update the group's permission to {newPermission}": ({
+      newPermission,
+    }: {
+      newPermission: "EDIT" | "READ";
+    }) => void;
   };
   networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
 }>({
@@ -90,9 +98,41 @@ const feature = test.extend<{
           await groupOption.click();
         },
       "the user saves the new share": async () => {
+        // Try both Save and Done buttons as the text might change
         const saveButton = page.getByRole("button", { name: /Save/i });
-        await saveButton.click();
+        const doneButton = page.getByRole("button", { name: /Done/i });
+
+        if (await saveButton.isVisible()) {
+          await saveButton.click();
+        } else if (await doneButton.isVisible()) {
+          await doneButton.click();
+        } else {
+          throw new Error("Neither Save nor Done button is visible");
+        }
       },
+      "the user changes Bob's permission from READ to EDIT": async () => {
+        const dialog = page.getByRole("dialog");
+        const table = dialog.getByRole("table");
+        const bobRow = table.getByRole("row").filter({
+          has: page.getByRole("button", { name: "Bob" }),
+        });
+        const permissionDropdown = bobRow.getByRole("combobox");
+        await permissionDropdown.click();
+        const editOption = page.getByRole("option", { name: /^Edit$/i });
+        await editOption.click();
+      },
+      "the user changes Alice and Bob's Group permission from EDIT to READ":
+        async () => {
+          const dialog = page.getByRole("dialog");
+          const table = dialog.getByRole("table").first();
+          const groupRow = table.getByRole("row").filter({
+            has: page.getByRole("button", { name: /Alice and Bob's Group/i }),
+          });
+          const permissionDropdown = groupRow.getByRole("combobox");
+          await permissionDropdown.click();
+          const editOption = page.getByRole("option", { name: /^Read$/i });
+          await editOption.click();
+        },
       "Alice and Bob's Group is chosen in the recipient dropdown": async () => {
         const recipientDropdown = page.getByRole("combobox", {
           name: /Add RSpace users or groups/i,
@@ -278,6 +318,43 @@ const feature = test.extend<{
         );
         expect(deleteRequest).toBeDefined();
       },
+      "a PUT request should have been made to update Bob's permission to EDIT":
+        () => {
+          const updateRequest = networkRequests.find(
+            (request) =>
+              request.url.pathname === "/api/v1/share" &&
+              request.method === "PUT" &&
+              request.postData !== null,
+          );
+          expect(updateRequest).toBeDefined();
+          if (updateRequest != null && updateRequest.postData != null) {
+            const body = JSON.parse(updateRequest.postData) as object;
+            expect(body).toHaveProperty("shareId");
+            expect((body as { shareId: number }).shareId).toEqual(1);
+            expect(body).toHaveProperty("permission");
+            expect(
+              (body as { permission: "EDIT" | "READ" }).permission,
+            ).toEqual("EDIT");
+          }
+        },
+      "a PUT request should have been made to update the group's permission to {newPermission}":
+        ({ newPermission }: { newPermission: "EDIT" | "READ" }) => {
+          const updateRequest = networkRequests.find(
+            (request) =>
+              request.url.pathname === "/api/v1/share" &&
+              request.method === "PUT" &&
+              request.postData !== null,
+          );
+          expect(updateRequest).toBeDefined();
+          if (updateRequest != null && updateRequest.postData != null) {
+            const body = JSON.parse(updateRequest.postData) as object;
+            expect(body).toHaveProperty("shareId");
+            expect(body).toHaveProperty("permission");
+            expect(
+              (body as { permission: "EDIT" | "READ" }).permission,
+            ).toEqual(newPermission);
+          }
+        },
     });
   },
   networkRequests: async ({}, use) => {
@@ -366,12 +443,12 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       contentType: "application/json",
       body: JSON.stringify({
         sharedDocId: 3,
-        sharedDocName: "A shared document",
+        sharedDocName: "Another shared document",
         directShares: [
           {
             shareId: 2,
             sharedDocId: 3,
-            sharedDocName: "A shared document",
+            sharedDocName: "Another shared document",
             sharerId: 1,
             sharerName: "Alice",
             permission: "EDIT",
@@ -725,6 +802,38 @@ test.describe("ShareDialog", () => {
         ]();
         await When["the user saves the new share"]();
         Then["a DELETE request should have been made to remove the share"]();
+      },
+    );
+  });
+
+  test.describe("Updating shares", () => {
+    feature(
+      "When the user changes a user's permission from READ to EDIT, it should make a PUT request",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the dialog is displayed with a document with a previous share with Bob"
+        ]();
+        await When["the user changes Bob's permission from READ to EDIT"]();
+        await When["the user saves the new share"]();
+        Then[
+          "a PUT request should have been made to update Bob's permission to EDIT"
+        ]();
+      },
+    );
+
+    feature(
+      "When the user changes a group's permission from EDIT to READ, it should make a PUT request",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the dialog is displayed with a document with a previous share with Alice and Bob's group"
+        ]();
+        await When[
+          "the user changes Alice and Bob's Group permission from EDIT to READ"
+        ]();
+        await When["the user saves the new share"]();
+        Then[
+          "a PUT request should have been made to update the group's permission to {newPermission}"
+        ]({ newPermission: "READ" });
       },
     );
   });
