@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
-import { NoPreviousShares, SharedWithAnotherUser } from "./ShareDialog.story";
+import {
+  NoPreviousShares,
+  SharedWithAGroup,
+  SharedWithAnotherUser,
+} from "./ShareDialog.story";
 import { type emptyObject } from "../util/types";
 import * as Jwt from "jsonwebtoken";
 
@@ -8,12 +12,14 @@ const feature = test.extend<{
   Given: {
     "the dialog is displayed with a document without previous shares": () => Promise<void>;
     "the dialog is displayed with a document with a previous share with Bob": () => Promise<void>;
+    "the dialog is displayed with a document with a previous share with Alice and Bob's group": () => Promise<void>;
   };
   Once: emptyObject;
   When: emptyObject;
   Then: {
     "a dialog should be visible": () => Promise<void>;
     "a table listing Bob as a user with whom the document is shared should be visible": () => Promise<void>;
+    "a table listing Alice and Bob's group as a group with whom the document is shared should be visible": () => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -25,6 +31,10 @@ const feature = test.extend<{
       "the dialog is displayed with a document with a previous share with Bob":
         async () => {
           await mount(<SharedWithAnotherUser />);
+        },
+      "the dialog is displayed with a document with a previous share with Alice and Bob's group":
+        async () => {
+          await mount(<SharedWithAGroup />);
         },
     });
   },
@@ -60,6 +70,26 @@ const feature = test.extend<{
           ).toBeVisible();
           await expect(row.getByRole("combobox")).toHaveText(/READ/i);
           await expect(row.getByRole("cell").nth(3)).toHaveText("—");
+        },
+      "a table listing Alice and Bob's group as a group with whom the document is shared should be visible":
+        async () => {
+          const dialog = page.getByRole("dialog", {
+            name: /Share A shared document/i,
+          });
+          await expect(dialog).toBeVisible();
+          const table = dialog.getByRole("table");
+          await expect(table).toBeVisible();
+          const row = table.getByRole("row").nth(1);
+          await expect(row).toBeVisible();
+          await expect(
+            row
+              .getByRole("cell")
+              .getByRole("button", { name: /^Alice and Bob's Group$/ }),
+          ).toBeVisible();
+          await expect(row.getByRole("combobox")).toHaveText(/READ/i);
+          await expect(row.getByRole("cell").nth(3)).toHaveText(
+            /aliceAndBobGroup_SHARED/,
+          );
         },
     });
   },
@@ -127,6 +157,32 @@ feature.beforeEach(async ({ router }) => {
             recipientName: "Bob",
             locationId: null,
             locationName: null,
+          },
+        ],
+        notebookShares: [],
+      }),
+    });
+  });
+  await router.route("/api/v1/share/document/3", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        sharedDocId: 3,
+        sharedDocName: "A shared document",
+        directShares: [
+          {
+            shareId: 2,
+            sharedDocId: 3,
+            sharedDocName: "A shared document",
+            sharerId: 1,
+            sharerName: "Alice",
+            permission: "READ",
+            recipientType: "GROUP",
+            recipientId: 1,
+            recipientName: "Alice and Bob's Group",
+            locationId: 1,
+            locationName: "aliceAndBobGroup_SHARED",
           },
         ],
         notebookShares: [],
@@ -263,6 +319,18 @@ test.describe("ShareDialog", () => {
       ]();
       await Then[
         "a table listing Bob as a user with whom the document is shared should be visible"
+      ]();
+    },
+  );
+
+  feature(
+    "When a document has been shared with another group, there's a table",
+    async ({ Given, Then }) => {
+      await Given[
+        "the dialog is displayed with a document with a previous share with Alice and Bob's group"
+      ]();
+      await Then[
+        "a table listing Alice and Bob's group as a group with whom the document is shared should be visible"
       ]();
     },
   );

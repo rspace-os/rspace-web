@@ -48,3 +48,24 @@ export function SharedWithAnotherUser() {
     </ThemeProvider>
   );
 }
+
+export function SharedWithAGroup() {
+  return (
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <Portal>
+        <Alerts>
+          <DialogBoundary>
+            <ShareDialog
+              shareDialogConfig={{
+                open: true,
+                onClose: () => {},
+                globalIds: ["SD3"],
+                names: ["A shared document"],
+              }}
+            />
+          </DialogBoundary>
+        </Alerts>
+      </Portal>
+    </ThemeProvider>
+  );
+}
