@@ -25,6 +25,7 @@ const feature = test.extend<{
     "the user selects Alice and Bob's Group from the recipient dropdown": () => Promise<void>;
     "the user saves the new share": () => Promise<void>;
     "Alice and Bob's Group is chosen in the recipient dropdown": () => Promise<void>;
+    "the user chooses unshare from the permission menu for Bob": () => Promise<void>;
   };
   Then: {
     "a dialog should be visible": () => Promise<void>;
@@ -37,6 +38,7 @@ const feature = test.extend<{
     "a POST request should have been made to create the share": () => void;
     "a PUT request should have been made to update the existing share": () => void;
     "Bob is disabled in the recipient dropdown": () => Promise<void>;
+    "a DELETE request should have been made to remove the share": () => void;
   };
   networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
 }>({
@@ -100,6 +102,17 @@ const feature = test.extend<{
           name: /Alice and Bob's Group/i,
         });
         await groupOption.click();
+      },
+      "the user chooses unshare from the permission menu for Bob": async () => {
+        const dialog = page.getByRole("dialog");
+        const table = dialog.getByRole("table");
+        const bobRow = table.getByRole("row").filter({
+          has: page.getByRole("button", { name: "Bob" }),
+        });
+        const permissionDropdown = bobRow.getByRole("combobox");
+        await permissionDropdown.click();
+        const unshareOption = page.getByRole("option", { name: /unshare/i });
+        await unshareOption.click();
       },
     });
   },
@@ -256,6 +269,14 @@ const feature = test.extend<{
         await recipientDropdown.click();
         const bobOption = page.getByRole("option", { name: /^Bob/ });
         await expect(bobOption).toBeDisabled();
+      },
+      "a DELETE request should have been made to remove the share": () => {
+        const deleteRequest = networkRequests.find(
+          (request) =>
+            request.method === "DELETE" &&
+            request.url.pathname.startsWith("/api/v1/share/"),
+        );
+        expect(deleteRequest).toBeDefined();
       },
     });
   },
@@ -563,6 +584,12 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
       return;
     }
+    if (request.method() !== "DELETE") {
+      await route.fulfill({
+        status: 204,
+      });
+      return;
+    }
   });
 });
 
@@ -682,6 +709,22 @@ test.describe("ShareDialog", () => {
         Then[
           "a PUT request should have been made to update the existing share"
         ]();
+      },
+    );
+  });
+
+  test.describe("Removing shares", () => {
+    feature(
+      "When the user chooses unshare from the permission menu, it should make a DELETE request",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the dialog is displayed with a document with a previous share with Bob"
+        ]();
+        await When[
+          "the user chooses unshare from the permission menu for Bob"
+        ]();
+        await When["the user saves the new share"]();
+        Then["a DELETE request should have been made to remove the share"]();
       },
     );
   });
