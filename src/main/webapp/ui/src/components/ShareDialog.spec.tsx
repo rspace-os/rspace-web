@@ -20,7 +20,10 @@ const feature = test.extend<{
     "the dialog is displayed with a document that has been shared into a notebook": () => Promise<void>;
   };
   Once: emptyObject;
-  When: emptyObject;
+  When: {
+    "the user selects Bob from the recipient dropdown": () => Promise<void>;
+    "the user saves the new share": () => Promise<void>;
+  };
   Then: {
     "a dialog should be visible": () => Promise<void>;
     "a table listing Bob as a user with whom the document is shared should be visible": () => Promise<void>;
@@ -28,7 +31,10 @@ const feature = test.extend<{
     "no table should be visible": () => Promise<void>;
     "two tables listing the shared notebook's implicit and explicit shares should be visible": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
+    "the Save button should have changed to Done": () => Promise<void>;
+    "a POST request should have been made to create the share": () => void;
   };
+  networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -56,10 +62,23 @@ const feature = test.extend<{
   Once: async ({}, use) => {
     await use({});
   },
-  When: async ({}, use) => {
-    await use({});
+  When: async ({ page }, use) => {
+    await use({
+      "the user selects Bob from the recipient dropdown": async () => {
+        const recipientDropdown = page.getByRole("combobox", {
+          name: /Add RSpace users or groups/i,
+        });
+        await recipientDropdown.click();
+        const bobOption = page.getByRole("option", { name: /^Bob/ });
+        await bobOption.click();
+      },
+      "the user saves the new share": async () => {
+        const saveButton = page.getByRole("button", { name: /Save/i });
+        await saveButton.click();
+      },
+    });
   },
-  Then: async ({ page }, use) => {
+  Then: async ({ page, networkRequests }, use) => {
     await use({
       "a dialog should be visible": async () => {
         const dialog = page.getByRole("dialog", {
@@ -173,11 +192,32 @@ const feature = test.extend<{
           .analyze();
         expect(accessibilityScanResults.violations).toEqual([]);
       },
+      "the Save button should have changed to Done": async () => {
+        const doneButton = page.getByRole("button", { name: /Done/i });
+        await expect(doneButton).toBeVisible();
+      },
+      "a POST request should have been made to create the share": () => {
+        const shareRequest = networkRequests.find(
+          (request) =>
+            request.url.pathname === "/api/v1/share" &&
+            request.postData !== null,
+        );
+        expect(shareRequest).toBeDefined();
+      },
     });
+  },
+  networkRequests: async ({}, use) => {
+    await use([]);
   },
 });
 
-feature.beforeEach(async ({ router }) => {
+feature.beforeEach(async ({ router, page, networkRequests }) => {
+  page.on("request", (request) => {
+    networkRequests.push({
+      url: new URL(request.url()),
+      postData: request.postData(),
+    });
+  });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
@@ -421,6 +461,37 @@ feature.beforeEach(async ({ router }) => {
       });
     },
   );
+  await router.route("/api/v1/share", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST") {
+      const body: any = (await request.postDataJSON()) as any;
+      const itemId = body.itemsToShare[0] as number;
+      const permission = body.users[0]?.permission as string;
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          shareInfos: [
+            {
+              id: 294912,
+              sharedItemId: itemId,
+              shareItemName: "Untitled document",
+              sharedTargetType: "USER",
+              permission: permission,
+              _links: [],
+            },
+          ],
+          failedShares: [],
+          _links: [],
+        }),
+      });
+    }
+  });
+});
+
+feature.afterEach(({ networkRequests }) => {
+  networkRequests.splice(0, networkRequests.length);
 });
 
 test.describe("ShareDialog", () => {
@@ -481,6 +552,21 @@ test.describe("ShareDialog", () => {
           "two tables listing the shared notebook's implicit and explicit shares should be visible"
         ]();
         await Then["there shouldn't be any axe violations"]();
+      },
+    );
+  });
+
+  test.describe("Creating new shares", () => {
+    feature(
+      "An unshared document should be sharable with a member of the same group",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the dialog is displayed with a document without previous shares"
+        ]();
+        await When["the user selects Bob from the recipient dropdown"]();
+        await When["the user saves the new share"]();
+        await Then["the Save button should have changed to Done"]();
+        Then["a POST request should have been made to create the share"]();
       },
     );
   });
