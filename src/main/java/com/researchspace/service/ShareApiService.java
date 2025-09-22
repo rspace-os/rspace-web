@@ -13,6 +13,7 @@ import org.springframework.validation.BindException;
 
 public interface ShareApiService {
 
+  @Transactional
   ApiSharingResult shareItems(SharePost shareConfig, User user) throws BindException;
 
   @Transactional
