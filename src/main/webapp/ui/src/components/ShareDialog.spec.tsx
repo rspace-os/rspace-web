@@ -27,7 +27,9 @@ const feature = test.extend<{
     "Alice and Bob's Group is chosen in the recipient dropdown": () => Promise<void>;
     "the user chooses unshare from the permission menu for Bob": () => Promise<void>;
     "the user changes Bob's permission from READ to EDIT": () => Promise<void>;
-    "the user changes Alice and Bob's Group permission from EDIT to READ": () => Promise<void>;
+    "the user changes Alice and Bob's Group permission from EDIT to read": () => Promise<void>;
+    "the user clicks the Change button for Alice and Bob's Group folder": () => Promise<void>;
+    "the user selects a different folder in the folder selection dialog": () => Promise<void>;
   };
   Then: {
     "a dialog should be visible": () => Promise<void>;
@@ -47,6 +49,7 @@ const feature = test.extend<{
     }: {
       newPermission: "EDIT" | "READ";
     }) => void;
+    "a POST request should have been made to move the document to the new folder": () => void;
   };
   networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
 }>({
@@ -99,15 +102,19 @@ const feature = test.extend<{
         },
       "the user saves the new share": async () => {
         // Try both Save and Done buttons as the text might change
-        const saveButton = page.getByRole("button", { name: /Save/i });
-        const doneButton = page.getByRole("button", { name: /Done/i });
+        // Target the ShareDialog specifically, not any other dialogs
+        const shareDialog = page.getByRole("dialog", { name: /Share/ });
+        const saveButton = shareDialog.getByRole("button", { name: /Save/i });
+        const doneButton = shareDialog.getByRole("button", { name: /Done/i });
 
         if (await saveButton.isVisible()) {
           await saveButton.click();
         } else if (await doneButton.isVisible()) {
           await doneButton.click();
         } else {
-          throw new Error("Neither Save nor Done button is visible");
+          throw new Error(
+            "Neither Save nor Done button is visible in share dialog",
+          );
         }
       },
       "the user changes Bob's permission from READ to EDIT": async () => {
@@ -121,7 +128,7 @@ const feature = test.extend<{
         const editOption = page.getByRole("option", { name: /^Edit$/i });
         await editOption.click();
       },
-      "the user changes Alice and Bob's Group permission from EDIT to READ":
+      "the user changes Alice and Bob's Group permission from EDIT to read":
         async () => {
           const dialog = page.getByRole("dialog");
           const table = dialog.getByRole("table").first();
@@ -154,6 +161,41 @@ const feature = test.extend<{
         const unshareOption = page.getByRole("option", { name: /unshare/i });
         await unshareOption.click();
       },
+      "the user clicks the Change button for Alice and Bob's Group folder":
+        async () => {
+          const dialog = page.getByRole("dialog");
+          const table = dialog.getByRole("table").first();
+          const groupRow = table.getByRole("row").filter({
+            has: page.getByRole("button", { name: /Alice and Bob's Group/i }),
+          });
+          const changeButton = groupRow.getByRole("button", {
+            name: /Change/i,
+          });
+          await changeButton.click();
+        },
+      "the user selects a different folder in the folder selection dialog":
+        async () => {
+          const folderDialog = page.getByRole("dialog", {
+            name: /Select Shared Folder Location/i,
+          });
+          await expect(folderDialog).toBeVisible();
+
+          // Wait for the folder tree to load
+          await page.waitForTimeout(1000);
+
+          // Click on the existing tree item (alice-bob)
+          const treeItem = folderDialog.getByText("alice-bob").first();
+          await expect(treeItem).toBeVisible();
+          await treeItem.click();
+
+          const selectButton = folderDialog.getByRole("button", {
+            name: /Select/i,
+          });
+          await selectButton.click();
+
+          // Wait for the folder dialog to close
+          await expect(folderDialog).not.toBeVisible();
+        },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
@@ -353,6 +395,29 @@ const feature = test.extend<{
             expect(
               (body as { permission: "EDIT" | "READ" }).permission,
             ).toEqual(newPermission);
+          }
+        },
+      "a POST request should have been made to move the document to the new folder":
+        () => {
+          const moveRequest = networkRequests.find(
+            (request) =>
+              request.url.pathname === "/api/v1/documents/move" &&
+              request.method === "POST" &&
+              request.postData !== null,
+          );
+          expect(moveRequest).toBeDefined();
+          if (moveRequest != null && moveRequest.postData != null) {
+            const body = JSON.parse(moveRequest.postData) as object;
+            expect(body).toHaveProperty("docId");
+            expect((body as { docId: number }).docId).toEqual(3);
+            expect(body).toHaveProperty("sourceFolderId");
+            expect((body as { sourceFolderId: number }).sourceFolderId).toEqual(
+              1,
+            );
+            expect(body).toHaveProperty("targetFolderId");
+            expect((body as { targetFolderId: number }).targetFolderId).toEqual(
+              129,
+            );
           }
         },
     });
@@ -557,8 +622,8 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          id: 1,
-          globalId: "FL1",
+          id: 129,
+          globalId: "FL129",
           name: "alice-bob",
           created: "2025-09-09T12:05:14.109Z",
           lastModified: "2025-09-09T12:05:14.109Z",
@@ -613,6 +678,53 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     },
   );
+  await router.route(/\/api\/v1\/folders\/tree.*/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        totalHits: 1,
+        pageNumber: 0,
+        parentId: null,
+        _links: [],
+        records: [
+          {
+            id: 2,
+            globalId: "FL2",
+            name: "alice-bob",
+            created: "2025-09-09T12:05:14.109Z",
+            lastModified: "2025-09-09T12:05:14.109Z",
+            parentFolderId: null,
+            type: "folder",
+            _links: [],
+            owner: {
+              id: 1,
+              username: "alice",
+              email: "alice@example.com",
+              firstName: "Alice",
+              lastName: "Smith",
+              homeFolderId: 1,
+              workbenchId: null,
+              hasPiRole: true,
+              hasSysAdminRole: false,
+              _links: [],
+            },
+          },
+        ],
+      }),
+    });
+  });
+  await router.route("/api/v1/documents/move", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ success: true }),
+      });
+      return;
+    }
+  });
   await router.route("/api/v1/share", async (route) => {
     const request = route.request();
     if (request.method() === "POST") {
@@ -822,18 +934,37 @@ test.describe("ShareDialog", () => {
     );
 
     feature(
-      "When the user changes a group's permission from EDIT to READ, it should make a PUT request",
+      "When the user changes a group's permission from EDIT to read, it should make a PUT request",
       async ({ Given, When, Then }) => {
         await Given[
           "the dialog is displayed with a document with a previous share with Alice and Bob's group"
         ]();
         await When[
-          "the user changes Alice and Bob's Group permission from EDIT to READ"
+          "the user changes Alice and Bob's Group permission from EDIT to read"
         ]();
         await When["the user saves the new share"]();
         Then[
           "a PUT request should have been made to update the group's permission to {newPermission}"
         ]({ newPermission: "READ" });
+      },
+    );
+
+    feature(
+      "When the user changes the folder location for a group share, it should make a POST request to move the document",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the dialog is displayed with a document with a previous share with Alice and Bob's group"
+        ]();
+        await When[
+          "the user clicks the Change button for Alice and Bob's Group folder"
+        ]();
+        await When[
+          "the user selects a different folder in the folder selection dialog"
+        ]();
+        await When["the user saves the new share"]();
+        Then[
+          "a POST request should have been made to move the document to the new folder"
+        ]();
       },
     );
   });
