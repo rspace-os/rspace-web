@@ -90,3 +90,24 @@ export function MultipleDocuments() {
     </ThemeProvider>
   );
 }
+
+export function DocumentThatHasBeenSharedIntoANotebook() {
+  return (
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <Portal>
+        <Alerts>
+          <DialogBoundary>
+            <ShareDialog
+              shareDialogConfig={{
+                open: true,
+                onClose: () => {},
+                globalIds: ["SD4"],
+                names: ["A shared notebook document"],
+              }}
+            />
+          </DialogBoundary>
+        </Alerts>
+      </Portal>
+    </ThemeProvider>
+  );
+}

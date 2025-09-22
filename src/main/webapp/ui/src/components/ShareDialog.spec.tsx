@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import {
+  DocumentThatHasBeenSharedIntoANotebook,
   MultipleDocuments,
   NoPreviousShares,
   SharedWithAGroup,
@@ -15,6 +16,7 @@ const feature = test.extend<{
     "the dialog is displayed with a document with a previous share with Bob": () => Promise<void>;
     "the dialog is displayed with a document with a previous share with Alice and Bob's group": () => Promise<void>;
     "the dialog is displated with multiple documents": () => Promise<void>;
+    "the dialog is displayed with a document that has been shared into a notebook": () => Promise<void>;
   };
   Once: emptyObject;
   When: emptyObject;
@@ -23,6 +25,7 @@ const feature = test.extend<{
     "a table listing Bob as a user with whom the document is shared should be visible": () => Promise<void>;
     "a table listing Alice and Bob's group as a group with whom the document is shared should be visible": () => Promise<void>;
     "no table should be visible": () => Promise<void>;
+    "two tables listing the shared notebook's implicit and explicit shares should be visible": () => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -42,6 +45,10 @@ const feature = test.extend<{
       "the dialog is displated with multiple documents": async () => {
         await mount(<MultipleDocuments />);
       },
+      "the dialog is displayed with a document that has been shared into a notebook":
+        async () => {
+          await mount(<DocumentThatHasBeenSharedIntoANotebook />);
+        },
     });
   },
   Once: async ({}, use) => {
@@ -110,6 +117,44 @@ const feature = test.extend<{
           }),
         ).toBeVisible();
       },
+      "two tables listing the shared notebook's implicit and explicit shares should be visible":
+        async () => {
+          const dialog = page.getByRole("dialog", {
+            name: /Share A shared notebook document/i,
+          });
+          await expect(dialog).toBeVisible();
+          const tables = dialog.getByRole("table");
+          await expect(tables).toHaveCount(2);
+          const directShareTable = tables.nth(0);
+          const notebookShareTable = tables.nth(1);
+          await expect(directShareTable).toBeVisible();
+          await expect(notebookShareTable).toBeVisible();
+          const directShareRow = directShareTable.getByRole("row").nth(1);
+          await expect(directShareRow).toBeVisible();
+          await expect(
+            directShareRow
+              .getByRole("cell")
+              .getByRole("button", { name: /^Alice and Bob's Group$/ }),
+          ).toBeVisible();
+          await expect(directShareRow.getByRole("combobox")).toHaveText(
+            /READ/i,
+          );
+          await expect(directShareRow.getByRole("cell").nth(3)).toHaveText(
+            /A notebook/,
+          );
+
+          const notebookShareRow = notebookShareTable.getByRole("row").nth(1);
+          await expect(notebookShareRow).toBeVisible();
+          await expect(
+            notebookShareRow
+              .getByRole("cell")
+              .getByRole("button", { name: /^Alice and Bob's Group$/ }),
+          ).toBeVisible();
+          await expect(notebookShareRow.getByRole("combobox")).toHaveText(
+            /EDIT/i,
+          );
+          await expect(notebookShareRow.getByRole("combobox")).toBeDisabled();
+        },
     });
   },
 });
@@ -205,6 +250,44 @@ feature.beforeEach(async ({ router }) => {
           },
         ],
         notebookShares: [],
+      }),
+    });
+  });
+  await router.route("/api/v1/share/document/4", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        sharedDocId: 4,
+        sharedDocName: "A shared notebook document",
+        directShares: [
+          {
+            shareId: 3,
+            sharedDocId: 4,
+            sharedDocName: "A shared notebook document",
+            sharerId: 1,
+            sharerName: "Alice",
+            permission: "READ",
+            recipientType: "GROUP",
+            recipientId: 1,
+            recipientName: "Alice and Bob's Group",
+            locationId: 2,
+            locationName: "A notebook",
+          },
+        ],
+        notebookShares: [
+          {
+            shareId: 4,
+            sharerId: 2,
+            sharerName: "Bob",
+            recipientId: 1,
+            recipientName: "Alice and Bob's Group",
+            recipientType: "GROUP",
+            permission: "EDIT",
+            locationId: 2,
+            locationName: "A notebook",
+          },
+        ],
       }),
     });
   });
@@ -362,6 +445,18 @@ test.describe("ShareDialog", () => {
     async ({ Given, Then }) => {
       await Given["the dialog is displated with multiple documents"]();
       await Then["no table should be visible"]();
+    },
+  );
+
+  feature(
+    "When a document has been shared into a notebook, the implicit shares are shown",
+    async ({ Given, Then }) => {
+      await Given[
+        "the dialog is displayed with a document that has been shared into a notebook"
+      ]();
+      await Then[
+        "two tables listing the shared notebook's implicit and explicit shares should be visible"
+      ]();
     },
   );
 });
