@@ -57,16 +57,13 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     boolean isParentFolderInSharedTree = false;
     if (parentFolder.isNotebook()) {
-      Folder grandParentFolder =
-          fMger.getFolder(
-              ((Breadcrumb) model.getAttribute("bcrumb"))
-                  .getElements()
-                  .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
-                  .getId(),
-              usr);
-      isParentFolderInSharedTree = grandParentFolder.isSharedFolder();
-    } else {
-      isParentFolderInSharedTree = parentFolder.isSharedFolder();
+      Long grandParentId =
+          ((Breadcrumb) model.getAttribute("bcrumb"))
+              .getElements()
+              .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
+              .getId();
+      isParentFolderInSharedTree =
+          fMger.isParentFolderInSharedTree(parentFolder, grandParentId, usr);
     }
 
     ActionPermissionsDTO dto = new ActionPermissionsDTO();

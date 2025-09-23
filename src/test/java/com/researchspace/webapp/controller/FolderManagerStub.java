@@ -132,6 +132,11 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
+  public boolean isParentFolderInSharedTree(Folder parentFolder, Long grandParentId, User usr) {
+    return false;
+  }
+
+  @Override
   public Folder getRootRecordForUser(User subject, User user) {
     return null;
   }
