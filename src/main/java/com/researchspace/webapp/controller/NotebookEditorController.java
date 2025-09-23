@@ -99,13 +99,11 @@ public class NotebookEditorController extends BaseController {
       }
     }
 
-    //    Long grandParentId =
-    //        ((Breadcrumb) model.getAttribute("bcrumb"))
-    //            .getElements()
-    //            .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
-    //            .getId();
 
     ActionPermissionsDTO permDTO = new ActionPermissionsDTO();
+    if(grandParentId == null){
+      grandParentId = notebook.getParent().getId();
+    }
     permDTO.setCreateRecord(
         folderManager.isFolderInSharedTree(notebook, grandParentId, user)
             && permissionUtils.isPermitted(notebook, PermissionType.WRITE, user));
