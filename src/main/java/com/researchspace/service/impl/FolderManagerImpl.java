@@ -199,6 +199,19 @@ public class FolderManagerImpl implements FolderManager {
         || br.hasType(RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT);
   }
 
+  @Override
+  public boolean isParentFolderInSharedTree(Folder parentFolder, Long grandParentId, User usr) {
+    boolean isParentFolderInSharedTree = false;
+    if (parentFolder.isNotebook()) {
+      Folder grandParentFolder = this.getFolder(grandParentId, usr);
+      isParentFolderInSharedTree = grandParentFolder.isSharedFolder();
+    } else {
+      isParentFolderInSharedTree = parentFolder.isSharedFolder();
+    }
+    return isParentFolderInSharedTree;
+  }
+
+  @Override
   public Notebook getNotebook(Long notebookid) {
     Notebook notebook = (Notebook) folderDao.get(notebookid);
     long count =
