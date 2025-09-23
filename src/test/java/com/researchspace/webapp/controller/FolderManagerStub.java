@@ -132,7 +132,7 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
-  public boolean isParentFolderInSharedTree(Folder parentFolder, Long grandParentId, User usr) {
+  public boolean isFolderInSharedTree(Folder folderOrNotebook, Long parentId, User usr) {
     return false;
   }
 
