@@ -29,6 +29,7 @@ import com.researchspace.api.v1.model.ApiSearchQuery;
 import com.researchspace.api.v1.model.ApiSearchQuery.OperatorEnum;
 import com.researchspace.api.v1.model.ApiSearchTerm;
 import com.researchspace.api.v1.model.ApiSearchTerm.QueryTypeEnum;
+import com.researchspace.api.v1.model.MoveRequest;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.Group;
@@ -727,5 +728,40 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertExceptionThrown(
         () -> documentsApi.deleteDocumentById(nb.getId(), testUser, new MockHttpServletResponse()),
         NotFoundException.class);
+  }
+
+  @Test
+  public void moveDocuments_movesDocumentToTargetFolder() throws Exception {
+    Folder rootFolder = folderMgr.getRootFolderForUser(testUser);
+    Folder source = createFolder("src", rootFolder, testUser);
+    Folder target = createFolder("dst", rootFolder, testUser);
+
+    StructuredDocument doc = createBasicDocumentInFolder(testUser, source, "some text");
+
+    MoveRequest req = new MoveRequest();
+    req.setDocId(doc.getId());
+    req.setSourceFolderId(source.getId());
+    req.setTargetFolderId(target.getId());
+
+    documentsApi.moveDocuments(req, mockBindingResult, testUser);
+
+    StructuredDocument moved = recordMgr.getRecordWithFields(doc.getId(), testUser).asStrucDoc();
+    assertTrue(moved.getOwnerParent().isPresent());
+    assertEquals(target.getId(), moved.getOwnerParent().get().getId());
+  }
+
+  @Test
+  public void moveDocuments_sameSourceAndTarget_throwsRuntime() throws Exception {
+    Folder rootFolder = folderMgr.getRootFolderForUser(testUser);
+    Folder source = createFolder("folder", rootFolder, testUser);
+    StructuredDocument doc = createBasicDocumentInFolder(testUser, source, "some text");
+
+    MoveRequest req = new MoveRequest();
+    req.setDocId(doc.getId());
+    req.setSourceFolderId(source.getId());
+    req.setTargetFolderId(source.getId());
+
+    assertExceptionThrown(() -> documentsApi.moveDocuments(req, mockBindingResult, testUser),
+        RuntimeException.class);
   }
 }

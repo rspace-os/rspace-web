@@ -422,25 +422,19 @@ public class DocumentsApiController extends BaseApiController implements Documen
       @RequestAttribute(name = "user") User user)
       throws BindException {
     throwBindExceptionIfErrors(errors);
-    List<ServiceOperationResult<? extends BaseRecord>> moveResult =
+    ServiceOperationResult<? extends BaseRecord> moveResult =
         workspaceService.moveRecords(
             List.of(request.getDocId()),
             String.valueOf(request.getTargetFolderId()),
             request.getSourceFolderId(),
-            user);
+            user)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No result from move operation."));
 
-    String failedMoves =
-        moveResult.stream()
-            .filter(result -> !result.isSucceeded())
-            .map(ServiceOperationResult::getMessage)
-            .filter(StringUtils::isNotEmpty)
-            .collect(Collectors.joining(", "));
-
-    if (StringUtils.isNotEmpty(failedMoves)) {
-      // throw as 500 as a general response as there are various possible reasons for failure, and
-      // we only
-      // have the failure message to understand why, which may or may not be present.`
-      throw new RuntimeException("Error performing move: " + failedMoves);
+    if (!moveResult.isSucceeded()) {
+      String message = StringUtils.defaultIfBlank(moveResult.getMessage(), "");
+      throw new RuntimeException("Error performing move. " + message);
     }
   }
 }

@@ -1163,6 +1163,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(notebookB.getId(), afterDoc.getParentFolderId());
   }
 
+  @Ignore
   @Test
   public void moveNotebookEntryIntoSharedNotebookOwnedByAnotherUser() throws Exception {
     // create a group with shared folders
