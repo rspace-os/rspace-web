@@ -246,7 +246,7 @@ public interface FolderManager {
   Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
       Long parentSharedFolderOrNotebookId, Long grandParentFolderId, User user);
 
-  boolean isParentFolderInSharedTree(Folder parentFolder, Long grandParentId, User usr);
+  boolean isFolderInSharedTree(Folder folderOrNotebook, Long parentId, User usr);
 
   /**
    * Ease of use method returns the root record always

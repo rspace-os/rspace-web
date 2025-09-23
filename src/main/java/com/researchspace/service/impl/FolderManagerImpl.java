@@ -200,13 +200,13 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   @Override
-  public boolean isParentFolderInSharedTree(Folder parentFolder, Long grandParentId, User usr) {
+  public boolean isFolderInSharedTree(Folder folderOrNotebook, Long parentId, User usr) {
     boolean isParentFolderInSharedTree = false;
-    if (parentFolder.isNotebook()) {
-      Folder grandParentFolder = this.getFolder(grandParentId, usr);
+    if (folderOrNotebook.isNotebook()) {
+      Folder grandParentFolder = this.getFolder(parentId, usr);
       isParentFolderInSharedTree = grandParentFolder.isSharedFolder();
     } else {
-      isParentFolderInSharedTree = parentFolder.isSharedFolder();
+      isParentFolderInSharedTree = folderOrNotebook.isSharedFolder();
     }
     return isParentFolderInSharedTree;
   }

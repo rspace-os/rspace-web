@@ -4,7 +4,6 @@ import static com.researchspace.model.core.RecordType.INDIVIDUAL_SHARED_FOLDER_R
 import static com.researchspace.model.core.RecordType.SHARED_FOLDER;
 import static com.researchspace.model.core.RecordType.SHARED_GROUP_FOLDER_ROOT;
 import static com.researchspace.model.core.RecordType.TEMPLATE;
-import static com.researchspace.model.core.RecordType.isNotebook;
 
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
@@ -70,7 +69,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
                 .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
                 .getId();
         isParentFolderInSharedTree =
-            fMger.isParentFolderInSharedTree(parentFolder, grandParentId, usr);
+            fMger.isFolderInSharedTree(parentFolder, grandParentId, usr);
       } else {
         log.warn("it was not possible to get Breadcumbs from the model for notebookID="
             + parentFolder.getId());
