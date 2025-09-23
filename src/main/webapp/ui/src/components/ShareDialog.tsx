@@ -448,6 +448,14 @@ export function ShareDialog({
     return Result.Ok(null);
   }, [newShares]);
 
+  /*
+   * Here we save all of the changes that have been made: new shares, permission
+   * changes, folder changes, and unshares. We do this in a sequence to ensure
+   * that each operation completes before the next begins, which helps to
+   * maintain data integrity and handle a server issue around concurrent updates.
+   * If this becomes a performance issue, we can look at batching some of these
+   * operations in the future or resolving the server-side issue.
+   */
   async function handleSave() {
     if (!hasChanges) {
       trackEvent("user:closes:share_dialog:workspace");
@@ -457,14 +465,16 @@ export function ShareDialog({
 
     setSaving(true);
     try {
-      // Handle deletions (unshare)
-      const deletionPromises = Array.from(permissionChanges.entries())
+      // Handle deletions (unshare) sequentially
+      const deletions = Array.from(permissionChanges.entries())
         .filter(([_, permission]) => permission === "UNSHARE")
-        .map(([shareId, _]) => deleteShare(parseInt(shareId, 10)));
+        .map(([shareId, _]) => parseInt(shareId, 10));
 
-      // Handle permission and folder modifications using updateShare
-      const updatePromises: Promise<void>[] = [];
-      const movePromises: Promise<void>[] = [];
+      for (const shareId of deletions) {
+        await deleteShare(shareId);
+      }
+
+      // Handle permission and folder modifications sequentially
       const allChangedShareIds = new Set([
         ...permissionChanges.keys(),
         ...shareFolderChanges.keys(),
@@ -485,42 +495,35 @@ export function ShareDialog({
               newPermission !== originalShare.permission &&
               typeof newPermission !== "undefined"
             ) {
-              updatePromises.push(
-                updateShare({
-                  ...originalShare,
-                  permission: newPermission,
-                }),
-              );
+              await updateShare({
+                ...originalShare,
+                permission: newPermission,
+              });
               continue;
             }
             if (newLocationId !== originalShare.locationId && newLocationId) {
-              movePromises.push(
-                move({
-                  documentId: originalShare.sharedDocId,
-                  sourceFolderId: originalShare.locationId!,
-                  destinationFolderId: newLocationId,
-                }),
-              );
+              await move({
+                documentId: originalShare.sharedDocId,
+                sourceFolderId: originalShare.locationId!,
+                destinationFolderId: newLocationId,
+              });
               continue;
             }
           }
         }
       }
 
-      // Handle new share creations
-      const creationPromises = Array.from(newShares.entries())
+      // Handle new share creations sequentially
+      const creations = Array.from(newShares.entries())
         .map(([globalId, shares]) => ({
           id: parseInt(globalId.replace(/\D/g, ""), 10),
           shares,
         }))
-        .filter(({ id, shares }) => !isNaN(id) && shares.length > 0)
-        .map(({ id, shares }) => createShare(id, shares));
+        .filter(({ id, shares }) => !isNaN(id) && shares.length > 0);
 
-      await Promise.all([
-        ...deletionPromises,
-        ...updatePromises,
-        ...creationPromises,
-      ]);
+      for (const { id, shares } of creations) {
+        await createShare(id, shares);
+      }
 
       trackEvent("user:saves:share_changes:workspace");
       setPermissionChanges(new Map());
