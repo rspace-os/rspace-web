@@ -13,16 +13,13 @@ import org.springframework.validation.BindException;
 
 public interface ShareApiService {
 
-  @Transactional
   ApiSharingResult shareItems(SharePost shareConfig, User user) throws BindException;
 
-  @Transactional
   void deleteShare(Long id, User user);
 
   @Transactional
   void updateShare(SharePermissionUpdate permissionUpdate, User user) throws BindException;
 
-  @Transactional(readOnly = true)
   ApiShareSearchResult getShares(
       DocumentApiPaginationCriteria pgCrit, ApiGenericSearchConfig apiSrchConfig, User user)
       throws BindException;
