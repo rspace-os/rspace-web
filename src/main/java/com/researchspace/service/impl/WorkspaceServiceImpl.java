@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Partial refactoring of WorkspaceController code into the service layer so that it can be used by
@@ -35,7 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
  * a count of the record move successes was kept in place.
  */
 @Service
-@Transactional
 public class WorkspaceServiceImpl implements WorkspaceService {
 
   private final FolderManager folderManager;
@@ -111,14 +109,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     }
   }
 
-  @Override
-  public int moveRecordsCountSuccess(
-      List<Long> toMove, String targetFolderId, Long sourceFolderId, User user) {
-    List<ServiceOperationResult<? extends BaseRecord>> results =
-        moveRecords(toMove, targetFolderId, sourceFolderId, user);
-    return (int) results.stream().filter(result -> result != null && result.isSucceeded()).count();
-  }
-
   private Folder resolveTargetFolder(String targetFolderId, User user, Folder usersRootFolder) {
     if ("/".equals(targetFolderId)) {
       return usersRootFolder;
@@ -147,9 +137,10 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       Long recordId, Folder sourceFolder, Folder target, User user) {
     BaseRecord toMove = recordManager.get(recordId);
 
+    // moving into a shared notebook, not owned by the user
     if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
       try {
-        Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder, null);
+        Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, target, null);
         SharingResult sharingResult =
             recordShareHandler.moveIntoSharedNotebook(group, toMove, (Notebook) target);
         return mapShareResultToServiceOperation(sharingResult, toMove);

@@ -124,7 +124,7 @@ class ShareApiServiceTest {
 
     assertEquals(1, result.getShareInfos().size());
     assertEquals(1, result.getFailedShares().size());
-    assertEquals(111L, result.getShareInfos().get(0).getId());
+    assertEquals(111L, result.getShareInfos().get(0).getSharedItemId());
     assertEquals(222L, result.getFailedShares().get(0));
   }
 

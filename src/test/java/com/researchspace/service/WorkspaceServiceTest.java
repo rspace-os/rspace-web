@@ -259,22 +259,4 @@ public class WorkspaceServiceTest {
     when(recordManager.move(RECORD_ID, TARGET_FOLDER_ID, SOURCE_FOLDER_ID, user))
         .thenReturn(moveResultFail);
   }
-
-  @Test
-  public void moveRecordsCountSuccess_countsSuccessfulMoves() {
-    when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
-    commonMocks(user, target, doc);
-    mockHasMovePermission(true);
-    mockMoveSuccess(doc);
-    int moved =
-        service.moveRecordsCountSuccess(
-            List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
-    assertEquals(1, moved);
-
-    mockFail();
-    int movedFail =
-        service.moveRecordsCountSuccess(
-            List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
-    assertEquals(0, movedFail);
-  }
 }

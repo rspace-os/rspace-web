@@ -583,15 +583,18 @@ public class WorkspaceController extends BaseController {
 
     User user = getUserByUsername(principal.getName());
 
-    int moveCounter =
-        workspaceService.moveRecordsCountSuccess(
-            List.of(toMove), targetFolderId, settings.getParentFolderId(), user);
+    long moveSuccessCount =
+        workspaceService
+            .moveRecords(List.of(toMove), targetFolderId, settings.getParentFolderId(), user)
+            .stream()
+            .filter(result -> result != null && result.isSucceeded())
+            .count();
 
-    if (moveCounter == toMove.length) {
+    if (moveSuccessCount == toMove.length) {
       model.addAttribute("successMsg", getText("workspace.move.success"));
     } else {
       String msgKey;
-      if (moveCounter == 0) {
+      if (moveSuccessCount == 0) {
         msgKey = getText("workspace.move.nothing.moved");
       } else {
         msgKey = getText("workspace.move.some.not.moved");
