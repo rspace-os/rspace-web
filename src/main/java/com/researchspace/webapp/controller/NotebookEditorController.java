@@ -69,7 +69,7 @@ public class NotebookEditorController extends BaseController {
       @PathVariable("notebookId") Long notebookId,
       @RequestParam(value = "initialRecordToDisplay", required = false) Long entryId,
       @RequestParam(value = "settingsKey", required = false) String settingsKey,
-      @RequestParam(value = "grandParentId") Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       Model model,
       HttpSession session,
       Principal principal)
