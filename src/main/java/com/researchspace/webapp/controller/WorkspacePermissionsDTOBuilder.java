@@ -4,6 +4,7 @@ import static com.researchspace.model.core.RecordType.INDIVIDUAL_SHARED_FOLDER_R
 import static com.researchspace.model.core.RecordType.SHARED_FOLDER;
 import static com.researchspace.model.core.RecordType.SHARED_GROUP_FOLDER_ROOT;
 import static com.researchspace.model.core.RecordType.TEMPLATE;
+import static com.researchspace.model.core.RecordType.isNotebook;
 
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
@@ -16,6 +17,7 @@ import com.researchspace.service.RecordManager;
 import java.util.Collection;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
@@ -23,13 +25,16 @@ import org.springframework.ui.Model;
 /*
  * Helper class for workspace controller to create a DTO object to pass to the UI with permissions info.
  */
+@Log4j
 @Service
 public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOBuilder {
 
   private FolderManager fMger;
   private RecordManager recMgr;
 
-  @Getter @Setter private @Autowired IPermissionUtils permissionUtils;
+  @Getter
+  @Setter
+  private @Autowired IPermissionUtils permissionUtils;
 
   @Autowired
   public void setRecMgr(RecordManager recMgr) {
@@ -57,13 +62,19 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     boolean isParentFolderInSharedTree = false;
     if (parentFolder.isNotebook()) {
-      Long grandParentId =
-          ((Breadcrumb) model.getAttribute("bcrumb"))
-              .getElements()
-              .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
-              .getId();
-      isParentFolderInSharedTree =
-          fMger.isParentFolderInSharedTree(parentFolder, grandParentId, usr);
+      if (model.getAttribute("bcrumb") != null &&
+          !((Breadcrumb) model.getAttribute("bcrumb")).getElements().isEmpty()) {
+        Long grandParentId =
+            ((Breadcrumb) model.getAttribute("bcrumb"))
+                .getElements()
+                .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
+                .getId();
+        isParentFolderInSharedTree =
+            fMger.isParentFolderInSharedTree(parentFolder, grandParentId, usr);
+      } else {
+        log.warn("it was not possible to get Breadcumbs from the model for notebookID="
+            + parentFolder.getId());
+      }
     }
 
     ActionPermissionsDTO dto = new ActionPermissionsDTO();
@@ -82,7 +93,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
             !br.isMediaRecord()
                 && !br.isSnippet()
                 && recMgr.canMove(
-                    br, parentFolder, usr); // manager transaction as may need to query db
+                br, parentFolder, usr); // manager transaction as may need to query db
         if (isSearch) {
           move = move && usr.isOwnerOfRecord(br);
         }
@@ -111,7 +122,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
       createRecord =
           createRecord
               || (isParentFolderInSharedTree
-                  && permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr));
+              && permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr));
       dto.setCreateRecord(createRecord);
       dto.setCreateFolder(false);
     }
