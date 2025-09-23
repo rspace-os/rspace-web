@@ -1208,8 +1208,8 @@ export function ShareDialog({
                   color="text.secondary"
                   sx={{ mb: 2 }}
                 >
-                  Use the field above to add new shares. The shared status of
-                  multiple documents can be performed on the{" "}
+                  Use the field above to add new shares. The share status of
+                  multiple documents can be edited on the{" "}
                   <Link href="/record/share/manage">shared documents page</Link>
                   .
                 </Typography>
