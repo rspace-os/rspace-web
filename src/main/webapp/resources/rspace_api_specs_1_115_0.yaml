@@ -2555,16 +2555,7 @@ paths:
           description: Updated sharing configuration
           required: true
           schema:
-            type: object
-            properties:
-              shareId:
-                type: integer
-                format: int64
-                description: The id of the existing ShareInfo to update
-              permission:
-                type: string
-                description: New permission to set for the share
-                enum: [READ, EDIT]
+            $ref: '#/definitions/SharePermissionUpdate'
       responses:
         '204':
           description: 'Share updated, no response body'
