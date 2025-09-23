@@ -13,6 +13,7 @@ import com.researchspace.service.GroupManager;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -56,9 +57,15 @@ public class GroupApiController extends BaseApiController implements GroupApi {
   }
 
   @Override
-  public ApiGroupInfo getGroupById(
+  public ApiGroupInfo getUserGroupById(
       @PathVariable("id") Long id, @RequestAttribute(name = "user") User user) {
-    Group group = groupManager.getGroup(id);
-    return new ApiGroupInfo(group);
+    return user.getGroups().stream()
+        .filter(g -> g.getId().equals(id))
+        .findFirst()
+        .map(ApiGroupInfo::new)
+        .orElseThrow(
+            () ->
+                new NotFoundException(
+                    "Group with id: " + id + " not found, or the user isn't a member."));
   }
 }

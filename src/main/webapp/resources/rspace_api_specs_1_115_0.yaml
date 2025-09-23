@@ -2429,6 +2429,32 @@ paths:
           schema:
             $ref: '#/definitions/GroupList'
 
+  /groups/{id}:
+    get:
+      summary: Get details of a specific group that the current user belongs to
+      description: >
+        Returns information about a group identified by its ID, but only if the current user is a member of that group.
+      produces:
+        - application/json
+      tags:
+        - Groups
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+          description: The unique identifier of the group
+      responses:
+        '200':
+          description: Details of the requested group
+          schema:
+            $ref: '#/definitions/GroupInfo'
+        '404':
+          description: Group not found, or the user is not a member of the group
+          schema:
+            $ref: '#/definitions/Error'
+
   /userDetails/whoami:
     get:
       summary: Get details of current user

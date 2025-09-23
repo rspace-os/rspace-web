@@ -40,5 +40,5 @@ public interface GroupApi {
    * @return group details
    */
   @GetMapping("/{id}")
-  ApiGroupInfo getGroupById(@PathVariable("id") Long id, User user);
+  ApiGroupInfo getUserGroupById(@PathVariable("id") Long id, User user);
 }
