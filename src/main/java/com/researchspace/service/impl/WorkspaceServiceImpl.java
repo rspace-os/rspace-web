@@ -83,7 +83,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       if (isFolder(toMove)) {
         results.add(moveFolder(toMove, sourceFolder, target, user));
       } else {
-        results.add(moveDoc(toMove, sourceFolder, target, grandparentId, user));
+        results.add(moveDocOrNotebook(toMove, sourceFolder, target, grandparentId, user));
       }
     }
     return results;
@@ -128,23 +128,23 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   private ServiceOperationResult<Folder> moveFolder(
-      Long folderId, Folder sourceFolder, Folder target, User user) {
+      Long toMoveId, Folder sourceFolder, Folder target, User user) {
     ServiceOperationResult<Folder> result =
-        folderManager.move(folderId, target.getId(), sourceFolder.getId(), user);
+        folderManager.move(toMoveId, target.getId(), sourceFolder.getId(), user);
     if (result != null && result.isSucceeded()) {
       auditService.notify(new MoveAuditEvent(user, result.getEntity(), sourceFolder, target));
     }
     return result;
   }
 
-  private ServiceOperationResult<? extends BaseRecord> moveDoc(
+  private ServiceOperationResult<? extends BaseRecord> moveDocOrNotebook(
       Long recordId, Folder sourceFolder, Folder target, Long grandparentId, User user) {
     BaseRecord toMove = recordManager.get(recordId);
 
-    // moving into a shared notebook that's not owned by the user, therefore the doc needs to be shared an
     if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
       try {
-        Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, target, grandparentId);
+        Group group =
+            groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder, grandparentId);
         SharingResult sharingResult =
             recordShareHandler.moveIntoSharedNotebook(group, toMove, (Notebook) target);
         return mapShareResultToServiceOperation(sharingResult, toMove);
