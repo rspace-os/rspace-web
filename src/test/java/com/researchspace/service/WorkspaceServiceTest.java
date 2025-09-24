@@ -38,6 +38,7 @@ public class WorkspaceServiceTest {
   private static final long RECORD_ID = 34L;
   private static final long TARGET_FOLDER_ID = 56L;
   private static final long SOURCE_FOLDER_ID = 78L;
+  private static final Long GRANDPARENT_ID = null;
 
   private Folder target;
   private Folder source;
@@ -79,7 +80,11 @@ public class WorkspaceServiceTest {
     mockMoveSuccess(doc);
     var results =
         service.moveRecords(
-            List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
+            List.of(RECORD_ID),
+            String.valueOf(TARGET_FOLDER_ID),
+            SOURCE_FOLDER_ID,
+            GRANDPARENT_ID,
+            user);
 
     assertEquals(1, results.size());
     assertTrue(results.get(0).isSucceeded());
@@ -97,7 +102,8 @@ public class WorkspaceServiceTest {
     when(moveResult.getEntity()).thenReturn(doc);
     when(recordManager.move(RECORD_ID, ROOT_ID, SOURCE_FOLDER_ID, user)).thenReturn(moveResult);
 
-    var results = service.moveRecords(List.of(RECORD_ID), "/", SOURCE_FOLDER_ID, user);
+    var results =
+        service.moveRecords(List.of(RECORD_ID), "/", SOURCE_FOLDER_ID, GRANDPARENT_ID, user);
 
     assertEquals(1, results.size());
     assertTrue(results.get(0).isSucceeded());
@@ -113,7 +119,8 @@ public class WorkspaceServiceTest {
     mockMoveSuccess(doc);
 
     var results =
-        service.moveRecords(List.of(RECORD_ID), TARGET_FOLDER_ID + "/", SOURCE_FOLDER_ID, user);
+        service.moveRecords(
+            List.of(RECORD_ID), TARGET_FOLDER_ID + "/", SOURCE_FOLDER_ID, GRANDPARENT_ID, user);
 
     assertEquals(1, results.size());
     assertTrue(results.get(0).isSucceeded());
@@ -132,7 +139,11 @@ public class WorkspaceServiceTest {
             IllegalArgumentException.class,
             () ->
                 service.moveRecords(
-                    List.of(SOURCE_FOLDER_ID), String.valueOf(SOURCE_FOLDER_ID), 123L, user));
+                    List.of(SOURCE_FOLDER_ID),
+                    String.valueOf(SOURCE_FOLDER_ID),
+                    123L,
+                    GRANDPARENT_ID,
+                    user));
 
     assertEquals(
         "Attempt to move record with ID: " + SOURCE_FOLDER_ID + " to itself", ex.getMessage());
@@ -151,7 +162,11 @@ public class WorkspaceServiceTest {
 
     var results =
         service.moveRecords(
-            List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user);
+            List.of(RECORD_ID),
+            String.valueOf(TARGET_FOLDER_ID),
+            SOURCE_FOLDER_ID,
+            GRANDPARENT_ID,
+            user);
 
     assertEquals(1, results.size());
     assertFalse(results.get(0).isSucceeded());
@@ -167,7 +182,11 @@ public class WorkspaceServiceTest {
             IllegalArgumentException.class,
             () ->
                 service.moveRecords(
-                    List.of(RECORD_ID), String.valueOf(SOURCE_FOLDER_ID), SOURCE_FOLDER_ID, user));
+                    List.of(RECORD_ID),
+                    String.valueOf(SOURCE_FOLDER_ID),
+                    SOURCE_FOLDER_ID,
+                    GRANDPARENT_ID,
+                    user));
 
     assertEquals("Source and target folder are the same. Id: " + SOURCE_FOLDER_ID, ex.getMessage());
     verify(recordManager, never())
@@ -177,14 +196,18 @@ public class WorkspaceServiceTest {
 
   @Test
   public void invalidInputThrowsException() {
-    assertThrows(IllegalArgumentException.class, () -> service.moveRecords(null, null, 0L, user));
-    assertThrows(
-        IllegalArgumentException.class, () -> service.moveRecords(List.of(), null, 0L, user));
-    assertThrows(
-        IllegalArgumentException.class, () -> service.moveRecords(List.of(1L), null, 0L, user));
     assertThrows(
         IllegalArgumentException.class,
-        () -> service.moveRecords(List.of(1L), "invalid", 0L, user));
+        () -> service.moveRecords(null, null, 0L, GRANDPARENT_ID, user));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.moveRecords(List.of(), null, 0L, GRANDPARENT_ID, user));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.moveRecords(List.of(1L), null, 0L, GRANDPARENT_ID, user));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.moveRecords(List.of(1L), "invalid", 0L, GRANDPARENT_ID, user));
   }
 
   @Test
@@ -198,7 +221,11 @@ public class WorkspaceServiceTest {
             AuthorizationException.class,
             () ->
                 service.moveRecords(
-                    List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), SOURCE_FOLDER_ID, user));
+                    List.of(RECORD_ID),
+                    String.valueOf(TARGET_FOLDER_ID),
+                    SOURCE_FOLDER_ID,
+                    GRANDPARENT_ID,
+                    user));
 
     assertEquals(
         "User: " + user.getId() + " does not have permission to move record with ID: " + RECORD_ID,
@@ -217,7 +244,11 @@ public class WorkspaceServiceTest {
             IllegalArgumentException.class,
             () ->
                 service.moveRecords(
-                    List.of(RECORD_ID), String.valueOf(TARGET_FOLDER_ID), 999L, user));
+                    List.of(RECORD_ID),
+                    String.valueOf(TARGET_FOLDER_ID),
+                    999L,
+                    GRANDPARENT_ID,
+                    user));
 
     assertEquals("Record with ID: " + RECORD_ID + " already in target folder", ex.getMessage());
   }

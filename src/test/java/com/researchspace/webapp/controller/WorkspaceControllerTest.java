@@ -437,7 +437,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
       settings.setParentFolderId(2L);
       ServiceOperationResult<? extends BaseRecord> moveSuccess =
           new ServiceOperationResult<>(null, true);
-      when(workspaceService.moveRecords(any(), any(), any(), any()))
+      when(workspaceService.moveRecords(any(), any(), any(), any(), any()))
           .thenReturn(List.of(moveSuccess));
       ModelAndView mav = basicMove(new Long[] {1L}, "/", settings);
 

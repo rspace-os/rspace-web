@@ -17,5 +17,9 @@ public interface WorkspaceService {
    * @return List of the results of each move attempt
    */
   List<ServiceOperationResult<? extends BaseRecord>> moveRecords(
-      List<Long> toMove, String targetFolderId, Long workspaceParentId, User user);
+      List<Long> toMove,
+      String targetFolderId,
+      Long workspaceParentId,
+      Long grandparentId,
+      User user);
 }

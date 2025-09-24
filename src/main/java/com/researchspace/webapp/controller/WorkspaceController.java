@@ -585,7 +585,12 @@ public class WorkspaceController extends BaseController {
 
     long moveSuccessCount =
         workspaceService
-            .moveRecords(List.of(toMove), targetFolderId, settings.getParentFolderId(), user)
+            .moveRecords(
+                List.of(toMove),
+                targetFolderId,
+                settings.getParentFolderId(),
+                settings.getGrandparentFolderId(),
+                user)
             .stream()
             .filter(result -> result != null && result.isSucceeded())
             .count();

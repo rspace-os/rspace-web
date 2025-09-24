@@ -63,7 +63,11 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   public List<ServiceOperationResult<? extends BaseRecord>> moveRecords(
-      List<Long> idsToMove, String targetFolderId, Long sourceFolderId, User user) {
+      List<Long> idsToMove,
+      String targetFolderId,
+      Long sourceFolderId,
+      Long grandparentId,
+      User user) {
     if (idsToMove == null || idsToMove.isEmpty() || StringUtils.isBlank(targetFolderId)) {
       throw new IllegalArgumentException("Ids to move and target folder are required.");
     }
@@ -79,7 +83,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       if (isFolder(toMove)) {
         results.add(moveFolder(toMove, sourceFolder, target, user));
       } else {
-        results.add(moveDoc(toMove, sourceFolder, target, user));
+        results.add(moveDoc(toMove, sourceFolder, target, grandparentId, user));
       }
     }
     return results;
@@ -134,13 +138,13 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   private ServiceOperationResult<? extends BaseRecord> moveDoc(
-      Long recordId, Folder sourceFolder, Folder target, User user) {
+      Long recordId, Folder sourceFolder, Folder target, Long grandparentId, User user) {
     BaseRecord toMove = recordManager.get(recordId);
 
     // moving into a shared notebook, not owned by the user
     if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
       try {
-        Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, target, null);
+        Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, target, grandparentId);
         SharingResult sharingResult =
             recordShareHandler.moveIntoSharedNotebook(group, toMove, (Notebook) target);
         return mapShareResultToServiceOperation(sharingResult, toMove);

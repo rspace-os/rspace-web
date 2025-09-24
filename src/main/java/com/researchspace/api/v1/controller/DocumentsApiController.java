@@ -427,6 +427,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
                 List.of(request.getDocId()),
                 String.valueOf(request.getTargetFolderId()),
                 request.getSourceFolderId(),
+                request.getGrandparentId(),
                 user)
             .stream()
             .findFirst()
