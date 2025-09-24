@@ -24,26 +24,40 @@ type ResultRowArgs = {
   adjustableColumns: Array<AdjustableTableRowLabel>;
 };
 
-const useStyles = makeStyles()((theme) => ({
-  tableRow: {
-    transition: theme.transitions.filterToggle,
-    "&.Mui-selected": {
-      backgroundColor: alpha(theme.palette.primary.background, 0.4),
+const useStyles = makeStyles()((theme) => {
+  const prefersMoreContrast = window.matchMedia(
+    "(prefers-contrast: more)",
+  ).matches;
+  return {
+    tableRow: {
+      transition: theme.transitions.filterToggle,
+      "&.Mui-selected": {
+        backgroundColor: theme.palette.primary.background,
+        color: theme.palette.primary.contrastText,
+        "& .MuiTableCell-root": {
+          color: theme.palette.primary.contrastText,
+        },
+        "& .MuiCheckbox-root": {
+          color: prefersMoreContrast
+            ? theme.palette.primary.contrastText
+            : null,
+        },
+      },
+      "&.Mui-selected:hover": {
+        backgroundColor: `${alpha(theme.palette.primary.background, 0.8)} !important`,
+      },
+      "&:hover": {
+        backgroundColor: `${alpha(theme.palette.primary.background, 0.2)} !important`,
+      },
     },
-    "&.Mui-selected:hover": {
-      backgroundColor: alpha(theme.palette.primary.background, 0.6),
+    checkbox: {
+      padding: `${theme.spacing(0.25)} !important`,
     },
-    "&:hover": {
-      backgroundColor: `${alpha(theme.palette.primary.background, 0.2)} !important`,
+    defaultCursor: {
+      cursor: "default",
     },
-  },
-  checkbox: {
-    padding: `${theme.spacing(0.25)} !important`,
-  },
-  defaultCursor: {
-    cursor: "default",
-  },
-}));
+  };
+});
 
 function ResultRow({
   result,
