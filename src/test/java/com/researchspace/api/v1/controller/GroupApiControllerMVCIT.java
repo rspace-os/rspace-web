@@ -111,7 +111,10 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
     mockMvc
         .perform(get(createUrl(API_VERSION.ONE, "/groups/" + groupBId)).header("apiKey", apiKeyA))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.message", is("Group with id: " + groupBId + " not found, or the user isn't a member.")));
+        .andExpect(
+            jsonPath(
+                "$.message",
+                is("Group with id: " + groupBId + " not found, or the user isn't a member.")));
   }
 
   @Test
@@ -124,7 +127,10 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
     mockMvc
         .perform(get(createUrl(API_VERSION.ONE, "/groups/" + fakeGroupId)).header("apiKey", apiKey))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.message", is("Group with id: " + fakeGroupId + " not found, or the user isn't a member.")));
+        .andExpect(
+            jsonPath(
+                "$.message",
+                is("Group with id: " + fakeGroupId + " not found, or the user isn't a member.")));
     ;
   }
 }

@@ -47,7 +47,6 @@ import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
@@ -423,14 +422,15 @@ public class DocumentsApiController extends BaseApiController implements Documen
       throws BindException {
     throwBindExceptionIfErrors(errors);
     ServiceOperationResult<? extends BaseRecord> moveResult =
-        workspaceService.moveRecords(
-            List.of(request.getDocId()),
-            String.valueOf(request.getTargetFolderId()),
-            request.getSourceFolderId(),
-            user)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No result from move operation."));
+        workspaceService
+            .moveRecords(
+                List.of(request.getDocId()),
+                String.valueOf(request.getTargetFolderId()),
+                request.getSourceFolderId(),
+                user)
+            .stream()
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("No result from move operation."));
 
     if (!moveResult.isSucceeded()) {
       String message = StringUtils.defaultIfBlank(moveResult.getMessage(), "");

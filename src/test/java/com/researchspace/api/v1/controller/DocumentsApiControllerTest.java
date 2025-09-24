@@ -761,7 +761,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     req.setSourceFolderId(source.getId());
     req.setTargetFolderId(source.getId());
 
-    assertExceptionThrown(() -> documentsApi.moveDocuments(req, mockBindingResult, testUser),
-        RuntimeException.class);
+    assertExceptionThrown(
+        () -> documentsApi.moveDocuments(req, mockBindingResult, testUser), RuntimeException.class);
   }
 }
