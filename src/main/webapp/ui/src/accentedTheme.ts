@@ -1081,6 +1081,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 },
                 "& .MuiTreeItem-label": {
                   color: contrastTextColor,
+                  [`& .${typographyClasses.root}`]: {
+                    color: contrastTextColor,
+                  },
                 },
                 "& .MuiTreeItem-iconContainer": {
                   color: contrastTextColor,
