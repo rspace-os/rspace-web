@@ -141,7 +141,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       Long recordId, Folder sourceFolder, Folder target, Long grandparentId, User user) {
     BaseRecord toMove = recordManager.get(recordId);
 
-    // moving into a shared notebook, not owned by the user
+    // moving into a shared notebook that's not owned by the user, therefore the doc needs to be shared an
     if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
       try {
         Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, target, grandparentId);
