@@ -731,7 +731,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void moveDocuments_movesDocumentToTargetFolder() throws Exception {
+  public void testMoveDoc() throws Exception {
     Folder rootFolder = folderMgr.getRootFolderForUser(testUser);
     Folder source = createFolder("src", rootFolder, testUser);
     Folder target = createFolder("dst", rootFolder, testUser);
@@ -751,7 +751,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void moveDocuments_sameSourceAndTarget_throwsRuntime() throws Exception {
+  public void testMoveDocSameSrcAndTargetThrows() throws Exception {
     Folder rootFolder = folderMgr.getRootFolderForUser(testUser);
     Folder source = createFolder("folder", rootFolder, testUser);
     StructuredDocument doc = createBasicDocumentInFolder(testUser, source, "some text");
