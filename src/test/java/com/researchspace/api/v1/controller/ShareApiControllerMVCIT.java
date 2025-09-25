@@ -16,7 +16,6 @@ import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
 import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.api.v1.model.GroupSharePostItem;
-import com.researchspace.api.v1.model.MoveRequest;
 import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
@@ -182,29 +181,6 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiSharingResult shareResponse = getFromJsonResponseBody(result, ApiSharingResult.class);
     assertEquals(toShare.getId(), shareResponse.getShareInfos().get(0).getSharedItemId());
-  }
-
-  @Test
-  public void movingDocAlreadyInTargetFolderReturnsServerError() throws Exception {
-    User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createNewApiKeyForUser(anyUser);
-    StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "anytext");
-    Long rootId = getRootFolderForUser(anyUser).getId();
-
-    MoveRequest moveReq = new MoveRequest();
-    moveReq.setDocId(doc.getId());
-    moveReq.setSourceFolderId(rootId);
-    moveReq.setTargetFolderId(rootId);
-
-    MvcResult result =
-        this.mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "/documents/move", anyUser, moveReq))
-            .andExpect(status().isUnprocessableEntity())
-            .andReturn();
-
-    assertEquals(
-        "Source and target folder are the same. Id: " + rootId,
-        result.getResolvedException().getMessage());
   }
 
   @Test

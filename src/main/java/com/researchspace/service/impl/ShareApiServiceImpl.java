@@ -83,7 +83,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     this.permissionUtils = permissionUtils;
   }
 
-  // used to set properties and messages in superclass for testing
+  // used to set IPropertyHolder and MessageSourceUtils in superclass for testing
   public ShareApiServiceImpl(
       SharingHandler recordShareHandler,
       RecordSharingManager recordShareMgr,

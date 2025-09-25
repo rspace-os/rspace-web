@@ -7,15 +7,6 @@ import java.util.List;
 
 public interface WorkspaceService {
 
-  /**
-   * Move one or more records (documents or folders) to a target folder.
-   *
-   * @param toMove ids of records to move
-   * @param targetFolderId string representation of target folder id; may be "/" for root
-   * @param workspaceParentId optional workspace parent folder context (may be null)
-   * @param user acting user
-   * @return List of the results of each move attempt
-   */
   List<ServiceOperationResult<? extends BaseRecord>> moveRecords(
       List<Long> toMove,
       String targetFolderId,

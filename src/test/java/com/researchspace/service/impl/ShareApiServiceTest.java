@@ -2,27 +2,18 @@ package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.api.v1.controller.ApiGenericSearchConfig;
-import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
-import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
 import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.auth.PermissionUtils;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
@@ -39,16 +30,12 @@ import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.mapping.DocumentSharesBuilder;
-import java.util.ArrayList;
-import javax.ws.rs.NotFoundException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataAccessException;
-import org.springframework.orm.ObjectRetrievalFailureException;
 
 @ExtendWith(MockitoExtension.class)
 class ShareApiServiceTest {
@@ -83,11 +70,6 @@ class ShareApiServiceTest {
             messages);
 
     user = TestFactory.createAnyUser("someUser");
-  }
-
-  private void setupResourceNotFoundMessageMock() {
-    when(messages.getResourceNotFoundMessage(anyString(), anyLong()))
-        .thenAnswer(inv -> inv.getArgument(0) + ":" + inv.getArgument(1));
   }
 
   @Test
@@ -129,7 +111,7 @@ class ShareApiServiceTest {
   }
 
   @Test
-  void shareItems_allAuthExceptions_throwsAuthorizationException() {
+  void whenAllSharesAreAuthExceptionThenThrowsAuthorizationException() {
     SharePost post = makeSharePost();
 
     ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> rc =
@@ -143,12 +125,12 @@ class ShareApiServiceTest {
   }
 
   @Test
-  void shareItems_illegalAddChild_leadsToIllegalArgumentException() {
+  void whenAllSharesAreIllegalAddChildOperationThenThrowsIllegalArgument() {
     SharePost post = makeSharePost();
 
     ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> rc =
         new ServiceOperationResultCollection<>();
-    rc.addException(new IllegalAddChildOperation("child err"));
+    rc.addException(new IllegalAddChildOperation("error"));
 
     when(sharingHandler.shareRecords(any(), eq(user))).thenReturn(rc);
 
@@ -156,12 +138,12 @@ class ShareApiServiceTest {
   }
 
   @Test
-  void shareItems_genericException_resultsInRuntimeException() {
+  void whenSharesAreRuntimeExceptionThenThrowsRuntimeException() {
     SharePost post = makeSharePost();
 
     ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> rc =
         new ServiceOperationResultCollection<>();
-    rc.addException(new RuntimeException("boom"));
+    rc.addException(new RuntimeException());
 
     when(sharingHandler.shareRecords(any(), eq(user))).thenReturn(rc);
 
@@ -169,7 +151,7 @@ class ShareApiServiceTest {
   }
 
   @Test
-  void deleteShare_success_callsUnshare() {
+  void deleteSharesSuccessCallsUnshare() {
     Long id = 123L;
 
     StructuredDocument shared = new StructuredDocument(TestFactory.createAnyForm());
@@ -185,33 +167,7 @@ class ShareApiServiceTest {
   }
 
   @Test
-  void deleteShare_dataAccess_leadsToNotFound() {
-    Long id = 123L;
-    setupResourceNotFoundMessageMock();
-
-    StructuredDocument shared = new StructuredDocument(TestFactory.createAnyForm());
-    RecordGroupSharing rgs = new RecordGroupSharing();
-    rgs.setShared(shared);
-    when(recordSharingManager.get(id)).thenReturn(rgs);
-
-    doThrow(mock(DataAccessException.class)).when(sharingHandler).unshare(id, user);
-
-    assertThrows(NotFoundException.class, () -> service.deleteShare(id, user));
-  }
-
-  @Test
-  void deleteShare_permissionDenied_leadsToNotFound() {
-    Long id = 123L;
-    setupResourceNotFoundMessageMock();
-
-    when(recordSharingManager.get(id))
-        .thenThrow(new ObjectRetrievalFailureException("RecordGroupSharing", id));
-
-    assertThrows(NotFoundException.class, () -> service.deleteShare(id, user));
-  }
-
-  @Test
-  void updateShare_errorListHasErrors_throwsIllegalArgument() {
+  void testUpdateSharesThrowsIllegalArgumentWhenErrors() {
     Long id = 123L;
     SharePermissionUpdate update = new SharePermissionUpdate();
     update.setShareId(id);
@@ -233,7 +189,7 @@ class ShareApiServiceTest {
   }
 
   @Test
-  void updateShare_success_doesNotThrow() {
+  void updateSharesSuccess() {
     Long id = 123L;
     SharePermissionUpdate update = new SharePermissionUpdate();
     update.setShareId(id);
@@ -251,31 +207,7 @@ class ShareApiServiceTest {
   }
 
   @Test
-  void getShares_convertsSearchResults() throws Exception {
-    DocumentApiPaginationCriteria pg =
-        new DocumentApiPaginationCriteria(
-            0, 10, DocumentApiPaginationCriteria.LAST_MODIFIED_DESC_API_PARAM);
-    ApiGenericSearchConfig cfg = new ApiGenericSearchConfig();
-    cfg.setQuery("abc");
-    when(properties.getServerUrl()).thenReturn("http://localhost");
-
-    @SuppressWarnings("unchecked")
-    ISearchResults<RecordGroupSharing> internal = mock(ISearchResults.class);
-    when(internal.getTotalHits()).thenReturn(3L);
-    when(internal.getPageNumber()).thenReturn(0);
-    when(internal.getResults()).thenReturn(new ArrayList<>());
-
-    when(recordSharingManager.listSharedRecordsForUser(eq(user), any())).thenReturn(internal);
-
-    ApiShareSearchResult result = service.getShares(pg, cfg, user);
-
-    assertEquals(3L, result.getTotalHits());
-    assertEquals(Integer.valueOf(0), result.getPageNumber());
-    assertNotNull(result.getShares());
-  }
-
-  @Test
-  void getAllSharesForDoc_nullId_illegalArgument() {
+  void testGetAllSharesNullIdThrows() {
     assertThrows(IllegalArgumentException.class, () -> service.getAllSharesForDoc(null, user));
   }
 

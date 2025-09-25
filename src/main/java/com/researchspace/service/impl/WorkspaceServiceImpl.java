@@ -28,10 +28,10 @@ import org.springframework.stereotype.Service;
 /**
  * Partial refactoring of WorkspaceController code into the service layer so that it can be used by
  * both legacy and new REST controllers. Only the move operation has been refactored so far to
- * support the share dialog move functionality. Left largely as the original implementation, but
- * added a method to return the ServiceOperationResult of the move operation so there's some
- * feedback when a move fails. For the WorkspaceController, the original implementation of returning
- * a count of the record move successes was kept in place.
+ * support the share dialog move functionality. Left largely as the original implementation with
+ * some additional validation and refactoring for readability, but deferring any larger changes
+ * until all workspace functionality is exposed via REST controllers to support workspace
+ * reactification.
  */
 @Service
 public class WorkspaceServiceImpl implements WorkspaceService {

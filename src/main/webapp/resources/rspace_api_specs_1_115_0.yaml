@@ -667,11 +667,8 @@ paths:
       description: >-
 
         Moves a single document (or record) to a target folder in the Workspace.
-
-        The target is specified as a numeric folder id.
-
-        The user must have permissions to move the record e.g. it is in their own workspace, or they are the PI of a 
-        shared group and are moving the record within that group shared folder hierarchy.
+        
+        See MoveRequest model for details on required and optional params.
       tags:
         - Documents
       parameters:
@@ -2433,7 +2430,7 @@ paths:
     get:
       summary: Get details of a specific group that the current user belongs to
       description: >
-        Returns information about a group identified by its ID, but only if the current user is a member of that group.
+        Returns information about a group identified by its ID
       produces:
         - application/json
       tags:
@@ -2611,8 +2608,7 @@ paths:
       summary: Get all shares for a document
       description: >-
         Returns all sharing information for the specified document, including direct shares and
-        implicit shares (e.g. via groups). Each share entry includes the share id, target type,
-        permission, and related identifiers.
+        implicit shares (e.g. via notebooks).
       produces:
         - application/json
       tags:
@@ -4128,7 +4124,6 @@ definitions:
       sharerId:
         type: integer
         format: int64
-        description: The id of the user who created the share
       sharerName:
         type: string
       recipientId:
