@@ -111,8 +111,9 @@ public class NotebookEditorController extends BaseController {
       }
     }
     permDTO.setCreateRecord(
-        folderManager.isFolderInSharedTree(notebook, grandParentId, user)
-            && permissionUtils.isPermitted(notebook, PermissionType.WRITE, user));
+        user.equals(notebook.getOwner())
+            || (folderManager.isFolderInSharedTree(notebook, grandParentId, user)
+                && permissionUtils.isPermitted(notebook, PermissionType.WRITE, user)));
     // this is a quick fix, we need to hook into permissions system so that
     // shared notebook entries can't be deleted by PI/admin in the way that other shared content
     // can be deleted from shared folders
