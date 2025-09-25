@@ -4484,10 +4484,10 @@ definitions:
         type: integer
         format: int64
         description: Destination folder/notebook to move the record to
-      grandparentId:
+      currentGrandparentId:
         type: integer
         format: int64
-        description: Optional, and only required in the case of moving a document from one notebook to another. The id of the folder containing the notebook the document is being moved from. To disambiguate when the notebook has multiple parents e.g. it is shared.
+        description: Optional. Only required in the case of moving a document from one shared notebook to another. The id of the folder containing the notebook the document is being moved from i.e. the grandparent of the notebook entry. To disambiguate when the notebook has multiple parents.
   SharePermissionUpdate:
     description: Update the permission for an existing share
     properties:

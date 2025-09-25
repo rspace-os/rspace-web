@@ -11,5 +11,5 @@ public class MoveRequest {
 
   @NotNull private long targetFolderId;
 
-  private Long grandparentId;
+  private Long currentGrandparentId;
 }
