@@ -23,6 +23,13 @@ function submit() {
   $form.attr('action', "/workspace/editor/structuredDocument/createFromTemplate/" + currentFolderId);
   $form.find('#createFromTemplateId').val(templateId);
   $form.find('#createFromTemplateNewName').val(docName);
+  
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = "grandParentId";
+  input.value = getGrandParentFolderId();
+  $form.append(input);
+  
   $form.submit();
   
   RS.trackEvent("user:create:from_template:workspace");

@@ -6,7 +6,13 @@ import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.SearchDepth;
 import com.researchspace.model.User;
-import com.researchspace.model.record.*;
+import com.researchspace.model.record.ACLPropagationPolicy;
+import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.ImportOverride;
+import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;
@@ -15,6 +21,7 @@ import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 
 public interface FolderManager {
+
   /**
    * Calls to any method which could create an API_INBOX, should be inside a synchronized block
    * which locks on this object.
@@ -85,7 +92,6 @@ public interface FolderManager {
    * @param toDelete A BaseRecord
    * @param parentfolderid The id of the parent folder from which toDelete will be removed.
    * @param aclPolicy an {@link ACLPropagationPolicy} to set ACL behaviour during deletion
-   * @see removeBaseRecordFromFolder (BaseRecord toDelete, Long parentfolderid)
    */
   Folder removeBaseRecordFromFolder(
       BaseRecord toDelete, Long parentfolderid, ACLPropagationPolicy aclPolicy);
@@ -147,7 +153,7 @@ public interface FolderManager {
    * @param newName A new name, not empty
    * @return
    */
-  RecordCopyResult copy(Long toCopyFolderid, User u, String newName);
+  RecordCopyResult copy(Long toCopyFolderid, User user, String newName);
 
   /**
    * @param toMoveId the Id of the folder to be moved.
@@ -216,24 +222,34 @@ public interface FolderManager {
   RSPath getShortestPathToSharedRootFolder(Long sharedSubfolderId, User user);
 
   /**
-   * Given the ID of a group-shared folder(i.e., a folder where
+   * This method finds out what is the root GroupSharedFolder or (IndividualShredFolder) having the
+   * ID of a sub-folder ({@code parentSharedFolderId}) located under the root shared folder sub
+   * hierarchy.
+   * <p>
+   * If the {@code parentSharedFolderId} is a shared Notebook, the method needs to know also the
+   * {@code grandParentFolderId} in order to locate the specific group/individual root folder,
+   * otherwise it raises a NotebookInvalidLocationException
    *
-   * <p><code>hasType(RecordType.SHARED_FOLDER) == true </code>, it will retrieve the root
-   * group-shared folder ( or root indivudual shared item folder). <br>
-   * If the folder identified by the argument srcRecordId is not a sub folder of the group folder,
-   * this method return <code>null</code>.
-   *
-   * @param srcRecordId
-   * @param user The authenticated user
-   * @return The shared group folder, or <code>Optional.empty</code> if this couldn't be found.
+   * @param parentSharedFolderOrNotebookId is the ID of the folder/notebook where the record is
+   *                                       located
+   * @param grandParentFolderId            is the ID of the parent folder where the main folder
+   *                                       {@code parentSharedFolderId} is located. This parameter
+   *                                       is mandatory when
+   *                                       {@code parentSharedFolderOrNotebookId) is a shared
+   *                                       Notebook
+   * @param user                           The authenticated user
+   * @return The ROOT shared group folder, or <code>Optional.empty</code> if this couldn't be found.
+   * @throws NotebookInvalidLocationException if the {@code grandParentFolderId} id is not passed
+   *                                          when the {@code parentSharedFolderOrNotebookId} is a
+   *                                          Notebook
    */
   Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long srcRecordId, User user);
+      Long parentSharedFolderOrNotebookId, Long grandParentFolderId, User user);
 
   /**
    * Ease of use method returns the root record always
    *
-   * @param subject autheniticated subject
+   * @param subject authenticated subject
    * @param user The user whose root folder is to be accessed.
    * @return The user's root folder.
    */
@@ -261,7 +277,7 @@ public interface FolderManager {
    * path to its children would be "/child/child/targetRecord". <br>
    * This method should initialize children collection, filtered by a the collection filter
    *
-   * @param id
+   * @param path
    * @param user
    * @param filter
    * @return
@@ -297,7 +313,7 @@ public interface FolderManager {
    *     MediaUtils#extractFileType(String fileSuffix)} or an empty string if the target folder is
    *     in the Workspace, not the Gallery.
    * @param subject The current user
-   * @param folderId Optional, can be <code>null</code>. If set, must be a folder Id that is
+   * @param targetFolderId Optional, can be <code>null</code>. If set, must be a folder Id that is
    *     consistent with the content type being added
    * @return A {@link Folder}
    * @throws AuthorizationException if a target folder is specified but user does not have

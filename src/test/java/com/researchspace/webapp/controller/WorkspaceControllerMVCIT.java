@@ -836,16 +836,6 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     settings.setParentFolderId(sd.getParent().getId());
     // move record into subfolder
     basicMove(new Long[] {sd.getId()}, Sub1.getId(), settings);
-    workspaceController.move(
-        new Long[] {sd.getId()},
-        "" + Sub1.getId(),
-        null,
-        settings,
-        model,
-        mockPrincipal,
-        request,
-        session,
-        response);
 
     ISearchResults<BaseRecord> rcds2 = listRootFolder();
     assertEquals(initialCount - 1, rcds2.getTotalHits().intValue());
@@ -1487,7 +1477,8 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     // now lets log in as U2 and check the notebook can be accessed from the shared folder
     logoutAndLoginAs(u2);
     Optional<Folder> indivSFolder =
-        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(nb.getId(), u2);
+        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+            nb.getId(), group.getCommunalGroupFolderId(), u2);
     assertTrue(indivSFolder.isPresent());
 
     // now we'll browse to notebook from this folder as if navigating from the shared root

@@ -47,7 +47,6 @@ import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
@@ -422,25 +421,21 @@ public class DocumentsApiController extends BaseApiController implements Documen
       @RequestAttribute(name = "user") User user)
       throws BindException {
     throwBindExceptionIfErrors(errors);
-    List<ServiceOperationResult<? extends BaseRecord>> moveResult =
-        workspaceService.moveRecords(
-            List.of(request.getDocId()),
-            String.valueOf(request.getTargetFolderId()),
-            request.getSourceFolderId(),
-            user);
+    ServiceOperationResult<? extends BaseRecord> moveResult =
+        workspaceService
+            .moveRecords(
+                List.of(request.getDocId()),
+                String.valueOf(request.getTargetFolderId()),
+                request.getSourceFolderId(),
+                request.getCurrentGrandparentId(),
+                user)
+            .stream()
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("No result from move operation."));
 
-    String failedMoves =
-        moveResult.stream()
-            .filter(result -> !result.isSucceeded())
-            .map(ServiceOperationResult::getMessage)
-            .filter(StringUtils::isNotEmpty)
-            .collect(Collectors.joining(", "));
-
-    if (StringUtils.isNotEmpty(failedMoves)) {
-      // throw as 500 as a general response as there are various possible reasons for failure, and
-      // we only
-      // have the failure message to understand why, which may or may not be present.`
-      throw new RuntimeException("Error performing move: " + failedMoves);
+    if (!moveResult.isSucceeded()) {
+      String message = StringUtils.defaultIfBlank(moveResult.getMessage(), "");
+      throw new RuntimeException("Error performing move. " + message);
     }
   }
 }

@@ -178,6 +178,7 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("parentId") Long parentFolderId,
       @RequestParam("wordXfile") List<MultipartFile> mswordOrEvernoteFile,
       @RequestParam(value = "recordToReplaceId", required = false) Long recordToReplaceId,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       HttpSession session)
       throws IOException {
 
@@ -254,7 +255,7 @@ public class StructuredDocumentController extends BaseController {
           if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
               user, originalParentFolder)) {
             recordShareHandler.shareIntoSharedFolderOrNotebook(
-                user, originalParentFolder, createdOrUpdated.getId());
+                user, originalParentFolder, createdOrUpdated.getId(), grandParentId);
           }
           publisher.publishEvent(createGenericEvent(user, createdOrUpdated, AuditAction.CREATE));
         } else {
@@ -310,6 +311,7 @@ public class StructuredDocumentController extends BaseController {
   public String createSD(
       @PathVariable("recordid") Long parentRecordId,
       @RequestParam(value = "template") long formid,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       Principal principal)
       throws RecordAccessDeniedException {
 
@@ -326,7 +328,7 @@ public class StructuredDocumentController extends BaseController {
           user, originalParentFolder)) {
         sharedWithGroup =
             recordShareHandler.shareIntoSharedFolderOrNotebook(
-                user, originalParentFolder, newRecord.getId());
+                user, originalParentFolder, newRecord.getId(), grandParentId);
       }
     } catch (AuthorizationException ae) {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", parentRecordId));
@@ -380,6 +382,7 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("recordid") Long parentRecordId,
       @RequestParam(value = "template") long templateid,
       @RequestParam(value = "newname", required = false) String newname,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       Principal principal)
       throws RecordAccessDeniedException {
     User user = getUserByUsername(principal.getName());
@@ -410,7 +413,7 @@ public class StructuredDocumentController extends BaseController {
       } else if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
         sharedWithGroup =
             recordShareHandler.shareIntoSharedFolderOrNotebook(
-                user, originalParentFolder, rc.getId());
+                user, originalParentFolder, rc.getId(), grandParentId);
       }
 
     } catch (AuthorizationException ae) {

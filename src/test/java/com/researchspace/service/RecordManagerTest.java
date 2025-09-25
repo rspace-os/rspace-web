@@ -596,11 +596,13 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     try {
       // these are not globally flagged as deleted, only from a folder,
-      // since a record
-      // can belong to multiple folders, if it is shared
+      // since a record can belong to multiple folders, if it is shared
       StructuredDocument childDeleted = (StructuredDocument) recordMgr.get(child.getId());
-      assertTrue(root.isMarkedDeleted(childDeleted));
       assertFalse(childDeleted.isDeleted());
+      assertEquals(1, childDeleted.getParents().size());
+      RecordToFolder rtf = childDeleted.getParents().iterator().next();
+      assertEquals(root, rtf.getFolder());
+      assertTrue(rtf.isRecordInFolderDeleted());
 
     } catch (ObjectRetrievalFailureException e) {
       fail(child.getId() + " was actually deleted!");
@@ -1708,7 +1710,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
         workspaceController.createNotebook(sharedFolderId, "notebook", new MockPrincipal(admin));
     flushDatabaseState();
 
-    sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedGroupFolder, notebookId);
+    sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedGroupFolder, notebookId, null);
     flushDatabaseState();
 
     final Notebook sharedNotebook = folderMgr.getNotebook(notebookId);

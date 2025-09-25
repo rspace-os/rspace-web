@@ -254,7 +254,7 @@ paths:
         ## Rules for parsing POST request body
 
         Provided request body must match #definitions/Document model (see the
-        bottom of the page). Only `name`, `tags`, `form`, `parentFolderId` and
+        bottom of the page). Only `name`, `tags`, `form`, `parentFolderId`, `grandParentFolderId` and
         `fields` properties are processed, other properties are skipped.
 
         ### When parsing `name` and `tags` properties:
@@ -273,6 +273,11 @@ paths:
 
           * The folder ID must be the id of a folder in the Workspace, *not* a Gallery folder or a subfolder of the 'Shared' folder.
           * If no folderID is provided, document will be created in 'ApiInbox' folder.
+
+        ### When parsing `grandParentFolderId` property (only needed for shared Notebooks):
+
+          * The grand parent folder ID must be the id of the parent of the shared notebook you want to create the document into.
+          * If no `grandParentFolderId` is provided when creating a document into a shared notebook, the creation fails.
 
         ### When parsing `fields` array:
           * `fields` array may be omitted - that will create document without any content.
@@ -662,11 +667,8 @@ paths:
       description: >-
 
         Moves a single document (or record) to a target folder in the Workspace.
-
-        The target is specified as a numeric folder id.
-
-        The user must have permissions to move the record e.g. it is in their own workspace, or they are the PI of a 
-        shared group and are moving the record within that group shared folder hierarchy.
+        
+        See MoveRequest model for details on required and optional params.
       tags:
         - Documents
       parameters:
@@ -2424,6 +2426,32 @@ paths:
           schema:
             $ref: '#/definitions/GroupList'
 
+  /groups/{id}:
+    get:
+      summary: Get details of a specific group that the current user belongs to
+      description: >
+        Returns information about a group identified by its ID
+      produces:
+        - application/json
+      tags:
+        - Groups
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+          description: The unique identifier of the group
+      responses:
+        '200':
+          description: Details of the requested group
+          schema:
+            $ref: '#/definitions/GroupInfo'
+        '404':
+          description: Group not found, or the user is not a member of the group
+          schema:
+            $ref: '#/definitions/Error'
+
   /userDetails/whoami:
     get:
       summary: Get details of current user
@@ -2550,16 +2578,7 @@ paths:
           description: Updated sharing configuration
           required: true
           schema:
-            type: object
-            properties:
-              shareId:
-                type: integer
-                format: int64
-                description: The id of the existing ShareInfo to update
-              permission:
-                type: string
-                description: New permission to set for the share
-                enum: [READ, EDIT]
+            $ref: '#/definitions/SharePermissionUpdate'
       responses:
         '204':
           description: 'Share updated, no response body'
@@ -2589,8 +2608,7 @@ paths:
       summary: Get all shares for a document
       description: >-
         Returns all sharing information for the specified document, including direct shares and
-        implicit shares (e.g. via groups). Each share entry includes the share id, target type,
-        permission, and related identifiers.
+        implicit shares (e.g. via notebooks).
       produces:
         - application/json
       tags:
@@ -4106,7 +4124,6 @@ definitions:
       sharerId:
         type: integer
         format: int64
-        description: The id of the user who created the share
       sharerName:
         type: string
       recipientId:
@@ -4444,9 +4461,10 @@ definitions:
           $ref: '#/definitions/StoichiometryMoleculeUpdateDTO'
 
   MoveRequest:
-    description: Request to move a single record to a target folder
+    description: Request to move a document or notebook to a target folder
     required:
       - docId
+      - sourceFolderId
       - targetFolderId
     properties:
       docId:
@@ -4456,11 +4474,31 @@ definitions:
       sourceFolderId:
         type: integer
         format: int64
-        description: Optional source folder id to disambiguate the move when the record has multiple parents
+        description: Source folder of the record, to disambiguate where a record has multiple parents e.g. it is shared
       targetFolderId:
         type: integer
         format: int64
-        description: Target folder id
+        description: Destination folder/notebook to move the record to
+      currentGrandparentId:
+        type: integer
+        format: int64
+        description: Optional. Only required in the case of moving a document from one shared notebook to another. The id of the folder containing the notebook the document is being moved from i.e. the grandparent of the notebook entry. To disambiguate when the notebook has multiple parents.
+  SharePermissionUpdate:
+    description: Update the permission for an existing share
+    properties:
+      shareId:
+        type: integer
+        format: int64
+        description: The id of the existing ShareInfo to update
+      permission:
+        type: string
+        description: New permission to set for the share
+        enum:
+          - READ
+          - EDIT
+    example:
+      shareId: 123456
+      permission: EDIT
 responses:
   UnprocessableQuery:
     description: Query could not be processed.
@@ -4484,20 +4522,3 @@ responses:
     description: License expired or not active.
     schema:
       $ref: '#/definitions/Error'
-
-  SharePermissionUpdate:
-    description: Update the permission for an existing share
-    properties:
-      shareId:
-        type: integer
-        format: int64
-        description: The id of the existing ShareInfo to update
-      permission:
-        type: string
-        description: New permission to set for the share
-        enum:
-          - READ
-          - EDIT
-    example:
-      shareId: 123456
-      permission: EDIT

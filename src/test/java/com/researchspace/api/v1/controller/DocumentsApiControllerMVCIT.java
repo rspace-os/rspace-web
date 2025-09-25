@@ -44,6 +44,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.units.RSUnitDef;
@@ -960,14 +961,10 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  public void moveDocFromOneFolderToAnother() throws Exception {}
-
-  @Test
-  public void moveDocNoOpToSameFolderReturnsServerError() throws Exception {
+  public void moveDocToSameFolderThrows422() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
-    // Create a document in the user's root folder
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "anytext");
     Long rootId = getRootFolderForUser(anyUser).getId();
 
@@ -980,7 +977,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         this.mockMvc
             .perform(createBuilderForPostWithJSONBody(apiKey, "/documents/move", anyUser, moveReq))
-            .andExpect(status().isUnauthorized())
+            .andExpect(status().isUnprocessableEntity())
             .andReturn();
 
     Exception ex = result.getResolvedException();
@@ -1049,10 +1046,121 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
     this.mockMvc
         .perform(createBuilderForPostWithJSONBody(sharerApiKey, "/documents/move", sharer, moveReq))
-        .andExpect(status().isInternalServerError())
+        .andExpect(status().isUnauthorized())
         .andReturn();
 
     assertGroupShareLocation(toShare.getId(), sharerApiKey, subfolderA.getId());
+  }
+
+  @Test
+  public void moveNotebookFromOneSharedFolderToAnother() throws Exception {
+    TestGroup group = createTestGroup(3, new TestGroupConfig(true));
+    User sharer = group.getUserByPrefix("u1");
+    User pi = group.getPi();
+
+    // create a notebook owned by sharer
+    logoutAndLoginAs(sharer);
+    String sharerApiKey = createNewApiKeyForUser(sharer);
+    Long sharerRootId = getRootFolderForUser(sharer).getId();
+    Notebook notebook = createNotebookWithNEntries(sharerRootId, "anyNotebook", 1, sharer);
+
+    Long communalGroupFolderId = group.getGroup().getCommunalGroupFolderId();
+
+    ApiFolder subfolderA =
+        createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedA");
+    ApiFolder subfolderB =
+        createSharedSubfolder(sharer, sharerApiKey, communalGroupFolderId, "sharedB");
+
+    // share the notebook to subfolder A with EDIT permission
+    SharePost sharePost =
+        SharePost.builder()
+            .itemToShare(notebook.getId())
+            .groupSharePostItem(
+                GroupSharePostItem.builder()
+                    .id(group.getGroup().getId())
+                    .permission("EDIT")
+                    .sharedFolderId(subfolderA.getId())
+                    .build())
+            .build();
+
+    this.mockMvc
+        .perform(createBuilderForPostWithJSONBody(sharerApiKey, "/share", sharer, sharePost))
+        .andExpect(status().isCreated())
+        .andReturn();
+
+    assertGroupShareLocation(notebook.getId(), sharerApiKey, subfolderA.getId());
+
+    // PI moves the notebook from subfolder A to subfolder B
+    logoutAndLoginAs(pi);
+    String piApiKey = createNewApiKeyForUser(pi);
+
+    MoveRequest moveReq = new MoveRequest();
+    moveReq.setDocId(notebook.getId());
+    moveReq.setSourceFolderId(subfolderA.getId());
+    moveReq.setTargetFolderId(subfolderB.getId());
+
+    this.mockMvc
+        .perform(createBuilderForPostWithJSONBody(piApiKey, "/documents/move", pi, moveReq))
+        .andExpect(status().isNoContent())
+        .andReturn();
+
+    assertGroupShareLocation(notebook.getId(), sharerApiKey, subfolderB.getId());
+  }
+
+  @Test
+  public void moveNotebookEntryFromOneNotebookToAnother() throws Exception {
+    // create a user and log in
+    User user = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(user);
+
+    Long rootId = getRootFolderForUser(user).getId();
+
+    // create 2 notebooks
+    Notebook notebookA = createNotebookWithNEntries(rootId, "nbA", 0, user);
+    Notebook notebookB = createNotebookWithNEntries(rootId, "nbB", 0, user);
+
+    // create an entry in notebook A via API and capture its id
+    ApiDocument newEntry = createDefaultOKBasicDocumentPost();
+    newEntry.setParentFolderId(notebookA.getId());
+    MvcResult createResult =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/documents", user, newEntry))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiDocument createdEntry = getFromJsonResponseBody(createResult, ApiDocument.class);
+
+    // verify via API that parent is notebook A
+    MvcResult beforeMove =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKey, "/documents/{id}", user, createdEntry.getId()))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiDocument beforeDoc = getFromJsonResponseBody(beforeMove, ApiDocument.class);
+    assertEquals(notebookA.getId(), beforeDoc.getParentFolderId());
+
+    // move entry from notebook A to notebook B
+    MoveRequest moveReq = new MoveRequest();
+    moveReq.setDocId(createdEntry.getId());
+    moveReq.setSourceFolderId(notebookA.getId());
+    moveReq.setTargetFolderId(notebookB.getId());
+
+    this.mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/documents/move", user, moveReq))
+        .andExpect(status().isNoContent())
+        .andReturn();
+
+    // verify via API that parent is now notebook B
+    MvcResult afterMove =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKey, "/documents/{id}", user, createdEntry.getId()))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiDocument afterDoc = getFromJsonResponseBody(afterMove, ApiDocument.class);
+    assertEquals(notebookB.getId(), afterDoc.getParentFolderId());
   }
 
   private ApiFolder createSharedSubfolder(
@@ -1091,7 +1199,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
   private void assertGroupShareLocation(Long docId, String apiKey, Long expectedLocationId)
       throws Exception {
-    MvcResult sharesResult =
+    MvcResult getSharesForDocResult =
         this.mockMvc
             .perform(get("/api/v1/share/document/" + docId).header("apiKey", apiKey))
             .andExpect(status().isOk())
@@ -1099,7 +1207,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
     DocumentShares shares =
         new ObjectMapper()
-            .readValue(sharesResult.getResponse().getContentAsString(), new TypeReference<>() {});
+            .readValue(
+                getSharesForDocResult.getResponse().getContentAsString(), new TypeReference<>() {});
 
     DocumentShares.Share groupShare =
         shares.getDirectShares().stream()

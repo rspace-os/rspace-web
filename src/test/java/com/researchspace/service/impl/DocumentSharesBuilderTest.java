@@ -30,19 +30,16 @@ public class DocumentSharesBuilderTest {
 
   @Test
   public void testFieldsMapped() {
-    // sharer and record
     User sharer = TestFactory.createAnyUser("sharer");
     BaseRecord record = TestFactory.createAnyRecord(sharer);
     record.setId(1L);
 
-    // recipients
     User recipientUser = TestFactory.createAnyUser("recipient");
     recipientUser.setId(2L);
     User pi = TestFactory.createAnyUserWithRole("pi", "ROLE_PI");
     Group recipientGroup = TestFactory.createAnyGroup(pi, sharer);
     recipientGroup.setId(3L);
 
-    // direct user share
     RecordGroupSharing groupShare = new RecordGroupSharing();
     groupShare.setId(1L);
     groupShare.setSharedBy(sharer);
@@ -50,7 +47,6 @@ public class DocumentSharesBuilderTest {
     groupShare.setPermType(PermissionType.WRITE);
     groupShare.setShared(record);
 
-    // implicit (via notebook) group share
     RecordGroupSharing sharedViaNotebook = new RecordGroupSharing();
     sharedViaNotebook.setId(2L);
     sharedViaNotebook.setSharedBy(sharer);
@@ -58,7 +54,6 @@ public class DocumentSharesBuilderTest {
     sharedViaNotebook.setPermType(PermissionType.READ);
     sharedViaNotebook.setShared(record);
 
-    // locations resolved by resolver
     Folder directLocation = new Folder();
     directLocation.setId(1000L);
     directLocation.setName("DirectLoc");
@@ -70,7 +65,6 @@ public class DocumentSharesBuilderTest {
     when(resolver.resolveLocation(groupShare, record)).thenReturn(directLocation);
     when(resolver.resolveLocation(sharedViaNotebook, record)).thenReturn(notebookLocation);
 
-    // sharing info split between direct and implicit
     RecordInfoSharingInfo shares =
         new RecordInfoSharingInfo(List.of(groupShare), List.of(sharedViaNotebook));
 

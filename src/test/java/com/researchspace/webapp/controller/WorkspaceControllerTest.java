@@ -36,6 +36,7 @@ import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
+import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FormManager;
@@ -58,6 +59,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletRequest;
@@ -433,8 +435,12 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
       setUpCommonMocks();
       WorkspaceSettings settings = new WorkspaceSettings();
       settings.setParentFolderId(2L);
-      when(workspaceService.moveRecordsCountSuccess(any(), any(), any(), any())).thenReturn(1);
+      ServiceOperationResult<? extends BaseRecord> moveSuccess =
+          new ServiceOperationResult<>(null, true);
+      when(workspaceService.moveRecords(any(), any(), any(), any(), any()))
+          .thenReturn(List.of(moveSuccess));
       ModelAndView mav = basicMove(new Long[] {1L}, "/", settings);
+
       assertTrue(model.containsAttribute("recordId"));
       assertEquals(WORKSPACE_AJAX_VIEWNAME, mav.getViewName());
       assertTrue((Boolean) model.getAttribute("publish_allowed"));

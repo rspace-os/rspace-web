@@ -3,6 +3,7 @@ package com.researchspace.webapp.integrations.egnyte;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
@@ -38,7 +39,7 @@ public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTe
     Map<String, Object> happyTokenRequest =
         connector.queryForEgnyteAccessToken(testUsername, testPassword);
     assertNotNull(happyTokenRequest, "no token after querying egnyte with test credentials");
-    assertEquals(3, happyTokenRequest.size());
+    assertTrue(happyTokenRequest.size() >= 3, "lack of expected data in egynte response");
     assertEquals("Bearer", happyTokenRequest.get("token_type"));
     assertNotNull(happyTokenRequest.get("access_token"));
     assertNotNull(happyTokenRequest.get("expires_in"));

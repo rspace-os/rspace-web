@@ -490,9 +490,8 @@ public class MediaManagerImpl implements MediaManager {
           fileStore.createAndSaveFileProperty(fileType, user, updatedFileName, inputStream);
     }
 
+    // reset doc-type attachment thumbnail to force re-generation on next request
     if (media.isEcatDocument()) {
-      indexFile(media);
-      // reset the thumbnail to force re-generation on next request
       ((EcatDocumentFile) media).setThumbNail(null);
     }
 
@@ -512,6 +511,9 @@ public class MediaManagerImpl implements MediaManager {
     media.setVersion(media.getVersion() + 1);
     recordDao.save(media);
 
+    if (media.isEcatDocument()) {
+      indexFile(media);
+    }
     updateRevisionOfLinkedDocuments(media, user);
 
     return media;

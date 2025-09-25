@@ -10,4 +10,6 @@ public class MoveRequest {
   @NotNull private long sourceFolderId;
 
   @NotNull private long targetFolderId;
+
+  private Long currentGrandparentId;
 }

@@ -24,18 +24,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Partial refactoring of WorkspaceController code into the service layer so that it can be used by
  * both legacy and new REST controllers. Only the move operation has been refactored so far to
- * support the share dialog move functionality. Left largely as the original implementation, but
- * added a method to return the ServiceOperationResult of the move operation so there's some
- * feedback when a move fails. For the WorkspaceController, the original implementation of returning
- * a count of the record move successes was kept in place.
+ * support the share dialog move functionality. Left largely as the original implementation with
+ * some additional validation and refactoring for readability, but deferring any larger changes
+ * until all workspace functionality is exposed via REST controllers to support workspace
+ * reactification.
  */
 @Service
-@Transactional
 public class WorkspaceServiceImpl implements WorkspaceService {
 
   private final FolderManager folderManager;
@@ -65,7 +63,11 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   public List<ServiceOperationResult<? extends BaseRecord>> moveRecords(
-      List<Long> idsToMove, String targetFolderId, Long sourceFolderId, User user) {
+      List<Long> idsToMove,
+      String targetFolderId,
+      Long sourceFolderId,
+      Long grandparentId,
+      User user) {
     if (idsToMove == null || idsToMove.isEmpty() || StringUtils.isBlank(targetFolderId)) {
       throw new IllegalArgumentException("Ids to move and target folder are required.");
     }
@@ -81,7 +83,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       if (isFolder(toMove)) {
         results.add(moveFolder(toMove, sourceFolder, target, user));
       } else {
-        results.add(moveDocAndMaybeShare(toMove, sourceFolder, target, user));
+        results.add(moveDocOrNotebook(toMove, sourceFolder, target, grandparentId, user));
       }
     }
     return results;
@@ -111,14 +113,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     }
   }
 
-  @Override
-  public int moveRecordsCountSuccess(
-      List<Long> toMove, String targetFolderId, Long sourceFolderId, User user) {
-    List<ServiceOperationResult<? extends BaseRecord>> results =
-        moveRecords(toMove, targetFolderId, sourceFolderId, user);
-    return (int) results.stream().filter(result -> result != null && result.isSucceeded()).count();
-  }
-
   private Folder resolveTargetFolder(String targetFolderId, User user, Folder usersRootFolder) {
     if ("/".equals(targetFolderId)) {
       return usersRootFolder;
@@ -134,22 +128,23 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   }
 
   private ServiceOperationResult<Folder> moveFolder(
-      Long folderId, Folder sourceFolder, Folder target, User user) {
+      Long toMoveId, Folder sourceFolder, Folder target, User user) {
     ServiceOperationResult<Folder> result =
-        folderManager.move(folderId, target.getId(), sourceFolder.getId(), user);
+        folderManager.move(toMoveId, target.getId(), sourceFolder.getId(), user);
     if (result != null && result.isSucceeded()) {
       auditService.notify(new MoveAuditEvent(user, result.getEntity(), sourceFolder, target));
     }
     return result;
   }
 
-  private ServiceOperationResult<? extends BaseRecord> moveDocAndMaybeShare(
-      Long recordId, Folder sourceFolder, Folder target, User user) {
+  private ServiceOperationResult<? extends BaseRecord> moveDocOrNotebook(
+      Long recordId, Folder sourceFolder, Folder target, Long grandparentId, User user) {
     BaseRecord toMove = recordManager.get(recordId);
 
     if (recordManager.isSharedNotebookWithoutCreatePermission(user, target)) {
       try {
-        Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder);
+        Group group =
+            groupManager.getGroupFromAnyLevelOfSharedFolder(user, sourceFolder, grandparentId);
         SharingResult sharingResult =
             recordShareHandler.moveIntoSharedNotebook(group, toMove, (Notebook) target);
         return mapShareResultToServiceOperation(sharingResult, toMove);

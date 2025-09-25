@@ -44,12 +44,22 @@ $(document).ready(function () {
 					}
 				}));
 			});
+
+			function getGrandParentFolderId() {
+				const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+				const grandParent = breadcrumbs[breadcrumbs.length - 1]
+				if(grandParent === undefined){
+					return null;
+				}
+				return grandParent.getAttribute("id").split("_")[1];
+			}
+			
 			//wait for all pio_Requests to come back
 			$.when.apply($, pio_requests).done(function (resp) {
 				// submit all protocols
         const targetFolderId = window.parent.document.querySelector("#protocolsIoChooserDlgIframe").dataset.parentid;
 				$.ajax({
-					url: `/importer/generic/protocols_io/${targetFolderId}`, dataType: 'json',
+					url: `/importer/generic/protocols_io/${targetFolderId}?grandParentId=${getGrandParentFolderId()}`, dataType: 'json',
 					"data": JSON.stringify(pio_results), type: "POST", contentType: "application/json;"
 				})
 					.done(function (response) {

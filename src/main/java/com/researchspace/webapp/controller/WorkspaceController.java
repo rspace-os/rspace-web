@@ -400,6 +400,7 @@ public class WorkspaceController extends BaseController {
   public String createNotebookAndRedirect(
       @PathVariable("recordid") long parentRecordId,
       @RequestParam("notebookNameField") String notebookName,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       Principal principal) {
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;
@@ -415,7 +416,7 @@ public class WorkspaceController extends BaseController {
     if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
       sharedWithGroup =
           recordShareHandler.shareIntoSharedFolderOrNotebook(
-              user, originalParentFolder, newNotebookId);
+              user, originalParentFolder, newNotebookId, grandParentId);
     }
 
     return getNotebookRedirectUrl(newNotebookId, sharedWithGroup);
@@ -582,15 +583,23 @@ public class WorkspaceController extends BaseController {
 
     User user = getUserByUsername(principal.getName());
 
-    int moveCounter =
-        workspaceService.moveRecordsCountSuccess(
-            List.of(toMove), targetFolderId, settings.getParentFolderId(), user);
+    long moveSuccessCount =
+        workspaceService
+            .moveRecords(
+                List.of(toMove),
+                targetFolderId,
+                settings.getParentFolderId(),
+                settings.getGrandparentFolderId(),
+                user)
+            .stream()
+            .filter(result -> result != null && result.isSucceeded())
+            .count();
 
-    if (moveCounter == toMove.length) {
+    if (moveSuccessCount == toMove.length) {
       model.addAttribute("successMsg", getText("workspace.move.success"));
     } else {
       String msgKey;
-      if (moveCounter == 0) {
+      if (moveSuccessCount == 0) {
         msgKey = getText("workspace.move.nothing.moved");
       } else {
         msgKey = getText("workspace.move.some.not.moved");

@@ -3,11 +3,12 @@ package com.researchspace.service;
 import static com.axiope.search.SearchConstants.ATTACHMENT_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.FULL_TEXT_SEARCH_OPTION;
 import static com.researchspace.testutils.SearchTestUtils.createAdvSearchCfg;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.EcatDocumentFile;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
@@ -18,7 +19,6 @@ import com.researchspace.search.impl.LuceneSearchStrategy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import org.apache.lucene.queryparser.classic.ParseException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -49,11 +49,11 @@ public class AttachmentSearchTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void attachmentAdvancedSearchTest() throws URISyntaxException, IOException {
+  public void attachmentSearchPartOfFullTextSearchTest() throws URISyntaxException, IOException {
     setupRandomPIUser();
     logoutAndLoginAs(user);
 
-    saveInGalleryAndIndexTestFile(user);
+    saveTextFileInGallery(user);
     flushToSearchIndices();
 
     WorkspaceListingConfig config =
@@ -65,28 +65,45 @@ public class AttachmentSearchTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void attachmentSingleSearchTest()
-      throws IllegalAddChildOperation, IOException, ParseException, URISyntaxException {
+  public void attachmentSearchTest()
+      throws IllegalAddChildOperation, IOException, URISyntaxException {
+
+    // create user and index test file
     User user = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(user);
-    saveInGalleryAndIndexTestFile(user);
+    EcatDocumentFile textFile = saveTextFileInGallery(user);
     flushToSearchIndices();
+
+    // prepare search options
     String[] options = {ATTACHMENT_SEARCH_OPTION};
     String[] terms = {"people"};
     PaginationCriteria<BaseRecord> pg = PaginationCriteria.createDefaultForClass(BaseRecord.class);
     WorkspaceListingConfig input = new WorkspaceListingConfig(pg, options, terms, -1L, false);
-    ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(input, user);
 
+    // run the search
+    ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(input, user);
     assertNotNull(results);
     assertEquals(1, results.getTotalHits().intValue());
+    assertEquals(textFile.getGlobalIdentifier(), results.getResults().get(0).getGlobalIdentifier());
+    assertEquals(1, ((EcatMediaFile) results.getResults().get(0)).getVersion());
+
+    // upload new version of file, and index
+    updateFileAttachmentInGallery(textFile.getId(), user);
+    flushToSearchIndices();
+
+    // try searching again, confirm the file is still findable (RSDEV-755)
+    results = searchMgr.searchWorkspaceRecords(input, user);
+    assertNotNull(results);
+    assertEquals(1, results.getTotalHits().intValue());
+    assertEquals(textFile.getGlobalIdentifier(), results.getResults().get(0).getGlobalIdentifier());
+    assertEquals(2, ((EcatMediaFile) results.getResults().get(0)).getVersion());
   }
 
   // saves an example file in filsestore and DB
-  private void saveInGalleryAndIndexTestFile(User user) throws URISyntaxException, IOException {
-
+  private EcatDocumentFile saveTextFileInGallery(User user) throws URISyntaxException, IOException {
     InputStream is =
         SearchManagerTest.class.getClassLoader().getResourceAsStream("TestResources/genFilesi.txt");
     EcatDocumentFile doc = mediaMgr.saveNewDocument("genFilesi.txt", is, user, null, null);
-    recordMgr.save(doc, user);
+    return (EcatDocumentFile) recordMgr.save(doc, user);
   }
 }

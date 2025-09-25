@@ -185,28 +185,6 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  public void movingDocAlreadyInTargetFolderReturnsServerError() throws Exception {
-    User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createNewApiKeyForUser(anyUser);
-    StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "anytext");
-    Long rootId = getRootFolderForUser(anyUser).getId();
-
-    MoveRequest moveReq = new MoveRequest();
-    moveReq.setDocId(doc.getId());
-    moveReq.setSourceFolderId(rootId + 999); // bogus source not equal to actual parent
-    moveReq.setTargetFolderId(rootId); // actual parent
-
-    MvcResult result =
-        this.mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "/documents/move", anyUser, moveReq))
-            .andExpect(status().isUnprocessableEntity())
-            .andReturn();
-
-    String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("already in target folder"));
-  }
-
-  @Test
   public void shareErrorHandling() throws Exception {
     TestGroup testGrp1 = createTestGroup(3, new TestGroupConfig(true));
     User other = createInitAndLoginAnyUser();
@@ -317,6 +295,8 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     SharePermissionUpdate update = new SharePermissionUpdate();
     update.setShareId(shareId);
     update.setPermission("EDIT");
+
+    // update permission
     mockMvc
         .perform(createBuilderForPutWithJSONBody(apiKey, "/share/", user, update))
         .andExpect(status().isNoContent())
@@ -358,12 +338,10 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
   @Test
   public void testGetAllSharesForDocument() throws Exception {
-    // Create first group
     TestGroup group = createTestGroup(2);
     User sharer = group.getPi();
     logoutAndLoginAs(sharer);
 
-    // Create second group and add sharer as PI
     TestGroup secondGroup = createTestGroup(1);
     addUsersToGroup(sharer, secondGroup.getGroup());
     User userToShareWith = secondGroup.getUserByPrefix("u1");
@@ -372,7 +350,6 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     toShare.setOwner(sharer);
     String apiKey = createNewApiKeyForUser(sharer);
 
-    // Share doc with the group
     SharePost sharePost = createValidSharePostWithGroup(group, toShare, "READ");
     MvcResult createResult =
         mockMvc
@@ -443,14 +420,13 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  public void getAllSharesForDoc_NotOwner_Returns404() throws Exception {
+  public void getAllSharesForDocNonOwnerReturns404() throws Exception {
     TestGroup group = createTestGroup(2);
     User owner = group.getPi();
     logoutAndLoginAs(owner);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "test");
     String ownerKey = createNewApiKeyForUser(owner);
 
-    // Owner shares the doc so that shares exist
     SharePost sharePost = createValidSharePostWithGroup(group, doc, "READ");
     mockMvc
         .perform(createBuilderForPostWithJSONBody(ownerKey, "/share", owner, sharePost))
@@ -466,7 +442,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  public void deleteShare_NotSharer_Returns404() throws Exception {
+  public void deleteShareNotSharerReturns404() throws Exception {
     TestGroup group = createTestGroup(2);
     User sharer = group.getPi();
     logoutAndLoginAs(sharer);

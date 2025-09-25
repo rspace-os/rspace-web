@@ -26,6 +26,7 @@ import lombok.NoArgsConstructor;
       "created",
       "lastModified",
       "parentFolderId",
+      "grandParentFolderId",
       "signed",
       "tags",
       "tagMetaData",
@@ -47,6 +48,9 @@ public class ApiDocumentInfo extends IdentifiableNameableApiObject {
 
   @JsonProperty("parentFolderId")
   private Long parentFolderId;
+
+  @JsonProperty("grandParentFolderId")
+  private Long grandParentFolderId;
 
   @JsonProperty("signed")
   private Boolean signed = null;
@@ -71,6 +75,9 @@ public class ApiDocumentInfo extends IdentifiableNameableApiObject {
     // set parent folder if user is owner of document else null
     if (authorisedSubject.equals(record.getOwner()) && record.hasParents()) {
       setParentFolderId(record.getOwnerParent().get().getId());
+      if (record.getOwnerParent().get().hasParents()) {
+        setGrandParentFolderId(record.getOwnerParent().get().getOwnerParent().get().getId());
+      }
     }
 
     setSigned(record.isSigned());
