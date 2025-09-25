@@ -69,7 +69,7 @@ public class NotebookEditorController extends BaseController {
       @PathVariable("notebookId") Long notebookId,
       @RequestParam(value = "initialRecordToDisplay", required = false) Long entryId,
       @RequestParam(value = "settingsKey", required = false) String settingsKey,
-      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
+      @RequestParam(value = "grandParentId") Long grandParentId,
       Model model,
       HttpSession session,
       Principal principal)
@@ -147,14 +147,9 @@ public class NotebookEditorController extends BaseController {
             (showWholeNotebook ? notebook : entryToShow), PermissionType.WRITE, user));
 
     Folder rootRecord = folderManager.getRootFolderForUser(user);
-    WorkspaceListingConfig cfg = null;
     Folder notebookparent = null;
-    if (isValidSettingsKey(settingsKey)
-        && (cfg = (WorkspaceListingConfig) session.getAttribute(settingsKey)) != null) {
-      Long grandparentId = cfg.getGrandparentFolderId();
-      if (grandparentId != null) {
-        notebookparent = folderManager.getFolder(grandparentId, user);
-      }
+    if (isValidSettingsKey(settingsKey)) {
+      notebookparent = folderManager.getFolder(grandParentId, user);
     }
     Breadcrumb bcrumb =
         breadcrumbGenerator.generateBreadcrumbToHome(
