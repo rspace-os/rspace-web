@@ -9,7 +9,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.dtos.FormMenu;
-import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.Breadcrumb;
@@ -107,7 +106,7 @@ public class NotebookEditorController extends BaseController {
         throw new IllegalStateException(
             "Cannot infer shared context for Notebook with ID=["
                 + notebook.getId()
-                + "], as \"grandParentFolderId\" param is not set");
+                + "], as \"grandParentId\" param is not set");
       }
     }
     permDTO.setCreateRecord(
