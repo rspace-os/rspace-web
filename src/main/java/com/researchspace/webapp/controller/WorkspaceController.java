@@ -295,7 +295,7 @@ public class WorkspaceController extends BaseController {
       throws IOException {
 
     WorkspaceListingConfig cfg = null;
-    Long grandparentFolderId = workspaceSettings.getParentFolderId();
+    Long grandParentId = workspaceSettings.getParentFolderId();
 
     // if we have a settings key, then we use that to configure workspace reload
     if (isValidSettingsKey(settingsKey)
@@ -312,7 +312,7 @@ public class WorkspaceController extends BaseController {
                 cfg.getPgCrit(),
                 cfg.getCurrentViewMode(),
                 user,
-                grandparentFolderId));
+                grandParentId));
       }
 
       model.addAttribute("settingsKey", settingsKey);
@@ -329,11 +329,11 @@ public class WorkspaceController extends BaseController {
               workspaceSettings.createPaginationCriteria(),
               workspaceSettings.getCurrentViewMode(),
               user,
-              grandparentFolderId));
+              grandParentId));
 
       workspaceSettings.setParentFolderId(folder.getId());
       cfg = new WorkspaceListingConfig(workspaceSettings);
-      cfg.setGrandparentFolderId(grandparentFolderId);
+      cfg.setGrandParentId(grandParentId);
       addWorkspaceConfigToSessionAndKeyModel(cfg, model, session);
       model.addAttribute("workspaceConfigJson", workspaceSettings.toJson());
     }
@@ -618,7 +618,7 @@ public class WorkspaceController extends BaseController {
           try {
             Group group =
                 groupManager.getGroupFromAnyLevelOfSharedFolder(
-                    user, sourceFolder, settings.getGrandparentFolderId());
+                    user, sourceFolder, settings.getGrandParentId());
             SharingResult sharingResult =
                 recordShareHandler.moveIntoSharedNotebook(
                     group, baseRecordToMove, (Notebook) target);
@@ -703,7 +703,7 @@ public class WorkspaceController extends BaseController {
             RS_DELETE_RECORD_PROGRESS, toDelete.length * 10, "Deleting records", session);
     DeletionSettings delContext =
         DeletionSettings.builder()
-            .grandParentFolderId(settings.getGrandparentFolderId())
+            .grandParentId(settings.getGrandParentId())
             .notebookEntryDeletion(isNotebookEntryDeletion)
             .parent(parent)
             .currentUsers(users)
@@ -715,7 +715,7 @@ public class WorkspaceController extends BaseController {
 
     if (isNotebookEntryDeletion) {
       /* let's set up proper grandparent for listFilesInFolder (RSPAC-991) */
-      settings.setParentFolderId(settings.getGrandparentFolderId());
+      settings.setParentFolderId(settings.getGrandParentId());
     }
     if (parent == null) {
       parent =
@@ -952,10 +952,10 @@ public class WorkspaceController extends BaseController {
           user,
           settings.getParentFolderId());
 
-      Long grandparentFolderId = settings.getParentFolderId();
+      Long grandParentId = settings.getParentFolderId();
       settings.setParentFolderId(parentFolder.getId()); // update with new parent id
       WorkspaceListingConfig config = new WorkspaceListingConfig(settings);
-      config.setGrandparentFolderId(grandparentFolderId);
+      config.setGrandParentId(grandParentId);
       addWorkspaceConfigToSessionAndKeyModel(config, model, session);
 
     } else {

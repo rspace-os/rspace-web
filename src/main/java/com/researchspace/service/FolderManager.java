@@ -227,24 +227,24 @@ public interface FolderManager {
    * hierarchy.
    * <p>
    * If the {@code parentSharedFolderId} is a shared Notebook, the method needs to know also the
-   * {@code grandParentFolderId} in order to locate the specific group/individual root folder,
+   * {@code grandParentId} in order to locate the specific group/individual root folder,
    * otherwise it raises a NotebookInvalidLocationException
    *
    * @param parentSharedFolderOrNotebookId is the ID of the folder/notebook where the record is
    *                                       located
-   * @param grandParentFolderId            is the ID of the parent folder where the main folder
+   * @param grandParentId            is the ID of the parent folder where the main folder
    *                                       {@code parentSharedFolderId} is located. This parameter
    *                                       is mandatory when
    *                                       {@code parentSharedFolderOrNotebookId) is a shared
    *                                       Notebook
    * @param user                           The authenticated user
    * @return The ROOT shared group folder, or <code>Optional.empty</code> if this couldn't be found.
-   * @throws NotebookInvalidLocationException if the {@code grandParentFolderId} id is not passed
+   * @throws NotebookInvalidLocationException if the {@code grandParentId} id is not passed
    *                                          when the {@code parentSharedFolderOrNotebookId} is a
    *                                          Notebook
    */
   Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long parentSharedFolderOrNotebookId, Long grandParentFolderId, User user);
+      Long parentSharedFolderOrNotebookId, Long grandParentId, User user);
 
   boolean isFolderInSharedTree(Folder folderOrNotebook, Long parentId, User usr);
 
