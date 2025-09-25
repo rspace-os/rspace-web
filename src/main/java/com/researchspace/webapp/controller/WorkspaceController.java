@@ -420,12 +420,12 @@ public class WorkspaceController extends BaseController {
               user, originalParentFolder, newNotebookId, grandParentId);
     }
 
-    return getNotebookRedirectUrl(newNotebookId, sharedWithGroup);
+    return getNotebookRedirectUrl(newNotebookId, grandParentId, sharedWithGroup);
   }
 
   @NotNull
   private static String getNotebookRedirectUrl(
-      Long newNotebookId, List<RecordGroupSharing> sharedWithGroup) {
+      Long newNotebookId, Long grandParentId, List<RecordGroupSharing> sharedWithGroup) {
     String redirectUrl = "redirect:/notebookEditor/" + newNotebookId;
     if (!(sharedWithGroup == null || sharedWithGroup.isEmpty())) {
       redirectUrl +=
@@ -433,7 +433,7 @@ public class WorkspaceController extends BaseController {
               + URLEncoder.encode(
                   sharedWithGroup.get(0).getSharee().getDisplayName(), StandardCharsets.UTF_8);
     }
-    return redirectUrl;
+    return redirectUrl + "?grandParentId=" + grandParentId;
   }
 
   @PostMapping("/ajax/createNotebook")
