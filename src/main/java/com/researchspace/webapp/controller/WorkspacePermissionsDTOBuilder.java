@@ -31,9 +31,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
   private FolderManager fMger;
   private RecordManager recMgr;
 
-  @Getter
-  @Setter
-  private @Autowired IPermissionUtils permissionUtils;
+  @Getter @Setter private @Autowired IPermissionUtils permissionUtils;
 
   @Autowired
   public void setRecMgr(RecordManager recMgr) {
@@ -61,18 +59,18 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     boolean isParentFolderInSharedTree = false;
     if (parentFolder.isNotebook()) {
-      if (model.getAttribute("bcrumb") != null &&
-          !((Breadcrumb) model.getAttribute("bcrumb")).getElements().isEmpty()) {
+      if (model.getAttribute("bcrumb") != null
+          && !((Breadcrumb) model.getAttribute("bcrumb")).getElements().isEmpty()) {
         Long grandParentId =
             ((Breadcrumb) model.getAttribute("bcrumb"))
                 .getElements()
                 .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
                 .getId();
-        isParentFolderInSharedTree =
-            fMger.isFolderInSharedTree(parentFolder, grandParentId, usr);
+        isParentFolderInSharedTree = fMger.isFolderInSharedTree(parentFolder, grandParentId, usr);
       } else {
-        log.warn("it was not possible to get Breadcumbs from the model for notebookID="
-            + parentFolder.getId());
+        log.warn(
+            "it was not possible to get Breadcumbs from the model for notebookID="
+                + parentFolder.getId());
       }
     }
 
@@ -92,7 +90,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
             !br.isMediaRecord()
                 && !br.isSnippet()
                 && recMgr.canMove(
-                br, parentFolder, usr); // manager transaction as may need to query db
+                    br, parentFolder, usr); // manager transaction as may need to query db
         if (isSearch) {
           move = move && usr.isOwnerOfRecord(br);
         }
@@ -121,7 +119,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
       createRecord =
           createRecord
               || (isParentFolderInSharedTree
-              && permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr));
+                  && permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr));
       dto.setCreateRecord(createRecord);
       dto.setCreateFolder(false);
     }

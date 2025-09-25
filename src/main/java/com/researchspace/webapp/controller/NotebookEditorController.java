@@ -99,10 +99,16 @@ public class NotebookEditorController extends BaseController {
       }
     }
 
-
     ActionPermissionsDTO permDTO = new ActionPermissionsDTO();
-    if(grandParentId == null){
-      grandParentId = notebook.getParent().getId();
+    if (grandParentId == null) {
+      if (notebook.getParent() != null) {
+        grandParentId = notebook.getParent().getId();
+      } else {
+        throw new IllegalStateException(
+            "Cannot infer shared context for Notebook with ID=["
+                + notebook.getId()
+                + "], as \"grandParentFolderId\" param is not set");
+      }
     }
     permDTO.setCreateRecord(
         folderManager.isFolderInSharedTree(notebook, grandParentId, user)

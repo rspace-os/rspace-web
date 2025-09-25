@@ -16,7 +16,6 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
-import com.researchspace.testutils.TestGroup;
 import com.researchspace.webapp.controller.ServiceLoggerAspct;
 import org.junit.After;
 import org.junit.Before;
@@ -127,15 +126,20 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
     Folder grpFolderShared = folderMgr.getFolder(group.getCommunalGroupFolderId(), piUser);
 
     Notebook notebookShared = recordFactory.createNotebook("notebookShared", user);
-    sharingHandler.shareIntoSharedFolderOrNotebook(user, grpFolderShared, notebookShared.getId(),
+    sharingHandler.shareIntoSharedFolderOrNotebook(
+        user,
+        grpFolderShared,
+        notebookShared.getId(),
         grpFolderShared.getParents().stream()
             .filter(recToParent -> recToParent.getFolder().getOwner().equals(user))
-            .findFirst().get().getFolder().getId());
+            .findFirst()
+            .get()
+            .getFolder()
+            .getId());
 
     assertTrue(folderMgr.isFolderInSharedTree(notebookShared, grpFolderShared.getId(), user));
     assertTrue(folderMgr.isFolderInSharedTree(notebookShared, grpFolderShared.getId(), piUser));
   }
-
 
   @Test
   public void getGroupFolderRootFromSharedSubfolderTest() throws IllegalAddChildOperation {
