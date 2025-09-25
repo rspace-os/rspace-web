@@ -4466,9 +4466,10 @@ definitions:
           $ref: '#/definitions/StoichiometryMoleculeUpdateDTO'
 
   MoveRequest:
-    description: Request to move a single record to a target folder
+    description: Request to move a document or notebook to a target folder
     required:
       - docId
+      - sourceFolderId
       - targetFolderId
     properties:
       docId:
@@ -4478,11 +4479,15 @@ definitions:
       sourceFolderId:
         type: integer
         format: int64
-        description: Optional source folder id to disambiguate the move when the record has multiple parents
+        description: Source folder of the record, to disambiguate where a record has multiple parents e.g. it is shared
       targetFolderId:
         type: integer
         format: int64
-        description: Target folder id
+        description: Destination folder/notebook to move the record to
+      grandparentId:
+        type: integer
+        format: int64
+        description: Optional, and only required in the case of moving a document from one notebook to another. The id of the folder containing the notebook the document is being moved from. To disambiguate when the notebook has multiple parents e.g. it is shared.
   SharePermissionUpdate:
     description: Update the permission for an existing share
     properties:
