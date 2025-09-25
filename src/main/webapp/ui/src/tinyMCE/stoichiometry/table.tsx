@@ -40,11 +40,13 @@ import { Dialog } from "../../components/DialogBoundary";
 import DialogContent from "@mui/material/DialogContent";
 import Result from "@/util/result";
 import { LandmarksProvider } from "@/components/LandmarksContext";
-import GalleryPicker from "../../eln/gallery/picker";
 import { MemoryRouter } from "react-router-dom";
 import * as Parsers from "../../util/parsers";
 import { filenameExceptExtension } from "@/util/files";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import Backdrop from "@mui/material/Backdrop";
+
+const GalleryPicker = React.lazy(() => import("../../eln/gallery/picker"));
 
 export type EditableMolecule = StoichiometryMolecule & {
   moles: number | null;
@@ -349,7 +351,11 @@ export function calculateUpdatedMolecules(
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
     setColumnsMenuAnchorEl: (anchorEl: HTMLElement | null) => void;
-    onAddReagent: (smilesString: string, name: string, source: string) => Promise<void>;
+    onAddReagent: (
+      smilesString: string,
+      name: string,
+      source: string,
+    ) => Promise<void>;
     editable: boolean;
     allMolecules: ReadonlyArray<EditableMolecule>;
   }
@@ -507,7 +513,9 @@ function Toolbar({
               onClose={() => {
                 setAddReagentSmilesDialogOpen(false);
               }}
-              onAddReagent={(smilesString, name) => onAddReagent(smilesString, name, "manual")}
+              onAddReagent={(smilesString, name) =>
+                onAddReagent(smilesString, name, "manual")
+              }
             />
             <ThemeProvider theme={createAccentedTheme(PUBCHEM_ACCENT_COLOR)}>
               <CompoundSearchDialog
@@ -530,37 +538,51 @@ function Toolbar({
             {galleryDialogOpen && (
               <MemoryRouter>
                 <LandmarksProvider>
-                  <GalleryPicker
-                    open={true}
-                    onClose={() => {
-                      setGalleryDialogOpen(false);
-                    }}
-                    onSubmit={doNotAwait(async (files) => {
-                      for (const file of files) {
-                        await Parsers.getValueWithKey("chemString")(
-                          file.metadata,
-                        )
-                          .flatMap(Parsers.isString)
-                          .doAsync((smiles) => {
-                            return onAddReagent(
-                              smiles,
-                              filenameExceptExtension(file.name),
-                              "gallery",
-                            );
-                          });
-                      }
-                      setGalleryDialogOpen(false);
-                    })}
-                    validateSelection={(file) => {
-                      if (file.type !== "Chemistry")
-                        return Result.Error([
-                          new Error(
-                            "Only chemistry files can be added to stoichiometry tables",
-                          ),
-                        ]);
-                      return Result.Ok(null);
-                    }}
-                  />
+                  <React.Suspense
+                    fallback={
+                      <Backdrop
+                        open
+                        sx={{
+                          color: "#fff",
+                          zIndex: 1,
+                        }}
+                      >
+                        <CircularProgress color="inherit" />
+                      </Backdrop>
+                    }
+                  >
+                    <GalleryPicker
+                      open={true}
+                      onClose={() => {
+                        setGalleryDialogOpen(false);
+                      }}
+                      onSubmit={doNotAwait(async (files) => {
+                        for (const file of files) {
+                          await Parsers.getValueWithKey("chemString")(
+                            file.metadata,
+                          )
+                            .flatMap(Parsers.isString)
+                            .doAsync((smiles) => {
+                              return onAddReagent(
+                                smiles,
+                                filenameExceptExtension(file.name),
+                                "gallery",
+                              );
+                            });
+                        }
+                        setGalleryDialogOpen(false);
+                      })}
+                      validateSelection={(file) => {
+                        if (file.type !== "Chemistry")
+                          return Result.Error([
+                            new Error(
+                              "Only chemistry files can be added to stoichiometry tables",
+                            ),
+                          ]);
+                        return Result.Ok(null);
+                      }}
+                    />
+                  </React.Suspense>
                 </LandmarksProvider>
               </MemoryRouter>
             )}
@@ -763,7 +785,7 @@ const StoichiometryTable = React.forwardRef<
       trackEvent("user:add:stoichiometry_reagent:document_editor", {
         source,
       });
-      
+
       // Prevent concurrent requests
       if (moleculeInfoLoading) {
         throw new Error(
@@ -834,7 +856,13 @@ const StoichiometryTable = React.forwardRef<
         setMoleculeInfoLoading(false);
       }
     },
-    [allMolecules, moleculeInfoLoading, getMoleculeInfo, onChangesUpdate, trackEvent],
+    [
+      allMolecules,
+      moleculeInfoLoading,
+      getMoleculeInfo,
+      onChangesUpdate,
+      trackEvent,
+    ],
   );
 
   const limitingReagent = allMolecules.find(

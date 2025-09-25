@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
 
-import KetcherDialog from "../../components/Ketcher/KetcherDialog";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
 import Analytics from "../../components/Analytics";
+import CircularProgress from "@mui/material/CircularProgress";
+import Backdrop from "@mui/material/Backdrop";
+const KetcherDialog = React.lazy(
+  () => import("../../components/Ketcher/KetcherDialog"),
+);
 
 /**
  * This component retrieves the selected chemical element in the global tinymce
@@ -35,7 +39,7 @@ export const KetcherViewer = (): React.ReactNode => {
         if (!response.data) {
           // @ts-expect-error global
           tinymceDialogUtils.showErrorAlert(
-            "Problem loading chemical element."
+            "Problem loading chemical element.",
           );
           return;
         }
@@ -67,14 +71,28 @@ export const KetcherViewer = (): React.ReactNode => {
   // @ts-expect-error global
   return $(tinymce.activeEditor.selection.getNode()).hasClass("chem") &&
     existingChemical === "" ? null : (
-    <KetcherDialog
-      isOpen={dialogIsOpen}
-      handleInsert={() => {}}
-      title={"Ketcher Chemical Viewer (Read-Only)"}
-      existingChem={existingChemical}
-      handleClose={handleClose}
-      readOnly={true}
-    />
+    <React.Suspense
+      fallback={
+        <Backdrop
+          open
+          sx={{
+            color: "#fff",
+            zIndex: 1301, // more than the menu bar that opens the ketcher viewer
+          }}
+        >
+          <CircularProgress color="inherit" />
+        </Backdrop>
+      }
+    >
+      <KetcherDialog
+        isOpen={dialogIsOpen}
+        handleInsert={() => {}}
+        title={"Ketcher Chemical Viewer (Read-Only)"}
+        existingChem={existingChemical}
+        handleClose={handleClose}
+        readOnly={true}
+      />
+    </React.Suspense>
   );
 };
 
@@ -87,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
       root.render(
         <Analytics>
           <KetcherViewer />
-        </Analytics>
+        </Analytics>,
       );
     }
   });

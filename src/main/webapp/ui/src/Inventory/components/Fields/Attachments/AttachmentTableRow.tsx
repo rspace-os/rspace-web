@@ -21,7 +21,11 @@ import { mkAlert } from "../../../../stores/contexts/Alert";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { type BlobUrl } from "../../../../util/types";
 import { doNotAwait } from "../../../../util/Util";
-import KetcherDialog from "../../../../components/Ketcher/KetcherDialog";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
+const KetcherDialog = React.lazy(
+  () => import("../../../../components/Ketcher/KetcherDialog"),
+);
 
 const ChemicalPreview = observer(
   ({ attachment }: { attachment: Attachment }) => {
@@ -50,12 +54,12 @@ const ChemicalPreview = observer(
             chemicalString
               ? ""
               : loadingString
-              ? "Loading file"
-              : chemistrySupported
-              ? "Preview file as 3D structure"
-              : isChemicalFile && !attachment.id
-              ? "Save first to enable 3D preview"
-              : "3D Preview is not supported for this file type"
+                ? "Loading file"
+                : chemistrySupported
+                  ? "Preview file as 3D structure"
+                  : isChemicalFile && !attachment.id
+                    ? "Save first to enable 3D preview"
+                    : "3D Preview is not supported for this file type"
           }
           size="small"
           color="primary"
@@ -69,19 +73,35 @@ const ChemicalPreview = observer(
             )
           }
         />
-        <KetcherDialog
-          isOpen={!loadingString && Boolean(chemicalString) && showPreview}
-          handleInsert={() => {}}
-          title={"View Chemical (Read-only)"}
-          existingChem={attachment.chemicalString}
-          handleClose={() => {
-            setShowPreview(false);
-          }}
-          readOnly={true}
-        />
+        {!loadingString && Boolean(chemicalString) && showPreview && (
+          <React.Suspense
+            fallback={
+              <Backdrop
+                open
+                sx={{
+                  color: "#fff",
+                  zIndex: (theme) => theme.zIndex.drawer + 1,
+                }}
+              >
+                <CircularProgress color="inherit" />
+              </Backdrop>
+            }
+          >
+            <KetcherDialog
+              isOpen
+              handleInsert={() => {}}
+              title={"View Chemical (Read-only)"}
+              existingChem={attachment.chemicalString}
+              handleClose={() => {
+                setShowPreview(false);
+              }}
+              readOnly={true}
+            />
+          </React.Suspense>
+        )}
       </>
     );
-  }
+  },
 );
 
 const Download = ({ attachment }: { attachment: Attachment }) => (
@@ -101,7 +121,7 @@ const SetAsPreviewImage = <
     image: BlobUrl | null;
     newBase64Image: string | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   attachment,
   disabled,
@@ -117,7 +137,7 @@ const SetAsPreviewImage = <
   const storeImage = async (dataURL: string | null, file: Blob | null) => {
     if (!fieldOwner)
       throw new Error(
-        "The preview image cannot be set as the item is not available."
+        "The preview image cannot be set as the item is not available.",
       );
     if (!dataURL || !file)
       throw new Error("Unable to set attachment as preview image.");
@@ -131,7 +151,7 @@ const SetAsPreviewImage = <
         message: `Setting ${attachment.name} as preview image. Please Save the item to confirm.`,
         variant: "notice",
         isInfinite: false,
-      })
+      }),
     );
   };
 
@@ -145,7 +165,7 @@ const SetAsPreviewImage = <
           title: "Could not fetch image",
           message: (e as Error).message,
           variant: "error",
-        })
+        }),
       );
     }
   };
@@ -156,8 +176,8 @@ const SetAsPreviewImage = <
           disabled && !attachment.previewSupported
             ? "Save first to enable setting this file as the item's Preview Image."
             : disabled
-            ? "First press Edit to set as Preview Image."
-            : "Set as Preview Image"
+              ? "First press Edit to set as Preview Image."
+              : "Set as Preview Image"
         }
         size="small"
         color="primary"
@@ -175,7 +195,7 @@ function AttachmentTableRow<
     image: BlobUrl | null;
     newBase64Image: string | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   attachment,
   fieldOwner,

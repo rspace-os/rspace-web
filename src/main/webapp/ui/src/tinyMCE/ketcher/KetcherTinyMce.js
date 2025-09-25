@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 
-import KetcherDialog from "../../components/Ketcher/KetcherDialog";
 import { createRoot } from "react-dom/client";
 import { blobToBase64 } from "../../util/files";
 import axios from "@/common/axios";
@@ -11,6 +10,11 @@ import theme from "../../theme";
 import useChemicalImport from "../../hooks/api/useChemicalImport";
 import Alerts from "../../components/Alerts/Alerts";
 import { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
+import CircularProgress from "@mui/material/CircularProgress";
+import Backdrop from "@mui/material/Backdrop";
+const KetcherDialog = React.lazy(
+  () => import("../../components/Ketcher/KetcherDialog"),
+);
 
 export const KetcherTinyMce = () => {
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -39,7 +43,7 @@ export const KetcherTinyMce = () => {
         })
         .catch(() => {
           tinymceDialogUtils.showErrorAlert(
-            "Loading chemical elements failed."
+            "Loading chemical elements failed.",
           );
         });
     }
@@ -117,7 +121,7 @@ export const KetcherTinyMce = () => {
         setExistingChemical("");
         void window.ketcher.setMolecule("");
       },
-      () => {}
+      () => {},
     );
   };
 
@@ -133,13 +137,13 @@ export const KetcherTinyMce = () => {
     }
     ketcher.getKet().then((ketData) => {
       const molecules = Object.keys(JSON.parse(ketData)).filter((key) =>
-        key.startsWith("mol")
+        key.startsWith("mol"),
       );
       if (molecules.length === 0) {
         setIsValid(
           IsInvalid(
-            "Please draw, paste, or open a molecule to insert into the document"
-          )
+            "Please draw, paste, or open a molecule to insert into the document",
+          ),
         );
         return;
       }
@@ -149,18 +153,32 @@ export const KetcherTinyMce = () => {
 
   return $(tinymce.activeEditor.selection.getNode()).hasClass("chem") &&
     existingChemical === "" ? null : (
-    <KetcherDialog
-      isOpen={dialogIsOpen}
-      handleInsert={handleInsert}
-      title={"Ketcher Insert Chemical"}
-      existingChem={existingChemical}
-      handleClose={handleClose}
-      actionBtnText={"Insert"}
-      validationResult={isValid}
-      onChange={() => {
-        validate(window.ketcher);
-      }}
-    />
+    <React.Suspense
+      fallback={
+        <Backdrop
+          open
+          sx={{
+            color: "#fff",
+            zIndex: 2, // higher than the TinyMCE form field editor
+          }}
+        >
+          <CircularProgress color="inherit" />
+        </Backdrop>
+      }
+    >
+      <KetcherDialog
+        isOpen={dialogIsOpen}
+        handleInsert={handleInsert}
+        title={"Ketcher Insert Chemical"}
+        existingChem={existingChemical}
+        handleClose={handleClose}
+        actionBtnText={"Insert"}
+        validationResult={isValid}
+        onChange={() => {
+          validate(window.ketcher);
+        }}
+      />
+    </React.Suspense>
   );
 };
 
@@ -178,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <KetcherTinyMce />
             </Alerts>
           </Analytics>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
     }
   });
