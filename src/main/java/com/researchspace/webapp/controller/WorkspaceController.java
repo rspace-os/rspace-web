@@ -418,6 +418,9 @@ public class WorkspaceController extends BaseController {
       sharedWithGroup =
           recordShareHandler.shareIntoSharedFolderOrNotebook(
               user, originalParentFolder, newNotebookId, grandParentId);
+      grandParentId = grandParentId != null ? grandParentId : originalParentFolder.getId();
+    } else {
+      grandParentId = grandParentId != null ? grandParentId : targetFolderId;
     }
 
     return getNotebookRedirectUrl(newNotebookId, grandParentId, sharedWithGroup);
@@ -432,6 +435,7 @@ public class WorkspaceController extends BaseController {
           "?sharedWithGroup="
               + URLEncoder.encode(
                   sharedWithGroup.get(0).getSharee().getDisplayName(), StandardCharsets.UTF_8);
+      return redirectUrl + "&grandParentId=" + grandParentId;
     }
     return redirectUrl + "?grandParentId=" + grandParentId;
   }
