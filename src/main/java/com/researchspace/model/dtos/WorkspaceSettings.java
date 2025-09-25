@@ -68,7 +68,7 @@ public class WorkspaceSettings implements Serializable {
    * actual deletion, or an unshare. Pretty backwards way of solving that problem, would be better
    * if delete button always deleted, and maybe we added a "unshare" button to crudops menu.
    */
-  private Long grandparentFolderId;
+  private Long grandParentId;
 
   private boolean advancedSearch;
   private SearchOperator operator = SearchOperator.AND;
@@ -98,7 +98,7 @@ public class WorkspaceSettings implements Serializable {
     ontologiesFilter = workspaceListingConfig.getFilters().isOntologiesFilter();
     // search
     parentFolderId = workspaceListingConfig.getParentFolderId();
-    grandparentFolderId = workspaceListingConfig.getParentFolderId();
+    grandParentId = workspaceListingConfig.getParentFolderId();
     advancedSearch = workspaceListingConfig.isAdvancedSearch();
     operator = workspaceListingConfig.getOperator();
     notebookFilter = workspaceListingConfig.isNotebookFilter();

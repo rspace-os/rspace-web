@@ -66,7 +66,7 @@ public class RecordApiManagerImpl implements RecordApiManager {
     if (apiDocument.getParentFolderId() != null) {
       Folder originalParentFolder = folderManager.getFolder(apiDocument.getParentFolderId(), user);
       recordShareHandler.shareIntoSharedFolderOrNotebook(
-          user, originalParentFolder, newDocument.getId(), apiDocument.getGrandParentFolderId());
+          user, originalParentFolder, newDocument.getId(), apiDocument.getGrandParentId());
     }
     try {
       saveApiDocumentChangesToStructuredDocument(apiDocument, user, newDocument);
