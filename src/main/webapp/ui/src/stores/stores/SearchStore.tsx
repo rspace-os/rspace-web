@@ -49,7 +49,7 @@ export type NewInContainerParams = {
 };
 
 const SAVED_SEARCHES = JSON.parse(
-  localStorage.getItem("searches") ?? "null"
+  localStorage.getItem("searches") ?? "null",
 ) as Array<SavedSearch> | null;
 
 /*
@@ -58,7 +58,7 @@ const SAVED_SEARCHES = JSON.parse(
  * they are made compatible with the latest version.
  */
 const normaliseSavedSearches = (
-  searches: Array<SavedSearch>
+  searches: Array<SavedSearch>,
 ): Array<SavedSearch> => {
   return searches.map((search) => ({
     ...search,
@@ -74,6 +74,12 @@ export const getContainer = async (id: Id): Promise<ContainerModel> => {
   throw new Error("Cannot get container without id");
 };
 
+/**
+ * This class models the state of the main Inventory search, as well as som
+ * global state for all searches. It does NOT manage the state of the searches
+ * embedded in sample, container, and template forms, nor the move and create
+ * dialogs, nor the template picker.
+ */
 export default class SearchStore {
   rootStore: RootStore;
   search: Search;
@@ -128,7 +134,7 @@ export default class SearchStore {
       this.savedSearches.findIndex(
         (savedSearch) =>
           JSON.stringify(savedSearch) ===
-          JSON.stringify(this.search.fetcher.serialize)
+          JSON.stringify(this.search.fetcher.serialize),
       ) !== -1
     );
   }
@@ -164,7 +170,7 @@ export default class SearchStore {
 
   deleteSearch(search: SavedSearch) {
     this.savedSearches = this.savedSearches.filter(
-      (savedSearch) => JSON.stringify(savedSearch) !== JSON.stringify(search)
+      (savedSearch) => JSON.stringify(savedSearch) !== JSON.stringify(search),
     );
     localStorage.setItem("searches", JSON.stringify(this.savedSearches));
   }
@@ -175,7 +181,7 @@ export default class SearchStore {
       const { data } = await ApiService.get<Array<BasketAttrs>>("baskets");
       runInAction(() => {
         this.savedBaskets = data.map(
-          (basketAttrs) => new BasketModel(basketAttrs)
+          (basketAttrs) => new BasketModel(basketAttrs),
         );
       });
     } catch (e) {
@@ -185,7 +191,7 @@ export default class SearchStore {
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
-        })
+        }),
       );
     }
   }
@@ -204,7 +210,7 @@ export default class SearchStore {
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
-        })
+        }),
       );
     }
   }
@@ -214,7 +220,7 @@ export default class SearchStore {
     try {
       const res = await showToastWhilstPending(
         "Creating Basket...",
-        ApiService.post<BasketAttrs>("baskets", { name, globalIds: items })
+        ApiService.post<BasketAttrs>("baskets", { name, globalIds: items }),
       );
       if (res.status === 201 && res.data) {
         // refetch to update list
@@ -225,7 +231,7 @@ export default class SearchStore {
             message: items ? "The selected items have been added to it." : "",
             variant: "success",
             isInfinite: false,
-          })
+          }),
         );
       }
     } catch (e) {
@@ -235,7 +241,7 @@ export default class SearchStore {
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
-        })
+        }),
       );
     }
   }
@@ -255,12 +261,12 @@ export default class SearchStore {
               The contents of the Basket will not be affected.
             </>,
             "OK",
-            "CANCEL"
+            "CANCEL",
           )
         ) {
           const res = await showToastWhilstPending(
             "Deleting Basket...",
-            ApiService.delete<void>(`baskets`, id)
+            ApiService.delete<void>(`baskets`, id),
           );
           if (res.status === 200) {
             // refetch to update list
@@ -271,7 +277,7 @@ export default class SearchStore {
                 message: "Its contents have not been affected.",
                 variant: "success",
                 isInfinite: false,
-              })
+              }),
             );
           }
         }
@@ -285,7 +291,7 @@ export default class SearchStore {
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
-        })
+        }),
       );
     }
   }
@@ -296,7 +302,7 @@ export default class SearchStore {
   }
 
   async createNewSample(
-    subsampleParentDetails?: NewInContainerParams
+    subsampleParentDetails?: NewInContainerParams,
   ): Promise<SampleModel> {
     const currentUsersGroups =
       await this.rootStore.peopleStore.fetchCurrentUsersGroups();
@@ -323,7 +329,7 @@ export default class SearchStore {
   }
 
   async createNewContainer(
-    containerParentDetails?: NewInContainerParams
+    containerParentDetails?: NewInContainerParams,
   ): Promise<ContainerModel> {
     const [currentUsersBench, currentUsersGroups] = await Promise.all<
       [Promise<Container> | null, Promise<Array<Group>>]
@@ -370,7 +376,9 @@ export default class SearchStore {
     return template;
   }
 
-  createNew(type: "sample" | "container" | "template"): Promise<InventoryBaseRecord> {
+  createNew(
+    type: "sample" | "container" | "template",
+  ): Promise<InventoryBaseRecord> {
     if (type === "sample") return this.createNewSample();
     if (type === "container") return this.createNewContainer();
     return this.createNewTemplate();
@@ -379,7 +387,7 @@ export default class SearchStore {
   async getBench(workbenchId: WorkbenchId): Promise<Container> {
     const { data } = await ApiService.get<ContainerAttrs>(
       "workbenches",
-      workbenchId
+      workbenchId,
     );
     return new ContainerModel(new MemoisedFactory(), data);
   }
@@ -387,11 +395,11 @@ export default class SearchStore {
   async getTemplate(
     id: number,
     version: number | null | undefined,
-    factory: Factory
+    factory: Factory,
   ): Promise<TemplateModel> {
     const { data } = await ApiService.get<TemplateAttrs>(
       "sampleTemplates",
-      typeof version === "number" ? `${id}/versions/${version}` : `${id}`
+      typeof version === "number" ? `${id}/versions/${version}` : `${id}`,
     );
     return new TemplateModel(factory, data);
   }

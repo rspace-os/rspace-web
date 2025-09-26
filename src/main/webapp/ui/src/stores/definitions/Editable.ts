@@ -1,19 +1,6 @@
 import { type ValidationResult } from "../../components/ValidatingSubmitButton";
 import { type Progress } from "../../util/progress";
 
-/*
- * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
- * "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
- * document are to be interpreted as described in RFC 2119.
- */
-
-/**
- * Maps any given type to an optional string, which when coupled with $ObjMap,
- * allows for any object to be mapped to one with the same keys but where the
- * values are optional strings.
- */
-export type OptionalString = (anything: unknown) => string | null;
-
 /**
  * Objects and classes that implement this interface can be edited by the user
  * and those changes can then be persisted on the server. By providing a

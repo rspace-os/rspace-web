@@ -3,10 +3,13 @@ import { type Id } from "./BaseRecord";
 import { type Username } from "./Person";
 import { type IsoTimestamp, type _LINK, type URL } from "../../util/types";
 
-/*
- * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
- * "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
- * document are to be interpreted as described in RFC 2119.
+/**
+ * @module Barcode
+ * @description Barcodes are often used in labs to aid with the rapid
+ * identification of samples and containers. RSpace supports associating
+ * barcodes with Inventory records, printing barcode labels, and searching for
+ * items in the systm by scanning its barcode. This module defines the types
+ * used in the frontend system to model barcodes.
  */
 
 /**
@@ -55,6 +58,13 @@ export type Deleted = {
 export type PersistedBarcodeAttrs = FromServer | NewlyCreated | Deleted;
 export type BarcodeAttrs = GeneratedBarcodeAttrs | PersistedBarcodeAttrs;
 
+/**
+ * This is the base definition of a barcode, which may be either a
+ * barcode that has been persisted in the database, or one that has been
+ * generated on-the-fly. Barcodes may be any one of many different types,
+ * including traditional 1D barcodes like Code 128, or 2D barcodes like QR
+ * codes.
+ */
 export interface BarcodeRecord {
   data: string;
   description: string;

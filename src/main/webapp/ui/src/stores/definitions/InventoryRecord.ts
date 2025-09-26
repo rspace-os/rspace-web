@@ -1,9 +1,3 @@
-/*
- * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
- * "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
- * document are to be interpreted as described in RFC 2119.
- */
-
 import { type Id, type GlobalId } from "./BaseRecord";
 import { type Record, type ReadAccessLevel } from "./Record";
 import { type BlobUrl } from "../../util/types";
@@ -105,7 +99,7 @@ export type CreateOptionParameter = {
 };
 
 /**
- * The create dialog (../../Inventory/components/ContextMenu/CreateDialog.js)
+ * The create dialog (../../Inventory/components/ContextMenu/CreateDialog.tsx)
  * presents the user with a series of contextual options for creating new
  * records with respect to the current record e.g. splitting a subsample.
  * This type defines a single such option, instructing the create dialog what
@@ -202,7 +196,7 @@ export interface InventoryRecord
    */
   image: BlobUrl | null;
   fetchImage(
-    imageType: "image" | "locationsImage" | "thumbnail"
+    imageType: "image" | "locationsImage" | "thumbnail",
   ): Promise<BlobUrl | null>;
 
   /*
@@ -237,7 +231,7 @@ export interface InventoryRecord
   populateFromJson(
     factory: Factory,
     params: any,
-    defaultParams: any | null
+    defaultParams: any | null,
   ): void;
 
   /*
@@ -257,7 +251,7 @@ export interface InventoryRecord
   setEditing(
     value: boolean,
     refresh?: boolean | null,
-    silent?: boolean | null
+    silent?: boolean | null,
   ): Promise<LockStatus>;
   editing: boolean;
   isFieldEditable(field: string): boolean;
@@ -364,7 +358,7 @@ export interface InventoryRecord
   addExtraField(newExtraFieldAttrs: ExtraFieldAttrs): void;
   updateExtraField(
     oldFieldName: string,
-    updatedField: { name: string; type: string }
+    updatedField: { name: string; type: string },
   ): void;
   removeExtraField(id: number | null, index: number): void;
   readonly visibleExtraFields: Array<ExtraField>;

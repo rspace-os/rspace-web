@@ -3,12 +3,6 @@ import { type URL } from "../../util/types";
 import { type GlobalId } from "./BaseRecord";
 
 /*
- * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
- * "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
- * document are to be interpreted as described in RFC 2119.
- */
-
-/*
  * Some records have an associated or set of associated attachments, which
  * facilitate indirect references to files stored in RSpace. The UI then
  * provides the means to upload, preview, and download those attached files.
