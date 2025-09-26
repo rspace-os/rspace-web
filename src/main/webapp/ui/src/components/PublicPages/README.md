@@ -64,7 +64,7 @@ not relevant; any of the stores that are reachable are problematic as they are
 all tightly coupled. What you need to do is to find a way to break this chain.
 
 In this case, the easiest place to do this to break the dependency that
-IdentifierModel.js has on InvApiService.js by having it only import the Flow
+IdentifierModel.js has on InvApiService.js by having it only import the TypeScript
 types and have the values passed at runtime by dependency injection rather than
 reaching for the global variable. Try to break the chain as early as possible
 as the further down you go the more other places in the codebase will need to
