@@ -11,12 +11,11 @@ import Tooltip from "@mui/material/Tooltip";
 import { StyledMenuItem, StyledMenu } from "../../../components/StyledMenu";
 import ListItemText from "@mui/material/ListItemText";
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(() => ({
   splitButtonBox: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    border: theme.borders.menuButton,
     borderRadius: "4px",
     height: "32px",
   },
@@ -93,13 +92,15 @@ export default function ContextMenuSplitButton({
           title={disabledHelp}
         >
           <Box className={classes.splitButtonBox}>
-            <Box className={classes.iconBox} ml={0.5}>
-              {loading ? (
-                <FontAwesomeIcon icon="spinner" spin size="sm" />
-              ) : (
-                icon
-              )}
-            </Box>
+            {false && (
+              <Box className={classes.iconBox} ml={0.5}>
+                {loading ? (
+                  <FontAwesomeIcon icon="spinner" spin size="sm" />
+                ) : (
+                  icon
+                )}
+              </Box>
+            )}
             <Grid container direction="column" alignItems="center">
               {/* high z-index to display it on top of Grid container */}
               <Grid item xs={12} className={classes.splitButtonGrid}>
@@ -115,11 +116,13 @@ export default function ContextMenuSplitButton({
                     disabled={disabledHelp !== ""}
                     variant="text"
                     color="standardIcon"
-                    sx={{
-                      borderRight: "1px solid #bdbdbd !important",
-                      borderColor: "#bdbdbd !important",
-                      color: "rgba(0,0,0,0.87)",
-                    }}
+                    startIcon={
+                      loading ? (
+                        <FontAwesomeIcon icon="spinner" spin size="sm" />
+                      ) : (
+                        icon
+                      )
+                    }
                   >
                     <span className={classes.buttonLabel}>
                       {options[selectedIndex].text}
@@ -140,7 +143,7 @@ export default function ContextMenuSplitButton({
                     variant="text"
                     color="standardIcon"
                   >
-                    <ArrowDropDownIcon />
+                    <ArrowDropDownIcon fontSize="small" />
                   </Button>
                 </ButtonGroup>
                 <StyledMenu

@@ -26,12 +26,13 @@ const TABS: Array<SearchViewType> = ["LIST", "TREE"];
 const MaxSizeCard = withStyles<
   { elevation: number; testId?: string; children: React.ReactNode },
   { root: string }
->(() => ({
+>((theme) => ({
   root: {
     height: "100%",
     width: "100%",
     display: "flex",
     flexDirection: "column",
+    padding: theme.spacing(1),
   },
 }))(({ classes, children, elevation, testId }) => (
   <Card elevation={elevation} classes={classes} data-test-id={testId}>

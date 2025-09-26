@@ -8,13 +8,9 @@ import {
   gallerySectionIcon,
   type GallerySection,
 } from "../common";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
+import DrawerTab from "../../../components/DrawerTab";
 import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import { darken } from "@mui/system";
+
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
@@ -142,8 +138,6 @@ const UploadMenuItem = ({
       <AccentMenuItem
         title="Upload Files"
         avatar={<UploadFileIcon />}
-        backgroundColor={ACCENT_COLOR.background}
-        foregroundColor={ACCENT_COLOR.contrastText}
         onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
           if (e.key === " ") inputRef.current?.click();
         }}
@@ -268,8 +262,6 @@ const NewFolderMenuItem = ({
       <AccentMenuItem
         title="New Folder"
         avatar={<CreateNewFolderIcon />}
-        backgroundColor={ACCENT_COLOR.background}
-        foregroundColor={ACCENT_COLOR.contrastText}
         onClick={() => {
           setOpen(true);
         }}
@@ -373,8 +365,6 @@ const AddFilestoreMenuItem = ({
                 : null
             }
             avatar={<DnsIcon />}
-            backgroundColor={ACCENT_COLOR.background}
-            foregroundColor={ACCENT_COLOR.contrastText}
             onClick={() => {
               setOpen(true);
             }}
@@ -438,69 +428,6 @@ const DmpMenuSection = ({
     </>
   );
 };
-
-const DrawerTab = styled(
-  //eslint-disable-next-line react/display-name
-  React.forwardRef<
-    HTMLDivElement,
-    {
-      drawerOpen: boolean;
-      icon: React.ReactNode;
-      label: React.ReactNode;
-      index: number;
-      className?: string;
-      selected: boolean;
-      onClick: () => void;
-      tabIndex: number;
-    }
-  >(
-    (
-      { icon, label, index, className, selected, onClick, tabIndex },
-      ref: React.ForwardedRef<HTMLDivElement>,
-    ) => (
-      <ListItem disablePadding className={className}>
-        <ListItemButton
-          selected={selected}
-          onClick={onClick}
-          tabIndex={tabIndex}
-          ref={ref}
-        >
-          <ListItemIcon>{icon}</ListItemIcon>
-          <ListItemText
-            primary={label}
-            sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
-          />
-        </ListItemButton>
-      </ListItem>
-    ),
-  ),
-)(({ drawerOpen }) => ({
-  position: "static",
-  "& .MuiListItemText-root": {
-    transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "none"
-      : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
-    opacity: drawerOpen ? 1 : 0,
-    transform: drawerOpen ? "unset" : "translateX(-20px)",
-    textTransform: "uppercase",
-  },
-  "& .MuiListItemButton-root": {
-    "&:hover": {
-      backgroundColor: darken(
-        `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 100%)`,
-        0.05,
-      ),
-    },
-    "&.Mui-selected": {
-      "&:hover": {
-        backgroundColor: darken(
-          `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 100%)`,
-          0.05,
-        ),
-      },
-    },
-  },
-}));
 
 type SidebarArgs = {
   selectedSection: GallerySection | null;

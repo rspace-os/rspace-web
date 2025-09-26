@@ -85,7 +85,7 @@ const CardWrapperInternals = forwardRef<
         )}
       </Observer>
     );
-  }
+  },
 );
 
 CardWrapperInternals.displayName = "CardWrapperInternals";
@@ -250,7 +250,7 @@ const MetadataBar = observer(
         />
       </div>
     );
-  }
+  },
 );
 
 const ActionsBar = observer(
@@ -278,13 +278,14 @@ const ActionsBar = observer(
     const allOnBench =
       currentUser === null
         ? false
-        : currentList?.materials.every((m) => {
+        : (currentList?.materials.every((m) => {
             return hasLocation(m.invRec)
               .map(
-                (r) => currentUser && r.isDirectlyOnWorkbenchOfUser(currentUser)
+                (r) =>
+                  currentUser && r.isDirectlyOnWorkbenchOfUser(currentUser),
               )
               .orElse(true);
-          }) ?? false;
+          }) ?? false);
 
     const moveAllToBenchValidation = () => {
       if (currentList?.materials.length === 0)
@@ -303,13 +304,13 @@ const ActionsBar = observer(
       >
         <Grid item>
           <Button
-            color="callToAction"
+            color="primary"
             variant="contained"
             disableElevation
             onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(
               () => {
                 setOpenPicker(true);
-              }
+              },
             )}
             disabled={!canEdit}
           >
@@ -318,13 +319,13 @@ const ActionsBar = observer(
         </Grid>
         <Grid item>
           <Button
-            color="callToAction"
+            color="primary"
             variant="contained"
             disableElevation
             onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(
               () => {
                 currentList?.setEditingMode(!editingMode);
-              }
+              },
             )}
             disabled={!canEditQuantities}
           >
@@ -340,6 +341,7 @@ const ActionsBar = observer(
             })}
             loading={moveStore.submitting === "TO-OTHER"}
             validationResult={moveAllToBenchValidation()}
+            color="primary"
           >
             Move all to my bench
           </ValidatingSubmitButton>
@@ -374,7 +376,7 @@ const ActionsBar = observer(
         )}
       </Grid>
     );
-  }
+  },
 );
 
 type DialogArgs = {
@@ -409,8 +411,8 @@ function MaterialsDialog({
   const [exportOptions, setExportOptions] = useState<ExportOptions>(
     defaultExportOptions(
       currentList?.materials.map((m) => m.invRec),
-      "listOfMaterials"
-    )
+      "listOfMaterials",
+    ),
   );
 
   const refetch = () => {
@@ -554,7 +556,7 @@ function MaterialsDialog({
                             header={"Export Options"}
                             showActions
                             selectedResults={currentList.materials.map(
-                              (m) => m.invRec
+                              (m) => m.invRec,
                             )}
                             setOpenExporter={setOpenExporter}
                             exportOptions={exportOptions}
@@ -578,17 +580,17 @@ function MaterialsDialog({
                   className={clsx(
                     classes.barWrapper,
                     classes.disableBackground,
-                    classes.hideWhenPrinting
+                    classes.hideWhenPrinting,
                   )}
                 >
                   <div
                     className={clsx(
                       classes.spacedBetweenRow,
-                      classes.fullWidth
+                      classes.fullWidth,
                     )}
                   >
                     <Button
-                      color="callToAction"
+                      color="primary"
                       variant="contained"
                       disableElevation
                       onClick={preventEventBubbling<
@@ -600,14 +602,14 @@ function MaterialsDialog({
                             if (changed) {
                               await showToastWhilstPending(
                                 `Saving changes...`,
-                                currentList.update()
+                                currentList.update(),
                               );
                               materialsStore.setCurrentList(currentList);
                               refetch();
                             }
                             setOpenExporter(true);
                           }
-                        })
+                        }),
                       )}
                       disabled={!isListExisting || !isListValid}
                     >
@@ -631,7 +633,7 @@ function MaterialsDialog({
                             ? () => setOpen(false)
                             : () => {
                                 materialsStore.setCurrentList(
-                                  materialsStore.originalList
+                                  materialsStore.originalList,
                                 );
                                 if (isListNew) setOpen(false);
                               }
@@ -645,7 +647,7 @@ function MaterialsDialog({
                             if (isListNew) {
                               await showToastWhilstPending(
                                 `Creating list...`,
-                                currentList.create()
+                                currentList.create(),
                               );
                             }
                             if (isListExisting) {
@@ -653,7 +655,7 @@ function MaterialsDialog({
                               if (changed)
                                 await showToastWhilstPending(
                                   `Updating list...`,
-                                  currentList.update()
+                                  currentList.update(),
                                 );
                             }
                             materialsStore.setCurrentList(currentList);

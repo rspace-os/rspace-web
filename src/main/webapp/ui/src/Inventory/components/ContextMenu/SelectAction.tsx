@@ -33,7 +33,7 @@ const SelectAction = forwardRef<
 >(
   (
     { as, disabled, onSelectOptions, selectedResults }: SelectActionArgs,
-    ref
+    ref,
   ) => {
     // can't enforce this in the type because ContextActions can't conditionally render
     if (!onSelectOptions) throw new Error("onSelectOptions is required");
@@ -55,7 +55,7 @@ const SelectAction = forwardRef<
                 color="primary"
                 max={100}
               >
-                <SelectAllIcon />
+                <SelectAllIcon fontSize="small" />
               </Badge>
             }
             disabledHelp={disabledHelp}
@@ -65,7 +65,7 @@ const SelectAction = forwardRef<
         )}
       </Observer>
     );
-  }
+  },
 );
 
 SelectAction.displayName = "SelectAction";

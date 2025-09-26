@@ -18,6 +18,7 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/CoreFetcher";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
+import Stack from "@mui/material/Stack";
 
 const useStyles = makeStyles()((theme) => ({
   relativeBox: {
@@ -40,7 +41,7 @@ type WrapperProps = {
 };
 
 const Wrapper = React.forwardRef<HTMLDivElement, WrapperProps>(
-  ({ children }, ref) => <div ref={ref}>{children}</div>
+  ({ children }, ref) => <div ref={ref}>{children}</div>,
 );
 Wrapper.displayName = "Wrapper";
 
@@ -137,14 +138,15 @@ function _Stepper({
   }, [onScroll]);
 
   const Title = (
-    <>
+    <Stack direction="row" spacing={1}>
       <Typography
         variant="h5"
         component="h2"
         className={clsx(
           classes.rightSpacing,
-          needsTruncating && classes.truncatedTitle
+          needsTruncating && classes.truncatedTitle,
         )}
+        sx={{ color: "unset !important" }}
       >
         {titleText}
       </Typography>
@@ -153,10 +155,10 @@ function _Stepper({
           link={helpLink.link}
           title={helpLink.title}
           size="small"
-          color="primary"
+          color="white"
         />
       )}
-    </>
+    </Stack>
   );
 
   const FooterActions = observer(() => (
@@ -167,9 +169,9 @@ function _Stepper({
             await activeResult.create();
             navigate(
               generateUrlFromCoreFetcherArgs(
-                activeResult.showNewlyCreatedRecordSearchParams
+                activeResult.showNewlyCreatedRecordSearchParams,
               ),
-              { modifyVisiblePanel: false }
+              { modifyVisiblePanel: false },
             );
           })}
         />

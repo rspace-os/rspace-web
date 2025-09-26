@@ -16,30 +16,48 @@ import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { UserCancelledAction } from "../../../util/error";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
-import { Radio } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import Radio from "@mui/material/Radio";
 
 type ResultRowArgs = {
   result: InventoryRecord;
   adjustableColumns: Array<AdjustableTableRowLabel>;
 };
 
-const useStyles = makeStyles()((theme) => ({
-  tableRow: {
-    transition: theme.transitions.filterToggle,
-    "&.Mui-selected": {
-      backgroundColor: "#e3f2fd",
+const useStyles = makeStyles()((theme) => {
+  const prefersMoreContrast = window.matchMedia(
+    "(prefers-contrast: more)",
+  ).matches;
+  return {
+    tableRow: {
+      transition: theme.transitions.filterToggle,
+      "&.Mui-selected": {
+        backgroundColor: theme.palette.primary.background,
+        color: theme.palette.primary.contrastText,
+        "& .MuiTableCell-root": {
+          color: theme.palette.primary.contrastText,
+        },
+        "& .MuiCheckbox-root": {
+          color: prefersMoreContrast
+            ? theme.palette.primary.contrastText
+            : null,
+        },
+      },
+      "&.Mui-selected:hover": {
+        backgroundColor: `${alpha(theme.palette.primary.background, 0.8)} !important`,
+      },
+      "&:hover": {
+        backgroundColor: `${alpha(theme.palette.primary.background, 0.2)} !important`,
+      },
     },
-    "&.Mui-selected:hover": {
-      backgroundColor: "rgba(0, 0, 0, 0.04) !important",
+    checkbox: {
+      padding: `${theme.spacing(0.25)} !important`,
     },
-  },
-  checkbox: {
-    padding: `${theme.spacing(0.25)} !important`,
-  },
-  defaultCursor: {
-    cursor: "default",
-  },
-}));
+    defaultCursor: {
+      cursor: "default",
+    },
+  };
+});
 
 function ResultRow({
   result,

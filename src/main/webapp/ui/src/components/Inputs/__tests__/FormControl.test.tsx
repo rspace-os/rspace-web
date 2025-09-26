@@ -26,14 +26,18 @@ describe("FormControl", () => {
           <FormControl label="foo">
             <div></div>
           </FormControl>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
 
       expect(FormLabel).toHaveBeenCalledWith(
         expect.objectContaining({
-          children: "foo",
+          children: expect.objectContaining({
+            props: expect.objectContaining({
+              label: "foo",
+            }),
+          }),
         }),
-        expect.anything()
+        expect.anything(),
       );
     });
     test("FormLabel is not rendered when label is not passed.", () => {
@@ -42,7 +46,7 @@ describe("FormControl", () => {
           <FormControl>
             <div></div>
           </FormControl>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
 
       expect(FormLabel).not.toHaveBeenCalled();

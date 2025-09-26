@@ -5,11 +5,11 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Router from "./Router";
 import useStores from "./stores/use-stores";
-import materialTheme from "./theme";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import Analytics from "./components/Analytics";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
+import createAccentedTheme from "./accentedTheme";
 
 function App(): React.ReactNode {
   const { authStore, peopleStore, unitStore } = useStores();
@@ -38,7 +38,7 @@ function App(): React.ReactNode {
         <>
           <GoogleLoginProvider />
           <StyledEngineProvider injectFirst>
-            <ThemeProvider theme={materialTheme}>
+            <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
               <Analytics>
                 <Router />
               </Analytics>

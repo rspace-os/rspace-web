@@ -48,7 +48,6 @@ function UnitSelect({
             [`& .${selectClasses.select}`]: {
               mt: 0.25,
               pt: 0.5,
-              borderLeft: "1px solid #c4c4c4",
               borderRadius: 0,
               mb: 0.25,
               pb: 0.5,

@@ -22,6 +22,7 @@ const useStyles = makeStyles<{ singleColumn: boolean }>()((theme) => ({
   alert: {
     position: "relative",
     backgroundColor: theme.palette.primary.background,
+    color: theme.palette.primary.contrastText,
     padding: theme.spacing(0.625, 1, 0.625, 1),
     minHeight: theme.spacing(4),
   },
@@ -48,7 +49,7 @@ function SearchFeedback(): React.ReactNode {
   }
   const searchParams = useSearchParams();
   const currentBasket = searchStore.savedBaskets.find(
-    (b) => b.globalId === searchParams.get("parentGlobalId")
+    (b) => b.globalId === searchParams.get("parentGlobalId"),
   );
 
   const resultsStatusText = (what: string) => `${search.count} ${what} found.`;

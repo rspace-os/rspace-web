@@ -6,29 +6,25 @@ import Drawer from "@mui/material/Drawer";
 import GetAppIcon from "@mui/icons-material/GetApp";
 import SettingsIcon from "@mui/icons-material/Settings";
 import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
-import Badge from "@mui/material/Badge";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
 import ExportDialog from "../Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
-import { mapNullable } from "../../../util/Util";
-import { InvalidState } from "../../../util/error";
-import Theme from "../../../theme";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import { useTheme, ThemeProvider } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
-import createAccentedTheme from "../../../accentedTheme";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/igsn";
 import { useLandmark } from "../../../components/LandmarksContext";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import DrawerTab from "../../../components/DrawerTab";
+import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
+import { mapNullable } from "@/util/Util";
+import { InvalidState } from "@/util/error";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);
@@ -65,8 +61,6 @@ const CustomDrawer = withStyles<
   drawerOpen: {
     overflow: "visible",
     width: drawerWidth,
-    backgroundColor: "#fafafa !important",
-    borderRight: "0px !important",
     transition: theme.transitions.create("width", {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
@@ -78,8 +72,6 @@ const CustomDrawer = withStyles<
       duration: theme.transitions.duration.leavingScreen,
     }),
     overflowX: "hidden",
-    backgroundColor: `${theme.palette.background.default} !important`,
-    borderRight: "0px !important",
     width: theme.spacing(5),
     [theme.breakpoints.up("sm")]: {
       width: theme.spacing(7.75),
@@ -127,349 +119,362 @@ const CustomDrawer = withStyles<
   }),
 );
 
-const NavButtonBadge = withStyles<
-  { sidebarOpen?: boolean; selected: boolean } & React.ComponentProps<
-    typeof Badge
-  >,
-  { root: string; badge: string }
->((theme, { sidebarOpen, selected }) => ({
-  root: {
-    alignItems: "center",
-    width: "100%",
-  },
-  badge: {
-    transform: sidebarOpen
-      ? "translate(0px, 6px) scale(1)"
-      : "translate(calc(50% + 2px), calc(-50% + 2px))",
-    backgroundColor: selected
-      ? theme.palette.sidebar.selected.badge
-      : theme.palette.sidebar.selected.bg,
-    color: theme.palette.standardIcon.main,
-    borderTop:
-      !sidebarOpen && selected
-        ? `2px solid ${theme.palette.sidebar.selected.bg}`
-        : "none",
-    borderRight:
-      !sidebarOpen && selected
-        ? `2px solid ${theme.palette.sidebar.selected.bg}`
-        : "none",
-    top: 0,
-    right: sidebarOpen ? 0 : 3,
-  },
-}))((props) => {
-  const rest = { ...props };
-  delete rest.sidebarOpen;
-  return <Badge {...rest} />;
-});
-
-const NavItem = withStyles<
-  {
-    label: string;
-    datatestid?: string;
-    badge: React.ReactNode;
-    icon: React.ReactNode;
-  } & React.ComponentProps<typeof ListItem>,
-  { button: string; listIcon: string }
->((theme: typeof Theme) => ({
-  button: {
-    paddingLeft: theme.spacing(2.5),
-    borderTopRightRadius: theme.spacing(3),
-    borderBottomRightRadius: theme.spacing(3),
-    cursor: "pointer",
-  },
-  listIcon: {
-    minWidth: theme.spacing(6.5),
-  },
-}))(
-  observer(({ classes, icon, datatestid, badge, label, ...args }) => {
-    const { uiStore } = useStores();
-    return (
-      // @ts-expect-error component prop is supported
-      <ListItemButton
-        {...args}
-        component="a"
-        className={classes.button}
-        data-test-id={datatestid}
-      >
-        <NavButtonBadge
-          badgeContent={badge}
-          color="primary"
-          selected={args.selected ?? false}
-          max={999}
-          sidebarOpen={uiStore.sidebarOpen}
-        >
-          <ListItemIcon className={classes.listIcon}>{icon}</ListItemIcon>
-          <ListItemText primary={label} />
-        </NavButtonBadge>
-      </ListItemButton>
-    );
-  }),
-);
-
 const largestFittingCount = 999;
 
-const MyBenchNavItem = observer(() => {
-  const { peopleStore, searchStore } = useStores();
-  const { navigateToSearch } = useNavigateHelpers();
-  const currentUser = peopleStore.currentUser;
-  const benchContentSummary = peopleStore.currentUser?.bench?.contentSummary;
-  const benchContentCount: number | null =
-    mapNullable((summary) => {
-      if (!summary.isAccessible)
-        throw new InvalidState(
-          "A user should always be able to access a summary of the contents of their own bench.",
-        );
-      return summary.value.totalCount;
-    }, benchContentSummary) ?? null;
+const MyBenchNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { peopleStore, searchStore, uiStore } = useStores();
+    const { navigateToSearch } = useNavigateHelpers();
+    const currentUser = peopleStore.currentUser;
+    const benchContentSummary = peopleStore.currentUser?.bench?.contentSummary;
+    const benchContentCount: number | null =
+      mapNullable((summary) => {
+        if (!summary.isAccessible)
+          throw new InvalidState(
+            "A user should always be able to access a summary of the contents of their own bench.",
+          );
+        return summary.value.totalCount;
+      }, benchContentSummary) ?? null;
 
-  return (
-    <NavItem
-      label="My Bench"
-      datatestid="MyBenchNavFilter"
-      selected={
-        (isSearchListing() &&
-          currentUser &&
-          searchStore.search.onUsersBench(currentUser)) ??
-        false
-      }
-      icon={<MyBenchIcon />}
-      disabled={!currentUser}
-      badge={Math.min(benchContentCount ?? 0, largestFittingCount)}
-      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
-        e.stopPropagation();
-        navigateToSearch(
-          currentUser ? { parentGlobalId: `BE${currentUser.workbenchId}` } : {},
-        );
-      }}
-    />
-  );
-});
-
-const ContainersNavItem = observer(() => {
-  const { searchStore } = useStores();
-  const theme = useTheme();
-  const benchSearch = searchStore.search.benchSearch;
-  const { navigateToSearch } = useNavigateHelpers();
-
-  return (
-    <NavItem
-      label="Containers"
-      datatestid="ContainersNavFilter"
-      selected={
-        !benchSearch &&
-        isSearchListing() &&
-        searchStore.isTypeSelected("CONTAINER")
-      }
-      icon={
-        <RecordTypeIcon
-          record={{
-            iconName: "container",
-            recordTypeLabel: "",
-          }}
-          style={{ width: "24px" }}
-          color={theme.palette.standardIcon.main}
-        />
-      }
-      badge={0}
-      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
-        e.stopPropagation();
-        navigateToSearch({
-          resultType: "CONTAINER",
-          deletedItems: "EXCLUDE",
-        });
-      }}
-    />
-  );
-});
-
-const SampleNavItem = observer(() => {
-  const { searchStore } = useStores();
-  const theme = useTheme();
-  const benchSearch = searchStore.search.benchSearch;
-  const { navigateToSearch } = useNavigateHelpers();
-
-  return (
-    <NavItem
-      label="Samples"
-      datatestid="SamplesNavFilter"
-      selected={
-        !benchSearch &&
-        isSearchListing() &&
-        searchStore.isTypeSelected("SAMPLE")
-      }
-      icon={
-        <RecordTypeIcon
-          record={{
-            iconName: "sample",
-            recordTypeLabel: "",
-          }}
-          style={{ width: "24px" }}
-          color={theme.palette.standardIcon.main}
-        />
-      }
-      badge={0}
-      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
-        e.stopPropagation();
-        navigateToSearch({
-          resultType: "SAMPLE",
-        });
-      }}
-    />
-  );
-});
-
-const TemplateNavItem = observer(() => {
-  const { searchStore } = useStores();
-  const theme = useTheme();
-  const benchSearch = searchStore.search.benchSearch;
-  const { navigateToSearch } = useNavigateHelpers();
-
-  return (
-    <NavItem
-      label="Templates"
-      datatestid="TemplatesNavFilter"
-      selected={
-        !benchSearch &&
-        isSearchListing() &&
-        searchStore.isTypeSelected("TEMPLATE")
-      }
-      icon={
-        <RecordTypeIcon
-          record={{
-            iconName: "template",
-            recordTypeLabel: "",
-          }}
-          style={{ width: "28px", height: "18px" }}
-          color={theme.palette.standardIcon.main}
-        />
-      }
-      badge={0}
-      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
-        e.stopPropagation();
-        navigateToSearch({
-          resultType: "TEMPLATE",
-        });
-      }}
-    />
-  );
-});
-
-const IgsnNavItem = observer(() => {
-  const { uiStore } = useStores();
-  const { useNavigate } = React.useContext(NavigateContext);
-  const { trackEvent } = React.useContext(AnalyticsContext);
-  const navigate = useNavigate();
-
-  return (
-    <NavItem
-      label="IGSN IDs"
-      selected={/identifiers\/igsn/.test(window.location.pathname)}
-      icon={<IgsnIcon style={{ width: "28px", height: "18px" }} />}
-      badge={0}
-      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
-        e.stopPropagation();
-        trackEvent("user:navigate:igsnManagementPage:InventorySidebar");
-        navigate("/inventory/identifiers/igsn");
-        if (uiStore.isVerySmall) uiStore.toggleSidebar(false);
-      }}
-    />
-  );
-});
-
-const SubsampleNavItem = observer(() => {
-  const { searchStore } = useStores();
-  const theme = useTheme();
-  const benchSearch = searchStore.search.benchSearch;
-  const { navigateToSearch } = useNavigateHelpers();
-
-  return (
-    <NavItem
-      label="Subsamples"
-      datatestid="SubsamplesNavFilter"
-      selected={
-        !benchSearch &&
-        isSearchListing() &&
-        searchStore.isTypeSelected("SUBSAMPLE")
-      }
-      icon={
-        <RecordTypeIcon
-          record={{
-            iconName: "subsample",
-            recordTypeLabel: "",
-          }}
-          style={{ width: "24px" }}
-          color={theme.palette.standardIcon.main}
-        />
-      }
-      badge={0}
-      onClick={(e: React.MouseEvent<HTMLLIElement>) => {
-        e.stopPropagation();
-        navigateToSearch({
-          resultType: "SUBSAMPLE",
-        });
-      }}
-    />
-  );
-});
-
-const ExportNavItem = observer(() => {
-  const {
-    peopleStore: { currentUser },
-  } = useStores();
-  const { trackEvent } = React.useContext(AnalyticsContext);
-
-  const [openExportDialog, setOpenExportDialog] = useState(false);
-
-  return (
-    <>
-      <NavItem
-        label="Export Data"
-        datatestid="ExportUserDataFilter"
+    return (
+      <DrawerTab
+        label="My Bench"
+        selected={
+          (isSearchListing() &&
+            currentUser &&
+            searchStore.search.onUsersBench(currentUser)) ??
+          false
+        }
+        icon={<MyBenchIcon />}
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        badge={Math.min(benchContentCount ?? 0, largestFittingCount)}
         onClick={() => {
-          trackEvent("user:open:allTheirItemsExportDialog:InventorySidebar");
-          setOpenExportDialog(true);
+          navigateToSearch(
+            currentUser
+              ? { parentGlobalId: `BE${currentUser.workbenchId}` }
+              : {},
+          );
         }}
-        selected={false}
-        icon={<GetAppIcon />}
-        badge={0}
       />
-      {openExportDialog && (
-        <ExportDialog
-          openExportDialog={openExportDialog}
-          setOpenExportDialog={setOpenExportDialog}
-          onExport={(exportOptions) =>
-            currentUser?.exportData(exportOptions, currentUser.username)
-          }
-          exportType="userData"
-        />
-      )}
-    </>
-  );
-});
+    );
+  },
+);
 
-const SettingsNavItem = observer(() => {
-  const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
-  return (
-    <>
-      <NavItem
-        label="Settings"
-        datatestid="SettingsNavFilter"
+const ContainersNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label="Containers"
+        selected={
+          !benchSearch &&
+          isSearchListing() &&
+          searchStore.isTypeSelected("CONTAINER")
+        }
+        icon={
+          <RecordTypeIcon
+            record={{
+              iconName: "container",
+              recordTypeLabel: "",
+            }}
+            color={theme.palette.standardIcon.main}
+          />
+        }
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
         onClick={() => {
-          setOpenSettingsDialog(true);
+          navigateToSearch({
+            resultType: "CONTAINER",
+            deletedItems: "EXCLUDE",
+          });
         }}
-        selected={false}
-        icon={<SettingsIcon />}
-        badge={0}
       />
-      {openSettingsDialog && (
-        <SettingsDialog
-          open={openSettingsDialog}
-          setOpen={setOpenSettingsDialog}
+    );
+  },
+);
+
+const SampleNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label="Samples"
+        selected={
+          !benchSearch &&
+          isSearchListing() &&
+          searchStore.isTypeSelected("SAMPLE")
+        }
+        icon={
+          <RecordTypeIcon
+            record={{
+              iconName: "sample",
+              recordTypeLabel: "",
+            }}
+            color={theme.palette.standardIcon.main}
+          />
+        }
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "SAMPLE",
+          });
+        }}
+      />
+    );
+  },
+);
+
+const TemplateNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label="Templates"
+        selected={
+          !benchSearch &&
+          isSearchListing() &&
+          searchStore.isTypeSelected("TEMPLATE")
+        }
+        icon={
+          <RecordTypeIcon
+            record={{
+              iconName: "template",
+              recordTypeLabel: "",
+            }}
+            style={{ width: "16px", height: "16px" }}
+            color={theme.palette.standardIcon.main}
+          />
+        }
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "TEMPLATE",
+          });
+        }}
+      />
+    );
+  },
+);
+
+const IgsnNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { uiStore } = useStores();
+    const { useNavigate } = React.useContext(NavigateContext);
+    const { trackEvent } = React.useContext(AnalyticsContext);
+    const navigate = useNavigate();
+
+    return (
+      <DrawerTab
+        label="IGSN IDs"
+        selected={/identifiers\/igsn/.test(window.location.pathname)}
+        icon={<IgsnIcon style={{ width: "16px", height: "16px" }} />}
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          trackEvent("user:navigate:igsnManagementPage:InventorySidebar");
+          navigate("/inventory/identifiers/igsn");
+          if (uiStore.isVerySmall) uiStore.toggleSidebar(false);
+        }}
+      />
+    );
+  },
+);
+
+const SubsampleNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label="Subsamples"
+        selected={
+          !benchSearch &&
+          isSearchListing() &&
+          searchStore.isTypeSelected("SUBSAMPLE")
+        }
+        icon={
+          <RecordTypeIcon
+            record={{
+              iconName: "subsample",
+              recordTypeLabel: "",
+            }}
+            color={theme.palette.standardIcon.main}
+          />
+        }
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "SUBSAMPLE",
+          });
+        }}
+      />
+    );
+  },
+);
+
+const ExportNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const {
+      peopleStore: { currentUser },
+      uiStore,
+    } = useStores();
+    const { trackEvent } = React.useContext(AnalyticsContext);
+
+    const [openExportDialog, setOpenExportDialog] = useState(false);
+
+    return (
+      <>
+        <DrawerTab
+          label="Export Data"
+          onClick={() => {
+            trackEvent("user:open:allTheirItemsExportDialog:InventorySidebar");
+            setOpenExportDialog(true);
+          }}
+          selected={false}
+          icon={<GetAppIcon />}
+          index={index}
+          tabIndex={tabIndex}
+          ref={getRef(index)}
+          drawerOpen={uiStore.sidebarOpen}
         />
-      )}
-    </>
-  );
-});
+        {openExportDialog && (
+          <ExportDialog
+            openExportDialog={openExportDialog}
+            setOpenExportDialog={setOpenExportDialog}
+            onExport={(exportOptions) =>
+              currentUser?.exportData(exportOptions, currentUser.username)
+            }
+            exportType="userData"
+          />
+        )}
+      </>
+    );
+  },
+);
+
+const SettingsNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { uiStore } = useStores();
+    const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
+    return (
+      <>
+        <DrawerTab
+          label="Settings"
+          onClick={() => {
+            setOpenSettingsDialog(true);
+          }}
+          selected={false}
+          icon={<SettingsIcon />}
+          index={index}
+          tabIndex={tabIndex}
+          ref={getRef(index)}
+          drawerOpen={uiStore.sidebarOpen}
+        />
+        {openSettingsDialog && (
+          <SettingsDialog
+            open={openSettingsDialog}
+            setOpen={setOpenSettingsDialog}
+          />
+        )}
+      </>
+    );
+  },
+);
 
 const useStyles = makeStyles()(() => ({
   drawerContainer: {
@@ -496,6 +501,11 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
   const sidebarRef = useLandmark("Navigation");
 
+  const { getTabIndex, getRef, eventHandlers } =
+    useOneDimensionalRovingTabIndex<HTMLDivElement>({
+      max: isSysAdmin ? 7 : 6,
+    });
+
   const afterClick = () => {
     if (!uiStore.alwaysVisibleSidebar) uiStore.toggleSidebar(false);
     uiStore.setVisiblePanel("right");
@@ -503,35 +513,66 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
 
   return (
     <CustomDrawer id={id}>
-      <nav
-        ref={sidebarRef}
-        role="navigation"
-        aria-label="Inventory Sidebar Navigation"
-      >
-        <div className={classes.drawerContainer}>
-          <List component="nav" aria-label="Create new Inventory items">
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <CreateNew onClick={afterClick} />
-            </ThemeProvider>
-          </List>
+      <Box ref={sidebarRef} aria-label="Inventory Sidebar Navigation">
+        <CreateNew onClick={afterClick} />
+        <Divider />
+        <Box
+          {...eventHandlers}
+          sx={{
+            overflowY: "auto",
+            overflowX: "hidden",
+            position: "relative",
+          }}
+        >
           <List
-            component="nav"
+            component="ul"
             onClick={afterClick}
             aria-label="List existing Inventory items"
           >
-            <MyBenchNavItem />
-            <ContainersNavItem />
-            <SampleNavItem />
-            <SubsampleNavItem />
-            <TemplateNavItem />
-            <IgsnNavItem />
+            <MyBenchNavItem
+              index={0}
+              tabIndex={getTabIndex(0)}
+              getRef={getRef}
+            />
+            <ContainersNavItem
+              index={1}
+              tabIndex={getTabIndex(1)}
+              getRef={getRef}
+            />
+            <SampleNavItem
+              index={2}
+              tabIndex={getTabIndex(2)}
+              getRef={getRef}
+            />
+            <SubsampleNavItem
+              index={3}
+              tabIndex={getTabIndex(3)}
+              getRef={getRef}
+            />
+            <TemplateNavItem
+              index={4}
+              tabIndex={getTabIndex(4)}
+              getRef={getRef}
+            />
+            <IgsnNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
           </List>
-          <List component="nav" aria-label="Other places and action">
-            <ExportNavItem />
-            {isSysAdmin && <SettingsNavItem />}
+          <Divider />
+          <List component="ul" aria-label="Other places and action">
+            <ExportNavItem
+              index={6}
+              tabIndex={getTabIndex(6)}
+              getRef={getRef}
+            />
+            {isSysAdmin && (
+              <SettingsNavItem
+                index={7}
+                tabIndex={getTabIndex(7)}
+                getRef={getRef}
+              />
+            )}
           </List>
-        </div>
-      </nav>
+        </Box>
+      </Box>
     </CustomDrawer>
   );
 }

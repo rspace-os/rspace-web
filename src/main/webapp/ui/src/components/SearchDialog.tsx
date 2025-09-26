@@ -28,7 +28,7 @@ const Samp = withStyles<{ children: React.ReactNode }, { root: string }>(
       borderRadius: 3,
       padding: theme.spacing(0.125, 0.25),
     },
-  })
+  }),
 )(({ classes, children }) => <samp className={classes.root}>{children}</samp>);
 
 export default function TextAreaDialog({
@@ -48,6 +48,7 @@ export default function TextAreaDialog({
           onClick={() => {
             setDialogOpen(true);
           }}
+          size="small"
         />
       </Grow>
       <Dialog open={dialogOpen} onClose={onClose}>

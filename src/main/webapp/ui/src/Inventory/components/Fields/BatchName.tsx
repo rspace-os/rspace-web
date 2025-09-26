@@ -7,13 +7,14 @@ import Select, { SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import { type BatchName } from "../../../stores/models/InventoryBaseRecordCollection";
 import BatchFormField from "../Inputs/BatchFormField";
+import Box from "@mui/material/Box";
 
 const MIN = 2;
 const MAX = 255;
 
 function Name<
   Fields extends { name: BatchName },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   allowAlphabeticalSuffix,
@@ -43,14 +44,14 @@ function Name<
     onErrorStateChange(
       value.length + lengthOfSuffix > MAX ||
         value.length + lengthOfSuffix < MIN ||
-        (suffix === "NONE" && value.trim().length === 0)
+        (suffix === "NONE" && value.trim().length === 0),
     );
   };
 
   const handleChangeSuffix = (
     event: SelectChangeEvent<
       "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED"
-    >
+    >,
   ) => {
     const value = event.target.value;
     const common = fieldOwner.fieldValues.name.common;
@@ -100,24 +101,26 @@ function Name<
           InputProps={{
             endAdornment: !disabled ? (
               <InputAdornment position="end">
-                Suffix:&nbsp;
-                <Select
-                  variant="standard"
-                  value={fieldOwner.fieldValues.name.suffix}
-                  onChange={handleChangeSuffix}
-                >
-                  <MenuItem value="NONE">None</MenuItem>
-                  <MenuItem value="INDEX_NUMBER">
-                    Numerical Index: 1, 2, 3...
-                  </MenuItem>
-                  <MenuItem
-                    disabled={!allowAlphabeticalSuffix}
-                    value="INDEX_LETTER"
+                <Box sx={{ mx: 1 }}>
+                  Suffix:&nbsp;
+                  <Select
+                    variant="standard"
+                    value={fieldOwner.fieldValues.name.suffix}
+                    onChange={handleChangeSuffix}
                   >
-                    Alphabetical Index: A, B, C...
-                  </MenuItem>
-                  <MenuItem value="CREATED">Date of Creation</MenuItem>
-                </Select>
+                    <MenuItem value="NONE">None</MenuItem>
+                    <MenuItem value="INDEX_NUMBER">
+                      Numerical Index: 1, 2, 3...
+                    </MenuItem>
+                    <MenuItem
+                      disabled={!allowAlphabeticalSuffix}
+                      value="INDEX_LETTER"
+                    >
+                      Alphabetical Index: A, B, C...
+                    </MenuItem>
+                    <MenuItem value="CREATED">Date of Creation</MenuItem>
+                  </Select>
+                </Box>
               </InputAdornment>
             ) : null,
           }}

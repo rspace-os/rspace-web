@@ -4,7 +4,7 @@ import ContainerModel from "../../../stores/models/ContainerModel";
 import ChoiceField, {
   type ChoiceOption,
 } from "../../../components/Inputs/ChoiceField";
-import FormField from "../../../components/Inputs/FormField";
+import FormField from "../../components/Inputs/FormField";
 import {
   mapPermissioned,
   orElseIfNoAccess,
