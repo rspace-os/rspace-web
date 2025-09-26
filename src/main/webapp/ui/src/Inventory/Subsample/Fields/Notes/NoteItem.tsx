@@ -1,7 +1,7 @@
 import React from "react";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
-import UserDetails from "../../../components/UserDetails";
+import UserDetails from "../../../../components/UserDetails";
 import TimeAgoCustom from "../../../../components/TimeAgoCustom";
 import TextField from "../../../../components/Inputs/TextField";
 import { type Note } from "../../../../stores/models/SubSampleModel";

@@ -26,7 +26,7 @@ import {
 } from "../../../stores/definitions/Document";
 import Alert from "@mui/material/Alert";
 import { type GlobalId } from "../../../stores/definitions/BaseRecord";
-import UserDetails from "../UserDetails";
+import UserDetails from "../../../components/UserDetails";
 import Typography from "@mui/material/Typography";
 import docLinks from "../../../assets/DocLinks";
 import Box from "@mui/material/Box";
@@ -144,8 +144,8 @@ function LinkedDocuments({
                       id,
                       owner,
                     }),
-                  ])
-              )
+                  ]),
+              ),
             ),
           });
         } catch (e) {
