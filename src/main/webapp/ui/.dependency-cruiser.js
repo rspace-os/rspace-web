@@ -341,7 +341,8 @@ module.exports = {
         path: "src/util",
       },
       to: {
-        pathNot: "src/util|babel|jest-dom|fast-check|mobx|react",
+        pathNot:
+          "src/util|babel|jest-dom|fast-check|mobx|react|@fortawesome|@mui",
       },
     },
 
