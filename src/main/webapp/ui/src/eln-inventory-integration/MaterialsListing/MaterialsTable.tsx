@@ -21,7 +21,7 @@ import { observer } from "mobx-react-lite";
 import ClearIcon from "@mui/icons-material/Clear";
 import RecordLocation from "../../Inventory/components/RecordLocation";
 import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
-import UserDetails from "../../Inventory/components/UserDetails";
+import UserDetails from "../../components/UserDetails";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Checkbox from "@mui/material/Checkbox";
@@ -125,10 +125,10 @@ const colorCodedQuantity = (material: Material, list: ListOfMaterials) => {
     material.editing && (!material.enoughLeft || !list.validAdditionalAmount)
       ? classes.warningRed
       : material.editing && material.usedQuantityChanged
-      ? classes.modifiedHighlight
-      : material.editing
-      ? classes.primary
-      : ""
+        ? classes.modifiedHighlight
+        : material.editing
+          ? classes.primary
+          : "",
   );
 };
 
@@ -179,7 +179,7 @@ function MaterialsTable({
   const editingMode = list.editingMode;
   const materials = list.materials;
   const editableMaterials = materials.filter(
-    (m) => m.invRec instanceof SubSampleModel
+    (m) => m.invRec instanceof SubSampleModel,
   );
 
   const afterToggleUpdates = (material: Material) => {
@@ -243,7 +243,7 @@ function MaterialsTable({
       <TableRow
         className={clsx(
           classes.tableRow,
-          isSingleColumn ? classes.tableRowMobile : classes.tableRowDesktop
+          isSingleColumn ? classes.tableRowMobile : classes.tableRowDesktop,
         )}
       >
         <TableCell
@@ -251,7 +251,7 @@ function MaterialsTable({
             classes.tableRowCell,
             isSingleColumn
               ? classes.tableRowCellMobile
-              : classes.tableRowCellDesktop
+              : classes.tableRowCellDesktop,
           )}
         >
           <span style={{ flex: 5 }}>Name</span>
@@ -270,7 +270,7 @@ function MaterialsTable({
               classes.tableRowCell,
               isSingleColumn
                 ? classes.tableRowCellMobile
-                : classes.tableRowCellDesktop
+                : classes.tableRowCellDesktop,
             )}
           >
             <div style={{ flex: 3 }} className={classes.columnWrapper}>
@@ -308,7 +308,7 @@ function MaterialsTable({
               classes.tableRowCell,
               isSingleColumn
                 ? classes.tableRowCellMobile
-                : classes.tableRowCellDesktop
+                : classes.tableRowCellDesktop,
             )}
           >
             <span
@@ -344,13 +344,13 @@ function MaterialsTable({
             classes.tableRowCell,
             isSingleColumn
               ? classes.tableRowCellMobile
-              : classes.tableRowCellDesktop
+              : classes.tableRowCellDesktop,
           )}
         >
           {children}
         </TableCell>
       );
-    }
+    },
   );
 
   const ResponsiveMaterialsRow = observer(({ material }: BodyRowArgs) => {
@@ -374,7 +374,7 @@ function MaterialsTable({
         className={clsx(
           classes.bottomBorder,
           classes.tableRow,
-          isSingleColumn ? classes.tableRowMobile : classes.tableRowDesktop
+          isSingleColumn ? classes.tableRowMobile : classes.tableRowDesktop,
         )}
       >
         <CustomTableCell>

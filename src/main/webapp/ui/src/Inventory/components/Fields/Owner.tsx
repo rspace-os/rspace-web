@@ -1,6 +1,6 @@
 import React from "react";
 import { type HasUneditableFields } from "../../../stores/definitions/Editable";
-import UserDetails from "../UserDetails";
+import UserDetails from "../../../components/UserDetails";
 import { type Person } from "../../../stores/definitions/Person";
 import NoValue from "../../../components/NoValue";
 import FormField from "../../../components/Inputs/FormField";
@@ -10,7 +10,7 @@ export default function Owner<
   Fields extends {
     owner: Person | null;
   },
-  FieldOwner extends HasUneditableFields<Fields>
+  FieldOwner extends HasUneditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
   const owner: Person | null = fieldOwner.fieldValues.owner;
 

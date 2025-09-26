@@ -8,7 +8,7 @@ import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
-import UserDetails from "../components/UserDetails";
+import UserDetails from "../components/UserDetails_deprecated";
 import { stripDiacritics } from "../util/StringUtils";
 
 export default function UserList(props) {
@@ -23,7 +23,7 @@ export default function UserList(props) {
   const handleSelect = (u) => {
     if (Array.isArray(u)) {
       props.onSelect(
-        u.map((user) => (typeof user === "string" ? user : user.username))
+        u.map((user) => (typeof user === "string" ? user : user.username)),
       );
     } else {
       props.onSelect(typeof u === "string" ? u : u.username);
@@ -64,7 +64,7 @@ export default function UserList(props) {
     const visible = props.users.filter((u) =>
       stripDiacritics(userLabel(u))
         .toUpperCase()
-        .includes(stripDiacritics(search.toUpperCase()))
+        .includes(stripDiacritics(search.toUpperCase())),
     );
     setVisibleUsers(visible);
     unselectFilteredUsers(visible);
