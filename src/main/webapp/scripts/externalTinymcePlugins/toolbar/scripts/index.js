@@ -86,6 +86,10 @@ var custom_toolbar = {
 
   saveSettings: function() {
     this.exportSettings();
+    if (Object.keys(current_config).length < 2) {
+      parent.apprise("Toolbar must contain at least two rows");
+      throw new Error("Toolbar must contain at least two rows");
+    }
     localStorage.setItem('custom_toolbar', JSON.stringify(current_config));
     this.closeDialog();
   },

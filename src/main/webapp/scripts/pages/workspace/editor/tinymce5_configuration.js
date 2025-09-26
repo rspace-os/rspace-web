@@ -610,6 +610,7 @@ function runAfterTinymceActiveEditorInitialized(afterInitCallback) {
 }
 
 function addToToolbarIfNotPresent(localTinymcesetup, toolBarName) {
+  while (localTinymcesetup.toolbar.length < 2) localTinymcesetup.toolbar.push('');
 	if (localTinymcesetup.toolbar[1].indexOf(toolBarName) === -1) {
 		localTinymcesetup.toolbar[1] = localTinymcesetup.toolbar[1] + toolBarName;
 	}
