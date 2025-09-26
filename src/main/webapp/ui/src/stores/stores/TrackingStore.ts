@@ -10,6 +10,9 @@ export default class TrackingStore {
     makeObservable(this, {
       trackEvent: observable,
     });
+    /*
+     * This functiona is re-assigned to when the analytics library has been loaded.
+     */
     this.trackEvent = () => {};
   }
 }
