@@ -1,6 +1,5 @@
 import { type InventoryRecord } from "./InventoryRecord";
 import { type Search, type SearchView } from "./Search";
-import { type SubSample } from "./SubSample";
 import { type Id } from "./BaseRecord";
 import { type Point } from "../../util/types";
 import { type Permissioned } from "./PermissionedData";
@@ -21,7 +20,7 @@ export const encodeA1Z26 = (num: number): string =>
 
 export const layoutToLabels = (
   layout: Axis,
-  n: number
+  n: number,
 ): Array<{ value: number; label: string | number }> =>
   ArrayUtils.zipWith(
     arrayToN(n),
@@ -31,7 +30,7 @@ export const layoutToLabels = (
       [(l) => l === "ABC", arrayToN(n).map(encodeA1Z26)],
       [(l) => l === "CBA", arrayToN(n).reverse().map(encodeA1Z26)],
     ])(layout),
-    (value: number, label: string | number) => ({ value, label })
+    (value: number, label: string | number) => ({ value, label }),
   );
 
 export type GridLayout = {
@@ -103,7 +102,7 @@ export interface Location extends Point {
  * - Visual containers store their contents in arbitrary locations defined on a
  *   specified image. This gives the maximum flexibility in describing exactly
  *   where a particular item can be located relative to the container in
- *   question, ideally for labelling drawers and boxes.
+ *   question, ideal for labelling drawers and boxes.
  * - Workbenches model the set of the items that the user currently has out on
  *   their bench. It is intended as a temporary storage location whilst an item
  *   is in use.
