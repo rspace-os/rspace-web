@@ -1,6 +1,6 @@
 import React from "react";
 import Stack from "@mui/material/Stack";
-import TitledBox from "../../components/TitledBox";
+import TitledBox from "../../../components/TitledBox";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import docLinks from "../../../assets/DocLinks";
