@@ -60,11 +60,7 @@ import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
 import { type SharedWithGroup } from "../definitions/Group";
 import { type ContainerInContainerParams } from "./ContainerModel";
 import { type SampleInContainerParams } from "./SampleModel";
-import {
-  calculateProgress,
-  noProgress,
-  type Progress,
-} from "../../util/progress";
+import { noProgress, type Progress } from "../../util/progress";
 import { type SortProperty } from "../../Inventory/components/Tables/SortableProperty";
 import {
   type Identifier,
@@ -213,7 +209,7 @@ type ResultAttrs = {
  * NOTE: This class is abstract and should not itself be instantiated. Derive
  * subclasses from it, implement the various unimplemented methods, and
  * instantiate those classes instead. It is a shame that we can't have
- * TypeScript enforce this for us with the "abstract" keyword but doing do would
+ * TypeScript enforce this for us with the "abstract" keyword but doing so would
  * deprive us of the ability to use mixins because mixin factory functions
  * cannot return abstract classes.
  */
