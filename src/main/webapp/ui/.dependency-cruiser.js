@@ -144,6 +144,10 @@ module.exports = {
           "src/eln/sysadmin/users/index.js",
           "src/tinyMCE/ketcher/KetcherViewer.tsx",
           "src/tinyMCE/ketcher/KetcherTinyMce.js",
+          "src/tinyMCE/stoichiometry/index.tsx",
+          "src/tinyMCE/galaxy/index.tsx",
+          "src/eln/eln-external-workflows/index.tsx",
+          "src/eln/about/index.tsx",
           // stores/defintion only export types so depcruise thinks it's never used, which at runtime it isn't
           "stores/definitions",
           // src/assets contains icon variants that may be useful in the future
