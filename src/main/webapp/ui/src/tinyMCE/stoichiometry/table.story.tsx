@@ -3,7 +3,7 @@ import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/chemistry";
 import StoichiometryTable from "./table";
-import Alerts from "@/Inventory/components/Alerts";
+import Alerts from "../../components/Alerts/Alerts";
 
 export function StoichiometryTableWithDataStory(): React.ReactNode {
   return (
