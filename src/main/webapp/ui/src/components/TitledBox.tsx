@@ -1,7 +1,6 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
 import { makeStyles } from "tss-react/mui";
 import Divider from "@mui/material/Divider";
 import clsx from "clsx";
