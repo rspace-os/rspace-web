@@ -5,7 +5,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import TimeAgoCustom from "../../../components/TimeAgoCustom";
-import UserDetails from "./../../../components/UserDetails";
+import UserDetails from "./../../../components/UserDetails_deprecated";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import { desc, stableSort, getSorting } from "../../../util/table";
 import axios from "@/common/axios";

@@ -1,32 +1,34 @@
 import React, { type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
-import useStores from "../../stores/use-stores";
+import useStores from "../../../../stores/use-stores";
 import { makeStyles } from "tss-react/mui";
-import { justFilenameExtension } from "../../util/files";
+import { justFilenameExtension } from "../../../../util/files";
 import TableContainer from "@mui/material/TableContainer";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
-import FileField from "../../components/Inputs/FileField";
-import NoValue from "../../components/NoValue";
-import AttachmentTableRow from "../../Inventory/components/Fields/Attachments/AttachmentTableRow";
+import FileField from "../../../../components/Inputs/FileField";
+import NoValue from "../../../../components/NoValue";
+import AttachmentTableRow from "./AttachmentTableRow";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import Grid from "@mui/material/Grid";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import type { HasEditableFields } from "../../stores/definitions/Editable";
-import { type BlobUrl } from "../../util/types";
-import type { Attachment } from "../../stores/definitions/Attachment";
-import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import { type BlobUrl } from "../../../../util/types";
+import type { Attachment } from "../../../../stores/definitions/Attachment";
+import { type GalleryFile } from "../../../../eln/gallery/useGalleryListing";
 import UploadIcon from "@mui/icons-material/Publish";
-import BigIconButton from "../BigIconButton";
-import Result from "../../util/result";
-import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
-import * as FetchingData from "../../util/fetchingData";
-import * as Parser from "../../util/parsers";
+import BigIconButton from "../../../../components/BigIconButton";
+import Result from "../../../../util/result";
+import { useDeploymentProperty } from "../../../../hooks/api/useDeploymentProperty";
+import * as FetchingData from "../../../../util/fetchingData";
+import * as Parser from "../../../../util/parsers";
 
-const GalleryPicker = React.lazy(() => import("../../eln/gallery/picker"));
+const GalleryPicker = React.lazy(
+  () => import("../../../../eln/gallery/picker"),
+);
 
 const useStyles = makeStyles()(() => ({
   descriptionText: {

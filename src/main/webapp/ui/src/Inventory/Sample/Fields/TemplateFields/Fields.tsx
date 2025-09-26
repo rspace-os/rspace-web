@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { type Sample } from "../../../../stores/definitions/Sample";
 import Box from "@mui/material/Box";
 import FormField from "../../../components/Inputs/FormField";
-import AttachmentField from "../../../../components/Inputs/AttachmentField";
+import AttachmentField from "../../../components/Fields/Attachments/AttachmentField";
 import ChoiceField from "../../../../components/Inputs/ChoiceField";
 import DateField from "../../../../components/Inputs/DateField";
 import { truncateIsoTimestamp } from "../../../../stores/definitions/Units";
@@ -33,8 +33,8 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
       helperText: field.mandatory
         ? "This field is mandatory. Please enter a value."
         : field.error
-        ? "Invalid value. Please enter a valid value."
-        : "",
+          ? "Invalid value. Please enter a valid value."
+          : "",
       required: field.mandatory,
     };
 
@@ -67,7 +67,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setAttributesDirty({ content: target.value });
                 onErrorStateChange(
                   `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error
+                  (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
               attachment={value.attachment}
@@ -103,7 +103,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setAttributesDirty({ selectedOptions: target.value });
                 onErrorStateChange(
                   `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error
+                  (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
             />
@@ -128,13 +128,13 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setAttributesDirty({
                   content: target.value
                     ? truncateIsoTimestamp(target.value, "date").orElse(
-                        "NaN-NaN-NaN"
+                        "NaN-NaN-NaN",
                       )
                     : null,
                 });
                 onErrorStateChange(
                   `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error
+                  (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
             />
@@ -159,7 +159,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setError(!target.checkValidity());
                 onErrorStateChange(
                   `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error
+                  (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
               inputProps={{
@@ -194,7 +194,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setAttributesDirty({ selectedOptions: [target.value] });
                 onErrorStateChange(
                   `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error
+                  (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
             />
@@ -231,7 +231,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 });
                 onErrorStateChange(
                   `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error
+                  (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
             />
@@ -259,7 +259,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 });
                 onErrorStateChange(
                   `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error
+                  (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
             />
@@ -284,11 +284,11 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                   content: target.value,
                 });
                 field.setError(
-                  target.value ? Number.isNaN(Number(target.value)) : false
+                  target.value ? Number.isNaN(Number(target.value)) : false,
                 );
                 onErrorStateChange(
                   `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error
+                  (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
             />
@@ -315,7 +315,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setError(false); // URIs are strings, so isNaN is not the right validation
                 onErrorStateChange(
                   `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error
+                  (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
             />

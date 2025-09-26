@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import TitledBox from "../components/TitledBox";
+import TitledBox from "../../components/TitledBox";
 import { observer } from "mobx-react-lite";
 import FileForImport from "./Fields/File";
 import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
@@ -167,7 +167,12 @@ function RecordsImport(): React.ReactNode {
   }
 
   return (
-    <Box className={classes.headWrapper} ref={mainContentRef} role="main" aria-label="Import main content">
+    <Box
+      className={classes.headWrapper}
+      ref={mainContentRef}
+      role="main"
+      aria-label="Import main content"
+    >
       <ImportTabs />
       <Grid container className={classes.fileButtonWrapper}>
         <FileForImport loadedFile={loadedFileByRecordType} />

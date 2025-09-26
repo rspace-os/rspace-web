@@ -16,7 +16,7 @@ import TableRow from "@mui/material/TableRow";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
-import UserDetails from "../components/UserDetails";
+import UserDetails from "../components/UserDetails_deprecated";
 import TimeAgoCustom from "../components/TimeAgoCustom";
 import EnhancedTableHead from "../components/EnhancedTableHead";
 import Radio from "@mui/material/Radio";
@@ -156,7 +156,7 @@ export default function InternalLink(props) {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `/workspace/revisionHistory/ajax/${props.id}/versions`
+          `/workspace/revisionHistory/ajax/${props.id}/versions`,
         );
         const fetchedRevisions = response.data.data.reverse(); // reverse to show latest first
         let latest = fetchedRevisions[0]; // latest version is the first in the reversed list
@@ -372,6 +372,6 @@ document.addEventListener("tinymce-insert-revision", function (e) {
       id={e.detail.id}
       version={e.detail.version}
       initialEl={e.detail.el}
-    />
+    />,
   );
 });

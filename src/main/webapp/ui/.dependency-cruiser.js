@@ -144,6 +144,10 @@ module.exports = {
           "src/eln/sysadmin/users/index.js",
           "src/tinyMCE/ketcher/KetcherViewer.tsx",
           "src/tinyMCE/ketcher/KetcherTinyMce.js",
+          "src/tinyMCE/stoichiometry/index.tsx",
+          "src/tinyMCE/galaxy/index.tsx",
+          "src/eln/eln-external-workflows/index.tsx",
+          "src/eln/about/index.tsx",
           // stores/defintion only export types so depcruise thinks it's never used, which at runtime it isn't
           "stores/definitions",
           // src/assets contains icon variants that may be useful in the future
@@ -284,7 +288,7 @@ module.exports = {
       from: {
         // only this whitelist of paths...
         pathNot:
-          "src/Inventory|src/Router.js|src/eln-inventory-integration|src/stores|src/App.js|src/components/PublicPages/IdentifierPublicPage.js",
+          "src/Inventory|src/Router.tsx|src/eln-inventory-integration|src/stores|src/App.tsx|src/components/PublicPages/IdentifierPublicPage.tsx|src/components/PublicPages/__tests__/IdentifierPublicPage.test.tsx|src/tinyMCE/inventory",
       },
       to: {
         // ...are the modules that should be accessing these Inventory-specific modules
@@ -337,7 +341,8 @@ module.exports = {
         path: "src/util",
       },
       to: {
-        pathNot: "src/util|babel|jest-dom|fast-check|mobx|react",
+        pathNot:
+          "src/util|babel|jest-dom|fast-check|mobx|react|@fortawesome|@mui",
       },
     },
 

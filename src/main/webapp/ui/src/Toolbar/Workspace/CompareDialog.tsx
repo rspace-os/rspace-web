@@ -26,7 +26,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { doNotAwait } from "../../util/Util";
 import { getByKey } from "../../util/optional";
 import Box from "@mui/material/Box";
-import UserDetails from "../../Inventory/components/UserDetails";
+import UserDetails from "../../components/UserDetails";
 import CircularProgress from "@mui/material/CircularProgress";
 import * as Parsers from "../../util/parsers";
 import TickIcon from "@mui/icons-material/Done";
