@@ -14,18 +14,18 @@ fullscreen. These forms come in various different forms.
 
 <dl>
 
-  <dt>*/NewRecordForm.js</dt>
+  <dt>*/NewRecordForm.tsx</dt>
   <dd>
     There are forms for creating new samples, containers, and templates.
   </dd>
 
-  <dt>*/Form.js</dt>
+  <dt>*/Form.tsx</dt>
   <dd>
     There are forms for viewing and editing samples, subsamples, containers,
     and templates. When viewing all of the fields are simply disabled.
   </dd>
 
-  <dt>*/BatchForm.js</dt>
+  <dt>*/BatchForm.tsx</dt>
   <dd>
     There are forms for batch editing samples, subsamples, and containers, as
     well as a form for editing a mixture of two or more of any of those three
@@ -76,7 +76,7 @@ an interface has increasingly been utilised.
 
 Regardless of which of the two techniques described below is used, there are a
 couple of common steps the need to be taken. The first and most obvious is that
-a property needs to be added to the model class -- [Result],
+a property needs to be added to the model class -- [InventoryBaseRecord],
 [ContainerModel], etc -- to store the value of the field. This should probably
 align with what the API responds with to keep things simple.
 
@@ -135,11 +135,11 @@ activeResult.setAttributesDirty({
 ### Testing
 This is where this technique falls down: it is rather annoying to test as the
 whole SearchStore must be mocked. Some examples of how to do this can be seen
-in [Sample's Quantity.test.js], anything in [Organization/\_\_tests\_\_], or
-[LocationsImageField.test.js].
+in [Sample's Quantity.test.tsx], anything in [Organization/\_\_tests\_\_], or
+[LocationsImageField.test.tsx].
 
 ### Downsides
-In addition to the quick tricky testing, this technique tightly couples the
+In addition to the quite tricky testing, this technique tightly couples the
 field to the model class. What I mean by that is that the react component that
 implements the field depends on the precise way that the class which implements
 the record type is implemented. The properties and models that the model class
@@ -156,7 +156,7 @@ implement a standard interface, as discussed below, but they are different
 classes and so cannot both be used with `instanceof` checks.
 
 ### Examples
-Examples of this approach include [ExtraFields], [CanStore], and 
+Examples of this approach include [ExtraFields], [CanStore], and
 [Sample's Quantity].
 
 
@@ -176,17 +176,16 @@ can be implemented to work the same.
 
 Under this approach, the react components take as a prop an argument typically
 called `fieldOwner` of type `HasEditableField<T>`, for some type `T`. For
-example, here is the type of the props for [Tags].
+example, here is the type of [Tags].
 
 ```
-type TagsArgs = {|
-  fieldOwner: HasEditableFields<{ tags: string, ... }>,
-|};
+function Tags<
+  Fields extends {
+    tags: Array<Tag>;
+  },
+  FieldOwner extends HasEditableFields<Fields>
+>({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
 ```
-
-Tags does not care if there are any other fields, hence the `...`, it just
-cares that whatever instance of the class it is given, that that class has a
-field called tags of type string.
 
 ### Checking if the field is visible and editable
 There is no way to check if a field is visible using this approach -- it is
@@ -194,7 +193,7 @@ assumed that all fields are visible here. If a field should be visible then
 don't include it in the form, or pass in a boolean flag as an additional prop.
 
 To check if a field is editable call `fieldOwner.isFieldEditable` with the
-name of the field. 
+name of the field.
 
 ### Reading the current value
 
@@ -218,8 +217,8 @@ fieldOwner.setFieldsDirty({ tags: event.target.value });
 Testing such a react component is much easier to do because unlike the
 SearchStore based approach that requires mocking the entire SearchStore, with
 these tests the react component just needs to be passed on object that
-completes the interface. For examples, look at [Name.test.js],
-[Description.test.js], or [Tags.test.js].
+completes the interface. For examples, look at [Name.test.tsx],
+[Description.test.tsx], or [Tags.test.tsx].
 
 ### Downsides
 The biggest downside to this approach is that there are additional changes that
@@ -230,7 +229,7 @@ with the SearchStore approach.
 First, each model class will define a type of the form
 `${ClassName}EditableFields`, where `${ClassName}` is Result, ContainerModel,
 ContainerCollection, etc. These are the fields that the model class exposes and
-so it will then go on to 
+so it will then go on to
 `implements HasEditableFields<${ClassName}EditableFields>`. Any new field
 should be added to this object type.
 
@@ -245,21 +244,21 @@ Examples of this approach include [Tags], [Expiry], and [Subsample's Quantity].
 
 
 
-[CanStore]: /src/main/webapp/ui/src/Inventory/Container/Fields/CanStore.js
-[ContainerModel]: /src/main/webapp/ui/src/stores/models/ContainerModel.js
-[Description.test.js]: /src/main/webapp/ui/src/Inventory/components/Fields/__tests__/Description.test.js
-[Editable]: /src/main/webapp/ui/src/stores/definitions/Editable.js
-[Expiry]: /src/main/webapp/ui/src/Inventory/Sample/Fields/Expiry.js
-[ExtraFields]: /src/main/webapp/ui/src/Inventory/components/Fields/ExtraFields/ExtraFields.js
-[InventoryRecord]: /src/main/webapp/ui/src/stores/definitions/InventoryRecord.js
-[LocationsImageField.test.js]: /src/main/webapp/ui/src/Inventory/Container/Fields/__tests__/LocationsImageField.test.js
-[Name.test.js]: /src/main/webapp/ui/src/Inventory/components/Fields/__tests__/Name.test.js
+[CanStore]: /src/main/webapp/ui/src/Inventory/Container/Fields/CanStore.tsx
+[ContainerModel]: /src/main/webapp/ui/src/stores/models/ContainerModel.tsx
+[Description.test.tsx]: /src/main/webapp/ui/src/Inventory/components/Fields/__tests__/Description.test.tsx
+[Editable]: /src/main/webapp/ui/src/stores/definitions/Editable.ts
+[Expiry]: /src/main/webapp/ui/src/Inventory/Sample/Fields/Expiry.tsx
+[ExtraFields]: /src/main/webapp/ui/src/Inventory/components/Fields/ExtraFields/ExtraFields.tsx
+[InventoryRecord]: /src/main/webapp/ui/src/stores/definitions/InventoryRecord.ts
+[LocationsImageField.test.tsx]: /src/main/webapp/ui/src/Inventory/Container/Fields/__tests__/LocationsImageField.test.tsx
+[Name.test.tsx]: /src/main/webapp/ui/src/Inventory/components/Fields/__tests__/Name.test.tsx
 [Organization/\_\_tests\_\_]: /src/main/webapp/ui/src/Inventory/Container/Fields/Organization/__tests__
-[Result]: /src/main/webapp/ui/src/stores/models/Result.js
-[Sample's Quantity.test.js]: /src/main/webapp/ui/src/Inventory/Sample/Fields/__tests__/Quantity.test.js
-[Sample's Quantity]: /src/main/webapp/ui/src/Inventory/Sample/Fields/Quantity.js
-[SearchStore]: /src/main/webapp/ui/src/stores/stores/SearchStore.js
-[Subsample's Quantity]: /src/main/webapp/ui/src/Inventory/Subsample/Fields/Quantity.js
-[Tags.test.js]: /src/main/webapp/ui/src/Inventory/components/Fields/__tests__/Tags.test.js
-[Tags]: /src/main/webapp/ui/src/Inventory/components/Fields/Tags.js
+[InventoryBaseRecord]: /src/main/webapp/ui/src/stores/models/InventoryBaseRecord.tsx
+[Sample's Quantity.test.tsx]: /src/main/webapp/ui/src/Inventory/Sample/Fields/__tests__/Quantity.test.tsx
+[Sample's Quantity]: /src/main/webapp/ui/src/Inventory/Sample/Fields/Quantity.tsx
+[SearchStore]: /src/main/webapp/ui/src/stores/stores/SearchStore.tsx
+[Subsample's Quantity]: /src/main/webapp/ui/src/Inventory/Subsample/Fields/Quantity.tsx
+[Tags.test.tsx]: /src/main/webapp/ui/src/Inventory/components/Fields/__tests__/Tags.test.tsx
+[Tags]: /src/main/webapp/ui/src/Inventory/components/Fields/Tags.tsx
 [interface segregation principle]: https://en.wikipedia.org/wiki/Interface_segregation_principle
