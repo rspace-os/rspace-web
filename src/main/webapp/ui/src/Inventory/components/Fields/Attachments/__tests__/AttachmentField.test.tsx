@@ -8,15 +8,15 @@ import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AttachmentField from "../AttachmentField";
 import TextField from "@mui/material/TextField";
-import FileField from "../FileField";
-import { ExistingAttachment } from "../../../stores/models/AttachmentModel";
+import FileField from "../../../../../components/Inputs/FileField";
+import { ExistingAttachment } from "../../../../../stores/models/AttachmentModel";
 import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../theme";
-import { containerAttrs } from "../../../stores/models/__tests__/ContainerModel/mocking";
-import ContainerModel from "../../../stores/models/ContainerModel";
-import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
-import type { Attachment } from "../../../stores/definitions/Attachment";
+import materialTheme from "../../../../../theme";
+import { containerAttrs } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
+import ContainerModel from "../../../../../stores/models/ContainerModel";
+import MemoisedFactory from "../../../../../stores/models/Factory/MemoisedFactory";
+import type { Attachment } from "../../../../../stores/definitions/Attachment";
 
 jest.mock("@mui/material/TextField", () => jest.fn(() => <div></div>));
 jest.mock("../FileField", () => jest.fn(() => <div></div>));
@@ -34,7 +34,7 @@ const expectLabel = (text: string) => (container: HTMLElement) =>
 const expectTextField = (value: string) => () =>
   expect(TextField).toHaveBeenCalledWith(
     expect.objectContaining({ value }),
-    expect.anything()
+    expect.anything(),
   );
 
 const activeResult = new ContainerModel(new MemoisedFactory(), {
@@ -54,7 +54,7 @@ const makeAttachment = (attrs?: { name: string }) =>
       ...attrs,
     },
     "",
-    () => {}
+    () => {},
   );
 
 describe("AttachmentField", () => {
@@ -97,10 +97,10 @@ describe("AttachmentField", () => {
               disabled={disabled}
               noValueLabel={noValueLabel}
             />
-          </ThemeProvider>
+          </ThemeProvider>,
         );
         expectFn(container);
-      }
+      },
     );
   });
   describe("Help text", () => {
@@ -115,10 +115,10 @@ describe("AttachmentField", () => {
               onChange={() => {}}
               value=""
             />
-          </ThemeProvider>
+          </ThemeProvider>,
         );
         expect(container).toHaveTextContent(
-          "A file of any type can be attached (e.g. image, document, or chemistry file)"
+          "A file of any type can be attached (e.g. image, document, or chemistry file)",
         );
       });
     });
@@ -133,10 +133,10 @@ describe("AttachmentField", () => {
               onChange={() => {}}
               value="foo"
             />
-          </ThemeProvider>
+          </ThemeProvider>,
         );
         expect(container).not.toHaveTextContent(
-          "A file of any type can be attached (e.g. image, document, or chemistry file)"
+          "A file of any type can be attached (e.g. image, document, or chemistry file)",
         );
       });
     });
@@ -175,7 +175,7 @@ describe("AttachmentField", () => {
                 value=""
                 disableFileUpload={disableFileUpload}
               />
-            </ThemeProvider>
+            </ThemeProvider>,
           );
           textContent = container.textContent;
         }
@@ -191,15 +191,15 @@ describe("AttachmentField", () => {
           renderAttachmentField();
           if (showNoAttachmentLabel) {
             expect(textContent).toEqual(
-              expect.stringContaining("No File Attached")
+              expect.stringContaining("No File Attached"),
             );
           } else {
             expect(textContent).not.toEqual(
-              expect.stringContaining("No File Attached")
+              expect.stringContaining("No File Attached"),
             );
           }
         });
-      }
+      },
     );
   });
   describe("File viewer", () => {
@@ -214,7 +214,7 @@ describe("AttachmentField", () => {
               onChange={() => {}}
               value=""
             />
-          </ThemeProvider>
+          </ThemeProvider>,
         );
         expect(container).toHaveTextContent("image.png");
       });
