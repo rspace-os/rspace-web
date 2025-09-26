@@ -8,8 +8,8 @@ import { Optional, lift2 } from "../../util/optional";
  * present and they will be Optional.empty. Typically, a tag should not have a
  * mixture of the version, vocabulary, and uri present -- it's all or nothing
  * -- but this type is not modelled as a disjoint union to keep the code
- * simpler. If flow cannot reason about this difference then using a disjoint
- * union may become necessary.
+ * simpler. If TypeScript cannot reason about this difference then using a
+ * disjoint union may become necessary.
  */
 export type Tag = {
   value: string;
@@ -27,5 +27,5 @@ export type Tag = {
  */
 export const areSameTag = (tagA: Tag, tagB: Tag): boolean =>
   lift2((uriA, uriB) => uriA === uriB, tagA.uri, tagB.uri).orElse(
-    !tagA.uri.isPresent() && !tagB.uri.isPresent() && tagA.value === tagB.value
+    !tagA.uri.isPresent() && !tagB.uri.isPresent() && tagA.value === tagB.value,
   );
