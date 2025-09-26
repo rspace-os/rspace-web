@@ -288,7 +288,7 @@ module.exports = {
       from: {
         // only this whitelist of paths...
         pathNot:
-          "src/Inventory|src/Router.tsx|src/eln-inventory-integration|src/stores|src/App.tsx|src/components/PublicPages/IdentifierPublicPage.tsx|src/tinyMCE/inventory",
+          "src/Inventory|src/Router.tsx|src/eln-inventory-integration|src/stores|src/App.tsx|src/components/PublicPages/IdentifierPublicPage.tsx|src/components/PublicPages/__tests__/IdentifierPublicPage.test.tsx|src/tinyMCE/inventory",
       },
       to: {
         // ...are the modules that should be accessing these Inventory-specific modules
