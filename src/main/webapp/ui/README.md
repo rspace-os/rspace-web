@@ -147,6 +147,7 @@ For detailed information about specific areas
 - Model classes: See [src/stores/models/README.md](src/stores/models/README.md)
 - React Contexts: See [src/stores/contexts/README.md](src/stores/contexts/README.md)
 - Global state management: See [src/stores/stores/README.md](src/stores/stores/README.md)
+- Custom Hooks: See [src/hooks/README.md](src/hooks/README.md)
 - Public Pages: See [src/components/PublicPages/README.md](src/components/PublicPages/README.md)
 
 ### Topics
