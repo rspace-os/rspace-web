@@ -28,7 +28,12 @@ export default React.forwardRef<HTMLElement, MainArgs>(function Main(
   const { classes } = useStyles();
 
   return (
-    <StyledMain ref={ref} className={clsx(classes.main)} sx={sx} {...htmlAttributes}>
+    <StyledMain
+      ref={ref}
+      className={clsx(classes.main)}
+      sx={sx}
+      {...htmlAttributes}
+    >
       {children}
     </StyledMain>
   );

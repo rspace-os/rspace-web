@@ -26,12 +26,16 @@ import { type Username } from "../../../stores/definitions/Person";
 
 const icon = (
   <span className="fa-layers fa-fw">
-    <FontAwesomeIcon icon="hand-holding" size="sm" style={{ marginRight: 3 }} />
+    <FontAwesomeIcon
+      icon="hand-holding"
+      size="sm"
+      style={{ marginRight: 8, width: 12 }}
+    />
     <FontAwesomeIcon
       icon="hand-holding"
       size="sm"
       flip="both"
-      style={{ marginLeft: 3 }}
+      style={{ marginLeft: 8, width: 12 }}
     />
   </span>
 );
@@ -65,7 +69,7 @@ const TransferAction = forwardRef<
 >(({ as, selectedResults, disabled, closeMenu }, ref) => {
   const { search } = useContext(SearchContext);
   const [btnPos, setBtnPos] = useState<{ top: number; left: number } | null>(
-    null
+    null,
   );
   const [recipient, setRecipient] = useState<PersonModel | null>(null);
 
@@ -94,7 +98,7 @@ const TransferAction = forwardRef<
   const ownersOfSelectedResults = new RsSet<Username>(
     selectedResults
       .filter(({ owner }) => Boolean(owner))
-      .map((r) => r.owner!.username)
+      .map((r) => r.owner!.username),
   );
   const excludedFromSelection =
     ownersOfSelectedResults.size === 1

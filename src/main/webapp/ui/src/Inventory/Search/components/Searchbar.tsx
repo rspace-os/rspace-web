@@ -2,7 +2,8 @@ import React, { useContext } from "react";
 import styled from "@emotion/styled";
 import IconButton from "@mui/material/IconButton";
 import CustomTooltip from "../../../components/CustomTooltip";
-import InputBase from "@mui/material/InputBase";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { observer } from "mobx-react-lite";
@@ -14,48 +15,21 @@ import { runInAction } from "mobx";
 
 const SearchBar = styled.div`
   form {
-    padding: 2px 2px;
     display: flex;
     align-items: center;
-  }
-  .MuiPaper-root {
-    background-color: rgba(0, 0, 0, 0.08) !important;
-  }
-  .MuiInputBase-root {
-    flex-grow: 1;
-    input:focus,
-    input:hover {
-      background-color: transparent !important;
-    }
-  }
-  .MuiInputBase-input {
-    padding: 3px;
-  }
-  .MuiDivider-root {
-    width: 1px;
-    height: 35px;
-    margin: 4px;
+    width: 100%;
   }
   .MuiTextField-root {
-    .MuiInputLabel-formControl {
-      transform: translate(0, 16px) scale(1);
+    flex-grow: 1;
+    .MuiOutlinedInput-root {
+      input:focus,
+      input:hover {
+        background-color: transparent !important;
+      }
     }
-    .MuiInputLabel-formControl.Mui-focused,
-    .MuiInputLabel-formControl.MuiFormLabel-filled {
-      transform: translate(5px, 0) scale(0.75);
-      transform-origin: top left;
+    .MuiOutlinedInput-input {
+      padding: 8px 0 8px 0;
     }
-    label + .MuiInput-formControl {
-      margin-top: 5px;
-    }
-    .MuiInput-underline:before,
-    .MuiInput-underline:after {
-      border-bottom: 0px;
-    }
-  }
-  button.MuiIconButton-root {
-    width: 40px;
-    height: 40px;
   }
   .grow {
     flex-grow: 1;
@@ -101,20 +75,41 @@ const Form = observer(({ handleSearch }: FormArgs) => {
         }}
         style={{ width: "100%" }}
       >
-        <IconButton
-          aria-label="Search"
-          data-test-id="s-search-submit"
-          onClick={onSearch}
-        >
-          <SearchOutlinedIcon />
-        </IconButton>
-        <InputBase
+        <TextField
           data-test-id="s-search-input-normal"
           placeholder="Search"
-          inputProps={{ "aria-label": "Search", type: "search" }}
           value={search.fetcher.query ?? ""}
           onChange={handleChange}
-          inputRef={inputRef}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <IconButton
+                  aria-label="Search"
+                  data-test-id="s-search-submit"
+                  onClick={onSearch}
+                  size="small"
+                  edge="start"
+                >
+                  <SearchOutlinedIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+            ...(search.fetcher.query
+              ? {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <ClearSearch handleReset={handleReset} />
+                    </InputAdornment>
+                  ),
+                }
+              : {}),
+          }}
+          inputProps={{
+            "aria-label": "Search",
+            type: "search",
+            ref: inputRef,
+          }}
+          sx={{ flexGrow: 1 }}
         />
         <SearchDialog
           visible={textTooWide.orElse(false)}
@@ -123,7 +118,6 @@ const Form = observer(({ handleSearch }: FormArgs) => {
           setQuery={handleChange}
         />
       </form>
-      {search.fetcher.query && <ClearSearch handleReset={handleReset} />}
     </>
   );
 });
@@ -154,7 +148,13 @@ function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
   return (
     <div style={{ flexGrow: 1 }}>
       <SearchBar>
-        <Paper style={{ display: "flex", alignItems: "center" }} elevation={0}>
+        <Paper
+          style={{
+            display: "flex",
+            alignItems: "center",
+          }}
+          elevation={0}
+        >
           <Form handleSearch={handleSearch} />
         </Paper>
       </SearchBar>

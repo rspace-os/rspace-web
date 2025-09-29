@@ -13,7 +13,7 @@ import ContainerModel from "../../../stores/models/ContainerModel";
 import { doNotAwait } from "../../../util/Util";
 import docLinks from "../../../assets/DocLinks";
 import { mkAlert, type Alert } from "../../../stores/contexts/Alert";
-import FormField from "../../../components/Inputs/FormField";
+import FormField from "../../components/Inputs/FormField";
 import Grid from "@mui/material/Grid";
 
 const CANVAS_ID = "locationsCanvas";

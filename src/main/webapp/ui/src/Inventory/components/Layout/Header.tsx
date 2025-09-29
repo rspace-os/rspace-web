@@ -31,6 +31,7 @@ function Header({ sidebarId }: HeaderArgs): React.ReactNode {
           />
         }
         accessibilityTips={{
+          supportsHighContrastMode: true,
           supports2xZoom: true,
           supportsSkipToContent: true,
         }}

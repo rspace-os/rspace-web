@@ -26,7 +26,6 @@ type AccentMenuItemArgs = {
   /*
    * Use these properties to make the menu item a link.
    */
-  //component?: "a";
   component?: React.ElementType<any>;
   href?: string;
 
@@ -158,6 +157,7 @@ export default styled(
       border: `${compact ? 3 : 4}px solid ${bg}`,
       borderRadius: `${compact ? 4 : 6}px`,
       backgroundColor: bg,
+      color: fg,
       "& svg": {
         margin: "2px",
       },

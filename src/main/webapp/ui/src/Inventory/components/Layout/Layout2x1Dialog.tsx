@@ -38,9 +38,14 @@ const useStyles = makeStyles<{ isSingleColumnLayout: boolean }>()(
        * automatically move as the dialog content is scrolled
        */
       position: "relative",
+      border: "none",
     },
     container: {
       justifyContent: "space-between",
+      gap: theme.spacing(1),
+      flexWrap: "nowrap",
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1),
     },
     leftPane: {
       maxWidth: `${((isSingleColumnLayout ? 12 : 5) / 12) * 100}%`,
@@ -53,7 +58,7 @@ const useStyles = makeStyles<{ isSingleColumnLayout: boolean }>()(
     hide: {
       display: "none",
     },
-  })
+  }),
 );
 
 type Layout2x1DialogArgs = {
@@ -80,13 +85,7 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
     >
       {props.dialogTitle !== null &&
         typeof props.dialogTitle !== "undefined" && (
-          <DialogTitle
-            component="h2"
-            variant="h5"
-            sx={{ px: 2, pt: 1.5, pb: 1 }}
-          >
-            {props.dialogTitle}
-          </DialogTitle>
+          <DialogTitle>{props.dialogTitle}</DialogTitle>
         )}
       <DialogContent dividers className={classes.content}>
         <Grid container className={classes.container}>
@@ -96,7 +95,7 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
               classes.leftPane,
               isSingleColumnLayout &&
                 !(uiStore.dialogVisiblePanel === "left") &&
-                classes.hide
+                classes.hide,
             )}
           >
             {props.colLeft}
@@ -107,7 +106,7 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
               classes.rightPane,
               isSingleColumnLayout &&
                 !(uiStore.dialogVisiblePanel === "right") &&
-                classes.hide
+                classes.hide,
             )}
           >
             {props.colRight}

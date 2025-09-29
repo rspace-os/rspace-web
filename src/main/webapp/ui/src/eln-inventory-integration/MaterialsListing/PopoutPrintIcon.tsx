@@ -15,7 +15,7 @@ export default function PopoutPrintIcon(): React.ReactNode {
       <g>
         <g>
           <path
-            fill="#00ADEF"
+            fill="currentColor"
             d="M43.36,26.961H30.168c-1.603,0-2.827,1.226-2.827,2.828v5.654h3.77v3.769h11.308v-3.769h3.77v-5.654
 			C46.188,28.187,44.963,26.961,43.36,26.961z M40.533,37.327h-7.539v-4.712h7.539V37.327z M43.36,30.731
 			c-0.565,0-0.942-0.378-0.942-0.942c0-0.566,0.377-0.942,0.942-0.942s0.942,0.376,0.942,0.942
@@ -24,11 +24,11 @@ export default function PopoutPrintIcon(): React.ReactNode {
         </g>
         <g>
           <path
-            fill="#00ADEF"
+            fill="currentColor"
             d="M28.146,38H5.813V10h14V6h-14c-2.21,0-4,1.79-4,4v28c0,2.21,1.79,4,4,4h22.334V38z"
           />
           <polygon
-            fill="#00ADEF"
+            fill="currentColor"
             points="11.322,29.66 14.152,32.49 33.813,12.83 33.813,20 37.813,20 37.813,6 23.813,6 23.813,10
 			30.982,10 		"
           />

@@ -4,6 +4,10 @@ import React from "react";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import { withStyles } from "../../../util/styles";
+import TitledBox from "@/Inventory/components/TitledBox";
+import Box from "@mui/material/Box";
+import RemoveButton from "@/components/RemoveButton";
+import Grid from "@mui/material/Grid";
 
 type FileArgs = {
   loadedFile?: File | null;
@@ -36,32 +40,41 @@ function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
   ));
 
   const labelByRecordType =
-    importStore.importData?.byRecordType("label") || "records";
+    (importStore.importData?.byRecordType("label") as string) || "records";
   const fileByRecordTypeLoaded =
     importStore.importData?.byRecordType("fileLoaded");
+  const fileLoaded = importStore.importData?.byRecordType("fileLoaded");
+  const submitting = importStore.isCurrentImportState("submitting");
 
   return (
     <>
-      <UploadFormControl
-        label="File Upload"
-        error={false}
-        helperText="Add a CSV file"
-      >
-        <FileField
-          accept=".csv"
-          buttonLabel={`${
-            fileByRecordTypeLoaded ? "Replace" : "Select"
-          } ${String(labelByRecordType)} CSV File`}
-          name="file"
-          datatestid="csvFile"
-          onChange={({ file }) => importStore.importData?.setFile(file)}
-          showSelectedFilename={true}
-          loading={importStore.isCurrentImportState("parsing")}
-          error={importStore.isCurrentImportState("parsingFailed")}
-          key={importStore.fileImportKey}
-          loadedFile={loadedFile}
-        />
-      </UploadFormControl>
+      <TitledBox title="Upload CSV File" border={true}>
+        <Grid container spacing={2} flexDirection="row">
+          <Grid item flexGrow={1}>
+            <FileField
+              accept=".csv"
+              buttonLabel={`${
+                fileByRecordTypeLoaded ? "Replace" : "Select"
+              } ${labelByRecordType} CSV File`}
+              name="file"
+              datatestid="csvFile"
+              onChange={({ file }) => importStore.importData?.setFile(file)}
+              showSelectedFilename={true}
+              loading={importStore.isCurrentImportState("parsing")}
+              error={importStore.isCurrentImportState("parsingFailed")}
+              key={importStore.fileImportKey}
+              loadedFile={loadedFile}
+            />
+          </Grid>
+          <Grid item>
+            <RemoveButton
+              onClick={() => importStore.importData?.clearFile()}
+              title={`Clear File and Mappings`}
+              disabled={!fileLoaded || submitting}
+            />
+          </Grid>
+        </Grid>
+      </TitledBox>
       {importStore.isCurrentImportState("parsingFailed") && (
         <ErrorDetails errorMessage={importStore.importData?.fileErrorMessage} />
       )}

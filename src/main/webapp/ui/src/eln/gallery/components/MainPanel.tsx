@@ -97,6 +97,7 @@ import * as StringUtils from "../../../util/StringUtils";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import LinkIcon from "@mui/icons-material/Link";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { IconButton, Paper } from "@mui/material";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
@@ -1260,6 +1261,7 @@ const PathAndSearch = observer(
     setSelectedSection: (section: GallerySection) => void;
   }) => {
     const { isViewportVerySmall } = useViewportDimensions();
+    const theme = useTheme();
 
     /*
      * We use a copy of the search term string so that edits the user makes are
@@ -1313,48 +1315,56 @@ const PathAndSearch = observer(
         )}
         {(!isViewportVerySmall || searchOpen) && (
           <Grid item>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                setAppliedSearchTerm(searchTerm);
-              }}
-            >
-              <TextField
-                disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
-                placeholder="Search"
-                value={searchTerm}
-                onChange={({ currentTarget: { value } }) =>
-                  setSearchTerm(value)
-                }
-                sx={{
-                  ...(searchOpen ? { width: "100%" } : {}),
+            <Paper elevation={0}>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setAppliedSearchTerm(searchTerm);
                 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                  endAdornment:
-                    searchTerm !== "" || searchOpen ? (
-                      <IconButtonWithTooltip
-                        title="Clear"
-                        icon={<StyledCloseIcon />}
-                        size="small"
-                        onClick={() => {
-                          setSearchTerm("");
-                          setAppliedSearchTerm("");
-                          setSearchOpen(false);
-                        }}
-                      />
-                    ) : null,
-                }}
-                inputProps={{
-                  "aria-label": "Search current folder",
-                  ref: searchTextfield,
-                }}
-              />
-            </form>
+              >
+                <TextField
+                  disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
+                  placeholder="Search"
+                  value={searchTerm}
+                  onChange={({ currentTarget: { value } }) =>
+                    setSearchTerm(value)
+                  }
+                  sx={{
+                    ...(searchOpen ? { width: "100%" } : {}),
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <IconButton
+                          aria-label="Search"
+                          size="small"
+                          edge="start"
+                        >
+                          <SearchIcon />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                    endAdornment:
+                      searchTerm !== "" || searchOpen ? (
+                        <IconButtonWithTooltip
+                          title="Clear"
+                          icon={<StyledCloseIcon />}
+                          size="small"
+                          onClick={() => {
+                            setSearchTerm("");
+                            setAppliedSearchTerm("");
+                            setSearchOpen(false);
+                          }}
+                        />
+                      ) : null,
+                  }}
+                  inputProps={{
+                    "aria-label": "Search current folder",
+                    ref: searchTextfield,
+                  }}
+                />
+              </form>
+            </Paper>
           </Grid>
         )}
       </Grid>
