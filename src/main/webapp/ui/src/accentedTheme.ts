@@ -864,13 +864,12 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               },
             },
             h1: {
-              color: backgroundContrastTextColor,
+              color: linkColor,
               marginBottom: baseTheme.spacing(3),
               textAlign: "left",
               borderBottom: accentedBorder,
               textTransform: "uppercase",
               fontWeight: 700,
-              opacity: 0.8,
               fontSize: "1.9rem",
             },
             h3: {
