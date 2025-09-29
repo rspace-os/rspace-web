@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  */
 /* eslint-env jest */
+import "../../../../__mocks__/matchMedia";
 import * as React from "react";
 import {
   render,
@@ -74,7 +75,7 @@ describe("Results Table", () => {
                 }),
               ],
             },
-          }) as ReturnType<typeof ApiServiceBase.prototype.query>
+          }) as ReturnType<typeof ApiServiceBase.prototype.query>,
       );
       await waitFor(() => {
         void search.setupAndPerformInitialSearch({});
@@ -95,7 +96,7 @@ describe("Results Table", () => {
               <ResultsTable contextMenuId={menuIDs.RESULTS} />
             </SearchContext.Provider>
           </storesContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
 
       within(screen.getByRole("navigation")).getByRole("combobox");
