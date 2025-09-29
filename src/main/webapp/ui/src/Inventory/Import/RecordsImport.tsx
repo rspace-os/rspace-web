@@ -22,6 +22,7 @@ import clsx from "clsx";
 import { capitaliseJustFirstChar } from "../../util/Util";
 import { type URL } from "../../util/types";
 import { Link } from "react-router-dom";
+import { HeadingContext } from "@/components/DynamicHeadingLevel";
 
 const useStyles = makeStyles()((theme) => ({
   bold: {
@@ -160,62 +161,64 @@ function RecordsImport(): React.ReactNode {
   }
 
   return (
-    <Box className={classes.headWrapper}>
-      <ImportTabs />
-      <Grid container className={classes.fileButtonWrapper}>
-        <FileForImport loadedFile={loadedFileByRecordType} />
-      </Grid>
+    <HeadingContext level={3}>
+      <Box className={classes.headWrapper}>
+        <ImportTabs />
+        <Grid container className={classes.fileButtonWrapper}>
+          <FileForImport loadedFile={loadedFileByRecordType} />
+        </Grid>
 
-      {/* Only samples need template handling */}
-      {isSamplesImport && (
-        <TitledBox title="Template Details" border>
-          <TemplateDetails />
+        {/* Only samples need template handling */}
+        {isSamplesImport && (
+          <TitledBox title="Template Details" border>
+            <TemplateDetails />
+          </TitledBox>
+        )}
+        <TitledBox title="CSV Column Conversion Settings" border>
+          <ColumnFieldMapping onTypeSelect={onTypeSelect} />
         </TitledBox>
-      )}
-      <TitledBox title="CSV Column Conversion Settings" border>
-        <ColumnFieldMapping onTypeSelect={onTypeSelect} />
-      </TitledBox>
-      <Grid
-        container
-        spacing={2}
-        className={clsx(classes.mt, classes.footWrapper)}
-      >
-        <Grid item className={classes.grow}>
-          <HelpTextAlert
-            severity="warning"
-            condition={showFooterAlert}
-            text={
-              <>
-                Some csv documents cannot be imported: check Settings in the{" "}
-                {notImportable().map((t, i) => (
-                  <span key={i}>
-                    {i > 0 && <>, </>}
-                    {t.toUpperCase() !== recordType ? (
-                      <Link
-                        to={onTypeSelect(t.toUpperCase() as ImportRecordType)}
-                      >
-                        {t}
-                      </Link>
-                    ) : (
-                      t
-                    )}
-                  </span>
-                ))}
-                {notImportable().length === 1 ? <> tab.</> : <> tabs.</>}
-              </>
-            }
-          />
+        <Grid
+          container
+          spacing={2}
+          className={clsx(classes.mt, classes.footWrapper)}
+        >
+          <Grid item className={classes.grow}>
+            <HelpTextAlert
+              severity="warning"
+              condition={showFooterAlert}
+              text={
+                <>
+                  Some csv documents cannot be imported: check Settings in the{" "}
+                  {notImportable().map((t, i) => (
+                    <span key={i}>
+                      {i > 0 && <>, </>}
+                      {t.toUpperCase() !== recordType ? (
+                        <Link
+                          to={onTypeSelect(t.toUpperCase() as ImportRecordType)}
+                        >
+                          {t}
+                        </Link>
+                      ) : (
+                        t
+                      )}
+                    </span>
+                  ))}
+                  {notImportable().length === 1 ? <> tab.</> : <> tabs.</>}
+                </>
+              }
+            />
+          </Grid>
+          <Grid item>
+            <SubmitSpinner
+              disabled={!importSubmittable || submitting}
+              onClick={() => importStore.submitImport()}
+              loading={submitting}
+              label={importButtonLabel}
+            />
+          </Grid>
         </Grid>
-        <Grid item>
-          <SubmitSpinner
-            disabled={!importSubmittable || submitting}
-            onClick={() => importStore.submitImport()}
-            loading={submitting}
-            label={importButtonLabel}
-          />
-        </Grid>
-      </Grid>
-    </Box>
+      </Box>
+    </HeadingContext>
   );
 }
 
