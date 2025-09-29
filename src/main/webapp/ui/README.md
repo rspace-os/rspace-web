@@ -39,23 +39,89 @@ instead use React Context and custom hooks for state management.
 
 ## Testing Strategy
 
-### Component Tests (Playwright)
+### Testing Frameworks
+
+#### Component Tests (Playwright)
 Most new React tests (since mid-2025) have been written using Playwright's
 component testing capabilities. This allows for more realistic testing of React
-components in isolation, with the ability to mock network requests and include
-necessary context providers. Whilst slower to run than Jest unit tests, they
-provide better confidence that components work as expected, in particular when
-it comes to accessibility.
+components than jest as the tests are run in an actual browser. Whilst slower to
+run than Jest unit tests, they provide better confidence that components work as
+expected, in particular when it comes to accessibility. The config for Playwright
+can be found in the [playwright-ct.config.ts](./playwright-ct.config.ts) file.
 
 Many of the tests have been written using a BDD-style approach, allowing for
 the test code to closely align with the feature specification and user stories.
+The test code can be found alongside the component code in files with a
+`.spec.tsx` suffix. Many of the tests also use a `.story.tsx` file to define
+different setups for the componenent as Playwright has restrictions on what
+can be done in the test file itself. These story files can also act as a form of
+documentation for the component, showing different ways it can be used.
 
-### Unit Tests (Jest)
+#### Unit Tests (Jest)
 Much of the rest of the React codebase is still tested using Jest unit tests. These
 tests are generally faster to run than Playwright component tests, but can be
 less realistic as they often require more mocking and stubbing of dependencies.
 The most compelling reason to avoid using Jest, however, is simply how
-frustrating it is to assert properties about a UI that you cannot see.
+frustrating it is to assert properties about a UI that you cannot see. The
+config for Jest can be found in the [package.json](./package.json) under the
+`jest` key.
+
+The test files can be found in `__tests__` directories alongside the code under test.
+This directory usually contains either a file for each file under test in the
+parent directory, or else a directory for each file inside of which there will
+be a file for each class, module, function, or other construct that can be
+tested in isolation.
+
+#### End-to-End Tests (Cypress)
+End-to-end tests for the entire RSpace application, including both frontend and
+backend, are written using a mixture of Cypress, Selenium, and Playwright and
+live in separate repositories.
+
+### Testing Libraries
+
+There are also a few testing libraries that we use.
+
+#### Testing Library
+Testing library provides a uniform API for querying the DOM in both Jest and
+Playwright tests. It encourages testing the application in a way that is closer
+to how a user would interact with it, rather than testing implementation details.
+
+#### Axios Mock Adapter
+This library is used to mock Axios requests in Jest tests. It allows us to
+define expected requests and responses, making it easier to test components that
+make HTTP requests. In playwright, this is handled by the built-in
+`router.route` API.
+
+#### Fast Check
+Fast Check is a property-based testing library that allows us to define
+properties that should hold true for our code, and then generates test cases to
+verify those properties. This can help to catch edge cases that may not be
+covered by traditional unit tests. It is very handy when testing business logic
+in utility functions and model classes, where there are lots of edge cases to
+consider. It can be made to work with React components in both Jest and
+Playwright, but this is quite difficult to set up and due to performance
+constraints usually means that only a few generated values can be asserted for
+each property, limiting the usefulness of the approach. It is definitely worth
+considering when a component is particularly complex, but if the logic can be
+extracted out and tested separately then that is probably wiser than spending
+the time to set it up for components.
+
+#### jest-axe
+Unlike Playwright which has AxeBuilder built-in for asserting accessiblity, Jest
+requires that we import jest-axe separately. They both perform much the same
+job, but Playwright is a slightly better tool as it can catch more issues given
+that it actually runs in the browser.
+
+### Jenkins
+We have four steps in the Jenkins pipeline for running frontend tests:
+- Jest Tests (feature branch)
+- Jest Tests (main branch)
+- Playwright Component Tests (feature branch)
+- Playwright Component Tests (main branch)
+
+The main branch steps run all the tests when the build is running against the
+`main` branch. The feature branch steps run only the tests that have been
+changed since `main`, substantially speeding up the development feedback loop.
 
 ## Further Documentation
 
