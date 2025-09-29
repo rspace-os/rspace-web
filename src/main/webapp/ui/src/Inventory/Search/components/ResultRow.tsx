@@ -40,7 +40,7 @@ const useStyles = makeStyles()((theme) => {
         "& .MuiCheckbox-root": {
           color: prefersMoreContrast
             ? theme.palette.primary.contrastText
-            : null,
+            : undefined,
         },
       },
       "&.Mui-selected:hover": {
