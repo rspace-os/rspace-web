@@ -20,17 +20,17 @@ different parts of the application it is done so in a controlled manner.
 
 The codebase has evolved over time, and as such contains a mix of architectural
 patterns. Many of the older pages are still based on JSPs with jQuery, with much
-of their JavaScript code in ../scripts, with exception of the React islands
-which can be found in [CreateGroup](./src/CreateGroup), [Gallery](./src/Gallery)
-(this is the old Gallery), [my-rspace](./src/my-rspace),
-[system-groups](./src/system-groups), [system-ror](./src/system-ror), and
-[Toolbar](./src/Toolbar).
+of their JavaScript code in [../scripts](../scripts), with the exception of the
+React islands which can be found in [src/CreateGroup](./src/CreateGroup),
+[src/Gallery](./src/Gallery) (this is the old Gallery),
+[src/my-rspace](./src/my-rspace), [src/system-groups](./src/system-groups),
+[src/system-ror](./src/system-ror), and [src/Toolbar](./src/Toolbar).
 
 Inventory, the Gallery, the Apps page, and some other newer parts of the ELN are
 fully React and TypeScript and also live in this directory. They can be found in
-[Inventory](./src/Inventory), [eln](./src/eln),
-[eln-dmp-integration](./src/eln-dmp-integration), and
-[eln-inventory-integration](./src/eln-inventory-integration).
+[src/Inventory](./src/Inventory), [src/eln](./src/eln),
+[src/eln-dmp-integration](./src/eln-dmp-integration), and
+[src/eln-inventory-integration](./src/eln-inventory-integration).
 
 Some of the older React code still uses legacy patterns such as class components
 and MobX stores, while newer code uses functional components with hooks and React
