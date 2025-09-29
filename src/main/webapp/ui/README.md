@@ -16,7 +16,7 @@ The [dependency cruiser config](./dependency-cruiser.js) defines rules for
 how the codebase should be organised, ensuring that where code is shared between
 different parts of the application it is done so in a controlled manner.
 
-## Architecture Migration
+## Architecture
 
 The codebase has evolved over time, and as such contains a mix of architectural
 patterns. Many of the older pages are still based on JSPs with jQuery, with much
@@ -25,12 +25,27 @@ React islands which can be found in [src/CreateGroup](./src/CreateGroup),
 [src/Gallery](./src/Gallery) (this is the old Gallery),
 [src/my-rspace](./src/my-rspace), [src/system-groups](./src/system-groups),
 [src/system-ror](./src/system-ror), and [src/Toolbar](./src/Toolbar).
+[src/tinyMCE](./src/tinyMCE) contains TinyMCE plugins, written in React, that
+are used in the ELN for the main rich text editor.
 
 Inventory, the Gallery, the Apps page, and some other newer parts of the ELN are
 fully React and TypeScript and also live in this directory. They can be found in
 [src/Inventory](./src/Inventory), [src/eln](./src/eln),
 [src/eln-dmp-integration](./src/eln-dmp-integration), and
 [src/eln-inventory-integration](./src/eln-inventory-integration).
+
+Other important directories include:
+- [dist](./dist): The output directory for built files.
+- [\_\_tests\_\_](./__tests__): Helper and setup functions for Jest.
+- [src/assets](./src/assets): Static assets such as images and branding.
+- [src/components](./src/components): Reusable React components used across the
+  application.
+- [src/hooks](./src/hooks): Custom React hooks for shared logic, in particular
+  wrappers for calling our API.
+- [src/stores](./src/stores): State management code, including type definitions,
+  model classes, React Contexts, and global stores. For more information, see
+  the `src/stores/*/README.md` files.
+- [src/util](./src/util): Utility functions used across the application.
 
 Some of the older React code still uses legacy patterns such as class components
 and MobX stores, while newer code uses functional components with hooks and React
@@ -132,10 +147,10 @@ For detailed information about specific areas
 - Model classes: See [src/stores/models/README.md](src/stores/models/README.md)
 - React Contexts: See [src/stores/contexts/README.md](src/stores/contexts/README.md)
 - Global state management: See [src/stores/stores/README.md](src/stores/stores/README.md)
+- Public Pages: See [src/components/PublicPages/README.md](src/components/PublicPages/README.md)
 
 ### Topics
 - Link Navigation in Inventory: See [src/Inventory/NavigationInInventory.md](src/Inventory/NavigationInInventory.md)
 - Adding Form Fields in Inventory: See [src/Inventory/AddingNewFormFields.md](src/Inventory/AddingNewFormFields.md)
-- Public Pages: See [src/components/PublicPages/README.md](src/components/PublicPages/README.md)
 - Adding new integrations to the Apps page: See [src/eln/apps/AddingANewIntegration.md](src/eln/apps/AddingANewIntegration.md)
 - Odd things to watch out for with Material UI: See [./QuirksOfMaterialUi.md](./QuirksOfMaterialUi.md)
