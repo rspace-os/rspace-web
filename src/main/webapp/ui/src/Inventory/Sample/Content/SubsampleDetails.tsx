@@ -60,10 +60,7 @@ const Wrapper = ({ children }: WrapperArgs) => {
   return (
     <Grid container direction="row" flexWrap="nowrap" spacing={1}>
       <Grid item sx={{ pl: 0, ml: -2 }}>
-        <IconButton
-          onClick={() => setSectionOpen(!sectionOpen)}
-          sx={{ p: 1.25 }}
-        >
+        <IconButton onClick={() => setSectionOpen(!sectionOpen)} sx={{ p: 1 }}>
           <ExpandCollapseIcon open={sectionOpen} />
         </IconButton>
       </Grid>
