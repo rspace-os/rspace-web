@@ -57,7 +57,7 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
       explanatoryText,
       containerProps,
     }: ButtonThatTriggersInvisibleInputArgs,
-    ref
+    ref,
   ) => (
     <Grid container spacing={1} {...containerProps}>
       {InputProps.startAdornment}
@@ -93,7 +93,7 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
       </Grid>
       {InputProps.endAdornment}
     </Grid>
-  )
+  ),
 );
 
 ButtonThatTriggersInvisibleInput.displayName =
@@ -214,7 +214,7 @@ function FileField({
             //eslint-disable-next-line
             inputComponent={forwardRef(function FileInputTrigger(
               _,
-              ref: React.ForwardedRef<HTMLLabelElement>
+              ref: React.ForwardedRef<HTMLLabelElement>,
             ) {
               return (
                 <ButtonThatTriggersInvisibleInput
