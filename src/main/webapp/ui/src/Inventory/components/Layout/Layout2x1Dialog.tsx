@@ -85,13 +85,7 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
     >
       {props.dialogTitle !== null &&
         typeof props.dialogTitle !== "undefined" && (
-          <DialogTitle
-            component="h2"
-            variant="h5"
-            sx={{ px: 2, pt: 1.5, pb: 1 }}
-          >
-            {props.dialogTitle}
-          </DialogTitle>
+          <DialogTitle>{props.dialogTitle}</DialogTitle>
         )}
       <DialogContent dividers className={classes.content}>
         <Grid container className={classes.container}>
