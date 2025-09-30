@@ -152,6 +152,7 @@ For detailed information about specific areas
 - Inventory Context Menu: See [src/Inventory/components/ContextMenu/README.md](src/Inventory/components/ContextMenu/README.md)
 
 ### Topics
+- Accessibility: See [../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md](../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md)
 - Link Navigation in Inventory: See [src/Inventory/NavigationInInventory.md](src/Inventory/NavigationInInventory.md)
 - Adding Form Fields in Inventory: See [src/Inventory/AddingNewFormFields.md](src/Inventory/AddingNewFormFields.md)
 - Adding new integrations to the Apps page: See [src/eln/apps/AddingANewIntegration.md](src/eln/apps/AddingANewIntegration.md)
