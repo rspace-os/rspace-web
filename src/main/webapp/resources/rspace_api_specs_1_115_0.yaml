@@ -4140,10 +4140,10 @@ definitions:
       locationId:
         type: integer
         format: int64
-        description: Optional id of the shared folder location
-      locationName:
+        description: id of the shared folder location
+      path:
         type: string
-        description: Optional name of the shared folder location
+        description: path of the shared folder location
   ActivityList:
     description: List of activities
     type: array

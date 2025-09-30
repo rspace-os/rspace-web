@@ -30,7 +30,7 @@ public class DocumentShares {
     private RecipientType recipientType;
     private PermissionType permission;
     private Long locationId;
-    private String locationName;
+    private String path;
   }
 
   public enum PermissionType {

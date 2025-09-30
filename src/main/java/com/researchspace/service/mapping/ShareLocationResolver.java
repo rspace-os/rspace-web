@@ -4,6 +4,7 @@ import com.researchspace.dao.FolderDao;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordToFolder;
 import java.util.Optional;
 import java.util.Set;
@@ -19,6 +20,10 @@ public class ShareLocationResolver {
     this.folderDao = folderDao;
   }
 
+  /***
+   * A record can be shared to multiple users or groups. This method finds the parent of the shared record that relates
+   * to the user or group the record is shared to in the specific RecordGroupSharing.
+   */
   public BaseRecord resolveLocation(RecordGroupSharing share, BaseRecord record) {
     // case of implicit share of a document within a notebook, rather than a notebook itself
     if (share.getShared().isNotebook() && !record.isNotebook()) {
@@ -30,6 +35,32 @@ public class ShareLocationResolver {
     }
 
     return findUserToUserSharedFolder(share, record);
+  }
+
+  /***
+   * Returns the path of the record within the shared folder context of the RecordGroupSharing.
+   */
+  public String resolvePath(RecordGroupSharing share, BaseRecord record) {
+    Folder sharedRoot;
+    if (share.getSharee().isGroup()) {
+      sharedRoot = folderDao.getSharedFolderForGroup(share.getSharee().asGroup());
+    } else {
+      sharedRoot =
+          folderDao.getIndividualSharedFolderForUsers(
+              share.getSharedBy(), share.getSharee().asUser(), share.getShared());
+    }
+
+    if (sharedRoot == null) {
+      return null;
+    }
+
+    BaseRecord parent = resolveLocation(share, record);
+    if (parent == null) {
+      return null;
+    }
+
+    RSPath path = parent.getShortestPathToParent(sharedRoot);
+    return path == null ? null : path.getPathAsString("/");
   }
 
   private BaseRecord findGroupSharedFolder(RecordGroupSharing share) {

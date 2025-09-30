@@ -414,8 +414,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(sharer.getId(), userShare.getSharerId());
     assertEquals(group.getGroup().getId(), groupShare.getRecipientId(), 0L);
     assertEquals(userToShareWith.getDisplayName(), userShare.getRecipientName());
-    assertEquals(
-        sharer.getUsername() + "-" + userToShareWith.getUsername(), userShare.getLocationName());
+    assertEquals(sharer.getUsername() + "-" + userToShareWith.getUsername(), userShare.getPath());
   }
 
   @Test
