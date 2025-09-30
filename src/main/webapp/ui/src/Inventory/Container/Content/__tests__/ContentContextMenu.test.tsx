@@ -17,12 +17,14 @@ import ContainerModel from "../../../../stores/models/ContainerModel";
 import ContentContextMenu from "../ContentContextMenu";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
-import Chip from "@mui/material/Chip";
+import ContextMenuButton from "../../../components/ContextMenu/ContextMenuButton";
 import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { take, incrementForever } from "../../../../util/iterators";
 import fc from "fast-check";
 
-jest.mock("@mui/material/Chip", () => jest.fn(() => <div></div>));
+jest.mock("../../../components/ContextMenu/ContextMenuButton", () =>
+  jest.fn(() => <div></div>),
+);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -68,15 +70,15 @@ describe("ContentContextMenu", () => {
           >
             <ContentContextMenu />
           </SearchContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
 
-      expect(Chip).toHaveBeenCalledWith(
+      expect(ContextMenuButton).toHaveBeenCalledWith(
         expect.objectContaining({
-          disabled: true,
+          disabledHelp: "Nothing selected.",
           label: "Open",
         }),
-        expect.anything()
+        expect.anything(),
       );
     });
   });
@@ -85,7 +87,7 @@ describe("ContentContextMenu", () => {
       fc.property(
         fc.tuple(
           fc.integer({ min: 1, max: 24 }),
-          fc.integer({ min: 1, max: 24 })
+          fc.integer({ min: 1, max: 24 }),
         ),
         ([width, height]: [number, number]) => {
           cleanup();
@@ -99,7 +101,7 @@ describe("ContentContextMenu", () => {
                 coordY,
                 content: containerAttrs(),
                 id: null,
-              })
+              }),
             ).flat(),
             cType: "GRID",
             gridLayout: {
@@ -132,13 +134,13 @@ describe("ContentContextMenu", () => {
               >
                 <ContentContextMenu />
               </SearchContext.Provider>
-            </ThemeProvider>
+            </ThemeProvider>,
           );
 
           expect(screen.getByText(`${width * height}`)).toBeVisible();
-        }
+        },
       ),
-      { numRuns: 10 }
+      { numRuns: 10 },
     );
   });
 });

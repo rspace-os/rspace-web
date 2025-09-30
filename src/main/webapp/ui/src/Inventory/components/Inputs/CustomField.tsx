@@ -6,7 +6,7 @@ import InputWrapper, {
 } from "../../../components/Inputs/InputWrapper";
 import AttachmentField, {
   type AttachmentFieldArgs,
-} from "../../../components/Inputs/AttachmentField";
+} from "../Fields/Attachments/AttachmentField";
 import ChoiceField, {
   type ChoiceFieldArgs,
 } from "../../../components/Inputs/ChoiceField";
@@ -91,7 +91,7 @@ type CustomFieldArgs<T extends string> = {
  * `type` prop, wrapped in an InputWrapper.
  */
 function CustomField<T extends string>(
-  props: CustomFieldArgs<T>
+  props: CustomFieldArgs<T>,
 ): React.ReactNode {
   const wrapperProps: Omit<InputWrapperArgs, "children"> = {
     label: props.label,

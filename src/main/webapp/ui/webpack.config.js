@@ -48,7 +48,7 @@ module.exports = {
     newLabGroup: "./src/system-groups/NewLabGroup.js",
     tinymceSidebarInfo: "./src/tinyMCE/sidebarInfo.js",
     previewInfo: "./src/tinyMCE/previewInfo.js",
-    userDetails: "./src/components/UserDetails.js",
+    userDetails: "./src/components/UserDetails_deprecated.js",
     groupUserActivity: "./src/my-rspace/directory/groups/GroupUserActivity.js",
     groupActivity: "./src/my-rspace/profile/GroupActivity.js",
     accountActivity: "./src/my-rspace/profile/AccountActivity.js",

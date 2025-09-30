@@ -1,6 +1,6 @@
 import React from "react";
 import Stack from "@mui/material/Stack";
-import TitledBox from "../../components/TitledBox";
+import TitledBox from "../../../components/TitledBox";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import docLinks from "../../../assets/DocLinks";
@@ -13,9 +13,7 @@ import { type Identifier } from "../../useIdentifiers";
 import { doNotAwait } from "../../../util/Util";
 import Menu from "@mui/material/Menu";
 import AccentMenuItem from "../../../components/AccentMenuItem";
-import { ThemeProvider, useTheme, lighten, darken } from "@mui/material/styles";
-import createAccentedTheme from "../../../accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
+import { useTheme, lighten, darken } from "@mui/material/styles";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -28,6 +26,8 @@ import PrintIcon from "@mui/icons-material/Print";
 import IgsnTable from "./IgsnTable";
 import RsSet from "../../../util/set";
 import { useLandmark } from "../../../components/LandmarksContext";
+import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
+import { HeadingContext } from "@/components/DynamicHeadingLevel";
 
 /**
  * The IGSN Management page allows users to view, bulk register, print, and
@@ -54,14 +54,17 @@ export default function IgsnManagementPage({
   const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
 
   return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <Main
-        sx={{ overflowY: "auto" }}
-        ref={mainContentRef}
-        role="main"
-        aria-label="IGSN management main content"
-      >
-        <Stack spacing={2} sx={{ my: 2, mr: 1 }}>
+    <Main
+      sx={{ overflowY: "auto", p: 2 }}
+      ref={mainContentRef}
+      role="main"
+      aria-label="IGSN management main content"
+    >
+      <VisuallyHiddenHeading variant="h2">
+        IGSN Management Page
+      </VisuallyHiddenHeading>
+      <HeadingContext level={3}>
+        <Stack spacing={2}>
           <TitledBox title="IGSN IDs" border>
             <Typography>
               The RSpace IGSN ID integration enables researchers to create,
@@ -228,7 +231,7 @@ export default function IgsnManagementPage({
             </Stack>
           </TitledBox>
         </Stack>
-      </Main>
-    </ThemeProvider>
+      </HeadingContext>
+    </Main>
   );
 }

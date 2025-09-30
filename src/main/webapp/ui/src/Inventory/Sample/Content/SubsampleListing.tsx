@@ -48,7 +48,7 @@ function SubsampleListing({ sample }: SubsampleListingArgs): React.ReactNode {
   return (
     <Grid container direction="row" flexWrap="nowrap" spacing={1}>
       <Grid item sx={{ pl: 0, ml: -2 }}>
-        <IconButton onClick={() => setSearchOpen(!searchOpen)} sx={{ p: 1.25 }}>
+        <IconButton onClick={() => setSearchOpen(!searchOpen)} sx={{ p: 1 }}>
           <ExpandCollapseIcon open={searchOpen} />
         </IconButton>
       </Grid>

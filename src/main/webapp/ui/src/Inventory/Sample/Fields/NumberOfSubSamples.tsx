@@ -4,7 +4,7 @@ import NumberField from "../../../components/Inputs/NumberField";
 import SampleModel, {
   type SubSampleTargetLocation,
 } from "../../../stores/models/SampleModel";
-import FormField from "../../../components/Inputs/FormField";
+import FormField from "../../components/Inputs/FormField";
 import RadioField, {
   OptionHeading,
   OptionExplanation,
@@ -42,7 +42,7 @@ function NumberOfSubSamples({
   const withSpecifiedLocations: boolean =
     sample.newSampleSubSampleTargetLocations?.some(
       ({ location }: SubSampleTargetLocation) =>
-        Object.keys(location).length > 0
+        Object.keys(location).length > 0,
     ) ?? false;
   const fixedNumberOfSubSamples: boolean =
     sample.beingCreatedInContainer && withSpecifiedLocations;

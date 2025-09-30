@@ -22,6 +22,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
   height: 32,
   textTransform: "none",
   letterSpacing: "0.04em",
+  border: "none",
   "& .MuiButton-endIcon": {
     marginLeft: theme.spacing(0.5),
   },

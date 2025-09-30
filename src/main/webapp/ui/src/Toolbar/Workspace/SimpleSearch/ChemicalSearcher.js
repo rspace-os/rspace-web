@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import KetcherDialog from "../../../components/Ketcher/KetcherDialog";
 import axios from "@/common/axios";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -18,6 +17,11 @@ import { DataGridColumn } from "../../../util/table";
 import Link from "@mui/material/Link";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { IsValid, IsInvalid } from "../../../components/ValidatingSubmitButton";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
+const KetcherDialog = React.lazy(
+  () => import("../../../components/Ketcher/KetcherDialog"),
+);
 
 const ChemicalSearcher = ({ isOpen, onClose }) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -92,21 +96,21 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
     }
     ketcher.getKet().then((ketData) => {
       const molecules = Object.keys(JSON.parse(ketData)).filter((key) =>
-        key.startsWith("mol")
+        key.startsWith("mol"),
       );
       if (molecules.length === 0) {
         setIsValid(
           IsInvalid(
-            "Please draw, paste, or open a molecule to start your search"
-          )
+            "Please draw, paste, or open a molecule to start your search",
+          ),
         );
         return;
       }
       if (molecules.length > 1) {
         setIsValid(
           IsInvalid(
-            "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas."
-          )
+            "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas.",
+          ),
         );
         return;
       }
@@ -141,7 +145,7 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         ),
         sortable: false,
         flex: 1,
-      }
+      },
     ),
     DataGridColumn.newColumnWithValueGetter(
       "name",
@@ -166,7 +170,7 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         ),
         sortable: false,
         flex: 1,
-      }
+      },
     ),
     DataGridColumn.newColumnWithFieldName("owner", {
       headerName: "Owner",
@@ -182,44 +186,60 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
 
   return (
     <div>
-      <KetcherDialog
-        isOpen={showKetcherDialog}
-        title={"Chemistry Search"}
-        handleInsert={handleInsert}
-        actionBtnText="Search"
-        handleClose={closeAndReset}
-        existingChem={searchSmiles}
-        validationResult={isValid}
-        instructionText="Draw a single molecule below to search"
-        onChange={() => {
-          validate(window.ketcher);
-        }}
-        additionalControls={
-          <FormControl>
-            <FormLabel id="search-type">Search Type</FormLabel>
-            <RadioGroup
-              row
-              aria-labelledby="search-type"
-              name="search-type"
-              value={searchType}
-              onChange={(e) => {
-                setSearchType(e.target.value);
+      {showKetcherDialog && (
+        <React.Suspense
+          fallback={
+            <Backdrop
+              open
+              sx={{
+                color: "#fff",
+                zIndex: 3, // more than the table pagination
               }}
             >
-              <FormControlLabel
-                value="SUBSTRUCTURE"
-                control={<Radio />}
-                label="Substructure"
-              />
-              <FormControlLabel
-                value="EXACT"
-                control={<Radio />}
-                label="Exact"
-              />
-            </RadioGroup>
-          </FormControl>
-        }
-      />
+              <CircularProgress color="inherit" />
+            </Backdrop>
+          }
+        >
+          <KetcherDialog
+            isOpen
+            title={"Chemistry Search"}
+            handleInsert={handleInsert}
+            actionBtnText="Search"
+            handleClose={closeAndReset}
+            existingChem={searchSmiles}
+            validationResult={isValid}
+            instructionText="Draw a single molecule below to search"
+            onChange={() => {
+              validate(window.ketcher);
+            }}
+            additionalControls={
+              <FormControl>
+                <FormLabel id="search-type">Search Type</FormLabel>
+                <RadioGroup
+                  row
+                  aria-labelledby="search-type"
+                  name="search-type"
+                  value={searchType}
+                  onChange={(e) => {
+                    setSearchType(e.target.value);
+                  }}
+                >
+                  <FormControlLabel
+                    value="SUBSTRUCTURE"
+                    control={<Radio />}
+                    label="Substructure"
+                  />
+                  <FormControlLabel
+                    value="EXACT"
+                    control={<Radio />}
+                    label="Exact"
+                  />
+                </RadioGroup>
+              </FormControl>
+            }
+          />
+        </React.Suspense>
+      )}
       <Dialog
         open={showSearchResults || loading || typeof errorMessage === "string"}
         fullWidth

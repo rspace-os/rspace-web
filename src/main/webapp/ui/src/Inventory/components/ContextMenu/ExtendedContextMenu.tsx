@@ -37,7 +37,7 @@ type ExtendedContextMenuArgs = {
         key: string;
         label: string;
         variant?: "default" | "filled";
-        onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+        onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
         active?: boolean;
       }
   >;
@@ -83,9 +83,11 @@ function ExtendedContextMenu({
                     key: string;
                     label: string;
                     variant?: "default" | "filled";
-                    onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+                    onClick?: (
+                      event: React.MouseEvent<HTMLButtonElement>,
+                    ) => void;
                     active?: boolean;
-                  }
+                  },
             ) => (
               <GridItem key={action.key}>
                 {/* conditional rendering based on: options or onClick */}
@@ -102,7 +104,7 @@ function ExtendedContextMenu({
                   <ContextMenuButton {...action} />
                 )}
               </GridItem>
-            )
+            ),
           )}
         </Grid>
       </Grid>

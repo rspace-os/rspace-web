@@ -7,7 +7,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { makeStyles } from "tss-react/mui";
 import NoValue from "../../../../components/NoValue";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
-import FormField from "../../../../components/Inputs/FormField";
+import FormField from "../../../components/Inputs/FormField";
 import TextField from "../../../../components/Inputs/TextField";
 import NumberField from "../../../../components/Inputs/NumberField";
 import Box from "@mui/material/Box";

@@ -16,35 +16,18 @@ use of contexts across the codebase.
 ### Keep them small
 
 With hindsight, the use of a [singular, large context for all of the page-wide
-state in Inventory](../stores-context.js) was a bit of a mistake. There are
+state in Inventory](../stores-context.ts) was a bit of a mistake. There are
 various benefits to keeping React contexts as small as possible, and we should
 aim to do so going forward.
 
-<dl>
-    <dt>Easier to test</dt>
-    <dd>
-        It is much easier to test components that only depend on small contexts
-        rather than a big one as it is much easier to mock a small data
-        structure rather than a big one.
-    </dd>
-    <dt>Re-use</dt>
-    <dd>
-        Contexts that are smaller and more specific in their purpose are more
-        likely to be re-usable across different pages. The
-        [Confirm context](Confirm.js) is a completely generic piece of state
-        that can easily re-used on pages with vastly different purposes. It was
-        originally a part of UiStore, but was copied into its own contexts for
-        re-use elsewhere.
-    </dd>
-    <dt>Different scopes</dt>
-    <dd>
-        Smaller contexts are more likely to be re-usable in multiple different
-        places on the same page, potentially nested within eachother. The
-        search context for managing the state of an Inventory search is used in
-        various places across the UI, with the search components utilising the
-        nearest context in the component tree.
-    </dd>
-</dl>
+**Easier to test**<br />
+It is much easier to test components that only depend on small contexts rather than a big one as it is much easier to mock a small data structure rather than a big one.
+
+**Re-use**<br />
+Contexts that are smaller and more specific in their purpose are more likely to be re-usable across different pages. The [Alert](Alert.ts) context exposes just `addAlert` and `removeAlert` functions, and [Analytics](Analytics.ts) context exposes just the `trackEvent` function, and both have been successfully used across the codebase.
+
+**Different scopes**<br />
+Smaller contexts are more likely to be re-usable in multiple different places on the same page, potentially nested within each other. The search context for managing the state of an Inventory search is used in various places across the UI, with the search components utilising the nearest context in the component tree.
 
 Ultimately, keeping contexts small can be seen as an application of the
 [Interface Segregation Principle][Interface Segregation Principle], as the
@@ -67,7 +50,7 @@ the more general behaviour of the wider page.
 Nested contexts are used in various places across the codebase including
 * [how links that navigate around the Single Page Application (SPA) behave, including opening links in a new page when the user is inside a modal](../../Inventory/NavigationInInventory.md#Navigate-Context)
 * [how the search mechanisms within Inventory works, facilitating nested search components like pickers inside the main search](../../Inventory/NavigationInInventory.md#Search-Context)
-* [how analytics data can be enriched with contextual information based on where on a page an event is recorded](../../Inventory/Analytics.js).
+* [how analytics data can be enriched with contextual information based on where on a page an event is recorded](../../Inventory/Analytics.tsx).
 
 Ordinarily, to use a context there would be some call to
 `<SomeContext.Provider>` at some point in the component tree, and at some
@@ -159,13 +142,13 @@ disabled until we can determine whether we are able to offer live chat or
 whether we have to fallback to a mailto link. Once the `isAvailable` flag moves
 from null to either true or false, we then want to re-render the button,
 enabling it with the functionality as required. The state exposed by the
-[Analytics context](Analytics.js) (which exposes `isAvailable`) is therefore
+[Analytics context](Analytics.ts) (which exposes `isAvailable`) is therefore
 wrapped in a `makeAutoObservable` and the
-[HelpDocs component](../../Inventory/components/Layout/HelpDocs.js) uses `when` to
+[HelpDocs component](../../components/Help/HelpDocs.tsx) uses `when` to
 await this asynchronous loading.
 
 This by itself would work, but there is [an additional instance of the Analytics
-context specifically for Inventory](../../Inventory/Analytics.js) which adds
+context specifically for Inventory](../../Inventory/Analytics.tsx) which adds
 contextual information to the logged user events. When the `isAvailable` flag
 changes, this value should propagate through the inner context instance and be
 available to the HelpDocs and other components further down the component tree.

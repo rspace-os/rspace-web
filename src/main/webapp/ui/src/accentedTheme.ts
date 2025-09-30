@@ -29,6 +29,10 @@ import { formLabelClasses } from "@mui/material/FormLabel";
 import { inputLabelClasses } from "@mui/material/InputLabel";
 import { inputAdornmentClasses } from "@mui/material/InputAdornment";
 import { linkClasses } from "@mui/material/Link";
+import { selectClasses } from "@mui/material/Select";
+import { checkboxClasses } from "@mui/material/Checkbox";
+import { radioClasses } from "@mui/material/Radio";
+import { buttonGroupClasses } from "@mui/material/ButtonGroup";
 
 /**
  * Represents an HSL color.
@@ -227,7 +231,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
             .main,
         } as PaletteColorOptions,
         standardIcon: {
-          main: interactiveColor,
+          main: darken(interactiveColor, 0.5),
         } as PaletteColorOptions,
       } as PaletteOptions,
       borders: {
@@ -478,7 +482,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 },
                 [`& .${listItemIconClasses.root}`]: {
                   minWidth: baseTheme.spacing(4),
-                  color: prefersMoreContrast ? "rgb(0,0,0)" : linkColor,
+                  color: prefersMoreContrast
+                    ? "rgb(0,0,0)"
+                    : darken(interactiveColor, 0.5),
                 },
                 [`& .${typographyClasses.body1}`]: {
                   fontWeight: 700,
@@ -584,7 +590,6 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
             },
             outlinedPrimary: {
               color: interactiveColor,
-              borderColor: interactiveColor,
               "&:hover": {
                 /*
                  * we have to replicate specifying the border width here
@@ -593,12 +598,48 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                  * then our width gets unset
                  */
                 border: accentedBorder,
-                borderColor: darken(interactiveColor, hoverDarkenCoefficient),
               },
             },
             outlinedError: {
               color: baseTheme.palette.error.main,
               borderColor: baseTheme.palette.error.main,
+            },
+          },
+        },
+        MuiButtonGroup: {
+          styleOverrides: {
+            root: {
+              [`& .${buttonGroupClasses.firstButton}, & .${buttonGroupClasses.middleButton}`]:
+                {
+                  borderRight: "none",
+                },
+            },
+          },
+        },
+        MuiIconButton: {
+          styleOverrides: {
+            colorPrimary: {
+              color: prefersMoreContrast ? "rgb(0,0,0)" : linkColor,
+            },
+          },
+        },
+        MuiCheckbox: {
+          styleOverrides: {
+            root: {
+              color: prefersMoreContrast ? "rgb(0,0,0)" : interactiveColor,
+              [`&.${checkboxClasses.checked}`]: {
+                color: prefersMoreContrast ? "rgb(0,0,0)" : interactiveColor,
+              },
+            },
+          },
+        },
+        MuiRadio: {
+          styleOverrides: {
+            root: {
+              color: prefersMoreContrast ? "rgb(0,0,0)" : interactiveColor,
+              [`&.${radioClasses.checked}`]: {
+                color: prefersMoreContrast ? "rgb(0,0,0)" : interactiveColor,
+              },
             },
           },
         },
@@ -627,7 +668,6 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                    * components want to override the hover effect too, they too
                    * can use !important
                    */
-                  border: `${accentedBorder} !important`,
                   borderColor: `${darken(
                     accentedBackground,
                     hoverDarkenCoefficient,
@@ -645,16 +685,25 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               [`& .${inputAdornmentClasses.root}`]: {
                 height: "100%",
                 [`&.${inputAdornmentClasses.positionStart}`]: {
-                  paddingLeft: baseTheme.spacing(1.5),
-                  paddingRight: baseTheme.spacing(1.5),
+                  paddingLeft: baseTheme.spacing(1),
+                  paddingRight: baseTheme.spacing(0.5),
+                  marginTop: baseTheme.spacing(0.5),
+                  marginBottom: baseTheme.spacing(0.5),
                   borderRight: accentedBorder,
                   marginRight: 0,
+                  [`& .${iconButtonClasses.root}`]: {
+                    padding: baseTheme.spacing(0.25),
+                  },
                 },
                 [`&.${inputAdornmentClasses.positionEnd}`]: {
                   paddingRight: baseTheme.spacing(1.5),
                   paddingLeft: baseTheme.spacing(1.5),
                   borderLeft: accentedBorder,
                   marginLeft: 0,
+                  [`&:has(.${selectClasses.select})`]: {
+                    paddingRight: 0,
+                    paddingLeft: 0,
+                  },
                 },
                 [`& .${typographyClasses.root}`]: {
                   textTransform: "uppercase",
@@ -815,13 +864,12 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               },
             },
             h1: {
-              color: backgroundContrastTextColor,
+              color: linkColor,
               marginBottom: baseTheme.spacing(3),
               textAlign: "left",
               borderBottom: accentedBorder,
               textTransform: "uppercase",
               fontWeight: 700,
-              opacity: 0.8,
               fontSize: "1.9rem",
             },
             h3: {
@@ -898,12 +946,13 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               letterSpacing: "0.03em",
               color: backgroundContrastTextColor,
               [`&.${chipClasses.filled}`]: {
-                backgroundColor: `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, ${accent.background.lightness}%, 60%)`,
+                backgroundColor: accentedBackground,
+                color: contrastTextColor,
                 [`& .${chipClasses.deleteIcon}`]: {
                   color: contrastTextColor,
                 },
               },
-              [`&.${chipClasses.filled}${chipClasses.clickable}`]: {
+              [`&.${chipClasses.filled}.${chipClasses.clickable}`]: {
                 backgroundColor: lighterInteractiveColor,
                 color: linkColor,
                 border: prefersMoreContrast ? accentedBorder : "none",
@@ -935,10 +984,10 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
         MuiFormLabel: {
           styleOverrides: {
             root: {
-              fontWeight: 700,
-              fontSize: "1rem",
-              letterSpacing: "0.02em",
               marginBottom: baseTheme.spacing(0.5),
+              fontWeight: 700,
+              fontSize: "0.9rem",
+              letterSpacing: "0.02em",
               color: backgroundContrastTextColor,
               [`&.${formLabelClasses.focused}`]: {
                 color: backgroundContrastTextColor,
@@ -1031,6 +1080,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 },
                 "& .MuiTreeItem-label": {
                   color: contrastTextColor,
+                  [`& .${typographyClasses.root}`]: {
+                    color: contrastTextColor,
+                  },
                 },
                 "& .MuiTreeItem-iconContainer": {
                   color: contrastTextColor,

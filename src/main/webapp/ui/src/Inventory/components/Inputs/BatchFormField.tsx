@@ -96,6 +96,9 @@ const useStyles = makeStyles()(() => ({
     "& .Mui-disabled::before": {
       borderBottom: "0px !important",
     },
+    "& > .MuiFormLabel-root": {
+      textTransform: "uppercase",
+    }
   },
 }));
 
