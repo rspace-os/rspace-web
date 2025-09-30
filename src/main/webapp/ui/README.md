@@ -148,6 +148,7 @@ For detailed information about specific areas
 - React Contexts: See [src/stores/contexts/README.md](src/stores/contexts/README.md)
 - Global state management: See [src/stores/stores/README.md](src/stores/stores/README.md)
 - Custom Hooks: See [src/hooks/README.md](src/hooks/README.md)
+- Gallery: See [src/eln/gallery/README.md](src/eln/gallery/README.md)
 - Public Pages: See [src/components/PublicPages/README.md](src/components/PublicPages/README.md)
 - Inventory Context Menu: See [src/Inventory/components/ContextMenu/README.md](src/Inventory/components/ContextMenu/README.md)
 
