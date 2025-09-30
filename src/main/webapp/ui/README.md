@@ -149,6 +149,7 @@ For detailed information about specific areas
 - Global state management: See [src/stores/stores/README.md](src/stores/stores/README.md)
 - Custom Hooks: See [src/hooks/README.md](src/hooks/README.md)
 - Public Pages: See [src/components/PublicPages/README.md](src/components/PublicPages/README.md)
+- Inventory Context Menu: See [src/Inventory/components/ContextMenu/README.md](src/Inventory/components/ContextMenu/README.md)
 
 ### Topics
 - Link Navigation in Inventory: See [src/Inventory/NavigationInInventory.md](src/Inventory/NavigationInInventory.md)
