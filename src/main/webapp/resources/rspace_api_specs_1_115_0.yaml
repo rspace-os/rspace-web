@@ -4137,13 +4137,17 @@ definitions:
       permission:
         type: string
         enum: [READ, EDIT]
-      locationId:
+      parentId:
         type: integer
         format: int64
-        description: id of the shared folder location
+        description: id of the parent (shared folder or notebook) within the shared hierarchy
       path:
         type: string
-        description: path of the shared folder location
+        description: path of the shared location (root to parent) within the shared hierarchy
+      grandparentId:
+        type: integer
+        format: int64
+        description: id of the grandparent within the shared hierarchy; null if parent is the root
   ActivityList:
     description: List of activities
     type: array

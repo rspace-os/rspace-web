@@ -38,9 +38,9 @@ public class ShareLocationResolver {
   }
 
   /***
-   * Returns the path of the record within the shared folder context of the RecordGroupSharing.
+   * Returns the RSPath of the record within the shared folder context of the RecordGroupSharing.
    */
-  public String resolvePath(RecordGroupSharing share, BaseRecord record) {
+  public RSPath resolvePath(RecordGroupSharing share, BaseRecord record) {
     Folder sharedRoot;
     if (share.getSharee().isGroup()) {
       sharedRoot = folderDao.getSharedFolderForGroup(share.getSharee().asGroup());
@@ -59,8 +59,7 @@ public class ShareLocationResolver {
       return null;
     }
 
-    RSPath path = parent.getShortestPathToParent(sharedRoot);
-    return path == null ? null : path.getPathAsString("/");
+    return parent.getShortestPathToParent(sharedRoot);
   }
 
   private BaseRecord findGroupSharedFolder(RecordGroupSharing share) {

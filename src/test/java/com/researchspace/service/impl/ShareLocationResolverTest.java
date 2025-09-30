@@ -11,6 +11,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
@@ -225,8 +226,8 @@ public class ShareLocationResolverTest {
 
     when(folderDao.getSharedFolderForGroup(recipientGroup)).thenReturn(groupRoot);
 
-    String path = resolver.resolvePath(share, doc);
-    assertEquals(groupRoot.getName(), path);
+    RSPath path = resolver.resolvePath(share, doc);
+    assertEquals(groupRoot.getName(), path.getPathAsString("/"));
   }
 
   @Test
@@ -255,8 +256,8 @@ public class ShareLocationResolverTest {
 
     when(folderDao.getSharedFolderForGroup(recipientGroup)).thenReturn(groupRoot);
 
-    String path = resolver.resolvePath(share, doc);
-    assertEquals(groupRoot.getName() + "/" + notebook.getName(), path);
+    var path = resolver.resolvePath(share, doc);
+    assertEquals(groupRoot.getName() + "/" + notebook.getName(), path.getPathAsString("/"));
   }
 
   @Test
@@ -279,7 +280,7 @@ public class ShareLocationResolverTest {
 
     when(folderDao.getIndividualSharedFolderForUsers(sharer, recipientUser, doc)).thenReturn(root);
 
-    String path = resolver.resolvePath(share, doc);
-    assertEquals(root.getName() + "/" + sub.getName(), path);
+    var path = resolver.resolvePath(share, doc);
+    assertEquals(root.getName() + "/" + sub.getName(), path.getPathAsString("/"));
   }
 }
