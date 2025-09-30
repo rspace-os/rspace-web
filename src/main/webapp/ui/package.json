@@ -9,7 +9,7 @@
     "clustermarket-test": "node_modules/.bin/jest --runInBand   --roots ./src/tinyMCE/clustermarket",
     "omero-test": "node_modules/.bin/jest --runInBand   --roots ./src/tinyMCE/omero",
     "build": "webpack --mode production",
-    "serve": "webpack --watch --mode development --devtool eval-cheap-module-source-map",
+    "serve": "NODE_OPTIONS='--max-old-space-size=8192' webpack --watch --mode development --devtool eval-cheap-module-source-map",
     "depcruise": "npx depcruise src",
     "tsc": "tsc --noEmit",
     "test-ct": "playwright test -c playwright-ct.config.ts",
