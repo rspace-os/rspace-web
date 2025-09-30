@@ -68,7 +68,7 @@ public class NotebookEditorController extends BaseController {
       @PathVariable("notebookId") Long notebookId,
       @RequestParam(value = "initialRecordToDisplay", required = false) Long entryId,
       @RequestParam(value = "settingsKey", required = false) String settingsKey,
-      @RequestParam(value = "grandParentId") Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
       Model model,
       HttpSession session,
       Principal principal)
@@ -100,8 +100,8 @@ public class NotebookEditorController extends BaseController {
 
     ActionPermissionsDTO permDTO = new ActionPermissionsDTO();
     if (grandParentId == null) {
-      if (notebook.getParent() != null) {
-        grandParentId = notebook.getParent().getId();
+      if (notebook.getOwnerOrSharedParentForUser(user).isPresent()) {
+        grandParentId = notebook.getOwnerOrSharedParentForUser(user).get().getId();
       } else {
         throw new IllegalStateException(
             "Cannot infer shared context for Notebook with ID=["
