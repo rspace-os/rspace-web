@@ -20,7 +20,7 @@ import ListItem from "@mui/material/ListItem";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Layout2x1Dialog from "../../components/Layout/Layout2x1Dialog";
-import TitledBox from "../../components/TitledBox";
+import TitledBox from "../../../components/TitledBox";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { type Location } from "../../../stores/definitions/Container";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
@@ -83,10 +83,10 @@ function LocationsImageMarkersDialog({
   if (!activeResult || !(activeResult instanceof ContainerModel))
     throw new Error("ActiveResult must be a Container");
   const [selected, setSelected] = React.useState<TappedLocationData | null>(
-    null
+    null,
   );
   const [rightView, setRightView] = React.useState<number>(
-    isSingleColumnLayout ? IMAGE_VIEW : COMPACT_VIEW
+    isSingleColumnLayout ? IMAGE_VIEW : COMPACT_VIEW,
   );
   const cardParent = useRef<HTMLDivElement | null>(null);
   const tableParent = useRef<HTMLElement | null>(null);
@@ -249,7 +249,7 @@ function LocationsImageMarkersDialog({
                 {(activeResult.sortedLocations ?? []).map(
                   (location: Location, index: number) => (
                     <Card location={location} number={index + 1} key={index} />
-                  )
+                  ),
                 )}
               </List>
             </Box>

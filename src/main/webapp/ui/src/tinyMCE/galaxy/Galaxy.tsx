@@ -3,7 +3,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
 import React, { useEffect, useState } from "react";
-import TitledBox from "@/Inventory/components/TitledBox";
+import TitledBox from "@/components/TitledBox";
 import Stack from "@mui/material/Stack";
 import { DataGridColumn } from "@/util/table";
 import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";

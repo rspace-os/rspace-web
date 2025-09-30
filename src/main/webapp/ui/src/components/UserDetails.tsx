@@ -13,9 +13,9 @@ import TableRow from "@mui/material/TableRow";
 import TimeAgo from "react-timeago";
 import axios from "@/common/axios";
 import { makeStyles } from "tss-react/mui";
-import { type PersonId } from "../../stores/definitions/Person";
+import { type PersonId } from "../stores/definitions/Person";
 import Chip from "@mui/material/Chip";
-import * as Parsers from "../../util/parsers";
+import * as Parsers from "../util/parsers";
 
 const useStyles = makeStyles()((theme) => ({
   text: {
@@ -78,8 +78,8 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
       .then((response) => {
         setUser(
           Parsers.getValueWithKey("data")(response.data).orElse(
-            null
-          ) as Person | null
+            null,
+          ) as Person | null,
         );
       })
       .catch((error) => {

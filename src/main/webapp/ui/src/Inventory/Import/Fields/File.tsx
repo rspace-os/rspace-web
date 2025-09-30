@@ -1,11 +1,9 @@
 import FileField from "../../../components/Inputs/FileField";
-import UploadFormControl from "./FormControl";
 import React from "react";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import { withStyles } from "../../../util/styles";
-import TitledBox from "@/Inventory/components/TitledBox";
-import Box from "@mui/material/Box";
+import TitledBox from "@/components/TitledBox";
 import RemoveButton from "@/components/RemoveButton";
 import Grid from "@mui/material/Grid";
 

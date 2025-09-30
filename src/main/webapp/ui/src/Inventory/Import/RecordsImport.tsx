@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import TitledBox from "../components/TitledBox";
+import TitledBox from "../../components/TitledBox";
 import { observer } from "mobx-react-lite";
 import FileForImport from "./Fields/File";
 import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
