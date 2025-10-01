@@ -8,6 +8,7 @@ type MoveDocumentRequest = {
   documentId: number;
   sourceFolderId: number;
   destinationFolderId: number;
+  currentGrandparentId?: number;
 };
 
 /**
@@ -31,6 +32,11 @@ export default function useDocuments(): {
           docId: moveRequest.documentId,
           sourceFolderId: moveRequest.sourceFolderId,
           targetFolderId: moveRequest.destinationFolderId,
+          ...(moveRequest.currentGrandparentId
+            ? {
+                currentGrandparentId: moveRequest.currentGrandparentId,
+              }
+            : {}),
         },
         {
           headers: {

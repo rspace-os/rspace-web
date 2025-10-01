@@ -507,6 +507,9 @@ export function ShareDialog({
                 documentId: originalShare.sharedDocId,
                 sourceFolderId: originalShare.parentId!,
                 destinationFolderId: newLocationId,
+                ...(originalShare.grandparentId != null
+                  ? { currentGrandparentId: originalShare.grandparentId }
+                  : {}),
               });
               continue;
             }
