@@ -1358,5 +1358,33 @@ test.describe("Stoichiometry Table", () => {
         });
       },
     );
+
+    feature(
+      "Editing negative equivalent value reverts to original value",
+      async ({ Given, Once, When, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Check original value
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Equivalent",
+          value: "2",
+        });
+
+        // Try to edit equivalent of Cyclopentadiene to -1 (should fail)
+        await When["the user edits equivalent in row {row} to {value}"]({
+          row: 1,
+          value: "-1",
+        });
+
+        // Value should remain unchanged (reverted to original)
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Equivalent",
+          value: "2",
+        });
+      },
+    );
   });
 });

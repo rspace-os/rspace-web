@@ -934,6 +934,7 @@ const StoichiometryTable = React.forwardRef<
         type: "number",
         editable,
         headerAlign: "left",
+
         cellClassName: (params) => {
           if (limitingReagent && params.id === limitingReagent.id) {
             return "stoichiometry-disabled-cell";
@@ -1135,11 +1136,42 @@ const StoichiometryTable = React.forwardRef<
         hideFooter
         disableColumnFilter
         getRowId={(row) => row.id}
-        processRowUpdate={(newRow) => {
-          const newMolecules = calculateUpdatedMolecules(allMolecules, newRow);
-          setAllMolecules(newMolecules);
-          onChangesUpdate?.(true);
-          return newMolecules.find((m) => m.id === newRow.id) || newRow;
+        processRowUpdate={(newRow, oldRow) => {
+          try {
+            /*
+             * Validate for negative values in numerical fields.
+             *
+             * Note: We implement validation here in processRowUpdate rather than
+             * using preProcessEditCellProps because the latter can interfere with
+             * normal cell editing operations, even when not actively setting errors.
+             * Using processRowUpdate allows us to properly validate and revert
+             * changes by returning the old row, providing a cleaner user experience.
+             */
+            const numericalFields = [
+              "coefficient",
+              "mass",
+              "moles",
+              "actualAmount",
+              "actualMoles",
+            ];
+            for (const field of numericalFields) {
+              const value = newRow[field as keyof EditableMolecule];
+              if (value !== null && value !== undefined && Number(value) < 0) {
+                throw new Error(`${field} cannot be negative`);
+              }
+            }
+
+            const newMolecules = calculateUpdatedMolecules(
+              allMolecules,
+              newRow,
+            );
+            setAllMolecules(newMolecules);
+            onChangesUpdate?.(true);
+            return newMolecules.find((m) => m.id === newRow.id) || newRow;
+          } catch (error) {
+            console.error("Error updating row:", (error as Error).message);
+            return oldRow; // Return the old row to revert the change
+          }
         }}
         slots={{
           toolbar: Toolbar,
