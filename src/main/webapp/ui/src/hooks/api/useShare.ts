@@ -32,9 +32,17 @@ export type ShareInfo = {
   recipientType: "USER" | "GROUP";
   recipientId: number;
   recipientName: string;
-  locationName: string | null;
   parentId: number | null;
+  path: string | null;
 };
+
+export function getParentFolderName(shareInfo: ShareInfo): string | null {
+  if (shareInfo.path === null) {
+    return null;
+  }
+  const parts = shareInfo.path.split("/");
+  return parts[parts.length - 1];
+}
 
 export type ShareInfoResponse = {
   sharedDocId: number;

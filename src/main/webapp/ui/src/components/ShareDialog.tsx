@@ -32,6 +32,7 @@ import useShare, {
   ShareInfo,
   ShareOption,
   NewShare,
+  getParentFolderName,
 } from "../hooks/api/useShare";
 import { doNotAwait } from "../util/Util";
 import useGroups from "../hooks/api/useGroups";
@@ -910,7 +911,8 @@ export function ShareDialog({
                                           <>
                                             {shareFolderChanges.get(
                                               share.shareId.toString(),
-                                            )?.name || share.locationName}
+                                            )?.name ||
+                                              getParentFolderName(share)}
                                             <Button
                                               size="small"
                                               sx={{ ml: 1 }}
@@ -1121,7 +1123,7 @@ export function ShareDialog({
                                     {notebookShares.map((share) => (
                                       <TableRow key={share.shareId}>
                                         <TableCell>
-                                          {share.locationName}
+                                          {getParentFolderName(share)}
                                         </TableCell>
                                         <TableCell>
                                           <Box>
