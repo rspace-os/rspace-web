@@ -878,12 +878,21 @@ const StoichiometryTable = React.forwardRef<
       sortable: false,
       flex: 1.5,
     }),
-    DataGridColumn.newColumnWithFieldName<"role", EditableMolecule>("role", {
-      headerName: "Role",
-      sortable: false,
-      flex: 1,
-      renderCell: (params) => <RoleChip role={params.value || ""} />,
-    }),
+    DataGridColumn.newColumnWithValueGetter<"role", EditableMolecule, string>(
+      "role",
+      ({ role }) =>
+        ({
+          REACTANT: "Reactant",
+          PRODUCT: "Product",
+          AGENT: "Reagent",
+        })[role] ?? "Unknown role",
+      {
+        headerName: "Role",
+        sortable: false,
+        flex: 1,
+        renderCell: ({ row }) => <RoleChip role={row.role || ""} />,
+      },
+    ),
     DataGridColumn.newColumnWithFieldName<"limitingReagent", EditableMolecule>(
       "limitingReagent",
       {
