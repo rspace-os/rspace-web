@@ -60,7 +60,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
     boolean isParentFolderInSharedTree = false;
     if (parentFolder.isNotebook()) {
       if (model.getAttribute("bcrumb") != null
-          && !((Breadcrumb) model.getAttribute("bcrumb")).getElements().isEmpty()) {
+          && ((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() > 1) {
         Long grandParentId =
             ((Breadcrumb) model.getAttribute("bcrumb"))
                 .getElements()
