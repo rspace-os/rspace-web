@@ -5,7 +5,7 @@ import { makeStyles } from "tss-react/mui";
 const useStyles = makeStyles()((theme) => ({
   label: {
     padding: theme.spacing(0, 0.25, 0, 1.5),
-    backgroundColor: theme.palette.primary.background,
+    border: theme.borders.section,
     borderRadius: theme.spacing(0.5),
     letterSpacing: theme.typography.letterSpacing.spaced,
     marginLeft: "auto",

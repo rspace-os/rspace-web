@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import TitledBox from "../components/TitledBox";
+import TitledBox from "../../components/TitledBox";
 import { observer } from "mobx-react-lite";
 import FileForImport from "./Fields/File";
 import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
@@ -22,7 +22,7 @@ import clsx from "clsx";
 import { capitaliseJustFirstChar } from "../../util/Util";
 import { type URL } from "../../util/types";
 import { Link } from "react-router-dom";
-import { useLandmark } from "../../components/LandmarksContext";
+import { HeadingContext } from "@/components/DynamicHeadingLevel";
 
 const useStyles = makeStyles()((theme) => ({
   bold: {
@@ -67,10 +67,6 @@ const useStyles = makeStyles()((theme) => ({
   mt: {
     marginTop: theme.spacing(1),
   },
-  removeWrapper: {
-    marginLeft: theme.spacing(0.25),
-    marginTop: theme.spacing(4),
-  },
   tabsWrapper: {
     backgroundColor: theme.palette.primary.main,
     display: "flex",
@@ -87,7 +83,6 @@ const useStyles = makeStyles()((theme) => ({
 function RecordsImport(): React.ReactNode {
   const { importStore } = useStores();
   const importData = importStore.importData;
-  const mainContentRef = useLandmark("Import main content");
 
   const onTypeSelect = (newValue: ImportRecordType): URL => {
     return `/inventory/import?recordType=${newValue}`;
@@ -100,7 +95,6 @@ function RecordsImport(): React.ReactNode {
     | File
     | null
     | undefined;
-  const fileLoaded = importData?.byRecordType("fileLoaded");
   const submitting = importStore.isCurrentImportState("submitting");
 
   const importSubmittable = importData?.importSubmittable;
@@ -167,69 +161,64 @@ function RecordsImport(): React.ReactNode {
   }
 
   return (
-    <Box className={classes.headWrapper} ref={mainContentRef} role="main" aria-label="Import main content">
-      <ImportTabs />
-      <Grid container className={classes.fileButtonWrapper}>
-        <FileForImport loadedFile={loadedFileByRecordType} />
-        <Box className={classes.removeWrapper}>
-          <RemoveButton
-            onClick={() => importData?.clearFile()}
-            title={`Clear File and Mappings`}
-            disabled={!fileLoaded || submitting}
-          />
-        </Box>
-      </Grid>
+    <HeadingContext level={3}>
+      <Box className={classes.headWrapper}>
+        <ImportTabs />
+        <Grid container className={classes.fileButtonWrapper}>
+          <FileForImport loadedFile={loadedFileByRecordType} />
+        </Grid>
 
-      {/* Only samples need template handling */}
-      {isSamplesImport && (
-        <TitledBox title="Template Details" border>
-          <TemplateDetails />
+        {/* Only samples need template handling */}
+        {isSamplesImport && (
+          <TitledBox title="Template Details" border>
+            <TemplateDetails />
+          </TitledBox>
+        )}
+        <TitledBox title="CSV Column Conversion Settings" border>
+          <ColumnFieldMapping onTypeSelect={onTypeSelect} />
         </TitledBox>
-      )}
-      <TitledBox title="CSV Column Conversion Settings" border>
-        <ColumnFieldMapping onTypeSelect={onTypeSelect} />
-      </TitledBox>
-      <Grid
-        container
-        spacing={2}
-        className={clsx(classes.mt, classes.footWrapper)}
-      >
-        <Grid item className={classes.grow}>
-          <HelpTextAlert
-            severity="warning"
-            condition={showFooterAlert}
-            text={
-              <>
-                Some csv documents cannot be imported: check Settings in the{" "}
-                {notImportable().map((t, i) => (
-                  <span key={i}>
-                    {i > 0 && <>, </>}
-                    {t.toUpperCase() !== recordType ? (
-                      <Link
-                        to={onTypeSelect(t.toUpperCase() as ImportRecordType)}
-                      >
-                        {t}
-                      </Link>
-                    ) : (
-                      t
-                    )}
-                  </span>
-                ))}
-                {notImportable().length === 1 ? <> tab.</> : <> tabs.</>}
-              </>
-            }
-          />
+        <Grid
+          container
+          spacing={2}
+          className={clsx(classes.mt, classes.footWrapper)}
+        >
+          <Grid item className={classes.grow}>
+            <HelpTextAlert
+              severity="warning"
+              condition={showFooterAlert}
+              text={
+                <>
+                  Some csv documents cannot be imported: check Settings in the{" "}
+                  {notImportable().map((t, i) => (
+                    <span key={i}>
+                      {i > 0 && <>, </>}
+                      {t.toUpperCase() !== recordType ? (
+                        <Link
+                          to={onTypeSelect(t.toUpperCase() as ImportRecordType)}
+                        >
+                          {t}
+                        </Link>
+                      ) : (
+                        t
+                      )}
+                    </span>
+                  ))}
+                  {notImportable().length === 1 ? <> tab.</> : <> tabs.</>}
+                </>
+              }
+            />
+          </Grid>
+          <Grid item>
+            <SubmitSpinner
+              disabled={!importSubmittable || submitting}
+              onClick={() => importStore.submitImport()}
+              loading={submitting}
+              label={importButtonLabel}
+            />
+          </Grid>
         </Grid>
-        <Grid item>
-          <SubmitSpinner
-            disabled={!importSubmittable || submitting}
-            onClick={() => importStore.submitImport()}
-            loading={submitting}
-            label={importButtonLabel}
-          />
-        </Grid>
-      </Grid>
-    </Box>
+      </Box>
+    </HeadingContext>
   );
 }
 

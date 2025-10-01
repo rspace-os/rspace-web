@@ -6,6 +6,7 @@ import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import HeroImage from "/src/assets/graphics/NoActiveResult.svg";
 import docLinks from "../../../assets/DocLinks";
+import { darken } from "@mui/material/styles";
 
 const Center = withStyles<
   { children: React.ReactNode },
@@ -30,7 +31,12 @@ const Title = () => (
 );
 
 const Subtitle = () => (
-  <Typography variant="subtitle1">
+  <Typography
+    variant="subtitle1"
+    sx={{
+      color: (theme) => darken(theme.palette.primary.main, 0.2),
+    }}
+  >
     Let&apos;s get you started with the system.
   </Typography>
 );

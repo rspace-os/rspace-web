@@ -4,6 +4,7 @@ import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordInfoSharingInfo;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,11 +33,25 @@ public class DocumentSharesBuilder {
     return shares.stream().map(share -> toShare(record, share)).collect(Collectors.toList());
   }
 
+  /***
+   * Accepts both the BaseRecord and the RecordGroupSharing, despite RecordGroupSharing also containing the BaseRecord,
+   * as in the case of a notebook entry indirectly shared via being part of a shared notebook, the BaseRecord will be a
+   * notebook entry, whereas the RecordGroupSharing will refer to the notebook itself.
+   */
   private DocumentShares.Share toShare(BaseRecord record, RecordGroupSharing share) {
     boolean isUser = share.getSharee().isUser();
     BaseRecord location = locationResolver.resolveLocation(share, record);
-    Long locationId = location != null ? location.getId() : null;
-    String locationName = location != null ? location.getName() : null;
+    Long parentId = location != null ? location.getId() : null;
+
+    RSPath rsPath = locationResolver.resolvePath(share, record);
+    String path = rsPath == null ? null : rsPath.getPathAsString("/");
+
+    // Determine grandparentId (second-to-last element)
+    Long grandparentId = null;
+    if (rsPath != null && rsPath.size() >= 2) {
+      int gpIndex = rsPath.size() - 2;
+      grandparentId = rsPath.get(gpIndex).map(BaseRecord::getId).orElse(null);
+    }
 
     return DocumentShares.Share.builder()
         .shareId(share.getId())
@@ -47,8 +62,9 @@ public class DocumentSharesBuilder {
         .recipientType(
             isUser ? DocumentShares.RecipientType.USER : DocumentShares.RecipientType.GROUP)
         .permission(mapPermission(share.getPermType()))
-        .locationId(locationId)
-        .locationName(locationName)
+        .parentId(parentId)
+        .path(path)
+        .grandparentId(grandparentId)
         .build();
   }
 

@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordInfoSharingInfo;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.mapping.DocumentSharesBuilder;
@@ -62,15 +63,31 @@ public class DocumentSharesBuilderTest {
     notebookLocation.setId(2000L);
     notebookLocation.setName("MyNotebook");
 
+    Folder directRoot = new Folder();
+    directRoot.setId(900L);
+    directRoot.setName("SharedRoot");
+
+    Folder groupRoot = new Folder();
+    groupRoot.setId(800L);
+    groupRoot.setName("Group_Shared");
+
     when(resolver.resolveLocation(groupShare, record)).thenReturn(directLocation);
     when(resolver.resolveLocation(sharedViaNotebook, record)).thenReturn(notebookLocation);
+
+    directRoot.addChild(directLocation, sharer);
+    groupRoot.addChild(notebookLocation, sharer);
+
+    RSPath directPath = new RSPath(List.of(directRoot, directLocation));
+    RSPath notebookPath = new RSPath(List.of(groupRoot, notebookLocation));
+
+    when(resolver.resolvePath(groupShare, record)).thenReturn(directPath);
+    when(resolver.resolvePath(sharedViaNotebook, record)).thenReturn(notebookPath);
 
     RecordInfoSharingInfo shares =
         new RecordInfoSharingInfo(List.of(groupShare), List.of(sharedViaNotebook));
 
     DocumentShares result = builder.assemble(record, shares);
 
-    // assert basic doc fields
     assertEquals(record.getId(), result.getSharedDocId());
     assertEquals(record.getName(), result.getSharedDocName());
 
@@ -80,8 +97,9 @@ public class DocumentSharesBuilderTest {
     assertEquals(1L, direct.getShareId());
     assertEquals(DocumentShares.RecipientType.USER, direct.getRecipientType());
     assertEquals(DocumentShares.PermissionType.EDIT, direct.getPermission());
-    assertEquals(1000L, direct.getLocationId());
-    assertEquals("DirectLoc", direct.getLocationName());
+    assertEquals(1000L, direct.getParentId());
+    assertEquals("SharedRoot/DirectLoc", direct.getPath());
+    assertEquals(directRoot.getId(), direct.getGrandparentId());
 
     // assert implicit (notebook) shares mapped
     assertEquals(1, result.getNotebookShares().size());
@@ -89,7 +107,8 @@ public class DocumentSharesBuilderTest {
     assertEquals(2L, viaNotebook.getShareId());
     assertEquals(DocumentShares.RecipientType.GROUP, viaNotebook.getRecipientType());
     assertEquals(DocumentShares.PermissionType.READ, viaNotebook.getPermission());
-    assertEquals(2000L, viaNotebook.getLocationId());
-    assertEquals("MyNotebook", viaNotebook.getLocationName());
+    assertEquals(2000L, viaNotebook.getParentId());
+    assertEquals("Group_Shared/MyNotebook", viaNotebook.getPath());
+    assertEquals(groupRoot.getId(), viaNotebook.getGrandparentId());
   }
 }

@@ -16,7 +16,6 @@ import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
 import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.api.v1.model.GroupSharePostItem;
-import com.researchspace.api.v1.model.MoveRequest;
 import com.researchspace.api.v1.model.SharePermissionUpdate;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
@@ -408,15 +407,18 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(sharer.getId(), groupShare.getSharerId());
     assertEquals(group.getGroup().getId(), groupShare.getRecipientId(), 0L);
     assertEquals(group.getGroup().getDisplayName(), groupShare.getRecipientName());
-    assertEquals(group.getGroup().getCommunalGroupFolderId(), groupShare.getLocationId());
+    assertEquals(group.getGroup().getCommunalGroupFolderId(), groupShare.getParentId());
 
     assertEquals(DocumentShares.PermissionType.EDIT, userShare.getPermission());
     assertEquals(DocumentShares.RecipientType.USER, userShare.getRecipientType());
     assertEquals(sharer.getId(), userShare.getSharerId());
     assertEquals(group.getGroup().getId(), groupShare.getRecipientId(), 0L);
     assertEquals(userToShareWith.getDisplayName(), userShare.getRecipientName());
-    assertEquals(
-        sharer.getUsername() + "-" + userToShareWith.getUsername(), userShare.getLocationName());
+    assertEquals(sharer.getUsername() + "-" + userToShareWith.getUsername(), userShare.getPath());
+    // grandparentId should be null when the document is shared into the root of the shared
+    // hierarchy
+    assertEquals(null, userShare.getGrandparentId());
+    assertEquals(null, groupShare.getGrandparentId());
   }
 
   @Test

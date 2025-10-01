@@ -8,7 +8,7 @@ import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import GlobalId from "../../../components/GlobalId";
 import { RecordLink } from "../../../Inventory/components/RecordLink";
-import UserDetails from "../../../Inventory/components/UserDetails";
+import UserDetails from "../../../components/UserDetails";
 import RecordLocation from "../../../Inventory/components/RecordLocation";
 import TagListing from "../../../components/Tags/TagListing";
 import NavigateContext from "../../../stores/contexts/Navigate";

@@ -26,7 +26,7 @@ import { StyledMenu } from "../../../components/StyledMenu";
 import Portal from "@mui/material/Portal";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { UserCancelledAction } from "../../../util/error";
-import UserDetails from "../UserDetails";
+import UserDetails from "../../../components/UserDetails";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SampleModel from "../../../stores/models/SampleModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
@@ -68,7 +68,7 @@ const Details = withStyles<{ record: InventoryRecord }, { location: string }>(
     location: {
       marginTop: theme.spacing(0.5),
     },
-  })
+  }),
 )(({ record, classes }) => (
   <DescriptionList
     content={[
@@ -150,7 +150,7 @@ const Modified = withStyles<{ record: InventoryRecord }, { container: string }>(
       color: theme.palette.text.secondary,
       fontSize: "0.8em",
     },
-  })
+  }),
 )(({ record, classes }) => (
   <div className={classes.container}>
     <span>Modified </span>
@@ -194,7 +194,7 @@ const useStyles = makeStyles<{ fetching: boolean }>()(
       cursor: fetching ? "progress" : "zoom-in",
       backgroundSize: "contain",
     },
-  })
+  }),
 );
 
 type CardArgs = {
@@ -240,7 +240,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
 
   const [link, setLink] = useState<BlobUrl | null>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(
-    null
+    null,
   );
 
   const [fetching, setFetching] = useState(false);
@@ -316,7 +316,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
                   if (currentTarget instanceof HTMLElement) {
                     setAnchorEl(currentTarget);
                   }
-                }
+                },
               )}
             >
               <MoreHorizIcon fontSize="small" />
@@ -335,7 +335,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
                   }: {
                     hidden: boolean;
                     component: React.ReactNode;
-                  }) => component
+                  }) => component,
                 )}
             </StyledMenu>
           </>

@@ -10,7 +10,7 @@ import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import RadioField, {
   type RadioOption,
 } from "../../../components/Inputs/RadioField";
-import FormField from "../../../components/Inputs/FormField";
+import FormField from "../../components/Inputs/FormField";
 
 type DefaultAliasOption =
   | "aliquot"

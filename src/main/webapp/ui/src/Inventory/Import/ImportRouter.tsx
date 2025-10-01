@@ -8,6 +8,7 @@ import useStores from "../../stores/use-stores";
 import NavigationContext from "./NavigationContext";
 import Main from "../Main";
 import Box from "@mui/material/Box";
+import { useLandmark } from "@/components/LandmarksContext";
 
 export default function ImportRouter(): React.ReactNode {
   const { importStore } = useStores();
@@ -21,7 +22,7 @@ export default function ImportRouter(): React.ReactNode {
    */
   useEffect(() => {
     importStore.importData?.updateRecordType(
-      new URLSearchParams(location.search)
+      new URLSearchParams(location.search),
     );
   }, [location.search]);
 
@@ -30,6 +31,7 @@ export default function ImportRouter(): React.ReactNode {
   }, []);
 
   const sidebarId = React.useId();
+  const mainContentRef = useLandmark("Import main content");
 
   const recordType = importStore.importData?.recordType;
   if (
@@ -42,7 +44,7 @@ export default function ImportRouter(): React.ReactNode {
         <Header sidebarId={sidebarId} />
         <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
           <Sidebar id={sidebarId} />
-          <Main>
+          <Main aria-label="Import main content" ref={mainContentRef}>
             <RecordsImport />
           </Main>
         </Box>

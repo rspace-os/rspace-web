@@ -41,7 +41,7 @@ import useFolders from "../hooks/api/useFolders";
 import useDocuments from "../hooks/api/useDocuments";
 import FolderSelectionDialog from "./FolderSelectionDialog";
 import { FolderTreeNode } from "../hooks/api/useFolders";
-import UserDetails from "../Inventory/components/UserDetails";
+import UserDetails from "./UserDetails";
 import GroupDetails from "./GroupDetails";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../accentedTheme";

@@ -28,7 +28,7 @@ const useStyles = makeStyles<{ deleted: boolean }>()((theme, { deleted }) => ({
     color: "white",
     backgroundColor: deleted
       ? theme.palette.deletedGrey
-      : theme.palette.primary.main,
+      : theme.palette.primary.dark,
   },
   absolute: {
     position: "absolute",

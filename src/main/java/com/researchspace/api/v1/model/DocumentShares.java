@@ -29,8 +29,9 @@ public class DocumentShares {
     private String recipientName;
     private RecipientType recipientType;
     private PermissionType permission;
-    private Long locationId;
-    private String locationName;
+    private Long parentId;
+    private Long grandparentId;
+    private String path;
   }
 
   public enum PermissionType {

@@ -1,10 +1,10 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
 import { makeStyles } from "tss-react/mui";
 import Divider from "@mui/material/Divider";
 import clsx from "clsx";
+import { Heading } from "@/components/DynamicHeadingLevel";
 
 const useStyles = makeStyles<{ allowOverflow: boolean }>()(
   (theme, { allowOverflow }) => ({
@@ -29,7 +29,7 @@ const useStyles = makeStyles<{ allowOverflow: boolean }>()(
       margin: theme.spacing(1, 0),
       borderRadius: theme.spacing(0.5),
     },
-  })
+  }),
 );
 
 type TitledBoxArgs = {
@@ -60,13 +60,14 @@ function TitledBox({
           <Grid item className={classes.titleContainer}>
             <Grid container direction="row" alignItems="center">
               <Grid item style={{ flexGrow: 1 }}>
-                <Typography
+                <Heading
                   variant="h5"
-                  component="h5"
-                  className={classes.title}
+                  sx={{
+                    wordBreak: "break-word",
+                  }}
                 >
                   {title}
-                </Typography>
+                </Heading>
               </Grid>
             </Grid>
           </Grid>

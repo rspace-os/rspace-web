@@ -5,6 +5,8 @@ import Typography from "@mui/material/Typography";
 import NoResultsSvg from "/src/assets/graphics/NoResults.svg";
 import Divider from "@mui/material/Divider";
 import docLinks from "../../../assets/DocLinks";
+import Link from "@mui/material/Link";
+import { darken } from "@mui/material/styles";
 
 type NoResultsArgs = {
   query: string | null;
@@ -23,7 +25,6 @@ const NoResults = withStyles<
   root: {
     fontWeight: 700,
     fontSize: "1.6rem",
-    color: theme.palette.lightestGrey,
     display: "flex",
     flexDirection: "column",
     height: "100%",
@@ -31,11 +32,11 @@ const NoResults = withStyles<
     marginBottom: theme.spacing(1),
   },
   noresults: {
-    color: theme.palette.primary.placeholderText,
+    color: darken(theme.palette.primary.main, 0.2),
   },
   help: {
     textAlign: "center",
-    color: theme.palette.primary.placeholderText,
+    color: darken(theme.palette.primary.main, 0.2),
     marginTop: theme.spacing(2),
     fontSize: "1rem",
     maxWidth: "20em",
@@ -64,17 +65,17 @@ const NoResults = withStyles<
         <Divider orientation="horizontal" className={classes.divider} />
         <Typography className={classes.help}>
           For more information on using Lucene queries, see{" "}
-          <a href={docLinks.luceneSyntax} rel="noreferrer" target="_blank">
+          <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank">
             advanced search
-          </a>{" "}
+          </Link>{" "}
           and the related{" "}
-          <a
+          <Link
             href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
             rel="noreferrer"
             target="_blank"
           >
             Apache page
-          </a>
+          </Link>
           .
         </Typography>
       </>

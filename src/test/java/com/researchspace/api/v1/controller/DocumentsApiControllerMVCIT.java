@@ -1197,7 +1197,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         .andReturn();
   }
 
-  private void assertGroupShareLocation(Long docId, String apiKey, Long expectedLocationId)
+  private void assertGroupShareLocation(Long docId, String apiKey, Long expectedParentId)
       throws Exception {
     MvcResult getSharesForDocResult =
         this.mockMvc
@@ -1216,6 +1216,6 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .findFirst()
             .orElse(null);
 
-    assertEquals(expectedLocationId, groupShare.getLocationId());
+    assertEquals(expectedParentId, groupShare.getParentId());
   }
 }
