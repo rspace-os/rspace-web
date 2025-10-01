@@ -32,8 +32,8 @@ export type ShareInfo = {
   recipientType: "USER" | "GROUP";
   recipientId: number;
   recipientName: string;
-  locationId: number | null;
   locationName: string | null;
+  parentId: number | null;
 };
 
 export type ShareInfoResponse = {
