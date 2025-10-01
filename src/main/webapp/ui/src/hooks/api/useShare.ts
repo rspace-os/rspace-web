@@ -33,6 +33,7 @@ export type ShareInfo = {
   recipientId: number;
   recipientName: string;
   parentId: number | null;
+  grandparentId: number | null;
   path: string | null;
 };
 
