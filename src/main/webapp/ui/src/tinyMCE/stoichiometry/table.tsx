@@ -386,7 +386,7 @@ const RoleChip = ({ role }: { role: string }) => {
       case "catalyst":
         return { color: "#7b1fa2", backgroundColor: "#f3e5f5" }; // Purple
       case "agent":
-        return { color: "#ed6c02", backgroundColor: "#fff3e0" }; // Orange
+        return { color: "#b04500", backgroundColor: "#fff3e0" }; // Orange
       default:
         return { color: "#616161", backgroundColor: "#f5f5f5" }; // Grey
     }
@@ -547,7 +547,10 @@ function Toolbar({
                           zIndex: 1,
                         }}
                       >
-                        <CircularProgress color="inherit" />
+                        <CircularProgress
+                          color="inherit"
+                          aria-label="Loading gallery picker"
+                        />
                       </Backdrop>
                     }
                   >
@@ -638,7 +641,7 @@ function LoadingDialog({
           py={3}
           gap={2}
         >
-          <CircularProgress size={40} />
+          <CircularProgress size={40} aria-label={message} />
           <Typography variant="body1" textAlign="center">
             {message}
           </Typography>
@@ -1062,7 +1065,7 @@ const StoichiometryTable = React.forwardRef<
         my={2}
         gap={1}
       >
-        <CircularProgress size={24} />
+        <CircularProgress size={24} aria-label="Loading stoichiometry table" />
         <Typography variant="body2" color="textSecondary">
           Loading stoichiometry table...
         </Typography>
