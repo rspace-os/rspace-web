@@ -501,10 +501,10 @@ export function ShareDialog({
               });
               continue;
             }
-            if (newLocationId !== originalShare.locationId && newLocationId) {
+            if (newLocationId !== originalShare.parentId && newLocationId) {
               await move({
                 documentId: originalShare.sharedDocId,
-                sourceFolderId: originalShare.locationId!,
+                sourceFolderId: originalShare.parentId!,
                 destinationFolderId: newLocationId,
               });
               continue;
