@@ -12,6 +12,7 @@ import com.researchspace.core.util.throttling.TooManyRequestsException;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
+import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
 import java.util.ArrayList;
 import java.util.List;
@@ -161,6 +162,14 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
             ex.getLocalizedMessage(),
             "");
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  @ExceptionHandler(ChemistryClientException.class)
+  public ResponseEntity<Object> handleChemistryClientException(
+      ChemistryClientException ex, WebRequest request) {
+    HttpStatus status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    ApiError apiError = new ApiError(status, 50001, ex.getMessage(), "");
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 

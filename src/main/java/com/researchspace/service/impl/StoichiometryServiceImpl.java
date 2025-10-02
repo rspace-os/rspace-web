@@ -91,17 +91,18 @@ public class StoichiometryServiceImpl implements StoichiometryService {
           "Stoichiometry already exists for reaction chemId=" + chemId + ", stoichId=" + e.getId());
     }
 
-    Optional<ElementalAnalysisDTO> analysis = chemistryProvider.getStoichiometry(chemical);
     try {
+      Optional<ElementalAnalysisDTO> analysis = chemistryProvider.getStoichiometry(chemical);
       if (analysis.isEmpty()) {
         throw new StoichiometryException(
-            "Unable to generate stoichiometry: problem generating analysis for chemical with ID "
-                + chemId);
+            "Unable to generate stoichiometry for chemId="
+                + chemId
+                + ": chemistry provider returned no analysis");
       }
       return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user);
     } catch (IOException e) {
       throw new StoichiometryException(
-          "Problem while creating new Stoichiometry: " + e.getMessage());
+          "Problem while creating new Stoichiometry (chemId=" + chemId + ")", e);
     }
   }
 
