@@ -98,7 +98,6 @@ public class ChemistryClient {
           e);
 
       throw new ChemistryClientException(errorReason, status, e);
-
     } catch (RestClientException e) {
       log.error("Error calling chemistry service at url={} requestBody={}", url, body, e);
       throw new ChemistryClientException("Chemistry service call failed");
