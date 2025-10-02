@@ -9,12 +9,14 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Breadcrumb;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import java.util.Collection;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
@@ -22,6 +24,7 @@ import org.springframework.ui.Model;
 /*
  * Helper class for workspace controller to create a DTO object to pass to the UI with permissions info.
  */
+@Log4j
 @Service
 public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOBuilder {
 
@@ -54,9 +57,23 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
     boolean createFolder =
         parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE_FOLDER);
 
-    boolean isParentFolderInSharedTree =
-        parentFolder.hasAncestorOfType(INDIVIDUAL_SHARED_FOLDER_ROOT, true)
-            || parentFolder.hasAncestorOfType(SHARED_GROUP_FOLDER_ROOT, true);
+    boolean isParentFolderInSharedTree = false;
+    if (parentFolder.isNotebook()) {
+      if (model.getAttribute("bcrumb") != null
+          && ((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() > 1) {
+        Long grandParentId =
+            ((Breadcrumb) model.getAttribute("bcrumb"))
+                .getElements()
+                .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
+                .getId();
+        isParentFolderInSharedTree = fMger.isFolderInSharedTree(parentFolder, grandParentId, usr);
+      } else {
+        log.warn(
+            "it was not possible to get Breadcumbs from the model for notebookID="
+                + parentFolder.getId());
+      }
+    }
+
     ActionPermissionsDTO dto = new ActionPermissionsDTO();
     if (records != null) {
       // allowed options per record in page.

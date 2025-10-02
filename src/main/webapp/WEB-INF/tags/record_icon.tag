@@ -118,7 +118,7 @@
 <c:choose>
     <c:when test="${record.notebook}">
   	    <%-- This opens the notebook directly in Notebook view --%>
-		<a data-id="${record.id}" class="notebook" href="<c:url value='/notebookEditor/${record.id}?settingsKey=${settingsKey}'/>">
+		<a data-id="${record.id}" class="notebook" href="<c:url value='/notebookEditor/${record.id}?settingsKey=${settingsKey}&grandParentId=${bcrumb.getFolderId()}'/>">
 			 <img src="<c:url value='${src}'/>" alt="${alt}" title="${alt}" height="${imgHeight}" width="${imgWidth}" data-type="${type}"/>
 		</a>
     </c:when>

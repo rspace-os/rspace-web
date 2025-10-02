@@ -108,7 +108,15 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
     when(permissionUtils.isPermitted(
             any(BaseRecord.class), any(PermissionType.class), any(User.class)))
         .thenReturn(false);
-    notebookEditorController.openNotebook(1l, null, "", model, mockSession, mockPrincipal);
+    notebookEditorController.openNotebook(1L, null, "", 2L, model, mockSession, mockPrincipal);
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void handleRequestNoGrandParentId() throws AuthorizationException {
+    when(permissionUtils.isPermitted(
+            any(BaseRecord.class), any(PermissionType.class), any(User.class)))
+        .thenReturn(true);
+    notebookEditorController.openNotebook(1L, null, "", null, model, mockSession, mockPrincipal);
   }
 
   @Test
@@ -118,7 +126,7 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
             any(BaseRecord.class), any(PermissionType.class), any(User.class)))
         .thenReturn(true);
     ModelAndView results =
-        notebookEditorController.openNotebook(1l, null, "", model, mockSession, mockPrincipal);
+        notebookEditorController.openNotebook(1L, null, "", 2L, model, mockSession, mockPrincipal);
     assertNotNull(results);
   }
 
@@ -129,14 +137,15 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
             any(BaseRecord.class), any(PermissionType.class), any(User.class)))
         .thenReturn(true);
     ModelAndView result =
-        notebookEditorController.openNotebook(1l, null, "", model, mockSession, mockPrincipal);
+        notebookEditorController.openNotebook(1L, null, "", 2L, model, mockSession, mockPrincipal);
     assertFalse((Boolean) result.getModelMap().getAttribute("enforce_ontologies"));
     User aPI = createAndSaveAPi();
     Group g = createGroup("aGroup", aPI);
     g.setEnforceOntologies(true);
     grpMgr.addUserToGroup(user.getUsername(), g.getId(), RoleInGroup.DEFAULT);
     grpMgr.saveGroup(g, user);
-    result = notebookEditorController.openNotebook(1l, null, "", model, mockSession, mockPrincipal);
+    result =
+        notebookEditorController.openNotebook(1L, null, "", 2L, model, mockSession, mockPrincipal);
     assertTrue((Boolean) result.getModelMap().getAttribute("enforce_ontologies"));
   }
 
@@ -147,20 +156,22 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
             any(BaseRecord.class), any(PermissionType.class), any(User.class)))
         .thenReturn(true);
     ModelAndView result =
-        notebookEditorController.openNotebook(1l, null, "", model, mockSession, mockPrincipal);
+        notebookEditorController.openNotebook(1L, null, "", 2L, model, mockSession, mockPrincipal);
     assertFalse((Boolean) result.getModelMap().getAttribute("allow_bioOntologies"));
     User aPI = createAndSaveAPi();
     Group aProjectG = createGroup("aProjectGroup", aPI);
     aProjectG.setGroupType(GroupType.PROJECT_GROUP);
     grpMgr.addUserToGroup(user.getUsername(), aProjectG.getId(), RoleInGroup.DEFAULT);
     grpMgr.saveGroup(aProjectG, user);
-    result = notebookEditorController.openNotebook(1l, null, "", model, mockSession, mockPrincipal);
+    result =
+        notebookEditorController.openNotebook(1L, null, "", 2L, model, mockSession, mockPrincipal);
     assertFalse((Boolean) result.getModelMap().getAttribute("allow_bioOntologies"));
     Group g = createGroup("aGroup", aPI);
     g.setAllowBioOntologies(true);
     grpMgr.addUserToGroup(user.getUsername(), g.getId(), RoleInGroup.DEFAULT);
     grpMgr.saveGroup(g, user);
-    result = notebookEditorController.openNotebook(1l, null, "", model, mockSession, mockPrincipal);
+    result =
+        notebookEditorController.openNotebook(1L, null, "", 2L, model, mockSession, mockPrincipal);
     assertTrue((Boolean) result.getModelMap().getAttribute("allow_bioOntologies"));
   }
 
@@ -173,20 +184,20 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
             any(BaseRecord.class), any(PermissionType.class), any(User.class)))
         .thenReturn(true);
     ModelAndView results =
-        notebookEditorController.openNotebook(1l, null, "", model, mockSession, mockPrincipal);
+        notebookEditorController.openNotebook(1L, null, "", 2L, model, mockSession, mockPrincipal);
     assertNotNull(results);
     assertTrue((Boolean) results.getModelMap().getAttribute("isPublished"));
   }
 
   @Test
   public void deleteEntryTest() throws Exception {
-    notebookEditorController.deleteEntry(1l, 1l, mockPrincipal);
+    notebookEditorController.deleteEntry(1L, 1L, mockPrincipal);
   }
 
   @Test(expected = RecordAccessDeniedException.class)
   public void deleteEntryTestAccessDenied() throws Exception {
     recordManagerStub.canEdit(false);
-    notebookEditorController.deleteEntry(1l, 1l, mockPrincipal);
+    notebookEditorController.deleteEntry(1L, 1L, mockPrincipal);
   }
 
   private StructuredDocument createRecordWithId(Long id) {
