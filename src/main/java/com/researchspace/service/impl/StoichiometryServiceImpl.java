@@ -102,7 +102,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user);
     } catch (IOException e) {
       throw new StoichiometryException(
-          "Problem while creating new Stoichiometry (chemId=" + chemId + ")", e);
+          "Problem while creating new Stoichiometry: " + e.getMessage());
     }
   }
 
