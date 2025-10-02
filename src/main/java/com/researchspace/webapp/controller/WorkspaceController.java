@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.MediaUtils.getContentTypeForFileExtension;
 import static com.researchspace.core.util.MediaUtils.getExtension;
+import static com.researchspace.model.utils.Utils.convertToLongOrNull;
 import static com.researchspace.session.SessionAttributeUtils.RS_DELETE_RECORD_PROGRESS;
 
 import com.axiope.search.SearchManager;
@@ -401,8 +402,9 @@ public class WorkspaceController extends BaseController {
   public String createNotebookAndRedirect(
       @PathVariable("recordid") long parentRecordId,
       @RequestParam("notebookNameField") String notebookName,
-      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Principal principal) {
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;
     Folder originalParentFolder = null;
