@@ -48,10 +48,7 @@ function editEntryHandler(e) {
 }
 
 function updateEntryNameInBreadcrumbs(entryId, entryName) {
-  /* FIXME: this is too simplistic, in case of shared entries the parent notebook is not visible at all.
-    * also particular entries may be shared into various locations of a Shared folder */
-
-  // reset breadcrumbs to notebook level 
+  // reset breadcrumbs to notebook level
   RS.addBreadcrumbAndRefresh("editorBcrumb", "" + notebookId, notebookName);
   // add breadcrumb for notebook entry
   RS.addBreadcrumbAndRefresh("editorBcrumb", "" + entryId, RS.escapeHtml(entryName));

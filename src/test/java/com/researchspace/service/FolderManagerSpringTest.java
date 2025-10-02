@@ -8,10 +8,12 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.licensews.LicenseExpiredException;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.controller.ServiceLoggerAspct;
@@ -21,10 +23,12 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class FolderManagerSpringTest extends SpringTransactionalTest {
+
   User user;
 
   private @Autowired RecordManager recordManager;
   private @Autowired ServiceLoggerAspct aspect;
+  private @Autowired SharingHandler sharingHandler;
 
   @Before
   public void setUp() throws Exception {
@@ -108,6 +112,33 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
     // check there is now 1 less child
     assertEquals(b4, numChildrenAfter);
     assertEquals(b4, fromDB);
+  }
+
+  @Test
+  public void isFolderInSharedTreeTest() throws IllegalAddChildOperation {
+    User piUser = createAndSaveAPi();
+    initialiseContentWithEmptyContent(piUser);
+    assertTrue(piUser.isContentInitialized());
+    logoutAndLoginAs(piUser);
+
+    Group group = createGroup("groupName", piUser);
+    addUsersToGroup(piUser, group, user);
+    Folder grpFolderShared = folderMgr.getFolder(group.getCommunalGroupFolderId(), piUser);
+
+    Notebook notebookShared = recordFactory.createNotebook("notebookShared", user);
+    sharingHandler.shareIntoSharedFolderOrNotebook(
+        user,
+        grpFolderShared,
+        notebookShared.getId(),
+        grpFolderShared.getParents().stream()
+            .filter(recToParent -> recToParent.getFolder().getOwner().equals(user))
+            .findFirst()
+            .get()
+            .getFolder()
+            .getId());
+
+    assertTrue(folderMgr.isFolderInSharedTree(notebookShared, grpFolderShared.getId(), user));
+    assertTrue(folderMgr.isFolderInSharedTree(notebookShared, grpFolderShared.getId(), piUser));
   }
 
   @Test

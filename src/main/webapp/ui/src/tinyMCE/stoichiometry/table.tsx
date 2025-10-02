@@ -386,7 +386,7 @@ const RoleChip = ({ role }: { role: string }) => {
       case "catalyst":
         return { color: "#7b1fa2", backgroundColor: "#f3e5f5" }; // Purple
       case "agent":
-        return { color: "#ed6c02", backgroundColor: "#fff3e0" }; // Orange
+        return { color: "#b04500", backgroundColor: "#fff3e0" }; // Orange
       default:
         return { color: "#616161", backgroundColor: "#f5f5f5" }; // Grey
     }
@@ -547,7 +547,10 @@ function Toolbar({
                           zIndex: 1,
                         }}
                       >
-                        <CircularProgress color="inherit" />
+                        <CircularProgress
+                          color="inherit"
+                          aria-label="Loading gallery picker"
+                        />
                       </Backdrop>
                     }
                   >
@@ -638,7 +641,7 @@ function LoadingDialog({
           py={3}
           gap={2}
         >
-          <CircularProgress size={40} />
+          <CircularProgress size={40} aria-label={message} />
           <Typography variant="body1" textAlign="center">
             {message}
           </Typography>
@@ -875,12 +878,21 @@ const StoichiometryTable = React.forwardRef<
       sortable: false,
       flex: 1.5,
     }),
-    DataGridColumn.newColumnWithFieldName<"role", EditableMolecule>("role", {
-      headerName: "Role",
-      sortable: false,
-      flex: 1,
-      renderCell: (params) => <RoleChip role={params.value || ""} />,
-    }),
+    DataGridColumn.newColumnWithValueGetter<"role", EditableMolecule, string>(
+      "role",
+      ({ role }) =>
+        ({
+          REACTANT: "Reactant",
+          PRODUCT: "Product",
+          AGENT: "Reagent",
+        })[role] ?? "Unknown role",
+      {
+        headerName: "Role",
+        sortable: false,
+        flex: 1,
+        renderCell: ({ row }) => <RoleChip role={row.role || ""} />,
+      },
+    ),
     DataGridColumn.newColumnWithFieldName<"limitingReagent", EditableMolecule>(
       "limitingReagent",
       {
@@ -922,6 +934,7 @@ const StoichiometryTable = React.forwardRef<
         type: "number",
         editable,
         headerAlign: "left",
+
         cellClassName: (params) => {
           if (limitingReagent && params.id === limitingReagent.id) {
             return "stoichiometry-disabled-cell";
@@ -1062,7 +1075,7 @@ const StoichiometryTable = React.forwardRef<
         my={2}
         gap={1}
       >
-        <CircularProgress size={24} />
+        <CircularProgress size={24} aria-label="Loading stoichiometry table" />
         <Typography variant="body2" color="textSecondary">
           Loading stoichiometry table...
         </Typography>
@@ -1123,11 +1136,42 @@ const StoichiometryTable = React.forwardRef<
         hideFooter
         disableColumnFilter
         getRowId={(row) => row.id}
-        processRowUpdate={(newRow) => {
-          const newMolecules = calculateUpdatedMolecules(allMolecules, newRow);
-          setAllMolecules(newMolecules);
-          onChangesUpdate?.(true);
-          return newMolecules.find((m) => m.id === newRow.id) || newRow;
+        processRowUpdate={(newRow, oldRow) => {
+          try {
+            /*
+             * Validate for negative values in numerical fields.
+             *
+             * Note: We implement validation here in processRowUpdate rather than
+             * using preProcessEditCellProps because the latter can interfere with
+             * normal cell editing operations, even when not actively setting errors.
+             * Using processRowUpdate allows us to properly validate and revert
+             * changes by returning the old row, providing a cleaner user experience.
+             */
+            const numericalFields = [
+              "coefficient",
+              "mass",
+              "moles",
+              "actualAmount",
+              "actualMoles",
+            ];
+            for (const field of numericalFields) {
+              const value = newRow[field as keyof EditableMolecule];
+              if (value !== null && value !== undefined && Number(value) < 0) {
+                throw new Error(`${field} cannot be negative`);
+              }
+            }
+
+            const newMolecules = calculateUpdatedMolecules(
+              allMolecules,
+              newRow,
+            );
+            setAllMolecules(newMolecules);
+            onChangesUpdate?.(true);
+            return newMolecules.find((m) => m.id === newRow.id) || newRow;
+          } catch (error) {
+            console.error("Error updating row:", (error as Error).message);
+            return oldRow; // Return the old row to revert the change
+          }
         }}
         slots={{
           toolbar: Toolbar,

@@ -2542,11 +2542,12 @@ RS.getVersionIdFromGlobalId = function (globalId) {
 }
 
 /* Returns URL to view a document */
-function getDocumentViewUrl(notebookId, recordId, withSettingsKey) {
+function getDocumentViewUrl(notebookId, recordId, grandParentId, withSettingsKey) {
   if (notebookId) {
     return "/notebookEditor/" + notebookId +
-      (recordId ? "?initialRecordToDisplay=" + recordId : "") +
-      (withSettingsKey ? "&settingsKey=" + settingsKey : "");
+        (grandParentId ? "?grandParentId=" + grandParentId : "") +
+        (recordId ? "&initialRecordToDisplay=" + recordId : "") +
+        (withSettingsKey ? "&settingsKey=" + settingsKey : "");
   } else {
     return "/workspace/editor/structuredDocument/" + recordId +
       (withSettingsKey ? "?settingsKey=" + settingsKey : "");

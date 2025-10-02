@@ -276,6 +276,14 @@ overrides the default filestore location.
 true/false will enable/disable the ability to set HTTP response headers
 to cache.
 
+#### Running RSpace in production mode locally
+
+Run the usual `mvn jetty:run` command, just change the active spring profile to `prod`
+i.e. pass a `-Dspring.profiles.active=prod` parameter.
+
+Note that when running through jetty, the `defaultDeployment.properties` file is not used for some reason.
+That means deployment properties that are not explicitly set in your `deployment.properties` file may have unexpected values. 
+
 #### Compiling RSpace production mode package
 
 Check the Jenkinsfile and mvn command run during "Build prodRelease-like package" stage:
