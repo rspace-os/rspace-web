@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.model.utils.Utils.convertToLongOrNull;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAllowBioOntologies;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
 
@@ -68,12 +69,12 @@ public class NotebookEditorController extends BaseController {
       @PathVariable("notebookId") Long notebookId,
       @RequestParam(value = "initialRecordToDisplay", required = false) Long entryId,
       @RequestParam(value = "settingsKey", required = false) String settingsKey,
-      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Model model,
       HttpSession session,
       Principal principal)
       throws AuthorizationException {
-
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = userManager.getUserByUsername(principal.getName());
     Notebook notebook = folderManager.getNotebook(notebookId);
 
