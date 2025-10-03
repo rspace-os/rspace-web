@@ -294,16 +294,38 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
               item ->
                   newCollections.put(
                       Integer.toString(new Random().nextInt()),
-                      Map.of(
-                          "DATAVERSE_URL",
-                          repoCfg.getServerURL().toString(),
-                          "DATAVERSE_APIKEY",
-                          repoCfg.getIdentifier(), // identifier = API key
-                          "DATAVERSE_ALIAS",
-                          item.getIdentifier(), // identifier = alias
-                          "_label",
-                          item.getIdentifier()))); // identifier = alias
+                      new HashMap<String, String>(
+                          Map.of(
+                              "DATAVERSE_URL",
+                              repoCfg.getServerURL().toString(),
+                              "DATAVERSE_APIKEY",
+                              repoCfg.getIdentifier(), // identifier = API key
+                              "DATAVERSE_ALIAS",
+                              item.getIdentifier(), // identifier = alias
+                              "_label",
+                              item.getIdentifier())) // identifier = alias
+                      ));
     }
     options.putAll(newCollections);
+  }
+
+  @Override
+  public void addMetadataLanguageToDataverseIntegrationOptions(Map<String, Object> options)
+      throws MalformedURLException {
+    for (Map.Entry<String, Object> dataverseEntry : options.entrySet()) {
+      Map<String, Object> dataverse = (Map<String, Object>) dataverseEntry.getValue();
+      RepositoryConfig repoCfg =
+          new RepositoryConfig(
+              new URL((String) dataverse.get("DATAVERSE_URL")),
+              (String) dataverse.get("DATAVERSE_APIKEY"),
+              null,
+              (String) dataverse.get("DATAVERSE_ALIAS"));
+      IRepository dataverseRepo = repoFactory.getRepository("dataverseRepository");
+      dataverseRepo.configure(repoCfg);
+      List<Map<String, String>> metadataLanguages =
+          ((DataverseRSpaceRepository) dataverseRepo).getMetadataLanguage();
+      dataverse.put("metadataLanguages", metadataLanguages);
+      dataverseEntry.setValue(dataverse);
+    }
   }
 }

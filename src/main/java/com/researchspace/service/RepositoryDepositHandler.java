@@ -81,4 +81,7 @@ public interface RepositoryDepositHandler {
   RepoUIConfigInfo getDigitalCommonsDataRepoUIConfigInfo(User user) throws MalformedURLException;
 
   void populateDataverseOptions(Map<String, Object> options) throws MalformedURLException;
+
+  void addMetadataLanguageToDataverseIntegrationOptions(Map<String, Object> options)
+      throws MalformedURLException;
 }

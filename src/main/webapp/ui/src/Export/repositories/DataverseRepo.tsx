@@ -117,13 +117,13 @@ export default function DataverseRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={4}>
+      {repo.metadataLanguages.length > 0 && (<Grid item xs={4}>
         <TextField
           //TODO: deal with validation
-          //error={submitAttempt && !inputValidations.subject}
+          error={submitAttempt && !inputValidations.subject}
           name="metadataLanguage"
           select
-          label="Metadata language"
+          label="Metadata language *"
           defaultValue={null}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleMetadataLanguageChange}
@@ -132,13 +132,13 @@ export default function DataverseRepo({
           fullWidth
           value={metadataLanguage}
         >
-          {[{ name: "Hungarian", langCode: "hu" }, { name: "English", langCode: "en" }].map((option) => (
-            <MenuItem key={option.name} value={option.langCode}>
-              {option.name}
+          {repo.metadataLanguages.map((option) => (
+            <MenuItem key={option.title} value={option.locale}>
+              {option.title}
             </MenuItem>
           ))}
         </TextField>
-      </Grid>
+      </Grid>)}
       <Grid item xs={4}>
         <TextField
           name="license"

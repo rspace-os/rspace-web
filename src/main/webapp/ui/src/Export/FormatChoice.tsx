@@ -108,8 +108,10 @@ function FormatChoice({
                       label: repo.options[k]._label,
                       //@ts-expect-error Options is poorly typed
                       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                      repoConnectionInfo: { apiKey: repo.options[k].DATAVERSE_APIKEY, repositoryName: repo.options[k].DATAVERSE_ALIAS, serverURL: repo.options[k].DATAVERSE_URL}
-                      
+                      repoConnectionInfo: { apiKey: repo.options[k].DATAVERSE_APIKEY, repositoryName: repo.options[k].DATAVERSE_ALIAS, serverURL: repo.options[k].DATAVERSE_URL},
+                      //@ts-expect-error Options is poorly typed
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                      metadataLanguages: repo.options[k].metadataLanguages,
                     }) as Repo,
                 );
               }

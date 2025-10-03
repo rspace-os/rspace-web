@@ -70,6 +70,7 @@ public class RepositoryConfigurationController extends BaseController {
       var options = inf.getOptions();
       if (inf.getName().equals(DATAVERSE_APP_NAME)) {
         depositHandler.populateDataverseOptions(options);
+        depositHandler.addMetadataLanguageToDataverseIntegrationOptions(options);
       }
       info.setOptions(options);
       info.setDisplayName(inf.getDisplayName());
