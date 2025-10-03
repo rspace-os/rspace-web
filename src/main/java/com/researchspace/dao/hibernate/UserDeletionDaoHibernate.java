@@ -316,7 +316,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
   }
 
   private void deleteForms(Long userId, Session session) {
-   // Set the temp field column to NULL to avoid FK violation during deletion
+    // Set the temp field column to NULL to avoid FK violation during deletion
     execute(
         userId,
         session,
