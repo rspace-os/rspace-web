@@ -617,6 +617,69 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertUserNotExist(userToDelete);
   }
 
+  @Test
+  public void deleteUserWithFormHavingPreviousVersion() throws Exception {
+    User formCreator = createInitAndLoginAnyUser();
+    
+    RSForm originalForm = createAnyForm(formCreator);
+    originalForm.publish();
+    formMgr.save(originalForm);
+    
+    RSForm newVersion = createAnyForm(formCreator);
+    newVersion.publish();
+    formMgr.save(newVersion);
+
+    // Set originalForm as previousVersion for newVersion
+    jdbcTemplate.update(
+        "UPDATE RSForm SET previousVersion_id = ? WHERE id = ?",
+        originalForm.getId(),
+        newVersion.getId());
+    
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(formCreator.getId(), policy, sysadmin);
+    
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(formCreator);
+  }
+
+  @Test
+  public void deleteUserWithFormHavingTempFieldFormReference() throws Exception {
+    User formCreator = createInitAndLoginAnyUser();
+    
+    RSForm form1 = createAnyForm(formCreator);
+    form1.publish();
+    formMgr.save(form1);
+    
+    RSForm form2 = createAnyForm(formCreator);
+    form2.publish();
+    formMgr.save(form2);
+    
+    List<Long> fieldIds =
+        jdbcTemplate.queryForList(
+            "SELECT id FROM FieldForm WHERE form_id IN (?, ?)",
+            Long.class,
+            form1.getId(),
+            form2.getId());
+
+    // set up the temp field reference between the two forms
+    jdbcTemplate.update(
+        "UPDATE FieldForm SET tempFieldForm_id = ? WHERE id = ?", 
+        fieldIds.get(0), 
+        fieldIds.get(1));
+    
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(formCreator.getId(), policy, sysadmin);
+    
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(formCreator);
+  }
+
   private UserDeletionPolicy getDeleteTempUserPolicy() {
     return new UserDeletionPolicy(UserTypeRestriction.TEMP_USER);
   }
