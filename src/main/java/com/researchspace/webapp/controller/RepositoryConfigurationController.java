@@ -67,7 +67,11 @@ public class RepositoryConfigurationController extends BaseController {
     List<RepoUIConfigInfo> uiConfigs = new ArrayList<>();
     for (IntegrationInfo inf : activeInfos) {
       RepoUIConfigInfo info = getRepoUIConfigInfo(user, inf.getName());
-      info.setOptions(inf.getOptions());
+      Map<String, Object> options = inf.getOptions();
+      if (inf.getName().equals(DATAVERSE_APP_NAME)) {
+        depositHandler.addMetadataLanguageToDataverseIntegrationOptions(options);
+      }
+      info.setOptions(options);
       info.setDisplayName(inf.getDisplayName());
       uiConfigs.add(info);
     }

@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
 
 import com.researchspace.archive.ArchiveResult;
+import com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
@@ -36,8 +37,10 @@ import com.researchspace.webapp.controller.repositories.ZenodoUIConnectionConfig
 import com.researchspace.webapp.integrations.digitalcommonsdata.DigitalCommonsDataController;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -177,6 +180,26 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
       log.warn("Test connection to Dataverse failed - {}", result.getMessage());
     }
     return result;
+  }
+
+  @Override
+  public void addMetadataLanguageToDataverseIntegrationOptions(Map<String, Object> options)
+      throws MalformedURLException {
+    for (Map.Entry<String, Object> dataverseEntry : options.entrySet()) {
+      Map<String, Object> dataverse = (Map<String, Object>) dataverseEntry.getValue();
+      RepositoryConfig repoCfg =
+          new RepositoryConfig(
+              new URL((String) dataverse.get("DATAVERSE_URL")),
+              (String) dataverse.get("DATAVERSE_APIKEY"),
+              null,
+              (String) dataverse.get("DATAVERSE_ALIAS"));
+      IRepository dataverseRepo = repoFactory.getRepository("dataverseRepository");
+      dataverseRepo.configure(repoCfg);
+      List<Map<String, String>> metadataLanguages =
+          ((DataverseRSpaceRepository) dataverseRepo).getMetadataLanguage();
+      dataverse.put("metadataLanguages", metadataLanguages);
+      dataverseEntry.setValue(dataverse);
+    }
   }
 
   @Override
