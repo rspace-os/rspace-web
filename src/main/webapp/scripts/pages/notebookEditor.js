@@ -166,6 +166,14 @@ $(document).ready(function(e) {
     Form$.submit();
     e.preventDefault();
   });
+  
+  function appendGrandParentIdToForm($form) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = "grandParentId";
+    input.value = getGrandParentFolderId();
+    $form.append(input);
+  }
 
   window.addEventListener("ReactToolbarMounted", () => {
     if (typeof initWordChooserDlg === 'function') {
@@ -193,14 +201,6 @@ $(document).ready(function(e) {
         openProtocolsIoChooserDlg();
       });
       
-    function appendGrandParentIdToForm($form) {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = "grandParentId";
-      input.value = getGrandParentFolderId();
-      $form.append(input);
-    }
-    
     // Clicking on the document (directly) in the menu to create the document.
     $(document).on('click', '.directList', function (e){
       var form$=$("#createPopularSD"); 
