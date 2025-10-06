@@ -2168,5 +2168,8 @@ $(document).ready(function () {
     e.editor.on("ExecCommand", function (e) {
       RS.trackEvent("user:trigger:tiny_mce_command:document_editor", { command: e.command });
     });
+    e.editor.on("OpenWindow", function (e) {
+      RS.trackEvent("user:open:tiny_mce_window:document_editor", { window: document.querySelector(".tox-dialog__title").textContent });
+    });
   });
 });
