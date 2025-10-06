@@ -618,7 +618,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void deleteUserWithFormHavingPreviousVersion() throws Exception {
+  public void deleteUserFormThatReferencesPreviousVersion() throws Exception {
     User formCreator = createInitAndLoginAnyUser();
 
     RSForm originalForm = createAnyForm(formCreator);
@@ -646,7 +646,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void deleteUserWithFormHavingTempFieldFormReference() throws Exception {
+  public void deleteUserFormWithTempVersion() throws Exception {
     User formCreator = createInitAndLoginAnyUser();
 
     RSForm form1 = createAnyForm(formCreator);
