@@ -2162,3 +2162,11 @@ $(document).ready(function () {
     );
   }
 });
+
+$(document).ready(function () {
+  window.tinymce.on("AddEditor", function (e) {
+    e.editor.on("ExecCommand", function (e) {
+      RS.trackEvent("user:trigger:tiny_mce_command:document_editor", { command: e.command });
+    });
+  });
+});
