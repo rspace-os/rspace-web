@@ -33,6 +33,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -112,25 +113,24 @@ class ChemistryClientTest {
     assertEquals(Optional.of(extractionInfo), actual);
   }
 
-  @ParameterizedTest
-  @EnumSource(
-      value = HttpStatus.class,
-      names = {"BAD_REQUEST", "INTERNAL_SERVER_ERROR"})
-  public void whenExtractionResponseHasErrorStatus_thenReturnEmptyOptional(HttpStatus errorStatus) {
+  @Test
+  public void whenExtractionResponseHasErrorStatus_thenThrowChemistryClientException() {
     when(restTemplate.postForEntity(anyString(), any(), any()))
-        .thenReturn(new ResponseEntity<>("", errorStatus));
+        .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
 
-    Optional<ElementalAnalysisDTO> actual = chemistryClient.extract("CCC");
-    assertEquals(Optional.empty(), actual);
+    ChemistryClientException exception =
+        assertThrows(ChemistryClientException.class, () -> chemistryClient.extract("CCC"));
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
   }
 
   @Test
-  public void whenExtractRequestThrowsException_thenReturnEmptyOptional() {
+  public void whenExtractRequestThrowsException_thenThrowChemistryException() {
     when(restTemplate.postForEntity(anyString(), any(), any()))
         .thenThrow(new RestClientException(""));
 
-    Optional<ElementalAnalysisDTO> actual = chemistryClient.extract("CCC");
-    assertEquals(Optional.empty(), actual);
+    ChemistryClientException exception =
+        assertThrows(ChemistryClientException.class, () -> chemistryClient.extract("CCC"));
+    assertEquals("Chemistry service call failed", exception.getMessage());
   }
 
   @Test
