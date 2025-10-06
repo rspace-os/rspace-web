@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.dmptool.client.DMPToolClient;
 import com.researchspace.dmptool.client.DMPToolClientImpl;
 import com.researchspace.dmptool.model.DMPPlanScope;
+import com.researchspace.dmptool.model.DMPTooItem;
 import com.researchspace.dmptool.model.DMPToolDMP;
 import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.dmps.DMPUser;
@@ -23,7 +24,9 @@ import com.researchspace.webapp.controller.MVCTestBase;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -228,16 +231,21 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   public void doListPlans() throws Exception {
     DMPToolOAuthController.AccessToken clientCredentialToken = getClientCredentialToken();
 
-    // try conversion to API response object
+    // retrieve & deserialize plans owned by the user
     DMPToolList plansList =
         dmpToolProvider.listPlans(DMPPlanScope.MINE, clientCredentialToken.getAccessToken());
     assertFalse(plansList.getItems().isEmpty());
-    assertFalse(plansList.getItems().isEmpty());
-    DMPToolDMP firstPlan = plansList.getItems().get(0).getDmp();
-    assertNotNull(firstPlan.getId());
-    assertNotNull(firstPlan.getTitle());
-    assertNotNull(firstPlan.getDescription());
-    assertEquals("eng", firstPlan.getLanguage());
+
+    // check details of test plan
+    List<DMPToolDMP> matchingDmps = plansList.getItems().stream()
+        .map(DMPTooItem::getDmp)
+        .filter(p -> p.getId().equals(69563L))
+        .collect(Collectors.toList());
+    assertEquals(1, matchingDmps.size());
+    DMPToolDMP testDmp = matchingDmps.get(0);
+    assertEquals("Testing DMP integration", testDmp.getTitle());
+    assertNotNull(testDmp.getDescription());
+    assertEquals("eng", testDmp.getLanguage());
   }
 
   @Test
