@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import GalleryPicker from "../../eln/gallery/picker";
 import { MemoryRouter } from "react-router-dom";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import axios from "@/common/axios";
 
 // Define types for external interfaces
 type ButtonConfig = {
@@ -61,7 +62,15 @@ class GalleryPlugin {
                     open={newProps?.open ?? false}
                     onClose={newProps?.onClose}
                     onSubmit={(files) => {
-                      // TODO: insert into editor
+                      files.toArray().forEach((file) => {
+                        void axios
+                          .get(
+                            `/workspace/getRecordInformation?recordId=${file.id}`,
+                          )
+                          .then((response) => {
+                            addFromGallery(response.data.data);
+                          });
+                      });
                       newProps?.onClose?.();
                     }}
                   />
