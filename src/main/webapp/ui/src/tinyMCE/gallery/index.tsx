@@ -39,6 +39,13 @@ export interface Editor {
   getDoc: () => Document;
 }
 
+declare global {
+  interface Window {
+    // this is defined in ../../../scripts/pages/workspace/mediaGalleryManager.js
+    addFromGallery: (fileData: unknown) => void;
+  }
+}
+
 // Declare the global tinymce object
 declare const tinymce: {
   PluginManager: {
@@ -49,18 +56,29 @@ declare const tinymce: {
 
 class GalleryPlugin {
   constructor(editor: Editor) {
-    function* renderGallery(domContainer) {
+    function* renderGallery(domContainer: HTMLElement): Generator<
+      {
+        open: boolean;
+        onClose?: () => void;
+      },
+      void,
+      { open: boolean; onClose?: () => void }
+    > {
       const root = createRoot(domContainer);
       while (true) {
-        const newProps = yield;
+        let newProps: { open: boolean; onClose?: () => void } = {
+          open: false,
+          onClose: () => {},
+        };
+        newProps = yield newProps;
         root.render(
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <MemoryRouter>
                 <LandmarksProvider>
                   <GalleryPicker
-                    open={newProps?.open ?? false}
-                    onClose={newProps?.onClose}
+                    open={newProps.open}
+                    onClose={newProps.onClose ?? (() => {})}
                     onSubmit={(files) => {
                       files.toArray().forEach((file) => {
                         void axios
@@ -68,7 +86,9 @@ class GalleryPlugin {
                             `/workspace/getRecordInformation?recordId=${file.id}`,
                           )
                           .then((response) => {
-                            addFromGallery(response.data.data);
+                            window.addFromGallery(
+                              (response.data as { data: unknown }).data,
+                            );
                           });
                       });
                       newProps?.onClose?.();
@@ -88,7 +108,7 @@ class GalleryPlugin {
       document.body.appendChild(div);
     }
     const galleryRenderer = renderGallery(
-      document.getElementById("tinymce-gallery"),
+      document.getElementById("tinymce-gallery")!,
     );
     galleryRenderer.next({ open: false });
 
