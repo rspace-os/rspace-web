@@ -2087,7 +2087,7 @@
     <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk15on</artifactId>
-        <version>1.54</version>
+        <version>1.70</version>
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
