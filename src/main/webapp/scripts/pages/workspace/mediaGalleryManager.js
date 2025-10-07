@@ -1241,7 +1241,7 @@ function insertChemistryFileFromGallery(mediaType, data) {
 
 function insertSnippetFromGallery(data) {
   var fieldId = getFieldIdFromTextFieldId(tinymce.activeEditor.id);
-  var selected = $('.selectable input:checked').parents('div.selectable');
+  var selected = (data != null) ? data : $('.selectable input:checked').parents('div.selectable');
   var fromPaste = (data != null);
 
   // asynchronous, so when adding more than one snippet they might be inserted
