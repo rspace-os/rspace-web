@@ -69,6 +69,7 @@ module.exports = {
     tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.tsx",
     tinymcePubchem: "./src/tinyMCE/pubchem/index.tsx",
     tinymceStoichiometry: "./src/tinyMCE/stoichiometry/index.tsx",
+    tinymceGallery: "./src/tinyMCE/gallery/index.tsx",
     baseSearch: "./src/components/BaseSearch.tsx",
     confirmationDialog: "./src/components/ConfirmationDialog.js",
     imageEditor: "./src/Gallery/imageEditorDialog.js",
