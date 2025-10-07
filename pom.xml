@@ -1032,7 +1032,7 @@
     <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-core</artifactId>
-        <version>1.17</version>
+        <version>1.28.5</version>
     </dependency>
     <dependency>
         <groupId>org.jdom</groupId>
@@ -1124,7 +1124,7 @@
         <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
         <groupId>xalan</groupId>
         <artifactId>xalan</artifactId>
-        <version>2.7.2</version>
+        <version>2.7.3</version>
         <exclusions>
             <exclusion>
                 <groupId>xml-apis</groupId>
