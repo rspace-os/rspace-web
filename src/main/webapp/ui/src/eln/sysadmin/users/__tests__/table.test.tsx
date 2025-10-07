@@ -15,7 +15,6 @@ import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
 import { render, within } from "../../../../__tests__/customQueries";
 
-// @ts-expect-error global
 window.RS = { newFileStoresExportEnabled: false };
 
 const mockAxios = new MockAdapter(axios);
@@ -46,23 +45,23 @@ describe("Table Listing", () => {
         <ThemeProvider theme={materialTheme}>
           <UsersPage />
         </ThemeProvider>
-      </StyledEngineProvider>
+      </StyledEngineProvider>,
     );
 
     const grid = await screen.findByRole("grid");
     await waitFor(() =>
-      expect(within(grid).getAllByRole("row").length).toBeGreaterThan(1)
+      expect(within(grid).getAllByRole("row").length).toBeGreaterThan(1),
     );
 
     expect(
       // @ts-expect-error findTableCell exists on the custom within function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(grid).findTableCell({ columnHeading: "Usage", rowIndex: 1 })
+      await within(grid).findTableCell({ columnHeading: "Usage", rowIndex: 1 }),
     ).toHaveTextContent("362.01 kB");
     expect(
       // @ts-expect-error findTableCell exists on the custom within function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(grid).findTableCell({ columnHeading: "Usage", rowIndex: 2 })
+      await within(grid).findTableCell({ columnHeading: "Usage", rowIndex: 2 }),
     ).toHaveTextContent("0 B");
   });
 });

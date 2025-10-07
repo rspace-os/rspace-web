@@ -47,12 +47,14 @@ export interface Editor {
 }
 
 declare global {
+  interface RSGlobal {
+    insertTemplateIntoTinyMCE?: (templateName: string, data: unknown) => void;
+  }
+
   interface Window {
     // this is defined in ../../../scripts/pages/workspace/mediaGalleryManager.js
     addFromGallery: (fileData: unknown) => void;
-    RS: {
-      insertTemplateIntoTinyMCE: (templateName: string, data: unknown) => void;
-    };
+    RS: RSGlobal;
   }
 }
 
@@ -118,7 +120,7 @@ class GalleryPlugin {
                           nfsId: file.nfsId,
                           nfsType: (file.path[0] as Filestore).filesystemType,
                         };
-                        window.RS.insertTemplateIntoTinyMCE(
+                        window.RS.insertTemplateIntoTinyMCE?.(
                           "netFilestoreLink",
                           json,
                         );

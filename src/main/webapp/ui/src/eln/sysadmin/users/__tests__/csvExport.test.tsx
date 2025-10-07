@@ -19,7 +19,6 @@ import userEvent from "@testing-library/user-event";
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-member-access
 window.Blob = require("node:buffer").Blob;
 
-// @ts-expect-error global
 window.RS = { newFileStoresExportEnabled: false };
 
 const mockAxios = new MockAdapter(axios);
@@ -56,14 +55,14 @@ describe("CSV Export", () => {
           <ThemeProvider theme={materialTheme}>
             <UsersPage />
           </ThemeProvider>
-        </StyledEngineProvider>
+        </StyledEngineProvider>,
       );
 
       fireEvent.click(await screen.findByRole("button", { name: /Export/ }));
       fireEvent.click(
         screen.getByRole("menuitem", {
           name: /Export this page of rows to CSV/,
-        })
+        }),
       );
 
       expect(createObjectURL).toHaveBeenCalled();
@@ -96,7 +95,7 @@ describe("CSV Export", () => {
           <ThemeProvider theme={materialTheme}>
             <UsersPage />
           </ThemeProvider>
-        </StyledEngineProvider>
+        </StyledEngineProvider>,
       );
 
       const checkboxes = await screen.findAllByRole("checkbox", {
@@ -109,7 +108,7 @@ describe("CSV Export", () => {
       fireEvent.click(
         screen.getByRole("menuitem", {
           name: /Export selected rows to CSV/,
-        })
+        }),
       );
 
       expect(createObjectURL).toHaveBeenCalled();
@@ -139,11 +138,11 @@ describe("CSV Export", () => {
           <ThemeProvider theme={materialTheme}>
             <UsersPage />
           </ThemeProvider>
-        </StyledEngineProvider>
+        </StyledEngineProvider>,
       );
 
       fireEvent.click(
-        await screen.findByRole("button", { name: /Select columns/ })
+        await screen.findByRole("button", { name: /Select columns/ }),
       );
       const numberOfColumns = screen.getAllByRole("checkbox", {
         name: (name) => {
@@ -160,14 +159,14 @@ describe("CSV Export", () => {
       fireEvent.click(
         screen.getByRole("menuitem", {
           name: /Export this page of rows to CSV/,
-        })
+        }),
       );
 
       expect(createObjectURL).toHaveBeenCalled();
       if (typeof blob === "undefined")
         throw new Error("Impossible, because createObjectURL has been called");
       expect((await blob.text()).split("\n")[0].split(",").length).toBe(
-        numberOfColumns
+        numberOfColumns,
       );
     });
     test("The usage column should be a precise number.", async () => {
@@ -195,14 +194,14 @@ describe("CSV Export", () => {
           <ThemeProvider theme={materialTheme}>
             <UsersPage />
           </ThemeProvider>
-        </StyledEngineProvider>
+        </StyledEngineProvider>,
       );
 
       await user.click(await screen.findByRole("button", { name: /Export/ }));
       await user.click(
         screen.getByRole("menuitem", {
           name: /Export this page of rows to CSV/,
-        })
+        }),
       );
 
       expect(createObjectURL).toHaveBeenCalled();

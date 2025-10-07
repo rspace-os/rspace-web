@@ -23,7 +23,6 @@ import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
 
-// @ts-expect-error global
 window.RS = { newFileStoresExportEnabled: false };
 
 beforeEach(() => {
@@ -58,7 +57,7 @@ describe("Grant User PI Role", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <UsersPage />
-        </ThemeProvider>
+        </ThemeProvider>,
       );
 
       await waitFor(() => {
@@ -67,7 +66,7 @@ describe("Grant User PI Role", () => {
 
       await waitFor(() => {
         expect(
-          within(screen.getByRole("grid")).getAllByRole("row").length
+          within(screen.getByRole("grid")).getAllByRole("row").length,
         ).toBeGreaterThan(1);
       });
 
@@ -76,7 +75,7 @@ describe("Grant User PI Role", () => {
       });
 
       const checkbox = within(
-        await screen.findByRole("row", { name: /user8h/ })
+        await screen.findByRole("row", { name: /user8h/ }),
       ).getByRole("checkbox");
 
       await act(async () => {
@@ -88,7 +87,7 @@ describe("Grant User PI Role", () => {
       });
       await act(async () => {
         await user.click(
-          screen.getByRole("menuitem", { name: /Grant PI role/ })
+          screen.getByRole("menuitem", { name: /Grant PI role/ }),
         );
       });
 
@@ -96,11 +95,11 @@ describe("Grant User PI Role", () => {
 
       expect(
         within(screen.getByRole("dialog")).getByText(
-          "Please set your verification password in My RSpace before performing this action."
-        )
+          "Please set your verification password in My RSpace before performing this action.",
+        ),
       ).toBeVisible();
     },
-    40 * 1000
+    40 * 1000,
   );
   test(
     "When `checkVerificationPasswordNeeded` returns false, a message should not be shown.",
@@ -123,7 +122,7 @@ describe("Grant User PI Role", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <UsersPage />
-        </ThemeProvider>
+        </ThemeProvider>,
       );
 
       await waitFor(() => {
@@ -132,12 +131,12 @@ describe("Grant User PI Role", () => {
 
       await waitFor(() => {
         expect(
-          within(screen.getByRole("grid")).getAllByRole("row").length
+          within(screen.getByRole("grid")).getAllByRole("row").length,
         ).toBeGreaterThan(1);
       });
 
       const checkbox = within(
-        await screen.findByRole("row", { name: /user8h/ })
+        await screen.findByRole("row", { name: /user8h/ }),
       ).getByRole("checkbox");
 
       await act(async () => {
@@ -149,7 +148,7 @@ describe("Grant User PI Role", () => {
       });
       await act(async () => {
         await user.click(
-          screen.getByRole("menuitem", { name: /Grant PI role/ })
+          screen.getByRole("menuitem", { name: /Grant PI role/ }),
         );
       });
 
@@ -162,10 +161,10 @@ describe("Grant User PI Role", () => {
               content ===
               "To grant the PI role to please re-enter your password."
             );
-          })
+          }),
         ).toBeVisible();
       });
     },
-    40 * 1000
+    40 * 1000,
   );
 });
