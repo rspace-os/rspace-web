@@ -142,8 +142,8 @@ primary colour.
 
 Logos follow design standards:
 - **SVG format only** for scalability and performance
-- **Consistent dimensions** matching existing assets
-- **Brand-coloured borders** for logos requiring background contrast
+- **Consistent dimensions** matching existing assets. Currently, logos are exported from Illustrator on a 100x100px artboard. `Object > Expand` and `Type > Create Outlines` are used to ensure logo renders and scales properly.
+- **Brand-coloured background** while ensuring the logo itself has good contrast with its background; usually, this means using a fully white version of the logo.
 
 ### Accessibility Compliance
 
