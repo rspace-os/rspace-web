@@ -52,6 +52,20 @@ and MobX stores, while newer code uses functional components with hooks and Reac
 Context for state management. New code should avoid using MobX stores, and
 instead use React Context and custom hooks for state management.
 
+## Building the code
+
+There are two approaches to building the code based on whether you want to make
+changes to the frontend code that is bundled by webpack, which is to say any of
+the React or TypeScript code. To build the codebase in either case, you will
+need to have Node.js and NPM installed. To start the Web server with the
+frontend code compiled, simply add `-DgenerateReactDist=clean` to the Maven
+command line. This can be quite slow and is not necessary for frontend
+development, instead run the maven command normally but in a separate terminal
+run `npm install` and then `npm run serve` from this directory to start a
+process that watches for changes to the React code and recompiles it as
+necessary. This is much faster and provides a better development experience,
+with shorter feedback loops and source maps for easier debugging.
+
 ## Testing Strategy
 
 ### Testing Frameworks
