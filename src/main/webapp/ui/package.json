@@ -39,6 +39,8 @@
     "@types/jest-axe": "^3.5.9",
     "@types/jsonwebtoken": "=9.0.10",
     "@types/node": "^22.13.9",
+    "@types/react": "18.3.26",
+    "@types/react-dom": "18.3.7",
     "@types/react-leaflet": "^2.8.3",
     "@types/react-timeago": "^4.1.7",
     "@types/sockjs-client": "^1.5.4",
