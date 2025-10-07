@@ -536,6 +536,7 @@ export class Filestore implements GalleryFile {
   id: Id;
   filesystemId: number;
   filesystemName: string;
+  filesystemType: string;
   name: string;
   description: Description;
   readonly isFolder: boolean;
@@ -548,11 +549,13 @@ export class Filestore implements GalleryFile {
     name,
     filesystemId,
     filesystemName,
+    filesystemType,
   }: {
     id: Id;
     name: string;
     filesystemId: number;
     filesystemName: string;
+    filesystemType: string;
   }) {
     this.id = id;
     this.name = name;
@@ -561,6 +564,7 @@ export class Filestore implements GalleryFile {
     this.size = 0;
     this.filesystemId = filesystemId;
     this.filesystemName = filesystemName;
+    this.filesystemType = filesystemType;
     this.path = [];
     this.metadata = {};
   }
@@ -650,7 +654,7 @@ export class Filestore implements GalleryFile {
   }
 }
 
-class RemoteFile implements GalleryFile {
+export class RemoteFile implements GalleryFile {
   readonly nfsId: number | null;
   name: string;
   description: Description;
@@ -1364,12 +1368,19 @@ export function useGalleryListing({
                       .flatMap(Parsers.isString)
                       .elseThrow();
 
+                    const filesystemType = Parsers.getValueWithKey(
+                      "clientType",
+                    )(filesystem)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+
                     return Result.Ok<GalleryFile>(
                       new Filestore({
                         id,
                         name,
                         filesystemId,
                         filesystemName,
+                        filesystemType,
                       }),
                     );
                   } catch (e) {

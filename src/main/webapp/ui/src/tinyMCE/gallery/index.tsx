@@ -7,6 +7,13 @@ import GalleryPicker from "../../eln/gallery/picker";
 import { MemoryRouter } from "react-router-dom";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import axios from "@/common/axios";
+import {
+  Filestore,
+  LocalGalleryFile,
+  RemoteFile,
+} from "@/eln/gallery/useGalleryListing";
+import * as ArrayUtils from "@/util/ArrayUtils";
+import { IsValid, IsInvalid } from "@/components/ValidatingSubmitButton";
 
 // Define types for external interfaces
 type ButtonConfig = {
@@ -43,6 +50,9 @@ declare global {
   interface Window {
     // this is defined in ../../../scripts/pages/workspace/mediaGalleryManager.js
     addFromGallery: (fileData: unknown) => void;
+    RS: {
+      insertTemplateIntoTinyMCE: (templateName: string, data: unknown) => void;
+    };
   }
 }
 
@@ -80,7 +90,11 @@ class GalleryPlugin {
                     open={newProps.open}
                     onClose={newProps.onClose ?? (() => {})}
                     onSubmit={(files) => {
-                      files.toArray().forEach((file) => {
+                      const localFiles = ArrayUtils.filterClass(
+                        LocalGalleryFile,
+                        files.toArray(),
+                      );
+                      localFiles.forEach((file) => {
                         void axios
                           .get(
                             `/workspace/getRecordInformation?recordId=${file.id}`,
@@ -91,7 +105,36 @@ class GalleryPlugin {
                             );
                           });
                       });
+                      const remoteFiles = ArrayUtils.filterClass(
+                        RemoteFile,
+                        files.toArray(),
+                      );
+                      remoteFiles.forEach((file) => {
+                        const json = {
+                          name: file.name,
+                          linktype: "file",
+                          fileStoreId: file.path[0].id,
+                          relFilePath: file.remotePath,
+                          nfsId: file.nfsId,
+                          nfsType: (file.path[0] as Filestore).filesystemType,
+                        };
+                        window.RS.insertTemplateIntoTinyMCE(
+                          "netFilestoreLink",
+                          json,
+                        );
+                      });
+                      if (files.size > localFiles.length + remoteFiles.length) {
+                        throw new Error(
+                          "Some selected files were of an unsupported type",
+                        );
+                      }
                       newProps?.onClose?.();
+                    }}
+                    validateSelection={(file) => {
+                      return file instanceof LocalGalleryFile ||
+                        file instanceof RemoteFile
+                        ? IsValid()
+                        : IsInvalid("Unsupported file type");
                     }}
                   />
                 </LandmarksProvider>
