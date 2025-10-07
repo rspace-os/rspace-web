@@ -1013,6 +1013,10 @@
                 <groupId>com.healthmarketscience.jackcess</groupId>
                 <artifactId>jackcess</artifactId>
             </exclusion>
+            <exclusion>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+            </exclusion>
         </exclusions>
     </dependency>
     <dependency>
@@ -1033,6 +1037,16 @@
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-core</artifactId>
         <version>1.28.5</version>
+        <exclusions>
+            <exclusion>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+            </exclusion>
+        </exclusions>
     </dependency>
     <dependency>
         <groupId>org.jdom</groupId>
@@ -1102,6 +1116,10 @@
             <exclusion>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>xalan</groupId>
+                <artifactId>xalan</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
@@ -2101,6 +2119,10 @@
             <exclusion>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.jdom</groupId>
+                <artifactId>jdom2</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
