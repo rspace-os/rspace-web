@@ -237,10 +237,11 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
     assertFalse(plansList.getItems().isEmpty());
 
     // check details of test plan
-    List<DMPToolDMP> matchingDmps = plansList.getItems().stream()
-        .map(DMPTooItem::getDmp)
-        .filter(p -> p.getId().equals(69563L))
-        .collect(Collectors.toList());
+    List<DMPToolDMP> matchingDmps =
+        plansList.getItems().stream()
+            .map(DMPTooItem::getDmp)
+            .filter(p -> p.getId().equals(69563L))
+            .collect(Collectors.toList());
     assertEquals(1, matchingDmps.size());
     DMPToolDMP testDmp = matchingDmps.get(0);
     assertEquals("Testing DMP integration", testDmp.getTitle());

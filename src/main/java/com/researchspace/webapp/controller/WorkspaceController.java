@@ -31,7 +31,6 @@ import com.researchspace.model.audittrail.AuditSearchEvent;
 import com.researchspace.model.audittrail.CreateAuditEvent;
 import com.researchspace.model.audittrail.DuplicateAuditEvent;
 import com.researchspace.model.audittrail.HistoricalEvent;
-import com.researchspace.model.audittrail.MoveAuditEvent;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dto.SharingResult;
 import com.researchspace.model.dto.UserPublicInfo;
@@ -52,14 +51,11 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
-import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
-import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DetailedRecordInformationProvider;
@@ -1199,8 +1195,7 @@ public class WorkspaceController extends BaseController {
     User user = userManager.getAuthenticatedUserInSession();
 
     DetailedRecordInformation detailedInfo =
-        infoProvider.getDetailedRecordInformation(
-            recordId, getCurrentActiveUsers(), user, revision, userVersion);
+        infoProvider.getDetailedRecordInformation(recordId, user, revision, userVersion);
     return new AjaxReturnObject<>(detailedInfo, null);
   }
 
