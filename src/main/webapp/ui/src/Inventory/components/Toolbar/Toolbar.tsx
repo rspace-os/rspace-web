@@ -50,9 +50,6 @@ const useStyles = makeStyles<{
     padding: theme.spacing(1, 0.5, 1, 1.5),
     marginRight: theme.spacing(1),
   },
-  backButtonIcon: {
-    color: "white",
-  },
   illustrationWrapper: {
     position: "relative",
     bottom: 0,
@@ -126,7 +123,12 @@ function CustomToolbar({
               <ArrowBackIosIcon
                 fontSize="small"
                 data-test-id="backIcon"
-                className={classes.backButtonIcon}
+                /*
+                 * Lacking CSS layers support, we have to resort to inline styles
+                 * here to ensure that we have a higher specificity than the
+                 * theme
+                 */
+                style={{ color: "white" }}
               />
             </IconButton>
           )}

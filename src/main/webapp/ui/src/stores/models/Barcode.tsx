@@ -3,20 +3,19 @@ import {
   type PersistedBarcodeAttrs,
   type GeneratedBarcodeAttrs,
   type FromServer,
-  NewlyCreated,
   Deleted,
 } from "../definitions/Barcode";
 import React from "react";
 import { makeObservable, observable, computed, action } from "mobx";
 import { type Id } from "../definitions/BaseRecord";
-import { _LINK, type URL } from "../../util/types";
+import { type URL } from "../../util/types";
 import ApiService from "../../common/InvApiService";
 
 function fetchImage(url: URL, description: string): Promise<File> {
   return ApiService.query<Blob>(url, new URLSearchParams(), true).then(
     ({ data }) => {
       return new File([data], description, { type: "image/png" });
-    }
+    },
   );
 }
 

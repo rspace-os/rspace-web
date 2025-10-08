@@ -154,6 +154,7 @@ ui/dist/tinymcePubchem.js
 ui/dist/tinymcePyrat.js
 ui/dist/tinymceShortcuts.js
 ui/dist/tinymceSidebarInfo.js
+ui/dist/tinymceStoichiometry.js
 ui/dist/toastMessage.js
 ui/dist/userDetails.js
 ui/dist/workspaceToolbar.js

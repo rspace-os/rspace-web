@@ -27,8 +27,8 @@
 	<c:when test="${record.structuredDocument}">
 		<c:choose>
 			<c:when test="${record.notebookEntry and not empty parentType and parentType eq 'NOTEBOOK'}">
-				<c:url value='/notebookEditor/${recordId}?initialRecordToDisplay=${record.id}&settingsKey=${settingsKey}'
-					var="notebookentryLink" />
+				<c:url value='/notebookEditor/${recordId}?initialRecordToDisplay=${record.id}&settingsKey=${settingsKey}&grandParentId=${bcrumb.getFolderId()}'
+					var="notebookentryLink"/>
 
 				<a id="structuredDocument_${record.id}" class="structuredDocument recordNameCell"
 					href="${notebookentryLink}" title="${record.name}">${visibleRecordName}</a>

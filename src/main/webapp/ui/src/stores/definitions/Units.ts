@@ -5,8 +5,9 @@ import * as Parsers from "../../util/parsers";
 /**
  * @module
  * @desc Scientists often record data in different units of measure. This module
- *       defines enums for these different types of units, types and objects for
- *       model quantities of those units, and functions for converting between.
+ *       defines enums for these different types of units, TS types and objects
+ *       for modelling quantities of those units, and functions for converting
+ *       between them.
  */
 
 /**
@@ -151,7 +152,7 @@ export function toCommonUnit(value: QuantityValue, id: QuantityUnitId): number {
  */
 export function fromCommonUnit(
   value: QuantityValue,
-  id: QuantityUnitId
+  id: QuantityUnitId,
 ): number {
   const baseId = atomicUnitOfSameCategory(id);
   const gap = quantityUnitMagnitudes[id] - quantityUnitMagnitudes[baseId];
@@ -187,7 +188,7 @@ type DatePrecision =
  */
 export function truncateIsoTimestamp(
   isoTimestamp: string | Date,
-  precision: DatePrecision
+  precision: DatePrecision,
 ): Result<string> {
   const date = new Date(isoTimestamp);
   if (date.toString() === "Invalid Date")
@@ -226,7 +227,7 @@ export function todaysDate(): Date {
     truncateIsoTimestamp(new Date(), "date").orElseGet(() => {
       throw new Error("Impossible");
       // `new Date()` can't produce an invalid date
-    })
+    }),
   );
 }
 
@@ -239,9 +240,8 @@ export function todaysDate(): Date {
 export function getRelativeTime(targetDate: Date): string {
   const now = new Date();
   const futureDate = targetDate;
-  //const diffInSeconds = Math.floor((futureDate - now) / 1000);
   const diffInSeconds = Math.floor(
-    (futureDate.getTime() - now.getTime()) / 1000
+    (futureDate.getTime() - now.getTime()) / 1000,
   );
 
   const units: Array<{ name: Intl.RelativeTimeFormatUnit; seconds: number }> = [
@@ -258,7 +258,7 @@ export function getRelativeTime(targetDate: Date): string {
       const value = Math.floor(diffInSeconds / unit.seconds);
       return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
         value,
-        unit.name
+        unit.name,
       );
     }
   }
@@ -319,7 +319,7 @@ export const LIQUID_NITROGEN = -196;
 export function temperatureFromTo(
   from: TemperatureScale,
   to: TemperatureScale,
-  value: number
+  value: number,
 ): number {
   let valueInCelsius = value;
   if (from === KELVIN) valueInCelsius = value - 273.15;
@@ -342,6 +342,6 @@ export const validateTemperature = (temp: Temperature | null): Result<null> =>
       .flatMap((t) =>
         t.numericValue >= temperatureFromTo(CELSIUS, t.unitId, ABSOLUTE_ZERO)
           ? Result.Ok(null)
-          : Result.Error([new Error("Temperature is less than absolute zero")])
-      )
+          : Result.Error([new Error("Temperature is less than absolute zero")]),
+      ),
   );

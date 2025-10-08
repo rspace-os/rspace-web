@@ -1,9 +1,3 @@
-/*
- * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
- * "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
- * document are to be interpreted as described in RFC 2119.
- */
-
 import { type URL } from "../../util/types";
 import { type Container } from "./Container";
 import { type Person } from "../definitions/Person";

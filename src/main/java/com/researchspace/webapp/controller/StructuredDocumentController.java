@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
+import static com.researchspace.model.utils.Utils.convertToLongOrNull;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.RSPACTAGS_FORSL__;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAllowBioOntologies;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
@@ -178,10 +179,10 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("parentId") Long parentFolderId,
       @RequestParam("wordXfile") List<MultipartFile> mswordOrEvernoteFile,
       @RequestParam(value = "recordToReplaceId", required = false) Long recordToReplaceId,
-      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       HttpSession session)
       throws IOException {
-
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = userManager.getAuthenticatedUserInSession();
     log.info("Creating RSpace docs from {} submitted files", mswordOrEvernoteFile.size());
 
@@ -311,10 +312,10 @@ public class StructuredDocumentController extends BaseController {
   public String createSD(
       @PathVariable("recordid") Long parentRecordId,
       @RequestParam(value = "template") long formid,
-      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Principal principal)
       throws RecordAccessDeniedException {
-
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = getUserByUsername(principal.getName());
     StructuredDocument newRecord = null;
     List<RecordGroupSharing> sharedWithGroup = null;
@@ -382,9 +383,10 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("recordid") Long parentRecordId,
       @RequestParam(value = "template") long templateid,
       @RequestParam(value = "newname", required = false) String newname,
-      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Principal principal)
       throws RecordAccessDeniedException {
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;
     StructuredDocument rc = null;

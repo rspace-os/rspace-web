@@ -8,7 +8,7 @@ import Divider from "@mui/material/Divider";
 const useStyles = makeStyles()((theme) => ({
   dl: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "auto 1fr",
     fontSize: "0.8rem",
     rowGap: theme.spacing(1),
     margin: 0,
@@ -95,7 +95,7 @@ function DescriptionList({
               className={clsx(
                 classes.dt,
                 reducedPadding && classes.dtReducedPadding,
-                below && "below"
+                below && "below",
               )}
             >
               {label}
@@ -105,13 +105,13 @@ function DescriptionList({
                 classes.dd,
                 reducedPadding && classes.ddReducedPadding,
                 below && classes.ddBelow,
-                below && "below"
+                below && "below",
               )}
             >
               {value}
             </dd>
           </React.Fragment>
-        )
+        ),
       )}
     </Dl>
   );

@@ -240,6 +240,15 @@ function _scanAllTextFieldsForAttachments() {
   }
 }
 
+function getGrandParentFolderId() {
+  const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+  const grandParent = breadcrumbs[breadcrumbs.length - 2]
+  if(grandParent === undefined){
+    return null;
+  }
+  return grandParent.getAttribute("id").split("_")[1];
+}
+
 function initTopBarButtonsForEditableDoc() {
   $('#close').click(function (e) {
     if (editable === 'EDIT_MODE') {
@@ -248,7 +257,7 @@ function initTopBarButtonsForEditableDoc() {
     }
   });
   if (fromNotebook) {
-    $('#close').attr('href', getDocumentViewUrl(fromNotebook, recordId, true));
+    $('#close').attr('href', getDocumentViewUrl(fromNotebook, recordId, getGrandParentFolderId(),true));
   }
 
   $('#save').click(function (e) {

@@ -44,6 +44,7 @@ import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
 import com.researchspace.model.dtos.WorkspaceFilters;
@@ -172,7 +173,8 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   /**
-   * Checks parents folders of the record for the folder belonging to the User. Omits shared folder.
+   * Checks parents folders of the record for the folder belonging to the User. Omits shared
+   * folder.
    */
   @Override
   public Folder getParentFolderOfRecordOwner(Long recordId, User user) {
@@ -203,7 +205,9 @@ public class RecordManagerImpl implements RecordManager {
     return folder.isNotebook() && !user.equals(folder.getOwner());
   }
 
-  /** Convenience method to get a subclass of record already cast to the appropriate type. */
+  /**
+   * Convenience method to get a subclass of record already cast to the appropriate type.
+   */
   @SuppressWarnings("unchecked")
   public <T extends Record> T getAsSubclass(long id, Class<T> clazz) {
     return (T) recordDao.get(id);
@@ -1408,12 +1412,20 @@ public class RecordManagerImpl implements RecordManager {
     }
 
     if ("DMPs".equals(mediaType)) {
-      DMPUser dmpSaved = dmpDao.findDMPsByFile(user, baseRecord.getId()).get(0);
-      String dmpLink =
-          dmpSaved.getDmpLink() == null ? null : dmpSaved.getDmpLink().replace("/api/v2/", "/");
-      recordInfo.setDmpLink(dmpLink);
-      recordInfo.setDoiLink(dmpSaved.getDoiLink());
-      recordInfo.setDmpSource(dmpSaved.getSource());
+      List<DMPUser> listDmpSaved = dmpDao.findDMPsByFile(user, baseRecord.getId());
+      if (!listDmpSaved.isEmpty()) {
+        DMPUser dmpSaved = listDmpSaved.get(0);
+        String dmpLink =
+            dmpSaved.getDmpLink() == null ? null : dmpSaved.getDmpLink().replace("/api/v2/", "/");
+        recordInfo.setDmpLink(dmpLink);
+        recordInfo.setDoiLink(dmpSaved.getDoiLink());
+        recordInfo.setDmpSource(dmpSaved.getSource());
+      } else {
+        log.warn(
+            "It was not possible to find the DMP details User=[" + user.getDisplayName() + "] and "
+                + "RecordId=[" + baseRecord.getId() + "]");
+        recordInfo.setDmpSource(DMPSource.UNKNOWN);
+      }
     }
 
     recordInfo.setParentId(parentFolder.getId());

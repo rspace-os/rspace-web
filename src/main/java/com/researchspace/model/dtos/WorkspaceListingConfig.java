@@ -40,7 +40,7 @@ public class WorkspaceListingConfig implements Serializable {
 
   @Getter @Setter private Long parentFolderId;
 
-  @Getter @Setter private Long grandparentFolderId;
+  @Getter @Setter private Long grandParentId;
 
   @Getter @Setter private boolean advancedSearch = false;
 

@@ -48,10 +48,7 @@ function editEntryHandler(e) {
 }
 
 function updateEntryNameInBreadcrumbs(entryId, entryName) {
-  /* FIXME: this is too simplistic, in case of shared entries the parent notebook is not visible at all.
-    * also particular entries may be shared into various locations of a Shared folder */
-
-  // reset breadcrumbs to notebook level 
+  // reset breadcrumbs to notebook level
   RS.addBreadcrumbAndRefresh("editorBcrumb", "" + notebookId, notebookName);
   // add breadcrumb for notebook entry
   RS.addBreadcrumbAndRefresh("editorBcrumb", "" + entryId, RS.escapeHtml(entryName));
@@ -169,6 +166,14 @@ $(document).ready(function(e) {
     Form$.submit();
     e.preventDefault();
   });
+  
+  function appendGrandParentIdToForm($form) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = "grandParentId";
+    input.value = getGrandParentFolderId();
+    $form.append(input);
+  }
 
   window.addEventListener("ReactToolbarMounted", () => {
     if (typeof initWordChooserDlg === 'function') {
@@ -196,14 +201,6 @@ $(document).ready(function(e) {
         openProtocolsIoChooserDlg();
       });
       
-    function appendGrandParentIdToForm($form) {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = "grandParentId";
-      input.value = getGrandParentFolderId();
-      $form.append(input);
-    }
-    
     // Clicking on the document (directly) in the menu to create the document.
     $(document).on('click', '.directList', function (e){
       var form$=$("#createPopularSD"); 
