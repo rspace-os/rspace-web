@@ -1,4 +1,8 @@
-import { Container, GridLayout, Location } from "../definitions/Container";
+import {
+  Container,
+  GridLayout,
+  Location,
+} from "../definitions/Container";
 import { Factory } from "../definitions/Factory";
 import { Person } from "../definitions/Person";
 import * as Parsers from "../../util/parsers";
@@ -18,6 +22,7 @@ import InventoryBaseRecord, {
   InventoryBaseRecordEditableFields,
   InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
+import { layoutToLabel } from "@/util/labels";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -215,8 +220,12 @@ export function HasLocationMixin<
       ]);
 
       const gridCoordinatesLabel = lift2<GridLayout, Location, string>(
-        ({ rowsNumber, columnsNumber }, parentLocation) =>
-          `Row ${parentLocation.coordY} of ${rowsNumber}, Column ${parentLocation.coordX} of ${columnsNumber}`,
+        ({ rowsLabelType, rowsNumber, columnsLabelType, columnsNumber }, parentLocation) => {
+          const rowLabel = layoutToLabel(rowsLabelType, rowsNumber !== "" ? rowsNumber : 1, parentLocation.coordY);
+          const columnLabel = layoutToLabel(columnsLabelType, columnsNumber !== "" ? columnsNumber : 1, parentLocation.coordX);
+
+          return `${rowLabel}${columnLabel}`
+        },
         Optional.fromNullable(this.immediateParentContainer?.gridLayout),
         Optional.fromNullable(this.parentLocation)
       ).orElse("");

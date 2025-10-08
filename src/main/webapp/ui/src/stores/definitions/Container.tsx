@@ -3,35 +3,15 @@ import { type Search, type SearchView } from "./Search";
 import { type Id } from "./BaseRecord";
 import { type Point } from "../../util/types";
 import { type Permissioned } from "./PermissionedData";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import { match } from "../../util/Util";
 import { type HasLocation } from "./HasLocation";
 
 export type WorkbenchId = number;
 export type ContainerType = "LIST" | "GRID" | "IMAGE" | "WORKBENCH";
 
 export type Axis = "ABC" | "CBA" | "N123" | "N321";
-const arrayToN = (n: number): Array<number> => {
-  return Array.from({ length: n }, (x, i) => i + 1);
-};
 
-export const encodeA1Z26 = (num: number): string =>
-  String.fromCharCode(64 + num);
-
-export const layoutToLabels = (
-  layout: Axis,
-  n: number,
-): Array<{ value: number; label: string | number }> =>
-  ArrayUtils.zipWith(
-    arrayToN(n),
-    match<Axis, Array<string | number>>([
-      [(l) => l === "N123", arrayToN(n)],
-      [(l) => l === "N321", arrayToN(n).reverse()],
-      [(l) => l === "ABC", arrayToN(n).map(encodeA1Z26)],
-      [(l) => l === "CBA", arrayToN(n).reverse().map(encodeA1Z26)],
-    ])(layout),
-    (value: number, label: string | number) => ({ value, label }),
-  );
+export const DEFAULT_ROW_AXIS: Axis = "ABC";
+export const DEFAULT_COLUMN_AXIS: Axis = "N123";
 
 export type GridLayout = {
   columnsNumber: number | "";
@@ -58,7 +38,7 @@ export interface Location extends Point {
   coordX: number;
   coordY: number;
   selected: boolean;
-  parentContainer: Container; //eslint-disable-line no-use-before-define
+  parentContainer: Container;
 
   toggleSelected(value: boolean | null): void;
   selectOnlyThis(): void;

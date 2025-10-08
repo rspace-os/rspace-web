@@ -8,6 +8,8 @@ import FormControl from "../../../../components/Inputs/FormControl";
 import {
   type Container,
   type Axis,
+  DEFAULT_ROW_AXIS,
+  DEFAULT_COLUMN_AXIS,
 } from "../../../../stores/definitions/Container";
 
 const LABEL_OPTIONS: Array<RadioOption<Axis>> = [
@@ -43,7 +45,7 @@ function GridLayoutConfig({
         <FormControl label="Row Labels">
           <RadioField
             name="rowsLabelType"
-            value={gridLayout.rowsLabelType ?? "ABC"}
+            value={gridLayout.rowsLabelType ?? DEFAULT_ROW_AXIS}
             onChange={handleChange}
             options={LABEL_OPTIONS}
           />
@@ -53,7 +55,7 @@ function GridLayoutConfig({
         <FormControl label="Column Labels">
           <RadioField
             name="columnsLabelType"
-            value={gridLayout.columnsLabelType ?? "N123"}
+            value={gridLayout.columnsLabelType ?? DEFAULT_COLUMN_AXIS}
             onChange={handleChange}
             options={LABEL_OPTIONS}
           />

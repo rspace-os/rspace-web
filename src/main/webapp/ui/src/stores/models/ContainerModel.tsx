@@ -11,7 +11,6 @@ import {
   type GridLayout,
   type ContentSummary,
   cTypeToDefaultSearchView,
-  layoutToLabels,
 } from "../definitions/Container";
 import {
   type AllowedTypeFilters,
@@ -89,6 +88,7 @@ import {
   HasLocationEditableFields,
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
+import { layoutToLabels } from "@/util/labels";
 
 type ContainerEditableFields = InventoryBaseRecordEditableFields &
   HasLocationEditableFields;
@@ -1062,7 +1062,6 @@ export default class ContainerModel
     return true;
   }
 
-  //eslint-disable-next-line no-unused-vars
   // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): {
     [key in keyof ContainerEditableFields]: string | null;
@@ -1242,7 +1241,6 @@ export class ContainerCollection
     return super.fieldValues;
   }
 
-  //eslint-disable-next-line no-unused-vars
   get noValueLabel(): {
     [key in keyof BatchContainerEditableFields]: string | null;
   } {
