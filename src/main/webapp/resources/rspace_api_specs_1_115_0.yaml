@@ -661,6 +661,28 @@ paths:
       responses:
         '204':
           description: No content
+  '/documents/move':
+    post:
+      summary: Move a document to a folder
+      description: >-
+
+        Moves a single document (or record) to a target folder in the Workspace.
+        
+        See MoveRequest model for details on required and optional params.
+      tags:
+        - Documents
+      parameters:
+        - in: body
+          name: moveRequest
+          description: Request specifying which record to move and the target folder.
+          required: true
+          schema:
+            $ref: '#/definitions/MoveRequest'
+      responses:
+        '204':
+          description: No content. The document was moved.
+        '500':
+          description: Catch-all for various errors due to legacy error-handling within underlying code. Error message may provide more detail.
   /forms:
     get:
       summary: 'List Forms, with optional search'
@@ -2404,6 +2426,32 @@ paths:
           schema:
             $ref: '#/definitions/GroupList'
 
+  /groups/{id}:
+    get:
+      summary: Get details of a specific group that the current user belongs to
+      description: >
+        Returns information about a group identified by its ID
+      produces:
+        - application/json
+      tags:
+        - Groups
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+          description: The unique identifier of the group
+      responses:
+        '200':
+          description: Details of the requested group
+          schema:
+            $ref: '#/definitions/GroupInfo'
+        '404':
+          description: Group not found, or the user is not a member of the group
+          schema:
+            $ref: '#/definitions/Error'
+
   /userDetails/whoami:
     get:
       summary: Get details of current user
@@ -2516,6 +2564,24 @@ paths:
           description: A listing of shared resources resulting from this post action. If any items couldn't be shared, the ids are returned in the `failedShares` list
           schema:
             $ref: '#/definitions/ShareResult'
+    put:
+      summary: Update a share configuration
+      description: >-
+        Updates an existing share's permission. Provide the id of the existing share (shareId) and the new permission (READ/EDIT).
+      produces:
+        - application/json
+      tags:
+        - Share
+      parameters:
+        - name: update
+          in: body
+          description: Updated sharing configuration
+          required: true
+          schema:
+            $ref: '#/definitions/SharePermissionUpdate'
+      responses:
+        '204':
+          description: 'Share updated, no response body'
   '/share/{id}':
     delete:
       summary: Unshares a shared resource
@@ -2537,6 +2603,28 @@ paths:
       responses:
         '204':
           description: 'Item was deleted, no response body'
+  '/share/document/{id}':
+    get:
+      summary: Get all shares for a document
+      description: >-
+        Returns all sharing information for the specified document, including direct shares and
+        implicit shares (e.g. via notebooks).
+      produces:
+        - application/json
+      tags:
+        - Share
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int64
+          description: The id of the document or notebook to retrieve share information for
+          required: true
+      responses:
+        '200':
+          description: Sharing information for the document
+          schema:
+            $ref: '#/definitions/DocumentShares'
 
   /units:
     get:
@@ -3970,7 +4058,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/ShareInfo'
-      failedShareIds:
+      failedShares:
         type: array
         description: >-
           List of Ids of documents/notebooks that weren't shared (e.g. because
@@ -4007,6 +4095,59 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/ShareInfo'
+  DocumentShares:
+    description: All shares for a document, including direct shares and shares via notebooks
+    properties:
+      sharedDocId:
+        type: integer
+        format: int64
+        description: The id of the document the shares relate to
+      sharedDocName:
+        type: string
+        description: The name of the document the shares relate to
+      notebookShares:
+        type: array
+        description: Shares that apply via a containing notebook (implicit)
+        items:
+          $ref: '#/definitions/DocumentShareEntry'
+      directShares:
+        type: array
+        description: Shares directly applied to the document
+        items:
+          $ref: '#/definitions/DocumentShareEntry'
+  DocumentShareEntry:
+    description: Details of a single share entry for a document
+    properties:
+      shareId:
+        type: integer
+        format: int64
+      sharerId:
+        type: integer
+        format: int64
+      sharerName:
+        type: string
+      recipientId:
+        type: integer
+        format: int64
+      recipientName:
+        type: string
+      recipientType:
+        type: string
+        enum: [USER, GROUP]
+      permission:
+        type: string
+        enum: [READ, EDIT]
+      parentId:
+        type: integer
+        format: int64
+        description: id of the parent (shared folder or notebook) within the shared hierarchy
+      path:
+        type: string
+        description: path of the shared location (root to parent) within the shared hierarchy
+      grandparentId:
+        type: integer
+        format: int64
+        description: id of the grandparent within the shared hierarchy; null if parent is the root
   ActivityList:
     description: List of activities
     type: array
@@ -4322,6 +4463,46 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/StoichiometryMoleculeUpdateDTO'
+
+  MoveRequest:
+    description: Request to move a document or notebook to a target folder
+    required:
+      - docId
+      - sourceFolderId
+      - targetFolderId
+    properties:
+      docId:
+        type: integer
+        format: int64
+        description: ID of the record to move
+      sourceFolderId:
+        type: integer
+        format: int64
+        description: Source folder of the record, to disambiguate where a record has multiple parents e.g. it is shared
+      targetFolderId:
+        type: integer
+        format: int64
+        description: Destination folder/notebook to move the record to
+      currentGrandparentId:
+        type: integer
+        format: int64
+        description: Optional. Only required in the case of moving a document from one shared notebook to another. The id of the folder containing the notebook the document is being moved from i.e. the grandparent of the notebook entry. To disambiguate when the notebook has multiple parents.
+  SharePermissionUpdate:
+    description: Update the permission for an existing share
+    properties:
+      shareId:
+        type: integer
+        format: int64
+        description: The id of the existing ShareInfo to update
+      permission:
+        type: string
+        description: New permission to set for the share
+        enum:
+          - READ
+          - EDIT
+    example:
+      shareId: 123456
+      permission: EDIT
 responses:
   UnprocessableQuery:
     description: Query could not be processed.

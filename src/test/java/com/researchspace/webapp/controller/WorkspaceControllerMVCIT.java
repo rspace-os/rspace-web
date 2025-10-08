@@ -836,16 +836,6 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     settings.setParentFolderId(sd.getParent().getId());
     // move record into subfolder
     basicMove(new Long[] {sd.getId()}, Sub1.getId(), settings);
-    workspaceController.move(
-        new Long[] {sd.getId()},
-        "" + Sub1.getId(),
-        null,
-        settings,
-        model,
-        mockPrincipal,
-        request,
-        session,
-        response);
 
     ISearchResults<BaseRecord> rcds2 = listRootFolder();
     assertEquals(initialCount - 1, rcds2.getTotalHits().intValue());

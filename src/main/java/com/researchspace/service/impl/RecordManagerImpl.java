@@ -173,8 +173,7 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   /**
-   * Checks parents folders of the record for the folder belonging to the User. Omits shared
-   * folder.
+   * Checks parents folders of the record for the folder belonging to the User. Omits shared folder.
    */
   @Override
   public Folder getParentFolderOfRecordOwner(Long recordId, User user) {
@@ -205,9 +204,7 @@ public class RecordManagerImpl implements RecordManager {
     return folder.isNotebook() && !user.equals(folder.getOwner());
   }
 
-  /**
-   * Convenience method to get a subclass of record already cast to the appropriate type.
-   */
+  /** Convenience method to get a subclass of record already cast to the appropriate type. */
   @SuppressWarnings("unchecked")
   public <T extends Record> T getAsSubclass(long id, Class<T> clazz) {
     return (T) recordDao.get(id);
@@ -265,7 +262,7 @@ public class RecordManagerImpl implements RecordManager {
     Folder newparent = folderDao.get(targetParent);
     if (newparent != null && toMove != null) {
       if (!movePermissionChecker.checkMovePermissions(user, newparent, toMove)) {
-        return new ServiceOperationResult<>(null, false);
+        return new ServiceOperationResult<>(null, false, "user not permitted to move record");
       }
       boolean moved;
       if (properties.isRsDevUnsafeMoveAllowed()) {
@@ -456,7 +453,7 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
-  public EditStatus requestRecordView(Long recordId, User user, UserSessionTracker activeUsers) {
+  public EditStatus requestRecordView(Long recordId, User user) {
     EditStatus basicStatus = checkBasicEditStatusForRecordAndUser(recordId, user);
     if (basicStatus != null) {
       return basicStatus;
@@ -1422,8 +1419,12 @@ public class RecordManagerImpl implements RecordManager {
         recordInfo.setDmpSource(dmpSaved.getSource());
       } else {
         log.warn(
-            "It was not possible to find the DMP details User=[" + user.getDisplayName() + "] and "
-                + "RecordId=[" + baseRecord.getId() + "]");
+            "It was not possible to find the DMP details User=["
+                + user.getDisplayName()
+                + "] and "
+                + "RecordId=["
+                + baseRecord.getId()
+                + "]");
         recordInfo.setDmpSource(DMPSource.UNKNOWN);
       }
     }

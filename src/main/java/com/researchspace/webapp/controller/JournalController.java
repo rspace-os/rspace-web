@@ -21,7 +21,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.JournalEntry;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
-import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -166,9 +165,7 @@ public class JournalController extends BaseController {
     if (doc.getTagMetaData() != null) {
       journalEntry.setTagMetaData(doc.getTagMetaData().replaceAll(RSPACTAGS_FORSL__, "/"));
     }
-    UserSessionTracker activeUsers = getCurrentActiveUsers();
-    journalEntry.setEditStatus(
-        recordManager.requestRecordView(currentRecord.getId(), user, activeUsers));
+    journalEntry.setEditStatus(recordManager.requestRecordView(currentRecord.getId(), user));
     signingManager.updateSigningAttributes(journalEntry, doc.getId(), user);
 
     boolean canShare =

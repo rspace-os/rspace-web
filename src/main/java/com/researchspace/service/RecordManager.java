@@ -261,10 +261,9 @@ public interface RecordManager {
    *
    * @param recordId
    * @param user
-   * @param activeUsers
    * @return
    */
-  EditStatus requestRecordView(Long recordId, User user, UserSessionTracker activeUsers);
+  EditStatus requestRecordView(Long recordId, User user);
 
   /**
    * Creates and persists a new empty {@link StructuredDocument}, using the {@link
