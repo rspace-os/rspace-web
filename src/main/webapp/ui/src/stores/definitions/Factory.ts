@@ -1,11 +1,3 @@
-//@flow
-
-/*
- * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
- * "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
- * document are to be interpreted as described in RFC 2119.
- */
-
 import { type PersonAttrs, type Person } from "./Person";
 import { type PersistedBarcodeAttrs, type BarcodeRecord } from "./Barcode";
 import { type InventoryRecord } from "./InventoryRecord";
@@ -23,12 +15,13 @@ import InvApiService from "../../common/InvApiService";
  */
 export interface Factory {
   /*
-   * Instantiates a new Result, given the respective attributes that the
-   * instance of Result requires. This is why `any` is the type of the argument
-   * as it cannot be determined before runtime what the attributes must be.
+   * Instantiates a new InventoryRecord, given the respective attributes that
+   * the instance of InventoryRecord requires. This is why
+   * `Record<string, unknown>` is the type of the argument as it cannot be
+   * determined before runtime what the attributes must be.
    */
   newRecord(
-    params: Record<string, unknown> & { globalId: GlobalId | null }
+    params: Record<string, unknown> & { globalId: GlobalId | null },
   ): InventoryRecord;
 
   newPerson(attrs: PersonAttrs): Person;
@@ -36,7 +29,7 @@ export interface Factory {
   newIdentifier(
     attrs: IdentifierAttrs,
     parentGlobalId: GlobalId,
-    ApiService: typeof InvApiService
+    ApiService: typeof InvApiService,
   ): Identifier;
   newDocument(attrs: DocumentAttrs): Document;
 

@@ -284,7 +284,7 @@ function _defaultRecordClickHandler(node) {
   // clicks on docs/entries outside of current notebook
   if (!clickHandled) {
     // get url without settings key, as workspaceSettings may not be valid for new selection
-    var urlToOpen = getDocumentViewUrl(parentNotebookId, node.key, false);
+    var urlToOpen = getDocumentViewUrl(parentNotebookId, node.key, node.parent?.parent?.key,false);
     navigateToDocument(urlToOpen, node);
   }
 }
@@ -294,7 +294,7 @@ function _defaultFolderClickHandler(node) {
   var isNotebook = node.extraClasses.includes('notebook');
   // if empty notebook, then click will open it
   if (isExpanded && isNotebook && !node.children.length) {
-    var urlToOpen = getDocumentViewUrl(node.key, null, false);
+    var urlToOpen = getDocumentViewUrl(node.key, null, node.parent?.parent?.key, false);
     navigateToDocument(urlToOpen, node);
     return;
   }

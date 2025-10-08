@@ -23,6 +23,11 @@ export type Option = {
   editing: boolean;
 };
 
+/**
+ * Samples and Templates have fields, which are effectively key-value pairs
+ * with a type. The type determines how the field is rendered in the UI, and
+ * what kind of data can be stored in it.
+ */
 export interface Field extends BaseRecord {
   attachment: Attachment | null;
   originalAttachment: Attachment | null;

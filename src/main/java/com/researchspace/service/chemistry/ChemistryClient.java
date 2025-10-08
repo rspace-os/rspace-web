@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -73,7 +74,6 @@ public class ChemistryClient {
     Map<String, Object> body = new HashMap<>();
     body.put("input", chem);
     String url = chemistryServiceUrl + "/chemistry/extract";
-
     return postForElementalAnalysis(body, url);
   }
 
@@ -86,16 +86,21 @@ public class ChemistryClient {
     try {
       ResponseEntity<ElementalAnalysisDTO> response =
           restTemplate.postForEntity(url, httpEntity, ElementalAnalysisDTO.class);
-      if (response.getStatusCode().is2xxSuccessful()) {
-        return Optional.ofNullable(response.getBody());
-      } else {
-        log.warn(
-            "Unsuccessful request to: {}. Response code: {}", url, response.getStatusCodeValue());
-        return Optional.empty();
-      }
+      return Optional.ofNullable(response.getBody());
+    } catch (HttpStatusCodeException e) {
+      String errorReason = e.getResponseBodyAsString();
+      HttpStatus status = e.getStatusCode();
+      log.error(
+          "Chemistry error response from request to {}. Status: {}, Reason: {}",
+          url,
+          status.value(),
+          errorReason,
+          e);
+
+      throw new ChemistryClientException(errorReason, status, e);
     } catch (RestClientException e) {
-      log.warn("Error while making request to {}: {}", url, e.getMessage());
-      return Optional.empty();
+      log.error("Error calling chemistry service at url={} requestBody={}", url, body, e);
+      throw new ChemistryClientException("Chemistry service call failed");
     }
   }
 

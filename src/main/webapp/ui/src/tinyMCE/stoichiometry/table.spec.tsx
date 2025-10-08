@@ -150,6 +150,11 @@ const feature = test.extend<{
     }: {
       count: number;
     }) => Promise<void>;
+    "{CSV} should contain the correct role strings": ({
+      csv,
+    }: {
+      csv: Download;
+    }) => Promise<void>;
     "the loading dialog should be visible": () => Promise<void>;
     "the loading dialog should not be visible": () => Promise<void>;
 
@@ -430,6 +435,16 @@ const feature = test.extend<{
         const lines = fileContents.split("\n");
         expect(lines.length).toBe(count + 1); // +1 for header row
       },
+      "{CSV} should contain the correct role strings": async ({ csv }) => {
+        const path = await csv.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        expect(fileContents).toContain("Reactant");
+        expect(fileContents).toContain("Product");
+        expect(fileContents).toContain("Reagent");
+        expect(fileContents).not.toContain("REACTANT");
+        expect(fileContents).not.toContain("PRODUCT");
+        expect(fileContents).not.toContain("AGENT");
+      },
       "the first row should NOT have a yield value": async () => {
         // Find the yield/excess column and check first row
         const dataRows = page
@@ -695,6 +710,37 @@ feature.beforeEach(async ({ router }) => {
           limitingReagent: false, // From CSV
           notes: null,
         },
+        {
+          id: 7,
+          rsChemElement: {
+            id: 32773,
+            parentId: null,
+            ecatChemFileId: null,
+            dataImage: null,
+            chemElements: "CCO",
+            smilesString: null,
+            chemId: null,
+            reactionId: null,
+            rgroupId: null,
+            metadata: null,
+            chemElementsFormat: "MOL",
+            creationDate: 1753964548128,
+            imageFileProperty: null,
+          },
+          role: "AGENT",
+          formula: "C2 H6 O",
+          name: "Ethanol",
+          smiles: "CCO",
+          coefficient: 1.0,
+          molecularWeight: 46.07,
+          mass: 5.0,
+          moles: 0.109,
+          expectedAmount: null,
+          actualAmount: null,
+          actualYield: null,
+          limitingReagent: false,
+          notes: null,
+        },
       ],
     };
 
@@ -867,7 +913,17 @@ test.describe("Stoichiometry Table", () => {
       await Given["the table is loaded with data"]();
       await Once["the table has loaded"]();
       const csv = await When["a CSV export is downloaded"]();
-      await Then["{CSV} should have {count} rows"]({ csv, count: 3 }); // 3 molecules in mock data
+      await Then["{CSV} should have {count} rows"]({ csv, count: 4 }); // 4 molecules in mock data
+    },
+  );
+
+  feature(
+    "When exporting to CSV, role strings should be transformed correctly",
+    async ({ Given, Once, When, Then }) => {
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      const csv = await When["a CSV export is downloaded"]();
+      await Then["{CSV} should contain the correct role strings"]({ csv });
     },
   );
 
@@ -937,7 +993,7 @@ test.describe("Stoichiometry Table", () => {
           weight: 194.19,
         });
         await Then["the new row should have role agent"]();
-        await Then["there should be {count} molecules in total"]({ count: 4 }); // 3 original + 1 new
+        await Then["there should be {count} molecules in total"]({ count: 5 }); // 4 original + 1 new
       },
     );
 
@@ -967,7 +1023,7 @@ test.describe("Stoichiometry Table", () => {
           weight: 46.07,
         });
         await Then["the new row should have role agent"]();
-        await Then["there should be {count} molecules in total"]({ count: 4 }); // 3 original + 1 new
+        await Then["there should be {count} molecules in total"]({ count: 5 }); // 4 original + 1 new
       },
     );
 
@@ -998,7 +1054,7 @@ test.describe("Stoichiometry Table", () => {
           weight: 46.07,
         });
         await Then["the new row should have role agent"]();
-        await Then["there should be {count} molecules in total"]({ count: 4 }); // 3 original + 1 new
+        await Then["there should be {count} molecules in total"]({ count: 5 }); // 4 original + 1 new
       },
     );
 
@@ -1017,7 +1073,7 @@ test.describe("Stoichiometry Table", () => {
         });
         await When["the user adds the manual reagent"]();
         await Once["the loading dialog disappears"]();
-        await Then["there should be {count} molecules in total"]({ count: 4 });
+        await Then["there should be {count} molecules in total"]({ count: 5 });
 
         // Add second reagent (Caffeine via PubChem)
         await When["the user clicks Add Reagent"]();
@@ -1035,7 +1091,7 @@ test.describe("Stoichiometry Table", () => {
         await Then["the table should contain a new row with {name}"]({
           name: "Caffeine",
         });
-        await Then["there should be {count} molecules in total"]({ count: 5 }); // 3 original + 2 new
+        await Then["there should be {count} molecules in total"]({ count: 6 }); // 4 original + 2 new
       },
     );
   });
@@ -1299,6 +1355,34 @@ test.describe("Stoichiometry Table", () => {
           name: "Cyclopentane",
           column: "Equivalent",
           value: "3",
+        });
+      },
+    );
+
+    feature(
+      "Editing negative equivalent value reverts to original value",
+      async ({ Given, Once, When, Then }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        // Check original value
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Equivalent",
+          value: "2",
+        });
+
+        // Try to edit equivalent of Cyclopentadiene to -1 (should fail)
+        await When["the user edits equivalent in row {row} to {value}"]({
+          row: 1,
+          value: "-1",
+        });
+
+        // Value should remain unchanged (reverted to original)
+        await Then["Compound {name} has {column} of {value}"]({
+          name: "Cyclopentadiene",
+          column: "Equivalent",
+          value: "2",
         });
       },
     );

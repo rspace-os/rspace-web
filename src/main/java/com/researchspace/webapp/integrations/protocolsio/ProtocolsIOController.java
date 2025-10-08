@@ -1,5 +1,7 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
+import static com.researchspace.model.utils.Utils.convertToLongOrNull;
+
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -48,11 +50,11 @@ public class ProtocolsIOController extends BaseController {
       consumes = MediaType.APPLICATION_JSON_VALUE)
   public AjaxReturnObject<PIOResponse> importExternalData(
       @PathVariable("parentFolderId") Long parentFolderId,
-      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       @RequestBody List<Protocol> protocols) {
     log.info("Importing {} protocols", protocols.size());
     List<RecordInformation> results = new ArrayList<>();
-
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User subject = userManager.getAuthenticatedUserInSession();
     Folder originalParentFolder = folderManager.getFolder(parentFolderId, subject);
     Long finalParentFolderId = folderManager.getImportsFolder(subject).getId();

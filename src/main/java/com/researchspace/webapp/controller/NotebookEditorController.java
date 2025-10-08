@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.model.utils.Utils.convertToLongOrNull;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAllowBioOntologies;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
 
@@ -9,7 +10,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.dtos.FormMenu;
-import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.Breadcrumb;
@@ -69,11 +69,12 @@ public class NotebookEditorController extends BaseController {
       @PathVariable("notebookId") Long notebookId,
       @RequestParam(value = "initialRecordToDisplay", required = false) Long entryId,
       @RequestParam(value = "settingsKey", required = false) String settingsKey,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Model model,
       HttpSession session,
       Principal principal)
       throws AuthorizationException {
-
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = userManager.getUserByUsername(principal.getName());
     Notebook notebook = folderManager.getNotebook(notebookId);
 
@@ -99,9 +100,20 @@ public class NotebookEditorController extends BaseController {
     }
 
     ActionPermissionsDTO permDTO = new ActionPermissionsDTO();
+    if (grandParentId == null) {
+      if (notebook.getOwnerOrSharedParentForUser(user).isPresent()) {
+        grandParentId = notebook.getOwnerOrSharedParentForUser(user).get().getId();
+      } else {
+        throw new IllegalStateException(
+            "Cannot infer shared context for Notebook with ID=["
+                + notebook.getId()
+                + "], as \"grandParentId\" param is not set");
+      }
+    }
     permDTO.setCreateRecord(
-        permissionUtils.isPermitted(notebook, PermissionType.CREATE, user)
-            || recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(user, notebook));
+        user.equals(notebook.getOwner())
+            || (folderManager.isFolderInSharedTree(notebook, grandParentId, user)
+                && permissionUtils.isPermitted(notebook, PermissionType.WRITE, user)));
     // this is a quick fix, we need to hook into permissions system so that
     // shared notebook entries can't be deleted by PI/admin in the way that other shared content
     // can be deleted from shared folders
@@ -135,14 +147,9 @@ public class NotebookEditorController extends BaseController {
             (showWholeNotebook ? notebook : entryToShow), PermissionType.WRITE, user));
 
     Folder rootRecord = folderManager.getRootFolderForUser(user);
-    WorkspaceListingConfig cfg = null;
     Folder notebookparent = null;
-    if (isValidSettingsKey(settingsKey)
-        && (cfg = (WorkspaceListingConfig) session.getAttribute(settingsKey)) != null) {
-      Long grandparentId = cfg.getGrandparentFolderId();
-      if (grandparentId != null) {
-        notebookparent = folderManager.getFolder(grandparentId, user);
-      }
+    if (isValidSettingsKey(settingsKey)) {
+      notebookparent = folderManager.getFolder(grandParentId, user);
     }
     Breadcrumb bcrumb =
         breadcrumbGenerator.generateBreadcrumbToHome(

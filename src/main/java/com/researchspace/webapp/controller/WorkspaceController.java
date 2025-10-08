@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.MediaUtils.getContentTypeForFileExtension;
 import static com.researchspace.core.util.MediaUtils.getExtension;
+import static com.researchspace.model.utils.Utils.convertToLongOrNull;
 import static com.researchspace.session.SessionAttributeUtils.RS_DELETE_RECORD_PROGRESS;
 
 import com.axiope.search.SearchManager;
@@ -30,6 +31,7 @@ import com.researchspace.model.audittrail.AuditSearchEvent;
 import com.researchspace.model.audittrail.CreateAuditEvent;
 import com.researchspace.model.audittrail.DuplicateAuditEvent;
 import com.researchspace.model.audittrail.HistoricalEvent;
+import com.researchspace.model.audittrail.MoveAuditEvent;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dto.SharingResult;
 import com.researchspace.model.dto.UserPublicInfo;
@@ -50,11 +52,14 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
+import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
+import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DetailedRecordInformationProvider;
@@ -294,7 +299,7 @@ public class WorkspaceController extends BaseController {
       throws IOException {
 
     WorkspaceListingConfig cfg = null;
-    Long grandparentFolderId = workspaceSettings.getParentFolderId();
+    Long grandParentId = workspaceSettings.getParentFolderId();
 
     // if we have a settings key, then we use that to configure workspace reload
     if (isValidSettingsKey(settingsKey)
@@ -311,7 +316,7 @@ public class WorkspaceController extends BaseController {
                 cfg.getPgCrit(),
                 cfg.getCurrentViewMode(),
                 user,
-                grandparentFolderId));
+                grandParentId));
       }
 
       model.addAttribute("settingsKey", settingsKey);
@@ -328,11 +333,11 @@ public class WorkspaceController extends BaseController {
               workspaceSettings.createPaginationCriteria(),
               workspaceSettings.getCurrentViewMode(),
               user,
-              grandparentFolderId));
+              grandParentId));
 
       workspaceSettings.setParentFolderId(folder.getId());
       cfg = new WorkspaceListingConfig(workspaceSettings);
-      cfg.setGrandparentFolderId(grandparentFolderId);
+      cfg.setGrandParentId(grandParentId);
       addWorkspaceConfigToSessionAndKeyModel(cfg, model, session);
       model.addAttribute("workspaceConfigJson", workspaceSettings.toJson());
     }
@@ -400,8 +405,9 @@ public class WorkspaceController extends BaseController {
   public String createNotebookAndRedirect(
       @PathVariable("recordid") long parentRecordId,
       @RequestParam("notebookNameField") String notebookName,
-      @RequestParam(value = "grandParentId", required = false) Long grandParentId,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Principal principal) {
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;
     Folder originalParentFolder = null;
@@ -417,22 +423,26 @@ public class WorkspaceController extends BaseController {
       sharedWithGroup =
           recordShareHandler.shareIntoSharedFolderOrNotebook(
               user, originalParentFolder, newNotebookId, grandParentId);
+      grandParentId = grandParentId != null ? grandParentId : originalParentFolder.getId();
+    } else {
+      grandParentId = grandParentId != null ? grandParentId : targetFolderId;
     }
 
-    return getNotebookRedirectUrl(newNotebookId, sharedWithGroup);
+    return getNotebookRedirectUrl(newNotebookId, grandParentId, sharedWithGroup);
   }
 
   @NotNull
   private static String getNotebookRedirectUrl(
-      Long newNotebookId, List<RecordGroupSharing> sharedWithGroup) {
+      Long newNotebookId, Long grandParentId, List<RecordGroupSharing> sharedWithGroup) {
     String redirectUrl = "redirect:/notebookEditor/" + newNotebookId;
     if (!(sharedWithGroup == null || sharedWithGroup.isEmpty())) {
       redirectUrl +=
           "?sharedWithGroup="
               + URLEncoder.encode(
                   sharedWithGroup.get(0).getSharee().getDisplayName(), StandardCharsets.UTF_8);
+      return redirectUrl + "&grandParentId=" + grandParentId;
     }
-    return redirectUrl;
+    return redirectUrl + "?grandParentId=" + grandParentId;
   }
 
   @PostMapping("/ajax/createNotebook")
@@ -589,7 +599,7 @@ public class WorkspaceController extends BaseController {
                 List.of(toMove),
                 targetFolderId,
                 settings.getParentFolderId(),
-                settings.getGrandparentFolderId(),
+                settings.getGrandParentId(),
                 user)
             .stream()
             .filter(result -> result != null && result.isSucceeded())
@@ -636,7 +646,7 @@ public class WorkspaceController extends BaseController {
             RS_DELETE_RECORD_PROGRESS, toDelete.length * 10, "Deleting records", session);
     DeletionSettings delContext =
         DeletionSettings.builder()
-            .grandParentFolderId(settings.getGrandparentFolderId())
+            .grandParentId(settings.getGrandParentId())
             .notebookEntryDeletion(isNotebookEntryDeletion)
             .parent(parent)
             .currentUsers(users)
@@ -648,7 +658,7 @@ public class WorkspaceController extends BaseController {
 
     if (isNotebookEntryDeletion) {
       /* let's set up proper grandparent for listFilesInFolder (RSPAC-991) */
-      settings.setParentFolderId(settings.getGrandparentFolderId());
+      settings.setParentFolderId(settings.getGrandParentId());
     }
     if (parent == null) {
       parent =
@@ -885,10 +895,10 @@ public class WorkspaceController extends BaseController {
           user,
           settings.getParentFolderId());
 
-      Long grandparentFolderId = settings.getParentFolderId();
+      Long grandParentId = settings.getParentFolderId();
       settings.setParentFolderId(parentFolder.getId()); // update with new parent id
       WorkspaceListingConfig config = new WorkspaceListingConfig(settings);
-      config.setGrandparentFolderId(grandparentFolderId);
+      config.setGrandParentId(grandParentId);
       addWorkspaceConfigToSessionAndKeyModel(config, model, session);
 
     } else {
@@ -1189,7 +1199,8 @@ public class WorkspaceController extends BaseController {
     User user = userManager.getAuthenticatedUserInSession();
 
     DetailedRecordInformation detailedInfo =
-        infoProvider.getDetailedRecordInformation(recordId, user, revision, userVersion);
+        infoProvider.getDetailedRecordInformation(
+            recordId, getCurrentActiveUsers(), user, revision, userVersion);
     return new AjaxReturnObject<>(detailedInfo, null);
   }
 

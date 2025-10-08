@@ -4,10 +4,10 @@ import { match } from "./Util";
 
 /*
  * These are some simple functions for converting strings into slightly more
- * structured types, providing for simpler code where Flow has to be convinced
- * of the correct type. All of the functions in this module should return a
- * Result, with the functions being composed together with the `flatMap`
- * method.
+ * structured types, providing for simpler code where TypeScript has to be
+ * convinced of the correct type. All of the functions in this module should
+ * return a Result, with the functions being composed together with the
+ * `flatMap` method.
  */
 
 /*
@@ -27,7 +27,7 @@ import { match } from "./Util";
  */
 export function parseString<T extends string>(
   pattern: T,
-  value: string
+  value: string,
 ): Result<T> {
   if (pattern === value) return Result.Ok(pattern);
   return Result.Error<T>([new Error(`"${value}" !== "${pattern}"`)]);
@@ -51,7 +51,7 @@ export const parseBoolean: (value: "true" | "false") => Result<boolean> = match(
     [(value: "false" | "true") => value === "false", Result.Ok(false)],
     [(value: "false" | "true") => value === "true", Result.Ok(true)],
     [() => true, Result.Error([new Error("Neither 'true' nor 'false'")])],
-  ]
+  ],
 );
 
 /**
@@ -69,19 +69,20 @@ export function parseDate(s: string | number): Result<Date> {
  * simply convert the type of the passed value from a very broad class of
  * values to much more narrow set of possible values.
  *
- * Many of them take a value of type `mixed` as input which is any possible
- * value (number, string, object, etc.) and is more type-safe than the
- * deprecated `any` type. Still others take a type that has been somewhat
- * refined, and further refine it into an even more precise type. In most
- * cases, several of these functions should be composed together with Result's
- * `flatMap` method to refine a particular value from the broadest of possible
- * values (e.g. any value JSON value that could come from an API call) down to
- * a very specific type of value that an algorithm expects.
+ * Many of them take a value of type `unknown` as input which is any possible
+ * value (number, string, object, etc.) and is more type-safe than the `any`
+ * type. Still others take a type that has been somewhat refined, and further
+ * refine it into an even more precise type. In most cases, several of these
+ * functions should be composed together with Result's `flatMap` method to
+ * refine a particular value from the broadest of possible values (e.g. any
+ * value JSON value that could come from an API call) down to a very specific
+ * type of value that an algorithm expects.
  */
 
 /**
- * Parses anything into an Object (i.e. not a primitive value
- * like string or number).
+ * Parses anything into an Object (i.e. not a primitive value like string or
+ * number). Note that this includes null as in JavaScript
+ * `typeof null === "object"`.
  */
 export function isObject(m: unknown): Result<object | null> {
   return typeof m === "object"
@@ -212,7 +213,7 @@ export const getValueWithKey =
   (key: string): ((obj: object) => Result<unknown>) =>
   (obj: object): Result<unknown> =>
     getByKey(key as never, obj).toResult(
-      () => new Error(`key '${key}' is missing`)
+      () => new Error(`key '${key}' is missing`),
     );
 
 /**
@@ -226,7 +227,7 @@ export const getValueWithKey =
  */
 export const objectPath = (
   path: ReadonlyArray<string>,
-  obj: unknown
+  obj: unknown,
 ): Result<unknown> => {
   if (path.length === 0) return Result.Ok(obj);
   const [head, ...tail] = path;
