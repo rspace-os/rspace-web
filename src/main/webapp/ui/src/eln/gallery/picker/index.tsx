@@ -28,6 +28,7 @@ import RsSet from "../../../util/set";
 import { DisableDragAndDropByDefault } from "../../../hooks/ui/useFileImportDragAndDrop";
 import OpenFolderProvider from "../components/OpenFolderProvider";
 import SidebarToggle from "../../../components/AppBar/SidebarToggle";
+import { CallableSnippetPreview } from "../components/CallableSnippetPreview";
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-container > .MuiPaper-root": {
@@ -137,110 +138,112 @@ const Picker = observer(
       <CallableImagePreview>
         <CallablePdfPreview>
           <CallableAsposePreview>
-            <OpenFolderProvider setPath={setPath}>
-              <CustomDialog
-                maxWidth="xl"
-                fullWidth
-                open={open}
-                TransitionComponent={CustomGrow}
-                onClose={onClose}
-                fullScreen={viewport.isViewportSmall}
-                sx={{
-                  height: {
-                    xs:
-                      selection.size > 0
-                        ? `calc(100% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px) !important`
-                        : "100%",
-                    md: "unset",
-                  },
-                }}
-                PaperProps={{
-                  "aria-label": "Gallery Picker",
-                }}
-              >
-                <AppBar
-                  variant="dialog"
-                  currentPage="Gallery"
-                  sidebarToggle={
-                    <SidebarToggle
-                      setSidebarOpen={setDrawerOpen}
-                      sidebarOpen={drawerOpen}
-                      sidebarId={sidebarId}
-                    />
-                  }
-                  accessibilityTips={{
-                    supportsHighContrastMode: true,
-                    supportsReducedMotion: true,
-                    supports2xZoom: true,
+            <CallableSnippetPreview>
+              <OpenFolderProvider setPath={setPath}>
+                <CustomDialog
+                  maxWidth="xl"
+                  fullWidth
+                  open={open}
+                  TransitionComponent={CustomGrow}
+                  onClose={onClose}
+                  fullScreen={viewport.isViewportSmall}
+                  sx={{
+                    height: {
+                      xs:
+                        selection.size > 0
+                          ? `calc(100% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px) !important`
+                          : "100%",
+                      md: "unset",
+                    },
                   }}
-                />
-                <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-                  <Sidebar
-                    selectedSection={selectedSection}
-                    setSelectedSection={(mediaType) => {
-                      setSelectedSection(mediaType);
-                      setPath([]);
-                      setAppliedSearchTerm("");
+                  PaperProps={{
+                    "aria-label": "Gallery Picker",
+                  }}
+                >
+                  <AppBar
+                    variant="dialog"
+                    currentPage="Gallery"
+                    sidebarToggle={
+                      <SidebarToggle
+                        setSidebarOpen={setDrawerOpen}
+                        sidebarOpen={drawerOpen}
+                        sidebarId={sidebarId}
+                      />
+                    }
+                    accessibilityTips={{
+                      supportsHighContrastMode: true,
+                      supportsReducedMotion: true,
+                      supports2xZoom: true,
                     }}
-                    drawerOpen={drawerOpen}
-                    setDrawerOpen={setDrawerOpen}
-                    folderId={folderId}
-                    refreshListing={refreshListing}
-                    id={sidebarId}
                   />
-                  <Box
-                    sx={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      flexGrow: 1,
-                      width: "calc(100% - 200px)",
-                    }}
-                  >
-                    <MainPanel
+                  <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+                    <Sidebar
                       selectedSection={selectedSection}
-                      path={path}
                       setSelectedSection={(mediaType) => {
                         setSelectedSection(mediaType);
                         setPath([]);
                         setAppliedSearchTerm("");
                       }}
-                      galleryListing={galleryListing}
+                      drawerOpen={drawerOpen}
+                      setDrawerOpen={setDrawerOpen}
                       folderId={folderId}
                       refreshListing={refreshListing}
-                      sortOrder={sortOrder}
-                      orderBy={orderBy}
-                      setSortOrder={setSortOrder}
-                      setOrderBy={setOrderBy}
-                      appliedSearchTerm={appliedSearchTerm}
-                      setAppliedSearchTerm={setAppliedSearchTerm}
+                      id={sidebarId}
                     />
-                    <DialogActions>
-                      <Button onClick={() => onClose()}>Cancel</Button>
-                      <ValidatingSubmitButton
-                        validationResult={
-                          selection.size > 0
-                            ? Result.all(
-                                ...selection.asSet().map(validateSelection),
-                              ).map(() => null)
-                            : Result.Error([
-                                new Error(
-                                  "Select at least one file to proceed.",
-                                ),
-                              ])
-                        }
-                        loading={false}
-                        onClick={() => {
-                          onSubmit(selection.asSet());
+                    <Box
+                      sx={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        flexGrow: 1,
+                        width: "calc(100% - 200px)",
+                      }}
+                    >
+                      <MainPanel
+                        selectedSection={selectedSection}
+                        path={path}
+                        setSelectedSection={(mediaType) => {
+                          setSelectedSection(mediaType);
+                          setPath([]);
+                          setAppliedSearchTerm("");
                         }}
-                      >
-                        Add
-                      </ValidatingSubmitButton>
-                    </DialogActions>
+                        galleryListing={galleryListing}
+                        folderId={folderId}
+                        refreshListing={refreshListing}
+                        sortOrder={sortOrder}
+                        orderBy={orderBy}
+                        setSortOrder={setSortOrder}
+                        setOrderBy={setOrderBy}
+                        appliedSearchTerm={appliedSearchTerm}
+                        setAppliedSearchTerm={setAppliedSearchTerm}
+                      />
+                      <DialogActions>
+                        <Button onClick={() => onClose()}>Cancel</Button>
+                        <ValidatingSubmitButton
+                          validationResult={
+                            selection.size > 0
+                              ? Result.all(
+                                  ...selection.asSet().map(validateSelection),
+                                ).map(() => null)
+                              : Result.Error([
+                                  new Error(
+                                    "Select at least one file to proceed.",
+                                  ),
+                                ])
+                          }
+                          loading={false}
+                          onClick={() => {
+                            onSubmit(selection.asSet());
+                          }}
+                        >
+                          Add
+                        </ValidatingSubmitButton>
+                      </DialogActions>
+                    </Box>
                   </Box>
-                </Box>
-              </CustomDialog>
-            </OpenFolderProvider>
+                </CustomDialog>
+              </OpenFolderProvider>
+            </CallableSnippetPreview>
           </CallableAsposePreview>
         </CallablePdfPreview>
       </CallableImagePreview>

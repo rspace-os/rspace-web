@@ -30,6 +30,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import { useSnippetPreview } from "./CallableSnippetPreview";
 import { Optional } from "../../../util/optional";
 import { useFolderOpen } from "./OpenFolderProvider";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
@@ -765,6 +766,7 @@ export function InfoPanelForLargeViewports() {
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openSnapGenePreview } = useSnapGenePreview();
+  const { openSnippetPreview } = useSnippetPreview();
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -915,6 +917,22 @@ export function InfoPanelForLargeViewports() {
                       <ActionButton
                         onClick={() => {
                           void openSnapGenePreview(file);
+                        }}
+                        label="View"
+                        sx={{
+                          borderRadius: 1,
+                          px: 1.125,
+                          py: 0.25,
+                        }}
+                      />
+                    </Grid>
+                  );
+                if (action.tag === "snippet")
+                  return (
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                      <ActionButton
+                        onClick={() => {
+                          void openSnippetPreview(file);
                         }}
                         label="View"
                         sx={{

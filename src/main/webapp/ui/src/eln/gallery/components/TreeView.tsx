@@ -26,6 +26,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
+import { useSnippetPreview } from "./CallableSnippetPreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { useFolderOpen } from "./OpenFolderProvider";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
@@ -426,6 +427,7 @@ const TreeView = ({
   const { openSnapGenePreview } = useSnapGenePreview();
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
+  const { openSnippetPreview } = useSnippetPreview();
 
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
 
@@ -584,6 +586,9 @@ const TreeView = ({
                 }
                 if (action.tag === "snapgene") {
                   void openSnapGenePreview(file);
+                }
+                if (action.tag === "snippet") {
+                  void openSnippetPreview(file);
                 }
               });
             });

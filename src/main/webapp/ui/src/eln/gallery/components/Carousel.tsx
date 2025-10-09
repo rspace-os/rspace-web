@@ -8,6 +8,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
+import { useSnippetPreview } from "./CallableSnippetPreview";
 import usePrimaryAction, {
   useImagePreviewOfGalleryFile,
   usePdfPreviewOfGalleryFile,
@@ -55,7 +56,7 @@ const StyledDocument = styled(Document)(() => ({
  */
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
+  import.meta.url,
 ).toString();
 
 /*
@@ -82,6 +83,7 @@ const PreviewWrapper = ({
   const { openAsposePreview } = useAsposePreview();
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openFolder } = useFolderOpen();
+  const { openSnippetPreview } = useSnippetPreview();
   const primaryAction = usePrimaryAction();
   const [scrollPos, setScrollPos] = React.useState<null | {
     scrollLeft: number;
@@ -138,7 +140,7 @@ const PreviewWrapper = ({
         };
         thisNode?.scrollTo(
           scrollPos.scrollLeft - moved.x,
-          scrollPos.scrollTop - moved.y
+          scrollPos.scrollTop - moved.y,
         );
       }}
       onMouseUp={() => {
@@ -173,6 +175,9 @@ const PreviewWrapper = ({
             }
             if (action.tag === "snapgene") {
               void openSnapGenePreview(file);
+            }
+            if (action.tag === "snippet") {
+              void openSnippetPreview(file);
             }
           });
         }
@@ -246,7 +251,7 @@ const Preview = ({
         canPreviewAsPdf(file).map((getDownloadHref) => ({
           key: "pdf",
           getDownloadHref,
-        }))
+        })),
       )
       .orElseTry<
         | { key: "image"; getDownloadHref: () => Promise<Url> }
@@ -255,7 +260,7 @@ const Preview = ({
       >(() =>
         canPreviewWithAspose(file).map(() => ({
           key: "aspose",
-        }))
+        })),
       )
       .do(
         doNotAwait(async (preview) => {
@@ -281,7 +286,7 @@ const Preview = ({
               const { data } = await axios.get<unknown>(
                 "/Streamfile/ajax/convert/" +
                   idToString(file.id).elseThrow() +
-                  "?outputFormat=pdf"
+                  "?outputFormat=pdf",
               );
               const fileName = Parsers.isObject(data)
                 .flatMap(Parsers.isNotNull)
@@ -319,7 +324,7 @@ const Preview = ({
               });
             }
           }
-        })
+        }),
       );
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - canPreviewWithAspose will not change
@@ -428,8 +433,8 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       setVisibleIndex(
         Math.max(
           0,
-          listing.list.findIndex(({ id }) => id === selectedFile.id)
-        )
+          listing.list.findIndex(({ id }) => id === selectedFile.id),
+        ),
       );
     });
     // otherwise select the first file
@@ -490,7 +495,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       <PlaceholderLabel>
         {listing.refreshing
           ? "Refreshing..."
-          : listing.reason ?? "There are no folders."}
+          : (listing.reason ?? "There are no folders.")}
       </PlaceholderLabel>
     );
   return (
