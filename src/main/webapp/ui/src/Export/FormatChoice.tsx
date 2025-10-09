@@ -105,6 +105,9 @@ function FormatChoice({
                       //@ts-expect-error Options is poorly typed
                       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                       label: repo.options[k]._label,
+                    //@ts-expect-error Options is poorly typed
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                      metadataLanguages: repo.options[k].metadataLanguages,
                       ...repo,
                     }) as Repo,
                 );
