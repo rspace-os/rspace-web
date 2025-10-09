@@ -490,14 +490,78 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     query.executeUpdate();
   }
 
+  /***
+   * Gets the forms used by other users.
+   * Where there are multiple versions of the same form, each of those forms in the chain is included so
+   * that all previous and later versions are also transferred to the sysadmin to maintain traceability.
+   */
   @Override
   public List<RSForm> getFormsUsedByOtherUsers(User formOwner) {
-    return getSession()
-        .createQuery(
-            "select distinct form from StructuredDocument sd where sd.form.id in "
-                + "(select id from RSForm form where form.owner=:owner) and sd.owner!=:owner",
-            RSForm.class)
-        .setParameter("owner", formOwner)
+    Session session = getSession();
+
+    // Get all form IDs created by formOwner that are used by other users
+    List<RSForm> formsUsedByOthers =
+        session
+            .createQuery(
+                "select distinct sd.form from StructuredDocument sd where sd.form.id in "
+                    + "(select id from RSForm form where form.owner=:owner) and sd.owner!=:owner",
+                RSForm.class)
+            .setParameter("owner", formOwner)
+            .list();
+
+    if (formsUsedByOthers.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    Set<Long> allFormsIDs = traversePreviousVersions(formsUsedByOthers);
+    Set<Long> newerVersionIds = traverseNewerVersions(formsUsedByOthers);
+
+    allFormsIDs.addAll(newerVersionIds);
+
+    return session
+        .createQuery("from RSForm where id in :ids", RSForm.class)
+        .setParameterList("ids", allFormsIDs)
         .list();
+  }
+
+  private Set<Long> traversePreviousVersions(List<RSForm> directlyUsedForms) {
+    String sql =
+        "select previousVersion.id from RSForm where id in :currentIds and previousVersion is not"
+            + " null";
+    return traverseFormVersions(directlyUsedForms, sql);
+  }
+
+  private Set<Long> traverseNewerVersions(List<RSForm> directlyUsedForms) {
+    String sql = "select id from RSForm where previousVersion.id in :currentIds";
+    return traverseFormVersions(directlyUsedForms, sql);
+  }
+
+  private Set<Long> traverseFormVersions(List<RSForm> directlyUsedForms, String sql) {
+    Set<Long> allFormIds = new LinkedHashSet<>();
+    Set<Long> currentFormIds = new LinkedHashSet<>();
+
+    for (RSForm directlyUsed : directlyUsedForms) {
+      currentFormIds.add(directlyUsed.getId());
+      allFormIds.add(directlyUsed.getId());
+    }
+
+    while (!currentFormIds.isEmpty()) {
+      List<Long> newerVersions =
+          getSession()
+              .createQuery(sql, Long.class)
+              .setParameterList("currentIds", currentFormIds)
+              .list();
+
+      currentFormIds.clear();
+
+      for (Long newerVersionId : newerVersions) {
+        if (!allFormIds.contains(newerVersionId)) {
+          allFormIds.add(newerVersionId);
+          currentFormIds.add(newerVersionId);
+        }
+      }
+    }
+
+    return allFormIds;
   }
 }
