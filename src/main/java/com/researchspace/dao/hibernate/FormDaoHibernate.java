@@ -500,7 +500,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     Session session = getSession();
 
     // Get all form IDs created by formOwner that are used by other users
-    List<RSForm> formUsedByOthersIds =
+    List<RSForm> formsUsedByOthers =
         session
             .createQuery(
                 "select distinct sd.form from StructuredDocument sd where sd.form.id in "
@@ -509,74 +509,57 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
             .setParameter("owner", formOwner)
             .list();
 
-    if (formUsedByOthersIds.isEmpty()) {
+    if (formsUsedByOthers.isEmpty()) {
       return Collections.emptyList();
     }
 
-    // Collect all form IDs including their previous versions
-    Set<Long> allFormIds = traversePreviousVersions(formUsedByOthersIds);
-    Set<Long> newFormIds = traverseNewerVersions(formUsedByOthersIds);
+    Set<Long> allFormsIDs = traversePreviousVersions(formsUsedByOthers);
+    Set<Long> newerVersionIds = traverseNewerVersions(formsUsedByOthers);
 
-    allFormIds.addAll(newFormIds);
+    allFormsIDs.addAll(newerVersionIds);
 
-    // Return all forms in the version chains
     return session
         .createQuery("from RSForm where id in :ids", RSForm.class)
-        .setParameterList("ids", allFormIds)
+        .setParameterList("ids", allFormsIDs)
         .list();
   }
 
-  private Set<Long> traversePreviousVersions(List<RSForm> formUsedByOthersIds) {
+  private Set<Long> traversePreviousVersions(List<RSForm> directlyUsedForms) {
     String sql =
-        "WITH RECURSIVE form_versions AS ( "
-            + "  SELECT id, previousVersion_id "
-            + "  FROM RSForm "
-            + "  WHERE id IN (:startingIds) "
-            + "  UNION ALL "
-            + "  SELECT f.id, f.previousVersion_id "
-            + "  FROM RSForm f "
-            + "  INNER JOIN form_versions fv ON fv.previousVersion_id = f.id "
-            + ") "
-            + "SELECT DISTINCT id FROM form_versions";
-
-    return executeVersionTraversalQuery(formUsedByOthersIds, sql);
+        "select previousVersion.id from RSForm where id in :currentIds and previousVersion is not"
+            + " null";
+    return traverseFormVersions(directlyUsedForms, sql);
   }
 
-  private Set<Long> traverseNewerVersions(List<RSForm> startingForms) {
-    String sql =
-        "WITH RECURSIVE form_versions AS ( "
-            + "  SELECT id, previousVersion_id "
-            + "  FROM RSForm "
-            + "  WHERE id IN (:startingIds) "
-            + "  UNION ALL "
-            + "  SELECT f.id, f.previousVersion_id "
-            + "  FROM RSForm f "
-            + "  INNER JOIN form_versions fv ON f.previousVersion_id = fv.id "
-            + ") "
-            + "SELECT DISTINCT id FROM form_versions";
-
-    return executeVersionTraversalQuery(startingForms, sql);
+  private Set<Long> traverseNewerVersions(List<RSForm> directlyUsedForms) {
+    String sql = "select id from RSForm where previousVersion.id in :currentIds";
+    return traverseFormVersions(directlyUsedForms, sql);
   }
 
-  private Set<Long> executeVersionTraversalQuery(List<RSForm> forms, String sql) {
+  private Set<Long> traverseFormVersions(List<RSForm> directlyUsedForms, String sql) {
     Set<Long> allFormIds = new LinkedHashSet<>();
+    Set<Long> currentFormIds = new LinkedHashSet<>();
 
-    // Extract the starting form IDs
-    List<Long> startingFormIds = new ArrayList<>();
-    for (RSForm form : forms) {
-      startingFormIds.add(form.getId());
+    for (RSForm directlyUsed : directlyUsedForms) {
+      currentFormIds.add(directlyUsed.getId());
+      allFormIds.add(directlyUsed.getId());
     }
 
-    if (startingFormIds.isEmpty()) {
-      return allFormIds;
-    }
+    while (!currentFormIds.isEmpty()) {
+      List<Long> newerVersions =
+          getSession()
+              .createQuery(sql, Long.class)
+              .setParameterList("currentIds", currentFormIds)
+              .list();
 
-    NativeQuery<?> query = getSession().createNativeQuery(sql);
-    query.setParameterList("startingIds", startingFormIds);
-    List<?> results = query.list();
+      currentFormIds.clear();
 
-    for (Object result : results) {
-      allFormIds.add(((BigInteger) result).longValue());
+      for (Long newerVersionId : newerVersions) {
+        if (!allFormIds.contains(newerVersionId)) {
+          allFormIds.add(newerVersionId);
+          currentFormIds.add(newerVersionId);
+        }
+      }
     }
 
     return allFormIds;
