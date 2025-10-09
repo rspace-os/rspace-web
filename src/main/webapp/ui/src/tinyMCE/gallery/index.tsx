@@ -140,10 +140,14 @@ class GalleryPlugin {
                       newProps?.onClose?.();
                     }}
                     validateSelection={(file) => {
-                      return file instanceof LocalGalleryFile ||
-                        file instanceof RemoteFile
-                        ? IsValid()
-                        : IsInvalid("Unsupported file type");
+                      if (
+                        !(file instanceof LocalGalleryFile) &&
+                        !(file instanceof RemoteFile)
+                      )
+                        return IsInvalid("Unsupported file type");
+                      if (file.isFolder)
+                        return IsInvalid("Folders cannot be selected");
+                      return IsValid();
                     }}
                   />
                 </LandmarksProvider>
