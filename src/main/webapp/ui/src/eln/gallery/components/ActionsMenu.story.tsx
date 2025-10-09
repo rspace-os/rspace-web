@@ -90,6 +90,47 @@ const folderFile: GalleryFile = {
   metadata: {},
 };
 
+const snippetFile: GalleryFile = {
+  deconstructor: () => {},
+  id: dummyId(),
+  globalId: "GF3",
+  name: "My Snippet",
+  extension: "txt",
+  creationDate: new Date(),
+  modificationDate: new Date(),
+  type: "Snippet",
+  thumbnailUrl: "example.com",
+  ownerName: "Joe Bloggs",
+  description: new Description({ key: "empty" }),
+  version: 1,
+  size: 512,
+  path: [],
+  pathAsString: () => "",
+  isFolder: false,
+  isSystemFolder: false,
+  isImage: false,
+  isSnippet: true,
+  isSnippetFolder: false,
+  transformFilename(f: (filename: string) => string) {
+    return f("My Snippet");
+  },
+  setName: () => {},
+  setDescription: () => {},
+  linkedDocuments: null,
+  canOpen: Result.Error([new Error("I'm not a folder")]),
+  canDuplicate: Result.Ok(null),
+  canDelete: Result.Ok(null),
+  canRename: Result.Ok(null),
+  canMoveToIrods: Result.Ok(null),
+  canBeExported: Result.Ok(null),
+  canBeMoved: Result.Ok(null),
+  canUploadNewVersion: Result.Ok(null),
+  canBeLoggedOutOf: Result.Ok(null),
+  treeViewItemId: "GF3",
+  key: "GF3",
+  metadata: {},
+};
+
 function ActionsMenuWrapper({ files }: { files: Array<GalleryFile> }) {
   const selection = useGallerySelection();
   React.useEffect(() => {
@@ -137,8 +178,20 @@ export function ActionsMenuWithMultipleFiles() {
       <LandmarksProvider>
         <GallerySelection>
           <ActionsMenuWrapper
-            files={[folderFile, { ...folderFile, globalId: "GF3", key: "GF3" }]}
+            files={[folderFile, { ...folderFile, globalId: "GF4", key: "GF4" }]}
           />
+        </GallerySelection>
+      </LandmarksProvider>
+    </ThemeProvider>
+  );
+}
+
+export function ActionsMenuWithSnippet() {
+  return (
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <LandmarksProvider>
+        <GallerySelection>
+          <ActionsMenuWrapper files={[snippetFile]} />
         </GallerySelection>
       </LandmarksProvider>
     </ThemeProvider>
