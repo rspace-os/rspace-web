@@ -948,7 +948,7 @@ public class WorkspaceController extends BaseController {
       return false; // no access - would be unexpected error case
     }
     /* otherwise check if the only permitted user is the owner of the folder
-      - or rather the permission is for group/project group */
+    - or rather the permission is for group/project group */
     return sharingACL.get(0).getUserOrGrpUniqueName().equals(folder.getOwner().getUsername());
   }
 
