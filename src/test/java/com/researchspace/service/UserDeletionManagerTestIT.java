@@ -678,6 +678,64 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertUserNotExist(formCreator);
   }
 
+  @Test
+  public void whenFormUsedByOtherUserThenFormVersionChainTransferredToSysadmin() throws Exception {
+    // Create userA and create initial form (version 0)
+    User userA = createInitAndLoginAnyUser();
+    RSForm formVersion0 = createAnyForm(userA);
+    formVersion0.getAccessControl().setWorldPermissionType(PermissionType.READ);
+    formVersion0.publish();
+    formMgr.save(formVersion0);
+
+    // As userA, create version 1 and link to version 0 via previousVersion
+    RSForm formVersion1 = createAnyForm(userA);
+    formVersion1.publish();
+    formMgr.save(formVersion1);
+
+    jdbcTemplate.update(
+        "UPDATE RSForm SET previousVersion_id = ? WHERE id = ?",
+        formVersion0.getId(),
+        formVersion1.getId());
+
+    // As userB create a document from version 1
+    User userB = createInitAndLoginAnyUser();
+    Record userBDoc =
+        recordFactory.createStructuredDocument("doc from formV1", userB, formVersion1);
+    recordMgr.save(userBDoc, userB);
+
+    //    // As userA, create version 2
+    logoutAndLoginAs(userA);
+    RSForm formVersion2 = createAnyForm(userA);
+    formVersion2.publish();
+    formMgr.save(formVersion2);
+
+    jdbcTemplate.update(
+        "UPDATE RSForm SET previousVersion_id = ? WHERE id = ?",
+        formVersion1.getId(),
+        formVersion2.getId());
+
+    // As sysadmin, delete userA
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(userA.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(userA);
+
+    // assert form version chain forward and backwards from version used by userB are transferred to
+    // sysadmin
+    assertFormExistsOwnedBySysadmin(formVersion0.getId(), sysadmin);
+    assertFormExistsOwnedBySysadmin(formVersion1.getId(), sysadmin);
+    assertFormExistsOwnedBySysadmin(formVersion2.getId(), sysadmin);
+  }
+
+  private void assertFormExistsOwnedBySysadmin(Long formId, User sysadmin) {
+    RSForm form = formMgr.get(formId);
+    assertEquals(sysadmin, form.getOwner());
+  }
+
   private UserDeletionPolicy getDeleteTempUserPolicy() {
     return new UserDeletionPolicy(UserTypeRestriction.TEMP_USER);
   }
