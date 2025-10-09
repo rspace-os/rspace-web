@@ -26,6 +26,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
+import { useSnippetPreview } from "./CallableSnippetPreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { useFolderOpen } from "./OpenFolderProvider";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
@@ -219,6 +220,7 @@ const CustomTreeItem = observer(
     const { openPdfPreview } = usePdfPreview();
     const { openAsposePreview } = useAsposePreview();
     const { openSnapGenePreview } = useSnapGenePreview();
+    const { openSnippetPreview } = useSnippetPreview();
     const primaryAction = usePrimaryAction();
     const { openFolder } = useFolderOpen();
 
@@ -249,6 +251,9 @@ const CustomTreeItem = observer(
             break;
           case "snapgene":
             void openSnapGenePreview(file);
+            break;
+          case "snippet":
+            void openSnippetPreview(file);
             break;
         }
       });
@@ -467,12 +472,6 @@ const TreeView = ({
 }: TreeViewArgs) => {
   const { addAlert } = React.useContext(AlertContext);
   const selection = useGallerySelection();
-  const { openImagePreview } = useImagePreview();
-  const { openPdfPreview } = usePdfPreview();
-  const { openAsposePreview } = useAsposePreview();
-  const { openSnapGenePreview } = useSnapGenePreview();
-  const primaryAction = usePrimaryAction();
-  const { openFolder } = useFolderOpen();
 
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
 
