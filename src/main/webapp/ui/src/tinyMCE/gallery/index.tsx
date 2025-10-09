@@ -49,6 +49,7 @@ export interface Editor {
 declare global {
   interface RSGlobal {
     insertTemplateIntoTinyMCE?: (templateName: string, data: unknown) => void;
+    confirm?: (message: string, type: "error" | "info") => void;
   }
 
   interface Window {
@@ -104,6 +105,12 @@ class GalleryPlugin {
                           .then((response) => {
                             window.addFromGallery(
                               (response.data as { data: unknown }).data,
+                            );
+                          })
+                          .catch((error) => {
+                            window.RS.confirm?.(
+                              `Could not insert file "${file.name}"`,
+                              "error",
                             );
                           });
                       });
