@@ -62,31 +62,31 @@ const omitDefault = <T extends object>(obj: T): object => {
 };
 
 export const parseCoreFetcherArgsFromUrl = (
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
 ): CoreFetcherArgs => {
   const query = searchParams.get("query");
   const pageSize = Result.fromNullable(
     searchParams.get("pageSize"),
-    new Error(`Search parameter "pageSize" is missing`)
+    new Error(`Search parameter "pageSize" is missing`),
   ).flatMap(parseInteger);
   const pageNumber = Result.fromNullable(
     searchParams.get("pageNumber"),
-    new Error(`Search parameter "pageNumber" is missing`)
+    new Error(`Search parameter "pageNumber" is missing`),
   ).flatMap(parseInteger);
   const orderBy = searchParams.get("orderBy");
   const order = Result.fromNullable(
     searchParams.get("order"),
-    new Error(`Search parameter "order" is missing`)
+    new Error(`Search parameter "order" is missing`),
   ).flatMap(parseOrder);
   const parentGlobalId = searchParams.get("parentGlobalId");
   const resultType = Result.fromNullable(
     searchParams.get("resultType"),
-    new Error(`Search parameter "resultType" is missing`)
+    new Error(`Search parameter "resultType" is missing`),
   ).flatMap(parseResultType);
   const ownedBy = searchParams.get("ownedBy");
   const deletedItems = Result.fromNullable(
     searchParams.get("deletedItems"),
-    new Error(`Search parameter "deletedItems" is missing`)
+    new Error(`Search parameter "deletedItems" is missing`),
   ).flatMap(parseDeletedItems);
   // prettier-ignore
   return {
@@ -112,7 +112,7 @@ export const parseCoreFetcherArgsFromUrl = (
  * with either specified values or else their defaults.
  */
 export const generateUrlFromCoreFetcherArgs = (
-  fetcherArgs: CoreFetcherArgs
+  fetcherArgs: CoreFetcherArgs,
 ): string => {
   const params = pick(...Object.keys(DEFAULT_SEARCH))({
     ...DEFAULT_SEARCH,
@@ -122,7 +122,7 @@ export const generateUrlFromCoreFetcherArgs = (
   delete params.benchOwner;
   delete params.owner;
   const searchParams = new URLSearchParams(
-    omitDefault(omitNull(params)) as Record<string, string>
+    omitDefault(omitNull(params)) as Record<string, string>,
   );
   return `/inventory/search?${searchParams.toString()}`;
 };
@@ -168,7 +168,7 @@ export default class CoreFetcher {
     params: CoreFetcherArgs | null = {
       ...DEFAULT_SEARCH,
       ...DEFAULT_FETCHER,
-    }
+    },
   ) {
     makeObservable(this, {
       results: observable,
@@ -299,7 +299,7 @@ export default class CoreFetcher {
 
   async search(
     _params: CoreFetcherArgs | null = null,
-    storeResults: (results: Array<InventoryRecord>) => void
+    storeResults: (results: Array<InventoryRecord>) => void,
   ) {
     this.setLoading(true);
 
@@ -358,7 +358,7 @@ export default class CoreFetcher {
           templates?: Array<Record<string, unknown> & { globalId: GlobalId }>;
         }>(
           endpoint,
-          new URLSearchParams(omitNull(params) as Record<string, string>)
+          new URLSearchParams(omitNull(params) as Record<string, string>),
         );
         const records = match<
           void,
@@ -404,12 +404,33 @@ export default class CoreFetcher {
             const newRecord = factory.newRecord(result);
             newRecord.populateFromJson(factory, result, null);
             return newRecord;
-          })
+          }),
         );
+        /*
+         * The query search parameter is an exact match search, so if there are
+         * no results and the query is not empty and does not already end with a
+         * wildcard, then perform the search again with a wildcard appended to
+         * the query. This is a bit of a hack, but it provides a better user
+         * experience than simply returning no results, allowing the user to
+         * more quickly find what they are looking for based on prefix matching.
+         */
+        if (
+          (data.totalHits === 0 || records.length === 0) &&
+          typeof params.query === "string" &&
+          !/\*$/.test(params.query)
+        ) {
+          await this.search(
+            {
+              ..._params,
+              query: params.query + "*",
+            },
+            storeResults,
+          );
+        }
       }
       if (this.endpoint !== endpoint)
         console.warn(
-          "search.endpoint has changed during fetching, which may result in buggy behaviour."
+          "search.endpoint has changed during fetching, which may result in buggy behaviour.",
         );
       this.setLoading(false);
     } catch (error) {
@@ -427,12 +448,12 @@ export default class CoreFetcher {
                   Parsers.isString(e).map((title) => ({
                     title,
                     variant: "error" as const,
-                  }))
-                )
-              )
+                  })),
+                ),
+              ),
             )
             .orElse([]),
-        })
+        }),
       );
       console.error("Could not perform search with parameters", params, error);
     }
@@ -467,7 +488,7 @@ export default class CoreFetcher {
       Object.entries(DEFAULT_SEARCH) as Array<
         [
           keyof typeof DEFAULT_SEARCH,
-          (typeof DEFAULT_SEARCH)[keyof typeof DEFAULT_SEARCH]
+          (typeof DEFAULT_SEARCH)[keyof typeof DEFAULT_SEARCH],
         ]
       >
     ).reduce(
@@ -475,10 +496,10 @@ export default class CoreFetcher {
         ...acc,
         [k]: acc[k] || this[k] || v,
       }),
-      params
+      params,
     );
     preparedParams.orderBy = `${String(preparedParams.orderBy)} ${String(
-      preparedParams.order
+      preparedParams.order,
     )}`;
     delete preparedParams.order;
     delete preparedParams.owner;
@@ -494,7 +515,7 @@ export default class CoreFetcher {
    */
   generateQuery(editedParams: CoreFetcherArgs): URLSearchParams {
     const params = pick(
-      ...(Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>)
+      ...(Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>),
     )(this.generateParams(editedParams)) as Partial<CoreFetcherArgs>;
 
     // These aren't URL serialisable
@@ -505,7 +526,7 @@ export default class CoreFetcher {
     params.pageNumber = 0;
 
     return new URLSearchParams(
-      omitDefault(omitNull(params)) as Record<string, string>
+      omitDefault(omitNull(params)) as Record<string, string>,
     );
   }
 
@@ -520,11 +541,11 @@ export default class CoreFetcher {
       this.generateParams({
         ...DEFAULT_SEARCH,
         ...editedParams,
-      })
+      }),
     ) as Partial<CoreFetcherArgs>;
     // Don't need to delete those that aren't serialisable as they are null.
     return new URLSearchParams(
-      omitDefault(omitNull(params)) as Record<string, string>
+      omitDefault(omitNull(params)) as Record<string, string>,
     );
   }
 
@@ -536,7 +557,7 @@ export default class CoreFetcher {
   get serialize(): Partial<CoreFetcherArgs> {
     const keysOfComplexData = new RsSet(["owner", "benchOwner", "permalink"]);
     const keysOfSimpleData: RsSet<string> = new RsSet(
-      Object.keys(DEFAULT_SEARCH)
+      Object.keys(DEFAULT_SEARCH),
     ).subtract(keysOfComplexData);
     return filterObject((k) => keysOfSimpleData.has(k), {
       ...DEFAULT_SEARCH,
@@ -550,14 +571,14 @@ export default class CoreFetcher {
 
   addResults(
     prependResults: Array<InventoryRecord> = [],
-    appendResults: Array<InventoryRecord> = []
+    appendResults: Array<InventoryRecord> = [],
   ): void {
     this.results = [...prependResults, ...this.results, ...appendResults];
   }
 
   replaceResult(result: InventoryRecord): void {
     this.results = this.results.map((r) =>
-      r.globalId === result.globalId ? result : r
+      r.globalId === result.globalId ? result : r,
     );
   }
 
