@@ -592,6 +592,7 @@ public class WorkspaceController extends BaseController {
     User user = getUserByUsername(principal.getName());
     Folder usersRootFolder = folderManager.getRootFolderForUser(user);
     Folder target = null;
+    String errorReason = "";
 
     // handle input which might contain a /
     if ("/".equals(targetFolderId)) {
@@ -634,6 +635,9 @@ public class WorkspaceController extends BaseController {
                 baseRecordToMove.getId(),
                 target.getId(),
                 ex.getMessage());
+            if (ex.getMessage().contains("document into own notebook")) {
+              errorReason = "workspace.share.owned.into.shared.owned";
+            }
             break;
           }
         } else {
@@ -652,7 +656,11 @@ public class WorkspaceController extends BaseController {
     } else {
       String msgKey;
       if (moveCounter == 0) {
-        msgKey = getText("workspace.move.nothing.moved");
+        if (StringUtils.isBlank(errorReason)) {
+          msgKey = getText("workspace.move.nothing.moved");
+        } else {
+          msgKey = getText(errorReason);
+        }
       } else {
         msgKey = getText("workspace.move.some.not.moved");
       }
