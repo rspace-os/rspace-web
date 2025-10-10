@@ -263,6 +263,7 @@ function generateIconSrc(
   if (section === GALLERY_SECTION.DMPS) {
     return "/images/icons/dmp.svg";
   }
+  if (file.isSnippet) return "/images/icons/snippet.svg";
   return idToString(id)
     .flatMap((idStr) => {
       if (type === "Image")
