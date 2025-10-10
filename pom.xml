@@ -923,7 +923,7 @@
         <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parsers</artifactId>
-        <version>1.17</version>
+        <version>${tika.version}</version>
         <exclusions>
             <exclusion>
                 <groupId>org.opengis</groupId>
@@ -1017,10 +1017,38 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
             </exclusion>
+            <exclusion>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>com.mchange</groupId>
+                <artifactId>mchange-commons-java</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>com.mchange</groupId>
+                <artifactId>c3p0</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>javax.measure</groupId>
+                <artifactId>unit-api</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>xml-apis</groupId>
+                <artifactId>xml-apis</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.jvnet.staxex</groupId>
+                <artifactId>stax-ex</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+            </exclusion>
         </exclusions>
     </dependency>
     <dependency>
-        <!-- tika-parsers 1.17 internally-conflicting dependency,
+        <!-- tika-parsers internally-conflicting dependency,
         used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
         <groupId>com.healthmarketscience.jackcess</groupId>
         <artifactId>jackcess</artifactId>
@@ -1032,11 +1060,11 @@
             </exclusion>
         </exclusions>
     </dependency>
-    <!-- tika-parsers 1.17 internally-conflicting dependency -->
+    <!-- tika-parsers internally-conflicting dependency -->
     <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-core</artifactId>
-        <version>1.28.5</version>
+        <version>${tika.version}</version>
         <exclusions>
             <exclusion>
                 <groupId>commons-io</groupId>
@@ -3066,6 +3094,7 @@
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
     <spotless.version>2.43.0</spotless.version>
+    <tika.version>1.28.5</tika.version>
     <npm.dependencies.collection.arg>install --force</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
