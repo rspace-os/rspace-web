@@ -5,6 +5,19 @@ import { type RadioOption } from "../../components/Inputs/RadioField";
 import React from "react";
 import { type Alert } from "../contexts/Alert";
 
+/**
+ * @module Identifier
+ * @description There are various global identifier schemes used across the
+ * scientific research community to uniquely identifier everything from research
+ * outputs to the researchers themselves. This module is particularly concerned
+ * with identifiers used on samples, for which RSpace currently supports just
+ * IGSN IDs. When an RSpace instance is configured with DataCite, researchers
+ * may "mint" an identifier to associate with any Inventory record. Once published,
+ * the identifier receives a DOI from DataCite, is registered in the DataCite
+ * metadata store, and has a public Webpage. This module models the types used
+ * across the frontend system for identifiers.
+ */
+
 export type IGSNDateType =
   | "ACCEPTED"
   | "AVAILABLE"
@@ -129,7 +142,7 @@ export interface Identifier {
       title: React.ReactNode,
       body: React.ReactNode,
       confirmLabel: string,
-      cancelLabel: string
+      cancelLabel: string,
     ) => Promise<boolean>;
     addAlert: (alert: Alert) => void;
   }): Promise<void>;
@@ -141,7 +154,7 @@ export interface Identifier {
       title: React.ReactNode,
       body: React.ReactNode,
       confirmLabel: string,
-      cancelLabel: string
+      cancelLabel: string,
     ) => Promise<boolean>;
     addAlert: (alert: Alert) => void;
   }): Promise<void>;

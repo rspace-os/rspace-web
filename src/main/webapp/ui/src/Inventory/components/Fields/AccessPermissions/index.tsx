@@ -183,9 +183,7 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                         <Grid item>
                           <OptionHeading>Explicit access list</OptionHeading>
                           <OptionExplanation>
-                            Accessible to only those who are in a lab or
-                            collaboration group that is listed in the table
-                            below, which can be any group in the system.
+                            Accessible only to members of the following groups the owner belongs to.
                           </OptionExplanation>
                         </Grid>
                         <Grid item>

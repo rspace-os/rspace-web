@@ -4,12 +4,16 @@
  *   - Iterator           - An object that implements the iterator protocol,
  *                          which consists of a next() method that returns an
  *                          object with two properties: done and value.
- *   - Generator          - A type of generator that can only be executed once.
+ *   - Iterable           - An object that implements the iterable protocol,
+ *                          by having a Symbol.iterator method that returns an
+ *                          iterator.
  *   - Generator Function - Differentiated from regular functions by the
  *                          asterisk after the function keyword, when called
  *                          they do not initially execute, instead returning a
  *                          Generator that starts executing on the first `next`
  *                          call.
+ *   - Generator          - An object returned by a generator function, which
+ *                          conforms to both the iterable and iterator protocols.
  *   - yield              - A keyword that is used to pause and resume a
  *                          generator function. It returns the arguments passed
  *                          to the next() method.
@@ -33,7 +37,7 @@ export function* incrementForever(): Generator<number, void, void> {
  */
 export function* take<T>(
   iterator: Iterable<T>,
-  n: number
+  n: number,
 ): Generator<T, void, void> {
   let count = n;
   for (const x of iterator) {

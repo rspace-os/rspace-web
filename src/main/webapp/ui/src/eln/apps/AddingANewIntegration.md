@@ -40,13 +40,13 @@ different set of APIs for saving and deleting those configurations.
 
 ### 1. API calls
 
-#### 1.1 Flow type
+#### 1.1 TypeScript type
 
 In each case, the first step is to declare the type of the credentials. The file
 [./useIntegrationsEndpoint.js](useIntegrationsEndpoint.js) exports a custom
 react hook that performs all of the network calls. As part of this, it
 deserialises and serialises the JSON into a shape that can be type checked by
-Flow. By converting the data into a new shape, we're able to leverage the
+TypeScript. By converting the data into a new shape, we're able to leverage the
 capabilities of the type checker, make impossible states impossible (such as an
 integration being both enabled and unavailable), and isolate the UI code from
 API changes that may be undertaken in the future.
@@ -61,7 +61,7 @@ requirement would be `IntegrationState<{||}>`: the type of the credentials is
 the empty object.
 
 The type of the state of OAuth-based authentication will be something like
-```
+```typescript
 IntegrationState<{|
   ACCESS_TOKEN: Optional<string>,
 |}>
@@ -73,7 +73,7 @@ the same, with `ACCESS_TOKEN` replaced with the other details.
 For the most complex integrations with several configurations, in place of an
 object the type of the credentials will be an array. As an example, this is the
 type of the state of the GitHub integration:
-```
+```typescript
 IntegrationState<
   Array<
     Optional<{|
@@ -101,14 +101,14 @@ defining a function that acts as parser for this new integration's state.
 
 For integrations without authentication, this is a straight copy-paste job: you
 want something like this
-```
+```typescript
 $NAME: { mode: parseState(data.$Name, credentials: {} },
 ```
 
 For OAuth-based authentication and simple other credentials this isn't too much
 more complex. There are helper functions, `parseCredentialString` and
 `parseCredentialBoolean` to aid with this process.
-```
+```typescript
 $NAME: {
   mode: parseState(data.$NAME),
   credentials: {
@@ -139,7 +139,7 @@ For integrations without authentication, this is a simple process of mapping the
 `mode` property of the `IntegraionState` object to the `available` and
 `enabled`. There is no other data to map because, recall, the credential type is
 the empty object.
-```
+```typescript
   if (integration === "$NAME") {
     return {
       name: "$NAME",
@@ -153,7 +153,7 @@ the empty object.
 For OAuth and simple authenticated integrations, the `options` object must also
 be populated with the credential data. Assuming there is just one piece of data
 this just a case of reversing the decoding:
-```
+```typescript
 if (integration === "$NAME") {
     return {
       name: "$NAME",
@@ -166,12 +166,12 @@ if (integration === "$NAME") {
   }
 ```
 
-The Flow suppression are unfortunate, but do not result in any weakening of the
-type safety. Despite the conditional logic selecting each integration in turn,
-Flow remains unconvinced that `data.credentials` has the refined type. However,
-because the `options` object will simply be serialised into a JSON string and
-passed to the API it shouldn't be possible for any bug to be present that would
-have been caught by Flow.
+The TypeScript suppression are unfortunate, but do not result in any weakening
+of the type safety. Despite the conditional logic selecting each integration in
+turn, TypeScript remains unconvinced that `data.credentials` has the refined
+type. However, because the `options` object will simply be serialised into a
+JSON string and passed to the API it shouldn't be possible for any bug to be
+present that would have been caught by TypeScript.
 
 Once more, the more complex integrations are, well, more complex. Each
 configuration needs to be encoded into the `options` object using
