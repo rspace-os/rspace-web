@@ -1,4 +1,4 @@
-/* eslint-disable camelcase */
+ 
 
 export type BarcodeFormat =
   | "aztec"

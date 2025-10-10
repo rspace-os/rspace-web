@@ -17,9 +17,7 @@ const Inner = () => {
   React.useEffect(() => {
     uiStore.addAlert = addAlert;
     uiStore.removeAlert = removeAlert;
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - addAlert will not change
-     */
+     
   }, [uiStore]);
 
   return <> </>;

@@ -928,7 +928,7 @@ export function InfoPanelForLargeViewports() {
                 return null;
               })
               .orElseGet((errors) => {
-                // eslint-disable-next-line no-console -- hard to debug why the button is not shown otherwise
+                 
                 console.info("Could not provide view", errors);
                 return (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }}>

@@ -239,9 +239,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
 
   React.useEffect(() => {
     void getUiNavigationData();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - getUiNavigationData will not meaningfully change
-     */
+     
   }, []);
 
   if (loading) return { tag: "loading" };

@@ -1062,7 +1062,7 @@ export default class ContainerModel
     return true;
   }
 
-  //eslint-disable-next-line no-unused-vars
+   
   // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): {
     [key in keyof ContainerEditableFields]: string | null;
@@ -1242,7 +1242,7 @@ export class ContainerCollection
     return super.fieldValues;
   }
 
-  //eslint-disable-next-line no-unused-vars
+   
   get noValueLabel(): {
     [key in keyof BatchContainerEditableFields]: string | null;
   } {

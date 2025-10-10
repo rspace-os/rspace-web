@@ -42,7 +42,7 @@ function GroupSeoManager({
   useEffect(() => {
     axios.get(`/groups/ajax/seoAllowedStatus/${groupId}`).then((response) => {
       if (!response.data.success) {
-        let msg = getValidationErrorString(response.data.error, ",", true);
+        const msg = getValidationErrorString(response.data.error, ",", true);
         RS.confirm(msg, "warning", 5000, { sticky: true });
         setWaiting(false);
         return;
@@ -66,7 +66,7 @@ function GroupSeoManager({
 
     axios.post(url + groupId).then((response) => {
       if (!response.data.success) {
-        let msg = getValidationErrorString(response.data.error, ",", true);
+        const msg = getValidationErrorString(response.data.error, ",", true);
         RS.confirm(msg, "warning", 5000, { sticky: true });
         setWaiting(false);
         return;

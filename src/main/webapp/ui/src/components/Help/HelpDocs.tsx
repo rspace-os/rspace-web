@@ -35,7 +35,7 @@ declare global {
   }
 }
 
-/* eslint-disable camelcase -- lighthouse requires object properties with camel casing */
+ 
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 

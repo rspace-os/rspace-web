@@ -331,7 +331,7 @@ type GalleryAppBarArgs = {
   };
 };
 
-// eslint-disable-next-line complexity -- yep, there's quite a lot of conditional logic here
+ 
 function GalleryAppBar({
   variant,
   currentPage,
@@ -363,9 +363,7 @@ function GalleryAppBar({
     FetchingData.getSuccessValue(uiNavigationData).do(({ bannerImgSrc }) => {
       setBrandingHref(bannerImgSrc);
     });
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - setBrandingHref wont meaningfully change
-     */
+     
   }, [uiNavigationData]);
 
   const { showInventory, showSystem, showMyLabGroups } =
@@ -924,15 +922,15 @@ function GalleryAppBar({
                           const auth2 = window.gapi.auth2.getAuthInstance();
                           if (auth2) {
                             void auth2.signOut().then(() => {
-                              // eslint-disable-next-line no-console
+                               
                               console.log("User signed out.");
                             });
                           } else {
-                            // eslint-disable-next-line no-console
+                             
                             console.log("No GAPI authinstance defined");
                           }
                         } else {
-                          // eslint-disable-next-line no-console
+                           
                           console.log("No GAPI defined");
                         }
 

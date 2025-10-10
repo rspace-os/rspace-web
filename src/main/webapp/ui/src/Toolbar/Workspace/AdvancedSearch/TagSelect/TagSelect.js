@@ -65,7 +65,7 @@ const useStyles = makeStyles()((theme) => ({
       theme.palette.type === "light"
         ? theme.palette.grey[300]
         : theme.palette.grey[700],
-      0.08
+      0.08,
     ),
   },
   noOptionsMessage: {
@@ -263,13 +263,13 @@ export default function TagSelect(props) {
   useEffect(() => {
     const fetchData = async () => {
       const result = await axios(
-        "/workspace/editor/structuredDocument/userTags"
+        "/workspace/editor/structuredDocument/userTags",
       );
       const RSPACE_ONTOLOGY_URL_DELIMITER = "__RSP_EXTONT_URL_DELIM__";
       const parseDelimitedTags = (tag) => {
         if (tag.includes(RSPACE_ONTOLOGY_URL_DELIMITER)) {
           return replaceCommaDelimiterInTag(
-            tag.split(RSPACE_ONTOLOGY_URL_DELIMITER)[0].trim()
+            tag.split(RSPACE_ONTOLOGY_URL_DELIMITER)[0].trim(),
           );
         }
         return tag;
@@ -283,7 +283,7 @@ export default function TagSelect(props) {
         return tag;
       };
 
-      let tags = result.data.data.map((suggestion) => ({
+      const tags = result.data.data.map((suggestion) => ({
         value: replaceForwardSlashInTag(parseDelimitedTags(suggestion)),
         label: parseDelimitedTags(suggestion),
       }));
@@ -291,10 +291,10 @@ export default function TagSelect(props) {
       setSuggestions(tags);
 
       if (props.selected) {
-        let selected = props.selected.split("<<>>");
-        let local_selected = [];
+        const selected = props.selected.split("<<>>");
+        const local_selected = [];
         selected.map((s) => {
-          let idx = tags.findIndex((r) => r.label == s);
+          const idx = tags.findIndex((r) => r.label == s);
           local_selected.push(tags[idx]);
         });
         handleChangeMulti(local_selected);

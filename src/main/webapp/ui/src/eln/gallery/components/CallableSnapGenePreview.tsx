@@ -142,7 +142,7 @@ function DnaPreview({
           </IconButton>
         </ButtonGroup>
       </Stack>
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- there is no semantic element */}
+      { }
       <div
         style={{
           borderRadius: "3px",
@@ -313,9 +313,7 @@ function RestrictionSites({
     setPage(0);
     setEnzymeList([]);
     void fetchEnzymes();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - fetchEnzymes will not meaningfully change
-     */
+     
   }, [enzymeSet]);
 
   const handleRequestSort = (_event: unknown, property: string) => {
@@ -579,17 +577,13 @@ function OrfTable({
 
   React.useEffect(() => {
     void fetchData();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - fetchData will not meaningfully change
-     */
+     
   }, []);
 
   React.useEffect(() => {
     setPage(0);
     filterResults(results);
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - filterResultswill not meaningfully change
-     */
+     
   }, [readingFrameOption]);
 
   const handleRequestSort = (_event: unknown, property: string) => {

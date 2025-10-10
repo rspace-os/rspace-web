@@ -141,9 +141,7 @@ const WholePage = styled(
          * encoded in the URL and so cannot be autoselected.
          */
       }
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - selection should be allowed to change with re-triggering this
-       */
+       
     }, [autoSelect, galleryListing]);
 
     const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
@@ -166,9 +164,7 @@ const WholePage = styled(
     const { trackEvent } = React.useContext(AnalyticsContext);
     React.useEffect(() => {
       trackEvent("user:load:page:gallery", { section: selectedSection });
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - selectedSection may change but we only care about on-mount
-       */
+       
     }, []);
 
     React.useEffect(() => {
@@ -472,9 +468,7 @@ function GalleryFileInFolder() {
 
   React.useEffect(() => {
     void fetchFileDetails();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - fetchFileDetails will not meaningfully change
-     */
+     
   }, []);
 
   return FetchingData.match<number, React.ReactNode>(folderId, {

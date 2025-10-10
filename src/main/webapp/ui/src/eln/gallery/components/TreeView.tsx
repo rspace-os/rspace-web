@@ -99,10 +99,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
   }: TreeItemContentArgs): React.ReactNode => {
     const listingOf = React.useMemo(
       () => ({ tag: "section" as const, section, path: [...path, file] }),
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - path will not meaningfully change
-       * - file will not meaningfully change
-       */
+       
       [section],
     );
 
@@ -123,9 +120,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
        * folder is done refreshing.
        */
       if (refeshing) void refreshingThisListing();
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - refreshingThisListing will not meaningfully change
-       */
+       
     }, [refeshing]);
 
     React.useEffect(() => {
@@ -136,9 +131,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
             treeViewItemIdMap.set(f.treeViewItemId, f);
         });
       });
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - treeViewItemId will not change as it is mobx observable that gets mutated
-       */
+       
     }, [galleryListing]);
 
     return FetchingData.match(galleryListing, {
@@ -153,7 +146,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
           <>
             {listing.list.map((f, i) =>
               filter(f) !== "hide" ? (
-                // eslint-disable-next-line no-use-before-define -- CustomTreeItem and TreeItemContent are mutually recursive
+                 
                 <CustomTreeItem
                   file={f}
                   index={i}
@@ -445,9 +438,7 @@ const TreeView = ({
     runInAction(() => {
       for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
     });
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - treeViewItemId will not change as it is mobx observable that gets mutated
-     */
+     
   }, [listing]);
 
   /*

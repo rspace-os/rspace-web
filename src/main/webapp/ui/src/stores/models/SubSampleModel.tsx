@@ -511,7 +511,7 @@ export class SubSampleCollection
     };
   }
 
-  //eslint-disable-next-line no-unused-vars
+   
   get noValueLabel(): {
     [key in keyof BatchSubSampleEditableFields]: string | null;
   } {
