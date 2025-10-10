@@ -5,12 +5,12 @@ import RadioField, {
   type RadioOption,
 } from "../../../../components/Inputs/RadioField";
 import FormControl from "../../../../components/Inputs/FormControl";
+import { type Container } from "@/stores/definitions/Container";
 import {
-  type Container,
-  type Axis,
-  DEFAULT_ROW_AXIS,
+  Axis,
   DEFAULT_COLUMN_AXIS,
-} from "../../../../stores/definitions/Container";
+  DEFAULT_ROW_AXIS,
+} from "@/stores/definitions/container/types";
 
 const LABEL_OPTIONS: Array<RadioOption<Axis>> = [
   { label: "ABC", value: "ABC" },

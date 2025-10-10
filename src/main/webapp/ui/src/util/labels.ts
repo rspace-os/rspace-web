@@ -1,5 +1,5 @@
 import { match } from "@/util/Util";
-import { Axis } from "@/stores/definitions/Container";
+import { Axis } from "@/stores/definitions/container/types";
 
 export const encodeA1Z26 = (num: number): string =>
   String.fromCharCode(64 + num);

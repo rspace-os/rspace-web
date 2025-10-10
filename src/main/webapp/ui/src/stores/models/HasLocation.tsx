@@ -1,6 +1,5 @@
 import {
   Container,
-  GridLayout,
   Location,
 } from "../definitions/Container";
 import { Factory } from "../definitions/Factory";
@@ -23,6 +22,7 @@ import InventoryBaseRecord, {
   InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import { layoutToLabel } from "@/util/labels";
+import { GridLayout } from "@/stores/definitions/container/types";
 
 /**
  * Inventory records that model items that physically exist and thus have a

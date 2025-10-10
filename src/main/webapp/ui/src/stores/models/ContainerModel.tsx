@@ -6,10 +6,7 @@ import { selectColor } from "../../util/colors";
 import RsSet from "../../util/set";
 import {
   type Container,
-  type ContainerType,
   type Location,
-  type GridLayout,
-  type ContentSummary,
   cTypeToDefaultSearchView,
 } from "../definitions/Container";
 import {
@@ -89,6 +86,11 @@ import {
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
 import { layoutToLabels } from "@/util/labels";
+import {
+  ContainerType,
+  ContentSummary,
+  GridLayout,
+} from "@/stores/definitions/container/types";
 
 type ContainerEditableFields = InventoryBaseRecordEditableFields &
   HasLocationEditableFields;
