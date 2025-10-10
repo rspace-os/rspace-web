@@ -792,7 +792,7 @@ function decodeIntegrationStates(data: {
   };
 }
 
-// eslint-disable-next-line complexity
+ 
 const encodeIntegrationState = <I extends Integration>(
     integration: I,
     data: IntegrationStates[I]
@@ -1294,7 +1294,7 @@ export function useIntegrationsEndpoint(): {
   };
 
   const update = React.useCallback(
-      // eslint-disable-next-line complexity
+       
       async <I extends Integration>(
           integration: I,
           newState: IntegrationStates[I]
@@ -1425,7 +1425,7 @@ export function useIntegrationsEndpoint(): {
       []
   );
 
-  // eslint-disable-next-line complexity
+   
   const saveAppOptions = async <I extends Integration>(
       appName: I,
       optionsId: Optional<OptionsId>,

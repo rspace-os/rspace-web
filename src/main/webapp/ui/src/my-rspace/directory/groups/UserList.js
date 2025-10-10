@@ -27,7 +27,7 @@ class UserList extends React.Component {
   isSelected = (user) => {
     return (
       this.props.selected.findIndex(
-        (selected) => selected.username == user.username
+        (selected) => selected.username == user.username,
       ) != -1
     );
   };
@@ -37,10 +37,10 @@ class UserList extends React.Component {
       stripDiacritics(
         `${user.username} ${
           user.displayName ? user.displayName : user.fullName
-        }`
+        }`,
       )
         .toUpperCase()
-        .includes(stripDiacritics(this.state.searchTerm.toUpperCase()))
+        .includes(stripDiacritics(this.state.searchTerm.toUpperCase())),
     );
   };
 

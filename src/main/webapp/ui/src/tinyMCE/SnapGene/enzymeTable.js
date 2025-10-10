@@ -68,7 +68,7 @@ export default function EnzymeTable(props) {
   const fetchEnzymes = () => {
     setLoading(true);
 
-    let url = `/molbiol/dna/enzymes/${props.id}?enzymeSet=${enzymeSet}`;
+    const url = `/molbiol/dna/enzymes/${props.id}?enzymeSet=${enzymeSet}`;
     axios
       .get(url)
       .then((response) => {
@@ -77,7 +77,7 @@ export default function EnzymeTable(props) {
       .catch((error) => {
         RS.confirm(error.response.data, "warning", "infinite");
       })
-      .finally(function () {
+      .finally(() => {
         setLoading(false);
       });
   };
@@ -115,7 +115,7 @@ export default function EnzymeTable(props) {
   };
 
   const generateEnzymeList = (list) => {
-    let new_list = list.map((enzyme) => {
+    const new_list = list.map((enzyme) => {
       return enzyme.hits.map((hit) => {
         return {
           name: enzyme.name,

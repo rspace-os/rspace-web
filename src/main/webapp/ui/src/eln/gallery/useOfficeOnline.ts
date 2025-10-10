@@ -58,9 +58,7 @@ export default function useOfficeOnline(): {
     });
     // we should probably store the result in session storage
     // as it doesn't need to be loaded everytime this component is mounted
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - context will not meaningfully change
-     */
+     
   }, []);
 
   return { supportedExts };

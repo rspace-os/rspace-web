@@ -102,7 +102,7 @@ import Analytics from "../../../components/Analytics";
  * information.
  */
 const EventBoundary = ({ children }: { children: React.ReactNode }) => (
-  // eslint-disable-next-line
+   
   <div
     onKeyDown={(e) => {
       e.stopPropagation();
@@ -479,7 +479,7 @@ const PiAction = ({
   return (
     <>
       <MenuItem
-        //eslint-disable-next-line
+         
         autoFocus={autoFocus}
         disabled={allowedPiAction.isError}
         onClick={() => {
@@ -1037,7 +1037,7 @@ const SelectionActions = ({
                    * ../../../../../QuirksOfMaterialUi.md, section
                    * "Custom components that wrap `MenuItem`s"
                    */
-                  //eslint-disable-next-line
+                   
                   autoFocus
                   selectedUser={selectedUser}
                   setActionsAnchorEl={setActionsAnchorEl}

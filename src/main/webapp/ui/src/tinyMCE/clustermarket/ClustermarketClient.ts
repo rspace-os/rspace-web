@@ -7,14 +7,14 @@ import type {
   BookingsList,
 } from "./ClustermarketData";
 
-// eslint-disable-next-line require-await
+ 
 const getBookingsList = async (): AxiosPromise<BookingsList> => {
   return axios.get<BookingsList>("/apps/clustermarket/bookings");
 };
 
 const getBookingDetails = async (
   bookingIDs: string
-  // eslint-disable-next-line require-await
+   
 ): AxiosPromise<Array<BookingDetails>> => {
   return axios.put("/apps/clustermarket/bookings/details", {
     bookingIDs,
@@ -23,7 +23,7 @@ const getBookingDetails = async (
 
 const getEquipmentDetails = async (
   equipmentIDs: string
-  // eslint-disable-next-line require-await
+   
 ): AxiosPromise<Array<EquipmentDetails>> => {
   return axios.put("/apps/clustermarket/equipment/details", { equipmentIDs });
 };

@@ -130,9 +130,7 @@ export default function useLinkedDocuments(file: GalleryFile): {
 
   React.useEffect(() => {
     void getLinkedDocuments();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - getLinkedDocuments will not meaningfully change
-     */
+     
   }, [file]);
 
   return {

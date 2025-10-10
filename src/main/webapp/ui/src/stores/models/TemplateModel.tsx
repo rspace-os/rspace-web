@@ -342,7 +342,7 @@ export default class TemplateModel extends SampleModel implements Template {
     return super.setEditing(value, refresh);
   }
 
-  // eslint-disable-next-line no-use-before-define
+   
   async setActiveResultToLatest(): Promise<TemplateModel> {
     const id = this.id;
     if (!id) throw new Error("id is required.");
@@ -599,7 +599,7 @@ export default class TemplateModel extends SampleModel implements Template {
     return false;
   }
 
-  //eslint-disable-next-line no-unused-vars
+   
   updateBecauseRecordsChanged(_recordIds: Set<GlobalId>) {
     /*
      * Whilst Sample has subsamples who when changed effect the Sample's

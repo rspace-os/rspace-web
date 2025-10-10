@@ -13,7 +13,7 @@ interface StyledCellProps {
 }
 
 const StyledCell = styled(
-  // eslint-disable-next-line react/display-name
+   
   React.forwardRef<
     HTMLTableCellElement,
     StyledCellProps & React.ComponentProps<typeof TableCell> & { theme?: any }

@@ -5,10 +5,10 @@ import { createRoot } from "react-dom/client";
 
 function MemberAutoshareStatusWrapper(props) {
   const [isCurrentlySharing, setIsCurrentlySharing] = React.useState(
-    props.isAutoshareInProgress
+    props.isAutoshareInProgress,
   );
   const [autoshareEnabled, setAutoshareEnabled] = React.useState(
-    props.autoshareEnabled
+    props.autoshareEnabled,
   );
 
   const fetchShareStatus = () => {
@@ -30,10 +30,10 @@ function MemberAutoshareStatusWrapper(props) {
   };
 
   const group = {
-    groupId: groupId,
-    groupDisplayName: groupDisplayName,
+    groupId,
+    groupDisplayName,
     labGroup: true,
-    autoshareEnabled: autoshareEnabled,
+    autoshareEnabled,
   };
 
   let isSwitchDisabled = false;
@@ -54,20 +54,19 @@ function MemberAutoshareStatusWrapper(props) {
 
   if (!isLabGroup) {
     return <> n/a </>;
-  } else {
-    return (
-      <AutoshareStatus
-        group={group}
-        username={props.username}
-        userId={props.userId}
-        isCurrentlySharing={isCurrentlySharing}
-        callback={fetchShareStatus}
-        isSwitch={true}
-        isSwitchDisabled={isSwitchDisabled}
-        switchDisabledReason={switchDisabledReason}
-      />
-    );
   }
+  return (
+    <AutoshareStatus
+      group={group}
+      username={props.username}
+      userId={props.userId}
+      isCurrentlySharing={isCurrentlySharing}
+      callback={fetchShareStatus}
+      isSwitch={true}
+      isSwitchDisabled={isSwitchDisabled}
+      switchDisabledReason={switchDisabledReason}
+    />
+  );
 }
 
 const domContainer = document.getElementById("memberAutoshareStatusWrapper");
@@ -88,11 +87,11 @@ axios.get(url).then((response) => {
 
   members
     .filter((member) =>
-      Boolean(document.getElementById(`autoshareStatus-${member.userId}`))
+      Boolean(document.getElementById(`autoshareStatus-${member.userId}`)),
     )
     .forEach((member) => {
       const root = createRoot(
-        document.getElementById(`autoshareStatus-${member.userId}`)
+        document.getElementById(`autoshareStatus-${member.userId}`),
       );
       root.render(
         <MemberAutoshareStatusWrapper
@@ -103,7 +102,7 @@ axios.get(url).then((response) => {
           isPI={member.isPI}
           autoshareEnabled={member.autoshareEnabled}
           isAutoshareInProgress={member.isAutoshareInProgress}
-        />
+        />,
       );
     });
 });

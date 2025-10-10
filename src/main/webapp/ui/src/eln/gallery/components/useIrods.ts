@@ -400,9 +400,7 @@ export default function useIrods(
   );
   React.useEffect(() => {
     void fetchConfiguredLocations();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - fetchConfiguredLocations wont meaningfully change
-     */
+     
   }, [sortedStringOfSelectedIds]);
 
   if (loading) return { tag: "loading" };

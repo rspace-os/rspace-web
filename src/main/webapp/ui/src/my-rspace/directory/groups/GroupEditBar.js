@@ -85,7 +85,7 @@ class GroupEditBar extends React.Component {
           })
           .catch((error) => {
             this.handleError(error);
-          })
+          }),
       );
     }
 
@@ -100,12 +100,12 @@ class GroupEditBar extends React.Component {
         axios
           .post(
             `/groups/ajax/admin/changePiCanEditAll/${this.state.group_id}`,
-            data
+            data,
           )
           .then((response) => {})
           .catch((error) => {
             this.handleError(error);
-          })
+          }),
       );
     }
 
@@ -121,12 +121,12 @@ class GroupEditBar extends React.Component {
         axios
           .post(
             `/groups/ajax/admin/changeHideProfileSetting/${this.state.group_id}`,
-            data
+            data,
           )
           .then((response) => {})
           .catch((error) => {
             this.handleError(error);
-          })
+          }),
       );
     }
 

@@ -28,7 +28,7 @@ library.add(
   faFolder,
   faShareAlt,
   faEye,
-  faTimes
+  faTimes,
 );
 
 import BaseToolbar from "../../components/BaseToolbar";
@@ -40,7 +40,7 @@ class NotebookToolbar extends React.Component {
     super(props);
     this.state = {
       workspaceFolderId: props.domContainer.getAttribute(
-        "data-workspace-folder-id"
+        "data-workspace-folder-id",
       ),
       settingsKey: props.domContainer.getAttribute("data-settings-key"),
       canCreateRecord:
@@ -217,7 +217,7 @@ window.renderToolbar = (newProps) => {
     },
   };
   rootNode.render(
-    <NotebookToolbar domContainer={domContainer} {...prevProps} />
+    <NotebookToolbar domContainer={domContainer} {...prevProps} />,
   );
 };
 
@@ -226,6 +226,6 @@ window.renderToolbar = (newProps) => {
  * opportunity to set up event handlers for the ReactToolbarMounted event
  * dispatched above.
  */
-window.addEventListener("load", function () {
+window.addEventListener("load", () => {
   window.renderToolbar();
 });

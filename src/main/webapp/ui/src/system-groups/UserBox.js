@@ -62,36 +62,34 @@ export default function main(props) {
       if (Array.isArray(username)) {
         setSelectedLeft(selectedLeft.filter((s) => !username.includes(s)));
       } else {
-        let idx = selectedLeft.findIndex((u) => u == username);
+        const idx = selectedLeft.findIndex((u) => u == username);
         if (idx == -1) {
           setSelectedLeft(selectedLeft.concat([username]));
         } else {
           setSelectedLeft(selectedLeft.filter((u) => u != username));
         }
       }
+    } else if (Array.isArray(username)) {
+      setSelectedRight(selectedRight.filter((s) => !username.includes(s)));
     } else {
-      if (Array.isArray(username)) {
-        setSelectedRight(selectedRight.filter((s) => !username.includes(s)));
+      const idx = selectedRight.findIndex((u) => u == username);
+      if (idx == -1) {
+        setSelectedRight(selectedRight.concat([username]));
       } else {
-        let idx = selectedRight.findIndex((u) => u == username);
-        if (idx == -1) {
-          setSelectedRight(selectedRight.concat([username]));
-        } else {
-          setSelectedRight(selectedRight.filter((u) => u != username));
-        }
+        setSelectedRight(selectedRight.filter((u) => u != username));
       }
     }
   };
 
   function addUsers() {
-    let selected = usersRight.concat(
-      props.users.filter((u) => selectedLeft.includes(u.username))
+    const selected = usersRight.concat(
+      props.users.filter((u) => selectedLeft.includes(u.username)),
     );
     if (props.maxSelected && props.maxSelected < selected.length) {
       setSnackbarMessage(
         <span>
           Please, select only <b>one</b> PI
-        </span>
+        </span>,
       );
       setSnackbar(true);
     } else {
@@ -107,10 +105,10 @@ export default function main(props) {
     setUsersLeft(
       props.users
         .filter((u) => selectedRight.includes(u.username))
-        .concat(usersLeft)
+        .concat(usersLeft),
     );
-    let selected = usersRight.filter(
-      (u) => !selectedRight.includes(u.username)
+    const selected = usersRight.filter(
+      (u) => !selectedRight.includes(u.username),
     );
     // remove from right column
     setUsersRight(selected);

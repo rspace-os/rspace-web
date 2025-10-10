@@ -12,7 +12,7 @@ function setupFormJs(globalContext) {
   vm.runInContext(
     fs.readFileSync("../scripts/pages/workspace/editor/form.js"),
     globalContext,
-    { filename: "form.js" }
+    { filename: "form.js" },
   );
 }
 
@@ -26,7 +26,7 @@ describe("Form", () => {
     globalContext.addError(null, "foo");
     expect(
       // eslint-disable-next-line testing-library/no-node-access
-      dom.window.document.querySelector("#errorSummary")
+      dom.window.document.querySelector("#errorSummary"),
     ).toHaveTextContent(/foo/);
   });
 
@@ -36,10 +36,8 @@ describe("Form", () => {
     setupJQuery(globalContext, dom);
     setupFormJs(globalContext);
 
-    expect(globalContext.parseRadioOptions('"foo, bar", baz', { isCSV: true })).toEqual([
-      '"foo',
-      'bar"',
-      "baz",
-    ]);
+    expect(
+      globalContext.parseRadioOptions('"foo, bar", baz', { isCSV: true }),
+    ).toEqual(['"foo', 'bar"', "baz"]);
   });
 });

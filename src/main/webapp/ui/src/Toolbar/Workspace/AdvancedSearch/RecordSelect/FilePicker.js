@@ -30,7 +30,7 @@ library.add(
   faFolder,
   faBook,
   faFile,
-  faTimes
+  faTimes,
 );
 
 import RootFolder from "./RootFolder";
@@ -54,7 +54,7 @@ class FilePicker extends React.Component {
           globalSelect: [],
           fromWorkspace: false,
         },
-        this.propagateChange
+        this.propagateChange,
       );
     }
     this.setState({ dialogOpen: true });
@@ -67,12 +67,12 @@ class FilePicker extends React.Component {
   confirmChoices = () => {
     this.setState(
       { dialogOpen: false, selectedFiles: this.state.globalSelect },
-      this.propagateChange
+      this.propagateChange,
     );
   };
 
   removeFile = (file_id) => {
-    let selected = update(this.state.selectedFiles, {
+    const selected = update(this.state.selectedFiles, {
       $splice: [[this.state.selectedFiles.indexOf(file_id), 1]],
     });
 
@@ -81,7 +81,7 @@ class FilePicker extends React.Component {
         selectedFiles: selected,
         globalSelect: selected,
       },
-      this.propagateChange
+      this.propagateChange,
     );
   };
 

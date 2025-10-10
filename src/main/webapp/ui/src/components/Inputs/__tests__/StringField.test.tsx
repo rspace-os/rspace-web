@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 /* eslint-env jest */
-/* eslint-disable no-undefined */
+ 
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";

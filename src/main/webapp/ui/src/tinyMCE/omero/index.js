@@ -6,39 +6,41 @@ import { getSorting, stableSort } from "../../util/table";
 import { createRoot } from "react-dom/client";
 import { omeroSort } from "./ResultsTable";
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-omero");
   const root = createRoot(domContainer);
   root.render(
-    <Omero omero_web_url={parent.tinymce.activeEditor.settings.omero_web_url} />
+    <Omero
+      omero_web_url={parent.tinymce.activeEditor.settings.omero_web_url}
+    />,
   );
 });
 
 function createTinyMceTable() {
-  let omeroTable = document.createElement("table");
+  const omeroTable = document.createElement("table");
   omeroTable.setAttribute("data-tableSource", "omero");
 
-  let tableHeader = document.createElement("tr");
+  const tableHeader = document.createElement("tr");
   const headers = getHeaders();
   const headersWithNotes = headers
     .slice(0, 4)
     .concat(
       [{ id: "notes", numeric: false, label: "Notes" }],
-      headers.slice(4)
+      headers.slice(4),
     );
   headersWithNotes.forEach((cell) => {
-    let columnName = document.createElement("th");
+    const columnName = document.createElement("th");
     columnName.textContent = cell.label;
     tableHeader.appendChild(columnName);
   });
   omeroTable.appendChild(tableHeader);
   omeroSort(getSelectedItems(), getOrder(), getOrderBy()).forEach((item) => {
-    let row = document.createElement("tr");
+    const row = document.createElement("tr");
 
     headersWithNotes.forEach((headerCell) => {
-      let cell = document.createElement("td");
+      const cell = document.createElement("td");
 
-      let textContent = item[headerCell.id];
+      const textContent = item[headerCell.id];
       if (headerCell.id === "path") {
         setCellContents(cell, "path", item);
       } else if (headerCell.id === "description") {
@@ -59,31 +61,31 @@ const setCellContents = (cell, type, item) => {
   hideUnwantedLinks(item);
   if (type === "description") {
     const dtRestToFormat = document.querySelector(
-      "[id=" + item.type + "_rest_description_" + item.id + "]"
+      "[id=" + item.type + "_rest_description_" + item.id + "]",
     );
     if (dtRestToFormat) {
       dtRestToFormat.outerHTML = dtRestToFormat.outerHTML.replace(
         /class.+?restOfDescription/,
-        'style="font-weight:lighter;font-size:0.9em;font-family:Verdana"'
+        'style="font-weight:lighter;font-size:0.9em;font-family:Verdana"',
       );
     }
     const dtFirstToFormat = document.querySelector(
-      "[id=" + item.type + "_first_description_" + item.id + "]"
+      "[id=" + item.type + "_first_description_" + item.id + "]",
     );
     if (dtFirstToFormat) {
       dtFirstToFormat.outerHTML = dtFirstToFormat.outerHTML.replace(
         /class.+?firstDescription/,
-        'style="font-weight:bold;font-style:italic;font-size:1em;font-family:Times"'
+        'style="font-weight:bold;font-style:italic;font-size:1em;font-family:Times"',
       );
     }
   } else if (type === "path") {
     const dtNameToFormat = document.querySelector(
-      "[id=" + item.type + "_name_display_" + item.id + "]"
+      "[id=" + item.type + "_name_display_" + item.id + "]",
     );
     if (dtNameToFormat) {
       dtNameToFormat.outerHTML = dtNameToFormat.outerHTML.replace(
         /class.+?nameText/,
-        'style="font-weight:bold;font-size:1.3em;font-family:Times"'
+        'style="font-weight:bold;font-size:1.3em;font-family:Times"',
       );
     }
   }
@@ -93,7 +95,7 @@ const setCellContents = (cell, type, item) => {
       "_tablecell_" +
       CSS.escape(item.type) +
       CSS.escape(item.id) +
-      "]"
+      "]",
   );
   if (path && path.innerHTML) {
     cell.innerHTML = path.innerHTML;
@@ -115,7 +117,7 @@ const hideUnwantedLinks = (item) => {
   ];
   ids.map((id) => {
     const idElement = document.querySelector(
-      "[id=" + CSS.escape(item.type) + id + CSS.escape(item.id) + "]"
+      "[id=" + CSS.escape(item.type) + id + CSS.escape(item.id) + "]",
     );
     if (idElement && idElement.innerHTML) {
       idElement.innerHTML = "";
@@ -124,7 +126,7 @@ const hideUnwantedLinks = (item) => {
   });
 };
 
-parent.tinymce.activeEditor.on("omero-insert", function () {
+parent.tinymce.activeEditor.on("omero-insert", () => {
   if (parent && parent.tinymce) {
     const ed = parent.tinymce.activeEditor;
 

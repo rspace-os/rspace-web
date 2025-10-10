@@ -350,16 +350,12 @@ export function useIdentifiersListing({
     } finally {
       setLoading(false);
     }
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - getIdentifiers wont meaningfully change between renders
-     */
+     
   }, [state, isAssociated, searchTerm]);
 
   React.useEffect(() => {
     void fetchIdentifiers();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - getIdentifiers wont meaningfully change between renders
-     */
+     
   }, [state, isAssociated, searchTerm]);
 
   return { identifiers, loading, error, refreshListing: fetchIdentifiers };

@@ -27,12 +27,12 @@ class RootFolder extends React.Component {
         params: { dir: "/" },
       })
       .then((response) => {
-        let selectedFiles = response.data.ajaxReturnObject.data
+        const selectedFiles = response.data.ajaxReturnObject.data
           .map((f) => f.globalId)
           .filter((id) => this.state.globalSelect.includes(id));
         this.setState({
           subfiles: response.data.ajaxReturnObject.data,
-          selectedFiles: selectedFiles,
+          selectedFiles,
         });
       });
   };
@@ -74,18 +74,17 @@ class RootFolder extends React.Component {
           globalSelect={this.state.globalSelect}
         />
       );
-    } else {
-      return (
-        <File
-          key={file.globalId}
-          file={file}
-          level={1}
-          updateSelected={this.updateSelected}
-          onSelectChange={this.updateSubfilesSelect}
-          selected={this.state.selectedFiles.includes(file.globalId)}
-        />
-      );
     }
+    return (
+      <File
+        key={file.globalId}
+        file={file}
+        level={1}
+        updateSelected={this.updateSelected}
+        onSelectChange={this.updateSubfilesSelect}
+        selected={this.state.selectedFiles.includes(file.globalId)}
+      />
+    );
   };
 
   render() {
