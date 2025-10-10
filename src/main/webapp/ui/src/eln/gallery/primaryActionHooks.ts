@@ -157,6 +157,13 @@ export function useAsposePreviewOfGalleryFile(): (
   };
 }
 
+export function useShowSnippet(): (file: GalleryFile) => Result<null> {
+  return (file) => {
+    if (file.isSnippet) return Result.Ok(null);
+    return Result.Error([new Error("The file is not a snippet")]);
+  };
+}
+
 /**
  * A hook that returns a function that can be used to determine what primary
  * action should be presented to the user given a particular file. This will
@@ -174,6 +181,7 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
   | { tag: "pdf"; downloadHref: () => Promise<URL> }
   | { tag: "aspose" }
   | { tag: "snapgene"; file: GalleryFile }
+  | { tag: "snippet" }
 > {
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
@@ -181,6 +189,7 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
   const canPreviewWithSnapGene = useSnapGenePreviewOfGalleryFile();
+  const canShowSnippet = useShowSnippet();
 
   return (file) =>
     file.canOpen
@@ -198,6 +207,9 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
             file.name,
           ],
         })),
+      )
+      .orElseTry(() =>
+        canShowSnippet(file).map(() => ({ tag: "snippet" as const })),
       )
       .orElseTry(() =>
         canEditWithCollabora(file).map((url) => ({

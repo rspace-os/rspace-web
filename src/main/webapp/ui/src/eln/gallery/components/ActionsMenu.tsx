@@ -51,6 +51,7 @@ import {
   usePdfPreviewOfGalleryFile,
   useAsposePreviewOfGalleryFile,
   useSnapGenePreviewOfGalleryFile,
+  useShowSnippet,
 } from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
@@ -67,6 +68,7 @@ import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { Optional } from "../../../util/optional";
 import LogoutIcon from "@mui/icons-material/Logout";
 import useFilestoresEndpoint from "../useFilestoresEndpoint";
+import { useSnippetPreview } from "./CallableSnippetPreview";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -314,11 +316,13 @@ function ActionsMenu({
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
   const canPreviewWithSnapGene = useSnapGenePreviewOfGalleryFile();
+  const canPreviewSnippet = useShowSnippet();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openFolder } = useFolderOpen();
+  const { openSnippetPreview } = useSnippetPreview();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
@@ -394,6 +398,12 @@ function ActionsMenu({
               file.name,
             ],
           }))
+          .orElseTry(() =>
+            canPreviewSnippet(file).map(() => ({
+              key: "snippet" as const,
+              file,
+            })),
+          )
           .orElseTry(() =>
             canPreviewAsPdf(file).map((downloadHref) => ({
               key: "pdf" as const,
@@ -576,6 +586,8 @@ function ActionsMenu({
                     void openAsposePreview(viewAction.file);
                   if (viewAction.key === "snapgene")
                     void openSnapGenePreview(viewAction.file);
+                  if (viewAction.key === "snippet")
+                    openSnippetPreview(viewAction.file);
                 });
                 setActionsMenuAnchorEl(null);
               }}
