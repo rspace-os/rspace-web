@@ -8,6 +8,7 @@ import {
   ActionsMenuWithNonFolder,
   ActionsMenuWithFolder,
   ActionsMenuWithMultipleFiles,
+  ActionsMenuWithSnippet,
 } from "./ActionsMenu.story";
 
 const feature = test.extend<{
@@ -15,6 +16,7 @@ const feature = test.extend<{
     "the actions menu with a non-folder is mounted": () => Promise<void>;
     "the actions menu with a folder is mounted": () => Promise<void>;
     "the actions menu with multiple files is mounted": () => Promise<void>;
+    "the actions menu with a snippet is mounted": () => Promise<void>;
   };
   When: {
     "the user clicks the actions menu button": () => Promise<void>;
@@ -24,6 +26,7 @@ const feature = test.extend<{
     "the actions menu should be visible": () => Promise<void>;
     "the Open option should not be visible": () => Promise<void>;
     "the Open option should be visible": () => Promise<void>;
+    "the Download option should be disabled": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
   };
 }>({
@@ -37,6 +40,9 @@ const feature = test.extend<{
       },
       "the actions menu with multiple files is mounted": async () => {
         await mount(<ActionsMenuWithMultipleFiles />);
+      },
+      "the actions menu with a snippet is mounted": async () => {
+        await mount(<ActionsMenuWithSnippet />);
       },
     });
   },
@@ -54,18 +60,23 @@ const feature = test.extend<{
     await use({
       "the actions menu should be visible": async () => {
         await expect(
-          page.getByRole("button", { name: /actions/i })
+          page.getByRole("button", { name: /actions/i }),
         ).toBeVisible({ timeout: 5000 });
       },
       "the Open option should not be visible": async () => {
         await expect(
-          page.getByRole("menuitem", { name: /open/i })
+          page.getByRole("menuitem", { name: /open/i }),
         ).not.toBeVisible({ timeout: 5000 });
       },
       "the Open option should be visible": async () => {
         await expect(page.getByRole("menuitem", { name: /open/i })).toBeVisible(
-          { timeout: 5000 }
+          { timeout: 5000 },
         );
+      },
+      "the Download option should be disabled": async () => {
+        await expect(
+          page.getByRole("menuitem", { name: /download/i }),
+        ).toBeDisabled({ timeout: 5000 });
       },
       "there shouldn't be any axe violations": async () => {
         const accessibilityScanResults = await new AxeBuilder({
@@ -90,7 +101,7 @@ const feature = test.extend<{
               v.id !== "page-has-heading-one" &&
               v.id !== "region"
             );
-          })
+          }),
         ).toEqual([]);
       },
     });
@@ -206,7 +217,7 @@ test.describe("ActionsMenu", () => {
         await Given["the actions menu with a non-folder is mounted"]();
         await When["the user clicks the actions menu button"]();
         await Then["the Open option should not be visible"]();
-      }
+      },
     );
 
     feature(
@@ -215,7 +226,16 @@ test.describe("ActionsMenu", () => {
         await Given["the actions menu with a folder is mounted"]();
         await When["the user clicks the actions menu button"]();
         await Then["the Open option should be visible"]();
-      }
+      },
+    );
+
+    feature(
+      "When the selected file is a snippet, download should be disabled",
+      async ({ Given, When, Then }) => {
+        await Given["the actions menu with a snippet is mounted"]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the Download option should be disabled"]();
+      },
     );
   });
 });

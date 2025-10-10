@@ -4,6 +4,30 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.15.0 2025-10-10
+
+### ELN Features
+
+- RSDEV-689 stoichiometry calculations for chemical reaction files
+- RSDEV-563 saving/displaying more data for imported DMPs
+- RSDEV-777 update icons for MS Office attachments
+
+### ELN Bugfix
+
+- RSDEV-835 fixed problem with 'incorrect sharing status' popup showing up when navigating Shared -> ProjectGroups folder
+- RSDEV-755 fixed problem with new version of document attachment not having its content indexed
+- RSDEV-813 fixed problem with multiple tags of ELN document being combined into one after duplicating that document
+- RSDEV-765 fixed problem with PI being unable to create doc inside shared notebook owned by the group member
+- RSDEV-819 when navigating to shared notebook, the 'CREATE' button was sometimes shown, or hidden, incorrectly
+- RSDEV-840 fixed problem with transferring some shared forms to sysadmin during user deletion
+- ISSUE#475 fixed problem with tinymce toolbar sometimes disappearing after customization
+
+### Inventory Features
+
+- RSDEV-864 applying accented UI theme
+- RSDEV-826 reduced JS bundle size
+
+
 # 2.14.0 2025-09-08
 
 ### ELN Features

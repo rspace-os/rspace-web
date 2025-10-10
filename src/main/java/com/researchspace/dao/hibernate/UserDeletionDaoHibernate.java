@@ -315,8 +315,17 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     execute(userId, session, "delete from OAuthApp where user_id = :id");
   }
 
-  // this will only work if user has no published forms!
   private void deleteForms(Long userId, Session session) {
+    // Set the temp field column to NULL to avoid FK violation during deletion
+    execute(
+        userId,
+        session,
+        "update FieldForm ff left join RSForm rf on ff.form_id = rf.id "
+            + "set ff.tempFieldForm_id = NULL where rf.owner_id=:id");
+
+    // Set previous version column to NULL to avoid FK violation
+    execute(userId, session, "update RSForm set previousVersion_id = NULL where owner_id=:id");
+
     execute(
         userId,
         session,

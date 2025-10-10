@@ -835,6 +835,9 @@ function initMediaGalleryDialog() {
           addFromGallery();
           $('#galleryContentDiv').dialog('close');
           isInsertGalleryItemClickHandlerInitialized = true;
+          RS.trackEvent(
+            "user:insert_from_gallery:old_gallery_picker:document_editor",
+          );
         }
       },
       open: function () {
