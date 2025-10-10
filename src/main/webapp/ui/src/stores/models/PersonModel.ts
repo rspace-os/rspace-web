@@ -1,6 +1,6 @@
 import ApiService from "../../common/InvApiService";
 import { type _LINK } from "../../util/types";
-import { type Container, type WorkbenchId } from "../definitions/Container";
+import { type Container } from "../definitions/Container";
 import getRootStore from "../stores/RootStore";
 import {
   observable,
@@ -17,10 +17,11 @@ import {
   type Email,
   type PersonAttrs,
 } from "../definitions/Person";
-import { type ExportOptions, type ExportFileType } from "../definitions/Search";
+import { type ExportOptions } from "../definitions/Search";
 import { mkAlert } from "../contexts/Alert";
 import { showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage } from "@/util/error";
+import { WorkbenchId } from "@/stores/definitions/container/types";
 
 export default class PersonModel implements Person {
   id: PersonId;
@@ -110,7 +111,7 @@ export default class PersonModel implements Person {
 
   async exportRecords(
     exportOptions: ExportOptions,
-    username: Username
+    username: Username,
   ): Promise<void> {
     this.setProcessingUserActions(true);
     const { uiStore, trackingStore } = getRootStore();
@@ -130,15 +131,15 @@ export default class PersonModel implements Person {
             : {
                 includeContainerContent: includeContainerContent === "INCLUDE",
               }),
-        })
+        }),
       );
 
       const { data } = await showToastWhilstPending(
         "Exporting User Data...",
         ApiService.post<{ _links: Array<{ link: string; rel: string }> }>(
           "export",
-          params
-        )
+          params,
+        ),
       );
       const downloadLink = data._links[1];
       const fileName = downloadLink.link.split("downloadArchive/")[1];
@@ -150,7 +151,7 @@ export default class PersonModel implements Person {
       link.click(); // trigger download
       trackingStore.trackEvent(
         "user:export:allTheirItems:Inventory",
-        exportOptions
+        exportOptions,
       );
     } catch (error) {
       uiStore.addAlert(
@@ -158,7 +159,7 @@ export default class PersonModel implements Person {
           title: `Data export failed.`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       console.error(`Could not export user's data.`, error);
       throw error;
@@ -182,7 +183,7 @@ type SortOptions = {
 
 export const sortPeople = (
   people: Array<PersonModel>,
-  options: SortOptions = {}
+  options: SortOptions = {},
 ): Array<PersonModel> => {
   const { placeCurrentFirst = false } = options;
 

@@ -1,5 +1,5 @@
 import ApiService from "../../common/InvApiService";
-import { type Container, type WorkbenchId } from "../definitions/Container";
+import { type Container } from "../definitions/Container";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type Factory } from "../definitions/Factory";
 import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
@@ -29,6 +29,7 @@ import { mkAlert } from "../contexts/Alert";
 import { showToastWhilstPending } from "../../util/alerts";
 import React from "react";
 import { type emptyObject } from "../../util/types";
+import { WorkbenchId } from "@/stores/definitions/container/types";
 
 export type SavedSearch = CoreFetcherArgs & {
   name: string;
