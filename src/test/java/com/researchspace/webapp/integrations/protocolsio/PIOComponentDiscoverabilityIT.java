@@ -125,14 +125,15 @@ public class PIOComponentDiscoverabilityIT {
       currentPage++;
     }
     if (!unknownComponents.isEmpty()) {
-      unknownComponents.forEach(
-          (protocolId, component) -> {
-            log.warn(
-                "Unknown Id found in Protocol {} with type_id: {}",
-                protocolId,
-                component.getInt("type_id"));
-            log.warn("Unknown Component: {}", component);
-          });
+      for (Map.Entry<Integer, JSONObject> entry : unknownComponents.entrySet()) {
+        Integer protocolId = entry.getKey();
+        JSONObject component = entry.getValue();
+        log.warn(
+            "Unknown Id found in Protocol {} with type_id: {}",
+            protocolId,
+            component.getInt("type_id"));
+        log.warn("Unknown Component: {}", component);
+      }
     }
     assertTrue(unknownComponents.isEmpty());
   }
