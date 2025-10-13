@@ -29,7 +29,7 @@ import ResetZoomIcon from "./ResetZoomIcon";
  */
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
+  import.meta.url,
 ).toString();
 
 const PdfPreviewContext = React.createContext((_link: string) => {});
@@ -63,7 +63,7 @@ export function CallablePdfPreview({
   children: React.ReactNode;
 }): React.ReactNode {
   const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(
-    null
+    null,
   );
   const [numPages, setNumPages] = React.useState<number>(0);
   const [scale, setScale] = React.useState(1);
@@ -88,6 +88,7 @@ export function CallablePdfPreview({
           onClose={() => {
             setPdfPreviewOpen(null);
           }}
+          aria-label="PDF Preview"
         >
           <DialogContent sx={{ overflowY: "auto" }}>
             <Document
