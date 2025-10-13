@@ -224,35 +224,32 @@ const CustomTreeItem = observer(
 
     const handleDoubleClick = React.useCallback(() => {
       primaryAction(file).do((action) => {
-        if (action.tag === "open") {
-          openFolder(file);
-          return;
-        }
-        if (action.tag === "image") {
-          void action.downloadHref().then((url) => {
-            openImagePreview(url);
-          });
-          return;
-        }
-        if (action.tag === "collabora") {
-          window.open(action.url);
-          return;
-        }
-        if (action.tag === "officeonline") {
-          window.open(action.url);
-          return;
-        }
-        if (action.tag === "pdf") {
-          void action.downloadHref().then((url) => {
-            openPdfPreview(url);
-          });
-          return;
-        }
-        if (action.tag === "aspose") {
-          void openAsposePreview(file);
-        }
-        if (action.tag === "snapgene") {
-          void openSnapGenePreview(file);
+        switch (action.tag) {
+          case "open":
+            openFolder(file);
+            break;
+          case "image":
+            void action.downloadHref().then((url) => {
+              openImagePreview(url);
+            });
+            break;
+          case "collabora":
+            window.open(action.url);
+            break;
+          case "officeonline":
+            window.open(action.url);
+            break;
+          case "pdf":
+            void action.downloadHref().then((url) => {
+              openPdfPreview(url);
+            });
+            break;
+          case "aspose":
+            void openAsposePreview(file);
+            break;
+          case "snapgene":
+            void openSnapGenePreview(file);
+            break;
         }
       });
     }, [
