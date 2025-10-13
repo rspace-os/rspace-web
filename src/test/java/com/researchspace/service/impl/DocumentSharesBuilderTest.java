@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class DocumentSharesBuilderTest {
@@ -42,14 +43,14 @@ public class DocumentSharesBuilderTest {
     recipientGroup.setId(3L);
 
     RecordGroupSharing groupShare = new RecordGroupSharing();
-    groupShare.setId(1L);
+    ReflectionTestUtils.setField(groupShare, "id", 1L);
     groupShare.setSharedBy(sharer);
     groupShare.setSharee(recipientUser);
     groupShare.setPermType(PermissionType.WRITE);
     groupShare.setShared(record);
 
     RecordGroupSharing sharedViaNotebook = new RecordGroupSharing();
-    sharedViaNotebook.setId(2L);
+    ReflectionTestUtils.setField(sharedViaNotebook, "id", 2L);
     sharedViaNotebook.setSharedBy(sharer);
     sharedViaNotebook.setSharee(recipientGroup);
     sharedViaNotebook.setPermType(PermissionType.READ);
