@@ -923,7 +923,7 @@
         <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parsers</artifactId>
-        <version>${tika.version}</version>
+        <version>1.28.5</version>
         <exclusions>
             <exclusion>
                 <groupId>org.apache.commons</groupId>
@@ -1009,22 +1009,6 @@
             <exclusion>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
-            </exclusion>
-        </exclusions>
-    </dependency>
-    <!-- tika-parsers internally-conflicting dependency -->
-    <dependency>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-core</artifactId>
-        <version>${tika.version}</version>
-        <exclusions>
-            <exclusion>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
@@ -3046,7 +3030,6 @@
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
     <spotless.version>2.43.0</spotless.version>
-    <tika.version>1.28.5</tika.version>
     <npm.dependencies.collection.arg>install --force</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
