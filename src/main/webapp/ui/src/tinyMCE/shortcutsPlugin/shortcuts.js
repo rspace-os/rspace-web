@@ -408,7 +408,7 @@ class Shortcuts extends React.Component {
                 Here's{" "}
                 <a
                   target="_blank"
-                  href="https://www.tinymce.com/docs/advanced/keyboard-shortcuts/"
+                  href="https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/"
                   rel="noreferrer"
                 >
                   a list
