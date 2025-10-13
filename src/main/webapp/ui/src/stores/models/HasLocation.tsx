@@ -22,7 +22,7 @@ import InventoryBaseRecord, {
   InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import { layoutToLabel } from "@/util/labels";
-import { GridLayout } from "@/stores/definitions/container/types";
+import { GridLayout, NUMERICAL_AXES } from "@/stores/definitions/container/types";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -223,8 +223,10 @@ export function HasLocationMixin<
         ({ rowsLabelType, rowsNumber, columnsLabelType, columnsNumber }, parentLocation) => {
           const rowLabel = layoutToLabel(rowsLabelType, rowsNumber !== "" ? rowsNumber : 1, parentLocation.coordY);
           const columnLabel = layoutToLabel(columnsLabelType, columnsNumber !== "" ? columnsNumber : 1, parentLocation.coordX);
+          // Disambiguate the row and column numbers if needed (row 1, column 11 vs row 11, column 1)
+          const insertComma = NUMERICAL_AXES.includes(rowsLabelType) && NUMERICAL_AXES.includes(columnsLabelType);
 
-          return `${rowLabel}${columnLabel}`
+          return `${rowLabel}${insertComma ? ',' : ''}${columnLabel}`
         },
         Optional.fromNullable(this.immediateParentContainer?.gridLayout),
         Optional.fromNullable(this.parentLocation)

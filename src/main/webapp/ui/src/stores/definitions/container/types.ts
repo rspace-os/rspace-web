@@ -3,6 +3,8 @@ export type ContainerType = "LIST" | "GRID" | "IMAGE" | "WORKBENCH";
 
 export type Axis = "ABC" | "CBA" | "N123" | "N321";
 
+export const NUMERICAL_AXES: Axis[] = ["N123", "N321"];
+
 export const DEFAULT_ROW_AXIS: Axis = "ABC";
 export const DEFAULT_COLUMN_AXIS: Axis = "N123";
 
