@@ -215,6 +215,52 @@ const CustomTreeItem = observer(
   }) => {
     const { uploadFiles } = useGalleryActions();
     const { trackEvent } = React.useContext(AnalyticsContext);
+    const { openImagePreview } = useImagePreview();
+    const { openPdfPreview } = usePdfPreview();
+    const { openAsposePreview } = useAsposePreview();
+    const { openSnapGenePreview } = useSnapGenePreview();
+    const primaryAction = usePrimaryAction();
+    const { openFolder } = useFolderOpen();
+
+    const handleDoubleClick = React.useCallback(() => {
+      primaryAction(file).do((action) => {
+        switch (action.tag) {
+          case "open":
+            openFolder(file);
+            break;
+          case "image":
+            void action.downloadHref().then((url) => {
+              openImagePreview(url);
+            });
+            break;
+          case "collabora":
+            window.open(action.url);
+            break;
+          case "officeonline":
+            window.open(action.url);
+            break;
+          case "pdf":
+            void action.downloadHref().then((url) => {
+              openPdfPreview(url);
+            });
+            break;
+          case "aspose":
+            void openAsposePreview(file);
+            break;
+          case "snapgene":
+            void openSnapGenePreview(file);
+            break;
+        }
+      });
+    }, [
+      file,
+      primaryAction,
+      openFolder,
+      openImagePreview,
+      openPdfPreview,
+      openAsposePreview,
+      openSnapGenePreview,
+    ]);
 
     /*
      * Here we setup the drag-and-drop handlers for files that are being
@@ -355,6 +401,7 @@ const CustomTreeItem = observer(
           })}
           {...attributes}
           role="treeitem"
+          onDoubleClick={handleDoubleClick}
           style={{
             ...dropStyle,
             ...fileUploadDropping,
@@ -549,45 +596,6 @@ const TreeView = ({
             }
           });
         } else {
-          // on double click, try and figure out what the user would want
-          // to do with a file of this type based on what services are
-          // configured
-          if (mouseEvent.detail > 1) {
-            MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
-              primaryAction(file).do((action) => {
-                if (action.tag === "open") {
-                  openFolder(file);
-                  return;
-                }
-                if (action.tag === "image") {
-                  void action.downloadHref().then((url) => {
-                    openImagePreview(url);
-                  });
-                  return;
-                }
-                if (action.tag === "collabora") {
-                  window.open(action.url);
-                  return;
-                }
-                if (action.tag === "officeonline") {
-                  window.open(action.url);
-                  return;
-                }
-                if (action.tag === "pdf") {
-                  void action.downloadHref().then((url) => {
-                    openPdfPreview(url);
-                  });
-                  return;
-                }
-                if (action.tag === "aspose") {
-                  void openAsposePreview(file);
-                }
-                if (action.tag === "snapgene") {
-                  void openSnapGenePreview(file);
-                }
-              });
-            });
-          }
           if (selected) {
             MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
               /*
