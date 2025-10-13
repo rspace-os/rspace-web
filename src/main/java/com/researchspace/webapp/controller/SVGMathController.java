@@ -10,6 +10,7 @@ import com.researchspace.service.RSMathManager;
 import java.io.IOException;
 import java.io.StringReader;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.XMLConstants;
 import org.apache.commons.lang.StringUtils;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
@@ -93,9 +94,8 @@ public class SVGMathController extends BaseController {
 
   private String validateSVGXML(String svg, String msg) {
     SAXBuilder builder = new SAXBuilder();
-    // Disable external doctypes to protect against XXE attacks.
-    // https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html#saxbuilder
-    builder.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    builder.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+    builder.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
     // build a JDOM2 Document using the SAXBuilder.
     try {
       Document jdomDoc = builder.build(new StringReader(svg));
