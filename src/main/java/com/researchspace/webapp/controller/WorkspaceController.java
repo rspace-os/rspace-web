@@ -42,6 +42,7 @@ import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.dtos.WorkspaceSettings;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.frontend.CreateMenuFormEntry;
+import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.BaseRecord;
@@ -56,6 +57,7 @@ import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
+import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DetailedRecordInformationProvider;
@@ -589,24 +591,29 @@ public class WorkspaceController extends BaseController {
 
     User user = getUserByUsername(principal.getName());
 
+    List<ServiceOperationResult<? extends BaseRecord>> moveResults =
+        workspaceService.moveRecords(
+            List.of(toMove),
+            targetFolderId,
+            settings.getParentFolderId(),
+            settings.getGrandParentId(),
+            user);
+
     long moveSuccessCount =
-        workspaceService
-            .moveRecords(
-                List.of(toMove),
-                targetFolderId,
-                settings.getParentFolderId(),
-                settings.getGrandParentId(),
-                user)
-            .stream()
-            .filter(result -> result != null && result.isSucceeded())
-            .count();
+        moveResults.stream().filter(result -> result != null && result.isSucceeded()).count();
 
     if (moveSuccessCount == toMove.length) {
       model.addAttribute("successMsg", getText("workspace.move.success"));
     } else {
       String msgKey;
       if (moveSuccessCount == 0) {
-        msgKey = getText("workspace.move.nothing.moved");
+        msgKey =
+            moveResults.stream()
+                    .anyMatch(
+                        result ->
+                            result != null && result.getMessage().contains("into own notebook"))
+                ? "workspace.share.owned.into.shared.owned"
+                : "workspace.move.nothing.moved";
       } else {
         msgKey = getText("workspace.move.some.not.moved");
       }
@@ -862,7 +869,9 @@ public class WorkspaceController extends BaseController {
 
   private void addErrorMsgIfProblematicFolder(Model model, Folder parentFolder) {
     // SUPPORT-526 shared folder moved outside sharing hierarchy
-    if (parentFolder.isSharedFolder() && !parentFolder.isShared()) {
+    boolean isSharedFolderWithOnlyOwnerPermission =
+        parentFolder.isSharedFolder() && isAccessPermittedForFolderOwnerOnly(parentFolder);
+    if (isSharedFolderWithOnlyOwnerPermission) {
       model.addAttribute(
           "errorMsg",
           "The folder you're browsing seems "
@@ -871,6 +880,19 @@ public class WorkspaceController extends BaseController {
               + parentFolder.getOid()
               + ". More details at https://researchspace.helpdocs.io/article/2toicmq4iu");
     }
+  }
+
+  private boolean isAccessPermittedForFolderOwnerOnly(Folder folder) {
+    if (folder.isShared()) {
+      return false; // there is access for multiple users/groups
+    }
+    List<ACLElement> sharingACL = folder.getSharingACL().getAclElements();
+    if (sharingACL.isEmpty()) {
+      return false; // no access - would be unexpected error case
+    }
+    /* otherwise check if the only permitted user is the owner of the folder
+    - or rather the permission is for group/project group */
+    return sharingACL.get(0).getUserOrGrpUniqueName().equals(folder.getOwner().getUsername());
   }
 
   /** Widely used function to simply list files in a folder */
