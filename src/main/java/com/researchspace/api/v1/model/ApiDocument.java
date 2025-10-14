@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
     value = {
       "id",
       "globalId",
+      "version",
       "name",
       "created",
       "lastModified",
