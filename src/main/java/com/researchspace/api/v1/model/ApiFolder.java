@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
-import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
@@ -66,9 +65,8 @@ public class ApiFolder extends IdentifiableNameableApiObject {
    * Constructor for converting {@link Folder} entity to an {@link ApiFolder}
    *
    * @param folderOrNotebook
-   * @param authorisedSubject
    */
-  public ApiFolder(Folder folderOrNotebook, User authorisedSubject) {
+  public ApiFolder(Folder folderOrNotebook) {
     super(
         folderOrNotebook.getId(),
         folderOrNotebook.getGlobalIdentifier(),
@@ -76,7 +74,7 @@ public class ApiFolder extends IdentifiableNameableApiObject {
     setCreatedMillis(folderOrNotebook.getCreationDateMillis());
     setLastModifiedMillis(folderOrNotebook.getModificationDateMillis());
     setNotebook(folderOrNotebook.isNotebook());
-    if (authorisedSubject.equals(folderOrNotebook.getOwner()) && folderOrNotebook.hasParents()) {
+    if (folderOrNotebook.hasParents()) {
       if (folderOrNotebook.getOwnerParent().isPresent()) {
         setParentFolderId(folderOrNotebook.getOwnerParent().get().getId());
       } else if (folderOrNotebook.isSharedFolder() && folderOrNotebook.hasParents()) {
@@ -106,19 +104,16 @@ public class ApiFolder extends IdentifiableNameableApiObject {
    * Folders), and also populates the 'parents' list if 'includeParents' param is 'true'
    *
    * @param folderOrNotebook
-   * @param authorisedSubject
    */
-  public ApiFolder(
-      Folder folderOrNotebook, Boolean includePathToRootFolder, User authorisedSubject) {
-    this(folderOrNotebook, authorisedSubject);
+  public ApiFolder(Folder folderOrNotebook, Boolean includePathToRootFolder) {
+    this(folderOrNotebook);
 
-    if (Boolean.TRUE.equals(includePathToRootFolder)
-        && authorisedSubject.equals(folderOrNotebook.getOwner())) {
+    if (Boolean.TRUE.equals(includePathToRootFolder)) {
       pathToRootFolder = new ArrayList<>();
       Optional<Folder> currParentOpt = folderOrNotebook.getOwnerParent();
       while (currParentOpt.isPresent()) {
         Folder currParent = currParentOpt.get();
-        pathToRootFolder.add(new ApiFolder(currParent, authorisedSubject));
+        pathToRootFolder.add(new ApiFolder(currParent));
         if (currParent.hasType(RecordType.ROOT_MEDIA)) {
           break; // for gallery subfolders, stop at Gallery level
         }
