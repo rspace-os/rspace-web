@@ -8,8 +8,8 @@ import RadioField, {
   OptionHeading,
   OptionExplanation,
 } from "../../../../components/Inputs/RadioField";
-import { type ContainerType } from "../../../../stores/definitions/Container";
 import FormField from "../../../components/Inputs/FormField";
+import { ContainerType } from "@/stores/definitions/container/types";
 
 const OPTIONS: Array<RadioOption<ContainerType>> = [
   {

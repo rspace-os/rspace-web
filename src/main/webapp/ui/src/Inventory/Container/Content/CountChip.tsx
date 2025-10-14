@@ -2,10 +2,8 @@ import React from "react";
 import { makeStyles } from "tss-react/mui";
 import Chip from "@mui/material/Chip";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import {
-  type Container,
-  type ContentSummary,
-} from "../../../stores/definitions/Container";
+import { type Container } from "@/stores/definitions/Container";
+import { ContentSummary } from "@/stores/definitions/container/types";
 
 type CountChipArgs = {
   type: string;
