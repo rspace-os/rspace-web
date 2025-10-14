@@ -52,15 +52,14 @@ const useStyles = makeStyles()(() => ({
 }));
 
 function getImageSize(base64String) {
-  var stringLength = base64String.length - "data:image/png;base64,".length;
-  var sizeInBytes = 4 * Math.ceil(stringLength / 3) * 0.5624896334383812;
-  var sizeInKb = sizeInBytes / 1000;
+  const stringLength = base64String.length - "data:image/png;base64,".length;
+  const sizeInBytes = 4 * Math.ceil(stringLength / 3) * 0.5624896334383812;
+  const sizeInKb = sizeInBytes / 1000;
 
   if (sizeInKb < 1024) {
     return `${sizeInKb.toFixed(0)} KB`;
-  } else {
-    return `${(sizeInKb / 1024).toFixed(2)} MB`;
   }
+  return `${(sizeInKb / 1024).toFixed(2)} MB`;
 }
 
 export default function ImageEditorDialog(props) {
@@ -80,15 +79,15 @@ export default function ImageEditorDialog(props) {
   const closeButton = useRef(null);
 
   useEffect(() => {
-    document.addEventListener("open-image-editor", function (e) {
+    document.addEventListener("open-image-editor", (e) => {
       setRecordId(e.detail.recordid);
       setOpen(true);
 
       getImage(
         `/image/getImageForEdit/${e.detail.recordid}/${Date.now()}`,
-        function (dataUrl) {
+        (dataUrl) => {
           setBase64(dataUrl);
-        }
+        },
       );
     });
   }, []);
@@ -104,7 +103,7 @@ export default function ImageEditorDialog(props) {
   };
 
   const getImage = (url, callback) => {
-    var xhr = new XMLHttpRequest();
+    const xhr = new XMLHttpRequest();
 
     xhr.onreadystatechange = function (e) {
       if (xhr.readyState === 4) {
@@ -116,14 +115,14 @@ export default function ImageEditorDialog(props) {
           // get orignal image format
           setImageType(xhr.response.type.split("/")[1]);
 
-          var reader = new FileReader();
+          const reader = new FileReader();
           reader.onloadend = function () {
             callback(reader.result);
           };
           reader.readAsDataURL(xhr.response);
         } else {
           setErrorMessage(
-            "The image could not be loaded or it can't be edited."
+            "The image could not be loaded or it can't be edited.",
           );
           setError(true);
           closeButton.current.focus();
@@ -156,16 +155,15 @@ export default function ImageEditorDialog(props) {
         format: "jpeg",
         quality: 0.85,
       });
-    } else {
-      return editorInstance.toDataURL();
     }
+    return editorInstance.toDataURL();
   };
 
   const submit = (format) => {
     setSubmitted(true);
     setPromptOpen(false);
 
-    let url = `/image/ajax/saveEditedImage`;
+    const url = `/image/ajax/saveEditedImage`;
     axios
       .post(url, {
         imageId: recordId,
@@ -178,7 +176,7 @@ export default function ImageEditorDialog(props) {
       .catch((error) => {
         RS.confirm(error.response.data, "warning", "infinite");
       })
-      .finally(function () {
+      .finally(() => {
         closeDialog();
       });
   };
@@ -272,7 +270,7 @@ export default function ImageEditorDialog(props) {
   );
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("react-image-editor");
   const root = createRoot(domContainer);
   root.render(<ImageEditorDialog />);

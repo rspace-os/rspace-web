@@ -72,7 +72,7 @@ describe("ExportRepo", () => {
     const repo1RadioButton = screen.getByTestId<HTMLInputElement>(
       "radio-button-app.repo1",
     );
-    expect(repo1RadioButton.checked).toEqual(true);
+    expect(repo1RadioButton).toBeChecked();
   });
 
   const arbListOfDMPs = (n: number): Arbitrary<Array<DMP>> =>

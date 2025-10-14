@@ -52,9 +52,7 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
         });
       },
     }),
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - alerts will not change as it is a local observable
-     */
+     
     [],
   );
 

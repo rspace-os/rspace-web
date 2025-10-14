@@ -24,9 +24,8 @@ const createGroupStep4 = (props) => {
         )}
       </p>
       <p data-test-id="createGroupSummaryPI">
-          {projectGroup && (<strong>Group Owner:</strong>)}
-          {!projectGroup && (<strong>PI:</strong>)}
-          {" "}
+        {projectGroup && <strong>Group Owner:</strong>}
+        {!projectGroup && <strong>PI:</strong>}{" "}
         {props.summary.selectPI.selectedUser === "" ? (
           <span style={styles.error}>You must select a PI</span>
         ) : (

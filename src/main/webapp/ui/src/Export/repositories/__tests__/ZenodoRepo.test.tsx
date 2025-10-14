@@ -12,7 +12,7 @@ import userEvent from "@testing-library/user-event";
 beforeEach(() => {
   jest.clearAllMocks();
 
-  //eslint-disable-next-line
+   
   global.fetch = () =>
     Promise.resolve({
       json: () => Promise.resolve([]),

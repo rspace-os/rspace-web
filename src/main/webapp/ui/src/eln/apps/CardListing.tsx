@@ -53,7 +53,7 @@ type CardListingArgs = {
   integrationStates: IntegrationStates;
 };
 
-//eslint-disable-next-line complexity
+ 
 function CardListing({
   mode,
   integrationStates,
@@ -80,7 +80,7 @@ function CardListing({
         integrationStates.ASCENSCIA = await update("ASCENSCIA", newState);
       });
     },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
+     
     [update]
   );
 

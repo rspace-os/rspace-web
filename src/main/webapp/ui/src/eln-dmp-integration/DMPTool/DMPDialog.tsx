@@ -151,9 +151,7 @@ function DMPDialogContent({
 
   useEffect(() => {
     void getDMPs("MINE");
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - getDMPs will not meaningfully change
-     */
+     
   }, []);
 
   const handleImport = async () => {

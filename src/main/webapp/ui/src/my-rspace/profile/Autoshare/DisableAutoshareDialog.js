@@ -68,13 +68,13 @@ function DisableAutoshareDialog({
       .post(url)
       .then((response) => {
         if (!response.data.success) {
-          let msg2 = getValidationErrorString(response.data.error, ",", true);
+          const msg2 = getValidationErrorString(response.data.error, ",", true);
           RS.confirm(msg2, "warning", 5000, { sticky: true });
           return;
         }
 
-        let async = response.data.data.async;
-        let msg = async
+        const async = response.data.data.async;
+        const msg = async
           ? `Reverting autoshare for ${group.groupDisplayName} started successfully. You will receive a notification once it is complete.`
           : `Autoshare for ${group.groupDisplayName} was disabled successfully.`;
 
@@ -87,10 +87,10 @@ function DisableAutoshareDialog({
           error.response.data ||
             "Something went wrong. Please, contact support if the issue persists.",
           "warning",
-          "infinite"
+          "infinite",
         );
       })
-      .then(function () {
+      .then(() => {
         setWaiting(false);
       });
   };

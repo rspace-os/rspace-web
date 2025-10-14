@@ -84,7 +84,7 @@ export default class AuthStore {
       .catch(() => {
         // @ts-expect-error I can update the location by assigning a string to it
         window.location = "/login";
-      }) as Promise<void>;
+      });
   }
 
   signOut() {

@@ -86,7 +86,7 @@ describe("GridDimensions", () => {
       );
 
       const rows = parseInteger(
-        (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+        (screen.getByRole("spinbutton", { name: "rows" }))
           .value
       ).orElse(null);
       expect(rows).not.toBeNull();
@@ -97,7 +97,7 @@ describe("GridDimensions", () => {
         (
           screen.getByRole("spinbutton", {
             name: "columns",
-          }) as HTMLInputElement
+          })
         ).value
       ).orElse(null);
       expect(columns).not.toBeNull();
@@ -135,12 +135,12 @@ describe("GridDimensions", () => {
       })
     );
     const rowsBefore = parseInteger(
-      (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+      (screen.getByRole("spinbutton", { name: "rows" }))
         .value
     ).orElse(null);
     expect(rowsBefore).not.toBeNull();
     const columnsBefore = parseInteger(
-      (screen.getByRole("spinbutton", { name: "columns" }) as HTMLInputElement)
+      (screen.getByRole("spinbutton", { name: "columns" }))
         .value
     ).orElse(null);
     expect(columnsBefore).not.toBeNull();
@@ -155,12 +155,12 @@ describe("GridDimensions", () => {
 
     // assert that the values have not changed
     const rowsAfter = parseInteger(
-      (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+      (screen.getByRole("spinbutton", { name: "rows" }))
         .value
     ).orElse(null);
     expect(rowsAfter).not.toBeNull();
     const columnsAfter = parseInteger(
-      (screen.getByRole("spinbutton", { name: "columns" }) as HTMLInputElement)
+      (screen.getByRole("spinbutton", { name: "columns" }))
         .value
     ).orElse(null);
     expect(columnsAfter).not.toBeNull();
@@ -198,7 +198,7 @@ describe("GridDimensions", () => {
 
     // change the rows
     const rowsBefore = parseInteger(
-      (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+      (screen.getByRole("spinbutton", { name: "rows" }))
         .value
     ).orElse(null);
     const newRows = (assertNotNull(rowsBefore) + 1) % 24;
@@ -240,7 +240,7 @@ describe("GridDimensions", () => {
 
     // change the columns
     const columnsBefore = parseInteger(
-      (screen.getByRole("spinbutton", { name: "columns" }) as HTMLInputElement)
+      (screen.getByRole("spinbutton", { name: "columns" }))
         .value
     ).orElse(null);
     // expect(columnsBefore).not.toBeNull();
@@ -286,14 +286,14 @@ describe("GridDimensions", () => {
       );
 
       const rows = parseInteger(
-        (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+        (screen.getByRole("spinbutton", { name: "rows" }))
           .value
       ).orElse(null);
       const columns = parseInteger(
         (
           screen.getByRole("spinbutton", {
             name: "columns",
-          }) as HTMLInputElement
+          })
         ).value
       ).orElse(null);
 
@@ -384,7 +384,7 @@ describe("GridDimensions", () => {
         );
 
         const rows = parseInteger(
-          (screen.getByRole("spinbutton", { name: "rows" }) as HTMLInputElement)
+          (screen.getByRole("spinbutton", { name: "rows" }))
             .value
         ).orElse(null);
         expect(rows).not.toBeNull();
@@ -392,7 +392,7 @@ describe("GridDimensions", () => {
           (
             screen.getByRole("spinbutton", {
               name: "columns",
-            }) as HTMLInputElement
+            })
           ).value
         ).orElse(null);
         expect(columns).not.toBeNull();

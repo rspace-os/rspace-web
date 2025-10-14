@@ -34,7 +34,7 @@ export default function NewNotebook() {
 
   function handleSubmit() {
     setLoading(true);
-    let form = $("<form></form>");
+    const form = $("<form></form>");
     form.attr("method", "POST");
     form.attr(
       "action",

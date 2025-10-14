@@ -15,7 +15,7 @@ export type RecordPalette = {
 };
 
 declare module "@mui/material/styles" {
-  // eslint-disable-next-line no-unused-vars
+   
   interface Theme {
     borders: {
       table?: string;
@@ -34,7 +34,7 @@ declare module "@mui/material/styles" {
     } & Transitions;
   }
 
-  // eslint-disable-next-line no-unused-vars
+   
   interface SimplePaletteColorOptions {
     saturated?: string;
     placeholderText?: string;
@@ -48,7 +48,7 @@ declare module "@mui/material/styles" {
 }
 
 declare module "@mui/material/styles/createTheme" {
-  // eslint-disable-next-line no-unused-vars
+   
   interface ThemeOptions {
     borders?: {
       table: string;
@@ -65,7 +65,7 @@ declare module "@mui/material/styles/createTheme" {
 }
 
 declare module "@mui/material/styles/createPalette" {
-  // eslint-disable-next-line no-unused-vars
+   
   interface PaletteColor {
     background: string;
     saturated?: string;
@@ -152,14 +152,14 @@ declare module "@mui/material/styles/createPalette" {
  * accept.
  */
 declare module "@mui/material/Button" {
-  // eslint-disable-next-line no-unused-vars
+   
   interface ButtonPropsColorOverrides {
     standardIcon: true;
     callToAction: true;
   }
 }
 declare module "@mui/material/IconButton" {
-  // eslint-disable-next-line no-unused-vars
+   
   interface IconButtonPropsColorOverrides {
     standardIcon: true;
   }
@@ -175,13 +175,13 @@ declare module "@mui/material/Switch" {
   }
 }
 declare module "@mui/material/Chip" {
-  // eslint-disable-next-line no-unused-vars
+   
   interface ChipPropsColorOverrides {
     callToAction: true;
   }
 }
 declare module "@mui/material/Fab" {
-  // eslint-disable-next-line no-unused-vars
+   
   interface FabPropsColorOverrides {
     callToAction: true;
   }

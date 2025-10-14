@@ -68,8 +68,8 @@ describe("constructor", () => {
       // Create a mock factory with the mock implementations
       const factory = mockFactory({
         newRecord: mockNewRecord,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        newFactory: jest.fn().mockReturnValue(mockFactoryRef as any),
+         
+        newFactory: jest.fn().mockReturnValue(mockFactoryRef),
       });
 
       // Assign the factory to the reference to resolve circular dependency

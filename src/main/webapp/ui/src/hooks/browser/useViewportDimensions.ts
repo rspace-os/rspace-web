@@ -112,9 +112,7 @@ export default function useViewportDimensions(): ViewportDimensions {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - viewportDimensions will not change as it is a local observable
-     */
+     
   }, []);
 
   return viewportDimensions;

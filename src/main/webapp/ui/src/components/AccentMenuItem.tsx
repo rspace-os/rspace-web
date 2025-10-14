@@ -53,7 +53,7 @@ type AccentMenuItemArgs = {
  * accent colour of the current page.
  */
 export default styled(
-  // eslint-disable-next-line react/display-name -- Just a styled wrapper around MenuItem
+   
   React.forwardRef<
     typeof MenuItem,
     AccentMenuItemArgs & { className?: string }
@@ -69,7 +69,7 @@ export default styled(
         disabled,
         autoFocus,
         tabIndex,
-        // eslint-disable-next-line react/prop-types -- flow will handle this just fine
+         
         "aria-haspopup": ariaHasPopup,
         title,
         subheader,
@@ -87,7 +87,7 @@ export default styled(
         onKeyDown={onKeyDown}
         onClick={onClick}
         disabled={disabled}
-        //eslint-disable-next-line jsx-a11y/no-autofocus
+         
         autoFocus={autoFocus}
         tabIndex={tabIndex}
         aria-haspopup={ariaHasPopup}

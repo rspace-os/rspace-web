@@ -27,12 +27,12 @@ describe("Global", () => {
                   s !== "__proto__" &&
                   s !== "constructor" &&
                   s !== "valueOf" &&
-                  s !== "toString"
+                  s !== "toString",
               ),
             fc.webQueryParameters(),
             {
               minKeys: 1,
-            }
+            },
           ),
           (obj) => {
             const dom = new JSDOM("");
@@ -42,13 +42,13 @@ describe("Global", () => {
 
             const searchParams = new URLSearchParams(obj);
             const toStringAndBackAgain = globalContext.RS.getJsonParamsFromUrl(
-              "?" + searchParams.toString()
+              "?" + searchParams.toString(),
             );
             expect(Object.values(toStringAndBackAgain)).toEqual(
-              Object.values(obj)
+              Object.values(obj),
             );
-          }
-        )
+          },
+        ),
       );
     });
   });

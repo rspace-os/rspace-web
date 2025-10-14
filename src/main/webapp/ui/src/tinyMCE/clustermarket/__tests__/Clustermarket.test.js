@@ -134,19 +134,19 @@ describe("Renders page with booking data ", () => {
 
     await screen.findByText("2022-01-28 07:30:00");
     expect(screen.getByTestId("start_time0")).toHaveTextContent(
-      "2022-01-28 07:30:00"
+      "2022-01-28 07:30:00",
     );
 
     expect(screen.getByTestId("start_time1")).toHaveTextContent(
-      "2022-02-28 06:30:00"
+      "2022-02-28 06:30:00",
     );
 
     expect(screen.getByTestId("start_time2")).toHaveTextContent(
-      "2022-02-28 06:31:00"
+      "2022-02-28 06:31:00",
     );
 
     expect(screen.getByTestId("start_time3")).toHaveTextContent(
-      "2022-02-28 07:30:00"
+      "2022-02-28 07:30:00",
     );
   });
 

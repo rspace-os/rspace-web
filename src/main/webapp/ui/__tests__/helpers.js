@@ -18,7 +18,7 @@ export function setupJQuery(globalContext, dom) {
   vm.runInContext(
     fs.readFileSync("../scripts/bower_components/jquery/dist/jquery.min.js"),
     globalContext,
-    { filename: "jquery" }
+    { filename: "jquery" },
   );
   globalContext.$ = window.$;
   globalContext.jQuery = window.jQuery;
@@ -26,7 +26,7 @@ export function setupJQuery(globalContext, dom) {
   vm.runInContext(
     fs.readFileSync("../scripts/bower_components/jquery-ui/jquery-ui.min.js"),
     globalContext,
-    { filename: "jquery-ui" }
+    { filename: "jquery-ui" },
   );
   globalContext.$.fn.tinymce = () => {};
 }

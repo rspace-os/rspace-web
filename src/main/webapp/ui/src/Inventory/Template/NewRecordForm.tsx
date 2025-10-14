@@ -38,9 +38,7 @@ const OverviewSection = observer(
      */
     React.useEffect(() => {
       setFormSectionError(formSectionError, "name", true);
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - formSectionError will not meaningfully change
-       */
+       
     }, []);
 
     return (

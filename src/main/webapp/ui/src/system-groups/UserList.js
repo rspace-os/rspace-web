@@ -37,17 +37,18 @@ export default function UserList(props) {
   function userLabel(u) {
     if (u.displayName) {
       return `${u.username} - ${u.displayName}`;
-    } else if (u.fullName) {
-      return `${u.username} - ${u.fullName}`;
-    } else if (u.firstName && u.lastName) {
-      return `${u.username} - ${u.firstName} ${u.lastName}`;
-    } else {
-      return `${u.username}`;
     }
+    if (u.fullName) {
+      return `${u.username} - ${u.fullName}`;
+    }
+    if (u.firstName && u.lastName) {
+      return `${u.username} - ${u.firstName} ${u.lastName}`;
+    }
+    return `${u.username}`;
   }
 
   function userRow(u) {
-    let name = userLabel(u);
+    const name = userLabel(u);
 
     return (
       <UserDetails
@@ -72,7 +73,7 @@ export default function UserList(props) {
 
   function unselectFilteredUsers(visible) {
     visible = visible.map((u) => u.username);
-    let to_unselect = props.selected.filter((s) => !visible.includes(s));
+    const to_unselect = props.selected.filter((s) => !visible.includes(s));
     handleSelect(to_unselect);
   }
 

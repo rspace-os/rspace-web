@@ -94,7 +94,7 @@ function UsedQuantityField({
       datatestid={`material-additional-quantity-${globalId}`}
       disabled={!material.selected || mixedSelectedCategories}
       value={getNumericValue()}
-      // eslint-disable-next-line jsx-a11y/no-autofocus
+       
       autoFocus
       onChange={({ target }) => {
         onChangeValue(parseFloat(target.value));

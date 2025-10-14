@@ -30,7 +30,7 @@ const useStyles = makeStyles()((theme) => ({
       theme.palette.type === "light"
         ? theme.palette.grey[300]
         : theme.palette.grey[700],
-      0.08
+      0.08,
     ),
   },
   noOptionsMessage: {
@@ -225,15 +225,15 @@ export default function UserSelect(props) {
   useEffect(() => {
     const fetchData = async () => {
       const result = await axios(
-        "/workspace/ajax/getViewablePublicUserInfoList"
+        "/workspace/ajax/getViewablePublicUserInfoList",
       );
 
       setSuggestions(result.data.data);
       if (props.selected) {
-        let selected = props.selected.split("<<>>");
-        let local_selected = [];
+        const selected = props.selected.split("<<>>");
+        const local_selected = [];
         selected.map((s) => {
-          let idx = result.data.data.findIndex((r) => r.username == s);
+          const idx = result.data.data.findIndex((r) => r.username == s);
           local_selected.push(result.data.data[idx]);
         });
         handleChangeMulti(local_selected);

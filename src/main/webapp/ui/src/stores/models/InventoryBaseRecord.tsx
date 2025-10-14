@@ -136,10 +136,10 @@ type LockOwner = {
 };
 
 export class RecordLockedError extends Error {
-  record: InventoryBaseRecord; //eslint-disable-line
+  record: InventoryBaseRecord;  
   lockOwner: LockOwner;
 
-  //eslint-disable-next-line
+   
   constructor(record: InventoryBaseRecord, lockOwner: LockOwner) {
     super();
     this.name = "RecordLockedError";
@@ -1754,7 +1754,7 @@ export default class InventoryBaseRecord
     throw new Error("Abstract computed property; not implemented.");
   }
 
-  //eslint-disable-next-line no-unused-vars
+   
   get noValueLabel(): {
     [key in keyof InventoryBaseRecordEditableFields]: string | null;
   } & {

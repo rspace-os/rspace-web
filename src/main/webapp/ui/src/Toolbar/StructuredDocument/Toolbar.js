@@ -29,7 +29,7 @@ library.add(
   faFolder,
   faShareAlt,
   faEye,
-  faTimes
+  faTimes,
 );
 
 import BaseToolbar from "../../components/BaseToolbar";
@@ -304,7 +304,11 @@ window.renderToolbar = (newProps) => {
     canSign: newProps?.canSign ?? prevProps.canSign,
   };
   rootNode.render(
-    <StructuredDocumentToolbar domContainer={domContainer} {...prevProps} canSign={prevProps.canSign} />
+    <StructuredDocumentToolbar
+      domContainer={domContainer}
+      {...prevProps}
+      canSign={prevProps.canSign}
+    />,
   );
 };
 
@@ -313,7 +317,7 @@ window.renderToolbar = (newProps) => {
  * opportunity to set up event handlers for the ReactToolbarMounted event
  * dispatched above.
  */
-window.addEventListener("load", function () {
+window.addEventListener("load", () => {
   const domContainer = document.getElementById("toolbar2");
   window.renderToolbar({
     canSign: domContainer.getAttribute("data-can-sign") === "true",

@@ -24,7 +24,7 @@ describe("ErrorBoundary", () => {
      * using console.error, even though the ErrorBoundary catches them, which
      * just pollutes the output of the jest CLI runner
      */
-    // eslint-disable-next-line no-undef
+     
     jest.spyOn(global.console, "error").mockImplementation(() => {});
 
     const { container } = render(

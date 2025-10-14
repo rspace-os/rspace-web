@@ -25,7 +25,7 @@ export default function IrodsWrapper(): React.ReactNode {
       dialogOpen={dialogOpen}
       setDialogOpen={(newState) => {
         setDialogOpen(newState);
-        // eslint-disable-next-line no-undef
+         
         // @ts-expect-error TS can't find the global gallery function
         if (!newState) gallery();
       }}

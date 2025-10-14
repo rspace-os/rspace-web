@@ -28,7 +28,7 @@ export default function GroupsTable(props) {
   }, []);
 
   const fetchGroups = () => {
-    let url = `/userform/ajax/userGroupInfo/${props.userId}`;
+    const url = `/userform/ajax/userGroupInfo/${props.userId}`;
 
     axios.get(url).then((response) => {
       if (response.status != 200 || response.data.exceptionMessage) {
@@ -42,7 +42,7 @@ export default function GroupsTable(props) {
   };
 
   const fetchShareStatus = () => {
-    let url = `/userform/ajax/autoshareInProgress`;
+    const url = `/userform/ajax/autoshareInProgress`;
 
     axios.get(url).then((response) => {
       setIsCurrentlySharing(response.data.data);
@@ -125,8 +125,8 @@ export default function GroupsTable(props) {
                               {group.autoshareEnabled
                                 ? "Enabled"
                                 : group.labGroup
-                                ? "Disabled"
-                                : "n/a"}
+                                  ? "Disabled"
+                                  : "n/a"}
                             </TableCell>
                           </>
                         )}
@@ -144,7 +144,7 @@ export default function GroupsTable(props) {
                           </TableCell>
                         )}
                       </TableRow>
-                    )
+                    ),
                   )}
                 </TableBody>
               </Table>
@@ -165,6 +165,6 @@ if (domContainer) {
       username={domContainer.dataset.username}
       userId={domContainer.dataset.userid}
       canEdit={domContainer.dataset.canedit === "true"}
-    />
+    />,
   );
 }

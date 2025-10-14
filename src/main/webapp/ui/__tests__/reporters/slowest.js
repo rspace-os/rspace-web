@@ -17,7 +17,7 @@ class JestSlowTestReporter {
     console.log(
       `Top ${slowestTests.length} slowest examples (${
         slowTestTime / 1000
-      } seconds,` + ` ${percentTime.toFixed(1)}% of total time):`
+      } seconds,` + ` ${percentTime.toFixed(1)}% of total time):`,
     );
 
     for (let i = 0; i < slowestTests.length; i++) {

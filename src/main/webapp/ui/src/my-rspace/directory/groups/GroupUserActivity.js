@@ -23,7 +23,7 @@ export default function GroupActivity(props) {
   const [orderBy, setOrderBy] = React.useState("timestamp");
 
   useEffect(() => {
-    let url = `/groups/ajax/membershipEventsByGroup/${props.groupId}`;
+    const url = `/groups/ajax/membershipEventsByGroup/${props.groupId}`;
     axios
       .get(url)
       .then((response) => {

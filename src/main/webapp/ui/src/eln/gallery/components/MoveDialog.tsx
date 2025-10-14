@@ -73,9 +73,7 @@ const MoveDialog = observer(
 
     React.useEffect(() => {
       if (open) void refreshListingInsideDialog();
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - refreshListingInsideDialog will not meaningfully change between renders
-       */
+       
     }, [open]);
 
     const [topLevelLoading, setTopLevelLoading] = React.useState(false);
@@ -211,7 +209,7 @@ const MoveDialog = observer(
  * rendered, and will make network requests to fetch the folder structure
  * immediately.
  */
-// eslint-disable-next-line react/display-name -- This is a wrapper component
+ 
 export default (
   props: Omit<MoveDialogArgs, "selectedFiles">,
 ): React.ReactNode => {

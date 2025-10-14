@@ -58,7 +58,7 @@ export interface Location extends Point {
   coordX: number;
   coordY: number;
   selected: boolean;
-  parentContainer: Container; //eslint-disable-line no-use-before-define
+  parentContainer: Container;  
 
   toggleSelected(value: boolean | null): void;
   selectOnlyThis(): void;

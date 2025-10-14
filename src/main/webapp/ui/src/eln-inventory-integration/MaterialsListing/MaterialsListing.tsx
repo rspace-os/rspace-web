@@ -139,7 +139,7 @@ const MaterialsLauncher = observer(
                     // @ts-expect-error global
                     RS.trackEvent("user:open:menu:list_of_materials", {
                       fieldListCount,
-                    }); //eslint-disable-line
+                    });  
                     setShowMenu(true);
                     setAnchorEl(currentTarget);
                   }}
@@ -220,9 +220,7 @@ const MaterialsListing = observer(
 
     useEffect(() => {
       materialsStore.canEdit = canEdit;
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - materialsStore will not meaningfully change
-       */
+       
     }, [canEdit]);
 
     useEffect(() => {
@@ -230,18 +228,13 @@ const MaterialsListing = observer(
         .setup()
         .then(() => setLoading(false))
         .catch((e) => console.error(e));
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - materialsStore will not meaningfully change
-       */
+       
     }, []);
 
     useEffect(() => {
       if (!loading)
         void materialsStore.getFieldMaterialsListings(parseInt(elnFieldId, 10));
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - materialsStore will not meaningfully change
-       * - elnFieldId is not passed from the initial render call and so will not change
-       */
+       
     }, [loading]);
 
     return !loading ? (
@@ -317,11 +310,11 @@ function initListOfMaterials({
   let canEdit;
   try {
     // @ts-expect-error eslint does not recognise the global variable
-    canEdit = canBeEditable(); //eslint-disable-line no-undef
+    canEdit = canBeEditable();  
   } catch {
     try {
       // @ts-expect-error eslint does not recognise the global variable
-      canEdit = isEditable; //eslint-disable-line no-undef
+      canEdit = isEditable;  
     } catch {
       canEdit = null;
     }
