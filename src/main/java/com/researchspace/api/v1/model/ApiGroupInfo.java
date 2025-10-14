@@ -13,11 +13,21 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@JsonPropertyOrder(value = {"id", "globalId", "name", "type", "sharedFolderId", "members"})
+@JsonPropertyOrder(
+    value = {
+      "id",
+      "globalId",
+      "name",
+      "type",
+      "sharedFolderId",
+      "sharedSnippetFolderId",
+      "members"
+    })
 public class ApiGroupInfo extends ApiGroupBasicInfo {
 
   private String type;
   private Long sharedFolderId;
+  private Long sharedSnippetFolderId;
   private List<ApiUserGroupInfo> members = new ArrayList<>();
 
   public ApiGroupInfo(Group group) {
@@ -25,6 +35,7 @@ public class ApiGroupInfo extends ApiGroupBasicInfo {
     this.type = group.getGroupType().name();
 
     this.sharedFolderId = group.getCommunalGroupFolderId();
+    this.sharedSnippetFolderId = group.getSharedSnippetGroupFolderId();
     for (UserGroup ug : group.getUserGroups()) {
       members.add(new ApiUserGroupInfo(ug));
     }

@@ -2605,10 +2605,11 @@ paths:
           description: 'Item was deleted, no response body'
   '/share/document/{id}':
     get:
-      summary: Get all shares for a document
+      summary: Get all shares for a document, notebook or snippet.
       description: >-
-        Returns all sharing information for the specified document, including direct shares and
-        implicit shares (e.g. via notebooks).
+        Returns all sharing information for the specified document, notebook, or snippet, including direct shares and
+        implicit shares via the document being inside a shared notebook. For snippet shares, `notebookShares` will be 
+        empty as snippets don't appear in notebooks.
       produces:
         - application/json
       tags:
@@ -4317,6 +4318,10 @@ definitions:
         type: integer
         format: int64
         description: Unique identifier for shared group folder.
+      sharedSnippetFolderId:
+        type: integer
+        format: int64
+        description: Unique identifier for shared group snippets folder.
       members:
         type: array
         description: A Listing of the group's members and their roles
@@ -4326,7 +4331,8 @@ definitions:
       id: 1234
       name: Smith Group
       type: LAB_GROUP
-      sharedFolderId: 12345
+      sharedFolderId: 123
+      sharedSnippetFolderId: 456
       members:
         - id: 12345
           username: jsmith

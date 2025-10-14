@@ -126,7 +126,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
 
   @Override
   public RecordInfoSharingInfo getRecordSharingInfo(BaseRecord baseRecord) {
-    if (baseRecord.isStructuredDocument() || baseRecord.isNotebook()) {
+    if (baseRecord.isStructuredDocument() || baseRecord.isNotebook() || baseRecord.isSnippet()) {
       List<RecordGroupSharing> sharingsList =
           sharingManager.getRecordSharingInfo(baseRecord.getId());
       sharingsList =
@@ -136,7 +136,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
       List<RecordGroupSharing> implicitSharingList = new ArrayList<>();
       // add information about documents in shared notebooks, that aren't themselves shared,
       // but are viewable by other users
-      if (baseRecord.isStructuredDocument()) {
+      if (baseRecord.isStructuredDocument() || baseRecord.isSnippet()) {
         Set<Notebook> parentNbs = baseRecord.getParentNotebooks();
         for (Notebook n : parentNbs) {
           List<RecordGroupSharing> parentNbSharedInfo =
