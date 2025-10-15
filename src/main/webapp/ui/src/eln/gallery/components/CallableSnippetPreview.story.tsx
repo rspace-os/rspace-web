@@ -3,7 +3,7 @@ import {
   CallableSnippetPreview,
   useSnippetPreview,
 } from "./CallableSnippetPreview";
-import { GalleryFile } from "../useGalleryListing";
+import { Description, GalleryFile } from "../useGalleryListing";
 import Button from "@mui/material/Button";
 import Result from "../../../util/result";
 
@@ -18,7 +18,7 @@ const mockSnippetFile: GalleryFile = {
   type: "snippet",
   thumbnailUrl: "",
   ownerName: "Test User",
-  description: "A test HTML snippet",
+  description: Description.Present("A test HTML snippet"),
   size: 1024,
   version: 1,
   originalImageId: null,
@@ -45,6 +45,7 @@ const mockSnippetFile: GalleryFile = {
   canUploadNewVersion: Result.Ok(null),
   canBeLoggedOutOf: Result.Error([new Error("Not applicable")]),
   deconstructor: () => {},
+  treeViewItemId: "tree-item-123",
 } as GalleryFile;
 
 function TestComponent() {
