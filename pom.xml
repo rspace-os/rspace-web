@@ -1013,10 +1013,18 @@
                 <groupId>com.healthmarketscience.jackcess</groupId>
                 <artifactId>jackcess</artifactId>
             </exclusion>
+            <exclusion>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk15on</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+            </exclusion>
         </exclusions>
     </dependency>
     <dependency>
-        <!-- tika-parsers 1.17 internally-conflicting dependency,
+        <!-- tika-parsers internally-conflicting dependency,
         used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
         <groupId>com.healthmarketscience.jackcess</groupId>
         <artifactId>jackcess</artifactId>
@@ -1037,7 +1045,7 @@
     <dependency>
         <groupId>org.jdom</groupId>
         <artifactId>jdom2</artifactId>
-        <version>2.0.6</version>
+        <version>2.0.6.1</version>
     </dependency>
     <dependency>
         <groupId>javax.annotation</groupId>
@@ -1103,6 +1111,10 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
             </exclusion>
+            <exclusion>
+                <groupId>xalan</groupId>
+                <artifactId>xalan</artifactId>
+            </exclusion>
         </exclusions>
     </dependency>
     <dependency>
@@ -1124,14 +1136,13 @@
         <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
         <groupId>xalan</groupId>
         <artifactId>xalan</artifactId>
-        <version>2.7.2</version>
-        <exclusions>
-            <exclusion>
-                <groupId>xml-apis</groupId>
-                <artifactId>xml-apis</artifactId>
-            </exclusion>
-        </exclusions>
+        <version>2.7.3</version>
     </dependency>
+      <dependency>
+          <groupId>xalan</groupId>
+          <artifactId>serializer</artifactId>
+          <version>2.7.3</version>
+      </dependency>
     <dependency>
         <groupId>org.apache.xmlgraphics</groupId>
         <artifactId>xmlgraphics-commons</artifactId>
@@ -2087,7 +2098,7 @@
     <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk15on</artifactId>
-        <version>1.54</version>
+        <version>1.70</version>
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
@@ -2101,6 +2112,10 @@
             <exclusion>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.jdom</groupId>
+                <artifactId>jdom2</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
@@ -2181,7 +2196,7 @@
     <dependency>
         <groupId>com.thoughtworks.xstream</groupId>
         <artifactId>xstream</artifactId>
-        <version>1.4.18</version>
+        <version>1.4.21</version>
     </dependency>
     <dependency>
       <groupId>org.xhtmlrenderer</groupId>

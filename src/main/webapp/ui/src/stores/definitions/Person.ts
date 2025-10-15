@@ -1,5 +1,6 @@
 import { type _LINK } from "../../util/types";
-import { type Container, type WorkbenchId } from "../definitions/Container";
+import { type Container } from "../definitions/Container";
+import { WorkbenchId } from "@/stores/definitions/container/types";
 
 export type Username = string;
 export type PersonId = number;

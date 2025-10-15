@@ -1,4 +1,7 @@
-import { Container, GridLayout, Location } from "../definitions/Container";
+import {
+  Container,
+  Location,
+} from "../definitions/Container";
 import { Factory } from "../definitions/Factory";
 import { Person } from "../definitions/Person";
 import * as Parsers from "../../util/parsers";
@@ -18,6 +21,8 @@ import InventoryBaseRecord, {
   InventoryBaseRecordEditableFields,
   InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
+import { layoutToLabel } from "@/util/labels";
+import { GridLayout, NUMERICAL_AXES } from "@/stores/definitions/container/types";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -215,8 +220,14 @@ export function HasLocationMixin<
       ]);
 
       const gridCoordinatesLabel = lift2<GridLayout, Location, string>(
-        ({ rowsNumber, columnsNumber }, parentLocation) =>
-          `Row ${parentLocation.coordY} of ${rowsNumber}, Column ${parentLocation.coordX} of ${columnsNumber}`,
+        ({ rowsLabelType, rowsNumber, columnsLabelType, columnsNumber }, parentLocation) => {
+          const rowLabel = layoutToLabel(rowsLabelType, rowsNumber !== "" ? rowsNumber : 1, parentLocation.coordY);
+          const columnLabel = layoutToLabel(columnsLabelType, columnsNumber !== "" ? columnsNumber : 1, parentLocation.coordX);
+          // Disambiguate the row and column numbers if needed (row 1, column 11 vs row 11, column 1)
+          const insertComma = NUMERICAL_AXES.includes(rowsLabelType) && NUMERICAL_AXES.includes(columnsLabelType);
+
+          return `${rowLabel}${insertComma ? ',' : ''}${columnLabel}`
+        },
         Optional.fromNullable(this.immediateParentContainer?.gridLayout),
         Optional.fromNullable(this.parentLocation)
       ).orElse("");
