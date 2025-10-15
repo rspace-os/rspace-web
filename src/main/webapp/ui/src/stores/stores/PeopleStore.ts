@@ -1,7 +1,6 @@
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import RsSet from "../../util/set";
-import { type WorkbenchId } from "../definitions/Container";
 import { type Username, type PersonAttrs } from "../definitions/Person";
 import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
 import PersonModel from "../models/PersonModel";
@@ -9,6 +8,7 @@ import { type RootStore } from "./RootStore";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
 import { observable, makeObservable, runInAction, action } from "mobx";
 import { type Group } from "../definitions/Group";
+import { WorkbenchId } from "@/stores/definitions/container/types";
 
 export default class PeopleStore {
   rootStore: RootStore;
