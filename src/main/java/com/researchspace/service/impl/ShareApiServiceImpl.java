@@ -94,13 +94,14 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
       PermissionUtils permissionUtils,
       IPropertyHolder properties,
       MessageSourceUtils messages) {
-    this.recordShareHandler = recordShareHandler;
-    this.recordShareMgr = recordShareMgr;
-    this.detailedRecordInformationProvider = detailedRecordInformationProvider;
-    this.recordManager = recordManager;
-    this.folderManager = folderManager;
-    this.documentSharesBuilder = documentSharesBuilder;
-    this.permissionUtils = permissionUtils;
+    this(
+        recordShareHandler,
+        recordShareMgr,
+        detailedRecordInformationProvider,
+        recordManager,
+        folderManager,
+        documentSharesBuilder,
+        permissionUtils);
     this.properties = properties;
     this.messages = messages;
   }
