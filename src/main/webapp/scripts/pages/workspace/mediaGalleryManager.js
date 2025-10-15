@@ -1054,13 +1054,21 @@ function createFolder(name) {
 function addFromGallery(data) {
   // Insert any selected folders first
   insertFolders(data);
+  
+  const typeMapping = {
+    'Image': MEDIA_TYPE_IMAGES,
+    'Video': MEDIA_TYPE_VIDEOS,
+    'Audio': MEDIA_TYPE_AUDIOS,
+    'Document': MEDIA_TYPE_DOCS,
+    'Chemistry': MEDIA_TYPE_CHEMISTRY,
+    'Miscellaneous': MEDIA_TYPE_MISCDOCS,
+    'PdfDocuments': MEDIA_TYPE_EXPORTED,
+    'Snippet': MEDIA_TYPE_SNIPPETS,
+    'NetworkFile': MEDIA_TYPE_FILESTORES,
+    'DMP': MEDIA_TYPE_DMPS,
+  };
 
-  var mediaTypeSelectedVal = (data != null) ? data.type + 's' : $("#mediaTypeSelected").val();
-
-  //Values are hardcoded in different styles, so it has to be hacky
-  if (mediaTypeSelectedVal == MEDIA_TYPE_MISCDOCS + "s") {
-    mediaTypeSelectedVal = MEDIA_TYPE_MISCDOCS;
-  }
+  var mediaTypeSelectedVal = (data != null) ? typeMapping[data.type] : $("#mediaTypeSelected").val();
 
   switch (mediaTypeSelectedVal) {
     case MEDIA_TYPE_IMAGES:
