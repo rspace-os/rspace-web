@@ -1,10 +1,7 @@
 import React from "react";
 import {createRoot} from "react-dom/client";
-import ExternalWorkflowInvocations
-  from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
 import { IpynbRenderer } from "react-ipynb-renderer";
 import axios from "@/common/axios";
-import {idToString} from "@/eln/gallery/useGalleryListing";
 
 /**
  * Renders a view of an attached jupyter notebook
@@ -24,19 +21,16 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
   [...document.getElementsByClassName("jupyter-notebooks-textfield")].forEach(
       (wrapperDiv) => {
         const fieldId = wrapperDiv.getAttribute("data-field-id");
-        const attachedFiles = getAttachedFilesByParsingEmbeddedText("rtf_"+fieldId);
+        const attachedFiles = getAttachedFilesByParsingEmbeddedText(isForNotebookPage,fieldId);
         (async () =>
         {
           const {data} = await axios.get<unknown>(
               "/Streamfile/" +
               attachedFiles[0]
           );
-          if (isForNotebookPage) {
-            // @ts-expect-error style does exist on HTMLDivElement
-            wrapperDiv.style.position = "relative"
-          }
           const root = createRoot(wrapperDiv);
           root.render(
+              // @ts-ignore
               <IpynbRenderer ipynb={data}/>
           );
         })();
@@ -47,19 +41,34 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
  * invoked when Structured Doc page loads (but not when a Notebook page loads)
  */
 loadUIOnPageLoad();
+
+function thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId: string | null) {
+  // @ts-ignore
+  return $('#jupyter_notebooks_details_' + fieldId).nextUntil('.attachmentDiv').find('.jupyter-notebooks-textfield').length === 0;
+}
+
 /*
  * we are only interested in embedded jupyter links
  */
-function getAttachedFilesByParsingEmbeddedText(selector: string): string[] {
+function getAttachedFilesByParsingEmbeddedText(isNotebook: boolean, fieldId: string | null): string[] {
   const recordIds: string [] = [];
-  $('<div>' + $('#' + selector).val()).find('.attachmentDiv').each(
-      function (index) {
-        const record :string = $(this).find('.attachmentInfoDiv').attr('id').substring(18);
-        const html = $(this).html();
-        if (html.includes("ipynb")) {
-          recordIds.push(record);
-        }
-      });
+  // @ts-ignore
+  const attachment = isNotebook ? $(".journalPageContent").find('#jupyter_notebooks_details_' + fieldId).nextAll('.attachmentDiv').first() : $('<div>' + $('#rtf_' + fieldId).val()).find('.attachmentDiv')
+  if (attachment.length > 0) {
+    // @ts-ignore
+    const record: string = isNotebook ? $(attachment).find('.inlineActionLink.downloadActionLink').attr('href').substring(12) : $(attachment).find('.attachmentInfoDiv').attr('id').substring(18);
+    // @ts-ignore
+    const html = $(attachment).html();
+    if (html.includes("ipynb")) {
+      // In Notebook 'view mode', attachment divs have no connection to a useable ID for finding them
+      // So we determine if our jupyter div has no other jupyter divs between it and the next attachment div
+      if (thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId)) {
+        // @ts-ignore
+        $('#jupyter_notebooks_details_' + fieldId).show();
+      }
+      recordIds.push(record);
+    }
+  }
   return recordIds;
 }
 
