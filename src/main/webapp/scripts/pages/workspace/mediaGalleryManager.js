@@ -568,7 +568,7 @@ function gallery(applySearch) {
             elementData.widthResized = val.widthResized;
             elementData.heightResized = val.heightResized;
             elementData.shortFilename = val.name;
-          } else if (val.type == 'Documents' || val.type == 'Miscellaneous' || val.type == 'DMPs') {
+          } else if (val.type == 'Document' || val.type == 'Miscellaneous' || val.type == 'DMPs') {
             elementTemplate = $('#ecatDocumentOrMiscTemplate').html();
             elementData.isMediaFile = true;
             elementData.imgSrc = iconSrc;
@@ -765,9 +765,9 @@ function generateIconSrc(type, extension, thumbnailId, id) {
     if (iconSrc == "" && type == 'Audio') {
       iconSrc = "/images/icons/audioIcon.png";
     }
-  } else if (type == 'Documents' || type == 'Miscellaneous' || type == 'DMPs') {
+  } else if (type == 'Document' || type == 'Miscellaneous' || type == 'DMPs') {
     var iconSrc = "";
-    if(type == 'Documents' & id != null) {
+    if(type == 'Document' & id != null) {
 	   let suffix = (thumbnailId!=null)?thumbnailId:"none";
         iconSrc = createURL("/image/docThumbnail/" + id + "/" + suffix);
      } else {
