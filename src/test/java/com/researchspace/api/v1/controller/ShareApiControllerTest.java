@@ -6,27 +6,13 @@ import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.core.testutil.JavaxValidatorTest;
-import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
-import com.researchspace.service.RecordSharingManager;
 import java.util.Collections;
-import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 
 public class ShareApiControllerTest extends JavaxValidatorTest {
 
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
-  @Mock RecordSharingManager handler;
-
-  @InjectMocks ShareApiController controller;
-  User sharer = TestFactory.createAnyUser("any");
-
   @Test
-  public void testShareItems() {
+  public void testShareItemsValidation() {
     SharePost post = createValidSharePost();
     assertNErrors(post, 0);
     setPermission(post, "EDIT");
