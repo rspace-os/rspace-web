@@ -4,13 +4,17 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
+import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @JsonPropertyOrder({
   "bannerImgSrc",
   "visibleTabs",
   "userDetails",
+  "extraHelpLinks",
   "incomingMaintenance",
   "operatedAs"
 })
@@ -23,6 +27,8 @@ public class ApiUiNavigationData {
   private ApiUiNavigationUserDetails userDetails;
 
   private ApiUiNavigationScheduledMaintenance nextMaintenance;
+
+  private List<ApiUiNavigationExtraHelpLink> extraHelpLinks;
 
   private boolean operatedAs;
 
@@ -73,5 +79,13 @@ public class ApiUiNavigationData {
       setCanUserLoginNow(maintenance.getCanUserLoginNow());
       setActiveNow(maintenance.isActiveNow());
     }
+  }
+
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ApiUiNavigationExtraHelpLink {
+    private String label;
+    private String url;
   }
 }
