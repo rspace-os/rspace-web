@@ -71,7 +71,7 @@ public class ImportsApiController extends BaseApiController implements ImportApi
     try {
       BaseRecord created = doImport(file, user, targetFolder, imageFolder);
       // this will always be a folder
-      ApiFolder docInfo = new ApiFolder((Folder) created);
+      ApiFolder docInfo = new ApiFolder((Folder) created, user);
       buildAndAddSelfLink(FOLDERS_ENDPOINT, docInfo);
       return docInfo;
 

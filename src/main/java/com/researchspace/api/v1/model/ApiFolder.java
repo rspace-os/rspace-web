@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
@@ -62,11 +63,12 @@ public class ApiFolder extends IdentifiableNameableApiObject {
   private List<ApiFolder> pathToRootFolder;
 
   /**
-   * Constructor for converting {@link Folder} entity to an {@link ApiFolder}
-   *
-   * @param folderOrNotebook
+   * Constructor for converting {@link Folder} entity to an {@link ApiFolder}. If the folder has a
+   * parent the user has access to (either the user owns the parent or has access to a shared
+   * parent), then parentFolderId will be set. If the folder is a Gallery Folder, then mediaType
+   * will be set
    */
-  public ApiFolder(Folder folderOrNotebook) {
+  public ApiFolder(Folder folderOrNotebook, User user) {
     super(
         folderOrNotebook.getId(),
         folderOrNotebook.getGlobalIdentifier(),
@@ -75,11 +77,8 @@ public class ApiFolder extends IdentifiableNameableApiObject {
     setLastModifiedMillis(folderOrNotebook.getModificationDateMillis());
     setNotebook(folderOrNotebook.isNotebook());
     if (folderOrNotebook.hasParents()) {
-      if (folderOrNotebook.getOwnerParent().isPresent()) {
-        setParentFolderId(folderOrNotebook.getOwnerParent().get().getId());
-      } else if (folderOrNotebook.isSharedFolder() && folderOrNotebook.hasParents()) {
-        setParentFolderId(folderOrNotebook.getParentFolders().iterator().next().getId());
-      }
+      Optional<Folder> parentInUserContext = folderOrNotebook.getOwnerOrSharedParentForUser(user);
+      parentInUserContext.ifPresent(parent -> setParentFolderId(parent.getId()));
     }
 
     if (GlobalIdPrefix.GF.equals(folderOrNotebook.getOid().getPrefix())) {
@@ -100,24 +99,26 @@ public class ApiFolder extends IdentifiableNameableApiObject {
   }
 
   /**
-   * Constructor that looks into parent folders to set 'mediaType' property (in case of Gallery
-   * Folders), and also populates the 'parents' list if 'includeParents' param is 'true'
+   * Constructor that additionally populates the 'pathToRootFolder' list if
+   * 'includePathToRootFolder' is true
    *
-   * @param folderOrNotebook
+   * @param folderOrNotebook the folder or notebook to convert
+   * @param includePathToRootFolder whether to include the path to the root folder
+   * @param user the user making the request
    */
-  public ApiFolder(Folder folderOrNotebook, Boolean includePathToRootFolder) {
-    this(folderOrNotebook);
+  public ApiFolder(Folder folderOrNotebook, boolean includePathToRootFolder, User user) {
+    this(folderOrNotebook, user);
 
-    if (Boolean.TRUE.equals(includePathToRootFolder)) {
+    if (includePathToRootFolder) {
       pathToRootFolder = new ArrayList<>();
-      Optional<Folder> currParentOpt = folderOrNotebook.getOwnerParent();
-      while (currParentOpt.isPresent()) {
-        Folder currParent = currParentOpt.get();
-        pathToRootFolder.add(new ApiFolder(currParent));
+      Optional<Folder> parent = folderOrNotebook.getOwnerOrSharedParentForUser(user);
+      while (parent.isPresent()) {
+        Folder currParent = parent.get();
+        pathToRootFolder.add(new ApiFolder(currParent, user));
         if (currParent.hasType(RecordType.ROOT_MEDIA)) {
           break; // for gallery subfolders, stop at Gallery level
         }
-        currParentOpt = currParent.getOwnerParent();
+        parent = currParent.getOwnerOrSharedParentForUser(user);
       }
     }
   }

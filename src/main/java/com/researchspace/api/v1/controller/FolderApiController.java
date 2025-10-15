@@ -98,7 +98,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       newCreatedFolder = folderMgr.createNewFolder(targetFolder.getId(), toCreate.getName(), user);
     }
 
-    ApiFolder rc = new ApiFolder(newCreatedFolder);
+    ApiFolder rc = new ApiFolder(newCreatedFolder, user);
     buildAndAddSelfLink(FOLDERS_ENDPOINT, rc);
     return rc;
   }
@@ -107,11 +107,11 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   public ApiFolder getFolder(
       @PathVariable Long id,
       @RequestParam(name = "includePathToRootFolder", defaultValue = "false", required = false)
-          Boolean includePathToRootFolder,
+          boolean includePathToRootFolder,
       @RequestAttribute(name = "user") User user) {
 
     Folder folder = loadFolder(id, user);
-    ApiFolder rc = new ApiFolder(folder, includePathToRootFolder);
+    ApiFolder rc = new ApiFolder(folder, includePathToRootFolder, user);
     buildAndAddSelfLink(FOLDERS_ENDPOINT, rc);
     return rc;
   }

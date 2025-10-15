@@ -44,7 +44,7 @@ public interface FolderApi {
    * @throws NotFoundException if folder does not exist
    */
   @GetMapping(value = "/{id}")
-  ApiFolder getFolder(@PathVariable Long id, Boolean includePathToRootFolder, User user);
+  ApiFolder getFolder(@PathVariable Long id, boolean includePathToRootFolder, User user);
 
   /**
    * Deletes a folder or notebook by ID
