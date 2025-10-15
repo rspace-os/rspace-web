@@ -765,9 +765,9 @@ function generateIconSrc(type, extension, thumbnailId, id) {
     if (iconSrc == "" && type == 'Audio') {
       iconSrc = "/images/icons/audioIcon.png";
     }
-  } else if (type == 'Document' || type == 'Miscellaneous' || type == 'DMPs') {
+  } else if (type == 'Document' || type == 'Documents' || type == 'Miscellaneous' || type == 'DMPs') {
     var iconSrc = "";
-    if(type == 'Document' & id != null) {
+    if((type == 'Document' || type == 'Documents') & id != null) {
 	   let suffix = (thumbnailId!=null)?thumbnailId:"none";
         iconSrc = createURL("/image/docThumbnail/" + id + "/" + suffix);
      } else {
