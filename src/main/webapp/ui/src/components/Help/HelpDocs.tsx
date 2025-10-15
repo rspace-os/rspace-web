@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useRef } from "react";
+import React, { useEffect, useState, useContext, useRef, useId } from "react";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { observer } from "mobx-react-lite";
 import axios from "@/common/axios";
@@ -6,10 +6,12 @@ import Intercom from "@intercom/messenger-js-sdk";
 import useUiNavigationData from "@/components/AppBar/useUiNavigationData";
 import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
 import HelpIcon from "@mui/icons-material/Help";
-import Menu from "@mui/material/Menu";
+import { Menu } from '../DialogBoundary';
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
-import Link from "@mui/material/Link";
+import Box from "@mui/material/Box";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 
 declare global {
   interface Window {
@@ -57,9 +59,6 @@ function loadScript(url: string): void {
   }
 }
 
-const MENU_ID = 'help-docs-menu';
-const MENU_OPEN_BUTTON_ID = 'help-docs-menu-open-button';
-
 /**
  * Displays the HelpDocs popup window.
  */
@@ -73,6 +72,9 @@ function HelpDocs() {
   );
   const analyticsContext = useContext(AnalyticsContext);
   const { trackEvent } = analyticsContext;
+
+  const menuId = useId();
+  const menuOpenButtonId = useId();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- this is simply to trigger a re-render once lighthouse is loaded
   const [_lighthouseIsLoaded, setLighthouseIsLoaded] = useState(false);
@@ -208,19 +210,19 @@ function HelpDocs() {
   return (
     <div>
       <IconButtonWithTooltip
-        id={MENU_OPEN_BUTTON_ID}
+        id={menuOpenButtonId}
         size="small"
         onClick={handleMenuButtonClick}
         icon={<HelpIcon />}
         title="Open Help"
         disabled={!window.Lighthouse}
-        aria-controls={open ? MENU_ID : undefined}
+        aria-controls={open ? menuId : undefined}
         aria-haspopup={hasExtraHelpLinks ? 'menu' : undefined}
         aria-expanded={open ? 'true' : undefined}
       />
       <Menu
-        id={MENU_ID}
-        aria-labelledby={MENU_OPEN_BUTTON_ID}
+        id={menuId}
+        aria-labelledby={menuOpenButtonId}
         anchorEl={anchorEl}
         open={open}
         onClose={handleMenuClose}
@@ -236,14 +238,17 @@ function HelpDocs() {
         {hasExtraHelpLinks && (
           <>
             {uiNavigationData.value.extraHelpLinks.map(({ label, url }) => (
-              <MenuItem key={`${label}${url}`} component="a" href={url}>
-                {label}
+              <MenuItem key={`${label}${url}`} component="a" href={url} rel="noreferrer">
+                <ListItemIcon>&nbsp;</ListItemIcon>
+                <ListItemText>{label}</ListItemText>
               </MenuItem>
             ))}
           </>
         )}
         <Divider />
-        <MenuItem onClick={handleHelpButtonClicked}>RSpace Documentation</MenuItem>
+        <MenuItem onClick={handleHelpButtonClicked}>
+          <ListItemIcon><Box component="img" sx={{ height: 24, width: 24 }} alt="RSpace" src="/images/icons/rspaceIcon.svg" /></ListItemIcon>
+          <ListItemText>RSpace Documentation</ListItemText></MenuItem>
       </Menu>
     </div>
   );
