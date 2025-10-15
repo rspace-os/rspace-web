@@ -15,6 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResultCollection;
@@ -215,6 +216,12 @@ public class FolderApiController extends BaseApiController implements FolderApi 
         info -> buildAndAddSelfLink(calculateSelfLink(info), info));
     if (folderToList.hasSingleParent()) {
       apiRecordTreeItemListing.setParentId(folderToList.getParent().getId());
+    } else {
+      RecordToFolder parentInUserContext = folderToList.getParents().stream()
+              .filter(parentFolder -> parentFolder.getUserName().equals(user.getUsername()))
+              .findFirst()
+              .get();
+      apiRecordTreeItemListing.setParentId(parentInUserContext.getRecord().getId());
     }
     return apiRecordTreeItemListing;
   }
