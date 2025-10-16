@@ -2,10 +2,7 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import {
   TreeViewWithFiles,
-  TreeViewWithPreviewProviders,
-  TreeViewWithEdgeCases,
   TreeViewLoading,
-  TreeViewWithFiltering,
   TreeViewFoldersOnly,
 } from "./TreeView.story";
 import AxeBuilder from "@axe-core/playwright";
@@ -14,10 +11,7 @@ import * as Jwt from "jsonwebtoken";
 const feature = test.extend<{
   Given: {
     "the tree view with files is mounted": () => Promise<void>;
-    "the tree view with preview providers is mounted": () => Promise<void>;
-    "the tree view with edge cases is mounted": () => Promise<void>;
     "the tree view with loading state is mounted": () => Promise<void>;
-    "the tree view with filtering is mounted": () => Promise<void>;
     "the tree view folders only is mounted": () => Promise<void>;
   };
   When: {
@@ -42,11 +36,6 @@ const feature = test.extend<{
     }: {
       fileName: string;
     }) => Promise<void>;
-    "the user right-clicks on a {fileType}": ({
-      fileType,
-    }: {
-      fileType: string;
-    }) => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
@@ -55,35 +44,15 @@ const feature = test.extend<{
     }: {
       fileType: string;
     }) => Promise<void>;
-    "the image preview should be visible": () => Promise<void>;
-    "the PDF preview should be visible": () => Promise<void>;
-    "the folder should be opened": ({
-      folderName,
-    }: {
-      folderName: string;
-    }) => Promise<void>;
-    "the focus should move to the next item": () => Promise<void>;
-    "the focus should move to the previous item": () => Promise<void>;
     "multiple files should be selected": () => Promise<void>;
-    "the {fileName} should be selected": ({
-      fileName,
-    }: {
-      fileName: string;
-    }) => Promise<void>;
     "the tree should show loading state": () => Promise<void>;
-    "the file should be disabled but visible": ({
-      fileName,
-    }: {
-      fileName: string;
-    }) => Promise<void>;
-    "the file should be hidden": ({
-      fileName,
-    }: {
-      fileName: string;
-    }) => Promise<void>;
-    "long file names should be handled gracefully": () => Promise<void>;
-    "special characters should be displayed correctly": () => Promise<void>;
     "only folders should be visible": () => Promise<void>;
+    "the {fileType} should have focus": ({
+      fileType,
+    }: {
+      fileType: string;
+    }) => Promise<void>;
+		"there is an error alert": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -92,17 +61,8 @@ const feature = test.extend<{
       "the tree view with files is mounted": async () => {
         await mount(<TreeViewWithFiles />);
       },
-      "the tree view with preview providers is mounted": async () => {
-        await mount(<TreeViewWithPreviewProviders />);
-      },
-      "the tree view with edge cases is mounted": async () => {
-        await mount(<TreeViewWithEdgeCases />);
-      },
       "the tree view with loading state is mounted": async () => {
         await mount(<TreeViewLoading />);
-      },
-      "the tree view with filtering is mounted": async () => {
-        await mount(<TreeViewWithFiltering />);
       },
       "the tree view folders only is mounted": async () => {
         await mount(<TreeViewFoldersOnly />);
@@ -136,12 +96,6 @@ const feature = test.extend<{
           .getByRole("treeitem", { name: new RegExp(fileName) })
           .click({ modifiers: ["Shift"] });
       },
-      "the user right-clicks on a {fileType}": async ({ fileType }) => {
-        const fileName = getFileNameByType(fileType);
-        await page
-          .getByRole("treeitem", { name: new RegExp(fileName) })
-          .click({ button: "right" });
-      },
     });
   },
   Then: async ({ page }, use) => {
@@ -174,39 +128,15 @@ const feature = test.extend<{
           page.getByRole("treeitem", { name: new RegExp(fileName) }),
         ).toHaveAttribute("aria-selected", "true");
       },
-      "the image preview should be visible": async () => {
-        await expect(page.getByRole("dialog")).toBeVisible();
-        await expect(page.getByRole("dialog")).toContainText("1 / 1");
-      },
-      "the PDF preview should be visible": async () => {
-        await expect(page.getByRole("dialog")).toBeVisible();
-        await expect(page.getByRole("dialog")).toContainText("Close");
-      },
-      "the folder should be opened": async ({ folderName }) => {
-        await expect(page.getByTestId("folder-open-count")).toHaveText("1");
-        await expect(page.getByTestId("opened-folder-name")).toHaveText(
-          folderName,
-        );
-      },
-      "the focus should move to the next item": async () => {
-        // Check that focus has moved by verifying aria-selected or focus state
-        const focusedElement = await page.locator(":focus");
-        await expect(focusedElement).toHaveAttribute("role", "treeitem");
-      },
-      "the focus should move to the previous item": async () => {
-        const focusedElement = await page.locator(":focus");
-        await expect(focusedElement).toHaveAttribute("role", "treeitem");
+      "the {fileType} should have focus": async ({ fileType }) => {
+        const focusedElement = page.locator(":focus");
+        expect(await focusedElement.textContent()).toEqual(getFileNameByType(fileType));
       },
       "multiple files should be selected": async () => {
         // Multi-selection may not be implemented yet, so just verify selection works
         const selectedItems = page.getByRole("treeitem", { selected: true });
         const count = await selectedItems.count();
         expect(count).toBeGreaterThanOrEqual(1);
-      },
-      "the {fileName} should be selected": async ({ fileName }) => {
-        await expect(
-          page.getByRole("treeitem", { name: new RegExp(fileName) }),
-        ).toHaveAttribute("aria-selected", "true");
       },
       "the tree should show loading state": async () => {
         // Just verify the component renders with loading state - specific loading UI may vary
@@ -216,39 +146,14 @@ const feature = test.extend<{
             // Component may not have explicit loading indicators
           });
       },
-      "the file should be disabled but visible": async ({ fileName }) => {
-        const fileItem = page.getByRole("treeitem", {
-          name: new RegExp(fileName),
-        });
-        await expect(fileItem).toBeVisible();
-        // Note: disabled state may not be easily testable in this component
-      },
-      "the file should be hidden": async ({ fileName }) => {
-        // Just verify component renders - filtering behavior may vary
-        const allItems = page.getByRole("treeitem");
-        const itemCount = await allItems.count();
-        expect(itemCount).toBeGreaterThanOrEqual(0);
-      },
-      "long file names should be handled gracefully": async () => {
-        const longNameItem = page.getByRole("treeitem", {
-          name: /This_is_a_very_long_file_name/,
-        });
-        await expect(longNameItem).toBeVisible();
-        // Verify it doesn't overflow its container
-        const boundingBox = await longNameItem.boundingBox();
-        expect(boundingBox?.width).toBeLessThanOrEqual(300); // Container width
-      },
-      "special characters should be displayed correctly": async () => {
-        const specialCharsItem = page.getByRole("treeitem", {
-          name: /file with spaces & symbols \(test\) \[2024\]/,
-        });
-        await expect(specialCharsItem).toBeVisible();
-      },
       "only folders should be visible": async () => {
         // Just verify we have tree items visible and they render properly
         const allItems = page.getByRole("treeitem");
         const itemCount = await allItems.count();
         expect(itemCount).toBeGreaterThan(0);
+      },
+      "there is an error alert": async () => {
+        await expect(page.getByRole("alert", { name: /Error/i })).toBeVisible();
       },
     });
   },
@@ -395,42 +300,35 @@ test.describe("TreeView", () => {
       async ({ Given, When, Then }) => {
         await Given["the tree view with files is mounted"]();
 
-        // Click first item to focus
         await When["the user single-clicks on a {fileType}"]({
           fileType: "folder",
         });
 
-        // Navigate with down arrow
         await When["the user presses {key} key"]({ key: "ArrowDown" });
-        await Then["the focus should move to the next item"]();
+        await Then["the {fileType} should have focus"]({
+          fileType: "image"
+        });
 
-        // Navigate with up arrow
         await When["the user presses {key} key"]({ key: "ArrowUp" });
-        await Then["the focus should move to the previous item"]();
+        await Then["the {fileType} should have focus"]({
+          fileType: "folder"
+        });
       },
     );
 
     feature("Should handle Enter key on folder", async ({ Given, When }) => {
       await Given["the tree view with files is mounted"]();
-
-      // Focus on folder first
       await When["the user single-clicks on a {fileType}"]({
         fileType: "folder",
       });
-
-      // Press Enter - just verify it doesn't crash
       await When["the user presses {key} key"]({ key: "Enter" });
     });
 
     feature("Should select with Space key", async ({ Given, When, Then }) => {
       await Given["the tree view with files is mounted"]();
-
-      // Focus on file
       await When["the user single-clicks on a {fileType}"]({
         fileType: "image",
       });
-
-      // Press Space
       await When["the user presses {key} key"]({ key: "Space" });
       await Then["the {fileType} should be selected"]({
         fileType: "image",
@@ -443,37 +341,27 @@ test.describe("TreeView", () => {
       "Should support Ctrl+click for multi-selection",
       async ({ Given, When, Then }) => {
         await Given["the tree view with files is mounted"]();
-
-        // Select first file
         await When["the user single-clicks on a {fileType}"]({
           fileType: "image",
         });
-
-        // Ctrl+click second file
         await When["the user holds Ctrl and clicks on {fileName}"]({
           fileName: "test-document.pdf",
         });
-
         await Then["multiple files should be selected"]();
       },
     );
 
     feature(
       "Should handle Shift+click without crashing",
-      async ({ Given, When }) => {
+      async ({ Given, When, Then }) => {
         await Given["the tree view with files is mounted"]();
-
-        // Select first file
         await When["the user single-clicks on a {fileType}"]({
           fileType: "folder",
         });
-
-        // Shift+click another file - just verify it doesn't crash
         await When["the user holds Shift and clicks on {fileName}"]({
           fileName: "test-document.pdf",
         });
-
-        // then there is an error toast
+        await Then["there is an error alert"]();
       },
     );
   });
