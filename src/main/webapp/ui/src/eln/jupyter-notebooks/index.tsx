@@ -1,6 +1,8 @@
 import React, {useState} from "react";
 import {createRoot} from "react-dom/client";
 import { IpynbRenderer } from "react-ipynb-renderer";
+import type {IpynbType, SyntaxThemeType} from "react-ipynb-renderer/dist/types";
+
 import "react-ipynb-renderer/dist/styles/default.css";
 import axios from "@/common/axios";
 
@@ -25,19 +27,17 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
         const attachedFiles = getAttachedFilesByParsingEmbeddedText(isForNotebookPage,fieldId);
         (async () =>
         {
-          const {data} = await axios.get<unknown>(
+          const {data} = await axios.get<IpynbType>(
               "/Streamfile/" +
               attachedFiles[0]
           );
           const root = createRoot(wrapperDiv);
           function App() {
-            const [theme, setTheme] = useState<string>('duotoneSea');
-            // @ts-ignore
-            // @ts-ignore
+            const [theme, setTheme] = useState<SyntaxThemeType>('duotoneSea');
             return(
                 <>
                   <div style={{height: 50}}>
-                    Syntax theme: <select value={theme} onChange={(e) => setTheme(e.target.value as string)}>
+                    Syntax theme: <select value={theme} onChange={(e) => setTheme(e.target.value as SyntaxThemeType)}>
                     {themes.map((theme) => (
                         <option key={theme} value={theme}>{theme}</option>
                     ))}
@@ -87,7 +87,7 @@ function getAttachedFilesByParsingEmbeddedText(isNotebook: boolean, fieldId: str
   }
   return recordIds;
 }
-const themes: string [] = [
+const themes: SyntaxThemeType [] = [
   'atomDark',
   'cb',
   'coy',
