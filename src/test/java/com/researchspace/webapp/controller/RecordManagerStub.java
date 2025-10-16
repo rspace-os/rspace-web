@@ -72,7 +72,7 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
-  public EditStatus requestRecordView(Long recordId, User user, UserSessionTracker activeUsers) {
+  public EditStatus requestRecordView(Long recordId, User user) {
     return null;
   }
 

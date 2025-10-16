@@ -13,8 +13,8 @@ function generate$RecordInfoPanel(info) {
   var isPdfExport = info.type === 'PdfDocuments';
   var isDMP = info.type === 'DMPs';
   var isGalleryFile = info.type === 'Image' || info.type === 'Audio' || info.type === 'Video' ||
-    info.type === 'Document' || info.type === 'Documents' || info.type === 'Miscellaneous' ||
-    info.type === 'Chemistry' || isPdfExport || isDMP;
+    info.type === 'Document' || info.type === 'Miscellaneous' || info.type === 'Chemistry'
+      || isPdfExport || isDMP;
   var isImageFile = info.type === 'Image';
   var isChemicalFile = info.type === 'Chemistry';
   var isOwnedByCurrentUser = info.ownerUsername === currentUser;

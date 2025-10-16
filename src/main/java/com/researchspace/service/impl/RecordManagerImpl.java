@@ -58,6 +58,7 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.DOCUMENT_CATEGORIES;
 import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.DocumentFieldInitializationPolicy;
 import com.researchspace.model.record.DocumentInitializationPolicy;
@@ -262,7 +263,7 @@ public class RecordManagerImpl implements RecordManager {
     Folder newparent = folderDao.get(targetParent);
     if (newparent != null && toMove != null) {
       if (!movePermissionChecker.checkMovePermissions(user, newparent, toMove)) {
-        return new ServiceOperationResult<>(null, false);
+        return new ServiceOperationResult<>(null, false, "user not permitted to move record");
       }
       boolean moved;
       if (properties.isRsDevUnsafeMoveAllowed()) {
@@ -453,7 +454,7 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
-  public EditStatus requestRecordView(Long recordId, User user, UserSessionTracker activeUsers) {
+  public EditStatus requestRecordView(Long recordId, User user) {
     EditStatus basicStatus = checkBasicEditStatusForRecordAndUser(recordId, user);
     if (basicStatus != null) {
       return basicStatus;
@@ -1405,7 +1406,7 @@ public class RecordManagerImpl implements RecordManager {
       String mediaType) {
     if (baseRecord instanceof EcatDocumentFile) {
       EcatDocumentFile doc = (EcatDocumentFile) baseRecord;
-      recordInfo.addType(getEcatDocumentFileType(mediaType, doc.getDocumentType()));
+      recordInfo.setType(getEcatDocumentFileType(mediaType, doc.getDocumentType()));
     }
 
     if ("DMPs".equals(mediaType)) {
@@ -1437,14 +1438,14 @@ public class RecordManagerImpl implements RecordManager {
 
   private String getEcatDocumentFileType(String mediatype, String documentType) {
     if (EXPORTS_FOLDER_NAME.equalsIgnoreCase(mediatype)) {
-      return EXPORTS_FOLDER_NAME;
+      return DOCUMENT_CATEGORIES.EXPORTEDFILE;
     }
     if (MISC_MEDIA_FLDER_NAME.equalsIgnoreCase(documentType)) {
-      return MISC_MEDIA_FLDER_NAME;
+      return DOCUMENT_CATEGORIES.MISCFILE;
     }
     if (DMP_MEDIA_FLDER_NAME.equalsIgnoreCase(documentType)) {
-      return DMP_MEDIA_FLDER_NAME;
+      return DOCUMENT_CATEGORIES.DMP;
     }
-    return DOCUMENT_MEDIA_FLDER_NAME;
+    return DOCUMENT_CATEGORIES.DOCUMENTFILE;
   }
 }

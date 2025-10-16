@@ -5,6 +5,7 @@ import com.researchspace.model.User;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -30,4 +31,14 @@ public interface GroupApi {
    */
   @GetMapping("/search")
   List<ApiGroupInfo> searchGroups(String query, User user);
+
+  /**
+   * Get details of a specific group by ID
+   *
+   * @param id the group ID
+   * @param user current user
+   * @return group details
+   */
+  @GetMapping("/{id}")
+  ApiGroupInfo getUserGroupById(@PathVariable("id") Long id, User user);
 }

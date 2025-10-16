@@ -117,7 +117,9 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
   @Override
   public RecordGroupSharing get(Long id) {
-    return groupshareRecordDao.get(id);
+    RecordGroupSharing rgs = groupshareRecordDao.get(id);
+    populateSharingPermissionType(Collections.singletonList(rgs));
+    return rgs;
   }
 
   @Override
@@ -628,7 +630,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     if (targetFolder.isNotebook()) {
       assertUserHasWritePermission(subject, targetFolder);
       if (targetFolder.getOwner().equals(docOrNotebook.getOwner())) {
-        throw new IllegalAddChildOperation("can't share document into own notebook");
+        throw new IllegalAddChildOperation(
+            "can't share document with id " + docOrNotebook.getId() + " into own notebook");
       }
     }
     return targetFolder;
