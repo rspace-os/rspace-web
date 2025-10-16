@@ -217,11 +217,10 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     if (folderToList.hasSingleParent()) {
       apiRecordTreeItemListing.setParentId(folderToList.getParent().getId());
     } else {
-      RecordToFolder parentInUserContext = folderToList.getParents().stream()
-              .filter(parentFolder -> parentFolder.getUserName().equals(user.getUsername()))
-              .findFirst()
-              .get();
-      apiRecordTreeItemListing.setParentId(parentInUserContext.getRecord().getId());
+      folderToList.getParents().stream()
+          .filter(parentFolder -> parentFolder.getUserName().equals(user.getUsername()))
+          .findFirst()
+          .ifPresent(p -> apiRecordTreeItemListing.setParentId(p.getRecord().getId()));
     }
     return apiRecordTreeItemListing;
   }
