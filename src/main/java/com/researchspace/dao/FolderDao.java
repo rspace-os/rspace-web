@@ -28,7 +28,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    * @param user user;
    * @return media Folder from User, or <code>null</code> if could not be found.
    */
-  public Folder getGalleryFolderForUser(User user);
+  public Folder getGalleryRootFolderForUser(User user);
 
   /**
    * Get Template folder child of user's root folder.

@@ -521,7 +521,7 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public Folder getGalleryRootFolderForUser(User user) {
-    return folderDao.getGalleryFolderForUser(user);
+    return folderDao.getGalleryRootFolderForUser(user);
   }
 
   @Override
@@ -655,7 +655,7 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public Folder getMediaFolderFromURLPath(String path, User user) {
-    Folder targetRecord = folderDao.getGalleryFolderForUser(user);
+    Folder targetRecord = folderDao.getGalleryRootFolderForUser(user);
     if (targetRecord == null) {
       throw new IllegalStateException(format("No root folder for user %s", user.getUsername()));
     }

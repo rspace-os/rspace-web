@@ -894,7 +894,7 @@ public class RecordManagerImpl implements RecordManager {
       return systemFolder;
     } else {
       // create if not present
-      Folder galleryRoot = folderDao.getGalleryFolderForUser(user);
+      Folder galleryRoot = folderDao.getGalleryRootFolderForUser(user);
 
       Folder newFolder = recordFactory.createSystemCreatedFolder(mediaFolderName, user);
       folderDao.save(newFolder);

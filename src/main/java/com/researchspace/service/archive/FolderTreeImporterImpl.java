@@ -122,7 +122,7 @@ public class FolderTreeImporterImpl implements FolderTreeImporter {
       }
       newFolder = folderManager.getApiUploadTargetFolder(apiFolderContentType, owner, null);
     } else if (archiveFlder.isRootMediaFolder()) {
-      newFolder = folderDao.getGalleryFolderForUser(owner);
+      newFolder = folderDao.getGalleryRootFolderForUser(owner);
       // we're importing a media folder from a selection. If we're importing whole Gallery,
       // this condition won't be met as these user-created gallery folders won't be top-level export
       // folders.

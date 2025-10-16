@@ -143,7 +143,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   @Test
   public void testInitialSetup() throws Exception {
     final int galleryFolders = 8;
-    Folder mediaRecord = folderDao.getGalleryFolderForUser(user);
+    Folder mediaRecord = folderDao.getGalleryRootFolderForUser(user);
     assertTrue(mediaRecord.isSystemFolder());
     assertEquals(galleryFolders, mediaRecord.getChildren().size());
     assertTrue(mediaRecord.getSubfolders().stream().allMatch(subF -> subF.isSystemFolder()));
@@ -163,7 +163,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
   @Test
   public void testAllGallerySubfoldersHaveSystemType() {
-    Folder galleryRoot = folderDao.getGalleryFolderForUser(user);
+    Folder galleryRoot = folderDao.getGalleryRootFolderForUser(user);
     for (BaseRecord child : galleryRoot.getChildrens()) {
       assertTrue(child.hasType(RecordType.SYSTEM));
       if (child.isFolder()) {

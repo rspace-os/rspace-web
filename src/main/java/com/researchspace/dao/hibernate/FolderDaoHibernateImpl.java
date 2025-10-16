@@ -57,7 +57,7 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
     return q.uniqueResult();
   }
 
-  public Folder getGalleryFolderForUser(User user) {
+  public Folder getGalleryRootFolderForUser(User user) {
     Query<Folder> q =
         getSession()
             .createQuery("from Folder where type like :type and owner.id=:id", Folder.class);

@@ -55,14 +55,14 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
   public void testRemoveFolder() throws Exception {
     // we'll delete the image folder from the media folder
     Folder toRemove = recordManager.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
-    Folder parent = folderDao.getGalleryFolderForUser(user);
+    Folder parent = folderDao.getGalleryRootFolderForUser(user);
     int numChildrenB4 = parent.getChildren().size();
     // remove child
     parent = folderMgr.removeBaseRecordFromFolder(toRemove, parent.getId());
 
     // get new child count
     int numChildrenAfter = parent.getChildren().size();
-    int fromDB = folderDao.getGalleryFolderForUser(user).getChildren().size();
+    int fromDB = folderDao.getGalleryRootFolderForUser(user).getChildren().size();
     // check there is now 1 less child
     assertEquals(numChildrenB4 - 1, numChildrenAfter);
     assertEquals(numChildrenB4 - 1, fromDB);
