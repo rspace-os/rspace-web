@@ -10,6 +10,16 @@ import USER_LISTING from "./__tests__/userListing.json";
 import fs from "fs/promises";
 import AxeBuilder from "@axe-core/playwright";
 
+declare global {
+  interface RSGlobal {
+    newFileStoresExportEnabled?: boolean;
+  }
+
+  interface Window {
+    RS: RSGlobal;
+  }
+}
+
 const feature = test.extend<{
   Given: {
     "the sysadmin is on the users page": () => Promise<void>;
@@ -61,7 +71,7 @@ const feature = test.extend<{
             <ThemeProvider theme={materialTheme}>
               <UsersPage />
             </ThemeProvider>
-          </StyledEngineProvider>
+          </StyledEngineProvider>,
         );
       },
       "checkVerificationPasswordNeeded endpoint returns {value}": async ({
@@ -75,7 +85,7 @@ const feature = test.extend<{
               contentType: "application/json",
               body: JSON.stringify({ data: value }),
             });
-          }
+          },
         );
       },
     });
@@ -156,15 +166,15 @@ const feature = test.extend<{
       "A request to set a verification password is not shown": async () => {
         await expect(
           page.getByText(
-            "Please set your verification password in My RSpace before performing this action."
-          )
+            "Please set your verification password in My RSpace before performing this action.",
+          ),
         ).not.toBeVisible();
       },
       "A request to set a verification password is shown": async () => {
         await expect(
           page.getByText(
-            "Please set your verification password in My RSpace before performing this action."
-          )
+            "Please set your verification password in My RSpace before performing this action.",
+          ),
         ).toBeVisible();
       },
       "the usage should be shown in human-readable format": async () => {
@@ -177,10 +187,10 @@ const feature = test.extend<{
         expect(usageIndex).toBeGreaterThan(-1);
 
         await expect(
-          grid.getByRole("row").nth(2).getByRole("gridcell").nth(usageIndex)
+          grid.getByRole("row").nth(2).getByRole("gridcell").nth(usageIndex),
         ).toHaveText("362.01 kB");
         await expect(
-          grid.getByRole("row").nth(3).getByRole("gridcell").nth(usageIndex)
+          grid.getByRole("row").nth(3).getByRole("gridcell").nth(usageIndex),
         ).toHaveText("0 B");
       },
     });
@@ -189,7 +199,6 @@ const feature = test.extend<{
 
 test.beforeEach(async ({ page, router }) => {
   await page.evaluate(() => {
-    // @ts-expect-error global
     window.RS = {
       newFileStoresExportEnabled: true,
     };
@@ -218,7 +227,7 @@ test.describe("Table Listing", () => {
     async ({ Given, When, Then }) => {
       await Given["the sysadmin is on the users page"]();
       await Then["the usage should be shown in human-readable format"]();
-    }
+    },
   );
 });
 
@@ -235,7 +244,7 @@ test.describe("Grant User PI role", () => {
       });
       await When["Grant PI role action is performed"]();
       await Then["A request to set a verification password is shown"]();
-    }
+    },
   );
   feature(
     "When `checkVerificationPasswordNeeded` returns false, the message should not be shown.",
@@ -249,7 +258,7 @@ test.describe("Grant User PI role", () => {
       });
       await When["Grant PI role action is performed"]();
       await Then["A request to set a verification password is not shown"]();
-    }
+    },
   );
 });
 
@@ -260,22 +269,22 @@ test.describe("Accessibility", () => {
         <ThemeProvider theme={materialTheme}>
           <UsersPage />
         </ThemeProvider>
-      </StyledEngineProvider>
+      </StyledEngineProvider>,
     );
-    
+
     // Wait for the table to be loaded
     await expect(page.getByRole("table")).toBeVisible();
-    
+
     // Run the accessibility scan
     const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
-    
+
     // Filter out known issues that can't be fixed in component tests
     expect(
       accessibilityScanResults.violations.filter((v) => {
         /*
          * These violations are expected in component tests as we're not rendering
          * a complete page with proper document structure:
-         * 
+         *
          * 1. MUI DataGrid renders its immediate children with role=presentation,
          *    which Firefox considers to be a violation
          * 2. Component tests don't have main landmarks as they're isolated components
@@ -283,12 +292,13 @@ test.describe("Accessibility", () => {
          * 4. Content not in landmarks is expected in component testing context
          */
         return (
-          v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
+          v.description !==
+            "Ensure elements with an ARIA role that require child roles contain them" &&
           v.id !== "landmark-one-main" &&
           v.id !== "page-has-heading-one" &&
           v.id !== "region"
         );
-      })
+      }),
     ).toEqual([]);
   });
 });
@@ -302,18 +312,17 @@ test.describe("CSV Export", () => {
         // Note that no selection is made
         const csv = await When["a CSV export is downloaded"]();
         await Then["{CSV} should have {count} rows"]({ csv, count: 10 });
-      }
+      },
     );
     feature(
       "When one row is selected, just it should be included in the export",
       async ({ Given, When, Then }) => {
         await Given["the sysadmin is on the users page"]();
         await When["one row is selected"]();
-        const csv = await When[
-          "a CSV export of the selected rows is downloaded"
-        ]();
+        const csv =
+          await When["a CSV export of the selected rows is downloaded"]();
         await Then["{CSV} should have {count} rows"]({ csv, count: 1 });
-      }
+      },
     );
   });
   test.describe("Columns", () => {
@@ -330,7 +339,7 @@ test.describe("CSV Export", () => {
          * column from the first and last name columns. It is provided as a
          * convenience in the UI but would be redundant if included in the CSV.
          */
-      }
+      },
     );
     feature(
       "The usage column should be a precise number.",
@@ -343,7 +352,7 @@ test.describe("CSV Export", () => {
          * and the usage column will be formatted as a number, for sorting and
          * other purposes.
          */
-      }
+      },
     );
   });
 });
