@@ -5,6 +5,7 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 
 import com.google.common.base.Supplier;
 import com.researchspace.api.v1.FolderApi;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.api.v1.model.ApiRecordTreeItemListing;
 import com.researchspace.api.v1.model.RecordTreeItemInfo;
@@ -15,6 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResultCollection;
@@ -108,12 +110,65 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       @PathVariable Long id,
       @RequestParam(name = "includePathToRootFolder", defaultValue = "false", required = false)
           boolean includePathToRootFolder,
+      @RequestParam(name = "parentId", required = false) Long parentId,
       @RequestAttribute(name = "user") User user) {
-
     Folder folder = loadFolder(id, user);
-    ApiFolder rc = new ApiFolder(folder, includePathToRootFolder, user);
+    ApiFolder rc = new ApiFolder(folder, user);
+
+    if (includePathToRootFolder) {
+      populateParentAndPathToRoot(parentId, user, folder, rc);
+    }
+
     buildAndAddSelfLink(FOLDERS_ENDPOINT, rc);
     return rc;
+  }
+
+  private void populateParentAndPathToRoot(Long parentId, User user, Folder folder, ApiFolder rc) {
+    Folder parent = findParentForUser(parentId, user, folder);
+
+    if (parent != null) {
+      rc.setParentFolderId(parent.getId());
+    }
+
+    List<ApiFolder> pathToRootFolder = new ArrayList<>();
+    while (parent != null) {
+      Folder current = parent;
+      pathToRootFolder.add(new ApiFolder(current, user));
+      if (current.hasType(RecordType.ROOT_MEDIA)) {
+        break; // for gallery subfolders, stop at Gallery level to not include users root folder
+      }
+      parent = current.getOwnerOrSharedParentForUser(user).orElse(null);
+    }
+    rc.setPathToRootFolder(pathToRootFolder);
+  }
+
+  /***
+   * Finds the parent folder for the supplied folder in the context of the supplied user.
+   * Handles case of a notebook having 2 parents for the same user e.g. users workspace and a shared folder they have access to.
+   * If no parentId is provided, falls back to finding the parent folder where the user is either the owner or a shared folder, only 1 of which will be true except in the mentioned notebook case.
+   * @param parentId the parent of the folder, only required in the case of a notebook both owned by the user and shared to another location
+   * @param user the user to find the parent context for
+   * @param folder the folder to find the parent for.
+   * @return the parent folder in the given context, or null if none found.
+   *
+   * @throws ApiRuntimeException if the supplied parentId isn't a parent of the supplied folder.
+   */
+  private Folder findParentForUser(Long parentId, User user, Folder folder) {
+    Folder parent;
+    if (parentId != null) {
+      folder.getParents().stream()
+          .map(RecordToFolder::getFolder)
+          .filter(f -> f.getId().equals(parentId))
+          .findAny()
+          .orElseThrow(
+              () ->
+                  new ApiRuntimeException(
+                      String.format("Folder %s is not a parent of %s", parentId, folder.getId())));
+      parent = folderMgr.getFolder(parentId, user);
+    } else {
+      parent = folder.getOwnerOrSharedParentForUser(user).orElse(null);
+    }
+    return parent;
   }
 
   @Override

@@ -10,9 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import javax.validation.constraints.Min;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -35,7 +33,6 @@ import lombok.NoArgsConstructor;
       "_links"
     })
 public class ApiFolder extends IdentifiableNameableApiObject {
-
   @JsonProperty("created")
   @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
   @JsonDeserialize(using = ISO8601DateTimeDeserialiser.class)
@@ -63,12 +60,10 @@ public class ApiFolder extends IdentifiableNameableApiObject {
   private List<ApiFolder> pathToRootFolder;
 
   /**
-   * Constructor for converting {@link Folder} entity to an {@link ApiFolder}. If the folder has a
-   * parent the user has access to (either the user owns the parent or has access to a shared
-   * parent), then parentFolderId will be set. If the folder is a Gallery Folder, then mediaType
-   * will be set
+   * Constructor for converting {@link Folder} entity to an {@link ApiFolder}. If the user is the
+   * owner of the parent folder, then parentFolderId will be populated.
    */
-  public ApiFolder(Folder folderOrNotebook, User user) {
+  public ApiFolder(Folder folderOrNotebook, User authorisedSubject) {
     super(
         folderOrNotebook.getId(),
         folderOrNotebook.getGlobalIdentifier(),
@@ -76,9 +71,12 @@ public class ApiFolder extends IdentifiableNameableApiObject {
     setCreatedMillis(folderOrNotebook.getCreationDateMillis());
     setLastModifiedMillis(folderOrNotebook.getModificationDateMillis());
     setNotebook(folderOrNotebook.isNotebook());
-    if (folderOrNotebook.hasParents()) {
-      Optional<Folder> parentInUserContext = folderOrNotebook.getOwnerOrSharedParentForUser(user);
-      parentInUserContext.ifPresent(parent -> setParentFolderId(parent.getId()));
+    if (authorisedSubject.equals(folderOrNotebook.getOwner()) && folderOrNotebook.hasParents()) {
+      if (folderOrNotebook.getOwnerParent().isPresent()) {
+        setParentFolderId(folderOrNotebook.getOwnerParent().get().getId());
+      } else if (folderOrNotebook.isSharedFolder() && folderOrNotebook.hasParents()) {
+        setParentFolderId(folderOrNotebook.getParentFolders().iterator().next().getId());
+      }
     }
 
     if (GlobalIdPrefix.GF.equals(folderOrNotebook.getOid().getPrefix())) {
@@ -96,30 +94,5 @@ public class ApiFolder extends IdentifiableNameableApiObject {
       prevFolder = currFolder;
     }
     return null;
-  }
-
-  /**
-   * Constructor that additionally populates the 'pathToRootFolder' list if
-   * 'includePathToRootFolder' is true
-   *
-   * @param folderOrNotebook the folder or notebook to convert
-   * @param includePathToRootFolder whether to include the path to the root folder
-   * @param user the user making the request
-   */
-  public ApiFolder(Folder folderOrNotebook, boolean includePathToRootFolder, User user) {
-    this(folderOrNotebook, user);
-
-    if (includePathToRootFolder) {
-      pathToRootFolder = new ArrayList<>();
-      Optional<Folder> parent = folderOrNotebook.getOwnerOrSharedParentForUser(user);
-      while (parent.isPresent()) {
-        Folder currParent = parent.get();
-        pathToRootFolder.add(new ApiFolder(currParent, user));
-        if (currParent.hasType(RecordType.ROOT_MEDIA)) {
-          break; // for gallery subfolders, stop at Gallery level
-        }
-        parent = currParent.getOwnerOrSharedParentForUser(user);
-      }
-    }
   }
 }
