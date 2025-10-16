@@ -568,7 +568,7 @@ function gallery(applySearch) {
             elementData.widthResized = val.widthResized;
             elementData.heightResized = val.heightResized;
             elementData.shortFilename = val.name;
-          } else if (val.type == 'Documents' || val.type == 'Miscellaneous' || val.type == 'DMPs') {
+          } else if (val.type == 'Document' || val.type == 'Miscellaneous' || val.type == 'DMPs') {
             elementTemplate = $('#ecatDocumentOrMiscTemplate').html();
             elementData.isMediaFile = true;
             elementData.imgSrc = iconSrc;
@@ -765,9 +765,9 @@ function generateIconSrc(type, extension, thumbnailId, id) {
     if (iconSrc == "" && type == 'Audio') {
       iconSrc = "/images/icons/audioIcon.png";
     }
-  } else if (type == 'Documents' || type == 'Miscellaneous' || type == 'DMPs') {
+  } else if (type == 'Document' || type == 'Documents' || type == 'Miscellaneous' || type == 'DMPs') {
     var iconSrc = "";
-    if(type == 'Documents' & id != null) {
+    if((type == 'Document' || type == 'Documents') & id != null) {
 	   let suffix = (thumbnailId!=null)?thumbnailId:"none";
         iconSrc = createURL("/image/docThumbnail/" + id + "/" + suffix);
      } else {
@@ -1054,13 +1054,21 @@ function createFolder(name) {
 function addFromGallery(data) {
   // Insert any selected folders first
   insertFolders(data);
+  
+  const typeMapping = {
+    'Image': MEDIA_TYPE_IMAGES,
+    'Video': MEDIA_TYPE_VIDEOS,
+    'Audio': MEDIA_TYPE_AUDIOS,
+    'Document': MEDIA_TYPE_DOCS,
+    'Chemistry': MEDIA_TYPE_CHEMISTRY,
+    'Miscellaneous': MEDIA_TYPE_MISCDOCS,
+    'PdfDocuments': MEDIA_TYPE_EXPORTED,
+    'Snippet': MEDIA_TYPE_SNIPPETS,
+    'NetworkFile': MEDIA_TYPE_FILESTORES,
+    'DMP': MEDIA_TYPE_DMPS,
+  };
 
-  var mediaTypeSelectedVal = (data != null) ? data.type + 's' : $("#mediaTypeSelected").val();
-
-  //Values are hardcoded in different styles, so it has to be hacky
-  if (mediaTypeSelectedVal == MEDIA_TYPE_MISCDOCS + "s") {
-    mediaTypeSelectedVal = MEDIA_TYPE_MISCDOCS;
-  }
+  var mediaTypeSelectedVal = (data != null) ? typeMapping[data.type] : $("#mediaTypeSelected").val();
 
   switch (mediaTypeSelectedVal) {
     case MEDIA_TYPE_IMAGES:
@@ -1218,7 +1226,7 @@ function insertChemistryFileFromGallery(mediaType, data) {
   RS.blockPage("Inserting Chemical...");
   var promises = [];
   $(selected).each(function (index, val) {
-    var fileName = val.children.item(1).children.item(0).getAttribute("data-recordname");
+    var fileName = (data != null) ? data.name : val.children.item(1).children.item(0).getAttribute("data-recordname");
     promises.push(insertChemElement(val.id, fieldId, fileName));
   });
   Promise.all(promises)
@@ -1233,7 +1241,7 @@ function insertChemistryFileFromGallery(mediaType, data) {
 
 function insertSnippetFromGallery(data) {
   var fieldId = getFieldIdFromTextFieldId(tinymce.activeEditor.id);
-  var selected = $('.selectable input:checked').parents('div.selectable');
+  var selected = (data != null) ? data : $('.selectable input:checked').parents('div.selectable');
   var fromPaste = (data != null);
 
   // asynchronous, so when adding more than one snippet they might be inserted

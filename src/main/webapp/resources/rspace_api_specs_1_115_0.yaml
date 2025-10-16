@@ -2605,11 +2605,10 @@ paths:
           description: 'Item was deleted, no response body'
   '/share/document/{id}':
     get:
-      summary: Get all shares for a document, notebook or snippet.
+      summary: Get all shares for a document
       description: >-
-        Returns all sharing information for the specified document, notebook, or snippet, including direct shares and
-        implicit shares via the document being inside a shared notebook. For snippet shares, `notebookShares` will be 
-        empty as snippets don't appear in notebooks.
+        Returns all sharing information for the specified document, including direct shares and
+        implicit shares (e.g. via notebooks).
       produces:
         - application/json
       tags:
