@@ -143,7 +143,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     rc.setPathToRootFolder(pathToRootFolder);
   }
 
-  /***
+  /**
    * Finds the parent folder for the supplied folder in the context of the supplied user.
    * Handles case of a notebook having 2 parents for the same user e.g. users workspace and a shared folder they have access to.
    * If no parentId is provided, falls back to finding the parent folder where the user is either the owner or a shared folder, only 1 of which will be true except in the mentioned notebook case.
