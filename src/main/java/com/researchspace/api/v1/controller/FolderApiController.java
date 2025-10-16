@@ -144,9 +144,9 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   }
 
   /**
-   * Finds the parent folder for the supplied folder in the context of the supplied user.
-   * Handles case of a notebook having 2 parents for the same user e.g. users workspace and a shared folder they have access to.
-   * If no parentId is provided, falls back to finding the parent folder where the user is either the owner or a shared folder, only 1 of which will be true except in the mentioned notebook case.
+   * Finds the parent folder where the user is either the owner or has access as a shared folder.
+   * Handles case of a notebook having 2 parents for the same user e.g. users workspace and a shared folder they have access to. parentId can be provided in this case to specify which parent to use - if not provided, the owner path will be returned.
+   *
    * @param parentId the parent of the folder, only required in the case of a notebook both owned by the user and shared to another location
    * @param user the user to find the parent context for
    * @param folder the folder to find the parent for
