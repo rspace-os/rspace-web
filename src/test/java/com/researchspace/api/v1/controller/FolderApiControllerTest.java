@@ -40,6 +40,8 @@ import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.UserGroup;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.permissions.RecordSharingACL;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
 import com.researchspace.model.record.Folder;
@@ -316,11 +318,9 @@ public class FolderApiControllerTest {
     // Create a group with piUser as PI and otherUser as member
     Group group = TestFactory.createAnyGroup(piUser, otherUser);
 
-    Folder sharedSnippetFolder = TestFactory.createAFolder("sharedSnippets", piUser);
+    Folder sharedSnippetFolder = TestFactory.createAFolder("sharedSnippets", TestFactory.createAnyUserWithRole("sysadmin", Role.SYSTEM_ROLE.getName()));
     sharedSnippetFolder.addType(RecordType.SHARED_FOLDER);
-    sharedSnippetFolder.setSharingACL(
-        com.researchspace.model.permissions.RecordSharingACL.createACLForUserOrGroup(
-            group, com.researchspace.model.permissions.PermissionType.READ));
+    sharedSnippetFolder.setSharingACL(RecordSharingACL.createACLForUserOrGroup(group, PermissionType.READ));
 
     group.setSharedSnippetGroupFolderId(sharedSnippetFolder.getId());
     UserGroup userGroup = new UserGroup(otherUser, group, RoleInGroup.DEFAULT);
