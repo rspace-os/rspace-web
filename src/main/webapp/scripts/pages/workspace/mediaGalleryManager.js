@@ -1226,7 +1226,7 @@ function insertChemistryFileFromGallery(mediaType, data) {
   RS.blockPage("Inserting Chemical...");
   var promises = [];
   $(selected).each(function (index, val) {
-    var fileName = val.children.item(1).children.item(0).getAttribute("data-recordname");
+    var fileName = (data != null) ? data.name : val.children.item(1).children.item(0).getAttribute("data-recordname");
     promises.push(insertChemElement(val.id, fieldId, fileName));
   });
   Promise.all(promises)
