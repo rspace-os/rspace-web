@@ -155,7 +155,6 @@ public class FolderApiController extends BaseApiController implements FolderApi 
    * @throws ApiRuntimeException if the supplied parentId isn't a parent of the supplied folder
    */
   private Optional<Folder> findParentForUser(Long parentId, User user, Folder folder) {
-    Optional<Folder> parent;
     if (parentId != null) {
       folder.getParents().stream()
           .map(RecordToFolder::getFolder)
@@ -165,11 +164,10 @@ public class FolderApiController extends BaseApiController implements FolderApi 
               () ->
                   new ApiRuntimeException(
                       String.format("Folder %s is not a parent of %s", parentId, folder.getId())));
-      parent = folderMgr.getFolderSafe(parentId, user);
+      return folderMgr.getFolderSafe(parentId, user);
     } else {
-      parent = folder.getOwnerOrSharedParentForUser(user);
+      return folder.getOwnerOrSharedParentForUser(user);
     }
-    return parent;
   }
 
   @Override
