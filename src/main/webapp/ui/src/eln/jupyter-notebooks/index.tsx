@@ -2,8 +2,7 @@ import React, {useState} from "react";
 import {createRoot} from "react-dom/client";
 import { IpynbRenderer } from "react-ipynb-renderer";
 import type {IpynbType, SyntaxThemeType} from "react-ipynb-renderer/dist/types";
-
-import "react-ipynb-renderer/dist/styles/default.css";
+import "react-ipynb-renderer/dist/styles/oceans16.css";
 import axios from "@/common/axios";
 
 /**
@@ -33,7 +32,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
           );
           const root = createRoot(wrapperDiv);
           function App() {
-            const [theme, setTheme] = useState<SyntaxThemeType>('duotoneSea');
+            const [theme, setTheme] = useState<SyntaxThemeType>('atomDark');
             return(
                 <>
                   <div style={{height: 50}}>
