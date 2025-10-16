@@ -32,9 +32,9 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
           const root = createRoot(wrapperDiv);
           function App() {
             const [theme, setTheme] = useState<string>('duotoneSea');
+            // @ts-ignore
+            // @ts-ignore
             return(
-                // @ts-ignore
-                // <IpynbRenderer ipynb={data} syntaxTheme={'duotoneSea'} />
                 <>
                   <div style={{height: 50}}>
                     Syntax theme: <select value={theme} onChange={(e) => setTheme(e.target.value as string)}>
@@ -43,6 +43,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
                     ))}
                   </select>
                   </div>
+
                   <IpynbRenderer ipynb={data} syntaxTheme={theme} />
                 </>
             );
