@@ -1,6 +1,7 @@
-import React from "react";
+import React, {useState} from "react";
 import {createRoot} from "react-dom/client";
 import { IpynbRenderer } from "react-ipynb-renderer";
+import "react-ipynb-renderer/dist/styles/default.css";
 import axios from "@/common/axios";
 
 /**
@@ -29,10 +30,24 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
               attachedFiles[0]
           );
           const root = createRoot(wrapperDiv);
-          root.render(
-              // @ts-ignore
-              <IpynbRenderer ipynb={data}/>
-          );
+          function App() {
+            const [theme, setTheme] = useState<string>('duotoneSea');
+            return(
+                // @ts-ignore
+                // <IpynbRenderer ipynb={data} syntaxTheme={'duotoneSea'} />
+                <>
+                  <div style={{height: 50}}>
+                    Syntax theme: <select value={theme} onChange={(e) => setTheme(e.target.value as string)}>
+                    {themes.map((theme) => (
+                        <option key={theme} value={theme}>{theme}</option>
+                    ))}
+                  </select>
+                  </div>
+                  <IpynbRenderer ipynb={data} syntaxTheme={theme} />
+                </>
+            );
+          }
+          root.render(<App/>);
         })();
       }
   );
@@ -71,5 +86,30 @@ function getAttachedFilesByParsingEmbeddedText(isNotebook: boolean, fieldId: str
   }
   return recordIds;
 }
+const themes: string [] = [
+  'atomDark',
+  'cb',
+  'coy',
+  'darcula',
+  'dark',
+  'duotoneDark',
+  'duotoneEarth',
+  'duotoneForest',
+  'duotoneLight',
+  'duotoneSea',
+  'duotoneSpace',
+  'funky',
+  'ghcolors',
+  'hopscotch',
+  'okaidia',
+  'pojoaque',
+  'prism',
+  'solarizedlight',
+  'tomorrow',
+  'twilight',
+  'vscDarkPlus',
+  'xonokai',
+];
+
 
 
