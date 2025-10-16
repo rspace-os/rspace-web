@@ -332,8 +332,6 @@ public class FolderApiControllerTest {
     mockBaseUrl();
     when(folderMgr.getFolderSafe(childFolder.getId(), otherUser))
         .thenReturn(Optional.of(childFolder));
-    when(folderMgr.getFolder(sharedSnippetFolder.getId(), otherUser))
-        .thenReturn(sharedSnippetFolder);
 
     // parentId not provided
     ApiFolder apiFolder = controller.getFolder(childFolder.getId(), true, null, otherUser);
@@ -425,7 +423,6 @@ public class FolderApiControllerTest {
 
     Folder wrongParent = TestFactory.createAFolder("wrongParent", subject);
 
-    mockBaseUrl();
     when(folderMgr.getFolderSafe(childFolder.getId(), subject))
         .thenReturn(Optional.of(childFolder));
 
@@ -594,7 +591,6 @@ public class FolderApiControllerTest {
 
   @Test
   public void deleteFolderValidation() throws Exception {
-    mockBaseUrl();
     // root folder
     createdFolder.addType(RecordType.ROOT);
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.of(createdFolder));
