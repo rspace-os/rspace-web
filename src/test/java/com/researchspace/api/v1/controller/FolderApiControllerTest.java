@@ -318,9 +318,13 @@ public class FolderApiControllerTest {
     // Create a group with piUser as PI and otherUser as member
     Group group = TestFactory.createAnyGroup(piUser, otherUser);
 
-    Folder sharedSnippetFolder = TestFactory.createAFolder("sharedSnippets", TestFactory.createAnyUserWithRole("sysadmin", Role.SYSTEM_ROLE.getName()));
+    Folder sharedSnippetFolder =
+        TestFactory.createAFolder(
+            "sharedSnippets",
+            TestFactory.createAnyUserWithRole("sysadmin", Role.SYSTEM_ROLE.getName()));
     sharedSnippetFolder.addType(RecordType.SHARED_FOLDER);
-    sharedSnippetFolder.setSharingACL(RecordSharingACL.createACLForUserOrGroup(group, PermissionType.READ));
+    sharedSnippetFolder.setSharingACL(
+        RecordSharingACL.createACLForUserOrGroup(group, PermissionType.READ));
 
     group.setSharedSnippetGroupFolderId(sharedSnippetFolder.getId());
     UserGroup userGroup = new UserGroup(otherUser, group, RoleInGroup.DEFAULT);
