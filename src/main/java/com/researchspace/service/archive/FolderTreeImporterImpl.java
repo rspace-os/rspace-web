@@ -110,7 +110,7 @@ public class FolderTreeImporterImpl implements FolderTreeImporter {
       if (isTemplateFolderMigrationRequired(archiveFlder, archiveModel)) {
         newFolder = folderDao.getTemplateFolderForUser(owner);
       }
-      newFolder = recordManager.getGallerySubFolderForUser(archiveFlder.getName(), owner);
+      newFolder = recordManager.getGalleryMediaFolderForUser(archiveFlder.getName(), owner);
     } else if (archiveFlder.isApiFolder()) {
       // which api folder?
       Optional<ArchiveFolder> parent = rl.getArchiveFolder(archiveFlder.getParentId());
@@ -128,12 +128,12 @@ public class FolderTreeImporterImpl implements FolderTreeImporter {
       // folders.
     } else if (rl.getTopLevelFolders().contains(archiveFlder) && archiveFlder.isMedia()) {
       Folder galleryTop =
-          recordManager.getGallerySubFolderForUser(archiveFlder.getMediaType(), owner);
+          recordManager.getGalleryMediaFolderForUser(archiveFlder.getMediaType(), owner);
       // default to miscellaneous
       if (galleryTop == null) {
         log.warn("Could not located media folder {}, defaulting to 'Miscellaneous' folder");
         galleryTop =
-            recordManager.getGallerySubFolderForUser(MediaUtils.MISC_MEDIA_FLDER_NAME, owner);
+            recordManager.getGalleryMediaFolderForUser(MediaUtils.MISC_MEDIA_FLDER_NAME, owner);
       }
       newFolder =
           folderManager.createNewFolder(

@@ -148,7 +148,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertEquals(galleryFolders, mediaRecord.getChildren().size());
     assertTrue(mediaRecord.getSubfolders().stream().allMatch(subF -> subF.isSystemFolder()));
 
-    Folder imges = recordMgr.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
+    Folder imges = recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
     Set<BaseRecord> imgGalleryContent = imges.getChildrens();
     assertEquals(2, imgGalleryContent.size()); // 'examples' folder + apifolder only
 

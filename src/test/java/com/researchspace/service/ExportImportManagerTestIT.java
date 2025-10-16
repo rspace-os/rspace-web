@@ -367,9 +367,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     EcatImage imagae = addImageToGallery(user);
     EcatDocumentFile doc = addDocumentToGallery(user);
     Folder imageTopFlder =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
     Folder docTopFlder =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME, user);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME, user);
     assertEquals(
         1, recordMgr.listFolderRecords(docTopFlder.getId(), brPg()).getTotalHits().intValue());
     Folder gallrySubFolder = createSubFolder(imageTopFlder, "subfolder", user);

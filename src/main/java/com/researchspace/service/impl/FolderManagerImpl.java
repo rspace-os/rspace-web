@@ -859,7 +859,7 @@ public class FolderManagerImpl implements FolderManager {
         ArrayUtils.contains(MediaUtils.GALLERY_MEDIA_FOLDERS, mediaFolderName),
         "Invalid mediaFolderName " + mediaFolderName);
 
-    Folder imagGalleryFolder = recordManager.getGallerySubFolderForUser(mediaFolderName, user);
+    Folder imagGalleryFolder = recordManager.getGalleryMediaFolderForUser(mediaFolderName, user);
     Folder targetFolder = createNewFolder(imagGalleryFolder.getId(), folderName, user);
     return targetFolder;
   }

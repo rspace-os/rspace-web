@@ -208,7 +208,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
 
     User user = loginAndAddToActiveUsers();
 
-    Folder imgGalleryFolder = recordMgr.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
+    Folder imgGalleryFolder = recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
     Folder imgGallerySubfolder = createFolder("my images", imgGalleryFolder, user);
 
     Long subfolderId = imgGallerySubfolder.getId();

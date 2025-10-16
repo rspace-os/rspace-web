@@ -592,7 +592,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
 
   protected Folder createImgGallerySubfolder(String subfolderName, User user) {
     Folder imgGallery =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
     return folderMgr.createNewFolder(imgGallery.getId(), subfolderName, user);
   }
 

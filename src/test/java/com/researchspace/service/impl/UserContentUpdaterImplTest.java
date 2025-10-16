@@ -32,7 +32,7 @@ public class UserContentUpdaterImplTest {
     testee = new UserContentUpdaterImpl();
     ReflectionTestUtils.setField(testee, "userFolderCreator", userFolderCreatorMock);
     ReflectionTestUtils.setField(testee, "recordManager", recordManagerMock);
-    when(recordManagerMock.getGallerySubFolderForUser(eq(Folder.SNIPPETS_FOLDER), eq(userMock)))
+    when(recordManagerMock.getGalleryMediaFolderForUser(eq(Folder.SNIPPETS_FOLDER), eq(userMock)))
         .thenReturn(userSnippetFolder);
   }
 

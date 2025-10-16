@@ -277,7 +277,7 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
-  public Folder getGallerySubFolderForUser(String folderName, User user) {
+  public Folder getGalleryMediaFolderForUser(String folderName, User user) {
     return null;
   }
 

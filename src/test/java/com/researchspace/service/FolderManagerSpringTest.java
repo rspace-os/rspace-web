@@ -46,15 +46,15 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
   @Test
   public void testGetMediaTypeFolder() throws Exception {
     // create a new folder
-    assertNotNull(recordManager.getGallerySubFolderForUser("unknown", user));
+    assertNotNull(recordManager.getGalleryMediaFolderForUser("unknown", user));
     // should be already present
-    assertNotNull(recordManager.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user));
+    assertNotNull(recordManager.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user));
   }
 
   @Test
   public void testRemoveFolder() throws Exception {
     // we'll delete the image folder from the media folder
-    Folder toRemove = recordManager.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
+    Folder toRemove = recordManager.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
     Folder parent = folderDao.getGalleryFolderForUser(user);
     int numChildrenB4 = parent.getChildren().size();
     // remove child

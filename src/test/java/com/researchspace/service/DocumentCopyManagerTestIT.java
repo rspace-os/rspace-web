@@ -232,7 +232,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     // Create sub folder in gallery folder
     Folder originalFolder = createImgGallerySubfolder("images-folder-test", user);
     Folder imageGalleryFolder =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
     // Add media files to new folder
     addImageToGalleryFolder(originalFolder, user);
     // Copy folder
