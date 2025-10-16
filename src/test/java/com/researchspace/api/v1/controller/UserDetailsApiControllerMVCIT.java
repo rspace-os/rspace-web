@@ -222,7 +222,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
     List<ApiUiNavigationExtraHelpLink> extraHelpLinks = retrievedData.getExtraHelpLinks();
     assertEquals(2, extraHelpLinks.size());
     assertEquals("linkName1", extraHelpLinks.get(0).getLabel());
-    assertEquals("", extraHelpLinks.get(0).getUrl());
+    assertEquals("http://www.url.com/example1", extraHelpLinks.get(0).getUrl());
 
     ApiUiNavigationUserDetails retrievedUser = retrievedData.getUserDetails();
     assertEquals(anyUser.getUsername(), retrievedUser.getUsername());
