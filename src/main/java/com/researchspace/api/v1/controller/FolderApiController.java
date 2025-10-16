@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
@@ -124,20 +125,20 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   }
 
   private void populateParentAndPathToRoot(Long parentId, User user, Folder folder, ApiFolder rc) {
-    Folder parent = findParentForUser(parentId, user, folder);
+    Optional<Folder> parent = findParentForUser(parentId, user, folder);
 
-    if (parent != null) {
-      rc.setParentFolderId(parent.getId());
+    if (parent.isPresent()) {
+      rc.setParentFolderId(parent.get().getId());
     }
 
     List<ApiFolder> pathToRootFolder = new ArrayList<>();
-    while (parent != null) {
-      Folder current = parent;
+    while (parent.isPresent()) {
+      Folder current = parent.get();
       pathToRootFolder.add(new ApiFolder(current, user));
       if (current.hasType(RecordType.ROOT_MEDIA)) {
         break; // for gallery subfolders, stop at Gallery level to not include users root folder
       }
-      parent = current.getOwnerOrSharedParentForUser(user).orElse(null);
+      parent = current.getOwnerOrSharedParentForUser(user);
     }
     rc.setPathToRootFolder(pathToRootFolder);
   }
@@ -149,12 +150,12 @@ public class FolderApiController extends BaseApiController implements FolderApi 
    * @param parentId the parent of the folder, only required in the case of a notebook both owned by the user and shared to another location
    * @param user the user to find the parent context for
    * @param folder the folder to find the parent for
-   * @return the parent folder in the given context, or null if none found
+   * @return the parent folder in the given context
    *
    * @throws ApiRuntimeException if the supplied parentId isn't a parent of the supplied folder
    */
-  private Folder findParentForUser(Long parentId, User user, Folder folder) {
-    Folder parent;
+  private Optional<Folder> findParentForUser(Long parentId, User user, Folder folder) {
+    Optional<Folder> parent;
     if (parentId != null) {
       folder.getParents().stream()
           .map(RecordToFolder::getFolder)
@@ -164,9 +165,9 @@ public class FolderApiController extends BaseApiController implements FolderApi 
               () ->
                   new ApiRuntimeException(
                       String.format("Folder %s is not a parent of %s", parentId, folder.getId())));
-      parent = folderMgr.getFolder(parentId, user);
+      parent = folderMgr.getFolderSafe(parentId, user);
     } else {
-      parent = folder.getOwnerOrSharedParentForUser(user).orElse(null);
+      parent = folder.getOwnerOrSharedParentForUser(user);
     }
     return parent;
   }
