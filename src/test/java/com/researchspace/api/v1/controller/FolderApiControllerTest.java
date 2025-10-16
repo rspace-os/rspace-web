@@ -350,7 +350,8 @@ public class FolderApiControllerTest {
     parentFolder.addChild(childFolder, subject);
 
     mockBaseUrl();
-    when(folderMgr.getFolderSafe(childFolder.getId(), otherUser)).thenReturn(Optional.of(childFolder));
+    when(folderMgr.getFolderSafe(childFolder.getId(), otherUser))
+        .thenReturn(Optional.of(childFolder));
 
     // get child as otherUser
     ApiFolder apiFolder = controller.getFolder(childFolder.getId(), true, null, otherUser);
@@ -387,7 +388,8 @@ public class FolderApiControllerTest {
     galleryRoot.addChild(gallerySubfolder, subject);
 
     mockBaseUrl();
-    when(folderMgr.getFolderSafe(gallerySubfolder.getId(), subject)).thenReturn(Optional.of(gallerySubfolder));
+    when(folderMgr.getFolderSafe(gallerySubfolder.getId(), subject))
+        .thenReturn(Optional.of(gallerySubfolder));
 
     ApiFolder apiFolder = controller.getFolder(gallerySubfolder.getId(), true, null, subject);
 
@@ -405,7 +407,8 @@ public class FolderApiControllerTest {
     parentFolder.addChild(childFolder, subject);
 
     mockBaseUrl();
-    when(folderMgr.getFolderSafe(childFolder.getId(), subject)).thenReturn(Optional.of(childFolder));
+    when(folderMgr.getFolderSafe(childFolder.getId(), subject))
+        .thenReturn(Optional.of(childFolder));
 
     ApiFolder apiFolder = controller.getFolder(childFolder.getId(), false, null, subject);
 
@@ -423,7 +426,8 @@ public class FolderApiControllerTest {
     Folder wrongParent = TestFactory.createAFolder("wrongParent", subject);
 
     mockBaseUrl();
-    when(folderMgr.getFolderSafe(childFolder.getId(), subject)).thenReturn(Optional.of(childFolder));
+    when(folderMgr.getFolderSafe(childFolder.getId(), subject))
+        .thenReturn(Optional.of(childFolder));
 
     controller.getFolder(childFolder.getId(), true, wrongParent.getId(), subject);
   }

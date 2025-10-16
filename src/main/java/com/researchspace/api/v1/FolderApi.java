@@ -6,6 +6,7 @@ import com.researchspace.api.v1.model.ApiRecordTreeItemListing;
 import com.researchspace.model.User;
 import java.util.Set;
 import javax.validation.Valid;
+import javax.ws.rs.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -34,21 +35,13 @@ public interface FolderApi {
       throws BindException;
 
   /**
-   * Retrieves a folder based on the provided ID and user, with options to include metadata such as
-   * the path to the root folder and the parent folder ID.
+   * Gets a folder by given Id
    *
-   * @param id The unique identifier of the folder to retrieve.
-   * @param includePathToRootFolder A boolean flag indicating whether to include the path to the
-   *     root folder in the response. Defaults to false.
-   * @param parentFolderId The ID of the parent folder, if specified. This is optional and can be
-   *     used to
-   * @param user The user requesting the folder, used for permissions and contextual checks.
-   * @return An {@code ApiFolder} object containing the folder's details, which may include the path
-   *     to the root folder and adjusted parent information based on context.
+   * @throws NotFoundException if folder does not exist
    */
   @GetMapping(value = "/{id}")
   ApiFolder getFolder(
-      @PathVariable Long id, boolean includePathToRootFolder, Long parentFolderId, User user);
+      @PathVariable Long id, boolean includePathToRootFolder, Long parentId, User user);
 
   /**
    * Deletes a folder or notebook by ID

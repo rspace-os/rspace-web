@@ -148,10 +148,10 @@ public class FolderApiController extends BaseApiController implements FolderApi 
    * If no parentId is provided, falls back to finding the parent folder where the user is either the owner or a shared folder, only 1 of which will be true except in the mentioned notebook case.
    * @param parentId the parent of the folder, only required in the case of a notebook both owned by the user and shared to another location
    * @param user the user to find the parent context for
-   * @param folder the folder to find the parent for.
-   * @return the parent folder in the given context, or null if none found.
+   * @param folder the folder to find the parent for
+   * @return the parent folder in the given context, or null if none found
    *
-   * @throws ApiRuntimeException if the supplied parentId isn't a parent of the supplied folder.
+   * @throws ApiRuntimeException if the supplied parentId isn't a parent of the supplied folder
    */
   private Folder findParentForUser(Long parentId, User user, Folder folder) {
     Folder parent;
