@@ -76,6 +76,7 @@ module.exports = {
     materialsListing:
       "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
     externalWorkFlows: "./src/eln/eln-external-workflows/index.tsx",
+    jupyterNotebooks: "./src/eln/jupyter-notebooks/index.tsx",
     associatedInventoryRecords:
       "./src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
     sysadminUsers: "./src/eln/sysadmin/users/index.tsx",
