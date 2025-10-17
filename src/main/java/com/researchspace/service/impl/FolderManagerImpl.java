@@ -464,7 +464,7 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public List<Long> getFolderChildrenIds(Folder fd) {
-    return folderDao.getRecordIds(fd);
+    return folderDao.getFolderChildrenIds(fd);
   }
 
   public Folder addChild(Long folderId, BaseRecord child, User owner) {

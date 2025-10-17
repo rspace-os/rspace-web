@@ -20,7 +20,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    */
   Folder getRootRecordForUser(User user);
 
-  public List<Long> getRecordIds(Folder fd);
+  public List<Long> getFolderChildrenIds(Folder fd);
 
   /**
    * Get Gallery folder child of user's root folder.

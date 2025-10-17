@@ -99,7 +99,7 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   }
 
   @Override
-  public List<Long> getRecordIds(Folder fd) {
+  public List<Long> getFolderChildrenIds(Folder fd) {
     Long pid = fd.getId();
     return getSession()
         .createQuery("SELECT rtf.record.id FROM RecordToFolder rtf WHERE folder_id = :parentId")
