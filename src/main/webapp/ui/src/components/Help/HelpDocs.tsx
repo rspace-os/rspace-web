@@ -1,8 +1,17 @@
-import React, { useEffect, useState, useContext, useRef } from "react";
+import React, { useEffect, useState, useContext, useRef, useId } from "react";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { observer } from "mobx-react-lite";
 import axios from "@/common/axios";
 import Intercom from "@intercom/messenger-js-sdk";
+import useUiNavigationData from "@/components/AppBar/useUiNavigationData";
+import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
+import HelpIcon from "@mui/icons-material/Help";
+import { Menu } from '../DialogBoundary';
+import MenuItem from "@mui/material/MenuItem";
+import Divider from "@mui/material/Divider";
+import Box from "@mui/material/Box";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 
 declare global {
   interface Window {
@@ -35,24 +44,7 @@ declare global {
   }
 }
 
-/* eslint-disable camelcase -- lighthouse requires object properties with camel casing */
-
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
-
-type HelpDocsArgs = {
-  /**
-   * This inner component is for rendering a button that triggers the opening
-   * of the popup. This is so that the HelpDocs component can be used in various
-   * different UIs, from sidebars to FABs.
-   *
-   * Note: if the HelpDocs component is not rendered inside of an Analytics
-   * context then disabled will always be true.
-   */
-  Action: (props: {
-    onClick: () => void;
-    disabled: boolean;
-  }) => React.ReactNode;
-};
 
 function loadScript(url: string): void {
   const s = document.createElement("script");
@@ -70,7 +62,8 @@ function loadScript(url: string): void {
 /**
  * Displays the HelpDocs popup window.
  */
-function HelpDocs({ Action }: HelpDocsArgs): React.ReactNode {
+function HelpDocs() {
+  const uiNavigationData = useUiNavigationData();
   const api = useRef(
     axios.create({
       baseURL: "/session/ajax",
@@ -80,8 +73,14 @@ function HelpDocs({ Action }: HelpDocsArgs): React.ReactNode {
   const analyticsContext = useContext(AnalyticsContext);
   const { trackEvent } = analyticsContext;
 
+  const menuId = useId();
+  const menuOpenButtonId = useId();
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- this is simply to trigger a re-render once lighthouse is loaded
   const [_lighthouseIsLoaded, setLighthouseIsLoaded] = useState(false);
+
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
   function loadLighthouse(livechatEnabled: boolean): void {
     if (!livechatEnabled) {
@@ -100,6 +99,8 @@ function HelpDocs({ Action }: HelpDocsArgs): React.ReactNode {
 
     loadScript("https://lighthouse.helpdocs.io/load?t=" + new Date().getTime());
   }
+
+  const hasExtraHelpLinks = uiNavigationData.tag === "success" && uiNavigationData.value.extraHelpLinks.length > 0;
 
   useEffect(() => {
     void (async () => {
@@ -179,18 +180,77 @@ function HelpDocs({ Action }: HelpDocsArgs): React.ReactNode {
     };
   }, []);
 
+  const _showLighthouse = () => {
+    // To show Lighthouse panel, Lighthouse button must be shown first
+    window.Lighthouse.showButton();
+    window.Lighthouse.show();
+    trackEvent("NeedHelpClicked");
+  }
+
+  const handleMenuButtonClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (!hasExtraHelpLinks) {
+      _showLighthouse();
+
+      return;
+    }
+
+    setAnchorEl(event.currentTarget);
+
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleHelpButtonClicked = () => {
+    handleMenuClose();
+    _showLighthouse();
+  }
+
   return (
-    <>
-      <Action
+    <div>
+      <IconButtonWithTooltip
+        id={menuOpenButtonId}
+        size="small"
+        onClick={handleMenuButtonClick}
+        icon={<HelpIcon />}
+        title="Open Help"
         disabled={!window.Lighthouse}
-        onClick={() => {
-          // To show Lighthouse panel, Lighthouse button must be shown first
-          window.Lighthouse.showButton();
-          window.Lighthouse.show();
-          trackEvent("NeedHelpClicked");
-        }}
+        aria-controls={open ? menuId : undefined}
+        aria-haspopup={hasExtraHelpLinks ? 'menu' : undefined}
+        aria-expanded={open ? 'true' : undefined}
       />
-    </>
+      <Menu
+        id={menuId}
+        aria-labelledby={menuOpenButtonId}
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+      >
+        {hasExtraHelpLinks && (
+          <>
+            {uiNavigationData.value.extraHelpLinks.map(({ label, url }) => (
+              <MenuItem key={`${label}${url}`} component="a" href={url} rel="noreferrer">
+                <ListItemIcon>&nbsp;</ListItemIcon>
+                <ListItemText>{label}</ListItemText>
+              </MenuItem>
+            ))}
+          </>
+        )}
+        <Divider />
+        <MenuItem onClick={handleHelpButtonClicked}>
+          <ListItemIcon><Box component="img" sx={{ height: 24, width: 24 }} alt="RSpace" src="/images/icons/rspaceIcon.svg" /></ListItemIcon>
+          <ListItemText>RSpace Documentation</ListItemText></MenuItem>
+      </Menu>
+    </div>
   );
 }
 
