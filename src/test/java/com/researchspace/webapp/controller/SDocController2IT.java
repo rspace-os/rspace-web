@@ -230,7 +230,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     Folder root = initUser(u);
     Notebook nb = createNotebookWithNEntries(root.getId(), u.getUsername() + "nb", 1, u);
-    Long nbEntryId = folderMgr.getRecordIds(nb).get(0);
+    Long nbEntryId = folderMgr.getFolderChildrenIds(nb).get(0);
 
     // start editing
     recordMgr.requestRecordEdit(nbEntryId, u, anySessionTracker());
@@ -239,7 +239,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     AjaxReturnObject<String> cloneUrl =
         controller.saveCopyStructuredDocument(
             nbEntryId, "entry", new MockPrincipal(u.getUsername()));
-    Long clonedEntryId = folderMgr.getRecordIds(nb).get(1);
+    Long clonedEntryId = folderMgr.getFolderChildrenIds(nb).get(1);
     assertNotEquals(nbEntryId, clonedEntryId);
 
     String expectedCloneUrl =
@@ -254,7 +254,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     // save and new
     AjaxReturnObject<String> newUrl =
         controller.saveNewStructuredDocument(nbEntryId, new MockPrincipal(u.getUsername()));
-    Long newEntryId = folderMgr.getRecordIds(nb).get(2);
+    Long newEntryId = folderMgr.getFolderChildrenIds(nb).get(2);
     assertNotEquals(clonedEntryId, newEntryId);
 
     String expectedNewUrl =

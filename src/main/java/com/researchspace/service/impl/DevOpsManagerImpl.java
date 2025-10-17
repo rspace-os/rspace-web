@@ -130,7 +130,7 @@ public class DevOpsManagerImpl implements DevOpsManager {
       if (!folderToCheck.isSharedFolder()) {
         return false;
       }
-      List<Long> childrenIds = folderMgr.getRecordIds(folderToCheck);
+      List<Long> childrenIds = folderMgr.getFolderChildrenIds(folderToCheck);
       for (Long childId : childrenIds) {
         BaseRecord child = baseRecordMgr.get(childId, user);
         if (!isSharedFolderOrRecordSharedWithGroup(child, recordsSharedWithGroup, user)) {

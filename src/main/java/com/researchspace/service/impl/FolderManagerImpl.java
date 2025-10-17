@@ -463,7 +463,7 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   @Override
-  public List<Long> getRecordIds(Folder fd) {
+  public List<Long> getFolderChildrenIds(Folder fd) {
     return folderDao.getRecordIds(fd);
   }
 

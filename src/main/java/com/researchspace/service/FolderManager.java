@@ -167,7 +167,7 @@ public interface FolderManager {
       Long toMoveId, Long targetFolderId, Long sourceFolderId, User user)
       throws IllegalAddChildOperation;
 
-  List<Long> getRecordIds(Folder fd);
+  List<Long> getFolderChildrenIds(Folder fd);
 
   /**
    * A transactional method that adds and persists a child (Record or Folder) to the folder

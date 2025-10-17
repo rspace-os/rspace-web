@@ -60,13 +60,13 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   @Test
   public void testCopyStructuredDocument() throws Exception {
     Folder root = user.getRootFolder();
-    int numberb4 = root.getChildren().size();
+    int numberb4 = folderMgr.getFolderChildrenIds(root).size();
     flushDatabaseState();
     long numb4InDB =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     RSForm anyForm = formDao.getAll().get(0);
     StructuredDocument document =
-        recordMgr.createNewStructuredDocument(root.getId(), anyForm.getId(), user);
+        recordMgr.createNewStructuredDocument(root.getId(), anyForm.getId(), user, true);
 
     Field txtFld = document.getTextFields().get(0);
 
@@ -170,9 +170,9 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     assertEquals(commentText, comment1.getItems().get(0).getItemContent());
 
     flushDatabaseState();
-    Folder f = folderDao.getRootRecordForUser(user);
+    int numberAfter = folderMgr.getFolderChildrenIds(root).size();
     // original + copy + linkTarget
-    assertEquals(numberb4 + 2, f.getChildren().size());
+    assertEquals(numberb4 + 2, numberAfter);
     assertEquals(
         numb4InDB + 2,
         recordMgr

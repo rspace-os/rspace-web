@@ -539,7 +539,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
       User user, Folder folder, final String text) {
     RSForm ontologyForm = formMgr.findOldestFormByName(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME);
     StructuredDocument doc =
-        recordMgr.createNewStructuredDocument(folder.getId(), ontologyForm.getId(), user);
+        recordMgr.createNewStructuredDocument(folder.getId(), ontologyForm.getId(), user, true);
     Field field = doc.getFields().get(0);
     field.setData(text);
     doc.setName(getRandomAlphabeticString("BasicDocument"));
