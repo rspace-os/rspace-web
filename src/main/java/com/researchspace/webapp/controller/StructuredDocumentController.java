@@ -564,21 +564,6 @@ public class StructuredDocumentController extends BaseController {
     User user = userManager.getUserByUsername(principal.getName(), true);
     DocumentEditContext docEditContext = getDocEditContext(recordId, user);
     StructuredDocument structuredDocument = docEditContext.getStructuredDocument();
-
-    // notebook entries should be opened in notebook view (RSPAC-501)
-    if (structuredDocument.isNotebookEntry() && fromNotebook == null && !msTeamsDocView) {
-      boolean redirectToNotebook = false;
-      if (user.equals(structuredDocument.getOwner())) {
-        // if you're an owner, and the doc is part of your notebook
-        redirectToNotebook = structuredDocument.getNonSharedParentNotebook() != null;
-      } else {
-        // user is not an owner, but one of the parent notebook was shared with him
-        redirectToNotebook = canUserAccessAnyOfParentNotebooks(user, structuredDocument);
-      }
-      if (redirectToNotebook) {
-        return new ModelAndView(redirectToNotebookView(structuredDocument, settingsKey));
-      }
-    }
     EditStatus res = docEditContext.getEditStatus();
     // Opening Basic Documents in "Edit Mode" when editMode flag is true or coming
     // from notebook view
@@ -697,15 +682,6 @@ public class StructuredDocumentController extends BaseController {
     createBreadcrumb(model, document, rootRecord, parent);
   }
 
-  private boolean canUserAccessAnyOfParentNotebooks(User user, StructuredDocument doc) {
-    for (Notebook nb : doc.getParentNotebooks()) {
-      if (permissionUtils.isPermitted(nb, PermissionType.READ, user)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   private void addGroupAttributes(Model model, User usr) {
     Set<Group> groups = groupManager.listGroupsForUser();
     model.addAttribute("groups", groups);
@@ -730,12 +706,6 @@ public class StructuredDocumentController extends BaseController {
       model.addAttribute("parentId", breadcrumb.getParentFolderId());
     }
     return breadcrumb;
-  }
-
-  protected String redirectToNotebookView(StructuredDocument notebookEntry, String settingsKey) {
-    return "redirect:"
-        + NotebookEditorController.getNotebookViewUrl(
-            notebookEntry.getParentNotebook().getId(), notebookEntry.getId(), settingsKey);
   }
 
   /**
