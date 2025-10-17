@@ -1413,6 +1413,12 @@ paths:
           description: if set to `true` and querying user is the owner of the folder, the `pathToRootFolder` property will be populated with owner's folder hierarchy up to root folder
           default: false
           type: boolean
+        - in: query
+          name: parentId
+          description: Optional parent folder ID. Only required when a notebook has multiple parents (e.g. workspace and a shared location) accessible to the user, to specify which parent folder context to use. If not provided, the system will automatically determine the parent based on ownership or shared folder access.
+          type: integer
+          format: int64
+          required: false
       produces:
         - application/json
       responses:
@@ -1431,6 +1437,10 @@ paths:
               parentFolderId: 456
               mediaType: null
               pathToRootFolder: null
+        '422':
+          description: Unprocessable Entity - the supplied parentId is not a valid parent of the requested folder
+          schema:
+            $ref: '#/definitions/Error'
     delete:
       summary: Delete a folder or notebook
       description: >

@@ -10,9 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import javax.validation.constraints.Min;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -35,7 +33,6 @@ import lombok.NoArgsConstructor;
       "_links"
     })
 public class ApiFolder extends IdentifiableNameableApiObject {
-
   @JsonProperty("created")
   @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
   @JsonDeserialize(using = ISO8601DateTimeDeserialiser.class)
@@ -63,10 +60,8 @@ public class ApiFolder extends IdentifiableNameableApiObject {
   private List<ApiFolder> pathToRootFolder;
 
   /**
-   * Constructor for converting {@link Folder} entity to an {@link ApiFolder}
-   *
-   * @param folderOrNotebook
-   * @param authorisedSubject
+   * Constructor for converting {@link Folder} entity to an {@link ApiFolder}. If the user is the
+   * owner of the parent folder, then parentFolderId will be populated.
    */
   public ApiFolder(Folder folderOrNotebook, User authorisedSubject) {
     super(
@@ -99,31 +94,5 @@ public class ApiFolder extends IdentifiableNameableApiObject {
       prevFolder = currFolder;
     }
     return null;
-  }
-
-  /**
-   * Constructor that looks into parent folders to set 'mediaType' property (in case of Gallery
-   * Folders), and also populates the 'parents' list if 'includeParents' param is 'true'
-   *
-   * @param folderOrNotebook
-   * @param authorisedSubject
-   */
-  public ApiFolder(
-      Folder folderOrNotebook, Boolean includePathToRootFolder, User authorisedSubject) {
-    this(folderOrNotebook, authorisedSubject);
-
-    if (Boolean.TRUE.equals(includePathToRootFolder)
-        && authorisedSubject.equals(folderOrNotebook.getOwner())) {
-      pathToRootFolder = new ArrayList<>();
-      Optional<Folder> currParentOpt = folderOrNotebook.getOwnerParent();
-      while (currParentOpt.isPresent()) {
-        Folder currParent = currParentOpt.get();
-        pathToRootFolder.add(new ApiFolder(currParent, authorisedSubject));
-        if (currParent.hasType(RecordType.ROOT_MEDIA)) {
-          break; // for gallery subfolders, stop at Gallery level
-        }
-        currParentOpt = currParent.getOwnerParent();
-      }
-    }
   }
 }
