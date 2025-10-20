@@ -916,7 +916,7 @@ public class StructuredDocumentController extends BaseController {
     publisher.publishEvent(createGenericEvent(user, sd, AuditAction.WRITE));
     Record newInstanceRecord =
         recordManager.createNewStructuredDocument(
-            sd.getParent().getId(), sd.getForm().getId(), user, true);
+            sd.getParent().getId(), sd.getForm().getId(), user);
     publisher.publishEvent(createGenericEvent(user, newInstanceRecord, AuditAction.CREATE));
     if (newInstanceRecord == null) {
       ErrorList el = ErrorList.of("Could not create new document");
