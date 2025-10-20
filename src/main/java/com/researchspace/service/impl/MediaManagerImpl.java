@@ -342,11 +342,11 @@ public class MediaManagerImpl implements MediaManager {
     if (targetFolder != null) {
       if (!targetFolder.hasAncestorMatchingPredicate(
           targetFolderIsCorrectTypeForMedia(mediaFolderType), true)) {
-        targetFolder = recordManager.getGallerySubFolderForUser(mediaFolderType, user);
+        targetFolder = recordManager.getGalleryMediaFolderForUser(mediaFolderType, user);
       }
 
     } else {
-      targetFolder = recordManager.getGallerySubFolderForUser(mediaFolderType, user);
+      targetFolder = recordManager.getGalleryMediaFolderForUser(mediaFolderType, user);
     }
     assertCanAddToFolder(targetFolder, user);
 

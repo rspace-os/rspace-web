@@ -206,7 +206,7 @@ public class PublicStructuredDocumentControllerIT extends RealTransactionSpringT
         setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
             "standardUser", Constants.USER_ROLE, true);
     RecordGroupSharing rgs = recShareMgr.getSharedRecordsForUser(setup.user).get(0);
-    Long notebookEntryID = folderMgr.getRecordIds(setup.notebook).iterator().next();
+    Long notebookEntryID = folderMgr.getFolderChildrenIds(setup.notebook).iterator().next();
     assertEquals(
         rgs.getPublicLink(),
         controller.getPublicDocForRecordOrParentOfRecord(setup.notebook.getGlobalIdentifier()));

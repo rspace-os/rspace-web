@@ -60,13 +60,13 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   @Test
   public void testCopyStructuredDocument() throws Exception {
     Folder root = user.getRootFolder();
-    int numberb4 = root.getChildren().size();
+    int numberb4 = folderMgr.getFolderChildrenIds(root).size();
     flushDatabaseState();
     long numb4InDB =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     RSForm anyForm = formDao.getAll().get(0);
     StructuredDocument document =
-        recordMgr.createNewStructuredDocument(root.getId(), anyForm.getId(), user);
+        recordMgr.createNewStructuredDocument(root.getId(), anyForm.getId(), user, true);
 
     Field txtFld = document.getTextFields().get(0);
 
@@ -170,9 +170,9 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     assertEquals(commentText, comment1.getItems().get(0).getItemContent());
 
     flushDatabaseState();
-    Folder f = folderDao.getRootRecordForUser(user);
+    int numberAfter = folderMgr.getFolderChildrenIds(root).size();
     // original + copy + linkTarget
-    assertEquals(numberb4 + 2, f.getChildren().size());
+    assertEquals(numberb4 + 2, numberAfter);
     assertEquals(
         numb4InDB + 2,
         recordMgr
@@ -232,7 +232,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     // Create sub folder in gallery folder
     Folder originalFolder = createImgGallerySubfolder("images-folder-test", user);
     Folder imageGalleryFolder =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
     // Add media files to new folder
     addImageToGalleryFolder(originalFolder, user);
     // Copy folder

@@ -277,14 +277,14 @@ public class FolderApiControllerTest {
   @Test(expected = NotFoundException.class)
   public void getFolderThrowsNotFoundExIfNoExists() throws BindException {
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.empty());
-    controller.getFolder(1L, false, subject);
+    controller.getFolder(1L, false, null, subject);
   }
 
   @Test
   public void getFolder() throws BindException {
     mockBaseUrl();
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.of(createdFolder));
-    ApiFolder created = controller.getFolder(1L, false, subject);
+    ApiFolder created = controller.getFolder(1L, false, null, subject);
     assertNotNull(created);
   }
 
@@ -450,7 +450,6 @@ public class FolderApiControllerTest {
 
   @Test
   public void deleteFolderValidation() throws Exception {
-    mockBaseUrl();
     // root folder
     createdFolder.addType(RecordType.ROOT);
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.of(createdFolder));

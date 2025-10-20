@@ -110,7 +110,7 @@ public class FolderTreeImporterImpl implements FolderTreeImporter {
       if (isTemplateFolderMigrationRequired(archiveFlder, archiveModel)) {
         newFolder = folderDao.getTemplateFolderForUser(owner);
       }
-      newFolder = recordManager.getGallerySubFolderForUser(archiveFlder.getName(), owner);
+      newFolder = recordManager.getGalleryMediaFolderForUser(archiveFlder.getName(), owner);
     } else if (archiveFlder.isApiFolder()) {
       // which api folder?
       Optional<ArchiveFolder> parent = rl.getArchiveFolder(archiveFlder.getParentId());
@@ -122,18 +122,18 @@ public class FolderTreeImporterImpl implements FolderTreeImporter {
       }
       newFolder = folderManager.getApiUploadTargetFolder(apiFolderContentType, owner, null);
     } else if (archiveFlder.isRootMediaFolder()) {
-      newFolder = folderDao.getGalleryFolderForUser(owner);
+      newFolder = folderDao.getGalleryRootFolderForUser(owner);
       // we're importing a media folder from a selection. If we're importing whole Gallery,
       // this condition won't be met as these user-created gallery folders won't be top-level export
       // folders.
     } else if (rl.getTopLevelFolders().contains(archiveFlder) && archiveFlder.isMedia()) {
       Folder galleryTop =
-          recordManager.getGallerySubFolderForUser(archiveFlder.getMediaType(), owner);
+          recordManager.getGalleryMediaFolderForUser(archiveFlder.getMediaType(), owner);
       // default to miscellaneous
       if (galleryTop == null) {
         log.warn("Could not located media folder {}, defaulting to 'Miscellaneous' folder");
         galleryTop =
-            recordManager.getGallerySubFolderForUser(MediaUtils.MISC_MEDIA_FLDER_NAME, owner);
+            recordManager.getGalleryMediaFolderForUser(MediaUtils.MISC_MEDIA_FLDER_NAME, owner);
       }
       newFolder =
           folderManager.createNewFolder(

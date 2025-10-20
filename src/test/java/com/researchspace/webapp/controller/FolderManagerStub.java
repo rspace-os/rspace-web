@@ -78,7 +78,7 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
-  public List<Long> getRecordIds(Folder fd) {
+  public List<Long> getFolderChildrenIds(Folder fd) {
     return null;
   }
 

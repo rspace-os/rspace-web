@@ -98,7 +98,7 @@ public class ImportApiControllerMVCIT extends API_MVC_TestBase {
 
   private Folder createImageTarget(User anyUser) {
     Folder imageGallery =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, anyUser);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, anyUser);
     Folder imageTarget = createSubFolder(imageGallery, "image-subfolder", anyUser);
     return imageTarget;
   }

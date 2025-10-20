@@ -222,7 +222,7 @@ public class GalleryController extends BaseController {
       GalleryFilterCriteria filterCriteria) {
     User user = userManager.getAuthenticatedUserInSession();
     // It's a trick to show parent folder on the
-    Folder galleryItemParent = recordManager.getGallerySubFolderForUser(mediatype, user);
+    Folder galleryItemParent = recordManager.getGalleryMediaFolderForUser(mediatype, user);
 
     boolean isOnRoot = isOnGalleryRoot(currentFolderId, galleryItemParent);
 
@@ -305,7 +305,7 @@ public class GalleryController extends BaseController {
   public AjaxReturnObject<List<Long>> getImageListFromRootImageFolder() {
     User user = userManager.getAuthenticatedUserInSession();
     Folder galleryItemParent =
-        recordManager.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
+        recordManager.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
 
     PaginationCriteria<BaseRecord> pg = new PaginationCriteria<BaseRecord>();
     pg.setResultsPerPage(Integer.MAX_VALUE);
@@ -599,7 +599,7 @@ public class GalleryController extends BaseController {
     }
     User user = userManager.getAuthenticatedUserInSession();
 
-    Folder galleryItemParent = recordManager.getGallerySubFolderForUser(mediatype, user);
+    Folder galleryItemParent = recordManager.getGalleryMediaFolderForUser(mediatype, user);
 
     if (isOnGalleryRoot(targetFolderId, galleryItemParent)) {
       targetFolderId = galleryItemParent.getId();

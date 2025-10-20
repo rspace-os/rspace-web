@@ -770,7 +770,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     Notebook notebook = createNotebookWithNEntries(rootFolderId, "any", 1, user);
 
     // find first entry
-    Long notebookEntryId = folderMgr.getRecordIds(notebook).get(0);
+    Long notebookEntryId = folderMgr.getFolderChildrenIds(notebook).get(0);
     assertNotNull(notebookEntryId);
 
     // opening notebook entry for edit should process document editor page

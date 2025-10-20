@@ -64,7 +64,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
     Folder groupFolder = sharedSubfolder.getParent();
     assertTrue(sharedSubfolder.isSharedFolder());
     assertTrue(sharedSubfolder.isShared());
-    assertEquals(2, folderMgr.getRecordIds(sharedSubfolder).size());
+    assertEquals(2, folderMgr.getFolderChildrenIds(sharedSubfolder).size());
     String originalAcl = sharedSubfolder.getSharingACL().getAcl();
 
     // from now on operate as pi
@@ -124,7 +124,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
     ServiceOperationResult<BaseRecord> recordMoveResult =
         recordMgr.move(docC.getId(), sharedSubfolder.getId(), docC.getParent().getId(), pi);
     assertTrue(recordMoveResult.isSucceeded());
-    assertEquals(3, folderMgr.getRecordIds(sharedSubfolder).size());
+    assertEquals(3, folderMgr.getFolderChildrenIds(sharedSubfolder).size());
 
     // call fix method - should say no fix possible as folder has mixed content
     fixMethodMessage = devOpsMgr.fixRecord(sharedSubfolder.getOid(), pi, false);
@@ -139,7 +139,7 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
     recordMoveResult =
         recordMgr.move(docC.getId(), pi.getRootFolder().getId(), sharedSubfolder.getId(), pi);
     assertTrue(recordMoveResult.isSucceeded());
-    assertEquals(2, folderMgr.getRecordIds(sharedSubfolder).size());
+    assertEquals(2, folderMgr.getFolderChildrenIds(sharedSubfolder).size());
 
     // call fix method - should suggest moving folder back to shared
     fixMethodMessage = devOpsMgr.fixRecord(sharedSubfolder.getOid(), pi, false);

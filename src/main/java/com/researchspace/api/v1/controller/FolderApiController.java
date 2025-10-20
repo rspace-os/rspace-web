@@ -22,6 +22,7 @@ import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.FolderNavigationService;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
@@ -30,7 +31,9 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.collections4.CollectionUtils;
@@ -49,6 +52,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   private @Autowired FolderManager folderMgr;
   private @Autowired RecordDeletionManager recordDeletionManager;
   private @Autowired SharingHandler recordShareHandler;
+  private @Autowired FolderNavigationService folderNavigationService;
 
   /** Only name field of folder is required. */
   @Override
@@ -108,13 +112,33 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   public ApiFolder getFolder(
       @PathVariable Long id,
       @RequestParam(name = "includePathToRootFolder", defaultValue = "false", required = false)
-          Boolean includePathToRootFolder,
+          boolean includePathToRootFolder,
+      @RequestParam(name = "parentId", required = false) Long parentId,
       @RequestAttribute(name = "user") User user) {
-
     Folder folder = loadFolder(id, user);
-    ApiFolder rc = new ApiFolder(folder, includePathToRootFolder, user);
+    ApiFolder rc = new ApiFolder(folder, user);
+
+    if (includePathToRootFolder) {
+      populateParentAndPathToRoot(parentId, user, folder, rc);
+    }
+
     buildAndAddSelfLink(FOLDERS_ENDPOINT, rc);
     return rc;
+  }
+
+  private void populateParentAndPathToRoot(Long parentId, User user, Folder folder, ApiFolder rc) {
+    Optional<Folder> parentFolder =
+        folderNavigationService.findParentForUser(parentId, user, folder);
+
+    if (parentFolder.isPresent()) {
+      rc.setParentFolderId(parentFolder.get().getId());
+    }
+
+    List<Folder> pathToRoot = folderNavigationService.buildPathToRootFolder(folder, user, parentId);
+    List<ApiFolder> apiPath =
+        pathToRoot.stream().map(f -> new ApiFolder(f, user)).collect(Collectors.toList());
+
+    rc.setPathToRootFolder(apiPath);
   }
 
   @Override
