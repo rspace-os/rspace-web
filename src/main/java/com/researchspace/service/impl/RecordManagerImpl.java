@@ -316,7 +316,7 @@ public class RecordManagerImpl implements RecordManager {
   @Override
   public StructuredDocument createNewStructuredDocument(
       Long parentId, Long formID, User user, RecordContext context, ImportOverride override) {
-    return doCreateDocument(parentId, formID, "", user, context, override, true);
+    return doCreateDocument(parentId, formID, "", user, context, override, false);
   }
 
   @RequiresActiveLicense

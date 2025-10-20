@@ -945,7 +945,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertTrue(permissionUtils.isPermitted(doc, PermissionType.READ, pi)); // PI can always read
     assertFalse(permissionUtils.isPermitted(doc, PermissionType.WRITE, pi)); // cannot write
     assertFalse(permissionUtils.isPermitted(doc, PermissionType.SEND, pi)); // cannot move
-    // cannot move from group members folder into pis folder
+    // cannot move from group members folder into pi's folder
     assertFalse(
         recordMgr
             .move(doc.getId(), pi.getRootFolder().getId(), grpMember.getRootFolder().getId(), pi)
@@ -970,16 +970,16 @@ public class RecordManagerTest extends SpringTransactionalTest {
             .move(doc.getId(), pi.getRootFolder().getId(), g.getCommunalGroupFolderId(), pi)
             .isSucceeded());
     // attempt to move from shared folder into shared subfolder should be fine though
-    /* !!! currently not working, due to sharing code not poplulating folder.children array,
-    which makes removing from folder (part of move) to fail.
-    this doesn't seem to be problem on real setup, just in unit test. !!! */
-    /*    Folder sharedSubfolder =
+    Folder sharedSubfolder =
         folderMgr.createNewFolder(g.getCommunalGroupFolderId(), "sharedSubfolder", pi);
     assertTrue(sharedSubfolder.isSharedFolder());
+    /* !!! currently not working, due to sharing code not populating folder.children array,
+    which makes removing from folder (part of move) to fail.
+    this doesn't seem to be problem on real setup, just in unit test. !!! */
     assertTrue(
         recordMgr
             .move(doc.getId(), sharedSubfolder.getId(), g.getCommunalGroupFolderId(), pi)
-            .isSucceeded());*/
+            .isSucceeded());
   }
 
   @Test
