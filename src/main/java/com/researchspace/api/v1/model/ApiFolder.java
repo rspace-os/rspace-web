@@ -11,6 +11,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.Min;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -84,14 +85,24 @@ public class ApiFolder extends IdentifiableNameableApiObject {
     }
   }
 
+  /**
+   * Finds the media type of the gallery folder by traversing back to gallery root and reading the
+   * node previous to the root, which is the media type.
+   *
+   * @param galleryFolder the gallery folder to find the media type for
+   * @return the media type or null if not found
+   */
   private String findGalleryFolderMediaType(Folder galleryFolder) {
     Folder prevFolder = galleryFolder;
-    while (prevFolder.getOwnerParent().isPresent()) {
-      Folder currFolder = prevFolder.getOwnerParent().get();
+    // when there are mutliple parents, all will have the same media type, so any path is fine
+    Optional<Folder> parent = prevFolder.getParentFolders().stream().findFirst();
+    while (parent.isPresent()) {
+      Folder currFolder = parent.get();
       if (currFolder.hasType(RecordType.ROOT_MEDIA)) {
         return prevFolder.getName();
       }
       prevFolder = currFolder;
+      parent = prevFolder.getParentFolders().stream().findFirst();
     }
     return null;
   }
