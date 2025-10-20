@@ -1,0 +1,15 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- RaID integration -->
+    <changeSet id="2025-24-10a" context="run" author="nico">
+        <comment>Increase column space</comment>
+        <modifyDataType columnName="accessToken" newDataType="varchar(4096)" tableName="UserConnection" />
+        <modifyDataType columnName="refreshToken" newDataType="varchar(4096)" tableName="UserConnection" />
+        <modifyDataType columnName="secret" newDataType="varchar(4096)" tableName="UserConnection" />
+    </changeSet>
+
+</databaseChangeLog>

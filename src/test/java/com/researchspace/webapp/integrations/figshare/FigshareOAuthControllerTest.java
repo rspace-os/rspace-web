@@ -96,7 +96,7 @@ class FigshareOAuthControllerTest {
     figOauthCtrllerTSS.disconnect(() -> "a principal");
     verify(userConnectionManager)
         .deleteByUserAndProvider(
-            Mockito.eq(IntegrationsHandler.FIGSHARE_APP_NAME), Mockito.eq("a principal"));
+            Mockito.eq("a principal"), Mockito.eq(IntegrationsHandler.FIGSHARE_APP_NAME));
   }
 
   @Test

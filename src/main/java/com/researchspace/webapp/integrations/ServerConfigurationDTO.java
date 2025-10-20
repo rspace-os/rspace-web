@@ -1,4 +1,4 @@
-package com.researchspace.webapp.integrations.pyrat;
+package com.researchspace.webapp.integrations;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.rometools.utils.Strings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,21 +14,22 @@ import org.jetbrains.annotations.NotNull;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PyratServerDTO implements Comparable<PyratServerDTO> {
+@EqualsAndHashCode
+public class ServerConfigurationDTO implements Comparable<ServerConfigurationDTO> {
 
-  private String alias;
-  private String url;
+  protected String alias;
+  protected String url;
 
   @JsonInclude(value = Include.NON_EMPTY)
-  private String token;
+  protected String authUrl;
 
-  public PyratServerDTO(String alias, String url) {
+  public ServerConfigurationDTO(String alias, String apiUrl) {
     this.alias = alias;
-    this.url = url;
+    this.url = apiUrl;
   }
 
   @Override
-  public int compareTo(@NotNull PyratServerDTO o) {
+  public int compareTo(@NotNull ServerConfigurationDTO o) {
     if (Strings.isBlank(this.getAlias())) {
       return this.getUrl().compareTo(o.getUrl());
     } else {

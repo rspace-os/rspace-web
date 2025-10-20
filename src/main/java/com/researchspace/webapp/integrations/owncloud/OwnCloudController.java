@@ -65,6 +65,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
 
   @Data
   public static class AccessToken {
+
     private @JsonProperty(ACCESS_TOKEN) String token;
     private String scope;
     private @JsonProperty("token_type") String type;
@@ -76,6 +77,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
   }
 
   static class OwnCloudControllerConnector {
+
     String doRedirectCall(String ownCloudUrl, String clientId, String clientSecret)
         throws IOException {
       URL url = new URL(ownCloudUrl);
@@ -337,7 +339,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
   @DeleteMapping("/connect")
   public void disconnect(Principal principal) {
     int deleted =
-        userConnectionManager.deleteByUserAndProvider(OWNCLOUD_APP_NAME, principal.getName());
+        userConnectionManager.deleteByUserAndProvider(principal.getName(), OWNCLOUD_APP_NAME);
     log.info("Deleted {} owncloud connection(s) for user {}", deleted, principal.getName());
   }
 
