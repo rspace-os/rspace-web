@@ -135,9 +135,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
 
     List<Folder> pathToRoot = folderNavigationService.buildPathToRootFolder(folder, user, parentId);
     List<ApiFolder> apiPath =
-        pathToRoot.stream()
-            .map(f -> new ApiFolder(f, user))
-            .collect(Collectors.toList());
+        pathToRoot.stream().map(f -> new ApiFolder(f, user)).collect(Collectors.toList());
 
     rc.setPathToRootFolder(apiPath);
   }

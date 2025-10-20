@@ -87,7 +87,7 @@ public class ApiFolder extends IdentifiableNameableApiObject {
 
   /**
    * Finds the media type of the gallery folder by traversing back to gallery root and reading the
-   * node previous to the root, which is the media type.
+   * name of the node previous to the root, which is the name of the media type.
    *
    * @param galleryFolder the gallery folder to find the media type for
    * @return the media type or null if not found
