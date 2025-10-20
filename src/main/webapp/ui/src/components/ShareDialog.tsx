@@ -51,6 +51,7 @@ import VisuallyHiddenHeading from "./VisuallyHiddenHeading";
 import Stack from "@mui/material/Stack";
 import RsSet, { flattenWithIntersectionWithEq } from "../util/set";
 import WarningBar from "./WarningBar";
+import AlertsContext, { mkAlert } from "@/stores/contexts/Alert";
 
 type DocumentGlobalId = string;
 type DocumentName = string;
@@ -187,6 +188,7 @@ export function ShareDialog({
   const { move } = useDocuments();
   const currentUser = useWhoAmI();
   const [autocompleteInput, setAutocompleteInput] = React.useState("");
+  const { addAlert } = React.useContext(AlertsContext);
 
   React.useEffect(() => {
     if (open && globalIds.length > 0) {
@@ -576,6 +578,12 @@ export function ShareDialog({
       // @ts-expect-error global function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
+      addAlert(
+        mkAlert({
+          message: "Shares updated successfully.",
+          variant: "success",
+        }),
+      );
     } catch (error) {
       console.error("Failed to save shares:", error);
     } finally {

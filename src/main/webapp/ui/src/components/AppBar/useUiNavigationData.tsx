@@ -6,7 +6,7 @@ import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 
 /**
- * The state requried to display the conditional parts of the AppBar.
+ * The state required to display the conditional parts of the AppBar.
  */
 export type UiNavigationData = {
   userDetails: {
@@ -23,6 +23,10 @@ export type UiNavigationData = {
     system: boolean;
     myLabGroups: boolean;
   };
+  extraHelpLinks: {
+    label: string;
+    url: string;
+  }[];
   bannerImgSrc: string;
   operatedAs: boolean;
   nextMaintenance: null | { startDate: Date };
@@ -180,6 +184,9 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
             const bannerImgSrc = Parsers.objectPath(["bannerImgSrc"], obj)
               .flatMap(Parsers.isString)
               .elseThrow();
+            const extraHelpLinks: UiNavigationData['extraHelpLinks'] = Parsers.objectPath(['extraHelpLinks'], obj)
+              .flatMap(Parsers.isArray)
+              .orElse([]) as UiNavigationData['extraHelpLinks'];
             const operatedAs = Parsers.objectPath(["operatedAs"], obj)
               .flatMap(Parsers.isBoolean)
               .elseThrow();
@@ -212,6 +219,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
                 myLabGroups,
               },
               bannerImgSrc,
+              extraHelpLinks,
               operatedAs,
               nextMaintenance,
             });
@@ -239,9 +247,6 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
 
   React.useEffect(() => {
     void getUiNavigationData();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - getUiNavigationData will not meaningfully change
-     */
   }, []);
 
   if (loading) return { tag: "loading" };
