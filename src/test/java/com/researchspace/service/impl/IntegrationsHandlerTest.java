@@ -8,6 +8,12 @@ import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTIN
 import static com.researchspace.service.IntegrationsHandler.ONBOARDING_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
+import static com.researchspace.service.SystemPropertyName.BOX_AVAILABLE;
+import static com.researchspace.service.SystemPropertyName.DIGITAL_COMMON_DATA_AVAILABLE;
+import static com.researchspace.service.SystemPropertyName.DROPBOX_AVAILABLE;
+import static com.researchspace.service.SystemPropertyName.PYRAT_AVAILABLE;
+import static com.researchspace.service.SystemPropertyName.SLACK_AVAILABLE;
+import static com.researchspace.service.impl.IntegrationsHandlerImpl.MASKED_TOKEN;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
@@ -49,8 +55,9 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.integrations.ServerConfigurationDTO;
 import com.researchspace.webapp.integrations.pyrat.PyratClient;
-import com.researchspace.webapp.integrations.pyrat.PyratServerDTO;
+import com.researchspace.webapp.integrations.pyrat.PyratServerConfigurationDTO;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -141,13 +148,15 @@ public class IntegrationsHandlerTest {
 
   @Test()
   public void getForPropertyHappyCase() {
-    String propName = "DROPBOX", systemPropertyName = propName.toLowerCase() + ".available";
+    String propName = "DROPBOX";
+    SystemPropertyName systemPropertyName = DROPBOX_AVAILABLE;
     SystemPropertyValue dropboxAvailable = getSystemPropertyValueAllowed(systemPropertyName);
     UserPreference dropboxEnabled = new UserPreference(Preference.DROPBOX, subject, "true");
 
-    when(systemPropertyPermissionUtils.isPropertyAllowed(eq(subject), eq(systemPropertyName)))
+    when(systemPropertyPermissionUtils.isPropertyAllowed(
+            eq(subject), eq(systemPropertyName.getPropertyName())))
         .thenReturn(true);
-    when(userMgr.getPreferenceForUser(subject, Preference.DROPBOX)).thenReturn(dropboxEnabled);
+    when(userMgr.getPreferenceForUser(any(), any())).thenReturn(dropboxEnabled);
     when(sysPropMgr.findByName(eq(systemPropertyName))).thenReturn(dropboxAvailable);
 
     IntegrationInfo info = handler.getIntegration(subject, propName);
@@ -163,7 +172,8 @@ public class IntegrationsHandlerTest {
     assertTrue(info.isAvailable());
     assertFalse(info.isEnabled());
 
-    when(systemPropertyPermissionUtils.isPropertyAllowed(eq(subject), eq(systemPropertyName)))
+    when(systemPropertyPermissionUtils.isPropertyAllowed(
+            eq(subject), eq(systemPropertyName.getPropertyName())))
         .thenReturn(false);
     info = handler.getIntegration(subject, propName);
     assertFalse(info.isAvailable());
@@ -180,8 +190,7 @@ public class IntegrationsHandlerTest {
     SystemPropertyValue expectedDropboxAvailableProp =
         new SystemPropertyValue(new SystemProperty(null), "true");
     when(userMgr.getPreferenceForUser(subject, Preference.DROPBOX)).thenReturn(expectedDropboxPref);
-    when(sysPropMgr.findByName(SystemPropertyName.DROPBOX_AVAILABLE.getPropertyName()))
-        .thenReturn(expectedDropboxAvailableProp);
+    when(sysPropMgr.findByName(DROPBOX_AVAILABLE)).thenReturn(expectedDropboxAvailableProp);
 
     assertNotNull(handler.updateIntegrationInfo(subject, info));
   }
@@ -206,8 +215,7 @@ public class IntegrationsHandlerTest {
     when(userMgr.getPreferenceForUser(subject, Preference.BOX_LINK_TYPE))
         .thenReturn(expectedBoxLinkTypePref);
     when(userMgr.getPreferenceForUser(subject, Preference.BOX)).thenReturn(expectedBoxPref);
-    when(sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE.getPropertyName()))
-        .thenReturn(expectedBoxAvailableProp);
+    when(sysPropMgr.findByName(BOX_AVAILABLE)).thenReturn(expectedBoxAvailableProp);
 
     handler.updateIntegrationInfo(subject, info);
 
@@ -221,7 +229,7 @@ public class IntegrationsHandlerTest {
   public void testUpdateSlackApp() {
 
     // set slack as available
-    SystemPropertyValue slackAvailable = getSystemPropertyValueAllowed("slack.available");
+    SystemPropertyValue slackAvailable = getSystemPropertyValueAllowed(SLACK_AVAILABLE);
     App app = new App(SLACK_APP_NAME, "Slack", true);
     UserAppConfig slackConfig = new UserAppConfig(subject, app, false);
     when(appCfgMgr.getByAppName("app.slack", subject)).thenReturn(slackConfig);
@@ -299,9 +307,8 @@ public class IntegrationsHandlerTest {
 
   @Test
   public void getBoxOptions() {
-    SystemPropertyValue boxAvailable = getSystemPropertyValueAllowed("box.available");
-    when(sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE.getPropertyName()))
-        .thenReturn(boxAvailable);
+    SystemPropertyValue boxAvailable = getSystemPropertyValueAllowed(BOX_AVAILABLE);
+    when(sysPropMgr.findByName(BOX_AVAILABLE)).thenReturn(boxAvailable);
 
     UserPreference boxEnablement = new UserPreference(Preference.BOX, subject, "true");
     when(userMgr.getPreferenceForUser(subject, Preference.BOX)).thenReturn(boxEnablement);
@@ -315,8 +322,8 @@ public class IntegrationsHandlerTest {
 
   @Test
   public void getSlackOptions() {
-    SystemPropertyValue slackAvailable = getSystemPropertyValueAllowed("slack.available");
-    when(sysPropMgr.findByName(SystemPropertyName.SLACK_AVAILABLE)).thenReturn(slackAvailable);
+    SystemPropertyValue slackAvailable = getSystemPropertyValueAllowed(SLACK_AVAILABLE);
+    when(sysPropMgr.findByName(SLACK_AVAILABLE)).thenReturn(slackAvailable);
 
     IntegrationInfo info = handler.getIntegration(subject, SLACK_APP_NAME);
     Map<String, Object> options = info.getOptions();
@@ -326,14 +333,13 @@ public class IntegrationsHandlerTest {
 
   @Test
   public void getDigitalCommonsDataOptions() {
-    String DIGITAL_COMMONS_DATA_AVAILABLE = "digitalCommonsData.available";
     SystemPropertyValue digitalCommonsDataAvailable =
-        getSystemPropertyValueAllowed(DIGITAL_COMMONS_DATA_AVAILABLE);
+        getSystemPropertyValueAllowed(DIGITAL_COMMON_DATA_AVAILABLE);
 
     UserConnection userConn = new UserConnection();
     userConn.setAccessToken("<ACCESS_TOKEN>");
 
-    when(sysPropMgr.findByName(DIGITAL_COMMONS_DATA_AVAILABLE))
+    when(sysPropMgr.findByName(DIGITAL_COMMON_DATA_AVAILABLE))
         .thenReturn(digitalCommonsDataAvailable);
     when(userConnectionManager.findByUserNameProviderName(
             anyString(), eq(DIGITAL_COMMONS_DATA_APP_NAME)))
@@ -344,14 +350,13 @@ public class IntegrationsHandlerTest {
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
     assertEquals(1, options.size());
-    assertEquals(options.get(DIGITAL_COMMONS_DATA_USER_TOKEN), "<ACCESS_TOKEN>");
+    assertEquals(MASKED_TOKEN, options.get(DIGITAL_COMMONS_DATA_USER_TOKEN));
   }
 
+  // TODO[nik]: make the same for RaID
   @Test
   public void getPyratIntegrationOptions() {
-    String PYRAT_AVAILABLE = "pyrat.available";
-    SystemPropertyValue digitalCommonsDataAvailable =
-        getSystemPropertyValueAllowed(PYRAT_AVAILABLE);
+    SystemPropertyValue pyratDataAvailable = getSystemPropertyValueAllowed(PYRAT_AVAILABLE);
 
     UserConnectionId userConnId1 = new UserConnectionId("user1", PYRAT_APP_NAME, "alias1");
     UserConnection userConn1 = new UserConnection();
@@ -365,7 +370,7 @@ public class IntegrationsHandlerTest {
     userConn2.setAccessToken("<API_KEY_2>");
     userConn2.setRank(2);
 
-    when(sysPropMgr.findByName(PYRAT_AVAILABLE)).thenReturn(digitalCommonsDataAvailable);
+    when(sysPropMgr.findByName(PYRAT_AVAILABLE)).thenReturn(pyratDataAvailable);
     when(userConnectionManager.findListByUserNameProviderName(anyString(), eq(PYRAT_APP_NAME)))
         .thenReturn(List.of(userConn1, userConn2));
 
@@ -393,37 +398,37 @@ public class IntegrationsHandlerTest {
     when(repositoryConfigFactory.getDisplayLabelForAppConfig(any(), any()))
         .thenReturn(Optional.empty());
 
-    Map<String, PyratServerDTO> serverByAlias =
+    Map<String, PyratServerConfigurationDTO> serverByAlias =
         Map.of(
-            "alias1", new PyratServerDTO(null, "http://pyrat1.server.com/"),
-            "alias2", new PyratServerDTO(null, "http://pyrat2.server.com/"));
-    when(pyratClient.getServerByAlias()).thenReturn(serverByAlias);
+            "alias1", new PyratServerConfigurationDTO(null, "http://pyrat1.server.com/"),
+            "alias2", new PyratServerConfigurationDTO(null, "http://pyrat2.server.com/"));
+    when(pyratClient.getServerMapByAlias()).thenReturn(serverByAlias);
 
     IntegrationInfo info = handler.getIntegration(subject, PYRAT_APP_NAME);
     assertEquals(PYRAT_APP_NAME, info.getName());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
     assertEquals(2, options.size());
-    Collections.sort((List<PyratServerDTO>) options.get(PYRAT_CONFIGURED_SERVERS));
+    Collections.sort((List<ServerConfigurationDTO>) options.get(PYRAT_CONFIGURED_SERVERS));
     assertEquals(
-        new PyratServerDTO("alias1", "http://pyrat1.server.com/"),
-        ((List<PyratServerDTO>) options.get(PYRAT_CONFIGURED_SERVERS)).get(0));
+        new ServerConfigurationDTO("alias1", "http://pyrat1.server.com/"),
+        ((List<ServerConfigurationDTO>) options.get(PYRAT_CONFIGURED_SERVERS)).get(0));
     assertEquals(
-        new PyratServerDTO("alias2", "http://pyrat2.server.com/"),
-        ((List<PyratServerDTO>) options.get(PYRAT_CONFIGURED_SERVERS)).get(1));
+        new ServerConfigurationDTO("alias2", "http://pyrat2.server.com/"),
+        ((List<ServerConfigurationDTO>) options.get(PYRAT_CONFIGURED_SERVERS)).get(1));
 
     // here we do get("null") becasue since the AppCnfigSet is not saved into DB (as per mocks)
     // then it has not got a proper numerical ID
     assertEquals("alias1", ((Map<String, String>) options.get("null")).get(PYRAT_ALIAS));
-    assertEquals("<API_KEY_1>", ((Map<String, String>) options.get("null")).get(PYRAT_APIKEY));
+    assertEquals(MASKED_TOKEN, ((Map<String, String>) options.get("null")).get(PYRAT_APIKEY));
     assertEquals(
         "http://pyrat1.server.com/", ((Map<String, String>) options.get("null")).get(PYRAT_URL));
   }
 
-  private SystemPropertyValue getSystemPropertyValueAllowed(String propertyName) {
+  private SystemPropertyValue getSystemPropertyValueAllowed(SystemPropertyName propertyName) {
     SystemProperty sp = createPermissionEnumSystemProperty();
 
-    sp.getDescriptor().setName(propertyName);
+    sp.getDescriptor().setName(propertyName.name());
     SystemPropertyValue systemDefault = new SystemPropertyValue(sp, "ALLOWED");
     return systemDefault;
   }

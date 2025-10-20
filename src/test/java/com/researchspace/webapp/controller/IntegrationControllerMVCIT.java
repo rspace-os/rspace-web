@@ -24,8 +24,10 @@ import static com.researchspace.service.IntegrationsHandler.ORCID_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.OWNCLOUD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
+import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
@@ -64,13 +66,19 @@ import org.springframework.test.web.servlet.MvcResult;
 
 @RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
-    properties =
-        "pyrat.server.config={\"mice server\": {\"url\": \"https://pyrat1.server.com\", \"token\":"
-            + " \"server1-secret-token\"}, \"frogs server\": {\"url\":"
-            + " \"https://pyrat2.server.com\", \"token\": \"server2-secret-token\"}}")
+    properties = {
+      "pyrat.server.config={\"mice server\": {\"url\": \"https://pyrat1.server.com\", \"token\":"
+          + " \"server1-secret-token\"}, \"frogs server\": {\"url\":"
+          + " \"https://pyrat2.server.com\", \"token\": \"server2-secret-token\"}}",
+      "raid.server.config={      \"DEMO\": {                \"url\": \"https://demo.raid.au/\", "
+          + "                \"authUrl\":"
+          + " \"https://demo.raid.org/realms/raid/protocol/openid-connect/\",                "
+          + " \"servicePointId\": 12345678,                 \"clientId\": \"rspace\",              "
+          + "   \"clientSecret\": \"secretfgubdfigu\"       }}"
+    })
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 28;
+  final int TOTAL_INTEGRATIONS = 29;
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
@@ -118,6 +126,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(MSTEAMS_APP_NAME, new String[] {});
     expectedOptions.put(PROTOCOLS_IO_APP_NAME, new String[] {}); // no token if not authenticated
     expectedOptions.put(PYRAT_APP_NAME, new String[] {PYRAT_CONFIGURED_SERVERS});
+    expectedOptions.put(RAID_APP_NAME, new String[] {RAID_CONFIGURED_SERVERS});
     expectedOptions.put(CLUSTERMARKET_APP_NAME, new String[] {});
     expectedOptions.put(DRYAD_APP_NAME, new String[] {});
     expectedOptions.put(JOVE_APP_NAME, new String[] {});
@@ -361,6 +370,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertEquals(0, deletedOptions.size());
   }
 
+  // TODO[nik]: do it for RaID as well
   @Test
   public void addEditDeletePyratOptions() throws Exception {
     String integrationName = PYRAT_APP_NAME;

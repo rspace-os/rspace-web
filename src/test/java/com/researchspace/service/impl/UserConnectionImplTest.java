@@ -13,7 +13,10 @@ public class UserConnectionImplTest {
   @Test
   public void cacheEvictionSpel() {
     UserConnection connection = TestFactory.createUserConnection("user1");
-    String expectedCacheKey = connection.getId().getUserId() + connection.getId().getProviderId();
+    String expectedCacheKey =
+        connection.getId().getUserId()
+            + connection.getId().getProviderId()
+            + connection.getId().getProviderUserId();
     String evaluatedSpel =
         evaluateSpel(connection, SAVE_CONNECTION_SPEL.replaceAll("#connection.", ""));
 

@@ -340,7 +340,7 @@ public class NextCloudController extends BaseOAuth2Controller {
   @DeleteMapping("/connect")
   public void disconnect(Principal principal) {
     int deleted =
-        userConnectionManager.deleteByUserAndProvider(NEXTCLOUD_APP_NAME, principal.getName());
+        userConnectionManager.deleteByUserAndProvider(principal.getName(), NEXTCLOUD_APP_NAME);
     log.info("Deleted {} nextcloud connection(s) for user {}", deleted, principal.getName());
   }
 }

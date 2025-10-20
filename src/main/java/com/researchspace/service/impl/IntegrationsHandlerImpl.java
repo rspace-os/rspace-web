@@ -2,6 +2,10 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.CacheNames.INTEGRATION_INFO;
 import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
+import static com.researchspace.service.SystemPropertyName.valueOfPropertyName;
+import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_ALIAS;
+import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_CONFIGURED_SERVERS;
+import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_OAUTH_CONNECTED;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
@@ -32,8 +36,10 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.raid.RaIDServiceClientAdapter;
+import com.researchspace.webapp.integrations.MultiInstanceClient;
+import com.researchspace.webapp.integrations.ServerConfigurationDTO;
 import com.researchspace.webapp.integrations.pyrat.PyratClient;
-import com.researchspace.webapp.integrations.pyrat.PyratServerDTO;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -47,6 +53,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -72,6 +79,7 @@ import org.springframework.dao.DataAccessException;
 @Slf4j
 public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
+  public static final String MASKED_TOKEN = "XXXXXXXXXXXXXXXXX";
   private @Autowired SystemPropertyManager sysPropMgr;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
   private @Autowired UserAppConfigManager appConfigMgr;
@@ -80,7 +88,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private @Autowired UserConnectionManager userConnManager;
   private @Autowired IPropertyHolder propertyHolder;
   private @Autowired PyratClient pyratClient;
-  @Autowired private GalaxyService galaxyService;
+  private @Autowired RaIDServiceClientAdapter raidClientService;
+  private @Autowired GalaxyService galaxyService;
 
   private final Map<SystemProperty, List<SystemProperty>> parent2ChildMap = new HashMap<>();
 
@@ -129,9 +138,12 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   @Override
   // if method arguments change, remember to update the 'key' attribute
-  @Cacheable(value = INTEGRATION_INFO, key = "#user.username + #integrationName")
+  @Cacheable(
+      value = INTEGRATION_INFO,
+      key =
+          "#user.username + #integrationName +"
+              + " T(com.researchspace.service.IntegrationsHandler).PROVIDER_USER_ID")
   public IntegrationInfo getIntegration(User user, String integrationName) {
-
     checkValidIntegration(integrationName);
     IntegrationInfo info = new IntegrationInfo();
     info.setName(integrationName);
@@ -139,7 +151,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     String integrationSystemPropertyName = getSysPropertyFromIntegrationName(integrationName);
     info.setAvailable(
         systemPropertyPermissionUtils.isPropertyAllowed(user, integrationSystemPropertyName));
-    SystemPropertyValue property = sysPropMgr.findByName(integrationSystemPropertyName);
+    SystemPropertyValue property =
+        sysPropMgr.findByName(valueOfPropertyName(integrationSystemPropertyName));
 
     if (isAppConfigIntegration(integrationName)) {
       populateIntegrationInfoFromUserAppConfig(info, user);
@@ -158,29 +171,33 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   void postProcessInfo(IntegrationInfo info, User user) {
     switch (info.getName()) {
       case PROTOCOLS_IO_APP_NAME:
-        setOAuthConnectionStatus(info, user, PROTOCOLS_IO_APP_NAME);
+        setSingleOAuthConnectionStatus(info, user, PROTOCOLS_IO_APP_NAME);
         return;
       case CLUSTERMARKET_APP_NAME:
-        setOAuthConnectionStatus(info, user, CLUSTERMARKET_APP_NAME);
+        setSingleOAuthConnectionStatus(info, user, CLUSTERMARKET_APP_NAME);
         return;
       case DMPTOOL_APP_NAME:
-        setOAuthConnectionStatus(info, user, DMPTOOL_APP_NAME);
+        setSingleOAuthConnectionStatus(info, user, DMPTOOL_APP_NAME);
         return;
       case OWNCLOUD_APP_NAME:
-        setOAuthConnectionStatus(info, user, OWNCLOUD_APP_NAME);
+        setSingleOAuthConnectionStatus(info, user, OWNCLOUD_APP_NAME);
         return;
       case NEXTCLOUD_APP_NAME:
-        setOAuthConnectionStatus(info, user, NEXTCLOUD_APP_NAME);
+        setSingleOAuthConnectionStatus(info, user, NEXTCLOUD_APP_NAME);
         return;
       case FIGSHARE_APP_NAME:
-        setOAuthConnectionStatus(info, user, FIGSHARE_APP_NAME);
+        setSingleOAuthConnectionStatus(info, user, FIGSHARE_APP_NAME);
         return;
       case DRYAD_APP_NAME:
-        setOAuthConnectionStatus(info, user, DRYAD_APP_NAME);
+        setSingleOAuthConnectionStatus(info, user, DRYAD_APP_NAME);
         return;
       case PYRAT_APP_NAME:
         setMultipleUserTokens(
             info, user, PYRAT_APP_NAME, PYRAT_CONFIGURED_SERVERS, PYRAT_ALIAS, PYRAT_APIKEY);
+        return;
+      case RAID_APP_NAME:
+        setMultipleOAuthConnectionStatus(
+            info, user, RAID_APP_NAME, RAID_CONFIGURED_SERVERS, RAID_ALIAS, RAID_OAUTH_CONNECTED);
         return;
       case ZENODO_APP_NAME:
         setSingleUserToken(info, user, ZENODO_APP_NAME, ZENODO_USER_TOKEN);
@@ -206,6 +223,26 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     }
   }
 
+  private void setMultipleOAuthConnectionStatus(
+      IntegrationInfo info,
+      User user,
+      String appName,
+      String paramConfiguredServers,
+      String paramAlias,
+      String paramOauthConnected) {
+    Map<String, String> apikeyByAlias = getTokenMapForProvider(user, appName);
+
+    for (Entry<String, Object> infoElement : info.getOptions().entrySet()) {
+      if (!paramConfiguredServers.equals(infoElement.getKey())) {
+        Map<String, String> configElementMapSet = (Map<String, String>) infoElement.getValue();
+        String aliasToConfigure = configElementMapSet.get(paramAlias); // i.e.: "server1"
+        configElementMapSet.put(
+            paramOauthConnected,
+            String.valueOf(StringUtils.isNotBlank(apikeyByAlias.get(aliasToConfigure))));
+      }
+    }
+  }
+
   private void setMultipleUserTokens(
       IntegrationInfo info,
       User user,
@@ -219,16 +256,16 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       if (!paramConfiguredServers.equals(infoElement.getKey())) {
         Map<String, String> configElementMapSet = (Map<String, String>) infoElement.getValue();
         String aliasToConfigure = configElementMapSet.get(paramAlias); // i.e.: "mice server"
-        String apiKey =
-            apikeyByAlias.get(aliasToConfigure) == null ? "" : apikeyByAlias.get(aliasToConfigure);
+        String apiKey = apikeyByAlias.get(aliasToConfigure) == null ? "" : MASKED_TOKEN;
         configElementMapSet.put(paramApiKey, apiKey);
       }
     }
   }
 
   // this is using UserConnection table to store OAuth token.
-  private void setOAuthConnectionStatus(IntegrationInfo info, User user, String appName) {
-    getTokenForProvider(user, appName).ifPresent(token -> updateInfoWithOAuthToken(info, token));
+  private void setSingleOAuthConnectionStatus(IntegrationInfo info, User user, String appName) {
+    getTokenForProvider(user, appName)
+        .ifPresent(token -> updateInfoWithOAuthToken(info, MASKED_TOKEN));
   }
 
   private String updateInfoWithOAuthToken(IntegrationInfo info, String token) {
@@ -240,12 +277,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private Optional<String> getTokenForProvider(User user, String provider) {
     return userConnManager
         .findByUserNameProviderName(user.getUsername(), provider)
-        .map(UserConnection::getAccessToken);
-  }
-
-  private Optional<String> getTokenForProvider(User user, String provider, String discriminant) {
-    return userConnManager
-        .findByUserNameProviderName(user.getUsername(), provider, discriminant)
         .map(UserConnection::getAccessToken);
   }
 
@@ -267,7 +298,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private void setSingleUserToken(
       IntegrationInfo info, User user, String appName, String tokenName) {
     Optional<String> userToken = getTokenForProvider(user, appName);
-    userToken.ifPresent(t -> info.getOptions().put(tokenName, t));
+    userToken.ifPresent(t -> info.getOptions().put(tokenName, MASKED_TOKEN)); // mask token t
   }
 
   private void populateIntegrationInfoFromUserAppConfig(IntegrationInfo info, User user) {
@@ -278,26 +309,18 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       info.setDisplayName(appConfig.getApp().getLabel());
       Map<String, Object> options = new HashMap<>();
 
-      // For PyRAT we need to fetch the configured servers returned by the client
+      // For PyRAT and RaID we need to fetch the configured servers returned by the client
       if (info.getName().equals(PYRAT_APP_NAME)) {
-        Map<String, PyratServerDTO> pyratServerByAliasMap = pyratClient.getServerByAlias();
-        if (!pyratServerByAliasMap.isEmpty()) {
-          List<PyratServerDTO> pyratConfiguredServers = new LinkedList<>();
-          options.put(PYRAT_CONFIGURED_SERVERS, pyratConfiguredServers);
-
-          // add the configured servers in the options
-          for (Entry<String, PyratServerDTO> pyratServerByAlias :
-              pyratServerByAliasMap.entrySet()) {
-            pyratConfiguredServers.add(createServerEntry(pyratServerByAlias));
-          }
-        }
+        createMultiServerEntriesForUI(options, PYRAT_CONFIGURED_SERVERS, pyratClient);
+      } else if (info.getName().equals(RAID_APP_NAME)) {
+        createMultiServerEntriesForUI(options, RAID_CONFIGURED_SERVERS, raidClientService);
       } else if (info.getName().equals(GALAXY_APP_NAME)) {
         List<GalaxyAliasToServer> galaxyServerByAlias = galaxyService.getAliasServerPairs();
         if (!galaxyServerByAlias.isEmpty()) {
           options.put(GALAXY_CONFIGURED_SERVERS, galaxyServerByAlias);
         }
       }
-
+      // TODO[nik]: CHECK THIS WHAT TO DO WITH RAID cause it is not populatinbg it
       appConfig
           .getAppConfigElementSets()
           .forEach(
@@ -318,10 +341,21 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     }
   }
 
-  @NotNull
-  private static PyratServerDTO createServerEntry(
-      Entry<String, PyratServerDTO> pyratServerByAlias) {
-    return new PyratServerDTO(pyratServerByAlias.getKey(), pyratServerByAlias.getValue().getUrl());
+  private <T extends ServerConfigurationDTO> void createMultiServerEntriesForUI(
+      @NotNull Map<String, Object> options,
+      @NotNull String serverListKey,
+      @NotNull MultiInstanceClient<T> clientAdapter) {
+    Map<String, T> serverByAliasMap = clientAdapter.getServerMapByAlias();
+    if (!serverByAliasMap.isEmpty()) {
+      List<ServerConfigurationDTO> configuredServers = new LinkedList<>();
+      options.put(serverListKey, configuredServers);
+
+      // add the configured servers in the options
+      for (Entry<String, T> serverByAlias : serverByAliasMap.entrySet()) {
+        configuredServers.add(
+            new ServerConfigurationDTO(serverByAlias.getKey(), serverByAlias.getValue().getUrl()));
+      }
+    }
   }
 
   private UserAppConfig getAppConfig(String infoName, User user) {
@@ -365,7 +399,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
               systemPropertyPermissionUtils.isPropertyAllowed(user, child.getName()));
         } catch (IllegalArgumentException e) {
           // Value was not one of ALLOWED, DENIED_BY_DEFAULT or DENIED
-          options.put(child.getName(), sysPropMgr.findByName(child.getName()).getValue());
+          options.put(
+              child.getName(),
+              sysPropMgr.findByName(valueOfPropertyName(child.getName())).getValue());
         }
       }
     }
@@ -382,7 +418,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   @Override
-  @CachePut(value = INTEGRATION_INFO, key = "#user.username + #newInfo.name")
+  @CachePut(
+      value = INTEGRATION_INFO,
+      key =
+          "#user.username + #newInfo.name +"
+              + " T(com.researchspace.service.IntegrationsHandler).PROVIDER_USER_ID")
   public IntegrationInfo updateIntegrationInfo(User user, IntegrationInfo newInfo) {
 
     String integrationName = newInfo.getName();
@@ -431,6 +471,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     if (PYRAT_APP_NAME.equals(appName) && optionsId != null) {
       saveNewUserConnectionForMultipleOptionApp(
           options.get(PYRAT_APIKEY), user, PYRAT_APP_NAME, options.get(PYRAT_ALIAS));
+    } else if (RAID_APP_NAME.equals(appName) && optionsId != null) {
+      saveNewUserConnectionForMultipleOAuthApp(user, RAID_APP_NAME, options.get(RAID_ALIAS));
     } else if (GALAXY_APP_NAME.equals(appName) && optionsId != null) {
       saveNewUserConnectionForMultipleOptionApp(
           options.get(GALAXY_APIKEY), user, GALAXY_APP_NAME, options.get(GALAXY_ALIAS));
@@ -460,6 +502,27 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     conn.setAccessToken(token);
     // These user tokens do not expire, and the expiry time isn't checked, i.e api keys
     conn.setExpireTime(0L);
+    userConnManager.save(conn);
+  }
+
+  private void saveNewUserConnectionForMultipleOAuthApp(
+      User user, String appName, String discriminant) {
+    Optional<UserConnection> existingConnection =
+        userConnManager.findByUserNameProviderName(user.getUsername(), appName, discriminant);
+    UserConnection conn = existingConnection.orElse(new UserConnection());
+    if (existingConnection.isEmpty()) {
+      conn.setDisplayName(appName + " User Token");
+      conn.setId(new UserConnectionId(user.getUsername(), appName, discriminant));
+      Optional<Integer> existingMaxRank =
+          userConnManager.findMaxRankByUserNameProviderName(user.getUsername(), appName);
+      if (existingMaxRank.isPresent()) {
+        conn.setRank(existingMaxRank.get() + 1);
+      } else {
+        conn.setRank(1);
+      }
+    }
+    conn.setAccessToken(null); // setting the token to null since it is set by the OAuth flow
+    conn.setExpireTime(null);
     userConnManager.save(conn);
   }
 
@@ -504,7 +567,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   @Override
-  @CacheEvict(value = INTEGRATION_INFO, key = "#user.username + #appName")
+  @CacheEvict( // TODO[nik]: call this when connection is not ALILVE
+      value = INTEGRATION_INFO,
+      key =
+          "#user.username + #appName +"
+              + " T(com.researchspace.service.IntegrationsHandler).PROVIDER_USER_ID")
   public void saveAppOptions(
       Long optionsId,
       Map<String, String> options,
@@ -512,10 +579,16 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       boolean trustedOrigin,
       User user) {
     // remove the apiKey from the option otherwise it is saved in clear on the database
-    if (PYRAT_APP_NAME.equals(appName)) {
+    if (PYRAT_APP_NAME.equals(appName) || RAID_APP_NAME.equals(appName)) {
       Map<String, String> safeMap = new LinkedHashMap<>();
       safeMap.putAll(options);
-      safeMap.remove(PYRAT_APIKEY);
+      String apiKeymap = "";
+      if (PYRAT_APP_NAME.equals(appName)) {
+        apiKeymap = PYRAT_APIKEY;
+        safeMap.remove(apiKeymap);
+      } else if (RAID_APP_NAME.equals(appName)) {
+        apiKeymap = RAID_OAUTH_CONNECTED;
+      }
       appConfigMgr.saveAppConfigElementSet(safeMap, optionsId, trustedOrigin, user);
     } else {
       appConfigMgr.saveAppConfigElementSet(options, optionsId, trustedOrigin, user);
@@ -524,13 +597,20 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   @Override
-  @CacheEvict(value = INTEGRATION_INFO, key = "#user.username + #appName")
+  @CacheEvict(
+      value = INTEGRATION_INFO,
+      key =
+          "#user.username + #appName +"
+              + " T(com.researchspace.service.IntegrationsHandler).PROVIDER_USER_ID")
   public void deleteAppOptions(Long optionsId, String appName, User user) {
     AppConfigElementSet configSetBeforeRemoval = appConfigMgr.getAppConfigElementSetById(optionsId);
     appConfigMgr.deleteAppConfigSet(optionsId, user);
     if (PYRAT_APP_NAME.equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
           user, appName, PYRAT_ALIAS, configSetBeforeRemoval);
+    } else if (RAID_APP_NAME.equals(appName)) {
+      deleteConfigOptionsForAppsWithMultipleOptionSet(
+          user, appName, RAID_ALIAS, configSetBeforeRemoval);
     }
   }
 
@@ -540,6 +620,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DATAVERSE_APP_NAME:
       case GITHUB_APP_NAME:
       case ORCID_APP_NAME:
+      case RAID_APP_NAME:
       case FIGSHARE_APP_NAME:
       case OWNCLOUD_APP_NAME:
       case NEXTCLOUD_APP_NAME:
@@ -567,6 +648,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case PROTOCOLS_IO_APP_NAME:
       case DMPTOOL_APP_NAME:
       case PYRAT_APP_NAME:
+      case RAID_APP_NAME:
       case JOVE_APP_NAME:
         return true;
     }

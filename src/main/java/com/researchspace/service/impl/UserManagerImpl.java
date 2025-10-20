@@ -331,7 +331,11 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   @CachePut(
       value = "com.researchspace.model.UserPreference",
       key = "#username + #preference.name()")
-  @CacheEvict(value = CacheNames.INTEGRATION_INFO, key = "#username + #preference.name()")
+  @CacheEvict(
+      value = CacheNames.INTEGRATION_INFO,
+      key =
+          "#username + #preference.name() +"
+              + " T(com.researchspace.service.IntegrationsHandler).PROVIDER_USER_ID")
   public UserPreference setPreference(Preference preference, String value, String username) {
     User subject = getUserByUsername(username, true);
     Validate.notNull(preference, "preference can't be null");

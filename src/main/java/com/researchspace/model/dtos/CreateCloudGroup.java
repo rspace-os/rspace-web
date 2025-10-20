@@ -2,6 +2,7 @@ package com.researchspace.model.dtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.User;
+import com.researchspace.webapp.integrations.raid.RaIDReference;
 import java.io.Serializable;
 import java.util.Arrays;
 import lombok.Getter;
@@ -17,6 +18,7 @@ public class CreateCloudGroup implements Serializable {
   private String piEmail;
   private String groupName;
   private String[] emails;
+  private RaIDReference raid;
   @JsonIgnore private User sessionUser;
 
   public CreateCloudGroup() {
@@ -24,17 +26,23 @@ public class CreateCloudGroup implements Serializable {
     groupName = "";
     emails = new String[] {""};
     this.sessionUser = null;
+    this.raid = null;
   }
 
   @Override
   public String toString() {
-    return "CreateCloudGroup principalEmail="
+    return "CreateCloudGroup{"
+        + "principalEmail='"
         + piEmail
-        + ", groupName="
+        + '\''
+        + ", groupName='"
         + groupName
+        + '\''
         + ", emails="
         + Arrays.toString(emails)
-        + "]";
+        + ", raid="
+        + raid
+        + '}';
   }
 
   @Override
@@ -44,6 +52,7 @@ public class CreateCloudGroup implements Serializable {
     result = prime * result + Arrays.hashCode(emails);
     result = prime * result + ((groupName == null) ? 0 : groupName.hashCode());
     result = prime * result + ((piEmail == null) ? 0 : piEmail.hashCode());
+    result = prime * result + ((raid == null) ? 0 : raid.hashCode());
     return result;
   }
 
