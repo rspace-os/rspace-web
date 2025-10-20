@@ -145,7 +145,8 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       ExportToFileConfig config, User exporter, ExportOperationDetails details, FileProperty fp) {
 
     EcatDocumentFile resultFile = null;
-    Folder parent = recordManager.getGalleryMediaFolderForUser(Folder.EXPORTS_FOLDER_NAME, exporter);
+    Folder parent =
+        recordManager.getGalleryMediaFolderForUser(Folder.EXPORTS_FOLDER_NAME, exporter);
     if (parent == null) {
       throw new IllegalStateException("Could not obtain the PDF export folder.");
     }

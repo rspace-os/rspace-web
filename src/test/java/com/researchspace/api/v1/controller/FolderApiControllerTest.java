@@ -21,7 +21,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.api.v1.model.ApiRecordTreeItemListing;
 import com.researchspace.api.v1.model.ApiRecordType;
@@ -34,15 +33,9 @@ import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.EcatMediaFile;
-import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
-import com.researchspace.model.Role;
-import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
-import com.researchspace.model.UserGroup;
 import com.researchspace.model.core.RecordType;
-import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.permissions.RecordSharingACL;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
 import com.researchspace.model.record.Folder;
@@ -55,6 +48,7 @@ import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.FolderNavigationService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordDeletionManager;
@@ -90,6 +84,7 @@ public class FolderApiControllerTest {
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock FolderManager folderMgr;
+  @Mock FolderNavigationService folderNavigationService;
   @Mock RecordManager recordMgr;
   @Mock RecordDeletionManager deletionMgr;
   @Mock IPropertyHolder properties;
@@ -295,146 +290,6 @@ public class FolderApiControllerTest {
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.of(createdFolder));
     ApiFolder created = controller.getFolder(1L, false, null, subject);
     assertNotNull(created);
-  }
-
-  @Test
-  public void getFolderWhenUserOwnsParentFolderThenParentSet() {
-    Folder parentFolder = TestFactory.createAFolder("parent", subject);
-    Folder childFolder = TestFactory.createAFolder("child", subject);
-    parentFolder.addChild(childFolder, subject);
-
-    mockBaseUrl();
-    when(folderMgr.getFolderSafe(childFolder.getId(), subject))
-        .thenReturn(Optional.of(childFolder));
-
-    ApiFolder apiFolder = controller.getFolder(childFolder.getId(), false, null, subject);
-
-    assertEquals(parentFolder.getId(), apiFolder.getParentFolderId());
-  }
-
-  @Test
-  public void getFolderWhenUserHasSharedParentFolderThenParentSet() {
-    User otherUser = TestFactory.createAnyUser("otherUser");
-    User piUser = TestFactory.createAnyUserWithRole("piUser", Role.PI_ROLE.getName());
-
-    // Create a group with piUser as PI and otherUser as member
-    Group group = TestFactory.createAnyGroup(piUser, otherUser);
-
-    Folder sharedSnippetFolder =
-        TestFactory.createAFolder(
-            "sharedSnippets",
-            TestFactory.createAnyUserWithRole("sysadmin", Role.SYSTEM_ROLE.getName()));
-    sharedSnippetFolder.addType(RecordType.SHARED_FOLDER);
-    sharedSnippetFolder.setSharingACL(
-        RecordSharingACL.createACLForUserOrGroup(group, PermissionType.READ));
-
-    group.setSharedSnippetGroupFolderId(sharedSnippetFolder.getId());
-    UserGroup userGroup = new UserGroup(otherUser, group, RoleInGroup.DEFAULT);
-    otherUser.setUserGroups(Collections.singleton(userGroup));
-
-    Folder childFolder = TestFactory.createAFolder("child", subject);
-    sharedSnippetFolder.addChild(childFolder, subject);
-
-    mockBaseUrl();
-    when(folderMgr.getFolderSafe(childFolder.getId(), otherUser))
-        .thenReturn(Optional.of(childFolder));
-    when(permissionUtils.isPermitted(sharedSnippetFolder, PermissionType.READ, otherUser))
-        .thenReturn(true);
-
-    // parentId not provided
-    ApiFolder apiFolder = controller.getFolder(childFolder.getId(), true, null, otherUser);
-
-    assertEquals(sharedSnippetFolder.getId(), apiFolder.getParentFolderId());
-    assertNotNull(apiFolder.getPathToRootFolder());
-  }
-
-  @Test
-  public void getFolderParentInfoNullWhenUserHasNoParent() {
-    User otherUser = TestFactory.createAnyUser("otherUser");
-    Folder parentFolder = TestFactory.createAFolder("parent", subject);
-    Folder childFolder = TestFactory.createAFolder("child", subject);
-    parentFolder.addChild(childFolder, subject);
-
-    mockBaseUrl();
-    when(folderMgr.getFolderSafe(childFolder.getId(), otherUser))
-        .thenReturn(Optional.of(childFolder));
-
-    // get child as otherUser
-    ApiFolder apiFolder = controller.getFolder(childFolder.getId(), true, null, otherUser);
-
-    assertNull(apiFolder.getParentFolderId());
-    assertTrue(apiFolder.getPathToRootFolder().isEmpty());
-  }
-
-  @Test
-  public void getFolderPathToRootFolder() {
-    Folder root = TestFactory.createAFolder("root", subject);
-    Folder level1 = TestFactory.createAFolder("level1", subject);
-    Folder level2 = TestFactory.createAFolder("level2", subject);
-    root.addChild(level1, subject);
-    level1.addChild(level2, subject);
-
-    mockBaseUrl();
-    when(folderMgr.getFolderSafe(level2.getId(), subject)).thenReturn(Optional.of(level2));
-
-    ApiFolder apiFolder = controller.getFolder(level2.getId(), true, null, subject);
-    assertEquals(2, apiFolder.getPathToRootFolder().size());
-  }
-
-  @Test
-  public void getFolderPathToRootStopsAtGalleryFolder() {
-    // User Root → Gallery (ROOT_MEDIA) → Gallery Subfolder
-    Folder userRoot = TestFactory.createAFolder("UserRoot", subject);
-
-    Folder galleryRoot = TestFactory.createAFolder("Gallery", subject);
-    galleryRoot.addType(RecordType.ROOT_MEDIA);
-    userRoot.addChild(galleryRoot, subject);
-
-    Folder gallerySubfolder = TestFactory.createAFolder("subfolder", subject);
-    galleryRoot.addChild(gallerySubfolder, subject);
-
-    mockBaseUrl();
-    when(folderMgr.getFolderSafe(gallerySubfolder.getId(), subject))
-        .thenReturn(Optional.of(gallerySubfolder));
-
-    ApiFolder apiFolder = controller.getFolder(gallerySubfolder.getId(), true, null, subject);
-
-    assertEquals(galleryRoot.getId(), apiFolder.getParentFolderId());
-    assertNotNull(apiFolder.getPathToRootFolder());
-    // Path should stop at Gallery folder
-    assertEquals(1, apiFolder.getPathToRootFolder().size());
-    assertEquals(galleryRoot.getId(), apiFolder.getPathToRootFolder().get(0).getId());
-  }
-
-  @Test
-  public void getFolderWithoutPathToRootWhenNotRequested() {
-    Folder parentFolder = TestFactory.createAFolder("parent", subject);
-    Folder childFolder = TestFactory.createAFolder("child", subject);
-    parentFolder.addChild(childFolder, subject);
-
-    mockBaseUrl();
-    when(folderMgr.getFolderSafe(childFolder.getId(), subject))
-        .thenReturn(Optional.of(childFolder));
-
-    ApiFolder apiFolder = controller.getFolder(childFolder.getId(), false, null, subject);
-
-    assertNull(apiFolder.getPathToRootFolder());
-    // parentFolderId is still set by ApiFolder constructor as user owns the folder
-    assertEquals(parentFolder.getId(), apiFolder.getParentFolderId());
-  }
-
-  @Test(expected = ApiRuntimeException.class)
-  public void getFolderWithInvalidParentIdThrowsApiRuntimeException() {
-    Folder actualParent = TestFactory.createAFolder("actualParent", subject);
-    Folder childFolder = TestFactory.createAFolder("child", subject);
-    actualParent.addChild(childFolder, subject);
-
-    Folder wrongParent = TestFactory.createAFolder("wrongParent", subject);
-
-    when(folderMgr.getFolderSafe(childFolder.getId(), subject))
-        .thenReturn(Optional.of(childFolder));
-
-    controller.getFolder(childFolder.getId(), true, wrongParent.getId(), subject);
   }
 
   @Test

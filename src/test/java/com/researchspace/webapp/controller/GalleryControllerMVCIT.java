@@ -114,7 +114,9 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   @Test
   public void testOpeningGalleryOnSpecificFolder() throws Exception {
     Long audioFolderId =
-        recordManager.getGalleryMediaFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, owner).getId();
+        recordManager
+            .getGalleryMediaFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, owner)
+            .getId();
     MvcResult result =
         mockMvc
             .perform(
@@ -132,7 +134,9 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   public void testOpeningGalleryOnSpecificFolderFromItem() throws Exception {
     RecordInformation imageInfo = uploadImageToGallery();
     Long imageFolderId =
-        recordManager.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, owner).getId();
+        recordManager
+            .getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, owner)
+            .getId();
     MvcResult result =
         mockMvc
             .perform(
@@ -149,7 +153,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
   @Test
   public void uploadToTargetFolder_RSPAC_1703() throws Exception {
-    Folder imagesFolder = recordManager.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, owner);
+    Folder imagesFolder =
+        recordManager.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, owner);
     final long initialCountInImagesFolder = getRecordCountInFolderForUser(imagesFolder.getId());
     Folder target = createSubFolder(imagesFolder, "imagesTarget", owner);
     assertEquals(0, getRecordCountInFolderForUser(target.getId()));
@@ -725,7 +730,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   private void create5FolderAnd5DocsInGalleryDocFolder(User user) throws IOException {
-    Folder parentFolder = recordManager.getGalleryMediaFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, user);
+    Folder parentFolder =
+        recordManager.getGalleryMediaFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, user);
     int i = 0;
     while (i < 5) {
       folderMgr.createNewFolder(parentFolder.getId(), "some folder", user);

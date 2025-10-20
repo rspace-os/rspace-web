@@ -5,26 +5,23 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 
 import com.google.common.base.Supplier;
 import com.researchspace.api.v1.FolderApi;
-import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.api.v1.model.ApiRecordTreeItemListing;
 import com.researchspace.api.v1.model.RecordTreeItemInfo;
-import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
-import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.FolderNavigationService;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
@@ -35,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.collections4.CollectionUtils;
@@ -53,7 +51,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   private @Autowired FolderManager folderMgr;
   private @Autowired RecordDeletionManager recordDeletionManager;
   private @Autowired SharingHandler recordShareHandler;
-  private @Autowired PermissionUtils permissionUtils;
+  private @Autowired FolderNavigationService folderNavigationService;
 
   /** Only name field of folder is required. */
   @Override
@@ -128,95 +126,25 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   }
 
   private void populateParentAndPathToRoot(Long parentId, User user, Folder folder, ApiFolder rc) {
-    Optional<Folder> parentFolder = findParentForUser(parentId, user, folder);
+    Optional<Folder> parentFolder =
+        folderNavigationService.findParentForUser(parentId, user, folder);
 
     if (parentFolder.isPresent()) {
       rc.setParentFolderId(parentFolder.get().getId());
     }
 
-    List<ApiFolder> pathToRootFolder = new ArrayList<>();
-    while (parentFolder.isPresent()) {
-      Folder currFolder = parentFolder.get();
-      pathToRootFolder.add(new ApiFolder(currFolder, user));
-      if (currFolder.hasType(RecordType.ROOT_MEDIA)) {
-        break; // for gallery subfolders, stop at Gallery level to not include users root folder
-      }
-      parentFolder = getOwnerOrSharedParent(user, currFolder);
-    }
-    rc.setPathToRootFolder(pathToRootFolder);
-  }
+    List<Folder> pathToRoot = folderNavigationService.buildPathToRootFolder(folder, user, parentId);
+    List<ApiFolder> apiPath =
+        pathToRoot.stream()
+            .map(f -> new ApiFolder(f, user))
+            .collect(Collectors.toList());
 
-  /**
-   * Finds the parent folder where the user is either the owner or has access as a shared folder.
-   * Handles case of a notebook having 2 parents for the same user e.g. users workspace and a shared
-   * folder they have access to. parentId can be provided in this case to specify which parent to
-   * use - if not provided, the owner path will be returned.
-   *
-   * @param parentId the parent of the folder, only required in the case of a notebook both owned by
-   *     the user and shared to another location
-   * @param user the user to find the parent context for
-   * @param folder the folder to find the parent for
-   * @return the parent folder in the given context
-   * @throws ApiRuntimeException if the supplied parentId isn't a parent of the supplied folder
-   */
-  private Optional<Folder> findParentForUser(Long parentId, User user, Folder folder) {
-    if (parentId != null) {
-      folder.getParents().stream()
-          .map(RecordToFolder::getFolder)
-          .filter(f -> f.getId().equals(parentId))
-          .findAny()
-          .orElseThrow(
-              () ->
-                  new ApiRuntimeException(
-                      String.format("Folder %s is not a parent of %s", parentId, folder.getId())));
-      return folderMgr.getFolderSafe(parentId, user);
-    } else {
-      return getOwnerOrSharedParent(user, folder);
-    }
-  }
-
-  /**
-   * Finds the parent folder context for a given folder and user.
-   *
-   * <p>A folder can appear in one of these contexts:
-   *
-   * <ul>
-   *   <li>Owned by the user (workspace or shared group subfolder)
-   *   <li>Shared folder the user has read access to (workspace group shared or gallery snippets)
-   * </ul>
-   *
-   * <p>Notebooks are a special case of folder that can have multiple parents, but this is handled
-   * separately by {@link #findParentForUser} by supplying the parentId. In the case of a notebook
-   * having 2 parents and parentId not being provided in {@link #findParentForUser}, and therefore
-   * being handled in this method, this method would return the workspace context first.
-   *
-   * @param user the user viewing the folder
-   * @param folder the folder to find the parent context for
-   * @return the parent folder if found, empty otherwise
-   */
-  private Optional<Folder> getOwnerOrSharedParent(User user, Folder folder) {
-    return folder.getParentFolders().stream()
-        .filter(parent -> inUsersWorkspace(user, parent))
-        .findAny()
-        .or(
-            () ->
-                folder.getParentFolders().stream()
-                    .filter(parent -> sharedFolderWithAccess(user, parent))
-                    .findAny());
-  }
-
-  private boolean inUsersWorkspace(User user, Folder folder) {
-    return folder.getOwner().equals(user) && !folder.isSharedFolder();
-  }
-
-  private boolean sharedFolderWithAccess(User user, Folder folder) {
-    return folder.isSharedFolder()
-        && permissionUtils.isPermitted(folder, PermissionType.READ, user);
+    rc.setPathToRootFolder(apiPath);
   }
 
   @Override
   public void deleteFolder(@PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    Folder folder = loadFolder(id, user); // test it exists and is a folder.
+    Folder folder = loadFolder(id, user);
     if (folder.isSystemFolder() || folder.isRootFolder()) {
       throw new IllegalArgumentException("Cannot delete user home folder or a system folder");
     }
