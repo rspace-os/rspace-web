@@ -62,6 +62,7 @@
         <div id="chemistry.available.description"><spring:message code="system.property.description.chemistry.available" /></div>
         <div id="slack.available.description"><spring:message code="system.property.description.slack.available" /></div>
         <div id="orcid.available.description"><spring:message code="system.property.description.orcid.available" /></div>
+        <div id="raid.available.description"><spring:message code="system.property.description.raid.available" /></div>
         <div id="dataverse.available.description"><spring:message code="system.property.description.repo.available" arguments="Dataverse"/></div>
         <div id="figshare.available.description"><spring:message code="system.property.description.repo.available" arguments="Figshare"/></div>
         <div id="clustermarket.available.description"><spring:message code="system.property.description.clustermarket.available" /></div>

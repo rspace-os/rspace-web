@@ -594,14 +594,14 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
             doc.getId(), "", false, false, null, modelTss, mockHttpSession, user::getUsername);
     assertEquals(documentViewUrl, userOpensDocument.getViewName());
 
-    // for pi, who sees it as a part of their notebook, should open in notebook view
+    // for pi, still opening in document view
     logoutAndLoginAs(pi);
     ModelAndView piOpensDocument =
         controller.openDocument(
             doc.getId(), "", false, false, null, modelTss, mockHttpSession, pi::getUsername);
     assertEquals(documentViewUrl, piOpensDocument.getViewName());
 
-    // for second user, who sees it as a part of pi's shared notebook, still open in doc view
+    // for second user still opening in document view
     logoutAndLoginAs(secondUser);
     ModelAndView secondUserOpensDocument =
         controller.openDocument(
