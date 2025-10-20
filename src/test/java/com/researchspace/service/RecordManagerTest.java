@@ -973,9 +973,6 @@ public class RecordManagerTest extends SpringTransactionalTest {
     Folder sharedSubfolder =
         folderMgr.createNewFolder(g.getCommunalGroupFolderId(), "sharedSubfolder", pi);
     assertTrue(sharedSubfolder.isSharedFolder());
-    /* !!! currently not working, due to sharing code not populating folder.children array,
-    which makes removing from folder (part of move) to fail.
-    this doesn't seem to be problem on real setup, just in unit test. !!! */
     assertTrue(
         recordMgr
             .move(doc.getId(), sharedSubfolder.getId(), g.getCommunalGroupFolderId(), pi)
