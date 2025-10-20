@@ -9,11 +9,13 @@ import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.api.v1.model.ApiRecordTreeItemListing;
 import com.researchspace.api.v1.model.RecordTreeItemInfo;
+import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RecordToFolder;
@@ -51,6 +53,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   private @Autowired FolderManager folderMgr;
   private @Autowired RecordDeletionManager recordDeletionManager;
   private @Autowired SharingHandler recordShareHandler;
+  @Autowired private PermissionUtils permissionUtils;
 
   /** Only name field of folder is required. */
   @Override
@@ -125,20 +128,20 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   }
 
   private void populateParentAndPathToRoot(Long parentId, User user, Folder folder, ApiFolder rc) {
-    Optional<Folder> parent = findParentForUser(parentId, user, folder);
+    Optional<Folder> parentFolder = findParentForUser(parentId, user, folder);
 
-    if (parent.isPresent()) {
-      rc.setParentFolderId(parent.get().getId());
+    if (parentFolder.isPresent()) {
+      rc.setParentFolderId(parentFolder.get().getId());
     }
 
     List<ApiFolder> pathToRootFolder = new ArrayList<>();
-    while (parent.isPresent()) {
-      Folder current = parent.get();
-      pathToRootFolder.add(new ApiFolder(current, user));
-      if (current.hasType(RecordType.ROOT_MEDIA)) {
+    while (parentFolder.isPresent()) {
+      Folder currFolder = parentFolder.get();
+      pathToRootFolder.add(new ApiFolder(currFolder, user));
+      if (currFolder.hasType(RecordType.ROOT_MEDIA)) {
         break; // for gallery subfolders, stop at Gallery level to not include users root folder
       }
-      parent = current.getOwnerOrSharedParentForUser(user);
+      parentFolder = getOwnerOrSharedParent(user, currFolder);
     }
     rc.setPathToRootFolder(pathToRootFolder);
   }
@@ -168,8 +171,47 @@ public class FolderApiController extends BaseApiController implements FolderApi 
                       String.format("Folder %s is not a parent of %s", parentId, folder.getId())));
       return folderMgr.getFolderSafe(parentId, user);
     } else {
-      return folder.getOwnerOrSharedParentForUser(user);
+      return getOwnerOrSharedParent(user, folder);
     }
+  }
+
+  /**
+   * Finds the parent folder context for a given folder and user.
+   *
+   * <p>A folder can appear in one of these contexts:
+   *
+   * <ul>
+   *   <li>Owned by the user (workspace or shared group subfolder)
+   *   <li>Shared folder the user has read access to (workspace group shared or gallery snippets)
+   * </ul>
+   *
+   * <p>Notebooks are a special case of folder that can have multiple parents, but this is handled
+   * separately by {@link #findParentForUser} by supplying the parentId. In the case of a notebook
+   * having 2 parents and parentId not being provided in {@link #findParentForUser}, and therefore
+   * being handled in this method, this method would return the workspace context first.
+   *
+   * @param user the user viewing the folder
+   * @param folder the folder to find the parent context for
+   * @return the parent folder if found, empty otherwise
+   */
+  private Optional<Folder> getOwnerOrSharedParent(User user, Folder folder) {
+    return folder.getParentFolders().stream()
+        .filter(parent -> inUsersWorkspace(user, parent))
+        .findAny()
+        .or(
+            () ->
+                folder.getParentFolders().stream()
+                    .filter(parent -> sharedFolderWithAccess(user, parent))
+                    .findAny());
+  }
+
+  private boolean inUsersWorkspace(User user, Folder folder) {
+    return folder.getOwner().equals(user) && !folder.isSharedFolder();
+  }
+
+  private boolean sharedFolderWithAccess(User user, Folder folder) {
+    return folder.isSharedFolder()
+        && permissionUtils.isPermitted(folder, PermissionType.READ, user);
   }
 
   @Override

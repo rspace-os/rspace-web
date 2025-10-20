@@ -27,6 +27,7 @@ import com.researchspace.api.v1.model.ApiRecordTreeItemListing;
 import com.researchspace.api.v1.model.ApiRecordType;
 import com.researchspace.api.v1.model.LinkableApiObject;
 import com.researchspace.api.v1.model.RecordTreeItemInfo;
+import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -93,6 +94,7 @@ public class FolderApiControllerTest {
   @Mock RecordDeletionManager deletionMgr;
   @Mock IPropertyHolder properties;
   @Mock SharingHandler recordShareHandler;
+  @Mock PermissionUtils permissionUtils;
 
   @InjectMocks FolderApiController controller;
   User subject;
@@ -336,6 +338,8 @@ public class FolderApiControllerTest {
     mockBaseUrl();
     when(folderMgr.getFolderSafe(childFolder.getId(), otherUser))
         .thenReturn(Optional.of(childFolder));
+    when(permissionUtils.isPermitted(sharedSnippetFolder, PermissionType.READ, otherUser))
+        .thenReturn(true);
 
     // parentId not provided
     ApiFolder apiFolder = controller.getFolder(childFolder.getId(), true, null, otherUser);
