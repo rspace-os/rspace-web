@@ -17,8 +17,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class FolderNavigationServiceImpl implements FolderNavigationService {
 
-  @Autowired private FolderManager folderManager;
-  @Autowired private PermissionUtils permissionUtils;
+  private final FolderManager folderManager;
+  private final PermissionUtils permissionUtils;
+
+  @Autowired
+  public FolderNavigationServiceImpl(FolderManager folderManager, PermissionUtils permissionUtils) {
+    this.folderManager = folderManager;
+    this.permissionUtils = permissionUtils;
+  }
 
   @Override
   public Optional<Folder> findParentForUser(Long parentId, User user, Folder folder) {
