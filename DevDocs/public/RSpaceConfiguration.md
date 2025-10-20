@@ -299,6 +299,28 @@ The following optional properties enable RSpace to connect to Orcid  API (if thi
 * **orcid.client.id** Client id of Orcid App registered for given RSpace instance
 * **orcid.client.secret** Client secret of Orcid App registered for given RSpace instance
 
+The following optional properties enable RSpace to connect to RaID API (if this integration is enabled):
+* **raid.server.config** configures the RaID server alias associated to *server url* .
+  **raid.server.config** should be configured (for local use) in dev/deployment.properties as we 
+                         have not got a central RaID server common to all RSpace instances.
+  * For example:
+```
+raid.server.config={ 
+    "DEMO": { 
+        "url": "https://api.demo.raid.org.au", 
+        "authUrl": "https://iam.demo.raid.org.au/realms/raid/protocol/openid-connect", 
+        "servicePointId": 20000030, 
+        "clientId": "pasteHereClientId", 
+        "clientSecret": "pasteHereClientSecret" 
+    }, 
+    "PROD": { 
+        "url": "https://api.production.raid.org.au", 
+        "authUrl": "https://iam.production.raid.org.au/realms/raid/protocol/openid-connect", 
+        "servicePointId": 20000030, 
+        "clientId": "pasteHereClientId", 
+        "clientSecret": "pasteHereClientSecret"
+}
+```
 The following optional properties enable RSpace to connect to Github API (if this integration is enabled):
 * **github.client.id** Client id of Github registered for given RSpace instance
 * **github.secret** Client secret of Github registered for given RSpace instance

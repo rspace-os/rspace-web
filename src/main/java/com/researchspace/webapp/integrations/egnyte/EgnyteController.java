@@ -122,7 +122,7 @@ public class EgnyteController {
   public AjaxReturnObject<Boolean> disconnectUserFromEgnyteFilestore(
       HttpSession session, Principal principal) {
 
-    userConnectionManager.deleteByUserAndProvider(EGNYTE_APP_NAME, principal.getName());
+    userConnectionManager.deleteByUserAndProvider(principal.getName(), EGNYTE_APP_NAME);
     session.setAttribute(SessionAttributeUtils.EXT_FILESTORE_CONNECTION_OK, false);
     return new AjaxReturnObject<Boolean>(true, null);
   }

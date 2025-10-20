@@ -2,21 +2,19 @@ package com.researchspace.webapp.integrations.pyrat;
 
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.User;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.integrations.MultiInstanceBaseClient;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.PostConstruct;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +30,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Slf4j
-public class PyratClient {
+public class PyratClient extends MultiInstanceBaseClient<PyratServerConfigurationDTO> {
 
   public static final String PYRAT_CONFIGURED_SERVERS = "PYRAT_CONFIGURED_SERVERS";
   public static final String PYRAT_URL = "PYRAT_URL";
@@ -50,10 +48,10 @@ public class PyratClient {
     }
   }
 
-  @Value("${pyrat.server.config}")
-  private String mapString;
-
-  @Getter private Map<String, PyratServerDTO> serverByAlias;
+  @Setter
+  @Getter
+  @Value("${pyrat.server.config:}")
+  private String configurationMap;
 
   private final RestTemplate restTemplate;
   private @Autowired UserConnectionManager source;
@@ -63,21 +61,16 @@ public class PyratClient {
     this.restTemplate = new RestTemplate();
   }
 
-  @PostConstruct
-  private void init() throws JsonProcessingException {
-    if (StringUtils.isBlank(mapString)) {
-      this.serverByAlias = new HashMap<>();
-    } else {
-      ObjectMapper objectMapper = new ObjectMapper();
-      serverByAlias = objectMapper.readValue(mapString, new TypeReference<>() {});
-    }
+  @Override
+  protected TypeReference<Map<String, PyratServerConfigurationDTO>> getTypeReference() {
+    return new TypeReference<>() {};
   }
 
   public JsonNode version(String serverAlias)
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     return restTemplate
         .exchange(
-            UriComponentsBuilder.fromUriString(getServerUrl(serverAlias) + "/version")
+            UriComponentsBuilder.fromUriString(getApiBaseUrl(serverAlias) + "/version")
                 .build()
                 .toUri(),
             HttpMethod.GET,
@@ -90,7 +83,7 @@ public class PyratClient {
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     return restTemplate
         .exchange(
-            UriComponentsBuilder.fromUriString(getServerUrl(serverAlias) + "/locations")
+            UriComponentsBuilder.fromUriString(getApiBaseUrl(serverAlias) + "/locations")
                 .queryParams(queryParams)
                 .build()
                 .toUri(),
@@ -104,7 +97,7 @@ public class PyratClient {
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     var response =
         restTemplate.exchange(
-            UriComponentsBuilder.fromUriString(getServerUrl(serverAlias) + "/animals")
+            UriComponentsBuilder.fromUriString(getApiBaseUrl(serverAlias) + "/animals")
                 .queryParams(queryParams)
                 .build()
                 .toUri(),
@@ -118,7 +111,7 @@ public class PyratClient {
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     var response =
         restTemplate.exchange(
-            UriComponentsBuilder.fromUriString(getServerUrl(serverAlias) + "/pups")
+            UriComponentsBuilder.fromUriString(getApiBaseUrl(serverAlias) + "/pups")
                 .queryParams(queryParams)
                 .build()
                 .toUri(),
@@ -160,7 +153,7 @@ public class PyratClient {
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     return restTemplate
         .exchange(
-            UriComponentsBuilder.fromUriString(getServerUrl(serverAlias) + "/projects")
+            UriComponentsBuilder.fromUriString(getApiBaseUrl(serverAlias) + "/projects")
                 .queryParams(queryParams)
                 .build()
                 .toUri(),
@@ -174,7 +167,7 @@ public class PyratClient {
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     return restTemplate
         .exchange(
-            UriComponentsBuilder.fromUriString(getServerUrl(serverAlias) + "/users")
+            UriComponentsBuilder.fromUriString(getApiBaseUrl(serverAlias) + "/users")
                 .queryParams(queryParams)
                 .build()
                 .toUri(),
@@ -188,7 +181,7 @@ public class PyratClient {
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     return restTemplate
         .exchange(
-            UriComponentsBuilder.fromUriString(getServerUrl(serverAlias) + "/licenses")
+            UriComponentsBuilder.fromUriString(getApiBaseUrl(serverAlias) + "/licenses")
                 .queryParams(queryParams)
                 .build()
                 .toUri(),
@@ -198,21 +191,12 @@ public class PyratClient {
         .getBody();
   }
 
-  private String getServerUrl(String serverAlias) {
-    if (!serverByAlias.containsKey(serverAlias)
-        || StringUtils.isBlank(serverByAlias.get(serverAlias).getUrl())) {
-      throw new HttpClientErrorException(
-          HttpStatus.NOT_FOUND, "Pyrat server url for alias=\"" + serverAlias + "\" not found");
-    }
-    return serverByAlias.get(serverAlias).getUrl();
-  }
-
   private String getServerSecret(String serverAlias) {
-    if (!serverByAlias.containsKey(serverAlias)
-        || StringUtils.isBlank(serverByAlias.get(serverAlias).getToken())) {
+    if (!this.getServerMapByAlias().containsKey(serverAlias)
+        || StringUtils.isBlank(this.getServerMapByAlias().get(serverAlias).getToken())) {
       throw new HttpClientErrorException(
           HttpStatus.NOT_FOUND, "Pyrat server token for alias=\"" + serverAlias + "\" not found");
     }
-    return serverByAlias.get(serverAlias).getToken();
+    return this.getServerMapByAlias().get(serverAlias).getToken();
   }
 }
