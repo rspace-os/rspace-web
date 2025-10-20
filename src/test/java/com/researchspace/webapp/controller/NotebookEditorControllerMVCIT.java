@@ -68,6 +68,6 @@ public class NotebookEditorControllerMVCIT extends MVCTestBase {
   }
 
   private Long getFirstEntryId(Notebook notebook) {
-    return folderMgr.getRecordIds(notebook).get(0);
+    return folderMgr.getFolderChildrenIds(notebook).get(0);
   }
 }

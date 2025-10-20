@@ -473,7 +473,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
 
   private void makeSharedSnippetFolderAssertionsForUser(
       User aUser, String expectedName, boolean shouldFolderExist) {
-    Folder snippetFolder = recordMgr.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, aUser);
+    Folder snippetFolder = recordMgr.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, aUser);
     Folder snippetSharedFolder =
         snippetFolder.getSystemSubFolderByName(
             SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);

@@ -453,12 +453,6 @@ export default createTheme({
     },
     MuiTypography: {
       styleOverrides: {
-        h1: {
-          fontSize: "2rem",
-          fontWeight: 500,
-          color: "#5482b7",
-          textAlign: "center",
-        },
         subtitle1: {
           fontSize: "1.05rem",
           letterSpacing: "0.02em",

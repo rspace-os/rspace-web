@@ -529,7 +529,7 @@ public interface RecordManager {
    * @return The media folder, or <code>null</code> if it does not exist and it could not be
    *     created.
    */
-  Folder getGallerySubFolderForUser(String folderName, User user);
+  Folder getGalleryMediaFolderForUser(String folderName, User user);
 
   /**
    * Unlock all the locked records using RecordEditorTracker.

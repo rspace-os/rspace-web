@@ -118,7 +118,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     String apiKey = createNewApiKeyForUser(anyUser);
 
     Folder docGalleryFolder =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME, anyUser);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME, anyUser);
     ApiFolder folderPost = new ApiFolder();
     folderPost.setName("TestFolder");
     folderPost.setParentFolderId(docGalleryFolder.getId());

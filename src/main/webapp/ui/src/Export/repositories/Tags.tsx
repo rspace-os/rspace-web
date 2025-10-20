@@ -11,6 +11,10 @@ import docLinks from "../../assets/DocLinks";
 import Button from "@mui/material/Button";
 import TagListing from "../../components/Tags/TagListing";
 import { Optional } from "../../util/optional";
+import { ThemeProvider } from "@mui/material";
+import createAccentedTheme from "@/accentedTheme";
+import { HeadingContext } from "@/components/DynamicHeadingLevel";
+import { color, currentPage } from "@/util/pageBranding";
 
 /**
  * The definition of a tag as used in the export flow.
@@ -24,7 +28,7 @@ export type Tag = {
 
 function Tags<
   Fields extends { tags: Array<Tag> },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   loading,
@@ -32,94 +36,107 @@ function Tags<
   fieldOwner: FieldOwner;
   loading: boolean;
 }): React.ReactNode {
+  /*
+   * InputWrapper assumes that it is being used on a page with an accented theme,
+   * but the export dialog isn't always on such a page, so we need to provide
+   * the theme here. Similarly, it assumes that the heading level of the label
+   * can be determined from the current heading context, but the export dialog
+   * doesn't utilise heading contexts so we need to provide a level explicitly.
+   * Ideally the entire export dialog would use heading contexts for its
+   * subheadings and derive the accented theme from the current page.
+   */
   return (
-    <InputWrapper
-      error={false}
-      disabled={!fieldOwner.isFieldEditable("tags")}
-      value={fieldOwner.fieldValues.tags.map((t) => t.value).join(",")}
-      label="Tags and Controlled Vocabulary Terms"
-      helperText={null}
-      actions={
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={() => fieldOwner.setFieldsDirty({ tags: [] })}
-          sx={{ py: 0 }}
-          disabled={fieldOwner.fieldValues.tags.length === 0}
+    <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
+      <HeadingContext level={4}>
+        <InputWrapper
+          error={false}
+          disabled={!fieldOwner.isFieldEditable("tags")}
+          value={fieldOwner.fieldValues.tags.map((t) => t.value).join(",")}
+          label="Tags and Controlled Vocabulary Terms"
+          helperText={null}
+          actions={
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => fieldOwner.setFieldsDirty({ tags: [] })}
+              sx={{ py: 0 }}
+              disabled={fieldOwner.fieldValues.tags.length === 0}
+            >
+              Clear Tags
+            </Button>
+          }
         >
-          Clear Tags
-        </Button>
-      }
-    >
-      <FormHelperText sx={{ ml: 0, mb: 2 }}>
-        Add tags from controlled vocabularies to this export. The term&apos;s
-        value and URI will be included in the deposit&apos;s metadata. For more
-        info see{" "}
-        <a
-          href={docLinks.controlledVocabularies}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Tagging Documents and using Controlled Vocabularies
-        </a>
-        .
-      </FormHelperText>
-      {fieldOwner.fieldValues.tags.length === 0 &&
-        !fieldOwner.isFieldEditable("tags") && (
-          <NoValue label={fieldOwner.noValueLabel.tags ?? "None"} />
-        )}
-      <TagListing
-        tags={fieldOwner.fieldValues.tags.map((tag) => ({
-          value: tag.value,
-          uri: Optional.present(tag.uri),
-          vocabulary: Optional.present(tag.vocabulary),
-          version: Optional.present(tag.version),
-        }))}
-        {...(fieldOwner.isFieldEditable("tags")
-          ? {
-              onDelete: (index) => {
-                fieldOwner.setFieldsDirty({
-                  tags: ArrayUtils.splice(
-                    fieldOwner.fieldValues.tags,
-                    index,
-                    1
-                  ),
-                });
-              },
+          <FormHelperText sx={{ ml: 0, mb: 2 }}>
+            Add tags from controlled vocabularies to this export. The
+            term&apos;s value and URI will be included in the deposit&apos;s
+            metadata. For more info see{" "}
+            <a
+              href={docLinks.controlledVocabularies}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Tagging Documents and using Controlled Vocabularies
+            </a>
+            .
+          </FormHelperText>
+          {fieldOwner.fieldValues.tags.length === 0 &&
+            !fieldOwner.isFieldEditable("tags") && (
+              <NoValue label={fieldOwner.noValueLabel.tags ?? "None"} />
+            )}
+          <TagListing
+            tags={fieldOwner.fieldValues.tags.map((tag) => ({
+              value: tag.value,
+              uri: Optional.present(tag.uri),
+              vocabulary: Optional.present(tag.vocabulary),
+              version: Optional.present(tag.version),
+            }))}
+            {...(fieldOwner.isFieldEditable("tags")
+              ? {
+                  onDelete: (index) => {
+                    fieldOwner.setFieldsDirty({
+                      tags: ArrayUtils.splice(
+                        fieldOwner.fieldValues.tags,
+                        index,
+                        1,
+                      ),
+                    });
+                  },
+                }
+              : {})}
+            endAdornment={
+              fieldOwner.isFieldEditable("tags") && (
+                <Grid item>
+                  <AddTag<{
+                    enforce: true;
+                    tag: {
+                      value: string;
+                      vocabulary: string;
+                      uri: string;
+                      version: string;
+                    };
+                  }>
+                    enforceOntologies={true}
+                    onSelection={(tag: Tag) => {
+                      if (fieldOwner.fieldValues.tags.includes(tag)) {
+                        console.warn(
+                          "Preventing the same tag from being added twice",
+                        );
+                        return;
+                      }
+                      fieldOwner.setFieldsDirty({
+                        tags: [...fieldOwner.fieldValues.tags, tag],
+                      });
+                    }}
+                    value={fieldOwner.fieldValues.tags}
+                    disabled={loading}
+                  />
+                </Grid>
+              )
             }
-          : {})}
-        endAdornment={
-          fieldOwner.isFieldEditable("tags") && (
-            <Grid item>
-              <AddTag<{
-                enforce: true;
-                tag: {
-                  value: string;
-                  vocabulary: string;
-                  uri: string;
-                  version: string;
-                };
-              }>
-                enforceOntologies={true}
-                onSelection={(tag: Tag) => {
-                  if (fieldOwner.fieldValues.tags.includes(tag)) {
-                    console.warn(
-                      "Preventing the same tag from being added twice"
-                    );
-                    return;
-                  }
-                  fieldOwner.setFieldsDirty({
-                    tags: [...fieldOwner.fieldValues.tags, tag],
-                  });
-                }}
-                value={fieldOwner.fieldValues.tags}
-                disabled={loading}
-              />
-            </Grid>
-          )
-        }
-      />
-    </InputWrapper>
+          />
+        </InputWrapper>
+      </HeadingContext>
+    </ThemeProvider>
   );
 }
 

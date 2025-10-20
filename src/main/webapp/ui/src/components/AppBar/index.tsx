@@ -9,7 +9,6 @@ import {
   AccessibilityTipsIconButton,
 } from "../AccessibilityTips";
 import HelpDocs from "../Help/HelpDocs";
-import HelpIcon from "@mui/icons-material/Help";
 import { observer } from "mobx-react-lite";
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
@@ -331,7 +330,6 @@ type GalleryAppBarArgs = {
   };
 };
 
-// eslint-disable-next-line complexity -- yep, there's quite a lot of conditional logic here
 function GalleryAppBar({
   variant,
   currentPage,
@@ -363,9 +361,6 @@ function GalleryAppBar({
     FetchingData.getSuccessValue(uiNavigationData).do(({ bannerImgSrc }) => {
       setBrandingHref(bannerImgSrc);
     });
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - setBrandingHref wont meaningfully change
-     */
   }, [uiNavigationData]);
 
   const { showInventory, showSystem, showMyLabGroups } =
@@ -924,15 +919,12 @@ function GalleryAppBar({
                           const auth2 = window.gapi.auth2.getAuthInstance();
                           if (auth2) {
                             void auth2.signOut().then(() => {
-                              // eslint-disable-next-line no-console
                               console.log("User signed out.");
                             });
                           } else {
-                            // eslint-disable-next-line no-console
                             console.log("No GAPI authinstance defined");
                           }
                         } else {
-                          // eslint-disable-next-line no-console
                           console.log("No GAPI defined");
                         }
 
@@ -975,17 +967,7 @@ function GalleryAppBar({
               <HelpLinkIcon title={helpPage.title} link={helpPage.docLink} />
             </Box>
           ) : (
-            <HelpDocs
-              Action={({ onClick, disabled }) => (
-                <IconButtonWithTooltip
-                  size="small"
-                  onClick={onClick}
-                  icon={<HelpIcon />}
-                  title="Open Help"
-                  disabled={disabled}
-                />
-              )}
-            />
+            <HelpDocs />
           )}
         </Box>
       </Toolbar>

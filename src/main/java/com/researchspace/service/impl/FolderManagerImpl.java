@@ -463,8 +463,8 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   @Override
-  public List<Long> getRecordIds(Folder fd) {
-    return folderDao.getRecordIds(fd);
+  public List<Long> getFolderChildrenIds(Folder fd) {
+    return folderDao.getFolderChildrenIds(fd);
   }
 
   public Folder addChild(Long folderId, BaseRecord child, User owner) {
@@ -521,7 +521,7 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public Folder getGalleryRootFolderForUser(User user) {
-    return folderDao.getGalleryFolderForUser(user);
+    return folderDao.getGalleryRootFolderForUser(user);
   }
 
   @Override
@@ -655,7 +655,7 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public Folder getMediaFolderFromURLPath(String path, User user) {
-    Folder targetRecord = folderDao.getGalleryFolderForUser(user);
+    Folder targetRecord = folderDao.getGalleryRootFolderForUser(user);
     if (targetRecord == null) {
       throw new IllegalStateException(format("No root folder for user %s", user.getUsername()));
     }
@@ -859,7 +859,7 @@ public class FolderManagerImpl implements FolderManager {
         ArrayUtils.contains(MediaUtils.GALLERY_MEDIA_FOLDERS, mediaFolderName),
         "Invalid mediaFolderName " + mediaFolderName);
 
-    Folder imagGalleryFolder = recordManager.getGallerySubFolderForUser(mediaFolderName, user);
+    Folder imagGalleryFolder = recordManager.getGalleryMediaFolderForUser(mediaFolderName, user);
     Folder targetFolder = createNewFolder(imagGalleryFolder.getId(), folderName, user);
     return targetFolder;
   }

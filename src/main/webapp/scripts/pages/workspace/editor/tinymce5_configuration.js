@@ -448,6 +448,8 @@ function initTinyMCE(selector) {
 		initTinyMCE_cachedPropertiesResponse = propertiesResponse;
 		initTinyMCE_cachedIntegrationsResponse = integrationsResponse;
 
+		localTinymcesetup.external_plugins["gallery"] = "/ui/dist/tinymceGallery.js";
+		
 		var properties = propertiesResponse[0];
 		var integrations = integrationsResponse[0].data;
 

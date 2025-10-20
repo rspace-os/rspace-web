@@ -114,7 +114,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   @Test
   public void testOpeningGalleryOnSpecificFolder() throws Exception {
     Long audioFolderId =
-        recordManager.getGallerySubFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, owner).getId();
+        recordManager.getGalleryMediaFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, owner).getId();
     MvcResult result =
         mockMvc
             .perform(
@@ -132,7 +132,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   public void testOpeningGalleryOnSpecificFolderFromItem() throws Exception {
     RecordInformation imageInfo = uploadImageToGallery();
     Long imageFolderId =
-        recordManager.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, owner).getId();
+        recordManager.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, owner).getId();
     MvcResult result =
         mockMvc
             .perform(
@@ -149,7 +149,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
   @Test
   public void uploadToTargetFolder_RSPAC_1703() throws Exception {
-    Folder imagesFolder = recordManager.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, owner);
+    Folder imagesFolder = recordManager.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, owner);
     final long initialCountInImagesFolder = getRecordCountInFolderForUser(imagesFolder.getId());
     Folder target = createSubFolder(imagesFolder, "imagesTarget", owner);
     assertEquals(0, getRecordCountInFolderForUser(target.getId()));
@@ -158,7 +158,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     assertEquals(1, getRecordCountInFolderForUser(target.getId()));
 
     // this is folder in wrong part of gallery for image file
-    Folder docFolder = recordManager.getGallerySubFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, owner);
+    Folder docFolder = recordManager.getGalleryMediaFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, owner);
     RecordInformation uploaded2 = uploadImageToGallery(docFolder.getId());
     assertNotNull(uploaded2.getId());
     // it gets uploaded to image root folder instead
@@ -183,7 +183,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     User other = createAndSaveUser(getRandomAlphabeticString("other"));
     initUser(other);
     Folder otherUsersImagesFolder =
-        recordManager.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, other);
+        recordManager.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, other);
     MvcResult otherUsersFolderResult =
         mockMvc
             .perform(
@@ -308,7 +308,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     // let's move audio to the subfolder
     Folder audioFolder =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, subject);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, subject);
     final String AUDIOSUBFOLDER_NAME = "subFolderOfAudio";
     Folder newSubfolder = createSubFolder(audioFolder, AUDIOSUBFOLDER_NAME, subject);
 
@@ -582,7 +582,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
         new Long[] {folder.getId()},
         new String[] {"test-folder_copy"},
         new MockPrincipal(user.getUsername()));
-    Folder copiedFolder = recordManager.getGallerySubFolderForUser("test-folder_copy", user);
+    Folder copiedFolder = recordManager.getGalleryMediaFolderForUser("test-folder_copy", user);
     CompositeRecordOperationResult result =
         recordDeletionMgr.deleteFolder(
             copiedFolder.getParent().getId(), copiedFolder.getId(), user);
@@ -693,7 +693,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   @Test
   public void testUploadingChemistryFile() throws IOException, URISyntaxException {
     Folder chemistryFolder =
-        recordManager.getGallerySubFolderForUser(CHEMISTRY_MEDIA_FLDER_NAME, owner);
+        recordManager.getGalleryMediaFolderForUser(CHEMISTRY_MEDIA_FLDER_NAME, owner);
     assertEquals(0, getRecordCountInFolderForUser(chemistryFolder.getId()));
     RecordInformation uploaded = uploadFileToGallery("Amfetamine.mol", "application/octet-stream");
     EcatChemistryFile chemistryFile = chemistryFileManager.get(uploaded.getId(), owner);
@@ -725,7 +725,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   private void create5FolderAnd5DocsInGalleryDocFolder(User user) throws IOException {
-    Folder parentFolder = recordManager.getGallerySubFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, user);
+    Folder parentFolder = recordManager.getGalleryMediaFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, user);
     int i = 0;
     while (i < 5) {
       folderMgr.createNewFolder(parentFolder.getId(), "some folder", user);

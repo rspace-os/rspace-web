@@ -47,7 +47,7 @@ public class CreateMissingUserFoldersForLabAdminsAndPIsIT extends RealTransactio
         () -> {
           Long piLabGroupsFolderId = folderDao.getLabGroupFolderForUser(pi).getId();
           Long labAdminLabGroupsFolderId = folderDao.getLabGroupFolderForUser(labAdmin).getId();
-          Folder member1Root = member1.getRootFolder();
+          Folder member1Root = folderDao.getRootRecordForUser(member1);
           folderMgr.removeBaseRecordFromFolder(member1Root, piLabGroupsFolderId);
           folderMgr.removeBaseRecordFromFolder(member1Root, labAdminLabGroupsFolderId);
 
@@ -92,10 +92,11 @@ public class CreateMissingUserFoldersForLabAdminsAndPIsIT extends RealTransactio
     /* remove member's folder from PIs labgroup folder */
     doInTransaction(
         () -> {
-          Long piLabGroupsFolderId = folderDao.getLabGroupFolderForUser(pi).getId();
-          Folder userRoot = member.getRootFolder();
-          folderMgr.removeBaseRecordFromFolder(userRoot, piLabGroupsFolderId);
-          assertEquals(2, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
+          Folder piLabGroupsFolder = folderDao.getLabGroupFolderForUser(pi);
+          assertEquals(3, folderDao.getFolderChildrenIds(piLabGroupsFolder).size());
+          Folder userRoot = folderDao.getRootRecordForUser(member);
+          folderMgr.removeBaseRecordFromFolder(userRoot, piLabGroupsFolder.getId());
+          assertEquals(2, folderDao.getFolderChildrenIds(piLabGroupsFolder).size());
         });
     /* assert only group folders visible by PI */
 

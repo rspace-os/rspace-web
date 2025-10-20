@@ -88,7 +88,7 @@ public class RelativeLinkProcessorTest extends SpringTransactionalTest {
 
     // now delete the gallery item folder. it will be copied into archive folder
     deletionMgr.deleteRecord(
-        recordMgr.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user).getId(),
+        recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user).getId(),
         media.getId(),
         user);
     // refresh object following deletion to pick up deleted state.

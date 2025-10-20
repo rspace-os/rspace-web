@@ -8,37 +8,8 @@ import createAccentedTheme from "../accentedTheme";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
-import { ACCENT_COLOR as GALLERY_COLOR } from "../assets/branding/rspace/gallery";
-import { ACCENT_COLOR as WORKSPACE_COLOR } from "../assets/branding/rspace/workspace";
-import { ACCENT_COLOR as OTHER_COLOR } from "../assets/branding/rspace/other";
 import Analytics from "../components/Analytics";
-
-function currentPage(): string {
-  const pages: Record<string, string> = {
-    workspace: "Workspace",
-    notebookEditor: "Workspace",
-    dashboard: "Other",
-    system: "System",
-    community: "System",
-    record: "My RSpace",
-    userform: "My RSpace",
-    directory: "My RSpace",
-    audit: "My RSpace",
-    import: "My RSpace",
-    groups: "My RSpace",
-    gallery: "Gallery",
-    oldGallery: "Gallery",
-  };
-  const firstPathFragment = window.location.pathname.split("/")[1];
-  if (firstPathFragment in pages) return pages[firstPathFragment];
-  return "Unknown";
-}
-
-function color(page: string) {
-  if (page === "Workspace") return WORKSPACE_COLOR;
-  if (page === "Gallery") return GALLERY_COLOR;
-  return OTHER_COLOR;
-}
+import { color, currentPage } from "@/util/pageBranding";
 
 window.addEventListener("load", () => {
   /*
@@ -87,7 +58,7 @@ window.addEventListener("load", () => {
           </ErrorBoundary>
         </Analytics>
       </CacheProvider>
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 
   const meta = document.createElement("meta");

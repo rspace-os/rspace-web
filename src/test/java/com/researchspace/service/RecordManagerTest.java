@@ -143,12 +143,12 @@ public class RecordManagerTest extends SpringTransactionalTest {
   @Test
   public void testInitialSetup() throws Exception {
     final int galleryFolders = 8;
-    Folder mediaRecord = folderDao.getGalleryFolderForUser(user);
+    Folder mediaRecord = folderDao.getGalleryRootFolderForUser(user);
     assertTrue(mediaRecord.isSystemFolder());
     assertEquals(galleryFolders, mediaRecord.getChildren().size());
     assertTrue(mediaRecord.getSubfolders().stream().allMatch(subF -> subF.isSystemFolder()));
 
-    Folder imges = recordMgr.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
+    Folder imges = recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
     Set<BaseRecord> imgGalleryContent = imges.getChildrens();
     assertEquals(2, imgGalleryContent.size()); // 'examples' folder + apifolder only
 
@@ -163,7 +163,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
   @Test
   public void testAllGallerySubfoldersHaveSystemType() {
-    Folder galleryRoot = folderDao.getGalleryFolderForUser(user);
+    Folder galleryRoot = folderDao.getGalleryRootFolderForUser(user);
     for (BaseRecord child : galleryRoot.getChildrens()) {
       assertTrue(child.hasType(RecordType.SYSTEM));
       if (child.isFolder()) {
@@ -945,7 +945,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertTrue(permissionUtils.isPermitted(doc, PermissionType.READ, pi)); // PI can always read
     assertFalse(permissionUtils.isPermitted(doc, PermissionType.WRITE, pi)); // cannot write
     assertFalse(permissionUtils.isPermitted(doc, PermissionType.SEND, pi)); // cannot move
-    // cannot move from group members folder into pis folder
+    // cannot move from group members folder into pi's folder
     assertFalse(
         recordMgr
             .move(doc.getId(), pi.getRootFolder().getId(), grpMember.getRootFolder().getId(), pi)
@@ -970,16 +970,13 @@ public class RecordManagerTest extends SpringTransactionalTest {
             .move(doc.getId(), pi.getRootFolder().getId(), g.getCommunalGroupFolderId(), pi)
             .isSucceeded());
     // attempt to move from shared folder into shared subfolder should be fine though
-    /* !!! currently not working, due to sharing code not poplulating folder.children array,
-    which makes removing from folder (part of move) to fail.
-    this doesn't seem to be problem on real setup, just in unit test. !!! */
-    /*    Folder sharedSubfolder =
+    Folder sharedSubfolder =
         folderMgr.createNewFolder(g.getCommunalGroupFolderId(), "sharedSubfolder", pi);
     assertTrue(sharedSubfolder.isSharedFolder());
     assertTrue(
         recordMgr
             .move(doc.getId(), sharedSubfolder.getId(), g.getCommunalGroupFolderId(), pi)
-            .isSucceeded());*/
+            .isSucceeded());
   }
 
   @Test
