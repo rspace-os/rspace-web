@@ -69,11 +69,11 @@ public class FolderNavigationServiceImpl implements FolderNavigationService {
   }
 
   /**
-   * Finds the parent folder context for a given folder and user.
-   *
-   * <p>Notebooks are a special case that can have multiple parents for the same user (i.e. their
-   * workspace and any shared locations). When a notebook has 2 parents for the same user, and
-   * parentId is not explicitly provided, this method returns the workspace context first.
+   * Finds the parent folder context for a given folder and user. Notebooks are a special case that
+   * can have multiple parents for the same user (i.e. their workspace and any shared locations).
+   * When a notebook has 2 parents for the same user, and parentId is not explicitly provided - and
+   * therefore this method gets called for a notebook - this method returns the workspace context
+   * first.
    */
   private Optional<Folder> getOwnerOrSharedParent(User user, Folder folder) {
     return folder.getParentFolders().stream()

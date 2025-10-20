@@ -142,7 +142,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
 
   @Override
   public void deleteFolder(@PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    Folder folder = loadFolder(id, user);
+    Folder folder = loadFolder(id, user); // test it exists and is a folder.
     if (folder.isSystemFolder() || folder.isRootFolder()) {
       throw new IllegalArgumentException("Cannot delete user home folder or a system folder");
     }

@@ -26,7 +26,6 @@ import com.researchspace.api.v1.model.ApiRecordTreeItemListing;
 import com.researchspace.api.v1.model.ApiRecordType;
 import com.researchspace.api.v1.model.LinkableApiObject;
 import com.researchspace.api.v1.model.RecordTreeItemInfo;
-import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -48,7 +47,6 @@ import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
-import com.researchspace.service.FolderNavigationService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordDeletionManager;
@@ -84,12 +82,10 @@ public class FolderApiControllerTest {
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock FolderManager folderMgr;
-  @Mock FolderNavigationService folderNavigationService;
   @Mock RecordManager recordMgr;
   @Mock RecordDeletionManager deletionMgr;
   @Mock IPropertyHolder properties;
   @Mock SharingHandler recordShareHandler;
-  @Mock PermissionUtils permissionUtils;
 
   @InjectMocks FolderApiController controller;
   User subject;
