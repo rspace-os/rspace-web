@@ -160,7 +160,7 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     mockPrincipal = new MockPrincipal(user.getUsername());
 
     Folder imageFolder =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
 
     AjaxReturnObject<GalleryData> res =
         galleryController.getUploadedFiles(

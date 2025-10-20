@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.MediaUtils.DMP_MEDIA_FLDER_NAME;
-import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.MISC_MEDIA_FLDER_NAME;
 import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUMENT_EDITED;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
@@ -425,7 +424,7 @@ public class RecordManagerImpl implements RecordManager {
     Snippet snippet = recordFactory.createSnippet(name, content, user);
     recordDao.save(snippet);
 
-    Folder snippetGaleryFolder = getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, user);
+    Folder snippetGaleryFolder = getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, user);
     snippetGaleryFolder.addChild(snippet, user);
     folderDao.save(snippetGaleryFolder);
 
@@ -862,7 +861,7 @@ public class RecordManagerImpl implements RecordManager {
 
     Folder templateRoot = folderDao.getTemplateFolderForUser(user);
     if (templateRoot == null) { // TODO temporary till all moved RSPAC-921
-      templateRoot = getGallerySubFolderForUser(Folder.TEMPLATE_MEDIA_FOLDER_NAME, user);
+      templateRoot = getGalleryMediaFolderForUser(Folder.TEMPLATE_MEDIA_FOLDER_NAME, user);
     }
 
     StructuredDocument template =
@@ -888,16 +887,16 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
-  public Folder getGallerySubFolderForUser(String folderName, User user)
+  public Folder getGalleryMediaFolderForUser(String mediaFolderName, User user)
       throws IllegalAddChildOperation {
-    Folder systemFolder = folderDao.getSystemFolderForUserByName(user, folderName);
+    Folder systemFolder = folderDao.getSystemFolderForUserByName(user, mediaFolderName);
     if (systemFolder != null) {
       return systemFolder;
     } else {
       // create if not present
-      Folder galleryRoot = folderDao.getGalleryFolderForUser(user);
+      Folder galleryRoot = folderDao.getGalleryRootFolderForUser(user);
 
-      Folder newFolder = recordFactory.createSystemCreatedFolder(folderName, user);
+      Folder newFolder = recordFactory.createSystemCreatedFolder(mediaFolderName, user);
       folderDao.save(newFolder);
 
       RecordToFolder rtf = galleryRoot.addChild(newFolder, user);

@@ -589,7 +589,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
       selectedTargetFolder.addChild(
-          docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, true); // check this
+          docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, true);
       saveRecordOrFolder(docOrNotebook);
       selectedTargetFolder = folderDao.get(selectedTargetFolder.getId());
       log.info(

@@ -758,7 +758,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     RSForm anyForm = formMgr.getAll().get(0);
     StructuredDocument recordToShare =
         recordMgr.createNewStructuredDocument(
-            piUser.getRootFolder().getId(), anyForm.getId(), piUser);
+            piUser.getRootFolder().getId(), anyForm.getId(), piUser, true);
     other = createAndSaveRandomUser();
     initUserFolder(other);
     group = createGroup(getRandomAlphabeticString("grp1"), piUser);

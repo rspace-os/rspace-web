@@ -419,7 +419,7 @@ public class GroupManagerImpl implements GroupManager {
       groupDao.save(grp);
       for (User user : grp.getMembers()) {
         Folder snippetFolder =
-            recordManager.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, user);
+            recordManager.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, user);
         // this checks to see if a 'SHARED/LABGroup' (or CollaborationGroup) folder has been created
         // inside the user's SNIPPETS folder
         // If it has then this group shared folder is added as a child to the user's folder
@@ -489,7 +489,7 @@ public class GroupManagerImpl implements GroupManager {
     projectGroupsShared.getSharingACL().addACLElement(element);
     contentUtils.addChild(sharedFolder, projectGroupsShared, u);
 
-    Folder snippetFolder = recordManager.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, u);
+    Folder snippetFolder = recordManager.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, u);
     Folder snippetSharedFolder;
     if (snippetFolder.getSystemSubFolderByName(
             SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)

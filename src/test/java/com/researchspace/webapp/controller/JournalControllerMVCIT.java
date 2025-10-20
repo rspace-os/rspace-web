@@ -119,7 +119,7 @@ public class JournalControllerMVCIT extends MVCTestBase {
     Folder rootFolder = folderMgr.getRootRecordForUser(user, user);
 
     Notebook nbook = createNotebookWithNEntries(rootFolder.getId(), "nb", 2, user);
-    List<Long> ids = folderMgr.getRecordIds(nbook);
+    List<Long> ids = folderMgr.getFolderChildrenIds(nbook);
     StructuredDocument entry1 = getNotebookEntry(user, ids, 0);
     StructuredDocument entry2 = getNotebookEntry(user, ids, 1);
     Field f1 = entry1.getFields().get(0);
