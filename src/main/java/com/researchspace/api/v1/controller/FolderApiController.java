@@ -53,7 +53,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   private @Autowired FolderManager folderMgr;
   private @Autowired RecordDeletionManager recordDeletionManager;
   private @Autowired SharingHandler recordShareHandler;
-  @Autowired private PermissionUtils permissionUtils;
+  private @Autowired PermissionUtils permissionUtils;
 
   /** Only name field of folder is required. */
   @Override

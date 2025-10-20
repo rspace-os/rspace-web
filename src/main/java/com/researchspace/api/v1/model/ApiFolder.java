@@ -94,7 +94,7 @@ public class ApiFolder extends IdentifiableNameableApiObject {
    */
   private String findGalleryFolderMediaType(Folder galleryFolder) {
     Folder prevFolder = galleryFolder;
-    // when there are mutliple parents, all will have the same media type, so any path is fine
+    // when there are multiple parents, all will have the same media type, so any path is fine
     Optional<Folder> parent = prevFolder.getParentFolders().stream().findFirst();
     while (parent.isPresent()) {
       Folder currFolder = parent.get();
