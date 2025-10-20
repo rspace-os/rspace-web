@@ -131,7 +131,7 @@ export type AccentColor = {
  *
  * This function creates a new theme, given an accent colour.
  */
-// eslint-disable-next-line complexity -- This is going to be complex because it's defining a lot of styles and a lot of those styles are conditioned on the user's preferences.
+ 
 export default function createAccentedTheme(accent: AccentColor): Theme {
   const prefersMoreContrast = window.matchMedia(
     "(prefers-contrast: more)",

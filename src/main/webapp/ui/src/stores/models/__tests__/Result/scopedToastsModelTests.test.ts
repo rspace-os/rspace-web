@@ -38,7 +38,7 @@ describe("Scoped Toasts Model Tests", () => {
         async (cmds) => {
           const s = () => ({
             model: { count: 0 },
-            real: new InventoryBaseRecord(mockFactory() as Factory, {}),
+            real: new InventoryBaseRecord(mockFactory(), {}),
           });
           fc.modelRun(s, cmds);
         }

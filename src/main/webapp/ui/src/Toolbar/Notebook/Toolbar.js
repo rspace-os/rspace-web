@@ -230,6 +230,6 @@ window.renderToolbar = (newProps) => {
  * opportunity to set up event handlers for the ReactToolbarMounted event
  * dispatched above.
  */
-window.addEventListener("load", function () {
+window.addEventListener("load", () => {
   window.renderToolbar();
 });

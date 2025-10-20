@@ -157,7 +157,7 @@ function RadioField<OptionValue extends string>({
             )}
             {option.editing && (
               <TextField
-                // eslint-disable-next-line jsx-a11y/no-autofocus
+                 
                 autoFocus={!option.value}
                 variant="standard"
                 value={option.value}

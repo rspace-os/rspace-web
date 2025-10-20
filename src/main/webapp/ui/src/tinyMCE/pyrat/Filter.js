@@ -54,7 +54,7 @@ export default function Filter({
       Object.keys(filter).reduce((acc, key) => {
         acc[key] = true;
         return acc;
-      }, {})
+      }, {}),
     );
   }
 
@@ -68,8 +68,8 @@ export default function Filter({
             value: "",
           },
         }),
-        {}
-      )
+        {},
+      ),
     );
     setFilterMultiReq(
       Object.entries(filterMultiReq).reduce(
@@ -80,8 +80,8 @@ export default function Filter({
             value: "",
           },
         }),
-        {}
-      )
+        {},
+      ),
     );
     setFilterSpecial(
       Object.entries(filterSpecial).reduce(
@@ -92,8 +92,8 @@ export default function Filter({
             value: config.defaultValue,
           },
         }),
-        {}
-      )
+        {},
+      ),
     );
     setFilterCounter(filterCounter + 1);
     resetValidity();
@@ -270,7 +270,7 @@ export default function Filter({
             <FormControl fullWidth>
               <Autocomplete
                 options={stableSort(Object.values(config.enumObj), (a, b) =>
-                  a.label.localeCompare(b.label)
+                  a.label.localeCompare(b.label),
                 )}
                 renderInput={(props) => (
                   <TextField

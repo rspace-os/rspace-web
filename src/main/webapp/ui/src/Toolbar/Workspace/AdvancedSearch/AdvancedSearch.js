@@ -90,8 +90,8 @@ class AdvancedSearch extends React.Component {
   }
 
   componentDidMount = () => {
-    let toolbar = this;
-    $(document).on("click", "#resetSearch", function (e) {
+    const toolbar = this;
+    $(document).on("click", "#resetSearch", (e) => {
       toolbar.reset();
     });
   };
@@ -102,7 +102,7 @@ class AdvancedSearch extends React.Component {
 
   setQueries = (queries) => {
     this.setState({
-      queries: queries,
+      queries,
     });
   };
 
@@ -115,11 +115,11 @@ class AdvancedSearch extends React.Component {
   };
 
   handleChange = (idx, input) => (event) => {
-    let value = event.target.value;
+    const value = event.target.value;
     let queries = this.state.queries;
 
     if (value == "records") {
-      let selected = getSelectedGlobalIds();
+      const selected = getSelectedGlobalIds();
 
       this.setState({
         queries: update(queries, {
@@ -127,7 +127,8 @@ class AdvancedSearch extends React.Component {
         }),
       });
       return;
-    } else if (input == "filter") {
+    }
+    if (input == "filter") {
       queries = update(queries, {
         [idx]: { term: { $set: "" } },
       });
@@ -206,25 +207,25 @@ class AdvancedSearch extends React.Component {
         59,
         59,
       )}`;
-    } else if (query.filter == "records") {
-      return query.term.join("; ");
-    } else {
-      return query.term;
     }
+    if (query.filter == "records") {
+      return query.term.join("; ");
+    }
+    return query.term;
   };
 
   toISO = (date, hours, minutes, seconds) => {
     if (typeof date === "string") {
       return date;
-    } else if (date) {
+    }
+    if (date) {
       date.setHours(hours);
       date.setMinutes(minutes);
       date.setSeconds(seconds);
 
       return date.toISOString();
-    } else {
-      return null;
     }
+    return null;
   };
 
   validateQueries = () => {
@@ -233,15 +234,15 @@ class AdvancedSearch extends React.Component {
     let queries = this.state.queries;
 
     this.state.queries.map((query, idx) => {
-      let isSimple = [
+      const isSimple = [
         "fullText",
         "name",
         "form",
         "template",
         "attachment",
       ].includes(query.filter);
-      let isSelectable = ["owner", "tag"].includes(query.filter);
-      let isScopeRecords = query.filter == "records";
+      const isSelectable = ["owner", "tag"].includes(query.filter);
+      const isScopeRecords = query.filter == "records";
 
       if (isSimple) {
         if (query.term.length >= 2) {
@@ -284,7 +285,7 @@ class AdvancedSearch extends React.Component {
 
     this.setState(
       {
-        queries: queries,
+        queries,
       },
       () => {
         if (valid) this.submitSearch();

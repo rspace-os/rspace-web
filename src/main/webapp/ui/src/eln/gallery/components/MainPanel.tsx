@@ -102,7 +102,7 @@ import { IconButton, Paper } from "@mui/material";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
-  // eslint-disable-next-line no-undefined -- undefined in types is fine
+   
   fileBeingMoved: GalleryFile | null | typeof undefined,
 ) => boolean {
   const selection = useGallerySelection();
@@ -136,7 +136,7 @@ const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
 }));
 
 const StyledBreadcrumb = styled(
-  //eslint-disable-next-line react/display-name
+   
   React.forwardRef<
     HTMLDivElement,
     ChipProps<
@@ -445,7 +445,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 
 const FileCard = styled(
   observer(
-    //eslint-disable-next-line react/display-name
+     
     React.forwardRef(
       (
         {
@@ -944,10 +944,7 @@ const GridView = observer(
     const [gridHasFocus, setGridHasFocus] = React.useState(false);
     React.useEffect(() => {
       if (gridHasFocus) focusFileCardRef.current?.focus();
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - We don't want to run this effect when gridHasFocus changes, as that
-       *   would result in an infinite loop
-       */
+       
     }, [tabIndexCoord]);
 
     /*

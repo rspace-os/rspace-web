@@ -38,7 +38,7 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }) {
       .get(`/groups/ajax/ontologiesEnforcedStatus/${groupId}`)
       .then((response) => {
         if (!response.data.success) {
-          let msg = getValidationErrorString(response.data.error, ",", true);
+          const msg = getValidationErrorString(response.data.error, ",", true);
           RS.confirm(msg, "warning", 5000, { sticky: true });
           setWaiting(false);
           return;
@@ -62,7 +62,7 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }) {
 
     axios.post(url + groupId).then((response) => {
       if (!response.data.success) {
-        let msg = getValidationErrorString(response.data.error, ",", true);
+        const msg = getValidationErrorString(response.data.error, ",", true);
         RS.confirm(msg, "warning", 5000, { sticky: true });
         setWaiting(false);
         return;

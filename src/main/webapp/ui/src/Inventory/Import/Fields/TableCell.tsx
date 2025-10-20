@@ -14,7 +14,7 @@ const TableCell = withStyles<TableCellArgs, { root: string }>(
       borderBottom: borderless ? "unset" : theme.borders.table,
     },
   })
-)(({ nopadding, borderless, ...rest }) => <CustomTableCell {...rest} />); // eslint-disable-line no-unused-vars
+)(({ nopadding, borderless, ...rest }) => <CustomTableCell {...rest} />);  
 
 TableCell.displayName = "TableCell";
 export default TableCell;

@@ -83,8 +83,8 @@ class WorkspaceToolbar extends React.Component {
     this.checkSavedSettings();
 
     // Bad practise. Change when the reset button is in React
-    let toolbar = this;
-    $(document).on("click", "#resetSearch", function () {
+    const toolbar = this;
+    $(document).on("click", "#resetSearch", () => {
       abandonSearch();
       toolbar.setState({
         sharedFilter: workspaceSettings.sharedFilter,
@@ -143,7 +143,7 @@ class WorkspaceToolbar extends React.Component {
           filter === "global" && workspaceSettings.options.length > 1
             ? "fullText"
             : filter,
-        term: term,
+        term,
         from: from === "null" ? null : from,
         to: to === "null" ? null : to,
       });
@@ -185,12 +185,12 @@ class WorkspaceToolbar extends React.Component {
     if (this.state.advancedOpen) {
       this.setState({ advancedOpen: false });
     } else {
-      let queries = [];
+      const queries = [];
 
       if (filter == "global") {
-        queries.push({ filter: "fullText", term: term });
+        queries.push({ filter: "fullText", term });
       } else {
-        queries.push({ filter: filter, term: term, from: from, to: to });
+        queries.push({ filter, term, from, to });
       }
 
       this.setState({ advancedOpen: true }, () =>
@@ -273,7 +273,7 @@ class WorkspaceToolbar extends React.Component {
 
   displayWorkspace = () => {
     this.setWorkspaceSettings();
-    let url = "/workspace/ajax/view/" + workspaceSettings.parentFolderId;
+    const url = "/workspace/ajax/view/" + workspaceSettings.parentFolderId;
 
     if (workspaceSettings.searchMode) {
       doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
@@ -604,6 +604,6 @@ window.renderToolbar = (newProps) => {
  * opportunity to set up event handlers for the ReactToolbarMounted event
  * dispatched above.
  */
-window.addEventListener("load", function () {
+window.addEventListener("load", () => {
   window.renderToolbar();
 });
