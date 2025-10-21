@@ -11,9 +11,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import FormControl from "@mui/material/FormControl";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner, faHandHolding } from "@fortawesome/free-solid-svg-icons";
-import { library } from "@fortawesome/fontawesome-svg-core";
-library.add(faSpinner, faHandHolding);
+import { faHandHolding } from "@fortawesome/free-solid-svg-icons/faHandHolding";
 import Typography from "@mui/material/Typography";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import PeopleField from "../Inputs/PeopleField";
@@ -27,12 +25,12 @@ import { type Username } from "../../../stores/definitions/Person";
 const icon = (
   <span className="fa-layers fa-fw">
     <FontAwesomeIcon
-      icon="hand-holding"
+      icon={faHandHolding}
       size="sm"
       style={{ marginRight: 8, width: 12 }}
     />
     <FontAwesomeIcon
-      icon="hand-holding"
+      icon={faHandHolding}
       size="sm"
       flip="both"
       style={{ marginLeft: 8, width: 12 }}

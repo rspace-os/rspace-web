@@ -5,7 +5,6 @@ import styled from "@emotion/styled";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Input from "@mui/material/Input";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
@@ -18,16 +17,10 @@ import CardActions from "@mui/material/CardActions";
 import { CardWrapper } from "../../../styles/CommonStyles.js";
 import DateField from "../../../components/Inputs/DateField";
 import Grid from "@mui/material/Grid";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faTrashAlt,
-  faSave,
-  faTimes,
-  faInfoCircle,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(faPlus, faTrashAlt, faSave, faTimes, faInfoCircle);
+import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons/faTrashAlt";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons/faInfoCircle";
 
 import FilePicker from "./RecordSelect/FilePicker";
 import UserSelect from "./UserSelect/UserSelect";
@@ -400,7 +393,7 @@ class AdvancedSearch extends React.Component {
                 onClick={() => this.deleteQuery(idx)}
                 data-test-id={`a-search-rmv-${idx}`}
               >
-                <FontAwesomeIcon icon="trash-alt" />
+                <FontAwesomeIcon icon={faTrashAlt} />
               </IconButton>
             </Tooltip>
           )}
@@ -410,7 +403,7 @@ class AdvancedSearch extends React.Component {
                 onClick={this.addNewQuery}
                 data-test-id={`a-search-query-add`}
               >
-                <FontAwesomeIcon icon="plus" />
+                <FontAwesomeIcon icon={faPlus} />
               </IconButton>
             </Tooltip>
           )}
@@ -458,7 +451,7 @@ class AdvancedSearch extends React.Component {
                               padding: "0px",
                             }}
                           >
-                            <FontAwesomeIcon icon="info-circle" />
+                            <FontAwesomeIcon icon={faInfoCircle} />
                           </IconButton>
                         </Tooltip>
                       )}
@@ -492,7 +485,7 @@ class AdvancedSearch extends React.Component {
                               padding: "0px",
                             }}
                           >
-                            <FontAwesomeIcon icon="info-circle" />
+                            <FontAwesomeIcon icon={faInfoCircle} />
                           </IconButton>
                         </Tooltip>
                       )}

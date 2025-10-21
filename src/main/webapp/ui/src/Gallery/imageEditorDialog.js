@@ -13,10 +13,8 @@ import "tui-image-editor/dist/tui-image-editor.css";
 import "./custom.css";
 import ImageEditor from "@toast-ui/react-image-editor";
 import whiteTheme from "../common/theme.js";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
-library.add(faExclamationTriangle);
+import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons/faExclamationTriangle";
 
 import FileFormatPrompt from "../components/FileFormatPrompt";
 import { createRoot } from "react-dom/client";
@@ -230,7 +228,7 @@ export default function ImageEditorDialog(props) {
             {error && (
               <div className={classes.error}>
                 <FontAwesomeIcon
-                  icon="exclamation-triangle"
+                  icon={faExclamationTriangle}
                   size="5x"
                   className={classes.errorIcon}
                 />

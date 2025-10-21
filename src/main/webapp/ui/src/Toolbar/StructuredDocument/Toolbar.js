@@ -9,28 +9,13 @@ import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import PrintButton from "../components/PrintButton";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faEdit,
-  faTrashAlt,
-  faCloudDownloadAlt,
-  faFileSignature,
-  faFolder,
-  faShareAlt,
-  faEye,
-  faTimes,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(
-  faEdit,
-  faTrashAlt,
-  faCloudDownloadAlt,
-  faFileSignature,
-  faFolder,
-  faShareAlt,
-  faEye,
-  faTimes,
-);
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons/faTrashAlt";
+import { faCloudDownloadAlt } from "@fortawesome/free-solid-svg-icons/faCloudDownloadAlt";
+import { faFileSignature } from "@fortawesome/free-solid-svg-icons/faFileSignature";
+import { faShareAlt } from "@fortawesome/free-solid-svg-icons/faShareAlt";
+import { faEye } from "@fortawesome/free-solid-svg-icons/faEye";
+import { faTimes } from "@fortawesome/free-solid-svg-icons/faTimes";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import SaveMenu from "./ToolbarSaveMenu";
@@ -67,7 +52,7 @@ class StructuredDocumentToolbar extends React.Component {
               href={this.state.closeHref}
               id="close"
             >
-              <FontAwesomeIcon icon="times" />
+              <FontAwesomeIcon icon={faTimes} />
             </IconButton>
           </Tooltip>
           <span
@@ -134,7 +119,7 @@ class StructuredDocumentToolbar extends React.Component {
                       RS.trackEvent("user:delete:document:document_editor");
                     }}
                   >
-                    <FontAwesomeIcon icon="trash-alt" />
+                    <FontAwesomeIcon icon={faTrashAlt} />
                   </IconButton>
                 </Tooltip>
               )}
@@ -149,7 +134,7 @@ class StructuredDocumentToolbar extends React.Component {
                       RS.trackEvent("user:sign:document:document_editor");
                     }}
                   >
-                    <FontAwesomeIcon icon="file-signature" />
+                    <FontAwesomeIcon icon={faFileSignature} />
                   </IconButton>
                 </Tooltip>
               )}
@@ -163,7 +148,7 @@ class StructuredDocumentToolbar extends React.Component {
                       RS.trackEvent("user:witness:document:document_editor");
                     }}
                   >
-                    <FontAwesomeIcon icon="eye" />
+                    <FontAwesomeIcon icon={faEye} />
                   </IconButton>
                 </Tooltip>
               )}
@@ -178,7 +163,7 @@ class StructuredDocumentToolbar extends React.Component {
                       RS.trackEvent("user:share:document:document_editor");
                     }}
                   >
-                    <FontAwesomeIcon icon="share-alt" />
+                    <FontAwesomeIcon icon={faShareAlt} />
                   </IconButton>
                 </Tooltip>
               )}
@@ -203,7 +188,7 @@ class StructuredDocumentToolbar extends React.Component {
                     RS.trackEvent("user:export:document:document_editor");
                   }}
                 >
-                  <FontAwesomeIcon icon="cloud-download-alt" />
+                  <FontAwesomeIcon icon={faCloudDownloadAlt} />
                 </IconButton>
               </Tooltip>
               <PrintButton

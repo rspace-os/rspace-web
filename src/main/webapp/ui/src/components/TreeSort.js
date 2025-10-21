@@ -2,14 +2,9 @@ import React, { useEffect } from "react";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import styled from "@emotion/styled";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSort,
-  faSortAmountUpAlt,
-  faSortAmountDown,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(faSort, faSortAmountUpAlt, faSortAmountDown);
+import { faSortAmountUpAlt } from "@fortawesome/free-solid-svg-icons/faSortAmountUpAlt";
+import { faSortAmountDown } from "@fortawesome/free-solid-svg-icons/faSortAmountDown";
 
 const SortWrapper = styled.div`
   display: flex;
@@ -104,14 +99,14 @@ export default function TreeSort(props) {
       >
         <MenuItem value="ASC" data-test-id="sort-asc">
           <FontAwesomeIcon
-            icon="sort-amount-up-alt"
+            icon={faSortAmountUpAlt}
             style={{ marginRight: "10px" }}
           />
           Ascending
         </MenuItem>
         <MenuItem value="DESC" data-test-id="sort-desc">
           <FontAwesomeIcon
-            icon="sort-amount-down"
+            icon={faSortAmountDown}
             style={{ marginRight: "10px" }}
           />
           Descending

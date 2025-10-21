@@ -4,15 +4,10 @@ import styled from "@emotion/styled";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Badge from "@mui/material/Badge";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBell,
-  faEnvelope,
-  faPaperPlane,
-} from "@fortawesome/free-solid-svg-icons";
-import { faSlack } from "@fortawesome/free-brands-svg-icons";
-library.add(faBell, faEnvelope, faPaperPlane, faSlack);
+import { faBell } from "@fortawesome/free-solid-svg-icons/faBell";
+import { faEnvelope } from "@fortawesome/free-solid-svg-icons/faEnvelope";
+import { faPaperPlane } from "@fortawesome/free-solid-svg-icons/faPaperPlane";
 
 const SocialActionsWrapper = styled.div`
   display: flex;
@@ -49,7 +44,7 @@ export default function ToolbarSocial(props) {
           aria-label="Notifications"
         >
           <Badge badgeContent={notificationCount} color="secondary">
-            <FontAwesomeIcon icon="bell" />
+            <FontAwesomeIcon icon={faBell} />
           </Badge>
         </IconButton>
       </Tooltip>
@@ -61,7 +56,7 @@ export default function ToolbarSocial(props) {
           aria-label="Received messages"
         >
           <Badge badgeContent={messageCount} color="secondary">
-            <FontAwesomeIcon icon="envelope" />
+            <FontAwesomeIcon icon={faEnvelope} />
           </Badge>
         </IconButton>
       </Tooltip>
@@ -73,7 +68,7 @@ export default function ToolbarSocial(props) {
           aria-label="Send a message"
           onClick={props.onCreateRequest ?? (() => {})}
         >
-          <FontAwesomeIcon icon="paper-plane" />
+          <FontAwesomeIcon icon={faPaperPlane} />
         </IconButton>
       </Tooltip>
       {window.hasOwnProperty("SLACK") && SLACK && props.showExternal && (

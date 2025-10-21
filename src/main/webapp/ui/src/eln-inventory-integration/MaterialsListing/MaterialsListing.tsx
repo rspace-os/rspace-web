@@ -6,8 +6,7 @@ import materialTheme from "../../theme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { faVial } from "@fortawesome/free-solid-svg-icons";
-import { library } from "@fortawesome/fontawesome-svg-core";
+import { faVial } from "@fortawesome/free-solid-svg-icons/faVial";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
@@ -20,7 +19,6 @@ import Popper from "@mui/material/Popper";
 import MenuList from "@mui/material/MenuList";
 import Badge from "@mui/material/Badge";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
-library.add(faVial);
 import PrintedMaterialsListing from "./PrintedMaterialsListing";
 import { createRoot } from "react-dom/client";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
@@ -148,7 +146,7 @@ const MaterialsLauncher = observer(
                   aria-label="Show list of materials associated with this field"
                   aria-haspopup="menu"
                 >
-                  <FontAwesomeIcon icon="vial" size="sm" />
+                  <FontAwesomeIcon icon={faVial} size="sm" />
                 </Fab>
               </CustomBadge>
               <Popper

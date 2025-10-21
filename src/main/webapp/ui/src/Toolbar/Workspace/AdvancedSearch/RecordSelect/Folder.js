@@ -8,15 +8,11 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import Collapse from "@mui/material/Collapse";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronDown,
-  faChevronUp,
-  faFolder,
-  faBook,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(faChevronDown, faChevronUp, faFolder, faBook);
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons/faChevronDown";
+import { faChevronUp } from "@fortawesome/free-solid-svg-icons/faChevronUp";
+import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
+import { faBook } from "@fortawesome/free-solid-svg-icons/faBook";
 
 import Subfolder from "./Folder";
 import File from "./File";
@@ -200,18 +196,20 @@ class Folder extends React.Component {
                 style={{ padding: 0 }}
                 data-test-id={`select-folder-${this.props.folder.globalId}`}
               />
-              <FontAwesomeIcon
-                icon={this.props.folder.notebook ? "book" : "folder"}
-                size="2x"
-              />
+              {this.props.folder.notebook ? (
+                <FontAwesomeIcon icon={faBook} size="2x" />
+              ) : (
+                <FontAwesomeIcon icon={faFolder} size="2x" />
+              )}
             </>
           </ListItemIcon>
           <ListItemText primary={this.props.folder.name} />
-          {this.state.subfiles.length > 0 && (
-            <FontAwesomeIcon
-              icon={this.state.open ? "chevron-up" : "chevron-down"}
-            />
-          )}
+          {this.state.subfiles.length > 0 &&
+            (this.state.open ? (
+              <FontAwesomeIcon icon={faChevronUp} />
+            ) : (
+              <FontAwesomeIcon icon={faChevronDown} />
+            ))}
         </ListItem>
         {this.state.subfiles.length > 0 && (
           <Collapse in={this.state.open} timeout="auto" unmountOnExit>

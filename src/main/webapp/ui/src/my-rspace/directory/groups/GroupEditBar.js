@@ -12,9 +12,8 @@ import IconButton from "@mui/material/IconButton";
 import TextField from "@mui/material/TextField";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import { faPencilAlt } from "@fortawesome/free-solid-svg-icons/faPencilAlt";
 import Tooltip from "@mui/material/Tooltip";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
@@ -22,7 +21,6 @@ import axios from "@/common/axios";
 import styled from "@emotion/styled";
 import { CardWrapper } from "../../../styles/CommonStyles.js";
 import { createRoot } from "react-dom/client";
-library.add(faPencilAlt);
 
 const Section = styled.div`
   margin-top: 10px;
@@ -182,7 +180,7 @@ class GroupEditBar extends React.Component {
                         style={this.styles.icon_button}
                         data-test-id="button-edit-profile"
                       >
-                        <FontAwesomeIcon icon="pencil-alt" />
+                        <FontAwesomeIcon icon={faPencilAlt} />
                       </IconButton>
                     </Tooltip>
                   )

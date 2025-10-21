@@ -4,35 +4,24 @@ import { toTitleCase } from "../util/Util";
 import { useTheme } from "@mui/material/styles";
 import BenchIcon from "../assets/graphics/RecordTypeGraphics/Icons/Bench";
 import TemplateIcon from "../assets/graphics/RecordTypeGraphics/Icons/Template";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faFile,
-  faFlask,
-  faVials,
-  faBox,
-  faQuestionCircle,
-  faLayerGroup,
-  faPaperclip,
-  faImage,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(
-  faFile,
-  faFlask,
-  faVials,
-  faBox,
-  faQuestionCircle,
-  faLayerGroup,
-  faPaperclip,
-  faImage
-);
+  FontAwesomeIcon,
+  FontAwesomeIconProps,
+} from "@fortawesome/react-fontawesome";
+import { faFile } from '@fortawesome/free-solid-svg-icons/faFile';
+import { faFlask } from '@fortawesome/free-solid-svg-icons/faFlask';
+import { faVials } from '@fortawesome/free-solid-svg-icons/faVials';
+import { faBox } from '@fortawesome/free-solid-svg-icons/faBox';
+import { faPaperclip } from '@fortawesome/free-solid-svg-icons/faPaperclip';
+import { faImage } from '@fortawesome/free-solid-svg-icons/faImage';
+
 import { type RecordIconData } from "../stores/definitions/BaseRecord";
 
 type RecordTypeIconArgs = {
   record: RecordIconData;
   color?: string | null;
   "aria-hidden"?: boolean;
-  style?: object;
+  style?: FontAwesomeIconProps['style'];
 };
 
 export default function RecordTypeIcon({
@@ -52,7 +41,7 @@ export default function RecordTypeIcon({
       icon = (
         <FontAwesomeIcon
           size="1x"
-          icon="box"
+          icon={faBox}
           color={color ?? theme.palette.record.container.fg}
           style={style}
         />
@@ -62,7 +51,7 @@ export default function RecordTypeIcon({
       icon = (
         <FontAwesomeIcon
           size="1x"
-          icon="flask"
+          icon={faFlask}
           color={color ?? theme.palette.record.sample.fg}
           style={style}
         />
@@ -72,7 +61,7 @@ export default function RecordTypeIcon({
       icon = (
         <FontAwesomeIcon
           size="1x"
-          icon="vials"
+          icon={faVials}
           color={color ?? theme.palette.record.subSample.fg}
           style={style}
         />
@@ -90,7 +79,7 @@ export default function RecordTypeIcon({
       icon = (
         <FontAwesomeIcon
           size="1x"
-          icon="paperclip"
+          icon={faPaperclip}
           color={color ?? theme.palette.record.attachment.fg}
           style={style}
         />
@@ -100,7 +89,7 @@ export default function RecordTypeIcon({
       icon = (
         <FontAwesomeIcon
           size="1x"
-          icon="file"
+          icon={faFile}
           color={color ?? theme.palette.record.document.fg}
         />
       );
@@ -109,7 +98,7 @@ export default function RecordTypeIcon({
       icon = (
         <FontAwesomeIcon
           size="1x"
-          icon="image"
+          icon={faImage}
           color={color ?? theme.palette.record.gallery.fg}
         />
       );

@@ -2,9 +2,7 @@ import React from "react";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { faPrint } from "@fortawesome/free-solid-svg-icons";
-library.add(faPrint);
+import { faPrint } from "@fortawesome/free-solid-svg-icons/faPrint";
 
 type PrintButtonArgs = {
   dataTestId: string;
@@ -26,7 +24,7 @@ export default function PrintButton({
           window.print();
         }}
       >
-        <FontAwesomeIcon icon="print" />
+        <FontAwesomeIcon icon={faPrint} />
       </IconButton>
     </Tooltip>
   );

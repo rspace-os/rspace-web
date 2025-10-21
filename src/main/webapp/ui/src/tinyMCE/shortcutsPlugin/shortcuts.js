@@ -21,13 +21,10 @@ import SymbolsTab from "./symbolsTab";
 import { Alert, AlertTitle } from "@mui/material";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faInfo,
-  faChevronUp,
-  faChevronDown,
-} from "@fortawesome/free-solid-svg-icons";
+import { faInfo } from "@fortawesome/free-solid-svg-icons/faInfo";
+import { faChevronUp } from "@fortawesome/free-solid-svg-icons/faChevronUp";
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons/faChevronDown";
 import { createRoot } from "react-dom/client";
-library.add(faInfo, faChevronUp, faChevronDown);
 
 const used = config.used.split(" ");
 const forbidden = config.forbidden.split(" ");
@@ -347,7 +344,7 @@ class Shortcuts extends React.Component {
           <Alert
             icon={
               <FontAwesomeIcon
-                icon="info"
+                icon={faInfo}
                 size="2x"
                 style={{ height: "30px" }}
               />
@@ -363,10 +360,10 @@ class Shortcuts extends React.Component {
               >
                 <IconButton onClick={() => this.toggleInstructions()}>
                   {this.state.instructions && (
-                    <FontAwesomeIcon icon="chevron-up" />
+                    <FontAwesomeIcon icon={faChevronUp} />
                   )}
                   {!this.state.instructions && (
-                    <FontAwesomeIcon icon="chevron-down" />
+                    <FontAwesomeIcon icon={faChevronDown} />
                   )}
                 </IconButton>
               </Tooltip>

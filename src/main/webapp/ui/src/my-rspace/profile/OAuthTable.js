@@ -12,11 +12,8 @@ import axios from "@/common/axios";
 import { makeStyles } from "tss-react/mui";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import { faUnlink } from "@fortawesome/free-solid-svg-icons";
-library.add(faTrashAlt, faUnlink);
+import { faTrashAlt } from "@fortawesome/free-regular-svg-icons/faTrashAlt";
 import OAuthDialog from "./OAuthDialog";
 
 const headCells = [
@@ -157,10 +154,7 @@ export default function OAuthTable(props) {
                               onClick={() => confirmDeleteApp(app.clientId)}
                               style={{ width: "42px" }}
                             >
-                              <FontAwesomeIcon
-                                icon={["far", "trash-alt"]}
-                                size="xs"
-                              />
+                              <FontAwesomeIcon icon={faTrashAlt} size="xs" />
                             </IconButton>
                           </Tooltip>
                         </div>

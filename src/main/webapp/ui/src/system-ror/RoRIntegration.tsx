@@ -7,11 +7,10 @@ import GenericsearchBar from "../components/GenericsearchBar";
 import axios from "@/common/axios";
 import styled from "@emotion/styled";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
+import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
+import { faMinus } from "@fortawesome/free-solid-svg-icons/faMinus";
 import Alert from "@mui/material/Alert";
 import { Button } from "@mui/material";
-library.add(faPlus, faMinus);
 
 type Location = { geonames_details: { name: string; country_name: string } };
 type Name = { types: Array<string>; value: string };
@@ -328,7 +327,7 @@ function RoRIntegration(): React.ReactNode {
               variant="contained"
               sx={{ marginTop: "10px" }}
               onClick={() => void updateRor()}
-              startIcon={<FontAwesomeIcon icon="plus" />}
+              startIcon={<FontAwesomeIcon icon={faPlus} />}
             >
               Link
             </Button>
@@ -341,7 +340,7 @@ function RoRIntegration(): React.ReactNode {
                 variant="contained"
                 sx={{ marginTop: "10px" }}
                 onClick={() => void deleteRor()}
-                startIcon={<FontAwesomeIcon icon="minus" />}
+                startIcon={<FontAwesomeIcon icon={faMinus} />}
               >
                 UnLink
               </Button>
