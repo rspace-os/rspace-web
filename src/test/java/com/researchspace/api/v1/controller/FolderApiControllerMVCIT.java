@@ -12,6 +12,7 @@ import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestGroup;
 import org.junit.After;
@@ -354,5 +355,116 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
 
   private MockHttpServletRequestBuilder folderTree(User anyUser, String apiKey) {
     return createBuilderForGet(API_VERSION.ONE, apiKey, "/folders/tree", anyUser);
+  }
+
+  /**
+   * Test for bug where pathToRootFolder becomes unexpectedly short after moving a shared notebook
+   * into a workspace subfolder. When a PI requests the notebook with includePathToRootFolder=true
+   * and parentId pointing to the user's workspace subfolder, the path should still traverse through
+   * Shared->LabGroups hierarchy to PI's root, but currently only shows the subfolder.
+   */
+  @Test
+  public void sharedNotebookPathToRootAfterMoveToSubfolder() throws Exception {
+    // Create test group with PI and user
+    TestGroup group = createTestGroup(2);
+    User user = group.u1();
+    User pi = group.getPi();
+
+    // As user, create a notebook in top level of workspace
+    logoutAndLoginAs(user);
+    String userApiKey = createNewApiKeyForUser(user);
+    Long userRootId = getRootFolderForUser(user).getId();
+    Notebook notebook = createNotebookWithNEntries(userRootId, "TestNotebook", 1, user);
+
+    // Share the notebook with the group
+    Long groupSharedFolderId = group.getGroup().getCommunalGroupFolderId();
+    SharePost sharePost =
+        SharePost.builder()
+            .itemToShare(notebook.getId())
+            .groupSharePostItem(
+                GroupSharePostItem.builder()
+                    .id(group.getGroup().getId())
+                    .permission("READ")
+                    .sharedFolderId(groupSharedFolderId)
+                    .build())
+            .build();
+
+    this.mockMvc
+        .perform(createBuilderForPostWithJSONBody(userApiKey, "/share", user, sharePost))
+        .andExpect(status().isCreated())
+        .andReturn();
+
+    // As PI, call folder/{id} endpoint with includePathToRootFolder=true and
+    // parentId=usersRootFolderId
+    logoutAndLoginAs(pi);
+    String piApiKey = createNewApiKeyForUser(pi);
+
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                        API_VERSION.ONE, piApiKey, "/folders/{id}", pi, notebook.getId())
+                    .param("includePathToRootFolder", "true")
+                    .param("parentId", userRootId.toString()))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ApiFolder notebookBeforeMove = getFromJsonResponseBody(result, ApiFolder.class);
+    assertNotNull(notebookBeforeMove.getPathToRootFolder());
+    int pathLengthBeforeMove = notebookBeforeMove.getPathToRootFolder().size();
+
+    // The path should go through Shared->LabGroups hierarchy to PI's root
+    // Expected path: userRoot -> Shared -> LabGroups -> GroupFolder -> PI's root (at least 4
+    // folders)
+    assertTrue(
+        "Path should traverse Shared->LabGroups hierarchy, but was: "
+            + notebookBeforeMove.getPathToRootFolder().size(),
+        pathLengthBeforeMove >= 4);
+
+    // As user, create a subfolder in workspace and move the notebook into it
+    logoutAndLoginAs(user);
+
+    ApiFolder subfolderPost = new ApiFolder();
+    subfolderPost.setName("WorkspaceSubfolder");
+    subfolderPost.setParentFolderId(userRootId);
+    MvcResult createFolderResult =
+        this.mockMvc.perform(folderCreate(user, userApiKey, subfolderPost)).andReturn();
+    ApiFolder subfolder = getFromJsonResponseBody(createFolderResult, ApiFolder.class);
+
+    // Move notebook from root to subfolder
+    MoveRequest moveReq = new MoveRequest();
+    moveReq.setDocId(notebook.getId());
+    moveReq.setSourceFolderId(userRootId);
+    moveReq.setTargetFolderId(subfolder.getId());
+
+    this.mockMvc
+        .perform(createBuilderForPostWithJSONBody(userApiKey, "/documents/move", user, moveReq))
+        .andExpect(status().isNoContent())
+        .andReturn();
+
+    // As PI, call endpoint with includePathToRootFolder=true and parentId=usersWorkspaceSubfolderId
+    logoutAndLoginAs(pi);
+
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                        API_VERSION.ONE, piApiKey, "/folders/{id}", pi, notebook.getId())
+                    .param("includePathToRootFolder", "true")
+                    .param("parentId", subfolder.getId().toString()))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ApiFolder notebookAfterMove = getFromJsonResponseBody(result, ApiFolder.class);
+    assertNotNull(notebookAfterMove.getPathToRootFolder());
+    int pathLengthAfterMove = notebookAfterMove.getPathToRootFolder().size();
+
+    // BUG: This assertion currently fails because the path is unexpectedly short
+    // The path should still go through Shared->LabGroups hierarchy to PI's root,
+    // but currently only shows the user's workspace subfolder
+    assertEquals(
+        "After moving to subfolder, path should still traverse full Shared->LabGroups hierarchy",
+        pathLengthBeforeMove,
+        pathLengthAfterMove);
   }
 }
