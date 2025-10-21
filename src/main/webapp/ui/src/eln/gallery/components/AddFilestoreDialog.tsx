@@ -247,11 +247,7 @@ function TreeListing({
       }
     }
     void browse();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - fsName will only change when fsId does
-     * - login wont change
-     * - onFailToAuthenticate will not meaningfully change
-     */
+     
   }, [fsId, path]);
 
   return (

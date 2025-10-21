@@ -43,7 +43,7 @@ function GroupAutoshareManager({
   useEffect(() => {
     axios.get(`/groups/ajax/autoshareStatus/${groupId}`).then((response) => {
       if (!response.data.success) {
-        let msg = getValidationErrorString(response.data.error, ",", true);
+        const msg = getValidationErrorString(response.data.error, ",", true);
         RS.confirm(msg, "warning", 5000, { sticky: true });
         return;
       }
@@ -66,7 +66,7 @@ function GroupAutoshareManager({
 
     axios.post(url + groupId).then((response) => {
       if (!response.data.success) {
-        let msg = getValidationErrorString(response.data.error, ",", true);
+        const msg = getValidationErrorString(response.data.error, ",", true);
         RS.confirm(msg, "warning", 5000, { sticky: true });
         return;
       }
@@ -78,7 +78,7 @@ function GroupAutoshareManager({
       RS.confirm(
         "Please allow some time for the setting to take into-effect. You will receive a notification when it is complete",
         "notice",
-        5000
+        5000,
       );
     });
   }

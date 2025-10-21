@@ -321,7 +321,7 @@ window.renderToolbar = (newProps) => {
  * opportunity to set up event handlers for the ReactToolbarMounted event
  * dispatched above.
  */
-window.addEventListener("load", function () {
+window.addEventListener("load", () => {
   const domContainer = document.getElementById("toolbar2");
   window.renderToolbar({
     canSign: domContainer.getAttribute("data-can-sign") === "true",

@@ -81,10 +81,7 @@ export default function ZenodoRepo({
         value: "DUMMY_VALUE",
       },
     });
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - handleChange will not meaningfully change
-     * - updatePeople will not meaningfully change
-     */
+     
   }, []);
 
   return (

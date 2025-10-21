@@ -34,7 +34,7 @@ export default function ConnectedAppsTable(props) {
   const [fetchSuccess, setFetchSuccess] = React.useState(false);
 
   const fetchApps = () => {
-    let urlConnected = "/userform/ajax/oAuthConnectedApps";
+    const urlConnected = "/userform/ajax/oAuthConnectedApps";
 
     axios.get(urlConnected).then((response) => {
       if (response.status == 200) {
@@ -61,14 +61,14 @@ export default function ConnectedAppsTable(props) {
         RS.confirm(
           "Unable to remove connected app. Please, contact support if the problem persists.",
           "error",
-          "infinite"
+          "infinite",
         );
       });
   };
 
   const confirmDisconnectApp = (clientId) => {
-    let app = apps.find((a) => a.clientId == clientId);
-    let event = new CustomEvent("confirm-action", {
+    const app = apps.find((a) => a.clientId == clientId);
+    const event = new CustomEvent("confirm-action", {
       detail: {
         title: "Confirm disconnect",
         consequences: `Are you sure you want to revoke access from <b>${app.clientName}</b>?`,

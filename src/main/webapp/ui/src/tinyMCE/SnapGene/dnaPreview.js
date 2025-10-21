@@ -88,12 +88,12 @@ export default function DnaPreview(props) {
   const fetchData = async () => {
     setLoading(true);
     setImage(
-      `/molbiol/dna/png/${props.id}?linear=${state.linear}&showEnzymes=${state.showEnzymes}&showORFs=${state.showORFs}`
+      `/molbiol/dna/png/${props.id}?linear=${state.linear}&showEnzymes=${state.showEnzymes}&showORFs=${state.showORFs}`,
     );
   };
 
   const updateDisabled = () => {
-    let changed =
+    const changed =
       state.linear === oldState.linear &&
       state.showEnzymes === oldState.showEnzymes &&
       state.showORFs === oldState.showORFs;
@@ -105,7 +105,7 @@ export default function DnaPreview(props) {
     RS.confirm(
       "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
       "warning",
-      "infinite"
+      "infinite",
     );
     setLoading(false);
   };
@@ -181,7 +181,7 @@ export default function DnaPreview(props) {
                 onChange={(event) =>
                   handleChange(
                     event.target.value,
-                    (!state.showEnzymes).toString()
+                    (!state.showEnzymes).toString(),
                   )
                 }
                 value="showEnzymes"

@@ -27,7 +27,7 @@ export default function FastaView(props) {
   const fetchData = () => {
     setLoading(true);
 
-    let url = `/molbiol/dna/fasta/${props.id}`;
+    const url = `/molbiol/dna/fasta/${props.id}`;
     axios
       .get(url)
       .then((response) => {
@@ -36,7 +36,7 @@ export default function FastaView(props) {
       .catch((error) => {
         RS.confirm(error.response.data, "warning", "infinite");
       })
-      .finally(function () {
+      .finally(() => {
         setLoading(false);
       });
   };
@@ -49,14 +49,14 @@ export default function FastaView(props) {
         : false; // Mark as false to know no selection existed before
     el.select(); // Select the <textarea> content
     try {
-      var successful = document.execCommand("copy");
-      var msg = successful ? "successful" : "unsuccessful";
+      const successful = document.execCommand("copy");
+      const msg = successful ? "successful" : "unsuccessful";
       RS.confirm("Copied to clipboard", "notice", 3000);
     } catch (err) {
       RS.confirm(
         "Couldn't copy to clipboard. Try again manually.",
         "warning",
-        5000
+        5000,
       );
     }
     document.body.removeChild(el); // Remove the <textarea> element

@@ -1685,9 +1685,7 @@ export function useGalleryListing({
       FetchingData.getSuccessValue(path),
       FetchingData.getSuccessValue(section),
     );
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - getGalleryFiles will not meaningfully change
-     */
+     
   }, [searchTerm, sortOrder, orderBy, listingOf, directFolderPath]);
 
   if (loading)

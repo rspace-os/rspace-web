@@ -42,9 +42,7 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
     if (!alert.isInfinite) {
       setTimeoutId(setTimeout(() => removeAlert(alert), alert.duration));
     }
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - alert will not change because the caller sets the key to the alert id
-     */
+     
   }, []);
 
   const stopTimeout = () => {

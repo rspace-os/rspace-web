@@ -48,7 +48,7 @@ export default function SidebarInfo(props) {
 
   // add click listener on chem elements
   useEffect(() => {
-    $(props.iframe.contentDocument).on("click", ".chem", function (e) {
+    $(props.iframe.contentDocument).on("click", ".chem", (e) => {
       addItem(e.target);
     });
 
@@ -58,19 +58,19 @@ export default function SidebarInfo(props) {
     });
 
     // detect new chem inserted
-    document.addEventListener("tinymce-chem-inserted", function (e) {
-      var innerDoc =
+    document.addEventListener("tinymce-chem-inserted", (e) => {
+      const innerDoc =
         props.iframe.contentDocument || props.iframe.contentWindow.document;
       addItem($(innerDoc).find(`img#${e.detail}`)[0]);
     });
 
     // detect chem updated
-    document.addEventListener("tinymce-chem-updated", function (e) {
+    document.addEventListener("tinymce-chem-updated", (e) => {
       closeAll();
     });
 
     // detect sidebar state open/close
-    document.addEventListener("tinymce-chem-sidebar", function (e) {
+    document.addEventListener("tinymce-chem-sidebar", (e) => {
       setOpen(e.detail);
     });
   }, []);
@@ -85,7 +85,7 @@ export default function SidebarInfo(props) {
   }, [items]);
 
   const addItem = (element) => {
-    let item = {
+    const item = {
       id: element.id,
       imageSrc: element.getAttribute("src"),
     };
@@ -157,20 +157,20 @@ function WrappedSidebarInfo(props) {
 }
 
 // detect iframe load and render elements
-document.addEventListener("tinymce-iframe-loaded", function (e) {
+document.addEventListener("tinymce-iframe-loaded", (e) => {
   const iframe = $(e.detail)[0];
-  let container = $(".tox-sidebar__pane-container")[0];
+  const container = $(".tox-sidebar__pane-container")[0];
   const root = createRoot(container);
   root.render(<WrappedSidebarInfo iframe={iframe} />);
 });
 
 function watchEditor(containerSelector, elementSelector, callbackRemoved) {
-  var onMutationsObserved = function (mutations) {
-    mutations.forEach(function (mutation) {
+  const onMutationsObserved = function (mutations) {
+    mutations.forEach((mutation) => {
       // if new chem is added
       if (mutation.removedNodes.length) {
         // if a chem is removed
-        var element = $(mutation.removedNodes).find(elementSelector);
+        const element = $(mutation.removedNodes).find(elementSelector);
         if (
           element.prevObject[0].classList &&
           element.prevObject[0].classList.contains("chem")
@@ -181,8 +181,8 @@ function watchEditor(containerSelector, elementSelector, callbackRemoved) {
     });
   };
 
-  var MutationObserver =
+  const MutationObserver =
     window.MutationObserver || window.WebKitMutationObserver;
-  var observer = new MutationObserver(onMutationsObserved);
+  const observer = new MutationObserver(onMutationsObserved);
   observer.observe($(containerSelector)[0], { childList: true, subtree: true });
 }

@@ -91,7 +91,7 @@ export default function CreateMenu(props) {
           />
           Notebook
         </MenuItem>
-        <Divider className="createMenuItemDivider"/>
+        <Divider className="createMenuItemDivider" />
         {dynamicItems.map((entry) => (
           <MenuItem
             key={entry.id}
@@ -134,7 +134,10 @@ export default function CreateMenu(props) {
         </MenuItem>
         {props.asposeEnabled && (
           <MenuItem id="createFromWord" data-test-id="create-btn-word">
-            <FontAwesomeIcon icon="file-word" style={{ paddingRight: "10px" }} />
+            <FontAwesomeIcon
+              icon="file-word"
+              style={{ paddingRight: "10px" }}
+            />
             From Word
           </MenuItem>
         )}
@@ -159,7 +162,7 @@ export default function CreateMenu(props) {
             From Protocols.io
           </MenuItem>
         )}
-        <Divider className="createMenuItemDivider"/>
+        <Divider className="createMenuItemDivider" />
         <MenuItem id="createNewForm" data-test-id="create-btn-new-form">
           <FontAwesomeIcon icon="file-alt" style={{ paddingRight: "10px" }} />
           New Form

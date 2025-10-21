@@ -62,13 +62,13 @@ function UserDetails(props) {
   // make sure the messages dialog is imported into the current page
   const sendMessage = () => {
     setAnchorEl(null);
-    let recipient = `${user.username}<${user.fullname}>,`;
+    const recipient = `${user.username}<${user.fullname}>,`;
     $("#createRequestDlg").data("recipient", recipient).dialog("open");
   };
 
   // fecth user details
   const fetchUser = () => {
-    let url = `/userform/ajax/miniprofile/${props.userId}`;
+    const url = `/userform/ajax/miniprofile/${props.userId}`;
     axios
       .get(url)
       .then((response) => {
@@ -141,11 +141,11 @@ function UserDetails(props) {
   const label = () => {
     if (props.display == "username" && props.username) {
       return props.username;
-    } else if (props.firstName) {
-      return `${props.firstName} ${props.lastName}`;
-    } else {
-      return props.fullName;
     }
+    if (props.firstName) {
+      return `${props.firstName} ${props.lastName}`;
+    }
+    return props.fullName;
   };
 
   return (

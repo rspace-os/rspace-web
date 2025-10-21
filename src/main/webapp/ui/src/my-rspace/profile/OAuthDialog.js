@@ -56,7 +56,7 @@ export default function OAuthDialog(props) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isNameValid()) {
-      let url = `/userform/ajax/oAuthApps/${appName}`;
+      const url = `/userform/ajax/oAuthApps/${appName}`;
       axios
         .post(url)
         .then((response) => {
@@ -67,7 +67,7 @@ export default function OAuthDialog(props) {
             setUnhashedClientSecret(response.data.unhashedClientSecret);
             props.addApp({
               clientId: response.data.clientId,
-              appName: appName,
+              appName,
             });
           } else if (response.hasOwnProperty("exceptionMessage")) {
             RS.confirm(response.exceptionMessage, "warning", "infinite");
@@ -75,7 +75,7 @@ export default function OAuthDialog(props) {
             RS.confirm(
               "There was a problem while creating your application. Please, try again later or contact support.",
               "warning",
-              "infinite"
+              "infinite",
             );
           }
         })
@@ -89,17 +89,17 @@ export default function OAuthDialog(props) {
     if (!/[\w-\\s]/.test(appName)) {
       setHasError(true);
       setErrorMessage(
-        "The application name should only contain alphanumeric symbols."
+        "The application name should only contain alphanumeric symbols.",
       );
       return false;
-    } else if (appName.length >= 100) {
+    }
+    if (appName.length >= 100) {
       setHasError(true);
       setErrorMessage("The application name should be less than 100 symbols.");
       return false;
-    } else {
-      setHasError(false);
-      return true;
     }
+    setHasError(false);
+    return true;
   };
 
   const copyToClipboard = (e, id) => {
@@ -110,21 +110,21 @@ export default function OAuthDialog(props) {
     }
 
     try {
-      var successful = document.execCommand("copy");
+      const successful = document.execCommand("copy");
       if (successful) {
         RS.confirm("Copied to clipboard", "notice", 3000);
       } else {
         RS.confirm(
           "Couldn't copy to clipboard. Try again manually.",
           "warning",
-          5000
+          5000,
         );
       }
     } catch (err) {
       RS.confirm(
         "Couldn't copy to clipboard. Try again manually.",
         "warning",
-        5000
+        5000,
       );
     }
   };

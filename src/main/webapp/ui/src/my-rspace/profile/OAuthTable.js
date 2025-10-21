@@ -43,7 +43,7 @@ export default function OAuthTable(props) {
   const [fetchSuccess, setFetchSuccess] = React.useState(false);
 
   const fetchApps = () => {
-    let urlAll = "/userform/ajax/oAuthApps";
+    const urlAll = "/userform/ajax/oAuthApps";
 
     axios.get(urlAll).then((response) => {
       if (response.status !== 200 || response.data.exceptionMessage) {
@@ -60,8 +60,8 @@ export default function OAuthTable(props) {
   }, []);
 
   const confirmDeleteApp = (clientId) => {
-    let app = apps.find((a) => a.clientId == clientId);
-    let event = new CustomEvent("confirm-action", {
+    const app = apps.find((a) => a.clientId == clientId);
+    const event = new CustomEvent("confirm-action", {
       detail: {
         title: "Confirm deletion",
         consequences: `Are you sure you want to delete <b>${app.appName}</b>? All access and refresh tokens will be revoked.`,
@@ -75,7 +75,7 @@ export default function OAuthTable(props) {
   };
 
   const deleteApp = (clientId) => {
-    let url = `/userform/ajax/oAuthApps/${clientId}`;
+    const url = `/userform/ajax/oAuthApps/${clientId}`;
     axios
       .delete(url)
       .then((response) => {
@@ -86,7 +86,7 @@ export default function OAuthTable(props) {
           RS.confirm(
             "There was a problem deleting this app. Please, try again.",
             "warning",
-            5000
+            5000,
           );
         }
       })

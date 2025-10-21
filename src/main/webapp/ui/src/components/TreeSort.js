@@ -26,8 +26,10 @@ const SortWrapper = styled.div`
     height: 100%;
     padding: 0px;
     border-radius: 4px;
-    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2),
-      0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);
+    box-shadow:
+      0px 1px 3px 0px rgba(0, 0, 0, 0.2),
+      0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+      0px 2px 1px -1px rgba(0, 0, 0, 0.12);
 
     ::before,
     ::after {
@@ -64,9 +66,9 @@ export default function TreeSort(props) {
   }
 
   useEffect(() => {
-    $(function () {
+    $(() => {
       if (clientUISettings) {
-        let [order, sort] = clientUISettings.treeSort.split(".");
+        const [order, sort] = clientUISettings.treeSort.split(".");
         setOrderBy(order || "name");
         setSortOrder(sort || "DESC");
       }

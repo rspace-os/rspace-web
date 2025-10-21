@@ -59,7 +59,7 @@ function loadIntercom({
       // The following code is copied from https://segment.com/docs/connections/sources/catalog/libraries/website/javascript/quickstart/
       (function () {
         // Create a queue, but don't obliterate an existing one!
-        var analytics = (window.analytics = window.analytics || []); //eslint-disable-line
+        var analytics = (window.analytics = window.analytics || []);  
         // If the real analytics.js is already on the page return.
         if (analytics.initialize) return;
         // If the snippet was invoked already show an error.
@@ -114,7 +114,7 @@ function loadIntercom({
         // Define a method to load Analytics.js from our CDN,
         // and that will be sure to only ever load it once.
         analytics.load = function (key, options) {
-          //eslint-disable-line
+           
           // Create an async script element based on your key.
           const script = document.createElement("script");
           script.type = "text/javascript";

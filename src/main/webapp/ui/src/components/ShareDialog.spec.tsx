@@ -728,7 +728,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/api/v1/share", async (route) => {
     const request = route.request();
     if (request.method() === "POST") {
-      const body: any = (await request.postDataJSON()) as any;
+      const body: any = (await request.postDataJSON());
       const itemId = body.itemsToShare[0] as number;
       const permission = body.users[0]?.permission as string;
 
@@ -753,7 +753,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       return;
     }
     if (request.method() === "PUT") {
-      const body: any = (await request.postDataJSON()) as any;
+      const body: any = (await request.postDataJSON());
       const shareId = body.shareId as number;
       const permission = body.permission as string;
       await route.fulfill({

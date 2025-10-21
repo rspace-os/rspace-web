@@ -39,7 +39,7 @@ export default function NewNotebook() {
     setOpen(false);
     RS.blockPage("Creating a new folder...");
 
-    let bodyFormData = new FormData();
+    const bodyFormData = new FormData();
     bodyFormData.set("folderNameField", name);
     setName("");
 

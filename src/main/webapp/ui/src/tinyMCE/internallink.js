@@ -168,7 +168,9 @@ export default function InternalLink(props) {
         setSelected(props.version ? props.version : latest.version);
 
         // calculate the initial page so that current revision is visible
-        let idx = fetchedRevisions.findIndex((r) => r.version == props.version);
+        const idx = fetchedRevisions.findIndex(
+          (r) => r.version == props.version,
+        );
         if (idx != -1) {
           // if revision's not found, selected "Always latest" and set to page 0
           setPage(Math.floor(idx / 5));
@@ -363,9 +365,9 @@ function WrappedInternalLink(props) {
   );
 }
 
-document.addEventListener("tinymce-insert-revision", function (e) {
+document.addEventListener("tinymce-insert-revision", (e) => {
   $(document.body).append("<span class='revision-dialog'></span>");
-  let container = $(".revision-dialog")[$(".revision-dialog").length - 1];
+  const container = $(".revision-dialog")[$(".revision-dialog").length - 1];
   const root = createRoot(container);
   root.render(
     <WrappedInternalLink

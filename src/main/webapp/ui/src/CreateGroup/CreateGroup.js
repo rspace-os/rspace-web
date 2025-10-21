@@ -77,7 +77,7 @@ class CreateGroup extends React.Component {
       activeStep: 1,
       createGroup: {
         ...this.state.createGroup,
-        groupType: groupType,
+        groupType,
       },
     });
   };
@@ -86,7 +86,7 @@ class CreateGroup extends React.Component {
     this.setState({
       createGroup: {
         ...this.state.createGroup,
-        groupName: groupName,
+        groupName,
       },
     });
   };
@@ -118,8 +118,8 @@ class CreateGroup extends React.Component {
     const url = projectGroup
       ? "/projectGroup/createProjectGroup"
       : selfService
-      ? "/selfServiceLabGroup/createSelfServiceLabGroup"
-      : "/cloud/createCloudGroup2";
+        ? "/selfServiceLabGroup/createSelfServiceLabGroup"
+        : "/cloud/createCloudGroup2";
     const data = {
       emails: [
         ...this.state.createGroup.existingUsers,
@@ -155,7 +155,7 @@ class CreateGroup extends React.Component {
           // unhandled error message
           console.warn(
             "Unexpected error returned by group creation request",
-            response.data
+            response.data,
           );
           this.setState({
             errorMessage: `Your request failed with unexpected error. If this problem persists, please contact RSpace Support.`,
@@ -187,9 +187,8 @@ class CreateGroup extends React.Component {
       details.groupType === ""
     ) {
       return false;
-    } else {
-      return true;
     }
+    return true;
   };
 
   //Depending on what modal number the user is on depends on what is displayed via switch

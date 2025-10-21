@@ -21,9 +21,9 @@ export default function Snackbars(props) {
 
   useEffect(() => {
     isMountedRef.current = true;
-    document.addEventListener("show-toast-message", function (e) {
+    document.addEventListener("show-toast-message", (e) => {
       if (isMountedRef.current) {
-        var config = {
+        const config = {
           id: Date.now(),
           message: e.detail.message,
           variant: e.detail.variant || "notice", // success/warning/error/notice
@@ -48,7 +48,7 @@ export default function Snackbars(props) {
     //  * as latter doesn't seem to trigger when page is unfocused, e.g. when user keeps editing
     //  * and saving in tinymce, which results in stacked/stucked confirmation messages.  */
     if (!toast_cnf.infinite) {
-      setTimeout(function () {
+      setTimeout(() => {
         removeToast(toast_cnf.id);
       }, toast_cnf.duration);
     }
@@ -95,7 +95,7 @@ function WrappedSnackbars(props) {
 }
 
 // render the snackbar wrapper component
-let domContainer = document.getElementById("toast-message");
+const domContainer = document.getElementById("toast-message");
 const root = createRoot(domContainer);
 root.render(<WrappedSnackbars />);
 

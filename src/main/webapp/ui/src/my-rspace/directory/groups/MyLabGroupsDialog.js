@@ -69,7 +69,7 @@ class MyLabGroupsDialog extends React.Component {
   submitForm = () => {
     const url = "/groups/admin/addUser";
 
-    let data = new FormData();
+    const data = new FormData();
     const config = {
       headers: { "Content-Type": "multipart/form-data", responseType: "text" },
     };
@@ -97,9 +97,9 @@ class MyLabGroupsDialog extends React.Component {
       .catch((error) => {
         console.error("couldn't add users: " + error);
         RS.confirm(
-            "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
-            "error",
-            "infinite"
+          "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
+          "error",
+          "infinite",
         );
       });
   };
@@ -165,7 +165,7 @@ class MyLabGroupsDialog extends React.Component {
           $push: this.state.selectedUsers.add,
         }),
       },
-      this.updateAvailableUsers
+      this.updateAvailableUsers,
     );
   };
 
@@ -175,11 +175,11 @@ class MyLabGroupsDialog extends React.Component {
         chosenUsers: this.state.chosenUsers.filter(
           (user) =>
             this.state.selectedUsers.remove.findIndex(
-              (selected) => selected.username == user.username
-            ) == -1
+              (selected) => selected.username == user.username,
+            ) == -1,
         ),
       },
-      this.updateAvailableUsers
+      this.updateAvailableUsers,
     );
   };
 
@@ -187,10 +187,10 @@ class MyLabGroupsDialog extends React.Component {
     this.setState(
       {
         availableUsers: this.state.userList.filter(
-          (user) => this.findUser(this.state.chosenUsers, user) == -1
+          (user) => this.findUser(this.state.chosenUsers, user) == -1,
         ),
       },
-      this.resetSelection()
+      this.resetSelection(),
     );
   };
 
@@ -200,7 +200,7 @@ class MyLabGroupsDialog extends React.Component {
         chosenUsers: [],
         availableUsers: this.state.userList,
       },
-      this.resetSelection
+      this.resetSelection,
     );
   };
 

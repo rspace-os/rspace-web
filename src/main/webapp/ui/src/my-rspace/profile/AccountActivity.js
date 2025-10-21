@@ -26,7 +26,7 @@ export default function AccountActivity(props) {
   const [orderBy, setOrderBy] = React.useState("timestamp");
 
   const loadUserActivity = () => {
-    let url = `/userform/ajax/accountEventsByUser/${props.userId}`;
+    const url = `/userform/ajax/accountEventsByUser/${props.userId}`;
     axios
       .get(url)
       .then((response) => {
@@ -91,7 +91,7 @@ export default function AccountActivity(props) {
                           </TableCell>
                         </TableRow>
                       );
-                    }
+                    },
                   )}
                 </TableBody>
               </Table>
