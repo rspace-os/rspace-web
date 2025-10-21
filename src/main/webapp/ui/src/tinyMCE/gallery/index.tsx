@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import GalleryPicker from "../../eln/gallery/picker";
 import { MemoryRouter } from "react-router-dom";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import Alerts from "@/components/Alerts/Alerts";
 import axios from "@/common/axios";
 import {
   Filestore,
@@ -88,76 +89,78 @@ class GalleryPlugin {
         root.render(
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <DialogBoundary>
-                <MemoryRouter>
-                  <LandmarksProvider>
-                    <GalleryPicker
-                      open={newProps.open}
-                      onClose={newProps.onClose ?? (() => {})}
-                      onSubmit={(files) => {
-                        const localFiles = ArrayUtils.filterClass(
-                          LocalGalleryFile,
-                          files.toArray(),
-                        );
-                        localFiles.forEach((file) => {
-                          void axios
-                            .get(
-                              `/workspace/getRecordInformation?recordId=${file.id}`,
-                            )
-                            .then((response) => {
-                              window.addFromGallery(
-                                (response.data as { data: unknown }).data,
+              <Alerts>
+                <DialogBoundary>
+                    <MemoryRouter>
+                      <LandmarksProvider>
+                          <GalleryPicker
+                            open={newProps.open}
+                            onClose={newProps.onClose ?? (() => {})}
+                            onSubmit={(files) => {
+                              const localFiles = ArrayUtils.filterClass(
+                                LocalGalleryFile,
+                                files.toArray(),
                               );
-                            })
-                            .catch((error) => {
-                              window.RS.confirm?.(
-                                `Could not insert file "${file.name}"`,
-                                "error",
+                              localFiles.forEach((file) => {
+                                void axios
+                                  .get(
+                                    `/workspace/getRecordInformation?recordId=${file.id}`,
+                                  )
+                                  .then((response) => {
+                                    window.addFromGallery(
+                                      (response.data as { data: unknown }).data,
+                                    );
+                                  })
+                                  .catch((error) => {
+                                    window.RS.confirm?.(
+                                      `Could not insert file "${file.name}"`,
+                                      "error",
+                                    );
+                                  });
+                              });
+                              const remoteFiles = ArrayUtils.filterClass(
+                                RemoteFile,
+                                files.toArray(),
                               );
-                            });
-                        });
-                        const remoteFiles = ArrayUtils.filterClass(
-                          RemoteFile,
-                          files.toArray(),
-                        );
-                        remoteFiles.forEach((file) => {
-                          const json = {
-                            name: file.name,
-                            linktype: "file",
-                            fileStoreId: file.path[0].id,
-                            relFilePath: file.remotePath,
-                            nfsId: file.nfsId,
-                            nfsType: (file.path[0] as Filestore).filesystemType,
-                          };
-                          window.RS.insertTemplateIntoTinyMCE?.(
-                            "netFilestoreLink",
-                            json,
-                          );
-                        });
-                        if (
-                          files.size >
-                          localFiles.length + remoteFiles.length
-                        ) {
-                          throw new Error(
-                            "Some selected files were of an unsupported type",
-                          );
-                        }
-                        newProps?.onClose?.();
-                      }}
-                      validateSelection={(file) => {
-                        if (
-                          !(file instanceof LocalGalleryFile) &&
-                          !(file instanceof RemoteFile)
-                        )
-                          return IsInvalid("Unsupported file type");
-                        if (file.isSystemFolder)
-                          return IsInvalid("System Folders cannot be inserted");
-                        return IsValid();
-                      }}
-                    />
-                  </LandmarksProvider>
-                </MemoryRouter>
-              </DialogBoundary>
+                              remoteFiles.forEach((file) => {
+                                const json = {
+                                  name: file.name,
+                                  linktype: "file",
+                                  fileStoreId: file.path[0].id,
+                                  relFilePath: file.remotePath,
+                                  nfsId: file.nfsId,
+                                  nfsType: (file.path[0] as Filestore).filesystemType,
+                                };
+                                window.RS.insertTemplateIntoTinyMCE?.(
+                                  "netFilestoreLink",
+                                  json,
+                                );
+                              });
+                              if (
+                                files.size >
+                                localFiles.length + remoteFiles.length
+                              ) {
+                                throw new Error(
+                                  "Some selected files were of an unsupported type",
+                                );
+                              }
+                              newProps?.onClose?.();
+                            }}
+                            validateSelection={(file) => {
+                              if (
+                                !(file instanceof LocalGalleryFile) &&
+                                !(file instanceof RemoteFile)
+                              )
+                                return IsInvalid("Unsupported file type");
+                              if (file.isSystemFolder)
+                                return IsInvalid("System Folders cannot be inserted");
+                              return IsValid();
+                            }}
+                          />
+                      </LandmarksProvider>
+                    </MemoryRouter>
+                </DialogBoundary>
+              </Alerts>
             </ThemeProvider>
           </StyledEngineProvider>,
         );
