@@ -1,5 +1,4 @@
 const path = require("path");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const webpack = require("webpack");
 
 module.exports = {
@@ -85,9 +84,9 @@ module.exports = {
     chunkFilename: "[name].js",
     path: path.resolve(__dirname, "dist"),
     publicPath: "/ui/dist/",
+    clean: true,
   },
   plugins: [
-    new CleanWebpackPlugin(),
     //mocks process object, required by the ketcher-react package which would
     // fail otherwise
     new webpack.DefinePlugin({
