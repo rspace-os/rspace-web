@@ -15,7 +15,11 @@ export default defineConfig([
   {
     ignores: ["**/node_modules/", ".git/", "**/dist/", "**/build/"],
   },
-
+  {
+    env: {
+      node: true
+    }
+  },
   // Base configuration for all JavaScript files
   {
     files: ["**/*.js", "**/*.jsx"],
