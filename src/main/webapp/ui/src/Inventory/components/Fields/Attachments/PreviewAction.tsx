@@ -1,14 +1,12 @@
-import React, { type ComponentType, useState } from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
 import PreviewIcon from "@mui/icons-material/Visibility";
 import ImagePreview, {
   type PreviewSize,
 } from "../../../../components/ImagePreview";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-library.add(faSpinner);
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { type Attachment } from "../../../../stores/definitions/Attachment";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import useStores from "../../../../stores/use-stores";
@@ -68,7 +66,7 @@ function Preview({ attachment }: PreviewArgs) {
         disabled={loadingImage || !previewSupported}
         icon={
           loadingImage ? (
-            <FontAwesomeIcon icon="spinner" spin size="lg" />
+            <FontAwesomeIcon icon={faSpinner} spin size="lg" />
           ) : previewSupported ? (
             <PreviewIcon />
           ) : (

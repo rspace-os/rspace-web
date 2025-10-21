@@ -2,16 +2,12 @@
 import React, { useEffect } from "react";
 import styled from "@emotion/styled";
 import IconButton from "@mui/material/IconButton";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Snackbar from "@mui/material/Snackbar";
 import CloseIcon from "@mui/icons-material/Close";
-import {
-  faCaretLeft,
-  faCaretRight,
-  faAngleDoubleLeft,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(faCaretLeft, faCaretRight, faAngleDoubleLeft);
+import { faCaretLeft } from "@fortawesome/free-solid-svg-icons/faCaretLeft";
+import { faCaretRight } from "@fortawesome/free-solid-svg-icons/faCaretRight";
+import { faAngleDoubleLeft } from "@fortawesome/free-solid-svg-icons/faAngleDoubleLeft";
 
 import UserList from "./UserList";
 
@@ -143,21 +139,21 @@ export default function main(props) {
           onClick={addUsers}
           data-test-id={`add-${props.labelRight.split(" ").join("-")}`}
         >
-          <FontAwesomeIcon icon="caret-right" />
+          <FontAwesomeIcon icon={faCaretRight} />
         </IconButton>
         <IconButton
           disabled={selectedRight.length == 0}
           onClick={removeUsers}
           data-test-id={`remove-${props.labelRight.split(" ").join("-")}`}
         >
-          <FontAwesomeIcon icon="caret-left" />
+          <FontAwesomeIcon icon={faCaretLeft} />
         </IconButton>
         <IconButton
           disabled={usersRight.length == 0}
           onClick={resetColumns}
           data-test-id={`remove-all-${props.labelRight.split(" ").join("-")}`}
         >
-          <FontAwesomeIcon icon="angle-double-left" />
+          <FontAwesomeIcon icon={faAngleDoubleLeft} />
         </IconButton>
       </Actions>
       <UserList

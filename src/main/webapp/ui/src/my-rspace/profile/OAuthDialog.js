@@ -14,11 +14,9 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCopy } from "@fortawesome/free-regular-svg-icons";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
-library.add(faCopy, faPlus);
+import { faCopy } from "@fortawesome/free-regular-svg-icons/faCopy";
+import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
 
 export default function OAuthDialog(props) {
   const [open, setOpen] = React.useState(false);
@@ -140,7 +138,7 @@ export default function OAuthDialog(props) {
       <ThemeProvider theme={materialTheme}>
         <Tooltip title="Add a new app" enterDelay={100}>
           <IconButton color="inherit" onClick={handleClickOpen}>
-            <FontAwesomeIcon icon="plus" size="xs" />
+            <FontAwesomeIcon icon={faPlus} size="xs" />
           </IconButton>
         </Tooltip>
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -192,7 +190,7 @@ export default function OAuthDialog(props) {
                       color="inherit"
                       onClick={(e) => copyToClipboard(e, 1)}
                     >
-                      <FontAwesomeIcon icon={["far", "copy"]} />
+                      <FontAwesomeIcon icon={faCopy} />
                     </IconButton>
                   </Tooltip>
                 </Grid>
@@ -210,7 +208,7 @@ export default function OAuthDialog(props) {
                       color="inherit"
                       onClick={(e) => copyToClipboard(e, 2)}
                     >
-                      <FontAwesomeIcon icon={["far", "copy"]} />
+                      <FontAwesomeIcon icon={faCopy} />
                     </IconButton>
                   </Tooltip>
                 </Grid>

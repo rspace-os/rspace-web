@@ -2,10 +2,8 @@ import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { library } from "@fortawesome/fontawesome-svg-core";
-library.add(faSpinner);
 import { doNotAwait } from "../../../util/Util";
 
 type RetryArgs = {
@@ -20,7 +18,7 @@ function Retry({ retryFunction, onClose }: RetryArgs): React.ReactNode {
       title="Retry"
       icon={
         retrying ? (
-          <FontAwesomeIcon icon="spinner" spin size="sm" />
+          <FontAwesomeIcon icon={faSpinner} spin size="sm" />
         ) : (
           <RefreshIcon />
         )

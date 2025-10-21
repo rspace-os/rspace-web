@@ -3,7 +3,6 @@ import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import CreateNew from "../CreateNew";
 import Drawer from "@mui/material/Drawer";
-import GetAppIcon from "@mui/icons-material/GetApp";
 import SettingsIcon from "@mui/icons-material/Settings";
 import List from "@mui/material/List";
 import { withStyles } from "Styles";
@@ -25,6 +24,9 @@ import DrawerTab from "../../../components/DrawerTab";
 import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
 import { mapNullable } from "@/util/Util";
 import { InvalidState } from "@/util/error";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
+import { faGear } from "@fortawesome/free-solid-svg-icons/faGear";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);
@@ -418,7 +420,7 @@ const ExportNavItem = observer(
             setOpenExportDialog(true);
           }}
           selected={false}
-          icon={<GetAppIcon />}
+          icon={<FontAwesomeIcon icon={faFileExport} />}
           index={index}
           tabIndex={tabIndex}
           ref={getRef(index)}
@@ -459,7 +461,7 @@ const SettingsNavItem = observer(
             setOpenSettingsDialog(true);
           }}
           selected={false}
-          icon={<SettingsIcon />}
+          icon={<FontAwesomeIcon icon={faGear} />}
           index={index}
           tabIndex={tabIndex}
           ref={getRef(index)}

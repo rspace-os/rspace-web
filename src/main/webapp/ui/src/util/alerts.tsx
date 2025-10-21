@@ -5,11 +5,9 @@ import * as ArrayUtils from "./ArrayUtils";
 import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { library } from "@fortawesome/fontawesome-svg-core";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { traverseObjectTree } from "./unsafeUtils";
 import { Optional } from "./optional";
-library.add(faSpinner);
 
 type Operation =
   | "trashed"
@@ -166,7 +164,7 @@ export async function showToastWhilstPending<A>(
   message: string,
   promise: Promise<A>
 ): Promise<A> {
-  const loadingIcon = <FontAwesomeIcon icon="spinner" spin size="1x" />;
+  const loadingIcon = <FontAwesomeIcon icon={faSpinner} spin size="1x" />;
   const processingAlert = mkAlert({
     message,
     variant: "notice",

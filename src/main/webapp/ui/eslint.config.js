@@ -110,6 +110,13 @@ export default defineConfig([
       "require-await": "warn",
       yoda: ["warn", "never"],
       "react/prop-types": "error",
+      // Remove when we have better tree-shaking
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [{ regex: "^@fortawesome/[^/]+$" }],
+        },
+      ],
     },
   },
 

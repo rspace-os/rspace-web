@@ -9,34 +9,17 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCalendarAlt,
-  faList,
-  faFolder,
-  faStar,
-  faShareAlt,
-  faUsers,
-  faFile,
-  faBook,
-  faFolderOpen,
-  faThList,
-  faStream,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(
-  faCalendarAlt,
-  faList,
-  faFolder,
-  faStar,
-  faShareAlt,
-  faUsers,
-  faFile,
-  faBook,
-  faFolderOpen,
-  faThList,
-  faStream,
-);
+import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons/faCalendarAlt";
+import { faList } from "@fortawesome/free-solid-svg-icons/faList";
+import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
+import { faStar } from "@fortawesome/free-solid-svg-icons/faStar";
+import { faShareAlt } from "@fortawesome/free-solid-svg-icons/faShareAlt";
+import { faUsers } from "@fortawesome/free-solid-svg-icons/faUsers";
+import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
+import { faThList } from "@fortawesome/free-solid-svg-icons/faThList";
+import { faStream } from "@fortawesome/free-solid-svg-icons/faStream";
+
 import TagDialog from "./TagDialog";
 import CompareDialog from "./CompareDialog";
 import RenameDialog from "./RenameDialog";
@@ -320,7 +303,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-calendar"
                 aria-label="Create a calendar entry"
               >
-                <FontAwesomeIcon icon="calendar-alt" />
+                <FontAwesomeIcon icon={faCalendarAlt} />
               </IconButton>
             </Tooltip>
           </span>
@@ -341,7 +324,11 @@ class WorkspaceToolbar extends React.Component {
             color="inherit"
             aria-label="View mode"
           >
-            <FontAwesomeIcon icon={this.state.treeView ? "stream" : "list"} />
+            {this.state.treeView ? (
+              <FontAwesomeIcon icon={faStream} />
+            ) : (
+              <FontAwesomeIcon icon={faList} />
+            )}
           </IconButton>
         </Tooltip>
         <Menu
@@ -360,7 +347,7 @@ class WorkspaceToolbar extends React.Component {
             data-test-id="toolbar-view-tree"
             aria-label="Tree view"
           >
-            <FontAwesomeIcon icon="stream" style={{ paddingRight: "10px" }} />
+            <FontAwesomeIcon icon={faStream} style={{ paddingRight: "10px" }} />
             Tree view
           </MenuItem>
           <MenuItem
@@ -369,7 +356,7 @@ class WorkspaceToolbar extends React.Component {
             data-test-id="toolbar-view-list"
             aria-label="List view"
           >
-            <FontAwesomeIcon icon="list" style={{ paddingRight: "10px" }} />
+            <FontAwesomeIcon icon={faList} style={{ paddingRight: "10px" }} />
             List view
           </MenuItem>
         </Menu>
@@ -385,11 +372,11 @@ class WorkspaceToolbar extends React.Component {
                 color="inherit"
                 aria-label="View mode"
               >
-                <FontAwesomeIcon
-                  icon={
-                    this.state.viewableItemsFilter ? "th-list" : "folder-open"
-                  }
-                />
+                {this.state.viewableItemsFilter ? (
+                  <FontAwesomeIcon icon={faThList} />
+                ) : (
+                  <FontAwesomeIcon icon={faFolderOpen} />
+                )}
               </IconButton>
             </Tooltip>
             <Menu
@@ -409,7 +396,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-view-folders"
               >
                 <FontAwesomeIcon
-                  icon="folder-open"
+                  icon={faFolderOpen}
                   style={{ paddingRight: "10px" }}
                 />
                 Folder view
@@ -420,7 +407,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-view-all"
               >
                 <FontAwesomeIcon
-                  icon="th-list"
+                  icon={faThList}
                   style={{ paddingRight: "10px" }}
                 />
                 View all
@@ -434,7 +421,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-filter-labgroup"
                 aria-label="Labgroup records"
               >
-                <FontAwesomeIcon icon="users" />
+                <FontAwesomeIcon icon={faUsers} />
               </IconButton>
             </Tooltip>
             <span
@@ -456,7 +443,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-filter-favorites"
                 aria-label="Favorites"
               >
-                <FontAwesomeIcon icon="star" />
+                <FontAwesomeIcon icon={faStar} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Shared with me" enterDelay={300}>
@@ -471,7 +458,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-filter-shared"
                 aria-label="Shared with me"
               >
-                <FontAwesomeIcon icon="share-alt" />
+                <FontAwesomeIcon icon={faShareAlt} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Templates" enterDelay={300}>
@@ -486,7 +473,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-filter-templates"
                 aria-label="Templates"
               >
-                <FontAwesomeIcon icon="folder" />
+                <FontAwesomeIcon icon={faFolder} />
                 <span
                   style={{
                     position: "absolute",
@@ -512,7 +499,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-filter-ontology"
                 aria-label="Ontology files"
               >
-                <FontAwesomeIcon icon="folder" />
+                <FontAwesomeIcon icon={faFolder} />
                 <span
                   style={{
                     position: "absolute",

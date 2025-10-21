@@ -7,10 +7,8 @@ import CardContent from "@mui/material/CardContent";
 import RecordDetails from "./RecordDetails";
 import Button from "@mui/material/Button";
 import useStores from "../../stores/use-stores";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
-library.add(faExternalLinkAlt);
+import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons/faExternalLinkAlt";
 import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import { type Record } from "../../stores/definitions/Record";
 import { withStyles } from "Styles";
@@ -51,7 +49,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
           target="_blank"
           icon={
             <FontAwesomeIcon
-              icon="external-link-alt"
+              icon={faExternalLinkAlt}
               style={{ marginRight: 10 }}
             />
           }

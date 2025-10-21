@@ -11,11 +11,8 @@ import EnhancedTableHead from "../../components/EnhancedTableHead";
 import axios from "@/common/axios";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import { faUnlink } from "@fortawesome/free-solid-svg-icons";
-library.add(faTrashAlt, faUnlink);
+import { faUnlink } from "@fortawesome/free-solid-svg-icons/faUnlink";
 
 const headCells = [
   { id: "clientName", numeric: false, label: "App Name" },
@@ -132,10 +129,7 @@ export default function ConnectedAppsTable(props) {
                             onClick={() => confirmDisconnectApp(app.clientId)}
                             style={{ width: "42px" }}
                           >
-                            <FontAwesomeIcon
-                              icon={["fa", "unlink"]}
-                              size="xs"
-                            />
+                            <FontAwesomeIcon icon={faUnlink} size="xs" />
                           </IconButton>
                         </Tooltip>
                       </TableCell>

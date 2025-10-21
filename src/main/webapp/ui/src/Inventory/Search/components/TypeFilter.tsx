@@ -4,12 +4,9 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
 import { type ResultType } from "../../../stores/definitions/Search";
-import TemplateIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/Template";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { faCircle } from "@fortawesome/free-regular-svg-icons";
+import { faCircle } from "@fortawesome/free-regular-svg-icons/faCircle";
 import { match } from "../../../util/Util";
-library.add(faCircle);
 import { useTheme } from "@mui/material/styles";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 
@@ -46,7 +43,7 @@ export default function TypeFilter({
           data-test-id="typeAll"
         >
           <ListItemIcon>
-            <FontAwesomeIcon icon={["far", "circle"]} />
+            <FontAwesomeIcon icon={faCircle} />
           </ListItemIcon>
           <ListItemText
             primary="All"

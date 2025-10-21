@@ -5,16 +5,11 @@ import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBook,
-  faFileWord,
-  faFolderOpen,
-  faFileAlt,
-} from "@fortawesome/free-solid-svg-icons";
-import { faEvernote } from "@fortawesome/free-brands-svg-icons";
-library.add(faBook, faFileWord, faFolderOpen, faFileAlt, faEvernote);
+import { faFileWord } from "@fortawesome/free-solid-svg-icons/faFileWord";
+import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
+import { faFileAlt } from "@fortawesome/free-solid-svg-icons/faFileAlt";
+import { faEvernote } from "@fortawesome/free-brands-svg-icons/faEvernote";
 
 import NewFolder from "./Workspace/Misc/NewFolder";
 import NewNotebook from "./Workspace/Misc/NewNotebook";
@@ -74,7 +69,7 @@ export default function CreateMenu(props) {
         onClose={() => setOpen(false)}
       >
         <MenuItem id="createEntry" data-test-id="create-btn-new-entry">
-          <FontAwesomeIcon icon="file-alt" style={{ paddingRight: "10px" }} />
+          <FontAwesomeIcon icon={faFileAlt} style={{ paddingRight: "10px" }} />
           New entry
         </MenuItem>
         <MenuItem id="createFolder" data-test-id="create-btn-folder">
@@ -110,13 +105,16 @@ export default function CreateMenu(props) {
         ))}
         {dynamicItems.length > 0 && (
           <MenuItem id="templateMenuLnk" data-test-id="create-btn-from-form">
-            <FontAwesomeIcon icon="file-alt" style={{ paddingRight: "10px" }} />
+            <FontAwesomeIcon
+              icon={faFileAlt}
+              style={{ paddingRight: "10px" }}
+            />
             From Form
           </MenuItem>
         )}
         <MenuItem id="createFromTemplate" data-test-id="create-btn-template">
           <span style={{ paddingRight: "6px" }}>
-            <FontAwesomeIcon icon="folder" />
+            <FontAwesomeIcon icon={faFolderOpen} />
             <span
               style={{
                 position: "absolute",
@@ -135,7 +133,7 @@ export default function CreateMenu(props) {
         {props.asposeEnabled && (
           <MenuItem id="createFromWord" data-test-id="create-btn-word">
             <FontAwesomeIcon
-              icon="file-word"
+              icon={faFileWord}
               style={{ paddingRight: "10px" }}
             />
             From Word
@@ -144,7 +142,7 @@ export default function CreateMenu(props) {
         {props.evernoteEnabled && (
           <MenuItem id="createFromEvernote" data-test-id="create-btn-evernote">
             <FontAwesomeIcon
-              icon={["fab", "evernote"]}
+              icon={faEvernote}
               style={{ paddingRight: "10px" }}
             />
             From Evernote
@@ -164,7 +162,7 @@ export default function CreateMenu(props) {
         )}
         <Divider className="createMenuItemDivider" />
         <MenuItem id="createNewForm" data-test-id="create-btn-new-form">
-          <FontAwesomeIcon icon="file-alt" style={{ paddingRight: "10px" }} />
+          <FontAwesomeIcon icon={faFileAlt} style={{ paddingRight: "10px" }} />
           New Form
         </MenuItem>
       </Menu>
