@@ -15,7 +15,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResultCollection;
@@ -172,7 +171,8 @@ public class FolderApiController extends BaseApiController implements FolderApi 
         .orElseThrow(() -> new NotFoundException(createNotFoundMessage("Folder", id)));
   }
 
-  private static final Set<String> ACCEPTABLE_TYPES = toSet("notebook", "folder", "document");
+  private static final Set<String> ACCEPTABLE_TYPES =
+      toSet("notebook", "folder", "document", "snippet");
 
   @Override
   public ApiRecordTreeItemListing rootFolderTree(
@@ -263,6 +263,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       case FOLDER:
         return BaseApiController.FOLDERS_ENDPOINT;
       case DOCUMENT:
+      case SNIPPET:
         return BaseApiController.DOCUMENTS_ENDPOINT;
       case MEDIA:
         return BaseApiController.FILES_ENDPOINT;

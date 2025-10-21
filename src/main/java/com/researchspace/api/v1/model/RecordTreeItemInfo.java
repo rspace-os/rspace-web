@@ -71,6 +71,8 @@ public class RecordTreeItemInfo extends IdentifiableNameableApiObject {
       setType(ApiRecordType.DOCUMENT);
     } else if (record.isMediaRecord()) {
       setType(ApiRecordType.MEDIA);
+    } else if (record.isSnippet()) {
+      setType(ApiRecordType.SNIPPET);
     }
   }
 }
