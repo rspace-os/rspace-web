@@ -768,7 +768,8 @@ public class SDocControllerMVCIT extends MVCTestBase {
         .andExpect(status().is2xxSuccessful())
         .andReturn();
 
-    // ...and also opening notebook entry (outside of the notebook) will still open the document view (PRT-1007)
+    // ...and also opening notebook entry (outside of the notebook) will still open the document
+    // view (PRT-1007)
     MvcResult redirectResult =
         this.mockMvc
             .perform(
