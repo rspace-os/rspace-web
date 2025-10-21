@@ -3041,13 +3041,13 @@ parameters:
   typesToIncludeParam:
     name: typesToInclude
     in: query
-    description: Optional list of record types to include in the results. (Note that Swagger documentation 'Try it out' only permits a single type; in a real request,  multiple types  can be sent, e.g. 'typesToInclude=notebook,folder' )
-    type: string
+    description: Optional list of record types to include in the results.
     required: false
-    enum:
-      - document
-      - notebook
-      - folder
+    type: array
+    items:
+      type: string
+      enum: [document,notebook,folder,snippet]
+    collectionFormat: csv  # This creates comma-separated values
   activityOrderByParam:
     name: orderBy
     in: query
