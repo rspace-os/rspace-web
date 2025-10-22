@@ -5,10 +5,8 @@ import TableCell from "@mui/material/TableCell";
 import DownloadIcon from "@mui/icons-material/GetApp";
 import Grid from "@mui/material/Grid";
 import NameWithBadge from "../../NameWithBadge";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-library.add(faSpinner);
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import ChemistryIcon from "../../../../assets/graphics/ChemistryIcon";
 import { type Attachment } from "../../../../stores/definitions/Attachment";
 import DeleteButton from "../../DeleteButton";
@@ -67,7 +65,7 @@ const ChemicalPreview = observer(
           disabled={loadingString || !chemistrySupported}
           icon={
             loadingString ? (
-              <FontAwesomeIcon icon="spinner" spin size="lg" />
+              <FontAwesomeIcon icon={faSpinner} spin size="lg" />
             ) : (
               <ChemistryIcon />
             )

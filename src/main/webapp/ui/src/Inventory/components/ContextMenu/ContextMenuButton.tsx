@@ -1,11 +1,9 @@
 import Button from "@mui/material/Button";
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { library } from "@fortawesome/fontawesome-svg-core";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
-library.add(faSpinner);
 import clsx from "clsx";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Tooltip from "@mui/material/Tooltip";
@@ -96,7 +94,7 @@ function ContextMenuButton({
               variant={inContrast ? "contained" : "outlined"}
               startIcon={
                 loading ? (
-                  <FontAwesomeIcon icon="spinner" spin size="sm" />
+                  <FontAwesomeIcon icon={faSpinner} spin size="sm" />
                 ) : (
                   icon
                 )

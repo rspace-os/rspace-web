@@ -111,10 +111,7 @@ export function useDeploymentProperty(
         }
       }
     })();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * Only fetching the value on first re-render is fine as deployment
-     * properties can only be changed with a server restart.
-     */
+     
   }, []);
 
   return value;

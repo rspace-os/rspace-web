@@ -133,7 +133,7 @@ export default function ChoiceField<OptionValue extends string>({
           {option.editing && (
             <TextField
               variant="standard"
-              // eslint-disable-next-line jsx-a11y/no-autofocus
+               
               autoFocus={!option.value}
               value={option.value}
               onChange={(e) => {

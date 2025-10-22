@@ -6,10 +6,9 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilter, faSearch, faBars } from "@fortawesome/free-solid-svg-icons";
-library.add(faFilter, faSearch, faBars);
+import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
+import { faTimes } from "@fortawesome/free-solid-svg-icons/faTimes";
 
 export default function SimpleSearchScopeDialog(props) {
   return (
@@ -23,13 +22,15 @@ export default function SimpleSearchScopeDialog(props) {
           <Chip
             style={{ marginRight: "10px" }}
             key={r}
-            icon={<FontAwesomeIcon icon="folder" style={{ padding: "10px" }} />}
+            icon={
+              <FontAwesomeIcon icon={faFolder} style={{ padding: "10px" }} />
+            }
             label={r}
             clickable
             variant="outlined"
             onDelete={() => props.removeRecord(r)}
             deleteIcon={
-              <FontAwesomeIcon icon="times" style={{ padding: "10px" }} />
+              <FontAwesomeIcon icon={faTimes} style={{ padding: "10px" }} />
             }
           />
         ))}

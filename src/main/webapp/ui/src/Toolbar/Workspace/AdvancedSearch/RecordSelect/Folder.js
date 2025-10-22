@@ -8,15 +8,11 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import Collapse from "@mui/material/Collapse";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronDown,
-  faChevronUp,
-  faFolder,
-  faBook,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(faChevronDown, faChevronUp, faFolder, faBook);
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons/faChevronDown";
+import { faChevronUp } from "@fortawesome/free-solid-svg-icons/faChevronUp";
+import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
+import { faBook } from "@fortawesome/free-solid-svg-icons/faBook";
 
 import Subfolder from "./Folder";
 import File from "./File";
@@ -59,14 +55,14 @@ class Folder extends React.Component {
         params: { dir: this.props.folder.id },
       })
       .then((response) => {
-        let selectedFiles = this.props.selected
+        const selectedFiles = this.props.selected
           ? response.data.ajaxReturnObject.data.map((f) => f.globalId)
           : response.data.ajaxReturnObject.data
               .map((f) => f.globalId)
               .filter((id) => this.props.globalSelect.includes(id));
         this.setState({
           subfiles: response.data.ajaxReturnObject.data,
-          selectedFiles: selectedFiles,
+          selectedFiles,
         });
       });
   };
@@ -84,15 +80,15 @@ class Folder extends React.Component {
       });
       this.props.updateSelected(
         [this.props.folder.globalId],
-        this.state.subfiles.map((file) => file.globalId)
+        this.state.subfiles.map((file) => file.globalId),
       );
     } else if (this.props.selected && this.state.selectedFiles.length > 0) {
       this.setState({ selectedFiles: [], open: false });
       this.props.updateSelected(
         [],
         [this.props.folder.globalId].concat(
-          this.state.subfiles.map((file) => file.globalId)
-        )
+          this.state.subfiles.map((file) => file.globalId),
+        ),
       );
     } else if (this.props.level == 1 && !this.state.subfiles.length) {
       if (this.props.selected)
@@ -116,15 +112,15 @@ class Folder extends React.Component {
             this.props.onSelectChange(this.props.folder.globalId, true);
             this.props.updateSelected(
               [this.props.folder.globalId],
-              this.state.subfiles.map((file) => file.globalId)
+              this.state.subfiles.map((file) => file.globalId),
             );
           } else {
             this.props.updateSelected(
               this.state.selectedFiles,
-              this.state.subfiles.map((file) => file.globalId)
+              this.state.subfiles.map((file) => file.globalId),
             );
           }
-        }
+        },
       );
     } else if (!selected) {
       this.setState(
@@ -142,10 +138,10 @@ class Folder extends React.Component {
           } else {
             this.props.updateSelected(
               this.state.selectedFiles,
-              this.state.subfiles.map((file) => file.globalId)
+              this.state.subfiles.map((file) => file.globalId),
             );
           }
-        }
+        },
       );
     }
   };
@@ -165,19 +161,18 @@ class Folder extends React.Component {
           globalSelect={this.props.globalSelect}
         />
       );
-    } else {
-      return (
-        <File
-          key={file.globalId}
-          onSelectChange={this.updateSubfilesSelect}
-          updateSelected={this.props.updateSelected}
-          file={file}
-          level={this.props.level + 1}
-          selected={this.state.selectedFiles.includes(file.globalId)}
-          parentSelected={this.props.selected}
-        />
-      );
     }
+    return (
+      <File
+        key={file.globalId}
+        onSelectChange={this.updateSubfilesSelect}
+        updateSelected={this.props.updateSelected}
+        file={file}
+        level={this.props.level + 1}
+        selected={this.state.selectedFiles.includes(file.globalId)}
+        parentSelected={this.props.selected}
+      />
+    );
   };
 
   render() {
@@ -201,18 +196,20 @@ class Folder extends React.Component {
                 style={{ padding: 0 }}
                 data-test-id={`select-folder-${this.props.folder.globalId}`}
               />
-              <FontAwesomeIcon
-                icon={this.props.folder.notebook ? "book" : "folder"}
-                size="2x"
-              />
+              {this.props.folder.notebook ? (
+                <FontAwesomeIcon icon={faBook} size="2x" />
+              ) : (
+                <FontAwesomeIcon icon={faFolder} size="2x" />
+              )}
             </>
           </ListItemIcon>
           <ListItemText primary={this.props.folder.name} />
-          {this.state.subfiles.length > 0 && (
-            <FontAwesomeIcon
-              icon={this.state.open ? "chevron-up" : "chevron-down"}
-            />
-          )}
+          {this.state.subfiles.length > 0 &&
+            (this.state.open ? (
+              <FontAwesomeIcon icon={faChevronUp} />
+            ) : (
+              <FontAwesomeIcon icon={faChevronDown} />
+            ))}
         </ListItem>
         {this.state.subfiles.length > 0 && (
           <Collapse in={this.state.open} timeout="auto" unmountOnExit>

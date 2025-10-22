@@ -4,8 +4,8 @@ import { makeStyles } from "tss-react/mui";
 
 const useStyles = makeStyles()(() => ({
   root: {
-    fontSize: "1.3rem",
-    marginLeft: "-3px",
+    fontSize: "--var(--fa-width, 1.25em)",
+    marginLeft: "2px",
   },
   line: {
     fill: "none",

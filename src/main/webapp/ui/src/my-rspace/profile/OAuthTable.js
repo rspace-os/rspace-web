@@ -12,11 +12,8 @@ import axios from "@/common/axios";
 import { makeStyles } from "tss-react/mui";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import { faUnlink } from "@fortawesome/free-solid-svg-icons";
-library.add(faTrashAlt, faUnlink);
+import { faTrashAlt } from "@fortawesome/free-regular-svg-icons/faTrashAlt";
 import OAuthDialog from "./OAuthDialog";
 
 const headCells = [
@@ -43,7 +40,7 @@ export default function OAuthTable(props) {
   const [fetchSuccess, setFetchSuccess] = React.useState(false);
 
   const fetchApps = () => {
-    let urlAll = "/userform/ajax/oAuthApps";
+    const urlAll = "/userform/ajax/oAuthApps";
 
     axios.get(urlAll).then((response) => {
       if (response.status !== 200 || response.data.exceptionMessage) {
@@ -60,8 +57,8 @@ export default function OAuthTable(props) {
   }, []);
 
   const confirmDeleteApp = (clientId) => {
-    let app = apps.find((a) => a.clientId == clientId);
-    let event = new CustomEvent("confirm-action", {
+    const app = apps.find((a) => a.clientId == clientId);
+    const event = new CustomEvent("confirm-action", {
       detail: {
         title: "Confirm deletion",
         consequences: `Are you sure you want to delete <b>${app.appName}</b>? All access and refresh tokens will be revoked.`,
@@ -75,7 +72,7 @@ export default function OAuthTable(props) {
   };
 
   const deleteApp = (clientId) => {
-    let url = `/userform/ajax/oAuthApps/${clientId}`;
+    const url = `/userform/ajax/oAuthApps/${clientId}`;
     axios
       .delete(url)
       .then((response) => {
@@ -86,7 +83,7 @@ export default function OAuthTable(props) {
           RS.confirm(
             "There was a problem deleting this app. Please, try again.",
             "warning",
-            5000
+            5000,
           );
         }
       })
@@ -157,10 +154,7 @@ export default function OAuthTable(props) {
                               onClick={() => confirmDeleteApp(app.clientId)}
                               style={{ width: "42px" }}
                             >
-                              <FontAwesomeIcon
-                                icon={["far", "trash-alt"]}
-                                size="xs"
-                              />
+                              <FontAwesomeIcon icon={faTrashAlt} size="xs" />
                             </IconButton>
                           </Tooltip>
                         </div>

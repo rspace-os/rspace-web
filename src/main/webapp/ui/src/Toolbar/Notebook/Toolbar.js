@@ -7,29 +7,16 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import PrintButton from "../components/PrintButton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faEdit,
-  faTrashAlt,
-  faCloudDownloadAlt,
-  faFileSignature,
-  faFolder,
-  faShareAlt,
-  faEye,
-  faTimes,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(
-  faEdit,
-  faTrashAlt,
-  faCloudDownloadAlt,
-  faFileSignature,
-  faFolder,
-  faShareAlt,
-  faEye,
-  faTimes,
-);
+import { faEdit } from "@fortawesome/free-solid-svg-icons/faEdit";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons/faTrashAlt";
+import { faCloudDownloadAlt } from "@fortawesome/free-solid-svg-icons/faCloudDownloadAlt";
+import { faFileSignature } from "@fortawesome/free-solid-svg-icons/faFileSignature";
+import { faShareAlt } from "@fortawesome/free-solid-svg-icons/faShareAlt";
+import { faEye } from "@fortawesome/free-solid-svg-icons/faEye";
+import { faTimes } from "@fortawesome/free-solid-svg-icons/faTimes";
+
 import ShareDialog from "../../components/ShareDialog";
 
 import BaseToolbar from "../../components/BaseToolbar";
@@ -67,7 +54,7 @@ class NotebookToolbar extends React.Component {
               data-test-id="structured-document-back"
               href={`/workspace/${this.state.workspaceFolderId}?settingsKey=${this.state.settingsKey}`}
             >
-              <FontAwesomeIcon icon="times" />
+              <FontAwesomeIcon icon={faTimes} />
             </IconButton>
           </Tooltip>
           <span
@@ -90,7 +77,7 @@ class NotebookToolbar extends React.Component {
               color="inherit"
               id="editEntry"
             >
-              <FontAwesomeIcon icon="edit" />
+              <FontAwesomeIcon icon={faEdit} />
             </IconButton>
           </Tooltip>
           {this.state.canDelete && (
@@ -100,7 +87,7 @@ class NotebookToolbar extends React.Component {
                 color="inherit"
                 id="deleteEntry"
               >
-                <FontAwesomeIcon icon="trash-alt" />
+                <FontAwesomeIcon icon={faTrashAlt} />
               </IconButton>
             </Tooltip>
           )}
@@ -110,7 +97,7 @@ class NotebookToolbar extends React.Component {
               color="inherit"
               id="signDocument"
             >
-              <FontAwesomeIcon icon="file-signature" />
+              <FontAwesomeIcon icon={faFileSignature} />
             </IconButton>
           </Tooltip>
           <Tooltip title="Witness" enterDelay={300}>
@@ -119,7 +106,7 @@ class NotebookToolbar extends React.Component {
               color="inherit"
               id="witnessDocument"
             >
-              <FontAwesomeIcon icon="eye" />
+              <FontAwesomeIcon icon={faEye} />
             </IconButton>
           </Tooltip>
           {this.state.canShare && (
@@ -129,7 +116,7 @@ class NotebookToolbar extends React.Component {
                 color="inherit"
                 id="shareRecord"
               >
-                <FontAwesomeIcon icon="share-alt" />
+                <FontAwesomeIcon icon={faShareAlt} />
               </IconButton>
             </Tooltip>
           )}
@@ -148,7 +135,7 @@ class NotebookToolbar extends React.Component {
                 id="exportDocument"
                 onClick={this.props.eventHandlers.onExportDocument}
               >
-                <FontAwesomeIcon icon="cloud-download-alt" />
+                <FontAwesomeIcon icon={faCloudDownloadAlt} />
               </IconButton>
             </Tooltip>
           )}
@@ -230,6 +217,6 @@ window.renderToolbar = (newProps) => {
  * opportunity to set up event handlers for the ReactToolbarMounted event
  * dispatched above.
  */
-window.addEventListener("load", function () {
+window.addEventListener("load", () => {
   window.renderToolbar();
 });

@@ -10,28 +10,12 @@ import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Chip from "@mui/material/Chip";
 import List from "@mui/material/List";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCaretLeft,
-  faCaretRight,
-  faAngleDoubleLeft,
-  faFolderOpen,
-  faFolder,
-  faBook,
-  faFile,
-  faTimes,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(
-  faCaretLeft,
-  faCaretRight,
-  faAngleDoubleLeft,
-  faFolderOpen,
-  faFolder,
-  faBook,
-  faFile,
-  faTimes
-);
+import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
+import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
+import { faBook } from "@fortawesome/free-solid-svg-icons/faBook";
+import { faFile } from "@fortawesome/free-solid-svg-icons/faFile";
+import { faTimes } from "@fortawesome/free-solid-svg-icons/faTimes";
 
 import RootFolder from "./RootFolder";
 
@@ -54,7 +38,7 @@ class FilePicker extends React.Component {
           globalSelect: [],
           fromWorkspace: false,
         },
-        this.propagateChange
+        this.propagateChange,
       );
     }
     this.setState({ dialogOpen: true });
@@ -67,12 +51,12 @@ class FilePicker extends React.Component {
   confirmChoices = () => {
     this.setState(
       { dialogOpen: false, selectedFiles: this.state.globalSelect },
-      this.propagateChange
+      this.propagateChange,
     );
   };
 
   removeFile = (file_id) => {
-    let selected = update(this.state.selectedFiles, {
+    const selected = update(this.state.selectedFiles, {
       $splice: [[this.state.selectedFiles.indexOf(file_id), 1]],
     });
 
@@ -81,7 +65,7 @@ class FilePicker extends React.Component {
         selectedFiles: selected,
         globalSelect: selected,
       },
-      this.propagateChange
+      this.propagateChange,
     );
   };
 
@@ -94,9 +78,9 @@ class FilePicker extends React.Component {
   };
 
   recordIcon = (file_id) => {
-    let icon = "folder";
-    if (file_id.startsWith("SD")) icon = "file";
-    else if (file_id.startsWith("NB")) icon = "book";
+    let icon = faFolder;
+    if (file_id.startsWith("SD")) icon = faFile;
+    else if (file_id.startsWith("NB")) icon = faBook;
 
     return <FontAwesomeIcon icon={icon} style={{ padding: "10px" }} />;
   };
@@ -115,7 +99,7 @@ class FilePicker extends React.Component {
             onDelete={() => this.removeFile(f)}
             deleteIcon={
               <FontAwesomeIcon
-                icon="times"
+                icon={faTimes}
                 style={{ padding: "10px" }}
                 data-test-id={`delete-record-${f}`}
               />
@@ -128,7 +112,7 @@ class FilePicker extends React.Component {
             onClick={this.openDialog}
             data-test-id={`open-record-select`}
           >
-            <FontAwesomeIcon icon="folder-open" />
+            <FontAwesomeIcon icon={faFolderOpen} />
           </IconButton>
         </Tooltip>
         {this.props.error && (

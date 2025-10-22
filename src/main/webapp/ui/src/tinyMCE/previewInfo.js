@@ -64,7 +64,9 @@ export default function PreviewInfo(props) {
                   data-fullwidth={props.item["data-fullwidth"]}
                   data-fullheight={props.item["data-fullheight"]}
                   data-chemfileid={props.item["data-chemfileid"]}
-                  data-stoichiometry-table={props.item["data-stoichiometry-table"]}
+                  data-stoichiometry-table={
+                    props.item["data-stoichiometry-table"]
+                  }
                 />
               </Div>
               <ChemCard item={props.item} inline />
@@ -136,24 +138,24 @@ function render(attributes, element) {
   root.render(<PreviewInfo item={{ ...attributes }} />);
 }
 
-document.addEventListener("document-placed", function (e) {
+document.addEventListener("document-placed", (e) => {
   $.fn.getAttributes = function () {
-    var attributes = {};
+    const attributes = {};
     if (this.length) {
-      $.each(this[0].attributes, function (i, attr) {
+      $.each(this[0].attributes, (i, attr) => {
         attributes[attr.name] = attr.value;
       });
     }
     return attributes;
   };
-  let domElements = e.detail ? $(`#div_${e.detail} img.chem`) : $("img.chem");
+  const domElements = e.detail ? $(`#div_${e.detail} img.chem`) : $("img.chem");
 
   domElements.each((i) => {
-    let domContainer = $(domElements[i]);
-    let parent = domContainer.parent();
-    let attributes = domContainer.getAttributes();
+    const domContainer = $(domElements[i]);
+    const parent = domContainer.parent();
+    const attributes = domContainer.getAttributes();
     parent.find("img.chem").remove();
-    let contents = parent.html();
+    const contents = parent.html();
 
     const root = createRoot(parent[0]);
     root.render(<PreviewInfo item={{ ...attributes }} />);
@@ -164,22 +166,22 @@ document.addEventListener("document-placed", function (e) {
   document.dispatchEvent(new Event("images-replaced"));
 });
 
-document.addEventListener("chem-updated", function (e) {
+document.addEventListener("chem-updated", (e) => {
   $.fn.getAttributes = function () {
-    var attributes = {};
+    const attributes = {};
     if (this.length) {
-      $.each(this[0].attributes, function (i, attr) {
+      $.each(this[0].attributes, (i, attr) => {
         attributes[attr.name] = attr.value;
       });
     }
     return attributes;
   };
 
-  let domElements = e.detail ? $(`#div_${e.detail} img.chem`) : $("img.chem");
+  const domElements = e.detail ? $(`#div_${e.detail} img.chem`) : $("img.chem");
 
   domElements.each((i) => {
-    let domContainer = $(domElements[i]);
-    let span = domContainer.closest("span");
+    const domContainer = $(domElements[i]);
+    const span = domContainer.closest("span");
     render(domContainer.getAttributes(), span[0]);
   });
 });

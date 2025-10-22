@@ -3,10 +3,8 @@ import React from "react";
 import clsx from "clsx";
 import { match } from "../../util/Util";
 import { withStyles } from "Styles";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-library.add(faSpinner);
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 
@@ -43,7 +41,7 @@ const StatusChip = withStyles<
     color: `${theme.palette.primary.contrastText} !important`,
   },
 }))(({ classes, error, loading, selectedFilename }) => {
-  const spinnerIcon = <FontAwesomeIcon icon="spinner" spin size="sm" />;
+  const spinnerIcon = <FontAwesomeIcon icon={faSpinner} spin size="sm" />;
   const label = match<void, React.ReactNode>([
     [() => loading, spinnerIcon],
     [() => error, "Invalid file."],

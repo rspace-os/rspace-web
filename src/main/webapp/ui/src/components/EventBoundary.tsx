@@ -22,7 +22,7 @@ export default function EventBoundary({
      * the `div` itself for this to work.
      */
 
-    // eslint-disable-next-line
+     
     <div
       onKeyDown={(e) => {
         e.stopPropagation();

@@ -125,7 +125,7 @@ export default class StateMachine<T extends string> {
     state: T,
     dataFn: (oldData: unknown) => unknown = (x) => x
   ): void {
-    // eslint-disable-next-line no-console
+     
     if (this.enableLogging) console.log(this.currentState, "->", state);
     if (!this.transitionMapping[this.currentState].has(state)) {
       throw new Error(

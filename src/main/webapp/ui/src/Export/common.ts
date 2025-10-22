@@ -56,7 +56,7 @@ export type FileLink = {
  */
 export type FolderLink = {
   type: "folder";
-  // eslint-disable-next-line no-use-before-define
+   
   content: Array<MixedLink>;
   fileSystemFullPath: Path;
   size: null;

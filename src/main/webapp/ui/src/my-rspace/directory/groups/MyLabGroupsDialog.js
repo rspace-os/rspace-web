@@ -11,16 +11,12 @@ import IconButton from "@mui/material/IconButton";
 import styled from "@emotion/styled";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCaretLeft,
-  faCaretRight,
-  faAngleDoubleLeft,
-} from "@fortawesome/free-solid-svg-icons";
+import { faCaretLeft } from "@fortawesome/free-solid-svg-icons/faCaretLeft";
+import { faCaretRight } from "@fortawesome/free-solid-svg-icons/faCaretRight";
+import { faAngleDoubleLeft } from "@fortawesome/free-solid-svg-icons/faAngleDoubleLeft";
 import axios from "@/common/axios";
 import Grid from "@mui/material/Grid";
-library.add(faCaretLeft, faCaretRight, faAngleDoubleLeft);
 
 const Actions = styled.div`
   display: flex;
@@ -69,7 +65,7 @@ class MyLabGroupsDialog extends React.Component {
   submitForm = () => {
     const url = "/groups/admin/addUser";
 
-    let data = new FormData();
+    const data = new FormData();
     const config = {
       headers: { "Content-Type": "multipart/form-data", responseType: "text" },
     };
@@ -97,9 +93,9 @@ class MyLabGroupsDialog extends React.Component {
       .catch((error) => {
         console.error("couldn't add users: " + error);
         RS.confirm(
-            "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
-            "error",
-            "infinite"
+          "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
+          "error",
+          "infinite",
         );
       });
   };
@@ -165,7 +161,7 @@ class MyLabGroupsDialog extends React.Component {
           $push: this.state.selectedUsers.add,
         }),
       },
-      this.updateAvailableUsers
+      this.updateAvailableUsers,
     );
   };
 
@@ -175,11 +171,11 @@ class MyLabGroupsDialog extends React.Component {
         chosenUsers: this.state.chosenUsers.filter(
           (user) =>
             this.state.selectedUsers.remove.findIndex(
-              (selected) => selected.username == user.username
-            ) == -1
+              (selected) => selected.username == user.username,
+            ) == -1,
         ),
       },
-      this.updateAvailableUsers
+      this.updateAvailableUsers,
     );
   };
 
@@ -187,10 +183,10 @@ class MyLabGroupsDialog extends React.Component {
     this.setState(
       {
         availableUsers: this.state.userList.filter(
-          (user) => this.findUser(this.state.chosenUsers, user) == -1
+          (user) => this.findUser(this.state.chosenUsers, user) == -1,
         ),
       },
-      this.resetSelection()
+      this.resetSelection(),
     );
   };
 
@@ -200,7 +196,7 @@ class MyLabGroupsDialog extends React.Component {
         chosenUsers: [],
         availableUsers: this.state.userList,
       },
-      this.resetSelection
+      this.resetSelection,
     );
   };
 
@@ -267,21 +263,21 @@ class MyLabGroupsDialog extends React.Component {
                     onClick={this.addUsers}
                     data-test-id="button-add-selected"
                   >
-                    <FontAwesomeIcon icon="caret-right" />
+                    <FontAwesomeIcon icon={faCaretRight} />
                   </IconButton>
                   <IconButton
                     disabled={!this.state.selectedUsers.remove.length}
                     onClick={this.removeUsers}
                     data-test-id="button-remove-selected"
                   >
-                    <FontAwesomeIcon icon="caret-left" />
+                    <FontAwesomeIcon icon={faCaretLeft} />
                   </IconButton>
                   <IconButton
                     disabled={!this.state.chosenUsers.length}
                     onClick={this.resetUsers}
                     data-test-id="button-remove-all"
                   >
-                    <FontAwesomeIcon icon="angle-double-left" />
+                    <FontAwesomeIcon icon={faAngleDoubleLeft} />
                   </IconButton>
                 </Actions>
               </Grid>

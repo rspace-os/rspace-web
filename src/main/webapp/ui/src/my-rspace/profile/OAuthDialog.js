@@ -14,11 +14,9 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCopy } from "@fortawesome/free-regular-svg-icons";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
-library.add(faCopy, faPlus);
+import { faCopy } from "@fortawesome/free-regular-svg-icons/faCopy";
+import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
 
 export default function OAuthDialog(props) {
   const [open, setOpen] = React.useState(false);
@@ -56,7 +54,7 @@ export default function OAuthDialog(props) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isNameValid()) {
-      let url = `/userform/ajax/oAuthApps/${appName}`;
+      const url = `/userform/ajax/oAuthApps/${appName}`;
       axios
         .post(url)
         .then((response) => {
@@ -67,7 +65,7 @@ export default function OAuthDialog(props) {
             setUnhashedClientSecret(response.data.unhashedClientSecret);
             props.addApp({
               clientId: response.data.clientId,
-              appName: appName,
+              appName,
             });
           } else if (response.hasOwnProperty("exceptionMessage")) {
             RS.confirm(response.exceptionMessage, "warning", "infinite");
@@ -75,7 +73,7 @@ export default function OAuthDialog(props) {
             RS.confirm(
               "There was a problem while creating your application. Please, try again later or contact support.",
               "warning",
-              "infinite"
+              "infinite",
             );
           }
         })
@@ -89,17 +87,17 @@ export default function OAuthDialog(props) {
     if (!/[\w-\\s]/.test(appName)) {
       setHasError(true);
       setErrorMessage(
-        "The application name should only contain alphanumeric symbols."
+        "The application name should only contain alphanumeric symbols.",
       );
       return false;
-    } else if (appName.length >= 100) {
+    }
+    if (appName.length >= 100) {
       setHasError(true);
       setErrorMessage("The application name should be less than 100 symbols.");
       return false;
-    } else {
-      setHasError(false);
-      return true;
     }
+    setHasError(false);
+    return true;
   };
 
   const copyToClipboard = (e, id) => {
@@ -110,21 +108,21 @@ export default function OAuthDialog(props) {
     }
 
     try {
-      var successful = document.execCommand("copy");
+      const successful = document.execCommand("copy");
       if (successful) {
         RS.confirm("Copied to clipboard", "notice", 3000);
       } else {
         RS.confirm(
           "Couldn't copy to clipboard. Try again manually.",
           "warning",
-          5000
+          5000,
         );
       }
     } catch (err) {
       RS.confirm(
         "Couldn't copy to clipboard. Try again manually.",
         "warning",
-        5000
+        5000,
       );
     }
   };
@@ -140,7 +138,7 @@ export default function OAuthDialog(props) {
       <ThemeProvider theme={materialTheme}>
         <Tooltip title="Add a new app" enterDelay={100}>
           <IconButton color="inherit" onClick={handleClickOpen}>
-            <FontAwesomeIcon icon="plus" size="xs" />
+            <FontAwesomeIcon icon={faPlus} size="xs" />
           </IconButton>
         </Tooltip>
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -192,7 +190,7 @@ export default function OAuthDialog(props) {
                       color="inherit"
                       onClick={(e) => copyToClipboard(e, 1)}
                     >
-                      <FontAwesomeIcon icon={["far", "copy"]} />
+                      <FontAwesomeIcon icon={faCopy} />
                     </IconButton>
                   </Tooltip>
                 </Grid>
@@ -210,7 +208,7 @@ export default function OAuthDialog(props) {
                       color="inherit"
                       onClick={(e) => copyToClipboard(e, 2)}
                     >
-                      <FontAwesomeIcon icon={["far", "copy"]} />
+                      <FontAwesomeIcon icon={faCopy} />
                     </IconButton>
                   </Tooltip>
                 </Grid>

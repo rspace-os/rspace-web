@@ -11,11 +11,8 @@ import EnhancedTableHead from "../../components/EnhancedTableHead";
 import axios from "@/common/axios";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import { faUnlink } from "@fortawesome/free-solid-svg-icons";
-library.add(faTrashAlt, faUnlink);
+import { faUnlink } from "@fortawesome/free-solid-svg-icons/faUnlink";
 
 const headCells = [
   { id: "clientName", numeric: false, label: "App Name" },
@@ -34,7 +31,7 @@ export default function ConnectedAppsTable(props) {
   const [fetchSuccess, setFetchSuccess] = React.useState(false);
 
   const fetchApps = () => {
-    let urlConnected = "/userform/ajax/oAuthConnectedApps";
+    const urlConnected = "/userform/ajax/oAuthConnectedApps";
 
     axios.get(urlConnected).then((response) => {
       if (response.status == 200) {
@@ -61,14 +58,14 @@ export default function ConnectedAppsTable(props) {
         RS.confirm(
           "Unable to remove connected app. Please, contact support if the problem persists.",
           "error",
-          "infinite"
+          "infinite",
         );
       });
   };
 
   const confirmDisconnectApp = (clientId) => {
-    let app = apps.find((a) => a.clientId == clientId);
-    let event = new CustomEvent("confirm-action", {
+    const app = apps.find((a) => a.clientId == clientId);
+    const event = new CustomEvent("confirm-action", {
       detail: {
         title: "Confirm disconnect",
         consequences: `Are you sure you want to revoke access from <b>${app.clientName}</b>?`,
@@ -132,10 +129,7 @@ export default function ConnectedAppsTable(props) {
                             onClick={() => confirmDisconnectApp(app.clientId)}
                             style={{ width: "42px" }}
                           >
-                            <FontAwesomeIcon
-                              icon={["fa", "unlink"]}
-                              size="xs"
-                            />
+                            <FontAwesomeIcon icon={faUnlink} size="xs" />
                           </IconButton>
                         </Tooltip>
                       </TableCell>
