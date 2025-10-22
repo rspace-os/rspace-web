@@ -16,6 +16,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilter } from "@fortawesome/free-solid-svg-icons/faFilter";
 import { faSearch } from "@fortawesome/free-solid-svg-icons/faSearch";
 import { faBars } from "@fortawesome/free-solid-svg-icons/faBars";
+import { faTimes } from "@fortawesome/free-solid-svg-icons/faTimes";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 
 import UserSelect from "../AdvancedSearch/UserSelect/UserSelect";
