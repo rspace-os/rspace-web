@@ -98,6 +98,7 @@ define(function() {
 
         _printCategory('Identity');
         _printSettings([ 'orcid.available' ]);
+        // _printSettings([ 'raid.available' ]); // DISABLED until RSDEV-850 is complete
 
         addSettingRowsHandlers();
     }
