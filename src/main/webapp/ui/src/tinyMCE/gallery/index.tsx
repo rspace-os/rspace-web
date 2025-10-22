@@ -1,52 +1,16 @@
 import React from "react";
-import createAccentedTheme from "@/accentedTheme";
-import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
-import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import { createRoot } from "react-dom/client";
-import GalleryPicker from "../../eln/gallery/picker";
-import { MemoryRouter } from "react-router-dom";
-import { LandmarksProvider } from "@/components/LandmarksContext";
-import Alerts from "@/components/Alerts/Alerts";
 import axios from "@/common/axios";
 import {
   Filestore,
+  GalleryFile,
   LocalGalleryFile,
   RemoteFile,
 } from "@/eln/gallery/useGalleryListing";
 import * as ArrayUtils from "@/util/ArrayUtils";
 import { IsValid, IsInvalid } from "@/components/ValidatingSubmitButton";
-import { DialogBoundary } from "@/components/DialogBoundary";
-
-// Define types for external interfaces
-type ButtonConfig = {
-  tooltip: string;
-  icon: string;
-  onAction: () => void;
-};
-
-type MenuItemConfig = {
-  text: string;
-  icon: string;
-  onAction: () => void;
-};
-
-export interface Editor {
-  ui: {
-    registry: {
-      addButton: (name: string, config: ButtonConfig) => void;
-      addMenuItem: (name: string, config: MenuItemConfig) => void;
-    };
-  };
-  execCommand: (command: string, ui: boolean, value?: string) => void;
-  id: string; // the id the current document field prefixed with "rtf_"
-  addCommand: (name: string, func: () => void) => void;
-  setDirty: (state: boolean) => void;
-  selection: {
-    getNode: () => HTMLElement;
-    select: (node: HTMLElement) => void;
-  };
-  getDoc: () => Document;
-}
+import GalleryEntrypoint from "@/tinyMCE/gallery/GalleryEntrypoint";
+import RsSet from "@/util/set";
 
 declare global {
   interface RSGlobal {
@@ -61,165 +25,139 @@ declare global {
   }
 }
 
-// Declare the global tinymce object
-declare const tinymce: {
-  PluginManager: {
-    add: (name: string, plugin: new (editor: Editor) => unknown) => void;
-  };
-  activeEditor: Editor;
-};
-
-class GalleryPlugin {
-  constructor(editor: Editor) {
-    function* renderGallery(domContainer: HTMLElement): Generator<
-      {
-        open: boolean;
-        onClose?: () => void;
-      },
-      void,
-      { open: boolean; onClose?: () => void }
-    > {
-      const root = createRoot(domContainer);
-      while (true) {
-        let newProps: { open: boolean; onClose?: () => void } = {
-          open: false,
-          onClose: () => {},
-        };
-        newProps = yield newProps;
-        root.render(
-          <StyledEngineProvider injectFirst>
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <Alerts>
-                <DialogBoundary>
-                    <MemoryRouter>
-                      <LandmarksProvider>
-                          <GalleryPicker
-                            open={newProps.open}
-                            onClose={newProps.onClose ?? (() => {})}
-                            onSubmit={(files) => {
-                              const localFiles = ArrayUtils.filterClass(
-                                LocalGalleryFile,
-                                files.toArray(),
-                              );
-                              localFiles.forEach((file) => {
-                                void axios
-                                  .get(
-                                    `/workspace/getRecordInformation?recordId=${file.id}`,
-                                  )
-                                  .then((response) => {
-                                    window.addFromGallery(
-                                      (response.data as { data: unknown }).data,
-                                    );
-                                  })
-                                  .catch((error) => {
-                                    window.RS.confirm?.(
-                                      `Could not insert file "${file.name}"`,
-                                      "error",
-                                    );
-                                  });
-                              });
-                              const remoteFiles = ArrayUtils.filterClass(
-                                RemoteFile,
-                                files.toArray(),
-                              );
-                              remoteFiles.forEach((file) => {
-                                const json = {
-                                  name: file.name,
-                                  linktype: "file",
-                                  fileStoreId: file.path[0].id,
-                                  relFilePath: file.remotePath,
-                                  nfsId: file.nfsId,
-                                  nfsType: (file.path[0] as Filestore).filesystemType,
-                                };
-                                window.RS.insertTemplateIntoTinyMCE?.(
-                                  "netFilestoreLink",
-                                  json,
-                                );
-                              });
-                              if (
-                                files.size >
-                                localFiles.length + remoteFiles.length
-                              ) {
-                                throw new Error(
-                                  "Some selected files were of an unsupported type",
-                                );
-                              }
-                              newProps?.onClose?.();
-                            }}
-                            validateSelection={(file) => {
-                              if (
-                                !(file instanceof LocalGalleryFile) &&
-                                !(file instanceof RemoteFile)
-                              )
-                                return IsInvalid("Unsupported file type");
-                              if (file.isSystemFolder)
-                                return IsInvalid("System Folders cannot be inserted");
-                              return IsValid();
-                            }}
-                          />
-                      </LandmarksProvider>
-                    </MemoryRouter>
-                </DialogBoundary>
-              </Alerts>
-            </ThemeProvider>
-          </StyledEngineProvider>,
+parent.tinymce.PluginManager.add("gallery", function (editor) {
+  function* renderGallery(domContainer: HTMLElement): Generator<
+    {
+      open: boolean;
+      onClose?: () => void;
+    },
+    void,
+    { open: boolean; onClose?: () => void }
+  > {
+    const root = createRoot(domContainer);
+    while (true) {
+      let newProps: { open: boolean; onClose?: () => void } = {
+        open: false,
+        onClose: () => {},
+      };
+      newProps = yield newProps;
+      const handleSubmit = (files: RsSet<GalleryFile>) => {
+        const localFiles = ArrayUtils.filterClass(
+          LocalGalleryFile,
+          files.toArray(),
         );
-      }
+        localFiles.forEach((file) => {
+          void axios
+            .get(
+              `/workspace/getRecordInformation?recordId=${file.id}`,
+            )
+            .then((response) => {
+              window.addFromGallery(
+                (response.data as { data: unknown }).data,
+              );
+            })
+            .catch(() => {
+              window.RS.confirm?.(
+                `Could not insert file "${file.name}"`,
+                "error",
+              );
+            });
+        });
+        const remoteFiles = ArrayUtils.filterClass(
+          RemoteFile,
+          files.toArray(),
+        );
+        remoteFiles.forEach((file) => {
+          const json = {
+            name: file.name,
+            linktype: "file",
+            fileStoreId: file.path[0].id,
+            relFilePath: file.remotePath,
+            nfsId: file.nfsId,
+            nfsType: (file.path[0] as Filestore).filesystemType,
+          };
+          window.RS.insertTemplateIntoTinyMCE?.(
+            "netFilestoreLink",
+            json,
+          );
+        });
+        if (
+          files.size >
+          localFiles.length + remoteFiles.length
+        ) {
+          throw new Error(
+            "Some selected files were of an unsupported type",
+          );
+        }
+        newProps?.onClose?.();
+      };
+
+      const handleValidateSelection = (file: GalleryFile) => {
+        if (
+          !(file instanceof LocalGalleryFile) &&
+          !(file instanceof RemoteFile)
+        )
+          return IsInvalid("Unsupported file type");
+        if (file.isSystemFolder)
+          return IsInvalid("System Folders cannot be inserted");
+        return IsValid();
+      };
+
+      root.render(
+        <GalleryEntrypoint open={newProps.open} onClose={newProps.onClose} onSubmit={handleSubmit} validateSelection={handleValidateSelection} />,
+      );
     }
-
-    if (!document.getElementById("tinymce-gallery")) {
-      const div = document.createElement("div");
-      div.id = "tinymce-gallery";
-      document.body.appendChild(div);
-    }
-    const galleryRenderer = renderGallery(
-      document.getElementById("tinymce-gallery")!,
-    );
-    galleryRenderer.next({ open: false });
-
-    // Add a button to the toolbar
-    editor.ui.registry.addButton("btnMediaGallery", {
-      tooltip: "Insert from RSpace Gallery",
-      icon: "image",
-      onAction() {
-        galleryRenderer.next({
-          open: true,
-          onClose: () => {
-            galleryRenderer.next({ open: false });
-          },
-        });
-      },
-    });
-
-    // Adds a menu item to the insert menu
-    editor.ui.registry.addMenuItem("optMediaGallery", {
-      text: "From RSpace Gallery",
-      icon: "image",
-      onAction() {
-        galleryRenderer.next({
-          open: true,
-          onClose: () => {
-            galleryRenderer.next({ open: false });
-          },
-        });
-      },
-    });
-
-    // Adds an option to the slash-menu
-    if (!window.insertActions) window.insertActions = new Map();
-    window.insertActions.set("optMediaGallery", {
-      text: "From RSpace Gallery",
-      icon: "image",
-      action: () => {
-        galleryRenderer.next({
-          open: true,
-          onClose: () => {
-            galleryRenderer.next({ open: false });
-          },
-        });
-      },
-    });
   }
-}
 
-tinymce.PluginManager.add("gallery", GalleryPlugin);
+  if (!document.getElementById("tinymce-gallery")) {
+    const div = document.createElement("div");
+    div.id = "tinymce-gallery";
+    document.body.appendChild(div);
+  }
+  const galleryRenderer = renderGallery(
+    document.getElementById("tinymce-gallery")!,
+  );
+  galleryRenderer.next({ open: false });
+
+  const openGalleryAction = () => {
+      galleryRenderer.next({
+        open: true,
+        onClose: () => {
+          galleryRenderer.next({ open: false });
+        },
+      });
+    };
+
+  // Add a button to the toolbar
+  editor.ui.registry.addButton("btnMediaGallery", {
+    tooltip: "Insert from RSpace Gallery",
+    icon: "image",
+    //shortcut: 'ctrl+shift+1',
+    onAction: openGalleryAction,
+  });
+
+  // Adds a menu item to the insert menu
+  editor.ui.registry.addMenuItem("optMediaGallery", {
+    text: "From RSpace Gallery",
+    icon: "image",
+    //shortcut: 'ctrl+shift+1',
+    onAction: openGalleryAction,
+  });
+
+  // Adds an option to the slash-menu
+  if (!window.insertActions) window.insertActions = new Map();
+  window.insertActions.set("optMediaGallery", {
+    text: "From RSpace Gallery",
+    icon: "image",
+    action: openGalleryAction,
+  });
+
+  editor.addCommand('cmdMediaGallery', openGalleryAction);
+
+  return {
+    getMetadata: () => ({
+      name: 'Example plugin',
+      url: 'http://exampleplugindocsurl.com'
+    })
+  };
+});
