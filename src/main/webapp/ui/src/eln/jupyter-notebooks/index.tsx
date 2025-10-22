@@ -15,12 +15,23 @@ import axios from "@/common/axios";
 window.addEventListener("jupyterNotebooks-init", function () {
   loadUIOnPageLoad(true);
 });
+window.addEventListener("jupyter_viewer_click", function (event) {
+  // alert(event.detail.id);
+  [...document.getElementsByClassName("jupyter_notebooks_contents")].forEach(
+      (wrapperDiv) => {
+        const fieldId = wrapperDiv.getAttribute("data-field-id");
+        if (fieldId === ""+event.detail.id){
+          $(wrapperDiv).toggle();
+        }
+      })
+});
 /**
+ *
  * notebook pages and structured doc pages require different positioning for the Workflow Button
  * @param isForNotebookPage
  */
 const loadUIOnPageLoad = (isForNotebookPage = false) => {
-  [...document.getElementsByClassName("jupyter-notebooks-textfield")].forEach(
+  [...document.getElementsByClassName("jupyter_notebooks_contents")].forEach(
       (wrapperDiv) => {
         const fieldId = wrapperDiv.getAttribute("data-field-id");
         const attachedFiles = getAttachedFilesByParsingEmbeddedText(isForNotebookPage,fieldId);
@@ -58,8 +69,17 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
 loadUIOnPageLoad();
 
 function thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId: string | null) {
+  let result = true;
   // @ts-ignore
-  return $('#jupyter_notebooks_details_' + fieldId).nextUntil('.attachmentDiv').find('.jupyter-notebooks-textfield').length === 0;
+  const matches = $('#jupyter_notebooks_button_' + fieldId).nextUntil('.attachmentDiv').find('.jupyter_notebooks_contents').toArray();
+  for (const jupyterDiv of matches) {
+    const matchedID = jupyterDiv.getAttribute("data-field-id");
+    if (fieldId !== matchedID) {
+      result = false;
+      break;
+    }
+  }
+  return result;
 }
 
 /*
@@ -68,7 +88,7 @@ function thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId: strin
 function getAttachedFilesByParsingEmbeddedText(isNotebook: boolean, fieldId: string | null): string[] {
   const recordIds: string [] = [];
   // @ts-ignore
-  const attachment = isNotebook ? $(".journalPageContent").find('#jupyter_notebooks_details_' + fieldId).nextAll('.attachmentDiv').first() : $('<div>' + $('#rtf_' + fieldId).val()).find('.attachmentDiv')
+  const attachment = isNotebook ? $(".journalPageContent").find('#jupyter_notebooks_button_' + fieldId).nextAll('.attachmentDiv').first() : $('<div>' + $('#rtf_' + fieldId).val()).find('.attachmentDiv')
   if (attachment.length > 0) {
     // @ts-ignore
     const record: string = isNotebook ? $(attachment).find('.inlineActionLink.downloadActionLink').attr('href').substring(12) : $(attachment).find('.attachmentInfoDiv').attr('id').substring(18);
@@ -79,7 +99,7 @@ function getAttachedFilesByParsingEmbeddedText(isNotebook: boolean, fieldId: str
       // So we determine if our jupyter div has no other jupyter divs between it and the next attachment div
       if (thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId)) {
         // @ts-ignore
-        $('#jupyter_notebooks_details_' + fieldId).show();
+        $('#jupyter_notebooks_button_' + fieldId).show();
       }
       recordIds.push(record);
     }

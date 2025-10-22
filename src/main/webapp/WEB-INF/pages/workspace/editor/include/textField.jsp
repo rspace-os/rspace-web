@@ -29,6 +29,14 @@
             <c:if test="${inventoryAvailable eq 'true'}">
               <div class="invMaterialsListing_new" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
             </c:if>
+          <div class="bootstrap-custom-flat">
+            <button style="display:none;float: left; margin-left: 28px; "    class="btn btn-default" id="jupyter_notebooks_button_${field.id}" onclick="window.dispatchEvent(new CustomEvent('jupyter_viewer_click',{detail:{id: ${field.id}}}))">
+              Open Jupyter Notebook
+            </button>
+          </div>
+          <span>
+            <div  style="display:none; float: right;" class="jupyter_notebooks_contents" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
+           </span>
           <div class="fieldNotification"></div>
           <div class="fieldHint"></div>
         </td>
@@ -53,12 +61,6 @@
           <c:if test="${galaxyEnabled eq 'true'}"> <!--TODO add more conditions as and when we integrate with other external workflows -->
             <div class="ext-workflows-textfield" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
           </c:if>
-            <details style="display:none" id="jupyter_notebooks_details_${field.id}">
-              <summary>
-                Open Jupyter Notebook
-              </summary>
-                <div class="jupyter-notebooks-textfield" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
-            </details>
           <textarea
             id="rtf_${field.id}" 
             name="fieldRtfData" 
