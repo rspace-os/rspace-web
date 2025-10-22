@@ -398,7 +398,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     int pathLengthFromUsersSubfolder = notebookFromUsersSubfolder.getPathToRootFolder().size();
 
     // Test path goes back to PI root
-    assertEquals(pathLengthFromUsersSubfolder, 5);
+    assertEquals(5, pathLengthFromUsersSubfolder);
 
     Long piRootId = getRootFolderForUser(pi).getId();
     Long lastFolderId =
