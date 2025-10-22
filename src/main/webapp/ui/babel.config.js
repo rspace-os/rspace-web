@@ -1,5 +1,3 @@
-const test = process.env.NODE_ENV === "test";
-
 module.exports = {
   presets: [
     [
@@ -20,6 +18,5 @@ module.exports = {
       },
     ],
     ["babel-plugin-syntax-hermes-parser"],
-    ...(test ? ["babel-plugin-transform-import-meta"] : []),
   ],
 };
