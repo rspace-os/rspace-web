@@ -1,5 +1,6 @@
 import path from 'node:path';
 import webpack from "webpack";
+import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -92,7 +93,10 @@ const config = {
     // fail otherwise
     new webpack.DefinePlugin({
       process: { env: {} },
-    })
+    }),
+    new BundleAnalyzerPlugin({
+      analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS) ? 'server' : "disabled",
+    }),
   ],
   optimization: {
     runtimeChunk: "single",

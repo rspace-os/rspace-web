@@ -9,6 +9,7 @@
     "clustermarket-test": "node_modules/.bin/jest --runInBand   --roots ./src/tinyMCE/clustermarket",
     "omero-test": "node_modules/.bin/jest --runInBand   --roots ./src/tinyMCE/omero",
     "build": "webpack --mode production",
+    "build:stats": "FRONTEND_BUILD_STATS=true webpack --mode production",
     "serve": "NODE_OPTIONS='--max-old-space-size=8192' webpack --watch --mode development --devtool eval-cheap-module-source-map",
     "depcruise": "npx depcruise src",
     "tsc": "tsc --noEmit",
@@ -72,6 +73,7 @@
     "typescript-eslint": "^8.35.0",
     "url": "^0.11.4",
     "webpack": "5.102.1",
+    "webpack-bundle-analyzer": "4.10.2",
     "webpack-cli": "6.0.1"
   },
   "dependencies": {
