@@ -32,7 +32,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
           );
           const root = createRoot(wrapperDiv);
           function App() {
-            const [theme, setTheme] = useState<SyntaxThemeType>('atomDark');
+            const [theme, setTheme] = useState<SyntaxThemeType>('vscDarkPlus');
             return(
                 <>
                   <div style={{height: 50}}>
