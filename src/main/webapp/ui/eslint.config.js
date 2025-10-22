@@ -114,7 +114,7 @@ export default defineConfig([
       "no-restricted-imports": [
         "error",
         {
-          patterns: [{ regex: "^@fortawesome/[^/]+$" }],
+          patterns: [{ regex: "^@fortawesome/free-[^/]+$" }],
         },
       ],
     },
