@@ -357,9 +357,9 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     return createBuilderForGet(API_VERSION.ONE, apiKey, "/folders/tree", anyUser);
   }
 
-
   @Test
-  public void whenNotebookInUsersSubFolderAccessedAsPiThenPathToPiRootIsReturned() throws Exception {
+  public void whenNotebookInUsersSubFolderAccessedAsPiThenPathToPiRootIsReturned()
+      throws Exception {
     // Create test group with PI and user
     TestGroup group = createTestGroup(2);
     User user = group.u1();
@@ -374,7 +374,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     subfolderPost.setName("WorkspaceSubfolder");
     subfolderPost.setParentFolderId(userRootId);
     MvcResult createFolderResult =
-            this.mockMvc.perform(folderCreate(user, userApiKey, subfolderPost)).andReturn();
+        this.mockMvc.perform(folderCreate(user, userApiKey, subfolderPost)).andReturn();
     ApiFolder subfolder = getFromJsonResponseBody(createFolderResult, ApiFolder.class);
 
     // Create a notebook in the user's subfolder
@@ -385,13 +385,13 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     String piApiKey = createNewApiKeyForUser(pi);
 
     MvcResult result =
-            this.mockMvc
-                    .perform(
-                            createBuilderForGet(
-                                    API_VERSION.ONE, piApiKey, "/folders/{id}", pi, notebook.getId())
-                                    .param("includePathToRootFolder", "true"))
-                    .andExpect(status().isOk())
-                    .andReturn();
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                        API_VERSION.ONE, piApiKey, "/folders/{id}", pi, notebook.getId())
+                    .param("includePathToRootFolder", "true"))
+            .andExpect(status().isOk())
+            .andReturn();
 
     ApiFolder notebookFromUsersSubfolder = getFromJsonResponseBody(result, ApiFolder.class);
     assertNotNull(notebookFromUsersSubfolder.getPathToRootFolder());
@@ -401,7 +401,8 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(pathLengthFromUsersSubfolder, 5);
 
     Long piRootId = getRootFolderForUser(pi).getId();
-    Long lastFolderId = notebookFromUsersSubfolder
+    Long lastFolderId =
+        notebookFromUsersSubfolder
             .getPathToRootFolder()
             .get(pathLengthFromUsersSubfolder - 1)
             .getId();
