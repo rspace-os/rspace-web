@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import tinymce, { RawEditorOptions } from "tinymce";
 import React from "react";
 import { Editor } from "@tinymce/tinymce-react";

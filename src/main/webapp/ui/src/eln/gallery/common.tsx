@@ -2,30 +2,17 @@ import React from "react";
 import { COLORS as baseThemeColors } from "../../theme";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
-import ChemistryIcon from "./chemistryIcon";
-import FilestoreIcon from "./filestoreIcon";
+import ChemistryIcon from "./ChemistryIcon";
+import FilestoreIcon from "./FilestoreIcon";
 import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import {
-  faImage,
-  faFilm,
-  faFile,
-  faFileInvoice,
-  faDatabase,
-  faShapes,
-  faCircleDown,
-  faVolumeLow,
-  faScissors,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(faImage);
-library.add(faFilm);
-library.add(faFile);
-library.add(faFileInvoice);
-library.add(faDatabase);
-library.add(faShapes);
-library.add(faCircleDown);
-library.add(faVolumeLow);
-library.add(faScissors);
+import { faImage } from '@fortawesome/free-solid-svg-icons/faImage';
+import { faFilm } from '@fortawesome/free-solid-svg-icons/faFilm';
+import { faFile } from '@fortawesome/free-solid-svg-icons/faFile';
+import { faFileInvoice } from '@fortawesome/free-solid-svg-icons/faFileInvoice';
+import { faShapes } from '@fortawesome/free-solid-svg-icons/faShapes';
+import { faVolumeLow } from '@fortawesome/free-solid-svg-icons/faVolumeLow';
+import { faScissors } from '@fortawesome/free-solid-svg-icons/faScissors';
+import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
 
 /**
  * Constants for the strings that identify gallery sections.
@@ -113,16 +100,16 @@ export const gallerySectionLabel = {
  * Mapping of gallery sections to icons that can be shown in the UI.
  */
 export const gallerySectionIcon: Record<string, React.ReactNode> = {
-  Images: <FaIcon icon="image" />,
-  Audios: <FaIcon icon="volume-low" />,
-  Videos: <FaIcon icon="film" />,
-  Documents: <FaIcon icon="file" />,
+  Images: <FaIcon icon={faImage} />,
+  Audios: <FaIcon icon={faVolumeLow} />,
+  Videos: <FaIcon icon={faFilm} />,
+  Documents: <FaIcon icon={faFile} />,
   Chemistry: <ChemistryIcon />,
-  DMPs: <FaIcon icon="file-invoice" />,
+  DMPs: <FaIcon icon={faFileInvoice} />,
   NetworkFiles: <FilestoreIcon />,
-  Snippets: <FaIcon icon="scissors" />,
-  Miscellaneous: <FaIcon icon="shapes" />,
-  PdfDocuments: <FaIcon icon="circle-down" />,
+  Snippets: <FaIcon icon={faScissors} />,
+  Miscellaneous: <FaIcon icon={faShapes} />,
+  PdfDocuments: <FaIcon icon={faFileExport} />,
 };
 
 /**

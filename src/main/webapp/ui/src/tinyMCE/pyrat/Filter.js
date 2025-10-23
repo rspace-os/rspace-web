@@ -6,7 +6,8 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import { Clear, FilterList } from "@mui/icons-material";
+import ClearIcon from "@mui/icons-material/Clear";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import Autocomplete from "@mui/material/Autocomplete";
 import { stableSort } from "../../util/table";
 import Grid from "@mui/material/Grid";
@@ -54,7 +55,7 @@ export default function Filter({
       Object.keys(filter).reduce((acc, key) => {
         acc[key] = true;
         return acc;
-      }, {})
+      }, {}),
     );
   }
 
@@ -68,8 +69,8 @@ export default function Filter({
             value: "",
           },
         }),
-        {}
-      )
+        {},
+      ),
     );
     setFilterMultiReq(
       Object.entries(filterMultiReq).reduce(
@@ -80,8 +81,8 @@ export default function Filter({
             value: "",
           },
         }),
-        {}
-      )
+        {},
+      ),
     );
     setFilterSpecial(
       Object.entries(filterSpecial).reduce(
@@ -92,8 +93,8 @@ export default function Filter({
             value: config.defaultValue,
           },
         }),
-        {}
-      )
+        {},
+      ),
     );
     setFilterCounter(filterCounter + 1);
     resetValidity();
@@ -270,7 +271,7 @@ export default function Filter({
             <FormControl fullWidth>
               <Autocomplete
                 options={stableSort(Object.values(config.enumObj), (a, b) =>
-                  a.label.localeCompare(b.label)
+                  a.label.localeCompare(b.label),
                 )}
                 renderInput={(props) => (
                   <TextField
@@ -310,7 +311,7 @@ export default function Filter({
       </Grid>
       <Button
         variant="contained"
-        endIcon={<Clear />}
+        endIcon={<ClearIcon />}
         className={classes.button}
         onClick={handleClear}
       >
@@ -319,7 +320,7 @@ export default function Filter({
       <Button
         variant="contained"
         color="primary"
-        endIcon={<FilterList />}
+        endIcon={<FilterListIcon />}
         className={`${classes.button} ${classes.buttonMargin}`}
         onClick={() => setFilterCounter(filterCounter + 1)}
       >

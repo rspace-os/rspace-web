@@ -8,9 +8,6 @@ import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import { type Group } from "../../../stores/definitions/Group";
 import { withStyles } from "Styles";
-import { faSpinner, faHandHolding } from "@fortawesome/free-solid-svg-icons";
-import { library } from "@fortawesome/fontawesome-svg-core";
-library.add(faSpinner, faHandHolding);
 
 const CustomAutocomplete = withStyles<
   React.ComponentProps<typeof Autocomplete<Group>>,

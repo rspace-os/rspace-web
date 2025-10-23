@@ -9,10 +9,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import PersonModel, { sortPeople } from "../../../stores/models/PersonModel";
 import { type Username, type Person } from "../../../stores/definitions/Person";
 import { withStyles } from "Styles";
-import { faSpinner, faHandHolding } from "@fortawesome/free-solid-svg-icons";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-library.add(faSpinner, faHandHolding);
 
 const CustomAutocomplete = withStyles<
   React.ComponentProps<typeof Autocomplete<PersonModel>>,

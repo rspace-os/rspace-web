@@ -65,9 +65,9 @@ export default function NewLabGroup() {
       executeScroll();
       setValues({ ...values, nameError: true });
       return;
-    } else {
-      setValues({ ...values, nameError: false });
     }
+    setValues({ ...values, nameError: false });
+
     if (values.groupType === LAB_GROUP && values.pis.length != 1) {
       setValues({ ...values, pisError: "Please, select a PI" });
     } else if (
@@ -88,7 +88,7 @@ export default function NewLabGroup() {
     form.method = "post";
     form.action = "/groups/admin/?new";
 
-    let params = {};
+    const params = {};
     params._memberString = 1;
     params.cancel = "Add group";
     params.pis = values.pis.length ? values.pis[0].username : values.pis;
@@ -103,8 +103,8 @@ export default function NewLabGroup() {
     } else if (values.groupType === PROJECT_GROUP) {
       params.memberString = params.memberString.concat(
         ...params.groupOwners.filter(
-          (owner) => !params.memberString.includes(owner)
-        )
+          (owner) => !params.memberString.includes(owner),
+        ),
       );
     }
 

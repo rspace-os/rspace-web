@@ -1,9 +1,7 @@
 import React from "react";
 import Button from "@mui/material/Button";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-library.add(faSpinner);
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
@@ -85,7 +83,7 @@ function SubmitSpinnerButton({
     >
       <div className={clsx(classes.spinner, !loading && classes.hidden)}>
         <FontAwesomeIcon
-          icon="spinner"
+          icon={faSpinner}
           spin
           size="lg"
           style={{ marginRight: "10px" }}

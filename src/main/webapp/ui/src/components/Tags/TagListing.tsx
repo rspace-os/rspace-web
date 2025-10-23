@@ -3,14 +3,12 @@ import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { faSitemap } from "@fortawesome/free-solid-svg-icons";
+import { faSitemap } from "@fortawesome/free-solid-svg-icons/faSitemap";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import DescriptionList from "../DescriptionList";
 import Popover from "@mui/material/Popover";
 import { type Tag } from "../../stores/definitions/Tag";
-library.add(faSitemap);
 
 function cardContent(tag: Tag) {
   return [

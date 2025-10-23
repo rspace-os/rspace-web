@@ -20,7 +20,7 @@ export default function ConfirmationDialog(props) {
   const [details, setDetails] = React.useState({});
 
   useEffect(() => {
-    document.addEventListener("confirm-action", function (e) {
+    document.addEventListener("confirm-action", (e) => {
       setDetails({
         title: e.detail.title,
         consequences: e.detail.consequences,
@@ -115,6 +115,6 @@ export default function ConfirmationDialog(props) {
 }
 
 // render the snackbar wrapper component
-let domContainer = document.getElementById("confirmation-dialog");
+const domContainer = document.getElementById("confirmation-dialog");
 const root = createRoot(domContainer);
 root.render(<ConfirmationDialog />);

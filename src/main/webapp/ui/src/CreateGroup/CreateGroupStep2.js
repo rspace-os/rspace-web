@@ -27,8 +27,7 @@ class createGroupStep2 extends React.Component {
   }
   handleChange = (event) => {
     //Check to see if self nominated or not
-    const nominatePi =
-      event.target.value === this.props.currentUser ? false : true;
+    const nominatePi = event.target.value !== this.props.currentUser;
 
     this.setState({
       radioOptions: {
@@ -56,8 +55,8 @@ class createGroupStep2 extends React.Component {
       (selfService && !projectGroup
         ? `/selfServiceLabGroup/`
         : projectGroup
-        ? /projectGroup/
-        : `/cloud/ajax/`) + `searchPublicUserInfoList?term=${value}`;
+          ? /projectGroup/
+          : `/cloud/ajax/`) + `searchPublicUserInfoList?term=${value}`;
 
     axios
       .get(url)

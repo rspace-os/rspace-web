@@ -73,7 +73,7 @@ export default function ChemCard(props) {
     // eslint-disable-next-line no-undef
     const publicView = $("#public_document_view").length > 0;
     const publicUrlPrepend = publicView ? "/public/publicView" : "";
-    let url =
+    const url =
       publicUrlPrepend + `/chemical/ajax/getInfo?chemId=${props.item.id}`;
     axios
       .get(url)

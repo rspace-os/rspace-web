@@ -12,11 +12,12 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
 import DateField from "../../../components/Inputs/DateField";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilter, faSearch, faBars } from "@fortawesome/free-solid-svg-icons";
+import { faFilter } from "@fortawesome/free-solid-svg-icons/faFilter";
+import { faSearch } from "@fortawesome/free-solid-svg-icons/faSearch";
+import { faBars } from "@fortawesome/free-solid-svg-icons/faBars";
+import { faTimes } from "@fortawesome/free-solid-svg-icons/faTimes";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
-library.add(faFilter, faSearch, faBars);
 
 import UserSelect from "../AdvancedSearch/UserSelect/UserSelect";
 import TagSelect from "../AdvancedSearch/TagSelect/TagSelect";
@@ -346,7 +347,7 @@ class SimpleSearch extends React.Component {
                       disabled={this.props.advancedOpen}
                       aria-label="Filters"
                     >
-                      <FontAwesomeIcon icon="filter" />
+                      <FontAwesomeIcon icon={faFilter} />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -365,7 +366,7 @@ class SimpleSearch extends React.Component {
                       onDelete={() => this.handleSelect("global")}
                       deleteIcon={
                         <FontAwesomeIcon
-                          icon="times"
+                          icon={faTimes}
                           style={{ padding: "10px" }}
                           data-test-id="s-search-rm-filter"
                         />
@@ -465,7 +466,7 @@ class SimpleSearch extends React.Component {
                   disabled={this.props.advancedOpen || !this.isValid()}
                   data-test-id="s-search-submit"
                 >
-                  <FontAwesomeIcon icon="search" />
+                  <FontAwesomeIcon icon={faSearch} />
                 </IconButton>
                 <Divider />
                 <Tooltip
@@ -477,7 +478,7 @@ class SimpleSearch extends React.Component {
                     onClick={this.toggleAdvanced}
                     aria-label="Advanced search"
                   >
-                    <FontAwesomeIcon icon="bars" />
+                    <FontAwesomeIcon icon={faBars} />
                   </IconButton>
                 </Tooltip>
               </SearchBar>

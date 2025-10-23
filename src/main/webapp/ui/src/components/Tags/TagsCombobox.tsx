@@ -25,10 +25,8 @@ import { Optional, lift3 } from "../../util/optional";
 import { stableSort } from "../../util/table";
 import { type Tag } from "../../stores/definitions/Tag";
 import RsSet from "../../util/set";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-library.add(faSpinner);
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import Grow from "@mui/material/Grow";
 import {
   parseEncodedTags,
@@ -724,7 +722,7 @@ export default function TagsCombobox<
                   <Grow in={isNextPageLoading} timeout={300}>
                     <div>
                       <FontAwesomeIcon
-                        icon="spinner"
+                        icon={faSpinner}
                         spin
                         size="sm"
                         style={{ animationDuration: "1.5s" }}

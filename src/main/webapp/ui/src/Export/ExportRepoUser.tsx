@@ -23,12 +23,10 @@ import EmailValidator from "email-validator";
 import FormHelperText from "@mui/material/FormHelperText";
 import styled from "@emotion/styled";
 import axios from "@/common/axios";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
+import { faUserPlus } from "@fortawesome/free-solid-svg-icons/faUserPlus";
 import { type Person } from "./repositories/common";
 import * as ArrayUtils from "../util/ArrayUtils";
-library.add(faUserPlus);
 
 const VALIDATIONS = {
   nameCheck: false,
@@ -254,7 +252,7 @@ export default function ExportRepoUser({
           </div>
           <Tooltip title="Add author/contact" className="child2">
             <IconButton onClick={() => setOpen(true)} data-test-id="add-user">
-              <FontAwesomeIcon icon="user-plus" />
+              <FontAwesomeIcon icon={faUserPlus} />
             </IconButton>
           </Tooltip>
         </AddUsers>
