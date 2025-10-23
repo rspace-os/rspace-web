@@ -397,7 +397,6 @@ export default class SubSampleModel
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
-  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get fieldValues(): SubSampleEditableFields & SubSampleUneditableFields {
     return {
       ...super.fieldValues,
@@ -409,7 +408,6 @@ export default class SubSampleModel
     return true;
   }
 
-  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): {
     [key in keyof SubSampleEditableFields]: string | null;
   } & {
