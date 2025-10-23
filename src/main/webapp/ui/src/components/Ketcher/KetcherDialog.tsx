@@ -8,6 +8,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { Editor, InfoModal } from "ketcher-react";
+// @ts-expect-error https://github.com/epam/ketcher/issues/5760
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
 import { styled } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
@@ -24,6 +25,8 @@ declare global {
   }
 }
 
+// https://github.com/epam/ketcher/issues/5760
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
 const structServiceProvider = new StandaloneStructServiceProvider();
 
 type KetcherDialogArgs = {
