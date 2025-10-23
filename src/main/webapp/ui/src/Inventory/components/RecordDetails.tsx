@@ -1,7 +1,7 @@
 import DescriptionList from "../../components/DescriptionList";
 import DOMPurify from "dompurify";
 import TableCellBlank from "../../components/TableCellBlank";
-import TimeAgoCustom from "../../components/TimeAgoCustom";
+import TimeAgoCustom from "@/components/TimeAgoCustom";
 import { type Record } from "../../stores/definitions/Record";
 import useStores from "../../stores/use-stores";
 import { formatFileSize } from "../../util/files";
