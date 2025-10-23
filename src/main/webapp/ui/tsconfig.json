@@ -5,6 +5,7 @@
     "target": "ES2024",
     "jsx": "react",
     "allowJs": true,
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
