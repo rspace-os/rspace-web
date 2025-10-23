@@ -30,8 +30,6 @@ const TimeAgoCustom = ({ time, formatter }: UserDetailsArgs) => {
     }
 
     if (typeof formatter === "function") {
-      // Not sure what's causing this
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return
       return formatter(
         value,
         unit,
@@ -44,8 +42,6 @@ const TimeAgoCustom = ({ time, formatter }: UserDetailsArgs) => {
 
     if (typeof nextFormatter === "function") {
       try {
-        // Not sure what's causing this
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return
         return nextFormatter(
           value,
           unit,
@@ -65,7 +61,6 @@ const TimeAgoCustom = ({ time, formatter }: UserDetailsArgs) => {
   // display "time ago" if less than 30 days ago
   if (Date.parse(time) + 30 * 24 * 60 * 60 * 1000 > new Date().getTime()) {
     // Not sure what's causing this
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     return <TimeAgo date={time} formatter={customFormatter} />;
   }
   // display actual date otherwise
