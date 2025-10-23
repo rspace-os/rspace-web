@@ -8,7 +8,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Button from "@mui/material/Button";
-import TimeAgoCustom from "../../components/TimeAgoCustom";
+import TimeAgoCustom from "@/components/TimeAgoCustom";
 import { stableSort, getSorting } from "../../util/table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import axios from "@/common/axios";

@@ -17,7 +17,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
 import UserDetails from "../components/UserDetails_deprecated";
-import TimeAgoCustom from "../components/TimeAgoCustom";
+import TimeAgoCustom from "@/components/TimeAgoCustom";
 import EnhancedTableHead from "../components/EnhancedTableHead";
 import Radio from "@mui/material/Radio";
 import { stableSort, getSorting, paginationOptions } from "../util/table";
