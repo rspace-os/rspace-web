@@ -31,7 +31,7 @@
             </c:if>
           <div class="bootstrap-custom-flat">
             <button style="display:none;float: right; margin-right: 8px; "    class="btn btn-default" id="jupyter_notebooks_button_${field.id}" onclick="window.dispatchEvent(new CustomEvent('jupyter_viewer_click',{detail:{id: ${field.id}}}))">
-              Open Jupyter Notebook
+              Open Jupyter Notebook(s)
             </button>
           </div>
           <span>

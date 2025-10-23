@@ -36,32 +36,43 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
   [...document.getElementsByClassName("jupyter_notebooks_contents")].forEach(
       (wrapperDiv) => {
         const fieldId = wrapperDiv.getAttribute("data-field-id");
-        const attachedFiles = getAttachedFilesByParsingEmbeddedText(isForNotebookPage,fieldId);
-        (async () =>
-        {
-          const {data} = await axios.get<IpynbType>(
-              "/Streamfile/" +
-              attachedFiles[0]
-          );
-          const root = createRoot(wrapperDiv);
-          function App() {
-            const [theme, setTheme] = useState<SyntaxThemeType>('vscDarkPlus');
-            return(
-                <>
-                  <div style={{height: 50, marginTop: '30px'}}>
-                    Syntax theme: <select value={theme} onChange={(e) => setTheme(e.target.value as SyntaxThemeType)}>
-                    {themes.map((theme) => (
-                        <option key={theme} value={theme}>{theme}</option>
-                    ))}
-                  </select>
-                  </div>
+        const attachedFileIds = getAttachedFilesByParsingEmbeddedText(isForNotebookPage, fieldId);
+        for (const attachedFileId of attachedFileIds) {
+          const rootDivId = "rootDiv_" + attachedFileId;
 
-                  <IpynbRenderer ipynb={data} syntaxTheme={theme} />
-                </>
+          // @ts-ignore
+          $(wrapperDiv).append('<div id='+rootDivId+' />');
+          // @ts-ignore
+          const rootDiv = $('#' + rootDivId)[0] as HTMLElement;
+          // @ts-ignore
+          (async () => {
+            const {data} = await axios.get<IpynbType>(
+                "/Streamfile/" +
+                attachedFileId
             );
-          }
-          root.render(<App/>);
-        })();
+            const root = createRoot(rootDiv);
+
+            function App() {
+              const [theme, setTheme] = useState<SyntaxThemeType>('vscDarkPlus');
+              return (
+                  <>
+                    <div style={{height: 50, marginTop: '30px'}}>
+                      Syntax theme: <select value={theme}
+                                            onChange={(e) => setTheme(e.target.value as SyntaxThemeType)}>
+                      {themes.map((theme) => (
+                          <option key={theme} value={theme}>{theme}</option>
+                      ))}
+                    </select>
+                    </div>
+
+                    <IpynbRenderer ipynb={data} syntaxTheme={theme}/>
+                  </>
+              );
+            }
+
+            root.render(<App/>);
+          })();
+        }
       }
   );
 }
@@ -90,20 +101,22 @@ function thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId: strin
 function getAttachedFilesByParsingEmbeddedText(isNotebook: boolean, fieldId: string | null): string[] {
   const recordIds: string [] = [];
   // @ts-ignore
-  const attachment = isNotebook ? $(".journalPageContent").find('#jupyter_notebooks_button_' + fieldId).nextAll('.attachmentDiv').first() : $('<div>' + $('#rtf_' + fieldId).val()).find('.attachmentDiv')
-  if (attachment.length > 0) {
-    // @ts-ignore
-    const record: string = isNotebook ? $(attachment).find('.inlineActionLink.downloadActionLink').attr('href').substring(12) : $(attachment).find('.attachmentInfoDiv').attr('id').substring(18);
-    // @ts-ignore
-    const html = $(attachment).html();
-    if (html.includes("ipynb")) {
-      // In Notebook 'view mode', attachment divs have no connection to a useable ID for finding them
-      // So we determine if our jupyter div has no other jupyter divs between it and the next attachment div
-      if (thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId)) {
-        // @ts-ignore
-        $('#jupyter_notebooks_button_' + fieldId).show();
+  const attachments = isNotebook ? $(".journalPageContent").find('#jupyter_notebooks_button_' + fieldId).nextAll('.attachmentDiv').toArray() : $('<div>' + $('#rtf_' + fieldId).val()).find('.attachmentDiv').toArray()
+  if (attachments.length > 0) {
+    for (const attachment of attachments) {
+      // @ts-ignore
+      const record: string = isNotebook ? $(attachment).find('.inlineActionLink.downloadActionLink').attr('href').substring(12) : $(attachment).find('.attachmentInfoDiv').attr('id').substring(18);
+      // @ts-ignore
+      const html = $(attachment).html();
+      if (html.includes("ipynb")) {
+        // In Notebook 'view mode', attachment divs have no connection to a useable ID for finding them
+        // So we determine if our jupyter div has no other jupyter divs between it and the next attachment div
+        if (thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId)) {
+          // @ts-ignore
+          $('#jupyter_notebooks_button_' + fieldId).show();
+          recordIds.push(record);
+        }
       }
-      recordIds.push(record);
     }
   }
   return recordIds;

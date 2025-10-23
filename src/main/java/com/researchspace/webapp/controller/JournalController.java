@@ -187,7 +187,7 @@ public class JournalController extends BaseController {
   private static final String JUPYTER_NOTEBOOKS_DIV =
       "<button style=\"display:none; \" class=\"bootstrap-custom-flat btn btn-default\" "
           + " id=\"jupyter_notebooks_button_%d\" onclick=\"window.dispatchEvent(new"
-          + " CustomEvent('jupyter_viewer_click',{detail:{id: %d}}))\">   Open Jupyter Notebook"
+          + " CustomEvent('jupyter_viewer_click',{detail:{id: %d}}))\">   Open Jupyter Notebook(s)"
           + " </button><span><div class='jupyter_notebooks_contents' style='display:none;"
           + " max-width:950px' data-field-id='%d'  data-document-id='%d'></div></span>  ";
 
