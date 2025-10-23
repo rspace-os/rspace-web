@@ -20,7 +20,9 @@ window.addEventListener("jupyter_viewer_click", function (event) {
   [...document.getElementsByClassName("jupyter_notebooks_contents")].forEach(
       (wrapperDiv) => {
         const fieldId = wrapperDiv.getAttribute("data-field-id");
+        // @ts-ignore
         if (fieldId === ""+event.detail.id){
+          // @ts-ignore
           $(wrapperDiv).toggle();
         }
       })
@@ -46,7 +48,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
             const [theme, setTheme] = useState<SyntaxThemeType>('vscDarkPlus');
             return(
                 <>
-                  <div style={{height: 50}}>
+                  <div style={{height: 50, marginTop: '30px'}}>
                     Syntax theme: <select value={theme} onChange={(e) => setTheme(e.target.value as SyntaxThemeType)}>
                     {themes.map((theme) => (
                         <option key={theme} value={theme}>{theme}</option>
