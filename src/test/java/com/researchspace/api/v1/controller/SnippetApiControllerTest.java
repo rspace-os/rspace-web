@@ -22,13 +22,11 @@ import org.springframework.orm.ObjectRetrievalFailureException;
 @ExtendWith(MockitoExtension.class)
 class SnippetApiControllerTest {
 
-  @Mock
-  private SnippetService snippetService;
+  @Mock private SnippetService snippetService;
 
   private MessageSourceUtils messageSourceUtils;
 
-  @InjectMocks
-  private SnippetApiController controller;
+  @InjectMocks private SnippetApiController controller;
 
   private User user;
 
@@ -59,7 +57,8 @@ class SnippetApiControllerTest {
     when(snippetService.getSnippet(id, user))
         .thenThrow(new ObjectRetrievalFailureException("Snippet", id));
     mockNotFoundMessage();
-    NotFoundException ex = assertThrows(NotFoundException.class, () -> controller.getSnippetContentById(id, user));
+    NotFoundException ex =
+        assertThrows(NotFoundException.class, () -> controller.getSnippetContentById(id, user));
     assertEquals("not found", ex.getMessage());
   }
 
@@ -68,12 +67,13 @@ class SnippetApiControllerTest {
     long id = 123L;
     when(snippetService.getSnippet(id, user)).thenThrow(new AuthorizationException(""));
     mockNotFoundMessage();
-    NotFoundException ex = assertThrows(NotFoundException.class, () -> controller.getSnippetContentById(id, user));
+    NotFoundException ex =
+        assertThrows(NotFoundException.class, () -> controller.getSnippetContentById(id, user));
     assertEquals("not found", ex.getMessage());
   }
 
-  void mockNotFoundMessage(){
+  void mockNotFoundMessage() {
     when(messageSourceUtils.getResourceNotFoundMessage(Mockito.anyString(), Mockito.anyLong()))
-            .thenReturn("not found");
+        .thenReturn("not found");
   }
 }

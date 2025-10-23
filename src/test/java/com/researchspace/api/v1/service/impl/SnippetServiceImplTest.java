@@ -7,7 +7,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.api.v1.service.impl.SnippetServiceImpl;
 import com.researchspace.auth.PermissionUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
@@ -46,8 +45,7 @@ class SnippetServiceImplTest {
 
     assertSame(snippet, result);
     verify(recordManager).getAsSubclass(id, Snippet.class);
-    verify(permissionUtils)
-        .assertIsPermitted(snippet, PermissionType.READ, user, "read snippet");
+    verify(permissionUtils).assertIsPermitted(snippet, PermissionType.READ, user, "read snippet");
     verifyNoMoreInteractions(recordManager, permissionUtils);
   }
 

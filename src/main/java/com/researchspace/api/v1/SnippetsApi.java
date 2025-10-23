@@ -12,5 +12,4 @@ public interface SnippetsApi {
 
   @GetMapping(value = "/api/v1/snippet/{id}/content", produces = MediaType.TEXT_PLAIN_VALUE)
   String getSnippetContentById(@PathVariable long id, User user);
-
 }

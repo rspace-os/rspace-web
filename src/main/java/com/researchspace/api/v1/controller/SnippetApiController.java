@@ -22,7 +22,7 @@ public class SnippetApiController extends BaseApiController implements SnippetsA
 
   @Override
   public ApiSnippet getSnippetById(
-          @PathVariable long id, @RequestAttribute(name = "user") User user) {
+      @PathVariable long id, @RequestAttribute(name = "user") User user) {
     try {
       Snippet snippet = snippetService.getSnippet(id, user);
       ApiSnippet apiSnippet = new ApiSnippet(snippet);

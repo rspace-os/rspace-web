@@ -1,8 +1,6 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,13 +25,13 @@ public class SnippetApiControllerMVCIT extends API_MVC_TestBase {
     Snippet snippet = recordMgr.createSnippet("Test Snippet", content, anyUser);
 
     mockMvc
-      .perform(
-          createBuilderForGet(
-              API_VERSION.ONE, apiKey, "/snippet/{id}/content", anyUser, snippet.getId()))
-      .andExpect(status().isOk())
-      .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
-      .andExpect(content().string(content))
-      .andReturn();
+        .perform(
+            createBuilderForGet(
+                API_VERSION.ONE, apiKey, "/snippet/{id}/content", anyUser, snippet.getId()))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+        .andExpect(content().string(content))
+        .andReturn();
   }
 
   @Test
@@ -43,12 +41,12 @@ public class SnippetApiControllerMVCIT extends API_MVC_TestBase {
     long nonExistentId = 987654321L;
 
     mockMvc
-      .perform(
-          createBuilderForGet(
-              API_VERSION.ONE, apiKey, "/snippet/{id}/content", anyUser, nonExistentId))
-      .andExpect(status().isNotFound())
-      .andExpect(jsonPath("$.message").value(makeNotFoundOrUnauthorizedMessage(nonExistentId)))
-      .andReturn();
+        .perform(
+            createBuilderForGet(
+                API_VERSION.ONE, apiKey, "/snippet/{id}/content", anyUser, nonExistentId))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value(makeNotFoundOrUnauthorizedMessage(nonExistentId)))
+        .andReturn();
   }
 
   @Test
@@ -61,12 +59,12 @@ public class SnippetApiControllerMVCIT extends API_MVC_TestBase {
     String apiKey = createNewApiKeyForUser(otherUser);
 
     mockMvc
-      .perform(
-          createBuilderForGet(
-              API_VERSION.ONE, apiKey, "/snippet/{id}/content", otherUser, snippet.getId()))
-      .andExpect(status().isNotFound())
-      .andExpect(jsonPath("$.message").value(makeNotFoundOrUnauthorizedMessage(snippet.getId())))
-      .andReturn();
+        .perform(
+            createBuilderForGet(
+                API_VERSION.ONE, apiKey, "/snippet/{id}/content", otherUser, snippet.getId()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value(makeNotFoundOrUnauthorizedMessage(snippet.getId())))
+        .andReturn();
   }
 
   @Test
@@ -101,8 +99,7 @@ public class SnippetApiControllerMVCIT extends API_MVC_TestBase {
     long nonExistentId = 987654321L;
     this.mockMvc
         .perform(
-            createBuilderForGet(
-                API_VERSION.ONE, apiKey, "/snippet/{id}", anyUser, nonExistentId))
+            createBuilderForGet(API_VERSION.ONE, apiKey, "/snippet/{id}", anyUser, nonExistentId))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message").value(makeNotFoundOrUnauthorizedMessage(nonExistentId)))
         .andReturn();
@@ -127,6 +124,9 @@ public class SnippetApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   private String makeNotFoundOrUnauthorizedMessage(long id) {
-	  return "Snippet with id [" + id + " ] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.";
+    return "Snippet with id ["
+        + id
+        + " ] could not be retrieved - possibly it has been deleted, does not exist, or you do not"
+        + " have permission to access it.";
   }
 }
