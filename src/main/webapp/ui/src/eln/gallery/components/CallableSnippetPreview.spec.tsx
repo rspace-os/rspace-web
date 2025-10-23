@@ -148,7 +148,7 @@ feature.beforeEach(async ({ router }) => {
     });
   });
 
-  await router.route("/snippet/content/123", (route) => {
+  await router.route("/snippet/123/content", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "text/html",
@@ -156,7 +156,7 @@ feature.beforeEach(async ({ router }) => {
     });
   });
 
-  await router.route("/snippet/content/124", (route) => {
+  await router.route("/snippet/124/content", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "text/html",
@@ -186,7 +186,7 @@ feature.beforeEach(async ({ router }) => {
     });
   });
 
-  await router.route("/snippet/content/999", (route) => {
+  await router.route("/snippet/999/content", (route) => {
     return route.fulfill({
       status: 500,
       contentType: "application/json",
@@ -239,7 +239,7 @@ test.describe("CallableSnippetPreview", () => {
         await Given["the snippet preview component is mounted"]();
 
         // Intercept the request to delay it
-        await page.route("/snippet/content/123", async (route) => {
+        await page.route("/snippet/123/content", async (route) => {
           await new Promise((resolve) => setTimeout(resolve, 1000));
           return route.fulfill({
             status: 200,

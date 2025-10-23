@@ -37,7 +37,7 @@ export function CallableSnippetPreview({
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<string>(`/snippet/content/${fileId}`);
+      const response = await axios.get<string>(`/snippet/${fileId}/content`);
       setSnippetContent(response.data);
     } catch (err) {
       const errorMessage = getErrorMessage(
