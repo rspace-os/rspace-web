@@ -95,12 +95,28 @@ function thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId: strin
   return result;
 }
 
+function thereAreNoOtherJupyterDivsBetweenTheAttachmentDivAndThis(attachment: any, fieldId: string | null){
+  let result = true;
+  // @ts-ignore
+  const matches = $(attachment).prevUntil('#jupyter_notebooks_button_' + fieldId).find('.jupyter_notebooks_contents').toArray();
+  for (const jupyterDiv of matches) {
+    const matchedID = jupyterDiv.getAttribute("data-field-id");
+    if (fieldId !== matchedID) {
+      result = false;
+      break;
+    }
+  }
+  return result;
+}
+
 /*
  * we are only interested in embedded jupyter links
  */
 function getAttachedFilesByParsingEmbeddedText(isNotebook: boolean, fieldId: string | null): string[] {
   const recordIds: string [] = [];
   // @ts-ignore
+  //For documents in any mode and notebook entries in 'edit' mode, this will create an array of all attachments in this textfield
+  //However, for notebooks in 'view' mode this will create an array of all attachments in the entire document
   const attachments = isNotebook ? $(".journalPageContent").find('#jupyter_notebooks_button_' + fieldId).nextAll('.attachmentDiv').toArray() : $('<div>' + $('#rtf_' + fieldId).val()).find('.attachmentDiv').toArray()
   if (attachments.length > 0) {
     for (const attachment of attachments) {
@@ -114,7 +130,9 @@ function getAttachedFilesByParsingEmbeddedText(isNotebook: boolean, fieldId: str
         if (thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId)) {
           // @ts-ignore
           $('#jupyter_notebooks_button_' + fieldId).show();
-          recordIds.push(record);
+          if (thereAreNoOtherJupyterDivsBetweenTheAttachmentDivAndThis(attachment, fieldId)) {
+            recordIds.push(record);
+          }
         }
       }
     }
