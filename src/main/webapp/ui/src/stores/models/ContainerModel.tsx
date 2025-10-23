@@ -1053,7 +1053,6 @@ export default class ContainerModel
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
-  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get fieldValues(): ContainerEditableFields & ContainerUneditableFields {
     return {
       ...super.fieldValues,
@@ -1064,7 +1063,6 @@ export default class ContainerModel
     return true;
   }
 
-  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): {
     [key in keyof ContainerEditableFields]: string | null;
   } & {

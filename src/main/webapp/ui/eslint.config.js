@@ -1,3 +1,4 @@
+import globals from "globals";
 import { defineConfig } from "@eslint/config-helpers";
 import js from "@eslint/js";
 import react from "eslint-plugin-react";
@@ -15,7 +16,6 @@ export default defineConfig([
   {
     ignores: ["**/node_modules/", ".git/", "**/dist/", "**/build/"],
   },
-
   // Base configuration for all JavaScript files
   {
     files: ["**/*.js", "**/*.jsx"],
@@ -28,6 +28,8 @@ export default defineConfig([
       ecmaVersion: 2023,
       sourceType: "module",
       globals: {
+        ...globals.browser,
+        ...globals.node,
         // Browser globals are included by default in flat config
       },
     },

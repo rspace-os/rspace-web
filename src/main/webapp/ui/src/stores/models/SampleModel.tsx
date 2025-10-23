@@ -859,7 +859,6 @@ export default class SampleModel
     );
   }
 
-  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get fieldValues(): SampleEditableFields & SampleUneditableFields {
     return {
       ...super.fieldValues,
@@ -875,7 +874,6 @@ export default class SampleModel
     return true;
   }
 
-  // @ts-expect-error The whole class hierarchy is using getters, so this looks like a TypeScript bug
   get noValueLabel(): { [key in keyof SampleEditableFields]: string | null } & {
     [key in keyof SampleUneditableFields]: string | null;
   } {

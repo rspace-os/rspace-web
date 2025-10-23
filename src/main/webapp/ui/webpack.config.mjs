@@ -1,8 +1,9 @@
-const path = require("path");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
-const webpack = require("webpack");
+import path from 'node:path';
+import webpack from "webpack";
+import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
-module.exports = {
+/** @type {import('webpack').Configuration} */
+const config = {
   entry: {
     /*
      * Inventory is a Single Page Application written entirely using React.
@@ -83,15 +84,18 @@ module.exports = {
   output: {
     filename: "[name].js",
     chunkFilename: "[name].js",
-    path: path.resolve(__dirname, "dist"),
+    path: path.resolve(import.meta.dirname, "dist"),
     publicPath: "/ui/dist/",
+    clean: true,
   },
   plugins: [
-    new CleanWebpackPlugin(),
     //mocks process object, required by the ketcher-react package which would
     // fail otherwise
     new webpack.DefinePlugin({
       process: { env: {} },
+    }),
+    new BundleAnalyzerPlugin({
+      analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS) ? 'server' : "disabled",
     }),
   ],
   optimization: {
@@ -100,11 +104,11 @@ module.exports = {
   resolve: {
     extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
     alias: {
-      Styles: path.resolve(__dirname, "src/util/styles"),
-      "@": path.resolve(__dirname, "src"),
+      Styles: path.resolve(import.meta.dirname, "src/util/styles"),
+      "@": path.resolve(import.meta.dirname, "src"),
     },
     fallback: {
-      url: require.resolve("url/"),
+      url: import.meta.resolve("url/"),
     },
   },
   module: {
@@ -114,7 +118,7 @@ module.exports = {
         use: ["style-loader", "css-loader"],
       },
       {
-        test: /\.(js|jsx)$/,
+        test: /\.m?jsx?$/,
         exclude: /node_modules/,
         use: {
           loader: "babel-loader",
@@ -147,3 +151,5 @@ module.exports = {
     ],
   },
 };
+
+export default config;

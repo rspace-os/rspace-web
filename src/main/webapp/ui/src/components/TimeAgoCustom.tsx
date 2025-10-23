@@ -1,37 +1,35 @@
-import React from "react";
 import TimeAgo from "react-timeago";
-import { isoToLocale } from "../util/Util";
-import { Formatter, Suffix, Unit } from "react-timeago/es6/types";
+import { isoToLocale } from "@/util/Util";
+import { Formatter } from "react-timeago";
+import { makeIntlFormatter } from "react-timeago/defaultFormatter";
 
 type UserDetailsArgs = {
   time: string;
-  formatter?: (
-    value: number,
-    unit: Unit,
-    suffix: Suffix,
-    epochMilliseconds: number,
-    nextFormatter?: Formatter,
-    now?: () => number,
-  ) => React.ReactNode;
+  formatter?: Formatter;
 };
 
-export default function UserDetails({
-  time,
-  formatter,
-}: UserDetailsArgs): JSX.Element {
-  const customFormatter = (
-    value: number,
-    unit: Unit,
-    suffix: Suffix,
-    epochMilliseconds: number,
-    nextFormatter: Formatter,
-    now: () => number,
-  ): React.ReactNode => {
+const intlFormatter = makeIntlFormatter({
+  locale: 'en-US',
+  localeMatcher: 'best fit',
+  numberingSystem: 'latn',
+  style: 'long',
+  numeric: 'auto',
+});
+
+const TimeAgoCustom = ({ time, formatter }: UserDetailsArgs) => {
+  const customFormatter: Formatter = (
+    value,
+    unit,
+    suffix,
+    epochMilliseconds,
+    nextFormatter,
+    now,
+  ) => {
     if (unit === "second") {
       return "< 1 minute ago";
     }
 
-    if (formatter) {
+    if (typeof formatter === "function") {
       return formatter(
         value,
         unit,
@@ -42,28 +40,31 @@ export default function UserDetails({
       );
     }
 
-    if (nextFormatter && typeof nextFormatter === "function") {
+    if (typeof nextFormatter === "function") {
       try {
         return nextFormatter(
           value,
           unit,
           suffix,
           epochMilliseconds,
-          nextFormatter,
+          intlFormatter,
           now,
         );
       } catch {
-        // Fall back if nextFormatter throws
+        return `${value} ${unit}${suffix}`;
       }
     }
 
     return `${value} ${unit}${suffix}`;
   };
 
+  // display "time ago" if less than 30 days ago
   if (Date.parse(time) + 30 * 24 * 60 * 60 * 1000 > new Date().getTime()) {
-    // display "time ago" if less than 30 days ago
+    // Not sure what's causing this
     return <TimeAgo date={time} formatter={customFormatter} />;
   }
   // display actual date otherwise
   return <>{isoToLocale(time)}</>;
 }
+
+export default TimeAgoCustom;
