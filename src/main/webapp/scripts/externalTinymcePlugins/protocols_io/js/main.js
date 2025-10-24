@@ -57,7 +57,11 @@ $(document).ready(function () {
 			//wait for all pio_Requests to come back
 			$.when.apply($, pio_requests).done(function (resp) {
 				// submit all protocols
-        const targetFolderId = window.parent.document.querySelector("#protocolsIoChooserDlgIframe").dataset.parentid;
+				var targetFolderId = 0;
+				if (!isTinyMCEPlugin) {
+					targetFolderId = window.parent.document.querySelector(
+							"#protocolsIoChooserDlgIframe").dataset.parentid;
+				}
 				$.ajax({
 					url: `/importer/generic/protocols_io/${targetFolderId}?grandParentId=${getGrandParentFolderId()}`, dataType: 'json',
 					"data": JSON.stringify(pio_results), type: "POST", contentType: "application/json;"
@@ -77,12 +81,16 @@ $(document).ready(function () {
 									});
 							});
 						} else {
-						  RS.trackEvent("user:import:from_protocols_io:workspace");
+						  parent.RS.trackEvent("user:import:from_protocols_io:workspace");
 							var importFolderId = response.data.importFolderId;
 							window.parent.RS.confirmAndNavigateTo("All documents imported, reloading page...",
 								'success', 3000, window.parent.createURL('/workspace/' + importFolderId));
 						}
 					})
+				.fail(function (result) {
+					showError('Couldn\'t import selected protocol(s).');
+					console.log("error on importing protocols: " + result.responseText);
+				})
 			});
 		},
 	};

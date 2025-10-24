@@ -44,38 +44,54 @@ public class ProtocolsIOController extends BaseController {
   private @Autowired SharingHandler recordShareHandler;
   private @Autowired IPermissionUtils permissnUtils;
 
+  /**
+   * @param parentFolderId decides where to save the downloaded protocol; handles '0' as a special
+   *     value pointing to user's 'Imports' folder.
+   * @param grandParentFolderId required when importing into shared notebook
+   * @param protocols list of protocols to import
+   * @return
+   */
   @PostMapping(
       value = "/{parentFolderId}",
       produces = MediaType.APPLICATION_JSON_VALUE,
       consumes = MediaType.APPLICATION_JSON_VALUE)
   public AjaxReturnObject<PIOResponse> importExternalData(
-      @PathVariable("parentFolderId") Long parentFolderId,
+      @PathVariable(value = "parentFolderId") Long parentFolderId,
       @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       @RequestBody List<Protocol> protocols) {
+
     log.info("Importing {} protocols", protocols.size());
     List<RecordInformation> results = new ArrayList<>();
+
     Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User subject = userManager.getAuthenticatedUserInSession();
-    Folder originalParentFolder = folderManager.getFolder(parentFolderId, subject);
-    Long finalParentFolderId = folderManager.getImportsFolder(subject).getId();
-    if (originalParentFolder.isNotebook()
-        && permissnUtils.isPermitted(originalParentFolder, PermissionType.CREATE, subject)) {
-      finalParentFolderId = originalParentFolder.getId();
-    }
+    Folder targetFolder = getTargetFolder(parentFolderId, subject);
     for (Protocol protocol : protocols) {
       if (protocol.getSteps() != null) {
         protocol.orderComponents(PIOStepComponent.DisplayOrder);
       }
       StructuredDocument converted =
-          converter.generateFromProtocol(protocol, subject, finalParentFolderId);
+          converter.generateFromProtocol(protocol, subject, targetFolder.getId());
       results.add(converted.toRecordInfo());
       if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
-          subject, originalParentFolder)) {
+          subject, targetFolder)) {
         recordShareHandler.shareIntoSharedFolderOrNotebook(
-            subject, originalParentFolder, converted.getId(), grandParentId);
+            subject, targetFolder, converted.getId(), grandParentId);
       }
     }
-    PIOResponse response = new PIOResponse(results, finalParentFolderId);
+    PIOResponse response = new PIOResponse(results, targetFolder.getId());
     return new AjaxReturnObject<>(response, null);
+  }
+
+  private Folder getTargetFolder(Long parentFolderId, User subject) {
+    Folder finalParentFolder = folderManager.getImportsFolder(subject);
+    if (parentFolderId != 0L) {
+      Folder originalParentFolder = folderManager.getFolder(parentFolderId, subject);
+      if (originalParentFolder.isNotebook()
+          && permissnUtils.isPermitted(originalParentFolder, PermissionType.CREATE, subject)) {
+        finalParentFolder = originalParentFolder;
+      }
+    }
+    return finalParentFolder;
   }
 }
