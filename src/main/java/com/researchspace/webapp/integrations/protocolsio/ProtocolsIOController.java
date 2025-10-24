@@ -70,14 +70,11 @@ public class ProtocolsIOController extends BaseController {
       if (protocol.getSteps() != null) {
         protocol.orderComponents(PIOStepComponent.DisplayOrder);
       }
-      StructuredDocument converted =
+      StructuredDocument importedProtocol =
           converter.generateFromProtocol(protocol, subject, targetFolder.getId());
-      results.add(converted.toRecordInfo());
-      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
-          subject, targetFolder)) {
-        recordShareHandler.shareIntoSharedFolderOrNotebook(
-            subject, targetFolder, converted.getId(), grandParentId);
-      }
+      results.add(importedProtocol.toRecordInfo());
+
+      shareIfParentFolderIdInSharedFolder(importedProtocol, parentFolderId, grandParentId, subject);
     }
     PIOResponse response = new PIOResponse(results, targetFolder.getId());
     return new AjaxReturnObject<>(response, null);
@@ -94,4 +91,17 @@ public class ProtocolsIOController extends BaseController {
     }
     return finalParentFolder;
   }
+
+  private void shareIfParentFolderIdInSharedFolder(StructuredDocument converted,
+      Long parentFolderId, Long grandParentId, User subject) {
+    if (parentFolderId != 0L) {
+      Folder originalParentFolder = folderManager.getFolder(parentFolderId, subject);
+      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
+          subject, originalParentFolder)) {
+        recordShareHandler.shareIntoSharedFolderOrNotebook(
+            subject, originalParentFolder, converted.getId(), grandParentId);
+      }
+    }
+  }
+
 }
