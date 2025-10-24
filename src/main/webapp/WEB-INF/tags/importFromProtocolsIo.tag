@@ -12,6 +12,6 @@
 }
 </style>
 
-<div id="protocolsIoChooserDlg" style="display: none">
-	<iframe id="protocolsIoChooserDlgIframe" data-parentid="${parentId}" style="width:100%;height:1400px;" class="seamless" scrolling="no" frameborder="0"></iframe>
+<div id="protocolsIoChooserDlg" style="display: none; overflow: inherit">
+	<iframe id="protocolsIoChooserDlgIframe" data-parentid="${parentId}" style="width:100%;height:100%;" class="seamless" frameborder="0"></iframe>
 </div>
