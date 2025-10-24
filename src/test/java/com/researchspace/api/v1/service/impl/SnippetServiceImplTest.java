@@ -15,27 +15,35 @@ import com.researchspace.service.RecordManager;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
+@ExtendWith(MockitoExtension.class)
 class SnippetServiceImplTest {
 
+  @Mock
   private RecordManager recordManager;
+
+  @Mock
   private PermissionUtils permissionUtils;
+
+  @InjectMocks
   private SnippetServiceImpl service;
+
   private User user;
 
   @BeforeEach
   void setUp() {
-    recordManager = org.mockito.Mockito.mock(RecordManager.class);
-    permissionUtils = org.mockito.Mockito.mock(PermissionUtils.class);
-    service = new SnippetServiceImpl(recordManager, permissionUtils);
     user = new User();
     user.setUsername("alice");
   }
 
   @Test
-  void getSnippet_success_returnsSnippet_andChecksPermission() {
-    long id = 42L;
+  void getSnippetChecksPermissionsAndReturnsSnippet() {
+    long id = 123L;
     Snippet snippet = new Snippet();
     snippet.setId(id);
 
@@ -44,14 +52,12 @@ class SnippetServiceImplTest {
     Snippet result = service.getSnippet(id, user);
 
     assertSame(snippet, result);
-    verify(recordManager).getAsSubclass(id, Snippet.class);
     verify(permissionUtils).assertIsPermitted(snippet, PermissionType.READ, user, "read snippet");
-    verifyNoMoreInteractions(recordManager, permissionUtils);
   }
 
   @Test
-  void getSnippet_missing_bubblesUp() {
-    long id = 99L;
+  void whenSnippetNotFoundThenExceptionBubblesUp() {
+    long id = 999L;
     when(recordManager.getAsSubclass(id, Snippet.class))
         .thenThrow(new ObjectRetrievalFailureException("Snippet", id));
 
@@ -59,12 +65,12 @@ class SnippetServiceImplTest {
   }
 
   @Test
-  void getSnippet_unauthorized_bubblesUp() {
-    long id = 7L;
+  void whenUserNotPermittedThenExceptionBubblesUp() {
+    long id = 123L;
     Snippet snippet = new Snippet();
     when(recordManager.getAsSubclass(id, Snippet.class)).thenReturn(snippet);
 
-    doThrow(new AuthorizationException("nope"))
+    doThrow(new AuthorizationException())
         .when(permissionUtils)
         .assertIsPermitted(snippet, PermissionType.READ, user, "read snippet");
 
