@@ -128,6 +128,15 @@ public class ProtocolsIOControllerTest {
         .shareIntoSharedFolderOrNotebook(subject, sharedNotebook, anyDoc.getId(), null);
   }
 
+  @Test
+  public void importExternalDataIntoDocumentEditor() {
+    AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
+        ctrller.importExternalData(TransformerUtils.toList(protocol));
+    assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
+    assertEquals(importsFolder.getId(), rc.getData().getImportFolderId());
+    verifyNoInteractions(recordShareHandler);
+  }
+
   private Protocol getAProtocol() {
     Protocol protocol = new Protocol();
     protocol.setNumberOfSteps(2);
