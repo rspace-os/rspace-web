@@ -7,6 +7,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import axios from "@/common/axios";
 import { getErrorMessage } from "@/util/error";
+import useOauthToken from "@/hooks/auth/useOauthToken";
 
 const SnippetPreviewContext = React.createContext((_file: GalleryFile) => {});
 
@@ -32,12 +33,17 @@ export function CallableSnippetPreview({
   );
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<null | string>(null);
+  const { getToken } = useOauthToken();
 
   const fetchSnippetContent = async (fileId: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<string>(`/snippet/content/${fileId}`);
+      const response = await axios.get<string>(`/api/v1/snippet/${fileId}/content`, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
       setSnippetContent(response.data);
     } catch (err) {
       const errorMessage = getErrorMessage(
