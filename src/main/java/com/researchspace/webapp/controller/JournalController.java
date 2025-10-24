@@ -184,6 +184,12 @@ public class JournalController extends BaseController {
 
   private static final String EXTERNAL_WORKFLOWS_DIV =
       "<div class='ext-workflows-textfield' data-field-id='%d' data-document-id='%d'></div>";
+  private static final String JUPYTER_NOTEBOOKS_DIV =
+      "<button style=\"display:none; \" class=\"bootstrap-custom-flat btn btn-default\" "
+          + " id=\"jupyter_notebooks_button_%d\" onclick=\"window.dispatchEvent(new"
+          + " CustomEvent('jupyter_viewer_click',{detail:{id: %d}}))\">   Open Jupyter Notebook(s)"
+          + " </button><span><div class='jupyter_notebooks_contents' style='display:none;"
+          + " max-width:950px' data-field-id='%d'  data-document-id='%d'></div></span>  ";
 
   /* Creates html string containing all the named fields and contents. Escapes content of non-text fields. */
   protected String prepareStructuredDocumentContent(StructuredDocument doc) {
@@ -210,6 +216,9 @@ public class JournalController extends BaseController {
         if (galaxyEnabled) {
           buffer.append(String.format(EXTERNAL_WORKFLOWS_DIV, field.getId(), doc.getId()));
         }
+        buffer.append(
+            String.format(
+                JUPYTER_NOTEBOOKS_DIV, field.getId(), field.getId(), field.getId(), doc.getId()));
       }
       Field latestField = field;
       if (field.getTempField() != null) {

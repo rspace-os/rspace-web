@@ -64,4 +64,5 @@
   <script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
   <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
   <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
+  <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>
   <!--End React Scripts -->
