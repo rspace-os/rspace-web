@@ -4363,10 +4363,10 @@ definitions:
       id:
         type: integer
         format: int64
-        description: Unique identifier for the Snippet.
+        description: Identifier for the Snippet.
       globalId:
         type: string
-        description: A unique identifier amongst all RSpace data types.
+        description: Global identifier amongst all RSpace data types.
       name:
         type: string
         description: The name of the Snippet.
