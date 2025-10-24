@@ -126,7 +126,7 @@ public class SnippetApiControllerMVCIT extends API_MVC_TestBase {
   private String makeNotFoundOrUnauthorizedMessage(long id) {
     return "Snippet with id ["
         + id
-        + " ] could not be retrieved - possibly it has been deleted, does not exist, or you do not"
+        + "] could not be retrieved - possibly it has been deleted, does not exist, or you do not"
         + " have permission to access it.";
   }
 }
