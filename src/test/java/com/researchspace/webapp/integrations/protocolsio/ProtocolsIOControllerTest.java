@@ -131,7 +131,7 @@ public class ProtocolsIOControllerTest {
   @Test
   public void importExternalDataIntoDocumentEditor() {
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
-        ctrller.importExternalData(0L, null, TransformerUtils.toList(protocol));
+        ctrller.importExternalData(TransformerUtils.toList(protocol));
     assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
     assertEquals(importsFolder.getId(), rc.getData().getImportFolderId());
     verifyNoInteractions(recordShareHandler);

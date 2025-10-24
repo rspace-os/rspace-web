@@ -44,9 +44,20 @@ public class ProtocolsIOController extends BaseController {
   private @Autowired SharingHandler recordShareHandler;
   private @Autowired IPermissionUtils permissnUtils;
 
+  /** Import protocols into user's 'Import' folder */
+  @PostMapping(
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  public AjaxReturnObject<PIOResponse> importExternalData(@RequestBody List<Protocol> protocols) {
+    return importExternalData(null, null, protocols);
+  }
+
   /**
-   * @param parentFolderId decides where to save the downloaded protocol; handles '0' as a special
-   *     value pointing to user's 'Imports' folder.
+   * Import provided protocols into user's 'Import' folder, or add as a part of Notebook,
+   * or shared notebook - behaviour is decided on passed parentFolderId/grandParentId values.
+   *
+   * @param parentFolderId decides where to save the downloaded protocol; if null is provided,
+   *     'Imports' folder will be used
    * @param grandParentFolderId required when importing into shared notebook
    * @param protocols list of protocols to import
    * @return
@@ -82,7 +93,7 @@ public class ProtocolsIOController extends BaseController {
 
   private Folder getTargetFolder(Long parentFolderId, User subject) {
     Folder finalParentFolder = folderManager.getImportsFolder(subject);
-    if (parentFolderId != 0L) {
+    if (parentFolderId != null) {
       Folder originalParentFolder = folderManager.getFolder(parentFolderId, subject);
       if (originalParentFolder.isNotebook()
           && permissnUtils.isPermitted(originalParentFolder, PermissionType.CREATE, subject)) {
@@ -92,9 +103,9 @@ public class ProtocolsIOController extends BaseController {
     return finalParentFolder;
   }
 
-  private void shareIfParentFolderIdInSharedFolder(StructuredDocument converted,
-      Long parentFolderId, Long grandParentId, User subject) {
-    if (parentFolderId != 0L) {
+  private void shareIfParentFolderIdInSharedFolder(
+      StructuredDocument converted, Long parentFolderId, Long grandParentId, User subject) {
+    if (parentFolderId != null) {
       Folder originalParentFolder = folderManager.getFolder(parentFolderId, subject);
       if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
           subject, originalParentFolder)) {
@@ -103,5 +114,4 @@ public class ProtocolsIOController extends BaseController {
       }
     }
   }
-
 }

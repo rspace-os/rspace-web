@@ -55,16 +55,17 @@ $(document).ready(function () {
 			}
 			
 			//wait for all pio_Requests to come back
-			$.when.apply($, pio_requests).done(function (resp) {
+			$.when.apply($, pio_requests).done(function () {
 				// submit all protocols
-				var targetFolderId = 0;
+				let url = "/importer/generic/protocols_io";
 				if (!isTinyMCEPlugin) {
-					targetFolderId = window.parent.document.querySelector(
+					const targetFolderId = window.parent.document.querySelector(
 							"#protocolsIoChooserDlgIframe").dataset.parentid;
+					url += `/${targetFolderId}?grandParentId=${getGrandParentFolderId()}`;
 				}
 				$.ajax({
-					url: `/importer/generic/protocols_io/${targetFolderId}?grandParentId=${getGrandParentFolderId()}`, dataType: 'json',
-					"data": JSON.stringify(pio_results), type: "POST", contentType: "application/json;"
+					url: url, dataType: 'json', "data": JSON.stringify(pio_results),
+					type: "POST", contentType: "application/json;"
 				})
 					.done(function (response) {
 						if (isTinyMCEPlugin) {
