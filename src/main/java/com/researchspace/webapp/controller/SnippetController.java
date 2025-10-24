@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-@Deprecated // GET content endpoint migrated to SnippetsApi to align with other public APIs
+@Deprecated // GET content endpoint also implemented in SnippetsApiController REST API. Existing
+// method left here while old gallery code is still using it. Other endpoints will be
+// migrated when the document editor is migrated to react.
 @Controller
 @BrowserCacheAdvice(cacheTime = BrowserCacheAdvice.DEFAULT)
 @RequestMapping("/snippet/")
