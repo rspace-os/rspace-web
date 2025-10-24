@@ -91,9 +91,13 @@ export function TreeItem<Item, Id extends string>({
 
   React.useEffect(() => {
     idMap.set(getId(item), item);
-    return () => {
-      idMap.delete(getId(item));
-    };
+    /**
+     * NOTE: Not running this on unmount may cause problems when a TreeItem is
+     * deleted, but the entire setup of storing state within the component tree
+     * is bad anyway */
+    // return () => {
+    //   idMap.delete(getId(item));
+    // };
   }, []);
 
   return <MuiTreeItem itemId={getId(item)} {...rest} />;
