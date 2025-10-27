@@ -59,9 +59,10 @@ $(document).ready(function () {
 				// submit all protocols
 				let url = "/importer/generic/protocols_io";
 				if (!isTinyMCEPlugin) {
-					const targetFolderId = window.parent.document.querySelector(
+					const parentFolderId = window.parent.document.querySelector(
 							"#protocolsIoChooserDlgIframe").dataset.parentid;
-					url += `/${targetFolderId}?grandParentId=${getGrandParentFolderId()}`;
+					const grandParentFolderId = window.parent.getGrandParentFolderId()
+					url += `/${parentFolderId}?grandParentId=${grandParentFolderId}`;
 				}
 				$.ajax({
 					url: url, dataType: 'json', "data": JSON.stringify(pio_results),
