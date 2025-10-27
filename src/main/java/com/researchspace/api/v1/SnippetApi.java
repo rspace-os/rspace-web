@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RequestMapping("/api/v1/snippet/{id}")
-public interface SnippetsApi {
+public interface SnippetApi {
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
   ApiSnippet getSnippetById(@PathVariable long id, User user);
 

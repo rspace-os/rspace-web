@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.api.v1.SnippetsApi;
+import com.researchspace.api.v1.SnippetApi;
 import com.researchspace.api.v1.model.ApiSnippet;
 import com.researchspace.api.v1.service.SnippetService;
 import com.researchspace.model.User;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 
 @ApiController
-public class SnippetApiController extends BaseApiController implements SnippetsApi {
+public class SnippetApiController extends BaseApiController implements SnippetApi {
 
   private final SnippetService snippetService;
 
