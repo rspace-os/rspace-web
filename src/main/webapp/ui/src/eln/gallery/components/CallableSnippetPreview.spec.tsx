@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import AxeBuilder from "@axe-core/playwright";
+import Jwt from "jsonwebtoken";
 import {
   CallableSnippetPreviewStory,
   CallableSnippetPreviewWithTableContent,
@@ -148,7 +149,24 @@ feature.beforeEach(async ({ router }) => {
     });
   });
 
-  await router.route("/snippet/content/123", (route) => {
+  await router.route("/userform/ajax/inventoryOauthToken", (route) => {
+    const payload = {
+      iss: "http://localhost:8080",
+      iat: new Date().getTime(),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      refreshTokenHash:
+        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+    };
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: Jwt.sign(payload, "dummySecretKey"),
+      }),
+    });
+  });
+
+  await router.route("/api/v1/snippet/123/content", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "text/html",
@@ -156,7 +174,7 @@ feature.beforeEach(async ({ router }) => {
     });
   });
 
-  await router.route("/snippet/content/124", (route) => {
+  await router.route("/api/v1/snippet/124/content", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "text/html",
@@ -186,7 +204,7 @@ feature.beforeEach(async ({ router }) => {
     });
   });
 
-  await router.route("/snippet/content/999", (route) => {
+  await router.route("/api/v1/snippet/999/content", (route) => {
     return route.fulfill({
       status: 500,
       contentType: "application/json",
@@ -239,7 +257,7 @@ test.describe("CallableSnippetPreview", () => {
         await Given["the snippet preview component is mounted"]();
 
         // Intercept the request to delay it
-        await page.route("/snippet/content/123", async (route) => {
+        await page.route("/api/v1/snippet/123/content", async (route) => {
           await new Promise((resolve) => setTimeout(resolve, 1000));
           return route.fulfill({
             status: 200,

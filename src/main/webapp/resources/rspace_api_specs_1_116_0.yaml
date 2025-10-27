@@ -53,7 +53,7 @@ info:
     rich language bindings and example code for `Python`, `Java` and others.
     Please suggest any use-cases or ideas for improving the API!
 
-  version: "1.97"
+  version: "1.116"
 
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit
@@ -1535,6 +1535,61 @@ paths:
                 $ref: '#/definitions/RecordTreeInfoList'
               _links:
                 $ref: '#/definitions/LinkItemList'
+
+  '/snippet/{id}':
+    get:
+      summary: Get snippet metadata and content as JSON
+      description: >
+        Retrieves a Snippet by id. If the snippet does not exist or the user does not have permission,
+        a 404 is returned to avoid disclosing existence.
+      produces:
+        - application/json
+      tags:
+        - Snippets
+      parameters:
+        - name: id
+          in: path
+          description: The id of the snippet
+          required: true
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Snippet
+          schema:
+            $ref: '#/definitions/ApiSnippet'
+        '404':
+          description: Not found or not authorized
+          schema:
+            $ref: '#/definitions/Error'
+
+  '/snippet/{id}/content':
+    get:
+      summary: Get snippet content
+      description: >
+        Retrieves the raw content of a Snippet. If the snippet does not exist or the user does not
+        have permission, a 404 is returned.
+      produces:
+        - text/plain
+      tags:
+        - Snippets
+      parameters:
+        - name: id
+          in: path
+          description: The id of the snippet
+          required: true
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Snippet content
+          schema:
+            type: string
+        '404':
+          description: Not found or not authorized
+          schema:
+            type: object
+
 
   /import/word:
     post:
@@ -4304,6 +4359,40 @@ definitions:
       firstName: Fred
       lastName: Bloggs
       homeFolderId: 24556
+  ApiSnippet:
+    description: Representation of a Snippet
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Identifier for the Snippet.
+      globalId:
+        type: string
+        description: Global identifier amongst all RSpace data types.
+      name:
+        type: string
+        description: The name of the Snippet.
+      owner:
+        $ref: '#/definitions/User'
+      content:
+        type: string
+        description: The raw HTML content of the snippet.
+      _links:
+        $ref: '#/definitions/LinkItemList'
+    example:
+      id: 123
+      globalId: SN123
+      name: My Snippet
+      owner:
+        id: 950272
+        username: alice
+        email: alice@example.com
+        firstName: Alice
+        lastName: A
+      content: "<p>Reusable HTML block</p>"
+      _links:
+        - link: 'https://myrspace.com/api/v1/snippet/123'
+          rel: self
   GroupList:
     type: array
     items:
