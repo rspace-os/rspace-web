@@ -53,8 +53,8 @@ public class ProtocolsIOController extends BaseController {
   }
 
   /**
-   * Import provided protocols into user's 'Import' folder, or add as a part of Notebook,
-   * or shared notebook - behaviour is decided on passed parentFolderId/grandParentId values.
+   * Import provided protocols into user's 'Import' folder, or add as a part of Notebook, or shared
+   * notebook - behaviour is decided on passed parentFolderId/grandParentId values.
    *
    * @param parentFolderId decides where to save the downloaded protocol; if null is provided,
    *     'Imports' folder will be used
