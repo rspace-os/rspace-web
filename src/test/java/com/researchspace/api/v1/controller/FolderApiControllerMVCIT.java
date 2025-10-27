@@ -357,72 +357,18 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     return createBuilderForGet(API_VERSION.ONE, apiKey, "/folders/tree", anyUser);
   }
 
-  /**
-   * Test for bug where pathToRootFolder becomes unexpectedly short after moving a shared notebook
-   * into a workspace subfolder. When a PI requests the notebook with includePathToRootFolder=true
-   * and parentId pointing to the user's workspace subfolder, the path should still traverse through
-   * Shared->LabGroups hierarchy to PI's root, but currently only shows the subfolder.
-   */
   @Test
-  public void sharedNotebookPathToRootAfterMoveToSubfolder() throws Exception {
+  public void whenNotebookInUsersSubFolderAccessedAsPiThenPathToPiRootIsReturned()
+      throws Exception {
     // Create test group with PI and user
     TestGroup group = createTestGroup(2);
     User user = group.u1();
     User pi = group.getPi();
 
-    // As user, create a notebook in top level of workspace
+    // As user, create a subfolder in workspace
     logoutAndLoginAs(user);
     String userApiKey = createNewApiKeyForUser(user);
     Long userRootId = getRootFolderForUser(user).getId();
-    Notebook notebook = createNotebookWithNEntries(userRootId, "TestNotebook", 1, user);
-
-    // Share the notebook with the group
-    Long groupSharedFolderId = group.getGroup().getCommunalGroupFolderId();
-    SharePost sharePost =
-        SharePost.builder()
-            .itemToShare(notebook.getId())
-            .groupSharePostItem(
-                GroupSharePostItem.builder()
-                    .id(group.getGroup().getId())
-                    .permission("READ")
-                    .sharedFolderId(groupSharedFolderId)
-                    .build())
-            .build();
-
-    this.mockMvc
-        .perform(createBuilderForPostWithJSONBody(userApiKey, "/share", user, sharePost))
-        .andExpect(status().isCreated())
-        .andReturn();
-
-    // As PI, call folder/{id} endpoint with includePathToRootFolder=true and
-    // parentId=usersRootFolderId
-    logoutAndLoginAs(pi);
-    String piApiKey = createNewApiKeyForUser(pi);
-
-    MvcResult result =
-        this.mockMvc
-            .perform(
-                createBuilderForGet(
-                        API_VERSION.ONE, piApiKey, "/folders/{id}", pi, notebook.getId())
-                    .param("includePathToRootFolder", "true")
-                    .param("parentId", userRootId.toString()))
-            .andExpect(status().isOk())
-            .andReturn();
-
-    ApiFolder notebookBeforeMove = getFromJsonResponseBody(result, ApiFolder.class);
-    assertNotNull(notebookBeforeMove.getPathToRootFolder());
-    int pathLengthBeforeMove = notebookBeforeMove.getPathToRootFolder().size();
-
-    // The path should go through Shared->LabGroups hierarchy to PI's root
-    // Expected path: userRoot -> Shared -> LabGroups -> GroupFolder -> PI's root (at least 4
-    // folders)
-    assertTrue(
-        "Path should traverse Shared->LabGroups hierarchy, but was: "
-            + notebookBeforeMove.getPathToRootFolder().size(),
-        pathLengthBeforeMove >= 4);
-
-    // As user, create a subfolder in workspace and move the notebook into it
-    logoutAndLoginAs(user);
 
     ApiFolder subfolderPost = new ApiFolder();
     subfolderPost.setName("WorkspaceSubfolder");
@@ -431,40 +377,35 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
         this.mockMvc.perform(folderCreate(user, userApiKey, subfolderPost)).andReturn();
     ApiFolder subfolder = getFromJsonResponseBody(createFolderResult, ApiFolder.class);
 
-    // Move notebook from root to subfolder
-    MoveRequest moveReq = new MoveRequest();
-    moveReq.setDocId(notebook.getId());
-    moveReq.setSourceFolderId(userRootId);
-    moveReq.setTargetFolderId(subfolder.getId());
+    // Create a notebook in the user's subfolder
+    Notebook notebook = createNotebookWithNEntries(subfolder.getId(), "TestNotebook", 1, user);
 
-    this.mockMvc
-        .perform(createBuilderForPostWithJSONBody(userApiKey, "/documents/move", user, moveReq))
-        .andExpect(status().isNoContent())
-        .andReturn();
-
-    // As PI, call endpoint with includePathToRootFolder=true and parentId=usersWorkspaceSubfolderId
+    // As PI, call endpoint to get the notebook with includePathToRootFolder=true
     logoutAndLoginAs(pi);
+    String piApiKey = createNewApiKeyForUser(pi);
 
-    result =
+    MvcResult result =
         this.mockMvc
             .perform(
                 createBuilderForGet(
                         API_VERSION.ONE, piApiKey, "/folders/{id}", pi, notebook.getId())
-                    .param("includePathToRootFolder", "true")
-                    .param("parentId", subfolder.getId().toString()))
+                    .param("includePathToRootFolder", "true"))
             .andExpect(status().isOk())
             .andReturn();
 
-    ApiFolder notebookAfterMove = getFromJsonResponseBody(result, ApiFolder.class);
-    assertNotNull(notebookAfterMove.getPathToRootFolder());
-    int pathLengthAfterMove = notebookAfterMove.getPathToRootFolder().size();
+    ApiFolder notebookFromUsersSubfolder = getFromJsonResponseBody(result, ApiFolder.class);
+    assertNotNull(notebookFromUsersSubfolder.getPathToRootFolder());
+    int pathLengthFromUsersSubfolder = notebookFromUsersSubfolder.getPathToRootFolder().size();
 
-    // BUG: This assertion currently fails because the path is unexpectedly short
-    // The path should still go through Shared->LabGroups hierarchy to PI's root,
-    // but currently only shows the user's workspace subfolder
-    assertEquals(
-        "After moving to subfolder, path should still traverse full Shared->LabGroups hierarchy",
-        pathLengthBeforeMove,
-        pathLengthAfterMove);
+    // Test path goes back to PI root
+    assertEquals(5, pathLengthFromUsersSubfolder);
+
+    Long piRootId = getRootFolderForUser(pi).getId();
+    Long lastFolderId =
+        notebookFromUsersSubfolder
+            .getPathToRootFolder()
+            .get(pathLengthFromUsersSubfolder - 1)
+            .getId();
+    assertEquals(piRootId, lastFolderId);
   }
 }

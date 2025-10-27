@@ -11,7 +11,7 @@ import { preventEventBubbling } from "../../../util/Util";
 import DescriptionList from "../../../components/DescriptionList";
 import { RecordLink } from "../RecordLink";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import TimeAgoCustom from "../../../components/TimeAgoCustom";
+import TimeAgoCustom from "@/components/TimeAgoCustom";
 import contextActions from "../ContextMenu/ContextActions";
 import { menuIDs } from "../../../util/menuIDs";
 import CardStructure from "./CardStructure";

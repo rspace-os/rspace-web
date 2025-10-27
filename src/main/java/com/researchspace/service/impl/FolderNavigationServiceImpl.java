@@ -70,8 +70,7 @@ public class FolderNavigationServiceImpl implements FolderNavigationService {
   }
 
   private boolean isSharedFolderWithAccess(User user, Folder folder) {
-    return folder.isSharedFolder()
-        && permissionUtils.isPermitted(folder, PermissionType.READ, user);
+    return permissionUtils.isPermitted(folder, PermissionType.READ, user);
   }
 
   /**

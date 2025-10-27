@@ -1,6 +1,6 @@
 import * as trm from "tss-react/mui";
 import { type ComponentType } from "react";
-import { CSSObject } from "tss-react/types";
+import type { CSSObject } from "tss-react";
 import { ThemeOptions, Theme } from "@mui/material";
 
 export function withStyles<Config extends object, Classes extends object>(

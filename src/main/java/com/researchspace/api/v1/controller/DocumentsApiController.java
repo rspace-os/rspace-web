@@ -202,7 +202,6 @@ public class DocumentsApiController extends BaseApiController implements Documen
     StructuredDocument doc = retrieveDocumentForApiUser(id, user);
     ApiDocument apiDocument = new ApiDocument(doc, user);
     apiFieldsHelper.updateOutgoingApiFieldsContent(apiDocument.getFields(), user);
-
     buildAndAddSelfLink(DOCUMENTS_ENDPOINT, apiDocument);
     buildAndAddSelfLink(FORMS_ENDPOINT, apiDocument.getForm());
     addFileLinks(apiDocument);
