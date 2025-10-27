@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.PermissionUtils;
@@ -24,14 +23,11 @@ import org.springframework.orm.ObjectRetrievalFailureException;
 @ExtendWith(MockitoExtension.class)
 class SnippetServiceImplTest {
 
-  @Mock
-  private RecordManager recordManager;
+  @Mock private RecordManager recordManager;
 
-  @Mock
-  private PermissionUtils permissionUtils;
+  @Mock private PermissionUtils permissionUtils;
 
-  @InjectMocks
-  private SnippetServiceImpl service;
+  @InjectMocks private SnippetServiceImpl service;
 
   private User user;
 
