@@ -6,13 +6,16 @@ These instructions are for anyone wanting to run RSpace from source code, on the
 
 ### Recommended hardware
 
-For production setup we recommend a Linux-based server with at least 8Gb RAM. More details: 
+For production setup we recommend a Linux-based server with at least 8GB RAM. More details: 
 https://documentation.researchspace.com/article/q5dl9e6oz6-system-requirements-for-research-space
 
 For development you should be able to run all the code and tests fine with Linux/MacOS.  
 
 ### Install required software
--   Install Java JDK17, use OpenJDK rather than Oracle.
+Our build toolchain requires Java 17. Currently using a different Java version to run Maven is not supported because of [spotless not supporting the Maven toolchains plugin](https://github.com/diffplug/spotless/issues/1857).
+
+-   Install Java JDK17 via [Adoptium](https://adoptium.net/temurin/releases/?version=17)
+-   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
 -   Install MariaDB 10.3.39, or later. MariaDB 11.3 is used fine on dockerized RSpace version. Later versions of MariaDB 11 are untested and we have seen some compatability issues with those.
 
 Historically we were running RSpace on MySQL 5.7 version, so some docs still mention it, but you should go with MariaDB.
@@ -40,7 +43,7 @@ path to your java installation.
      <type>jdk</type>
      <provides>
        <version>17</version>
-       <vendor>openjdk</vendor>
+       <vendor>openjdk</vendor> <!-- Only vendor=openjdk is accepted at the moment, though it does not have to be actual OpenJDK -->
      </provides>
      <configuration>
        <jdkHome>/usr/lib/jvm/java-17-openjdk-amd64</jdkHome>   <!-- path to your local installation -->
@@ -93,7 +96,7 @@ ResearchSpace dev team (check 'Build prodRelease-like package' stage script).
 
 ### Set up MariaDB/MySQL database
 
-**You can now use the Docker MariaDB setup guide found in the side bar**
+**You can now use the Docker MariaDB setup guide [here](/DevDOcs/DeveloperNotes/GettingStarted/dockerMariaDB.md)**
 
 #### MariaDB/MySQL initialisation
 
