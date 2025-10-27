@@ -38,7 +38,7 @@ public class SnippetApiControllerMVCIT extends API_MVC_TestBase {
   public void getSnippetContentWhenSnippetNotFoundThenReturn404() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
-    long nonExistentId = 987654321L;
+    long nonExistentId = -987654321L;
 
     mockMvc
         .perform(
@@ -96,7 +96,7 @@ public class SnippetApiControllerMVCIT extends API_MVC_TestBase {
   public void getSnippetByIdWhenSnippetDoesntExistThenThrows404() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
-    long nonExistentId = 987654321L;
+    long nonExistentId = -987654321L;
     this.mockMvc
         .perform(
             createBuilderForGet(API_VERSION.ONE, apiKey, "/snippet/{id}", anyUser, nonExistentId))

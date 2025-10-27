@@ -53,7 +53,7 @@ class SnippetServiceImplTest {
 
   @Test
   void whenSnippetNotFoundThenExceptionBubblesUp() {
-    long id = 999L;
+    long id = -999L;
     when(recordManager.getAsSubclass(id, Snippet.class))
         .thenThrow(new ObjectRetrievalFailureException("Snippet", id));
 
