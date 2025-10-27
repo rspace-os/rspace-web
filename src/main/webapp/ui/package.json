@@ -66,6 +66,7 @@
     "jest-environment-jsdom": "=29.7.0",
     "jsonwebtoken": "^9.0.2",
     "prettier": "=3.6.2",
+    "react-ipynb-renderer": "^2.3.0",
     "style-loader": "=4.0.0",
     "ts-jest": "=29.4.0",
     "ts-jest-mock-import-meta": "^1.3.0",

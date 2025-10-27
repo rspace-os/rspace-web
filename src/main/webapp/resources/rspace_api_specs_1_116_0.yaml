@@ -364,6 +364,7 @@ paths:
             application/json:
               id: 22
               globalId: SD22
+              version: 2
               name: My Experiment
               created: '2017-07-09T00:00:00.000Z'
               lastModified: '2017-07-09T00:00:00.000Z'
@@ -419,6 +420,7 @@ paths:
             application/json:
               id: 23
               globalId: SD23
+              version: 2
               name: MyExperiment
               created: '2016-11-09T00:00:00.000Z'
               lastModified: '2016-11-10T00:00:00.000Z'

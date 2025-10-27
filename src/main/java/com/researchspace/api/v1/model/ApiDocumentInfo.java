@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
     value = {
       "id",
       "globalId",
+      "version",
       "name",
       "created",
       "lastModified",
@@ -68,8 +69,12 @@ public class ApiDocumentInfo extends IdentifiableNameableApiObject {
   @JsonProperty("owner")
   private ApiUser owner = null;
 
+  @JsonProperty("version")
+  private Long version;
+
   public ApiDocumentInfo(StructuredDocument record, User authorisedSubject) {
     super(record.getId(), record.getGlobalIdentifier(), record.getName());
+    setVersion(record.getUserVersion().getVersion());
     setCreatedMillis(record.getCreationDateMillis());
     setLastModifiedMillis(record.getModificationDateMillis());
     // set parent folder if user is owner of document else null
