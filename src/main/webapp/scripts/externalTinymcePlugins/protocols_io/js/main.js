@@ -61,7 +61,7 @@ $(document).ready(function () {
 				if (!isTinyMCEPlugin) {
 					const parentFolderId = window.parent.document.querySelector(
 							"#protocolsIoChooserDlgIframe").dataset.parentid;
-					const grandParentFolderId = window.parent.getGrandParentFolderId()
+					const grandParentFolderId = window.parent.getGrandParentFolderId();
 					url += `/${parentFolderId}?grandParentId=${grandParentFolderId}`;
 				}
 				$.ajax({
