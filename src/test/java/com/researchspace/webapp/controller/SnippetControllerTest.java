@@ -32,7 +32,7 @@ public class SnippetControllerTest extends SpringTransactionalTest {
 
   @Before
   public void setUp() throws IllegalAddChildOperation {
-    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
+    user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
     initialiseContentWithExampleContent(user);
     assertTrue(user.isContentInitialized());
     principalTestUserStub = new MockPrincipal(user.getUsername());
@@ -54,7 +54,7 @@ public class SnippetControllerTest extends SpringTransactionalTest {
         messages.getMessage("errors.invalidchars", new String[] {"/,> or <", "name"}));
   }
 
-  private static final Long UNEXISTING_SNIPPET_ID = -501L;
+  private static final Long NON_EXISTENT_SNIPPET_ID = -501L;
 
   @Test
   public void testGetSnippetContent() {
@@ -71,7 +71,7 @@ public class SnippetControllerTest extends SpringTransactionalTest {
   }
 
   @Test(expected = ObjectRetrievalFailureException.class)
-  public void testExceptionOnGetttingUnexistingSnippetContent() {
-    snippetController.getSnippetContent(UNEXISTING_SNIPPET_ID, principalTestUserStub, response);
+  public void testExceptionOnGettingNonExistentSnippetContent() {
+    snippetController.getSnippetContent(NON_EXISTENT_SNIPPET_ID, principalTestUserStub, response);
   }
 }
