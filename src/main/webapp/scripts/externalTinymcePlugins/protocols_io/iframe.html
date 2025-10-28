@@ -98,6 +98,9 @@
     }
     hr.col-xs-12 {
       margin: 0 0;
+      width: -moz-available;
+      width: -webkit-fill-available;
+      width: stretch;
     }
     body {
       padding: 15px;
@@ -195,6 +198,7 @@
       100%{-webkit-transform:rotate(360deg)}
     }
   </style>
+
   <div id="protocols_noAccessTokenWarning" style="display:none" class="col-xs-12">
       <div class="alert alert-warning">Protocols.io integration is not configured correctly.</div>
        <div>
