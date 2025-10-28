@@ -268,11 +268,10 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     }
   }
 
-  RecordTypeFilter generateRecordFilter(Set<String> typesToInclude, boolean isMediaFolder) {
-    RecordTypeFilter rcFilter = null;
+  RecordTypeFilter generateRecordFilter(Set<String> typesToInclude) {
+    RecordTypeFilter rcFilter;
     // add exclusions, only if there is a filter in the request
     if (!isEmpty(typesToInclude)) {
-
       Collection<RecordType> toExcludeEnums = new HashSet<>();
       if (!typesToInclude.contains("notebook")) {
         toExcludeEnums.add(RecordType.NOTEBOOK);
@@ -283,6 +282,9 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       if (!typesToInclude.contains("document")) {
         toExcludeEnums.add(RecordType.MEDIA_FILE);
         toExcludeEnums.add(RecordType.NORMAL);
+      }
+      if(!typesToInclude.contains("snippet")) {
+        toExcludeEnums.add(RecordType.SNIPPET);
       }
       toExcludeEnums.remove(RecordType.ROOT_MEDIA); // enable Gallery to be listed in root search
       rcFilter = new RecordTypeFilter(EnumSet.copyOf(toExcludeEnums), false);
