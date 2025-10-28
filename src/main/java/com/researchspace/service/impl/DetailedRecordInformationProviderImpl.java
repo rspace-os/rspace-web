@@ -136,7 +136,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
       List<RecordGroupSharing> implicitSharingList = new ArrayList<>();
       // add information about documents in shared notebooks, that aren't themselves shared,
       // but are viewable by other users
-      if (baseRecord.isStructuredDocument() || baseRecord.isSnippet()) {
+      if (baseRecord.isStructuredDocument()) {
         Set<Notebook> parentNbs = baseRecord.getParentNotebooks();
         for (Notebook n : parentNbs) {
           List<RecordGroupSharing> parentNbSharedInfo =

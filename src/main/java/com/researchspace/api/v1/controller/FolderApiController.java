@@ -236,16 +236,11 @@ public class FolderApiController extends BaseApiController implements FolderApi 
         results,
         apiRecordTreeItemListing,
         fileList,
-        file -> new RecordTreeItemInfo(file, user),
+        file -> new RecordTreeItemInfo(file, user, folderToList.getId()),
         info -> buildAndAddSelfLink(calculateSelfLink(info), info));
-    if (folderToList.hasSingleParent()) {
-      apiRecordTreeItemListing.setParentId(folderToList.getParent().getId());
-    } else {
-      folderToList.getParents().stream()
-          .filter(parentFolder -> parentFolder.getUserName().equals(user.getUsername()))
-          .findFirst()
-          .ifPresent(p -> apiRecordTreeItemListing.setParentId(p.getRecord().getId()));
-    }
+    folderNavigationService
+        .findParentForUser(user, folderToList)
+        .ifPresent(parent -> apiRecordTreeItemListing.setParentId(parent.getId()));
     return apiRecordTreeItemListing;
   }
 
@@ -263,11 +258,11 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       case FOLDER:
         return BaseApiController.FOLDERS_ENDPOINT;
       case DOCUMENT:
-      case SNIPPET:
         return BaseApiController.DOCUMENTS_ENDPOINT;
       case MEDIA:
         return BaseApiController.FILES_ENDPOINT;
-
+      case SNIPPET:
+        return BaseApiController.SNIPPETS_ENDPOINT;
       default:
         throw new IllegalStateException("document type cannot be null");
     }
