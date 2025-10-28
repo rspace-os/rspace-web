@@ -26,7 +26,7 @@ public class SnippetApiController extends BaseApiController implements SnippetAp
     try {
       Snippet snippet = snippetService.getSnippet(id, user);
       ApiSnippet apiSnippet = new ApiSnippet(snippet);
-      buildAndAddSelfLink("/snippet", apiSnippet);
+      buildAndAddSelfLink("/snippets", apiSnippet);
       return apiSnippet;
     } catch (ObjectRetrievalFailureException | AuthorizationException e) {
       // don't let unauthorised users know whether the snippet exists or not.

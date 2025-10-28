@@ -1536,7 +1536,7 @@ paths:
               _links:
                 $ref: '#/definitions/LinkItemList'
 
-  '/snippet/{id}':
+  '/snippets/{id}':
     get:
       summary: Get snippet metadata and content as JSON
       description: >
@@ -1563,7 +1563,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
-  '/snippet/{id}/content':
+  '/snippets/{id}/content':
     get:
       summary: Get snippet content
       description: >
@@ -4381,7 +4381,7 @@ definitions:
         $ref: '#/definitions/LinkItemList'
     example:
       id: 123
-      globalId: SN123
+      globalId: ST123
       name: My Snippet
       owner:
         id: 950272

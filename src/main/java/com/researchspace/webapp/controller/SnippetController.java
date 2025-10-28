@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 // migrated when the document editor is migrated to react.
 @Controller
 @BrowserCacheAdvice(cacheTime = BrowserCacheAdvice.DEFAULT)
-@RequestMapping("/snippet/")
+@RequestMapping("/snippet")
 public class SnippetController extends BaseController {
 
   @ResponseBody

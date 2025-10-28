@@ -44,38 +44,74 @@ public class ProtocolsIOController extends BaseController {
   private @Autowired SharingHandler recordShareHandler;
   private @Autowired IPermissionUtils permissnUtils;
 
+  /** Import protocols into user's 'Import' folder */
+  @PostMapping(
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  public AjaxReturnObject<PIOResponse> importExternalData(@RequestBody List<Protocol> protocols) {
+    return importExternalData(null, null, protocols);
+  }
+
+  /**
+   * Import provided protocols into user's 'Import' folder, or add as a part of Notebook, or shared
+   * notebook - behaviour is decided on passed parentFolderId/grandParentId values.
+   *
+   * @param parentFolderId decides where to save the downloaded protocol; if null is provided,
+   *     'Imports' folder will be used
+   * @param grandParentFolderId required when importing into shared notebook
+   * @param protocols list of protocols to import
+   * @return
+   */
   @PostMapping(
       value = "/{parentFolderId}",
       produces = MediaType.APPLICATION_JSON_VALUE,
       consumes = MediaType.APPLICATION_JSON_VALUE)
   public AjaxReturnObject<PIOResponse> importExternalData(
-      @PathVariable("parentFolderId") Long parentFolderId,
+      @PathVariable(value = "parentFolderId") Long parentFolderId,
       @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       @RequestBody List<Protocol> protocols) {
+
     log.info("Importing {} protocols", protocols.size());
     List<RecordInformation> results = new ArrayList<>();
+
     Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User subject = userManager.getAuthenticatedUserInSession();
-    Folder originalParentFolder = folderManager.getFolder(parentFolderId, subject);
-    Long finalParentFolderId = folderManager.getImportsFolder(subject).getId();
-    if (originalParentFolder.isNotebook()
-        && permissnUtils.isPermitted(originalParentFolder, PermissionType.CREATE, subject)) {
-      finalParentFolderId = originalParentFolder.getId();
-    }
+    Folder targetFolder = getTargetFolder(parentFolderId, subject);
     for (Protocol protocol : protocols) {
       if (protocol.getSteps() != null) {
         protocol.orderComponents(PIOStepComponent.DisplayOrder);
       }
-      StructuredDocument converted =
-          converter.generateFromProtocol(protocol, subject, finalParentFolderId);
-      results.add(converted.toRecordInfo());
+      StructuredDocument importedProtocol =
+          converter.generateFromProtocol(protocol, subject, targetFolder.getId());
+      results.add(importedProtocol.toRecordInfo());
+
+      shareIfParentFolderIdInSharedFolder(importedProtocol, parentFolderId, grandParentId, subject);
+    }
+    PIOResponse response = new PIOResponse(results, targetFolder.getId());
+    return new AjaxReturnObject<>(response, null);
+  }
+
+  private Folder getTargetFolder(Long parentFolderId, User subject) {
+    Folder finalParentFolder = folderManager.getImportsFolder(subject);
+    if (parentFolderId != null) {
+      Folder originalParentFolder = folderManager.getFolder(parentFolderId, subject);
+      if (originalParentFolder.isNotebook()
+          && permissnUtils.isPermitted(originalParentFolder, PermissionType.CREATE, subject)) {
+        finalParentFolder = originalParentFolder;
+      }
+    }
+    return finalParentFolder;
+  }
+
+  private void shareIfParentFolderIdInSharedFolder(
+      StructuredDocument converted, Long parentFolderId, Long grandParentId, User subject) {
+    if (parentFolderId != null) {
+      Folder originalParentFolder = folderManager.getFolder(parentFolderId, subject);
       if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
           subject, originalParentFolder)) {
         recordShareHandler.shareIntoSharedFolderOrNotebook(
             subject, originalParentFolder, converted.getId(), grandParentId);
       }
     }
-    PIOResponse response = new PIOResponse(results, finalParentFolderId);
-    return new AjaxReturnObject<>(response, null);
   }
 }
