@@ -4381,7 +4381,7 @@ definitions:
         $ref: '#/definitions/LinkItemList'
     example:
       id: 123
-      globalId: SN123
+      globalId: ST123
       name: My Snippet
       owner:
         id: 950272
