@@ -220,7 +220,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     PaginationCriteria<BaseRecord> internalPgCrit =
         getPaginationCriteriaForApiSearch(pgCrit, BaseRecord.class);
 
-    RecordTypeFilter filter = generateRecordFilter(typesToInclude, isMediaFolder);
+    RecordTypeFilter filter = generateRecordFilter(typesToInclude);
     Folder folderToList = folderSupplier.get();
     ISearchResults<BaseRecord> results =
         recordManager.listFolderRecords(folderToList.getId(), internalPgCrit, filter);
@@ -283,7 +283,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
         toExcludeEnums.add(RecordType.MEDIA_FILE);
         toExcludeEnums.add(RecordType.NORMAL);
       }
-      if(!typesToInclude.contains("snippet")) {
+      if (!typesToInclude.contains("snippet")) {
         toExcludeEnums.add(RecordType.SNIPPET);
       }
       toExcludeEnums.remove(RecordType.ROOT_MEDIA); // enable Gallery to be listed in root search

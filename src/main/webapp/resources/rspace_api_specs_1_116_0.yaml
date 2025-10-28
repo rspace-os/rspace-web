@@ -2602,9 +2602,7 @@ paths:
 
         There are some restrictions on sharing.
 
-        - Only items owned by the account can be shared. You
-        can't share other peoples' work, Gallery items or Snippets.
-
+        - Only items owned by the account can be shared.
 
         - Items can only be shared with groups that the account holder belongs
         to; or individual users in those groups.
