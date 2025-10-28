@@ -236,7 +236,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
         results,
         apiRecordTreeItemListing,
         fileList,
-        file -> new RecordTreeItemInfo(file, user, folderToList.getId()),
+        file -> new RecordTreeItemInfo(file, folderToList.getId()),
         info -> buildAndAddSelfLink(calculateSelfLink(info), info));
     folderNavigationService
         .findParentForUser(user, folderToList)

@@ -49,7 +49,7 @@ public class RecordTreeItemInfo extends IdentifiableNameableApiObject {
   @JsonProperty("type")
   private ApiRecordType type = null;
 
-  public RecordTreeItemInfo(BaseRecord record, User user, Long parentFolderId) {
+  public RecordTreeItemInfo(BaseRecord record, Long parentFolderId) {
     super(record.getId(), record.getGlobalIdentifier(), record.getName());
     setCreatedMillis(record.getCreationDateMillis());
     setLastModifiedMillis(record.getModificationDateMillis());
