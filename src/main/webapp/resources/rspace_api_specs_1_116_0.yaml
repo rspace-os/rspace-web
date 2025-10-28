@@ -4389,7 +4389,7 @@ definitions:
         lastName: A
       content: "<p>Reusable HTML block</p>"
       _links:
-        - link: 'https://myrspace.com/api/v1/snippet/123'
+        - link: 'https://myrspace.com/api/v1/snippets/123'
           rel: self
   GroupList:
     type: array
