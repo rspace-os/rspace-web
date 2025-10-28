@@ -15,9 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+@Deprecated // GET content endpoint also implemented in SnippetsApiController REST API. Existing
+// method left here while old gallery code is still using it. Other endpoints will be
+// migrated when the document editor is migrated to react.
 @Controller
 @BrowserCacheAdvice(cacheTime = BrowserCacheAdvice.DEFAULT)
-@RequestMapping("/snippet/")
+@RequestMapping("/snippet")
 public class SnippetController extends BaseController {
 
   @ResponseBody
@@ -29,13 +32,13 @@ public class SnippetController extends BaseController {
       Principal principal)
       throws Exception {
 
-    ErrorList el = new ErrorList();
+    ErrorList errors = new ErrorList();
     if (StringUtils.isBlank(snippetName)) {
-      el = getErrorListFromMessageCode("errors.required", "Name");
-      return new AjaxReturnObject<String>(null, el);
+      errors = getErrorListFromMessageCode("errors.required", "Name");
+      return new AjaxReturnObject<>(null, errors);
     } else if (StringUtils.containsAny(snippetName, "/<>")) {
-      el = getErrorListFromMessageCode("errors.invalidchars", "/,> or <", "name");
-      return new AjaxReturnObject<String>(null, el);
+      errors = getErrorListFromMessageCode("errors.invalidchars", "/,> or <", "name");
+      return new AjaxReturnObject<>(null, errors);
     }
 
     User user = userManager.getUserByUsername(principal.getName());
@@ -43,12 +46,12 @@ public class SnippetController extends BaseController {
 
     if (snippet != null) {
       publisher.publishEvent(createGenericEvent(user, snippet, AuditAction.CREATE));
-      return new AjaxReturnObject<String>(
+      return new AjaxReturnObject<>(
           getText("snippet.creation.ok", new String[] {snippetName}), null);
     }
 
-    el.addErrorMsg(getText("snippet.creation.failed"));
-    return new AjaxReturnObject<String>(null, el);
+    errors.addErrorMsg(getText("snippet.creation.failed"));
+    return new AjaxReturnObject<>(null, errors);
   }
 
   @ResponseBody
@@ -56,8 +59,7 @@ public class SnippetController extends BaseController {
   public String insertSnippetIntoField(
       @RequestParam("snippetId") Long snippetId,
       @RequestParam("fieldId") Long fieldId,
-      Principal principal)
-      throws Exception {
+      Principal principal) {
     User user = userManager.getUserByUsername(principal.getName());
     String updatedSnippetContent = recordManager.copySnippetIntoField(snippetId, fieldId, user);
     return updatedSnippetContent;
@@ -66,8 +68,7 @@ public class SnippetController extends BaseController {
   @ResponseBody
   @GetMapping("/content/{id}")
   public String getSnippetContent(
-      @PathVariable("id") Long id, Principal principal, HttpServletResponse response)
-      throws Exception {
+      @PathVariable("id") Long id, Principal principal, HttpServletResponse response) {
     Snippet snippet = recordManager.getAsSubclass(id, Snippet.class);
     return snippet.getContent();
   }

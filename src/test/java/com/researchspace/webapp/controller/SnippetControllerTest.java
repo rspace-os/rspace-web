@@ -28,52 +28,50 @@ public class SnippetControllerTest extends SpringTransactionalTest {
   private MockHttpServletResponse response;
 
   private User user;
-  private Principal principalTestuserStub = null;
+  private Principal principalTestUserStub = null;
 
   @Before
   public void setUp() throws IllegalAddChildOperation {
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
     initialiseContentWithExampleContent(user);
     assertTrue(user.isContentInitialized());
-    principalTestuserStub = new MockPrincipal(user.getUsername());
-    this.response = new MockHttpServletResponse();
+    principalTestUserStub = new MockPrincipal(user.getUsername());
   }
 
   @Test
   public void testCreateNewSimpleSnippet() throws Exception {
-
     AjaxReturnObject<String> response =
-        snippetController.createSnippet("a", "b", 0L, principalTestuserStub);
+        snippetController.createSnippet("a", "b", 0L, principalTestUserStub);
     String createResultMsg = response.getData();
     assertEquals(createResultMsg, messages.getMessage("snippet.creation.ok", new String[] {"a"}));
 
     // test invalid names
     String invalidName = "<img src=\"image.png\" onerror=\"alert('1');\">";
-    response = snippetController.createSnippet(invalidName, "b", 0L, principalTestuserStub);
+    response = snippetController.createSnippet(invalidName, "b", 0L, principalTestUserStub);
     assertNull(response.getData());
     assertEquals(
         response.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(""),
         messages.getMessage("errors.invalidchars", new String[] {"/,> or <", "name"}));
   }
 
-  private static final Long UNEXISTING_SNIPPET_ID = -501L;
+  private static final Long NON_EXISTENT_SNIPPET_ID = -501L;
 
   @Test
-  public void testGetSnippetContent() throws Exception {
+  public void testGetSnippetContent() {
 
     final String testContent = "test snippet content";
 
-    User user = userManager.getUserByUsername(principalTestuserStub.getName());
+    User user = userManager.getUserByUsername(principalTestUserStub.getName());
     Snippet snippet = recordManager.createSnippet("a", testContent, user);
 
     String snippetContent =
-        snippetController.getSnippetContent(snippet.getId(), principalTestuserStub, response);
+        snippetController.getSnippetContent(snippet.getId(), principalTestUserStub, response);
 
     assertEquals(testContent, snippetContent);
   }
 
   @Test(expected = ObjectRetrievalFailureException.class)
-  public void testExceptionOnGetttingUnexistingSnippetContent() throws Exception {
-    snippetController.getSnippetContent(UNEXISTING_SNIPPET_ID, principalTestuserStub, response);
+  public void testExceptionOnGettingNonExistentSnippetContent() {
+    snippetController.getSnippetContent(NON_EXISTENT_SNIPPET_ID, principalTestUserStub, response);
   }
 }
