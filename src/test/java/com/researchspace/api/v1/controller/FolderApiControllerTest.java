@@ -47,6 +47,7 @@ import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.FolderNavigationService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordDeletionManager;
@@ -86,6 +87,7 @@ public class FolderApiControllerTest {
   @Mock RecordDeletionManager deletionMgr;
   @Mock IPropertyHolder properties;
   @Mock SharingHandler recordShareHandler;
+  @Mock FolderNavigationService folderNavigationService;
 
   @InjectMocks FolderApiController controller;
   User subject;
@@ -366,6 +368,8 @@ public class FolderApiControllerTest {
     subFolder.setId(3L);
     root.addChild(subFolder, subject);
     ISearchResults<BaseRecord> mockResults = createEmptySearchResults();
+    when(folderNavigationService.findParentForUser(subject, subFolder))
+        .thenReturn(Optional.of(root));
     when(recordMgr.listFolderRecords(
             eq(subFolder.getId()), any(PaginationCriteria.class), any(RecordTypeFilter.class)))
         .thenReturn(mockResults);
@@ -393,6 +397,8 @@ public class FolderApiControllerTest {
     folderSetup.getMediaImgExamples().addChild(imgFile, subject);
     ISearchResults<BaseRecord> mockResults = createMediaResults(imgFile);
     // set up mocks
+    when(folderNavigationService.findParentForUser(subject, folderSetup.getMediaImgExamples()))
+        .thenReturn(Optional.of(folderSetup.getMediaImgExamples().getParent()));
     when(recordMgr.listFolderRecords(
             eq(folderSetup.getMediaImgExamples().getId()),
             any(PaginationCriteria.class),
