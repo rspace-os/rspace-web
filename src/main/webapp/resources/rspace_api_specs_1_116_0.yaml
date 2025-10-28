@@ -1536,7 +1536,7 @@ paths:
               _links:
                 $ref: '#/definitions/LinkItemList'
 
-  '/snippet/{id}':
+  '/snippets/{id}':
     get:
       summary: Get snippet metadata and content as JSON
       description: >
@@ -1563,7 +1563,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
-  '/snippet/{id}/content':
+  '/snippets/{id}/content':
     get:
       summary: Get snippet content
       description: >
@@ -4391,7 +4391,7 @@ definitions:
         lastName: A
       content: "<p>Reusable HTML block</p>"
       _links:
-        - link: 'https://myrspace.com/api/v1/snippet/123'
+        - link: 'https://myrspace.com/api/v1/snippets/123'
           rel: self
   GroupList:
     type: array

@@ -39,7 +39,7 @@ export function CallableSnippetPreview({
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<string>(`/api/v1/snippet/${fileId}/content`, {
+      const response = await axios.get<string>(`/api/v1/snippets/${fileId}/content`, {
         headers: {
           Authorization: `Bearer ${await getToken()}`,
         },
