@@ -7,10 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
-import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.Folder;
-import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -51,16 +48,12 @@ public class RecordTreeItemInfo extends IdentifiableNameableApiObject {
   @JsonProperty("type")
   private ApiRecordType type = null;
 
-  public RecordTreeItemInfo(BaseRecord record, User user) {
+  public RecordTreeItemInfo(BaseRecord record, Long parentFolderId) {
     super(record.getId(), record.getGlobalIdentifier(), record.getName());
     setCreatedMillis(record.getCreationDateMillis());
     setLastModifiedMillis(record.getModificationDateMillis());
-    // set parent folder if user is owner of document else null
-    if (user.equals(record.getOwner()) && record.hasParents()) {
-      Optional<Folder> parentForCurrentUser = record.getOwnerOrSharedParentForUser(user);
-      if (parentForCurrentUser.isPresent()) {
-        setParentFolderId(parentForCurrentUser.get().getId());
-      }
+    if (parentFolderId != null) {
+      setParentFolderId(parentFolderId);
     }
     setOwner(new ApiUser(record.getOwner()));
     if (record.isNotebook()) {
@@ -71,6 +64,8 @@ public class RecordTreeItemInfo extends IdentifiableNameableApiObject {
       setType(ApiRecordType.DOCUMENT);
     } else if (record.isMediaRecord()) {
       setType(ApiRecordType.MEDIA);
+    } else if (record.isSnippet()) {
+      setType(ApiRecordType.SNIPPET);
     }
   }
 }

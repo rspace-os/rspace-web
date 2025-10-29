@@ -47,6 +47,7 @@ import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.FolderNavigationService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordDeletionManager;
@@ -86,6 +87,7 @@ public class FolderApiControllerTest {
   @Mock RecordDeletionManager deletionMgr;
   @Mock IPropertyHolder properties;
   @Mock SharingHandler recordShareHandler;
+  @Mock FolderNavigationService folderNavigationService;
 
   @InjectMocks FolderApiController controller;
   User subject;
@@ -290,26 +292,26 @@ public class FolderApiControllerTest {
 
   @Test
   public void recordFilterWorkspace() throws Exception {
-    RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet(), false);
+    RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet());
     assertEquals(EnumSet.allOf(RecordType.class), actualFilter.getWantedTypes());
-    actualFilter = controller.generateRecordFilter(toSet("notebook"), false);
+    actualFilter = controller.generateRecordFilter(toSet("notebook"));
     assertThat(actualFilter.getWantedTypes(), hasItem(RecordType.NOTEBOOK));
     assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NORMAL, RecordType.FOLDER));
 
-    actualFilter = controller.generateRecordFilter(toSet("document", "folder"), false);
+    actualFilter = controller.generateRecordFilter(toSet("document", "folder"));
     assertThat(actualFilter.getWantedTypes(), hasItems(RecordType.NORMAL, RecordType.FOLDER));
     assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NOTEBOOK));
   }
 
   @Test
   public void recordFilterGallery() throws Exception {
-    RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet(), true);
+    RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet());
     assertEquals(EnumSet.allOf(RecordType.class), actualFilter.getWantedTypes());
-    actualFilter = controller.generateRecordFilter(toSet("folder"), true);
+    actualFilter = controller.generateRecordFilter(toSet("folder"));
     assertThat(actualFilter.getWantedTypes(), hasItem(RecordType.FOLDER));
     assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NORMAL, RecordType.MEDIA_FILE));
 
-    actualFilter = controller.generateRecordFilter(toSet("document", "folder"), true);
+    actualFilter = controller.generateRecordFilter(toSet("document", "folder"));
     assertThat(actualFilter.getWantedTypes(), hasItems(RecordType.MEDIA_FILE, RecordType.FOLDER));
     assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NOTEBOOK));
   }
@@ -366,6 +368,8 @@ public class FolderApiControllerTest {
     subFolder.setId(3L);
     root.addChild(subFolder, subject);
     ISearchResults<BaseRecord> mockResults = createEmptySearchResults();
+    when(folderNavigationService.findParentForUser(subject, subFolder))
+        .thenReturn(Optional.of(root));
     when(recordMgr.listFolderRecords(
             eq(subFolder.getId()), any(PaginationCriteria.class), any(RecordTypeFilter.class)))
         .thenReturn(mockResults);
@@ -393,6 +397,8 @@ public class FolderApiControllerTest {
     folderSetup.getMediaImgExamples().addChild(imgFile, subject);
     ISearchResults<BaseRecord> mockResults = createMediaResults(imgFile);
     // set up mocks
+    when(folderNavigationService.findParentForUser(subject, folderSetup.getMediaImgExamples()))
+        .thenReturn(Optional.of(folderSetup.getMediaImgExamples().getParent()));
     when(recordMgr.listFolderRecords(
             eq(folderSetup.getMediaImgExamples().getId()),
             any(PaginationCriteria.class),

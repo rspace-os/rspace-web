@@ -126,7 +126,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
 
   @Override
   public RecordInfoSharingInfo getRecordSharingInfo(BaseRecord baseRecord) {
-    if (baseRecord.isStructuredDocument() || baseRecord.isNotebook()) {
+    if (baseRecord.isStructuredDocument() || baseRecord.isNotebook() || baseRecord.isSnippet()) {
       List<RecordGroupSharing> sharingsList =
           sharingManager.getRecordSharingInfo(baseRecord.getId());
       sharingsList =

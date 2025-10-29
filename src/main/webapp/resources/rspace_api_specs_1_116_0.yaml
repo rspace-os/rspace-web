@@ -2565,7 +2565,7 @@ paths:
   /share:
     get:
       summary: List or search shared items
-      description: Lists documents and notebooks shared by the API account.
+      description: Lists documents, notebooks and snippets shared by the API account.
       produces:
         - application/json
       tags:
@@ -2594,17 +2594,15 @@ paths:
                 $ref: '#/definitions/LinkItemList'
     post:
       summary: >-
-        Share 1 or more documents or notebooks with groups or individuals.
+        Share 1 or more documents, notebooks or snippets with groups or individuals.
       description: >
 
-        Share documents or notebooks with groups or individuals within a group,
+        Share documents, notebooks or snippets with groups or individuals within a group,
         with either 'read' or 'edit' permission.
 
         There are some restrictions on sharing.
 
-        - Only notebooks or documents owned by the account can be shared. You
-        can't share other peoples' work, Gallery items or Snippets.
-
+        - Only items owned by the account can be shared.
 
         - Items can only be shared with groups that the account holder belongs
         to; or individual users in those groups.
@@ -2672,10 +2670,10 @@ paths:
           description: 'Item was deleted, no response body'
   '/share/document/{id}':
     get:
-      summary: Get all shares for a document
+      summary: Get all shares for a document, notebook or snippet.
       description: >-
-        Returns all sharing information for the specified document, including direct shares and
-        implicit shares (e.g. via notebooks).
+        Returns all sharing information for the specified document, notebook or snippet including direct shares and notebook shares (document shared via being part of a notebook). 
+        Notebook shares will always be empty for a notebook or snippet, since neither of these can be contained within another notebook.
       produces:
         - application/json
       tags:
@@ -2685,7 +2683,7 @@ paths:
           in: path
           type: integer
           format: int64
-          description: The id of the document or notebook to retrieve share information for
+          description: The id of the document, notebook or snippet to retrieve share information for
           required: true
       responses:
         '200':
@@ -3098,13 +3096,13 @@ parameters:
   typesToIncludeParam:
     name: typesToInclude
     in: query
-    description: Optional list of record types to include in the results. (Note that Swagger documentation 'Try it out' only permits a single type; in a real request,  multiple types  can be sent, e.g. 'typesToInclude=notebook,folder' )
-    type: string
+    description: Optional list of record types to include in the results.
     required: false
-    enum:
-      - document
-      - notebook
-      - folder
+    type: array
+    items:
+      type: string
+      enum: [document,notebook,folder,snippet]
+    collectionFormat: csv  # This creates comma-separated values
   activityOrderByParam:
     name: orderBy
     in: query
@@ -4418,6 +4416,10 @@ definitions:
         type: integer
         format: int64
         description: Unique identifier for shared group folder.
+      sharedSnippetFolderId:
+        type: integer
+        format: int64
+        description: Unique identifier for shared group snippets folder.
       members:
         type: array
         description: A Listing of the group's members and their roles
@@ -4427,7 +4429,8 @@ definitions:
       id: 1234
       name: Smith Group
       type: LAB_GROUP
-      sharedFolderId: 12345
+      sharedFolderId: 123
+      sharedSnippetFolderId: 456
       members:
         - id: 12345
           username: jsmith

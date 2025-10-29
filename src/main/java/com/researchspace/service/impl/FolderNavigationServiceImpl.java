@@ -46,6 +46,11 @@ public class FolderNavigationServiceImpl implements FolderNavigationService {
   }
 
   @Override
+  public Optional<Folder> findParentForUser(User user, Folder folder) {
+    return findParentForUser(null, user, folder);
+  }
+
+  @Override
   public List<Folder> buildPathToRootFolder(Folder folder, User user, Long parentId) {
     List<Folder> pathToRootFolder = new ArrayList<>();
     Optional<Folder> parentFolder = findParentForUser(parentId, user, folder);

@@ -8,5 +8,6 @@ public enum ApiRecordType {
   FOLDER,
   NOTEBOOK,
   DOCUMENT,
-  MEDIA
+  MEDIA,
+  SNIPPET
 }

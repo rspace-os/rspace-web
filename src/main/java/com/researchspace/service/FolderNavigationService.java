@@ -29,6 +29,15 @@ public interface FolderNavigationService {
   Optional<Folder> findParentForUser(Long parentId, User user, Folder folder);
 
   /**
+   * Convenience method for finding the parent folder when parentId is not known.
+   *
+   * @param user The user viewing the folder
+   * @param folder The folder to find the parent of
+   * @return The parent folder in the appropriate context, or empty if no accessible parent
+   */
+  Optional<Folder> findParentForUser(User user, Folder folder);
+
+  /**
    * Builds the path from a folder to its root (Workspace or Gallery root) folder for a given user.
    * The path will stop at ROOT_MEDIA for gallery subfolders.
    *

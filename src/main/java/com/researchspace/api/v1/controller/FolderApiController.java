@@ -171,7 +171,8 @@ public class FolderApiController extends BaseApiController implements FolderApi 
         .orElseThrow(() -> new NotFoundException(createNotFoundMessage("Folder", id)));
   }
 
-  private static final Set<String> ACCEPTABLE_TYPES = toSet("notebook", "folder", "document");
+  private static final Set<String> ACCEPTABLE_TYPES =
+      toSet("notebook", "folder", "document", "snippet");
 
   @Override
   public ApiRecordTreeItemListing rootFolderTree(
@@ -219,7 +220,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     PaginationCriteria<BaseRecord> internalPgCrit =
         getPaginationCriteriaForApiSearch(pgCrit, BaseRecord.class);
 
-    RecordTypeFilter filter = generateRecordFilter(typesToInclude, isMediaFolder);
+    RecordTypeFilter filter = generateRecordFilter(typesToInclude);
     Folder folderToList = folderSupplier.get();
     ISearchResults<BaseRecord> results =
         recordManager.listFolderRecords(folderToList.getId(), internalPgCrit, filter);
@@ -235,11 +236,11 @@ public class FolderApiController extends BaseApiController implements FolderApi 
         results,
         apiRecordTreeItemListing,
         fileList,
-        file -> new RecordTreeItemInfo(file, user),
+        file -> new RecordTreeItemInfo(file, folderToList.getId()),
         info -> buildAndAddSelfLink(calculateSelfLink(info), info));
-    if (folderToList.hasSingleParent()) {
-      apiRecordTreeItemListing.setParentId(folderToList.getParent().getId());
-    }
+    folderNavigationService
+        .findParentForUser(user, folderToList)
+        .ifPresent(parent -> apiRecordTreeItemListing.setParentId(parent.getId()));
     return apiRecordTreeItemListing;
   }
 
@@ -260,17 +261,17 @@ public class FolderApiController extends BaseApiController implements FolderApi 
         return BaseApiController.DOCUMENTS_ENDPOINT;
       case MEDIA:
         return BaseApiController.FILES_ENDPOINT;
-
+      case SNIPPET:
+        return BaseApiController.SNIPPETS_ENDPOINT;
       default:
         throw new IllegalStateException("document type cannot be null");
     }
   }
 
-  RecordTypeFilter generateRecordFilter(Set<String> typesToInclude, boolean isMediaFolder) {
-    RecordTypeFilter rcFilter = null;
+  RecordTypeFilter generateRecordFilter(Set<String> typesToInclude) {
+    RecordTypeFilter rcFilter;
     // add exclusions, only if there is a filter in the request
     if (!isEmpty(typesToInclude)) {
-
       Collection<RecordType> toExcludeEnums = new HashSet<>();
       if (!typesToInclude.contains("notebook")) {
         toExcludeEnums.add(RecordType.NOTEBOOK);
@@ -281,6 +282,9 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       if (!typesToInclude.contains("document")) {
         toExcludeEnums.add(RecordType.MEDIA_FILE);
         toExcludeEnums.add(RecordType.NORMAL);
+      }
+      if (!typesToInclude.contains("snippet")) {
+        toExcludeEnums.add(RecordType.SNIPPET);
       }
       toExcludeEnums.remove(RecordType.ROOT_MEDIA); // enable Gallery to be listed in root search
       rcFilter = new RecordTypeFilter(EnumSet.copyOf(toExcludeEnums), false);

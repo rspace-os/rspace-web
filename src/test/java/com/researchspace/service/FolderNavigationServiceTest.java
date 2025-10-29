@@ -46,7 +46,7 @@ public class FolderNavigationServiceTest {
     Folder childFolder = TestFactory.createAFolder("child", subject);
     parentFolder.addChild(childFolder, subject);
 
-    Optional<Folder> result = service.findParentForUser(null, subject, childFolder);
+    Optional<Folder> result = service.findParentForUser(subject, childFolder);
 
     assertTrue(result.isPresent());
     assertEquals(parentFolder.getId(), result.get().getId());
@@ -64,7 +64,7 @@ public class FolderNavigationServiceTest {
     when(permissionUtils.isPermitted(sharedFolder, PermissionType.READ, otherUser))
         .thenReturn(true);
 
-    Optional<Folder> result = service.findParentForUser(null, otherUser, childFolder);
+    Optional<Folder> result = service.findParentForUser(otherUser, childFolder);
 
     assertTrue(result.isPresent());
     assertEquals(sharedFolder.getId(), result.get().getId());
@@ -77,7 +77,7 @@ public class FolderNavigationServiceTest {
     Folder childFolder = TestFactory.createAFolder("child", subject);
     parentFolder.addChild(childFolder, subject);
 
-    Optional<Folder> result = service.findParentForUser(null, otherUser, childFolder);
+    Optional<Folder> result = service.findParentForUser(otherUser, childFolder);
 
     assertFalse(result.isPresent());
   }
@@ -113,15 +113,15 @@ public class FolderNavigationServiceTest {
     userALabGroups.addChild(groupSharedFolder, userA);
     userBLabGroups.addChild(groupSharedFolder, userB);
 
-    Optional<Folder> resultPi = service.findParentForUser(null, piUser, groupSharedFolder);
+    Optional<Folder> resultPi = service.findParentForUser(piUser, groupSharedFolder);
     assertEquals(piLabGroups.getId(), resultPi.get().getId());
     assertEquals(piUser, resultPi.get().getOwner());
 
-    Optional<Folder> resultA = service.findParentForUser(null, userA, groupSharedFolder);
+    Optional<Folder> resultA = service.findParentForUser(userA, groupSharedFolder);
     assertEquals(userALabGroups.getId(), resultA.get().getId());
     assertEquals(userA, resultA.get().getOwner());
 
-    Optional<Folder> resultB = service.findParentForUser(null, userB, groupSharedFolder);
+    Optional<Folder> resultB = service.findParentForUser(userB, groupSharedFolder);
     assertEquals(userBLabGroups.getId(), resultB.get().getId());
     assertEquals(userB, resultB.get().getOwner());
   }
