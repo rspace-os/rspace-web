@@ -19,6 +19,7 @@ scripts/externalTinymcePlugins/nexcloud/plugin.min.js
 scripts/externalTinymcePlugins/onedrive/plugin.min.js
 scripts/externalTinymcePlugins/owncloud/plugin.min.js
 scripts/externalTinymcePlugins/omero/plugin.min.js
+scripts/externalTinymcePlugins/protocols_io/js/main.js
 scripts/externalTinymcePlugins/protocols_io/plugin.min.js
 scripts/externalTinymcePlugins/sketch/plugin.min.js
 scripts/externalTinymcePlugins/snip/plugin.min.js
