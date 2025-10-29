@@ -369,7 +369,8 @@ pipeline {
                                         name: 'DEPLOYMENT_PROPERTY_OVERRIDE',
                                         value: "$WORKSPACE/${BRANCH_NAME}.properties"
                                 ]
-                        ]
+                        ],
+                        wait: false
                 )
             }
         }
@@ -426,7 +427,8 @@ pipeline {
                            name: 'BRANCH_NAME',
                            value: "${BRANCH_NAME}"
                          ]
-                    ]
+                    ],
+                    wait: false
                 )
             }
         }
