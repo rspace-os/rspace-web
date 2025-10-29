@@ -14,7 +14,15 @@ import typescriptParser from "@typescript-eslint/parser";
 export default defineConfig([
   // Global ignores
   {
-    ignores: ["**/node_modules/", ".git/", "**/dist/", "**/build/"],
+    ignores: [
+      "**/node_modules/",
+      ".git/",
+      "**/dist/",
+      "**/build/",
+      "**/playwright-report/",
+      "**/playwright/.cache/",
+      "**/test-results/",
+    ],
   },
   // Base configuration for all JavaScript files
   {
@@ -25,7 +33,7 @@ export default defineConfig([
           jsx: true,
         },
       },
-      ecmaVersion: 2023,
+      ecmaVersion: 2024,
       sourceType: "module",
       globals: {
         ...globals.browser,
