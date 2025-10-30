@@ -1,0 +1,318 @@
+name: Lint and Test
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      frontend_tests:
+        description: 'Run TypeScript/Jest tests'
+        type: boolean
+        default: false
+      fast_java_tests:
+        description: 'Run fast Java tests'
+        type: boolean
+        default: false
+# Re-enable in the future
+#      full_java_tests:
+#        description: 'Run all Java tests'
+#        type: boolean
+#        default: false
+# Re-enable when build is fixed
+#      run_build:
+#        description: 'Run build'
+#        type: boolean
+#        default: false
+      java_vendor:
+        description: 'Java vendor Maven toolchain'
+        type: string
+        default: 'temurin'
+# Re-enable when full java tests are fixed
+#      nightly_build:
+#        description: 'Optional nightly build configuration'
+#        type: string
+#        default: ''
+
+env:
+  RS_FILE_BASE: /tmp/${{ github.ref_name }}-filestore
+
+jobs:
+#  initialize:
+#    runs-on: ubuntu-latest
+#    outputs:
+#      sanitized_dbname: ${{ steps.dbname.outputs.name }}
+#    steps:
+#      - name: Generate sanitized DB name
+#        id: dbname
+#        run: |
+#          BRANCH_NAME="${GITHUB_REF_NAME}"
+#          SANITIZED=$(echo "$BRANCH_NAME" | sed 's/[^A-Za-z0-9]/_/g' | cut -c1-63)
+#          echo "name=$SANITIZED" >> $GITHUB_OUTPUT
+
+  changed-files:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'src/main/webapp/ui/**/*.{js,jsx,ts,tsx}'
+              - 'src/main/webapp/ui/**/*.{css,json}'
+              - 'src/main/webapp/ui/package.json'
+              - 'src/main/webapp/ui/package-lock.json'
+            java:
+              - 'src/main/java/**'
+              - 'src/test/java/**'
+              - 'pom.xml'
+
+  fast-junit-tests:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    strategy:
+      matrix:
+        java-version: [17]
+    if: |
+      github.event_name == 'pull_request' ||
+      inputs.fast_java_tests ||
+      needs.changed-files.outputs.java == 'true'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Setup filestore
+        run: |
+          rm -rf $RS_FILE_BASE
+          mkdir -p $RS_FILE_BASE
+
+      - name: Run fast tests
+        run: |
+          ./mvnw clean test -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: target/surefire-reports/*.xml
+
+  frontend-checks:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    if: |
+      github.event_name == 'pull_request' || 
+      inputs.frontend_tests ||
+      needs.changed-files.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: src/main/webapp/ui/package-lock.json
+
+      - name: Install dependencies
+        working-directory: src/main/webapp/ui
+        run: npm ci --force
+
+      - name: TypeScript check
+        working-directory: src/main/webapp/ui
+        run: |
+          npx tsc --version
+          npm run tsc --noEmit
+
+      - name: Dependency Cruiser
+        working-directory: src/main/webapp/ui
+        run: npm run depcruise | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
+
+  jest-tests:
+    runs-on: ubuntu-latest
+    needs: frontend-checks
+    if: |
+      github.event_name == 'pull_request' || 
+      inputs.frontend_tests ||
+      needs.changed-files.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: src/main/webapp/ui/package-lock.json
+
+      - name: Install dependencies
+        working-directory: src/main/webapp/ui
+        run: npm ci --force
+
+#      - name: Run Jest tests (feature branch)
+#        if: github.ref_name != 'main'
+#        working-directory: src/main/webapp/ui
+#        run: env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2 --changedSince=main
+
+      - name: Run Jest tests (main branch)
+        #if: github.ref_name == 'main'
+        working-directory: src/main/webapp/ui
+        run: npm run test -- --ci --reporters=default --reporters=jest-junit
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: Jest Tests
+          files: src/main/webapp/ui/junit.xml
+
+  playwright-tests:
+    runs-on: ubuntu-latest
+    needs: frontend-checks
+    strategy:
+      matrix:
+        browser: [ chromium, firefox, webkit ]
+    if: |
+      github.event_name == 'pull_request' || 
+      inputs.frontend_tests ||
+      needs.changed-files.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: src/main/webapp/ui/package-lock.json
+
+      - name: Install dependencies
+        working-directory: src/main/webapp/ui
+        run: npm ci --force
+
+      - name: Install Playwright browsers
+        working-directory: src/main/webapp/ui
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        if: github.ref_name == 'main'
+        working-directory: src/main/webapp/ui
+        run: |
+          rm -rf playwright/.cache
+          npm run test-ct -- --project=${{ matrix.browser }} --workers=2
+
+#  full-java-tests:
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        java-version: [17]
+#    needs: initialize
+#    if: inputs.full_java_tests && !inputs.liquibase
+#    steps:
+#      - uses: actions/checkout@v5
+#      - uses: liquibase/setup-liquibase@v2
+#        with:
+#          version: '4.27.0'
+#          edition: 'community'
+#      - uses: shogo82148/actions-setup-mysql@v1
+#        with:
+#          distribution: "mariadb"
+#          mysql-version: "10.11"
+#          user: rspacedbuser
+#          password: rspacedbpwd
+#
+#      - name: Set up JDK
+#        uses: actions/setup-java@v5
+#        with:
+#          distribution: ${{ inputs.java_vendor || 'temurin' }}
+#          java-version: ${{ matrix.java-version }}
+#          cache: maven
+#
+#      - name: Setup filestore
+#        run: |
+#          rm -rf $RS_FILE_BASE
+#          mkdir -p $RS_FILE_BASE
+#
+#      - name: Create test database
+#        run: |
+#          mysql -h127.0.0.1 -urspacedbuser -prspacedbpwd -e "CREATE DATABASE IF NOT EXISTS ${{ needs.initialize.outputs.sanitized_dbname }}"
+#
+#      - name: Run full tests
+#        run: |
+#          ./mvnw clean verify \
+#            -Djava-version=${{ matrix.java-version }} \
+#            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+#            -Djavax.xml.accessExternalDTD=all \
+#            -Dlog4j2.configurationFile=log4j2-dev.xml \
+#            -Dsurefire.rerunFailingTestsCount=2 \
+#            -Djdbc.db.maven=${{ needs.initialize.outputs.sanitized_dbname }} \
+#            -Djdbc.url=jdbc:mysql://localhost:3306/${{ needs.initialize.outputs.sanitized_dbname }} \
+#            -Dmaven.test.failure.ignore=false \
+#            -Denvironment=drop-recreate-db \
+#            -DRS.devlogLevel=INFO \
+#            -DRS_FILE_BASE=${RS_FILE_BASE} \
+#            -DenableTestCoverage \
+#            ${{ inputs.nightly_build }}
+#
+#      - name: Publish test results
+#        uses: EnricoMi/publish-unit-test-result-action@v2
+#        with:
+#          files: target/surefire-reports/*.xml
+#
+#      - name: Upload coverage to Codecov
+#        uses: codecov/codecov-action@v5
+#        with:
+#          files: target/site/jacoco/jacoco.xml
+
+#  build:
+#    runs-on: ubuntu-latest
+#    if: |
+#      github.event_name == 'pull_request' ||
+#      inputs.run_build ||
+#      needs.changed-files.outputs.frontend == 'true' ||
+#      needs.changed-files.outputs.java == 'true'
+#    strategy:
+#      matrix:
+#        java-version: [17]
+#    steps:
+#      - uses: actions/checkout@v5
+#        with:
+#          fetch-depth: 0
+#
+#      - name: Set up JDK
+#        uses: actions/setup-java@v5
+#        with:
+#          distribution: ${{ inputs.java_vendor || 'temurin' }}
+#          java-version: ${{ matrix.java-version }}
+#          cache: maven
+#
+#      - name: Setup filestore
+#        run: |
+#          rm -rf $RS_FILE_BASE
+#          mkdir -p $RS_FILE_BASE
+#
+#      - name: Build project
+#        run: |
+#          ./mvnw clean package -X -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+#            -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
+#            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+#            -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}
