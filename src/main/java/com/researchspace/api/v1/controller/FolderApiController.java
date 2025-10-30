@@ -182,7 +182,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       @RequestAttribute(name = "user") User user)
       throws BindException {
     return doListing(
-        typesToInclude, pgCrit, errors, user, () -> folderMgr.getRootFolderForUser(user), false);
+        typesToInclude, pgCrit, errors, user, () -> folderMgr.getRootFolderForUser(user));
   }
 
   @Override
@@ -195,13 +195,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       throws BindException {
     // validates read permission
     Folder toListFolder = loadFolder(id, user);
-    return doListing(
-        recordTypes,
-        pgCrit,
-        errors,
-        user,
-        () -> toListFolder,
-        toListFolder.hasAncestorOfType(RecordType.ROOT_MEDIA, true));
+    return doListing(recordTypes, pgCrit, errors, user, () -> toListFolder);
   }
 
   private ApiRecordTreeItemListing doListing(
@@ -209,8 +203,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       DocumentApiPaginationCriteria pgCrit,
       BindingResult errors,
       User user,
-      Supplier<Folder> folderSupplier,
-      boolean isMediaFolder)
+      Supplier<Folder> folderSupplier)
       throws BindException {
     // validate
     throwBindExceptionIfErrors(errors);
@@ -232,7 +225,6 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     convertISearchResults(
         pgCrit,
         null,
-        user,
         results,
         apiRecordTreeItemListing,
         fileList,

@@ -226,7 +226,6 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
     convertISearchResults(
         pgCriteria,
         srchConfig,
-        sysadmin,
         internalsearchResults,
         searchResults,
         users,

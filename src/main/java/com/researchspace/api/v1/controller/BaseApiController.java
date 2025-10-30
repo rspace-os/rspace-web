@@ -8,7 +8,6 @@ import com.researchspace.api.v1.model.IdentifiableObject;
 import com.researchspace.api.v1.model.LinkableApiObject;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
-import com.researchspace.model.User;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
@@ -150,7 +149,6 @@ public class BaseApiController implements ServletContextAware {
    *
    * @param pgCrit
    * @param srchConfig
-   * @param user
    * @param internalSearchResults
    * @param apiSearchResult
    * @param apiItemList
@@ -160,7 +158,6 @@ public class BaseApiController implements ServletContextAware {
   protected <T, R extends LinkableApiObject> void convertISearchResults(
       ApiPaginationCriteria pgCrit,
       ApiSearchConfig srchConfig,
-      User user,
       ISearchResults<T> internalSearchResults,
       ApiPaginatedResultList<R> apiSearchResult,
       List<R> apiItemList,

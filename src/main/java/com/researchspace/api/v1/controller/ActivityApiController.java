@@ -56,7 +56,6 @@ public class ActivityApiController extends BaseApiController implements Activity
     convertISearchResults(
         apiPgCrit,
         apiSrchConfig,
-        user,
         auditTrail,
         apDashboardSearchResults,
         auditEventList,
