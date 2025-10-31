@@ -1,5 +1,3 @@
-//@flow strict
-
 import React, {useContext} from "react";
 import axios from "@/common/axios";
 import {getByKey, Optional} from "../../util/optional";
@@ -162,6 +160,18 @@ export type IntegrationStates = {
       url: string;
       alias: string;
       apiKey: string;
+      optionsId: OptionsId;
+    }>;
+  }>;
+  RAID: IntegrationState<{
+    configuredServers: ReadonlyArray<{
+      url: string;
+      alias: string;
+    }>;
+    authenticatedServers: ReadonlyArray<{
+      url: string;
+      alias: string;
+      authenticated: boolean;
       optionsId: OptionsId;
     }>;
   }>;
@@ -688,6 +698,85 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
   };
 }
 
+function decodeRaid(data: FetchedState): IntegrationStates["RAID"] {
+  return {
+    mode: parseState(data),
+    credentials: {
+      configuredServers: Parsers.objectPath(
+        ["options", "RAID_CONFIGURED_SERVERS"],
+        data
+      )
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .flatMap((configuredServers) =>
+          Result.all(
+            ...Object.values(configuredServers).map((config: unknown) => {
+              try {
+                const server = Parsers.isObject(config)
+                  .flatMap(Parsers.isNotNull)
+                  .elseThrow();
+                const alias = Parsers.getValueWithKey("alias")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const url = Parsers.getValueWithKey("url")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                return Result.Ok({alias, url});
+              } catch {
+                return Result.Error<{
+                  url: string;
+                  alias: string;
+                }>([new Error("Could not parse out RaID configured server")]);
+              }
+            })
+          )
+        )
+        .orElse([]),
+      authenticatedServers: Parsers.objectPath(["options"], data)
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .map((servers) =>
+          Object.entries(servers).filter(
+            ([k]) => k !== "RAID_CONFIGURED_SERVERS"
+          )
+        )
+        .flatMap((servers) =>
+          Result.all(
+            ...servers.map(([key, config]: [string, unknown]) => {
+              try {
+                const server = Parsers.isObject(config)
+                  .flatMap(Parsers.isNotNull)
+                  .elseThrow();
+                const alias = Parsers.getValueWithKey("RAID_ALIAS")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const url = Parsers.getValueWithKey("RAID_URL")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const authenticated = (Parsers.getValueWithKey("RAID_OAUTH_CONNECTED")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow()) === 'true';
+                const optionsId = Parsers.isString(key).elseThrow();
+                return Result.Ok({alias, url, authenticated, optionsId});
+              } catch {
+                return Result.Error<{
+                  url: string;
+                  alias: string;
+                  authenticated: boolean;
+                  optionsId: OptionsId;
+                }>([
+                  new Error("Could not parse out RaID authenticated server"),
+                ]);
+              }
+            })
+          )
+        )
+        .orElse([]),
+    },
+  };
+}
+
+
 function decodeSlack(data: FetchedState): IntegrationStates["SLACK"] {
   return {
     mode: parseState(data),
@@ -787,12 +876,12 @@ function decodeIntegrationStates(data: {
     OWNCLOUD: decodeOwnCloud(data.OWNCLOUD),
     PROTOCOLS_IO: decodeProtocolsIo(data.PROTOCOLS_IO),
     PYRAT: decodePyrat(data.PYRAT),
+    RAID: decodeRaid(data.RAID),
     SLACK: decodeSlack(data.SLACK),
     ZENODO: decodeZenodo(data.ZENODO),
   };
 }
 
- 
 const encodeIntegrationState = <I extends Integration>(
     integration: I,
     data: IntegrationStates[I]
@@ -1156,6 +1245,25 @@ const encodeIntegrationState = <I extends Integration>(
       ),
     };
   }
+  if (integration === "RAID") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["RAID"]["credentials"] = data.credentials;
+    return {
+      name: "RAID",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: Object.fromEntries(
+        creds.authenticatedServers.map(({alias, url, optionsId}) => [
+          optionsId,
+          {
+            RAID_ALIAS: alias,
+            RAID_URL: url,
+            RAID_OAUTH_CONNECTED: false, // TODO: return the actual status
+          },
+        ])
+      ),
+    };
+  }
   if (integration === "SLACK") {
     return {
       name: "SLACK",
@@ -1402,6 +1510,8 @@ export function useIntegrationsEndpoint(): {
                 ) as IntegrationStates[I];
               case "PYRAT":
                 return decodePyrat(responseData.data) as IntegrationStates[I];
+              case "RAID":
+                return decodeRaid(responseData.data) as IntegrationStates[I];
               case "SLACK":
                 return decodeSlack(responseData.data) as IntegrationStates[I];
               case "ZENODO":
@@ -1508,6 +1618,8 @@ export function useIntegrationsEndpoint(): {
           return decodeProtocolsIo(response.data.data) as IntegrationStates[I];
         case "PYRAT":
           return decodePyrat(response.data.data) as IntegrationStates[I];
+        case "RAID":
+          return decodeRaid(response.data.data) as IntegrationStates[I];
         case "SLACK":
           return decodeSlack(response.data.data) as IntegrationStates[I];
         case "ZENODO":
