@@ -5,7 +5,7 @@ React and TypeScript. The application serves both as a Single Page Application
 (SPA) for Inventory, Gallery, and the Apps page, and provides React islands
 embedded within the ELN (Electronic Laboratory Notebook) JSP-based pages.
 
-The [webpack configuration](./webpack.config.js) defines multiple entry points
+The [webpack configuration](./webpack.config.mjs) defines multiple entry points
 for these different application parts -- see the entry object for the complete
 list of bundles and their purposes.
 
