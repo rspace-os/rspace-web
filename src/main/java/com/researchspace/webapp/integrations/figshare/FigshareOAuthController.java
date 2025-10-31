@@ -9,7 +9,6 @@ import com.researchspace.figshare.impl.FigshareTemplate;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
-import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.net.URLEncoder;
@@ -82,8 +81,7 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
   @DeleteMapping("/connect")
   public void disconnect(Principal principal) {
     int deleted =
-        userConnectionManager.deleteByUserAndProvider(
-            IntegrationsHandler.FIGSHARE_APP_NAME, principal.getName());
+        userConnectionManager.deleteByUserAndProvider(principal.getName(), FIGSHARE_APP_NAME);
     log.info("Deleted {} Figshare connection(s) for user {}", deleted, principal.getName());
   }
 

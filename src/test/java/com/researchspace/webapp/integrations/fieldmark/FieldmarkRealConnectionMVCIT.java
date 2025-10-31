@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.fieldmark;
 
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -45,7 +46,7 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
     apiKey = createNewApiKeyForUser(user);
     UserConnection actualConnection = new UserConnection();
     actualConnection.setId(
-        new UserConnectionId(user.getUsername(), FIELDMARK_APP_NAME, "ProviderUserIdNotNeeded"));
+        new UserConnectionId(user.getUsername(), FIELDMARK_APP_NAME, PROVIDER_USER_ID));
     actualConnection.setAccessToken(LONG_LIVED_TOKEN);
     actualConnection.setRefreshToken("REFRESH_TOKEN");
     actualConnection.setExpireTime(299L);

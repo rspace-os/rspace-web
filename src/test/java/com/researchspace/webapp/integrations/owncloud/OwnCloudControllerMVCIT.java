@@ -94,7 +94,7 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
     when(mockConnectionManager.get(mockConnectionId))
         .thenAnswer(invoc -> connectionMap.get(mockConnectionId));
 
-    when(mockConnectionManager.deleteByUserAndProvider("OWNCLOUD", "my_user"))
+    when(mockConnectionManager.deleteByUserAndProvider("my_user", "OWNCLOUD"))
         .then(
             invoc -> {
               connectionMap.remove(mockConnectionId);

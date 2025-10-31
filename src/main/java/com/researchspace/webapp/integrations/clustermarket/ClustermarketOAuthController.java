@@ -62,7 +62,7 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
   @DeleteMapping("/connect")
   public void disconnect(Principal principal) {
     int deleted =
-        userConnectionManager.deleteByUserAndProvider(CLUSTERMARKET_APP_NAME, principal.getName());
+        userConnectionManager.deleteByUserAndProvider(principal.getName(), CLUSTERMARKET_APP_NAME);
     log.info("Deleted {} Clustermarket connection(s) for user {}", deleted, principal.getName());
   }
 

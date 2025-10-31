@@ -52,7 +52,7 @@ public class IntegrationControllerTest {
     when(handler.getIntegration(Mockito.eq(subject), Mockito.anyString()))
         .thenReturn(new IntegrationInfo());
     // +23 for all non-boolean integrations
-    int integrationsNumber = IntegrationsHandlerImpl.booleanIntegrationPrefs.size() + 23;
+    int integrationsNumber = IntegrationsHandlerImpl.booleanIntegrationPrefs.size() + 24;
     AjaxReturnObject<Map<String, IntegrationInfo>> infos =
         integrationCtrller.getAllIntegrationsInfo(new MockPrincipal(subject.getUsername()));
     assertEquals(integrationsNumber, infos.getData().size());

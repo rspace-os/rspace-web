@@ -218,8 +218,7 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
     return findByName(preference.name());
   }
 
-  @Override
-  public SystemPropertyValue findByName(String name) {
+  private SystemPropertyValue findByName(String name) {
     return syspropdao.findByPropertyNameAndCommunity(name, null);
   }
 

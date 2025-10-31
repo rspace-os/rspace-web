@@ -44,7 +44,7 @@ public interface UserConnectionManager extends GenericManager<UserConnection, Us
    * @param providername
    * @param rspaceUserName
    */
-  int deleteByUserAndProvider(String providername, String rspaceUserName);
+  int deleteByUserAndProvider(String rspaceUserName, String providername);
 
-  int deleteByUserAndProvider(String providername, String rspaceUserName, String discriminant);
+  int deleteByUserAndProvider(String rspaceUserName, String providername, String discriminant);
 }

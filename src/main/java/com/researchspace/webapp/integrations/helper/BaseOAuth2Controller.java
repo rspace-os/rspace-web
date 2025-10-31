@@ -28,6 +28,7 @@ public class BaseOAuth2Controller extends BaseController {
   public static class AccessToken {
     private @JsonProperty("access_token") String accessToken;
     private @JsonProperty("refresh_token") String refreshToken;
+    private @JsonProperty("id_token") String idToken;
     private @JsonProperty("token_type") String type;
     private @JsonProperty("created_at") Long createdAt;
     private @JsonProperty("expires_in") Long expiresIn;
