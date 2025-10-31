@@ -29,6 +29,7 @@ import { DisableDragAndDropByDefault } from "../../../hooks/ui/useFileImportDrag
 import OpenFolderProvider from "../components/OpenFolderProvider";
 import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 import { CallableSnippetPreview } from "../components/CallableSnippetPreview";
+import { FilestoreLoginProvider } from "@/eln/gallery/components/FilestoreLoginDialog";
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-container > .MuiPaper-root": {
@@ -270,16 +271,18 @@ export default function Wrapper({
 }): React.ReactNode {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <GallerySelection onlyAllowSingleSelection={onlyAllowSingleSelection}>
-        <DisableDragAndDropByDefault>
-          <Picker
-            open={open}
-            onClose={onClose}
-            onSubmit={onSubmit}
-            validateSelection={validateSelection}
-          />
-        </DisableDragAndDropByDefault>
-      </GallerySelection>
+      <FilestoreLoginProvider>
+        <GallerySelection onlyAllowSingleSelection={onlyAllowSingleSelection}>
+          <DisableDragAndDropByDefault>
+            <Picker
+              open={open}
+              onClose={onClose}
+              onSubmit={onSubmit}
+              validateSelection={validateSelection}
+            />
+          </DisableDragAndDropByDefault>
+        </GallerySelection>
+      </FilestoreLoginProvider>
     </ThemeProvider>
   );
 }
