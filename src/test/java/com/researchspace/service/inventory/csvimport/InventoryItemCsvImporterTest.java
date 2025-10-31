@@ -29,15 +29,18 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
 public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
 
   private final String DOI_1 = "10.12345/nico-test1";
   private final String DOI_2 = "10.12345/nico-test2";
 
-  @Autowired private CsvContainerImporter containerCsvImporter;
-  @Autowired private CsvSampleImporter sampleCsvImporter;
-  @Autowired private CsvSubSampleImporter subSampleCsvImporter;
+  @Autowired private AutowireCapableBeanFactory beanFactory;
+
+  private CsvContainerImporter containerCsvImporter;
+  private CsvSampleImporter sampleCsvImporter;
+  private CsvSubSampleImporter subSampleCsvImporter;
   @Mock private InventoryIdentifierApiManager mockIdenitfierManager;
   @Mock private ApiAvailabilityHandler mockApiHandler;
 
@@ -47,6 +50,13 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     user = createAndSaveRandomUser();
+
+    // Create fresh importer instances per test to avoid mutating Spring singletons
+    containerCsvImporter = beanFactory.createBean(CsvContainerImporter.class);
+    sampleCsvImporter = beanFactory.createBean(CsvSampleImporter.class);
+    subSampleCsvImporter = beanFactory.createBean(CsvSubSampleImporter.class);
+
+    // Inject mocks into these fresh instances only
     containerCsvImporter.setInventoryIdentifierManager(mockIdenitfierManager);
     containerCsvImporter.setApiHandler(mockApiHandler);
 
