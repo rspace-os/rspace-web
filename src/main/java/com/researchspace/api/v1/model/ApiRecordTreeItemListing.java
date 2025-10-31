@@ -1,6 +1,7 @@
 /** RSpace API Access your RSpace documents programmatically. */
 package com.researchspace.api.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.api.v1.controller.BaseApiController;
@@ -19,14 +20,16 @@ public class ApiRecordTreeItemListing extends ApiPaginatedResultList<RecordTreeI
   @JsonProperty("parentId")
   private Long parentId;
 
-  private static String endpointFormat = "BaseApiController.FOLDER_TREE_ENDPOINT/%d";
+  @JsonIgnore private boolean omitParentIdInSearchEndpointString;
+
+  private static String endpointFormat = BaseApiController.FOLDER_TREE_ENDPOINT + "/%d";
 
   @JsonProperty("records")
   private List<RecordTreeItemInfo> records = new ArrayList<>();
 
   @Override
   protected String getSearchEndpoint() {
-    return parentId == null
+    return parentId == null || omitParentIdInSearchEndpointString
         ? BaseApiController.FOLDER_TREE_ENDPOINT
         : String.format(endpointFormat, parentId);
   }
