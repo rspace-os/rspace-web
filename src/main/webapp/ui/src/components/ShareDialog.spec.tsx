@@ -33,7 +33,7 @@ const feature = test.extend<{
   };
   Then: {
     "a dialog should be visible": () => Promise<void>;
-    "a table listing Bob as a user with whom the document is shared should be visible": () => Promise<void>;
+    "a table listing Bob as a user with whom the document is shared should be visible": (multiple?: boolean) => Promise<void>;
     "a table listing Alice and Bob's group as a group with whom the document is shared should be visible": () => Promise<void>;
     "no table should be visible": () => Promise<void>;
     "two tables listing the shared notebook's implicit and explicit shares should be visible": () => Promise<void>;
@@ -210,9 +210,9 @@ const feature = test.extend<{
         );
       },
       "a table listing Bob as a user with whom the document is shared should be visible":
-        async () => {
+        async (multiple = false) => {
           const dialog = page.getByRole("dialog", {
-            name: /Share A shared document/i,
+            name: multiple ? /Share 2 items/i : /Share A shared document/i,
           });
           await expect(dialog).toBeVisible();
           const table = dialog.getByRole("table");
@@ -246,16 +246,10 @@ const feature = test.extend<{
           );
         },
       "no table should be visible": async () => {
-        const dialog = page.getByRole("dialog", {
-          name: /Share \d+ items/i,
-        });
-        await expect(dialog).toBeVisible();
-        const table = dialog.getByRole("table");
+        const table = page.getByRole("table");
         await expect(table).toHaveCount(0);
         await expect(
-          dialog.getByRole("heading", {
-            name: /adding shares to 2 documents/i,
-          }),
+          page.getByText(/This document is not directly shared with anyone./i)
         ).toBeVisible();
       },
       "two tables listing the shared notebook's implicit and explicit shares should be visible":
@@ -793,6 +787,9 @@ test.describe("ShareDialog", () => {
         "the dialog is displayed with a document without previous shares"
       ]();
       await Then["a dialog should be visible"]();
+      await Then[
+        "no table should be visible"
+        ]();
       await Then["there shouldn't be any axe violations"]();
     });
 
@@ -822,14 +819,11 @@ test.describe("ShareDialog", () => {
       },
     );
 
-    /*
-     * This is because the UI became too complex to show a table for each document
-     */
     feature(
-      "When multiple documents are selected, no table is shown",
+      "When multiple documents are selected, show table of share options for the first document",
       async ({ Given, Then }) => {
         await Given["the dialog is displayed with multiple documents"]();
-        await Then["no table should be visible"]();
+        await Then["a table listing Bob as a user with whom the document is shared should be visible"](true);
         await Then["there shouldn't be any axe violations"]();
       },
     );
