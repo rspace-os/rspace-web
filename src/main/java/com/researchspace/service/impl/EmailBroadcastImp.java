@@ -35,7 +35,6 @@ import javax.mail.Address;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
-import javax.mail.NoSuchProviderException;
 import javax.mail.SendFailedException;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -78,8 +77,14 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
 
   private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
 
+  private int retryDelayMillis = 1000;
+
   void setStrictEmailContentGenerator(StrictEmailContentGenerator strictEmailContentGenerator) {
     this.strictEmailContentGenerator = strictEmailContentGenerator;
+  }
+
+  void setRetryDelayMillis(int retryDelayMillis) {
+    this.retryDelayMillis = retryDelayMillis;
   }
 
   RetryConfig retryConfig = null;
@@ -102,7 +107,7 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
 
   RetryConfig buildRetryConfig() {
     IntervalFunction intervalWithCustomExponentialBackoff =
-        IntervalFunction.ofExponentialBackoff(1000, 2d);
+        IntervalFunction.ofExponentialBackoff(retryDelayMillis, 2d);
     return RetryConfig.custom()
         .maxAttempts(3)
         .intervalFunction(intervalWithCustomExponentialBackoff)
@@ -127,14 +132,14 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
   @lombok.Value
   @AllArgsConstructor
   public static class EmailConfig {
-    private List<String> addresses;
-    private String subject;
-    private EmailContent content;
-    private Communication comm;
-    private boolean isStrictValidEmail;
+    List<String> addresses;
+    String subject;
+    EmailContent content;
+    Communication comm;
+    boolean isStrictValidEmail;
   }
 
-  private Integer maxEmailsPerSecond = 5;
+  private Integer maxEmailsPerSecond;
 
   public Integer getMaxSendingRate() {
     return maxEmailsPerSecond;
@@ -151,14 +156,14 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
   public static final String SEND_FAILURE_PREFIX = "SEND_FAILURE";
   public static final String GENERAL_FAILURE_PREFIX = "FAILURE";
 
-  private Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private Logger emailErrorLog = LoggerFactory.getLogger(FailedEmailLogger.class);
 
   void setErrorLog(Logger errorLog) {
     this.emailErrorLog = errorLog;
   }
 
-  private MessageRecipientFactory msgRecipientFac = new MessageRecipientFactory();
+  private final MessageRecipientFactory msgRecipientFac = new MessageRecipientFactory();
 
   /**
    * These are detected by Spring via PropertyPlaceholderConfigurer and injected in. They're
@@ -191,7 +196,7 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
   @Value("${mail.debug}")
   private String mailDebug;
 
-  private Integer addressChunkSize = 25;
+  private Integer addressChunkSize;
 
   /**
    * @param addressChunkSize > 0
@@ -233,7 +238,7 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
       return;
     }
     String subj = comm.getSubject();
-    if (subj == null || subj.length() < 1) {
+    if (subj == null || subj.isEmpty()) {
       subj = "email: ";
     }
     EmailContent body = generateEmailBody(comm);
@@ -261,11 +266,9 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
 
   private Collection<List<String>> partitionAddressesBySize(List<String> addrs, int chunkSize) {
     final AtomicInteger counter = new AtomicInteger();
-    Collection<List<String>> addressPartitions =
-        addrs.stream()
-            .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / chunkSize))
-            .values();
-    return addressPartitions;
+    return addrs.stream()
+        .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / chunkSize))
+        .values();
   }
 
   @Override
@@ -306,7 +309,7 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
     public void run() throws Throwable {
       try {
         sendMailToAddresses(config);
-        log.info("Message [" + id + "] sent");
+        log.info("Message [{}] sent", id);
       } catch (AuthenticationFailedException e) {
         emailErrorLog.error(
             "{}:{} -  {}. Not retrying", AUTHENTICATION_FAILURE_PREFIX, id, e.getMessage());
@@ -404,8 +407,7 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
     }
   }
 
-  private Transport configureMailTransport(Session session)
-      throws NoSuchProviderException, MessagingException {
+  private Transport configureMailTransport(Session session) throws MessagingException {
     Transport transport;
     transport = session.getTransport("smtp");
     transport.connect(emailHost, Integer.parseInt(port), emailAccount, password);

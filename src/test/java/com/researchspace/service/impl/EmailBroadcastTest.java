@@ -49,7 +49,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   private static final String BASEURL = "http://localhost:8080/";
 
-  // Test-only base class to avoid repeating the no-retry configuration in every subclass
+  // Removes retries (which aren't tested in the class) from stubs to avoid waiting during tests
   abstract static class NoRetryBroadcasterStub extends EmailBroadcastImp {
     @Override
     RetryConfig buildRetryConfig() {
