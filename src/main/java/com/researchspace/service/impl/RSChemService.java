@@ -253,7 +253,7 @@ public class RSChemService implements ChemistryService {
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ChemicalSearchResults {
-    List<ChemSearchedItem> pagedRecords = new ArrayList<>();
+    List<ChemSearchedItem> pagedRecords;
     int startHit;
     int endHit;
     Map<Long, Breadcrumb> breadcrumbMap;

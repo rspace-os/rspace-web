@@ -1,7 +1,6 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
@@ -20,15 +19,15 @@ public class SharePost {
 
   @Size(min = 1, max = 255, message = "There must be at least 1 document or notebook to share")
   @Singular("itemToShare")
-  private List<Long> itemsToShare = new ArrayList<>();
+  private List<Long> itemsToShare;
 
   @Valid
   @Singular
   @JsonProperty("groups")
-  private List<GroupSharePostItem> groupSharePostItems = new ArrayList<>();
+  private List<GroupSharePostItem> groupSharePostItems;
 
   @Valid
   @Singular
   @JsonProperty("users")
-  private List<UserSharePostItem> userSharePostItems = new ArrayList<>();
+  private List<UserSharePostItem> userSharePostItems;
 }

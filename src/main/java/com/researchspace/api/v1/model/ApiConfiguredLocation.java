@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
 
-/** It is an API representation of an external filestore lacotion */
+/** API representation of an external filestore location */
 @Data
 @Builder
 @AllArgsConstructor
