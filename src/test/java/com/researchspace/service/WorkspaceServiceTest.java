@@ -2,18 +2,26 @@ package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.model.Group;
+import com.researchspace.model.RecordGroupSharing;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailService;
+import com.researchspace.model.core.RecordType;
+import com.researchspace.model.dtos.NotebookCreationResult;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
@@ -50,6 +58,8 @@ public class WorkspaceServiceTest {
   @Mock BaseRecordManager baseRecordManager;
   @Mock AuditTrailService auditService;
   @Mock MovePermissionChecker permissionChecker;
+  @Mock SharingHandler recordShareHandler;
+  @Mock GroupManager groupManager;
 
   @InjectMocks WorkspaceServiceImpl service;
 
@@ -62,7 +72,6 @@ public class WorkspaceServiceTest {
     target = folder(TARGET_FOLDER_ID);
     user = TestFactory.createAnyUser("user");
     doc = docWithParent(RECORD_ID, source, user.getUsername());
-    when(folderManager.getRootFolderForUser(any(User.class))).thenReturn(root);
   }
 
   private void mockHasMovePermission(boolean hasPermission) {
@@ -156,7 +165,11 @@ public class WorkspaceServiceTest {
   public void moveDocumentFailureNotCounted() {
     when(folderManager.getRootFolderForUser(user)).thenReturn(root);
     when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
-    commonMocks(user, target, doc);
+    when(baseRecordManager.get(RECORD_ID, user)).thenReturn(doc);
+    when(recordManager.exists(RECORD_ID)).thenReturn(true);
+    when(recordManager.get(RECORD_ID)).thenReturn(doc);
+    when(recordManager.isSharedNotebookWithoutCreatePermission(user, target))
+            .thenReturn(false);
     mockHasMovePermission(true);
     mockFail();
 
@@ -253,12 +266,88 @@ public class WorkspaceServiceTest {
     assertEquals("Record with ID: " + RECORD_ID + " already in target folder", ex.getMessage());
   }
 
+  @Test
+  public void createNotebookNonSharedNoGrandparentCreatesInParent() {
+    long parentId = TARGET_FOLDER_ID;
+    Folder parent = folder(parentId);
+    when(folderManager.getFolder(parentId, user)).thenReturn(parent);
+
+    long notebookId = 123L;
+    when(folderManager.createNewNotebook(
+            eq(parentId), eq("My NB"), any(DefaultRecordContext.class), eq(user)))
+        .thenReturn(notebookWithId(notebookId));
+
+    NotebookCreationResult result = service.createNotebook("My NB", parentId, null, user);
+
+    assertEquals(notebookId, result.getNotebookId());
+    assertEquals(parentId, result.getGrandParentId());
+    assertNull(result.getGroupName());
+    verify(auditService).notify(any());
+  }
+
+  @Test
+  void createNotebookNonSharedParentUsesProvidedGrandparent() {
+    long parentId = TARGET_FOLDER_ID;
+    long grandparentId = 999L;
+    Folder parent = folder(parentId);
+    when(folderManager.getFolder(parentId, user)).thenReturn(parent);
+
+    long createdId = 123L;
+    when(folderManager.createNewNotebook(
+            eq(parentId), eq("My NB"), any(DefaultRecordContext.class), eq(user)))
+        .thenReturn(notebookWithId(createdId));
+
+    NotebookCreationResult result = service.createNotebook("My NB", parentId, grandparentId, user);
+
+    assertEquals(grandparentId, result.getGrandParentId());
+    assertNull(result.getGroupName());
+    verify(auditService).notify(any());
+  }
+
+  @Test
+  void createNotebookSharedParentCreatesInRootAndSharesToGroup() {
+    long parentId = TARGET_FOLDER_ID;
+    Folder sharedParent = folder(parentId);
+    sharedParent.addType(RecordType.SHARED_FOLDER);
+    when(folderManager.getFolder(parentId, user)).thenReturn(sharedParent);
+
+    when(folderManager.getRootFolderForUser(user)).thenReturn(root);
+    long createdId = 123L;
+    when(folderManager.createNewNotebook(
+            eq(root.getId()), eq("Shared NB"), any(DefaultRecordContext.class), eq(user)))
+        .thenReturn(notebookWithId(createdId));
+
+    Group group =
+        TestFactory.createAnyGroup(TestFactory.createAnyUserWithRole("pi", Role.PI_ROLE.getName()));
+    RecordGroupSharing rgs = new RecordGroupSharing();
+    rgs.setSharee(group);
+    when(recordShareHandler.shareIntoSharedFolderOrNotebook(
+            eq(user), eq(sharedParent), eq(createdId), eq(null)))
+        .thenReturn(List.of(rgs));
+
+    NotebookCreationResult result = service.createNotebook("Shared NB", parentId, null, user);
+
+    assertEquals(createdId, result.getNotebookId());
+    assertEquals(sharedParent.getId(), result.getGrandParentId());
+    assertEquals(group.getDisplayName(), result.getGroupName());
+    verify(recordShareHandler).shareIntoSharedFolderOrNotebook(user, sharedParent, createdId, null);
+    verify(auditService).notify(any());
+  }
+
+  private Notebook notebookWithId(long id) {
+    Notebook nb = new Notebook();
+    nb.setId(id);
+    return nb;
+  }
+
   private void commonMocks(User user, Folder sharedTarget, StructuredDocument doc) {
     when(baseRecordManager.get(RECORD_ID, user)).thenReturn(doc);
     when(recordManager.exists(RECORD_ID)).thenReturn(true);
     when(recordManager.get(RECORD_ID)).thenReturn(doc);
     when(recordManager.isSharedNotebookWithoutCreatePermission(user, sharedTarget))
         .thenReturn(false);
+    when(folderManager.getRootFolderForUser(any(User.class)))
+            .thenReturn(root);
   }
 
   private Folder folder(long id) {
