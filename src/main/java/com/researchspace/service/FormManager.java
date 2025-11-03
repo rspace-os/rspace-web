@@ -101,11 +101,6 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   RSForm updatePermissions(Long formId, FormSharingCommand config, User authUser);
 
   /**
-   * @deprecated use searchForms instead which paginates the response.
-   */
-  ISearchResults<RSForm> getAllWithPermissions(User user, PermissionType type, boolean visibleOnly);
-
-  /**
    * @param user
    * @param sc
    * @param pg

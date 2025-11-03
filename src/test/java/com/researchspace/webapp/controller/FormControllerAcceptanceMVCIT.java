@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
 import static com.researchspace.testutils.TestRunnerController.isJDK8;
 import static org.junit.Assert.assertEquals;
@@ -30,8 +29,6 @@ import com.researchspace.service.IconImageManager;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.InputStream;
-import java.security.Principal;
-import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.shiro.SecurityUtils;
@@ -45,9 +42,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.MvcResult;
 
-/*
- * mixture of regular and mvc tests
- */
 public class FormControllerAcceptanceMVCIT extends MVCTestBase {
 
   private @Autowired RSFormController formController;
@@ -60,9 +54,6 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
   }
 
   User other;
-
-  /** Represents the 'user' user. */
-  protected Principal mockOtherPrincipal = () -> other.getUsername();
 
   StructuredDocument docToShare;
   MockServletContext mockServletCtxt;
@@ -87,7 +78,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
 
   @Test
   @SuppressWarnings({"unchecked"})
-  public void testListForms() throws Exception {
+  public void testListForms() {
     docToShare = setUpLoginAsPIUserAndCreateADocument();
     // this is a basic document system form
     RSForm form = docToShare.getForm();
@@ -127,7 +118,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
 
   @Test
   @SuppressWarnings("rawtypes")
-  public void testSearchFormsBySearchTerm() throws Exception {
+  public void testSearchFormsBySearchTerm() {
 
     docToShare = setUpLoginAsPIUserAndCreateADocument();
     RSForm form = docToShare.getForm();
@@ -193,7 +184,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     final RSForm newForm =
         formMgr.copy(form.getId(), piUser, new CopyIndependentFormAndFieldFormPolicy());
 
-    User maliciousMike = createInitAndLoginAnyUser();
+    createInitAndLoginAnyUser();
 
     // assert both addTo and removeFrom menu
     assertExceptionThrown(
@@ -201,7 +192,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     assertExceptionThrown(
         () -> formController.toggleMenu(false, newForm.getId()), AuthorizationException.class);
     logoutAndLoginAs(piUser);
-    formController.toggleMenu(true, newForm.getId()); // ok
+    formController.toggleMenu(true, newForm.getId());
   }
 
   @Test
@@ -214,7 +205,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     RSForm[] copies = new RSForm[NUM_FORMS];
 
     // counting initial forms visible to 'user'
-    PaginationCriteria<RSForm> pg = new PaginationCriteria<RSForm>(RSForm.class);
+    PaginationCriteria<RSForm> pg = new PaginationCriteria<>(RSForm.class);
     FormSearchCriteria tsc = new FormSearchCriteria(PermissionType.READ);
     int userInitFormNumber = formMgr.searchForms(piUser, tsc, pg).getTotalHits().intValue();
 
@@ -242,8 +233,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
 
     // counting initial forms visible to 'other1'
     User other1 = createAndSaveUser("other1");
-    int other1InitFormNumber =
-        formMgr.getAllWithPermissions(other1, PermissionType.READ, true).getTotalHits().intValue();
+    int other1InitFormNumber = formMgr.searchForms(other1, tsc, pg).getTotalHits().intValue();
 
     // now make 10 forms World readable:
     openTransaction();
@@ -256,20 +246,17 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
 
     // and verify 'other1' can see the forms that were just made world
     // readable
-    int other1NewFormNumber =
-        formMgr.getAllWithPermissions(other1, PermissionType.READ, true).getTotalHits().intValue();
+    int other1NewFormNumber = formMgr.searchForms(other1, tsc, pg).getTotalHits().intValue();
     assertEquals(NUM_WORLD_READABLE + other1InitFormNumber, other1NewFormNumber);
   }
 
   /**
    * Tests several permutations of form read/write access within groups.
    *
-   * @throws Exception
    */
   @Test
   public void testFormReadWriteAccess() throws Exception {
     docToShare = setUpLoginAsPIUserAndCreateADocument();
-    RSForm form = docToShare.getForm();
     User pi1 = createAndSaveUser("pi1", Constants.PI_ROLE);
     User admin1 = createAndSaveUser("grpAdmn1");
     User user_1 = createAndSaveUser("grpUsr1");
@@ -280,8 +267,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     final RSForm anyform = formMgr.create(user_1);
 
     createGroupForUsers(piUser, pi1.getUsername(), admin1.getUsername(), user_1, admin1, pi1);
-    // current logged in is 'user_1', who created the form and therefore has
-    // publish permission + edit pernmissio.
+    // current logged in is 'user_1', who created the form and therefore has publish permission and edit permission.
     logoutAndLoginAs(user_1);
     assertPublishIsAuthorized(anyform, user_1);
     assertEquals(
@@ -333,7 +319,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     // now switch to the group PI - he'll make the template group-readable
     logoutAndLoginAs(pi1);
     FormSharingCommand tsc = new FormSharingCommand(grpForm);
-    tsc.setGroupOptions(Arrays.asList(new String[] {"READ"}));
+    tsc.setGroupOptions(List.of("READ"));
     formMgr.updatePermissions(grpForm.getId(), tsc, pi1);
 
     // ---------------- group member logged in
@@ -352,7 +338,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     // now switch to the group PI - he'll make the form group-WRITEABLE
     logoutCurrUserAndLoginAs(pi1.getUsername(), TESTPASSWD);
     FormSharingCommand tsc2 = new FormSharingCommand(grpForm);
-    tsc2.setGroupOptions(Arrays.asList(new String[] {"WRITE"}));
+    tsc2.setGroupOptions(List.of("WRITE"));
     formMgr.updatePermissions(grpForm.getId(), tsc2, pi1);
 
     // ---------------- group member logged in
@@ -380,7 +366,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     logoutAndLoginAs(pi1);
     // ---------------- PI member logged in
     FormSharingCommand tsc3 = new FormSharingCommand(grpForm);
-    tsc3.setWorldOptions(Arrays.asList(new String[] {"READ"}));
+    tsc3.setWorldOptions(List.of("READ"));
     formMgr.updatePermissions(grpForm.getId(), tsc3, pi1);
 
     // now switch to a user who is not a group member - they should now
@@ -392,24 +378,24 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     assertPublishNotAuthorized(grpForm, USER_IN_OTHER_GROUP);
   }
 
-  private void assertAccessDenied(RSForm grpForm, User user) throws Exception {
+  private void assertAccessDenied(RSForm grpForm, User user) {
     RSForm t = formMgr.getForEditing(grpForm.getId(), user, anySessionTracker());
-    assertTrue(t.getEditStatus().equals(EditStatus.ACCESS_DENIED));
+    assertEquals(EditStatus.ACCESS_DENIED, t.getEditStatus());
   }
 
-  private void assertHasEditPermission(RSForm grpForm, User user) throws Exception {
+  private void assertHasEditPermission(RSForm grpForm, User user) {
     RSForm t = formMgr.getForEditing(grpForm.getId(), user, anySessionTracker());
     assertTrue(t.getEditStatus().isEditable());
   }
 
-  private void assertHasNOEditPermission(RSForm grpForm, User user) throws Exception {
+  private void assertHasNOEditPermission(RSForm grpForm, User user) {
     RSForm t = formMgr.getForEditing(grpForm.getId(), user, anySessionTracker());
     assertFalse(t.getEditStatus().isEditable());
   }
 
-  private void assertHasReadPermission(RSForm grpForm, User user) throws Exception {
+  private void assertHasReadPermission(RSForm grpForm, User user) {
     RSForm form = formMgr.getForEditing(grpForm.getId(), user, anySessionTracker());
-    assertTrue(form.getEditStatus().equals(EditStatus.CANNOT_EDIT_NO_PERMISSION));
+    assertEquals(EditStatus.CANNOT_EDIT_NO_PERMISSION, form.getEditStatus());
   }
 
   private void assertPublishNotAuthorized(RSForm form, User u) throws Exception {
@@ -497,7 +483,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void testFormTag() throws Exception {
+  public void testFormTag() {
     docToShare = setUpLoginAsPIUserAndCreateADocument();
     Boolean ok = formController.tagForm(docToShare.getForm().getId(), "template_tag").getData();
     assertTrue(ok);
@@ -520,7 +506,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
         new MockMultipartFile("file", "Picture1.png", "multipart/form-data", rawBytes);
 
     AjaxReturnObject<Long> savedIcon = formController.saveImage(mf, fid.getData(), mockPrincipal);
-    assertTrue(savedIcon.getData() != null);
+    assertNotNull(savedIcon.getData());
     MockHttpServletResponse response = new MockHttpServletResponse();
     imageCtrller.getIconImage(savedIcon.getData(), response); // if failed throw out
     IconEntity ie = iconImageManager.getIconEntity(savedIcon.getData());
@@ -531,8 +517,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     assertEquals(isJDK8() ? 1377 : 1410, ie.getIconImage().length);
     assertEquals(form.getId(), ie.getParentId());
 
-    RSForm savedform = formMgr.get(form.getId(), piUser); // exception
-    // assertEquals(savedIcon.getData(), savedform.getIconId());
+    formMgr.get(form.getId(), piUser); // exception
   }
 
   private RSForm getFormFromModel() {
@@ -580,7 +565,6 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
             .perform(post(formUrlBase).principal(u::getUsername))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    RSForm form = (RSForm) result.getModelAndView().getModelMap().get("template");
-    return form;
+    return (RSForm) result.getModelAndView().getModelMap().get("template");
   }
 }
