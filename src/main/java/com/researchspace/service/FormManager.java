@@ -6,7 +6,6 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.FormMenu;
 import com.researchspace.model.dtos.FormSharingCommand;
-import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.FormUserMenu;
 import com.researchspace.model.record.IFormCopyPolicy;

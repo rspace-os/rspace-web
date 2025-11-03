@@ -250,10 +250,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     assertEquals(NUM_WORLD_READABLE + other1InitFormNumber, other1NewFormNumber);
   }
 
-  /**
-   * Tests several permutations of form read/write access within groups.
-   *
-   */
+  /** Tests several permutations of form read/write access within groups. */
   @Test
   public void testFormReadWriteAccess() throws Exception {
     docToShare = setUpLoginAsPIUserAndCreateADocument();
@@ -267,7 +264,8 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     final RSForm anyform = formMgr.create(user_1);
 
     createGroupForUsers(piUser, pi1.getUsername(), admin1.getUsername(), user_1, admin1, pi1);
-    // current logged in is 'user_1', who created the form and therefore has publish permission and edit permission.
+    // current logged in is 'user_1', who created the form and therefore has publish permission and
+    // edit permission.
     logoutAndLoginAs(user_1);
     assertPublishIsAuthorized(anyform, user_1);
     assertEquals(
