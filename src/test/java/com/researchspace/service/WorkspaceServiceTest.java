@@ -72,9 +72,6 @@ public class WorkspaceServiceTest {
     target = folder(TARGET_FOLDER_ID);
     user = TestFactory.createAnyUser("user");
     doc = docWithParent(RECORD_ID, source, user.getUsername());
-    org.mockito.Mockito.lenient()
-        .when(folderManager.getRootFolderForUser(any(User.class)))
-        .thenReturn(root);
   }
 
   private void mockHasMovePermission(boolean hasPermission) {
@@ -168,7 +165,11 @@ public class WorkspaceServiceTest {
   public void moveDocumentFailureNotCounted() {
     when(folderManager.getRootFolderForUser(user)).thenReturn(root);
     when(folderManager.getFolder(TARGET_FOLDER_ID, user)).thenReturn(target);
-    commonMocks(user, target, doc);
+    when(baseRecordManager.get(RECORD_ID, user)).thenReturn(doc);
+    when(recordManager.exists(RECORD_ID)).thenReturn(true);
+    when(recordManager.get(RECORD_ID)).thenReturn(doc);
+    when(recordManager.isSharedNotebookWithoutCreatePermission(user, target))
+            .thenReturn(false);
     mockHasMovePermission(true);
     mockFail();
 
@@ -345,6 +346,8 @@ public class WorkspaceServiceTest {
     when(recordManager.get(RECORD_ID)).thenReturn(doc);
     when(recordManager.isSharedNotebookWithoutCreatePermission(user, sharedTarget))
         .thenReturn(false);
+    when(folderManager.getRootFolderForUser(any(User.class)))
+            .thenReturn(root);
   }
 
   private Folder folder(long id) {
