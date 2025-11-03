@@ -13,14 +13,12 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.testutils.SpringTransactionalTest;
-import com.researchspace.webapp.controller.WorkspaceController;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class SharingHandlerTest extends SpringTransactionalTest {
 
   private @Autowired SharingHandler sharingHandler;
-  private @Autowired WorkspaceController workspaceController;
 
   @Test
   public void shareIntoSharedFolder() {
@@ -54,7 +52,7 @@ public class SharingHandlerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void shareIntoSharedNotebook() {
+  public void shareIntoSharedNotebook() throws InterruptedException {
     User admin = createAndSaveAPi();
     initialiseContentWithEmptyContent(admin);
     logoutAndLoginAs(admin);
@@ -75,9 +73,8 @@ public class SharingHandlerTest extends SpringTransactionalTest {
         grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
     flushDatabaseState();
 
-    Long notebookId =
-        workspaceController.createNotebook(
-            sharedGroupFolder.getId(), "notebook", new MockPrincipal(admin));
+    long notebookId =
+        createNotebookWithNEntries(sharedGroupFolder.getId(), "notebook", 0, admin).getId();
     flushDatabaseState();
 
     sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedGroupFolder, notebookId, null);
