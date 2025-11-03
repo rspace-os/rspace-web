@@ -20,12 +20,9 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FormManager;
-import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordManager;
-import com.researchspace.service.SharingHandler;
+import com.researchspace.service.WorkspaceService;
 import com.researchspace.testutils.SpringTransactionalTest;
-import com.researchspace.webapp.controller.WorkspaceController;
-import com.researchspace.webapp.controller.WorkspaceHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -37,10 +34,7 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
   @Autowired private RecordApiManager recordApiMgr;
   @Autowired private RecordManager recordMgr;
   @Autowired private FormManager formMgr;
-  @Autowired private GroupManager groupManager;
-  @Autowired private SharingHandler recordShareHandler;
-  @Autowired private WorkspaceHandler workspaceHandler;
-  @Autowired private WorkspaceController workspaceController;
+  @Autowired private WorkspaceService workspaceService;
   @Mock private AuditTrailService auditTrailService;
 
   private User testUser;
@@ -98,14 +92,11 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
         grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
     flushDatabaseState();
 
-    Long notebookId =
-        Long.valueOf(
-            workspaceController.createNotebookAndRedirect(
-                    sharedGroupFolder.getId(), "notebook", null, new MockPrincipal(admin))
-                .split("/")[2]
-                .split("\\?")[0]);
-
-    flushDatabaseState();
+    long notebookId =
+        workspaceService
+            .createNotebook(
+                "notebook", sharedGroupFolder.getId(), sharedGroupFolder.getParent().getId(), admin)
+            .getNotebookId();
     final Notebook sharedNotebook = folderMgr.getNotebook(notebookId);
     assertTrue(sharedNotebook.isShared());
 

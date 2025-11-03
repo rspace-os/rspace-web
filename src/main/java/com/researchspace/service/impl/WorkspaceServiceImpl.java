@@ -1,10 +1,13 @@
 package com.researchspace.service.impl;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailService;
+import com.researchspace.model.audittrail.CreateAuditEvent;
 import com.researchspace.model.audittrail.MoveAuditEvent;
 import com.researchspace.model.dto.SharingResult;
+import com.researchspace.model.dtos.NotebookCreationResult;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
@@ -13,6 +16,7 @@ import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordManager;
@@ -24,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Partial refactoring of WorkspaceController code into the service layer so that it can be used by
@@ -87,6 +92,41 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       }
     }
     return results;
+  }
+
+  @Override
+  @Transactional
+  public NotebookCreationResult createNotebook(
+      String notebookName, Long parentId, Long grandparentId, User user) {
+    Folder parent = folderManager.getFolder(parentId, user);
+
+    Long targetFolderId = parentId;
+    if (parent != null && parent.isSharedFolder()) {
+      targetFolderId = folderManager.getRootFolderForUser(user).getId();
+    }
+
+    Notebook created =
+        folderManager.createNewNotebook(
+            targetFolderId, notebookName, new DefaultRecordContext(), user);
+
+    auditService.notify(new CreateAuditEvent(user, created, notebookName));
+
+    String sharedWithGroupDisplayName = null;
+    Long effectiveGrandParentId;
+    if (parent != null && parent.isSharedFolder()) {
+      List<RecordGroupSharing> sharedWithGroup =
+          recordShareHandler.shareIntoSharedFolderOrNotebook(
+              user, parent, created.getId(), grandparentId);
+      if (sharedWithGroup != null && !sharedWithGroup.isEmpty()) {
+        sharedWithGroupDisplayName = sharedWithGroup.get(0).getSharee().getDisplayName();
+      }
+      effectiveGrandParentId = (grandparentId != null) ? grandparentId : parent.getId();
+    } else {
+      effectiveGrandParentId = (grandparentId != null) ? grandparentId : targetFolderId;
+    }
+
+    return new NotebookCreationResult(
+        created.getId(), effectiveGrandParentId, sharedWithGroupDisplayName);
   }
 
   private void validateMove(List<Long> idsToMove, Long sourceFolderId, User user, Folder target) {
