@@ -1330,7 +1330,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     Folder regularUserRoot = folderMgr.getRootFolderForUser(regularUser);
 
     StructuredDocument docToShare = createBasicDocumentInRootFolderWithText(regularUser, "anytext");
-    SharePost toPost = createValidSharePostWithGroup(group, docToShare, "EDIT");
+    SharePost toPost = createValidSharePostWithGroup(group, docToShare, group.getGroup().getCommunalGroupFolderId());
     String apiKey = createNewApiKeyForUser(regularUser);
 
     // regular user shares a Doc into Group_shared_folder
@@ -1373,14 +1373,15 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   }
 
   private SharePost createValidSharePostWithGroup(
-      TestGroup testGrp1, BaseRecord toShare, String permission) {
+      TestGroup testGrp1, BaseRecord toShare, Long sharedFolderId) {
     SharePost toPost =
         SharePost.builder()
             .itemToShare(toShare.getId())
             .groupSharePostItem(
                 GroupSharePostItem.builder()
                     .id(testGrp1.getGroup().getId())
-                    .permission(permission)
+                    .permission("EDIT")
+                    .sharedFolderId(sharedFolderId)
                     .build())
             .build();
     return toPost;
@@ -2400,5 +2401,46 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals("notebookTag", foundTagDTOs.get(1).getTagMetaData());
     assertEquals(testDoc2.getId(), foundTagDTOs.get(2).getRecordId());
     assertEquals("docTag", foundTagDTOs.get(2).getTagMetaData());
+  }
+
+  @Test
+  public void testPiSharesDocToGroupSubFolderThenMovesToGroupRoot() throws Exception {
+    // Create a group with a PI and log in as PI
+    TestGroup group = createTestGroup(2);
+    User piUser = group.getPi();
+    logoutAndLoginAs(piUser);
+
+    // Create a new document in PI’s own workspace
+    Folder piRoot = folderMgr.getRootFolderForUser(piUser);
+    StructuredDocument doc = createBasicDocumentInFolder(piUser, piRoot, "some text");
+
+    // Share the document to a group sub-folder
+    Long sharedFolderRootId = group.getGroup().getCommunalGroupFolderId();
+    Folder sharedFolderRoot = folderMgr.getFolder(sharedFolderRootId, piUser);
+    Folder sharedSubFolder = createSubFolder(sharedFolderRoot, "shared sub folder", piUser);
+    SharePost sharePost = createValidSharePostWithGroup(group, doc, sharedSubFolder.getId());
+    String apiKey = createNewApiKeyForUser(piUser);
+
+    mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/share", piUser, sharePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    // Move the doc to the top-level shared folder
+    MvcResult moveResult = mockMvc
+            .perform(
+                    post("/workspace/ajax/move")
+                            .param("parentFolderId", sharedSubFolder.getId() + "")
+                            .param("toMove[]", doc.getId() + "")
+                            .param("target", sharedFolderRootId + "")
+                            .principal(new MockPrincipal(piUser.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(moveResult.getResolvedException());
+
+    Record movedToSharedRoot = recordMgr.get(doc.getId());
+    assertTrue(movedToSharedRoot.getParentFolders().contains(sharedFolderRoot));
+    assertFalse(movedToSharedRoot.getParentFolders().contains(sharedSubFolder));
   }
 }

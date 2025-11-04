@@ -67,6 +67,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     this.permissionChecker = permissionChecker;
   }
 
+  @Override
+  @Transactional
   public List<ServiceOperationResult<? extends BaseRecord>> moveRecords(
       List<Long> idsToMove,
       String targetFolderId,
