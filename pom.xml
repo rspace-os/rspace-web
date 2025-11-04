@@ -3063,7 +3063,7 @@
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
-    <spotless.version>2.43.0</spotless.version>
+    <spotless.version>3.0.0</spotless.version>
     <npm.dependencies.collection.arg>install --force</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
