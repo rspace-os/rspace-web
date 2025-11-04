@@ -168,8 +168,7 @@ public class WorkspaceServiceTest {
     when(baseRecordManager.get(RECORD_ID, user)).thenReturn(doc);
     when(recordManager.exists(RECORD_ID)).thenReturn(true);
     when(recordManager.get(RECORD_ID)).thenReturn(doc);
-    when(recordManager.isSharedNotebookWithoutCreatePermission(user, target))
-            .thenReturn(false);
+    when(recordManager.isSharedNotebookWithoutCreatePermission(user, target)).thenReturn(false);
     mockHasMovePermission(true);
     mockFail();
 
@@ -346,8 +345,7 @@ public class WorkspaceServiceTest {
     when(recordManager.get(RECORD_ID)).thenReturn(doc);
     when(recordManager.isSharedNotebookWithoutCreatePermission(user, sharedTarget))
         .thenReturn(false);
-    when(folderManager.getRootFolderForUser(any(User.class)))
-            .thenReturn(root);
+    when(folderManager.getRootFolderForUser(any(User.class))).thenReturn(root);
   }
 
   private Folder folder(long id) {
