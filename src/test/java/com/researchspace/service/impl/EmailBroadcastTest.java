@@ -54,7 +54,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     @Override
     RetryConfig buildRetryConfig() {
       return RetryConfig.custom()
-          .maxAttempts(1) // remove retries from test stubs to avoid waiting
+          .maxAttempts(1)
           .build();
     }
   }
