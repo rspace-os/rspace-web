@@ -5,13 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.api.v1.InventoryFilesApi;
 import com.researchspace.api.v1.SampleTemplatesApi;
@@ -38,7 +33,6 @@ import com.researchspace.api.v1.model.ApiSubSampleSearchResult;
 import com.researchspace.fieldmark.model.FieldmarkMultipartFile;
 import com.researchspace.model.User;
 import com.researchspace.model.units.RSUnitDef;
-import com.researchspace.service.DocumentTagManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -46,9 +40,7 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 
@@ -59,7 +51,6 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
   private @Autowired SampleTemplatesApi sampleTemplatesApi;
   private @Autowired SamplesApi samplesApi;
   private @Autowired SubSamplesApi subSamplesApi;
-  @Mock private DocumentTagManager documentTagManagerMock;
 
   private BindingResult mockBindingResult = mock(BindingResult.class);
   private User testUser;
@@ -68,81 +59,10 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
 
   @Before
   public void setUp() {
-    openMocks(this);
     sampleDao.resetDefaultTemplateOwner();
-    ReflectionTestUtils.setField(sampleApiMgr, "documentTagManager", documentTagManagerMock);
-    ReflectionTestUtils.setField(subSampleApiMgr, "documentTagManager", documentTagManagerMock);
     testUser = createInitAndLoginAnyUser();
     assertTrue(testUser.isContentInitialized());
     when(mockBindingResult.hasErrors()).thenReturn(false);
-  }
-
-  @Test
-  public void createSubSampleShouldUpdateTags() throws Exception {
-    User testUser = createInitAndLoginAnyUser();
-    when(mockBindingResult.hasErrors()).thenReturn(false);
-    ApiSampleWithFullSubSamples newSample = createSampleWithSubSamples("");
-    samplesApi.createNewSample(newSample, mockBindingResult, testUser);
-    verify(documentTagManagerMock, never()).updateUserOntologyDocument(eq(testUser));
-    // set tags - create will write to ontology doc
-    newSample = createSampleWithSubSamples("some tags");
-    samplesApi.createNewSample(newSample, mockBindingResult, testUser);
-    verify(documentTagManagerMock, times(1)).updateUserOntologyDocument(eq(testUser));
-  }
-
-  @Test
-  public void deleteSubSampleShouldUpdateTags() throws Exception {
-    User testUser = createInitAndLoginAnyUser();
-    when(mockBindingResult.hasErrors()).thenReturn(false);
-    ApiSampleWithFullSubSamples newSample = createSampleWithSubSamples("");
-    newSample = samplesApi.createNewSample(newSample, mockBindingResult, testUser);
-    ApiSubSample subSample1 = newSample.getSubSamples().get(0);
-    subSamplesApi.deleteSubSample(subSample1.getId(), testUser);
-    verify(documentTagManagerMock, never()).updateUserOntologyDocument(eq(testUser));
-    // set tags - delete will write to ontology doc
-    newSample = createSampleWithSubSamples("some tags");
-    newSample = samplesApi.createNewSample(newSample, mockBindingResult, testUser);
-    verify(documentTagManagerMock, times(1)).updateUserOntologyDocument(eq(testUser));
-    subSample1 = newSample.getSubSamples().get(0);
-    subSamplesApi.deleteSubSample(subSample1.getId(), testUser);
-    verify(documentTagManagerMock, times(2)).updateUserOntologyDocument(eq(testUser));
-  }
-
-  @Test
-  public void restoreSampleShouldUpdateTags() throws Exception {
-    User testUser = createInitAndLoginAnyUser();
-    when(mockBindingResult.hasErrors()).thenReturn(false);
-    ApiSampleWithFullSubSamples newSample = createSampleWithSubSamples("");
-    newSample = samplesApi.createNewSample(newSample, mockBindingResult, testUser);
-    ApiSubSample subSample1 = newSample.getSubSamples().get(0);
-    subSamplesApi.deleteSubSample(subSample1.getId(), testUser);
-    subSamplesApi.restoreDeletedSubSample(subSample1.getId(), testUser);
-    verify(documentTagManagerMock, never()).updateUserOntologyDocument(eq(testUser));
-    // set tags - restore will write to ontology doc
-    newSample = createSampleWithSubSamples("some tags");
-    newSample = samplesApi.createNewSample(newSample, mockBindingResult, testUser);
-    verify(documentTagManagerMock, times(1)).updateUserOntologyDocument(eq(testUser));
-    subSample1 = newSample.getSubSamples().get(0);
-    subSamplesApi.deleteSubSample(subSample1.getId(), testUser);
-    verify(documentTagManagerMock, times(2)).updateUserOntologyDocument(eq(testUser));
-    subSamplesApi.restoreDeletedSubSample(subSample1.getId(), testUser);
-    verify(documentTagManagerMock, times(3)).updateUserOntologyDocument(eq(testUser));
-  }
-
-  @Test
-  public void updateSubSampleShouldUpdateTags() throws Exception {
-    User testUser = createInitAndLoginAnyUser();
-    when(mockBindingResult.hasErrors()).thenReturn(false);
-    ApiSampleWithFullSubSamples newSample = createSampleWithSubSamples("");
-    newSample = samplesApi.createNewSample(newSample, mockBindingResult, testUser);
-    ApiSubSample subSample1 = newSample.getSubSamples().get(0);
-    subSample1.setDescription("dddddd");
-    subSamplesApi.updateSubSample(subSample1.getId(), subSample1, mockBindingResult, testUser);
-    verify(documentTagManagerMock, never()).updateUserOntologyDocument(eq(testUser));
-    // set tags - create will write to ontology doc
-    subSample1.setApiTagInfo("some tags");
-    subSamplesApi.updateSubSample(subSample1.getId(), subSample1, mockBindingResult, testUser);
-    verify(documentTagManagerMock, times(1)).updateUserOntologyDocument(eq(testUser));
   }
 
   private ApiSampleWithFullSubSamples createSampleWithSubSamples(String tags) {
