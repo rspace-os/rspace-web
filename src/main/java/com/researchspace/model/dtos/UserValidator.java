@@ -238,11 +238,14 @@ public class UserValidator implements Validator {
           errors,
           "password",
           ERRORS_MAXLENGTH_KEY,
-          new Object[] {"Password", User.DEFAULT_MAXFIELD_LEN + ""});
+          new Object[] {"Password", User.MAX_PWD_LENGTH + ""});
     }
     if (!passwordHasValidCharacters(password)) {
       return addToErrorsAndGetMessage(
-          errors, "password", "errors.invalidpwd", new Object[] {User.MIN_PWD_LENGTH});
+          errors,
+          "password",
+          "errors.invalidpwd",
+          new Object[] {User.MIN_PWD_LENGTH, User.MAX_PWD_LENGTH});
     }
     if (!passwordIsValid(password)) {
       return addToErrorsAndGetMessage(errors, "password", "errors.password.insecurepassword", null);
@@ -258,7 +261,7 @@ public class UserValidator implements Validator {
   }
 
   private boolean passwordTooLong(String pwd) {
-    return pwd.length() > User.DEFAULT_MAXFIELD_LEN;
+    return pwd.length() > User.MAX_PWD_LENGTH;
   }
 
   private boolean passwordHasValidCharacters(String pword) {
