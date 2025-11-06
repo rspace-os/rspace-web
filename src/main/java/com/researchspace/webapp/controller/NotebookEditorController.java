@@ -27,7 +27,6 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Set;
-import javax.servlet.http.HttpSession;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -71,9 +70,9 @@ public class NotebookEditorController extends BaseController {
       @RequestParam(value = "settingsKey", required = false) String settingsKey,
       @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Model model,
-      HttpSession session,
       Principal principal)
       throws AuthorizationException {
+
     Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = userManager.getUserByUsername(principal.getName());
     Notebook notebook = folderManager.getNotebook(notebookId);
@@ -99,21 +98,21 @@ public class NotebookEditorController extends BaseController {
       }
     }
 
-    ActionPermissionsDTO permDTO = new ActionPermissionsDTO();
+    // in some cases we can deduct useful grandParentId
     if (grandParentId == null) {
       if (notebook.getOwnerOrSharedParentForUser(user).isPresent()) {
         grandParentId = notebook.getOwnerOrSharedParentForUser(user).get().getId();
-      } else {
-        throw new IllegalStateException(
-            "Cannot infer shared context for Notebook with ID=["
-                + notebook.getId()
-                + "], as \"grandParentId\" param is not set");
       }
     }
-    permDTO.setCreateRecord(
-        user.equals(notebook.getOwner())
-            || (folderManager.isFolderInSharedTree(notebook, grandParentId, user)
-                && permissionUtils.isPermitted(notebook, PermissionType.WRITE, user)));
+
+    ActionPermissionsDTO permDTO = new ActionPermissionsDTO();
+    boolean createRecordPerm =
+        grandParentId != null
+            && (user.equals(notebook.getOwner())
+                || (folderManager.isFolderInSharedTree(notebook, grandParentId, user)
+                    && permissionUtils.isPermitted(notebook, PermissionType.WRITE, user)));
+    permDTO.setCreateRecord(createRecordPerm);
+
     // this is a quick fix, we need to hook into permissions system so that
     // shared notebook entries can't be deleted by PI/admin in the way that other shared content
     // can be deleted from shared folders
@@ -148,7 +147,7 @@ public class NotebookEditorController extends BaseController {
 
     Folder rootRecord = folderManager.getRootFolderForUser(user);
     Folder notebookparent = null;
-    if (isValidSettingsKey(settingsKey)) {
+    if (isValidSettingsKey(settingsKey) && grandParentId != null) {
       notebookparent = folderManager.getFolder(grandParentId, user);
     }
     Breadcrumb bcrumb =

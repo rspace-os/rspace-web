@@ -2446,4 +2446,60 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertTrue(movedToSharedRoot.getParentFolders().contains(sharedFolderRoot));
     assertFalse(movedToSharedRoot.getParentFolders().contains(sharedSubFolder));
   }
+
+  @Test
+  public void testPiAttemptsToMoveSharedDocIntoSharedNotebookOwnedBySameUser() throws Exception {
+    // Create a group with a PI and a regular member
+    TestGroup group = createTestGroup(2);
+    User piUser = group.getPi();
+    User regularUser = group.getUserByPrefix("u1");
+
+    logoutAndLoginAs(regularUser);
+
+    // Create notebook as regular user in shared location
+    Long sharedFolderRootId = group.getGroup().getCommunalGroupFolderId();
+    Folder sharedFolderRoot = folderMgr.getFolder(sharedFolderRootId, regularUser);
+    String sharedNbName = "member-shared-notebook";
+    MvcResult res = mockMvc
+        .perform(
+            post("/workspace/create_notebook/{rootid}", sharedFolderRoot.getId())
+                .principal(new MockPrincipal(regularUser.getUsername()))
+                .param("notebookNameField", sharedNbName))
+        .andExpect(status().isFound())
+        .andReturn();
+
+    long notebookId = Long.parseLong(res.getResponse().getRedirectedUrl().split("[/?]")[2]);
+
+    // regular member creates a new doc in own workspace and shares it to the group shared folder
+    Folder regularUserRoot = folderMgr.getRootFolderForUser(regularUser);
+    StructuredDocument doc = createBasicDocumentInFolder(regularUser, regularUserRoot, "some text");
+    SharePost sharePostForDoc = createValidSharePostWithGroup(group, doc, sharedFolderRoot.getId());
+    String regUserApiKey = createNewApiKeyForUser(regularUser);
+
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(regUserApiKey, "/share", regularUser, sharePostForDoc))
+        .andExpect(status().isCreated())
+        .andReturn();
+
+    // Now login as PI and attempt to move the member-owned shared doc into the member-owned shared
+    // notebook
+    logoutAndLoginAs(piUser);
+    MvcResult moveIntoNotebookResult =
+        mockMvc
+            .perform(
+                post("/workspace/ajax/move")
+                    .param("parentFolderId", sharedFolderRoot.getId() + "")
+                    .param("toMove[]", doc.getId() + "")
+                    .param("target", notebookId + "")
+                    .principal(new MockPrincipal(piUser.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    // Verify error message
+    assertNull(moveIntoNotebookResult.getResolvedException());
+    ModelMap modelMap = moveIntoNotebookResult.getModelAndView().getModelMap();
+    Object errorMsg = modelMap.get("errorMsg");
+    assertTrue(errorMsg.toString().contains("A shared document owned by a specific user cannot be shared into a notebook owned by the same user"));
+  }
 }
