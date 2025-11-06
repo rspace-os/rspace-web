@@ -438,7 +438,13 @@
 						<fmt:message key="dialogs.changePassword.label.new"></fmt:message>
 					</label>
 				</td>
-				<td><input type="password" value="" id="newPasswordInput" class="form-control" /></td>
+				<td style="display: flex; flex-direction: column;">
+                    <input type="password" value="" id="newPasswordInput" class="form-control"
+                           pattern="[ -~]{8,50}"
+                           title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"
+                    />
+                    <p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+                </td>
 			</tr>
 			<tr>
 				<td>

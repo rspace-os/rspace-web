@@ -95,22 +95,25 @@
             <form:input id="username" type="text" 
                         path="username"
                         readonly="true"
+                        pattern="[a-zA-Z0-9]{6,50}"
                         class="form-control rs-field__input" />
           </rst:hasDeploymentProperty>
           <div class="rs-field__icon glyphicon glyphicon-user"></div>
+          <p class="form-text">6 - 50 characters. Only numbers and letters are allowed.</p>
           <form:errors class="rs-tooltip error" path="username"></form:errors>
         </div>
 
         <rst:hasDeploymentProperty name="standalone" value="true">
           <div class="form-group col-lg-12 rs-field rs-field--input">
-            <label for="password" class="sr-only">Create a Password</label>
+            <label for="password" class="sr-only">Create a Password (8 - 50 characters). Numbers, letters, spaces and special characters are allowed.</label>
             <form:input id="password" type="password" 
                         path="password"
-                        placeholder="Create a Password" 
+                        placeholder="Create a Password"
                         required="required"
-                        pattern="[A-Za-z0-9@\.]{8,255}" 
-                        title="Minimum 8, max 255 alphanumeric characters"
+                        pattern="[ -~]{8,50}"
+                        title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
                         class="form-control rs-field__input"/>
+            <p class="form-text">8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
             <div class="rs-field__icon glyphicon fa-key"></div>
             <form:errors class="rs-tooltip error" path="password"></form:errors>
           </div>
@@ -121,8 +124,8 @@
                         path="confirmPassword" 
                         placeholder="Confirm Password" 
                         required="required"
-                        pattern="[A-Za-z0-9@\.]{8,255}" 
-                        title="Minimum 8, max 255 alphanumeric characters"
+                        pattern="[ -~]{8,50}"
+                        title="Confirm Password"
                         class="form-control rs-field__input"/>
             <div class="rs-field__icon glyphicon fa-key"></div>
             <form:errors class="rs-tooltip error" path="confirmPassword"></form:errors>

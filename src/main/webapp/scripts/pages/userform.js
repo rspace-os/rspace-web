@@ -217,7 +217,6 @@ function initChangePasswordDialog(){
           $("#changePasswordDialog").dialog('close');
         },
         Save: function (){
-    
           var currentPassword = $("#currentPasswordInput").val();
           var newPassword   = $("#newPasswordInput").val();
           var confirmPassword = $("#newPasswordConfirm").val();
