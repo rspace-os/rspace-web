@@ -2460,13 +2460,14 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     Long sharedFolderRootId = group.getGroup().getCommunalGroupFolderId();
     Folder sharedFolderRoot = folderMgr.getFolder(sharedFolderRootId, regularUser);
     String sharedNbName = "member-shared-notebook";
-    MvcResult res = mockMvc
-        .perform(
-            post("/workspace/create_notebook/{rootid}", sharedFolderRoot.getId())
-                .principal(new MockPrincipal(regularUser.getUsername()))
-                .param("notebookNameField", sharedNbName))
-        .andExpect(status().isFound())
-        .andReturn();
+    MvcResult res =
+        mockMvc
+            .perform(
+                post("/workspace/create_notebook/{rootid}", sharedFolderRoot.getId())
+                    .principal(new MockPrincipal(regularUser.getUsername()))
+                    .param("notebookNameField", sharedNbName))
+            .andExpect(status().isFound())
+            .andReturn();
 
     long notebookId = Long.parseLong(res.getResponse().getRedirectedUrl().split("[/?]")[2]);
 
@@ -2500,6 +2501,11 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertNull(moveIntoNotebookResult.getResolvedException());
     ModelMap modelMap = moveIntoNotebookResult.getModelAndView().getModelMap();
     Object errorMsg = modelMap.get("errorMsg");
-    assertTrue(errorMsg.toString().contains("A shared document owned by a specific user cannot be shared into a notebook owned by the same user"));
+    assertTrue(
+        errorMsg
+            .toString()
+            .contains(
+                "A shared document owned by a specific user cannot be shared into a notebook owned"
+                    + " by the same user"));
   }
 }
