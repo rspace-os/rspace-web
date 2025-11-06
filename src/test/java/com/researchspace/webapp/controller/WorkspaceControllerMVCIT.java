@@ -1330,7 +1330,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     Folder regularUserRoot = folderMgr.getRootFolderForUser(regularUser);
 
     StructuredDocument docToShare = createBasicDocumentInRootFolderWithText(regularUser, "anytext");
-    SharePost toPost = createValidSharePostWithGroup(group, docToShare, "EDIT");
+    SharePost toPost =
+        createValidSharePostWithGroup(
+            group, docToShare, group.getGroup().getCommunalGroupFolderId());
     String apiKey = createNewApiKeyForUser(regularUser);
 
     // regular user shares a Doc into Group_shared_folder
@@ -1373,14 +1375,15 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   }
 
   private SharePost createValidSharePostWithGroup(
-      TestGroup testGrp1, BaseRecord toShare, String permission) {
+      TestGroup testGrp1, BaseRecord toShare, Long sharedFolderId) {
     SharePost toPost =
         SharePost.builder()
             .itemToShare(toShare.getId())
             .groupSharePostItem(
                 GroupSharePostItem.builder()
                     .id(testGrp1.getGroup().getId())
-                    .permission(permission)
+                    .permission("EDIT")
+                    .sharedFolderId(sharedFolderId)
                     .build())
             .build();
     return toPost;
@@ -2400,5 +2403,103 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals("notebookTag", foundTagDTOs.get(1).getTagMetaData());
     assertEquals(testDoc2.getId(), foundTagDTOs.get(2).getRecordId());
     assertEquals("docTag", foundTagDTOs.get(2).getTagMetaData());
+  }
+
+  @Test
+  public void testPiSharesDocToGroupSubFolderThenMovesToGroupRoot() throws Exception {
+    // Create a group with a PI and log in as PI
+    TestGroup group = createTestGroup(2);
+    User piUser = group.getPi();
+    logoutAndLoginAs(piUser);
+
+    // Create a new document in PI’s own workspace
+    Folder piRoot = folderMgr.getRootFolderForUser(piUser);
+    StructuredDocument doc = createBasicDocumentInFolder(piUser, piRoot, "some text");
+
+    // Share the document to a group sub-folder
+    Long sharedFolderRootId = group.getGroup().getCommunalGroupFolderId();
+    Folder sharedFolderRoot = folderMgr.getFolder(sharedFolderRootId, piUser);
+    Folder sharedSubFolder = createSubFolder(sharedFolderRoot, "shared sub folder", piUser);
+    SharePost sharePost = createValidSharePostWithGroup(group, doc, sharedSubFolder.getId());
+    String apiKey = createNewApiKeyForUser(piUser);
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/share", piUser, sharePost))
+        .andExpect(status().isCreated())
+        .andReturn();
+
+    // Move the doc to the top-level shared folder
+    MvcResult moveResult =
+        mockMvc
+            .perform(
+                post("/workspace/ajax/move")
+                    .param("parentFolderId", sharedSubFolder.getId() + "")
+                    .param("toMove[]", doc.getId() + "")
+                    .param("target", sharedFolderRootId + "")
+                    .principal(new MockPrincipal(piUser.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(moveResult.getResolvedException());
+
+    Record movedToSharedRoot = recordMgr.get(doc.getId());
+    assertTrue(movedToSharedRoot.getParentFolders().contains(sharedFolderRoot));
+    assertFalse(movedToSharedRoot.getParentFolders().contains(sharedSubFolder));
+  }
+
+  @Test
+  public void testPiAttemptsToMoveSharedDocIntoSharedNotebookOwnedBySameUser() throws Exception {
+    // Create a group with a PI and a regular member
+    TestGroup group = createTestGroup(2);
+    User piUser = group.getPi();
+    User regularUser = group.getUserByPrefix("u1");
+
+    logoutAndLoginAs(regularUser);
+
+    // Create notebook as regular user in shared location
+    Long sharedFolderRootId = group.getGroup().getCommunalGroupFolderId();
+    Folder sharedFolderRoot = folderMgr.getFolder(sharedFolderRootId, regularUser);
+    String sharedNbName = "member-shared-notebook";
+    MvcResult res = mockMvc
+        .perform(
+            post("/workspace/create_notebook/{rootid}", sharedFolderRoot.getId())
+                .principal(new MockPrincipal(regularUser.getUsername()))
+                .param("notebookNameField", sharedNbName))
+        .andExpect(status().isFound())
+        .andReturn();
+
+    long notebookId = Long.parseLong(res.getResponse().getRedirectedUrl().split("[/?]")[2]);
+
+    // regular member creates a new doc in own workspace and shares it to the group shared folder
+    Folder regularUserRoot = folderMgr.getRootFolderForUser(regularUser);
+    StructuredDocument doc = createBasicDocumentInFolder(regularUser, regularUserRoot, "some text");
+    SharePost sharePostForDoc = createValidSharePostWithGroup(group, doc, sharedFolderRoot.getId());
+    String regUserApiKey = createNewApiKeyForUser(regularUser);
+
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(regUserApiKey, "/share", regularUser, sharePostForDoc))
+        .andExpect(status().isCreated())
+        .andReturn();
+
+    // Now login as PI and attempt to move the member-owned shared doc into the member-owned shared
+    // notebook
+    logoutAndLoginAs(piUser);
+    MvcResult moveIntoNotebookResult =
+        mockMvc
+            .perform(
+                post("/workspace/ajax/move")
+                    .param("parentFolderId", sharedFolderRoot.getId() + "")
+                    .param("toMove[]", doc.getId() + "")
+                    .param("target", notebookId + "")
+                    .principal(new MockPrincipal(piUser.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    // Verify error message
+    assertNull(moveIntoNotebookResult.getResolvedException());
+    ModelMap modelMap = moveIntoNotebookResult.getModelAndView().getModelMap();
+    Object errorMsg = modelMap.get("errorMsg");
+    assertTrue(errorMsg.toString().contains("A shared document owned by a specific user cannot be shared into a notebook owned by the same user"));
   }
 }
