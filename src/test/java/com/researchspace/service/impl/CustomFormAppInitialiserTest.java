@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,13 +23,11 @@ import com.researchspace.service.FormManager;
 import com.researchspace.service.IconImageManager;
 import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import org.apache.commons.io.input.NullInputStream;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.subject.Subject;
-import org.apache.shiro.subject.SubjectContext;
+import org.apache.shiro.util.ThreadContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,7 +45,6 @@ public class CustomFormAppInitialiserTest {
   @Mock private FormDao formDao;
   @Mock private UserDao userdao;
   @Mock private FormManager formManager;
-  @Mock private SecurityManager securityManagerMock;
   @Mock private Subject subjectMock;
   @Mock private User mockUser;
   @Mock private RSForm ontologyFormMock;
@@ -59,24 +55,13 @@ public class CustomFormAppInitialiserTest {
 
   @BeforeEach
   public void initEach() throws IOException {
-    InputStream is = new NullInputStream();
-    SecurityUtils.setSecurityManager(securityManagerMock);
-    lenient()
-        .when(securityManagerMock.createSubject(any(SubjectContext.class)))
-        .thenReturn(subjectMock);
-    lenient().when(userdao.getUserByUsername(any(String.class))).thenReturn(mockUser);
-    lenient().when(mockUser.getUsername()).thenReturn("sysadmin1");
-    // simulate a pre-existing ontologies form
-    lenient()
-        .when(formDao.findOldestFormByNameForCreator(eq(ONTOLOGY_FORM_NAME), anyString()))
-        .thenReturn(ontologyFormMock);
-    lenient()
-        .when(mockAppContext.getResource(eq("classpath:formIcons/" + ONTOLOGY_PNG)))
-        .thenReturn(mockResource);
-    lenient().when(mockResource.getInputStream()).thenReturn(is);
-    lenient()
-        .when(iconImageManagerMock.saveIconEntity(any(IconEntity.class), eq(true)))
-        .thenReturn(mockIconEntiy);
+    // Bind a thread-local mocked subject to avoid mutating the global SecurityManager
+    ThreadContext.bind(subjectMock);
+  }
+
+  @AfterEach
+  public void tearDownEach() {
+    ThreadContext.unbindSubject();
   }
 
   @Test
@@ -90,10 +75,16 @@ public class CustomFormAppInitialiserTest {
   }
 
   @Test
-  public void shouldCreateOntologyFormIfDoesntExist() {
+  public void shouldCreateOntologyFormIfDoesntExist() throws IOException {
+    when(userdao.getUserByUsername(any(String.class))).thenReturn(mockUser);
+    when(mockUser.getUsername()).thenReturn("sysadmin1");
+    when(mockAppContext.getResource(eq("classpath:formIcons/" + ONTOLOGY_PNG)))
+        .thenReturn(mockResource);
+    when(mockResource.getInputStream()).thenReturn(new NullInputStream());
+    when(iconImageManagerMock.saveIconEntity(any(IconEntity.class), eq(true)))
+        .thenReturn(mockIconEntiy);
     // simulate no pre-existing ontologies form
-    lenient()
-        .when(formDao.findOldestFormByNameForCreator(eq(ONTOLOGY_FORM_NAME), anyString()))
+    when(formDao.findOldestFormByNameForCreator(eq(ONTOLOGY_FORM_NAME), anyString()))
         .thenReturn(null);
     ArgumentCaptor<RSForm> captor = ArgumentCaptor.forClass(RSForm.class);
     testee.onAppStartup(mockAppContext);

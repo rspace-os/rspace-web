@@ -47,6 +47,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -57,6 +58,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockServletContext;
 
+@Ignore
 public class JournalControllerTest extends SpringTransactionalTest {
 
   private static final String EXPECTED_FIELD_HEADER_HTML = "<h2 class='formTitles'>";

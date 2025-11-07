@@ -15,11 +15,9 @@ import com.researchspace.service.UserManager;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.subject.Subject;
-import org.apache.shiro.subject.SubjectContext;
 import org.apache.shiro.util.ThreadContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,18 +41,22 @@ public class GroupSharedSnippetsFolderAppInitialiserTest {
 
   @BeforeEach
   public void setup() throws IOException {
-    ThreadContext
-        .unbindSubject(); // Need this else the first subject created is bound and re-used in all
-    // tests!
-    SecurityUtils.setSecurityManager(securityManagerMock);
+    ThreadContext.unbindSubject(); // ensure clean start
+    // Bind a thread-local Subject instead of mutating the global SecurityManager
+    ThreadContext.bind(subjectMock);
+
     testee = new GroupSharedSnippetsFolderAppInitialiser();
-    when(securityManagerMock.createSubject(any(SubjectContext.class))).thenReturn(subjectMock);
     ReflectionTestUtils.setField(testee, "groupManager", groupManagerMock);
     ReflectionTestUtils.setField(testee, "userManager", userManagerMock);
     when(groupManagerMock.list()).thenReturn(List.of(mockGroup));
     when(userManagerMock.getUserByUsername(eq(Constants.SYSADMIN_UNAME))).thenReturn(userMock);
     captor = ArgumentCaptor.forClass(Callable.class);
     when(subjectMock.execute(captor.capture())).thenReturn(true);
+  }
+
+  @AfterEach
+  public void tearDown() {
+    ThreadContext.unbindSubject();
   }
 
   @Test
