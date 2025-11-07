@@ -40,17 +40,19 @@ import org.springframework.orm.ObjectRetrievalFailureException;
 
 @ExtendWith(MockitoExtension.class)
 public class CustomFormAppInitialiserTest {
-  @Mock private ApplicationContext mockAppContext;
-  @Mock private FormDao formDao;
-  @Mock private UserDao userdao;
-  @Mock private FormManager formManager;
   @Mock private Subject subjectMock;
   @Mock private User mockUser;
   @Mock private RSForm ontologyFormMock;
+  @Mock private Resource mockResource;
+  @Mock private IconEntity mockIconEntity;
+
+  @Mock private FormDao formDao;
+  @Mock private UserDao userdao;
+  @Mock private FormManager formManager;
+  @Mock private ApplicationContext mockAppContext;
   @Mock private IconImageManager iconImageManagerMock;
   @InjectMocks private CustomFormAppInitialiser testee;
-  @Mock private Resource mockResource;
-  @Mock private IconEntity mockIconEntiy;
+
 
   @BeforeEach
   public void initEach() {
@@ -96,7 +98,7 @@ public class CustomFormAppInitialiserTest {
         .thenReturn(mockResource);
     when(mockResource.getInputStream()).thenReturn(new NullInputStream());
     when(iconImageManagerMock.saveIconEntity(any(IconEntity.class), eq(true)))
-        .thenReturn(mockIconEntiy);
+        .thenReturn(mockIconEntity);
 
     ArgumentCaptor<RSForm> captor = ArgumentCaptor.forClass(RSForm.class);
     testee.onAppStartup(mockAppContext);
