@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.service.impl.CustomFormAppInitialiser.ONTOLOGY_FORM_NAME;
 import static com.researchspace.service.impl.CustomFormAppInitialiser.ONTOLOGY_PNG;
-import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -54,7 +53,7 @@ public class CustomFormAppInitialiserTest {
   @Mock private IconEntity mockIconEntiy;
 
   @BeforeEach
-  public void initEach() throws IOException {
+  public void initEach() {
     // Bind a thread-local mocked subject to avoid mutating the global SecurityManager
     ThreadContext.bind(subjectMock);
   }
@@ -64,8 +63,20 @@ public class CustomFormAppInitialiserTest {
     ThreadContext.unbindSubject();
   }
 
+  private void userMocks() {
+    when(userdao.getUserByUsername(anyString())).thenReturn(mockUser);
+    when(mockUser.getUsername()).thenReturn("sysadmin1");
+  }
+
   @Test
   public void shouldCreateAFormIfDoesntExist() {
+    userMocks();
+    when(formDao.findOldestFormByNameForCreator(
+            CustomFormAppInitialiser.EQUIPMENT_FORM_NAME, "sysadmin1"))
+        .thenReturn(null);
+    when(formDao.findOldestFormByNameForCreator(ONTOLOGY_FORM_NAME, "sysadmin1"))
+        .thenReturn(ontologyFormMock);
+
     ArgumentCaptor<RSForm> captor = ArgumentCaptor.forClass(RSForm.class);
     testee.onAppStartup(mockAppContext);
     verify(formDao).save(captor.capture());
@@ -76,16 +87,17 @@ public class CustomFormAppInitialiserTest {
 
   @Test
   public void shouldCreateOntologyFormIfDoesntExist() throws IOException {
-    when(userdao.getUserByUsername(any(String.class))).thenReturn(mockUser);
-    when(mockUser.getUsername()).thenReturn("sysadmin1");
-    when(mockAppContext.getResource(eq("classpath:formIcons/" + ONTOLOGY_PNG)))
+    userMocks();
+    when(formDao.findOldestFormByNameForCreator(
+            CustomFormAppInitialiser.EQUIPMENT_FORM_NAME, "sysadmin1"))
+        .thenReturn(null);
+    when(formDao.findOldestFormByNameForCreator(ONTOLOGY_FORM_NAME, "sysadmin1")).thenReturn(null);
+    when(mockAppContext.getResource("classpath:formIcons/" + ONTOLOGY_PNG))
         .thenReturn(mockResource);
     when(mockResource.getInputStream()).thenReturn(new NullInputStream());
     when(iconImageManagerMock.saveIconEntity(any(IconEntity.class), eq(true)))
         .thenReturn(mockIconEntiy);
-    // simulate no pre-existing ontologies form
-    when(formDao.findOldestFormByNameForCreator(eq(ONTOLOGY_FORM_NAME), anyString()))
-        .thenReturn(null);
+
     ArgumentCaptor<RSForm> captor = ArgumentCaptor.forClass(RSForm.class);
     testee.onAppStartup(mockAppContext);
     verify(formDao, times(3)).save(captor.capture());
@@ -96,38 +108,47 @@ public class CustomFormAppInitialiserTest {
         count++;
       }
     }
-    if (count == 2) { // saves form then saves again after setting icon
-      return;
-    }
-    fail("No Ontology form saved to DB on App startup");
+    assertEquals(2, count); // initial save then again after setting the icon
   }
 
   @Test
   public void shouldNotCreateAFormIfAlreadyExistsWithSameVersion() {
+    userMocks();
+
     RSForm existingForm =
         testee.createTransientEquipmentForm(
             "Equipment", "A generic equipment description", mockUser);
+
     when(formDao.findOldestFormByNameForCreator(
-            eq(CustomFormAppInitialiser.EQUIPMENT_FORM_NAME), eq("sysadmin1")))
+            CustomFormAppInitialiser.EQUIPMENT_FORM_NAME, "sysadmin1"))
         .thenReturn(existingForm);
+    // ontology already exists
+    when(formDao.findOldestFormByNameForCreator(eq(ONTOLOGY_FORM_NAME), anyString()))
+        .thenReturn(ontologyFormMock);
+
     testee.onAppStartup(mockAppContext);
     verify(formDao, never()).save(any(RSForm.class));
   }
 
   @Test
   public void shouldUpdateAnExistingFormIfVersionIncremented() {
+    userMocks();
     RSForm existingFormInDB =
         testee.createTransientEquipmentForm(
             "Equipment", "A generic equipment description", mockUser);
-    // faking the situation that there is an existing form with a version lower than the one set
-    // CustomFormAppInitialiser's code.
+    // simulate an existing form with a lower version than CURRENT_VERSION
     existingFormInDB.setVersion(new Version(-1));
     existingFormInDB.setId(1L);
-    when(formManager.getForEditing(any(Long.class), any(User.class), any(UserSessionTracker.class)))
-        .thenReturn(existingFormInDB);
+
     when(formDao.findOldestFormByNameForCreator(
             eq(CustomFormAppInitialiser.EQUIPMENT_FORM_NAME), eq("sysadmin1")))
         .thenReturn(existingFormInDB);
+    when(formManager.getForEditing(any(Long.class), any(User.class), any(UserSessionTracker.class)))
+        .thenReturn(existingFormInDB);
+
+    when(formDao.findOldestFormByNameForCreator(ONTOLOGY_FORM_NAME, "sysadmin1"))
+        .thenReturn(ontologyFormMock);
+
     testee.onAppStartup(mockAppContext);
     verify(formDao).save(any(RSForm.class));
   }
