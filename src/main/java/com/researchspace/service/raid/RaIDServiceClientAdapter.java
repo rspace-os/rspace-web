@@ -32,5 +32,5 @@ public interface RaIDServiceClientAdapter extends MultiInstanceClient<RaIDServer
   AccessToken performRefreshToken(String username, String serverAlias)
       throws HttpServerErrorException, URISyntaxException, JsonProcessingException;
 
-  Boolean isRaidConnectionAlive(String username, String serverAlias);
+  boolean isRaidConnectionAlive(String username, String serverAlias);
 }

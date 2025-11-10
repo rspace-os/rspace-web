@@ -293,7 +293,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private void setSingleUserToken(
       IntegrationInfo info, User user, String appName, String tokenName) {
     Optional<String> userToken = getTokenForProvider(user, appName);
-    userToken.ifPresent(t -> info.getOptions().put(tokenName, MASKED_TOKEN)); // mask token t
+    userToken.ifPresent(t -> info.getOptions().put(tokenName, MASKED_TOKEN));
   }
 
   private void populateIntegrationInfoFromUserAppConfig(IntegrationInfo info, User user) {
@@ -306,9 +306,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
       // For PyRAT and RaID we need to fetch the configured servers returned by the client
       if (info.getName().equals(PYRAT_APP_NAME)) {
-        createMultiServerEntriesForUI(options, PYRAT_CONFIGURED_SERVERS, pyratClient);
+        createMultiServerEntries(options, PYRAT_CONFIGURED_SERVERS, pyratClient);
       } else if (info.getName().equals(RAID_APP_NAME)) {
-        createMultiServerEntriesForUI(options, RAID_CONFIGURED_SERVERS, raidClientService);
+        createMultiServerEntries(options, RAID_CONFIGURED_SERVERS, raidClientService);
       } else if (info.getName().equals(GALAXY_APP_NAME)) {
         List<GalaxyAliasToServer> galaxyServerByAlias = galaxyService.getAliasServerPairs();
         if (!galaxyServerByAlias.isEmpty()) {
@@ -336,7 +336,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     }
   }
 
-  private <T extends ServerConfigurationDTO> void createMultiServerEntriesForUI(
+  private <T extends ServerConfigurationDTO> void createMultiServerEntries(
       @NotNull Map<String, Object> options,
       @NotNull String serverListKey,
       @NotNull MultiInstanceClient<T> clientAdapter) {

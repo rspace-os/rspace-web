@@ -15,7 +15,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2025-10-27b" author="nico">
+    <changeSet id="2025-10-27b" context="run" author="nico">
         <comment>Property Descriptors for RaID App</comment>
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>

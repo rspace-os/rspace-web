@@ -12,7 +12,6 @@ import com.researchspace.raid.client.RaIDClient;
 import com.researchspace.raid.model.RaID;
 import com.researchspace.raid.model.RaIDServicePoint;
 import com.researchspace.service.UserConnectionManager;
-import com.researchspace.service.UserManager;
 import com.researchspace.service.raid.RaIDServerConfigurationDTO;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.webapp.integrations.MultiInstanceBaseClient;
@@ -47,7 +46,6 @@ public class RaIDServiceClientAdapterImpl
     implements MultiInstanceClient<RaIDServerConfigurationDTO>, RaIDServiceClientAdapter {
 
   public static final String RAID_CONFIGURED_SERVERS = "RAID_CONFIGURED_SERVERS";
-  public static final String RAID_URL = "RAID_URL";
   public static final String RAID_OAUTH_CONNECTED = "RAID_OAUTH_CONNECTED";
   public static final String RAID_ALIAS = "RAID_ALIAS";
 
@@ -60,7 +58,6 @@ public class RaIDServiceClientAdapterImpl
   private static String URL_CALLBACK;
 
   private @Autowired UserConnectionManager userConnectionManager;
-  private @Autowired UserManager userManager;
 
   @Setter(value = AccessLevel.PROTECTED) // for test purposes
   private @Autowired RaIDClient raidClient;
@@ -149,14 +146,14 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
-  public Boolean isRaidConnectionAlive(String username, String serverAlias) {
+  public boolean isRaidConnectionAlive(String username, String serverAlias) {
     Optional<UserConnection> optUserConnection =
         getExistingRaidUserConnection(username, serverAlias);
     if (optUserConnection.isEmpty()) {
-      return Boolean.FALSE;
+      return false;
     }
 
-    Boolean isConnectionAlive = Boolean.TRUE;
+    boolean isConnectionAlive = true;
     try {
       this.getServicePoint(username, serverAlias, getServicePointId(serverAlias));
     } catch (Exception e) {
@@ -164,7 +161,7 @@ public class RaIDServiceClientAdapterImpl
           "Couldn't perform test connection action on RaID. "
               + "The connection will be flagged as NOT ALIVE",
           e);
-      isConnectionAlive = Boolean.FALSE;
+      isConnectionAlive = false;
     }
     return isConnectionAlive;
   }

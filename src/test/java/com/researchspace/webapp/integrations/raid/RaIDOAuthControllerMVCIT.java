@@ -182,7 +182,7 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void testConnectionIsAlive() throws Exception {
     when(mockedRaidClientAdapter.isRaidConnectionAlive(eq(user.getUsername()), eq(SERVER_ALIAS)))
-        .thenReturn(Boolean.TRUE);
+        .thenReturn(true);
 
     MvcResult result =
         mockMvc
@@ -197,7 +197,7 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void testConnectionIsNotAlive() throws Exception {
     when(mockedRaidClientAdapter.isRaidConnectionAlive(eq(user.getUsername()), eq(SERVER_ALIAS)))
-        .thenReturn(Boolean.FALSE);
+        .thenReturn(false);
 
     MvcResult result =
         mockMvc
