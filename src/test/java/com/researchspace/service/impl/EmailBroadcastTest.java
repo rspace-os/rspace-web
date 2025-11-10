@@ -53,7 +53,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   abstract static class NoRetryBroadcasterStub extends EmailBroadcastImp {
     @Override
     RetryConfig buildRetryConfig() {
-      return RetryConfig.custom().maxAttempts(1).build();
+      return RetryConfig.custom()
+          .maxAttempts(1)
+          .build();
     }
   }
 

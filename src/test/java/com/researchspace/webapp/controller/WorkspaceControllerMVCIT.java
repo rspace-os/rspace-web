@@ -1330,9 +1330,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     Folder regularUserRoot = folderMgr.getRootFolderForUser(regularUser);
 
     StructuredDocument docToShare = createBasicDocumentInRootFolderWithText(regularUser, "anytext");
-    SharePost toPost =
-        createValidSharePostWithGroup(
-            group, docToShare, group.getGroup().getCommunalGroupFolderId());
+    SharePost toPost = createValidSharePostWithGroup(group, docToShare, group.getGroup().getCommunalGroupFolderId());
     String apiKey = createNewApiKeyForUser(regularUser);
 
     // regular user shares a Doc into Group_shared_folder
@@ -2424,19 +2422,18 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     String apiKey = createNewApiKeyForUser(piUser);
 
     mockMvc
-        .perform(createBuilderForPostWithJSONBody(apiKey, "/share", piUser, sharePost))
-        .andExpect(status().isCreated())
-        .andReturn();
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/share", piUser, sharePost))
+            .andExpect(status().isCreated())
+            .andReturn();
 
     // Move the doc to the top-level shared folder
-    MvcResult moveResult =
-        mockMvc
+    MvcResult moveResult = mockMvc
             .perform(
-                post("/workspace/ajax/move")
-                    .param("parentFolderId", sharedSubFolder.getId() + "")
-                    .param("toMove[]", doc.getId() + "")
-                    .param("target", sharedFolderRootId + "")
-                    .principal(new MockPrincipal(piUser.getUsername())))
+                    post("/workspace/ajax/move")
+                            .param("parentFolderId", sharedSubFolder.getId() + "")
+                            .param("toMove[]", doc.getId() + "")
+                            .param("target", sharedFolderRootId + "")
+                            .principal(new MockPrincipal(piUser.getUsername())))
             .andExpect(status().isOk())
             .andReturn();
 
