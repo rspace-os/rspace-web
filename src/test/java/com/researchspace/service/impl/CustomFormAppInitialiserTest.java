@@ -53,7 +53,6 @@ public class CustomFormAppInitialiserTest {
   @Mock private IconImageManager iconImageManagerMock;
   @InjectMocks private CustomFormAppInitialiser testee;
 
-
   @BeforeEach
   public void initEach() {
     // Bind a thread-local mocked subject to avoid mutating the global SecurityManager
