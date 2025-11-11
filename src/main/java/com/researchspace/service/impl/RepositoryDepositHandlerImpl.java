@@ -4,6 +4,7 @@ import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrat
 
 import com.researchspace.archive.ArchiveResult;
 import com.researchspace.dataverse.api.v1.DataverseConfig;
+import com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
@@ -37,8 +38,11 @@ import com.researchspace.webapp.controller.repositories.ZenodoUIConnectionConfig
 import com.researchspace.webapp.integrations.digitalcommonsdata.DigitalCommonsDataController;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -265,5 +269,40 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     LicenseConfigInfo license = configurer.getLicenseConfigInfo();
     List<RepoProperty> otherProperties = new ArrayList<>(configurer.getOtherProperties().values());
     return new RepoUIConfigInfo(app.getName(), subjects, license, otherProperties);
+  }
+
+  @Override
+  public void populateDataverseOptions(Map<String, Object> options) throws MalformedURLException {
+    DataverseRSpaceRepository dataverseRepo =
+        (DataverseRSpaceRepository) repoFactory.getRepository("dataverseRepository");
+
+    var newCollections = new HashMap<String, Map<String, String>>();
+    for (var collectionObject : options.values()) {
+      var collection = (Map<String, String>) collectionObject;
+      RepositoryConfig repoCfg =
+          new RepositoryConfig(
+              new URL(collection.get("DATAVERSE_URL")),
+              collection.get("DATAVERSE_APIKEY"),
+              null,
+              collection.get("DATAVERSE_ALIAS"));
+      dataverseRepo.configure(repoCfg);
+      var searchResults = dataverseRepo.getCollections(repoCfg.getRepositoryName());
+      searchResults
+          .getItems()
+          .forEach(
+              item ->
+                  newCollections.put( // TODO mi a faszt írjak ide?
+                      item.getName(), // TODO aliast kell ideírni!
+                      Map.of(
+                          "DATAVERSE_URL",
+                          repoCfg.getServerURL().toString(),
+                          "DATAVERSE_APIKEY",
+                          repoCfg.getIdentifier(),
+                          "DATAVERSE_ALIAS",
+                          item.getName(), // TODO aliast kell ideírni!
+                          "_label",
+                          item.getName())));
+    }
+    options.putAll(newCollections);
   }
 }

@@ -69,17 +69,7 @@ public class RepositoryConfigurationController extends BaseController {
       RepoUIConfigInfo info = getRepoUIConfigInfo(user, inf.getName());
       var options = inf.getOptions();
       if (inf.getName().equals(DATAVERSE_APP_NAME)) {
-        options.put(
-            "8",
-            Map.of(
-                "DATAVERSE_APIKEY",
-                "qwertzuiop",
-                "DATAVERSE_URL",
-                "https://adataverse.com/",
-                "DATAVERSE_ALIAS",
-                "test",
-                "_label",
-                "test"));
+        depositHandler.populateDataverseOptions(options);
       }
       info.setOptions(options);
       info.setDisplayName(inf.getDisplayName());
