@@ -78,7 +78,9 @@ import org.springframework.dao.DataAccessException;
 @Slf4j
 public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
+  // this is to avoid passing clear apiToken to the UI while building the app page integration
   public static final String MASKED_TOKEN = "XXXXXXXXXXXXXXXXX";
+
   private @Autowired SystemPropertyManager sysPropMgr;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
   private @Autowired UserAppConfigManager appConfigMgr;

@@ -5,7 +5,6 @@ import static java.net.URLEncoder.encode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +28,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @TestPropertySource(
     properties = {
+      "server.urls.prefix=http://localhost:8080",
       "raid.server.config={ \"DEMO\": { \"url\": \"https://demo.raid.au\", "
           + " \"authUrl\": \"https://demo.raid.org/realms/raid/protocol/openid-connect\", "
           + " \"servicePointId\": 12345678, \"clientId\": \"rspace\", "
@@ -73,7 +73,7 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
   @Test
   public void testPerformRedirectConnect() throws Exception {
     when(mockedRaidClient.getRedirectUriToConnect(
-            eq(AUTH_BASE_URL), eq(CLIENT_ID), eq(getExpectedCallbackUrl()), eq(SERVER_ALIAS)))
+            AUTH_BASE_URL, CLIENT_ID, getExpectedCallbackUrl(), SERVER_ALIAS))
         .thenReturn(
             "https://demo.raid.org/realms/raid/protocol/openid-connect/auth?client_id=rspace&"
                 + "redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fapps%2Fraid%2Fcallback&"
@@ -101,11 +101,7 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
   public void testPerformCreateAccessToken() throws Exception {
     // GIVEN
     when(mockedRaidClient.getAccessToken(
-            eq(AUTH_BASE_URL),
-            eq(CLIENT_ID),
-            eq(CLIENT_SECRET),
-            eq(AUTH_CODE),
-            eq(getExpectedCallbackUrl())))
+            AUTH_BASE_URL, CLIENT_ID, CLIENT_SECRET, AUTH_CODE, getExpectedCallbackUrl()))
         .thenReturn(jsonAccessToken);
 
     // WHEN
@@ -127,18 +123,14 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
   public void testPerformRefreshToken() throws Exception {
     // GIVEN
     when(mockedRaidClient.getAccessToken(
-            eq(AUTH_BASE_URL),
-            eq(CLIENT_ID),
-            eq(CLIENT_SECRET),
-            eq(AUTH_CODE),
-            eq(getExpectedCallbackUrl())))
+            AUTH_BASE_URL, CLIENT_ID, CLIENT_SECRET, AUTH_CODE, getExpectedCallbackUrl()))
         .thenReturn(jsonAccessToken);
     when(mockedRaidClient.getRefreshToken(
-            eq(AUTH_BASE_URL),
-            eq(CLIENT_ID),
-            eq(CLIENT_SECRET),
-            eq(expectedAccessToken.getRefreshToken()),
-            eq(getExpectedCallbackUrl())))
+            AUTH_BASE_URL,
+            CLIENT_ID,
+            CLIENT_SECRET,
+            expectedAccessToken.getRefreshToken(),
+            getExpectedCallbackUrl()))
         .thenReturn(jsonRefreshToken);
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 
@@ -162,18 +154,14 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
 
     // GIVEN
     when(mockedRaidClient.getAccessToken(
-            eq(AUTH_BASE_URL),
-            eq(CLIENT_ID),
-            eq(CLIENT_SECRET),
-            eq(AUTH_CODE),
-            eq(getExpectedCallbackUrl())))
+            AUTH_BASE_URL, CLIENT_ID, CLIENT_SECRET, AUTH_CODE, getExpectedCallbackUrl()))
         .thenReturn(jsonAccessToken);
     when(mockedRaidClient.getRefreshToken(
-            eq(AUTH_BASE_URL),
-            eq(CLIENT_ID),
-            eq(CLIENT_SECRET),
-            eq(expectedAccessToken.getRefreshToken()),
-            eq(getExpectedCallbackUrl())))
+            AUTH_BASE_URL,
+            CLIENT_ID,
+            CLIENT_SECRET,
+            expectedAccessToken.getRefreshToken(),
+            getExpectedCallbackUrl()))
         .thenReturn(jsonRefreshToken);
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 

@@ -89,7 +89,7 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
 
   @GetMapping("/gettest_connection/{serverAlias}") // TODO[nik]: remove the GET used for testing
   public Boolean isConnectionAliveGet(@PathVariable String serverAlias, Principal principal) {
-      return isConnectionAlive(serverAlias, principal);
+    return isConnectionAlive(serverAlias, principal);
   }
 
   @PostMapping("/test_connection/{serverAlias}")
