@@ -263,6 +263,10 @@
                       <reflowLongStrings>true</reflowLongStrings>
                   </googleJavaFormat>
               </java>
+              <upToDateChecking>
+                  <enabled>true</enabled>
+                  <indexFile>${project.basedir}/.spotless/spotless-index</indexFile>
+              </upToDateChecking>
           </configuration>
           <executions>
               <execution>
@@ -3050,7 +3054,7 @@
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
-    <spotless.version>2.43.0</spotless.version>
+    <spotless.version>2.46.1</spotless.version>
     <npm.dependencies.collection.arg>install --force</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
