@@ -571,7 +571,9 @@ public class ExportController extends BaseController {
   private RepoDepositPreDepositValidation validatePreDeposit(
       StringBuilder errorBuffer, RepoDepositConfig repositoryConfig, User exporter) {
     Optional<AppConfigElementSet> optionalAppConfig =
-        userAppConfigMgr.findByAppConfigElementSetId(repositoryConfig.getRepoCfg());
+        repositoryConfig.getAppName().equals(App.APP_DATAVERSE)
+            ? Optional.of(new AppConfigElementSet())
+            : userAppConfigMgr.findByAppConfigElementSetId(repositoryConfig.getRepoCfg());
     validateCfgIfExists(repositoryConfig.getRepoCfg(), errorBuffer, optionalAppConfig);
     String msg = "";
     if (errorBuffer.length() > 0) {

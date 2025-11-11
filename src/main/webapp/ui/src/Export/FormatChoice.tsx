@@ -101,11 +101,15 @@ function FormatChoice({
                 return keys.map(
                   (k) =>
                     ({
+                      ...repo,
                       repoCfg: k,
                       //@ts-expect-error Options is poorly typed
                       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                       label: repo.options[k]._label,
-                      ...repo,
+                      //@ts-expect-error Options is poorly typed
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                      repoConnectionInfo: { apiKey: repo.options[k].DATAVERSE_APIKEY, repositoryName: repo.options[k].DATAVERSE_ALIAS, serverURL: repo.options[k].DATAVERSE_URL}
+                      
                     }) as Repo,
                 );
               }
@@ -289,27 +293,27 @@ function FormatChoice({
           {FetchingData.getSuccessValue(asposeEnabled)
             .flatMap(Parsers.isBoolean)
             .orElse(false) && (
-            <FormControlLabel
-              value="doc"
-              disabled={!wordAvailable}
-              control={<Radio data-test-id="doc" color="primary" />}
-              label={
-                <>
-                  <OptionHeading>.DOC file</OptionHeading>
-                  <OptionExplanation>
-                    {wordAvailable ? (
-                      <>
-                        MS Word version of your RSpace documents will be placed
-                        in the &apos;Exports&apos; area of the Gallery.
-                      </>
-                    ) : (
-                      wordAvailabilityMessage
-                    )}
-                  </OptionExplanation>
-                </>
-              }
-            />
-          )}
+              <FormControlLabel
+                value="doc"
+                disabled={!wordAvailable}
+                control={<Radio data-test-id="doc" color="primary" />}
+                label={
+                  <>
+                    <OptionHeading>.DOC file</OptionHeading>
+                    <OptionExplanation>
+                      {wordAvailable ? (
+                        <>
+                          MS Word version of your RSpace documents will be placed
+                          in the &apos;Exports&apos; area of the Gallery.
+                        </>
+                      ) : (
+                        wordAvailabilityMessage
+                      )}
+                    </OptionExplanation>
+                  </>
+                }
+              />
+            )}
         </Stack>
       </RadioGroup>
 

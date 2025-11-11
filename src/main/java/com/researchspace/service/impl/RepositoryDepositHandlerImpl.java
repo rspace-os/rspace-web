@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
 
 import com.researchspace.archive.ArchiveResult;
+import com.researchspace.dataverse.api.v1.DataverseConfig;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
@@ -106,13 +107,24 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     checkConnectionState(app, subject);
 
     IRepository repository = repoFactory.getRepository(getRepoName(app));
-    RepositoryConfig repoConnectionInfo = getRepoConnectionInfo(cfg, app, subject);
+    RepositoryConfig repoConnectionInfo =
+        app.getName().equals(App.APP_DATAVERSE)
+            ? dataverseConfigToRepositoryConfig(archiveConfig.getRepoConnectionInfo())
+            : getRepoConnectionInfo(cfg, app, subject);
     repository.configure(repoConnectionInfo);
     repository.testConnection();
 
     asyncDepositor.depositArchive(
         app, subject, repository, archiveConfig, repoConnectionInfo, archive);
     return null;
+  }
+
+  private RepositoryConfig dataverseConfigToRepositoryConfig(DataverseConfig repoConnectionInfo) {
+    return new RepositoryConfig(
+        repoConnectionInfo.getServerURL(),
+        repoConnectionInfo.getApiKey(),
+        null,
+        repoConnectionInfo.getRepositoryName());
   }
 
   private RepositoryConfig getRepoConnectionInfo(

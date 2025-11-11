@@ -67,7 +67,21 @@ public class RepositoryConfigurationController extends BaseController {
     List<RepoUIConfigInfo> uiConfigs = new ArrayList<>();
     for (IntegrationInfo inf : activeInfos) {
       RepoUIConfigInfo info = getRepoUIConfigInfo(user, inf.getName());
-      info.setOptions(inf.getOptions());
+      var options = inf.getOptions();
+      if (inf.getName().equals(DATAVERSE_APP_NAME)) {
+        options.put(
+            "8",
+            Map.of(
+                "DATAVERSE_APIKEY",
+                "qwertzuiop",
+                "DATAVERSE_URL",
+                "https://adataverse.com/",
+                "DATAVERSE_ALIAS",
+                "test",
+                "_label",
+                "test"));
+      }
+      info.setOptions(options);
       info.setDisplayName(inf.getDisplayName());
       uiConfigs.add(info);
     }
