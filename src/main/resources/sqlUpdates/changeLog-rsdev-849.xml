@@ -1,0 +1,39 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!-- RaID integration -->
+  <changeSet id="2025-12-11" context="run" author="nico">
+    <comment>Create UserRaid table to handle the pair RaID-Group owned by an user</comment>
+    <createTable tableName="UserRaid">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="raid_natural_key" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="raid_server_alias" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="owner_id" type="BIGINT">
+        <constraints nullable="false" foreignKeyName="fk_user_raid_owner"
+          references="User(id)"/>
+      </column>
+    </createTable>
+    <addUniqueConstraint tableName="UserRaid" constraintName="raidNaturalKey_serverAlias_uq"
+      columnNames="raid_natural_key,raid_server_alias"/>
+  </changeSet>
+
+  <changeSet id="2025-12-12" context="run" author="nico">
+    <comment>Add new column in rsGroup which references an the RaID</comment>
+    <addColumn tableName="rsGroup">
+      <column name="raid_id" type="BIGINT">
+        <constraints nullable="true" foreignKeyName="fk_raid_associated"
+          references="UserRaid(id)"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+</databaseChangeLog>
