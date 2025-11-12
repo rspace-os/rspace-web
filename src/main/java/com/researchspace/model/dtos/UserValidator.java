@@ -242,7 +242,7 @@ public class UserValidator implements Validator {
     }
     if (!passwordHasValidCharacters(password)) {
       return addToErrorsAndGetMessage(
-          errors, "password", "errors.invalidpwd", new Object[] {User.MIN_PWD_LENGTH, User.MAX_UNAME_LENGTH});
+          errors, "password", "errors.invalidpwd", new Object[] {User.MIN_PWD_LENGTH, User.MAX_PWD_LENGTH});
     }
     if (!passwordIsValid(password)) {
       return addToErrorsAndGetMessage(errors, "password", "errors.password.insecurepassword", null);
