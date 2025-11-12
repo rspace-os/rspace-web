@@ -35,7 +35,6 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
   @Autowired
   private RaIDServiceClientAdapter raidServiceClientAdapter;
 
-
   @PostMapping("/connect/{serverAlias}")
   public RedirectView connect(@PathVariable String serverAlias)
       throws MalformedURLException, URISyntaxException {
