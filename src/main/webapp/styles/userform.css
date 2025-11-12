@@ -112,13 +112,11 @@
 
 .msgArea {
   border: 1px solid black;
-  height: 25px;
+  min-height: 25px;
   display: none;
   text-align: center;
-  vertical-align: middle;
-  line-height: 25px;
-  /* the same as your div height */
-  font-weight: bold; }
+  font-weight: bold;
+}
 
 /* API KEY Panel */
 

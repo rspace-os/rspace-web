@@ -153,22 +153,22 @@
 		</rst:hasDeploymentProperty>
 		<tr class="createPasswordRow">
 			<td width="20%">
-				<label>
+				<label for="password">
 					Enter or <a id="generatePasswordButton" href="#"> Generate </a> password
 				</label>
+                <p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
 			</td>
 			<td width="30%">
-				<input type="password" name="password" placeholder="Password" class="accountsInputs" pattern=".{8,}"
-					title="Minimum 8 characters" required />
+				<input type="password" name="password" placeholder="Password" class="accountsInputs" pattern="[ -~]{8,50}" title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~" required />
+
 			</td>
 			<td width="20%">
-				<label>
+				<label for="passwordConfirmation">
 					<spring:message code="system.createAccountForm.confirmPassword.label" />
 				</label>
 			</td>
 			<td width="30%">
-				<input type="password" name="passwordConfirmation" placeholder="Password Confirmation" class="accountsInputs"
-					pattern=".{8,}" title="Minimum 8 characters" required />
+				<input type="password" name="passwordConfirmation" placeholder="Password Confirmation" class="accountsInputs" pattern="[ -~]{8,50}" title="Confirm Password" required />
 			</td>
 		</tr>
 		<tr class="createPasswordRow" >

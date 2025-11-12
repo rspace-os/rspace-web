@@ -1,0 +1,20 @@
+services:
+  rspace-db:
+    image: 'mariadb:lts-jammy'
+    restart: always
+    container_name: rspace-db
+    volumes:
+      - type: volume
+        source: rspace-db
+        target: /var/lib/mysql
+      - type: bind
+        source: ./db-config.cnf
+        target: /etc/alternatives/my.cnf
+    environment:
+      MARIADB_ROOT_PASSWORD: rspacedbpwd
+      MARIADB_USER: rspacedbuser
+      MARIADB_PASSWORD: rspacedbpwd
+    ports:
+      - '127.0.0.1:3306:3306'
+volumes:
+  rspace-db:
