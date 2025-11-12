@@ -7,6 +7,8 @@ please ask rather than 'commit-and-hope'.
 This document is written in Markdown format.
 
 ### Are you creating a new table? If so: 
+- Add the entity in the `hibernate.cfg.xml` file
+- Add the entity on `HibernateTest.recordClasses()` method
 - Update `DatabaseCleaner cleanup ()` to clean up the table during test runs. 
 - Explicitly set charset and collation:  `character set utf8mb4 collate  utf8mb4_unicode_ci`.
   (As an example, see src/main/resources/sqlUpdates/changeLog-1.76.xml : ```<sql>alter table ClustermarketEquipment engine=InnoDB, CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</sql>```)
