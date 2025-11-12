@@ -291,17 +291,17 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
           .getItems()
           .forEach(
               item ->
-                  newCollections.put( // TODO mi a faszt írjak ide?
-                      item.getName(), // TODO aliast kell ideírni!
+                  newCollections.put(
+                      item.getIdentifier(),
                       Map.of(
                           "DATAVERSE_URL",
                           repoCfg.getServerURL().toString(),
                           "DATAVERSE_APIKEY",
-                          repoCfg.getIdentifier(),
+                          repoCfg.getIdentifier(), // identifier = API key
                           "DATAVERSE_ALIAS",
-                          item.getName(), // TODO aliast kell ideírni!
+                          item.getName(),
                           "_label",
-                          item.getName())));
+                          item.getIdentifier()))); // identifier = alias
     }
     options.putAll(newCollections);
   }
