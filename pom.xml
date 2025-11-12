@@ -1947,7 +1947,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>raid-java-client</artifactId>
-      <version>RSDEV-850-client-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-validator</groupId>
@@ -3074,7 +3074,7 @@
     <jstl.version>1.1.2</jstl.version>
     <lucene.version>5.5.5</lucene.version>
     <netty.version>4.1.63.Final</netty.version>
-    <rspace-core-model.version>RSDEV-850-model-SNAPSHOT</rspace-core-model.version>
+    <rspace-core-model.version>2.16.0</rspace-core-model.version>
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>

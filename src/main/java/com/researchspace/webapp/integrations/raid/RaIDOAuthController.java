@@ -36,12 +36,6 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
   private RaIDServiceClientAdapter raidServiceClientAdapter;
 
 
-  @GetMapping("/getconnect/{serverAlias}") // TODO[nik]: remove the GET used for testing
-  public RedirectView connectGet(@PathVariable String serverAlias)
-      throws MalformedURLException, URISyntaxException {
-    return connect(serverAlias);
-  }
-
   @PostMapping("/connect/{serverAlias}")
   public RedirectView connect(@PathVariable String serverAlias)
       throws MalformedURLException, URISyntaxException {
@@ -71,12 +65,6 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
     return redirectResult;
   }
 
-  @GetMapping("/getdisconnect/{serverAlias}") // TODO[nik]: remove the GET used for testing
-  @ResponseStatus(HttpStatus.OK)
-  public void disconnectGet(@PathVariable String serverAlias, Principal principal) {
-    disconnect(serverAlias, principal);
-  }
-
   @DeleteMapping("/connect/{serverAlias}")
   @ResponseStatus(HttpStatus.OK)
   public void disconnect(@PathVariable String serverAlias, Principal principal) {
@@ -84,11 +72,6 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
         userConnectionManager.deleteByUserAndProvider(
             principal.getName(), RAID_APP_NAME, serverAlias);
     log.info("Deleted {} RaID connection(s) for user {}", deletedConnCount, principal.getName());
-  }
-
-  @GetMapping("/gettest_connection/{serverAlias}") // TODO[nik]: remove the GET used for testing
-  public Boolean isConnectionAliveGet(@PathVariable String serverAlias, Principal principal) {
-    return isConnectionAlive(serverAlias, principal);
   }
 
   @PostMapping("/test_connection/{serverAlias}")
@@ -105,12 +88,6 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
       isConnectionAlive = Boolean.FALSE;
     }
     return isConnectionAlive;
-  }
-
-  @GetMapping("/getrefresh_token/{serverAlias}") // TODO[nik]: remove the GET used for testing
-  public String refreshTokenGet(
-      @PathVariable String serverAlias, Model model, Principal principal) {
-    return refreshToken(serverAlias, model, principal);
   }
 
   @PostMapping("/refresh_token/{serverAlias}")
