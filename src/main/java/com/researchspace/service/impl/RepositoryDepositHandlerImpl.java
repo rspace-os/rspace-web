@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import lombok.extern.slf4j.Slf4j;
@@ -292,14 +293,14 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
           .forEach(
               item ->
                   newCollections.put(
-                      item.getIdentifier(),
+                      Integer.toString(new Random().nextInt()),
                       Map.of(
                           "DATAVERSE_URL",
                           repoCfg.getServerURL().toString(),
                           "DATAVERSE_APIKEY",
                           repoCfg.getIdentifier(), // identifier = API key
                           "DATAVERSE_ALIAS",
-                          item.getName(),
+                          item.getIdentifier(), // identifier = alias
                           "_label",
                           item.getIdentifier()))); // identifier = alias
     }
