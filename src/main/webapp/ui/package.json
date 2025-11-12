@@ -96,6 +96,7 @@
     "@fortawesome/free-regular-svg-icons": "7.1.0",
     "@fortawesome/free-solid-svg-icons": "7.1.0",
     "@fortawesome/react-fontawesome": "3.1.0",
+    "@hookform/resolvers": "^5.2.2",
     "@intercom/messenger-js-sdk": "^0.0.14",
     "@mui/icons-material": "5.18.0",
     "@mui/material": "5.18.0",
@@ -103,6 +104,9 @@
     "@mui/x-date-pickers": "5.0.20",
     "@mui/x-tree-view": "7.29.10",
     "@stomp/stompjs": "^7.1.1",
+    "@tanstack/react-form": "1.28.0",
+    "@tanstack/react-query": "5.90.20",
+    "@tanstack/valibot-form-adapter": "^0.42.1",
     "@tinymce/tinymce-react": "=6.2.1",
     "@toast-ui/react-image-editor": "=3.15.2",
     "autosuggest-highlight": "=3.3.4",
@@ -124,6 +128,7 @@
     "npm": "=11.4.2",
     "photoswipe": "=5.4.4",
     "posthog-js": "=1.256.1",
+    "purify-ts": "^2.1.2",
     "qr-scanner": "^1.4.1",
     "react": "=18.2.0",
     "react-autosuggest": "=10.1.0",
@@ -143,7 +148,8 @@
     "sockjs-client": "^1.6.1",
     "tinymce": "=7.9.1",
     "tss-react": "=4.9.18",
-    "use-broadcast-channel": "0.4.0"
+    "use-broadcast-channel": "0.4.0",
+    "valibot": "1.2.0"
   },
   "overrides": {
     "word-wrap": "=1.2.5",
@@ -181,6 +187,9 @@
       ],
       "^.+\\.(ts|tsx)$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(msw))"
+    ],
     "testMatch": [
       "**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"
     ],

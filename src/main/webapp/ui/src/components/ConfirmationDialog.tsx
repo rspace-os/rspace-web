@@ -56,7 +56,6 @@ export function ConfirmationDialog({
   };
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
-    debugger;
     if (e) {
       e.preventDefault();
     }

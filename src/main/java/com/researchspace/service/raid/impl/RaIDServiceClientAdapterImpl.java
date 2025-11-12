@@ -1,7 +1,8 @@
 package com.researchspace.service.raid.impl;
 
-import static com.researchspace.CacheNames.RAID_CONNECTION;
+import static com.researchspace.CacheNames.CACHE_RAID_CONNECTION;
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
+import static javax.management.timer.Timer.ONE_HOUR;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -32,13 +33,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -105,10 +107,7 @@ public class RaIDServiceClientAdapterImpl
             getApiBaseUrl(serverAlias),
             getExistingAccessTokenOrRefreshIfExpired(username, serverAlias));
     return verboseRaidList.stream()
-        .map(
-            r ->
-                new RaIDReferenceDTO(
-                    serverAlias, r.getTitle().get(0).getText(), r.getIdentifier().getId()))
+        .map(r -> new RaIDReferenceDTO(serverAlias, r.getIdentifier().getId()))
         .collect(Collectors.toSet());
   }
 
@@ -122,8 +121,7 @@ public class RaIDServiceClientAdapterImpl
             getExistingAccessTokenOrRefreshIfExpired(username, serverAlias),
             raidPrefix,
             raidSuffix);
-    return new RaIDReferenceDTO(
-        serverAlias, verboseRaid.getTitle().get(0).getText(), verboseRaid.getIdentifier().getId());
+    return new RaIDReferenceDTO(serverAlias, verboseRaid.getIdentifier().getId());
   }
 
   @Override
@@ -134,7 +132,7 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
-  @CacheEvict(value = RAID_CONNECTION, key = "#username + #serverAlias")
+  @CacheEvict(value = CACHE_RAID_CONNECTION, key = "#username + #serverAlias")
   public AccessToken performCreateAccessToken(
       String username, String serverAlias, String authorizationCode)
       throws JsonProcessingException, URISyntaxException {
@@ -152,7 +150,7 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
-  @CacheEvict(value = RAID_CONNECTION, key = "#username + #serverAlias")
+  @CacheEvict(value = CACHE_RAID_CONNECTION, key = "#username + #serverAlias")
   public AccessToken performRefreshToken(String username, String serverAlias)
       throws HttpServerErrorException, URISyntaxException, JsonProcessingException {
 
@@ -170,7 +168,7 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
-  @Cacheable(value = RAID_CONNECTION, key = "#username + #serverAlias")
+  @Cacheable(value = CACHE_RAID_CONNECTION, key = "#username + #serverAlias")
   public boolean isRaidConnectionAlive(String username, String serverAlias) {
     Optional<UserConnection> optUserConnection =
         getExistingRaidUserConnection(username, serverAlias);
@@ -189,6 +187,13 @@ public class RaIDServiceClientAdapterImpl
       isConnectionAlive = false;
     }
     return isConnectionAlive;
+  }
+
+  @Override
+  @Scheduled(fixedRate = ONE_HOUR)
+  @CacheEvict(value = {CACHE_RAID_CONNECTION})
+  public void clearConnectionAliveCache() {
+    log.info("Cache '{}' cleared after ONE HOUR", CACHE_RAID_CONNECTION);
   }
 
   private String getExistingAccessTokenOrRefreshIfExpired(String username, String serverAlias)

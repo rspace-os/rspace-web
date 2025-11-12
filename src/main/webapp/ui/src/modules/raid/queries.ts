@@ -1,0 +1,88 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+  GetAvailableRaIDListResponseSchema,
+  IntegrationRaidInfoResponseSchema,
+  type IntegrationRaidInfo,
+  GetAvailableRaIDList,
+} from "@/modules/raid/schema";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+
+/**
+ * Query key factory for RaID-related queries
+ */
+export const raidQueryKeys = {
+  all: ["rspace.apps.raid"] as const,
+  availableRaidIdentifiers: () => [...raidQueryKeys.all, "availableIds"] as const,
+  integrationInfo: () => [...raidQueryKeys.all, "integrationInfo"] as const,
+  projectAssociation: (alias: string, groupId: string) => [...raidQueryKeys.all, "projectAssociation", alias, groupId] as const,
+};
+
+/**
+ * Fetches the list of available RaID identifiers for the current user
+ * @returns Promise that resolves to the GetRaIDListResponse
+ * @throws Error if the request fails or validation fails
+ */
+export async function getAvailableRaidIdentifiersAjax(): Promise<GetAvailableRaIDList> {
+  const response = await fetch("/apps/raid", {
+    method: "GET",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+
+  const data: unknown = await response.json();
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch RaID apps: ${response.statusText}`);
+  }
+
+  return parseOrThrow(GetAvailableRaIDListResponseSchema, data);
+}
+
+/**
+ * Hook to fetch the list of RaID apps with Suspense
+ * Throws on error - wrap with Error Boundary
+ * @returns useSuspenseQuery result with GetRaIDListResponse data
+ */
+export function useGetAvailableRaIDIdentifiersAjaxQuery() {
+  return useSuspenseQuery({
+    queryKey: raidQueryKeys.availableRaidIdentifiers(),
+    queryFn: getAvailableRaidIdentifiersAjax,
+  });
+}
+
+/**
+ * Fetch RaID integration information
+ * @returns Promise that resolves to the IntegrationRaIdInfo
+ * @throws Error if the request fails or validation fails
+ */
+export async function getRaidIntegrationInfoAjax(): Promise<IntegrationRaidInfo> {
+  const response = await fetch("/integration/integrationInfo?name=RAID", {
+    method: "GET",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+
+  const data: unknown = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch RaID integration info: ${response.statusText}`,
+    );
+  }
+
+  return parseOrThrow(IntegrationRaidInfoResponseSchema, data);
+}
+
+/**
+ * Hook to fetch RaID integration information with Suspense
+ * Throws on error - wrap with Error Boundary
+ * @returns useSuspenseQuery result with IntegrationRaIdInfo data
+ */
+export function useRaidIntegrationInfoAjaxQuery() {
+  return useSuspenseQuery({
+    queryKey: raidQueryKeys.integrationInfo(),
+    queryFn: () => getRaidIntegrationInfoAjax(),
+  });
+}

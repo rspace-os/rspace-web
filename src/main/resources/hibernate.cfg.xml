@@ -173,5 +173,11 @@
 
         <mapping class="com.researchspace.model.raid.UserRaid"/>
 
+        <mapping class="com.researchspace.model.raid.UserRaid"/>
+
+        <mapping class="com.researchspace.model.raid.UserRaid"/>
+
+        <mapping class="com.researchspace.model.raid.UserRaid"/>
+
     </session-factory>
  </hibernate-configuration>

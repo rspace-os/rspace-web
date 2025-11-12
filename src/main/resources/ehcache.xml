@@ -91,7 +91,7 @@
 		maxElementsInMemory="1000" timeToLiveSeconds="3600" />
 	<cache name="com.researchspace.model.dto.IntegrationInfo"
 		maxElementsInMemory="1000" timeToLiveSeconds="3600"  />
-	<cache name="com.researchspace.webapp.integrations.raid.connection"
+	<cache name="com.researchspace.webapp.integrations.raid.RaIDServiceClientAdapter.isConnectionAlive"
 		maxElementsInMemory="1000" timeToLiveSeconds="3600"  />
 	<cache name="com.researchspace.service.audit.files"
 		maxElementsInMemory="10" timeToLiveSeconds="0"   />
