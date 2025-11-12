@@ -35,7 +35,6 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
   @Autowired
   private RaIDServiceClientAdapter raidServiceClientAdapter;
 
-  public RaIDOAuthController() {}
 
   @GetMapping("/getconnect/{serverAlias}") // TODO[nik]: remove the GET used for testing
   public RedirectView connectGet(@PathVariable String serverAlias)

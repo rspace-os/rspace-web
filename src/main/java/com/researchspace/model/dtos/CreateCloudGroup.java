@@ -78,12 +78,18 @@ public class CreateCloudGroup implements Serializable {
     } else if (!groupName.equals(other.groupName)) {
       return false;
     }
-
     if (piEmail == null) {
       if (other.piEmail != null) {
         return false;
       }
     } else if (!piEmail.equals(other.piEmail)) {
+      return false;
+    }
+    if (raid == null) {
+      if (other.raid != null) {
+        return false;
+      }
+    } else if (!raid.equals(other.raid)) {
       return false;
     }
     return true;

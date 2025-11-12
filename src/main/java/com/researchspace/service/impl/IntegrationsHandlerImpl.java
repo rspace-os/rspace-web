@@ -605,7 +605,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case PROTOCOLS_IO_APP_NAME:
       case DMPTOOL_APP_NAME:
       case PYRAT_APP_NAME:
-      case RAID_APP_NAME:
       case JOVE_APP_NAME:
         return true;
     }
