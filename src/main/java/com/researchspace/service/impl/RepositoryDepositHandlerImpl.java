@@ -303,7 +303,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
                               "DATAVERSE_ALIAS",
                               item.getIdentifier(), // identifier = alias
                               "_label",
-                              item.getIdentifier())) // identifier = alias
+                              item.getName())) // TODO this might not be unique!
                       ));
     }
     options.putAll(newCollections);

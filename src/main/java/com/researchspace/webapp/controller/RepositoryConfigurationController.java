@@ -69,7 +69,8 @@ public class RepositoryConfigurationController extends BaseController {
       RepoUIConfigInfo info = getRepoUIConfigInfo(user, inf.getName());
       var options = inf.getOptions();
       if (inf.getName().equals(DATAVERSE_APP_NAME)) {
-        depositHandler.populateDataverseOptions(options);
+        depositHandler.populateDataverseOptions(
+            options); // TODO figure out how to prevent options appearing more than once
         depositHandler.addMetadataLanguageToDataverseIntegrationOptions(options);
       }
       info.setOptions(options);
