@@ -3,6 +3,7 @@ package com.researchspace.webapp.integrations.digitalcommonsdata;
 import static com.researchspace.dcd.utils.DigitalCommonsDataUtils.getApiBaseUrl;
 import static com.researchspace.dcd.utils.DigitalCommonsDataUtils.getAuthBaseUrl;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
 
 import com.researchspace.dcd.model.DcdAccessToken;
 import com.researchspace.model.oauth.UserConnection;
@@ -142,7 +143,7 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
   public void disconnect(Principal principal) {
     int deletedConnCount =
         userConnectionManager.deleteByUserAndProvider(
-            DIGITAL_COMMONS_DATA_APP_NAME, principal.getName());
+            principal.getName(), DIGITAL_COMMONS_DATA_APP_NAME);
     log.info(
         "Deleted {} Digital Commons Data connection(s) for user {}",
         deletedConnCount,
@@ -295,8 +296,7 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
     conn.setExpireTime(getExpireTime(300L));
     conn.setDisplayName("DigitalCommonsData TEMP Token");
     conn.setId(
-        new UserConnectionId(
-            principal.getName(), DIGITAL_COMMONS_DATA_APP_NAME, "ProviderUserIdNotNeeded"));
+        new UserConnectionId(principal.getName(), DIGITAL_COMMONS_DATA_APP_NAME, PROVIDER_USER_ID));
     return conn;
   }
 
