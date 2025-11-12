@@ -1,5 +1,7 @@
 package com.axiope.service.cfg;
 
+import static com.researchspace.CacheNames.RAID_CONNECTION;
+
 import com.researchspace.CacheNames;
 import com.researchspace.core.util.NumberUtils;
 import net.sf.ehcache.Cache;
@@ -37,6 +39,9 @@ class EhCacheConfigurer {
   @Value("${cache.com.researchspace.model.dto.IntegrationInfo}")
   private String integrationInfoMaxElementsInMemory;
 
+  @Value("${cache." + RAID_CONNECTION + "}")
+  private String raidAliveConnectionMaxElementsInMemory;
+
   @Value("${cache.com.researchspace.model.record.BaseRecord}")
   private String baseRecordMaxElementsInMemory;
 
@@ -55,6 +60,7 @@ class EhCacheConfigurer {
     override(ehCcheMgr, fieldFormMaxElementsInMemory, fieldFormCachename);
     override(ehCcheMgr, formMaxElementsInMemory, formCachename);
     override(ehCcheMgr, integrationInfoMaxElementsInMemory, CacheNames.INTEGRATION_INFO);
+    override(ehCcheMgr, raidAliveConnectionMaxElementsInMemory, RAID_CONNECTION);
     override(ehCcheMgr, baseRecordMaxElementsInMemory, "com.researchspace.model.record.BaseRecord");
     override(ehCcheMgr, userGroupMaxElementsInMemory, "com.researchspace.model.UserGroup");
     override(

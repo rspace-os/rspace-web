@@ -1,0 +1,110 @@
+[
+  {
+    "id": 20000012,
+    "name": "Australian Plant Phenomics Network",
+    "identifierOwner": "https://ror.org/02zj7b759",
+    "repositoryId": "ARDCX.RAID-GMTQLG",
+    "prefix": "10.82995",
+    "groupId": "dd8a0256-6931-4d58-93c9-7951d3bda820",
+    "techEmail": "qefwde@.edu.au",
+    "adminEmail": "sdfwsd@adelaide.edu.au",
+    "enabled": true,
+    "appWritesEnabled": true
+  },
+  {
+    "id": 20000001,
+    "name": "Australian Research Data Commons",
+    "identifierOwner": "https://ror.org/038sjwq14",
+    "repositoryId": "ARDCX.RAID-ANUOXL",
+    "prefix": "10.82989",
+    "groupId": "4c1fb7aa-1783-4a8c-b529-49c42cd1d4ec",
+    "techEmail": "adfvadef@ardc.edu.au",
+    "adminEmail": "wrgwrgs@ardc.edu.au",
+    "enabled": true,
+    "appWritesEnabled": true
+  },
+  {
+    "id": 20000011,
+    "name": "EOSC-MP",
+    "identifierOwner": "https://ror.org/038sjwq14",
+    "repositoryId": "ARDCX.RAID-QZFUWQ",
+    "prefix": "10.82971",
+    "groupId": "2565676a-9410-4d07-91ac-7e5892935e93",
+    "techEmail": "dsfghj@cyfronet.pl",
+    "adminEmail": "swrgetryjktgli@cyfronet.pl",
+    "enabled": true,
+    "appWritesEnabled": true
+  },
+  {
+    "id": 20000014,
+    "name": "MQ-PPAP",
+    "identifierOwner": "https://ror.org/01sf06y89",
+    "repositoryId": "ARDCX.RAID-AALTOY",
+    "prefix": "10.80380",
+    "groupId": "d0fb4c2e-7449-4614-8a68-a221b9f4b5a6",
+    "techEmail": "",
+    "adminEmail": "",
+    "enabled": true,
+    "appWritesEnabled": true
+  },
+  {
+    "id": 20000010,
+    "name": "Research.fi",
+    "identifierOwner": "https://ror.org/04m8m1253",
+    "repositoryId": "ARDCX.RAID-NNRTZW",
+    "prefix": "10.82997",
+    "groupId": "47f2b9b1-6bf4-473f-9042-9501e68d19e0",
+    "techEmail": "qdefaewf@csc.fi",
+    "adminEmail": "wefadfaf@csc.fi",
+    "enabled": false,
+    "appWritesEnabled": true
+  },
+  {
+    "id": 20000007,
+    "name": "Charles Darwin University",
+    "identifierOwner": "https://ror.org/048zcaj52",
+    "repositoryId": "ARDCX.RAID-VVVBDZ",
+    "prefix": "10.82994",
+    "groupId": "9c9fb8b8-42a3-425b-9bcd-4b896dce5cdc",
+    "techEmail": "rthjrteueuy@cdu.edu.au",
+    "adminEmail": "erthrtyuru@cdu.edu.au",
+    "enabled": true,
+    "appWritesEnabled": true
+  },
+  {
+    "id": 20000015,
+    "name": "African PID Alliance",
+    "identifierOwner": "                         ",
+    "repositoryId": "ARDCX.RAID-CUKOPT",
+    "prefix": "10.80368",
+    "groupId": "54685020-4f1b-4068-bb14-1c12e02c338a",
+    "techEmail": "34teqtyethy@amband.co.ke",
+    "adminEmail": "wrtye6ru@tcc-africa.org",
+    "enabled": true,
+    "appWritesEnabled": true
+  },
+  {
+    "id": 20000005,
+    "name": "Queensland University of Technology - Research Infrastructure",
+    "identifierOwner": "https://ror.org/03pnv4752",
+    "repositoryId": "ARDCX.RAID-CJINMZ",
+    "prefix": "10.82991",
+    "groupId": "54682d9d-ef1a-497b-af8e-547a420da87e",
+    "techEmail": "245sfg@qut.edu.au",
+    "adminEmail": "sdfvfs43@qut.edu.au",
+    "enabled": true,
+    "appWritesEnabled": true
+  },
+  {
+    "id": 20000030,
+    "name": "Research Space",
+    "identifierOwner": "https://ror.org/038xqyz77",
+    "repositoryId": "ATHH.GIOEYW",
+    "prefix": "10.83334",
+    "groupId": "db8e951a-d0af-483f-ab57-c45ef0ccd5a2",
+    "techEmail": "aasdfgtere@researchspace.com",
+    "adminEmail": "adfwsrgsgh@researchspace.com",
+    "enabled": true,
+    "appWritesEnabled": true
+  }
+]
