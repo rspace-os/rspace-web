@@ -170,5 +170,7 @@
         <mapping class="com.researchspace.model.stoichiometry.Stoichiometry"/>
         <mapping class="com.researchspace.model.stoichiometry.StoichiometryMolecule"/>
 
+        <mapping class="com.researchspace.model.raid.UserRaid"/>
+
     </session-factory>
 </hibernate-configuration>
