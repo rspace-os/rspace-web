@@ -91,7 +91,10 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     checkConnectionState(app, subject);
 
     IRepository repository = repoFactory.getRepository(getRepoName(app));
-    RepositoryConfig repoConnectionInfo = getRepoConnectionInfo(cfg, app, subject);
+    RepositoryConfig repoConnectionInfo =
+        app.getName().equals(App.APP_DATAVERSE)
+            ? dataverseConfigToRepositoryConfig(archiveConfig.getRepoConnectionInfo())
+            : getRepoConnectionInfo(cfg, app, subject);
     repository.configure(repoConnectionInfo);
     repository.testConnection();
 
