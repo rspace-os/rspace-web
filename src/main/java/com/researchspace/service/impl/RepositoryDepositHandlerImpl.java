@@ -273,59 +273,44 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
   }
 
   @Override
-  public void populateDataverseOptions(Map<String, Object> options) throws MalformedURLException {
+  public Map<String, Object> populateDataverseOptions(Map<String, Object> options)
+      throws MalformedURLException {
     DataverseRSpaceRepository dataverseRepo =
         (DataverseRSpaceRepository) repoFactory.getRepository("dataverseRepository");
-
-    var newCollections = new HashMap<String, Map<String, String>>();
+    var newCollections = new HashMap<String, Object>();
     for (var collectionObject : options.values()) {
-      var collection = (Map<String, String>) collectionObject;
-      RepositoryConfig repoCfg =
-          new RepositoryConfig(
-              new URL(collection.get("DATAVERSE_URL")),
-              collection.get("DATAVERSE_APIKEY"),
-              null,
-              collection.get("DATAVERSE_ALIAS"));
+      var collection = (Map<String, Object>) collectionObject;
+      URL url = new URL((String) collection.get("DATAVERSE_URL"));
+      String apiKey = (String) collection.get("DATAVERSE_APIKEY");
+      String alias = (String) collection.get("DATAVERSE_ALIAS");
+      RepositoryConfig repoCfg = new RepositoryConfig(url, apiKey, null, alias);
       dataverseRepo.configure(repoCfg);
       var searchResults = dataverseRepo.getCollections(repoCfg.getRepositoryName());
+      var metadataLanguages = dataverseRepo.getMetadataLanguage();
+      collection.put("metadataLanguages", metadataLanguages);
       searchResults
           .getItems()
           .forEach(
-              item ->
-                  newCollections.put(
-                      Integer.toString(new Random().nextInt()),
-                      new HashMap<String, String>(
-                          Map.of(
-                              "DATAVERSE_URL",
-                              repoCfg.getServerURL().toString(),
-                              "DATAVERSE_APIKEY",
-                              repoCfg.getIdentifier(), // identifier = API key
-                              "DATAVERSE_ALIAS",
-                              item.getIdentifier(), // identifier = alias
-                              "_label",
-                              item.getName())) // TODO this might not be unique!
-                      ));
+              item -> {
+                dataverseRepo.configure(
+                    new RepositoryConfig(url, apiKey, null, item.getIdentifier()));
+                var childRepoMetadataLanguages = dataverseRepo.getMetadataLanguage();
+                newCollections.put(
+                    Integer.toString(new Random().nextInt()), // TODO better indexing
+                    Map.of(
+                        "DATAVERSE_URL",
+                        url.toString(),
+                        "DATAVERSE_APIKEY",
+                        apiKey,
+                        "DATAVERSE_ALIAS",
+                        item.getIdentifier(),
+                        "_label",
+                        item.getName(),
+                        "metadataLanguages",
+                        childRepoMetadataLanguages));
+              });
+      newCollections.put(Integer.toString(new Random().nextInt()), collection);
     }
-    options.putAll(newCollections);
-  }
-
-  @Override
-  public void addMetadataLanguageToDataverseIntegrationOptions(Map<String, Object> options)
-      throws MalformedURLException {
-    for (Map.Entry<String, Object> dataverseEntry : options.entrySet()) {
-      Map<String, Object> dataverse = (Map<String, Object>) dataverseEntry.getValue();
-      RepositoryConfig repoCfg =
-          new RepositoryConfig(
-              new URL((String) dataverse.get("DATAVERSE_URL")),
-              (String) dataverse.get("DATAVERSE_APIKEY"),
-              null,
-              (String) dataverse.get("DATAVERSE_ALIAS"));
-      IRepository dataverseRepo = repoFactory.getRepository("dataverseRepository");
-      dataverseRepo.configure(repoCfg);
-      List<Map<String, String>> metadataLanguages =
-          ((DataverseRSpaceRepository) dataverseRepo).getMetadataLanguage();
-      dataverse.put("metadataLanguages", metadataLanguages);
-      dataverseEntry.setValue(dataverse);
-    }
+    return newCollections;
   }
 }
