@@ -44,7 +44,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import lombok.extern.slf4j.Slf4j;
@@ -278,8 +277,8 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     DataverseRSpaceRepository dataverseRepo =
         (DataverseRSpaceRepository) repoFactory.getRepository("dataverseRepository");
     var newCollections = new HashMap<String, Object>();
-    for (var collectionObject : options.values()) {
-      var collection = (Map<String, Object>) collectionObject;
+    for (var collectionObject : options.entrySet()) {
+      var collection = (Map<String, Object>) collectionObject.getValue();
       URL url = new URL((String) collection.get("DATAVERSE_URL"));
       String apiKey = (String) collection.get("DATAVERSE_APIKEY");
       String alias = (String) collection.get("DATAVERSE_ALIAS");
@@ -288,6 +287,8 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
       var searchResults = dataverseRepo.getCollections(repoCfg.getRepositoryName());
       var metadataLanguages = dataverseRepo.getMetadataLanguage();
       collection.put("metadataLanguages", metadataLanguages);
+      String parentIndex = collectionObject.getKey();
+      int[] index = {0};
       searchResults
           .getItems()
           .forEach(
@@ -296,7 +297,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
                     new RepositoryConfig(url, apiKey, null, item.getIdentifier()));
                 var childRepoMetadataLanguages = dataverseRepo.getMetadataLanguage();
                 newCollections.put(
-                    Integer.toString(new Random().nextInt()), // TODO better indexing
+                    parentIndex + index[0]++,
                     Map.of(
                         "DATAVERSE_URL",
                         url.toString(),
@@ -309,7 +310,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
                         "metadataLanguages",
                         childRepoMetadataLanguages));
               });
-      newCollections.put(Integer.toString(new Random().nextInt()), collection);
+      newCollections.put(parentIndex, collection);
     }
     return newCollections;
   }
