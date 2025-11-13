@@ -1,7 +1,7 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
 import IntegrationCard from "../IntegrationCard";
-import JupyterIcon from "../../../assets/branding/jupyter/logo.svg";
+import JupyterIcon from "../../../assets/branding/Jupyter/logo.svg";
 import { observer } from "mobx-react-lite";
 import { LOGO_COLOR } from "@/assets/branding/Jupyter";
 import Typography from "@mui/material/Typography";
