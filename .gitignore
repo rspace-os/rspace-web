@@ -38,6 +38,7 @@ generatedDBChangeSets/
 /svg.pdf
 /xsxx.pdf
 xsxx2.pdf
+.spotless
 
 # Nix specifics
 shell.nix

@@ -73,7 +73,7 @@ public class DryadOAuthController extends BaseOAuth2Controller {
   @DeleteMapping("/connect")
   public void disconnect(Principal principal) {
     int deleted =
-        userConnectionManager.deleteByUserAndProvider(DRYAD_APP_NAME, principal.getName());
+        userConnectionManager.deleteByUserAndProvider(principal.getName(), DRYAD_APP_NAME);
     log.info("Deleted {} Dryad connection(s) for user {}", deleted, principal.getName());
   }
 

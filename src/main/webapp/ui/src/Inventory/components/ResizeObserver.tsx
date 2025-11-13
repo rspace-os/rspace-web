@@ -1,5 +1,4 @@
 import { useRef, useLayoutEffect } from "react";
-import ResizeObserver from "resize-observer-polyfill";
 
 const useResizeObserver = ({
   callback,
@@ -23,8 +22,8 @@ const useResizeObserver = ({
     if (observer.current && current) {
       observer.current.unobserve(current);
     }
-    const resizeObserverOrPolyfill = ResizeObserver;
-    observer.current = new resizeObserverOrPolyfill(callback);
+
+    observer.current = new ResizeObserver(callback);
     observe();
 
     return () => {

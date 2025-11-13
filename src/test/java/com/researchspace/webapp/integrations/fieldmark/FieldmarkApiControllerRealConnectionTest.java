@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.fieldmark;
 
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -40,7 +41,7 @@ public class FieldmarkApiControllerRealConnectionTest extends SpringTransactiona
 
     UserConnection actualConnection = new UserConnection();
     actualConnection.setId(
-        new UserConnectionId(user.getUsername(), FIELDMARK_APP_NAME, "ProviderUserIdNotNeeded"));
+        new UserConnectionId(user.getUsername(), FIELDMARK_APP_NAME, PROVIDER_USER_ID));
     actualConnection.setAccessToken(ACCESS_TOKEN);
     actualConnection.setRefreshToken("REFRESH_TOKEN");
     actualConnection.setExpireTime(299L);
