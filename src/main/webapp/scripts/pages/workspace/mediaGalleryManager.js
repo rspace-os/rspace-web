@@ -1066,6 +1066,7 @@ function addFromGallery(data) {
     'Snippet': MEDIA_TYPE_SNIPPETS,
     'NetworkFile': MEDIA_TYPE_FILESTORES,
     'DMP': MEDIA_TYPE_DMPS,
+    'DMPs': MEDIA_TYPE_DMPS,
   };
 
   var mediaTypeSelectedVal = (data != null) ? typeMapping[data.type] : $("#mediaTypeSelected").val();
