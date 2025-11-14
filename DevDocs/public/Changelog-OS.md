@@ -4,6 +4,28 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.16.0 2025-11-11
+
+### ELN Features
+
+- RSDEV-762 new UI for 'Share' dialog, which now allows to manage share status of the record
+- RSDEV-428 new UI for 'Insert from Gallery' dialog (in document editor)
+- RSDEV-756 server-configured custom links now appear in 'help' button, to stay available on pages that don't display footer
+- RSDEV-773 snippets can be previewed in the new Gallery UI
+- RSDEV-898 document/notebook view allows browsing content of attached .ipynb files (Jupyter Notebooks)  
+
+### ELN Bugfix
+
+- RSDEV-895 fix problem with opening notebook if location of that notebook cannot be easily inferred
+- PRT-1007 fix problem with opening shared notebook entry by the group's PI
+- RSDEV-804 protocols.io import is fixed for Workspace and in document editor
+- RSDEV-860 snippets shared with Lab Group can be navigated through new Gallery UI
+
+### Inventory Features
+
+- RSDEV-821 default search now looks for an exact match OR the first portion of a string
+- RSDEV-464 more consistent use of custom axis labels in grid containers
+
 # 2.15.0 2025-10-10
 
 ### ELN Features
@@ -14,19 +36,18 @@ You can find official changelog at https://documentation.researchspace.com/artic
 
 ### ELN Bugfix
 
-- RSDEV-835 fixed problem with 'incorrect sharing status' popup showing up when navigating Shared -> ProjectGroups folder
-- RSDEV-755 fixed problem with new version of document attachment not having its content indexed
-- RSDEV-813 fixed problem with multiple tags of ELN document being combined into one after duplicating that document
-- RSDEV-765 fixed problem with PI being unable to create doc inside shared notebook owned by the group member
+- RSDEV-835 fix problem with 'incorrect sharing status' popup showing up when navigating Shared -> ProjectGroups folder
+- RSDEV-755 fix problem with new version of document attachment not having its content indexed
+- RSDEV-813 fix problem with multiple tags of ELN document being combined into one after duplicating that document
+- RSDEV-765 fix problem with PI being unable to create doc inside shared notebook owned by the group member
 - RSDEV-819 when navigating to shared notebook, the 'CREATE' button was sometimes shown, or hidden, incorrectly
-- RSDEV-840 fixed problem with transferring some shared forms to sysadmin during user deletion
-- ISSUE#475 fixed problem with tinymce toolbar sometimes disappearing after customization
+- RSDEV-840 fix problem with transferring some shared forms to sysadmin during user deletion
+- ISSUE#475 fix problem with tinymce toolbar sometimes disappearing after customization
 
 ### Inventory Features
 
 - RSDEV-864 applying accented UI theme
 - RSDEV-826 reduced JS bundle size
-
 
 # 2.14.0 2025-09-08
 

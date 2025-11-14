@@ -83,7 +83,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
   @DeleteMapping("/connect")
   public void disconnect(Principal principal) {
     int deleted =
-        userConnectionManager.deleteByUserAndProvider(PROTOCOLS_IO_APP_NAME, principal.getName());
+        userConnectionManager.deleteByUserAndProvider(principal.getName(), PROTOCOLS_IO_APP_NAME);
     log.info("Deleted {} ProtocolsIO connection(s) for user {}", deleted, principal.getName());
   }
 

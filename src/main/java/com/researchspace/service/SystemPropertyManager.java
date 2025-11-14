@@ -66,9 +66,6 @@ public interface SystemPropertyManager extends GenericManager<SystemPropertyValu
 
   SystemPropertyValue findByName(Preference name);
 
-  @Deprecated // use strongly-typed findByName method variant
-  SystemPropertyValue findByName(String name);
-
   /**
    * Finds a SystemPropertyValue with a specified name and community or <code>null</code> if not
    * found.

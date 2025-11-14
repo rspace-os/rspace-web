@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.service.SystemPropertyName.valueOfPropertyName;
+
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.PaginationObject;
@@ -324,7 +326,7 @@ public class CommunityAdminController extends BaseController {
     assertUserCanEditCommunity(subject, communityService.get(communityId));
 
     SystemPropertyValue systemPropertyValueBySysAdmin =
-        systemPropertyManager.findByName(propertyName);
+        systemPropertyManager.findByName(valueOfPropertyName(propertyName));
     // If system admin denies something, the setting cannot be overridden
     if (systemPropertyValueBySysAdmin
             .getValue()

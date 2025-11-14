@@ -50,7 +50,7 @@ public class UserConnectionManagerImpl extends GenericManagerImpl<UserConnection
 
   @Override
   @CacheEvict(value = INTEGRATION_INFO, key = "#rspaceUserName + #providername")
-  public int deleteByUserAndProvider(String providername, String rspaceUserName) {
+  public int deleteByUserAndProvider(String rspaceUserName, String providername) {
     return userConnectionDao.deleteByUserAndProvider(rspaceUserName, providername);
   }
 
