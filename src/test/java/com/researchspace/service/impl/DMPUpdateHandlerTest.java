@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -76,10 +77,13 @@ public class DMPUpdateHandlerTest {
     final long dmpUserId = -1;
     IntegrationInfo usableInfo = usableInfo();
     DMPUser dmpUser = createMultipleDMPusers(List.of(dmpUserId)).get(0);
+    dmpUser.setDoiLink("https://doi.org/ORIGINAL");
     mockIntegrationsHandler(usableInfo);
     mockSuccessfulDMPAPIcall();
+    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString())) ;
     when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(dmpUser));
     dmpUpdateHandler.updateDMPS(urlSupplier(), anyUser, List.of(dmpUserId));
+    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString())) ;
     verifyAttemptToAddDoi();
   }
 
