@@ -33,13 +33,10 @@ function Jupyter(): React.ReactNode {
                         overflowX: "auto",
                       }}
                   >
-            {`
-%pip install rspace-client==2.6.2
-            
-            `}
+            {`%pip install rspace-client==2.6.2`}
               </pre>
                 </Typography>
-                <b>Run the cell then restart the kernel AND REFRESH THE BROWSER TAB RUNNING JUPYTER.</b>
+                Run the cell then <b>restart the kernel</b> and <b>refresh the browser </b> tab running Jupyter.
               </li>
               <li>
                 <b>Configure notebook:</b> Follow the instructions in RSpace help docs to import the sync_notebook script.
@@ -52,18 +49,15 @@ function Jupyter(): React.ReactNode {
                   overflowX: "auto",
                 }}
               >
-                {`
-from rspace_client.notebook_sync import sync_notebook
-
-`}
+                {`from rspace_client.notebook_sync import sync_notebook`}
               </pre>
             </Typography>
-                <b>Run the cell, restart the kernel and then run the cell one more time without a kernel restart. Save the Notebook.</b>
+               Run the cell,  <b>restart the kernel</b> and then run the cell one more time <b>without a kernel restart. Save the Notebook.</b>
               </li>
               <li>
                 <b>Run the code:</b>
                 <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
-                  <strong>Paste this code into the last cell in the notebook:</strong>
+                  Paste this code into <b>the last cell in the notebook:</b>
                   <pre
                       style={{
                         background: "#f5f5f5",
@@ -71,11 +65,9 @@ from rspace_client.notebook_sync import sync_notebook
                         overflowX: "auto",
                       }}
                   >
-                {`
-await sync_notebook.sync_notebook_to_rspace(
+                {`await sync_notebook.sync_notebook_to_rspace(
 rspace_url="https://researchspace2.eu.ngrok.io/",
-rspace_username="user1a")
-`}
+rspace_username="user1a")`}
               </pre>
                 </Typography>
               </li>
