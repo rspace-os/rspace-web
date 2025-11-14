@@ -25,6 +25,7 @@ import Galaxy from "./integrations/Galaxy";
 import GitHub from "./integrations/GitHub";
 import GoogleDrive from "./integrations/GoogleDrive";
 import Jove from "./integrations/Jove";
+import Jupyter from "./integrations/Jupyter";
 import MSTeams from "./integrations/MSTeams";
 import NextCloud from "./integrations/NextCloud";
 import Omero from "./integrations/Omero";
@@ -346,6 +347,7 @@ function CardListing({
         />
       )}
       {integrationStates.API_DIRECT.mode === mode && <ApiDirect />}
+      { integrationStates.API_DIRECT.mode === mode && <Jupyter />}
       {integrationStates.ASCENSCIA.mode === mode && (
         <Ascenscia
           integrationState={integrationStates.ASCENSCIA}

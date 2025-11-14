@@ -55,6 +55,7 @@ const docLinks: { [name: string]: URL } = {
   galaxy: mkDocLink("zzsl46jo5y"),
   cloudstorage: mkDocLink("j2z5f5r90q"),
   jove: mkDocLink("mopbqzzdf5"),
+  jupyter: mkDocLink("gg0ao0rqpt"),
   chemistry: mkDocLink("wfxm4xwtio"),
   pubchem: mkDocLink(
     "wfxm4xwtio",
