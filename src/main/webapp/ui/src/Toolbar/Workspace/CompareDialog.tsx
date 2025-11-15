@@ -157,7 +157,7 @@ const Toolbar = ({
   rowSelectionModel,
   setColumnsMenuAnchorEl,
 }: {
-  rowSelectionModel: ReadonlyArray<number>;
+  rowSelectionModel: GridRowSelectionModel;
   setColumnsMenuAnchorEl: (anchorEl: HTMLElement) => void;
 }) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -242,6 +242,7 @@ function CompareDialog(): React.ReactNode {
   React.useEffect(() => {
     const handler = doNotAwait(async (event: Event) => {
       // @ts-expect-error the event will have this detail
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const ids = event.detail.ids as Array<string>;
       analytics.trackEvent("Dialog comparing ELN documents opened", {
         numberOfDocuments: ids.length,
@@ -450,6 +451,7 @@ function CompareDialog(): React.ReactNode {
               }}
               slotProps={{
                 toolbar: {
+                  // @ts-expect-error Needed by <Toolbar>
                   rowSelectionModel,
                   setColumnsMenuAnchorEl,
                 },
