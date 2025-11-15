@@ -460,7 +460,7 @@ module.exports = {
        for details)
      */
     webpackConfig: {
-      fileName: "webpack.config.js",
+      fileName: "webpack.config.mjs",
       env: {},
       arguments: {},
     },
