@@ -75,7 +75,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     String redirectUrl = String.valueOf(new URL(getServerUrl(), "/apps/dmptool/callback"));
     String pathAndQuery =
         String.format(
-            "/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=read_dmps",
+            "/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=read_dmps+edit_dmps",
             clientId, URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8));
     String dmptoolAuthUrl = String.valueOf(new URL(baseUrl, pathAndQuery));
     return new RedirectView(dmptoolAuthUrl);
