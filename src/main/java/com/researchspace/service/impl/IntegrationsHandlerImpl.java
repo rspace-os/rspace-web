@@ -261,8 +261,12 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   // this is using UserConnection table to store OAuth token.
   private void setSingleOAuthConnectionStatus(IntegrationInfo info, User user, String appName) {
-    getTokenForProvider(user, appName)
-        .ifPresent(token -> updateInfoWithOAuthToken(info, MASKED_TOKEN));
+    if (PROTOCOLS_IO_APP_NAME.equals(appName)) { // PRT-1023: temp fix while waiting to refactor
+      getTokenForProvider(user, appName).ifPresent(token -> updateInfoWithOAuthToken(info, token));
+    } else {
+      getTokenForProvider(user, appName)
+          .ifPresent(token -> updateInfoWithOAuthToken(info, MASKED_TOKEN));
+    }
   }
 
   private String updateInfoWithOAuthToken(IntegrationInfo info, String token) {
