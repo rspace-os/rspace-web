@@ -191,35 +191,6 @@ public class ProductionConfig extends BaseConfig {
     return mgr;
   }
 
-  @Bean
-  @Scope(value = "prototype")
-  public DataverseAPI dataverseAPI() {
-    return new DataverseAPIImpl();
-  }
-
-  @Bean(name = "configurerDataverse")
-  public RepositoryConfigurer dataverseRepoConfigurer() {
-    DataverseRepoConfigurer rc = new DataverseRepoConfigurer();
-    ClassPathResource subjects = new ClassPathResource("subjects.txt");
-    rc.setResource(subjects);
-    return rc;
-  }
-
-  /**
-   * Create a new stateful repository adapter per request. <br>
-   * The name is created from appName+'Repository' as IRepository beans are created on-demand at
-   * export time.
-   */
-  @Bean(name = "dataverseRepository")
-  @Scope(value = WebApplicationContext.SCOPE_REQUEST)
-  public IRepository dataverseRepository() {
-    DataverseRSpaceRepository repo = new DataverseRSpaceRepository();
-    repo.setConfigurer(dataverseRepoConfigurer());
-    repo.setDvAPI(dataverseAPI());
-    logSettingRepositoryImplementation(repo);
-    return repo;
-  }
-
   /**
    * Creates a new {@link IRepository} bean for Figshare.
    *
