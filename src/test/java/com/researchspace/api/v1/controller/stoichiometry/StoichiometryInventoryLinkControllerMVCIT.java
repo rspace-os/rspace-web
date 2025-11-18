@@ -32,7 +32,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
 public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase {
-
   @Autowired private StoichiometryManager stoichiometryManager;
   @Autowired private RSChemElementManager rsChemElementManager;
 
@@ -125,7 +124,6 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
   @Test
   public void updateQuantityUsedSuccess() throws Exception {
     StoichiometryMolecule molecule = createSingleMoleculeStoichiometry(user, "stoich update");
-
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
 
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
@@ -166,7 +164,6 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
   public void updateQuantityUsedWithoutWritePermissionsThrows401() throws Exception {
     StoichiometryMolecule molecule = createSingleMoleculeStoichiometry(user, "stoich update 401");
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
-
     StoichiometryInventoryLinkDTO created = createLink(user, apiKey, molecule, sample, 1.0);
 
     User otherUser = createInitAndLoginAnyUser();
