@@ -3029,6 +3029,167 @@ paths:
               message:
                 type: string
                 example: "Couldn't retrieve molecule info for provided structure"
+
+  /stoichiometry/link:
+    post:
+      summary: Create a link between a stoichiometry molecule and an Inventory sample or subsample
+      tags:
+        - Chemistry
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/StoichInvLinkRequest'
+      responses:
+        '200':
+          description: Created link
+          schema:
+            $ref: '#/definitions/StoichInvLinkDTO'
+        '401':
+          description: Authentication error or insufficient permissions
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have write permissions on document containing stoichiometry"
+        '404':
+          description: Stoichiometry molecule or inventory item not found
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Stoichiometry molecule or inventory item not found"
+        '500':
+          description: An unexpected error occurred while creating the link
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Error creating link"
+    put:
+      summary: Update quantity used for a stoichiometry-inventory link
+      tags:
+        - Chemistry
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/StoichiometryLinkQuantityUpdateRequest'
+      responses:
+        '200':
+          description: Updated link
+          schema:
+            $ref: '#/definitions/StoichInvLinkDTO'
+        '401':
+          description: Authentication error or insufficient permissions
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have write permissions on document containing stoichiometry"
+        '404':
+          description: Link not found
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Link not found"
+        '500':
+          description: An unexpected error occurred while updating the link
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Error updating link"
+
+  /stoichiometry/link/{id}:
+    get:
+      summary: Get a stoichiometry-inventory link by id
+      tags:
+        - Chemistry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: The link
+          schema:
+            $ref: '#/definitions/StoichInvLinkDTO'
+        '401':
+          description: Authentication error or insufficient permissions
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have read permissions on document containing stoichiometry"
+        '404':
+          description: Link not found
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Link not found"
+        '500':
+          description: An unexpected error occurred while retrieving the link
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Error retrieving link"
+    delete:
+      summary: Delete a stoichiometry-inventory link
+      tags:
+        - Chemistry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Deletion succeeded
+          schema:
+            type: boolean
+        '401':
+          description: Authentication error or insufficient permissions
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "User does not have write permissions on document containing stoichiometry"
+        '404':
+          description: Link not found
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Link not found"
+        '500':
+          description: An unexpected error occurred while deleting the link
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Error deleting link"
+
   /status:
     get:
       summary: Get API status
@@ -3341,21 +3502,48 @@ parameters:
 definitions:
   ChemicalSearchRequest:
     description: Request object for searching chemicals
-    required:
-      - searchType
-      - searchTerm
+  StoichInvLinkDTO:
+    description: Link between a stoichiometry molecule and an Inventory item
     properties:
-      searchType:
+      id:
+        type: integer
+        format: int64
+      inventoryItemId:
+        type: integer
+        format: int64
+      stoichiometryMoleculeId:
+        type: integer
+        format: int64
+      quantityUsed:
+        type: number
+        format: double
+  StoichInvLinkRequest:
+    description: Request to create a link between a stoichiometry molecule and an Inventory item
+    required:
+      - inventoryItemGlobalId
+      - stoichiometryMoleculeId
+    properties:
+      inventoryItemGlobalId:
         type: string
-        description: The type of search to perform. Use NAME for both chemical names and CAS numbers.
-        enum:
-          - NAME
-          - SMILES
-        example: "NAME"
-      searchTerm:
-        type: string
-        description: The search term to use (chemical name, CAS number, or SMILES notation)
-        example: "aspirin"
+        description: Global identifier of the inventory item (e.g. SA123, SS456, IC789)
+      stoichiometryMoleculeId:
+        type: integer
+        format: int64
+      quantityUsed:
+        type: number
+        format: double
+  StoichiometryLinkQuantityUpdateRequest:
+    description: Request to update quantity used for a stoichiometry-inventory link
+    required:
+      - stoichiometryLinkId
+      - newQuantity
+    properties:
+      stoichiometryLinkId:
+        type: integer
+        format: int64
+      newQuantity:
+        type: number
+        format: double
   ChemicalImportSearchResult:
     description: Chemical search result from external sources
     properties:

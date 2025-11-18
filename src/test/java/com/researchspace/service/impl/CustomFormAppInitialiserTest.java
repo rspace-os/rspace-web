@@ -141,7 +141,8 @@ public class CustomFormAppInitialiserTest {
     existingFormInDB.setVersion(new Version(-1));
     existingFormInDB.setId(1L);
 
-    when(formDao.findOldestFormByNameForCreator(CustomFormAppInitialiser.EQUIPMENT_FORM_NAME, "sysadmin1"))
+    when(formDao.findOldestFormByNameForCreator(
+            CustomFormAppInitialiser.EQUIPMENT_FORM_NAME, "sysadmin1"))
         .thenReturn(existingFormInDB);
     when(formManager.getForEditing(any(Long.class), any(User.class), any(UserSessionTracker.class)))
         .thenReturn(existingFormInDB);

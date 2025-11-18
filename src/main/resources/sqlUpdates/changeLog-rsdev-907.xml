@@ -1,0 +1,35 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2025-11-13" context="run" author="fraser">
+        <comment>Create new table to hold the link between stoichiometry molecules and inventory items</comment>
+        <createTable tableName="StoichiometryInventoryLink">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="stoichiometry_molecule_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_stoichiometry_molecule"
+                             references="StoichiometryMolecule(id)"/>
+            </column>
+            <column name="container_id" type="BIGINT">
+                <constraints foreignKeyName="fk_container" references="Container(id)"/>
+            </column>
+            <column name="sample_id" type="BIGINT">
+                <constraints foreignKeyName="fk_sample" references="Sample(id)"/>
+            </column>
+            <column name="subSample_id" type="BIGINT">
+                <constraints foreignKeyName="fk_subsample" references="SubSample(id)"/>
+            </column>
+
+            <column name="quantity_used" type="DECIMAL(19,6)"/>
+            <column name="unit" type="VARCHAR(32)"/>
+
+        </createTable>
+        <createIndex tableName="StoichiometryInventoryLink" indexName="idx_stoich_molecule">
+            <column name="stoichiometry_molecule_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
