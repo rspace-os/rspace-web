@@ -10,10 +10,8 @@ import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.StoichiometryService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@Slf4j
 @ApiController
 public class StoichiometryApiController extends BaseApiController implements StoichiometryApi {
 

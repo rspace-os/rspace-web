@@ -42,7 +42,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @Ignore(
     "Requires chemistry service to run. See"
         + " https://documentation.researchspace.com/article/1jbygguzoa")
-public class StoichiometryControllerIT extends API_MVC_TestBase {
+public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
   private Principal principal;
   private User user;
