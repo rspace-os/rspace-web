@@ -70,7 +70,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
         remoteFiles.forEach((file) => {
           const json = {
             name: file.name,
-            linktype: "file",
+            linktype: file.isFolder ? "directory" : "file",
             fileStoreId: file.path[0].id,
             relFilePath: file.remotePath,
             nfsId: file.nfsId,

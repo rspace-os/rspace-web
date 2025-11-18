@@ -69,7 +69,7 @@ public class AscensciaController extends BaseController {
 
   private void saveToken(String username, User subject, AuthResponseDTO authResponse) {
     // should only be 1 active connection per user and provider, so delete any existing
-    userConnectionManager.deleteByUserAndProvider(ASCENSCIA_APP_NAME, subject.getUsername());
+    userConnectionManager.deleteByUserAndProvider(subject.getUsername(), ASCENSCIA_APP_NAME);
 
     UserConnection newUserConnection = new UserConnection();
     newUserConnection.setId(

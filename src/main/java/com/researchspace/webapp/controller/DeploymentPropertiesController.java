@@ -42,6 +42,9 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${pyrat.server.config}")
   private String pyratServerConfig;
 
+  @Value("${raid.server.config}")
+  private String raidServerConfig;
+
   @Value("${labtools.server.location}")
   private String labToolsServerUrl;
 
@@ -151,6 +154,8 @@ public class DeploymentPropertiesController extends BaseController {
         return egnyteClientId;
       case "pyrat.server.config":
         return pyratServerConfig;
+      case "raid.server.config":
+        return raidServerConfig;
       case "owncloud.url":
         return ownCloudURL;
       case "owncloud.server.name":
@@ -252,6 +257,7 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("nextcloud.client.id", nextCloudClientId);
 
     properties.put("pyrat.server.config", pyratServerConfig);
+    properties.put("raid.server.config", raidServerConfig);
 
     properties.put("googledrive.developer.key", googleDriveDevKey);
     properties.put("googledrive.client.id", googleDriveClientId);

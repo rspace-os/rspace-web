@@ -1,0 +1,11 @@
+{
+  "access_token": "ACCESS_TOKEN",
+  "expires_in": 82649,
+  "refresh_expires_in": 82649,
+  "refresh_token": "REFRESH_TOKEN",
+  "token_type": "Bearer",
+  "id_token": "ACCESS_TOKEN",
+  "not-before-policy": 0,
+  "session_state": "595c279f-0457-4100-a33b-6f0b4429254e",
+  "scope": "openid email service_point_group_id profile"
+}
