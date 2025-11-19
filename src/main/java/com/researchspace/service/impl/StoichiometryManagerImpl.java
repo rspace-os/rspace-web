@@ -26,10 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional // todo: needed?
 public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, Long>
     implements StoichiometryManager {
 
@@ -57,7 +55,6 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   }
 
   @Override
-  @Transactional(readOnly = true) // todo: needeed?
   public AuditedEntity<Stoichiometry> getRevision(long id, Long revision, User user) {
     if (revision == null) {
       return auditManager.getNewestRevisionForEntity(Stoichiometry.class, id);

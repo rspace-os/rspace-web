@@ -10,31 +10,6 @@ public final class StoichiometryMapper {
 
   private StoichiometryMapper() {}
 
-  public static StoichiometryDTO toDTO(Stoichiometry stoichiometry) {
-    if (stoichiometry == null) {
-      return null;
-    }
-
-    List<StoichiometryMoleculeDTO> moleculeDTOs = new ArrayList<>();
-    if (stoichiometry.getMolecules() != null) {
-      moleculeDTOs =
-          stoichiometry.getMolecules().stream()
-              .map(StoichiometryMapper::moleculeToDTO)
-              .collect(Collectors.toList());
-    }
-
-    Long parentReactionId = null;
-    if (stoichiometry.getParentReaction() != null) {
-      parentReactionId = stoichiometry.getParentReaction().getId();
-    }
-
-    return StoichiometryDTO.builder()
-        .id(stoichiometry.getId())
-        .molecules(moleculeDTOs)
-        .parentReactionId(parentReactionId)
-        .build();
-  }
-
   public static StoichiometryDTO toDTO(Stoichiometry stoichiometry, Long revision) {
     if (stoichiometry == null) {
       return null;
