@@ -3,7 +3,7 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <changeSet id="2025-11-13" context="run" author="fraser">
+    <changeSet id="2025-11-13a" context="run" author="fraser">
         <comment>Create new table to hold the link between stoichiometry molecules and inventory items</comment>
         <createTable tableName="StoichiometryInventoryLink">
             <column name="id" type="BIGINT" autoIncrement="true">
@@ -30,6 +30,42 @@
         <createIndex tableName="StoichiometryInventoryLink" indexName="idx_stoich_molecule">
             <column name="stoichiometry_molecule_id"/>
         </createIndex>
+    </changeSet>
+
+    <changeSet id="2025-11-13b" context="run" author="fraser">
+        <comment>Add column to StoichiometryMolecule to hold the reference to the inventory link</comment>
+        <addColumn tableName="StoichiometryMolecule">
+            <column name="inventory_link_id" type="BIGINT">
+                <constraints foreignKeyName="fk_inventory_link" references="StoichiometryInventoryLink(id)"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2025-11-13c" context="run" author="fraser">
+        <comment>Create AUD table for StoichiometryInventoryLink</comment>
+        <createTable tableName="StoichiometryInventoryLink_AUD">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REV" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVTYPE" type="TINYINT"/>
+
+            <column name="stoichiometry_molecule_id" type="BIGINT"/>
+            <column name="container_id" type="BIGINT"/>
+            <column name="sample_id" type="BIGINT"/>
+            <column name="subSample_id" type="BIGINT"/>
+            <column name="quantity_used" type="DECIMAL(19,6)"/>
+            <column name="unit" type="VARCHAR(32)"/>
+        </createTable>
+
+        <addPrimaryKey tableName="StoichiometryInventoryLink_AUD" columnNames="id, REV" constraintName="PRIMARY"/>
+        <addForeignKeyConstraint baseTableName="StoichiometryInventoryLink_AUD" baseColumnNames="REV"
+                                 referencedTableName="REVINFO" referencedColumnNames="REV"
+                                 constraintName="FK_stoichiometry_inventory_link_aud_rev"
+                                 deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION" onUpdate="NO ACTION"/>
     </changeSet>
 
 </databaseChangeLog>
