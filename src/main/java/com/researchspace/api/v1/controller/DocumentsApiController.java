@@ -152,7 +152,6 @@ public class DocumentsApiController extends BaseApiController implements Documen
     convertISearchResults(
         pgCrit,
         srchConfig,
-        user,
         docSearchResults,
         searchResult,
         info,
