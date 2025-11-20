@@ -13,7 +13,6 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
-import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import javax.ws.rs.NotFoundException;
@@ -28,20 +27,17 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private final StoichiometryMoleculeManager stoichiometryMoleculeManager;
   private final IPermissionUtils elnPermissionUtils;
   private final InventoryPermissionUtils invPermissionUtils;
-  private final StoichiometryManager stoichiometryManager;
 
   @Autowired
   public StoichiometryInventoryLinkManagerImpl(
       StoichiometryInventoryLinkDao linkDao,
       StoichiometryMoleculeManager stoichiometryMoleculeManager,
       IPermissionUtils elnPermissionUtils,
-      InventoryPermissionUtils invPermissionUtils,
-      StoichiometryManager stoichiometryManager) {
+      InventoryPermissionUtils invPermissionUtils) {
     this.linkDao = linkDao;
     this.stoichiometryMoleculeManager = stoichiometryMoleculeManager;
     this.elnPermissionUtils = elnPermissionUtils;
     this.invPermissionUtils = invPermissionUtils;
-    this.stoichiometryManager = stoichiometryManager;
   }
 
   @Override
@@ -67,12 +63,11 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
 
   /**
    * Ensures each change to an inventory link (add new, update quantity, delete) creates a new
-   * Stoichiometry revision
+   * Stoichiometry revision.
    */
   private void generateNewStoichiometryRevision(StoichiometryMolecule stoichiometryMolecule) {
     Stoichiometry parent = stoichiometryMolecule.getStoichiometry();
     parent.touchForAudit();
-    stoichiometryManager.save(parent);
   }
 
   @Override

@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.dao.StoichiometryDao;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
@@ -15,6 +16,7 @@ import com.researchspace.service.AuditManager;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
 import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.chemistry.StoichiometryException;
 import java.io.IOException;
@@ -35,18 +37,21 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   private final RSChemElementManager rsChemElementManager;
   private final ChemicalSearcher chemicalSearcher;
   private final AuditManager auditManager;
+  private final StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager;
 
   @Autowired
   public StoichiometryManagerImpl(
       StoichiometryDao stoichiometryDao,
       RSChemElementManager rsChemElementManager,
       ChemicalSearcher chemicalSearcher,
-      AuditManager auditManager) {
+      AuditManager auditManager,
+      StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager) {
     super(stoichiometryDao);
     this.stoichiometryDao = stoichiometryDao;
     this.rsChemElementManager = rsChemElementManager;
     this.chemicalSearcher = chemicalSearcher;
     this.auditManager = auditManager;
+    this.stoichiometryInventoryLinkManager = stoichiometryInventoryLinkManager;
   }
 
   @Override
@@ -137,15 +142,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
 
     if (source.getMolecules() != null) {
       for (StoichiometryMolecule sourceMol : source.getMolecules()) {
-        RSChemElement newMol;
-        try {
-          newMol =
-              rsChemElementManager.save(
-                  RSChemElement.builder().chemElements(sourceMol.getSmiles()).build(), user);
-        } catch (IOException e) {
-          throw new StoichiometryException(
-              "Problem saving molecule from SMILES during stoichiometry copy", e);
-        }
+        RSChemElement newMol = createNewRsChemElement(user, sourceMol);
 
         StoichiometryMolecule copy =
             StoichiometryMolecule.builder()
@@ -168,7 +165,37 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       }
     }
 
-    return save(target);
+    Stoichiometry saved = save(target);
+    copyInventoryLinks(source, saved, user);
+    return saved;
+  }
+
+  private void copyInventoryLinks(Stoichiometry source, Stoichiometry copy, User user) {
+    for (StoichiometryMolecule sourceMol : source.getMolecules()) {
+      if (sourceMol.getInventoryLink() != null) {
+        StoichiometryInventoryLinkRequest link =
+            StoichiometryInventoryLinkRequest.builder()
+                .inventoryItemGlobalId(
+                    sourceMol.getInventoryLink().getConnectedRecordGlobalIdentifier())
+                .stoichiometryMoleculeId(copy.getId())
+                .quantityUsed(sourceMol.getInventoryLink().getQuantityUsed())
+                .build();
+        stoichiometryInventoryLinkManager.createLink(link, user);
+      }
+    }
+  }
+
+  private RSChemElement createNewRsChemElement(User user, StoichiometryMolecule sourceMol) {
+    RSChemElement newMol;
+    try {
+      newMol =
+          rsChemElementManager.save(
+              RSChemElement.builder().chemElements(sourceMol.getSmiles()).build(), user);
+    } catch (IOException e) {
+      throw new StoichiometryException(
+          "Problem saving molecule from SMILES during stoichiometry copy", e);
+    }
+    return newMol;
   }
 
   private Set<Long> processUpdates(
