@@ -314,7 +314,29 @@ test.describe("ValidatingSubmitButton", () => {
 
     feature(
       "When user prefers more contrast, button should meet WCAG AAA contrast requirements",
-      async ({ Given, Then }) => {
+      async ({ Given, Then, page }) => {
+        await page.emulateMedia({ forcedColors: 'active' });
+
+        // Stub prefers-contrast
+        await page.addInitScript(() => {
+          const originalMatchMedia = window.matchMedia;
+          window.matchMedia = (query: string) => {
+            if (query === '(prefers-contrast: more)') {
+              return {
+                matches: true,
+                media: query,
+                onchange: null,
+                addListener() {}, // deprecated
+                removeListener() {},
+                addEventListener() {},
+                removeEventListener() {},
+                dispatchEvent() { return false; },
+              } as MediaQueryList;
+            }
+            return originalMatchMedia(query);
+          };
+        });
+
         await Given[
           "the ValidatingSubmitButton with high contrast is rendered"
         ]();
