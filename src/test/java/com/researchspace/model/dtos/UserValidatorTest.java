@@ -33,7 +33,8 @@ public class UserValidatorTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    user = TestFactory.createAnyUser("XXXXXX");
+    /* plaintext password, so validation rules are applied to the actual password, not the hash */
+    user = TestFactory.createAnyUserWithPlainTextPassword("XXXXXX");
     ResourceBundleMessageSource msgSource = new ResourceBundleMessageSource();
     msgSource.setUseCodeAsDefaultMessage(true);
     userValidator.setMessages(new MessageSourceUtils(msgSource));
