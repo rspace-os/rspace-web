@@ -230,22 +230,22 @@ public class UserValidatorTest {
   public void validatePassword() {
     // invalid password scenarios
     assertNotEquals(UserValidator.FIELD_OK, userValidator.validatePasswords(null, null, "user"));
-    assertNotEquals(UserValidator.FIELD_OK, userValidator
-        .validatePasswords("xxxxxxxx", "yyyyyyyy", "user"));
+    assertNotEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords("xxxxxxxx", "yyyyyyyy", "user"));
     String toolong = RandomStringUtils.randomAlphabetic(User.MAX_PWD_LENGTH + 1);
-    assertNotEquals(UserValidator.FIELD_OK,
-        userValidator.validatePasswords(toolong, toolong, "user"));
-    assertNotEquals(UserValidator.FIELD_OK,
-        userValidator.validatePasswords("xxxx", "yyyy", "user"));
-    assertNotEquals(UserValidator.FIELD_OK, userValidator
-        .validatePasswords("password", "password", "user"));
+    assertNotEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords(toolong, toolong, "user"));
+    assertNotEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords("xxxx", "yyyy", "user"));
+    assertNotEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords("password", "password", "user"));
 
     // valid password scenarios
-    assertEquals(UserValidator.FIELD_OK, userValidator
-        .validatePasswords("goodpwd23", "goodpwd23", "user"));
+    assertEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords("goodpwd23", "goodpwd23", "user"));
     String notTooLong = RandomStringUtils.randomAlphabetic(User.MAX_PWD_LENGTH);
-    assertEquals(UserValidator.FIELD_OK, userValidator
-        .validatePasswords(notTooLong, notTooLong, "user"));
+    assertEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords(notTooLong, notTooLong, "user"));
   }
 
   @Test

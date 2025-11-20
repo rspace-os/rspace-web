@@ -132,23 +132,25 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   @Test
   public void testUniqueUsernameEmailRequired() throws Exception {
     User user = createAndSaveUser(getRandomAlphabeticString("any"));
-    initUser(user);
-    user.setRole(Constants.USER_ROLE);
-    user.setConfirmPassword(user.getPassword());
-    MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
-    // now let' set email different but keep same uname:
     final String initialEmail = user.getEmail();
-    user.setEmail(getRandomEmail());
-    addUserParams(builder, user).principal(sysAdminPrincipal);
+    initUser(user);
+
+    // now let's set a different email, but keep same uname
+    User newUser = TestFactory.createAnyUserWithPlainTextPassword(user.getUsername());
+    newUser.setRole(Constants.USER_ROLE);
+    newUser.setEmail(getRandomEmail());
+
+    MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
+    addUserParams(builder, newUser).principal(sysAdminPrincipal);
     MvcResult result = mockMvc.perform(builder).andReturn();
     assertDuplicateEmailOrUsername(result);
 
-    // now let' set uname different but keep same email:
-    user.setEmail(initialEmail);
-    user.setUsername(getRandomAlphabeticString("any"));
+    // now let's set different username, but keep same email
+    newUser.setEmail(initialEmail);
+    newUser.setUsername(getRandomAlphabeticString("any"));
 
     MockHttpServletRequestBuilder builder2 = post("/system/ajax/createUserAccount");
-    addUserParams(builder2, user).principal(sysAdminPrincipal);
+    addUserParams(builder2, newUser).principal(sysAdminPrincipal);
     MvcResult result2 = mockMvc.perform(builder2).andReturn();
     assertDuplicateEmailOrUsername(result2);
   }
@@ -575,7 +577,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     User pi = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
     initUsers(pi);
     Group grp = createGroupForUsers(sysAdmin, pi.getUsername(), "", pi);
-    User userToCreate = TestFactory.createAnyUser(getRandomAlphabeticString("user"));
+    User userToCreate =
+        TestFactory.createAnyUserWithPlainTextPassword(getRandomAlphabeticString("user"));
     userToCreate.setRole(Constants.USER_ROLE);
 
     MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
@@ -684,7 +687,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     Community comm = createAndSaveCommunity(sysAdmin, getRandomAlphabeticString("comm"));
     communityMgr.addGroupToCommunity(grp.getId(), comm.getId(), sysAdmin);
 
-    User piToCreate = TestFactory.createAnyUser(getRandomAlphabeticString("pi"));
+    User piToCreate =
+        TestFactory.createAnyUserWithPlainTextPassword(getRandomAlphabeticString("pi"));
     piToCreate.setRole(Constants.PI_ROLE);
     MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
     addUserParams(builder, piToCreate)
@@ -712,7 +716,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     Community comm = createAndSaveCommunity(admin, getRandomAlphabeticString("comm"));
     communityMgr.addGroupToCommunity(grp.getId(), comm.getId(), admin);
 
-    User piToCreate = TestFactory.createAnyUser(getRandomAlphabeticString("pi"));
+    User piToCreate =
+        TestFactory.createAnyUserWithPlainTextPassword(getRandomAlphabeticString("pi"));
     piToCreate.setRole(Constants.PI_ROLE);
     MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
     addUserParams(builder, piToCreate)
@@ -735,7 +740,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     Community comm = createAndSaveCommunity(sysAdmin, getRandomAlphabeticString("comm"));
     communityMgr.addGroupToCommunity(grp.getId(), comm.getId(), sysAdmin);
 
-    User adminToCreate = TestFactory.createAnyUser(getRandomAlphabeticString("admin"));
+    User adminToCreate =
+        TestFactory.createAnyUserWithPlainTextPassword(getRandomAlphabeticString("admin"));
     adminToCreate.setRole(Constants.ADMIN_ROLE);
     MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
     addUserParams(builder, adminToCreate)
@@ -758,7 +764,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     Community comm = createAndSaveCommunity(adminSubject, getRandomAlphabeticString("comm"));
     communityMgr.addGroupToCommunity(grp.getId(), comm.getId(), adminSubject);
 
-    User adminToCreate = TestFactory.createAnyUser(getRandomAlphabeticString("admin"));
+    User adminToCreate =
+        TestFactory.createAnyUserWithPlainTextPassword(getRandomAlphabeticString("admin"));
     adminToCreate.setRole(Constants.ADMIN_ROLE);
     MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
     addUserParams(builder, adminToCreate)
@@ -772,7 +779,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
 
   @Test
   public void createNewSystemAdminAccountUsingSysAdmin() throws Exception {
-    User toCreate = TestFactory.createAnyUser(getRandomAlphabeticString("sysadmin"));
+    User toCreate =
+        TestFactory.createAnyUserWithPlainTextPassword(getRandomAlphabeticString("sysadmin"));
     toCreate.setRole(Constants.SYSADMIN_ROLE);
     MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
     addUserParams(builder, toCreate).principal(sysAdminPrincipal);
@@ -853,7 +861,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   public void createNewSystemAdminAccountUsingRSpaceAdminNotAllowed() throws Exception {
     User admin = createAndSaveUser(getRandomAlphabeticString("admin"), Constants.ADMIN_ROLE);
     logoutAndLoginAs(admin);
-    User toCreate = TestFactory.createAnyUser(getRandomAlphabeticString("sysadmin"));
+    User toCreate =
+        TestFactory.createAnyUserWithPlainTextPassword(getRandomAlphabeticString("sysadmin"));
     toCreate.setRole(Constants.SYSADMIN_ROLE);
     MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
     addUserParams(builder, toCreate).principal(new MockPrincipal(admin.getUsername()));
