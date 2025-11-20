@@ -9,9 +9,11 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
+import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import javax.ws.rs.NotFoundException;
@@ -26,17 +28,20 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private final StoichiometryMoleculeManager stoichiometryMoleculeManager;
   private final IPermissionUtils elnPermissionUtils;
   private final InventoryPermissionUtils invPermissionUtils;
+  private final StoichiometryManager stoichiometryManager;
 
   @Autowired
   public StoichiometryInventoryLinkManagerImpl(
       StoichiometryInventoryLinkDao linkDao,
       StoichiometryMoleculeManager stoichiometryMoleculeManager,
       IPermissionUtils elnPermissionUtils,
-      InventoryPermissionUtils invPermissionUtils) {
+      InventoryPermissionUtils invPermissionUtils,
+      StoichiometryManager stoichiometryManager) {
     this.linkDao = linkDao;
     this.stoichiometryMoleculeManager = stoichiometryMoleculeManager;
     this.elnPermissionUtils = elnPermissionUtils;
     this.invPermissionUtils = invPermissionUtils;
+    this.stoichiometryManager = stoichiometryManager;
   }
 
   @Override
@@ -56,7 +61,18 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     link.setInventoryRecord(inventoryRecord);
     link.setQuantityUsed(req.getQuantityUsed());
     link = linkDao.save(link);
+    generateNewStoichiometryRevision(stoichiometryMolecule);
     return toDto(link);
+  }
+
+  /**
+   * Ensures each change to an inventory link (add new, update quantity, delete) creates a new
+   * Stoichiometry revision
+   */
+  private void generateNewStoichiometryRevision(StoichiometryMolecule stoichiometryMolecule) {
+    Stoichiometry parent = stoichiometryMolecule.getStoichiometry();
+    parent.touchForAudit();
+    stoichiometryManager.save(parent);
   }
 
   @Override
@@ -74,6 +90,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
     entity.setQuantityUsed(newQuantity);
     entity = linkDao.save(entity);
+    generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
     return toDto(entity);
   }
 
@@ -83,6 +100,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.WRITE, user);
     invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
     linkDao.remove(linkId);
+    generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
   }
 
   private StoichiometryInventoryLinkDTO toDto(StoichiometryInventoryLink e) {

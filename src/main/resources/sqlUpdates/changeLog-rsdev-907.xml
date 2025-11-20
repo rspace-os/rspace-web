@@ -33,15 +33,6 @@
     </changeSet>
 
     <changeSet id="2025-11-13b" context="run" author="fraser">
-        <comment>Add column to StoichiometryMolecule to hold the reference to the inventory link</comment>
-        <addColumn tableName="StoichiometryMolecule">
-            <column name="inventory_link_id" type="BIGINT">
-                <constraints foreignKeyName="fk_inventory_link" references="StoichiometryInventoryLink(id)"/>
-            </column>
-        </addColumn>
-    </changeSet>
-
-    <changeSet id="2025-11-13c" context="run" author="fraser">
         <comment>Create AUD table for StoichiometryInventoryLink</comment>
         <createTable tableName="StoichiometryInventoryLink_AUD">
             <column name="id" type="BIGINT">

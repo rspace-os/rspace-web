@@ -58,9 +58,12 @@ public final class StoichiometryMapper {
     }
     Long rsChemElementId =
         molecule.getRsChemElement() != null ? molecule.getRsChemElement().getId() : null;
+    Long inventoryLinkId =
+        molecule.getInventoryLink() != null ? molecule.getInventoryLink().getId() : null;
     return StoichiometryMoleculeDTO.builder()
         .id(molecule.getId())
         .rsChemElementId(rsChemElementId)
+        .inventoryLinkId(inventoryLinkId)
         .role(molecule.getRole())
         .formula(molecule.getFormula())
         .name(molecule.getName())
