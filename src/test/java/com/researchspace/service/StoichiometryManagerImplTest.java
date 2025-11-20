@@ -46,7 +46,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 
 @RunWith(MockitoJUnitRunner.class)
-public class StoichiometryManagerTest {
+public class StoichiometryManagerImplTest {
 
   @Mock private StoichiometryDao stoichiometryDao;
   @Mock private RSChemElementManager rsChemElementManager;
