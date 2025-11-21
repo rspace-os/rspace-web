@@ -22,6 +22,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
+import com.researchspace.service.AuditManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
 import java.util.List;
@@ -39,6 +40,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
   private String apiKey;
 
   private final ObjectMapper mapper = new ObjectMapper();
+  @Autowired private AuditManager auditManager;
 
   @Before
   public void setup() throws Exception {
@@ -57,6 +59,9 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     req.setInventoryItemGlobalId(sample.getGlobalId());
     req.setQuantityUsed(1.23);
 
+    // creation should create a new Stoichiometry revision
+    long revisionBeforeCreateLink = getLatestStoichiometryRevisionId(molecule);
+
     MvcResult createResult =
         mockMvc
             .perform(
@@ -70,6 +75,16 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
         getFromJsonResponseBody(createResult, StoichiometryInventoryLinkDTO.class);
     assertEquals(molecule.getId(), created.getStoichiometryMoleculeId());
     assertEquals(Double.valueOf(1.23), created.getQuantityUsed());
+
+    long latestRevision = getLatestStoichiometryRevisionId(molecule);
+    assertTrue(latestRevision > revisionBeforeCreateLink);
+  }
+
+  private long getLatestStoichiometryRevisionId(StoichiometryMolecule molecule) {
+    return auditManager
+        .getNewestRevisionForEntity(Stoichiometry.class, molecule.getStoichiometry().getId())
+        .getRevision()
+        .longValue();
   }
 
   @Test

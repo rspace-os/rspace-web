@@ -17,6 +17,7 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.StoichiometryMoleculeManager;
@@ -50,6 +51,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     user.setUsername("u1");
     molecule = new StoichiometryMolecule();
     molecule.setId(10L);
+    molecule.setStoichiometry(new Stoichiometry());
     invSample = new Sample();
     invSample.setId(200L);
     owningRecord = org.mockito.Mockito.mock(BaseRecord.class);
