@@ -16,10 +16,6 @@ public class StoichiometryMoleculeDaoHibernate
 
   @Override
   public BaseRecord getDocContainingMolecule(StoichiometryMolecule molecule) {
-    if (molecule == null) {
-      return null;
-    }
-
     Query<BaseRecord> query =
         getSession()
             .createQuery(

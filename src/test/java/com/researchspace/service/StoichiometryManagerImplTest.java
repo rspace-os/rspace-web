@@ -354,7 +354,7 @@ public class StoichiometryManagerImplTest {
 
     stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user);
 
-    verify(stoichiometryDao, org.mockito.Mockito.atLeast(2)).save(any(Stoichiometry.class));
+    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
 
     Stoichiometry finalSave = savedStoichiometries.get(savedStoichiometries.size() - 1);
@@ -367,22 +367,21 @@ public class StoichiometryManagerImplTest {
     Long sourceParentReactionId = 11L;
     RSChemElement targetParentReaction = createRSChemElement(22L);
 
-    // Build source stoichiometry with two molecules, each having an inventory link
+    // Build source stoichiometry with two molecules, mol1 has inventory link
     Stoichiometry source =
         Stoichiometry.builder()
             .id(5L)
             .parentReaction(createRSChemElement(sourceParentReactionId))
             .molecules(new ArrayList<>())
             .build();
-
-    StoichiometryMolecule srcMol1 =
+    StoichiometryMolecule mol1 =
         StoichiometryMolecule.builder()
             .id(1L)
             .stoichiometry(source)
             .rsChemElement(createRSChemElement(101L))
             .smiles("C")
             .build();
-    StoichiometryMolecule srcMol2 =
+    StoichiometryMolecule mol2 =
         StoichiometryMolecule.builder()
             .id(2L)
             .stoichiometry(source)
@@ -395,12 +394,12 @@ public class StoichiometryManagerImplTest {
     sample.setId(10L);
     link1.setSample(sample);
     link1.setQuantityUsed(1.5);
-    link1.setStoichiometryMolecule(srcMol1);
+    link1.setStoichiometryMolecule(mol1);
 
-    srcMol1.setInventoryLink(link1);
+    mol1.setInventoryLink(link1);
 
-    source.getMolecules().add(srcMol1);
-    source.getMolecules().add(srcMol2);
+    source.getMolecules().add(mol1);
+    source.getMolecules().add(mol2);
 
     when(stoichiometryDao.findByParentReactionId(sourceParentReactionId))
         .thenReturn(Optional.of(source));
@@ -420,7 +419,7 @@ public class StoichiometryManagerImplTest {
     assertEquals(1, reqs.size());
     StoichiometryInventoryLinkRequest newLink = reqs.get(0);
     assertEquals("SA" + sample.getId(), newLink.getInventoryItemGlobalId());
-    assertEquals(srcMol1.getInventoryLink().getQuantityUsed(), newLink.getQuantityUsed());
+    assertEquals(mol1.getInventoryLink().getQuantityUsed(), newLink.getQuantityUsed());
   }
 
   @Test

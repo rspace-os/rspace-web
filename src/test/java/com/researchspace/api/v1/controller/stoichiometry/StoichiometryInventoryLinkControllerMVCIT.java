@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.stoichiometry.StoichiometryLinkQuantityUpd
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.field.Field;
@@ -157,7 +158,6 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     StoichiometryInventoryLinkDTO created =
         getFromJsonResponseBody(createResult, StoichiometryInventoryLinkDTO.class);
 
-    // Update quantity
     StoichiometryLinkQuantityUpdateRequest upd = new StoichiometryLinkQuantityUpdateRequest();
     upd.setStoichiometryLinkId(created.getId());
     upd.setNewQuantity(9.5);
@@ -255,8 +255,8 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
   private RSChemElement addReactionToField(Field field, User owner) throws Exception {
     String reactionString = "C1C=CC=CC=1.C1C=CC=C1>>C1CCCCC1";
     String imageBytes = com.researchspace.testutils.RSpaceTestUtils.getChemImage();
-    com.researchspace.model.dtos.chemistry.ChemicalDataDTO chemicalData =
-        com.researchspace.model.dtos.chemistry.ChemicalDataDTO.builder()
+    ChemicalDataDTO chemicalData =
+        ChemicalDataDTO.builder()
             .chemElements(reactionString)
             .fieldId(field.getId())
             .imageBase64(imageBytes)
