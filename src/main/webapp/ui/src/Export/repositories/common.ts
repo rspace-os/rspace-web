@@ -63,9 +63,14 @@ export type Repo = {
    * associate with the export.
    */
   linkedDMPs: Array<Plan> | null;
-
+  metadataLanguages: Array<Record<string,string>>;
   label?: string;
   repoCfg: unknown;
+  repoConnectionInfo: {
+    apiKey: string;
+    repositoryName: string;
+    serverURL: string;
+  }
 };
 
 /**
@@ -98,6 +103,11 @@ export const DEFAULT_REPO_CONFIG = {
     otherProperties: {},
   },
   depositToRepository: false as boolean,
+  repoConnectionInfo: {
+    apiKey: "",
+    repositoryName: "",
+    serverURL: "",
+  }
 };
 
 export type RepoDetails = typeof DEFAULT_REPO_CONFIG;

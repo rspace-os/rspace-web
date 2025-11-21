@@ -147,6 +147,7 @@ function ExportRepo({
       crossrefFunders: [] as Array<{ name: string }>,
       selectedFunder: {},
       tags: [] as Array<Tag>,
+      metadataLanguage: "",
     })
   );
   const [fetchingTags, setFetchingTags] = useState(false);
@@ -217,6 +218,11 @@ function ExportRepo({
         otherProperties: state.otherProperties,
         tags: state.tags,
       },
+      repoConnectionInfo: {
+        apiKey: repo.repoConnectionInfo?.apiKey,
+        repositoryName: repo.repoConnectionInfo?.repositoryName,
+        serverURL: repo.repoConnectionInfo?.serverURL
+      }
     };
   };
 
@@ -233,16 +239,26 @@ function ExportRepo({
     updateRemoteConfig();
   };
 
+  const handleMetadataLanguageChange = (event: {
+    target: { name: string; value: string };
+  }) => {
+    runInAction(() => {
+      state.otherProperties = { metadataLanguage: event.target.value };
+      state.metadataLanguage = event.target.value;
+    });
+    updateRemoteConfig();
+  };
+
   const handleSwitch =
     <Key extends keyof typeof state>(
       name: Key
     ): ((event: { target: { checked: boolean } }) => void) =>
-    (event) => {
-      runInAction(() => {
-        // @ts-expect-error the type of state[name] might not be a boolean
-        state[name] = event.target.checked;
-      });
-    };
+      (event) => {
+        runInAction(() => {
+          // @ts-expect-error the type of state[name] might not be a boolean
+          state[name] = event.target.checked;
+        });
+      };
 
   const updatePeople = (people: Array<Person>) => {
     runInAction(() => {
@@ -383,7 +399,8 @@ function ExportRepo({
               }}
               tags={state.tags}
               fetchingTags={fetchingTags}
-            />
+              metadataLanguage={state.metadataLanguage}
+              handleMetadataLanguageChange={handleMetadataLanguageChange}/>
           </>
         )}
         {repo.repoName === "app.figshare" && (
