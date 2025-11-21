@@ -128,61 +128,64 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   }
 
   @Override
-  public Stoichiometry copyForReaction(
+  public Stoichiometry copy(
       Long sourceParentReactionId, RSChemElement newParentReaction, User user) {
-    Stoichiometry source =
+    Stoichiometry originalStoich =
         findByParentReactionId(sourceParentReactionId)
             .orElseThrow(
                 () ->
                     new StoichiometryException(
                         "No stoichiometry found for reaction id " + sourceParentReactionId));
 
-    Stoichiometry target = Stoichiometry.builder().parentReaction(newParentReaction).build();
-    target = save(target);
+    Stoichiometry newStoich = Stoichiometry.builder().parentReaction(newParentReaction).build();
+    newStoich = save(newStoich);
 
-    if (source.getMolecules() != null) {
-      for (StoichiometryMolecule sourceMol : source.getMolecules()) {
-        RSChemElement newMol = createNewRsChemElement(user, sourceMol);
-
-        StoichiometryMolecule copy =
-            StoichiometryMolecule.builder()
-                .stoichiometry(target)
-                .rsChemElement(newMol)
-                .role(sourceMol.getRole())
-                .smiles(sourceMol.getSmiles())
-                .name(sourceMol.getName())
-                .formula(sourceMol.getFormula())
-                .molecularWeight(sourceMol.getMolecularWeight())
-                .coefficient(sourceMol.getCoefficient())
-                .mass(sourceMol.getMass())
-                .actualAmount(sourceMol.getActualAmount())
-                .actualYield(sourceMol.getActualYield())
-                .limitingReagent(sourceMol.getLimitingReagent())
-                .notes(sourceMol.getNotes())
-                .build();
-
-        target.addMolecule(copy);
+    if (originalStoich.getMolecules() != null) {
+      for (StoichiometryMolecule originalMol : originalStoich.getMolecules()) {
+        RSChemElement newMol = createNewRsChemElement(user, originalMol);
+        StoichiometryMolecule copy = buildMolecule(originalMol, newStoich, newMol);
+        newStoich.addMolecule(copy);
+        if (originalMol.getInventoryLink() != null) {
+          // Save parent Stoichiometry to ensure the newly created molecule gets an ID, required for
+          // copying inventory links
+          newStoich = save(newStoich);
+          copyInventoryLink(user, originalMol, copy);
+        }
       }
     }
-
-    Stoichiometry saved = save(target);
-    copyInventoryLinks(source, saved, user);
-    return saved;
+    save(newStoich);
+    return newStoich;
   }
 
-  private void copyInventoryLinks(Stoichiometry source, Stoichiometry copy, User user) {
-    for (StoichiometryMolecule sourceMol : source.getMolecules()) {
-      if (sourceMol.getInventoryLink() != null) {
-        StoichiometryInventoryLinkRequest link =
-            StoichiometryInventoryLinkRequest.builder()
-                .inventoryItemGlobalId(
-                    sourceMol.getInventoryLink().getConnectedRecordGlobalIdentifier())
-                .stoichiometryMoleculeId(copy.getId())
-                .quantityUsed(sourceMol.getInventoryLink().getQuantityUsed())
-                .build();
-        stoichiometryInventoryLinkManager.createLink(link, user);
-      }
-    }
+  private void copyInventoryLink(
+      User user, StoichiometryMolecule sourceMol, StoichiometryMolecule copy) {
+    StoichiometryInventoryLinkRequest link =
+        StoichiometryInventoryLinkRequest.builder()
+            .inventoryItemGlobalId(
+                sourceMol.getInventoryLink().getConnectedRecordGlobalIdentifier())
+            .stoichiometryMoleculeId(copy.getId())
+            .quantityUsed(sourceMol.getInventoryLink().getQuantityUsed())
+            .build();
+    stoichiometryInventoryLinkManager.createLink(link, user);
+  }
+
+  private static StoichiometryMolecule buildMolecule(
+      StoichiometryMolecule sourceMol, Stoichiometry target, RSChemElement newMol) {
+    return StoichiometryMolecule.builder()
+        .stoichiometry(target)
+        .rsChemElement(newMol)
+        .role(sourceMol.getRole())
+        .smiles(sourceMol.getSmiles())
+        .name(sourceMol.getName())
+        .formula(sourceMol.getFormula())
+        .molecularWeight(sourceMol.getMolecularWeight())
+        .coefficient(sourceMol.getCoefficient())
+        .mass(sourceMol.getMass())
+        .actualAmount(sourceMol.getActualAmount())
+        .actualYield(sourceMol.getActualYield())
+        .limitingReagent(sourceMol.getLimitingReagent())
+        .notes(sourceMol.getNotes())
+        .build();
   }
 
   private RSChemElement createNewRsChemElement(User user, StoichiometryMolecule sourceMol) {
