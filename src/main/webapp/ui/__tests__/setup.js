@@ -1,3 +1,6 @@
+import { enableFetchMocks } from "jest-fetch-mock";
+enableFetchMocks();
+
 /*
  * Polyfill for TextEncoder and TextDecoder in Jest tests.
  *
@@ -6,6 +9,6 @@
  * for encoding/decoding text, even in test environments.
  * This ensures tests that rely on these APIs do not fail with "ReferenceError: TextEncoder is not defined".
  */
-const { TextEncoder, TextDecoder } = require("util");
+import { TextEncoder, TextDecoder } from "util";
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;

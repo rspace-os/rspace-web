@@ -217,36 +217,36 @@ function initChangePasswordDialog(){
           $("#changePasswordDialog").dialog('close');
         },
         Save: function (){
-    
-          var currentPassword = $("#currentPasswordInput").val();
-          var newPassword   = $("#newPasswordInput").val();
-          var confirmPassword = $("#newPasswordConfirm").val();
-          var hintPassword  = $("#newPasswordHint").val();
-          var data = { 
-              currentPassword: currentPassword,
-              newPassword: newPassword,
-              confirmPassword: confirmPassword,
-              hintPassword: hintPassword
-          };
+            const currentPassword = $("#currentPasswordInput").val();
+            const newPassword   = $("#newPasswordInput").val();
+            const confirmPassword = $("#newPasswordConfirm").val();
+            const hintPassword  = $("#newPasswordHint").val();
+            const data = {
+                  currentPassword: currentPassword,
+                  newPassword: newPassword,
+                  confirmPassword: confirmPassword,
+                  hintPassword: hintPassword
+              };
           
-          RS.blockPage("Changing password...");
-          var jqxhr= $.post(createURL("/userform/ajax/changePassword"), data, function (result) { 
-            RS.unblockPage();
-            var msgx = new String(result.data);
-            
-            if (msgx.indexOf("successfully") != -1) {
-              RS.confirm(msgx, "success", 3000);
-              $("#userPasswordHint").text(hintPassword);
-              $("#changePasswordDialog").dialog('close');
-            } else {
-              $('#msgAreaPassword').text(msgx);
-              $('#msgAreaPassword').slideDown('slow');
-            }
-          });
-          jqxhr.fail(function(){
-            RS.unblockPage();
-            RS.ajaxFailed("Change password process", false, jqxhr);
-          });
+            RS.blockPage("Changing password...");
+            const jqxhr = $.post(createURL("/userform/ajax/changePassword"), data, function (result) {
+                RS.unblockPage();
+                const msgx = new String(result.data);
+
+                if (msgx.indexOf("successfully") !== -1) {
+                  RS.confirm(msgx, "success", 3000);
+                  $("#userPasswordHint").text(hintPassword);
+                  $("#changePasswordForm")[0].reset();
+                  $("#changePasswordDialog").dialog('close');
+                } else {
+                  $('#msgAreaPassword').text(msgx);
+                  $('#msgAreaPassword').slideDown('slow');
+                }
+            });
+            jqxhr.fail(function(){
+              RS.unblockPage();
+              RS.ajaxFailed("Change password process", false, jqxhr);
+            });
         }
       }
     });
@@ -275,36 +275,36 @@ function initChangeVerificationPasswordDialog(){
 	        $("#changeVerificationPasswordDialog").dialog('close');
 	      },
 	      Change: function (){
-	  
-	        var currentVerificationPassword = $("#currentVerificationPasswordInput").val();
-	        var newVerificationPassword   = $("#newVerificationPasswordInput").val();
-	        var confirmVerificationPassword = $("#newVerificationPasswordConfirm").val();
-	        var hintVerificationPassword  = $("#newVerificationPasswordHint").val();
-	        var data = { 
+	          const currentVerificationPassword = $("#currentVerificationPasswordInput").val();
+              const newVerificationPassword   = $("#newVerificationPasswordInput").val();
+              const confirmVerificationPassword = $("#newVerificationPasswordConfirm").val();
+              const hintVerificationPassword  = $("#newVerificationPasswordHint").val();
+              const data = {
 	            currentVerificationPassword: currentVerificationPassword,
 	            newVerificationPassword: newVerificationPassword,
 	            confirmVerificationPassword: confirmVerificationPassword,
 	            hintVerificationPassword: hintVerificationPassword
-	        };
+	          };
 	        
 	        RS.blockPage("Changing verification password...");
-	        var jqxhr= $.post(createURL("/vfpwd/ajax/changeVerificationPassword"), data, function (result) { 
-	          RS.unblockPage();
-	          var msgx = new String(result.data);
-	          
-	          if (msgx.indexOf("successfully") != -1) {
-	            RS.confirm(msgx, "success", 3000);
-	            $("#userVerificationPasswordHint").text(hintVerificationPassword);
-	            $("#changeVerificationPasswordDialog").dialog('close');
-	          } else {
-	            $('#msgAreaVerificationPassword').text(msgx);
-	            $('#msgAreaVerificationPassword').slideDown('slow');
-	          }
-	        });
-	        jqxhr.fail(function(){
-	          RS.unblockPage();
-              RS.ajaxFailed("Change verification password process",false,jqxhr);
-            });
+              const jqxhr= $.post(createURL("/vfpwd/ajax/changeVerificationPassword"), data, function (result) {
+                  RS.unblockPage();
+                  const msgx = new String(result.data);
+
+                  if (msgx.indexOf("successfully") !== -1) {
+                    RS.confirm(msgx, "success", 3000);
+                    $("#userVerificationPasswordHint").text(hintVerificationPassword);
+                    $("#changeVerificationPasswordForm")[0].reset();
+                    $("#changeVerificationPasswordDialog").dialog('close');
+                  } else {
+                    $('#msgAreaVerificationPassword').text(msgx);
+                    $('#msgAreaVerificationPassword').slideDown('slow');
+                  }
+                });
+              jqxhr.fail(function(){
+                RS.unblockPage();
+                RS.ajaxFailed("Change verification password process",false,jqxhr);
+              });
 	      }
 	    }
 	  });

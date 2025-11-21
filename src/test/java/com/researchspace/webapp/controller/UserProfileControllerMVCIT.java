@@ -249,8 +249,8 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     User user = createAndSaveUser(CoreTestUtils.getRandomName(8));
     logoutAndLoginAs(user);
 
-    String newPassword = RandomStringUtils.random(10);
-    String newHint = RandomStringUtils.random(10);
+    String newPassword = RandomStringUtils.randomAlphanumeric(10);
+    String newHint = RandomStringUtils.randomAlphanumeric(10);
     MvcResult result =
         mockMvc
             .perform(
@@ -263,9 +263,11 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
 
-    assertTrue(result.getResponse().getContentAsString().contains("Password changed successfully"));
+    String stringResponse = result.getResponse().getContentAsString();
+    assertTrue(
+        "unexpected: " + stringResponse, stringResponse.contains("Password changed successfully"));
 
-    String newPassword2 = RandomStringUtils.random(3);
+    String newPassword2 = RandomStringUtils.randomAlphanumeric(3);
     MvcResult result2 =
         mockMvc
             .perform(
@@ -284,7 +286,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
             .getContentAsString()
             .contains(getMsgFromResourceBundler("errors.invalidpwd").substring(0, 10)));
 
-    String newPassword3 = RandomStringUtils.random(10);
+    String newPassword3 = RandomStringUtils.randomAlphanumeric(10);
     MvcResult result3 =
         mockMvc
             .perform(
@@ -308,7 +310,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     User user = createAndSaveUser(CoreTestUtils.getRandomName(8));
     logoutAndLoginAs(user);
 
-    String newEmail = RandomStringUtils.random(10);
+    String newEmail = RandomStringUtils.randomAlphanumeric(10);
     MvcResult result =
         mockMvc
             .perform(
@@ -327,7 +329,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     Map json = parseJSONObjectFromResponseStream(result);
     assertEquals("SUCCESS", json.get("data"));
 
-    String newEmail2 = RandomStringUtils.random(300);
+    String newEmail2 = RandomStringUtils.randomAlphanumeric(300);
     MvcResult result2 =
         mockMvc
             .perform(

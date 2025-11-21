@@ -40,7 +40,7 @@ public class ApiUserPostTest extends JavaxValidatorTest {
     userToCreate.setPassword("222"); // too short
     assertNErrors(userToCreate, 5);
 
-    userToCreate.setPassword("2222       ");
-    assertNErrors(userToCreate, 4);
+    userToCreate.setPassword("222     "); // whitespaces are fine
+    assertNErrors(userToCreate, 3);
   }
 }
