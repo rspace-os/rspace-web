@@ -166,13 +166,7 @@ jobs:
         working-directory: src/main/webapp/ui
         run: npm ci --force
 
-#      - name: Run Jest tests (feature branch)
-#        if: github.ref_name != 'main'
-#        working-directory: src/main/webapp/ui
-#        run: env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2 --changedSince=main
-
-      - name: Run Jest tests (main branch)
-        #if: github.ref_name == 'main'
+      - name: Run Jest tests
         working-directory: src/main/webapp/ui
         run: npm run test -- --ci --reporters=default --reporters=jest-junit
 
@@ -214,7 +208,6 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run Playwright tests
-        if: github.ref_name == 'main'
         working-directory: src/main/webapp/ui
         run: |
           rm -rf playwright/.cache
