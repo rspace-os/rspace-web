@@ -143,8 +143,12 @@ $(document).ready(function() {
 });
 </script>
 
-<!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-<script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
-<script src="<c:url value='/ui/dist/workspaceToolbar.js'/>"></script>
-<!--End React Scripts -->
+
+<axt:once key="LOADED_exportModal">
+  <%@ include file="/ui/dist/templates/exportModal-scripts.jsp" %>
+</axt:once>
+
+<axt:once key="LOADED_workspaceToolbar">
+  <%@ include file="/ui/dist/templates/workspaceToolbar-scripts.jsp" %>
+</axt:once>
