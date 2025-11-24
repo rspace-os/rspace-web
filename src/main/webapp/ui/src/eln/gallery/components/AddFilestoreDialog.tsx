@@ -263,7 +263,7 @@ function TreeListing({
               <TreeListing
                 fsId={fsId}
                 fsName={name}
-                path={encodeURIComponent(`${path}${name}/`)}
+                path={path + encodeURIComponent(`${name}/`)}
                 onFailToAuthenticate={onFailToAuthenticate}
               />
             </TreeItem>
@@ -309,13 +309,13 @@ function FolderSelectionStep(props: {
             if (!(typeof itemId === "string")) return;
             const selectedFolder: string = itemId;
             if (!selected) return;
-            setSelectedFolderPath(selectedFolder);
+            setSelectedFolderPath(decodeURIComponent(selectedFolder));
           }}
         >
           {selectedFilesystem
             .map(({ id, name }) => (
               <TreeListing
-                path="/"
+                path={encodeURIComponent("/")}
                 fsId={id}
                 fsName={name}
                 key={null}
