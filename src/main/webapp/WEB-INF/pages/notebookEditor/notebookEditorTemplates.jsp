@@ -75,5 +75,6 @@
       <div id="cachedData"></div>
     </div>
   </div>
-  <script id="baseSearchScript" src="<c:url value='{{scriptsPrefix}}/ui/dist/baseSearch.js'/>" />
+
+  <%@ include file="/ui/dist/templates/baseSearch-scripts.jsp" %>
 </script>

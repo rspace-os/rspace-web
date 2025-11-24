@@ -1,28 +1,65 @@
 import path from 'node:path';
 import webpack from "webpack";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
+import ChunksWebpackPlugin from "chunks-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+
+/**
+ * Contains SPA entrypoints configs.
+ */
+/** @type {Array<{name: string, entrypoint: string, title: string, filePath: string}>} */
+const APP_ENTRYPOINTS = [
+  {
+    name: "inventoryEntry",
+    entrypoint: "./src/App.tsx",
+    title: "RSpace Inventory",
+    filePath: "../../inventory/start.html",
+  },
+  {
+    name: "inventoryRecordIdentifierPublicPage",
+    entrypoint: "./src/components/PublicPages/IdentifierPublicPage.tsx",
+    title: "RSpace Inventory - Public Item",
+    filePath: "../../inventory/identifierPublicPage.html",
+  },
+  {
+    name: "apps",
+    entrypoint: "./src/eln/apps/index.tsx",
+    title: "RSpace Apps",
+    filePath: "../../eln/apps.html",
+  },
+  {
+    name: "gallery",
+    entrypoint: "./src/eln/gallery/index.tsx",
+    title: "RSpace Gallery",
+    filePath: "../../eln/gallery.html",
+  },
+  {
+    name: "about",
+    entrypoint: "./src/eln/about/index.tsx",
+    title: "About RSpace",
+    filePath: "../../about/index.html",
+  },
+];
+
+/** @type {HtmlWebpackPlugin[]} */
+const entrypointHtmlPlugins = APP_ENTRYPOINTS.map(
+  ({ name, filePath, title }) =>
+    new HtmlWebpackPlugin({
+      filename: filePath,
+      template: "templates/default.html",
+      chunks: [name],
+      inject: false,
+      hash: true,
+      title,
+    }),
+);
 
 /** @type {import('webpack').Configuration} */
 const config = {
   entry: {
-    /*
-     * Inventory is a Single Page Application written entirely using React.
-     * The main Inventory UI (`/inventory`) is deployed as the `inventoryEntry`
-     * bundle, with some additional JavaScript assets for other standalone
-     * pages.
-     */
-    inventoryEntry: "./src/App.tsx",
-    inventoryRecordIdentifierPublicPage:
-      "./src/components/PublicPages/IdentifierPublicPage.tsx",
-
-    /*
-     * Some of the ELN pages are Single Page Applications too. These JS bundles
-     * implement each of those pages.
-     */
-    apps: "./src/eln/apps/index.tsx",
-    gallery: "./src/eln/gallery/index.tsx",
-    about: "./src/eln/about/index.tsx",
-
+    ...Object.fromEntries(
+      APP_ENTRYPOINTS.map(({ name, entrypoint }) => [name, entrypoint]),
+    ),
     /*
      * The Electronic Notebook (ELN) is a traditional multipage application
      * written mostly using JSPs, jQuery, and a variety of other technologies.
@@ -83,11 +120,11 @@ const config = {
     sysadminUsers: "./src/eln/sysadmin/users/index.tsx",
   },
   output: {
-    filename: "[name].js",
-    chunkFilename: "[name].js",
     path: path.resolve(import.meta.dirname, "dist"),
     publicPath: "/ui/dist/",
     clean: true,
+    filename: "[contenthash].js",
+    chunkFilename: "[contenthash].js",
   },
   plugins: [
     //mocks process object, required by the ketcher-react package which would
@@ -95,15 +132,27 @@ const config = {
     new webpack.DefinePlugin({
       process: { env: {} },
     }),
+    ...entrypointHtmlPlugins,
     new BundleAnalyzerPlugin({
       analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS)
         ? "server"
         : "disabled",
       generateStatsFile: true,
     }),
+    new ChunksWebpackPlugin({
+      filename: "templates/[name]-[type].jsp",
+    }),
   ],
   optimization: {
     runtimeChunk: "single",
+    splitChunks: {
+      chunks: (chunk) =>
+        chunk.isOnlyInitial &&
+        (!chunk.name ||
+          !(
+            chunk.name.startsWith("tinymce") || chunk.name === "ketcherViewer"
+          )),
+    },
   },
   resolve: {
     extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
