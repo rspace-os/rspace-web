@@ -1,6 +1,8 @@
 package com.researchspace.service;
 
 import static com.researchspace.service.IntegrationsHandler.ACCESS_TOKEN_SETTING;
+import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.FIELDMARK_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.service.impl.IntegrationsHandlerImpl.MASKED_TOKEN;
 import static org.hamcrest.Matchers.not;
@@ -141,7 +143,7 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testCachingForAccessTokensStoredInUserConnection() {
+  public void testCachingForAccessTokensStoredInUserConnectionForProtocolsIo() {
     // RSPAC-1614
     User anyUser = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(anyUser);
@@ -163,7 +165,7 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     IntegrationInfo reloaded = integrationsHandler.getIntegration(anyUser, PROTOCOLS_IO_APP_NAME);
     IntegrationInfo reloadedCached =
         integrationsHandler.getIntegration(anyUser, PROTOCOLS_IO_APP_NAME);
-    assertEquals(MASKED_TOKEN, getAccessTokenFromIntegrationInfo(reloaded));
+    assertEquals("newToken", getAccessTokenFromIntegrationInfo(reloaded));
     // sanity check that it is now being cached again
     assertThat(reloaded, sameInstance(reloadedCached));
 
@@ -173,6 +175,40 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     // ... and is now picking up  no UserConnection
     assertThat(reloaded2, not(sameInstance(reloaded)));
     assertNull(getAccessTokenFromIntegrationInfo(reloaded2));
+  }
+
+  @Test
+  public void testCachingForAccessTokensStoredInUserConnectionForNonProtocolsIO() {
+    User anyUser = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(anyUser);
+    // add a user connection
+    UserConnection fieldmarkConnection = TestFactory.createUserConnection(anyUser.getUsername());
+    fieldmarkConnection.getId().setProviderId(FIELDMARK_APP_NAME);
+    fieldmarkConnection = userConn.save(fieldmarkConnection);
+
+    // this will cache the info
+    IntegrationInfo info = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
+    IntegrationInfo infoCached = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
+    assertThat(info, sameInstance(infoCached));
+    assertEquals(
+        getAccessTokenFromIntegrationInfo(info), getAccessTokenFromIntegrationInfo(infoCached));
+
+    // now set new access token - this should trigger a reload and re-cache.
+    fieldmarkConnection.setAccessToken("newToken");
+    fieldmarkConnection = userConn.save(fieldmarkConnection);
+    IntegrationInfo reloaded = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
+    IntegrationInfo reloadedCached =
+        integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
+    assertEquals(MASKED_TOKEN, reloaded.getOptions().get(FIELDMARK_USER_TOKEN));
+    // sanity check that it is now being cached again
+    assertThat(reloaded, sameInstance(reloadedCached));
+
+    // now we remove the UserConnection, should evict cache
+    userConn.deleteByUserAndProvider(anyUser.getUsername(), FIELDMARK_APP_NAME);
+    IntegrationInfo reloaded2 = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
+    // ... and is now picking up  no UserConnection
+    assertThat(reloaded2, not(sameInstance(reloaded)));
+    assertNull(reloaded2.getOptions().get(FIELDMARK_USER_TOKEN));
   }
 
   private Object getAccessTokenFromIntegrationInfo(IntegrationInfo infoCached) {

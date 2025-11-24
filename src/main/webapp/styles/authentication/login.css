@@ -87,14 +87,14 @@ li.rs-navbar__item:last-child {
 }
 
 .rs-sign-in-form {
-  width: 380px;
+  width: 500px;
   margin: 50px auto;
   box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.28);
   border-radius: 3px;
 }
 
 .rs-sign-in-form__body {
-  padding: 20px 20px 10px 20px;
+  padding: 20px 0px 10px 25px;
 }
 
 .rs-sign-in-form__head {
@@ -111,15 +111,13 @@ li.rs-navbar__item:last-child {
   font-size: 16px !important;
 }
 
+.rs-sign-in-form .rs-field {
+    width: 100%;
+}
+
 #showChangeServerDlgBtn {
     margin: auto 10px auto auto;
     display: none; /* initially hidden */
-}
-
-.rs-field {
-  position: relative;
-  width: 370px !important;
-  box-sizing: border-box;
 }
 
 .form-group.rs-field--input {
@@ -193,11 +191,15 @@ input[type=text].rs-field__input.rs-field__input--invalid:valid  {
 .rs-field .rs-field__icon {
   position: absolute;
   top: 10px;
-  right: 17px;
+  left: 19px;
   font-size: 16px;
   color: #bfbfbf;
   display: inline-block;
 }
+
+.bootstrap-custom-flat .form-control.rs-field__input {
+    padding: 2px 25px;
+ }
 
 .rs-field__button {
   width: 100%;
@@ -286,4 +288,13 @@ input[type=text].rs-field__input.rs-field__input--invalid:valid  {
         padding-top: 10px;
         padding-bottom: 5px;
     }
+}
+
+.pi-create-group-on-signup {
+    display: flex;
+    flex-direction: row;
+}
+
+.pi-create-group-on-signup #picreateGroupOnSignup {
+    padding: 4px 5px 0 0;
 }

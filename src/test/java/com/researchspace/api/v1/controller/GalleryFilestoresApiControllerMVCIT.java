@@ -204,7 +204,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     NfsClient mockNfsClient = Mockito.mock(NfsClient.class);
 
     // mock calls used by login flow
-    ApiNfsCredentials dummyCredentials = new ApiNfsCredentials(anyUser, "testuser", "testpass");
+    ApiNfsCredentials dummyCredentials = new ApiNfsCredentials(anyUser, "testuser", TESTPASSWD);
     when(mockNfsAuthentication.validateCredentials(
             dummyCredentials.getUsername(), dummyCredentials.getPassword(), anyUser))
         .thenReturn(null);

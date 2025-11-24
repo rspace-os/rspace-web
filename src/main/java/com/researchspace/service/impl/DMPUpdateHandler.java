@@ -58,8 +58,6 @@ public class DMPUpdateHandler {
         if (!dmpUpdated.isSucceeded()) {
           log.error("Updating didn't succeed : {}", dmpUpdated.getMessage());
         } else {
-          currentDmpToUpdate.setDoiLink(doi.toString());
-          dmpManager.save(currentDmpToUpdate);
           log.info("Updated DMP {}", currentDmpToUpdate.getDmpId());
         }
       }
