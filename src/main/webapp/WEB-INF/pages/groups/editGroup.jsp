@@ -39,6 +39,6 @@
 
 <div id="newLabGroup"></div>
 
-<!-- React Scripts -->
-<script src="<c:url value='/ui/dist/newLabGroup.js'/>"></script>
-<!--End React Scripts -->
+<axt:once key="LOADED_newLabGroup">
+  <%@ include file="/ui/dist/templates/newLabGroup-scripts.jsp" %>
+</axt:once>

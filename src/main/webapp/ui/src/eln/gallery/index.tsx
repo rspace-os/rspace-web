@@ -569,21 +569,23 @@ export function Gallery() {
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
-  if (domContainer) {
-    window.scrollTo(0, 1);
-
-    const root = createRoot(domContainer);
-    root.render(
-      <React.StrictMode>
-        <BrowserRouter>
-          <Gallery />
-        </BrowserRouter>
-      </React.StrictMode>,
-    );
-
-    const meta = document.createElement("meta");
-    meta.name = "theme-color";
-    meta.content = `hsl(${ACCENT_COLOR.background.hue}, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`;
-    document.head?.appendChild(meta);
+  if (!domContainer) {
+    throw new Error("Failed to find the root element");
   }
+
+  window.scrollTo(0, 1);
+
+  const root = createRoot(domContainer);
+  root.render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <Gallery />
+      </BrowserRouter>
+    </React.StrictMode>,
+  );
+
+  const meta = document.createElement("meta");
+  meta.name = "theme-color";
+  meta.content = `hsl(${ACCENT_COLOR.background.hue}, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`;
+  document.head?.appendChild(meta);
 });
