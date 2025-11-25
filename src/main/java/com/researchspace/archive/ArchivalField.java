@@ -30,7 +30,8 @@ import javax.xml.bind.annotation.XmlType;
       "linkMeta",
       "sktchMeta",
       "listsOfMaterials",
-      "nfsElements"
+      "nfsElements",
+      "externalWorkFlowData"
     })
 public class ArchivalField {
   long fieldId;
@@ -51,6 +52,7 @@ public class ArchivalField {
   List<ArchivalGalleryMetadata> linkMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> sktchMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> mathMeta = new ArrayList<>();
+  List<ArchiveExternalWorkFlowMetaData> externalWorkFlowData = new ArrayList<>();
   List<ArchivalNfsFile> nfsElements = new ArrayList<>();
   List<ArchivalListOfMaterials> listsOfMaterials = new ArrayList<>();
 
@@ -126,6 +128,12 @@ public class ArchivalField {
     return mathMeta;
   }
 
+  @XmlElementWrapper(name = "externalWorkFlowData")
+  @XmlElement(name = "externalWorkFlowData-info")
+  public List<ArchiveExternalWorkFlowMetaData> getExternalWorkFlowData() {
+    return externalWorkFlowData;
+  }
+
   @XmlElementWrapper(name = "ImageAnnotationList")
   @XmlElement(name = "annotation-info")
   public List<ArchivalGalleryMetadata> getAnnotMeta() {
@@ -180,6 +188,7 @@ public class ArchivalField {
     archivalGalleryMetadata.addAll(getAttachMeta());
     archivalGalleryMetadata.addAll(getVideoMeta());
     archivalGalleryMetadata.addAll(getImgMeta());
+    archivalGalleryMetadata.addAll(getExternalWorkFlowData());
     return archivalGalleryMetadata;
   }
 
@@ -213,6 +222,10 @@ public class ArchivalField {
 
   public void setFieldDataPrintable(String fieldDataPrintable) {
     this.fieldDataPrintable = fieldDataPrintable;
+  }
+
+  public void addArchivalExternalWorkFlowData(ArchiveExternalWorkFlowMetaData extWFD) {
+    externalWorkFlowData.add(extWFD);
   }
 
   public void addArchivalComment(ArchiveComment acm) {

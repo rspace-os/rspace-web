@@ -1,9 +1,11 @@
 package com.researchspace.archive;
 
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Read only methods of ExportRecordList. Standard implementation is expected to be
@@ -12,6 +14,9 @@ import java.util.Set;
 public interface ImmutableExportRecordList {
 
   List<GlobalIdentifier> getRecordsToExport();
+
+  @XmlTransient
+  List<ExternalWorkFlowData> getExternalWorkFlows();
 
   Set<GlobalIdentifier> getAssociatedFieldAttachments();
 
@@ -33,6 +38,8 @@ public interface ImmutableExportRecordList {
    * @return
    */
   boolean containsRecord(GlobalIdentifier rcdId);
+
+  boolean containsExternalWorkFlowData(Long rcdId);
 
   boolean containsFolder(Long id);
 
