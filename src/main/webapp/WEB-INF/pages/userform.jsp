@@ -423,38 +423,40 @@
 	</div>
 
 	<div id="changePasswordDialog" style="display: none;">
-		<table>
-			<tr>
-				<td>
-					<label for="currentPasswordInput">
-						<fmt:message key="dialogs.changePassword.label.current"></fmt:message>
-					</label>
-				</td>
-				<td><input type="password" value="" id="currentPasswordInput" class="form-control" /></td>
-			</tr>
-			<tr>
-				<td>
-					<label for="newPasswordInput">
-						<fmt:message key="dialogs.changePassword.label.new"></fmt:message>
-					</label>
-				</td>
-				<td style="display: flex; flex-direction: column;">
-                    <input type="password" value="" id="newPasswordInput" class="form-control"
-                           pattern="[ -~]{8,50}"
-                           title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"
-                    />
-                    <p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
-                </td>
-			</tr>
-			<tr>
-				<td>
-					<label for="newPasswordConfirm">
-						<fmt:message key="dialogs.changePassword.label.confirm"></fmt:message>
-					</label>
-				</td>
-				<td><input type="password" value="" id="newPasswordConfirm" class="form-control" /></td>
-			</tr>
-		</table>
+		<form id="changePasswordForm">
+			<table>
+				<tr>
+					<td>
+						<label for="currentPasswordInput">
+							<fmt:message key="dialogs.changePassword.label.current"></fmt:message>
+						</label>
+					</td>
+					<td><input type="password" value="" id="currentPasswordInput" class="form-control" /></td>
+				</tr>
+				<tr>
+					<td>
+						<label for="newPasswordInput">
+							<fmt:message key="dialogs.changePassword.label.new"></fmt:message>
+						</label>
+					</td>
+					<td style="display: flex; flex-direction: column;">
+						<input type="password" value="" id="newPasswordInput" class="form-control"
+							   pattern="[ -~]{8,50}"
+							   title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"
+						/>
+						<p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label for="newPasswordConfirm">
+							<fmt:message key="dialogs.changePassword.label.confirm"></fmt:message>
+						</label>
+					</td>
+					<td><input type="password" value="" id="newPasswordConfirm" class="form-control" /></td>
+				</tr>
+			</table>
+		</form>
 		<div id="msgAreaPassword" class="msgArea"></div>
 	</div>
 
