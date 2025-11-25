@@ -8,6 +8,8 @@ import static com.researchspace.core.util.FieldParserConstants.DATA_CHEM_FILE_ID
 import static com.researchspace.core.util.FieldParserConstants.IMAGE_DROPPED_CLASS_NAME;
 import static com.researchspace.core.util.FieldParserConstants.MATH_CLASSNAME;
 import static com.researchspace.core.util.MediaUtils.extractFileType;
+import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceContainerType.FIELD;
+import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceDataType.LOCAL;
 import static java.lang.String.format;
 
 import com.researchspace.archive.ArchivalDocument;
@@ -20,6 +22,7 @@ import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchivalLinkRecord;
 import com.researchspace.archive.ArchiveComment;
 import com.researchspace.archive.ArchiveCommentItem;
+import com.researchspace.archive.ArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.FieldParserConstants;
@@ -44,6 +47,7 @@ import com.researchspace.model.RSMath;
 import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
@@ -65,13 +69,16 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -348,6 +355,73 @@ abstract class AbstractImporterStrategyImpl {
     }
   }
 
+  private Field importExternalWorkFlows(Field newField, ArchivalField oldField, User user) {
+    List<ArchiveExternalWorkFlowMetaData> allExternalWorkFlowDataMeta =
+        oldField.getExternalWorkFlowData();
+    if (allExternalWorkFlowDataMeta != null) {
+      for (ArchiveExternalWorkFlowMetaData externalWorkFlowMetaData : allExternalWorkFlowDataMeta) {
+        Long rspaceAttachmentIdUSedForExternalWorkflow =
+            findCorrespondingRSpaceDataIdForExportedExternalWorkFlow(
+                newField, oldField, externalWorkFlowMetaData);
+        if (rspaceAttachmentIdUSedForExternalWorkflow != null) {
+          ExternalWorkFlowData externalWorkFlowData =
+              new ExternalWorkFlowData(
+                  ExternalWorkFlowData.ExternalService.valueOf(
+                      externalWorkFlowMetaData.getExternalService()),
+                  rspaceAttachmentIdUSedForExternalWorkflow, //
+                  LOCAL,
+                  newField.getId(),
+                  newField.getName(),
+                  FIELD,
+                  externalWorkFlowMetaData.getLinkFile(),
+                  externalWorkFlowMetaData.getExtId(),
+                  externalWorkFlowMetaData.getExtSecondaryId(),
+                  externalWorkFlowMetaData.getExtContainerId(),
+                  externalWorkFlowMetaData.getExtContainerName(),
+                  externalWorkFlowMetaData.getBaseUrl());
+        }
+      }
+    }
+    return newField;
+  }
+
+  /**
+   * The rspaceDataId is the ID of the attachment Data from a given Struc Doc Field that has been
+   * uploaded to an External Service and used in an ExternalWorkFlow This has been exported. On
+   * import we now need to determine which of the files attached to an import Field corresponds to
+   * that file. We compare filenames and if there is more than a single match, we compare shasums of
+   * the file's contents.
+   *
+   * @return the ID of the attachment data or null if that data no longer exists in RSpace If
+   *     multiple attachments match the name of the uploaded file, compare shasums of contents
+   */
+  public Long findCorrespondingRSpaceDataIdForExportedExternalWorkFlow(
+      Field newField,
+      ArchivalField oldField,
+      ArchiveExternalWorkFlowMetaData externalWorkFlowMetaData) {
+    long originalRspaceDataId = externalWorkFlowMetaData.getRspaceDataId();
+    String attachmentName = externalWorkFlowMetaData.getLinkFile();
+    Set<FieldAttachment> matches = new HashSet<>();
+    for (FieldAttachment fa : fieldManager.getFieldAttachments(newField.getId())) {
+      if (fa.getMediaFile().getFileName().equals(attachmentName)) {
+        matches.add(fa);
+      }
+    }
+    if (matches.size() == 1) {
+      return matches.iterator().next().getMediaFile().getId();
+    } else if (matches.size() > 1) { // look at shasums
+      for (FieldAttachment matchedFa : matches) {
+        return matches.iterator().next().getMediaFile().getId();
+      }
+    }
+    log.info(
+        "No match found for external work flow data id "
+            + originalRspaceDataId
+            + " and attachment name "
+            + attachmentName); // the attachment could have been deleted so this is not an error
+    return null;
+  }
+
   private void setUpFieldAttachmentLinks(
       StructuredDocument newDoc, User importingUser, ImportArchiveReport report) {
     newDoc.getFields().stream()
@@ -376,7 +450,7 @@ abstract class AbstractImporterStrategyImpl {
   // the sdc created and set Form
   private void convertStructureDocument(
       ArchivalDocument archivalDoc,
-      StructuredDocument strucDoc,
+      @NotNull StructuredDocument strucDoc,
       User user,
       File pth,
       ArchivalLinkRecord linkRecord,
@@ -479,6 +553,7 @@ abstract class AbstractImporterStrategyImpl {
     fld = importImageAnnotation(fld, archiveFld, recordFolder, oldIdToNewGalleryItem);
     importLinkedRecords(fld, archiveFld, recordFolder, linkRecord);
     fld = importSketches(fld, archiveFld, recordFolder);
+    fld = importExternalWorkFlows(fld, archiveFld, user);
     rtu.updateAttachmentIcons(fld);
     rtu.updateNfsLinksOnImport(fld);
   }
