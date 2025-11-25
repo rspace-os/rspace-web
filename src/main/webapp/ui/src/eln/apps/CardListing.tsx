@@ -38,6 +38,7 @@ import Zenodo from "./integrations/Zenodo";
 import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
+import RaIDIntergrationCard from "@/eln/apps/integrations/RaID/RaIDIntegrationCard";
 
 type CardListingArgs = {
   /*
@@ -298,6 +299,15 @@ function CardListing({
     [update, integrationStates.PYRAT],
   );
 
+  const raidUpdate = React.useCallback(
+    (newState: IntegrationStates["RAID"]) => {
+      void runInAction(async () => {
+        integrationStates.RAID = await update("RAID", newState);
+      });
+    },
+    [update, integrationStates.RAID],
+  );
+
   const slackUpdate = React.useCallback(
     (newState: IntegrationStates["SLACK"]) => {
       void runInAction(async () => {
@@ -484,6 +494,12 @@ function CardListing({
         <Pyrat
           integrationState={integrationStates.PYRAT}
           update={pyratUpdate}
+        />
+      )}
+      {integrationStates.RAID.mode === mode && (
+        <RaIDIntergrationCard
+          integrationState={integrationStates.RAID}
+          update={raidUpdate}
         />
       )}
       {integrationStates.SLACK.mode === mode && (

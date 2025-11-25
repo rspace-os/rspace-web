@@ -96,7 +96,10 @@ const config = {
       process: { env: {} },
     }),
     new BundleAnalyzerPlugin({
-      analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS) ? 'server' : "disabled",
+      analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS)
+        ? "server"
+        : "disabled",
+      generateStatsFile: true,
     }),
   ],
   optimization: {

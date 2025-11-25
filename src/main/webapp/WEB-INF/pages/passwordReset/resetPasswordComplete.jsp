@@ -1,5 +1,6 @@
 <%@ include file="/common/taglibs.jsp" %>
 <%@ page import="com.researchspace.webapp.controller.PasswordType" %>
+<%--@elvariable id="passwordType" type="com.researchspace.webapp.controller.PasswordType"--%>
 
 <head>
     <title>${passwordType.capitalise()} reset</title>

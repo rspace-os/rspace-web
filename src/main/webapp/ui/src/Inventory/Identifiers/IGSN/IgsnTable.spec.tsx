@@ -122,12 +122,12 @@ const feature = test.extend<{
         await page.getByRole("button", { name: "Scan" }).click();
       },
       "the researcher selects 'Draft' from the state menu": async () => {
-        await page.getByRole("button", { name: /State/ }).click();
+        await page.getByRole("button", { name: /State: / }).click();
         await page.getByRole("menuitem", { name: /Draft/ }).click();
       },
       "the researcher selects 'No Linked Item' from the Linked Item menu":
         async () => {
-          await page.getByRole("button", { name: /Linked Item/ }).click();
+          await page.getByRole("button", { name: /Linked Item: / }).click();
           await page.getByRole("menuitem", { name: /No Linked Item/ }).click();
         },
       "the researcher types 'test' in the search box": async () => {
@@ -313,9 +313,9 @@ const feature = test.extend<{
         async () => {
           const searchControl = page.getByRole("searchbox");
           const scanButton = page.getByRole("button", { name: "Scan" });
-          const stateFilter = page.getByRole("button", { name: "State" });
+          const stateFilter = page.getByRole("button", { name: /State: / });
           const linkedItemFilter = page.getByRole("button", {
-            name: "Linked Item",
+            name: /Linked Item: /,
           });
 
           const searchControlHandle = await searchControl.evaluateHandle((x) =>

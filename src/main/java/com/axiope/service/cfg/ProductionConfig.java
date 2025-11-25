@@ -8,17 +8,12 @@ import com.researchspace.admin.service.IServerlogRetriever;
 import com.researchspace.admin.service.impl.FileLocationBasedLogRetriever;
 import com.researchspace.core.util.cache.DefaultTimeLimitedMemoryCache;
 import com.researchspace.core.util.cache.TimeLimitedMemoryCache;
-import com.researchspace.dataverse.api.v1.DataverseAPI;
-import com.researchspace.dataverse.http.DataverseAPIImpl;
-import com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository;
-import com.researchspace.dataverse.rspaceadapter.DataverseRepoConfigurer;
 import com.researchspace.dataverse.spring.config.DataverseSpringConfig;
 import com.researchspace.dryad.rspaceadapter.DryadRSpaceRepository;
 import com.researchspace.figshare.rspaceadapter.FigshareRSpaceRepository;
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.licensews.client.LicenseWSClient;
 import com.researchspace.repository.spi.IRepository;
-import com.researchspace.repository.spi.RepositoryConfigurer;
 import com.researchspace.service.Broadcaster;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.GlobalInitManager;
@@ -48,10 +43,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.web.context.WebApplicationContext;
 
 /** Configuration for deployment/production */
 @Configuration

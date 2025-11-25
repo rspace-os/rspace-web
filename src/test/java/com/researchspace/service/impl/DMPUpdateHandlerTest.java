@@ -80,10 +80,10 @@ public class DMPUpdateHandlerTest {
     dmpUser.setDoiLink("https://doi.org/ORIGINAL");
     mockIntegrationsHandler(usableInfo);
     mockSuccessfulDMPAPIcall();
-    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString())) ;
+    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString()));
     when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(dmpUser));
     dmpUpdateHandler.updateDMPS(urlSupplier(), anyUser, List.of(dmpUserId));
-    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString())) ;
+    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString()));
     verifyAttemptToAddDoi();
   }
 

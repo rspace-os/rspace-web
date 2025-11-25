@@ -37,6 +37,7 @@ import {
   GridColumnVisibilityModel,
   GridRowSelectionModel,
   GridSortItem,
+  GridSortModel,
 } from "@mui/x-data-grid";
 import TextField from "@mui/material/TextField";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -1936,7 +1937,7 @@ export const UsersPage = (): React.ReactNode => {
                         sortingMode="server"
                         sortModel={sortModel}
                         onSortModelChange={(
-                          newSortModel: Array<GridSortItem>,
+                          newSortModel: GridSortModel,
                         ) => {
                           FetchingData.match(userListing, {
                             loading: () => {},
@@ -1985,6 +1986,7 @@ export const UsersPage = (): React.ReactNode => {
                         }}
                         slotProps={{
                           toolbar: {
+                            // @ts-expect-error Needed by <Toolbar>
                             userListing,
                             setColumnsMenuAnchorEl,
                             rowSelectionModel,

@@ -56,7 +56,7 @@ public class ApiUserPost {
   @Email @NotNull private String email;
 
   @NotEmpty
-  @Size(min = User.MIN_PWD_LENGTH, max = User.MAX_UNAME_LENGTH)
+  @Size(min = User.MIN_PWD_LENGTH, max = User.MAX_PWD_LENGTH)
   @Pattern(regexp = User.ALLOWED_PWD_CHARS_REGEX)
   private String password;
 
