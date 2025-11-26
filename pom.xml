@@ -1726,7 +1726,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>${rspace-core-model.version}</version>
+      <version>RSDEV-910-export-galaxy-data-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>

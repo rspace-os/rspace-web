@@ -1,27 +1,15 @@
 package com.researchspace.archive;
 
-import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
+import java.util.HashSet;
+import java.util.Set;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlRootElement
-@Getter
-@Setter
-@ToString
-public class ArchiveExternalWorkFlowMetaData extends ArchivalGalleryMetadata {
-  private @XmlElement long rspaceDataId;
-  private @XmlElement String externalService;
-  private @XmlElement String extName;
+@EqualsAndHashCode(of = { "extId" })
+public class ArchiveExternalWorkFlowMetaData extends ArchivalGalleryMetadata{
   private @XmlElement String extId;
-  private @XmlElement String extSecondaryId;
-  private @XmlElement String extContainerId;
-  private @XmlElement String extContainerName;
-  private @XmlElement String baseUrl;
-  private List<ArchiveExternalWorkFlowMetaData> invocations = new java.util.ArrayList<>();
+  private @XmlElement String name;
+  private @XmlElement String description;
+  private @XmlElement String id;
+  private Set<ArchiveExternalWorkFlowInvocationMetaData> invocations = new HashSet<>();
 }

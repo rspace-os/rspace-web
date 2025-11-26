@@ -22,7 +22,7 @@ import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchivalLinkRecord;
 import com.researchspace.archive.ArchiveComment;
 import com.researchspace.archive.ArchiveCommentItem;
-import com.researchspace.archive.ArchiveExternalWorkFlowMetaData;
+import com.researchspace.archive.ArchiveExternalWorkFlowDataMetaData;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.FieldParserConstants;
@@ -48,6 +48,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
@@ -56,6 +57,7 @@ import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EcatCommentManager;
+import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.MediaManager;
@@ -99,7 +101,8 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired MediaManager mediaManager;
   @Autowired RSChemElementManager rsChemElementManager;
   @Autowired InternalLinkDao internalLinkDao;
-
+  @Autowired
+  private ExternalWorkFlowDataManager externalWorkFlowDataManager;
   @Autowired RichTextUpdater rtu;
   @Autowired EcatCommentManager commentMgr;
   @Autowired FolderTreeImporter folderTreeImporter;
@@ -340,6 +343,7 @@ abstract class AbstractImporterStrategyImpl {
         newDoc.addType(RecordType.TEMPLATE);
       }
       recordManager.save(newDoc, importingUser);
+      importExternalWorkFlows(newDoc, archivalDoc, importingUser);
       String dnm = ref.getDocumentFileName();
       if (dnm != null && dnm.trim().length() > 1) {
         linkRecord.addMap(dnm, Long.toString(newDoc.getId()));
@@ -355,34 +359,44 @@ abstract class AbstractImporterStrategyImpl {
     }
   }
 
-  private Field importExternalWorkFlows(Field newField, ArchivalField oldField, User user) {
-    List<ArchiveExternalWorkFlowMetaData> allExternalWorkFlowDataMeta =
-        oldField.getExternalWorkFlowData();
-    if (allExternalWorkFlowDataMeta != null) {
-      for (ArchiveExternalWorkFlowMetaData externalWorkFlowMetaData : allExternalWorkFlowDataMeta) {
-        Long rspaceAttachmentIdUSedForExternalWorkflow =
-            findCorrespondingRSpaceDataIdForExportedExternalWorkFlow(
-                newField, oldField, externalWorkFlowMetaData);
-        if (rspaceAttachmentIdUSedForExternalWorkflow != null) {
-          ExternalWorkFlowData externalWorkFlowData =
-              new ExternalWorkFlowData(
-                  ExternalWorkFlowData.ExternalService.valueOf(
-                      externalWorkFlowMetaData.getExternalService()),
-                  rspaceAttachmentIdUSedForExternalWorkflow, //
-                  LOCAL,
-                  newField.getId(),
-                  newField.getName(),
-                  FIELD,
-                  externalWorkFlowMetaData.getLinkFile(),
-                  externalWorkFlowMetaData.getExtId(),
-                  externalWorkFlowMetaData.getExtSecondaryId(),
-                  externalWorkFlowMetaData.getExtContainerId(),
-                  externalWorkFlowMetaData.getExtContainerName(),
-                  externalWorkFlowMetaData.getBaseUrl());
+  private void importExternalWorkFlows(StructuredDocument newDoc, ArchivalDocument oldDoc,
+      User user) {
+    for (ArchivalField oldField : oldDoc.getListFields()) {
+      List<ArchiveExternalWorkFlowDataMetaData> allExternalWorkFlowDataMeta =
+          oldField.getExternalWorkFlowData();
+      if (allExternalWorkFlowDataMeta != null) {
+        Field newField = newDoc.getField(oldField.getFieldName());
+        for (ArchiveExternalWorkFlowDataMetaData externalWorkFlowMetaData : allExternalWorkFlowDataMeta) {
+          Long rspaceAttachmentIdUSedForExternalWorkflow =
+              findCorrespondingRSpaceDataIdForExportedExternalWorkFlow(
+                  newField, oldField, externalWorkFlowMetaData);
+          if (rspaceAttachmentIdUSedForExternalWorkflow != null) {
+            ExternalWorkFlowData externalWorkFlowData =
+                new ExternalWorkFlowData(
+                    ExternalWorkFlowData.ExternalService.valueOf(
+                        externalWorkFlowMetaData.getExternalService()),
+                    rspaceAttachmentIdUSedForExternalWorkflow,
+                    LOCAL,
+                    newField.getId(),
+                    newField.getName(),
+                    FIELD,
+                    externalWorkFlowMetaData.getLinkFile(),
+                    externalWorkFlowMetaData.getExtId(),
+                    externalWorkFlowMetaData.getExtSecondaryId(),
+                    externalWorkFlowMetaData.getExtContainerId(),
+                    externalWorkFlowMetaData.getExtContainerName(),
+                    externalWorkFlowMetaData.getBaseUrl());
+            Set invocations = externalWorkFlowMetaData.getInvocations();
+            if(invocations != null){
+              ExternalWorkFlowInvocation externalWorkFlowInvocation = ExternalWorkFlowInvocation.builder().externalWorkFlow(externalWorkFlowData)
+                  .build();
+              externalWorkFlowData.setExternalWorkflowInvocations(externalWorkFlowMetaData.getInvocations());
+            }
+            externalWorkFlowDataManager.save(externalWorkFlowData);
+          }
         }
       }
     }
-    return newField;
   }
 
   /**
@@ -398,7 +412,7 @@ abstract class AbstractImporterStrategyImpl {
   public Long findCorrespondingRSpaceDataIdForExportedExternalWorkFlow(
       Field newField,
       ArchivalField oldField,
-      ArchiveExternalWorkFlowMetaData externalWorkFlowMetaData) {
+      ArchiveExternalWorkFlowDataMetaData externalWorkFlowMetaData) {
     long originalRspaceDataId = externalWorkFlowMetaData.getRspaceDataId();
     String attachmentName = externalWorkFlowMetaData.getLinkFile();
     Set<FieldAttachment> matches = new HashSet<>();
@@ -553,7 +567,7 @@ abstract class AbstractImporterStrategyImpl {
     fld = importImageAnnotation(fld, archiveFld, recordFolder, oldIdToNewGalleryItem);
     importLinkedRecords(fld, archiveFld, recordFolder, linkRecord);
     fld = importSketches(fld, archiveFld, recordFolder);
-    fld = importExternalWorkFlows(fld, archiveFld, user);
+//    fld = importExternalWorkFlows(fld, archiveFld, user);
     rtu.updateAttachmentIcons(fld);
     rtu.updateNfsLinksOnImport(fld);
   }
