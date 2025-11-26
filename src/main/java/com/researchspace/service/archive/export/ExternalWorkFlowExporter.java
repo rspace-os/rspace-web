@@ -1,7 +1,8 @@
 package com.researchspace.service.archive.export;
 
 import com.researchspace.archive.ArchivalField;
-import com.researchspace.archive.ArchiveExternalWorkFlowMetaData;
+import com.researchspace.archive.ArchiveExternalWorkFlowDataMetaData;
+import com.researchspace.archive.ArchiveExternalWorkFlowInvocationMetaData;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldElementLinkPair;
 import com.researchspace.linkedelements.FieldElementLinkPairs;
@@ -60,7 +61,7 @@ public class ExternalWorkFlowExporter extends AbstractFieldExporter<LinkableExte
       LinkableExternalWorkFlowData item, String archiveLink, FieldExportContext context) {
     ArchivalField archiveField = context.getArchiveField();
     ExternalWorkFlowData data = item.getExternalWorkflowData();
-    ArchiveExternalWorkFlowMetaData aEWFMeta = new ArchiveExternalWorkFlowMetaData();
+    ArchiveExternalWorkFlowDataMetaData aEWFMeta = new ArchiveExternalWorkFlowDataMetaData();
     aEWFMeta.setId(item.getId());
     aEWFMeta.setParentId(archiveField.getFieldId());
     aEWFMeta.setFileName(archiveLink);
@@ -75,11 +76,11 @@ public class ExternalWorkFlowExporter extends AbstractFieldExporter<LinkableExte
     aEWFMeta.setBaseUrl(data.getBaseUrl());
     for (ExternalWorkFlowInvocation invocation :
         item.getExternalWorkflowData().getExternalWorkflowInvocations()) {
-      ArchiveExternalWorkFlowMetaData invocationAgm = new ArchiveExternalWorkFlowMetaData();
+      ArchiveExternalWorkFlowInvocationMetaData invocationAgm = new ArchiveExternalWorkFlowInvocationMetaData();
       invocationAgm.setId(invocation.getId());
       invocationAgm.setParentId(item.getId());
-      invocationAgm.setAnnotation(invocation.getStatus());
-      invocationAgm.setName(invocation.getExtId());
+      invocationAgm.setStatus(invocation.getStatus());
+      invocationAgm.setExtId(invocation.getExtId());
       aEWFMeta.getInvocations().add(invocationAgm);
     }
     //    String ext = "png";
@@ -95,7 +96,9 @@ public class ExternalWorkFlowExporter extends AbstractFieldExporter<LinkableExte
       FieldElementLinkPair<LinkableExternalWorkFlowData> itemPair,
       String replacementUrl,
       FieldExportContext context) {
-    return "";
+    return context
+        .getArchiveField()
+        .getFieldData(); // we do not add ExternalWorkFlowData to the html of the field
   }
 
   /**

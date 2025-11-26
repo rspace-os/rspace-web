@@ -31,7 +31,8 @@ import javax.xml.bind.annotation.XmlType;
       "sktchMeta",
       "listsOfMaterials",
       "nfsElements",
-      "externalWorkFlowData"
+      "externalWorkFlowData",
+      "externalWorkFlowInvocations"
     })
 public class ArchivalField {
   long fieldId;
@@ -52,7 +53,8 @@ public class ArchivalField {
   List<ArchivalGalleryMetadata> linkMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> sktchMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> mathMeta = new ArrayList<>();
-  List<ArchiveExternalWorkFlowMetaData> externalWorkFlowData = new ArrayList<>();
+  List<ArchiveExternalWorkFlowDataMetaData> externalWorkFlowData = new ArrayList<>();
+  List<ArchiveExternalWorkFlowInvocationMetaData> externalWorkFlowInvocations = new ArrayList<>();
   List<ArchivalNfsFile> nfsElements = new ArrayList<>();
   List<ArchivalListOfMaterials> listsOfMaterials = new ArrayList<>();
 
@@ -130,8 +132,13 @@ public class ArchivalField {
 
   @XmlElementWrapper(name = "externalWorkFlowData")
   @XmlElement(name = "externalWorkFlowData-info")
-  public List<ArchiveExternalWorkFlowMetaData> getExternalWorkFlowData() {
+  public List<ArchiveExternalWorkFlowDataMetaData> getExternalWorkFlowData() {
     return externalWorkFlowData;
+  }
+  @XmlElementWrapper(name = "externalWorkFlowInvocations")
+  @XmlElement(name = "externalWorkFlowInvocations-info")
+  public List<ArchiveExternalWorkFlowInvocationMetaData> getExternalWorkFlowInvocations() {
+    return externalWorkFlowInvocations;
   }
 
   @XmlElementWrapper(name = "ImageAnnotationList")
@@ -224,8 +231,11 @@ public class ArchivalField {
     this.fieldDataPrintable = fieldDataPrintable;
   }
 
-  public void addArchivalExternalWorkFlowData(ArchiveExternalWorkFlowMetaData extWFD) {
+  public void addArchivalExternalWorkFlowData(ArchiveExternalWorkFlowDataMetaData extWFD) {
     externalWorkFlowData.add(extWFD);
+  }
+  public void addArchivalExternalWorkFlowInvocations(ArchiveExternalWorkFlowInvocationMetaData extWFDI) {
+    externalWorkFlowInvocations.add(extWFDI);
   }
 
   public void addArchivalComment(ArchiveComment acm) {
