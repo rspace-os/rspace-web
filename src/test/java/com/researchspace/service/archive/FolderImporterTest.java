@@ -58,10 +58,8 @@ public class FolderImporterTest extends SpringTransactionalTest {
 
     int numFoldersToImport = folderList.getFolderTree().size();
     int numNotebooksToImport = getNotebookToImportCount(folderList);
-    System.err.println(" to import is " + numFoldersToImport);
     int currentFoldersForUser = getFolderCount(anyUser).intValue();
     int currentNotebooksForUser = getNotebookCount(anyUser).intValue();
-    System.err.println(" curr count is  " + currentFoldersForUser);
     ArchivalImportConfig cfg = new ArchivalImportConfig();
     ArchiveModelTSS am = new ArchiveModelTSS();
     am.version = new SemanticVersion("1.36");

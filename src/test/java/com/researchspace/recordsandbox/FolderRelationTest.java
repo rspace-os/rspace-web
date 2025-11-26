@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
-import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSPath;
@@ -17,7 +16,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class FolderRelnTest {
+public class FolderRelationTest {
 
   static User owner, user2, u3, u4, ROOT;
   static Folder p1, p2, p3, p4, ROOT_NODE, a, b, c, d, cP;
@@ -60,16 +59,14 @@ public class FolderRelnTest {
   }
 
   @Test(expected = IllegalAddChildOperation.class)
-  public void testCannotCreateSimpleCycles() throws IllegalAddChildOperation {
+  public void testCannotCreateSimpleCycles() {
     Folder parent = TestFactory.createAFolder("1", owner);
     Folder child = TestFactory.createAFolder("2", owner);
     Folder grandchild = TestFactory.createAFolder("3", owner);
 
     parent.addChild(child, owner);
     child.addChild(grandchild, owner);
-
-    assertNull(grandchild.addChild(parent, owner));
-    assertNull(grandchild.addChild(child, owner));
+    grandchild.addChild(parent, owner);
   }
 
   @Test(expected = IllegalAddChildOperation.class)
@@ -80,8 +77,7 @@ public class FolderRelnTest {
     Folder child = TestFactory.createAFolder("3", owner);
     parent.addChild(child, owner);
     parent2.addChild(child, owner);
-
-    assertNull(child.addChild(parent2, owner));
+    child.addChild(parent2, owner);
   }
 
   @Test

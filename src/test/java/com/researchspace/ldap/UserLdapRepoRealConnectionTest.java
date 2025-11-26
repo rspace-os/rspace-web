@@ -48,8 +48,6 @@ public class UserLdapRepoRealConnectionTest extends AbstractJUnit4SpringContextT
     assertEquals(LDAPUSER1_TEST_SID, ldapUser1.getSid());
     assertEquals("cn=ldapUser1,dc=test,dc=howler,dc=researchspace,dc=com", ldapUser1.getToken());
 
-    System.out.println("found user: " + ldapUser1);
-
     // found user with no dn
     User ldapUser2 = userLdapRepo.findUserByUsername("ldapUserEmptyDN");
     assertNotNull(ldapUser2);
@@ -78,25 +76,5 @@ public class UserLdapRepoRealConnectionTest extends AbstractJUnit4SpringContextT
     } finally {
       ((PropertyHolder) iProperties).setLdapAuthenticationEnabled(isLdapAuthEnabled + "");
     }
-  }
-
-  /*
-   * Helper test, uncomment to run saving sid as a binary file that can be later imported to openldap
-   */
-  // @Test
-  public void generateBinarySID() throws IOException {
-    File sidFile = File.createTempFile("testBinarySid", ".dat");
-
-    byte[] objectSid = LdapUtils.convertStringSidToBinary(LDAPUSER1_TEST_SID);
-    DataOutputStream os = new DataOutputStream(new FileOutputStream(sidFile));
-    os.write(objectSid);
-    os.close();
-
-    // verify the file contains correct sid bytes
-    byte[] bytesFromFile = Files.readAllBytes(sidFile.toPath());
-    String sidFromFile = LdapUtils.convertBinarySidToString(bytesFromFile);
-    assertEquals(LDAPUSER1_TEST_SID, sidFromFile);
-
-    //	System.out.println("test objectSID saved into: " + sidFile.toString());
   }
 }

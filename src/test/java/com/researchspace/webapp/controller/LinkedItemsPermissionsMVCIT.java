@@ -225,9 +225,8 @@ public class LinkedItemsPermissionsMVCIT extends MVCTestBase {
   }
 
   private void doAuthorisationCheck(boolean isAuthorised, String link)
-      throws Exception, UnsupportedEncodingException {
+      throws Exception {
 
-    System.err.println("looking at link " + link);
     String linkToCheck = link;
     if (link.contains("/globalId/")) {
       /* globalId url returns 302 redirect, so for permissions check let's resolve to full address */

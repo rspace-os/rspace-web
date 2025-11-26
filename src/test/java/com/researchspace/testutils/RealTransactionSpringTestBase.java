@@ -456,7 +456,6 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
     RSChemElement chemElement = rsChemElementManager.get(chemElementId, user);
 
     InputStream molInput = getClass().getResourceAsStream("/TestResources/Aminoglutethimide.mol");
-    // System.out.println("molInput null: " + (molInput == null));
     String newChemElementMolString = IOUtils.toString(molInput, "UTF-8");
     molInput.close();
 

@@ -390,7 +390,6 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
       if (docs.getName().contains("complexDoc")) {
         ArchivalField field = docs.getArchivalDocument().getListFields().get(0);
         String data = field.getFieldData();
-        System.err.println(data);
         Elements rawImageElements =
             getElementsFromHTML(data, FieldParserConstants.IMAGE_THMNAIL_DROPPED_CLASS_NAME);
         for (Element el : rawImageElements) {

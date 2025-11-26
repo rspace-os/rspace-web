@@ -104,7 +104,6 @@ public class API_ModelTestUtils {
     assertEquals(testDoc.getName(), apiDocInfo.getName());
     assertEquals(testDoc.isSigned(), apiDocInfo.getSigned());
     assertEquals(testDoc.getDocTag(), apiDocInfo.getTags());
-    System.err.println(testDoc.getCreationDate() + "," + new Date(apiDocInfo.getCreatedMillis()));
     assertEquals(testDoc.getCreationDate().getTime(), apiDocInfo.getCreatedMillis().longValue());
     assertEquals(testDoc.getModificationDateMillis(), apiDocInfo.getLastModifiedMillis());
 
