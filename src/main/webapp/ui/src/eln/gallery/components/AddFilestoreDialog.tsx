@@ -315,7 +315,7 @@ function FolderSelectionStep(props: {
           {selectedFilesystem
             .map(({ id, name }) => (
               <TreeListing
-                path={encodeURIComponent("/")}
+                path="%2F"
                 fsId={id}
                 fsName={name}
                 key={null}
