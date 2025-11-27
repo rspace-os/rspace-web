@@ -1,10 +1,12 @@
 package com.researchspace.model.dtos.chemistry;
 
 import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Data;
 
 public final class StoichiometryMapper {
 
@@ -58,12 +60,12 @@ public final class StoichiometryMapper {
     }
     Long rsChemElementId =
         molecule.getRsChemElement() != null ? molecule.getRsChemElement().getId() : null;
-    Long inventoryLinkId =
-        molecule.getInventoryLink() != null ? molecule.getInventoryLink().getId() : null;
+    EmbeddedInventoryLinkDTO inventoryLink =
+        EmbeddedInventoryLinkDTO.fromInventoryLink(molecule.getInventoryLink());
     return StoichiometryMoleculeDTO.builder()
         .id(molecule.getId())
         .rsChemElementId(rsChemElementId)
-        .inventoryLinkId(inventoryLinkId)
+        .inventoryLink(inventoryLink)
         .role(molecule.getRole())
         .formula(molecule.getFormula())
         .name(molecule.getName())
@@ -76,6 +78,28 @@ public final class StoichiometryMapper {
         .limitingReagent(molecule.getLimitingReagent())
         .notes(molecule.getNotes())
         .build();
+  }
+
+  @Data
+  static class EmbeddedInventoryLinkDTO {
+    private Long linkId;
+    private String inventoryItemGlobalId;
+    private String unit;
+    private Double quantityUsed;
+
+    EmbeddedInventoryLinkDTO(StoichiometryInventoryLink inventoryLink) {
+      this.linkId = inventoryLink.getId();
+      this.inventoryItemGlobalId = inventoryLink.getConnectedRecordGlobalIdentifier();
+      this.unit = inventoryLink.getUnit();
+      this.quantityUsed = inventoryLink.getQuantityUsed();
+    }
+
+    static EmbeddedInventoryLinkDTO fromInventoryLink(StoichiometryInventoryLink inventoryLink) {
+      if (inventoryLink == null) {
+        return null;
+      }
+      return new EmbeddedInventoryLinkDTO(inventoryLink);
+    }
   }
 
   public static StoichiometryMoleculeDTO moleculeInfoToDTO(MoleculeInfoDTO moleculeInfo) {
