@@ -82,7 +82,6 @@ public class StoichiometryMoleculeManagerTest extends SpringTransactionalTest {
             .chemElements(reactionString)
             .fieldId(field.getId())
             .imageBase64(imageBytes)
-            .fieldId(field.getId())
             .chemElementsFormat(ChemElementsFormat.MOL.getLabel())
             .build();
 

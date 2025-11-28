@@ -267,7 +267,6 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
             .chemElements(reactionString)
             .fieldId(field.getId())
             .imageBase64(imageBytes)
-            .fieldId(field.getId())
             .chemElementsFormat(ChemElementsFormat.MOL.getLabel())
             .build();
 
