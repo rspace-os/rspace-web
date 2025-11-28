@@ -12,4 +12,18 @@ public class ExternalWorkFlowDaoHibernate extends GenericDaoHibernate<ExternalWo
   public ExternalWorkFlowDaoHibernate() {
     super(ExternalWorkFlow.class);
   }
+
+  @Override
+  public ExternalWorkFlow findWorkFlowByExtIdAndName(String extId, String name) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from ExternalWorkFlow ewf join fetch ewf.externalWorkflowInvocations"
+                + " where ewf.extId ="
+                + " (:extId) and ewf.name = (:name) ",
+            ExternalWorkFlow.class)
+        .setParameter("extId", extId)
+        .setParameter("name", name)
+        .getSingleResult();
+  }
 }

@@ -1,7 +1,9 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.dao.ExternalWorkFlowDao;
 import com.researchspace.dao.ExternalWorkFlowDataDao;
 import com.researchspace.dao.ExternalWorkFlowInvocationDao;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
@@ -21,6 +23,7 @@ public class ExternalWorkFlowDataManagerImpl implements ExternalWorkFlowDataMana
 
   @Autowired private ExternalWorkFlowDataDao externalWorkFlowDataDao;
   @Autowired private ExternalWorkFlowInvocationDao externalWorkFlowInvocationDao;
+  @Autowired private ExternalWorkFlowDao externalWorkFlowDao;
 
   @Override
   public void save(ExternalWorkFlowData data) {
@@ -48,5 +51,10 @@ public class ExternalWorkFlowDataManagerImpl implements ExternalWorkFlowDataMana
       String state) {
     externalWorkFlowInvocationDao.saveExternalWorkfFlowInvocation(
         workflowId, workflowName, invocationId, allMatchingDataForThisInvocation, state);
+  }
+
+  @Override
+  public ExternalWorkFlow findWorkFlowByExtIdAndName(String extId, String name) {
+    return externalWorkFlowDao.findWorkFlowByExtIdAndName(extId, name);
   }
 }

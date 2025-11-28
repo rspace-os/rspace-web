@@ -1,5 +1,6 @@
 package com.researchspace.service.archive.export;
 
+import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalForm;
 import com.researchspace.archive.ArchivalLinkResolver;
@@ -82,10 +83,16 @@ public class XMLArchiveExportManagerServiceImpl extends AbstractArchiveExporter
     generateDocumentSchema(xsdDoc);
     File xsdForm = new File(archiveAssmblyFlder, ExportImport.ZIP_FORM_SCHEMA);
     generateFormSchema(xsdForm);
+    File xsdExtWF = new File(archiveAssmblyFlder, ExportImport.EXT_WF_SCHEMA);
+    generateExternalWorkFlowSchema(xsdExtWF);
   }
 
   private void generateDocumentSchema(File xsdFile) throws JAXBException, IOException {
     XMLReadWriteUtils.generateSchemaFromXML(xsdFile, ArchivalDocument.class);
+  }
+
+  private void generateExternalWorkFlowSchema(File xsdFile) throws JAXBException, IOException {
+    XMLReadWriteUtils.generateSchemaFromXML(xsdFile, AllArchiveExternalWorkFlowMetaData.class);
   }
 
   private void generateFormSchema(File xsdFile) throws JAXBException, IOException {

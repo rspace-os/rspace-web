@@ -2,14 +2,12 @@ package com.researchspace.service.archive.export;
 
 import com.researchspace.archive.ArchivalField;
 import com.researchspace.archive.ArchiveExternalWorkFlowDataMetaData;
-import com.researchspace.archive.ArchiveExternalWorkFlowInvocationMetaData;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldElementLinkPair;
 import com.researchspace.linkedelements.FieldElementLinkPairs;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import com.researchspace.service.archive.export.externalWorkFlow.LinkableExternalWorkFlowData;
 import java.io.File;
 import java.io.IOException;
@@ -60,34 +58,8 @@ public class ExternalWorkFlowExporter extends AbstractFieldExporter<LinkableExte
   void createFieldArchiveObject(
       LinkableExternalWorkFlowData item, String archiveLink, FieldExportContext context) {
     ArchivalField archiveField = context.getArchiveField();
-    ExternalWorkFlowData data = item.getExternalWorkflowData();
-    ArchiveExternalWorkFlowDataMetaData aEWFMeta = new ArchiveExternalWorkFlowDataMetaData();
-    aEWFMeta.setId(item.getId());
-    aEWFMeta.setParentId(archiveField.getFieldId());
-    aEWFMeta.setFileName(archiveLink);
-    aEWFMeta.setLinkFile(archiveLink);
-    aEWFMeta.setRspaceDataId(data.getRspacedataid());
-    aEWFMeta.setExternalService(data.getExternalService().name());
-    aEWFMeta.setExtName(data.getExtName());
-    aEWFMeta.setExtId(data.getExtId());
-    aEWFMeta.setExtSecondaryId(data.getExtSecondaryId());
-    aEWFMeta.setExtContainerId(data.getExtContainerID());
-    aEWFMeta.setExtContainerName(data.getExtContainerName());
-    aEWFMeta.setBaseUrl(data.getBaseUrl());
-    for (ExternalWorkFlowInvocation invocation :
-        item.getExternalWorkflowData().getExternalWorkflowInvocations()) {
-      ArchiveExternalWorkFlowInvocationMetaData invocationAgm = new ArchiveExternalWorkFlowInvocationMetaData();
-      invocationAgm.setId(invocation.getId());
-      invocationAgm.setParentId(item.getId());
-      invocationAgm.setStatus(invocation.getStatus());
-      invocationAgm.setExtId(invocation.getExtId());
-      aEWFMeta.getInvocations().add(invocationAgm);
-    }
-    //    String ext = "png";
-    //    agm.setExtension(ext);
-    //    agm.setContentType("image/" + ext);
-    //    agm.setAnnotation(item.getAnnotations());
-    //    agm.setOriginalId(item.getImageId());
+    ArchiveExternalWorkFlowDataMetaData aEWFMeta =
+        new ArchiveExternalWorkFlowDataMetaData(item, archiveLink, archiveField);
     archiveField.addArchivalExternalWorkFlowData(aEWFMeta);
   }
 

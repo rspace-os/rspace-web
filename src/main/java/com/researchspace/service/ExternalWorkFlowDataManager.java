@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
@@ -20,4 +21,6 @@ public interface ExternalWorkFlowDataManager {
       String invocationId,
       List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
       String state);
+
+  ExternalWorkFlow findWorkFlowByExtIdAndName(String extId, String name);
 }
