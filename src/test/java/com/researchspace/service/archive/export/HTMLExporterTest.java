@@ -25,22 +25,25 @@ public class HTMLExporterTest extends SpringTransactionalTest {
 
   @Autowired private VelocityEngine velocity;
 
-  private static final String EXPECTED_HTML = "<!DOCTYPE HTML>\n" +
-          "<html>\n" +
-          "<head>\n" +
-          "<title>$folderName </title>\n" +
-          "<link href=\"resources/index.css\" rel=\"stylesheet\" />\n" +
-          "<meta charset=\"UTF-8\">\n" +
-          "</head>\n" +
-          "<body>\n" +
-          "<div class=\"navigationSection\">\n" +
-          "<a href=\"index.html\">Top</a></div>\n" +
-          " <h3>Listing of $folderName</h3>\n" +
-          "   <img src=\"./resources/document.png\" width=32 height=32/><a href = \"url1\">record1</a><br/>\n" +
-          "    <img src=\"./resources/folder.png\" width=32 height=32/><a href = \"url2\">record2</a><br/>\n" +
-          "  \n" +
-          "</body>\n" +
-          "</html>";
+  private static final String EXPECTED_HTML =
+      "<!DOCTYPE HTML>\n"
+          + "<html>\n"
+          + "<head>\n"
+          + "<title>$folderName </title>\n"
+          + "<link href=\"resources/index.css\" rel=\"stylesheet\" />\n"
+          + "<meta charset=\"UTF-8\">\n"
+          + "</head>\n"
+          + "<body>\n"
+          + "<div class=\"navigationSection\">\n"
+          + "<a href=\"index.html\">Top</a></div>\n"
+          + " <h3>Listing of $folderName</h3>\n"
+          + "   <img src=\"./resources/document.png\" width=32 height=32/><a href ="
+          + " \"url1\">record1</a><br/>\n"
+          + "    <img src=\"./resources/folder.png\" width=32 height=32/><a href ="
+          + " \"url2\">record2</a><br/>\n"
+          + "  \n"
+          + "</body>\n"
+          + "</html>";
 
   @Test
   public void testIsArchiveType() {

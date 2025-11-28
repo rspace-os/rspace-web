@@ -23,7 +23,6 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.PermissionsUtilsStub;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 import net.fortuna.ical4j.validate.ValidationException;

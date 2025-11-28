@@ -290,10 +290,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
   public void testIndexingAndSearchingAtSameTime()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
-          TimeoutException {
+      throws IOException, InterruptedException, ExecutionException, TimeoutException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();
     List<FileSearchTerms> created = tfgg.generate(randomFilefolder.getRoot(), 100, 200);
     // each tread will index one file at a time from the queue

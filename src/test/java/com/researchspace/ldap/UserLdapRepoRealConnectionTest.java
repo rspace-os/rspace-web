@@ -11,15 +11,9 @@ import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.DefaultTestContext;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.ldap.support.LdapUtils;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 /**
