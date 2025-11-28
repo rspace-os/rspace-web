@@ -3513,7 +3513,7 @@ definitions:
       unitId:
         type: integer
         format: int32
-        description: Optional unit identifier from RSUnitDef catalog; may be omitted if unknown
+        description: Unit identifier from RSUnitDef. Options can be retrieved from /units endpoint.
   StoichiometryInventoryLinkDTO:
     description: Link between a stoichiometry molecule and an Inventory item
     properties:

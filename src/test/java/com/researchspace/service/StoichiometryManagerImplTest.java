@@ -422,8 +422,7 @@ public class StoichiometryManagerImplTest {
     assertEquals(1, reqs.size());
     StoichiometryInventoryLinkRequest newLink = reqs.get(0);
     assertEquals("SA" + sample.getId(), newLink.getInventoryItemGlobalId());
-    assertEquals(
-        mol1.getInventoryLink().getQuantityUsed().getNumericValue(), newLink.getQuantity());
+    assertEquals(mol1.getInventoryLink().getQuantity().getNumericValue(), newLink.getQuantity());
     assertEquals(RSUnitDef.MILLI_LITRE.getId(), newLink.getUnitId());
   }
 
