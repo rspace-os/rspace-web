@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -73,8 +74,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(moleculeManager.getById(10L)).thenReturn(molecule);
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
-    when(invPerms.assertUserCanEditInventoryRecord(
-            any(GlobalIdentifier.class), org.mockito.Mockito.eq(user)))
+    when(invPerms.assertUserCanEditInventoryRecord(any(GlobalIdentifier.class), eq(user)))
         .thenReturn(invSample);
 
     when(linkDao.save(any(StoichiometryInventoryLink.class)))
