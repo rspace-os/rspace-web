@@ -2,7 +2,9 @@ package com.researchspace.archive;
 
 import com.researchspace.archive.elninventory.ArchivalListOfMaterials;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -53,8 +55,8 @@ public class ArchivalField {
   List<ArchivalGalleryMetadata> linkMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> sktchMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> mathMeta = new ArrayList<>();
-  List<ArchiveExternalWorkFlowDataMetaData> externalWorkFlowData = new ArrayList<>();
-  List<ArchiveExternalWorkFlowInvocationMetaData> externalWorkFlowInvocations = new ArrayList<>();
+  Set<ArchiveExternalWorkFlowDataMetaData> externalWorkFlowData = new HashSet<>();
+  Set<ArchiveExternalWorkFlowInvocationMetaData> externalWorkFlowInvocations = new HashSet<>();
   List<ArchivalNfsFile> nfsElements = new ArrayList<>();
   List<ArchivalListOfMaterials> listsOfMaterials = new ArrayList<>();
 
@@ -130,14 +132,15 @@ public class ArchivalField {
     return mathMeta;
   }
 
-  @XmlElementWrapper(name = "externalWorkFlowData")
-  @XmlElement(name = "externalWorkFlowData-info")
-  public List<ArchiveExternalWorkFlowDataMetaData> getExternalWorkFlowData() {
+  @XmlElementWrapper(name = "allExternalWorkFlowData")
+  @XmlElement(name = "externalWorkFlowData")
+  public Set<ArchiveExternalWorkFlowDataMetaData> getExternalWorkFlowData() {
     return externalWorkFlowData;
   }
+
   @XmlElementWrapper(name = "externalWorkFlowInvocations")
-  @XmlElement(name = "externalWorkFlowInvocations-info")
-  public List<ArchiveExternalWorkFlowInvocationMetaData> getExternalWorkFlowInvocations() {
+  @XmlElement(name = "externalWorkFlowInvocation")
+  public Set<ArchiveExternalWorkFlowInvocationMetaData> getExternalWorkFlowInvocations() {
     return externalWorkFlowInvocations;
   }
 
@@ -233,9 +236,6 @@ public class ArchivalField {
 
   public void addArchivalExternalWorkFlowData(ArchiveExternalWorkFlowDataMetaData extWFD) {
     externalWorkFlowData.add(extWFD);
-  }
-  public void addArchivalExternalWorkFlowInvocations(ArchiveExternalWorkFlowInvocationMetaData extWFDI) {
-    externalWorkFlowInvocations.add(extWFDI);
   }
 
   public void addArchivalComment(ArchiveComment acm) {

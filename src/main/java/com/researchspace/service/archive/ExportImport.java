@@ -33,6 +33,8 @@ public interface ExportImport {
   /** Name of form XSD file */
   String ZIP_FORM_SCHEMA = "formSchema.xsd";
 
+  String EXT_WF_SCHEMA = "extWorkflowSchema.xsd";
+
   /** Name of manifest file */
   String EXPORT_MANIFEST = "manifest.txt";
 

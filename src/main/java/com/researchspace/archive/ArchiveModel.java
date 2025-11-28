@@ -37,6 +37,7 @@ public class ArchiveModel implements IArchiveModel {
   private File manifestFile;
   private File folderTree;
   private File userInfo;
+  private File externalWorkFlowSchema;
 
   private ArchiveManifest manifest;
 
@@ -271,5 +272,13 @@ public class ArchiveModel implements IArchiveModel {
     } catch (IOException ie) {
       return SemanticVersion.UNKNOWN_VERSION;
     }
+  }
+
+  public File getExternalWorkFlowSchema() {
+    return externalWorkFlowSchema;
+  }
+
+  public void setExternalWorkFlowSchema(File externalWorkFlowSchema) {
+    this.externalWorkFlowSchema = externalWorkFlowSchema;
   }
 }

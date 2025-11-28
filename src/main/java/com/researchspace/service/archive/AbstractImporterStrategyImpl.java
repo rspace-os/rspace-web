@@ -12,6 +12,7 @@ import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.Rsp
 import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceDataType.LOCAL;
 import static java.lang.String.format;
 
+import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
 import com.researchspace.archive.ArchivalField;
@@ -23,6 +24,8 @@ import com.researchspace.archive.ArchivalLinkRecord;
 import com.researchspace.archive.ArchiveComment;
 import com.researchspace.archive.ArchiveCommentItem;
 import com.researchspace.archive.ArchiveExternalWorkFlowDataMetaData;
+import com.researchspace.archive.ArchiveExternalWorkFlowInvocationMetaData;
+import com.researchspace.archive.ArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.FieldParserConstants;
@@ -47,6 +50,7 @@ import com.researchspace.model.RSMath;
 import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import com.researchspace.model.field.Field;
@@ -101,8 +105,7 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired MediaManager mediaManager;
   @Autowired RSChemElementManager rsChemElementManager;
   @Autowired InternalLinkDao internalLinkDao;
-  @Autowired
-  private ExternalWorkFlowDataManager externalWorkFlowDataManager;
+  @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
   @Autowired RichTextUpdater rtu;
   @Autowired EcatCommentManager commentMgr;
   @Autowired FolderTreeImporter folderTreeImporter;
@@ -343,7 +346,7 @@ abstract class AbstractImporterStrategyImpl {
         newDoc.addType(RecordType.TEMPLATE);
       }
       recordManager.save(newDoc, importingUser);
-      importExternalWorkFlows(newDoc, archivalDoc, importingUser);
+      importExternalWorkFlows(newDoc, ref, importingUser);
       String dnm = ref.getDocumentFileName();
       if (dnm != null && dnm.trim().length() > 1) {
         linkRecord.addMap(dnm, Long.toString(newDoc.getId()));
@@ -359,14 +362,22 @@ abstract class AbstractImporterStrategyImpl {
     }
   }
 
-  private void importExternalWorkFlows(StructuredDocument newDoc, ArchivalDocument oldDoc,
-      User user) {
+  private void importExternalWorkFlows(
+      StructuredDocument newDoc, ArchivalDocumentParserRef ref, User user) {
+    ArchivalDocument oldDoc = ref.getArchivalDocument();
+    // Note - not all externalWorkFlowData is ever invoked and so it can be detached from any
+    // external workflow
+    // Conversely, an externalWorkFlow must have externalWorkFlowData and Invocations
+    AllArchiveExternalWorkFlowMetaData allWorkflows = ref.getArchiveExternalWorkFlowMetaData();
     for (ArchivalField oldField : oldDoc.getListFields()) {
-      List<ArchiveExternalWorkFlowDataMetaData> allExternalWorkFlowDataMeta =
+      Set<ArchiveExternalWorkFlowDataMetaData> allExternalWorkFlowDataMeta =
           oldField.getExternalWorkFlowData();
+      Set<ArchiveExternalWorkFlowInvocationMetaData> allExternalWorkFlowInvocations =
+          oldField.getExternalWorkFlowInvocations();
       if (allExternalWorkFlowDataMeta != null) {
         Field newField = newDoc.getField(oldField.getFieldName());
-        for (ArchiveExternalWorkFlowDataMetaData externalWorkFlowMetaData : allExternalWorkFlowDataMeta) {
+        for (ArchiveExternalWorkFlowDataMetaData externalWorkFlowMetaData :
+            allExternalWorkFlowDataMeta) {
           Long rspaceAttachmentIdUSedForExternalWorkflow =
               findCorrespondingRSpaceDataIdForExportedExternalWorkFlow(
                   newField, oldField, externalWorkFlowMetaData);
@@ -386,11 +397,41 @@ abstract class AbstractImporterStrategyImpl {
                     externalWorkFlowMetaData.getExtContainerId(),
                     externalWorkFlowMetaData.getExtContainerName(),
                     externalWorkFlowMetaData.getBaseUrl());
-            Set invocations = externalWorkFlowMetaData.getInvocations();
-            if(invocations != null){
-              ExternalWorkFlowInvocation externalWorkFlowInvocation = ExternalWorkFlowInvocation.builder().externalWorkFlow(externalWorkFlowData)
-                  .build();
-              externalWorkFlowData.setExternalWorkflowInvocations(externalWorkFlowMetaData.getInvocations());
+            for (ArchiveExternalWorkFlowInvocationMetaData invocationMetaData :
+                allExternalWorkFlowInvocations) {
+              if (invocationMetaData.getDataIds().contains(externalWorkFlowMetaData.getId())) {
+                ArchiveExternalWorkFlowMetaData workFlow =
+                    allWorkflows.findById(invocationMetaData.getWorkFlowId());
+                ExternalWorkFlow existingWorkFlow =
+                    externalWorkFlowDataManager.findWorkFlowByExtIdAndName(
+                        workFlow.getExtId(), workFlow.getName());
+                if (existingWorkFlow != null) {
+                  for (ExternalWorkFlowInvocation existingInvocation :
+                      existingWorkFlow.getExternalWorkflowInvocations()) {
+                    if (existingInvocation.getExtId().equals(invocationMetaData.getExtId())) {
+                      externalWorkFlowData.getExternalWorkflowInvocations().add(existingInvocation);
+                      existingInvocation.getExternalWorkFlowData().add(externalWorkFlowData);
+                    } else {
+                      ExternalWorkFlowInvocation newInvocation =
+                          new ExternalWorkFlowInvocation(
+                              invocationMetaData.getExtId(),
+                              Set.of(externalWorkFlowData),
+                              invocationMetaData.getStatus(),
+                              existingWorkFlow);
+                    }
+                  }
+                } else {
+                  ExternalWorkFlow newExternalWorkFlow =
+                      new ExternalWorkFlow(
+                          workFlow.getExtId(), workFlow.getName(), workFlow.getDescription());
+                  ExternalWorkFlowInvocation newInvocation =
+                      new ExternalWorkFlowInvocation(
+                          invocationMetaData.getExtId(),
+                          Set.of(externalWorkFlowData),
+                          invocationMetaData.getStatus(),
+                          newExternalWorkFlow);
+                }
+              }
             }
             externalWorkFlowDataManager.save(externalWorkFlowData);
           }
@@ -567,7 +608,7 @@ abstract class AbstractImporterStrategyImpl {
     fld = importImageAnnotation(fld, archiveFld, recordFolder, oldIdToNewGalleryItem);
     importLinkedRecords(fld, archiveFld, recordFolder, linkRecord);
     fld = importSketches(fld, archiveFld, recordFolder);
-//    fld = importExternalWorkFlows(fld, archiveFld, user);
+    //    fld = importExternalWorkFlows(fld, archiveFld, user);
     rtu.updateAttachmentIcons(fld);
     rtu.updateNfsLinksOnImport(fld);
   }

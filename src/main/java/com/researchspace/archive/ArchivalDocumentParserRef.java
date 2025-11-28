@@ -14,6 +14,7 @@ public class ArchivalDocumentParserRef extends AbstractArchivalParserRef {
 
   ArchivalDocument archivalDocument;
   ArchivalForm archivalForm;
+  AllArchiveExternalWorkFlowMetaData archiveExternalWorkFlowMetaData;
 
   /** Sorts by creation date Asc of underlying ArchivalDocument */
   public static final Comparator<ArchivalDocumentParserRef>
