@@ -51,7 +51,7 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
     req.setStoichiometryMoleculeId(molecule.getId());
     req.setInventoryItemGlobalId(sample.getGlobalId());
-    req.setQuantityUsed(BigDecimal.valueOf(1.5));
+    req.setQuantity(BigDecimal.valueOf(1.5));
     req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
 
     // Create
@@ -59,14 +59,14 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     assertNotNull(createdLink.getId());
     assertEquals(molecule.getId(), createdLink.getStoichiometryMoleculeId());
     assertEquals(sample.getGlobalId(), createdLink.getInventoryItemGlobalId());
-    assertEquals(BigDecimal.valueOf(1.5), createdLink.getQuantityUsed().getNumericValue());
+    assertEquals(BigDecimal.valueOf(1.5), createdLink.getQuantity().getNumericValue());
 
     // Retrieve
     StoichiometryInventoryLinkDTO retrieved = linkManager.getById(createdLink.getId(), user);
     assertEquals(createdLink.getId(), retrieved.getId());
     assertEquals(molecule.getId(), retrieved.getStoichiometryMoleculeId());
     assertEquals(sample.getGlobalId(), retrieved.getInventoryItemGlobalId());
-    assertEquals(BigDecimal.valueOf(1.5), retrieved.getQuantityUsed().getNumericValue());
+    assertEquals(BigDecimal.valueOf(1.5), retrieved.getQuantity().getNumericValue());
 
     // Update quantity
     StoichiometryLinkQuantityUpdateRequest update = new StoichiometryLinkQuantityUpdateRequest();
@@ -75,8 +75,8 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
         new ApiQuantityInfo(BigDecimal.valueOf(5), RSUnitDef.MILLI_LITRE.getId()));
     StoichiometryInventoryLinkDTO updated =
         linkManager.updateQuantity(update.getStoichiometryLinkId(), update.getNewQuantity(), user);
-    assertEquals(BigDecimal.valueOf(5), updated.getQuantityUsed().getNumericValue());
-    assertEquals(RSUnitDef.MILLI_LITRE.getId(), updated.getQuantityUsed().getUnitId());
+    assertEquals(BigDecimal.valueOf(5), updated.getQuantity().getNumericValue());
+    assertEquals(RSUnitDef.MILLI_LITRE.getId(), updated.getQuantity().getUnitId());
 
     // Delete
     linkManager.deleteLink(createdLink.getId(), user);

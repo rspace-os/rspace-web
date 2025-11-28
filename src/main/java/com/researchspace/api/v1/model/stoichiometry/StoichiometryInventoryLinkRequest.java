@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 public class StoichiometryInventoryLinkRequest {
   private String inventoryItemGlobalId;
   private Long stoichiometryMoleculeId;
-  private BigDecimal quantityUsed;
+  private BigDecimal quantity;
   private Integer unitId;
 }

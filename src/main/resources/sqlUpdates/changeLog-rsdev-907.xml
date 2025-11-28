@@ -10,8 +10,7 @@
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="stoichiometry_molecule_id" type="BIGINT">
-                <constraints nullable="false" foreignKeyName="fk_stoichiometry_molecule"
-                             references="StoichiometryMolecule(id)"/>
+                <constraints nullable="false" foreignKeyName="fk_stoichiometry_molecule" unique="true" references="StoichiometryMolecule(id)"/>
             </column>
             <column name="container_id" type="BIGINT">
                 <constraints foreignKeyName="fk_container" references="Container(id)"/>

@@ -58,15 +58,15 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     link.setStoichiometryMolecule(stoichiometryMolecule);
     link.setInventoryRecord(inventoryRecord);
     QuantityInfo quantityInfo = makeQuantity(req);
-    link.setQuantityUsed(quantityInfo);
+    link.setQuantity(quantityInfo);
     link = linkDao.save(link);
     generateNewStoichiometryRevision(stoichiometryMolecule);
     return toDto(link);
   }
 
   private QuantityInfo makeQuantity(StoichiometryInventoryLinkRequest request) {
-    if (request.getQuantityUsed() != null && request.getUnitId() != null) {
-      return new QuantityInfo(request.getQuantityUsed(), request.getUnitId());
+    if (request.getQuantity() != null && request.getUnitId() != null) {
+      return new QuantityInfo(request.getQuantity(), request.getUnitId());
     } else {
       throw new IllegalArgumentException("quantityUsed and unitId are required");
     }
@@ -95,7 +95,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
     verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.WRITE, user);
     invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
-    entity.setQuantityUsed(newQuantity.toQuantityInfo());
+    entity.setQuantity(newQuantity.toQuantityInfo());
     entity = linkDao.save(entity);
     generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
     return toDto(entity);
@@ -115,11 +115,10 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     dto.setId(entity.getId());
     dto.setInventoryItemGlobalId(entity.getInventoryRecord().getOid().getIdString());
     dto.setStoichiometryMoleculeId(entity.getStoichiometryMolecule().getId());
-    dto.setQuantityUsed(
-        entity.getQuantityUsed().getNumericValue() == null
+    dto.setQuantity(
+        entity.getQuantity().getNumericValue() == null
             ? null
-            : new ApiQuantityInfo(
-                entity.getQuantityUsed().getNumericValue(), entity.getQuantityUsed().getUnitId()));
+            : new ApiQuantityInfo(entity.getQuantity()));
     return dto;
   }
 

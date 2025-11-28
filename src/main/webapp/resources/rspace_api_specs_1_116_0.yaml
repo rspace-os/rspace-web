@@ -2926,7 +2926,8 @@ paths:
                 type: string
                 example: "Error retrieving stoichiometry."
     put:
-      summary: Update stoichiometry
+      summary: Update stoichiometry.
+      description: Values shown in the model are updatable. Note that inventory links are managed separately and should be updated using the /stoichiometry/link endpoint.
       tags:
         - Chemistry
       parameters:
@@ -3040,12 +3041,12 @@ paths:
           name: body
           required: true
           schema:
-            $ref: '#/definitions/StoichInvLinkRequest'
+            $ref: '#/definitions/StoichiometryInventoryLinkRequest'
       responses:
         '200':
           description: Created link
           schema:
-            $ref: '#/definitions/StoichInvLinkDTO'
+            $ref: '#/definitions/StoichiometryInventoryLinkDTO'
         '401':
           description: Authentication error or insufficient permissions
           schema:
@@ -3084,7 +3085,7 @@ paths:
         '200':
           description: Updated link
           schema:
-            $ref: '#/definitions/StoichInvLinkDTO'
+            $ref: '#/definitions/StoichiometryInventoryLinkDTO'
         '401':
           description: Authentication error or insufficient permissions
           schema:
@@ -3125,7 +3126,7 @@ paths:
         '200':
           description: The link
           schema:
-            $ref: '#/definitions/StoichInvLinkDTO'
+            $ref: '#/definitions/StoichiometryInventoryLinkDTO'
         '401':
           description: Authentication error or insufficient permissions
           schema:
@@ -3513,7 +3514,7 @@ definitions:
         type: integer
         format: int32
         description: Optional unit identifier from RSUnitDef catalog; may be omitted if unknown
-  StoichInvLinkDTO:
+  StoichiometryInventoryLinkDTO:
     description: Link between a stoichiometry molecule and an Inventory item
     properties:
       id:
@@ -3525,9 +3526,9 @@ definitions:
       stoichiometryMoleculeId:
         type: integer
         format: int64
-      quantityUsed:
+      quantity:
         $ref: '#/definitions/QuantityInfo'
-  StoichInvLinkRequest:
+  StoichiometryInventoryLinkRequest:
     description: Request to create a link between a stoichiometry molecule and an Inventory item
     required:
       - inventoryItemGlobalId
@@ -3539,14 +3540,14 @@ definitions:
       stoichiometryMoleculeId:
         type: integer
         format: int64
-      quantityUsed:
+      quantity:
         type: number
         format: double
         description: Numeric value of the quantity used
       unitId:
         type: integer
         format: int32
-        description: Optional unit identifier from RSUnitDef catalog; may be omitted if unknown
+        description: Unit identifier. Options can be retrieved from /units endpoint.
   StoichiometryLinkQuantityUpdateRequest:
     description: Request to update quantity used for a stoichiometry-inventory link
     required:
@@ -4734,9 +4735,14 @@ definitions:
       inventoryItemGlobalId:
         type: string
         description: Global identifier of the connected Inventory record (e.g. SA123, SS456)
-      amountUsed:
-        type: string
-        description: Human-readable quantity used from the connected item, including unit (e.g. "5 g", "10 mL")
+      quantity:
+        type: number
+        format: double
+        description: Numeric value of the quantity used from the connected item
+      unitId:
+        type: integer
+        format: int32
+        description: Unit identifier of the quantity used from the connected item
   StoichiometryDTO:
     description: Stoichiometry data for a reaction
     properties:
@@ -4760,6 +4766,14 @@ definitions:
         type: integer
         format: int64
       coefficient:
+        type: number
+      smiles:
+        type: string
+      name:
+        type: string
+      formula:
+        type: string
+      molecularWeight:
         type: number
       role:
         type: string

@@ -8,5 +8,5 @@ public class StoichiometryInventoryLinkDTO {
   private Long id;
   private String inventoryItemGlobalId;
   private Long stoichiometryMoleculeId;
-  private ApiQuantityInfo quantityUsed;
+  private ApiQuantityInfo quantity;
 }

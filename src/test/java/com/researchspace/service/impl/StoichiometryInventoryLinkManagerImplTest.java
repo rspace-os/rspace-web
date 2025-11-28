@@ -67,7 +67,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
     req.setStoichiometryMoleculeId(10L);
     req.setInventoryItemGlobalId("SA200");
-    req.setQuantityUsed(BigDecimal.valueOf(2.5));
+    req.setQuantity(BigDecimal.valueOf(2.5));
     req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
@@ -83,8 +83,8 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StoichiometryInventoryLinkDTO dto = manager.createLink(req, user);
     assertEquals(Long.valueOf(10L), dto.getStoichiometryMoleculeId());
     assertEquals("SA200", dto.getInventoryItemGlobalId());
-    assertEquals(BigDecimal.valueOf(2.5), dto.getQuantityUsed().getNumericValue());
-    assertEquals(RSUnitDef.MILLI_LITRE.getId(), dto.getQuantityUsed().getUnitId());
+    assertEquals(BigDecimal.valueOf(2.5), dto.getQuantity().getNumericValue());
+    assertEquals(RSUnitDef.MILLI_LITRE.getId(), dto.getQuantity().getUnitId());
   }
 
   @Test
@@ -92,7 +92,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
     req.setStoichiometryMoleculeId(10L);
     req.setInventoryItemGlobalId("SA200");
-    req.setQuantityUsed(BigDecimal.valueOf(1.0));
+    req.setQuantity(BigDecimal.valueOf(1.0));
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
@@ -107,8 +107,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     original.setId(123L);
     original.setStoichiometryMolecule(molecule);
     original.setSample(invSample);
-    original.setQuantityUsed(
-        new QuantityInfo(BigDecimal.valueOf(1), RSUnitDef.MILLI_LITRE.getId()));
+    original.setQuantity(new QuantityInfo(BigDecimal.valueOf(1), RSUnitDef.MILLI_LITRE.getId()));
 
     when(linkDao.getSafeNull(123L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
@@ -123,7 +122,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         manager.updateQuantity(
             123L, new ApiQuantityInfo(BigDecimal.valueOf(5), RSUnitDef.MILLI_LITRE.getId()), user);
     assertEquals(Long.valueOf(123L), updated.getId());
-    assertEquals(BigDecimal.valueOf(5), updated.getQuantityUsed().getNumericValue());
+    assertEquals(BigDecimal.valueOf(5), updated.getQuantity().getNumericValue());
   }
 
   @Test
