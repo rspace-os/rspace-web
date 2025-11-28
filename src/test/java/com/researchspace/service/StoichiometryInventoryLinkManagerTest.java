@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
@@ -20,7 +21,9 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.math.BigDecimal;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
 import org.junit.Test;
@@ -48,29 +51,32 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
     req.setStoichiometryMoleculeId(molecule.getId());
     req.setInventoryItemGlobalId(sample.getGlobalId());
-    req.setQuantityUsed(1.5);
+    req.setQuantityUsed(BigDecimal.valueOf(1.5));
+    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
 
     // Create
     StoichiometryInventoryLinkDTO createdLink = linkManager.createLink(req, user);
     assertNotNull(createdLink.getId());
     assertEquals(molecule.getId(), createdLink.getStoichiometryMoleculeId());
     assertEquals(sample.getGlobalId(), createdLink.getInventoryItemGlobalId());
-    assertEquals(Double.valueOf(1.5), createdLink.getQuantityUsed());
+    assertEquals(BigDecimal.valueOf(1.5), createdLink.getQuantityUsed().getNumericValue());
 
     // Retrieve
     StoichiometryInventoryLinkDTO retrieved = linkManager.getById(createdLink.getId(), user);
     assertEquals(createdLink.getId(), retrieved.getId());
     assertEquals(molecule.getId(), retrieved.getStoichiometryMoleculeId());
     assertEquals(sample.getGlobalId(), retrieved.getInventoryItemGlobalId());
-    assertEquals(Double.valueOf(1.5), retrieved.getQuantityUsed());
+    assertEquals(BigDecimal.valueOf(1.5), retrieved.getQuantityUsed().getNumericValue());
 
     // Update quantity
     StoichiometryLinkQuantityUpdateRequest update = new StoichiometryLinkQuantityUpdateRequest();
     update.setStoichiometryLinkId(createdLink.getId());
-    update.setNewQuantity(10.0);
+    update.setNewQuantity(
+        new ApiQuantityInfo(BigDecimal.valueOf(5), RSUnitDef.MILLI_LITRE.getId()));
     StoichiometryInventoryLinkDTO updated =
         linkManager.updateQuantity(update.getStoichiometryLinkId(), update.getNewQuantity(), user);
-    assertEquals(Double.valueOf(10.0), updated.getQuantityUsed());
+    assertEquals(BigDecimal.valueOf(5), updated.getQuantityUsed().getNumericValue());
+    assertEquals(RSUnitDef.MILLI_LITRE.getId(), updated.getQuantityUsed().getUnitId());
 
     // Delete
     linkManager.deleteLink(createdLink.getId(), user);

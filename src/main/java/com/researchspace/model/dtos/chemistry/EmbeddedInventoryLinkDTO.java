@@ -7,14 +7,12 @@ import lombok.Data;
 public class EmbeddedInventoryLinkDTO {
   private Long linkId;
   private String inventoryItemGlobalId;
-  private String unit;
-  private Double quantityUsed;
+  private String amountUsed;
 
   EmbeddedInventoryLinkDTO(StoichiometryInventoryLink inventoryLink) {
     this.linkId = inventoryLink.getId();
     this.inventoryItemGlobalId = inventoryLink.getConnectedRecordGlobalIdentifier();
-    this.unit = inventoryLink.getUnit();
-    this.quantityUsed = inventoryLink.getQuantityUsed();
+    this.amountUsed = inventoryLink.getQuantityUsed().toPlainString();
   }
 
   static EmbeddedInventoryLinkDTO fromInventoryLink(StoichiometryInventoryLink inventoryLink) {

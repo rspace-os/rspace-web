@@ -3502,21 +3502,31 @@ parameters:
 definitions:
   ChemicalSearchRequest:
     description: Request object for searching chemicals
+  QuantityInfo:
+    description: Quantity information with numeric value and unit identifier.
+    properties:
+      numericValue:
+        type: number
+        format: double
+        description: Numeric value of the quantity
+      unitId:
+        type: integer
+        format: int32
+        description: Optional unit identifier from RSUnitDef catalog; may be omitted if unknown
   StoichInvLinkDTO:
     description: Link between a stoichiometry molecule and an Inventory item
     properties:
       id:
         type: integer
         format: int64
-      inventoryItemId:
-        type: integer
-        format: int64
+      inventoryItemGlobalId:
+        type: string
+        description: Global identifier of the inventory item (e.g. SA123, SS456, IC789)
       stoichiometryMoleculeId:
         type: integer
         format: int64
       quantityUsed:
-        type: number
-        format: double
+        $ref: '#/definitions/QuantityInfo'
   StoichInvLinkRequest:
     description: Request to create a link between a stoichiometry molecule and an Inventory item
     required:
@@ -3532,6 +3542,11 @@ definitions:
       quantityUsed:
         type: number
         format: double
+        description: Numeric value of the quantity used
+      unitId:
+        type: integer
+        format: int32
+        description: Optional unit identifier from RSUnitDef catalog; may be omitted if unknown
   StoichiometryLinkQuantityUpdateRequest:
     description: Request to update quantity used for a stoichiometry-inventory link
     required:
@@ -3542,8 +3557,7 @@ definitions:
         type: integer
         format: int64
       newQuantity:
-        type: number
-        format: double
+        $ref: '#/definitions/QuantityInfo'
   ChemicalImportSearchResult:
     description: Chemical search result from external sources
     properties:
@@ -4678,6 +4692,8 @@ definitions:
       rsChemElementId:
         type: integer
         format: int64
+      inventoryLink:
+        $ref: '#/definitions/EmbeddedInventoryLinkDTO'
       role:
         type: string
         enum: [REACTANT, PRODUCT, AGENT]
@@ -4708,6 +4724,19 @@ definitions:
       notes:
         type: string
         example: 'some notes'
+  EmbeddedInventoryLinkDTO:
+    description: Embedded link to an Inventory item associated with this molecule
+    properties:
+      linkId:
+        type: integer
+        format: int64
+        description: Identifier of the stoichiometry-inventory link
+      inventoryItemGlobalId:
+        type: string
+        description: Global identifier of the connected Inventory record (e.g. SA123, SS456)
+      amountUsed:
+        type: string
+        description: Human-readable quantity used from the connected item, including unit (e.g. "5 g", "10 mL")
   StoichiometryDTO:
     description: Stoichiometry data for a reaction
     properties:

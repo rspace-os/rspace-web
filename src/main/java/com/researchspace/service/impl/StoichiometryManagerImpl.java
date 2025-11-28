@@ -164,7 +164,8 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
             .inventoryItemGlobalId(
                 sourceMol.getInventoryLink().getConnectedRecordGlobalIdentifier())
             .stoichiometryMoleculeId(copy.getId())
-            .quantityUsed(sourceMol.getInventoryLink().getQuantityUsed())
+            .quantityUsed(sourceMol.getInventoryLink().getQuantityUsed().getNumericValue())
+            .unitId(sourceMol.getInventoryLink().getQuantityUsed().getUnitId())
             .build();
     stoichiometryInventoryLinkManager.createLink(link, user);
   }

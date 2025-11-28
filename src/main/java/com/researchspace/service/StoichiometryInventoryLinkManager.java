@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.model.User;
@@ -10,7 +11,7 @@ public interface StoichiometryInventoryLinkManager {
 
   StoichiometryInventoryLinkDTO getById(long linkId, User user);
 
-  StoichiometryInventoryLinkDTO updateQuantity(long linkId, double newQuantity, User user);
+  StoichiometryInventoryLinkDTO updateQuantity(long linkId, ApiQuantityInfo newQuantity, User user);
 
   void deleteLink(long linkId, User user);
 }

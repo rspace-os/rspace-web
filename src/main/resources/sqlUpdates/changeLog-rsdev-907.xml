@@ -24,7 +24,7 @@
             </column>
 
             <column name="quantity_used" type="DECIMAL(19,6)"/>
-            <column name="unit" type="VARCHAR(32)"/>
+            <column name="unit_id" type="BIGINT"/>
 
         </createTable>
         <createIndex tableName="StoichiometryInventoryLink" indexName="idx_stoich_molecule">
@@ -48,7 +48,7 @@
             <column name="sample_id" type="BIGINT"/>
             <column name="subSample_id" type="BIGINT"/>
             <column name="quantity_used" type="DECIMAL(19,6)"/>
-            <column name="unit" type="VARCHAR(32)"/>
+            <column name="unit_id" type="BIGINT"/>
         </createTable>
 
         <addPrimaryKey tableName="StoichiometryInventoryLink_AUD" columnNames="id, REV" constraintName="PRIMARY"/>

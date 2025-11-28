@@ -31,9 +31,12 @@ import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
+import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.service.impl.StoichiometryManagerImpl;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -393,7 +396,7 @@ public class StoichiometryManagerImplTest {
     Sample sample = new Sample();
     sample.setId(10L);
     link1.setSample(sample);
-    link1.setQuantityUsed(1.5);
+    link1.setQuantityUsed(new QuantityInfo(BigDecimal.valueOf(1.5), RSUnitDef.MILLI_LITRE.getId()));
     link1.setStoichiometryMolecule(mol1);
 
     mol1.setInventoryLink(link1);
@@ -419,7 +422,9 @@ public class StoichiometryManagerImplTest {
     assertEquals(1, reqs.size());
     StoichiometryInventoryLinkRequest newLink = reqs.get(0);
     assertEquals("SA" + sample.getId(), newLink.getInventoryItemGlobalId());
-    assertEquals(mol1.getInventoryLink().getQuantityUsed(), newLink.getQuantityUsed());
+    assertEquals(
+        mol1.getInventoryLink().getQuantityUsed().getNumericValue(), newLink.getQuantityUsed());
+    assertEquals(RSUnitDef.MILLI_LITRE.getId(), newLink.getUnitId());
   }
 
   @Test

@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
@@ -12,6 +13,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
+import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
@@ -55,10 +57,19 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setStoichiometryMolecule(stoichiometryMolecule);
     link.setInventoryRecord(inventoryRecord);
-    link.setQuantityUsed(req.getQuantityUsed());
+    QuantityInfo quantityInfo = makeQuantity(req);
+    link.setQuantityUsed(quantityInfo);
     link = linkDao.save(link);
     generateNewStoichiometryRevision(stoichiometryMolecule);
     return toDto(link);
+  }
+
+  private QuantityInfo makeQuantity(StoichiometryInventoryLinkRequest request) {
+    if (request.getQuantityUsed() != null && request.getUnitId() != null) {
+      return new QuantityInfo(request.getQuantityUsed(), request.getUnitId());
+    } else {
+      throw new IllegalArgumentException("quantityUsed and unitId are required");
+    }
   }
 
   /**
@@ -79,11 +90,12 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   }
 
   @Override
-  public StoichiometryInventoryLinkDTO updateQuantity(long linkId, double newQuantity, User user) {
+  public StoichiometryInventoryLinkDTO updateQuantity(
+      long linkId, ApiQuantityInfo newQuantity, User user) {
     StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
     verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.WRITE, user);
     invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
-    entity.setQuantityUsed(newQuantity);
+    entity.setQuantityUsed(newQuantity.toQuantityInfo());
     entity = linkDao.save(entity);
     generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
     return toDto(entity);
@@ -98,12 +110,16 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
   }
 
-  private StoichiometryInventoryLinkDTO toDto(StoichiometryInventoryLink e) {
+  private StoichiometryInventoryLinkDTO toDto(StoichiometryInventoryLink entity) {
     StoichiometryInventoryLinkDTO dto = new StoichiometryInventoryLinkDTO();
-    dto.setId(e.getId());
-    dto.setInventoryItemGlobalId(e.getInventoryRecord().getOid().getIdString());
-    dto.setStoichiometryMoleculeId(e.getStoichiometryMolecule().getId());
-    dto.setQuantityUsed(e.getQuantityUsed());
+    dto.setId(entity.getId());
+    dto.setInventoryItemGlobalId(entity.getInventoryRecord().getOid().getIdString());
+    dto.setStoichiometryMoleculeId(entity.getStoichiometryMolecule().getId());
+    dto.setQuantityUsed(
+        entity.getQuantityUsed().getNumericValue() == null
+            ? null
+            : new ApiQuantityInfo(
+                entity.getQuantityUsed().getNumericValue(), entity.getQuantityUsed().getUnitId()));
     return dto;
   }
 
