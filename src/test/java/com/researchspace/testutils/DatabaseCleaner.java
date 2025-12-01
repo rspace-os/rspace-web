@@ -113,6 +113,7 @@ public class DatabaseCleaner {
             "EcatAudio",
             "EcatVideo",
             "EcatDocumentFile",
+            "StoichiometryInventoryLink",
             "StoichiometryMolecule",
             "Stoichiometry",
             "RSChemElement",
