@@ -40,7 +40,7 @@ const ConnectedAppsTableRow = ({
           consequences={
             <Typography variant="body1">
               Are you sure you want to revoke access from{" "}
-              <strong>${app.clientName}</strong>?
+              <strong>{app.clientName}</strong>?
             </Typography>
           }
           variant="warning"

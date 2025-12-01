@@ -118,7 +118,7 @@ export default function ConnectedAppsTable() {
                     <ConnectedAppsTableRow
                       // @ts-expect-error stableSort needs better types
                       app={app}
-                      onConfirmDisconnectApp={handleConfirmDisconnectApp}
+                      onConfirmDisconnectApp={() => handleConfirmDisconnectApp(app.clientId)}
                       key={app.clientId}
                     />
                   ))}
