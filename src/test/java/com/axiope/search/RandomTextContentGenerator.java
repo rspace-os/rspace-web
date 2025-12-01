@@ -56,7 +56,6 @@ public class RandomTextContentGenerator {
       }
 
       sw.split();
-      // System.err.println(sw.getSplitTime());
       IOUtils.write(sb.toString() + "\n", fos);
       sb = createStringBuffer(LINE_LENGTH, EXPECTED_WORD_SIZE);
     }

@@ -551,7 +551,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             .getResponse()
             .getContentAsByteArray();
     BufferedImage image = getImageFromBytes(data);
-    System.err.println(image.getWidth());
+    assertEquals(644, image.getWidth());
     // unauthorised can't view
     User other = createInitAndLoginAnyUser();
     MvcResult result =

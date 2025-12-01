@@ -28,9 +28,4 @@ public class DatabaseMetaDataManagerTest extends SpringTransactionalTest {
     int version = mgr.getVersion().getMajor();
     assertTrue(version == MARIA_DB10 || version == MYSQL_5);
   }
-
-  @Test
-  public void testGetVersionMessage() {
-    System.err.println(mgr.getVersionMessage());
-  }
 }

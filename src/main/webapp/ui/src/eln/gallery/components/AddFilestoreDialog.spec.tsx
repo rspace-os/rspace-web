@@ -113,7 +113,7 @@ feature.beforeEach(async ({ router }) => {
     });
   });
   await router.route(
-    "/api/v1/gallery/filesystems/1/browse?remotePath=/",
+    "/api/v1/gallery/filesystems/1/browse?remotePath=%2F",
     (route) => {
       return route.fulfill({
         status: 200,
