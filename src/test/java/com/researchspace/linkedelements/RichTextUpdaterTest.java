@@ -183,11 +183,9 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     oldKey2NewKey.put(32769L, 3L);
     oldKey2NewKey.put(32770L, 4L);
     String updated = updater.updateSketchIdsInCopy(oldKey2NewKey, test);
-    System.err.println(updated);
 
     assertFalse(updated.contains("32769"));
     assertFalse(updated.contains("32770"));
-    //		assertTrue(testAttributeValue("src", updated, "/image/getImageSketch/"));
 
     assertTrue(updated.contains("/image/getImageSketch/3"));
     assertTrue(updated.contains("/image/getImageSketch/4"));
@@ -285,7 +283,6 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
 
     String updated =
         updater.updateImageIdsAndAnnoIdsInCopy(oldKey2NewKey, null, copy.getFieldData());
-    System.err.println(updated);
     // ORIG_ID Could be on the String because now src = /images/getImage/3-1/{ramdom long}
     assertFalse(updated.contains("id=" + ORIG_ID));
     assertTrue(testAttributeValue("id", updated, "3-1"));

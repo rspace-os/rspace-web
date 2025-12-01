@@ -74,7 +74,6 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
 
     String newHTml = "<img src=\"image.png\" onerror=\"alert('1');\">";
     newHTml = fieldDataSanitizer.cleanData(newHTml);
-    System.err.println(newHTml);
     assertFalse(newHTml.contains("alert"));
   }
 

@@ -19,7 +19,7 @@ public class IconImgDaoHibernate extends GenericDaoHibernate<ImageBlob, Long>
 
   @Override
   public IconEntity getIconEntity(Long id) {
-    return (IconEntity) getSession().get(IconEntity.class, id);
+    return getSession().get(IconEntity.class, id);
   }
 
   @Override
@@ -39,14 +39,13 @@ public class IconImgDaoHibernate extends GenericDaoHibernate<ImageBlob, Long>
   }
 
   @Override
-  public boolean updateIconRelation(long icon_id, long form_id) {
+  public boolean updateIconRelation(long iconId, long formId) {
     boolean fg = true;
     Session session = getSession();
-    // System.out.println("update: iconid="+icon_id+" form id="+form_id);
     String q1 = "UPDATE RSForm SET iconId=:iconId  WHERE id =:id ";
     NativeQuery<?> query = session.createSQLQuery(q1);
-    query.setParameter("iconId", icon_id);
-    query.setParameter("id", form_id);
+    query.setParameter("iconId", iconId);
+    query.setParameter("id", formId);
     query.executeUpdate();
     return fg;
   }
