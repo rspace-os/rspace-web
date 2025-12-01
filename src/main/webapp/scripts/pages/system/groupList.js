@@ -23,14 +23,12 @@ $(document).ready(function () {
         RS.ajaxFailed("Removing group", true, jqxhr);
       });
     }
-
-		var event = new CustomEvent('confirm-action', { 'detail': {
+    RS.createConfirmationDialog({
       title: "Confirm deletion",
-      consequences: `Are you sure you want to delete the following group: <b>${selected[0].displayName}</b>?`,
+      consequences: `Are you sure you want to delete the following group: <strong>${selected[0].displayName}</strong>?`,
 			variant: "warning",
       callback: callback
-    }});
-    document.dispatchEvent(event);
+    });
   });
 
   var paginationEventHandler = function (source, e) {

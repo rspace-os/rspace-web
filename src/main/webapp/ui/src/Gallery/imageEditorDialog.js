@@ -257,7 +257,6 @@ export default function ImageEditorDialog(props) {
               disabled={submitted || !dirty}
               onClick={handleSubmit}
               color="primary"
-              data-test-id="confirm-action"
             >
               Save as new image
             </Button>

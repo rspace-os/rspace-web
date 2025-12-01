@@ -57,15 +57,12 @@ $(document).ready(function () {
             });
         }
 
-        var event = new CustomEvent('confirm-action', {
-            'detail': {
-                title: "Confirm deletion",
-                consequences: `Are you sure you want to delete the following group: <b>${displayName}</b>?`,
-                variant: "warning",
-                callback: callback
-            }
-        });
-        document.dispatchEvent(event);
+		RS.createConfirmationDialog({
+			title: "Confirm deletion",
+			consequences: `Are you sure you want to delete the following group: <strong>${displayName}</strong>?`,
+			variant: "warning",
+			callback: callback
+		});
     }
 
   $(document).ready(function(){

@@ -137,7 +137,7 @@ module.exports = {
           "src/tinyMCE/pubchem/index.tsx",
           "src/tinyMCE/inventory/identifiers/index.tsx",
           "src/components/BaseSearch.js",
-          "src/components/ConfirmationDialog.js",
+          "src/components/ConfirmationDialog/ConfirmationDialog.tsx",
           "src/Gallery/imageEditorDialog.js",
           "src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
           "src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",

@@ -4,7 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
 import Button from "@mui/material/Button";
-import OAuthTable from "./OAuthTable.js";
+import OAuthTable from "./OAuthTable";
 import { createRoot } from "react-dom/client";
 
 export default function OAuthTrigger(props) {

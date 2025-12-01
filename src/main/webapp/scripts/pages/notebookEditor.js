@@ -71,13 +71,12 @@ function deleteEntry(){
     });
   };
 
-  var event = new CustomEvent('confirm-action', { 'detail': {
+  RS.createConfirmationDialog({
     title: "Confirm deletion",
-    consequences: `Are you sure you want to delete the following entry? - <b>${$("#recordNameInHeader").html()}</b>. Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
+    consequences: `Are you sure you want to delete the following entry?<br><strong>${$("#recordNameInHeader").html()}</strong><br /><br />Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
     variant: "warning",
     callback: callback
-  }});
-  document.dispatchEvent(event);
+  });
 }
 
 /*

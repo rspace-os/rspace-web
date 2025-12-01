@@ -300,17 +300,13 @@ function deleteGalleries(isDMPs) {
 		initGalleriesCrudopsActions();
 	}
 
-	var text = idsToDelete.length == 1 ? "this item" : `these ${idsToDelete.length} items`
-	var event = new CustomEvent('confirm-action', {
-		'detail': {
-			title: "Confirm deletion",
-			consequences: `Do you want to delete ${text}?`
-			 +  `${isDMPs? " Deleting a DMP attachment will also dissociate the DMP from your account.":""}`,
-			variant: "warning",
-			callback: callback
-		}
+	RS.createConfirmationDialog({
+		title: "Confirm deletion",
+		consequences: `Do you want to delete ${idsToDelete.length === 1 ? "this item" : `these ${idsToDelete.length} items`}?`
+		 +  `${isDMPs? " Deleting a DMP attachment will also dissociate the DMP from your account." : ""}`,
+		variant: "warning",
+		callback: callback
 	});
-	document.dispatchEvent(event);
 }
 
 /*

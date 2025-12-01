@@ -2,7 +2,6 @@
 <%@ include file="/common/meta.jsp"%>
 
 <head>
-  <script src="<c:url value='/public/ui/dist/runtime.js'/>"></script>
   <link rel="stylesheet" href="<c:url value='/styles/bootstrap-custom-flat.css'/>" />
   <link media="all" href="<c:url value='/styles/simplicity/theme.css'/>" rel="stylesheet" />
   <link media="print" href="<c:url value='/styles/simplicity/print.css'/>" rel="stylesheet" />
@@ -75,7 +74,7 @@
     <jsp:include page="public_published_records_list_ajax.jsp" />
   </div>
 
-  <!-- Import React search -->
-  <script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
-
+  <axt:once key="LOADED_baseSearch">
+    <%@ include file="/ui/dist/templates/baseSearch-scripts.jsp" %>
+  </axt:once>
 </body>
