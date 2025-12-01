@@ -226,5 +226,4 @@
 <div id="toast-message" data-test-id="toast-messages-wrapper"></div>
 <script src="<c:url value='/ui/dist/toastMessage.js'/>"></script>
 
-<div id="confirmation-dialog" data-test-id="confirmation-dialog"></div>
 <script src="<c:url value='/ui/dist/confirmationDialog.js'/>"></script>
