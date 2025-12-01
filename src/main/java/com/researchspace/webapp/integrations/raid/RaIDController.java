@@ -88,7 +88,9 @@ public class RaIDController extends BaseOAuth2Controller {
           }
         } catch (HttpClientErrorException e) {
           log.warn("error connecting to RaID for serverAlias {}:", currentServerAlias, e);
-          errors.rejectValue("raidServerAlias", "connectionError",
+          errors.rejectValue(
+              "raidServerAlias",
+              "connectionError",
               "no connection to RaID for serverAlias " + currentServerAlias);
         }
       }
