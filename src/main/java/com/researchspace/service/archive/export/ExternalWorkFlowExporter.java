@@ -1,7 +1,7 @@
 package com.researchspace.service.archive.export;
 
 import com.researchspace.archive.ArchivalField;
-import com.researchspace.archive.ArchiveExternalWorkFlowDataMetaData;
+import com.researchspace.archive.ArchiveExternalWorkFlowData;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldElementLinkPair;
 import com.researchspace.linkedelements.FieldElementLinkPairs;
@@ -58,8 +58,8 @@ public class ExternalWorkFlowExporter extends AbstractFieldExporter<LinkableExte
   void createFieldArchiveObject(
       LinkableExternalWorkFlowData item, String archiveLink, FieldExportContext context) {
     ArchivalField archiveField = context.getArchiveField();
-    ArchiveExternalWorkFlowDataMetaData aEWFMeta =
-        new ArchiveExternalWorkFlowDataMetaData(item, archiveLink, archiveField);
+    ArchiveExternalWorkFlowData aEWFMeta =
+        new ArchiveExternalWorkFlowData(item, archiveLink, archiveField);
     archiveField.addArchivalExternalWorkFlowData(aEWFMeta);
   }
 

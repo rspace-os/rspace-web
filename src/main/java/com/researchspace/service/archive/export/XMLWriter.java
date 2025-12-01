@@ -5,8 +5,8 @@ import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalField;
 import com.researchspace.archive.ArchivalForm;
 import com.researchspace.archive.ArchivalGalleryMetadata;
-import com.researchspace.archive.ArchiveExternalWorkFlowInvocationMetaData;
-import com.researchspace.archive.ArchiveExternalWorkFlowMetaData;
+import com.researchspace.archive.ArchiveExternalWorkFlow;
+import com.researchspace.archive.ArchiveExternalWorkFlowInvocation;
 import com.researchspace.archive.model.ArchiveModelFactory;
 import com.researchspace.core.util.XMLReadWriteUtils;
 import com.researchspace.model.record.RSForm;
@@ -58,11 +58,11 @@ class XMLWriter implements ExportObjectWriter {
    */
   private void marshalExternalWorkFlows(ArchivalDocument archiveDoc, File recordFolder)
       throws Exception {
-    Set<ArchiveExternalWorkFlowMetaData> externalWorkFlows = new HashSet<>();
+    Set<ArchiveExternalWorkFlow> externalWorkFlows = new HashSet<>();
     AllArchiveExternalWorkFlowMetaData allArchiveExternalWorkFlowMetaData =
         new AllArchiveExternalWorkFlowMetaData();
     for (ArchivalField af : archiveDoc.getListFields()) {
-      for (ArchiveExternalWorkFlowInvocationMetaData afi : af.getExternalWorkFlowInvocations()) {
+      for (ArchiveExternalWorkFlowInvocation afi : af.getExternalWorkFlowInvocations()) {
         externalWorkFlows.add(afi.getWorkFlowMetaData());
       }
     }

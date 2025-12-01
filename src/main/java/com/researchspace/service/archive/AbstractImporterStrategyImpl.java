@@ -23,9 +23,9 @@ import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchivalLinkRecord;
 import com.researchspace.archive.ArchiveComment;
 import com.researchspace.archive.ArchiveCommentItem;
-import com.researchspace.archive.ArchiveExternalWorkFlowDataMetaData;
-import com.researchspace.archive.ArchiveExternalWorkFlowInvocationMetaData;
-import com.researchspace.archive.ArchiveExternalWorkFlowMetaData;
+import com.researchspace.archive.ArchiveExternalWorkFlow;
+import com.researchspace.archive.ArchiveExternalWorkFlowData;
+import com.researchspace.archive.ArchiveExternalWorkFlowInvocation;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.FieldParserConstants;
@@ -75,7 +75,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -346,12 +345,12 @@ abstract class AbstractImporterStrategyImpl {
         newDoc.addType(RecordType.TEMPLATE);
       }
       recordManager.save(newDoc, importingUser);
-      importExternalWorkFlows(newDoc, ref, importingUser);
       String dnm = ref.getDocumentFileName();
       if (dnm != null && dnm.trim().length() > 1) {
         linkRecord.addMap(dnm, Long.toString(newDoc.getId()));
       }
       setUpFieldAttachmentLinks(newDoc, importingUser, report);
+      importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem);
       report.addImportedRecord(newDoc);
     } else {
       String msg =
@@ -363,24 +362,25 @@ abstract class AbstractImporterStrategyImpl {
   }
 
   private void importExternalWorkFlows(
-      StructuredDocument newDoc, ArchivalDocumentParserRef ref, User user) {
+      StructuredDocument newDoc,
+      ArchivalDocumentParserRef ref,
+      Map<String, EcatMediaFile> oldIdToNewGalleryItem) {
     ArchivalDocument oldDoc = ref.getArchivalDocument();
     // Note - not all externalWorkFlowData is ever invoked and so it can be detached from any
     // external workflow
     // Conversely, an externalWorkFlow must have externalWorkFlowData and Invocations
     AllArchiveExternalWorkFlowMetaData allWorkflows = ref.getArchiveExternalWorkFlowMetaData();
     for (ArchivalField oldField : oldDoc.getListFields()) {
-      Set<ArchiveExternalWorkFlowDataMetaData> allExternalWorkFlowDataMeta =
+      Set<ArchiveExternalWorkFlowData> allExternalWorkFlowDataMeta =
           oldField.getExternalWorkFlowData();
-      Set<ArchiveExternalWorkFlowInvocationMetaData> allExternalWorkFlowInvocations =
+      Set<ArchiveExternalWorkFlowInvocation> allExternalWorkFlowInvocations =
           oldField.getExternalWorkFlowInvocations();
       if (allExternalWorkFlowDataMeta != null) {
         Field newField = newDoc.getField(oldField.getFieldName());
-        for (ArchiveExternalWorkFlowDataMetaData externalWorkFlowMetaData :
-            allExternalWorkFlowDataMeta) {
+        for (ArchiveExternalWorkFlowData externalWorkFlowMetaData : allExternalWorkFlowDataMeta) {
           Long rspaceAttachmentIdUSedForExternalWorkflow =
-              findCorrespondingRSpaceDataIdForExportedExternalWorkFlow(
-                  newField, oldField, externalWorkFlowMetaData);
+              findCorrespondingRSpaceDataIdForExportedExternalWorkFlowData(
+                  newField, oldField, externalWorkFlowMetaData, oldIdToNewGalleryItem);
           if (rspaceAttachmentIdUSedForExternalWorkflow != null) {
             ExternalWorkFlowData externalWorkFlowData =
                 new ExternalWorkFlowData(
@@ -397,10 +397,10 @@ abstract class AbstractImporterStrategyImpl {
                     externalWorkFlowMetaData.getExtContainerId(),
                     externalWorkFlowMetaData.getExtContainerName(),
                     externalWorkFlowMetaData.getBaseUrl());
-            for (ArchiveExternalWorkFlowInvocationMetaData invocationMetaData :
+            for (ArchiveExternalWorkFlowInvocation invocationMetaData :
                 allExternalWorkFlowInvocations) {
               if (invocationMetaData.getDataIds().contains(externalWorkFlowMetaData.getId())) {
-                ArchiveExternalWorkFlowMetaData workFlow =
+                ArchiveExternalWorkFlow workFlow =
                     allWorkflows.findById(invocationMetaData.getWorkFlowId());
                 ExternalWorkFlow existingWorkFlow =
                     externalWorkFlowDataManager.findWorkFlowByExtIdAndName(
@@ -440,41 +440,25 @@ abstract class AbstractImporterStrategyImpl {
     }
   }
 
-  /**
-   * The rspaceDataId is the ID of the attachment Data from a given Struc Doc Field that has been
-   * uploaded to an External Service and used in an ExternalWorkFlow This has been exported. On
-   * import we now need to determine which of the files attached to an import Field corresponds to
-   * that file. We compare filenames and if there is more than a single match, we compare shasums of
-   * the file's contents.
-   *
-   * @return the ID of the attachment data or null if that data no longer exists in RSpace If
-   *     multiple attachments match the name of the uploaded file, compare shasums of contents
-   */
-  public Long findCorrespondingRSpaceDataIdForExportedExternalWorkFlow(
+  public Long findCorrespondingRSpaceDataIdForExportedExternalWorkFlowData(
       Field newField,
       ArchivalField oldField,
-      ArchiveExternalWorkFlowDataMetaData externalWorkFlowMetaData) {
-    long originalRspaceDataId = externalWorkFlowMetaData.getRspaceDataId();
-    String attachmentName = externalWorkFlowMetaData.getLinkFile();
-    Set<FieldAttachment> matches = new HashSet<>();
-    for (FieldAttachment fa : fieldManager.getFieldAttachments(newField.getId())) {
-      if (fa.getMediaFile().getFileName().equals(attachmentName)) {
-        matches.add(fa);
+      ArchiveExternalWorkFlowData externalWorkFlowMetaDataUsedByOldField,
+      Map<String, EcatMediaFile> oldIdToNewGalleryItem) {
+    long originalRspaceDataId = externalWorkFlowMetaDataUsedByOldField.getRspaceDataId();
+    for (ArchivalGalleryMetadata attached : oldField.getAllGalleryMetaData()) {
+      if (attached.getId() == originalRspaceDataId) {
+        String key =
+            originalRspaceDataId
+                + "-"
+                + (attached.getModificationDate() != null
+                    ? "" + attached.getModificationDate().getTime()
+                    : "null");
+        return oldIdToNewGalleryItem.get(key).getId();
       }
     }
-    if (matches.size() == 1) {
-      return matches.iterator().next().getMediaFile().getId();
-    } else if (matches.size() > 1) { // look at shasums
-      for (FieldAttachment matchedFa : matches) {
-        return matches.iterator().next().getMediaFile().getId();
-      }
-    }
-    log.info(
-        "No match found for external work flow data id "
-            + originalRspaceDataId
-            + " and attachment name "
-            + attachmentName); // the attachment could have been deleted so this is not an error
-    return null;
+    return originalRspaceDataId; // this will happen when the attached data in the original field
+    // was removed from that field - so it has not been exported
   }
 
   private void setUpFieldAttachmentLinks(

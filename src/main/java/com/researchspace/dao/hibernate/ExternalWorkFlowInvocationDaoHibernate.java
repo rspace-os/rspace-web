@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 public class ExternalWorkFlowInvocationDaoHibernate
     extends GenericDaoHibernate<ExternalWorkFlowInvocation, Long>
     implements ExternalWorkFlowInvocationDao {
+
   @Autowired private ExternalWorkFlowDao externalWorkFlowDao;
 
   public ExternalWorkFlowInvocationDaoHibernate() {
@@ -22,17 +23,20 @@ public class ExternalWorkFlowInvocationDaoHibernate
   }
 
   @Override
-  public void saveExternalWorkfFlowInvocation(
+  public ExternalWorkFlowInvocation saveExternalWorkfFlowInvocation(
       String workflowId,
       String workflowName,
       String invocationId,
       List<ExternalWorkFlowData> workFlowData,
       String state) {
-    ExternalWorkFlow externalWorkFlow = new ExternalWorkFlow(workflowId, workflowName, "");
-    externalWorkFlow = externalWorkFlowDao.save(externalWorkFlow);
+    ExternalWorkFlow externalWorkFlow =
+        externalWorkFlowDao.findWorkFlowByExtIdAndName(workflowId, workflowName);
+    if (externalWorkFlow == null) {
+      externalWorkFlow = externalWorkFlowDao.save(externalWorkFlow);
+    }
     ExternalWorkFlowInvocation externalWorkFlowInvocation =
         new ExternalWorkFlowInvocation(
             invocationId, new HashSet<>(workFlowData), state, externalWorkFlow);
-    save(externalWorkFlowInvocation);
+    return save(externalWorkFlowInvocation);
   }
 }

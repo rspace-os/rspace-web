@@ -18,7 +18,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @EqualsAndHashCode(of = {"extId", "rspaceDataId"})
-public class ArchiveExternalWorkFlowDataMetaData extends ArchivalGalleryMetadata {
+public class ArchiveExternalWorkFlowData extends ArchivalGalleryMetadata {
   private @XmlElement long rspaceDataId;
   private @XmlElement String externalService;
   private @XmlElement String extName;
@@ -28,9 +28,9 @@ public class ArchiveExternalWorkFlowDataMetaData extends ArchivalGalleryMetadata
   private @XmlElement String extContainerName;
   private @XmlElement String baseUrl;
 
-  public ArchiveExternalWorkFlowDataMetaData() {}
+  public ArchiveExternalWorkFlowData() {}
 
-  public ArchiveExternalWorkFlowDataMetaData(
+  public ArchiveExternalWorkFlowData(
       LinkableExternalWorkFlowData item, String archiveLink, ArchivalField archiveField) {
     ExternalWorkFlowData data = item.getExternalWorkflowData();
     this.setId(item.getId());
@@ -48,7 +48,7 @@ public class ArchiveExternalWorkFlowDataMetaData extends ArchivalGalleryMetadata
     for (ExternalWorkFlowInvocation invocation :
         item.getExternalWorkflowData().getExternalWorkflowInvocations()) {
       boolean existingInvocation = false;
-      for (ArchiveExternalWorkFlowInvocationMetaData existingInvocationAgms :
+      for (ArchiveExternalWorkFlowInvocation existingInvocationAgms :
           archiveField.getExternalWorkFlowInvocations()) {
         if (existingInvocationAgms.getId() == invocation.getId()) {
           existingInvocationAgms.addDataId(item.getId());
@@ -57,10 +57,10 @@ public class ArchiveExternalWorkFlowDataMetaData extends ArchivalGalleryMetadata
         }
       }
       if (!existingInvocation) {
-        ArchiveExternalWorkFlowInvocationMetaData invocationAgm =
-            new ArchiveExternalWorkFlowInvocationMetaData(
+        ArchiveExternalWorkFlowInvocation invocationAgm =
+            new ArchiveExternalWorkFlowInvocation(
                 invocation, item.getExternalWorkflowData().getExternalService().name());
-        invocationAgm.addDataId(item.getId());gi
+        invocationAgm.addDataId(item.getId());
         archiveField.getExternalWorkFlowInvocations().add(invocationAgm);
       }
     }
