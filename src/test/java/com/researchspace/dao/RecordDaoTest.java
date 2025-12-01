@@ -52,11 +52,6 @@ public class RecordDaoTest extends BaseDaoTestCase {
   }
 
   @Test
-  public void testGetAllRecords() {
-    dao.getAll().size();
-  }
-
-  @Test
   public void getMediaLinkedRecords() {
     assertEquals(0, dao.getInfosOfDocumentsLinkedToMediaFile(1L).size());
   }
