@@ -15,9 +15,9 @@ import lombok.Setter;
 @Setter
 public class AllArchiveExternalWorkFlowMetaData extends ArchivalGalleryMetadata {
   @XmlElement(name = "exported-externalWorkFlow")
-  private Set<ArchiveExternalWorkFlowMetaData> workFlows = new HashSet<>();
+  private Set<ArchiveExternalWorkFlow> workFlows = new HashSet<>();
 
-  public ArchiveExternalWorkFlowMetaData findById(long id) {
+  public ArchiveExternalWorkFlow findById(long id) {
     return workFlows.stream().filter(wf -> wf.getId() == id).findFirst().orElse(null);
   }
 }

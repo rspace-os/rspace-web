@@ -15,7 +15,7 @@ public interface ExternalWorkFlowDataManager {
 
   void save(ExternalWorkFlowInvocation invocation);
 
-  void saveExternalWorkfFlowInvocation(
+  ExternalWorkFlowInvocation saveExternalWorkfFlowInvocation(
       String workflowId,
       String workflowName,
       String invocationId,

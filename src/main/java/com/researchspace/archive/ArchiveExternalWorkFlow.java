@@ -7,19 +7,17 @@ import lombok.Getter;
 
 @Getter
 @EqualsAndHashCode(of = {"extId", "name", "externalService"})
-public class ArchiveExternalWorkFlowMetaData extends ArchivalGalleryMetadata {
+public class ArchiveExternalWorkFlow extends ArchivalGalleryMetadata {
   private @XmlElement String extId;
-  private @XmlElement String name;
-  private @XmlElement String description;
   private @XmlElement String externalService;
 
-  public ArchiveExternalWorkFlowMetaData() {}
+  public ArchiveExternalWorkFlow() {}
 
-  public ArchiveExternalWorkFlowMetaData(ExternalWorkFlow exWF) {
+  public ArchiveExternalWorkFlow(ExternalWorkFlow exWF) {
     this.extId = exWF.getExtId();
     this.setId(exWF.getId());
-    this.name = exWF.getName();
-    this.description = exWF.getDescription();
+    this.setName(exWF.getName());
+    this.setDescription(exWF.getDescription());
     this.externalService =
         exWF.getExternalWorkflowInvocations()
             .iterator()

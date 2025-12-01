@@ -55,8 +55,8 @@ public class ArchivalField {
   List<ArchivalGalleryMetadata> linkMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> sktchMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> mathMeta = new ArrayList<>();
-  Set<ArchiveExternalWorkFlowDataMetaData> externalWorkFlowData = new HashSet<>();
-  Set<ArchiveExternalWorkFlowInvocationMetaData> externalWorkFlowInvocations = new HashSet<>();
+  Set<ArchiveExternalWorkFlowData> externalWorkFlowData = new HashSet<>();
+  Set<ArchiveExternalWorkFlowInvocation> externalWorkFlowInvocations = new HashSet<>();
   List<ArchivalNfsFile> nfsElements = new ArrayList<>();
   List<ArchivalListOfMaterials> listsOfMaterials = new ArrayList<>();
 
@@ -134,13 +134,13 @@ public class ArchivalField {
 
   @XmlElementWrapper(name = "allExternalWorkFlowData")
   @XmlElement(name = "externalWorkFlowData")
-  public Set<ArchiveExternalWorkFlowDataMetaData> getExternalWorkFlowData() {
+  public Set<ArchiveExternalWorkFlowData> getExternalWorkFlowData() {
     return externalWorkFlowData;
   }
 
   @XmlElementWrapper(name = "externalWorkFlowInvocations")
   @XmlElement(name = "externalWorkFlowInvocation")
-  public Set<ArchiveExternalWorkFlowInvocationMetaData> getExternalWorkFlowInvocations() {
+  public Set<ArchiveExternalWorkFlowInvocation> getExternalWorkFlowInvocations() {
     return externalWorkFlowInvocations;
   }
 
@@ -234,7 +234,7 @@ public class ArchivalField {
     this.fieldDataPrintable = fieldDataPrintable;
   }
 
-  public void addArchivalExternalWorkFlowData(ArchiveExternalWorkFlowDataMetaData extWFD) {
+  public void addArchivalExternalWorkFlowData(ArchiveExternalWorkFlowData extWFD) {
     externalWorkFlowData.add(extWFD);
   }
 

@@ -21,7 +21,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @EqualsAndHashCode(of = {"extId"})
-public class ArchiveExternalWorkFlowInvocationMetaData extends ArchivalGalleryMetadata {
+public class ArchiveExternalWorkFlowInvocation extends ArchivalGalleryMetadata {
   private @XmlElement String extId;
   private @XmlElement String status;
   private @XmlElement String externalService;
@@ -30,11 +30,11 @@ public class ArchiveExternalWorkFlowInvocationMetaData extends ArchivalGalleryMe
   @XmlElementWrapper(name = "allExternalWorkFlowDataIds")
   private @XmlElement Set<Long> dataIds = new HashSet<>();
 
-  private @XmlTransient ArchiveExternalWorkFlowMetaData workFlowMetaData;
+  private @XmlTransient ArchiveExternalWorkFlow workFlowMetaData;
 
-  public ArchiveExternalWorkFlowInvocationMetaData() {}
+  public ArchiveExternalWorkFlowInvocation() {}
 
-  public ArchiveExternalWorkFlowInvocationMetaData(
+  public ArchiveExternalWorkFlowInvocation(
       ExternalWorkFlowInvocation invocation, String externalService) {
     this.setId(invocation.getId());
     this.setExternalService(externalService);
@@ -42,7 +42,7 @@ public class ArchiveExternalWorkFlowInvocationMetaData extends ArchivalGalleryMe
     this.setExtId(invocation.getExtId());
     ExternalWorkFlow exWF = invocation.getExternalWorkFlow();
     workFlowId = exWF.getId();
-    ArchiveExternalWorkFlowMetaData exWFAgm = new ArchiveExternalWorkFlowMetaData(exWF);
+    ArchiveExternalWorkFlow exWFAgm = new ArchiveExternalWorkFlow(exWF);
     this.workFlowMetaData = exWFAgm;
   }
 

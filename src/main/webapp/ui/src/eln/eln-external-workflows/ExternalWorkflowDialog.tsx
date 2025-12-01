@@ -19,6 +19,19 @@ export type ExternalWorkflowDialogArgs = {
   galaxySummaryReport: Array<GalaxyDataSummary>
 };
 
+function makeGalleryLiks(row: GalaxyDataSummary) {
+  const links = [];
+  row.galaxyDataNames.forEach(dataName => {
+    links.push(
+        <Link
+            href={"/gallery/item/" + dataName.id}
+            target="_blank"
+            rel="noreferrer">{dataName.fileName + "   "}</Link>
+    );
+  });
+  return links;
+}
+
 function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWorkflowDialogArgs) {
   return (
 
@@ -50,7 +63,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWo
                           flex: 1,
                           sortable: false,
                           resizable: true,
-                          renderCell: ({row}) => row.galaxyDataNames
+                          renderCell: ({row}) => makeGalleryLiks(row)
                         }),
                     DataGridColumn.newColumnWithValueGetter("Container",
                         (wf: GalaxyDataSummary) => wf.galaxyHistoryName,

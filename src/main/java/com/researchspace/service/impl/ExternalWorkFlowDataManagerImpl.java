@@ -43,13 +43,13 @@ public class ExternalWorkFlowDataManagerImpl implements ExternalWorkFlowDataMana
   }
 
   @Override
-  public void saveExternalWorkfFlowInvocation(
+  public ExternalWorkFlowInvocation saveExternalWorkfFlowInvocation(
       String workflowId,
       String workflowName,
       String invocationId,
       List<ExternalWorkFlowData> allMatchingDataForThisInvocation,
       String state) {
-    externalWorkFlowInvocationDao.saveExternalWorkfFlowInvocation(
+    return externalWorkFlowInvocationDao.saveExternalWorkfFlowInvocation(
         workflowId, workflowName, invocationId, allMatchingDataForThisInvocation, state);
   }
 
