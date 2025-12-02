@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.servlet.view.RedirectView;
 
 @Controller
 @RequestMapping("/apps/raid")
@@ -87,17 +88,19 @@ public class RaIDController extends BaseOAuth2Controller {
             result.addAll(externalRaIDList);
           }
         } catch (HttpClientErrorException e) {
-          log.warn("error connecting to RaID for serverAlias {}:", currentServerAlias, e);
+          log.warn("error connecting to RaID for server alias \"{}\":", currentServerAlias, e);
           errors.rejectValue(
               "raidServerAlias",
               "connectionError",
-              "no connection to RaID for serverAlias " + currentServerAlias);
+              "no connection to RaID for server alias \"" + currentServerAlias + "\"");
         }
       }
     } catch (Exception ex) {
-      log.error("Not able to get RaID list for the user {}:", principal.getName(), ex);
+      log.error("Not able to get RaID list for the user \"{}\":", principal.getName(), ex);
       errors.reject(
-          "raidList", null, "Not able to get RaID list for the user " + principal.getName());
+          "raidList",
+          null,
+          "Not able to get RaID list for the user \"" + principal.getName() + "\"");
     }
     if (errors.hasErrors()) {
       ErrorList el = inputValidator.populateErrorList(errors, new ErrorList());
@@ -122,7 +125,6 @@ public class RaIDController extends BaseOAuth2Controller {
       Principal principal) {
     Optional<RaidGroupAssociation> result = Optional.empty();
     BindingResult errors = new BeanPropertyBindingResult(null, "raidGroupAssociation");
-    //    User user = userManager.getAuthenticatedUserInSession();
     try {
       Set<RaidGroupAssociation> userRaidAlreadyAssociated =
           raidServiceManager.getAssociatedRaidsByUserAndAlias(
@@ -134,9 +136,11 @@ public class RaIDController extends BaseOAuth2Controller {
                 .findAny();
       }
     } catch (Exception e) {
-      log.error("Not able to get RaID list for the user {}:", principal.getName(), e);
+      log.error("Not able to get RaID list for the user \"{}\":", principal.getName(), e);
       errors.reject(
-          "raidList", null, "Not able to get RaID list for the user " + principal.getName());
+          "raidList",
+          null,
+          "Not able to get RaID list for the user \"" + principal.getName() + "\"");
     }
     if (errors.hasErrors()) {
       ErrorList el = inputValidator.populateErrorList(errors, new ErrorList());
@@ -147,9 +151,7 @@ public class RaIDController extends BaseOAuth2Controller {
 
   // TODO[nik]:  remove the GET since it is here just for testing without UI
   @GetMapping("/associate/{projectGroupId}/{raidServerAlias}")
-  @ResponseStatus(HttpStatus.CREATED)
-  @ResponseBody
-  public String associateRaidToGroup_GET(
+  public RedirectView associateRaidToGroup_GET(
       @PathVariable Long projectGroupId,
       @PathVariable String raidServerAlias,
       @RequestParam(name = "raidIdentifier") String raidIdentifier)
@@ -161,9 +163,7 @@ public class RaIDController extends BaseOAuth2Controller {
   }
 
   @PostMapping("/associate")
-  @ResponseStatus(HttpStatus.CREATED)
-  @ResponseBody
-  public String associateRaidToGroup(@RequestBody RaidGroupAssociation raidGroupAssociation)
+  public RedirectView associateRaidToGroup(@RequestBody RaidGroupAssociation raidGroupAssociation)
       throws BindException {
     validateInput(raidGroupAssociation);
     BindingResult errors =
@@ -200,18 +200,18 @@ public class RaIDController extends BaseOAuth2Controller {
     }
     throwBindExceptionIfErrors(errors);
 
-    return "redirect:/groups/view/" + raidGroupAssociation.getProjectGroupId();
+    return new RedirectView("/groups/view/" + raidGroupAssociation.getProjectGroupId());
   }
 
   // TODO[nik]:  remove the GET since it is here just for testing without UI
   @GetMapping("/disassociate/{projectGroupId}")
-  public @ResponseBody String disassociateRaidToGroup_GET(@PathVariable Long projectGroupId)
+  public RedirectView disassociateRaidToGroup_GET(@PathVariable Long projectGroupId)
       throws BindException {
     return disassociateRaidFromGroup(projectGroupId);
   }
 
   @PostMapping("/disassociate/{projectGroupId}")
-  public @ResponseBody String disassociateRaidFromGroup(@PathVariable Long projectGroupId)
+  public RedirectView disassociateRaidFromGroup(@PathVariable Long projectGroupId)
       throws BindException {
     Group group = null;
     BindingResult errors = new BeanPropertyBindingResult(projectGroupId, "projectGroupId");
@@ -245,7 +245,7 @@ public class RaIDController extends BaseOAuth2Controller {
     }
     throwBindExceptionIfErrors(errors);
 
-    return "redirect:/groups/view/" + projectGroupId;
+    return new RedirectView("/groups/view/" + projectGroupId);
   }
 
   private static void validateInput(RaidGroupAssociation raidGroupAssociation) {

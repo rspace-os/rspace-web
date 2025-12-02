@@ -44,6 +44,7 @@ import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.servlet.view.RedirectView;
 
 @WebAppConfiguration
 public class RaIDControllerMCVIT extends MVCTestBase {
@@ -239,12 +240,13 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                 post("/apps/raid/associate", newProjectGroupId)
                     .content(JacksonUtil.toJson(raidToGroupAssociation))
                     .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().is2xxSuccessful())
+            .andExpect(status().is3xxRedirection())
             .andReturn();
 
     // THEN
     assertEquals(
-        "redirect:/groups/view/" + newProjectGroupId, result.getResponse().getContentAsString());
+        "/groups/view/" + newProjectGroupId,
+        ((RedirectView) result.getModelAndView().getView()).getUrl());
     expectedProjectGroup = grpMgr.getGroup(newProjectGroupId);
     assertNotNull(expectedProjectGroup.getRaid());
 
@@ -276,12 +278,13 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     result =
         mockMvc
             .perform(post("/apps/raid/disassociate/{projectGroupId}", newProjectGroupId))
-            .andExpect(status().is2xxSuccessful())
+            .andExpect(status().is3xxRedirection())
             .andReturn();
 
     // THEN
     assertEquals(
-        "redirect:/groups/view/" + newProjectGroupId, result.getResponse().getContentAsString());
+        "/groups/view/" + newProjectGroupId,
+        ((RedirectView) result.getModelAndView().getView()).getUrl());
     expectedProjectGroup.setRaid(null);
     assertEquals(expectedProjectGroup, grpMgr.getGroup(newProjectGroupId));
     assertExceptionThrown(
