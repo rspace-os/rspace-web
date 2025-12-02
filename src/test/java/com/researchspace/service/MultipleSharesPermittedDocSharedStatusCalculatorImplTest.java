@@ -53,7 +53,7 @@ public class MultipleSharesPermittedDocSharedStatusCalculatorImplTest {
 
     // now let's return a group that contains the user, we can still share with the user as well?
     // RSPAC 563
-    AbstractUserOrGroupImpl grp = TestFactory.createAnyGroup(toShareWith, null);
+    AbstractUserOrGroupImpl grp = TestFactory.createAnyGroup(toShareWith, (User) null);
     groups = TransformerUtils.toList(grp);
     when(groupSharingDao.getUsersOrGroupsWithRecordAccess(doc.getId())).thenReturn(groups);
     assertTrue(sharingStatusImpl.canShare(toShareWith, doc, sharer));
