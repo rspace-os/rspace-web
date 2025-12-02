@@ -1,4 +1,3 @@
-/** RSpace API Access your RSpace documents programmatically. */
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;

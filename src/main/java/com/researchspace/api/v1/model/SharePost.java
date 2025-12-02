@@ -1,19 +1,18 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.Singular;
 
 @Data
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor
 @ValidSharePost
 public class SharePost {
 
@@ -30,4 +29,10 @@ public class SharePost {
   @Singular
   @JsonProperty("users")
   private List<UserSharePostItem> userSharePostItems;
+
+  public SharePost() {
+    this.itemsToShare = new ArrayList<>();
+    this.groupSharePostItems = new ArrayList<>();
+    this.userSharePostItems = new ArrayList<>();
+  }
 }
