@@ -30,6 +30,37 @@
             <attachList/>
             <linkRecordList/>
             <sketchImageList/>
+          <allExternalWorkFlowData>
+          <externalWorkFlowData id="8">
+            <schemaVersion>1</schemaVersion>
+            <parentId>32768</parentId>
+            <fileName>lemmings_1762854515120.gif</fileName>
+            <linkFile>lemmings_1762854515120.gif</linkFile>
+            <contentType>application/octet-stream</contentType>
+            <rspaceDataId>164</rspaceDataId>
+            <externalService>GALAXY</externalService>
+            <extName>lemmings_1762854515120.gif</extName>
+            <extId>26c75dcccb616ac84aee5d0b5ac26866</extId>
+            <extSecondaryId>74a951e0-1edc-432f-9e61-eef68ef18ae9</extSecondaryId>
+            <extContainerId>dd444a2ed2ba965f</extContainerId>
+            <extContainerName>RSPACE_Editable2_SD155v17_MyText_FD34_3</extContainerName>
+            <baseUrl>https://usegalaxy.eu</baseUrl>
+          </externalWorkFlowData>
+          </allExternalWorkFlowData>
+          <externalWorkFlowInvocations>
+          <externalWorkFlowInvocation id="1">
+            <schemaVersion>1</schemaVersion>
+            <parentId>0</parentId>
+            <contentType>application/octet-stream</contentType>
+            <extId>a1465345366767a2</extId>
+            <status>Failed</status>
+            <externalService>GALAXY</externalService>
+            <workFlowId>1</workFlowId>
+            <allExternalWorkFlowDataIds>
+              <dataIds>1</dataIds>
+            </allExternalWorkFlowDataIds>
+          </externalWorkFlowInvocation>
+          </externalWorkFlowInvocations>
         </field>
         <field id="32769">
             <fieldName>Objective</fieldName>
