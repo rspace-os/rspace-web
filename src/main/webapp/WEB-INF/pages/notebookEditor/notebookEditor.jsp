@@ -58,11 +58,27 @@
   <axt:createFromTemplateDlg />
   <!-- Dialog upon Create-Other Documents -->
   <axt:formCreateMenuDialog parentFolderId="${selectedNotebookId}"></axt:formCreateMenuDialog>
-  <!-- React Scripts -->
-  <script src="<c:url value='/ui/dist/notebookToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/fileTreeToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
-  <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
-  <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
-  <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>
-  <!--End React Scripts -->
+
+  <axt:once key="LOADED_notebookToolbar">
+    <%@ include file="/ui/dist/templates/notebookToolbar-scripts.jsp" %>
+  </axt:once>
+
+  <axt:once key="LOADED_fileTreeToolbar">
+    <%@ include file="/ui/dist/templates/fileTreeToolbar-scripts.jsp" %>
+  </axt:once>
+
+  <axt:once key="LOADED_baseSearch">
+    <%@ include file="/ui/dist/templates/baseSearch-scripts.jsp" %>
+  </axt:once>
+
+  <axt:once key="LOADED_materialsListing">
+    <%@ include file="/ui/dist/templates/materialsListing-scripts.jsp" %>
+  </axt:once>
+
+  <axt:once key="LOADED_externalWorkFlows">
+    <%@ include file="/ui/dist/templates/externalWorkFlows-scripts.jsp" %>
+  </axt:once>
+
+  <axt:once key="LOADED_jupyterNotebooks">
+    <%@ include file="/ui/dist/templates/jupyterNotebooks-scripts.jsp" %>
+  </axt:once>

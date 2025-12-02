@@ -933,7 +933,7 @@ const IdentifierPublicPage = ({
 };
 
 window.addEventListener("load", (_e) => {
-  const domContainer = document.getElementById("identifierPublicPage");
+  const domContainer = document.getElementById("app");
   const location = window.location;
   /**
    * expected path is `/public/inventory/${rsPublicId}`

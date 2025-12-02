@@ -103,7 +103,7 @@ import Analytics from "../../../components/Analytics";
  * information.
  */
 const EventBoundary = ({ children }: { children: React.ReactNode }) => (
-   
+
   <div
     onKeyDown={(e) => {
       e.stopPropagation();
@@ -120,11 +120,11 @@ const EventBoundary = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Panel = ({
-  anchorEl,
-  children,
-  onClose,
-  ariaLabel,
-}: {
+                 anchorEl,
+                 children,
+                 onClose,
+                 ariaLabel,
+               }: {
   anchorEl: HTMLElement | null;
   children: React.ReactNode;
   onClose: () => void;
@@ -243,11 +243,11 @@ const ChipWithMenu = styled(Chip)(({ theme }) => ({
 }));
 
 const TagDialog = ({
-  selectedUsers,
-  open,
-  onClose,
-  setTags,
-}: {
+                     selectedUsers,
+                     open,
+                     onClose,
+                     setTags,
+                   }: {
   selectedUsers: ReadonlyArray<User>;
   open: boolean;
   onClose: () => void;
@@ -389,8 +389,8 @@ const TagDialog = ({
 };
 
 const SearchBox = ({
-  userListing,
-}: {
+                     userListing,
+                   }: {
   userListing: FetchingData.Fetched<UserListing>;
 }) => {
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -455,10 +455,10 @@ const SearchBox = ({
  * role if they currently are.
  */
 const PiAction = ({
-  selectedUser,
-  setActionsAnchorEl,
-  autoFocus,
-}: {
+                    selectedUser,
+                    setActionsAnchorEl,
+                    autoFocus,
+                  }: {
   selectedUser: Result<User>;
   setActionsAnchorEl: (_: null) => void;
   autoFocus: boolean;
@@ -480,7 +480,7 @@ const PiAction = ({
   return (
     <>
       <MenuItem
-         
+
         autoFocus={autoFocus}
         disabled={allowedPiAction.isError}
         onClick={() => {
@@ -647,9 +647,9 @@ const PiAction = ({
 };
 
 const SetUsernamAliasAction = ({
-  selectedUser,
-  setActionsAnchorEl,
-}: {
+                                 selectedUser,
+                                 setActionsAnchorEl,
+                               }: {
   selectedUser: Result<User>;
   setActionsAnchorEl: (_: null) => void;
 }) => {
@@ -769,9 +769,9 @@ const SetUsernamAliasAction = ({
 };
 
 const DeleteAction = ({
-  selectedUser,
-  setActionsAnchorEl,
-}: {
+                        selectedUser,
+                        setActionsAnchorEl,
+                      }: {
   selectedUser: Result<User>;
   setActionsAnchorEl: (_: null) => void;
 }) => {
@@ -927,9 +927,9 @@ const DeleteAction = ({
 };
 
 const SelectionActions = ({
-  selectedIds,
-  fetchedListing,
-}: {
+                            selectedIds,
+                            fetchedListing,
+                          }: {
   selectedIds: ReadonlyArray<UserId>;
   fetchedListing: FetchingData.Fetched<UserListing>;
 }) => {
@@ -943,19 +943,19 @@ const SelectionActions = ({
     selectedIds.length === 1
       ? Result.Ok(null)
       : Result.Error([
-          new Error("Only one user's work can be exported at a time."),
-        ]);
+        new Error("Only one user's work can be exported at a time."),
+      ]);
 
   const selectedUsers: Result<ReadonlyArray<User>> =
     selectedIds.length === 0
       ? Result.Error([new Error("No users selected")])
       : Result.all(
-          ...selectedIds.map((id) =>
-            FetchingData.getSuccessValue(fetchedListing).flatMap((listing) =>
-              listing.getById(id),
-            ),
+        ...selectedIds.map((id) =>
+          FetchingData.getSuccessValue(fetchedListing).flatMap((listing) =>
+            listing.getById(id),
           ),
-        );
+        ),
+      );
 
   const selectedUser: Result<User> = ArrayUtils.getAt(0, selectedIds)
     .toResult(() => new Error("selectedIds is empty"))
@@ -1038,7 +1038,7 @@ const SelectionActions = ({
                    * ../../../../../QuirksOfMaterialUi.md, section
                    * "Custom components that wrap `MenuItem`s"
                    */
-                   
+
                   autoFocus
                   selectedUser={selectedUser}
                   setActionsAnchorEl={setActionsAnchorEl}
@@ -1234,8 +1234,8 @@ const SelectionActions = ({
               >
                 {selectedIds.length > 0
                   ? `${selectedIds.length} user${
-                      selectedIds.length > 1 ? "s" : ""
-                    } selected`
+                    selectedIds.length > 1 ? "s" : ""
+                  } selected`
                   : "No selection"}
               </Typography>
             </Grid>
@@ -1259,10 +1259,10 @@ const SelectionActions = ({
 };
 
 const ExportMenuItem = ({
-  onClick,
-  children,
-  ...rest
-}: {
+                          onClick,
+                          children,
+                          ...rest
+                        }: {
   onClick: () => Promise<void>;
   children: React.ReactNode;
 }) => (
@@ -1286,10 +1286,10 @@ const ExportMenuItem = ({
 );
 
 const Toolbar = ({
-  userListing,
-  setColumnsMenuAnchorEl,
-  rowSelectionModel,
-}: {
+                   userListing,
+                   setColumnsMenuAnchorEl,
+                   rowSelectionModel,
+                 }: {
   userListing: FetchingData.Fetched<UserListing>;
   setColumnsMenuAnchorEl: (anchorEl: HTMLElement) => void;
   rowSelectionModel: ReadonlyArray<UserId>;
@@ -1918,9 +1918,9 @@ export const UsersPage = (): React.ReactNode => {
                             paginationOptions(listing.totalListingCount),
                         })}
                         onPaginationModelChange={({
-                          pageSize: newPageSize,
-                          page: newPage,
-                        }) => {
+                                                    pageSize: newPageSize,
+                                                    page: newPage,
+                                                  }) => {
                           FetchingData.match(userListing, {
                             loading: () => {},
                             error: () => {},
@@ -1998,7 +1998,7 @@ export const UsersPage = (): React.ReactNode => {
                             sx: {
                               "& .MuiPaper-root": {
                                 boxShadow:
-                                  // this is copied from the other menus
+                                // this is copied from the other menus
                                   "0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12)",
                               },
                             },
@@ -2054,8 +2054,15 @@ export const UsersPage = (): React.ReactNode => {
   );
 };
 
+declare global {
+  interface Window {
+    __sysadminUserInitialized: boolean;
+  }
+}
+
 const wrapperDiv = document.getElementById("sysadminUsers");
-if (wrapperDiv) {
+if (wrapperDiv && !window.__sysadminUserInitialized) {
+  window.__sysadminUserInitialized = true;
   const root = createRoot(wrapperDiv);
   root.render(
     <StyledEngineProvider injectFirst>
