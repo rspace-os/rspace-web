@@ -12,6 +12,7 @@ import Link from "@mui/material/Link";
 import {
   type GalaxyDataSummary
 } from "./GalaxyData";
+import { JSX } from "react/jsx-runtime";
 
 export type ExternalWorkflowDialogArgs = {
   open: boolean;
@@ -20,7 +21,7 @@ export type ExternalWorkflowDialogArgs = {
 };
 
 function makeGalleryLiks(row: GalaxyDataSummary) {
-  const links = [];
+  const links: JSX.Element[] = [];
   row.galaxyDataNames.forEach(dataName => {
     links.push(
         <Link
