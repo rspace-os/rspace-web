@@ -1,11 +1,17 @@
 package com.researchspace.integrations.galaxy.service;
 
+import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_INVOCATION_STATE;
+import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED;
+import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOW_ID_1;
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.galaxy.model.output.upload.DatasetCollection;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,6 +36,7 @@ public class GalaxySummaryStatusReportTest {
     GalaxyInvocationDetails invocationDetails =
         GalaxyInvocationDetailsTestMother.createInvocationdetails(
             "invocation_name1", "Running", "history1", used);
+
     List<GalaxySummaryStatusReport> reports =
         GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
             Set.of(invocationDetails), workflowDataList);
@@ -47,7 +54,7 @@ public class GalaxySummaryStatusReportTest {
     assertEquals("invocation_name" + reportNumber, report.getGalaxyInvocationName());
     assertEquals("default-baseurl", report.getGalaxyBaseUrl());
     assertEquals("history" + reportNumber, report.getGalaxyHistoryId());
-    assertEquals("used_name" + reportNumber, report.getGalaxyDataNames());
+    assertEquals("used_name" + reportNumber, report.getGalaxyDataNames()[0].getFileName());
     assertEquals("history_name" + reportNumber, report.getGalaxyHistoryName());
     assertEquals("default-rspace-container-name", report.getRspaceFieldName());
   }
@@ -132,7 +139,7 @@ public class GalaxySummaryStatusReportTest {
     assertNull(report3.getGalaxyInvocationName());
     assertEquals("default-baseurl", report3.getGalaxyBaseUrl());
     assertEquals("history3", report3.getGalaxyHistoryId());
-    assertEquals("default-name", report3.getGalaxyDataNames());
+    assertEquals("default-name", report3.getGalaxyDataNames()[0].getFileName());
     assertEquals("history_name3", report3.getGalaxyHistoryName());
     assertEquals("default-rspace-container-name", report2.getRspaceFieldName());
   }

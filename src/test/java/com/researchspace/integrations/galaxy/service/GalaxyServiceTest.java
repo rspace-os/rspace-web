@@ -45,6 +45,7 @@ import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceContainerType;
@@ -174,6 +175,8 @@ public class GalaxyServiceTest {
     workflowInvocationSummaryStatusResponse =
         createWorkflowInvocationSummaryStatusResponseForState(OverAllState.Running, "ok");
     when(client.getWorkflowInvocatioSummaryStatus(API_KEY, INVOCATION_ID_1, galaxyUrl))
+        .thenReturn(workflowInvocationSummaryStatusResponse);
+    when(client.getWorkflowInvocatioSummaryStatus(API_KEY, INVOCATION_ID_1+ "_not_pre", galaxyUrl))
         .thenReturn(workflowInvocationSummaryStatusResponse);
   }
 
@@ -359,19 +362,13 @@ public class GalaxyServiceTest {
         .thenReturn(createMatchingHDCA(DEFAULT_UUID));
     when(client.getWorkflowInvocationReport(API_KEY, INVOCATION_ID_1, galaxyUrl))
         .thenReturn(createWorkFlowInvocationReport());
+    andNonPreExistingWorkFlowIsSavedToDB(testExternalWorkFlowData, INVOCATION_ID_1);
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(1, result.size());
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
-    verify(externalWorkFlowDataManager)
-        .saveExternalWorkfFlowInvocation(
-            WORKFLOW_ID_1,
-            ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED,
-            INVOCATION_ID_1,
-            List.of(testExternalWorkFlowData),
-            DEFAULT_INVOCATION_STATE);
     makeGalaxyDataAssertionsWithInvocation(result.get(0));
   }
 
@@ -396,19 +393,13 @@ public class GalaxyServiceTest {
         .thenReturn(createMatchingHDCAWithNestedData(DEFAULT_UUID));
     when(client.getWorkflowInvocationReport(API_KEY, INVOCATION_ID_1, galaxyUrl))
         .thenReturn(createWorkFlowInvocationReport());
+    andNonPreExistingWorkFlowIsSavedToDB(testExternalWorkFlowData, INVOCATION_ID_1);
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(1, result.size());
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
-    verify(externalWorkFlowDataManager)
-        .saveExternalWorkfFlowInvocation(
-            WORKFLOW_ID_1,
-            ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED,
-            INVOCATION_ID_1,
-            List.of(testExternalWorkFlowData),
-            DEFAULT_INVOCATION_STATE);
     makeGalaxyDataAssertionsWithInvocation(result.get(0));
   }
 
@@ -433,19 +424,13 @@ public class GalaxyServiceTest {
         .thenReturn(createMatchingHDA(DEFAULT_UUID));
     when(client.getWorkflowInvocationReport(API_KEY, INVOCATION_ID_1, galaxyUrl))
         .thenReturn(createWorkFlowInvocationReport());
+    andNonPreExistingWorkFlowIsSavedToDB(testExternalWorkFlowData, INVOCATION_ID_1);
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(1, result.size());
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
-    verify(externalWorkFlowDataManager)
-        .saveExternalWorkfFlowInvocation(
-            WORKFLOW_ID_1,
-            ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED,
-            INVOCATION_ID_1,
-            List.of(testExternalWorkFlowData),
-            DEFAULT_INVOCATION_STATE);
     makeGalaxyDataAssertionsWithInvocation(result.get(0));
   }
 
@@ -592,6 +577,7 @@ public class GalaxyServiceTest {
         .thenReturn(createWorkFlowInvocationReport());
     when(client.getWorkflowInvocatioSummaryStatus(API_KEY, INVOCATION_ID_1 + "_not_pre", galaxyUrl))
         .thenReturn(workflowInvocationSummaryStatusResponse);
+    andNonPreExistingWorkFlowIsSavedToDB(testExternalWorkFlowDataNotPreexisting, INVOCATION_ID_1 + "_not_pre");
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(2, result.size());
@@ -604,14 +590,19 @@ public class GalaxyServiceTest {
 
     assertEquals(DEFAULT_INVOCATION_STATE, savedPreExistingInvocation.getStatus());
     assertEquals(INVOCATION_ID_1, savedPreExistingInvocation.getExtId());
-    verify(externalWorkFlowDataManager)
+    makeGalaxyDataAssertionsWithInvocation(result.get(0));
+    makeGalaxyDataAssertionsWithInvocation(result.get(1), "_not_pre");
+  }
+
+  private void andNonPreExistingWorkFlowIsSavedToDB(ExternalWorkFlowData testExternalWorkFlowDataNotPreexisting, String invocationID) {
+    when(externalWorkFlowDataManager
         .saveExternalWorkfFlowInvocation(
             WORKFLOW_ID_1,
             WORKFLOWTHATWASUSED,
-            INVOCATION_ID_1 + "_not_pre",
+            invocationID,
             List.of(testExternalWorkFlowDataNotPreexisting),
-            DEFAULT_INVOCATION_STATE);
-    makeGalaxyDataAssertionsWithInvocation(result.get(0));
-    makeGalaxyDataAssertionsWithInvocation(result.get(1), "_not_pre");
+            DEFAULT_INVOCATION_STATE)).thenReturn(ExternalWorkFlowInvocation.builder().extId(invocationID).externalWorkFlowData(Set.of(
+            testExternalWorkFlowDataNotPreexisting))
+        .externalWorkFlow(new ExternalWorkFlow("extID", WORKFLOWTHATWASUSED, "")).status(DEFAULT_INVOCATION_STATE).build());
   }
 }
