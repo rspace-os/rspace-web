@@ -176,7 +176,7 @@ public class GalaxyServiceTest {
         createWorkflowInvocationSummaryStatusResponseForState(OverAllState.Running, "ok");
     when(client.getWorkflowInvocatioSummaryStatus(API_KEY, INVOCATION_ID_1, galaxyUrl))
         .thenReturn(workflowInvocationSummaryStatusResponse);
-    when(client.getWorkflowInvocatioSummaryStatus(API_KEY, INVOCATION_ID_1+ "_not_pre", galaxyUrl))
+    when(client.getWorkflowInvocatioSummaryStatus(API_KEY, INVOCATION_ID_1 + "_not_pre", galaxyUrl))
         .thenReturn(workflowInvocationSummaryStatusResponse);
   }
 
@@ -577,7 +577,8 @@ public class GalaxyServiceTest {
         .thenReturn(createWorkFlowInvocationReport());
     when(client.getWorkflowInvocatioSummaryStatus(API_KEY, INVOCATION_ID_1 + "_not_pre", galaxyUrl))
         .thenReturn(workflowInvocationSummaryStatusResponse);
-    andNonPreExistingWorkFlowIsSavedToDB(testExternalWorkFlowDataNotPreexisting, INVOCATION_ID_1 + "_not_pre");
+    andNonPreExistingWorkFlowIsSavedToDB(
+        testExternalWorkFlowDataNotPreexisting, INVOCATION_ID_1 + "_not_pre");
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
     assertEquals(2, result.size());
@@ -594,15 +595,20 @@ public class GalaxyServiceTest {
     makeGalaxyDataAssertionsWithInvocation(result.get(1), "_not_pre");
   }
 
-  private void andNonPreExistingWorkFlowIsSavedToDB(ExternalWorkFlowData testExternalWorkFlowDataNotPreexisting, String invocationID) {
-    when(externalWorkFlowDataManager
-        .saveExternalWorkfFlowInvocation(
+  private void andNonPreExistingWorkFlowIsSavedToDB(
+      ExternalWorkFlowData testExternalWorkFlowDataNotPreexisting, String invocationID) {
+    when(externalWorkFlowDataManager.saveExternalWorkfFlowInvocation(
             WORKFLOW_ID_1,
             WORKFLOWTHATWASUSED,
             invocationID,
             List.of(testExternalWorkFlowDataNotPreexisting),
-            DEFAULT_INVOCATION_STATE)).thenReturn(ExternalWorkFlowInvocation.builder().extId(invocationID).externalWorkFlowData(Set.of(
-            testExternalWorkFlowDataNotPreexisting))
-        .externalWorkFlow(new ExternalWorkFlow("extID", WORKFLOWTHATWASUSED, "")).status(DEFAULT_INVOCATION_STATE).build());
+            DEFAULT_INVOCATION_STATE))
+        .thenReturn(
+            ExternalWorkFlowInvocation.builder()
+                .extId(invocationID)
+                .externalWorkFlowData(Set.of(testExternalWorkFlowDataNotPreexisting))
+                .externalWorkFlow(new ExternalWorkFlow("extID", WORKFLOWTHATWASUSED, ""))
+                .status(DEFAULT_INVOCATION_STATE)
+                .build());
   }
 }

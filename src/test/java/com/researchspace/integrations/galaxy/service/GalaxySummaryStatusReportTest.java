@@ -1,17 +1,11 @@
 package com.researchspace.integrations.galaxy.service;
 
-import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_INVOCATION_STATE;
-import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED;
-import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOW_ID_1;
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 import com.researchspace.galaxy.model.output.upload.DatasetCollection;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;

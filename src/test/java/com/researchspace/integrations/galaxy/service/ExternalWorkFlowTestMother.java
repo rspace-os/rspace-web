@@ -59,7 +59,7 @@ public class ExternalWorkFlowTestMother {
   public static final String HISTORY_DATASET_ASSOCIATION_UUID = "historyDatasetAssociationUuid";
   public static final String HISTORY_DATASET_ASSOCIATION_NAME = "historyDatasetAssociationName";
 
-  private static ExternalWorkFlowDataBuilder getBuilderWithNonNullValuesSet() {
+  public static ExternalWorkFlowDataBuilder getBuilderWithNonNullValuesSet() {
     ExternalWorkFlowDataBuilder builder = ExternalWorkFlowData.builder();
     builder
         .extName(DEFAULT_DATA_NAME)
@@ -135,6 +135,7 @@ public class ExternalWorkFlowTestMother {
     builder.extContainerName(historyName);
     return builder.build();
   }
+
   public static ExternalWorkFlowData createExternalWorkFlowDataWithNonDefaultName(
       String extContainerId, String extId, String historyName, String nameToUse) {
     ExternalWorkFlowDataBuilder builder = getBuilderWithNonNullValuesSet();

@@ -1,8 +1,5 @@
 package com.researchspace.integrations.galaxy.service;
 
-import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_INVOCATION_STATE;
-import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED;
-
 import com.researchspace.galaxy.model.output.upload.DatasetCollection;
 import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationResponse;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
@@ -27,9 +24,15 @@ public class GalaxyInvocationDetailsTestMother {
     gid.setWorkflowName(name);
     gid.setState(state);
     gid.setPersistedInvocation(
-        ExternalWorkFlowInvocation.builder().extId("test_invocation_id_" + name).externalWorkFlowData(Set.of(
-                ExternalWorkFlowTestMother.createExternalWorkFlowDataWithNonDefaultName(historyID, "data1", "history_name1",used.getName())))
-            .externalWorkFlow(new ExternalWorkFlow("extID", name, "")).status(state).build());
+        ExternalWorkFlowInvocation.builder()
+            .extId("test_invocation_id_" + name)
+            .externalWorkFlowData(
+                Set.of(
+                    ExternalWorkFlowTestMother.createExternalWorkFlowDataWithNonDefaultName(
+                        historyID, "data1", "history_name1", used.getName())))
+            .externalWorkFlow(new ExternalWorkFlow("extID", name, ""))
+            .status(state)
+            .build());
     return gid;
   }
 }

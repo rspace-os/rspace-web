@@ -41,27 +41,20 @@ public class ExternalWorkFlowsImporterTest {
 
   private static final String OLD_FIELD_NAME = "old field name";
   private static final String NEW_FIELD_NAME = "new field name";
-  @Mock
-  private StructuredDocument newDoc;
-  @Mock
-  private ArchivalDocumentParserRef ref;
+  @Mock private StructuredDocument newDoc;
+  @Mock private ArchivalDocumentParserRef ref;
   private Map<String, EcatMediaFile> oldIdToNewGalleryItem;
-  @Mock
-  private ExternalWorkFlowDataManager externalWorkFlowDataManager;
+  @Mock private ExternalWorkFlowDataManager externalWorkFlowDataManager;
   private ExternalWorkFlowsImporter importer;
-  @Mock
-  private ArchivalDocument archivalDoc;
+  @Mock private ArchivalDocument archivalDoc;
   private AllArchiveExternalWorkFlowMetaData allArchiveExternalWorkFlows;
   private ArchiveExternalWorkFlowData oldData;
   private ArchiveExternalWorkFlowInvocation oldInvocation;
   private ArchiveExternalWorkFlow archiveExternalWorkFlow;
-  @Mock
-  private ArchivalField oldField;
+  @Mock private ArchivalField oldField;
   private List<ArchivalField> listFields;
-  @Mock
-  private Field newField;
-  @Captor
-  private ArgumentCaptor<ExternalWorkFlowData> externalWorkFlowDataArgumentCaptor;
+  @Mock private Field newField;
+  @Captor private ArgumentCaptor<ExternalWorkFlowData> externalWorkFlowDataArgumentCaptor;
   private ArchiveExternalWorkFlowInvocation invocationToAnotherWF;
   private ArchiveExternalWorkFlowInvocation umatchedDataInvocation;
   private ArchiveExternalWorkFlow archiveExternalWorkFlowOther;
@@ -94,34 +87,32 @@ public class ExternalWorkFlowsImporterTest {
   @Test
   public void testNoExternalWorkflowsAndNoExternalWorkFlowData() {
     when(oldField.getExternalWorkFlowData()).thenReturn(new HashSet<>());
-    importer.importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem,
-        externalWorkFlowDataManager);
+    importer.importExternalWorkFlows(
+        newDoc, ref, oldIdToNewGalleryItem, externalWorkFlowDataManager);
     verify(externalWorkFlowDataManager, never()).save(any(ExternalWorkFlowData.class));
   }
 
   @Test
   public void testOneExternalWorkflowsAndNoInvocations() {
     when(oldField.getExternalWorkFlowInvocations()).thenReturn(new HashSet<>());
-    importer.importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem,
-        externalWorkFlowDataManager);
+    importer.importExternalWorkFlows(
+        newDoc, ref, oldIdToNewGalleryItem, externalWorkFlowDataManager);
     ExternalWorkFlowData data = makeExternalWFDataAssertions();
     assertEquals(0, data.getExternalWorkflowInvocations().size());
   }
 
   @Test
   public void testOneExternalWorkflowInvocationAndExternalWorkFlowData() {
-    importer.importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem,
-        externalWorkFlowDataManager);
+    importer.importExternalWorkFlows(
+        newDoc, ref, oldIdToNewGalleryItem, externalWorkFlowDataManager);
     ExternalWorkFlowData data = makeExternalWFDataAssertions();
-    ExternalWorkFlow externalWorkFlow = data.getExternalWorkflowInvocations().iterator().next()
-        .getExternalWorkFlow();
+    ExternalWorkFlow externalWorkFlow =
+        data.getExternalWorkflowInvocations().iterator().next().getExternalWorkFlow();
     assertEquals(ArchiveExternalWorkFlowTestMother.NAME, externalWorkFlow.getName());
   }
 
   @Test
-  public void testPersistedInvocationOverwritesMatchingImportedInvocationStatus() {
-
-  }
+  public void testPersistedInvocationOverwritesMatchingImportedInvocationStatus() {}
 
   private ExternalWorkFlowData makeExternalWFDataAssertions() {
     verify(externalWorkFlowDataManager).save(externalWorkFlowDataArgumentCaptor.capture());
@@ -132,8 +123,8 @@ public class ExternalWorkFlowsImporterTest {
     assertEquals(ArchiveExternalWorkFlowDataTestMother.EXT_CONTAINER_ID, data.getExtContainerID());
     assertEquals(ArchiveExternalWorkFlowDataTestMother.BASE_URL, data.getBaseUrl());
     assertEquals(NEW_FIELD_NAME, data.getRspacecontainerName());
-    assertEquals(ArchiveExternalWorkFlowDataTestMother.EXT_CONTAINER_NAME,
-        data.getExtContainerName());
+    assertEquals(
+        ArchiveExternalWorkFlowDataTestMother.EXT_CONTAINER_NAME, data.getExtContainerName());
     assertEquals(ArchiveExternalWorkFlowDataTestMother.EXT_SECONDARY_ID, data.getExtSecondaryId());
     assertEquals(1L, data.getRspacecontainerid());
     assertEquals(RspaceContainerType.FIELD, data.getRspaceContainerType());
@@ -143,20 +134,25 @@ public class ExternalWorkFlowsImporterTest {
 
   @Test
   public void testMultipleAndOneUnmatchedExternalWorkflowInvocationAndExternalWorkFlowData() {
-    allArchiveExternalWorkFlows.setWorkFlows(Set.of(archiveExternalWorkFlow, archiveExternalWorkFlowOther));
-    when(oldField.getExternalWorkFlowInvocations()).thenReturn(
-        Set.of(oldInvocation, invocationToAnotherWF, umatchedDataInvocation));
-    importer.importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem,
-        externalWorkFlowDataManager);
+    allArchiveExternalWorkFlows.setWorkFlows(
+        Set.of(archiveExternalWorkFlow, archiveExternalWorkFlowOther));
+    when(oldField.getExternalWorkFlowInvocations())
+        .thenReturn(Set.of(oldInvocation, invocationToAnotherWF, umatchedDataInvocation));
+    importer.importExternalWorkFlows(
+        newDoc, ref, oldIdToNewGalleryItem, externalWorkFlowDataManager);
     verify(externalWorkFlowDataManager).save(externalWorkFlowDataArgumentCaptor.capture());
     ExternalWorkFlowData data = externalWorkFlowDataArgumentCaptor.getAllValues().get(0);
-    Set<ExternalWorkFlowInvocation> externalWorkFlowInvocations = data.getExternalWorkflowInvocations();
+    Set<ExternalWorkFlowInvocation> externalWorkFlowInvocations =
+        data.getExternalWorkflowInvocations();
     assertEquals(2, externalWorkFlowInvocations.size());
-    List<ExternalWorkFlowInvocation> externalWorkFlowInvocationsWithWF = data.getExternalWorkflowInvocations()
-        .stream().filter(wf -> wf.getExternalWorkFlow().getName().equals(ArchiveExternalWorkFlowTestMother.NAME)).collect(
-            Collectors.toList());
+    List<ExternalWorkFlowInvocation> externalWorkFlowInvocationsWithWF =
+        data.getExternalWorkflowInvocations().stream()
+            .filter(
+                wf ->
+                    wf.getExternalWorkFlow()
+                        .getName()
+                        .equals(ArchiveExternalWorkFlowTestMother.NAME))
+            .collect(Collectors.toList());
     assertEquals(1, externalWorkFlowInvocationsWithWF.size());
-
   }
-
 }
