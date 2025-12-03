@@ -1,4 +1,4 @@
-import React, { FormEventHandler } from "react";
+import React, { FormEventHandler, useId } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
@@ -47,6 +47,7 @@ export function ConfirmationDialog({
 }) {
   const [input, setInput] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
+  const formTitle = useId();
 
   const focusInputField = (input: HTMLInputElement) => {
     if (input) {
@@ -74,8 +75,13 @@ export function ConfirmationDialog({
   return (
     <dialog>
       <form onSubmit={handleSubmit}>
-        <Dialog open={open} onClose={handleCloseDialog} fullWidth>
-          <DialogTitle id="form-dialog-title">
+        <Dialog
+          open={open}
+          onClose={handleCloseDialog}
+          fullWidth
+          aria-labelledby={formTitle}
+        >
+          <DialogTitle id={formTitle}>
             <>{title}</>
           </DialogTitle>
           <DialogContent style={{ overscrollBehavior: "contain" }}>
@@ -85,7 +91,9 @@ export function ConfirmationDialog({
                 gutterBottom
                 dangerouslySetInnerHTML={{ __html: consequences }}
               />
-            ): consequences }
+            ) : (
+              consequences
+            )}
 
             {confirmText && (
               <FormControl error={error !== null} fullWidth>
@@ -96,7 +104,12 @@ export function ConfirmationDialog({
                   placeholder={confirmTextLabel}
                   fullWidth
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    if (error) {
+                      setError(null);
+                    }
+                  }}
                   inputProps={{ "aria-label": confirmTextLabel }}
                   variant="standard"
                 />
@@ -107,10 +120,7 @@ export function ConfirmationDialog({
             )}
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={handleCloseDialog}
-              color="secondary"
-            >
+            <Button onClick={handleCloseDialog} color="secondary">
               Cancel
             </Button>
             {/* @ts-expect-error Fix types later */}
