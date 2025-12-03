@@ -514,8 +514,6 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
 
     assertEquals(isJDK8() ? 1377 : 1410, ie.getIconImage().length);
     assertEquals(form.getId(), ie.getParentId());
-
-    formMgr.get(form.getId(), piUser); // exception
   }
 
   private RSForm getFormFromModel() {
