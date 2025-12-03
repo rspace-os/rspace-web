@@ -13,8 +13,9 @@ public class ArchiveExternalWorkFlowDataTestMother {
   public static final String EXT_CONTAINER_ID = "extContainerId";
   private static final long WF_DATA_ID = 1L;
 
-  public static ArchiveExternalWorkFlowData makeDefault(){
-    ArchiveExternalWorkFlowData defaultArchiveExternalWorkFlowData = new ArchiveExternalWorkFlowData();
+  public static ArchiveExternalWorkFlowData makeDefault() {
+    ArchiveExternalWorkFlowData defaultArchiveExternalWorkFlowData =
+        new ArchiveExternalWorkFlowData();
     defaultArchiveExternalWorkFlowData.setId(WF_DATA_ID);
     defaultArchiveExternalWorkFlowData.setExternalService(EXTERNAL_SERVICE);
     defaultArchiveExternalWorkFlowData.setRspaceDataId(RSPACE_DATA_ID);

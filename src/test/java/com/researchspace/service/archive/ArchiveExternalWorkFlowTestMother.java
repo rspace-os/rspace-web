@@ -9,7 +9,7 @@ public class ArchiveExternalWorkFlowTestMother {
   private static final String EXT_ID = "extId";
   private static final long WF_ID = 2L;
 
-  public static ArchiveExternalWorkFlow makeDefault(){
+  public static ArchiveExternalWorkFlow makeDefault() {
     ArchiveExternalWorkFlow defaultArchiveExternalWorkFlow = new ArchiveExternalWorkFlow();
     defaultArchiveExternalWorkFlow.setExternalService(EXTERNAL_SERVICE);
     defaultArchiveExternalWorkFlow.setName(NAME);
@@ -21,8 +21,8 @@ public class ArchiveExternalWorkFlowTestMother {
 
   public static ArchiveExternalWorkFlow withIdAppendedToValues(long l) {
     ArchiveExternalWorkFlow defaultArchiveExternalWorkFlow = makeDefault();
-    defaultArchiveExternalWorkFlow.setExtId(defaultArchiveExternalWorkFlow.getExtId()+l);
-    defaultArchiveExternalWorkFlow.setName(defaultArchiveExternalWorkFlow.getName()+l);
+    defaultArchiveExternalWorkFlow.setExtId(defaultArchiveExternalWorkFlow.getExtId() + l);
+    defaultArchiveExternalWorkFlow.setName(defaultArchiveExternalWorkFlow.getName() + l);
     defaultArchiveExternalWorkFlow.setId(l);
     return defaultArchiveExternalWorkFlow;
   }

@@ -23,7 +23,9 @@ import java.util.Set;
 
 public class ExternalWorkFlowsImporter {
 
-  public void importExternalWorkFlows(StructuredDocument newDoc, ArchivalDocumentParserRef ref,
+  public void importExternalWorkFlows(
+      StructuredDocument newDoc,
+      ArchivalDocumentParserRef ref,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem,
       ExternalWorkFlowDataManager externalWorkFlowDataManager) {
     ArchivalDocument oldDoc = ref.getArchivalDocument();
@@ -100,6 +102,7 @@ public class ExternalWorkFlowsImporter {
       }
     }
   }
+
   public Long findCorrespondingRSpaceDataIdForExportedExternalWorkFlowData(
       Field newField,
       ArchivalField oldField,
@@ -112,8 +115,8 @@ public class ExternalWorkFlowsImporter {
             originalRspaceDataId
                 + "-"
                 + (attached.getModificationDate() != null
-                ? "" + attached.getModificationDate().getTime()
-                : "null");
+                    ? "" + attached.getModificationDate().getTime()
+                    : "null");
         return oldIdToNewGalleryItem.get(key).getId();
       }
     }

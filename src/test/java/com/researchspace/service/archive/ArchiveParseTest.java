@@ -331,8 +331,8 @@ public class ArchiveParseTest {
     AllArchiveExternalWorkFlowMetaData testExtWF = ref.getArchiveExternalWorkFlowMetaData();
     assertNotNull(testExtWF);
     ArchiveExternalWorkFlow aewf = testExtWF.getWorkFlows().iterator().next();
-    assertEquals("9ac5c918248cc7aa",aewf.getExtId());
-    assertEquals("RNA-seq for Paired-end fastqs (release v1.1)",aewf.getName());
-    assertEquals(1,aewf.getId());
+    assertEquals("9ac5c918248cc7aa", aewf.getExtId());
+    assertEquals("RNA-seq for Paired-end fastqs (release v1.1)", aewf.getName());
+    assertEquals(1, aewf.getId());
   }
 }

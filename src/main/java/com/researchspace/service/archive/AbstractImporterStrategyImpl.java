@@ -8,11 +8,8 @@ import static com.researchspace.core.util.FieldParserConstants.DATA_CHEM_FILE_ID
 import static com.researchspace.core.util.FieldParserConstants.IMAGE_DROPPED_CLASS_NAME;
 import static com.researchspace.core.util.FieldParserConstants.MATH_CLASSNAME;
 import static com.researchspace.core.util.MediaUtils.extractFileType;
-import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceContainerType.FIELD;
-import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceDataType.LOCAL;
 import static java.lang.String.format;
 
-import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
 import com.researchspace.archive.ArchivalField;
@@ -23,9 +20,7 @@ import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchivalLinkRecord;
 import com.researchspace.archive.ArchiveComment;
 import com.researchspace.archive.ArchiveCommentItem;
-import com.researchspace.archive.ArchiveExternalWorkFlow;
 import com.researchspace.archive.ArchiveExternalWorkFlowData;
-import com.researchspace.archive.ArchiveExternalWorkFlowInvocation;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.FieldParserConstants;
@@ -50,9 +45,6 @@ import com.researchspace.model.RSMath;
 import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.core.RecordType;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
-import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
@@ -79,7 +71,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -365,30 +356,8 @@ abstract class AbstractImporterStrategyImpl {
       StructuredDocument newDoc,
       ArchivalDocumentParserRef ref,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem) {
-    new ExternalWorkFlowsImporter().importExternalWorkFlows( newDoc,
-         ref,
-        oldIdToNewGalleryItem, externalWorkFlowDataManager);
-  }
-
-  public Long findCorrespondingRSpaceDataIdForExportedExternalWorkFlowData(
-      Field newField,
-      ArchivalField oldField,
-      ArchiveExternalWorkFlowData externalWorkFlowMetaDataUsedByOldField,
-      Map<String, EcatMediaFile> oldIdToNewGalleryItem) {
-    long originalRspaceDataId = externalWorkFlowMetaDataUsedByOldField.getRspaceDataId();
-    for (ArchivalGalleryMetadata attached : oldField.getAllGalleryMetaData()) {
-      if (attached.getId() == originalRspaceDataId) {
-        String key =
-            originalRspaceDataId
-                + "-"
-                + (attached.getModificationDate() != null
-                    ? "" + attached.getModificationDate().getTime()
-                    : "null");
-        return oldIdToNewGalleryItem.get(key).getId();
-      }
-    }
-    return originalRspaceDataId; // this will happen when the attached data in the original field
-    // was removed from that field - so it has not been exported
+    new ExternalWorkFlowsImporter()
+        .importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem, externalWorkFlowDataManager);
   }
 
   private void setUpFieldAttachmentLinks(

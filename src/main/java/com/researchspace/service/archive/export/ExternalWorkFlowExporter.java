@@ -63,14 +63,16 @@ public class ExternalWorkFlowExporter extends AbstractFieldExporter<LinkableExte
     archiveField.addArchivalExternalWorkFlowData(aEWFMeta);
   }
 
+  /**
+   * We do not add ExternalWorkFlowData to the html of the field Therefore this just returns the
+   * original html of the field unmodified
+   */
   @Override
   String doUpdateLinkText(
       FieldElementLinkPair<LinkableExternalWorkFlowData> itemPair,
       String replacementUrl,
       FieldExportContext context) {
-    return context
-        .getArchiveField()
-        .getFieldData(); // we do not add ExternalWorkFlowData to the html of the field
+    return context.getArchiveField().getFieldData();
   }
 
   /**
@@ -90,8 +92,6 @@ public class ExternalWorkFlowExporter extends AbstractFieldExporter<LinkableExte
         .getDiskSpaceChecker()
         .assertEnoughDiskSpaceToCopyFileIntoArchiveDir(attachmentFile, context.getExportFolder());
     FileUtils.copyFileToDirectory(attachmentFile, context.getRecordFolder());
-    return nameOfGalleryFile; // TODO - is there a way to avoid implementing this method and do the
-    // file copying elsewhere in the code, or will that cause more
-    // problems that it solves?
+    return nameOfGalleryFile;
   }
 }
