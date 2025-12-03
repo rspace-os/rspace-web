@@ -66,11 +66,9 @@ public class SlackPosterTest extends SpringTransactionalTest {
         "posted from slack test at " + new SessionTimeZoneUtils().formatDateForClient(new Date());
     node.put("text", text);
     String json = mapper.writeValueAsString(node);
-    System.err.println("json is " + json);
     URI uri = new URI(slackTestWebhookUrl);
     HttpEntity<String> requestEntity = new HttpEntity<>(json);
     ResponseEntity<String> resp = template.postForEntity(uri, requestEntity, String.class);
     assertEquals(HttpStatus.OK, resp.getStatusCode());
-    System.err.println(resp);
   }
 }

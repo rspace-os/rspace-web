@@ -98,7 +98,6 @@ public class MSWordProcessorTest {
         .getImageBytesFromImgSrc(Mockito.anyString(), Mockito.any(ExportToFileConfig.class));
     verify(converter, atMost(1))
         .convert(Mockito.any(Convertible.class), Mockito.eq("doc"), Mockito.eq(outfile));
-    System.err.println(outfile.length());
   }
 
   private ExportProcesserInput createAnyHTMLWithImage() {

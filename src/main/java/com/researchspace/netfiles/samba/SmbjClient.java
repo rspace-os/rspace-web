@@ -169,7 +169,6 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
       NfsFileTreeOrderType order,
       NfsFileStore activeUserFolder) {
 
-    System.out.println("File : " + f.getFileName());
     boolean isFolder = isFolder(f);
 
     NfsFileTreeNode node = new NfsFileTreeNode();

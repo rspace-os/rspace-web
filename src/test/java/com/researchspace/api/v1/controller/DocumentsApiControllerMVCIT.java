@@ -328,7 +328,6 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     addAttachmentDocumentToField(RSpaceTestUtils.getAnyAttachment(), textField, anyUser);
 
     MvcResult result = this.mockMvc.perform(getDocById(anyUser, apiKey, doc.getId())).andReturn();
-    System.err.println(result.getResolvedException());
     assertNull(result.getResolvedException());
 
     ApiDocument apiDoc = getFromJsonResponseBody(result, ApiDocument.class);

@@ -372,10 +372,6 @@ public class FormManagerTest extends SpringTransactionalTest {
     }
 
     items = formMgr.getDynamicMenuFormItems(user);
-    System.err.println("menu items, in order");
-    for (RSForm t : items) {
-      System.err.println("[" + t.getName() + "," + t.getId() + "]");
-    }
 
     assertEquals(4, items.size());
     assertEquals(2, items.indexOf(forms[3]));

@@ -10,6 +10,7 @@
 /*
  * Default workspace refresh used when this page is inside Workspace page.
  */
+
 var defaultRefresh = function (result) {
   setTimeout(function () {
     $('#record_list').hide(effect, effectDuration);
@@ -537,13 +538,13 @@ function registerDeleteRecordsHandler(onDelete) {
       });
     }
     getSelectedIdsAndNames(idsToDelete, namesToDelete);
-    var event = new CustomEvent('confirm-action', { 'detail': {
-        title: "Confirm deletion",
-        consequences: `Do you want to delete the following document(s)? - ${RS.escapeHtml(namesToDelete.join(", "))} - Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
-        variant: "warning",
-        callback: callback
-      }});
-    document.dispatchEvent(event);
+
+    RS.createConfirmationDialog({
+      title: "Confirm deletion",
+      consequences: `Do you want to delete the following document(s)?<br><strong>${RS.escapeHtml(namesToDelete.join(", "))}</strong><br><br>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
+      variant: "warning",
+      callback: callback
+    });
     RS.focusAppriseDialog(false);
   });
 }

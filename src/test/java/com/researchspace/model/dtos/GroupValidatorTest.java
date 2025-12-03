@@ -140,7 +140,6 @@ public class GroupValidatorTest extends SpringTransactionalTest {
     grp.setDisplayName("a display name");
     Errors errors = new BeanPropertyBindingResult(grp, "MyObject");
     validator.validate(grp, errors);
-    System.out.println(errors);
     assertFalse(errors.hasErrors());
   }
 
@@ -152,7 +151,6 @@ public class GroupValidatorTest extends SpringTransactionalTest {
     grp.setDisplayName("a display name");
     Errors errors = new BeanPropertyBindingResult(grp, "MyObject");
     validator.validate(grp, errors);
-    System.out.println(errors);
     assertTrue(ValidationTestUtils.hasError(GroupValidator.GROUP_OWNER_NOT_SELECTED, errors));
   }
 

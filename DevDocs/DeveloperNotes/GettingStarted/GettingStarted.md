@@ -96,7 +96,7 @@ ResearchSpace dev team (check 'Build prodRelease-like package' stage script).
 
 ### Set up MariaDB/MySQL database
 
-**You can now use the Docker MariaDB setup guide [here](/DevDOcs/DeveloperNotes/GettingStarted/dockerMariaDB.md)**
+**You can now use the Docker MariaDB setup guide [here](/DevDocs/DeveloperNotes/GettingStarted/dockerMariaDB.md)**
 
 #### MariaDB/MySQL initialisation
 

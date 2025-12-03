@@ -206,7 +206,6 @@ public class JournalControllerMVCIT extends MVCTestBase {
             .andReturn();
     Instant openEnd = Instant.now();
     Duration notebookOpeningTime = Duration.between(openStart, openEnd);
-    //  System.out.println("opening took: " + notebookOpeningTime);
 
     assertNull(result.getResolvedException());
     // initial entry retrieval may be a bit longer, as classes/tables are being loaded first time
@@ -224,7 +223,6 @@ public class JournalControllerMVCIT extends MVCTestBase {
             .andReturn();
     Instant nextEntryEnd = Instant.now();
     Duration entrySwitchTime = Duration.between(nextEntryStart, nextEntryEnd);
-    //  System.out.println("switching entry took: " + entrySwitchTime);
 
     assertNull(result2.getResolvedException());
     // subsequent entry retrieval should be faster

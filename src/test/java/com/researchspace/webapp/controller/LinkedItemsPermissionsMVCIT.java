@@ -21,7 +21,6 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.RecordCopyResult;
-import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Set;
@@ -224,10 +223,8 @@ public class LinkedItemsPermissionsMVCIT extends MVCTestBase {
     }
   }
 
-  private void doAuthorisationCheck(boolean isAuthorised, String link)
-      throws Exception, UnsupportedEncodingException {
+  private void doAuthorisationCheck(boolean isAuthorised, String link) throws Exception {
 
-    System.err.println("looking at link " + link);
     String linkToCheck = link;
     if (link.contains("/globalId/")) {
       /* globalId url returns 302 redirect, so for permissions check let's resolve to full address */
