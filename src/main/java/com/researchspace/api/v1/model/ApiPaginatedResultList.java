@@ -80,8 +80,7 @@ public abstract class ApiPaginatedResultList<T extends LinkableApiObject>
         .cloneBuilder()
         .path(getSearchEndpoint())
         .queryParams(pgCrit.toMap())
-        .queryParams(
-            srchConfig != null ? srchConfig.toMap() : new LinkedMultiValueMap<String, String>())
+        .queryParams(srchConfig != null ? srchConfig.toMap() : new LinkedMultiValueMap<>())
         .build()
         .encode()
         .toUriString();
