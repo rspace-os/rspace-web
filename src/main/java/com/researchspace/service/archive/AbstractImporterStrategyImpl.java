@@ -365,79 +365,9 @@ abstract class AbstractImporterStrategyImpl {
       StructuredDocument newDoc,
       ArchivalDocumentParserRef ref,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem) {
-    ArchivalDocument oldDoc = ref.getArchivalDocument();
-    // Note - not all externalWorkFlowData is ever invoked and so it can be detached from any
-    // external workflow
-    // Conversely, an externalWorkFlow must have externalWorkFlowData and Invocations
-    AllArchiveExternalWorkFlowMetaData allWorkflows = ref.getArchiveExternalWorkFlowMetaData();
-    for (ArchivalField oldField : oldDoc.getListFields()) {
-      Set<ArchiveExternalWorkFlowData> allExternalWorkFlowDataMeta =
-          oldField.getExternalWorkFlowData();
-      Set<ArchiveExternalWorkFlowInvocation> allExternalWorkFlowInvocations =
-          oldField.getExternalWorkFlowInvocations();
-      if (allExternalWorkFlowDataMeta != null) {
-        Field newField = newDoc.getField(oldField.getFieldName());
-        for (ArchiveExternalWorkFlowData externalWorkFlowMetaData : allExternalWorkFlowDataMeta) {
-          Long rspaceAttachmentIdUSedForExternalWorkflow =
-              findCorrespondingRSpaceDataIdForExportedExternalWorkFlowData(
-                  newField, oldField, externalWorkFlowMetaData, oldIdToNewGalleryItem);
-          if (rspaceAttachmentIdUSedForExternalWorkflow != null) {
-            ExternalWorkFlowData externalWorkFlowData =
-                new ExternalWorkFlowData(
-                    ExternalWorkFlowData.ExternalService.valueOf(
-                        externalWorkFlowMetaData.getExternalService()),
-                    rspaceAttachmentIdUSedForExternalWorkflow,
-                    LOCAL,
-                    newField.getId(),
-                    newField.getName(),
-                    FIELD,
-                    externalWorkFlowMetaData.getLinkFile(),
-                    externalWorkFlowMetaData.getExtId(),
-                    externalWorkFlowMetaData.getExtSecondaryId(),
-                    externalWorkFlowMetaData.getExtContainerId(),
-                    externalWorkFlowMetaData.getExtContainerName(),
-                    externalWorkFlowMetaData.getBaseUrl());
-            for (ArchiveExternalWorkFlowInvocation invocationMetaData :
-                allExternalWorkFlowInvocations) {
-              if (invocationMetaData.getDataIds().contains(externalWorkFlowMetaData.getId())) {
-                ArchiveExternalWorkFlow workFlow =
-                    allWorkflows.findById(invocationMetaData.getWorkFlowId());
-                ExternalWorkFlow existingWorkFlow =
-                    externalWorkFlowDataManager.findWorkFlowByExtIdAndName(
-                        workFlow.getExtId(), workFlow.getName());
-                if (existingWorkFlow != null) {
-                  for (ExternalWorkFlowInvocation existingInvocation :
-                      existingWorkFlow.getExternalWorkflowInvocations()) {
-                    if (existingInvocation.getExtId().equals(invocationMetaData.getExtId())) {
-                      externalWorkFlowData.getExternalWorkflowInvocations().add(existingInvocation);
-                      existingInvocation.getExternalWorkFlowData().add(externalWorkFlowData);
-                    } else {
-                      ExternalWorkFlowInvocation newInvocation =
-                          new ExternalWorkFlowInvocation(
-                              invocationMetaData.getExtId(),
-                              Set.of(externalWorkFlowData),
-                              invocationMetaData.getStatus(),
-                              existingWorkFlow);
-                    }
-                  }
-                } else {
-                  ExternalWorkFlow newExternalWorkFlow =
-                      new ExternalWorkFlow(
-                          workFlow.getExtId(), workFlow.getName(), workFlow.getDescription());
-                  ExternalWorkFlowInvocation newInvocation =
-                      new ExternalWorkFlowInvocation(
-                          invocationMetaData.getExtId(),
-                          Set.of(externalWorkFlowData),
-                          invocationMetaData.getStatus(),
-                          newExternalWorkFlow);
-                }
-              }
-            }
-            externalWorkFlowDataManager.save(externalWorkFlowData);
-          }
-        }
-      }
-    }
+    new ExternalWorkFlowsImporter().importExternalWorkFlows( newDoc,
+         ref,
+        oldIdToNewGalleryItem, externalWorkFlowDataManager);
   }
 
   public Long findCorrespondingRSpaceDataIdForExportedExternalWorkFlowData(

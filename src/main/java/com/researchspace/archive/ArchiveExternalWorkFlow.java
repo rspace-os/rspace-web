@@ -4,8 +4,10 @@ import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import javax.xml.bind.annotation.XmlElement;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 @EqualsAndHashCode(of = {"extId", "name", "externalService"})
 public class ArchiveExternalWorkFlow extends ArchivalGalleryMetadata {
   private @XmlElement String extId;
