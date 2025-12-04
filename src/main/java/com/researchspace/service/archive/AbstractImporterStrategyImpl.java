@@ -73,7 +73,6 @@ import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -387,7 +386,7 @@ abstract class AbstractImporterStrategyImpl {
   // the sdc created and set Form
   private void convertStructureDocument(
       ArchivalDocument archivalDoc,
-      @NotNull StructuredDocument strucDoc,
+      StructuredDocument strucDoc,
       User user,
       File pth,
       ArchivalLinkRecord linkRecord,
