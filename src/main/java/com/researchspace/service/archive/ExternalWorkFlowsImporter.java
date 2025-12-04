@@ -1,8 +1,5 @@
 package com.researchspace.service.archive;
 
-import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceContainerType.FIELD;
-import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceDataType.LOCAL;
-
 import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
@@ -50,10 +47,12 @@ public class ExternalWorkFlowsImporter {
                     ExternalWorkFlowData.ExternalService.valueOf(
                         externalWorkFlowMetaData.getExternalService()),
                     rspaceAttachmentIdUSedForExternalWorkflow,
-                    ExternalWorkFlowData.RspaceDataType.valueOf(externalWorkFlowMetaData.getRspaceDataType()),
+                    ExternalWorkFlowData.RspaceDataType.valueOf(
+                        externalWorkFlowMetaData.getRspaceDataType()),
                     newField.getId(),
                     newField.getName(),
-                    ExternalWorkFlowData.RspaceContainerType.valueOf(externalWorkFlowMetaData.getRspaceContainerType()),
+                    ExternalWorkFlowData.RspaceContainerType.valueOf(
+                        externalWorkFlowMetaData.getRspaceContainerType()),
                     externalWorkFlowMetaData.getLinkFile(),
                     externalWorkFlowMetaData.getExtId(),
                     externalWorkFlowMetaData.getExtSecondaryId(),
