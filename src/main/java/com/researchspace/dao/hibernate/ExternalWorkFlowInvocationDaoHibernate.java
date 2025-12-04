@@ -32,6 +32,7 @@ public class ExternalWorkFlowInvocationDaoHibernate
     ExternalWorkFlow externalWorkFlow =
         externalWorkFlowDao.findWorkFlowByExtIdAndName(workflowId, workflowName);
     if (externalWorkFlow == null) {
+      externalWorkFlow = new ExternalWorkFlow(workflowId, workflowName, "");
       externalWorkFlow = externalWorkFlowDao.save(externalWorkFlow);
     }
     ExternalWorkFlowInvocation externalWorkFlowInvocation =
