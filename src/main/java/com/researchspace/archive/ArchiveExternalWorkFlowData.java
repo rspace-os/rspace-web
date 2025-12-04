@@ -27,6 +27,8 @@ public class ArchiveExternalWorkFlowData extends ArchivalGalleryMetadata {
   private @XmlElement String extContainerId;
   private @XmlElement String extContainerName;
   private @XmlElement String baseUrl;
+  private @XmlElement String rspaceDataType;
+  private @XmlElement String rspaceContainerType;
 
   public ArchiveExternalWorkFlowData() {}
 
@@ -45,6 +47,8 @@ public class ArchiveExternalWorkFlowData extends ArchivalGalleryMetadata {
     this.setExtContainerId(data.getExtContainerID());
     this.setExtContainerName(data.getExtContainerName());
     this.setBaseUrl(data.getBaseUrl());
+    this.setRspaceDataType(data.getRspaceDataType().name());
+    this.setRspaceContainerType(data.getRspaceContainerType().name());
     for (ExternalWorkFlowInvocation invocation :
         item.getExternalWorkflowData().getExternalWorkflowInvocations()) {
       boolean existingInvocation = false;
