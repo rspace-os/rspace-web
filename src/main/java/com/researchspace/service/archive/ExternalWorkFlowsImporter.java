@@ -50,10 +50,10 @@ public class ExternalWorkFlowsImporter {
                     ExternalWorkFlowData.ExternalService.valueOf(
                         externalWorkFlowMetaData.getExternalService()),
                     rspaceAttachmentIdUSedForExternalWorkflow,
-                    LOCAL,
+                    ExternalWorkFlowData.RspaceDataType.valueOf(externalWorkFlowMetaData.getRspaceDataType()),
                     newField.getId(),
                     newField.getName(),
-                    FIELD,
+                    ExternalWorkFlowData.RspaceContainerType.valueOf(externalWorkFlowMetaData.getRspaceContainerType()),
                     externalWorkFlowMetaData.getLinkFile(),
                     externalWorkFlowMetaData.getExtId(),
                     externalWorkFlowMetaData.getExtSecondaryId(),
