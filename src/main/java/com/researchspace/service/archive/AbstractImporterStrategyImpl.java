@@ -20,7 +20,6 @@ import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchivalLinkRecord;
 import com.researchspace.archive.ArchiveComment;
 import com.researchspace.archive.ArchiveCommentItem;
-import com.researchspace.archive.ArchiveExternalWorkFlowData;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.FieldParserConstants;

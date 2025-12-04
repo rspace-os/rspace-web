@@ -187,8 +187,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   @Qualifier("standardPostExportCompletionImpl")
   @InjectMocks
   private PostArchiveCompletion standardPostExport;
-  @Autowired
-  private ExternalWorkFlowDataManager externalWorkFlowDataManager;
+
+  @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
 
   @Before
   public void setUp() throws Exception {
@@ -1096,13 +1096,17 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
         ArchiveTestUtils.archiveContainsFile(
             tempImportFolder2.getRoot(), updatedImage.getFileName()));
   }
-  public static ExternalWorkFlowData createExternalWorkFlowData(long fieldId, long dataId, String extId) {
-    ExternalWorkFlowDataBuilder builder = ExternalWorkFlowTestMother.getBuilderWithNonNullValuesSet();
+
+  public static ExternalWorkFlowData createExternalWorkFlowData(
+      long fieldId, long dataId, String extId) {
+    ExternalWorkFlowDataBuilder builder =
+        ExternalWorkFlowTestMother.getBuilderWithNonNullValuesSet();
     builder.rspacecontainerId(fieldId);
     builder.rspacedataid(dataId);
     builder.extId(extId);
     return builder.build();
   }
+
   @Test
   public void testExportImportImagesAndAnnotations() throws Exception {
     User u1 = createInitAndLoginAnyUser();
@@ -1167,9 +1171,12 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     Field textField = sdoc.getFields().get(0);
     ContentBuilder builder = new ContentBuilder(u1, textField);
     builder.addImage().addMath().addImageAnnotation().addImageAnnotation().addImage();
-    textField = fieldMgr.getWithLoadedMediaLinks(textField.getId(),u1).get();
-    ExternalWorkFlowData externalWorkFlowData = createExternalWorkFlowData(textField.getId(),
-        textField.getLinkedMediaFiles().iterator().next().getMediaFile().getId(),"ext123");
+    textField = fieldMgr.getWithLoadedMediaLinks(textField.getId(), u1).get();
+    ExternalWorkFlowData externalWorkFlowData =
+        createExternalWorkFlowData(
+            textField.getId(),
+            textField.getLinkedMediaFiles().iterator().next().getMediaFile().getId(),
+            "ext123");
     externalWorkFlowDataManager.save(externalWorkFlowData);
     final ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
     ArchiveResult result =
@@ -1194,11 +1201,15 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertTrue(report.isSuccessful());
     // now check field content
     StructuredDocument imported = report.getImportedRecords().iterator().next().asStrucDoc();
-    List<Field> textFields = imported.getFields().stream().filter(f->f.isTextField()).collect(toList());
+    List<Field> textFields =
+        imported.getFields().stream().filter(f -> f.isTextField()).collect(toList());
     assertEquals(1, textFields.size());
-    assertEquals(1,externalWorkFlowDataManager.
-        findWorkFlowDataByRSpaceContainerIdAndServiceType(textFields.get(0).getId(),
-            ExternalService.GALAXY).size());
+    assertEquals(
+        1,
+        externalWorkFlowDataManager
+            .findWorkFlowDataByRSpaceContainerIdAndServiceType(
+                textFields.get(0).getId(), ExternalService.GALAXY)
+            .size());
   }
 
   private Elements getImageTagsInDocument(String content) {
