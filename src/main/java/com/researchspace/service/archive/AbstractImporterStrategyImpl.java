@@ -489,7 +489,6 @@ abstract class AbstractImporterStrategyImpl {
     fld = importImageAnnotation(fld, archiveFld, recordFolder, oldIdToNewGalleryItem);
     importLinkedRecords(fld, archiveFld, recordFolder, linkRecord);
     fld = importSketches(fld, archiveFld, recordFolder);
-    //    fld = importExternalWorkFlows(fld, archiveFld, user);
     rtu.updateAttachmentIcons(fld);
     rtu.updateNfsLinksOnImport(fld);
   }
