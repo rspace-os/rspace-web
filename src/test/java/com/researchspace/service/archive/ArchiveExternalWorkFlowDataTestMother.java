@@ -1,6 +1,8 @@
 package com.researchspace.service.archive;
 
 import com.researchspace.archive.ArchiveExternalWorkFlowData;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.RspaceContainerType;
 
 public class ArchiveExternalWorkFlowDataTestMother {
   public static final String EXTERNAL_SERVICE = "GALAXY";
@@ -25,6 +27,8 @@ public class ArchiveExternalWorkFlowDataTestMother {
     defaultArchiveExternalWorkFlowData.setExtContainerId(EXT_CONTAINER_ID);
     defaultArchiveExternalWorkFlowData.setExtSecondaryId(EXT_SECONDARY_ID);
     defaultArchiveExternalWorkFlowData.setLinkFile(LINK_FILE);
+    defaultArchiveExternalWorkFlowData.setRspaceContainerType(RspaceContainerType.FIELD.name());
+    defaultArchiveExternalWorkFlowData.setRspaceDataType(ExternalWorkFlowData.RspaceDataType.LOCAL.name());
     return defaultArchiveExternalWorkFlowData;
   }
 }

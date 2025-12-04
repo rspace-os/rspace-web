@@ -58,6 +58,8 @@ public class ExternalWorkFlowTestMother {
       "historyDatasetAssociationDataSetId";
   public static final String HISTORY_DATASET_ASSOCIATION_UUID = "historyDatasetAssociationUuid";
   public static final String HISTORY_DATASET_ASSOCIATION_NAME = "historyDatasetAssociationName";
+  public static final String NEW_INVOCATION_STATUS = "new-invocation-status";
+  public static final String WF_EXT_ID = "extID";
 
   public static ExternalWorkFlowDataBuilder getBuilderWithNonNullValuesSet() {
     ExternalWorkFlowDataBuilder builder = ExternalWorkFlowData.builder();
@@ -154,7 +156,7 @@ public class ExternalWorkFlowTestMother {
     builder.extContainerName(historyName);
     builder.extSecondaryId(extId + "_uuid");
     ExternalWorkFlowData toReturn = builder.build();
-    ExternalWorkFlow externalWorkFlow = new ExternalWorkFlow("extID", WORKFLOWTHATWASUSED, "");
+    ExternalWorkFlow externalWorkFlow = new ExternalWorkFlow(WF_EXT_ID, WORKFLOWTHATWASUSED, "");
     ExternalWorkFlowInvocation invocation =
         new ExternalWorkFlowInvocation(
             INVOCATION_ID_1, Set.of(toReturn), invocationStatus, externalWorkFlow);
