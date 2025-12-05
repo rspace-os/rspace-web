@@ -69,7 +69,7 @@ public class TimezoneInterceptorTest {
   @Test
   public void testRequiresNotNullCookieAndSSO() throws IOException {
     when(properties.isSSO()).thenReturn(true);
-    req.setCookies(null);
+    req.setCookies((Cookie[]) null);
     invokeHandler();
     verifyTzSetInSession(false);
   }

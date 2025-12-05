@@ -1,4 +1,3 @@
-/** RSpace API Access your RSpace documents programmatically. */
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -36,19 +35,19 @@ public class ApiLinkItem {
 
   @JsonInclude(Include.NON_NULL)
   @JsonProperty("link")
-  private String link = null;
+  private String link;
 
   @JsonInclude(Include.NON_NULL)
   @JsonProperty("rel")
-  private String rel = null;
+  private String rel;
 
   @JsonInclude(Include.NON_NULL)
   @JsonProperty("method")
-  private HttpMethod method = null;
+  private HttpMethod method;
 
   @JsonInclude(Include.NON_NULL)
   @JsonProperty("operation")
-  private String operation = null; // copy/paste
+  private String operation;
 
   public ApiLinkItem() {}
 }

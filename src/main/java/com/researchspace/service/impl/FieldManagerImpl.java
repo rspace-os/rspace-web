@@ -53,15 +53,7 @@ public class FieldManagerImpl implements FieldManager {
 
   @Override
   public List<Field> getFieldsByRecordId(long id, User user) {
-    List<Field> listFields = fieldDao.getFieldFromStructuredDocument(id);
-    return listFields;
-  }
-
-  @Override
-  public List<Field> getFieldsByRecordIdFromColumnNumber(
-      long recordId, int columnNumber, User user) {
-    List<Field> listFields = fieldDao.getFieldByRecordIdFromColumnNumber(recordId, columnNumber);
-    return listFields;
+    return fieldDao.getFieldFromStructuredDocument(id);
   }
 
   @Override
@@ -122,23 +114,9 @@ public class FieldManagerImpl implements FieldManager {
   }
 
   public String createAuthExceptionMsg(User subject, Long fieldId, Record mediaFile) {
-    String msg =
-        String.format(
-            "Unauthorised attempt by  %s  to link media file [%s] to file [%s]",
-            subject.getUsername(), mediaFile.getId(), fieldId);
-    return msg;
-  }
-
-  @Override
-  public EcatMediaFile removeMediaFileLink(Long ecatMediaFileId, User subject, Long fieldId) {
-    Record mediaFile = recordDao.get(ecatMediaFileId);
-    if (!mediaFile.isMediaRecord()) {
-      throw new IllegalArgumentException("Can't remove non media-file link from field");
-    }
-    Field field = get(fieldId, subject).get();
-    field.removeMediaFileLink((EcatMediaFile) mediaFile);
-    save(field, subject);
-    return (EcatMediaFile) mediaFile;
+    return String.format(
+        "Unauthorised attempt by  %s  to link media file [%s] to file [%s]",
+        subject.getUsername(), mediaFile.getId(), fieldId);
   }
 
   @Override

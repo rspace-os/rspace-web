@@ -215,7 +215,7 @@ public class RecordGroupSharingDaoHibernateImpl
   public List<String> getTextDataFromOntologiesSharedWithUserIfSharedWithAGroup(
       User subject, Long[] ontologyIDsSharedWithAGroup) {
     Criteria docsSharedWithUser = getOntologiesSharedWithUserQuery(subject);
-    docsSharedWithUser.add(Restrictions.in("shared.id", ontologyIDsSharedWithAGroup));
+    docsSharedWithUser.add(Restrictions.in("shared.id", (Object[]) ontologyIDsSharedWithAGroup));
     docsSharedWithUser.setProjection(Projections.distinct(Projections.property("field.rtfData")));
     return docsSharedWithUser.list();
   }
