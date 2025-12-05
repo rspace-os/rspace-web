@@ -7,10 +7,12 @@ import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DiskSpaceChecker;
+import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,7 @@ class FieldExporterSupport {
   private NfsFileHandler nfsFileHandler;
   private FileStore fileStore;
   private DiskSpaceChecker diskSpaceChecker;
+  private ExternalWorkFlowDataManager externalWorkFlowDataManager;
 
   FieldExporterSupport(
       @Autowired RichTextUpdater richTextUpdater,
@@ -44,7 +47,8 @@ class FieldExporterSupport {
       @Autowired NfsManager nfsManager,
       @Autowired NfsFileHandler nfsFileHandler,
       @Autowired @Qualifier("compositeFileStore") FileStore fileStore,
-      DiskSpaceChecker diskSpaceChecker) {
+      DiskSpaceChecker diskSpaceChecker,
+      @Autowired ExternalWorkFlowDataManager externalWorkFlowDataManager) {
 
     this.richTextUpdater = richTextUpdater;
     this.auditManager = auditManager;
@@ -57,6 +61,7 @@ class FieldExporterSupport {
     this.nfsFileHandler = nfsFileHandler;
     this.fileStore = fileStore;
     this.diskSpaceChecker = diskSpaceChecker;
+    this.externalWorkFlowDataManager = externalWorkFlowDataManager;
   }
 
   RichTextUpdater getRichTextUpdater() {
@@ -99,11 +104,19 @@ class FieldExporterSupport {
     return recordDao.get(recordId).asStrucDoc();
   }
 
+  Record getRecordById(Long recordId) {
+    return recordDao.get(recordId);
+  }
+
   Folder getFolderById(Long folderId) {
     return folderDao.get(folderId);
   }
 
   String getServerUrl() {
     return properties.getServerUrl();
+  }
+
+  public ExternalWorkFlowDataManager getExternalWorkFlowDataManager() {
+    return externalWorkFlowDataManager;
   }
 }

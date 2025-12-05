@@ -1,13 +1,19 @@
 package com.researchspace.service.archive.export;
 
+import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
+import com.researchspace.archive.ArchivalField;
 import com.researchspace.archive.ArchivalForm;
 import com.researchspace.archive.ArchivalGalleryMetadata;
+import com.researchspace.archive.ArchiveExternalWorkFlow;
+import com.researchspace.archive.ArchiveExternalWorkFlowInvocation;
 import com.researchspace.archive.model.ArchiveModelFactory;
 import com.researchspace.core.util.XMLReadWriteUtils;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +28,7 @@ class XMLWriter implements ExportObjectWriter {
         marshalDocument(outputFile, exported.getArchivedRecord());
         StructuredDocument doc = (StructuredDocument) exported.getExportedRecord();
         marshalDocumentForm(doc.getForm(), outputFile.getParentFile());
+        marshalExternalWorkFlows(exported.getArchivedRecord(), outputFile.getParentFile());
       } else if (exported.getExportedRecord().isMediaRecord()) {
         marshalMediaDoc(outputFile, exported.getArchivedMedia());
       }
@@ -42,6 +49,33 @@ class XMLWriter implements ExportObjectWriter {
     File formFile = new File(recordFolder, formCode + ".xml");
     if (!formFile.exists()) {
       makeFormXML(formFile, archiveForm);
+    }
+  }
+
+  /**
+   * While externalWorkFlowData and Invocations are per Field, the ExternalWorkFlows are global in
+   * scope
+   */
+  private void marshalExternalWorkFlows(ArchivalDocument archiveDoc, File recordFolder)
+      throws Exception {
+    Set<ArchiveExternalWorkFlow> externalWorkFlows = new HashSet<>();
+    AllArchiveExternalWorkFlowMetaData allArchiveExternalWorkFlowMetaData =
+        new AllArchiveExternalWorkFlowMetaData();
+    for (ArchivalField af : archiveDoc.getListFields()) {
+      for (ArchiveExternalWorkFlowInvocation afi : af.getExternalWorkFlowInvocations()) {
+        externalWorkFlows.add(afi.getWorkFlowMetaData());
+      }
+    }
+    if (!externalWorkFlows.isEmpty()) {
+      String exportFileName = recordFolder.getName() + "_externalWorkflows.xml";
+      File externalWorkFlowFile = new File(recordFolder, exportFileName);
+      allArchiveExternalWorkFlowMetaData.setWorkFlows(externalWorkFlows);
+      if (!externalWorkFlowFile.exists()) {
+        XMLReadWriteUtils.toXML(
+            externalWorkFlowFile,
+            allArchiveExternalWorkFlowMetaData,
+            AllArchiveExternalWorkFlowMetaData.class);
+      }
     }
   }
 

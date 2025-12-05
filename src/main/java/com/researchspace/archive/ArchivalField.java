@@ -2,7 +2,9 @@ package com.researchspace.archive;
 
 import com.researchspace.archive.elninventory.ArchivalListOfMaterials;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -30,7 +32,9 @@ import javax.xml.bind.annotation.XmlType;
       "linkMeta",
       "sktchMeta",
       "listsOfMaterials",
-      "nfsElements"
+      "nfsElements",
+      "externalWorkFlowData",
+      "externalWorkFlowInvocations"
     })
 public class ArchivalField {
   long fieldId;
@@ -51,6 +55,8 @@ public class ArchivalField {
   List<ArchivalGalleryMetadata> linkMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> sktchMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> mathMeta = new ArrayList<>();
+  Set<ArchiveExternalWorkFlowData> externalWorkFlowData = new HashSet<>();
+  Set<ArchiveExternalWorkFlowInvocation> externalWorkFlowInvocations = new HashSet<>();
   List<ArchivalNfsFile> nfsElements = new ArrayList<>();
   List<ArchivalListOfMaterials> listsOfMaterials = new ArrayList<>();
 
@@ -126,6 +132,18 @@ public class ArchivalField {
     return mathMeta;
   }
 
+  @XmlElementWrapper(name = "allExternalWorkFlowData")
+  @XmlElement(name = "externalWorkFlowData")
+  public Set<ArchiveExternalWorkFlowData> getExternalWorkFlowData() {
+    return externalWorkFlowData;
+  }
+
+  @XmlElementWrapper(name = "externalWorkFlowInvocations")
+  @XmlElement(name = "externalWorkFlowInvocation")
+  public Set<ArchiveExternalWorkFlowInvocation> getExternalWorkFlowInvocations() {
+    return externalWorkFlowInvocations;
+  }
+
   @XmlElementWrapper(name = "ImageAnnotationList")
   @XmlElement(name = "annotation-info")
   public List<ArchivalGalleryMetadata> getAnnotMeta() {
@@ -180,6 +198,7 @@ public class ArchivalField {
     archivalGalleryMetadata.addAll(getAttachMeta());
     archivalGalleryMetadata.addAll(getVideoMeta());
     archivalGalleryMetadata.addAll(getImgMeta());
+    archivalGalleryMetadata.addAll(getExternalWorkFlowData());
     return archivalGalleryMetadata;
   }
 
@@ -213,6 +232,10 @@ public class ArchivalField {
 
   public void setFieldDataPrintable(String fieldDataPrintable) {
     this.fieldDataPrintable = fieldDataPrintable;
+  }
+
+  public void addArchivalExternalWorkFlowData(ArchiveExternalWorkFlowData extWFD) {
+    externalWorkFlowData.add(extWFD);
   }
 
   public void addArchivalComment(ArchiveComment acm) {

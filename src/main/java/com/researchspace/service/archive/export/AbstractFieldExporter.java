@@ -14,9 +14,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
-@Component
 @Slf4j
 abstract class AbstractFieldExporter<T extends IFieldLinkableElement> {
 
@@ -58,7 +56,8 @@ abstract class AbstractFieldExporter<T extends IFieldLinkableElement> {
   public boolean export(FieldExportContext context, FieldElementLinkPair<T> itemPair) {
     T item = itemPair.getElement();
     item = getRevisionIfAvailable(context.getRevision(), item);
-    if (!context.getExportRecordList().containsFieldAttachment(item.getOid())) {
+    if (!context.getExportRecordList().containsFieldAttachment(item.getOid())
+        && !context.getExportRecordList().containsExternalWorkFlowData(item.getId())) {
       log.warn(
           "fieldExport: Item  [{}] is not in whitelisted set of field attachments", item.getOid());
       return false;

@@ -3,12 +3,14 @@ package com.researchspace.service.archive;
 import static com.researchspace.archive.ArchiveFileNameData.DOC_PREFIX;
 import static com.researchspace.archive.ArchiveFileNameData.MEDIA_PREFIX;
 import static com.researchspace.core.util.XMLReadWriteUtils.fromXML;
+import static com.researchspace.service.archive.ExportImport.EXT_WF_SCHEMA;
 import static com.researchspace.service.archive.ExportImport.SCHEMAS_FOLDER;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.researchspace.archive.AbstractArchivalParserRef;
+import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
 import com.researchspace.archive.ArchivalFileNotExistException;
@@ -373,6 +375,11 @@ public class ArchiveParserImpl implements IArchiveParser {
           } else if (fileInRecordFolder.getName().equals(folderName + "_form.xml")) {
             ArchivalForm af = unmarshalFormFile(fileInRecordFolder, archiveModel.getFormScheme());
             parserRef.setArchivalForm(af);
+          } else if (fileInRecordFolder.getName().equals(folderName + "_externalWorkflows.xml")) {
+            AllArchiveExternalWorkFlowMetaData allEWF =
+                unmarshalExternalWorkFlowsFile(
+                    fileInRecordFolder, archiveModel.getExternalWorkFlowSchema());
+            parserRef.setArchiveExternalWorkFlowMetaData(allEWF);
           } else
             // it's a resource file - image , attachment etc
             parserRef.addFile(fileInRecordFolder);
@@ -431,6 +438,7 @@ public class ArchiveParserImpl implements IArchiveParser {
     File linkResolver = new File(rootFolder, ExportImport.ZIP_LINK_SOLVER);
     File folderTree = new File(rootFolder, ExportImport.FOLDER_TREE);
     File userInfo = new File(rootFolder, ExportImport.USERS);
+    File externalWorkFlowSchema = new File(rootFolder, EXT_WF_SCHEMA);
 
     if (!formScheme.exists()) {
       throw new ArchivalFileNotExistException(formScheme.getName());
@@ -450,6 +458,9 @@ public class ArchiveParserImpl implements IArchiveParser {
     archive.setLinkResolver(linkResolver);
     archive.setFolderTree(folderTree);
     archive.setUserInfo(userInfo);
+    if (externalWorkFlowSchema.exists()) {
+      archive.setExternalWorkFlowSchema(externalWorkFlowSchema);
+    }
 
     return archive;
   }
@@ -498,6 +509,11 @@ public class ArchiveParserImpl implements IArchiveParser {
 
   private ArchivalForm unmarshalFormFile(File xmlFile, File xsdFile) throws Exception {
     return fromXML(xmlFile, ArchivalForm.class, xsdFile, null);
+  }
+
+  private AllArchiveExternalWorkFlowMetaData unmarshalExternalWorkFlowsFile(File xmlFile, File xsd)
+      throws Exception {
+    return fromXML(xmlFile, AllArchiveExternalWorkFlowMetaData.class, xsd, null);
   }
 
   protected Optional<ArchivalCheckSum> getCheckSum(String uid) {

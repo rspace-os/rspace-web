@@ -3,6 +3,7 @@ package com.researchspace.archive;
 import static java.util.stream.Collectors.toCollection;
 
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,6 +49,8 @@ public class ExportRecordList implements ImmutableExportRecordList {
 
   private List<ArchiveFolder> foldersToExport = new ArrayList<ArchiveFolder>();
 
+  private List<ExternalWorkFlowData> externalWorkFlows = new ArrayList<>();
+
   /**
    * Get immutable read-only view of the record Ids to export
    *
@@ -56,6 +59,13 @@ public class ExportRecordList implements ImmutableExportRecordList {
   @XmlTransient
   public List<GlobalIdentifier> getRecordsToExport() {
     return Collections.unmodifiableList(recordsToExport);
+  }
+
+  /** This is deliberately modifiable */
+  @XmlTransient
+  @Override
+  public List<ExternalWorkFlowData> getExternalWorkFlows() {
+    return externalWorkFlows;
   }
 
   /**
@@ -208,6 +218,11 @@ public class ExportRecordList implements ImmutableExportRecordList {
   @Override
   public boolean containsFieldAttachment(GlobalIdentifier rcdId) {
     return associatedFieldAttachments.stream().anyMatch(oid -> gidEqualsIgnoreVersion(rcdId, oid));
+  }
+
+  @Override
+  public boolean containsExternalWorkFlowData(Long rcdId) {
+    return externalWorkFlows.stream().anyMatch(ewfd -> ewfd.getId().equals(rcdId));
   }
 
   private boolean gidEqualsIgnoreVersion(GlobalIdentifier rcdId, GlobalIdentifier oid) {

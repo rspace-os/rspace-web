@@ -52,6 +52,7 @@ import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EcatCommentManager;
+import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.MediaManager;
@@ -92,7 +93,7 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired MediaManager mediaManager;
   @Autowired RSChemElementManager rsChemElementManager;
   @Autowired InternalLinkDao internalLinkDao;
-
+  @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
   @Autowired RichTextUpdater rtu;
   @Autowired EcatCommentManager commentMgr;
   @Autowired FolderTreeImporter folderTreeImporter;
@@ -338,6 +339,7 @@ abstract class AbstractImporterStrategyImpl {
         linkRecord.addMap(dnm, Long.toString(newDoc.getId()));
       }
       setUpFieldAttachmentLinks(newDoc, importingUser, report);
+      importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem);
       report.addImportedRecord(newDoc);
     } else {
       String msg =
@@ -346,6 +348,14 @@ abstract class AbstractImporterStrategyImpl {
       report.getErrorList().addErrorMsg(msg);
       log.warn(msg);
     }
+  }
+
+  private void importExternalWorkFlows(
+      StructuredDocument newDoc,
+      ArchivalDocumentParserRef ref,
+      Map<String, EcatMediaFile> oldIdToNewGalleryItem) {
+    new ExternalWorkFlowsImporter()
+        .importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem, externalWorkFlowDataManager);
   }
 
   private void setUpFieldAttachmentLinks(

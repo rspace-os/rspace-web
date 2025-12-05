@@ -12,12 +12,26 @@ import Link from "@mui/material/Link";
 import {
   type GalaxyDataSummary
 } from "./GalaxyData";
+import { JSX } from "react/jsx-runtime";
 
 export type ExternalWorkflowDialogArgs = {
   open: boolean;
   setOpen: (val: boolean) => void;
   galaxySummaryReport: Array<GalaxyDataSummary>
 };
+
+function makeGalleryLinks(row: GalaxyDataSummary) {
+  const links: JSX.Element[] = [];
+  row.galaxyDataNames.forEach(dataName => {
+    links.push(
+        <Link
+            href={"/gallery/item/" + dataName.id}
+            target="_blank"
+            rel="noreferrer">{dataName.fileName + "   "}</Link>
+    );
+  });
+  return links;
+}
 
 function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWorkflowDialogArgs) {
   return (
@@ -50,7 +64,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWo
                           flex: 1,
                           sortable: false,
                           resizable: true,
-                          renderCell: ({row}) => row.galaxyDataNames
+                          renderCell: ({row}) => makeGalleryLinks(row)
                         }),
                     DataGridColumn.newColumnWithValueGetter("Container",
                         (wf: GalaxyDataSummary) => wf.galaxyHistoryName,

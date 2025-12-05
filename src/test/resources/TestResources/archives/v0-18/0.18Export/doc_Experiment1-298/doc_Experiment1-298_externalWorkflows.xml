@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExternalWorkFlows id="0">
+  <schemaVersion>1</schemaVersion>
+  <parentId>0</parentId>
+  <contentType>application/octet-stream</contentType>
+  <exported-externalWorkFlow id="1">
+    <schemaVersion>1</schemaVersion>
+    <parentId>0</parentId>
+    <name>RNA-seq for Paired-end fastqs (release v1.1)</name>
+    <contentType>application/octet-stream</contentType>
+    <description></description>
+    <extId>9ac5c918248cc7aa</extId>
+    <externalService>GALAXY</externalService>
+  </exported-externalWorkFlow>
+</ExternalWorkFlows>

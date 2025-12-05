@@ -7,7 +7,7 @@ import java.util.List;
 public interface ExternalWorkFlowInvocationDao
     extends GenericDao<ExternalWorkFlowInvocation, Long> {
 
-  void saveExternalWorkfFlowInvocation(
+  ExternalWorkFlowInvocation saveExternalWorkfFlowInvocation(
       String workflowId,
       String workflowName,
       String invocationId,
