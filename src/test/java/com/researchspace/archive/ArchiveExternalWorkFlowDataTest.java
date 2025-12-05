@@ -4,9 +4,6 @@ import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTest
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_DATA_EXITID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_DATA_NAME;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_EXT_CONTAINER_ID;
-import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_EXT_CONTAINER_NAME;
-import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_RSPACE_CONTAINER_NAME;
-import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.DEFAULT_UUID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.HISTORY_ID_1;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.NEW_INVOCATION_STATUS;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.RSPACECONTAINER_ID;
@@ -39,19 +36,16 @@ public class ArchiveExternalWorkFlowDataTest {
   public static final long DEFAULT_WORKFLOW_ID = 1L;
   private LinkableExternalWorkFlowData item;
   private String archiveLink;
-  @Mock
-  private ArchivalField archiveField;
+  @Mock private ArchivalField archiveField;
   private Set<ArchiveExternalWorkFlowInvocation> invocations;
-
 
   @Before
   public void setUp() {
     invocations = new HashSet<>();
     initMocks(this);
-    ExternalWorkFlowData data =  ExternalWorkFlowTestMother.createExternalWorkFlowDataWithInvocations(DEFAULT_EXT_CONTAINER_ID,
-        DEFAULT_DATA_EXITID,
-        HISTORY_ID_1,
-        NEW_INVOCATION_STATUS);
+    ExternalWorkFlowData data =
+        ExternalWorkFlowTestMother.createExternalWorkFlowDataWithInvocations(
+            DEFAULT_EXT_CONTAINER_ID, DEFAULT_DATA_EXITID, HISTORY_ID_1, NEW_INVOCATION_STATUS);
     ReflectionTestUtils.setField(data, "id", DATA_ID);
     ExternalWorkFlowInvocation invocation = data.getExternalWorkflowInvocations().iterator().next();
     ExternalWorkFlow workflow = invocation.getExternalWorkFlow();
@@ -65,9 +59,8 @@ public class ArchiveExternalWorkFlowDataTest {
 
   @Test
   public void testCorrectDataPassedIntoArchiveNoExistingInvocationInArchiveField() {
-    ArchiveExternalWorkFlowData data = new ArchiveExternalWorkFlowData(
-         item,  archiveLink,  archiveField
-    );
+    ArchiveExternalWorkFlowData data =
+        new ArchiveExternalWorkFlowData(item, archiveLink, archiveField);
     assertEquals(DATA_ID, data.getId());
 
     assertEquals(DEFAULT_EXT_CONTAINER_ID, data.getExtContainerId());
@@ -78,7 +71,7 @@ public class ArchiveExternalWorkFlowDataTest {
     assertEquals(GALAXY.name(), data.getExternalService());
     assertEquals(DEFAULT_DATA_NAME, data.getExtName());
     assertEquals(DEFAULT_DATA_EXITID, data.getExtId());
-    assertEquals(DEFAULT_DATA_EXITID+"_uuid", data.getExtSecondaryId());
+    assertEquals(DEFAULT_DATA_EXITID + "_uuid", data.getExtSecondaryId());
     assertEquals(DEFAULT_EXT_CONTAINER_ID, data.getExtContainerId());
     assertEquals(HISTORY_ID_1, data.getExtContainerName());
     assertEquals(DEFAULT_BASEURL, data.getBaseUrl());
@@ -93,7 +86,6 @@ public class ArchiveExternalWorkFlowDataTest {
     assertEquals(archiveField.getFieldId(), data.getParentId());
 
     makeWorkFlowAssertions(invocation);
-
   }
 
   private static void makeWorkFlowAssertions(ArchiveExternalWorkFlowInvocation invocation) {
@@ -105,7 +97,7 @@ public class ArchiveExternalWorkFlowDataTest {
 
   @NotNull
   private ArchiveExternalWorkFlowInvocation makeInvocationAssertions() {
-    ArchiveExternalWorkFlowInvocation invocation =invocations.iterator().next();
+    ArchiveExternalWorkFlowInvocation invocation = invocations.iterator().next();
     assertEquals(NEW_INVOCATION_STATUS, invocation.getStatus());
 
     assertEquals(DEFAULT_WORKFLOW_ID, invocation.getWorkFlowId());
@@ -119,15 +111,14 @@ public class ArchiveExternalWorkFlowDataTest {
 
   @Test
   public void testCorrectDataPassedIntoArchiveMatchingExistingInvocationInArchiveField() {
-    ExternalWorkFlowInvocation existingWFI =  item.getExternalWorkflowData().getExternalWorkflowInvocations().iterator().next();
-    ArchiveExternalWorkFlowInvocation existingInField = new ArchiveExternalWorkFlowInvocation(
-        existingWFI, GALAXY.name());
+    ExternalWorkFlowInvocation existingWFI =
+        item.getExternalWorkflowData().getExternalWorkflowInvocations().iterator().next();
+    ArchiveExternalWorkFlowInvocation existingInField =
+        new ArchiveExternalWorkFlowInvocation(existingWFI, GALAXY.name());
     invocations.add(existingInField);
-    ArchiveExternalWorkFlowData data = new ArchiveExternalWorkFlowData(
-         item,  archiveLink,  archiveField
-    );
+    ArchiveExternalWorkFlowData data =
+        new ArchiveExternalWorkFlowData(item, archiveLink, archiveField);
     makeInvocationAssertions();
     makeWorkFlowAssertions(existingInField);
   }
-
 }

@@ -28,7 +28,8 @@ public class ArchiveExternalWorkFlowDataTestMother {
     defaultArchiveExternalWorkFlowData.setExtSecondaryId(EXT_SECONDARY_ID);
     defaultArchiveExternalWorkFlowData.setLinkFile(LINK_FILE);
     defaultArchiveExternalWorkFlowData.setRspaceContainerType(RspaceContainerType.FIELD.name());
-    defaultArchiveExternalWorkFlowData.setRspaceDataType(ExternalWorkFlowData.RspaceDataType.LOCAL.name());
+    defaultArchiveExternalWorkFlowData.setRspaceDataType(
+        ExternalWorkFlowData.RspaceDataType.LOCAL.name());
     return defaultArchiveExternalWorkFlowData;
   }
 }
