@@ -1,0 +1,193 @@
+[
+  {
+    "metadata": {
+      "created": 1760540382,
+      "updated": 1760540382
+    },
+    "identifier": {
+      "id": "https://static.demo.raid.org.au/10.83334/666b2cff",
+      "schemaUri": "https://raid.org/",
+      "registrationAgency": {
+        "id": "https://ror.org/038sjwq54",
+        "schemaUri": "https://ror.org/"
+      },
+      "owner": {
+        "id": "https://ror.org/038xqyz99",
+        "schemaUri": "https://ror.org/",
+        "servicePoint": 20000030
+      },
+      "raidAgencyUrl": "https://demo.static.raid.org.au/10.83334/666b2cff",
+      "license": "Creative Commons CC-0",
+      "version": 1
+    },
+    "title": [
+      {
+        "text": "TestNik_RaID2",
+        "type": {
+          "id": "https://vocabulary.raid.org/title.type.schema/5",
+          "schemaUri": "https://vocabulary.raid.org/title.type.schema/376"
+        },
+        "startDate": "2025-10-15",
+        "endDate": "2026-10-15",
+        "language": {
+          "id": "eng",
+          "schemaUri": "https://www.iso.org/standard/74575.html"
+        }
+      }
+    ],
+    "date": {
+      "startDate": "2025-10-15",
+      "endDate": "2026-10-15"
+    },
+    "description": [],
+    "access": {
+      "type": {
+        "id": "https://vocabularies.coar-repositories.org/access_rights/c_abf2/",
+        "schemaUri": "https://vocabularies.coar-repositories.org/access_rights/"
+      }
+    },
+    "alternateUrl": [],
+    "contributor": [
+      {
+        "id": "https://orcid.org/0000-0002-9561-5942",
+        "schemaUri": "https://orcid.org/",
+        "status": "AWAITING_AUTHENTICATION",
+        "position": [
+          {
+            "schemaUri": "https://vocabulary.raid.org/contributor.position.schema/305",
+            "id": "https://vocabulary.raid.org/contributor.position.schema/307",
+            "startDate": "2025-10-15"
+          }
+        ],
+        "role": [
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/visualization/"
+          },
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/writing-original-draft/"
+          },
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/software/"
+          },
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/funding-acquisition/"
+          }
+        ],
+        "leader": true,
+        "contact": true
+      }
+    ],
+    "organisation": [],
+    "subject": [],
+    "relatedRaid": [],
+    "relatedObject": [],
+    "alternateIdentifier": [],
+    "spatialCoverage": []
+  },
+  {
+    "metadata": {
+      "created": 1760348593,
+      "updated": 1760436048
+    },
+    "identifier": {
+      "id": "https://static.demo.raid.org.au/10.83334/g87981r4",
+      "schemaUri": "https://raid.org/",
+      "registrationAgency": {
+        "id": "https://ror.org/038sjwq15",
+        "schemaUri": "https://ror.org/"
+      },
+      "owner": {
+        "id": "https://ror.org/038xqyz78",
+        "schemaUri": "https://ror.org/",
+        "servicePoint": 20000030
+      },
+      "raidAgencyUrl": "https://demo.static.raid.org.au/10.83334/g87981r4",
+      "license": "Creative Commons CC-0",
+      "version": 2
+    },
+    "title": [
+      {
+        "text": "TestNik_RAID",
+        "type": {
+          "id": "https://vocabulary.raid.org/title.type.schema/5",
+          "schemaUri": "https://vocabulary.raid.org/title.type.schema/376"
+        },
+        "startDate": "2025-10-13",
+        "endDate": "2026-10-13",
+        "language": {
+          "id": "eng",
+          "schemaUri": "https://www.iso.org/standard/74575.html"
+        }
+      }
+    ],
+    "date": {
+      "startDate": "2025-10-13",
+      "endDate": "2026-10-13"
+    },
+    "description": [],
+    "access": {
+      "type": {
+        "id": "https://vocabularies.coar-repositories.org/access_rights/c_abf2/",
+        "schemaUri": "https://vocabularies.coar-repositories.org/access_rights/"
+      }
+    },
+    "alternateUrl": [],
+    "contributor": [
+      {
+        "id": "https://orcid.org/0000-0002-9561-5942",
+        "schemaUri": "https://orcid.org/",
+        "status": "AWAITING_AUTHENTICATION",
+        "email": "",
+        "position": [
+          {
+            "schemaUri": "https://vocabulary.raid.org/contributor.position.schema/305",
+            "id": "https://vocabulary.raid.org/contributor.position.schema/307",
+            "startDate": "2025-10-13"
+          }
+        ],
+        "role": [
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/data-curation/"
+          },
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/writing-original-draft/"
+          },
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/conceptualization/"
+          },
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/resources/"
+          },
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/project-administration/"
+          },
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/investigation/"
+          },
+          {
+            "schemaUri": "https://credit.niso.org/",
+            "id": "https://credit.niso.org/contributor-roles/funding-acquisition/"
+          }
+        ],
+        "leader": true,
+        "contact": true
+      }
+    ],
+    "organisation": [],
+    "subject": [],
+    "relatedRaid": [],
+    "relatedObject": [],
+    "alternateIdentifier": [],
+    "spatialCoverage": []
+  }
+]
