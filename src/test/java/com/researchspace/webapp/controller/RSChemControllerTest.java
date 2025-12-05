@@ -15,7 +15,7 @@ import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;

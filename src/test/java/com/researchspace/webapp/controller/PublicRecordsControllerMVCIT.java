@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.researchspace.Constants;
 import com.researchspace.model.RecordGroupSharing;
-import com.researchspace.model.system.SystemPropertyTestFactory;
+import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SystemPropertyManager;

@@ -24,7 +24,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.impl.MovePermissionChecker;
 import com.researchspace.service.impl.WorkspaceServiceImpl;

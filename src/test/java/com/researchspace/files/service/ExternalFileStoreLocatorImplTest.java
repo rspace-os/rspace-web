@@ -1,6 +1,6 @@
 package com.researchspace.files.service;
 
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.UserConnectionManager;
 import java.io.IOException;
 import java.util.Optional;

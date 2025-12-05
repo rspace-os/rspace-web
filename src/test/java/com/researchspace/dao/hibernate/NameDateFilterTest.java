@@ -8,7 +8,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

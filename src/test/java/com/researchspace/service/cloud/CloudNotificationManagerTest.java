@@ -9,7 +9,7 @@ import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.cloud.impl.CloudNotificationManagerImpl;
 import com.researchspace.service.impl.ConfigurableLogger;
 import com.researchspace.testutils.SpringTransactionalTest;

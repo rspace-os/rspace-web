@@ -1,11 +1,11 @@
 package com.researchspace.search.impl;
 
-import static com.researchspace.model.record.TestFactory.createNRecords;
+import static com.researchspace.testutils.TestFactory.createNRecords;
 import static org.junit.Assert.assertEquals;
 
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Notebook;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import org.apache.lucene.search.BooleanQuery;
 import org.junit.Before;

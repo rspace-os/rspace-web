@@ -1,7 +1,7 @@
 package com.researchspace.service.archive.export;
 
-import static com.researchspace.model.record.TestFactory.createAnyGroup;
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyGroup;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -16,7 +16,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.regex.Matcher;
 import org.junit.After;
 import org.junit.Before;

@@ -7,7 +7,7 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.record.EcatDocumentThumbnailInitializationPolicy;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.awt.image.BufferedImage;

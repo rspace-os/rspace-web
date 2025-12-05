@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static com.researchspace.model.netfiles.NetFilesTestFactory.createAnyNfsFileSystem;
+import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileSystem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -19,7 +19,7 @@ import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
-import com.researchspace.model.netfiles.NetFilesTestFactory;
+import com.researchspace.testutils.NetFilesTestFactory;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;

@@ -20,7 +20,7 @@ import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.IllegalAddChildOperation;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
 import com.researchspace.testutils.RSpaceTestUtils;

@@ -1,9 +1,9 @@
 package com.researchspace.export.pdf;
 
-import static com.researchspace.model.netfiles.NetFilesTestFactory.createAnyNfsFileStore;
-import static com.researchspace.model.record.TestFactory.createAnySD;
-import static com.researchspace.model.record.TestFactory.createAnySDWithText;
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileStore;
+import static com.researchspace.testutils.TestFactory.createAnySD;
+import static com.researchspace.testutils.TestFactory.createAnySDWithText;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -22,7 +22,7 @@ import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.AuditManager;

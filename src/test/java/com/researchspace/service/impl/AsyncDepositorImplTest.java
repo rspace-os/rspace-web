@@ -1,12 +1,12 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.repository.RepoDepositConfig;
-import com.researchspace.model.system.SystemPropertyTestFactory;
+import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.testutils.VelocityTestUtils;

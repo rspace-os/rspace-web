@@ -11,7 +11,7 @@ import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import java.util.concurrent.Callable;
 import org.apache.shiro.authc.AuthenticationToken;

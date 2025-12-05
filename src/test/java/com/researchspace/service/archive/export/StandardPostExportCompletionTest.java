@@ -15,7 +15,7 @@ import com.researchspace.model.comms.data.ArchiveExportNotificationData;
 import com.researchspace.model.comms.data.ArchiveExportNotificationData.ExportedNfsLinkData;
 import com.researchspace.model.comms.data.ArchiveExportNotificationData.ExportedRecordData;
 import com.researchspace.model.record.Record;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;

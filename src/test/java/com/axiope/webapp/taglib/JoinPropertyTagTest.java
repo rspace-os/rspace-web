@@ -3,7 +3,7 @@ package com.axiope.webapp.taglib;
 import static org.junit.Assert.assertEquals;
 
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.After;

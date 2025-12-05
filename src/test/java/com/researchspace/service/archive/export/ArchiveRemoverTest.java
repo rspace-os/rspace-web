@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.archive.ArchiveExportServiceManager;

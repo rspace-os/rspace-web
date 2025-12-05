@@ -13,7 +13,7 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;

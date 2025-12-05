@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.model.record.TestFactory.createAFolder;
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAFolder;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

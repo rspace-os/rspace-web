@@ -25,7 +25,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.search.impl.LuceneSearchTermListFactory;
 import com.researchspace.search.impl.LuceneSrchCfg;
 import com.researchspace.testutils.SearchTestUtils;

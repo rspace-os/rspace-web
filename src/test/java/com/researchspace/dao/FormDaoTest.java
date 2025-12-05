@@ -24,7 +24,7 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.TemporaryCopyLinkedToOriginalCopyPolicy;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.FormSearchCriteria;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.util.HashSet;

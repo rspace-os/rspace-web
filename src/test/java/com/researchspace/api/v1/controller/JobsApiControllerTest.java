@@ -12,7 +12,7 @@ import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.aws.S3Utilities;
 import java.net.MalformedURLException;

@@ -20,7 +20,7 @@ import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.ImageController.RotationConfig;
 import java.awt.Image;

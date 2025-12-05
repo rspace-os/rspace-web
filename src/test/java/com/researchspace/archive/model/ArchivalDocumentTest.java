@@ -4,7 +4,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.ArchiveTestUtils;
 import org.junit.After;
 import org.junit.Before;

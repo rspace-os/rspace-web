@@ -15,7 +15,7 @@ import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.googleauth.ExternalAuthTokenVerifier;
 import com.researchspace.googleauth.ExternalProfile;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserEnablementUtils;

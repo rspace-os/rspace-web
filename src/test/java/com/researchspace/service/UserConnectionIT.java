@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import org.junit.Before;
 import org.junit.Test;
