@@ -19,7 +19,7 @@ public class PiToUserCmndValidatorTest {
 
   private PiToUserCommandValidator validator;
   private User pi;
-  private final Set<String> activeUsers = new HashSet<>();
+  private Set<String> activeUsers = new HashSet<>();
 
   @Before
   public void setUp() throws Exception {
