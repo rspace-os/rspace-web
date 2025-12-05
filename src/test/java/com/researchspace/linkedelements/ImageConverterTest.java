@@ -11,7 +11,7 @@ import com.researchspace.model.EcatImageAnnotation;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;

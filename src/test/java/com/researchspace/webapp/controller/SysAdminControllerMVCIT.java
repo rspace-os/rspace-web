@@ -36,7 +36,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.ConfigurableLogger;

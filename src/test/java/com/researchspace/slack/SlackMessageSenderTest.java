@@ -8,7 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import org.junit.After;
 import org.junit.Before;

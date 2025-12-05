@@ -80,7 +80,7 @@ import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFolderDetails;

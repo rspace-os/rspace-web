@@ -8,7 +8,7 @@ import com.researchspace.api.v1.model.ApiExportJobResult;
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.archive.ExportImport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.researchspace.model.ArchivalCheckSum;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.After;
 import org.junit.Before;

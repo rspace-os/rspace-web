@@ -5,7 +5,7 @@ import static org.junit.Assert.assertEquals;
 import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.UserManager;
 import java.util.ArrayList;
 import java.util.List;

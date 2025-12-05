@@ -1,6 +1,6 @@
 package com.researchspace.comms;
 
-import static com.researchspace.model.record.TestFactory.createAnyRecord;
+import static com.researchspace.testutils.TestFactory.createAnyRecord;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -22,7 +22,7 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Set;

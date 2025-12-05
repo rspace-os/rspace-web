@@ -8,7 +8,7 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Record;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.session.UserSessionTracker;
 import java.util.ArrayList;
 import java.util.Collections;

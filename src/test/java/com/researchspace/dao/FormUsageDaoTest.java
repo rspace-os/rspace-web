@@ -7,7 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormUsage;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;

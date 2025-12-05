@@ -3,7 +3,7 @@ package com.researchspace.service.archive.export;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

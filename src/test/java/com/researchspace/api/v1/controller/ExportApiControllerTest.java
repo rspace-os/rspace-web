@@ -8,7 +8,7 @@ import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.service.ExportApiHandler;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.export.ExportFailureException;

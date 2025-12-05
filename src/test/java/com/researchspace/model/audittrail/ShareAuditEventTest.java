@@ -5,14 +5,15 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.record.Record;
+import com.researchspace.testutils.TestFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class ShareAuditEventTest {
-  User user = com.researchspace.model.record.TestFactory.createAnyUser("any");
-  User sharee = com.researchspace.model.record.TestFactory.createAnyUser("sharee");
-  Record shared = com.researchspace.model.record.TestFactory.createAnyRecord(user);
+  User user = TestFactory.createAnyUser("any");
+  User sharee = TestFactory.createAnyUser("sharee");
+  Record shared = TestFactory.createAnyRecord(user);
 
   @Before
   public void setUp() throws Exception {

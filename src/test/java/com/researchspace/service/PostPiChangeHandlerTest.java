@@ -1,10 +1,10 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.model.record.TestFactory.createAnyGroup;
-import static com.researchspace.model.record.TestFactory.createAnyMessageForRecipientOfType;
-import static com.researchspace.model.record.TestFactory.createAnyUser;
-import static com.researchspace.model.record.TestFactory.createAnyUserWithRole;
+import static com.researchspace.testutils.TestFactory.createAnyGroup;
+import static com.researchspace.testutils.TestFactory.createAnyMessageForRecipientOfType;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUserWithRole;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

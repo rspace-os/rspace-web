@@ -15,7 +15,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.impl.ConditionalTestRunnerNotSpring;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.service.impl.ShiroTestUtils;

@@ -10,7 +10,7 @@ import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.impl.MultipleSharesPermittedDocSharedStatusCalculatorImpl;
 import java.util.Collections;
 import java.util.List;

@@ -17,7 +17,7 @@ import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.Record;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
 import com.researchspace.testutils.SpringTransactionalTest;

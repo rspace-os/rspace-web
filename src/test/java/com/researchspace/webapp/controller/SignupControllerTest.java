@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

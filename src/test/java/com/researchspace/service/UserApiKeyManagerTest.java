@@ -9,7 +9,7 @@ import static org.junit.Assert.assertNull;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.UserApiKey;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Date;
 import org.junit.After;

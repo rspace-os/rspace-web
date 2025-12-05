@@ -10,7 +10,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.TreeViewItem;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.UserManager;

@@ -1,6 +1,6 @@
 package com.researchspace.webapp.integrations.egnyte;
 
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;

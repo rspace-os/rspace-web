@@ -5,7 +5,7 @@ import static org.junit.Assert.assertEquals;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

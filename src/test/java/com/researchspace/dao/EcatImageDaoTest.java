@@ -6,7 +6,7 @@ import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.awt.image.BufferedImage;

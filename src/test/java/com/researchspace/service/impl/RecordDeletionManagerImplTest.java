@@ -3,7 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionContext;

@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.model.record.TestFactory.createOAuthTokenForUI;
+import static com.researchspace.testutils.TestFactory.createOAuthTokenForUI;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -28,7 +28,7 @@ import com.researchspace.model.frontend.PublicOAuthApps;
 import com.researchspace.model.frontend.PublicOAuthConnApps;
 import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.preference.Preference;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.LicenseService;

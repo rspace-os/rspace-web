@@ -14,7 +14,7 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.mapping.ShareLocationResolver;
 import java.util.HashSet;
 import java.util.Set;

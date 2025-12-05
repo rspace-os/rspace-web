@@ -30,7 +30,7 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import java.util.ArrayList;

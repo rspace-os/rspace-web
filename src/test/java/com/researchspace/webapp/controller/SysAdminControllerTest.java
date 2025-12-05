@@ -17,7 +17,7 @@ import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.GroupListResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserStatistics;

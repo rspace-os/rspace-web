@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.model.record.TestFactory.createAnyUserWithRole;
+import static com.researchspace.testutils.TestFactory.createAnyUserWithRole;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
@@ -11,7 +11,7 @@ import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

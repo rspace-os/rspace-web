@@ -27,7 +27,7 @@ import com.researchspace.model.events.GroupMembershipEvent;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IntegrationsHandler;

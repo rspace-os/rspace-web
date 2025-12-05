@@ -7,7 +7,7 @@ import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.Notification;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.After;
 import org.junit.Before;

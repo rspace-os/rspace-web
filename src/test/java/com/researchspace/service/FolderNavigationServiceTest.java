@@ -15,7 +15,7 @@ import com.researchspace.model.UserGroup;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.impl.FolderNavigationServiceImpl;
 import java.util.Collections;
 import java.util.List;

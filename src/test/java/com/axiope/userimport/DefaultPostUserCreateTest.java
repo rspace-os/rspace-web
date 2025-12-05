@@ -9,7 +9,7 @@ import com.researchspace.auth.LoginHelper;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.HistoricalEvent;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserRoleHandler;
 import javax.servlet.http.HttpServletRequest;

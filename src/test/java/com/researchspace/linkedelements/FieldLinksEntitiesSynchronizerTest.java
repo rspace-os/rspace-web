@@ -17,7 +17,7 @@ import com.researchspace.model.field.TextField;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.impl.FieldLinksEntitySyncImpl;
 import java.io.IOException;

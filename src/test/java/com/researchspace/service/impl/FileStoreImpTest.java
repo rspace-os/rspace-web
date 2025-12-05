@@ -6,7 +6,7 @@ import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.FileStoreRoot;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.io.FileInputStream;

@@ -3,7 +3,7 @@ package com.researchspace.api.v1.auth;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.UserApiKeyManager;
 import java.util.Optional;
 import org.apache.shiro.SecurityUtils;

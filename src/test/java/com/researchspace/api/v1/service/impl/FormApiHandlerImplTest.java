@@ -13,7 +13,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.FormManager;
 import com.researchspace.session.UserSessionTracker;
 import java.util.List;

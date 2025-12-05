@@ -6,7 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import com.researchspace.model.AccessControl;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

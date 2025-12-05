@@ -23,7 +23,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.impl.FolderManagerImpl;
 import com.researchspace.testutils.FolderTestUtils;
 import java.util.Optional;

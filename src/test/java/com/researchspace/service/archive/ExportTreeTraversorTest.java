@@ -9,7 +9,7 @@ import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.UserFolderSetup;
 import com.researchspace.service.archive.export.ExportArchiveTreeTraversor;
 import com.researchspace.testutils.FolderTestUtils;

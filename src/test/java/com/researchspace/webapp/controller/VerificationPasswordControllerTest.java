@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.UserManager;
 import org.junit.After;

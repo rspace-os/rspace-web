@@ -14,7 +14,7 @@ import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatVideo;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.testutils.RSpaceTestUtils;
 import ij.IJ;

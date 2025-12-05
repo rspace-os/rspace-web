@@ -7,7 +7,7 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.io.IOException;

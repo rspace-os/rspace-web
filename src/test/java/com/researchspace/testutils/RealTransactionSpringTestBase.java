@@ -55,7 +55,6 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.EcatImageAnnotationManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.IContentInitializer;

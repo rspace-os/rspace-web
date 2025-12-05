@@ -20,7 +20,7 @@ import com.researchspace.model.dtos.chemistry.ChemElementDataDto;
 import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.record.BreadcrumbGenerator;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.FolderManager;

@@ -8,7 +8,7 @@ import com.researchspace.archive.model.ArchiveModelFactory;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
 import org.junit.Before;

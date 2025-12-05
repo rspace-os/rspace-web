@@ -20,7 +20,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DetailedRecordInformationProvider;

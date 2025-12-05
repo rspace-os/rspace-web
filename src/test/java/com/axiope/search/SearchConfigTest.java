@@ -1,6 +1,6 @@
 package com.axiope.search;
 
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.Before;
 import org.junit.Test;
 

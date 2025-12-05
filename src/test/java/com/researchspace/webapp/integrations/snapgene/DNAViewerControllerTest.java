@@ -5,7 +5,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumen
 import static com.researchspace.model.preference.HierarchicalPermission.ALLOWED;
 import static com.researchspace.model.preference.HierarchicalPermission.DENIED;
 import static com.researchspace.model.preference.HierarchicalPermission.DENIED_BY_DEFAULT;
-import static com.researchspace.model.record.TestFactory.createAFileProperty;
+import static com.researchspace.testutils.TestFactory.createAFileProperty;
 import static com.researchspace.service.SystemPropertyName.SNAPGENE_AVAILABLE;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,7 +22,7 @@ import com.researchspace.model.FileStoreRoot;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;

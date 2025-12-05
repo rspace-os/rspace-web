@@ -11,7 +11,7 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.CreateCloudGroupValidator;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.cloud.CloudGroupManager;

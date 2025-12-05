@@ -18,7 +18,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.protocolsio.Protocol;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;

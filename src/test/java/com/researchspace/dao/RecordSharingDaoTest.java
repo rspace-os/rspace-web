@@ -19,7 +19,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.SharedRecordSearchCriteria;
 import com.researchspace.model.record.ObjectToIdPropertyTransformer;
 import com.researchspace.model.record.Record;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;

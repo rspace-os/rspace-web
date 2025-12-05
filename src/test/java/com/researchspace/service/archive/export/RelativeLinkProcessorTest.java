@@ -18,7 +18,7 @@ import com.researchspace.archive.ImmutableExportRecordList;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.DiskSpaceLimitException;
 import com.researchspace.service.DocumentAlreadyEditedException;

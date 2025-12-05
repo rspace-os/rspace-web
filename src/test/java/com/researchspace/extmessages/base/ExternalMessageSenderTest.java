@@ -1,6 +1,6 @@
 package com.researchspace.extmessages.base;
 
-import static com.researchspace.model.system.SystemPropertyTestFactory.createAnyAppWithConfigElements;
+import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
 import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.verify;
@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.UserAppConfig;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import java.net.URI;
 import java.net.URISyntaxException;

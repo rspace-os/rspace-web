@@ -13,7 +13,7 @@ import com.axiope.search.IFileSearcher;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import java.io.IOException;
 import java.util.List;

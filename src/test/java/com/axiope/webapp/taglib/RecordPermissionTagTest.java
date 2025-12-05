@@ -7,7 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Snippet;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
 import org.junit.After;

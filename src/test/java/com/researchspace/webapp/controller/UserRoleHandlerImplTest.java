@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.model.record.TestFactory.createAnyGroup;
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyGroup;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doThrow;
@@ -14,7 +14,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserManager;

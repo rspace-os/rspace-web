@@ -13,7 +13,7 @@ import com.researchspace.model.events.ListOfMaterialsEditingEvent;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.units.QuantityInfo;
 import org.junit.Rule;
 import org.junit.Test;

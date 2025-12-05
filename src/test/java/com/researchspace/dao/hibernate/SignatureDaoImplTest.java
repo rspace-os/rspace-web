@@ -7,7 +7,7 @@ import static org.junit.Assert.assertNull;
 import com.researchspace.model.Signature;
 import com.researchspace.model.User;
 import com.researchspace.model.Witness;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;

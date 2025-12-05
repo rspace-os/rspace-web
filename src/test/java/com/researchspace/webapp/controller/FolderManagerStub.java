@@ -15,7 +15,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSPath;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;

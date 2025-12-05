@@ -18,7 +18,7 @@ import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.service.RecordManager;
 import java.time.Instant;

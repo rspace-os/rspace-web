@@ -8,7 +8,7 @@ import static org.mockito.Mockito.never;
 import com.researchspace.dao.IconImgDao;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.io.IOException;

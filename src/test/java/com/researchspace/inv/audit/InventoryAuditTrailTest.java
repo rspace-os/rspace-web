@@ -14,7 +14,7 @@ import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import org.junit.Rule;
 import org.junit.Test;

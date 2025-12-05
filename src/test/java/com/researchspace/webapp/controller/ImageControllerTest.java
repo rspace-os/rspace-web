@@ -18,7 +18,7 @@ import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.MediaManager;

@@ -8,7 +8,7 @@ import com.researchspace.model.EcatAudio;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.jsoup.nodes.Element;
 import org.junit.After;

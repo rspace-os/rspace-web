@@ -13,7 +13,7 @@ import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.UserExistsException;

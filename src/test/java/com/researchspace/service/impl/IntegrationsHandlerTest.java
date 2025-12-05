@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.model.system.SystemPropertyTestFactory.createPermissionEnumSystemProperty;
+import static com.researchspace.testutils.SystemPropertyTestFactory.createPermissionEnumSystemProperty;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
@@ -43,9 +43,9 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.SettingsType;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.system.SystemProperty;
-import com.researchspace.model.system.SystemPropertyTestFactory;
+import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.IRepositoryConfigFactory;

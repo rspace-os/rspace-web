@@ -8,7 +8,7 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;

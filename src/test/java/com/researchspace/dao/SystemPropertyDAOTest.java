@@ -6,7 +6,7 @@ import static org.junit.Assert.assertNull;
 
 import com.researchspace.model.PropertyDescriptor;
 import com.researchspace.model.system.SystemProperty;
-import com.researchspace.model.system.SystemPropertyTestFactory;
+import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.Test;

@@ -12,7 +12,7 @@ import com.researchspace.model.FileStoreRoot;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.FileDuplicateStrategy;

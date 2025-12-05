@@ -3,7 +3,7 @@ package com.researchspace.service.archive;
 import static com.researchspace.model.core.RecordType.FOLDER;
 import static com.researchspace.model.core.RecordType.MEDIA_FILE;
 import static com.researchspace.model.core.RecordType.NORMAL;
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -12,7 +12,7 @@ import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.archive.export.ExportIdCollector;
 import org.junit.After;

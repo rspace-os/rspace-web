@@ -13,7 +13,7 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import java.io.IOException;
 import java.util.ArrayList;

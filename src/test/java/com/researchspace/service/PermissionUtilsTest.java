@@ -13,7 +13,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.*;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.*;
 import org.apache.shiro.authz.Permission;
 import org.junit.After;

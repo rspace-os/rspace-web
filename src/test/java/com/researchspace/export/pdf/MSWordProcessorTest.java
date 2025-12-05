@@ -14,7 +14,7 @@ import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.core.IRSpaceDoc;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;

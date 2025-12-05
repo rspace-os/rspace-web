@@ -13,7 +13,7 @@ import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;

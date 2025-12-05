@@ -13,7 +13,7 @@ import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.Version;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.AuditManager;
 import java.io.File;
 import java.io.IOException;
