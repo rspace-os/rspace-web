@@ -4,6 +4,20 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.17.0 2025-12-05
+
+### ELN Features
+
+- RSDEV-892 reviewed password policy is now consistently applied across the UI
+- RSDEV-854 new Apps page panel explaining usage of Jupyter Notebook integration
+
+### ELN Bugfix
+
+- RSDEV-791 fix new Gallery UI error on attempt to save a new filestore pointing to a subfolder of a connected file system
+- RSDEV-923 increase size of BaseRecord.acl column, to support sharing with larger number of groups
+- RSDEV-903, RSDEV-905 fixes around DMP import and export
+- RSDEV-912 fix problem with filestore folder links inserted with new 'Insert from Gallery' dialog
+
 # 2.16.0 2025-11-11
 
 ### ELN Features
