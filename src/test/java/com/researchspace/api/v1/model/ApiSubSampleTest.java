@@ -9,9 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import java.math.BigDecimal;
 import org.junit.Test;
 

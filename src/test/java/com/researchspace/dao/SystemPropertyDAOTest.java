@@ -6,9 +6,9 @@ import static org.junit.Assert.assertNull;
 
 import com.researchspace.model.PropertyDescriptor;
 import com.researchspace.model.system.SystemProperty;
-import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.SystemPropertyTestFactory;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

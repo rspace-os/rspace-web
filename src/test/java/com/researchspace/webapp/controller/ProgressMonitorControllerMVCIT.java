@@ -9,8 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.core.util.progress.ProgressMonitor;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.session.SessionAttributeUtils;
+import com.researchspace.testutils.TestFactory;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;

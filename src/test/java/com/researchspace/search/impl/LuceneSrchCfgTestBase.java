@@ -3,8 +3,8 @@ package com.researchspace.search.impl;
 import com.axiope.search.SearchConfig;
 import com.axiope.search.WorkspaceSearchConfig;
 import com.researchspace.model.User;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import org.junit.Before;
 import org.springframework.beans.factory.annotation.Autowired;
 

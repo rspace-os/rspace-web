@@ -33,7 +33,6 @@ import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO.ArchiveD
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
 import com.researchspace.model.preference.Preference;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.model.repository.RepositoryTestFactory;
 import com.researchspace.properties.IPropertyHolder;
@@ -49,6 +48,7 @@ import com.researchspace.service.archive.ImportArchiveReport;
 import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.impl.OntologyDocManager;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.ExportController.ServerPath;
 import java.io.File;
 import java.net.URI;

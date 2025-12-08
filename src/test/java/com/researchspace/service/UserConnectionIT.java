@@ -6,8 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import com.researchspace.testutils.TestFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;

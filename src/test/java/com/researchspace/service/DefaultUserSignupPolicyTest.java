@@ -1,9 +1,9 @@
 package com.researchspace.service;
 
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.impl.DefaultUserSignupPolicy;
+import com.researchspace.testutils.TestFactory;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

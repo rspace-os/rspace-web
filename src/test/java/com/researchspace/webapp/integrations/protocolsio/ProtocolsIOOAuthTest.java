@@ -10,10 +10,10 @@ import static org.mockito.Mockito.verify;
 
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.impl.ShiroTestUtils;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.protocolsio.ProtocolsIO_OAuthController.AccessToken;
 import com.researchspace.webapp.integrations.protocolsio.ProtocolsIO_OAuthController.ClientError;
 import java.net.MalformedURLException;

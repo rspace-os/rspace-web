@@ -9,12 +9,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.researchspace.model.User;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.InitializedContent;
 import com.researchspace.service.PostAnyLoginAction;
 import com.researchspace.service.PostFirstLoginAction;
 import com.researchspace.session.SessionAttributeUtils;
+import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import javax.servlet.http.HttpSession;
 import lombok.Data;

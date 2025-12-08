@@ -4,8 +4,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.After;
 import org.junit.Before;

@@ -10,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.ProductType;
 import com.researchspace.model.User;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.testutils.TestFactory;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

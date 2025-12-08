@@ -8,8 +8,8 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.Before;
