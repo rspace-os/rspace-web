@@ -8,7 +8,7 @@ import com.researchspace.export.pdf.HTMLStringGenerator;
 import com.researchspace.export.pdf.StructuredDocumentHTMLViewConfig;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.RecordManager;
 import org.junit.Before;
 import org.junit.Rule;

@@ -12,7 +12,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.dto.IntegrationInfo;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.IntegrationsHandler;

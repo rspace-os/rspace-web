@@ -22,7 +22,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.EcatImageAnnotationManager;
 import com.researchspace.service.MediaManager;

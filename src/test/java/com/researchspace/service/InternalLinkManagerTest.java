@@ -16,7 +16,7 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.PermissionsAdaptable;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.impl.InternalLinkManagerImpl;
 import org.junit.Rule;
 import org.junit.Test;

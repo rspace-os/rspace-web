@@ -17,7 +17,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DiskSpaceChecker;

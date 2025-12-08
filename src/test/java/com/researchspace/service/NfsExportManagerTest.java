@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
-import com.researchspace.model.netfiles.NetFilesTestFactory;
+import com.researchspace.testutils.NetFilesTestFactory;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;

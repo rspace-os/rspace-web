@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.math.BigDecimal;

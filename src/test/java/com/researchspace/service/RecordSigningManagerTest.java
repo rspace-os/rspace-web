@@ -20,7 +20,7 @@ import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.SigningResult;
 import com.researchspace.testutils.RSpaceTestUtils;

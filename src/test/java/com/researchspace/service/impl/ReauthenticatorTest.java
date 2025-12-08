@@ -8,7 +8,7 @@ import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.model.Role;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.UserManager;
 import org.apache.shiro.subject.Subject;

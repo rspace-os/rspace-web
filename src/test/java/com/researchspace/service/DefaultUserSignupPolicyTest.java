@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.impl.DefaultUserSignupPolicy;

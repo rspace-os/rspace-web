@@ -10,7 +10,7 @@ import com.researchspace.dao.GroupDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Arrays;
 import java.util.Collections;

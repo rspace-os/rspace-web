@@ -18,7 +18,7 @@ import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.permissions.IPermissionUtils;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.UserManager;

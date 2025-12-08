@@ -2,7 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.model.system.SystemPropertyTestFactory.createAnyAppWithConfigElements;
+import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
 import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -33,7 +33,7 @@ import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO.ArchiveD
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
 import com.researchspace.model.preference.Preference;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.model.repository.RepositoryTestFactory;
 import com.researchspace.properties.IPropertyHolder;

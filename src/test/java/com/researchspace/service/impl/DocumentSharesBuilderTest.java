@@ -12,7 +12,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordInfoSharingInfo;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.mapping.DocumentSharesBuilder;
 import com.researchspace.service.mapping.ShareLocationResolver;
 import java.util.List;

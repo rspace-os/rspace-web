@@ -28,7 +28,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecordAdaptable;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.impl.RSChemElementManagerImpl;
 import com.researchspace.testutils.RSpaceTestUtils;

@@ -11,7 +11,7 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.Signature;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.SigningResult;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.FileDuplicateStrategy;

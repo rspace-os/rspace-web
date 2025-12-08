@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.After;

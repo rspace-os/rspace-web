@@ -20,7 +20,7 @@ import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.dto.IntegrationInfo;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.properties.RepoProperty;
 import com.researchspace.repository.spi.properties.StringRepoProperty;

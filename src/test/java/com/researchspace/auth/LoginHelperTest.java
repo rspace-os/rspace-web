@@ -1,6 +1,6 @@
 package com.researchspace.auth;
 
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static com.researchspace.session.SessionAttributeUtils.FIRST_LOGIN;
 import static com.researchspace.session.SessionAttributeUtils.RSPACE_VERSION;
 import static org.junit.Assert.assertEquals;

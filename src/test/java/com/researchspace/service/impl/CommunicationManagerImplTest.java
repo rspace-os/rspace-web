@@ -7,7 +7,7 @@ import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.Broadcaster;
 import java.util.Arrays;
 import java.util.Collections;

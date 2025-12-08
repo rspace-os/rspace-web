@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.linkedelements.FieldContentDelta;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.model.RSChemElement;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;

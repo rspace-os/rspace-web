@@ -13,7 +13,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileSystem;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserManager;

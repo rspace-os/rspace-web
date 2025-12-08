@@ -15,7 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.MessageSourceUtils;

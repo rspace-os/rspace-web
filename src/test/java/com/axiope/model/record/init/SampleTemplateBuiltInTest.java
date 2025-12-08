@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
