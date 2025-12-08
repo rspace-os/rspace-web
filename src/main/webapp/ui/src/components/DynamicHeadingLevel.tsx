@@ -35,152 +35,113 @@ import React from "react";
  */
 
 type HeadingContextType = {
-  level: 1 | 2 | 3 | 4 | 5 | 6;
+    level: 1 | 2 | 3 | 4 | 5 | 6;
 };
 
 const DEFAULT_HEADING_CONTEXT: HeadingContextType = {
-  level: 1,
+    level: 1,
 };
 
-const HContext: React.Context<HeadingContextType> = React.createContext(
-  DEFAULT_HEADING_CONTEXT
-);
+const HContext: React.Context<HeadingContextType> = React.createContext(DEFAULT_HEADING_CONTEXT);
 
 export function HeadingContext({
-  children,
-  level: overridenLevel,
+    children,
+    level: overridenLevel,
 }: {
-  /**
-   * More components that render headings using Heading
-   */
-  children: React.ReactNode;
+    /**
+     * More components that render headings using Heading
+     */
+    children: React.ReactNode;
 
-  /**
-   * The level of the context can be manually specified, allowing for this
-   * system to be used on pages that are also manually rendering
-   * HTMLHeadingElements. The root HeadingContext can specify a level and all
-   * headings inside with descend from there. This MUST NOT be specified on
-   * HeadingContexts that are not the root.
-   * ```
-   *   <h1>Heading</h1>
-   *   <HeadingContext level={2}>
-   *     <Heading>This will be a h2</Heading>
-   *     <HeadingContext>
-   *       <SomeComponentThatRendersMoreContextWithHeadings />
-   *     </HeadingContext>
-   *   </HeadingContext>
-   * ```
-   */
-  level?: 1 | 2 | 3 | 4 | 5 | 6;
+    /**
+     * The level of the context can be manually specified, allowing for this
+     * system to be used on pages that are also manually rendering
+     * HTMLHeadingElements. The root HeadingContext can specify a level and all
+     * headings inside with descend from there. This MUST NOT be specified on
+     * HeadingContexts that are not the root.
+     * ```
+     *   <h1>Heading</h1>
+     *   <HeadingContext level={2}>
+     *     <Heading>This will be a h2</Heading>
+     *     <HeadingContext>
+     *       <SomeComponentThatRendersMoreContextWithHeadings />
+     *     </HeadingContext>
+     *   </HeadingContext>
+     * ```
+     */
+    level?: 1 | 2 | 3 | 4 | 5 | 6;
 }): React.ReactNode {
-  const { level } = React.useContext(HContext);
+    const { level } = React.useContext(HContext);
 
-  if (typeof overridenLevel !== "undefined" && level > 1)
-    throw new Error(
-      "Only root HeadingContexts can specify a level. Skipping heading levels and reseting to a lower level are both accessibility violations"
+    if (typeof overridenLevel !== "undefined" && level > 1)
+        throw new Error(
+            "Only root HeadingContexts can specify a level. Skipping heading levels and reseting to a lower level are both accessibility violations",
+        );
+
+    const l = overridenLevel ?? Math.min(6, level + 1);
+    if (l !== 1 && l !== 2 && l !== 3 && l !== 4 && l !== 5 && l !== 6) throw new Error("impossible");
+
+    return (
+        <HContext.Provider
+            value={{
+                level: l,
+            }}
+        >
+            {children}
+        </HContext.Provider>
     );
-
-  const l = overridenLevel ?? Math.min(6, level + 1);
-  if (l !== 1 && l !== 2 && l !== 3 && l !== 4 && l !== 5 && l !== 6)
-    throw new Error("impossible");
-
-  return (
-    <HContext.Provider
-      value={{
-        level: l,
-      }}
-    >
-      {children}
-    </HContext.Provider>
-  );
 }
 
 export function Heading({
-  children,
-  variant,
-  className,
-  id,
-  sx,
+    children,
+    variant,
+    className,
+    id,
+    sx,
 }: {
-  children: React.ReactNode;
-  variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
-  className?: string;
-  id?: string;
-  sx?: object;
+    children: React.ReactNode;
+    variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+    className?: string;
+    id?: string;
+    sx?: object;
 }): React.ReactNode {
-  const { level } = React.useContext(HContext);
-  const v = variant ?? `h${level}`;
+    const { level } = React.useContext(HContext);
+    const v = variant ?? `h${level}`;
 
-  if (level === 1)
-    return (
-      <Typography
-        variant={v}
-        component="h1"
-        className={className}
-        id={id}
-        sx={sx}
-      >
-        {children}
-      </Typography>
-    );
-  if (level === 2)
-    return (
-      <Typography
-        variant={v}
-        component="h2"
-        className={className}
-        id={id}
-        sx={sx}
-      >
-        {children}
-      </Typography>
-    );
-  if (level === 3)
-    return (
-      <Typography
-        variant={v}
-        component="h3"
-        className={className}
-        id={id}
-        sx={sx}
-      >
-        {children}
-      </Typography>
-    );
-  if (level === 4)
-    return (
-      <Typography
-        variant={v}
-        component="h4"
-        className={className}
-        id={id}
-        sx={sx}
-      >
-        {children}
-      </Typography>
-    );
-  if (level === 5)
-    return (
-      <Typography
-        variant={v}
-        component="h5"
-        className={className}
-        id={id}
-        sx={sx}
-      >
-        {children}
-      </Typography>
-    );
-  if (level === 6)
-    return (
-      <Typography
-        variant={v}
-        component="h6"
-        className={className}
-        id={id}
-        sx={sx}
-      >
-        {children}
-      </Typography>
-    );
+    if (level === 1)
+        return (
+            <Typography variant={v} component="h1" className={className} id={id} sx={sx}>
+                {children}
+            </Typography>
+        );
+    if (level === 2)
+        return (
+            <Typography variant={v} component="h2" className={className} id={id} sx={sx}>
+                {children}
+            </Typography>
+        );
+    if (level === 3)
+        return (
+            <Typography variant={v} component="h3" className={className} id={id} sx={sx}>
+                {children}
+            </Typography>
+        );
+    if (level === 4)
+        return (
+            <Typography variant={v} component="h4" className={className} id={id} sx={sx}>
+                {children}
+            </Typography>
+        );
+    if (level === 5)
+        return (
+            <Typography variant={v} component="h5" className={className} id={id} sx={sx}>
+                {children}
+            </Typography>
+        );
+    if (level === 6)
+        return (
+            <Typography variant={v} component="h6" className={className} id={id} sx={sx}>
+                {children}
+            </Typography>
+        );
 }

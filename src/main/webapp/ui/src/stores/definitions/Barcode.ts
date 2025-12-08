@@ -1,7 +1,7 @@
-import React from "react";
-import { type Id } from "./BaseRecord";
-import { type Username } from "./Person";
-import { type IsoTimestamp, type _LINK, type URL } from "../../util/types";
+import type React from "react";
+import type { _LINK, IsoTimestamp, URL } from "../../util/types";
+import type { Id } from "./BaseRecord";
+import type { Username } from "./Person";
 
 /**
  * @module Barcode
@@ -18,7 +18,7 @@ import { type IsoTimestamp, type _LINK, type URL } from "../../util/types";
  * generated on-the-fly.
  */
 export type GeneratedBarcodeAttrs = {
-  data: string;
+    data: string;
 };
 
 /*
@@ -26,21 +26,21 @@ export type GeneratedBarcodeAttrs = {
  * that has been persisted in the database.
  */
 export type FromServer = {
-  id: Id;
-  created: IsoTimestamp;
-  createdBy: Username;
-  data: string;
-  description: string;
-  _links: Array<_LINK>;
+    id: Id;
+    created: IsoTimestamp;
+    createdBy: Username;
+    data: string;
+    description: string;
+    _links: Array<_LINK>;
 };
 
 /*
  * This is the data that must be specified when a new BarcodeRecord is created.
  */
 export type NewlyCreated = {
-  data: string;
-  newBarcodeRequest: true;
-  description: string;
+    data: string;
+    newBarcodeRequest: true;
+    description: string;
 };
 
 /*
@@ -48,11 +48,11 @@ export type NewlyCreated = {
  * deleted.
  */
 export type Deleted = {
-  id: Id;
-  data: string;
-  description: string;
-  deleteBarcodeRequest: true;
-  imageUrl: URL | null;
+    id: Id;
+    data: string;
+    description: string;
+    deleteBarcodeRequest: true;
+    imageUrl: URL | null;
 };
 
 export type PersistedBarcodeAttrs = FromServer | NewlyCreated | Deleted;
@@ -66,35 +66,35 @@ export type BarcodeAttrs = GeneratedBarcodeAttrs | PersistedBarcodeAttrs;
  * codes.
  */
 export interface BarcodeRecord {
-  data: string;
-  description: string;
+    data: string;
+    description: string;
 
-  imageUrl: URL | null;
-  /*
-   * fetchImage MUST reject if imageUrl is null.
-   */
-  fetchImage(): Promise<File>;
+    imageUrl: URL | null;
+    /*
+     * fetchImage MUST reject if imageUrl is null.
+     */
+    fetchImage(): Promise<File>;
 
-  /*
-   * The data to be sent to the API to persist the barcode. This method MUST
-   * throw if generated is true.
-   */
-  readonly paramsForBackend: object;
+    /*
+     * The data to be sent to the API to persist the barcode. This method MUST
+     * throw if generated is true.
+     */
+    readonly paramsForBackend: object;
 
-  /*
-   * If isDeletable is true then `deletedCopy` MUST return a copy of this
-   * BarcodeRecord, but with the metadata indicating that it has been deleted,
-   * such that sending the output of `paramsForBackend` on the new object to the
-   * server will result in the barcode being deleted. `isDeleted` MUST also be set
-   * to true on the new object. If `isDeletable` is false then `deletedCopy` MUST
-   * throw an error. Null MUST be returned if the barcode record can be
-   * discarded without communicating with the server.
-   */
-  deletedCopy(): BarcodeRecord | null;
-  readonly isDeleted: boolean;
-  readonly isDeletable: boolean;
+    /*
+     * If isDeletable is true then `deletedCopy` MUST return a copy of this
+     * BarcodeRecord, but with the metadata indicating that it has been deleted,
+     * such that sending the output of `paramsForBackend` on the new object to the
+     * server will result in the barcode being deleted. `isDeleted` MUST also be set
+     * to true on the new object. If `isDeletable` is false then `deletedCopy` MUST
+     * throw an error. Null MUST be returned if the barcode record can be
+     * discarded without communicating with the server.
+     */
+    deletedCopy(): BarcodeRecord | null;
+    readonly isDeleted: boolean;
+    readonly isDeletable: boolean;
 
-  setDescription(description: string): void;
-  readonly descriptionIsEditable: boolean;
-  readonly renderedDescription: React.ReactNode;
+    setDescription(description: string): void;
+    readonly descriptionIsEditable: boolean;
+    readonly renderedDescription: React.ReactNode;
 }

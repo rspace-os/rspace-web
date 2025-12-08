@@ -2,92 +2,84 @@
  * @jest-environment jsdom
  */
 /* eslint-env jest */
-import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+
+import { cleanup, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
+import userEvent from "@testing-library/user-event";
 import NavigateContext from "../../stores/contexts/Navigate";
+import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
 import Search from "../../stores/models/Search";
 import useNavigateHelpers from "../useNavigateHelpers";
-import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+    jest.clearAllMocks();
 });
 
 afterEach(cleanup);
 
 describe("useNavigateHelpers", () => {
-  describe("navigateToRecord should", () => {
-    test("call setActiveResult", async () => {
-      const user = userEvent.setup();
-      const mockContainer = makeMockContainer();
-      const FunctionComponent = () => {
-        const { navigateToRecord } = useNavigateHelpers();
-        return (
-          <button
-            onClick={() => {
-              void navigateToRecord(mockContainer);
-            }}
-          >
-            Click me.
-          </button>
-        );
-      };
+    describe("navigateToRecord should", () => {
+        test("call setActiveResult", async () => {
+            const user = userEvent.setup();
+            const mockContainer = makeMockContainer();
+            const FunctionComponent = () => {
+                const { navigateToRecord } = useNavigateHelpers();
+                return (
+                    <button
+                        onClick={() => {
+                            void navigateToRecord(mockContainer);
+                        }}
+                    >
+                        Click me.
+                    </button>
+                );
+            };
 
-      const setActiveResultSpy = jest.spyOn(
-        Search.prototype,
-        "setActiveResult"
-      );
+            const setActiveResultSpy = jest.spyOn(Search.prototype, "setActiveResult");
 
-      render(
-        <NavigateContext.Provider
-          value={{ useNavigate: jest.fn(), useLocation: jest.fn() }}
-        >
-          <FunctionComponent />
-        </NavigateContext.Provider>
-      );
-      await user.click(screen.getByText("Click me."));
+            render(
+                <NavigateContext.Provider value={{ useNavigate: jest.fn(), useLocation: jest.fn() }}>
+                    <FunctionComponent />
+                </NavigateContext.Provider>,
+            );
+            await user.click(screen.getByText("Click me."));
 
-      expect(setActiveResultSpy).toHaveBeenCalledWith(mockContainer);
+            expect(setActiveResultSpy).toHaveBeenCalledWith(mockContainer);
+        });
     });
-  });
 
-  describe("navigateToSearch should", () => {
-    test("not call setActiveResult", async () => {
-      const user = userEvent.setup();
-      const mockSearchParams = { query: "foo" } as const;
-      const FunctionComponent = () => {
-        const { navigateToSearch } = useNavigateHelpers();
-        return (
-          <button
-            onClick={() => {
-              navigateToSearch(mockSearchParams);
-            }}
-          >
-            Click me.
-          </button>
-        );
-      };
+    describe("navigateToSearch should", () => {
+        test("not call setActiveResult", async () => {
+            const user = userEvent.setup();
+            const mockSearchParams = { query: "foo" } as const;
+            const FunctionComponent = () => {
+                const { navigateToSearch } = useNavigateHelpers();
+                return (
+                    <button
+                        onClick={() => {
+                            navigateToSearch(mockSearchParams);
+                        }}
+                    >
+                        Click me.
+                    </button>
+                );
+            };
 
-      const setActiveResultSpy = jest.spyOn(
-        Search.prototype,
-        "setActiveResult"
-      );
+            const setActiveResultSpy = jest.spyOn(Search.prototype, "setActiveResult");
 
-      render(
-        <NavigateContext.Provider
-          value={{
-            useNavigate: jest.fn().mockImplementation(() => () => {}),
-            useLocation: jest.fn(),
-          }}
-        >
-          <FunctionComponent />
-        </NavigateContext.Provider>
-      );
-      await user.click(screen.getByText("Click me."));
+            render(
+                <NavigateContext.Provider
+                    value={{
+                        useNavigate: jest.fn().mockImplementation(() => () => {}),
+                        useLocation: jest.fn(),
+                    }}
+                >
+                    <FunctionComponent />
+                </NavigateContext.Provider>,
+            );
+            await user.click(screen.getByText("Click me."));
 
-      expect(setActiveResultSpy).not.toHaveBeenCalled();
+            expect(setActiveResultSpy).not.toHaveBeenCalled();
+        });
     });
-  });
 });

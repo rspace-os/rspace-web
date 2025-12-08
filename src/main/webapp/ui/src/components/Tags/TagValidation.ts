@@ -8,8 +8,8 @@
  * ================
  */
 
+import type { Tag } from "../../stores/definitions/Tag";
 import { lift2 } from "../../util/optional";
-import { type Tag } from "../../stores/definitions/Tag";
 
 /**
  * The max length of an individual tag. Chosen rather arbitrarily based on the
@@ -20,25 +20,25 @@ export const MAX_LENGTH = 200;
 const MIN_LENGTH = 2;
 
 type TagValidation =
-  | { reason: "NoIssues" }
-  | { reason: "OntologiesAreEnforced" }
-  | {
-      reason: "NoIssuesWithSourceInformation";
-      version: string;
-      filename: string;
-    }
-  | { reason: "AlreadySelected" }
-  | { reason: "InvalidChar"; char: string }
-  | {
-      reason: "InvalidWhitespace";
-      detail: "Prefix" | "Suffix" | "Consecutive";
-    }
-  | {
-      reason: "TooLong";
-    }
-  | {
-      reason: "TooShort";
-    };
+    | { reason: "NoIssues" }
+    | { reason: "OntologiesAreEnforced" }
+    | {
+          reason: "NoIssuesWithSourceInformation";
+          version: string;
+          filename: string;
+      }
+    | { reason: "AlreadySelected" }
+    | { reason: "InvalidChar"; char: string }
+    | {
+          reason: "InvalidWhitespace";
+          detail: "Prefix" | "Suffix" | "Consecutive";
+      }
+    | {
+          reason: "TooLong";
+      }
+    | {
+          reason: "TooShort";
+      };
 
 const forbiddenCharacters = new Set("<>\\".split(""));
 
@@ -47,22 +47,19 @@ const forbiddenCharacters = new Set("<>\\".split(""));
  * that can be performed on it alone.
  */
 export const checkTagString = (tag: string): TagValidation => {
-  if (tag.length > MAX_LENGTH) return { reason: "TooLong" };
-  if (tag.length < MIN_LENGTH) return { reason: "TooShort" };
-  for (const char of tag.split("")) {
-    if (forbiddenCharacters.has(char))
-      return {
-        reason: "InvalidChar",
-        char,
-      };
-  }
-  if (tag.startsWith(" "))
-    return { reason: "InvalidWhitespace", detail: "Prefix" };
-  if (tag.endsWith(" "))
-    return { reason: "InvalidWhitespace", detail: "Suffix" };
-  if (/ {2}/.test(tag))
-    return { reason: "InvalidWhitespace", detail: "Consecutive" };
-  return { reason: "NoIssues" };
+    if (tag.length > MAX_LENGTH) return { reason: "TooLong" };
+    if (tag.length < MIN_LENGTH) return { reason: "TooShort" };
+    for (const char of tag.split("")) {
+        if (forbiddenCharacters.has(char))
+            return {
+                reason: "InvalidChar",
+                char,
+            };
+    }
+    if (tag.startsWith(" ")) return { reason: "InvalidWhitespace", detail: "Prefix" };
+    if (tag.endsWith(" ")) return { reason: "InvalidWhitespace", detail: "Suffix" };
+    if (/ {2}/.test(tag)) return { reason: "InvalidWhitespace", detail: "Consecutive" };
+    return { reason: "NoIssues" };
 };
 
 /**
@@ -70,21 +67,21 @@ export const checkTagString = (tag: string): TagValidation => {
  * some additional checks
  */
 export const checkUserInputString = (tag: string): TagValidation => {
-  if (tag.includes("/"))
-    return {
-      reason: "InvalidChar",
-      char: tag[tag.indexOf("/")],
-    };
-  if (tag.includes(","))
-    return {
-      reason: "InvalidChar",
-      char: tag[tag.indexOf(",")],
-    };
-  return checkTagString(tag);
+    if (tag.includes("/"))
+        return {
+            reason: "InvalidChar",
+            char: tag[tag.indexOf("/")],
+        };
+    if (tag.includes(","))
+        return {
+            reason: "InvalidChar",
+            char: tag[tag.indexOf(",")],
+        };
+    return checkTagString(tag);
 };
 
 type InternalTag = Tag & {
-  selected: boolean;
+    selected: boolean;
 };
 /**
  * Internal to the components for rendering the means with which a user may
@@ -93,25 +90,21 @@ type InternalTag = Tag & {
  * that a tag can be chosen.
  */
 export const checkInternalTag = (
-  tag: InternalTag,
-  { enforceOntologies }: { enforceOntologies: boolean }
+    tag: InternalTag,
+    { enforceOntologies }: { enforceOntologies: boolean },
 ): TagValidation => {
-  const checkedName = checkTagString(tag.value);
-  if (checkedName.reason !== "NoIssues") return checkedName;
-  if (tag.selected) return { reason: "AlreadySelected" };
-  return lift2(
-    (version, filename) => ({
-      reason: "NoIssuesWithSourceInformation" as const,
-      version,
-      filename,
-    }),
-    tag.version,
-    tag.vocabulary
-  ).orElse(
-    enforceOntologies
-      ? { reason: "OntologiesAreEnforced" }
-      : { reason: "NoIssues" }
-  );
+    const checkedName = checkTagString(tag.value);
+    if (checkedName.reason !== "NoIssues") return checkedName;
+    if (tag.selected) return { reason: "AlreadySelected" };
+    return lift2(
+        (version, filename) => ({
+            reason: "NoIssuesWithSourceInformation" as const,
+            version,
+            filename,
+        }),
+        tag.version,
+        tag.vocabulary,
+    ).orElse(enforceOntologies ? { reason: "OntologiesAreEnforced" } : { reason: "NoIssues" });
 };
 
 /* =======================
@@ -127,36 +120,25 @@ export const checkInternalTag = (
  * For disabling a tab based on the validation of a tag.
  */
 export const isAllowed = (tagValidation: TagValidation): boolean => {
-  return (
-    tagValidation.reason === "NoIssues" ||
-    tagValidation.reason === "NoIssuesWithSourceInformation"
-  );
+    return tagValidation.reason === "NoIssues" || tagValidation.reason === "NoIssuesWithSourceInformation";
 };
 
 /**
  * For explaining why a tag is not allowed.
  */
 export const helpText = (tagValidation: TagValidation): string | null => {
-  if (tagValidation.reason === "NoIssues") return null;
-  if (tagValidation.reason === "OntologiesAreEnforced")
-    return "Not from an ontology";
-  if (tagValidation.reason === "NoIssuesWithSourceInformation")
-    return `From version ${tagValidation.version} of ${tagValidation.filename}`;
-  if (tagValidation.reason === "TooLong")
-    return `Tag cannot exceed ${MAX_LENGTH} characters.`;
-  if (tagValidation.reason === "TooShort")
-    return `Tag must be at least ${MIN_LENGTH} characters long.`;
-  if (tagValidation.reason === "AlreadySelected")
-    return "Tag is already selected.";
-  if (tagValidation.reason === "InvalidChar")
-    return `Tag contains invalid character "${tagValidation.char}".`;
-  if (tagValidation.reason === "InvalidWhitespace") {
-    if (tagValidation.detail === "Prefix")
-      return "Tags cannot start with whitespace characters.";
-    if (tagValidation.detail === "Suffix")
-      return "Tags cannot end with whitespace characters.";
-    if (tagValidation.detail === "Consecutive")
-      return "Tags cannot contain consecutive whitespace characters.";
-  }
-  throw new Error("impossible");
+    if (tagValidation.reason === "NoIssues") return null;
+    if (tagValidation.reason === "OntologiesAreEnforced") return "Not from an ontology";
+    if (tagValidation.reason === "NoIssuesWithSourceInformation")
+        return `From version ${tagValidation.version} of ${tagValidation.filename}`;
+    if (tagValidation.reason === "TooLong") return `Tag cannot exceed ${MAX_LENGTH} characters.`;
+    if (tagValidation.reason === "TooShort") return `Tag must be at least ${MIN_LENGTH} characters long.`;
+    if (tagValidation.reason === "AlreadySelected") return "Tag is already selected.";
+    if (tagValidation.reason === "InvalidChar") return `Tag contains invalid character "${tagValidation.char}".`;
+    if (tagValidation.reason === "InvalidWhitespace") {
+        if (tagValidation.detail === "Prefix") return "Tags cannot start with whitespace characters.";
+        if (tagValidation.detail === "Suffix") return "Tags cannot end with whitespace characters.";
+        if (tagValidation.detail === "Consecutive") return "Tags cannot contain consecutive whitespace characters.";
+    }
+    throw new Error("impossible");
 };

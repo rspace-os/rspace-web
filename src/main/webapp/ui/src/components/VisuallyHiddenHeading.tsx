@@ -1,9 +1,9 @@
-import React from "react";
 import Typography from "@mui/material/Typography";
+import type React from "react";
 
 type VisuallyHiddenHeadingArgs = {
-  variant: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
-  children: React.ReactNode;
+    variant: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+    children: React.ReactNode;
 };
 
 /**
@@ -18,31 +18,28 @@ type VisuallyHiddenHeadingArgs = {
  * correct heading level. Given that this heading will never be shown, how MUI
  * chooses to style that tag is irrelevant.
  */
-export default function VisuallyHiddenHeading({
-  variant,
-  children,
-}: VisuallyHiddenHeadingArgs): React.ReactNode {
-  return (
-    <Typography
-      variant={variant}
-      component={variant}
-      sx={{
-        /*
-         * These styles are taken from
-         * https://www.a11yproject.com/posts/how-to-hide-content/
-         * Note the use of 1 px rather than 0 px because Apple's VoiceOver
-         * will not announce elements with dimension of 0.
-         */
-        position: "absolute",
-        height: "1px",
-        width: "1px",
-        overflow: "hidden",
-        whiteSpace: "nowrap",
-        clip: "rect(1px, 1px, 1px, 1px)",
-        clipPath: "inset(50%)",
-      }}
-    >
-      {children}
-    </Typography>
-  );
+export default function VisuallyHiddenHeading({ variant, children }: VisuallyHiddenHeadingArgs): React.ReactNode {
+    return (
+        <Typography
+            variant={variant}
+            component={variant}
+            sx={{
+                /*
+                 * These styles are taken from
+                 * https://www.a11yproject.com/posts/how-to-hide-content/
+                 * Note the use of 1 px rather than 0 px because Apple's VoiceOver
+                 * will not announce elements with dimension of 0.
+                 */
+                position: "absolute",
+                height: "1px",
+                width: "1px",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                clip: "rect(1px, 1px, 1px, 1px)",
+                clipPath: "inset(50%)",
+            }}
+        >
+            {children}
+        </Typography>
+    );
 }

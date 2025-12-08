@@ -1,55 +1,53 @@
-import React from "react";
-import { makeStyles } from "tss-react/mui";
 import Chip from "@mui/material/Chip";
+import type React from "react";
+import { makeStyles } from "tss-react/mui";
+import type { Container } from "@/stores/definitions/Container";
+import type { ContentSummary } from "@/stores/definitions/container/types";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import { type Container } from "@/stores/definitions/Container";
-import { ContentSummary } from "@/stores/definitions/container/types";
 
 type CountChipArgs = {
-  type: string;
-  record: Container;
+    type: string;
+    record: Container;
 };
 
 const useStyles = makeStyles()((theme) => ({
-  root: {
-    marginLeft: theme.spacing(0.5),
-  },
-  icon: {
-    marginLeft: `${theme.spacing(1)} !important`,
-  },
+    root: {
+        marginLeft: theme.spacing(0.5),
+    },
+    icon: {
+        marginLeft: `${theme.spacing(1)} !important`,
+    },
 }));
 
 function getCount(type: string, cs: ContentSummary): number {
-  if (type === "container") return cs.containerCount;
-  if (type === "subSample") return cs.subSampleCount;
-  throw new TypeError(
-    'The string "type" can only be "container" or "subSample"'
-  );
+    if (type === "container") return cs.containerCount;
+    if (type === "subSample") return cs.subSampleCount;
+    throw new TypeError('The string "type" can only be "container" or "subSample"');
 }
 
 const CountChip = ({ type, record }: CountChipArgs): React.ReactNode => {
-  const { classes } = useStyles();
-  if (!record.contentSummary.isAccessible) return null;
-  const count = getCount(type, record.contentSummary.value);
+    const { classes } = useStyles();
+    if (!record.contentSummary.isAccessible) return null;
+    const count = getCount(type, record.contentSummary.value);
 
-  return (
-    <Chip
-      className={classes.root}
-      label={count}
-      size="small"
-      icon={
-        <span className={classes.icon}>
-          <RecordTypeIcon
-            record={{
-              recordTypeLabel: type.toUpperCase(),
-              iconName: type === "container" ? "container" : "sample",
-            }}
-          />
-        </span>
-      }
-      variant="outlined"
-    />
-  );
+    return (
+        <Chip
+            className={classes.root}
+            label={count}
+            size="small"
+            icon={
+                <span className={classes.icon}>
+                    <RecordTypeIcon
+                        record={{
+                            recordTypeLabel: type.toUpperCase(),
+                            iconName: type === "container" ? "container" : "sample",
+                        }}
+                    />
+                </span>
+            }
+            variant="outlined"
+        />
+    );
 };
 
 export default CountChip;

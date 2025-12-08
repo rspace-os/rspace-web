@@ -1,9 +1,9 @@
-import { type URL } from "../../util/types";
-import { type Container } from "./Container";
-import { type Person } from "../definitions/Person";
-import { type InventoryRecord } from "./InventoryRecord";
-import { type Tag } from "./Tag";
-import { type LinkableRecord } from "./LinkableRecord";
+import type { URL } from "../../util/types";
+import type { Person } from "../definitions/Person";
+import type { Container } from "./Container";
+import type { InventoryRecord } from "./InventoryRecord";
+import type { LinkableRecord } from "./LinkableRecord";
+import type { Tag } from "./Tag";
 
 export type ReadAccessLevel = "full" | "limited" | "public";
 
@@ -21,24 +21,24 @@ export type Thumbnail = URL | null;
  * implementations; each of which should just return the relevant data.
  */
 export type RecordDetails = {
-  /*
-   * There are some record types where we don't want to show the Global Id in
-   * the UI because the user need not be aware of it; its essentially just an
-   * implementation detail and may just confuse them. For example, attachments
-   */
-  hideGlobalId?: boolean;
+    /*
+     * There are some record types where we don't want to show the Global Id in
+     * the UI because the user need not be aware of it; its essentially just an
+     * implementation detail and may just confuse them. For example, attachments
+     */
+    hideGlobalId?: boolean;
 
-  modified?: [string, string];
-  owner?: string | null;
-  description?: string | null;
-  tags?: Array<Tag>;
-  quantity?: string;
-  contents?: Container;
-  location?: InventoryRecord;
-  size?: number;
-  sample?: InventoryRecord;
-  version?: number;
-  galleryFile?: LinkableRecord;
+    modified?: [string, string];
+    owner?: string | null;
+    description?: string | null;
+    tags?: Array<Tag>;
+    quantity?: string;
+    contents?: Container;
+    location?: InventoryRecord;
+    size?: number;
+    sample?: InventoryRecord;
+    version?: number;
+    galleryFile?: LinkableRecord;
 };
 
 /**
@@ -49,13 +49,13 @@ export type RecordDetails = {
  * with. This includes Attachments as well as all InventoryRecords.
  */
 export interface Record extends LinkableRecord {
-  owner: Person | null;
-  thumbnail?: Thumbnail;
+    owner: Person | null;
+    thumbnail?: Thumbnail;
 
-  readonly deleted: boolean;
-  readonly cardTypeLabel: string;
-  readonly currentUserIsOwner?: boolean | null;
-  readonly readAccessLevel?: ReadAccessLevel;
+    readonly deleted: boolean;
+    readonly cardTypeLabel: string;
+    readonly currentUserIsOwner?: boolean | null;
+    readonly readAccessLevel?: ReadAccessLevel;
 
-  readonly recordDetails: RecordDetails;
+    readonly recordDetails: RecordDetails;
 }

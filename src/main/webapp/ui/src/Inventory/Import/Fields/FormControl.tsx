@@ -1,4 +1,5 @@
-import React, { type ComponentType } from "react";
+import type React from "react";
+import type { ComponentType } from "react";
 import FormControl from "../../../components/Inputs/FormControl";
 import { withStyles } from "../../../util/styles";
 
@@ -9,22 +10,22 @@ import { withStyles } from "../../../util/styles";
  */
 
 export type UploadFormControlArgs = {
-  label: string;
-  children: React.ReactNode;
-  error?: boolean;
-  helperText?: string;
+    label: string;
+    children: React.ReactNode;
+    error?: boolean;
+    helperText?: string;
 };
 
 const UploadFormControl: ComponentType<UploadFormControlArgs> = withStyles<
-  UploadFormControlArgs,
-  { formControl?: string; formLabel?: string }
+    UploadFormControlArgs,
+    { formControl?: string; formLabel?: string }
 >(() => ({
-  formControl: {
-    maxWidth: 660,
-  },
+    formControl: {
+        maxWidth: 660,
+    },
 }))((props) => {
-  const { classes, ...rest } = props;
-  return <FormControl classes={classes} {...rest} />;
+    const { classes, ...rest } = props;
+    return <FormControl classes={classes} {...rest} />;
 });
 
 UploadFormControl.displayName = "UploadFormControl";

@@ -5,6 +5,6 @@
  * used in tests on it
  */
 Object.defineProperty(window.URL, "revokeObjectURL", {
-  writable: true,
-  value: () => {},
+    writable: true,
+    value: () => {},
 });

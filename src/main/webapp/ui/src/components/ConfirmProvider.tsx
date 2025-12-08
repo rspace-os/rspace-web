@@ -16,48 +16,46 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { default as React, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { default as React, useState } from "react";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
 type ConfirmState = {
-  title: React.ReactNode;
-  message: React.ReactNode;
-  yesLabel?: string;
-  noLabel?: string;
-  yes: () => void;
-  no: () => void;
-  confirmationSpinner: boolean;
+    title: React.ReactNode;
+    message: React.ReactNode;
+    yesLabel?: string;
+    noLabel?: string;
+    yes: () => void;
+    no: () => void;
+    confirmationSpinner: boolean;
 };
 
 type ConfirmContextType = {
-  confirmState: ConfirmState | null;
-  setConfirmState: React.Dispatch<React.SetStateAction<ConfirmState | null>>;
+    confirmState: ConfirmState | null;
+    setConfirmState: React.Dispatch<React.SetStateAction<ConfirmState | null>>;
 };
 
 const DEFAULT_CONFIRM_CONTEXT: ConfirmContextType = {
-  confirmState: null,
-  setConfirmState: () => {},
+    confirmState: null,
+    setConfirmState: () => {},
 };
 
-const ConfirmContext: React.Context<ConfirmContextType> = React.createContext(
-  DEFAULT_CONFIRM_CONTEXT
-);
+const ConfirmContext: React.Context<ConfirmContextType> = React.createContext(DEFAULT_CONFIRM_CONTEXT);
 
 type ConfirmFunction = (
-  title: React.ReactNode,
-  message: React.ReactNode,
-  yesLabel?: string,
-  noLabel?: string,
+    title: React.ReactNode,
+    message: React.ReactNode,
+    yesLabel?: string,
+    noLabel?: string,
 
-  /*
-   * onConfirm is a callback function that callers of confirm can pass that
-   * will perform some asynchronous action. Whilst that action is being
-   * performed the confirmation dialog will stay visible and the "OK" button
-   * will turn into a spinner. Once the promise returned by onConfirm resolves,
-   * the promise returned by confirm also resolves with true.
-   */
-  onConfirm?: () => Promise<void>
+    /*
+     * onConfirm is a callback function that callers of confirm can pass that
+     * will perform some asynchronous action. Whilst that action is being
+     * performed the confirmation dialog will stay visible and the "OK" button
+     * will turn into a spinner. Once the promise returned by onConfirm resolves,
+     * the promise returned by confirm also resolves with true.
+     */
+    onConfirm?: () => Promise<void>,
 ) => Promise<boolean>;
 
 /**
@@ -81,85 +79,79 @@ type ConfirmFunction = (
  * always null within the scope of the code below.
  */
 export function useConfirm(): ConfirmFunction {
-  const cc = React.useContext(ConfirmContext);
+    const cc = React.useContext(ConfirmContext);
 
-  return function confirm(
-    title,
-    message,
-    yesLabel = "OK",
-    noLabel = "Cancel",
-    onConfirm
-  ): Promise<boolean> {
-    return new Promise((resolve) => {
-      cc.setConfirmState({
-        title,
-        message,
-        yesLabel,
-        noLabel,
-        yes: () => {
-          const returnYes = () => {
-            cc.setConfirmState(null);
-            resolve(true);
-          };
-          if (onConfirm) {
-            if (cc.confirmState) cc.confirmState.confirmationSpinner = true;
-            void onConfirm().then(returnYes);
-          } else {
-            returnYes();
-          }
-        },
-        no: () => {
-          cc.setConfirmState(null);
-          resolve(false);
-        },
-        confirmationSpinner: false,
-      });
-    });
-  };
+    return function confirm(title, message, yesLabel = "OK", noLabel = "Cancel", onConfirm): Promise<boolean> {
+        return new Promise((resolve) => {
+            cc.setConfirmState({
+                title,
+                message,
+                yesLabel,
+                noLabel,
+                yes: () => {
+                    const returnYes = () => {
+                        cc.setConfirmState(null);
+                        resolve(true);
+                    };
+                    if (onConfirm) {
+                        if (cc.confirmState) cc.confirmState.confirmationSpinner = true;
+                        void onConfirm().then(returnYes);
+                    } else {
+                        returnYes();
+                    }
+                },
+                no: () => {
+                    cc.setConfirmState(null);
+                    resolve(false);
+                },
+                confirmationSpinner: false,
+            });
+        });
+    };
 }
 
 type ConfirmProviderArgs = {
-  children: React.ReactNode;
+    children: React.ReactNode;
 };
 
 function ConfirmProvider({ children }: ConfirmProviderArgs): React.ReactNode {
-  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+    const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
-  return (
-    <ConfirmContext.Provider value={{ confirmState, setConfirmState }}>
-      {children}
-      <Dialog
-        open={Boolean(confirmState)}
-        onClose={() => {
-          confirmState?.no();
-        }}
-      >
-        <DialogTitle>{confirmState?.title ?? ""}</DialogTitle>
-        <DialogContent style={{ overscrollBehavior: "contain" }}>
-          <DialogContentText>{confirmState?.message ?? ""}</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          {confirmState?.noLabel && (
-            <Button
-              onClick={() => {
-                confirmState.no();
-              }}
+    return (
+        <ConfirmContext.Provider value={{ confirmState, setConfirmState }}>
+            {children}
+            <Dialog
+                open={Boolean(confirmState)}
+                onClose={() => {
+                    confirmState?.no();
+                }}
             >
-              {confirmState.noLabel}
-            </Button>
-          )}
-          <SubmitSpinnerButton
-            onClick={() => {
-              confirmState?.yes();
-            }}
-            loading={Boolean(confirmState?.confirmationSpinner)}
-            disabled={Boolean(confirmState?.confirmationSpinner)}
-            label={confirmState?.yesLabel ?? "OK"}
-          />
-        </DialogActions>
-      </Dialog>
-    </ConfirmContext.Provider>
-  );
+                <DialogTitle>{confirmState?.title ?? ""}</DialogTitle>
+                <DialogContent style={{ overscrollBehavior: "contain" }}>
+                    <DialogContentText>{confirmState?.message ?? ""}</DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    {confirmState?.noLabel && (
+                        <Button
+                            onClick={() => {
+                                confirmState.no();
+                            }}
+                        >
+                            {confirmState.noLabel}
+                        </Button>
+                    )}
+                    <SubmitSpinnerButton
+                        onClick={() => {
+                            confirmState?.yes();
+                        }}
+                        loading={Boolean(confirmState?.confirmationSpinner)}
+                        disabled={Boolean(confirmState?.confirmationSpinner)}
+                        label={confirmState?.yesLabel ?? "OK"}
+                    />
+                </DialogActions>
+            </Dialog>
+        </ConfirmContext.Provider>
+    );
 }
 
 export default observer(ConfirmProvider);

@@ -17,11 +17,8 @@ import Result from "./result";
  *    information on this CORS header, see the MDN docs:
  *    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
  */
-export function getHeader(
-  response: { headers: { [key: string]: string } },
-  headerName: string
-): Result<string> {
-  if (typeof response.headers[headerName] === "undefined")
-    return Result.Error([new Error(`Header "${headerName}" is missing`)]);
-  return Result.Ok(response.headers[headerName]);
+export function getHeader(response: { headers: { [key: string]: string } }, headerName: string): Result<string> {
+    if (typeof response.headers[headerName] === "undefined")
+        return Result.Error([new Error(`Header "${headerName}" is missing`)]);
+    return Result.Ok(response.headers[headerName]);
 }

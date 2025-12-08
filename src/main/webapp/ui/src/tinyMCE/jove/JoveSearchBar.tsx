@@ -1,51 +1,45 @@
-import React from "react";
+import SearchIcon from "@mui/icons-material/Search";
 import FormControl from "@mui/material/FormControl";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
 import OutlinedInput from "@mui/material/OutlinedInput";
-import InputAdornment from "@mui/material/InputAdornment";
-import IconButton from "@mui/material/IconButton";
-import Grid from "@mui/material/Grid";
-import SearchIcon from "@mui/icons-material/Search";
+import type React from "react";
 
 type JoveSearchBarArgs = {
-  searchQuery: string;
-  handleSearchQueryChange: (event: { target: { value: string } }) => void;
-  submitSearch: () => void;
+    searchQuery: string;
+    handleSearchQueryChange: (event: { target: { value: string } }) => void;
+    submitSearch: () => void;
 };
 
 export default function JoveSearchBar({
-  searchQuery,
-  handleSearchQueryChange,
-  submitSearch,
+    searchQuery,
+    handleSearchQueryChange,
+    submitSearch,
 }: JoveSearchBarArgs): React.ReactNode {
-  return (
-    <>
-      <Grid container style={{ gap: 8 }}>
-        <FormControl fullWidth variant="outlined">
-          <InputLabel htmlFor="jove-search-input">Search</InputLabel>
-          <OutlinedInput
-            id="jove-search-input"
-            value={searchQuery}
-            inputProps={{ maxLength: 320 }}
-            onChange={handleSearchQueryChange}
-            label="Search"
-            onKeyDown={(event) => {
-              if (event.key === "Enter") submitSearch();
-            }}
-            endAdornment={
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="search"
-                  onClick={submitSearch}
-                  edge="end"
-                >
-                  <SearchIcon></SearchIcon>
-                </IconButton>
-              </InputAdornment>
-            }
-          />
-        </FormControl>
-      </Grid>
-    </>
-  );
+    return (
+        <Grid container style={{ gap: 8 }}>
+            <FormControl fullWidth variant="outlined">
+                <InputLabel htmlFor="jove-search-input">Search</InputLabel>
+                <OutlinedInput
+                    id="jove-search-input"
+                    value={searchQuery}
+                    inputProps={{ maxLength: 320 }}
+                    onChange={handleSearchQueryChange}
+                    label="Search"
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter") submitSearch();
+                    }}
+                    endAdornment={
+                        <InputAdornment position="end">
+                            <IconButton aria-label="search" onClick={submitSearch} edge="end">
+                                <SearchIcon></SearchIcon>
+                            </IconButton>
+                        </InputAdornment>
+                    }
+                />
+            </FormControl>
+        </Grid>
+    );
 }

@@ -49,27 +49,11 @@
                 "id": "100000003",
                 "location": "United States",
                 "name": "Boeing",
-                "alt-names": [
-                    "Boeing Co.",
-                    "The Boeing Company",
-                    "Boeing Co",
-                    "Boeing Company"
-                ],
+                "alt-names": ["Boeing Co.", "The Boeing Company", "Boeing Co", "Boeing Company"],
                 "uri": "http://dx.doi.org/10.13039/100000003",
                 "replaces": [],
                 "replaced-by": [],
-                "tokens": [
-                    "boeing",
-                    "boeing",
-                    "co",
-                    "the",
-                    "boeing",
-                    "company",
-                    "boeing",
-                    "co",
-                    "boeing",
-                    "company"
-                ]
+                "tokens": ["boeing", "boeing", "co", "the", "boeing", "company", "boeing", "co", "boeing", "company"]
             },
             {
                 "id": "100000005",
@@ -264,10 +248,7 @@
                 "id": "100000011",
                 "location": "United States",
                 "name": "Howard Hughes Medical Institute",
-                "alt-names": [
-                    "The Howard Hughes Medical Institute",
-                    "HHMI"
-                ],
+                "alt-names": ["The Howard Hughes Medical Institute", "HHMI"],
                 "uri": "http://dx.doi.org/10.13039/100000011",
                 "replaces": [],
                 "replaced-by": [],
@@ -288,23 +269,11 @@
                 "id": "100000014",
                 "location": "United States",
                 "name": "Smithsonian Institution",
-                "alt-names": [
-                    "The Smithsonian Institution",
-                    "SI",
-                    "Smithsonian"
-                ],
+                "alt-names": ["The Smithsonian Institution", "SI", "Smithsonian"],
                 "uri": "http://dx.doi.org/10.13039/100000014",
                 "replaces": [],
                 "replaced-by": [],
-                "tokens": [
-                    "smithsonian",
-                    "institution",
-                    "the",
-                    "smithsonian",
-                    "institution",
-                    "si",
-                    "smithsonian"
-                ]
+                "tokens": ["smithsonian", "institution", "the", "smithsonian", "institution", "si", "smithsonian"]
             },
             {
                 "id": "100000015",
@@ -415,11 +384,7 @@
                 "id": "100000019",
                 "location": "United States",
                 "name": "National Hemophilia Foundation",
-                "alt-names": [
-                    "The National Hemophilia Foundation",
-                    "Fundación Nacional de la Hemofilia",
-                    "NHF"
-                ],
+                "alt-names": ["The National Hemophilia Foundation", "Fundación Nacional de la Hemofilia", "NHF"],
                 "uri": "http://dx.doi.org/10.13039/100000019",
                 "replaces": [],
                 "replaced-by": [],
@@ -443,11 +408,7 @@
                 "id": "100000028",
                 "location": "United States",
                 "name": "Semiconductor Research Corporation",
-                "alt-names": [
-                    "Semiconductor Research Corp.",
-                    "SRC",
-                    "Semiconductor Research Corp"
-                ],
+                "alt-names": ["Semiconductor Research Corp.", "SRC", "Semiconductor Research Corp"],
                 "uri": "http://dx.doi.org/10.13039/100000028",
                 "replaces": [],
                 "replaced-by": [],
@@ -468,32 +429,19 @@
                 "id": "100000040",
                 "location": "United States",
                 "name": "American Parkinson's Disease Foundation",
-                "alt-names": [
-                    "APDA"
-                ],
+                "alt-names": ["APDA"],
                 "uri": "http://dx.doi.org/10.13039/100000040",
                 "replaces": [],
                 "replaced-by": [],
-                "tokens": [
-                    "american",
-                    "parkinsons",
-                    "disease",
-                    "foundation",
-                    "apda"
-                ]
+                "tokens": ["american", "parkinsons", "disease", "foundation", "apda"]
             },
             {
                 "id": "100000041",
                 "location": "United States",
                 "name": "American Diabetes Association",
-                "alt-names": [
-                    "ADA",
-                    "Asociación Americana de la Diabetes"
-                ],
+                "alt-names": ["ADA", "Asociación Americana de la Diabetes"],
                 "uri": "http://dx.doi.org/10.13039/100000041",
-                "replaces": [
-                    "100000963"
-                ],
+                "replaces": ["100000963"],
                 "replaced-by": [],
                 "tokens": [
                     "american",
@@ -575,61 +523,31 @@
                 "id": "100000045",
                 "location": "United States",
                 "name": "Aetna Foundation",
-                "alt-names": [
-                    "Aetna Foundation, Inc.",
-                    "Aetna Foundation Inc"
-                ],
+                "alt-names": ["Aetna Foundation, Inc.", "Aetna Foundation Inc"],
                 "uri": "http://dx.doi.org/10.13039/100000045",
                 "replaces": [],
                 "replaced-by": [],
-                "tokens": [
-                    "aetna",
-                    "foundation",
-                    "aetna",
-                    "foundation",
-                    "inc",
-                    "aetna",
-                    "foundation",
-                    "inc"
-                ]
+                "tokens": ["aetna", "foundation", "aetna", "foundation", "inc", "aetna", "foundation", "inc"]
             },
             {
                 "id": "100000046",
                 "location": "United States",
                 "name": "Abbott Fund",
-                "alt-names": [
-                    "Abbott",
-                    "The Abbott Fund"
-                ],
+                "alt-names": ["Abbott", "The Abbott Fund"],
                 "uri": "http://dx.doi.org/10.13039/100000046",
                 "replaces": [],
                 "replaced-by": [],
-                "tokens": [
-                    "abbott",
-                    "fund",
-                    "abbott",
-                    "the",
-                    "abbott",
-                    "fund"
-                ]
+                "tokens": ["abbott", "fund", "abbott", "the", "abbott", "fund"]
             },
             {
                 "id": "100000047",
                 "location": "United States",
                 "name": "Annenberg Foundation",
-                "alt-names": [
-                    "The Annenberg Foundation"
-                ],
+                "alt-names": ["The Annenberg Foundation"],
                 "uri": "http://dx.doi.org/10.13039/100000047",
                 "replaces": [],
                 "replaced-by": [],
-                "tokens": [
-                    "annenberg",
-                    "foundation",
-                    "the",
-                    "annenberg",
-                    "foundation"
-                ]
+                "tokens": ["annenberg", "foundation", "the", "annenberg", "foundation"]
             },
             {
                 "id": "100000048",

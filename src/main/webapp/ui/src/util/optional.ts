@@ -8,13 +8,13 @@ import Result from "./result";
  * use type refinement to determine the existence of the value based on the key.
  */
 type OptionalInternals<T> =
-  | {
-      key: "empty";
-    }
-  | {
-      key: "present";
-      value: T;
-    };
+    | {
+          key: "empty";
+      }
+    | {
+          key: "present";
+          value: T;
+      };
 
 /**
  * Optional data structures are a common addition to most languages' standard
@@ -38,159 +38,157 @@ type OptionalInternals<T> =
  * [Haskell]: https://hackage.haskell.org/package/base-4.18.0.0/docs/Prelude.html#t:Maybe
  */
 export class Optional<T> {
-  /*
-   * This is a read-only private property
-   * If you want to change it, create a new instance of the class
-   * If you want to read it, use one of the methods to safely get at the value
-   */
-  #state: OptionalInternals<T>;
+    /*
+     * This is a read-only private property
+     * If you want to change it, create a new instance of the class
+     * If you want to read it, use one of the methods to safely get at the value
+     */
+    #state: OptionalInternals<T>;
 
-  /*
-   * DO NOT attempt to call this constructor from outside of this module. Use
-   * one of the two static methods, `present` and `empty`, instead.
-   */
-  constructor(internal: OptionalInternals<T>) {
-    this.#state = internal;
-  }
+    /*
+     * DO NOT attempt to call this constructor from outside of this module. Use
+     * one of the two static methods, `present` and `empty`, instead.
+     */
+    constructor(internal: OptionalInternals<T>) {
+        this.#state = internal;
+    }
 
-  isEqual(other: Optional<T>): boolean {
-    return this.destruct(
-      () =>
-        other.destruct(
-          () => true,
-          () => false,
-        ),
-      (value) =>
-        other.destruct(
-          () => false,
-          (otherValue) => value === otherValue,
-        ),
-    );
-  }
-
-  /*
-   * Creates a new Optional, that wraps a particular value.
-   * This is the same as Java's `Optional.of`
-   */
-  static present<U>(value: U): Optional<U> {
-    return new Optional({ key: "present", value });
-  }
-
-  /*
-   * Creates a new Optional for a missing value.
-   * This is the same as Java's `Optional.empty`
-   */
-  static empty<U>(): Optional<U> {
-    return new Optional({ key: "empty" });
-  }
-
-  /*
-   * There really should be little reason to use this method outside of this
-   * module. Always try to use one of the other, less generic, methods first.
-   */
-  destruct<U>(emptyFunc: () => U, presentFunc: (t: T) => U): U {
-    if (this.#state.key === "present") return presentFunc(this.#state.value);
-    return emptyFunc();
-  }
-
-  isPresent(): boolean {
-    return this.destruct(
-      () => false,
-      () => true,
-    );
-  }
-
-  isEmpty(): boolean {
-    return !this.isPresent();
-  }
-
-  // altValueGetter doesn't have to return a value; it could throw an exception
-  orElseGet<U>(altValueGetter: () => U): T | U {
-    return this.destruct<T | U>(altValueGetter, (value) => value);
-  }
-
-  /*
-   * Provide a default value for an Optional
-   * For example,
-   * `Optional.empty().orElse(4)` will be 4
-   */
-  orElse<U>(altValue: U): T | U {
-    return this.orElseGet(() => altValue);
-  }
-
-  /**
-   * If `this` is Optional.empty then try executing a function that itself
-   * returns another optional. These can be chained together to provide
-   * something akin to the Alternative typeclasses, which is useful when
-   * writing parsers.
-   */
-  orElseTry<U>(altFunc: () => Optional<U>): Optional<T | U> {
-    return this.destruct(
-      () => {
-        const resultOfAltFunc = altFunc();
-        return resultOfAltFunc.destruct(
-          () => Optional.empty(),
-          (value) => Optional.present(value),
+    isEqual(other: Optional<T>): boolean {
+        return this.destruct(
+            () =>
+                other.destruct(
+                    () => true,
+                    () => false,
+                ),
+            (value) =>
+                other.destruct(
+                    () => false,
+                    (otherValue) => value === otherValue,
+                ),
         );
-      },
-      (value) => Optional.present(value),
-    );
-  }
+    }
 
-  /*
-   * Apply a function over the value that may or may not be inside.
-   * `Optional.present(3).map(n => n + 1)` will be the same as `Optional.present(4)`
-   * `Optional.empty().map(n => n + 1)` will be the same as `Optional.empty()`
-   */
-  map<U>(func: (t: T) => U): Optional<U> {
-    return this.destruct(
-      () => Optional.empty(),
-      (value: T) => Optional.present(func(value)),
-    );
-  }
+    /*
+     * Creates a new Optional, that wraps a particular value.
+     * This is the same as Java's `Optional.of`
+     */
+    static present<U>(value: U): Optional<U> {
+        return new Optional({ key: "present", value });
+    }
 
-  /*
-   * This is just the same as `map` with no returned value -- a bit like
-   * `Array.prototype.forEach`. It is needed because eslint will complain if a
-   * call to `Optional.prototype.map` does not return as eslint thinks that it
-   * is a call to `Array.prototype.map`.
-   */
-  do(func: (t: T) => void): void {
-    return this.destruct(() => {}, func);
-  }
+    /*
+     * Creates a new Optional for a missing value.
+     * This is the same as Java's `Optional.empty`
+     */
+    static empty<U>(): Optional<U> {
+        return new Optional({ key: "empty" });
+    }
 
-  /*
-   * For chaining together functions that return optionals, much like
-   * Array.prototype.flatMap
-   *
-   * `Optional.present(3).flatMap(n => n % 2 === 0 ? Optional.present(n) : Optional.empty())` is the same as `Optional.empty()`
-   * `Optional.present(4).flatMap(n => n % 2 === 0 ? Optional.present(n) : Optional.empty())` is the same as `Optional.present(4)`
-   * `Optional.empty().flatMap(n => n % 2 === 0 ? Optional.present(n) : Optional.empty())` is the same as `Optional.empty()`
-   *
-   * Which is to say, that if either the original Optional or the Optional
-   * return by the function are Optional.empty then Optional.empty is
-   * returned, otherwise the value returned by the function is.
-   */
-  flatMap<U>(func: (t: T) => Optional<U>): Optional<U> {
-    return optionalFlat(this.map(func));
-  }
+    /*
+     * There really should be little reason to use this method outside of this
+     * module. Always try to use one of the other, less generic, methods first.
+     */
+    destruct<U>(emptyFunc: () => U, presentFunc: (t: T) => U): U {
+        if (this.#state.key === "present") return presentFunc(this.#state.value);
+        return emptyFunc();
+    }
 
-  /*
-   * Just like Java's `Optional.ofNullable`, it turns `null` into
-   * Optional.empty and any other value is wrapped inside Optional.present
-   */
-  static fromNullable<U>(value: U | null | undefined): Optional<U> {
-    return value === null || typeof value === "undefined"
-      ? Optional.empty()
-      : Optional.present(value);
-  }
+    isPresent(): boolean {
+        return this.destruct(
+            () => false,
+            () => true,
+        );
+    }
 
-  toResult(onEmpty: () => Error): Result<T> {
-    return this.destruct(
-      () => Result.Error([onEmpty()]),
-      (value) => Result.Ok(value),
-    );
-  }
+    isEmpty(): boolean {
+        return !this.isPresent();
+    }
+
+    // altValueGetter doesn't have to return a value; it could throw an exception
+    orElseGet<U>(altValueGetter: () => U): T | U {
+        return this.destruct<T | U>(altValueGetter, (value) => value);
+    }
+
+    /*
+     * Provide a default value for an Optional
+     * For example,
+     * `Optional.empty().orElse(4)` will be 4
+     */
+    orElse<U>(altValue: U): T | U {
+        return this.orElseGet(() => altValue);
+    }
+
+    /**
+     * If `this` is Optional.empty then try executing a function that itself
+     * returns another optional. These can be chained together to provide
+     * something akin to the Alternative typeclasses, which is useful when
+     * writing parsers.
+     */
+    orElseTry<U>(altFunc: () => Optional<U>): Optional<T | U> {
+        return this.destruct(
+            () => {
+                const resultOfAltFunc = altFunc();
+                return resultOfAltFunc.destruct(
+                    () => Optional.empty(),
+                    (value) => Optional.present(value),
+                );
+            },
+            (value) => Optional.present(value),
+        );
+    }
+
+    /*
+     * Apply a function over the value that may or may not be inside.
+     * `Optional.present(3).map(n => n + 1)` will be the same as `Optional.present(4)`
+     * `Optional.empty().map(n => n + 1)` will be the same as `Optional.empty()`
+     */
+    map<U>(func: (t: T) => U): Optional<U> {
+        return this.destruct(
+            () => Optional.empty(),
+            (value: T) => Optional.present(func(value)),
+        );
+    }
+
+    /*
+     * This is just the same as `map` with no returned value -- a bit like
+     * `Array.prototype.forEach`. It is needed because eslint will complain if a
+     * call to `Optional.prototype.map` does not return as eslint thinks that it
+     * is a call to `Array.prototype.map`.
+     */
+    do(func: (t: T) => void): void {
+        return this.destruct(() => {}, func);
+    }
+
+    /*
+     * For chaining together functions that return optionals, much like
+     * Array.prototype.flatMap
+     *
+     * `Optional.present(3).flatMap(n => n % 2 === 0 ? Optional.present(n) : Optional.empty())` is the same as `Optional.empty()`
+     * `Optional.present(4).flatMap(n => n % 2 === 0 ? Optional.present(n) : Optional.empty())` is the same as `Optional.present(4)`
+     * `Optional.empty().flatMap(n => n % 2 === 0 ? Optional.present(n) : Optional.empty())` is the same as `Optional.empty()`
+     *
+     * Which is to say, that if either the original Optional or the Optional
+     * return by the function are Optional.empty then Optional.empty is
+     * returned, otherwise the value returned by the function is.
+     */
+    flatMap<U>(func: (t: T) => Optional<U>): Optional<U> {
+        return optionalFlat(this.map(func));
+    }
+
+    /*
+     * Just like Java's `Optional.ofNullable`, it turns `null` into
+     * Optional.empty and any other value is wrapped inside Optional.present
+     */
+    static fromNullable<U>(value: U | null | undefined): Optional<U> {
+        return value === null || typeof value === "undefined" ? Optional.empty() : Optional.present(value);
+    }
+
+    toResult(onEmpty: () => Error): Result<T> {
+        return this.destruct(
+            () => Result.Error([onEmpty()]),
+            (value) => Result.Ok(value),
+        );
+    }
 }
 
 /**
@@ -203,10 +201,10 @@ export class Optional<T> {
  * is only valid if the type argument of the class is of a particular shape.
  */
 export function optionalFlat<T>(opt: Optional<Optional<T>>): Optional<T> {
-  return opt.destruct(
-    () => Optional.empty(),
-    (value) => value,
-  );
+    return opt.destruct(
+        () => Optional.empty(),
+        (value) => value,
+    );
 }
 
 /*
@@ -231,19 +229,15 @@ export function optionalFlat<T>(opt: Optional<Optional<T>>): Optional<T> {
  * Optional values.
  */
 export function lift<A, B>(f: (a: A) => B, optA: Optional<A>): Optional<B> {
-  return optA.map(f);
+    return optA.map(f);
 }
 
 /**
  * Lift a function that operates on two normal values into one that operates on
  * two Optional values.
  */
-export function lift2<A, B, C>(
-  f: (a: A, b: B) => C,
-  optA: Optional<A>,
-  optB: Optional<B>,
-): Optional<C> {
-  return optA.flatMap((a) => lift((b) => f(a, b), optB));
+export function lift2<A, B, C>(f: (a: A, b: B) => C, optA: Optional<A>, optB: Optional<B>): Optional<C> {
+    return optA.flatMap((a) => lift((b) => f(a, b), optB));
 }
 
 /**
@@ -251,12 +245,12 @@ export function lift2<A, B, C>(
  * on three Optional values.
  */
 export function lift3<A, B, C, D>(
-  f: (a: A, b: B, c: C) => D,
-  optA: Optional<A>,
-  optB: Optional<B>,
-  optC: Optional<C>,
+    f: (a: A, b: B, c: C) => D,
+    optA: Optional<A>,
+    optB: Optional<B>,
+    optC: Optional<C>,
 ): Optional<D> {
-  return optA.flatMap((a) => lift2((b, c) => f(a, b, c), optB, optC));
+    return optA.flatMap((a) => lift2((b, c) => f(a, b, c), optB, optC));
 }
 
 /**
@@ -264,15 +258,13 @@ export function lift3<A, B, C, D>(
  * on four Optional values.
  */
 export function lift4<A, B, C, D, E>(
-  f: (a: A, b: B, c: C, d: D) => E,
-  optA: Optional<A>,
-  optB: Optional<B>,
-  optC: Optional<C>,
-  optD: Optional<D>,
+    f: (a: A, b: B, c: C, d: D) => E,
+    optA: Optional<A>,
+    optB: Optional<B>,
+    optC: Optional<C>,
+    optD: Optional<D>,
 ): Optional<E> {
-  return optA.flatMap((a) =>
-    lift3((b, c, d) => f(a, b, c, d), optB, optC, optD),
-  );
+    return optA.flatMap((a) => lift3((b, c, d) => f(a, b, c, d), optB, optC, optD));
 }
 
 /*
@@ -284,14 +276,11 @@ export function lift4<A, B, C, D, E>(
  * undefined when the object has no such key, this function returns
  * Optional.empty
  */
-export function getByKey<T extends object, K extends keyof T>(
-  key: K,
-  obj: T,
-): Optional<Required<T>[K]> {
-  if (key in obj) {
-    return Optional.present(obj[key]);
-  }
-  return Optional.empty();
+export function getByKey<T extends object, K extends keyof T>(key: K, obj: T): Optional<Required<T>[K]> {
+    if (key in obj) {
+        return Optional.present(obj[key]);
+    }
+    return Optional.empty();
 }
 
 /*

@@ -30,86 +30,83 @@ import { modulo } from "../../util/Util";
  *  - https://www.w3.org/WAI/ARIA/apg/patterns/radio/examples/radio/
  *  - https://www.youtube.com/watch?v=uCIC2LNt0bk
  */
-export default function useOneDimensionalRovingTabIndex<
-  RefComponent extends HTMLElement,
->({
-  max,
-  direction = "column",
+export default function useOneDimensionalRovingTabIndex<RefComponent extends HTMLElement>({
+    max,
+    direction = "column",
 }: {
-  /**
-   * The index of the last element of the vertical list, where the indexing is
-   * 0-based.
-   */
-  max: number;
-
-  /**
-   * The dimension in which the elements of the list are laid out. Defaults to "column"
-   */
-  direction?: "row" | "column";
-}): {
-  /**
-   * The set of the event handlers that must be attached to the container
-   * component of all of the elements of the vertical list.
-   */
-  eventHandlers: {
-    onFocus: () => void;
-    onBlur: () => void;
-    onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void;
-  };
-  /**
-   * Given the index of an element of the vertical list, return that element's
-   * current tab index.
-   */
-  getTabIndex: (index: number) => -1 | 0;
-
-  /**
-   * Given the index of an element of the vertical list, return a ref if it has
-   * a tab index of 0. Otherwise returns null.
-   */
-  getRef: (index: number) => null | React.RefObject<RefComponent>;
-} {
-  const [rovingTabIndex, setRovingTabIndex] = React.useState(0);
-  const [hasFocus, setHasFocus] = React.useState(false);
-  const refOfRovingTabIndex = React.useRef<null | RefComponent>(null);
-
-  React.useEffect(() => {
-    if (hasFocus) refOfRovingTabIndex.current?.focus();
-     
-  }, [rovingTabIndex]);
-
-  function getTabIndex(i: number) {
-    if (i === rovingTabIndex) return 0;
-    return -1;
-  }
-
-  function getRef(i: number) {
-    if (i === rovingTabIndex) return refOfRovingTabIndex;
-    return null;
-  }
-
-  function onFocus() {
-    setHasFocus(true);
-  }
-
-  function onBlur() {
-    setHasFocus(false);
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLElement>) {
-    /*
-     * By using modulo rather than min and max the user's focus wraps around
-     * when reaching the end.
+    /**
+     * The index of the last element of the vertical list, where the indexing is
+     * 0-based.
      */
-    if (e.key === "ArrowUp" && direction === "column") {
-      setRovingTabIndex(modulo(rovingTabIndex - 1, max + 1));
-    } else if (e.key === "ArrowDown" && direction === "column") {
-      setRovingTabIndex(modulo(rovingTabIndex + 1, max + 1));
-    } else if (e.key === "ArrowLeft" && direction === "row") {
-      setRovingTabIndex(modulo(rovingTabIndex - 1, max + 1));
-    } else if (e.key === "ArrowRight" && direction === "row") {
-      setRovingTabIndex(modulo(rovingTabIndex + 1, max + 1));
-    }
-  }
+    max: number;
 
-  return { getTabIndex, getRef, eventHandlers: { onFocus, onBlur, onKeyDown } };
+    /**
+     * The dimension in which the elements of the list are laid out. Defaults to "column"
+     */
+    direction?: "row" | "column";
+}): {
+    /**
+     * The set of the event handlers that must be attached to the container
+     * component of all of the elements of the vertical list.
+     */
+    eventHandlers: {
+        onFocus: () => void;
+        onBlur: () => void;
+        onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void;
+    };
+    /**
+     * Given the index of an element of the vertical list, return that element's
+     * current tab index.
+     */
+    getTabIndex: (index: number) => -1 | 0;
+
+    /**
+     * Given the index of an element of the vertical list, return a ref if it has
+     * a tab index of 0. Otherwise returns null.
+     */
+    getRef: (index: number) => null | React.RefObject<RefComponent>;
+} {
+    const [rovingTabIndex, setRovingTabIndex] = React.useState(0);
+    const [hasFocus, setHasFocus] = React.useState(false);
+    const refOfRovingTabIndex = React.useRef<null | RefComponent>(null);
+
+    React.useEffect(() => {
+        if (hasFocus) refOfRovingTabIndex.current?.focus();
+    }, [hasFocus]);
+
+    function getTabIndex(i: number) {
+        if (i === rovingTabIndex) return 0;
+        return -1;
+    }
+
+    function getRef(i: number) {
+        if (i === rovingTabIndex) return refOfRovingTabIndex;
+        return null;
+    }
+
+    function onFocus() {
+        setHasFocus(true);
+    }
+
+    function onBlur() {
+        setHasFocus(false);
+    }
+
+    function onKeyDown(e: React.KeyboardEvent<HTMLElement>) {
+        /*
+         * By using modulo rather than min and max the user's focus wraps around
+         * when reaching the end.
+         */
+        if (e.key === "ArrowUp" && direction === "column") {
+            setRovingTabIndex(modulo(rovingTabIndex - 1, max + 1));
+        } else if (e.key === "ArrowDown" && direction === "column") {
+            setRovingTabIndex(modulo(rovingTabIndex + 1, max + 1));
+        } else if (e.key === "ArrowLeft" && direction === "row") {
+            setRovingTabIndex(modulo(rovingTabIndex - 1, max + 1));
+        } else if (e.key === "ArrowRight" && direction === "row") {
+            setRovingTabIndex(modulo(rovingTabIndex + 1, max + 1));
+        }
+    }
+
+    return { getTabIndex, getRef, eventHandlers: { onFocus, onBlur, onKeyDown } };
 }

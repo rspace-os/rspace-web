@@ -1,18 +1,18 @@
 import React from "react";
-import { take, incrementForever } from "../../../util/iterators";
 import { Document, Page, pdfjs } from "react-pdf";
+import { incrementForever, take } from "../../../util/iterators";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import ZoomOutIcon from "@mui/icons-material/ZoomOut";
-import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import ResetZoomIcon from "./ResetZoomIcon";
 
 /**
@@ -27,10 +27,7 @@ import ResetZoomIcon from "./ResetZoomIcon";
  * functionality. Taken from the example code for react-pdf
  * https://github.com/wojtekmaj/react-pdf/blob/main/sample/webpack5/Sample.tsx
  */
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 
 const PdfPreviewContext = React.createContext((_link: string) => {});
 
@@ -38,16 +35,16 @@ const PdfPreviewContext = React.createContext((_link: string) => {});
  * Use the callable PDF preview component to display a PDF in a dialog.
  */
 export function usePdfPreview(): {
-  /**
-   * Preview the PDF to be found at the passed URL. If the PDF cannot be
-   * loaded then the dialog opens with the message "Failed to load PDF file".
-   */
-  openPdfPreview: (url: string) => void;
+    /**
+     * Preview the PDF to be found at the passed URL. If the PDF cannot be
+     * loaded then the dialog opens with the message "Failed to load PDF file".
+     */
+    openPdfPreview: (url: string) => void;
 } {
-  const openPdfPreview = React.useContext(PdfPreviewContext);
-  return {
-    openPdfPreview,
-  };
+    const openPdfPreview = React.useContext(PdfPreviewContext);
+    return {
+        openPdfPreview,
+    };
 }
 
 /**
@@ -57,118 +54,98 @@ export function usePdfPreview(): {
  *    const { openPdfPreview } = usePdfPreview();
  *    openPdfPreview("http://example.com/document.pdf");
  */
-export function CallablePdfPreview({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
-  const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(
-    null,
-  );
-  const [numPages, setNumPages] = React.useState<number>(0);
-  const [scale, setScale] = React.useState(1);
+export function CallablePdfPreview({ children }: { children: React.ReactNode }): React.ReactNode {
+    const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(null);
+    const [numPages, setNumPages] = React.useState<number>(0);
+    const [scale, setScale] = React.useState(1);
 
-  function onDocumentLoadSuccess({
-    numPages: nextNumPages,
-  }: {
-    numPages: number;
-  }): void {
-    setNumPages(nextNumPages);
-  }
+    function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
+        setNumPages(nextNumPages);
+    }
 
-  return (
-    <>
-      <PdfPreviewContext.Provider value={setPdfPreviewOpen}>
-        {children}
-      </PdfPreviewContext.Provider>
-      {pdfPreviewOpen && (
-        <Dialog
-          open={true}
-          fullWidth
-          onClose={() => {
-            setPdfPreviewOpen(null);
-          }}
-          aria-label="PDF Preview"
-        >
-          <DialogContent sx={{ overflowY: "auto" }}>
-            <Document
-              file={pdfPreviewOpen}
-              onLoadSuccess={onDocumentLoadSuccess}
-            >
-              {[...take(incrementForever(), numPages)].map((index) => (
-                <Page
-                  key={`page_${index + 1}`}
-                  pageNumber={index + 1}
-                  width={550}
-                  scale={scale}
-                />
-              ))}
-            </Document>
-          </DialogContent>
-          <DialogActions>
-            <ButtonGroup
-              variant="outlined"
-              sx={{
-                border: "2px solid #cfc9d2",
-                borderRadius: "8px",
-              }}
-            >
-              <IconButton
-                onClick={() => {
-                  setScale(scale * 1.2);
-                }}
-                aria-label="zoom in"
-                size="small"
-              >
-                <ZoomInIcon />
-              </IconButton>
-              <Divider
-                orientation="vertical"
-                sx={{
-                  height: "26px",
-                  marginTop: "4px",
-                  borderRightWidth: "1px",
-                }}
-              />
-              <IconButton
-                onClick={() => {
-                  setScale(1);
-                }}
-                disabled={scale === 1}
-                aria-label="reset zoom"
-                size="small"
-              >
-                <ResetZoomIcon />
-              </IconButton>
-              <Divider
-                orientation="vertical"
-                sx={{
-                  height: "26px",
-                  marginTop: "4px",
-                  borderRightWidth: "1px",
-                }}
-              />
-              <IconButton
-                onClick={() => {
-                  setScale(scale / 1.2);
-                }}
-                aria-label="zoom out"
-                size="small"
-              >
-                <ZoomOutIcon />
-              </IconButton>
-            </ButtonGroup>
-            <Box flexGrow={1}></Box>
-            <Button
-              onClick={() => {
-                setPdfPreviewOpen(null);
-              }}
-            >
-              Close
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
-    </>
-  );
+    return (
+        <>
+            <PdfPreviewContext.Provider value={setPdfPreviewOpen}>{children}</PdfPreviewContext.Provider>
+            {pdfPreviewOpen && (
+                <Dialog
+                    open={true}
+                    fullWidth
+                    onClose={() => {
+                        setPdfPreviewOpen(null);
+                    }}
+                    aria-label="PDF Preview"
+                >
+                    <DialogContent sx={{ overflowY: "auto" }}>
+                        <Document file={pdfPreviewOpen} onLoadSuccess={onDocumentLoadSuccess}>
+                            {[...take(incrementForever(), numPages)].map((index) => (
+                                <Page key={`page_${index + 1}`} pageNumber={index + 1} width={550} scale={scale} />
+                            ))}
+                        </Document>
+                    </DialogContent>
+                    <DialogActions>
+                        <ButtonGroup
+                            variant="outlined"
+                            sx={{
+                                border: "2px solid #cfc9d2",
+                                borderRadius: "8px",
+                            }}
+                        >
+                            <IconButton
+                                onClick={() => {
+                                    setScale(scale * 1.2);
+                                }}
+                                aria-label="zoom in"
+                                size="small"
+                            >
+                                <ZoomInIcon />
+                            </IconButton>
+                            <Divider
+                                orientation="vertical"
+                                sx={{
+                                    height: "26px",
+                                    marginTop: "4px",
+                                    borderRightWidth: "1px",
+                                }}
+                            />
+                            <IconButton
+                                onClick={() => {
+                                    setScale(1);
+                                }}
+                                disabled={scale === 1}
+                                aria-label="reset zoom"
+                                size="small"
+                            >
+                                <ResetZoomIcon />
+                            </IconButton>
+                            <Divider
+                                orientation="vertical"
+                                sx={{
+                                    height: "26px",
+                                    marginTop: "4px",
+                                    borderRightWidth: "1px",
+                                }}
+                            />
+                            <IconButton
+                                onClick={() => {
+                                    setScale(scale / 1.2);
+                                }}
+                                aria-label="zoom out"
+                                size="small"
+                            >
+                                <ZoomOutIcon />
+                            </IconButton>
+                        </ButtonGroup>
+                        <Box flexGrow={1}></Box>
+                        <Button
+                            onClick={() => {
+                                setPdfPreviewOpen(null);
+                            }}
+                        >
+                            Close
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            )}
+        </>
+    );
 }

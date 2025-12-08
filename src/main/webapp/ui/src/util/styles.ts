@@ -1,30 +1,23 @@
-import * as trm from "tss-react/mui";
-import { type ComponentType } from "react";
+import type { Theme, ThemeOptions } from "@mui/material";
+import type { ComponentType } from "react";
 import type { CSSObject } from "tss-react";
-import { ThemeOptions, Theme } from "@mui/material";
+import * as trm from "tss-react/mui";
 
 export function withStyles<Config extends object, Classes extends object>(
-  styles:
-    | { [Property in keyof Classes]: CSSObject }
-    | ((
-        theme: Theme,
-        config: Config
-      ) => { [Property in keyof Classes]: CSSObject })
+    styles:
+        | { [Property in keyof Classes]: CSSObject }
+        | ((theme: Theme, config: Config) => { [Property in keyof Classes]: CSSObject }),
 ): (c: ComponentType<Config & { classes: Classes }>) => ComponentType<Config> {
-  return (
-    component: ComponentType<Config & { classes: Classes }>
-  ): ComponentType<Config> =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    trm.withStyles(component, styles as any) as ComponentType<Config>;
+    return (component: ComponentType<Config & { classes: Classes }>): ComponentType<Config> =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        trm.withStyles(component, styles as any) as ComponentType<Config>;
 }
 
 export type Sx =
-  | {
-      [cssProp: string]: string | number | ((t: Theme) => string | number) | Sx;
-    }
-  | ((
-      theme: Theme
-    ) => object | Array<boolean | object | ((t: Theme) => object)>);
+    | {
+          [cssProp: string]: string | number | ((t: Theme) => string | number) | Sx;
+      }
+    | ((theme: Theme) => object | Array<boolean | object | ((t: Theme) => object)>);
 
 /**
  * This function is for merging themes and only themes. It is not a truely
@@ -37,20 +30,20 @@ export type Sx =
  * override where both have non-object values for a particular key.
  */
 export function mergeThemes(
-  themeA: ThemeOptions | Theme | undefined,
-  themeB: ThemeOptions | Theme | undefined
+    themeA: ThemeOptions | Theme | undefined,
+    themeB: ThemeOptions | Theme | undefined,
 ): ThemeOptions | undefined {
-  if (typeof themeA === "undefined") return themeB as ThemeOptions;
-  if (typeof themeB === "undefined") return themeA as ThemeOptions;
-  if (typeof themeA === "object" && typeof themeB === "object") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const merged: { [key: string]: any } = {};
-    const keys = [...Object.keys(themeA), ...Object.keys(themeB)];
-    for (const k of keys) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      merged[k] = mergeThemes((themeA as any)[k], (themeB as any)[k]);
+    if (typeof themeA === "undefined") return themeB as ThemeOptions;
+    if (typeof themeB === "undefined") return themeA as ThemeOptions;
+    if (typeof themeA === "object" && typeof themeB === "object") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const merged: { [key: string]: any } = {};
+        const keys = [...Object.keys(themeA), ...Object.keys(themeB)];
+        for (const k of keys) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+            merged[k] = mergeThemes((themeA as any)[k], (themeB as any)[k]);
+        }
+        return merged as ThemeOptions;
     }
-    return merged as ThemeOptions;
-  }
-  return themeB as ThemeOptions;
+    return themeB as ThemeOptions;
 }

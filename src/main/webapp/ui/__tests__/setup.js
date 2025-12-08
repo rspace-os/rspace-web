@@ -1,4 +1,5 @@
 import { enableFetchMocks } from "jest-fetch-mock";
+
 enableFetchMocks();
 
 /*
@@ -9,6 +10,7 @@ enableFetchMocks();
  * for encoding/decoding text, even in test environments.
  * This ensures tests that rely on these APIs do not fail with "ReferenceError: TextEncoder is not defined".
  */
-import { TextEncoder, TextDecoder } from "util";
+import { TextDecoder, TextEncoder } from "node:util";
+
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;

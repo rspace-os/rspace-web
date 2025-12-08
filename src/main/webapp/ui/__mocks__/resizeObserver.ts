@@ -6,13 +6,13 @@
  * API.
  */
 class ResizeObserverMock {
-  observe = jest.fn();
-  unobserve = jest.fn();
-  disconnect = jest.fn();
+    observe = jest.fn();
+    unobserve = jest.fn();
+    disconnect = jest.fn();
 }
 
 Object.defineProperty(window, "ResizeObserver", {
-  writable: true,
-  configurable: true,
-  value: jest.fn().mockImplementation(() => new ResizeObserverMock()),
+    writable: true,
+    configurable: true,
+    value: jest.fn().mockImplementation(() => new ResizeObserverMock()),
 });

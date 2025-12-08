@@ -1,41 +1,41 @@
-import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-import { type Record } from "../../../stores/definitions/Record";
-import { observer } from "mobx-react-lite";
-import RsSet from "../../../util/set";
-import IconButton from "@mui/material/IconButton";
-import React from "react";
-import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
+import IconButton from "@mui/material/IconButton";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
+import type { Record } from "../../../stores/definitions/Record";
+import type RsSet from "../../../util/set";
 import { withStyles } from "../../../util/styles";
 import SimpleRecordsTable from "../SimpleRecordsTable";
 
 const CustomHeader = withStyles<
-  { open: boolean; setOpen: (open: boolean) => void; title: string },
-  { root: string; action: string }
+    { open: boolean; setOpen: (open: boolean) => void; title: string },
+    { root: string; action: string }
 >(() => ({
-  root: {
-    height: 48,
-    padding: "0 0 0 12px",
-  },
-  action: {
-    margin: 0,
-    height: "100%",
-    alignItems: "center",
-    display: "flex",
-  },
+    root: {
+        height: 48,
+        padding: "0 0 0 12px",
+    },
+    action: {
+        margin: 0,
+        height: "100%",
+        alignItems: "center",
+        display: "flex",
+    },
 }))(({ open, setOpen, classes, title }) => (
-  <CardHeader
-    classes={classes}
-    title={`${title} (Click to ${open ? "close" : "expand"} list)`}
-    onClick={() => setOpen(!open)}
-    titleTypographyProps={{ variant: "body1" }}
-    action={
-      <IconButton onClick={() => setOpen(!open)}>
-        <ExpandCollapseIcon open={open} />
-      </IconButton>
-    }
-  />
+    <CardHeader
+        classes={classes}
+        title={`${title} (Click to ${open ? "close" : "expand"} list)`}
+        onClick={() => setOpen(!open)}
+        titleTypographyProps={{ variant: "body1" }}
+        action={
+            <IconButton onClick={() => setOpen(!open)}>
+                <ExpandCollapseIcon open={open} />
+            </IconButton>
+        }
+    />
 ));
 
 /*
@@ -48,27 +48,24 @@ const CustomHeader = withStyles<
  * ReadOnlyArray.
  */
 type BatchEditingItemsTableArgs<RecordLike extends Record> = {
-  records: RsSet<RecordLike>;
-  label: string;
+    records: RsSet<RecordLike>;
+    label: string;
 };
 
 function BatchEditingItemsTable<RecordLike extends Record>({
-  records,
-  label,
+    records,
+    label,
 }: BatchEditingItemsTableArgs<RecordLike>): React.ReactNode {
-  const [open, setOpen] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
 
-  return (
-    <Box my={1}>
-      <Card variant="outlined">
-        <CustomHeader title={label} open={open} setOpen={setOpen} />
-        <SimpleRecordsTable
-          open={open}
-          records={records.toArray((a, b) => (a.id ?? -1) - (b.id ?? -1))}
-        />
-      </Card>
-    </Box>
-  );
+    return (
+        <Box my={1}>
+            <Card variant="outlined">
+                <CustomHeader title={label} open={open} setOpen={setOpen} />
+                <SimpleRecordsTable open={open} records={records.toArray((a, b) => (a.id ?? -1) - (b.id ?? -1))} />
+            </Card>
+        </Box>
+    );
 }
 
 export default observer(BatchEditingItemsTable);

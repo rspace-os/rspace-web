@@ -2,76 +2,71 @@
  * @jest-environment jsdom
  */
 /* eslint-env jest */
- 
-import React from "react";
-import { render, cleanup } from "@testing-library/react";
+
+import { cleanup, render } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import RadioField from "../../RadioField";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
+import each from "jest-each";
 import materialTheme from "../../../../theme";
+import RadioField from "../../RadioField";
 
 jest.mock("@mui/material/FormControlLabel", () => jest.fn(() => <div></div>));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+    jest.clearAllMocks();
 });
 
 afterEach(cleanup);
 
-const renderRadioField = (props: {
-  disabled?: boolean;
-  hideWhenDisabled?: boolean;
-  value: "foo" | "bar" | null;
-}) =>
-  render(
-    <ThemeProvider theme={materialTheme}>
-      <RadioField
-        onChange={() => {}}
-        name="foo"
-        options={[
-          { label: "Foo", value: "foo", editing: false },
-          { label: "Bar", value: "bar", editing: false },
-        ]}
-        {...props}
-      />
-    </ThemeProvider>
-  );
+const renderRadioField = (props: { disabled?: boolean; hideWhenDisabled?: boolean; value: "foo" | "bar" | null }) =>
+    render(
+        <ThemeProvider theme={materialTheme}>
+            <RadioField
+                onChange={() => {}}
+                name="foo"
+                options={[
+                    { label: "Foo", value: "foo", editing: false },
+                    { label: "Bar", value: "bar", editing: false },
+                ]}
+                {...props}
+            />
+        </ThemeProvider>,
+    );
 
 const expectAllOptionsAreShown = () => {
-  expect(FormControlLabel).toHaveBeenCalledTimes(2);
-  expect(FormControlLabel).toHaveBeenCalledWith(
-    expect.objectContaining({
-      value: "foo",
-    }),
-    expect.anything()
-  );
-  expect(FormControlLabel).toHaveBeenCalledWith(
-    expect.objectContaining({
-      value: "bar",
-    }),
-    expect.anything()
-  );
+    expect(FormControlLabel).toHaveBeenCalledTimes(2);
+    expect(FormControlLabel).toHaveBeenCalledWith(
+        expect.objectContaining({
+            value: "foo",
+        }),
+        expect.anything(),
+    );
+    expect(FormControlLabel).toHaveBeenCalledWith(
+        expect.objectContaining({
+            value: "bar",
+        }),
+        expect.anything(),
+    );
 };
 
 const expectNoOptions = () => {
-  expect(FormControlLabel).not.toHaveBeenCalled();
+    expect(FormControlLabel).not.toHaveBeenCalled();
 };
 
 const expectJustFoo = () => {
-  expect(FormControlLabel).toHaveBeenCalledTimes(1);
-  expect(FormControlLabel).toHaveBeenCalledWith(
-    expect.objectContaining({
-      value: "foo",
-    }),
-    expect.anything()
-  );
+    expect(FormControlLabel).toHaveBeenCalledTimes(1);
+    expect(FormControlLabel).toHaveBeenCalledWith(
+        expect.objectContaining({
+            value: "foo",
+        }),
+        expect.anything(),
+    );
 };
 
 describe("RadioField", () => {
-  describe("Renders correctly", () => {
-    each`
+    describe("Renders correctly", () => {
+        each`
       disabled     | hideWhenDisabled | value      | expectFn
       ${true}      | ${true}          | ${null}    | ${expectNoOptions}
       ${true}      | ${true}          | ${"foo"}   | ${expectJustFoo}
@@ -91,22 +86,19 @@ describe("RadioField", () => {
       ${undefined} | ${false}         | ${"foo"}   | ${expectAllOptionsAreShown}
       ${undefined} | ${undefined}     | ${null}    | ${expectAllOptionsAreShown}
       ${undefined} | ${undefined}     | ${["foo"]} | ${expectAllOptionsAreShown}
-    `.test(
-      "{disabled = $disabled, hideWhenDisabled = $hideWhenDisabled, value = $value}",
-      ({
-        disabled,
-        hideWhenDisabled,
-        value,
-        expectFn,
-      }: {
-        disabled: typeof undefined | boolean;
-        hideWhenDisabled: typeof undefined | boolean;
-        value: "foo" | "bar" | null;
-        expectFn: () => void;
-      }) => {
-        renderRadioField({ disabled, hideWhenDisabled, value });
-        expectFn();
-      }
-    );
-  });
+    `.test("{disabled = $disabled, hideWhenDisabled = $hideWhenDisabled, value = $value}", ({
+            disabled,
+            hideWhenDisabled,
+            value,
+            expectFn,
+        }: {
+            disabled: typeof undefined | boolean;
+            hideWhenDisabled: typeof undefined | boolean;
+            value: "foo" | "bar" | null;
+            expectFn: () => void;
+        }) => {
+            renderRadioField({ disabled, hideWhenDisabled, value });
+            expectFn();
+        });
+    });
 });

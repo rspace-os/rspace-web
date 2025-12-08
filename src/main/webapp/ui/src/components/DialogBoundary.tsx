@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useRef, forwardRef } from "react";
 import MuiDialog from "@mui/material/Dialog";
-import MuiMenu from "@mui/material/Menu";
 import MuiDrawer from "@mui/material/Drawer";
+import MuiMenu from "@mui/material/Menu";
+import React, { createContext, forwardRef, useContext, useRef } from "react";
 
 /**
  * This file contains a number of components that collectively provide a
@@ -63,15 +63,14 @@ import MuiDrawer from "@mui/material/Drawer";
  */
 
 type DialogBoundaryContextType = {
-  modalContainer: { current: HTMLElement | null };
+    modalContainer: { current: HTMLElement | null };
 };
 
 const DEFAULT_DIALOG_BOUNDARY_CONTEXT: DialogBoundaryContextType = {
-  modalContainer: { current: null },
+    modalContainer: { current: null },
 };
 
-const DialogBoundaryContext: React.Context<DialogBoundaryContextType> =
-  createContext(DEFAULT_DIALOG_BOUNDARY_CONTEXT);
+const DialogBoundaryContext: React.Context<DialogBoundaryContextType> = createContext(DEFAULT_DIALOG_BOUNDARY_CONTEXT);
 
 /**
  * This component defines a <div> into which all UI components exported by this
@@ -79,19 +78,13 @@ const DialogBoundaryContext: React.Context<DialogBoundaryContextType> =
  * the <body> element of the document but with this component they will be
  * rendered as children of this <div> instead.
  */
-export function DialogBoundary({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
-  const modalContainer = useRef<HTMLDivElement | null>(null);
-  return (
-    <div ref={modalContainer}>
-      <DialogBoundaryContext.Provider value={{ modalContainer }}>
-        {children}
-      </DialogBoundaryContext.Provider>
-    </div>
-  );
+export function DialogBoundary({ children }: { children: React.ReactNode }): React.ReactNode {
+    const modalContainer = useRef<HTMLDivElement | null>(null);
+    return (
+        <div ref={modalContainer}>
+            <DialogBoundaryContext.Provider value={{ modalContainer }}>{children}</DialogBoundaryContext.Provider>
+        </div>
+    );
 }
 
 /**
@@ -103,92 +96,86 @@ export function DialogBoundary({
  * a DialogTitle as the Material UI Dialog and DialogTitle already contain
  * the logic for wiring up the `aria-labelledby` attribute correctly.
  */
-export function Dialog(
-  props: Omit<React.ComponentProps<typeof MuiDialog>, "container">,
-): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
-  const { children, open, ...rest } = props;
+export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "container">): React.ReactNode {
+    const { modalContainer } = useContext(DialogBoundaryContext);
+    const { children, open, ...rest } = props;
 
-  React.useEffect(() => {
-    if (document.body) {
-      if (open) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "unset";
-      }
-    }
-  }, [open]);
+    React.useEffect(() => {
+        if (document.body) {
+            if (open) {
+                document.body.style.overflow = "hidden";
+            } else {
+                document.body.style.overflow = "unset";
+            }
+        }
+    }, [open]);
 
-  return (
-    <MuiDialog container={() => modalContainer.current} open={open} {...rest}>
-      {children}
-    </MuiDialog>
-  );
+    return (
+        <MuiDialog container={() => modalContainer.current} open={open} {...rest}>
+            {children}
+        </MuiDialog>
+    );
 }
 
 /**
  * A Menu that is rendered within the boundary defined by DialogBoundary.
  */
-export function Menu(
-  props: Omit<React.ComponentProps<typeof MuiMenu>, "container">,
-): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
-  const { children, open, ...rest } = props;
+export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "container">): React.ReactNode {
+    const { modalContainer } = useContext(DialogBoundaryContext);
+    const { children, open, ...rest } = props;
 
-  React.useEffect(() => {
-    if (document.body) {
-      if (open) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "unset";
-      }
-    }
-  }, [open]);
+    React.useEffect(() => {
+        if (document.body) {
+            if (open) {
+                document.body.style.overflow = "hidden";
+            } else {
+                document.body.style.overflow = "unset";
+            }
+        }
+    }, [open]);
 
-  return (
-    <MuiMenu container={() => modalContainer.current} open={open} {...rest}>
-      {children}
-    </MuiMenu>
-  );
+    return (
+        <MuiMenu container={() => modalContainer.current} open={open} {...rest}>
+            {children}
+        </MuiMenu>
+    );
 }
 
 /**
  * A Drawer that is rendered within the boundary defined by DialogBoundary.
  */
 export const Drawer = forwardRef(
-  (
-    props: Omit<React.ComponentProps<typeof MuiDrawer>, "container">,
-    ref: React.Ref<HTMLDivElement>,
-  ): React.ReactNode => {
-    const { modalContainer } = useContext(DialogBoundaryContext);
-    const { children, open, ...rest } = props;
+    (
+        props: Omit<React.ComponentProps<typeof MuiDrawer>, "container">,
+        ref: React.Ref<HTMLDivElement>,
+    ): React.ReactNode => {
+        const { modalContainer } = useContext(DialogBoundaryContext);
+        const { children, open, ...rest } = props;
 
-    React.useEffect(() => {
-      if (document.body) {
-        if (open) {
-          document.body.style.overflow = "hidden";
-        } else {
-          document.body.style.overflow = "unset";
-        }
-      }
-    }, [open]);
+        React.useEffect(() => {
+            if (document.body) {
+                if (open) {
+                    document.body.style.overflow = "hidden";
+                } else {
+                    document.body.style.overflow = "unset";
+                }
+            }
+        }, [open]);
 
-    return (
-      <MuiDrawer
-        /*
-         * Only temporary drawers are modal and require the dialog boundary.
-         * Including the superfluous prop otherwise results in a console error.
-         * See https://mui.com/material-ui/api/drawer/
-         */
-        {...(props.variant === "temporary"
-          ? { container: () => modalContainer.current }
-          : {})}
-        open={open}
-        ref={ref}
-        {...rest}
-      >
-        {children}
-      </MuiDrawer>
-    );
-  },
+        return (
+            <MuiDrawer
+                /*
+                 * Only temporary drawers are modal and require the dialog boundary.
+                 * Including the superfluous prop otherwise results in a console error.
+                 * See https://mui.com/material-ui/api/drawer/
+                 */
+                {...(props.variant === "temporary" ? { container: () => modalContainer.current } : {})}
+                open={open}
+                ref={ref}
+                {...rest}
+            >
+                {children}
+            </MuiDrawer>
+        );
+    },
 );

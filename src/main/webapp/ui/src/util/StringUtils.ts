@@ -16,7 +16,7 @@
  * characters.
  */
 export function stripDiacritics(str: string): string {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 /**
@@ -28,5 +28,5 @@ export function stripDiacritics(str: string): string {
  * on with non-breakspaces.
  */
 export function replaceSpacesWithNonBreakingSpaces(str: string): string {
-  return str.replace(/ /g, "\u00A0");
+    return str.replace(/ /g, "\u00A0");
 }

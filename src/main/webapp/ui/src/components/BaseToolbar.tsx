@@ -1,7 +1,7 @@
-import React from "react";
+import styled from "@emotion/styled";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
-import styled from "@emotion/styled";
+import type React from "react";
 
 const ToolbarContent = styled.div`
   display: flex;
@@ -21,11 +21,11 @@ const ToolbarContent = styled.div`
 `;
 
 export default function BaseToolbar(props: { content: React.ReactNode }) {
-  return (
-    <AppBar position="relative" elevation={0}>
-      <Toolbar style={{ padding: "0px 0px", position: "relative" }}>
-        <ToolbarContent>{props.content}</ToolbarContent>
-      </Toolbar>
-    </AppBar>
-  );
+    return (
+        <AppBar position="relative" elevation={0}>
+            <Toolbar style={{ padding: "0px 0px", position: "relative" }}>
+                <ToolbarContent>{props.content}</ToolbarContent>
+            </Toolbar>
+        </AppBar>
+    );
 }

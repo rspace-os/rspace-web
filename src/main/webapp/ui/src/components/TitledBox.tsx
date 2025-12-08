@@ -1,86 +1,75 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import Grid from "@mui/material/Grid";
-import { makeStyles } from "tss-react/mui";
 import Divider from "@mui/material/Divider";
+import Grid from "@mui/material/Grid";
 import clsx from "clsx";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { makeStyles } from "tss-react/mui";
 import { Heading } from "@/components/DynamicHeadingLevel";
 
-const useStyles = makeStyles<{ allowOverflow: boolean }>()(
-  (theme, { allowOverflow }) => ({
+const useStyles = makeStyles<{ allowOverflow: boolean }>()((theme, { allowOverflow }) => ({
     title: {
-      wordBreak: "break-word",
+        wordBreak: "break-word",
     },
     container: {
-      flexWrap: "nowrap",
-      maxHeight: "100%",
-      backgroundColor: "white !important",
+        flexWrap: "nowrap",
+        maxHeight: "100%",
+        backgroundColor: "white !important",
     },
     body: {
-      padding: theme.spacing(2),
-      overflow: "auto",
-      overflowX: allowOverflow ? "auto" : "hidden",
+        padding: theme.spacing(2),
+        overflow: "auto",
+        overflowX: allowOverflow ? "auto" : "hidden",
     },
     titleContainer: {
-      padding: theme.spacing(1, 2),
+        padding: theme.spacing(1, 2),
     },
     border: {
-      border: theme.borders.section,
-      margin: theme.spacing(1, 0),
-      borderRadius: theme.spacing(0.5),
+        border: theme.borders.section,
+        margin: theme.spacing(1, 0),
+        borderRadius: theme.spacing(0.5),
     },
-  }),
-);
+}));
 
 type TitledBoxArgs = {
-  title?: React.ReactNode;
-  children?: React.ReactNode;
-  allowOverflow?: boolean;
-  border?: boolean;
+    title?: React.ReactNode;
+    children?: React.ReactNode;
+    allowOverflow?: boolean;
+    border?: boolean;
 };
 
-function TitledBox({
-  title,
-  children,
-  allowOverflow = true,
-  border = false,
-}: TitledBoxArgs): React.ReactNode {
-  const { classes } = useStyles({
-    allowOverflow,
-  });
+function TitledBox({ title, children, allowOverflow = true, border = false }: TitledBoxArgs): React.ReactNode {
+    const { classes } = useStyles({
+        allowOverflow,
+    });
 
-  return (
-    <Grid
-      container
-      direction="column"
-      className={clsx(classes.container, border && classes.border)}
-    >
-      {title !== null && typeof title !== "undefined" && (
-        <>
-          <Grid item className={classes.titleContainer}>
-            <Grid container direction="row" alignItems="center">
-              <Grid item style={{ flexGrow: 1 }}>
-                <Heading
-                  variant="h5"
-                  sx={{
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {title}
-                </Heading>
-              </Grid>
+    return (
+        <Grid container direction="column" className={clsx(classes.container, border && classes.border)}>
+            {title !== null && typeof title !== "undefined" && (
+                <>
+                    <Grid item className={classes.titleContainer}>
+                        <Grid container direction="row" alignItems="center">
+                            <Grid item style={{ flexGrow: 1 }}>
+                                <Heading
+                                    variant="h5"
+                                    sx={{
+                                        wordBreak: "break-word",
+                                    }}
+                                >
+                                    {title}
+                                </Heading>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                    <Grid item>
+                        <Divider orientation="horizontal" />
+                    </Grid>
+                </>
+            )}
+            <Grid item className={classes.body}>
+                {children}
             </Grid>
-          </Grid>
-          <Grid item>
-            <Divider orientation="horizontal" />
-          </Grid>
-        </>
-      )}
-      <Grid item className={classes.body}>
-        {children}
-      </Grid>
-    </Grid>
-  );
+        </Grid>
+    );
 }
 
 /**

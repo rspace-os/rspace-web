@@ -1,5 +1,5 @@
-import Result from "./result";
 import * as Parsers from "./parsers";
+import Result from "./result";
 
 /**
  * This script contains various common general-purpose error classes and utility
@@ -11,20 +11,20 @@ import * as Parsers from "./parsers";
  * impossible.
  */
 export class InvalidState extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "InvalidState";
-  }
+    constructor(message: string) {
+        super(message);
+        this.name = "InvalidState";
+    }
 }
 
 /**
  * A string could not be parsed into the expected format.
  */
 export class UnparsableString extends Error {
-  constructor(string: string, message: string) {
-    super(`Error when parsing "${string}": ${message}.`);
-    this.name = "UnparsableString";
-  }
+    constructor(string: string, message: string) {
+        super(`Error when parsing "${string}": ${message}.`);
+        this.name = "UnparsableString";
+    }
 }
 
 /**
@@ -32,20 +32,20 @@ export class UnparsableString extends Error {
  * to jump right up the call stack to where the operation started.
  */
 export class UserCancelledAction extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "UserCancelledAction";
-  }
+    constructor(message: string) {
+        super(message);
+        this.name = "UserCancelledAction";
+    }
 }
 
 /**
  * For when the data in local storage is not in the required format.
  */
 export class InvalidLocalStorageState extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "InvalidLocalStorageState";
-  }
+    constructor(message: string) {
+        super(message);
+        this.name = "InvalidLocalStorageState";
+    }
 }
 
 /**
@@ -60,15 +60,13 @@ export class InvalidLocalStorageState extends Error {
  *   getErrorMessage(new Error("example"), "Unknown reason")
  */
 export function getErrorMessage(error: unknown, fallback: string): string {
-  return Parsers.objectPath(["response", "data", "message"], error)
-    .orElseTry(() =>
-      Parsers.objectPath(["response", "data", "exceptionMessage"], error),
-    )
-    .flatMap(Parsers.isString)
-    .orElseTry(() =>
-      Parsers.isObject(error).flatMap((e) =>
-        e instanceof Error ? Result.Ok(e.message) : Result.Error<string>([]),
-      ),
-    )
-    .orElse(fallback);
+    return Parsers.objectPath(["response", "data", "message"], error)
+        .orElseTry(() => Parsers.objectPath(["response", "data", "exceptionMessage"], error))
+        .flatMap(Parsers.isString)
+        .orElseTry(() =>
+            Parsers.isObject(error).flatMap((e) =>
+                e instanceof Error ? Result.Ok(e.message) : Result.Error<string>([]),
+            ),
+        )
+        .orElse(fallback);
 }

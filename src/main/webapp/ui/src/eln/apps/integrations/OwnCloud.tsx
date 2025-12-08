@@ -1,16 +1,16 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useContext, useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import OwnCloudIcon from "../../../assets/branding/owncloud/logo.svg";
-import { useOwncloudEndpoint } from "../useOwncloud";
+import Grid from "@mui/material/Grid";
+import React, { useContext, useEffect, useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/owncloud";
+import OwnCloudIcon from "../../../assets/branding/owncloud/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useOwncloudEndpoint } from "../useOwncloud";
 
 type OwnCloudArgs = {
-  integrationState: IntegrationStates["OWNCLOUD"];
-  update: (newIntegrationState: IntegrationStates["OWNCLOUD"]) => void;
+    integrationState: IntegrationStates["OWNCLOUD"];
+    update: (newIntegrationState: IntegrationStates["OWNCLOUD"]) => void;
 };
 
 /*
@@ -38,87 +38,72 @@ type OwnCloudArgs = {
  * ../useOwncloud.
  */
 function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
-  const { addAlert } = useContext(AlertContext);
-  const { disconnect } = useOwncloudEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+    const { addAlert } = useContext(AlertContext);
+    const { disconnect } = useOwncloudEndpoint();
+    const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
-      setConnected(true);
-      addAlert(
-        mkAlert({
-          variant: "success",
-          message: "Successfully connected to OwnCloud.",
-        })
-      );
-    };
-    window.addEventListener("OWNCLOUD_CONNECTED", f);
-    return () => {
-      window.removeEventListener("OWNCLOUD_CONNECTED", f);
-    };
-  }, []);
+    useEffect(() => {
+        const f = () => {
+            setConnected(true);
+            addAlert(
+                mkAlert({
+                    variant: "success",
+                    message: "Successfully connected to OwnCloud.",
+                }),
+            );
+        };
+        window.addEventListener("OWNCLOUD_CONNECTED", f);
+        return () => {
+            window.removeEventListener("OWNCLOUD_CONNECTED", f);
+        };
+    }, [addAlert]);
 
-  return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
-      <IntegrationCard
-        name="ownCloud"
-        integrationState={integrationState}
-        explanatoryText="Create, manage, and share your files through an open-source file hosting system."
-        image={OwnCloudIcon}
-        color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
-        helpLinkText="OwnCloud integration docs"
-        website="owncloud.com"
-        docLink="owncloud"
-        usageText="You can make links to ownCloud documents directly from RSpace."
-        setupSection={
-          <>
-            <ol>
-              <li>
-                Click on Connect to authorise RSpace to access your ownCloud
-                account.
-              </li>
-              <li>Enable the integration.</li>
-              <li>
-                When editing a document, click on the ownCloud icon in the text
-                editor toolbar.
-              </li>
-            </ol>
-            {connected ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void (async () => {
-                    await disconnect();
-                    setConnected(false);
-                  })();
-                }}
-              >
-                <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
-                </Button>
-              </form>
-            ) : (
-              <form
-                action="/apps/owncloud/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
-                <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
-                </Button>
-              </form>
-            )}
-          </>
-        }
-      />
-    </Grid>
-  );
+    return (
+        <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+            <IntegrationCard
+                name="ownCloud"
+                integrationState={integrationState}
+                explanatoryText="Create, manage, and share your files through an open-source file hosting system."
+                image={OwnCloudIcon}
+                color={LOGO_COLOR}
+                update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+                helpLinkText="OwnCloud integration docs"
+                website="owncloud.com"
+                docLink="owncloud"
+                usageText="You can make links to ownCloud documents directly from RSpace."
+                setupSection={
+                    <>
+                        <ol>
+                            <li>Click on Connect to authorise RSpace to access your ownCloud account.</li>
+                            <li>Enable the integration.</li>
+                            <li>When editing a document, click on the ownCloud icon in the text editor toolbar.</li>
+                        </ol>
+                        {connected ? (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    void (async () => {
+                                        await disconnect();
+                                        setConnected(false);
+                                    })();
+                                }}
+                            >
+                                <Button type="submit" sx={{ mt: 1 }}>
+                                    Disconnect
+                                </Button>
+                            </form>
+                        ) : (
+                            <form action="/apps/owncloud/connect" method="POST" target="_blank" rel="noopener opener">
+                                <Button type="submit" sx={{ mt: 1 }} value="Connect">
+                                    Connect
+                                </Button>
+                            </form>
+                        )}
+                    </>
+                }
+            />
+        </Grid>
+    );
 }
 
 export default React.memo(OwnCloud);

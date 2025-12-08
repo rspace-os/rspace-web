@@ -1,7 +1,7 @@
-import React from "react";
 import { observer } from "mobx-react-lite";
+import type React from "react";
 import TextField from "../../../components/Inputs/TextField";
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import BatchFormField from "../Inputs/BatchFormField";
 
 const MAX_LENGTH = 250;
@@ -22,50 +22,48 @@ const MAX_LENGTH = 250;
  * prepopulated with records or when records are created directly from the API.
  */
 function Description<
-  Fields extends {
-    description: string | null;
-  },
-  FieldOwner extends HasEditableFields<Fields>
+    Fields extends {
+        description: string | null;
+    },
+    FieldOwner extends HasEditableFields<Fields>,
 >({
-  fieldOwner,
-  onErrorStateChange,
+    fieldOwner,
+    onErrorStateChange,
 }: {
-  fieldOwner: FieldOwner;
-  onErrorStateChange: (hasError: boolean) => void;
+    fieldOwner: FieldOwner;
+    onErrorStateChange: (hasError: boolean) => void;
 }): React.ReactNode {
-  const handleChange = (e: { target: { name: string; value: string } }) => {
-    fieldOwner.setFieldsDirty({
-      description: e.target.value,
-    });
-    onErrorStateChange(e.target.value.length > MAX_LENGTH);
-  };
+    const handleChange = (e: { target: { name: string; value: string } }) => {
+        fieldOwner.setFieldsDirty({
+            description: e.target.value,
+        });
+        onErrorStateChange(e.target.value.length > MAX_LENGTH);
+    };
 
-  const errorMessage = () => {
-    if ((fieldOwner.fieldValues.description ?? "").length > MAX_LENGTH)
-      return `Description must be no longer than ${MAX_LENGTH} characters (including HTML tags).`;
-    return null;
-  };
+    const errorMessage = () => {
+        if ((fieldOwner.fieldValues.description ?? "").length > MAX_LENGTH)
+            return `Description must be no longer than ${MAX_LENGTH} characters (including HTML tags).`;
+        return null;
+    };
 
-  return (
-    <BatchFormField
-      label="Description"
-      value={fieldOwner.fieldValues.description ?? ""}
-      disabled={!fieldOwner.isFieldEditable("description")}
-      maxLength={MAX_LENGTH}
-      error={Boolean(errorMessage())}
-      helperText={errorMessage()}
-      // ID is not used because TinyMCE does not expose an HTMLInputElement to attach it to
-      doNotAttachIdToLabel
-      renderInput={({ error: _error, id: _id, ...props }) => (
-        <TextField {...props} onChange={handleChange} />
-      )}
-      noValueLabel={fieldOwner.noValueLabel.description}
-      canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
-      setDisabled={(d) => {
-        fieldOwner.setFieldEditable("description", d);
-      }}
-    />
-  );
+    return (
+        <BatchFormField
+            label="Description"
+            value={fieldOwner.fieldValues.description ?? ""}
+            disabled={!fieldOwner.isFieldEditable("description")}
+            maxLength={MAX_LENGTH}
+            error={Boolean(errorMessage())}
+            helperText={errorMessage()}
+            // ID is not used because TinyMCE does not expose an HTMLInputElement to attach it to
+            doNotAttachIdToLabel
+            renderInput={({ error: _error, id: _id, ...props }) => <TextField {...props} onChange={handleChange} />}
+            noValueLabel={fieldOwner.noValueLabel.description}
+            canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
+            setDisabled={(d) => {
+                fieldOwner.setFieldEditable("description", d);
+            }}
+        />
+    );
 }
 
 export default observer(Description);

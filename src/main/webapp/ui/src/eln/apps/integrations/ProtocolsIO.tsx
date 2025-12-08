@@ -1,16 +1,16 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useState, useContext } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
-import { useProtocolsioEndpoint } from "../useProtocolsio";
+import Grid from "@mui/material/Grid";
+import React, { useContext, useEffect, useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/protocolsio";
+import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useProtocolsioEndpoint } from "../useProtocolsio";
 
 type ProtocolsIOArgs = {
-  integrationState: IntegrationStates["PROTOCOLS_IO"];
-  update: (newIntegrationState: IntegrationStates["PROTOCOLS_IO"]) => void;
+    integrationState: IntegrationStates["PROTOCOLS_IO"];
+    update: (newIntegrationState: IntegrationStates["PROTOCOLS_IO"]) => void;
 };
 
 /*
@@ -37,92 +37,82 @@ type ProtocolsIOArgs = {
  * The process of disconnecing is via a standard API call made by
  * ../useProtocolsio.
  */
-function ProtocolsIO({
-  integrationState,
-  update,
-}: ProtocolsIOArgs): React.ReactNode {
-  const { addAlert } = useContext(AlertContext);
-  const { disconnect } = useProtocolsioEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.ReactNode {
+    const { addAlert } = useContext(AlertContext);
+    const { disconnect } = useProtocolsioEndpoint();
+    const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
-      setConnected(true);
-      addAlert(
-        mkAlert({
-          variant: "success",
-          message: "Successfully connected to Protocols IO.",
-        })
-      );
-    };
-    window.addEventListener("PROTOCOLS_IO_CONNECTED", f);
-    return () => {
-      window.removeEventListener("PROTOCOLS_IO_CONNECTED", f);
-    };
-  }, []);
+    useEffect(() => {
+        const f = () => {
+            setConnected(true);
+            addAlert(
+                mkAlert({
+                    variant: "success",
+                    message: "Successfully connected to Protocols IO.",
+                }),
+            );
+        };
+        window.addEventListener("PROTOCOLS_IO_CONNECTED", f);
+        return () => {
+            window.removeEventListener("PROTOCOLS_IO_CONNECTED", f);
+        };
+    }, [addAlert]);
 
-  return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
-      <IntegrationCard
-        name="protocols.io"
-        integrationState={integrationState}
-        explanatoryText="Develop, organise, and share reproducible experimental protocols through a secure repository."
-        image={ProtocolsIOIcon}
-        color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
-        usageText="You can browse private and public protocols, and import them into RSpace."
-        helpLinkText="protocols.io integration docs"
-        website="protocols.io"
-        docLink="protocolsio"
-        setupSection={
-          <>
-            <ol>
-              <li>Register for a protocols.io account.</li>
-              <li>
-                Click on Connect to authorise RSpace to access your protocols.io
-                account.
-              </li>
-              <li>Enable the integration.</li>
-              <li>
-                You can now import protocols from the Workspace Create menu, or
-                from the text editor toolbar when editing a document.
-              </li>
-            </ol>
-            {connected ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void (async () => {
-                    await disconnect();
-                    setConnected(false);
-                  })();
-                }}
-              >
-                <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
-                </Button>
-              </form>
-            ) : (
-              <form
-                action="/apps/protocolsio/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
-                <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
-                </Button>
-              </form>
-            )}
-          </>
-        }
-      />
-    </Grid>
-  );
+    return (
+        <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+            <IntegrationCard
+                name="protocols.io"
+                integrationState={integrationState}
+                explanatoryText="Develop, organise, and share reproducible experimental protocols through a secure repository."
+                image={ProtocolsIOIcon}
+                color={LOGO_COLOR}
+                update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+                usageText="You can browse private and public protocols, and import them into RSpace."
+                helpLinkText="protocols.io integration docs"
+                website="protocols.io"
+                docLink="protocolsio"
+                setupSection={
+                    <>
+                        <ol>
+                            <li>Register for a protocols.io account.</li>
+                            <li>Click on Connect to authorise RSpace to access your protocols.io account.</li>
+                            <li>Enable the integration.</li>
+                            <li>
+                                You can now import protocols from the Workspace Create menu, or from the text editor
+                                toolbar when editing a document.
+                            </li>
+                        </ol>
+                        {connected ? (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    void (async () => {
+                                        await disconnect();
+                                        setConnected(false);
+                                    })();
+                                }}
+                            >
+                                <Button type="submit" sx={{ mt: 1 }}>
+                                    Disconnect
+                                </Button>
+                            </form>
+                        ) : (
+                            <form
+                                action="/apps/protocolsio/connect"
+                                method="POST"
+                                target="_blank"
+                                rel="noopener opener"
+                            >
+                                <Button type="submit" sx={{ mt: 1 }} value="Connect">
+                                    Connect
+                                </Button>
+                            </form>
+                        )}
+                    </>
+                }
+            />
+        </Grid>
+    );
 }
 
 export default React.memo(ProtocolsIO);

@@ -5,7 +5,7 @@
 import { stripDiacritics } from "../../StringUtils";
 
 describe("stripDiacritics", () => {
-  test("Example", () => {
-    expect(stripDiacritics("Zoë")).toEqual("Zoe");
-  });
+    test("Example", () => {
+        expect(stripDiacritics("Zoë")).toEqual("Zoe");
+    });
 });

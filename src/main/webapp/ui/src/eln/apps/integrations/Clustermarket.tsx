@@ -1,16 +1,16 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useContext, useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
-import { useClustermarketEndpoint } from "../useClustermarket";
+import Grid from "@mui/material/Grid";
+import React, { useContext, useEffect, useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/clustermarket";
+import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import { useClustermarketEndpoint } from "../useClustermarket";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ClustermarketArgs = {
-  integrationState: IntegrationStates["CLUSTERMARKET"];
-  update: (newIntegrationState: IntegrationStates["CLUSTERMARKET"]) => void;
+    integrationState: IntegrationStates["CLUSTERMARKET"];
+    update: (newIntegrationState: IntegrationStates["CLUSTERMARKET"]) => void;
 };
 
 /*
@@ -37,92 +37,82 @@ type ClustermarketArgs = {
  * The process of disconnecing is via a standard API call made by
  * ../useClustermarket.
  */
-function Clustermarket({
-  integrationState,
-  update,
-}: ClustermarketArgs): React.ReactNode {
-  const { addAlert } = useContext(AlertContext);
-  const { disconnect } = useClustermarketEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+function Clustermarket({ integrationState, update }: ClustermarketArgs): React.ReactNode {
+    const { addAlert } = useContext(AlertContext);
+    const { disconnect } = useClustermarketEndpoint();
+    const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
-      setConnected(true);
-      addAlert(
-        mkAlert({
-          variant: "success",
-          message: "Successfully connected to Clustermarket.",
-        })
-      );
-    };
-    window.addEventListener("CLUSTERMARKET_CONNECTED", f);
-    return () => {
-      window.removeEventListener("CLUSTERMARKET_CONNECTED", f);
-    };
-  }, []);
+    useEffect(() => {
+        const f = () => {
+            setConnected(true);
+            addAlert(
+                mkAlert({
+                    variant: "success",
+                    message: "Successfully connected to Clustermarket.",
+                }),
+            );
+        };
+        window.addEventListener("CLUSTERMARKET_CONNECTED", f);
+        return () => {
+            window.removeEventListener("CLUSTERMARKET_CONNECTED", f);
+        };
+    }, [addAlert]);
 
-  return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
-      <IntegrationCard
-        name="Clustermarket"
-        integrationState={integrationState}
-        explanatoryText="Manage schedules of lab equipment, maintenance, and personnel through a web-based platform."
-        image={ClustermarketIcon}
-        color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
-        helpLinkText="Clustermarket integration docs"
-        website="clustermarket.com"
-        docLink="clustermarket"
-        usageText="You can view and insert your equipment bookings from Clustermarket into RSpace documents, as data tables. These tables will contain direct links back to the bookings in Clustermarket."
-        setupSection={
-          <>
-            <ol>
-              <li>Register for a Clustermarket account.</li>
-              <li>
-                Click on Connect to authorise RSpace to access your
-                Clustermarket account.
-              </li>
-              <li>Enable the integration.</li>
-              <li>
-                When editing a document, click on the Clustermarket icon in the
-                text editor toolbar to access and insert equipment data.
-              </li>
-            </ol>
-            {connected ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void (async () => {
-                    await disconnect();
-                    setConnected(false);
-                  })();
-                }}
-              >
-                <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
-                </Button>
-              </form>
-            ) : (
-              <form
-                action="/apps/clustermarket/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
-                <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
-                </Button>
-              </form>
-            )}
-          </>
-        }
-      />
-    </Grid>
-  );
+    return (
+        <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+            <IntegrationCard
+                name="Clustermarket"
+                integrationState={integrationState}
+                explanatoryText="Manage schedules of lab equipment, maintenance, and personnel through a web-based platform."
+                image={ClustermarketIcon}
+                color={LOGO_COLOR}
+                update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+                helpLinkText="Clustermarket integration docs"
+                website="clustermarket.com"
+                docLink="clustermarket"
+                usageText="You can view and insert your equipment bookings from Clustermarket into RSpace documents, as data tables. These tables will contain direct links back to the bookings in Clustermarket."
+                setupSection={
+                    <>
+                        <ol>
+                            <li>Register for a Clustermarket account.</li>
+                            <li>Click on Connect to authorise RSpace to access your Clustermarket account.</li>
+                            <li>Enable the integration.</li>
+                            <li>
+                                When editing a document, click on the Clustermarket icon in the text editor toolbar to
+                                access and insert equipment data.
+                            </li>
+                        </ol>
+                        {connected ? (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    void (async () => {
+                                        await disconnect();
+                                        setConnected(false);
+                                    })();
+                                }}
+                            >
+                                <Button type="submit" sx={{ mt: 1 }}>
+                                    Disconnect
+                                </Button>
+                            </form>
+                        ) : (
+                            <form
+                                action="/apps/clustermarket/connect"
+                                method="POST"
+                                target="_blank"
+                                rel="noopener opener"
+                            >
+                                <Button type="submit" sx={{ mt: 1 }} value="Connect">
+                                    Connect
+                                </Button>
+                            </form>
+                        )}
+                    </>
+                }
+            />
+        </Grid>
+    );
 }
 
 export default React.memo(Clustermarket);

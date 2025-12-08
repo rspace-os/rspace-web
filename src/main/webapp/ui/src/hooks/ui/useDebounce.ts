@@ -16,29 +16,26 @@ import React from "react";
  *   debouncedSearch(event.target.value);
  * };
  */
-export default function useDebounce<T>(
-  callback: (value: T) => void,
-  delay: number,
-) {
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+export default function useDebounce<T>(callback: (value: T) => void, delay: number) {
+    const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  React.useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [callback, delay]);
+    React.useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
 
-  return React.useCallback(
-    (value: T) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        callback(value);
-      }, delay);
-    },
-    [callback, delay],
-  );
+    return React.useCallback(
+        (value: T) => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+            timeoutRef.current = setTimeout(() => {
+                callback(value);
+            }, delay);
+        },
+        [callback, delay],
+    );
 }

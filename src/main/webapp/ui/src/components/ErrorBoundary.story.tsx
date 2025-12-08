@@ -1,5 +1,5 @@
-import React from "react";
+import type React from "react";
 
 export function ErrorComponent(): React.ReactNode {
-  throw new Error("Error");
+    throw new Error("Error");
 }

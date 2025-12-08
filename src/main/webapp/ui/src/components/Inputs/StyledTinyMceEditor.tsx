@@ -1,7 +1,6 @@
- 
-import tinymce, { RawEditorOptions } from "tinymce";
-import React from "react";
 import { Editor } from "@tinymce/tinymce-react";
+import type React from "react";
+import tinymce, { type RawEditorOptions } from "tinymce";
 import "tinymce/models/dom/model";
 // Theme
 import "tinymce/themes/silver";
@@ -31,54 +30,54 @@ import "tinymce/plugins/autoresize";
  * race conditions where this component is used multiple times on the same page.
  */
 declare global {
-  interface Window {
-    tinymce: typeof tinymce;
-  }
+    interface Window {
+        tinymce: typeof tinymce;
+    }
 }
 window.tinymce = tinymce;
 
 const customStyles =
-  `.mce-content-body {
+    `.mce-content-body {
     font-family: "Roboto", "Helvetica", sans-serif;
   }` +
-  `.mce-content-body:not(.mce-content-readonly) {
+    `.mce-content-body:not(.mce-content-readonly) {
   border-radius: 4px;
   padding: 0px 14px;
   word-break: break-word;
 }` +
-  `.tox-editor-header { position: static !important; }`;
+    `.tox-editor-header { position: static !important; }`;
 
 export default function StyledTinyMceEditor({
-  init,
-  ...props
+    init,
+    ...props
 }: {
-  init: RawEditorOptions;
+    init: RawEditorOptions;
 } & React.ComponentProps<typeof Editor>): React.ReactNode {
-  return (
-    <Editor
-      init={{
-        ...init,
+    return (
+        <Editor
+            init={{
+                ...init,
 
-        // see https://www.tiny.cloud/docs/tinymce/latest/autoresize/
-        autoresize: true,
-        min_height: 100,
-        max_height: 500,
+                // see https://www.tiny.cloud/docs/tinymce/latest/autoresize/
+                autoresize: true,
+                min_height: 100,
+                max_height: 500,
 
-        /*
-         * This uses the default tinymce blue, which is a bit
-         * darker than our primary blue. Unfortunately, the only way to change
-         * this seems to be by defining a custom skin, which doesn't seem worth
-         * it for such a small thing.
-         * https://www.tiny.cloud/docs/tinymce/latest/content-appearance/#using-highlight_on_focus-with-custom-skins
-         */
-        highlight_on_focus: true,
+                /*
+                 * This uses the default tinymce blue, which is a bit
+                 * darker than our primary blue. Unfortunately, the only way to change
+                 * this seems to be by defining a custom skin, which doesn't seem worth
+                 * it for such a small thing.
+                 * https://www.tiny.cloud/docs/tinymce/latest/content-appearance/#using-highlight_on_focus-with-custom-skins
+                 */
+                highlight_on_focus: true,
 
-        branding: false,
-        skin: false,
-        content_css: false,
-        content_style: [init.content_style || "", customStyles].join("\n"),
-      }}
-      {...props}
-    />
-  );
+                branding: false,
+                skin: false,
+                content_css: false,
+                content_style: [init.content_style || "", customStyles].join("\n"),
+            }}
+            {...props}
+        />
+    );
 }

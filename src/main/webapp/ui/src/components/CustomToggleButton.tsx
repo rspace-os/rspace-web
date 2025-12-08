@@ -6,40 +6,39 @@
  * So as to be usable throughout the application this component MUST NOT have a
  * dependency on any global state.
  */
-import React from "react";
+
 import { withStyles } from "Styles";
 import ToggleButton from "@mui/material/ToggleButton";
 import Tooltip from "@mui/material/Tooltip";
+import type React from "react";
 
 const CustomToggleButton = withStyles<
-  { title: string; disabled: boolean } & React.ComponentProps<
-    typeof ToggleButton
-  >,
-  { root: string; selected: string }
+    { title: string; disabled: boolean } & React.ComponentProps<typeof ToggleButton>,
+    { root: string; selected: string }
 >((theme) => ({
-  root: {
-    margin: `${theme.spacing(0.5)} !important`,
-    border: `${theme.borders.section} !important`,
-    flexGrow: 1,
-    borderRadius: "4px !important",
-    textTransform: "none",
-  },
-  selected: {
-    backgroundColor: `${theme.palette.primary.main} !important`,
-    color: `${theme.palette.primary.contrastText} !important`,
-    "&:hover": {
-      backgroundColor: `${theme.palette.primary.saturated} !important`,
-      color: `${theme.palette.primary.contrastText} !important`,
+    root: {
+        margin: `${theme.spacing(0.5)} !important`,
+        border: `${theme.borders.section} !important`,
+        flexGrow: 1,
+        borderRadius: "4px !important",
+        textTransform: "none",
     },
-  },
+    selected: {
+        backgroundColor: `${theme.palette.primary.main} !important`,
+        color: `${theme.palette.primary.contrastText} !important`,
+        "&:hover": {
+            backgroundColor: `${theme.palette.primary.saturated} !important`,
+            color: `${theme.palette.primary.contrastText} !important`,
+        },
+    },
 }))(({ title = "", disabled = false, ...rest }) =>
-  disabled ? (
-    <ToggleButton disabled={true} {...rest} />
-  ) : (
-    <Tooltip title={title}>
-      <ToggleButton disabled={false} {...rest} />
-    </Tooltip>
-  )
+    disabled ? (
+        <ToggleButton disabled={true} {...rest} />
+    ) : (
+        <Tooltip title={title}>
+            <ToggleButton disabled={false} {...rest} />
+        </Tooltip>
+    ),
 );
 
 CustomToggleButton.displayName = "CustomToggleButton";

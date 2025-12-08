@@ -1,41 +1,39 @@
-import React from "react";
-import Typography from "@mui/material/Typography";
-import Grid from "@mui/material/Grid";
-import { styled } from "@mui/material/styles";
-import { type GalleryFile, Description } from "../useGalleryListing";
-import { useGallerySelection } from "../useGallerySelection";
-import Button from "@mui/material/Button";
-import Stack from "@mui/material/Stack";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import SwipeableDrawer from "@mui/material/SwipeableDrawer";
+import Button from "@mui/material/Button";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
 import { grey } from "@mui/material/colors";
-import DescriptionList from "../../../components/DescriptionList";
-import { formatFileSize, filenameExceptExtension } from "../../../util/files";
-import Result from "../../../util/result";
-import { observer } from "mobx-react-lite";
-import { useGalleryActions } from "../useGalleryActions";
-import ImagePreview, {
-  type PreviewSize,
-} from "../../../components/ImagePreview";
-import clsx from "clsx";
+import Grid from "@mui/material/Grid";
+import Link from "@mui/material/Link";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import SwipeableDrawer from "@mui/material/SwipeableDrawer";
+import { styled } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import clsx from "clsx";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
+import DescriptionList from "../../../components/DescriptionList";
+import ImagePreview, { type PreviewSize } from "../../../components/ImagePreview";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+import { filenameExceptExtension, formatFileSize } from "../../../util/files";
+import { Optional } from "../../../util/optional";
+import Result from "../../../util/result";
 import usePrimaryAction from "../primaryActionHooks";
+import { useGalleryActions } from "../useGalleryActions";
+import { Description, type GalleryFile } from "../useGalleryListing";
+import { useGallerySelection } from "../useGallerySelection";
+import { useAsposePreview } from "./CallableAsposePreview";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
-import { useAsposePreview } from "./CallableAsposePreview";
 import { useSnippetPreview } from "./CallableSnippetPreview";
-import { Optional } from "../../../util/optional";
 import { useFolderOpen } from "./OpenFolderProvider";
-import AnalyticsContext from "../../../stores/contexts/Analytics";
-import Link from "@mui/material/Link";
-import Chip from "@mui/material/Chip";
 
 /**
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -61,60 +59,58 @@ const MINIMAL_STYLING_CLASS = "minimal-styling";
  * link between the two.
  */
 const ActionButton = ({
-  onClick,
-  label,
-  disabled,
-  sx,
+    onClick,
+    label,
+    disabled,
+    sx,
 }: {
-  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  label: string;
-  disabled?: boolean;
-  sx: { borderRadius: number; px: number; py: number };
+    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+    label: string;
+    disabled?: boolean;
+    sx: { borderRadius: number; px: number; py: number };
 }): React.ReactNode => {
-  return (
-    <Button
-      component="button"
-      color="callToAction"
-      variant="contained"
-      sx={sx}
-      onClick={onClick}
-      /*
-       * The SwipeableDrawer used on mobile has a little discoverability
-       * feature where if you tap the card without swiping it it jiggles up and
-       * down to indicate that it can be moved; this is controlled by the
-       * `disableDiscovery` prop. When someone taps a button that is on the
-       * card we want to prevent this discovery animation as the button has
-       * nought to do with the sliding of the card. As such, we capture that
-       * touch start event and prevent it from bubbling up to the
-       * SwipeableDrawer component.
-       */
-      onTouchStart={(e) => {
-        e.stopPropagation();
-      }}
-      disabled={disabled}
-    >
-      {label}
-    </Button>
-  );
+    return (
+        <Button
+            component="button"
+            color="callToAction"
+            variant="contained"
+            sx={sx}
+            onClick={onClick}
+            /*
+             * The SwipeableDrawer used on mobile has a little discoverability
+             * feature where if you tap the card without swiping it it jiggles up and
+             * down to indicate that it can be moved; this is controlled by the
+             * `disableDiscovery` prop. When someone taps a button that is on the
+             * card we want to prevent this discovery animation as the button has
+             * nought to do with the sliding of the card. As such, we capture that
+             * touch start event and prevent it from bubbling up to the
+             * SwipeableDrawer component.
+             */
+            onTouchStart={(e) => {
+                e.stopPropagation();
+            }}
+            disabled={disabled}
+        >
+            {label}
+        </Button>
+    );
 };
 
-const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
-  () => ({
+const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(() => ({
     zIndex: 1400, // higher than the dialog when Gallery is inside a picker
     [`& .${paperClasses.root}`]: {
-      /*
-       * When open, the floating info panel takes up 90% of the height of
-       * viewport, leaving just a small section at the top unobscured so that
-       * the panel feels temporary and not modal. This height style is the
-       * height of the info panel, minus the region at the top with the border
-       * radii that triggers the open and closing and is therefore 0px when the
-       * panel is closed.
-       */
-      height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
-      overflow: "visible",
+        /*
+         * When open, the floating info panel takes up 90% of the height of
+         * viewport, leaving just a small section at the top unobscured so that
+         * the panel feels temporary and not modal. This height style is the
+         * height of the info panel, minus the region at the top with the border
+         * radii that triggers the open and closing and is therefore 0px when the
+         * panel is closed.
+         */
+        height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
+        overflow: "visible",
     },
-  }),
-);
+}));
 
 /**
  * This components wraps all of the content inside of the floating info panel,
@@ -122,18 +118,18 @@ const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
  * are shown even when the panel is closed.
  */
 const MobileInfoPanelContent: React.ComponentType<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }> = styled(Box)(({ theme }) => ({
-  position: "absolute",
-  top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
-  height: "100%",
-  visibility: "visible",
-  right: 0,
-  left: 0,
-  backgroundColor: "white",
-  borderTopLeftRadius: theme.spacing(2),
-  borderTopRightRadius: theme.spacing(2),
-  boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
+    position: "absolute",
+    top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
+    height: "100%",
+    visibility: "visible",
+    right: 0,
+    left: 0,
+    backgroundColor: "white",
+    borderTopLeftRadius: theme.spacing(2),
+    borderTopRightRadius: theme.spacing(2),
+    boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
 }));
 
 /**
@@ -147,13 +143,13 @@ const MobileInfoPanelContent: React.ComponentType<{
  *
  */
 const Puller = styled("button")(() => ({
-  width: 30,
-  height: 6,
-  backgroundColor: grey[300],
-  borderRadius: 3,
-  position: "absolute",
-  top: 8,
-  left: "calc(50% - 15px)",
+    width: 30,
+    height: 6,
+    backgroundColor: grey[300],
+    borderRadius: 3,
+    position: "absolute",
+    top: 8,
+    left: "calc(50% - 15px)",
 }));
 
 /**
@@ -175,136 +171,128 @@ const Puller = styled("button")(() => ({
  * @param className Ignore; it is provided by the `styled` HOC.
  */
 const NameFieldForLargeViewports = styled(
-  observer(({ file, className }: { file: GalleryFile; className?: string }) => {
-    const { trackEvent } = React.useContext(AnalyticsContext);
-    const { rename } = useGalleryActions();
-    const [name, setName] = React.useState(file.name);
-    const textField = React.useRef<HTMLInputElement | null>(null);
+    observer(({ file, className }: { file: GalleryFile; className?: string }) => {
+        const { trackEvent } = React.useContext(AnalyticsContext);
+        const { rename } = useGalleryActions();
+        const [name, setName] = React.useState(file.name);
+        const textField = React.useRef<HTMLInputElement | null>(null);
 
-    function handleSubmit() {
-      void rename(file, name).then(() => {
-        textField.current?.blur();
-        setName(file.transformFilename(() => name));
-        trackEvent("user:renames:file:gallery");
-      });
-    }
-
-    return (
-      <Stack sx={{ pr: 0.25, pl: 0.75 }}>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSubmit();
-          }}
-        >
-          <TextField
-            value={name}
-            placeholder="No Name"
-            /*
-             * We use multiline so that long names wrap, but prevent the user
-             * from typing in a return character by using string replacement.
-             */
-            multiline
-            onChange={({ target: { value } }) =>
-              setName(value.replace(/\n/g, ""))
-            }
-            fullWidth
-            size="small"
-            className={clsx(className, name !== file.name && "modified")}
-            inputProps={{
-              "aria-label": "Name",
-              ref: textField,
-            }}
-            onFocus={() => {
-              if (name === file.name)
-                setName(filenameExceptExtension(file.name));
-            }}
-            onBlur={() => {
-              if (name === filenameExceptExtension(file.name))
-                setName(file.name);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setName(file.name);
+        function handleSubmit() {
+            void rename(file, name).then(() => {
                 textField.current?.blur();
-              }
-              /*
-               * We have to explicitly handle enter key and can't rely on the
-               * form's onSubmit being automaticaly called because we're using
-               * a multiline textfield and so the enter key will naturally
-               * enter a newline
-               */
-              if (e.key === "Enter") {
-                handleSubmit();
-              }
-            }}
-          />
-          <Collapse
-            in={name !== file.name}
-            timeout={
-              window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                ? 0
-                : 200
-            }
-          >
-            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-              <Button
-                size="small"
-                onClick={() => {
-                  setName(file.name);
-                }}
-                sx={{ px: 0.75 }}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="callToAction"
-                type="submit"
-                sx={{ px: 0.75 }}
-              >
-                Save
-              </Button>
+                setName(file.transformFilename(() => name));
+                trackEvent("user:renames:file:gallery");
+            });
+        }
+
+        return (
+            <Stack sx={{ pr: 0.25, pl: 0.75 }}>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSubmit();
+                    }}
+                >
+                    <TextField
+                        value={name}
+                        placeholder="No Name"
+                        /*
+                         * We use multiline so that long names wrap, but prevent the user
+                         * from typing in a return character by using string replacement.
+                         */
+                        multiline
+                        onChange={({ target: { value } }) => setName(value.replace(/\n/g, ""))}
+                        fullWidth
+                        size="small"
+                        className={clsx(className, name !== file.name && "modified")}
+                        inputProps={{
+                            "aria-label": "Name",
+                            ref: textField,
+                        }}
+                        onFocus={() => {
+                            if (name === file.name) setName(filenameExceptExtension(file.name));
+                        }}
+                        onBlur={() => {
+                            if (name === filenameExceptExtension(file.name)) setName(file.name);
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                                setName(file.name);
+                                textField.current?.blur();
+                            }
+                            /*
+                             * We have to explicitly handle enter key and can't rely on the
+                             * form's onSubmit being automaticaly called because we're using
+                             * a multiline textfield and so the enter key will naturally
+                             * enter a newline
+                             */
+                            if (e.key === "Enter") {
+                                handleSubmit();
+                            }
+                        }}
+                    />
+                    <Collapse
+                        in={name !== file.name}
+                        timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
+                    >
+                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                            <Button
+                                size="small"
+                                onClick={() => {
+                                    setName(file.name);
+                                }}
+                                sx={{ px: 0.75 }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                size="small"
+                                variant="contained"
+                                color="callToAction"
+                                type="submit"
+                                sx={{ px: 0.75 }}
+                            >
+                                Save
+                            </Button>
+                        </Stack>
+                    </Collapse>
+                </form>
             </Stack>
-          </Collapse>
-        </form>
-      </Stack>
-    );
-  }),
+        );
+    }),
 )(({ theme }) => ({
-  "&.modified": {
+    "&.modified": {
+        [`& .${outlinedInputClasses.root}`]: {
+            backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+            [`& .${outlinedInputClasses.notchedOutline}`]: {
+                border: "none",
+            },
+        },
+    },
+    "&:not(.modified)": {
+        [`& .${outlinedInputClasses.notchedOutline}`]: {
+            border: "none",
+        },
+    },
     [`& .${outlinedInputClasses.root}`]: {
-      backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-      [`& .${outlinedInputClasses.notchedOutline}`]: {
         border: "none",
-      },
+        borderRadius: "4px",
+        fontSize: "1.4rem", // to be the same height as the adjacent button
+        marginTop: theme.spacing(0.5),
+        marginBottom: theme.spacing(0.5),
+        transition: "all .3s ease-in-out",
+        "&:hover, &:focus-within": {
+            backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+            [`& .${outlinedInputClasses.notchedOutline}`]: {
+                border: "none !important",
+            },
+        },
     },
-  },
-  "&:not(.modified)": {
-    [`& .${outlinedInputClasses.notchedOutline}`]: {
-      border: "none",
+    [`& .${outlinedInputClasses.multiline}`]: {
+        paddingTop: theme.spacing(0.25),
+        paddingBottom: theme.spacing(0.25),
+        paddingLeft: theme.spacing(0.25),
     },
-  },
-  [`& .${outlinedInputClasses.root}`]: {
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "1.4rem", // to be the same height as the adjacent button
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    transition: "all .3s ease-in-out",
-    "&:hover, &:focus-within": {
-      backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-      [`& .${outlinedInputClasses.notchedOutline}`]: {
-        border: "none !important",
-      },
-    },
-  },
-  [`& .${outlinedInputClasses.multiline}`]: {
-    paddingTop: theme.spacing(0.25),
-    paddingBottom: theme.spacing(0.25),
-    paddingLeft: theme.spacing(0.25),
-  },
 }));
 
 /*
@@ -336,423 +324,389 @@ const NameFieldForLargeViewports = styled(
  * @param className      Ignore; it is provided by the `styled` HOC.
  */
 const DescriptionField = styled(
-  observer(
-    ({
-      file,
-      description: initialDescription,
-      minimalStyling = false,
-      className,
-    }: {
-      file: GalleryFile;
-      description: string;
-      minimalStyling?: boolean;
-      className?: string;
-    }) => {
-      const { changeDescription } = useGalleryActions();
+    observer(
+        ({
+            file,
+            description: initialDescription,
+            minimalStyling = false,
+            className,
+        }: {
+            file: GalleryFile;
+            description: string;
+            minimalStyling?: boolean;
+            className?: string;
+        }) => {
+            const { changeDescription } = useGalleryActions();
 
-      const [description, setDescription] =
-        React.useState<string>(initialDescription);
+            const [description, setDescription] = React.useState<string>(initialDescription);
 
-      const prefersMoreContrast = window.matchMedia(
-        "(prefers-contrast: more)",
-      ).matches;
+            const prefersMoreContrast = window.matchMedia("(prefers-contrast: more)").matches;
 
-      return (
-        <Stack>
-          <TextField
-            value={description}
-            placeholder="No description"
-            fullWidth
-            size="small"
-            className={clsx(
-              className,
-              minimalStyling && !prefersMoreContrast && MINIMAL_STYLING_CLASS,
-              description !== initialDescription && "modified",
-            )}
-            onChange={({ target: { value } }) => setDescription(value)}
-            multiline
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && e.shiftKey) {
-                e.stopPropagation();
-                e.preventDefault();
-                void changeDescription(file, Description.Present(description));
-              }
-            }}
-          />
-          <Collapse
-            in={description !== initialDescription}
-            timeout={
-              window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                ? 0
-                : 200
-            }
-          >
-            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-              <Button
-                size="small"
-                onClick={() => {
-                  setDescription(initialDescription);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="callToAction"
-                onClick={() => {
-                  void changeDescription(
-                    file,
-                    Description.Present(description),
-                  );
-                }}
-              >
-                Save
-              </Button>
-            </Stack>
-          </Collapse>
-        </Stack>
-      );
-    },
-  ),
+            return (
+                <Stack>
+                    <TextField
+                        value={description}
+                        placeholder="No description"
+                        fullWidth
+                        size="small"
+                        className={clsx(
+                            className,
+                            minimalStyling && !prefersMoreContrast && MINIMAL_STYLING_CLASS,
+                            description !== initialDescription && "modified",
+                        )}
+                        onChange={({ target: { value } }) => setDescription(value)}
+                        multiline
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && e.shiftKey) {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                void changeDescription(file, Description.Present(description));
+                            }
+                        }}
+                    />
+                    <Collapse
+                        in={description !== initialDescription}
+                        timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
+                    >
+                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                            <Button
+                                size="small"
+                                onClick={() => {
+                                    setDescription(initialDescription);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                size="small"
+                                variant="contained"
+                                color="callToAction"
+                                onClick={() => {
+                                    void changeDescription(file, Description.Present(description));
+                                }}
+                            >
+                                Save
+                            </Button>
+                        </Stack>
+                    </Collapse>
+                </Stack>
+            );
+        },
+    ),
 )(({ theme }) => ({
-  [`& .${outlinedInputClasses.root}`]: {
-    borderRadius: "4px",
-    fontSize: "0.9rem",
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-  },
-  [`& .${outlinedInputClasses.input}`]: {
-    paddingLeft: theme.spacing(1),
-  },
-  [`&.${MINIMAL_STYLING_CLASS}`]: {
-    "&.modified": {
-      [`& .${outlinedInputClasses.root}`]: {
-        backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-        [`& .${outlinedInputClasses.notchedOutline}`]: {
-          border: "none",
-        },
-      },
-    },
-    "&:not(.modified)": {
-      [`& .${outlinedInputClasses.root}`]: {
-        backgroundColor: "unset",
-        [`& .${outlinedInputClasses.notchedOutline}`]: {
-          border: "none",
-        },
-      },
-    },
     [`& .${outlinedInputClasses.root}`]: {
-      border: "none",
-      borderRadius: "4px",
-      marginTop: theme.spacing(0.5),
-      marginBottom: theme.spacing(0.5),
-      transition: "all .3s ease-in-out",
-      "&:hover, &:focus-within": {
+        borderRadius: "4px",
+        fontSize: "0.9rem",
+        marginTop: theme.spacing(0.5),
+        marginBottom: theme.spacing(0.5),
         backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-        [`& .${outlinedInputClasses.notchedOutline}`]: {
-          border: "none !important",
+    },
+    [`& .${outlinedInputClasses.input}`]: {
+        paddingLeft: theme.spacing(1),
+    },
+    [`&.${MINIMAL_STYLING_CLASS}`]: {
+        "&.modified": {
+            [`& .${outlinedInputClasses.root}`]: {
+                backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+                [`& .${outlinedInputClasses.notchedOutline}`]: {
+                    border: "none",
+                },
+            },
         },
-      },
+        "&:not(.modified)": {
+            [`& .${outlinedInputClasses.root}`]: {
+                backgroundColor: "unset",
+                [`& .${outlinedInputClasses.notchedOutline}`]: {
+                    border: "none",
+                },
+            },
+        },
+        [`& .${outlinedInputClasses.root}`]: {
+            border: "none",
+            borderRadius: "4px",
+            marginTop: theme.spacing(0.5),
+            marginBottom: theme.spacing(0.5),
+            transition: "all .3s ease-in-out",
+            "&:hover, &:focus-within": {
+                backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+                [`& .${outlinedInputClasses.notchedOutline}`]: {
+                    border: "none !important",
+                },
+            },
+        },
+        [`& .${outlinedInputClasses.multiline}`]: {
+            paddingTop: theme.spacing(0.25),
+            paddingBottom: theme.spacing(0.25),
+            paddingLeft: theme.spacing(0.25),
+        },
     },
-    [`& .${outlinedInputClasses.multiline}`]: {
-      paddingTop: theme.spacing(0.25),
-      paddingBottom: theme.spacing(0.25),
-      paddingLeft: theme.spacing(0.25),
-    },
-  },
 }));
 
 const formatDmpSource = (source: string): string => {
-  switch (source) {
-    case "UNKNOWN":
-      return "Unknown";
-    case "DMP_TOOL":
-      return "DMP Tool";
-    case "DMP_ONLINE":
-      return "DMP Online";
-    case "ARGOS":
-      return "ARGOS";
-    default:
-      return source;
-  }
+    switch (source) {
+        case "UNKNOWN":
+            return "Unknown";
+        case "DMP_TOOL":
+            return "DMP Tool";
+        case "DMP_ONLINE":
+            return "DMP Online";
+        case "ARGOS":
+            return "ARGOS";
+        default:
+            return source;
+    }
 };
 
 const InfoPanelContent = observer(
-  ({
-    file,
-    smallViewport = false,
-  }: {
-    file: GalleryFile;
-    smallViewport?: boolean;
-  }): React.ReactNode => {
-    return (
-      <Stack sx={{ height: "100%" }}>
-        <DescriptionList
-          content={[
-            ...(typeof file.globalId === "string"
-              ? [
-                  {
-                    label: "Global ID",
-                    value: file.globalId,
-                  },
-                ]
-              : []),
-            ...(typeof file.ownerName === "string"
-              ? [
-                  {
-                    label: "Owner",
-                    value: file.ownerName,
-                  },
-                ]
-              : []),
-            ...file.description
-              .toString()
-              .map((desc) => [
-                {
-                  label: "Description",
-                  value: (
-                    <DescriptionField
-                      file={file}
-                      description={desc}
-                      minimalStyling={!smallViewport}
+    ({ file, smallViewport = false }: { file: GalleryFile; smallViewport?: boolean }): React.ReactNode => {
+        return (
+            <Stack sx={{ height: "100%" }}>
+                <DescriptionList
+                    content={[
+                        ...(typeof file.globalId === "string"
+                            ? [
+                                  {
+                                      label: "Global ID",
+                                      value: file.globalId,
+                                  },
+                              ]
+                            : []),
+                        ...(typeof file.ownerName === "string"
+                            ? [
+                                  {
+                                      label: "Owner",
+                                      value: file.ownerName,
+                                  },
+                              ]
+                            : []),
+                        ...file.description
+                            .toString()
+                            .map((desc) => [
+                                {
+                                    label: "Description",
+                                    value: (
+                                        <DescriptionField
+                                            file={file}
+                                            description={desc}
+                                            minimalStyling={!smallViewport}
+                                        />
+                                    ),
+                                    below: true,
+                                },
+                            ])
+                            .orElse(
+                                [] as ReadonlyArray<{
+                                    label: string;
+                                    value: React.ReactNode;
+                                    below?: boolean;
+                                    reducedPadding?: boolean;
+                                }>,
+                            ),
+                    ]}
+                    sx={{
+                        pl: 2,
+                        "& dd.below": {
+                            justifySelf: "start",
+                            width: "100%",
+                        },
+                    }}
+                />
+                {(file.metadata.doiLink || file.metadata.dmpLink || file.metadata.dmpSource) && (
+                    <Box component="section" sx={{ mt: 0.5 }}>
+                        <Typography variant="h4" component="h4">
+                            DMP Details
+                        </Typography>
+                        <DescriptionList
+                            content={[
+                                ...(file.metadata.dmpLink
+                                    ? [
+                                          {
+                                              label: "Link",
+                                              value: (
+                                                  <Link
+                                                      href={file.metadata.dmpLink}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                  >
+                                                      {file.metadata.dmpLink}
+                                                  </Link>
+                                              ),
+                                          },
+                                      ]
+                                    : []),
+                                ...(file.metadata.dmpSource
+                                    ? [
+                                          {
+                                              label: "Source",
+                                              value: (
+                                                  <Chip
+                                                      label={formatDmpSource(file.metadata.dmpSource)}
+                                                      size="small"
+                                                      variant="outlined"
+                                                  />
+                                              ),
+                                          },
+                                      ]
+                                    : []),
+                                ...(file.metadata.doiLink
+                                    ? [
+                                          {
+                                              label: "DOI Link",
+                                              value: (
+                                                  <Link
+                                                      href={file.metadata.doiLink}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                  >
+                                                      {file.metadata.doiLink}
+                                                  </Link>
+                                              ),
+                                          },
+                                      ]
+                                    : []),
+                            ]}
+                            sx={{
+                                pl: 2,
+                                "& dd.below": {
+                                    justifySelf: "start",
+                                    width: "100%",
+                                },
+                            }}
+                        />
+                    </Box>
+                )}
+                <Box component="section" sx={{ mt: 0.5 }}>
+                    <Typography variant="h4" component="h4">
+                        Details
+                    </Typography>
+                    <DescriptionList
+                        content={[
+                            ...(typeof file.type === "string"
+                                ? [
+                                      {
+                                          label: "Type",
+                                          value: file.type,
+                                      },
+                                  ]
+                                : []),
+                            {
+                                label: "Size",
+                                value: formatFileSize(file.size),
+                            },
+                            ...(typeof file.creationDate !== "undefined"
+                                ? [
+                                      {
+                                          label: "Created",
+                                          value: file.creationDate.toLocaleString(),
+                                      },
+                                  ]
+                                : []),
+                            ...(typeof file.modificationDate !== "undefined"
+                                ? [
+                                      {
+                                          label: "Modified",
+                                          value: file.modificationDate.toLocaleString(),
+                                      },
+                                  ]
+                                : []),
+                            ...(typeof file.version === "number"
+                                ? [
+                                      {
+                                          label: "Version",
+                                          value: file.version,
+                                      },
+                                  ]
+                                : []),
+                            ...(typeof file.originalImageId === "string"
+                                ? [
+                                      {
+                                          label: "Original Image ID",
+                                          value: file.originalImageId,
+                                      },
+                                  ]
+                                : []),
+                        ]}
+                        sx={{
+                            pl: 2,
+                        }}
                     />
-                  ),
-                  below: true,
-                },
-              ])
-              .orElse(
-                [] as ReadonlyArray<{
-                  label: string;
-                  value: React.ReactNode;
-                  below?: boolean;
-                  reducedPadding?: boolean;
-                }>,
-              ),
-          ]}
-          sx={{
-            pl: 2,
-            "& dd.below": {
-              justifySelf: "start",
-              width: "100%",
-            },
-          }}
-        />
-        {(file.metadata.doiLink ||
-          file.metadata.dmpLink ||
-          file.metadata.dmpSource) && (
-          <Box component="section" sx={{ mt: 0.5 }}>
-            <Typography variant="h4" component="h4">
-              DMP Details
-            </Typography>
-            <DescriptionList
-              content={[
-                ...(file.metadata.dmpLink
-                  ? [
-                      {
-                        label: "Link",
-                        value: (
-                          <Link
-                            href={file.metadata.dmpLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {file.metadata.dmpLink}
-                          </Link>
-                        ),
-                      },
-                    ]
-                  : []),
-                ...(file.metadata.dmpSource
-                  ? [
-                      {
-                        label: "Source",
-                        value: (
-                          <Chip
-                            label={formatDmpSource(file.metadata.dmpSource)}
-                            size="small"
-                            variant="outlined"
-                          />
-                        ),
-                      },
-                    ]
-                  : []),
-                ...(file.metadata.doiLink
-                  ? [
-                      {
-                        label: "DOI Link",
-                        value: (
-                          <Link
-                            href={file.metadata.doiLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {file.metadata.doiLink}
-                          </Link>
-                        ),
-                      },
-                    ]
-                  : []),
-              ]}
-              sx={{
-                pl: 2,
-                "& dd.below": {
-                  justifySelf: "start",
-                  width: "100%",
-                },
-              }}
-            />
-          </Box>
-        )}
-        <Box component="section" sx={{ mt: 0.5 }}>
-          <Typography variant="h4" component="h4">
-            Details
-          </Typography>
-          <DescriptionList
-            content={[
-              ...(typeof file.type === "string"
-                ? [
-                    {
-                      label: "Type",
-                      value: file.type,
-                    },
-                  ]
-                : []),
-              {
-                label: "Size",
-                value: formatFileSize(file.size),
-              },
-              ...(typeof file.creationDate !== "undefined"
-                ? [
-                    {
-                      label: "Created",
-                      value: file.creationDate.toLocaleString(),
-                    },
-                  ]
-                : []),
-              ...(typeof file.modificationDate !== "undefined"
-                ? [
-                    {
-                      label: "Modified",
-                      value: file.modificationDate.toLocaleString(),
-                    },
-                  ]
-                : []),
-              ...(typeof file.version === "number"
-                ? [
-                    {
-                      label: "Version",
-                      value: file.version,
-                    },
-                  ]
-                : []),
-              ...(typeof file.originalImageId === "string"
-                ? [
-                    {
-                      label: "Original Image ID",
-                      value: file.originalImageId,
-                    },
-                  ]
-                : []),
-            ]}
-            sx={{
-              pl: 2,
-            }}
-          />
-        </Box>
-        {file.linkedDocuments}
-      </Stack>
-    );
-  },
+                </Box>
+                {file.linkedDocuments}
+            </Stack>
+        );
+    },
 );
 
 const InfoPanelMultipleContent = (): React.ReactNode => {
-  const selection = useGallerySelection();
-  const sortedByCreated = selection
-    .asSet()
-    .mapOptional((file) =>
-      typeof file.creationDate === "undefined"
-        ? Optional.empty<Date>()
-        : Optional.present(file.creationDate),
-    )
-    .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
-  const sortedByModified = selection
-    .asSet()
-    .mapOptional((file) =>
-      typeof file.modificationDate === "undefined"
-        ? Optional.empty<Date>()
-        : Optional.present(file.modificationDate),
-    )
-    .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
-  return (
-    <DescriptionList
-      content={[
-        {
-          label: "Total size",
-          value: formatFileSize(
-            selection.asSet().reduce((sum, file) => sum + file.size, 0),
-          ),
-        },
-        ...Result.lift2<
-          Date,
-          Date,
-          Array<{ label: string; value: React.ReactNode }>
-        >((oldestDate, newestDate) => [
-          {
-            label: "Created",
-            value: (
-              <>
-                {oldestDate.toLocaleDateString()} &ndash;{" "}
-                {newestDate.toLocaleDateString()}
-              </>
-            ),
-          },
-        ])(
-          ArrayUtils.head(sortedByCreated),
-          ArrayUtils.last(sortedByCreated),
-        ).orElse([]),
-        ...Result.lift2<
-          Date,
-          Date,
-          Array<{ label: string; value: React.ReactNode }>
-        >((oldestDate, newestDate) => [
-          {
-            label: "Modified",
-            value: (
-              <>
-                {oldestDate.toLocaleDateString()} &ndash;{" "}
-                {newestDate.toLocaleDateString()}
-              </>
-            ),
-          },
-        ])(
-          ArrayUtils.head(sortedByModified),
-          ArrayUtils.last(sortedByModified),
-        ).orElse([]),
-      ]}
-    />
-  );
+    const selection = useGallerySelection();
+    const sortedByCreated = selection
+        .asSet()
+        .mapOptional((file) =>
+            typeof file.creationDate === "undefined" ? Optional.empty<Date>() : Optional.present(file.creationDate),
+        )
+        .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
+    const sortedByModified = selection
+        .asSet()
+        .mapOptional((file) =>
+            typeof file.modificationDate === "undefined"
+                ? Optional.empty<Date>()
+                : Optional.present(file.modificationDate),
+        )
+        .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
+    return (
+        <DescriptionList
+            content={[
+                {
+                    label: "Total size",
+                    value: formatFileSize(selection.asSet().reduce((sum, file) => sum + file.size, 0)),
+                },
+                ...Result.lift2<Date, Date, Array<{ label: string; value: React.ReactNode }>>(
+                    (oldestDate, newestDate) => [
+                        {
+                            label: "Created",
+                            value: (
+                                <>
+                                    {oldestDate.toLocaleDateString()} &ndash; {newestDate.toLocaleDateString()}
+                                </>
+                            ),
+                        },
+                    ],
+                )(ArrayUtils.head(sortedByCreated), ArrayUtils.last(sortedByCreated)).orElse([]),
+                ...Result.lift2<Date, Date, Array<{ label: string; value: React.ReactNode }>>(
+                    (oldestDate, newestDate) => [
+                        {
+                            label: "Modified",
+                            value: (
+                                <>
+                                    {oldestDate.toLocaleDateString()} &ndash; {newestDate.toLocaleDateString()}
+                                </>
+                            ),
+                        },
+                    ],
+                )(ArrayUtils.head(sortedByModified), ArrayUtils.last(sortedByModified)).orElse([]),
+            ]}
+        />
+    );
 };
 
 const AsposePreviewButton = ({ file }: { file: GalleryFile }) => {
-  const { openAsposePreview, loading } = useAsposePreview();
-  return (
-    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-      <ActionButton
-        disabled={loading}
-        onClick={() => {
-          void openAsposePreview(file);
-        }}
-        label={loading ? "Loading" : "View"}
-        sx={{
-          borderRadius: 1,
-          px: 1.125,
-          py: 0.25,
-        }}
-      />
-    </Grid>
-  );
+    const { openAsposePreview, loading } = useAsposePreview();
+    return (
+        <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+            <ActionButton
+                disabled={loading}
+                onClick={() => {
+                    void openAsposePreview(file);
+                }}
+                label={loading ? "Loading" : "View"}
+                sx={{
+                    borderRadius: 1,
+                    px: 1.125,
+                    py: 0.25,
+                }}
+            />
+        </Grid>
+    );
 };
 
 /**
@@ -762,227 +716,225 @@ const AsposePreviewButton = ({ file }: { file: GalleryFile }) => {
  * documents that link to the file.
  */
 export function InfoPanelForLargeViewports() {
-  const selection = useGallerySelection();
-  const { openImagePreview } = useImagePreview();
-  const { openPdfPreview } = usePdfPreview();
-  const { openSnapGenePreview } = useSnapGenePreview();
-  const { openSnippetPreview } = useSnippetPreview();
-  const primaryAction = usePrimaryAction();
-  const { openFolder } = useFolderOpen();
-  const { trackEvent } = React.useContext(AnalyticsContext);
+    const selection = useGallerySelection();
+    const { openImagePreview } = useImagePreview();
+    const { openPdfPreview } = usePdfPreview();
+    const { openSnapGenePreview } = useSnapGenePreview();
+    const { openSnippetPreview } = useSnippetPreview();
+    const primaryAction = usePrimaryAction();
+    const { openFolder } = useFolderOpen();
+    const { trackEvent } = React.useContext(AnalyticsContext);
 
-  return (
-    <>
-      <Grid
-        container
-        direction="row"
-        spacing={0.5}
-        alignItems="flex-start"
-        flexWrap="nowrap"
-        sx={{
-          marginLeft: "-10px",
-          marginTop: "-8px",
-          width: "calc(100% + 9px)",
-        }}
-      >
-        <Grid item sx={{ flexShrink: 1, flexGrow: 1 }}>
-          {selection
-            .asSet()
-            .only.toResult(() => new Error("Empty or multiple selected"))
-            .flatMapDiscarding((f) => f.canRename)
-            .map((f) => <NameFieldForLargeViewports key={null} file={f} />)
-            .orElse(
-              <Typography
-                variant="h3"
+    return (
+        <>
+            <Grid
+                container
+                direction="row"
+                spacing={0.5}
+                alignItems="flex-start"
+                flexWrap="nowrap"
                 sx={{
-                  border: "none",
-                  // these margins are setup so that the heading takes up the
-                  // same amount of space as the text field when it is shown
-                  mr: 0.75,
-                  ml: 1.5,
-                  mt: 1,
-                  mb: 1,
-                  lineBreak: "anywhere",
-                  textTransform: "none",
-                  fontWeight: 400,
+                    marginLeft: "-10px",
+                    marginTop: "-8px",
+                    width: "calc(100% + 9px)",
                 }}
-              >
-                {selection.size === 0 && "Nothing selected."}
+            >
+                <Grid item sx={{ flexShrink: 1, flexGrow: 1 }}>
+                    {selection
+                        .asSet()
+                        .only.toResult(() => new Error("Empty or multiple selected"))
+                        .flatMapDiscarding((f) => f.canRename)
+                        .map((f) => <NameFieldForLargeViewports key={null} file={f} />)
+                        .orElse(
+                            <Typography
+                                variant="h3"
+                                sx={{
+                                    border: "none",
+                                    // these margins are setup so that the heading takes up the
+                                    // same amount of space as the text field when it is shown
+                                    mr: 0.75,
+                                    ml: 1.5,
+                                    mt: 1,
+                                    mb: 1,
+                                    lineBreak: "anywhere",
+                                    textTransform: "none",
+                                    fontWeight: 400,
+                                }}
+                            >
+                                {selection.size === 0 && "Nothing selected."}
+                                {selection
+                                    .asSet()
+                                    .only.map((f) => f.name)
+                                    .orElse(null)}
+                                {selection.size > 1 && selection.label}
+                            </Typography>,
+                        )}
+                </Grid>
                 {selection
-                  .asSet()
-                  .only.map((f) => f.name)
-                  .orElse(null)}
-                {selection.size > 1 && selection.label}
-              </Typography>,
+                    .asSet()
+                    .only.map((file) =>
+                        primaryAction(file)
+                            .map((action) => {
+                                if (action.tag === "open")
+                                    return (
+                                        <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                                            <ActionButton
+                                                onClick={() => {
+                                                    openFolder(file);
+                                                }}
+                                                label="Open"
+                                                sx={{
+                                                    borderRadius: 1,
+                                                    px: 1.125,
+                                                    py: 0.25,
+                                                }}
+                                            />
+                                        </Grid>
+                                    );
+                                if (action.tag === "image")
+                                    return (
+                                        <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                                            <ActionButton
+                                                onClick={() => {
+                                                    void action.downloadHref().then((url) => {
+                                                        openImagePreview(url, {
+                                                            caption: action.caption,
+                                                        });
+                                                    });
+                                                }}
+                                                label="View"
+                                                sx={{
+                                                    borderRadius: 1,
+                                                    px: 1.125,
+                                                    py: 0.25,
+                                                }}
+                                            />
+                                        </Grid>
+                                    );
+                                if (action.tag === "collabora")
+                                    return (
+                                        <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                                            <ActionButton
+                                                onClick={() => {
+                                                    window.open(action.url);
+                                                    trackEvent("user:opens:document:collabora");
+                                                }}
+                                                label="Edit"
+                                                sx={{
+                                                    borderRadius: 1,
+                                                    px: 1.125,
+                                                    py: 0.25,
+                                                }}
+                                            />
+                                        </Grid>
+                                    );
+                                if (action.tag === "officeonline")
+                                    return (
+                                        <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                                            <ActionButton
+                                                onClick={() => {
+                                                    window.open(action.url);
+                                                    trackEvent("user:opens:document:officeonline");
+                                                }}
+                                                label="Edit"
+                                                sx={{
+                                                    borderRadius: 1,
+                                                    px: 1.125,
+                                                    py: 0.25,
+                                                }}
+                                            />
+                                        </Grid>
+                                    );
+                                if (action.tag === "pdf")
+                                    return (
+                                        <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                                            <ActionButton
+                                                onClick={() => {
+                                                    void action.downloadHref().then((href) => {
+                                                        openPdfPreview(href);
+                                                    });
+                                                }}
+                                                label="View"
+                                                sx={{
+                                                    borderRadius: 1,
+                                                    px: 1.125,
+                                                    py: 0.25,
+                                                }}
+                                            />
+                                        </Grid>
+                                    );
+                                if (action.tag === "aspose") return <AsposePreviewButton key={null} file={file} />;
+                                if (action.tag === "snapgene")
+                                    return (
+                                        <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                                            <ActionButton
+                                                onClick={() => {
+                                                    void openSnapGenePreview(file);
+                                                }}
+                                                label="View"
+                                                sx={{
+                                                    borderRadius: 1,
+                                                    px: 1.125,
+                                                    py: 0.25,
+                                                }}
+                                            />
+                                        </Grid>
+                                    );
+                                if (action.tag === "snippet")
+                                    return (
+                                        <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                                            <ActionButton
+                                                onClick={() => {
+                                                    void openSnippetPreview(file);
+                                                }}
+                                                label="View"
+                                                sx={{
+                                                    borderRadius: 1,
+                                                    px: 1.125,
+                                                    py: 0.25,
+                                                }}
+                                            />
+                                        </Grid>
+                                    );
+                                return null;
+                            })
+                            .orElseGet((errors) => {
+                                console.info("Could not provide view", errors);
+                                return (
+                                    <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
+                                        <ActionButton
+                                            onClick={() => {
+                                                // do nothing
+                                            }}
+                                            disabled
+                                            label="View"
+                                            sx={{
+                                                borderRadius: 1,
+                                                px: 1.125,
+                                                py: 0.25,
+                                            }}
+                                        />
+                                    </Grid>
+                                );
+                            }),
+                    )
+                    .orElse(null)}
+            </Grid>
+            {selection
+                .asSet()
+                .only.map((f) => (
+                    <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
+                        <InfoPanelContent file={f} />
+                    </CardContent>
+                ))
+                .orElse(null)}
+            {selection.size > 1 && (
+                <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
+                    <InfoPanelMultipleContent />
+                </CardContent>
             )}
-        </Grid>
-        {selection
-          .asSet()
-          .only.map((file) =>
-            primaryAction(file)
-              .map((action) => {
-                if (action.tag === "open")
-                  return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          openFolder(file);
-                        }}
-                        label="Open"
-                        sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "image")
-                  return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          void action.downloadHref().then((url) => {
-                            openImagePreview(url, {
-                              caption: action.caption,
-                            });
-                          });
-                        }}
-                        label="View"
-                        sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "collabora")
-                  return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          window.open(action.url);
-                          trackEvent("user:opens:document:collabora");
-                        }}
-                        label="Edit"
-                        sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "officeonline")
-                  return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          window.open(action.url);
-                          trackEvent("user:opens:document:officeonline");
-                        }}
-                        label="Edit"
-                        sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "pdf")
-                  return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          void action.downloadHref().then((href) => {
-                            openPdfPreview(href);
-                          });
-                        }}
-                        label="View"
-                        sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "aspose")
-                  return <AsposePreviewButton key={null} file={file} />;
-                if (action.tag === "snapgene")
-                  return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          void openSnapGenePreview(file);
-                        }}
-                        label="View"
-                        sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "snippet")
-                  return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          void openSnippetPreview(file);
-                        }}
-                        label="View"
-                        sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
-                        }}
-                      />
-                    </Grid>
-                  );
-                return null;
-              })
-              .orElseGet((errors) => {
-                 
-                console.info("Could not provide view", errors);
-                return (
-                  <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
-                    <ActionButton
-                      onClick={() => {
-                        // do nothing
-                      }}
-                      disabled
-                      label="View"
-                      sx={{
-                        borderRadius: 1,
-                        px: 1.125,
-                        py: 0.25,
-                      }}
-                    />
-                  </Grid>
-                );
-              }),
-          )
-          .orElse(null)}
-      </Grid>
-      {selection
-        .asSet()
-        .only.map((f) => (
-          <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
-            <InfoPanelContent file={f} />
-          </CardContent>
-        ))
-        .orElse(null)}
-      {selection.size > 1 && (
-        <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
-          <InfoPanelMultipleContent />
-        </CardContent>
-      )}
-    </>
-  );
+        </>
+    );
 }
 
 /**
@@ -994,147 +946,129 @@ export function InfoPanelForLargeViewports() {
  * that link to the file.
  */
 export const InfoPanelForSmallViewports: React.ComponentType<{
-  file: GalleryFile;
+    file: GalleryFile;
 }> = ({ file }) => {
-  const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
-  const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
-    null,
-  );
-  const [previewImageUrl, setPreviewImageUrl] = React.useState<null | string>(
-    null,
-  );
-  const selection = useGallerySelection();
-  const mobileInfoPanelId = React.useId();
-  const { openFolder } = useFolderOpen();
-  const { trackEvent } = React.useContext(AnalyticsContext);
+    const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
+    const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(null);
+    const [previewImageUrl, setPreviewImageUrl] = React.useState<null | string>(null);
+    const selection = useGallerySelection();
+    const mobileInfoPanelId = React.useId();
+    const { openFolder } = useFolderOpen();
+    const { trackEvent } = React.useContext(AnalyticsContext);
 
-  return (
-    <CustomSwipeableDrawer
-      key={null}
-      anchor="bottom"
-      open={mobileInfoPanelOpen}
-      sx={{
-        display: { xs: "block", md: "none" },
-        touchAction: "none",
-      }}
-      SwipeAreaProps={{
-        sx: {
-          display: { xs: "block", md: "none" },
-        },
-      }}
-      onClose={() => {
-        setMobileInfoPanelOpen(false);
-      }}
-      onOpen={() => {
-        setMobileInfoPanelOpen(true);
-        trackEvent("user:opens:mobileInfoPanel:gallery");
-      }}
-      swipeAreaWidth={CLOSED_MOBILE_INFO_PANEL_HEIGHT}
-      disableSwipeToOpen={false}
-      ModalProps={{
-        keepMounted: true,
-        "aria-hidden": false,
-      }}
-      allowSwipeInChildren={(event) => {
-        if ((event.target as HTMLElement | null)?.id === "open") return false;
-        return true;
-      }}
-    >
-      <MobileInfoPanelContent>
-        <Stack
-          spacing={1}
-          height="100%"
-          role="region"
-          aria-label="info panel"
-          id={mobileInfoPanelId}
-        >
-          <Puller
-            onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
-            onKeyDown={(e) => {
-              if (e.key === " ") setMobileInfoPanelOpen(!mobileInfoPanelOpen);
+    return (
+        <CustomSwipeableDrawer
+            key={null}
+            anchor="bottom"
+            open={mobileInfoPanelOpen}
+            sx={{
+                display: { xs: "block", md: "none" },
+                touchAction: "none",
             }}
-            role="button"
-            tabIndex={0}
-            aria-controls={mobileInfoPanelId}
-            aria-expanded={mobileInfoPanelOpen ? "true" : "false"}
-          />
-          <CardContent>
-            <Grid
-              container
-              direction="row"
-              spacing={2}
-              flexWrap="nowrap"
-              sx={{ mb: 2, minHeight: "54px" }}
-            >
-              <Grid item sx={{ flexShrink: 1, flexGrow: 1, mt: 0.5 }}>
-                <Typography
-                  variant="h3"
-                  sx={{
-                    border: "none",
-                    textTransform: "none",
-                    overflowWrap: "anywhere",
-                  }}
-                >
-                  {file.name}
-                </Typography>
-              </Grid>
-              {file.canOpen
-                .map(() => (
-                  <Grid item key={null}>
-                    <ActionButton
-                      label="Open"
-                      sx={{
-                        borderRadius: 3,
-                        px: 2.5,
-                        py: 0.5,
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openFolder(file);
-                        setMobileInfoPanelOpen(false);
-                      }}
+            SwipeAreaProps={{
+                sx: {
+                    display: { xs: "block", md: "none" },
+                },
+            }}
+            onClose={() => {
+                setMobileInfoPanelOpen(false);
+            }}
+            onOpen={() => {
+                setMobileInfoPanelOpen(true);
+                trackEvent("user:opens:mobileInfoPanel:gallery");
+            }}
+            swipeAreaWidth={CLOSED_MOBILE_INFO_PANEL_HEIGHT}
+            disableSwipeToOpen={false}
+            ModalProps={{
+                keepMounted: true,
+                "aria-hidden": false,
+            }}
+            allowSwipeInChildren={(event) => {
+                if ((event.target as HTMLElement | null)?.id === "open") return false;
+                return true;
+            }}
+        >
+            <MobileInfoPanelContent>
+                <Stack spacing={1} height="100%" role="region" aria-label="info panel" id={mobileInfoPanelId}>
+                    <Puller
+                        onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
+                        onKeyDown={(e) => {
+                            if (e.key === " ") setMobileInfoPanelOpen(!mobileInfoPanelOpen);
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-controls={mobileInfoPanelId}
+                        aria-expanded={mobileInfoPanelOpen ? "true" : "false"}
                     />
-                  </Grid>
-                ))
-                .orElse(null)}
-              {file.isImage && file.downloadHref && (
-                <Grid item>
-                  <ActionButton
-                    onClick={() => {
-                      if (file.downloadHref)
-                        void file.downloadHref().then((url) => {
-                          setPreviewImageUrl(url);
-                        });
-                    }}
-                    label="View"
-                    sx={{
-                      borderRadius: 3,
-                      px: 2.5,
-                      py: 0.5,
-                    }}
-                  />
-                  {previewImageUrl && (
-                    <ImagePreview
-                      closePreview={() => {
-                        setPreviewImageUrl(null);
-                      }}
-                      link={previewImageUrl}
-                      size={previewSize}
-                      setSize={(s) => setPreviewSize(s)}
-                    />
-                  )}
-                </Grid>
-              )}
-            </Grid>
-            {selection
-              .asSet()
-              .only.map((f) => (
-                <InfoPanelContent key={null} file={f} smallViewport />
-              ))
-              .orElse(null)}
-          </CardContent>
-        </Stack>
-      </MobileInfoPanelContent>
-    </CustomSwipeableDrawer>
-  );
+                    <CardContent>
+                        <Grid container direction="row" spacing={2} flexWrap="nowrap" sx={{ mb: 2, minHeight: "54px" }}>
+                            <Grid item sx={{ flexShrink: 1, flexGrow: 1, mt: 0.5 }}>
+                                <Typography
+                                    variant="h3"
+                                    sx={{
+                                        border: "none",
+                                        textTransform: "none",
+                                        overflowWrap: "anywhere",
+                                    }}
+                                >
+                                    {file.name}
+                                </Typography>
+                            </Grid>
+                            {file.canOpen
+                                .map(() => (
+                                    <Grid item key={null}>
+                                        <ActionButton
+                                            label="Open"
+                                            sx={{
+                                                borderRadius: 3,
+                                                px: 2.5,
+                                                py: 0.5,
+                                            }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openFolder(file);
+                                                setMobileInfoPanelOpen(false);
+                                            }}
+                                        />
+                                    </Grid>
+                                ))
+                                .orElse(null)}
+                            {file.isImage && file.downloadHref && (
+                                <Grid item>
+                                    <ActionButton
+                                        onClick={() => {
+                                            if (file.downloadHref)
+                                                void file.downloadHref().then((url) => {
+                                                    setPreviewImageUrl(url);
+                                                });
+                                        }}
+                                        label="View"
+                                        sx={{
+                                            borderRadius: 3,
+                                            px: 2.5,
+                                            py: 0.5,
+                                        }}
+                                    />
+                                    {previewImageUrl && (
+                                        <ImagePreview
+                                            closePreview={() => {
+                                                setPreviewImageUrl(null);
+                                            }}
+                                            link={previewImageUrl}
+                                            size={previewSize}
+                                            setSize={(s) => setPreviewSize(s)}
+                                        />
+                                    )}
+                                </Grid>
+                            )}
+                        </Grid>
+                        {selection
+                            .asSet()
+                            .only.map((f) => <InfoPanelContent key={null} file={f} smallViewport />)
+                            .orElse(null)}
+                    </CardContent>
+                </Stack>
+            </MobileInfoPanelContent>
+        </CustomSwipeableDrawer>
+    );
 };

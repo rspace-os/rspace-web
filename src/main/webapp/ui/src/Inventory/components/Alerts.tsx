@@ -11,20 +11,19 @@ import useStores from "../../stores/use-stores";
  * context.
  */
 const Inner = () => {
-  const { addAlert, removeAlert } = React.useContext(AlertContext);
-  const { uiStore } = useStores();
+    const { addAlert, removeAlert } = React.useContext(AlertContext);
+    const { uiStore } = useStores();
 
-  React.useEffect(() => {
-    uiStore.addAlert = addAlert;
-    uiStore.removeAlert = removeAlert;
-     
-  }, [uiStore]);
+    React.useEffect(() => {
+        uiStore.addAlert = addAlert;
+        uiStore.removeAlert = removeAlert;
+    }, [uiStore, addAlert, removeAlert]);
 
-  return <> </>;
+    return <> </>;
 };
 
 type OuterArgs = {
-  children: React.ReactNode;
+    children: React.ReactNode;
 };
 
 /**
@@ -45,10 +44,10 @@ type OuterArgs = {
  * should be used in the same way.
  */
 export default function Outer({ children }: OuterArgs): React.ReactNode {
-  return (
-    <Alerts>
-      <Inner />
-      {children}
-    </Alerts>
-  );
+    return (
+        <Alerts>
+            <Inner />
+            {children}
+        </Alerts>
+    );
 }

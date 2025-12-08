@@ -1,13 +1,10 @@
-"use strict";
-import React from "react";
+import styled from "@emotion/styled";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import materialTheme from "../theme";
-import styled from "@emotion/styled";
 import { createRoot } from "react-dom/client";
-
 import BaseToolbar from "../components/BaseToolbar";
 import TreeSort from "../components/TreeSort";
+import materialTheme from "../theme";
 
 const ToolbarWrapper = styled.div`
   display: flex;
@@ -37,35 +34,35 @@ const ToolbarWrapper = styled.div`
 `;
 
 export default function FileTreeToolbar() {
-  function content() {
-    return (
-      <ToolbarWrapper>
-        <TreeSort />
-        <ul>
-          <li>
-            <a
-              id="hideFileTreeSmall"
-              href="#"
-              className="rs-actionbar__item rs-actionbar__item--icon"
-              title="Hide tree browser"
-              data-test-id="hide-tree"
-              aria-label="Hide tree browser"
-            >
-              <span className="glyphicon glyphicon-menu-right"></span>
-            </a>
-          </li>
-        </ul>
-      </ToolbarWrapper>
-    );
-  }
+    function content() {
+        return (
+            <ToolbarWrapper>
+                <TreeSort />
+                <ul>
+                    <li>
+                        <a
+                            id="hideFileTreeSmall"
+                            href="#"
+                            className="rs-actionbar__item rs-actionbar__item--icon"
+                            title="Hide tree browser"
+                            data-test-id="hide-tree"
+                            aria-label="Hide tree browser"
+                        >
+                            <span className="glyphicon glyphicon-menu-right"></span>
+                        </a>
+                    </li>
+                </ul>
+            </ToolbarWrapper>
+        );
+    }
 
-  return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={materialTheme}>
-        <BaseToolbar content={content()} />
-      </ThemeProvider>
-    </StyledEngineProvider>
-  );
+    return (
+        <StyledEngineProvider injectFirst>
+            <ThemeProvider theme={materialTheme}>
+                <BaseToolbar content={content()} />
+            </ThemeProvider>
+        </StyledEngineProvider>
+    );
 }
 
 const domContainer = document.getElementById("fileTreeToolbar");

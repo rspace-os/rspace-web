@@ -7,21 +7,21 @@ const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
  * mechanism that allows the user to choose a Slack channel.
  */
 export function useSlackEndpoint(): {
-  oauthUrl: () => Promise<string>;
+    oauthUrl: () => Promise<string>;
 } {
-  const api = axios.create({
-    baseURL: "/slack",
-    timeout: ONE_MINUTE_IN_MS,
-  });
+    const api = axios.create({
+        baseURL: "/slack",
+        timeout: ONE_MINUTE_IN_MS,
+    });
 
-  const oauthUrl = async (): Promise<string> => {
-    const response = await api.get<{
-      success: true;
-      data: string;
-      error: null;
-    }>("/oauthUrl");
-    return response.data.data;
-  };
+    const oauthUrl = async (): Promise<string> => {
+        const response = await api.get<{
+            success: true;
+            data: string;
+            error: null;
+        }>("/oauthUrl");
+        return response.data.data;
+    };
 
-  return { oauthUrl };
+    return { oauthUrl };
 }

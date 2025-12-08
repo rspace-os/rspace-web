@@ -26,7 +26,7 @@
  * at 0. Useful for indexing over other iterators.
  */
 export function* incrementForever(): Generator<number, void, void> {
-  for (let i = 0; ; i++) yield i;
+    for (let i = 0; ; i++) yield i;
 }
 
 /**
@@ -35,23 +35,20 @@ export function* incrementForever(): Generator<number, void, void> {
  * @arg iterator - The iterator to take from.
  * @arg n        - The number of elements to take.
  */
-export function* take<T>(
-  iterator: Iterable<T>,
-  n: number,
-): Generator<T, void, void> {
-  let count = n;
-  for (const x of iterator) {
-    if (count === 0) return;
-    yield x;
-    count--;
-  }
+export function* take<T>(iterator: Iterable<T>, n: number): Generator<T, void, void> {
+    let count = n;
+    for (const x of iterator) {
+        if (count === 0) return;
+        yield x;
+        count--;
+    }
 }
 
 /**
  * Compute the sum of an iterator of numbers.
  */
 export function sum(iterator: Iterable<number>): number {
-  let result = 0;
-  for (const x of iterator) result += x;
-  return result;
+    let result = 0;
+    for (const x of iterator) result += x;
+    return result;
 }

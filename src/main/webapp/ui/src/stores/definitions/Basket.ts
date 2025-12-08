@@ -1,6 +1,6 @@
-import { type BaseRecord, type Id, type GlobalId } from "./BaseRecord";
-import { type InventoryRecord } from "./InventoryRecord";
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
+import type { BaseRecord, GlobalId, Id } from "./BaseRecord";
+import type { InventoryRecord } from "./InventoryRecord";
 
 /**
  * @module Basket
@@ -23,25 +23,25 @@ import { type URL } from "../../util/types";
  */
 
 export type BasketAttrs = {
-  id: Id;
-  globalId: GlobalId;
-  name: string;
-  items: Array<InventoryRecord>;
-  itemCount: number;
-  _links: Array<URL>;
+    id: Id;
+    globalId: GlobalId;
+    name: string;
+    items: Array<InventoryRecord>;
+    itemCount: number;
+    _links: Array<URL>;
 };
 
 export type BasketDetails = {
-  name: string;
+    name: string;
 };
 
 export interface Basket extends BaseRecord {
-  items: Array<InventoryRecord>;
-  itemCount: number;
-  _links: Array<URL>;
-  loading: boolean;
+    items: Array<InventoryRecord>;
+    itemCount: number;
+    _links: Array<URL>;
+    loading: boolean;
 
-  addItems(itemIds: Array<GlobalId>): Promise<void>;
-  removeItems(itemIds: Array<GlobalId>): Promise<void>;
-  updateDetails(details: BasketDetails): Promise<void>;
+    addItems(itemIds: Array<GlobalId>): Promise<void>;
+    removeItems(itemIds: Array<GlobalId>): Promise<void>;
+    updateDetails(details: BasketDetails): Promise<void>;
 }

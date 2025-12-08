@@ -2,37 +2,38 @@
  * @jest-environment jsdom
  */
 /* eslint-env jest */
-import React, { useContext, useEffect } from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+
+import { cleanup, render, screen } from "@testing-library/react";
+import { useContext, useEffect } from "react";
 import "@testing-library/jest-dom";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Alerts from "../Alerts";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+    jest.clearAllMocks();
 });
 
 afterEach(cleanup);
 
 function DisplaysAlert() {
-  const { addAlert } = useContext(AlertContext);
+    const { addAlert } = useContext(AlertContext);
 
-  useEffect(() => {
-    addAlert(mkAlert({ message: "Success!" }));
-  }, []);
+    useEffect(() => {
+        addAlert(mkAlert({ message: "Success!" }));
+    }, [addAlert]);
 
-  return <></>;
+    return <></>;
 }
 
 describe("Alerts", () => {
-  test("Example of usage", () => {
-    render(
-      <Alerts>
-        <DisplaysAlert />
-      </Alerts>
-    );
+    test("Example of usage", () => {
+        render(
+            <Alerts>
+                <DisplaysAlert />
+            </Alerts>,
+        );
 
-    expect(screen.getByRole("alert")).toBeVisible();
-    expect(screen.getByText("Success!")).toBeVisible();
-  });
+        expect(screen.getByRole("alert")).toBeVisible();
+        expect(screen.getByText("Success!")).toBeVisible();
+    });
 });

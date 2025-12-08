@@ -7,27 +7,27 @@
  *  3. The user selects a user.
  */
 export type ExportSelection =
-  | {
-      type: "selection";
-      /*
-       * Note that if these arrays are larger than 100, the network call to
-       * trigger the export will fail.
-       */
-      exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">;
-      exportNames: Array<string>;
-      exportIds: ReadonlyArray<string>;
-    }
-  | {
-      type: "group";
-      groupId: string;
-      groupName: string;
-      exportIds: Array<unknown>;
-    }
-  | {
-      type: "user";
-      username: string;
-      exportIds: Array<unknown>;
-    };
+    | {
+          type: "selection";
+          /*
+           * Note that if these arrays are larger than 100, the network call to
+           * trigger the export will fail.
+           */
+          exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">;
+          exportNames: Array<string>;
+          exportIds: ReadonlyArray<string>;
+      }
+    | {
+          type: "group";
+          groupId: string;
+          groupName: string;
+          exportIds: Array<unknown>;
+      }
+    | {
+          type: "user";
+          username: string;
+          exportIds: Array<unknown>;
+      };
 
 /**
  * When generating PDFs, the user can select between A4 and LETTER page sizes.
@@ -45,26 +45,26 @@ type Path = string;
  * A link to a file in an external filestore.
  */
 export type FileLink = {
-  type: "file";
-  size: number;
-  fileSystemFullPath: Path;
-  path: Path;
+    type: "file";
+    size: number;
+    fileSystemFullPath: Path;
+    path: Path;
 };
 
 /**
  * A link to a folder in an external filestore.
  */
 export type FolderLink = {
-  type: "folder";
-   
-  content: Array<MixedLink>;
-  fileSystemFullPath: Path;
-  size: null;
+    type: "folder";
+
+    content: Array<MixedLink>;
+    fileSystemFullPath: Path;
+    size: null;
 };
 
 type FoundFileLink = {
-  linkType: "file" | "directory";
-  path: Path;
+    linkType: "file" | "directory";
+    path: Path;
 };
 
 /**
@@ -81,10 +81,10 @@ export type FileSystemId = string;
  * The metadata associated with an external file system.
  */
 export type FileSystem = {
-  id: FileSystemId;
-  name: string;
-  foundNfsLinks: Array<FoundFileLink>;
-  loggedAs: string | null;
-  checkedNfsLinks: Array<MixedLink | null>;
-  checkedNfsLinkMessages: { [path: Path]: string };
+    id: FileSystemId;
+    name: string;
+    foundNfsLinks: Array<FoundFileLink>;
+    loggedAs: string | null;
+    checkedNfsLinks: Array<MixedLink | null>;
+    checkedNfsLinkMessages: { [path: Path]: string };
 };

@@ -1,5 +1,5 @@
-import { type UnitCategory } from "../stores/UnitStore";
-import { AdjustableTableRowOptions } from "./Tables";
+import type { UnitCategory } from "../stores/UnitStore";
+import type { AdjustableTableRowOptions } from "./Tables";
 
 /**
  * This is used to mark implementations of the HasQuantity interface so that at
@@ -22,8 +22,8 @@ export const HasQuantityMarker = Symbol("HasQuantity");
  * numeric value (e.g., grams, liters, pieces, etc.)
  */
 export type Quantity = {
-  numericValue: number | "";
-  unitId: number;
+    numericValue: number | "";
+    unitId: number;
 };
 
 /**
@@ -36,7 +36,7 @@ export type HasQuantityUneditableFields = object;
  * Where a record has a quantity, the user may edit it in the UI.
  */
 export type HasQuantityEditableFields = {
-  quantity: Quantity | null;
+    quantity: Quantity | null;
 };
 
 /**
@@ -46,52 +46,52 @@ export type HasQuantityEditableFields = {
  * providing a generic abstraction over all such items.
  */
 export interface HasQuantity {
-  [HasQuantityMarker]: true;
+    [HasQuantityMarker]: true;
 
-  /**
-   * Despite all of the properties below which should be used wherever possible,
-   * we still expose this property directly so that TypeScript's type refinement
-   * can be used to first check if the value is not null, and then get at the
-   * numerical value.
-   */
-  quantity: HasQuantityEditableFields["quantity"];
+    /**
+     * Despite all of the properties below which should be used wherever possible,
+     * we still expose this property directly so that TypeScript's type refinement
+     * can be used to first check if the value is not null, and then get at the
+     * numerical value.
+     */
+    quantity: HasQuantityEditableFields["quantity"];
 
-  /*
-   * The category of unit by which the quantity is measured e.g. mass, volume,
-   * etc.
-   */
-  readonly quantityCategory: UnitCategory;
+    /*
+     * The category of unit by which the quantity is measured e.g. mass, volume,
+     * etc.
+     */
+    readonly quantityCategory: UnitCategory;
 
-  /*
-   * The specific unit by which the quantity is measured -- e.g. grams,
-   * kilograms, etc. It is described as a enum number that the database uses to
-   * identify units.
-   */
-  readonly quantityUnitId: number;
+    /*
+     * The specific unit by which the quantity is measured -- e.g. grams,
+     * kilograms, etc. It is described as a enum number that the database uses to
+     * identify units.
+     */
+    readonly quantityUnitId: number;
 
-  /*
-   * The numerical value of the quantity. Prefer this over accessing the
-   * `quantity` property directly.
-   */
-  readonly quantityValue: number;
+    /*
+     * The numerical value of the quantity. Prefer this over accessing the
+     * `quantity` property directly.
+     */
+    readonly quantityValue: number;
 
-  /*
-   * The label to be shown in the UI when displaying the quantity.
-   */
-  readonly quantityLabel: string;
+    /*
+     * The label to be shown in the UI when displaying the quantity.
+     */
+    readonly quantityLabel: string;
 
-  /*
-   * The label to be shown in the UI for just the units of this quantity.
-   */
-  readonly quantityUnitLabel: string;
+    /*
+     * The label to be shown in the UI for just the units of this quantity.
+     */
+    readonly quantityUnitLabel: string;
 
-  adjustableTableOptions(): AdjustableTableRowOptions<string>;
+    adjustableTableOptions(): AdjustableTableRowOptions<string>;
 
-  readonly fieldValues: HasQuantityEditableFields & HasQuantityUneditableFields;
+    readonly fieldValues: HasQuantityEditableFields & HasQuantityUneditableFields;
 
-  readonly noValueLabel: {
-    [key in keyof HasQuantityEditableFields]: string | null;
-  } & {
-    [key in keyof HasQuantityUneditableFields]: string | null;
-  };
+    readonly noValueLabel: {
+        [key in keyof HasQuantityEditableFields]: string | null;
+    } & {
+        [key in keyof HasQuantityUneditableFields]: string | null;
+    };
 }

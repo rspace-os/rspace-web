@@ -26,29 +26,27 @@
  * system.
  */
 export type Validator = {
-  /*
-   * All of the booleans are wrapped in promises so that the validation
-   * function may perform asynchronous operations. To ensure that the user is
-   * not left waiting after pressing the button that triggers the isValid call,
-   * it is best to limit such logic to only what is essential. An example would
-   * be to display a confirmation dialog asking the user if they would like to
-   * override any validation warnings.
-   */
-  setValidFunc: (f: () => Promise<boolean>) => void;
-  isValid: () => Promise<boolean>;
+    /*
+     * All of the booleans are wrapped in promises so that the validation
+     * function may perform asynchronous operations. To ensure that the user is
+     * not left waiting after pressing the button that triggers the isValid call,
+     * it is best to limit such logic to only what is essential. An example would
+     * be to display a confirmation dialog asking the user if they would like to
+     * override any validation warnings.
+     */
+    setValidFunc: (f: () => Promise<boolean>) => void;
+    isValid: () => Promise<boolean>;
 };
 
 /**
  * Constructor function for creating new Validator objects
  */
-export const mkValidator = (
-  isValidFunc?: () => Promise<boolean>
-): Validator => {
-  let validFunc = isValidFunc ?? (() => Promise.resolve(true));
-  return {
-    setValidFunc: (f: () => Promise<boolean>) => {
-      validFunc = f;
-    },
-    isValid: () => validFunc(),
-  };
+export const mkValidator = (isValidFunc?: () => Promise<boolean>): Validator => {
+    let validFunc = isValidFunc ?? (() => Promise.resolve(true));
+    return {
+        setValidFunc: (f: () => Promise<boolean>) => {
+            validFunc = f;
+        },
+        isValid: () => validFunc(),
+    };
 };

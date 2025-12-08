@@ -2,8 +2,7 @@
  * The colour used in the background of the logo.
  */
 export const LOGO_COLOR = {
-  hue: 209,
-  saturation: 100,
-  lightness: 39,
+    hue: 209,
+    saturation: 100,
+    lightness: 39,
 };
-

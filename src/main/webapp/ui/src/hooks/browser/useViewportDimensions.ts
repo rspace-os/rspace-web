@@ -1,67 +1,63 @@
-import React from "react";
+import { computed, makeObservable, observable, runInAction } from "mobx";
 import { useLocalObservable } from "mobx-react-lite";
-import { runInAction, makeObservable, observable, computed } from "mobx";
+import React from "react";
 import theme from "../../theme";
 
 class ViewportDimensions {
-  width: number;
-  height: number;
+    width: number;
+    height: number;
 
-  constructor({ width, height }: { width: number; height: number }) {
-    makeObservable(this, {
-      width: observable,
-      height: observable,
-      viewportSize: computed,
-      isViewportVerySmall: computed,
-      isViewportSmall: computed,
-      isViewportLarge: computed,
-    });
-    this.width = width;
-    this.height = height;
-  }
+    constructor({ width, height }: { width: number; height: number }) {
+        makeObservable(this, {
+            width: observable,
+            height: observable,
+            viewportSize: computed,
+            isViewportVerySmall: computed,
+            isViewportSmall: computed,
+            isViewportLarge: computed,
+        });
+        this.width = width;
+        this.height = height;
+    }
 
-  /**
-   * Returns the label of the largest breakpoint that is smaller than the
-   * current width.
-   */
-  get viewportSize(): "xl" | "lg" | "md" | "sm" | "xs" {
-    if (this.width > theme.breakpoints.values.xl) return "xl";
-    if (this.width > theme.breakpoints.values.lg) return "lg";
-    if (this.width > theme.breakpoints.values.md) return "md";
-    if (this.width > theme.breakpoints.values.sm) return "sm";
-    return "xs";
-  }
+    /**
+     * Returns the label of the largest breakpoint that is smaller than the
+     * current width.
+     */
+    get viewportSize(): "xl" | "lg" | "md" | "sm" | "xs" {
+        if (this.width > theme.breakpoints.values.xl) return "xl";
+        if (this.width > theme.breakpoints.values.lg) return "lg";
+        if (this.width > theme.breakpoints.values.md) return "md";
+        if (this.width > theme.breakpoints.values.sm) return "sm";
+        return "xs";
+    }
 
-  /**
-   * Pretty much just phones, but also tablets that support side-by-side apps,
-   * and very narrow laptop/desktop windows.
-   */
-  get isViewportVerySmall(): boolean {
-    return this.viewportSize === "xs";
-  }
+    /**
+     * Pretty much just phones, but also tablets that support side-by-side apps,
+     * and very narrow laptop/desktop windows.
+     */
+    get isViewportVerySmall(): boolean {
+        return this.viewportSize === "xs";
+    }
 
-  /**
-   * Viewports of this size are typically phones or tablets but also when
-   * windows are pinned to just one side of laptop screens.
-   */
-  get isViewportSmall(): boolean {
-    return this.viewportSize === "xs" || this.viewportSize === "sm";
-  }
+    /**
+     * Viewports of this size are typically phones or tablets but also when
+     * windows are pinned to just one side of laptop screens.
+     */
+    get isViewportSmall(): boolean {
+        return this.viewportSize === "xs" || this.viewportSize === "sm";
+    }
 
-  /**
-   * Full screen/maximised windows on laptops and most windows on desktops
-   */
-  get isViewportLarge(): boolean {
-    return this.viewportSize === "lg" || this.viewportSize === "xl";
-  }
+    /**
+     * Full screen/maximised windows on laptops and most windows on desktops
+     */
+    get isViewportLarge(): boolean {
+        return this.viewportSize === "lg" || this.viewportSize === "xl";
+    }
 
-  get isViewportNotLarge(): boolean {
-    return (
-      this.viewportSize === "xs" ||
-      this.viewportSize === "sm" ||
-      this.viewportSize === "md"
-    );
-  }
+    get isViewportNotLarge(): boolean {
+        return this.viewportSize === "xs" || this.viewportSize === "sm" || this.viewportSize === "md";
+    }
 }
 
 /**
@@ -94,26 +90,25 @@ class ViewportDimensions {
  * https://mobx.js.org/react-integration.html
  */
 export default function useViewportDimensions(): ViewportDimensions {
-  const viewportDimensions = useLocalObservable(
-    () =>
-      new ViewportDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      }),
-  );
+    const viewportDimensions = useLocalObservable(
+        () =>
+            new ViewportDimensions({
+                width: window.innerWidth,
+                height: window.innerHeight,
+            }),
+    );
 
-  React.useEffect(() => {
-    const handleResize = () => {
-      runInAction(() => {
-        viewportDimensions.width = window.innerWidth;
-        viewportDimensions.height = window.innerHeight;
-      });
-    };
+    React.useEffect(() => {
+        const handleResize = () => {
+            runInAction(() => {
+                viewportDimensions.width = window.innerWidth;
+                viewportDimensions.height = window.innerHeight;
+            });
+        };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-     
-  }, []);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [viewportDimensions]);
 
-  return viewportDimensions;
+    return viewportDimensions;
 }

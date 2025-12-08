@@ -1,33 +1,33 @@
-import React from "react";
+import { faFile } from "@fortawesome/free-solid-svg-icons/faFile";
+import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
+import { faFileInvoice } from "@fortawesome/free-solid-svg-icons/faFileInvoice";
+import { faFilm } from "@fortawesome/free-solid-svg-icons/faFilm";
+import { faImage } from "@fortawesome/free-solid-svg-icons/faImage";
+import { faScissors } from "@fortawesome/free-solid-svg-icons/faScissors";
+import { faShapes } from "@fortawesome/free-solid-svg-icons/faShapes";
+import { faVolumeLow } from "@fortawesome/free-solid-svg-icons/faVolumeLow";
+import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
+import type React from "react";
 import { COLORS as baseThemeColors } from "../../theme";
-import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
 import ChemistryIcon from "./ChemistryIcon";
 import FilestoreIcon from "./FilestoreIcon";
-import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
-import { faImage } from '@fortawesome/free-solid-svg-icons/faImage';
-import { faFilm } from '@fortawesome/free-solid-svg-icons/faFilm';
-import { faFile } from '@fortawesome/free-solid-svg-icons/faFile';
-import { faFileInvoice } from '@fortawesome/free-solid-svg-icons/faFileInvoice';
-import { faShapes } from '@fortawesome/free-solid-svg-icons/faShapes';
-import { faVolumeLow } from '@fortawesome/free-solid-svg-icons/faVolumeLow';
-import { faScissors } from '@fortawesome/free-solid-svg-icons/faScissors';
-import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
 
 /**
  * Constants for the strings that identify gallery sections.
  */
 export const GALLERY_SECTION = {
-  IMAGES: "Images",
-  AUDIOS: "Audios",
-  VIDEOS: "Videos",
-  DOCUMENTS: "Documents",
-  CHEMISTRY: "Chemistry",
-  DMPS: "DMPs",
-  NETWORKFILES: "NetworkFiles",
-  SNIPPETS: "Snippets",
-  MISCELLANEOUS: "Miscellaneous",
-  PDFDOCUMENTS: "PdfDocuments",
+    IMAGES: "Images",
+    AUDIOS: "Audios",
+    VIDEOS: "Videos",
+    DOCUMENTS: "Documents",
+    CHEMISTRY: "Chemistry",
+    DMPS: "DMPs",
+    NETWORKFILES: "NetworkFiles",
+    SNIPPETS: "Snippets",
+    MISCELLANEOUS: "Miscellaneous",
+    PDFDOCUMENTS: "PdfDocuments",
 } as const;
 
 /**
@@ -38,78 +38,75 @@ export const GALLERY_SECTION = {
  * on external filesystems.
  */
 export type GallerySection =
-  | "Images"
-  | "Audios"
-  | "Videos"
-  | "Documents"
-  | "Chemistry"
-  | "DMPs"
-  | "NetworkFiles"
-  | "Snippets"
-  | "Miscellaneous"
-  | "PdfDocuments";
+    | "Images"
+    | "Audios"
+    | "Videos"
+    | "Documents"
+    | "Chemistry"
+    | "DMPs"
+    | "NetworkFiles"
+    | "Snippets"
+    | "Miscellaneous"
+    | "PdfDocuments";
 
 /**
  * Given a string, parse it into a gallery section. If the string does not
  * correspond to any of the valid gallery sections, return an error.
  */
 export const parseGallerySection = (section: string): Result<GallerySection> =>
-  Result.first(
-    Parsers.parseString(GALLERY_SECTION.IMAGES, section),
-    Parsers.parseString(GALLERY_SECTION.AUDIOS, section),
-    Parsers.parseString(GALLERY_SECTION.VIDEOS, section),
-    Parsers.parseString(GALLERY_SECTION.DOCUMENTS, section),
-    Parsers.parseString(GALLERY_SECTION.CHEMISTRY, section),
-    Parsers.parseString(GALLERY_SECTION.DMPS, section),
-    Parsers.parseString(GALLERY_SECTION.NETWORKFILES, section),
-    Parsers.parseString(GALLERY_SECTION.SNIPPETS, section),
-    Parsers.parseString(GALLERY_SECTION.MISCELLANEOUS, section),
-    Parsers.parseString(GALLERY_SECTION.PDFDOCUMENTS, section),
-  );
+    Result.first(
+        Parsers.parseString(GALLERY_SECTION.IMAGES, section),
+        Parsers.parseString(GALLERY_SECTION.AUDIOS, section),
+        Parsers.parseString(GALLERY_SECTION.VIDEOS, section),
+        Parsers.parseString(GALLERY_SECTION.DOCUMENTS, section),
+        Parsers.parseString(GALLERY_SECTION.CHEMISTRY, section),
+        Parsers.parseString(GALLERY_SECTION.DMPS, section),
+        Parsers.parseString(GALLERY_SECTION.NETWORKFILES, section),
+        Parsers.parseString(GALLERY_SECTION.SNIPPETS, section),
+        Parsers.parseString(GALLERY_SECTION.MISCELLANEOUS, section),
+        Parsers.parseString(GALLERY_SECTION.PDFDOCUMENTS, section),
+    );
 
 /**
  * Given a URLSearchParams, get the gallery section as referred to by the
  * 'mediaType' search parameter. Most of this logic is to satify flow that the
  * string is indeed one of the valid strings that identify a gallery section.
  */
-export const parseGallerySectionFromUrlSearchParams = (
-  searchParams: URLSearchParams,
-): Result<GallerySection> =>
-  Result.fromNullable(
-    searchParams.get("mediaType"),
-    new Error("No search parameter with name 'mediaType'"),
-  ).flatMap(parseGallerySection);
+export const parseGallerySectionFromUrlSearchParams = (searchParams: URLSearchParams): Result<GallerySection> =>
+    Result.fromNullable(searchParams.get("mediaType"), new Error("No search parameter with name 'mediaType'")).flatMap(
+        parseGallerySection,
+    );
 
 /**
  * Mapping of gallery sections to a label that can be shown in the UI.
  */
 export const gallerySectionLabel = {
-  Images: "Images",
-  Audios: "Audio",
-  Videos: "Videos",
-  Documents: "Documents",
-  Chemistry: "Chemistry",
-  DMPs: "DMPs",
-  NetworkFiles: "Filestores",
-  Snippets: "Snippets",
-  Miscellaneous: "Miscellaneous",
-  PdfDocuments: "Exports",
+    Images: "Images",
+    Audios: "Audio",
+    Videos: "Videos",
+    Documents: "Documents",
+    Chemistry: "Chemistry",
+    DMPs: "DMPs",
+    NetworkFiles: "Filestores",
+    Snippets: "Snippets",
+    Miscellaneous: "Miscellaneous",
+    PdfDocuments: "Exports",
 };
 
 /**
  * Mapping of gallery sections to icons that can be shown in the UI.
  */
 export const gallerySectionIcon: Record<string, React.ReactNode> = {
-  Images: <FaIcon icon={faImage} />,
-  Audios: <FaIcon icon={faVolumeLow} />,
-  Videos: <FaIcon icon={faFilm} />,
-  Documents: <FaIcon icon={faFile} />,
-  Chemistry: <ChemistryIcon />,
-  DMPs: <FaIcon icon={faFileInvoice} />,
-  NetworkFiles: <FilestoreIcon />,
-  Snippets: <FaIcon icon={faScissors} />,
-  Miscellaneous: <FaIcon icon={faShapes} />,
-  PdfDocuments: <FaIcon icon={faFileExport} />,
+    Images: <FaIcon icon={faImage} />,
+    Audios: <FaIcon icon={faVolumeLow} />,
+    Videos: <FaIcon icon={faFilm} />,
+    Documents: <FaIcon icon={faFile} />,
+    Chemistry: <ChemistryIcon />,
+    DMPs: <FaIcon icon={faFileInvoice} />,
+    NetworkFiles: <FilestoreIcon />,
+    Snippets: <FaIcon icon={faScissors} />,
+    Miscellaneous: <FaIcon icon={faShapes} />,
+    PdfDocuments: <FaIcon icon={faFileExport} />,
 };
 
 /**
@@ -118,16 +115,16 @@ export const gallerySectionIcon: Record<string, React.ReactNode> = {
  * section.
  */
 export const gallerySectionCollectiveNoun = {
-  Images: "images",
-  Audios: "audio files",
-  Videos: "video files",
-  Documents: "documents",
-  Chemistry: "chemistry files",
-  DMPs: "DMPs",
-  NetworkFiles: "filestores",
-  Snippets: "snippets",
-  Miscellaneous: "miscellaneous files",
-  PdfDocuments: "exports",
+    Images: "images",
+    Audios: "audio files",
+    Videos: "video files",
+    Documents: "documents",
+    Chemistry: "chemistry files",
+    DMPs: "DMPs",
+    NetworkFiles: "filestores",
+    Snippets: "snippets",
+    Miscellaneous: "miscellaneous files",
+    PdfDocuments: "exports",
 };
 
 /**

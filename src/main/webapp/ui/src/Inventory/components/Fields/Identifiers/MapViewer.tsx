@@ -1,31 +1,19 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import "leaflet/dist/leaflet.css";
-import {
-  boxComplete,
-  pointComplete,
-} from "../../../../stores/models/GeoLocationModel";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Grid from "@mui/material/Grid";
 import FormGroup from "@mui/material/FormGroup";
+import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
-import {
-  MapContainer,
-  TileLayer,
-  Polygon,
-  Circle,
-  Rectangle,
-} from "react-leaflet";
 import { useTheme } from "@mui/material/styles";
-import {
-  type GeoLocationBox,
-  type GeoLocationPolygon,
-  type PolygonPoint,
-} from "../../../../stores/definitions/GeoLocation";
+import { Circle, MapContainer, Polygon, Rectangle, TileLayer } from "react-leaflet";
+import type { GeoLocationBox, GeoLocationPolygon, PolygonPoint } from "../../../../stores/definitions/GeoLocation";
+import { boxComplete, pointComplete } from "../../../../stores/models/GeoLocationModel";
 
 type MapViewerArgs = {
-  point: PolygonPoint;
-  box: GeoLocationBox;
-  polygon: GeoLocationPolygon;
+    point: PolygonPoint;
+    box: GeoLocationBox;
+    polygon: GeoLocationPolygon;
 };
 
 /**
@@ -44,201 +32,177 @@ type MapViewerArgs = {
  * work with. There is some discussion online on how this can be resolved, but those steps
  * alone did not prove fruitful. For example, https://github.com/PaulLeCam/react-leaflet/issues/977
  */
-export default function MapViewer({
-  point,
-  box,
-  polygon,
-}: MapViewerArgs): React.ReactNode {
-  const theme = useTheme();
+export default function MapViewer({ point, box, polygon }: MapViewerArgs): React.ReactNode {
+    const theme = useTheme();
 
-  const [showPoint, setShowPoint] = useState<boolean>(pointComplete(point));
-  const [showBox, setShowBox] = useState<boolean>(boxComplete(box));
-  const [showPolygon, setShowPolygon] = useState<boolean>(polygon.isValid);
+    const [showPoint, setShowPoint] = useState<boolean>(pointComplete(point));
+    const [showBox, setShowBox] = useState<boolean>(boxComplete(box));
+    const [showPolygon, setShowPolygon] = useState<boolean>(polygon.isValid);
 
-  const {
-    eastBoundLongitude,
-    northBoundLatitude,
-    southBoundLatitude,
-    westBoundLongitude,
-  } = box;
-  const boxToPolygon = [
-    { latitude: northBoundLatitude, longitude: westBoundLongitude },
-    { latitude: northBoundLatitude, longitude: eastBoundLongitude },
-    { latitude: southBoundLatitude, longitude: eastBoundLongitude },
-    { latitude: southBoundLatitude, longitude: westBoundLongitude },
-    { latitude: northBoundLatitude, longitude: westBoundLongitude },
-  ];
+    const { eastBoundLongitude, northBoundLatitude, southBoundLatitude, westBoundLongitude } = box;
+    const boxToPolygon = [
+        { latitude: northBoundLatitude, longitude: westBoundLongitude },
+        { latitude: northBoundLatitude, longitude: eastBoundLongitude },
+        { latitude: southBoundLatitude, longitude: eastBoundLongitude },
+        { latitude: southBoundLatitude, longitude: westBoundLongitude },
+        { latitude: northBoundLatitude, longitude: westBoundLongitude },
+    ];
 
-  /*
-   * To center the map as closely as possible on all three parts of the geo location data,
-   * we sum their latitudes and longitudes weighted by the number of points. Where no data
-   * has yet been set, we default to (0,0)
-   */
+    /*
+     * To center the map as closely as possible on all three parts of the geo location data,
+     * we sum their latitudes and longitudes weighted by the number of points. Where no data
+     * has yet been set, we default to (0,0)
+     */
 
-  let latitudeCenter = 0;
-  let latitudeDataPoints = 0;
-  if (pointComplete(point)) {
-    if (!isNaN(parseFloat(point.pointLatitude))) {
-      latitudeCenter += parseFloat(point.pointLatitude);
-      latitudeDataPoints++;
+    let latitudeCenter = 0;
+    let latitudeDataPoints = 0;
+    if (pointComplete(point)) {
+        if (!Number.isNaN(parseFloat(point.pointLatitude))) {
+            latitudeCenter += parseFloat(point.pointLatitude);
+            latitudeDataPoints++;
+        }
     }
-  }
-  if (boxComplete(box)) {
-    if (
-      !isNaN(parseFloat(box.northBoundLatitude)) &&
-      !isNaN(parseFloat(box.southBoundLatitude))
-    ) {
-      latitudeCenter +=
-        0.5 * parseFloat(box.northBoundLatitude) +
-        0.5 * parseFloat(box.southBoundLatitude);
-      latitudeDataPoints++;
+    if (boxComplete(box)) {
+        if (!Number.isNaN(parseFloat(box.northBoundLatitude)) && !Number.isNaN(parseFloat(box.southBoundLatitude))) {
+            latitudeCenter += 0.5 * parseFloat(box.northBoundLatitude) + 0.5 * parseFloat(box.southBoundLatitude);
+            latitudeDataPoints++;
+        }
     }
-  }
-  if (polygon.isValid) {
-    const sum = polygon
-      .mapPoints((polygonPoint) => parseFloat(polygonPoint.pointLatitude))
-      .reduce((acc, lat) => acc + lat, 0);
-    latitudeCenter += sum * (1 / polygon.length);
-    latitudeDataPoints++;
-  }
-  latitudeCenter /= latitudeDataPoints;
-
-  let longitudeCenter = 0;
-  let longitudeDataPoints = 0;
-  if (pointComplete(point)) {
-    if (!isNaN(parseFloat(point.pointLongitude))) {
-      longitudeCenter += parseFloat(point.pointLongitude);
-      longitudeDataPoints++;
+    if (polygon.isValid) {
+        const sum = polygon
+            .mapPoints((polygonPoint) => parseFloat(polygonPoint.pointLatitude))
+            .reduce((acc, lat) => acc + lat, 0);
+        latitudeCenter += sum * (1 / polygon.length);
+        latitudeDataPoints++;
     }
-  }
-  if (boxComplete(box)) {
-    if (
-      !isNaN(parseFloat(box.eastBoundLongitude)) &&
-      !isNaN(parseFloat(box.westBoundLongitude))
-    ) {
-      longitudeCenter +=
-        0.5 * parseFloat(box.eastBoundLongitude) +
-        0.5 * parseFloat(box.westBoundLongitude);
-      longitudeDataPoints++;
+    latitudeCenter /= latitudeDataPoints;
+
+    let longitudeCenter = 0;
+    let longitudeDataPoints = 0;
+    if (pointComplete(point)) {
+        if (!Number.isNaN(parseFloat(point.pointLongitude))) {
+            longitudeCenter += parseFloat(point.pointLongitude);
+            longitudeDataPoints++;
+        }
     }
-  }
-  if (polygon.isValid) {
-    const sum = polygon
-      .mapPoints((polygonPoint) => parseFloat(polygonPoint.pointLongitude))
-      .reduce((acc, lat) => acc + lat, 0);
-    longitudeCenter += sum * (1 / polygon.length);
-    longitudeDataPoints++;
-  }
-  longitudeCenter /= longitudeDataPoints;
+    if (boxComplete(box)) {
+        if (!Number.isNaN(parseFloat(box.eastBoundLongitude)) && !Number.isNaN(parseFloat(box.westBoundLongitude))) {
+            longitudeCenter += 0.5 * parseFloat(box.eastBoundLongitude) + 0.5 * parseFloat(box.westBoundLongitude);
+            longitudeDataPoints++;
+        }
+    }
+    if (polygon.isValid) {
+        const sum = polygon
+            .mapPoints((polygonPoint) => parseFloat(polygonPoint.pointLongitude))
+            .reduce((acc, lat) => acc + lat, 0);
+        longitudeCenter += sum * (1 / polygon.length);
+        longitudeDataPoints++;
+    }
+    longitudeCenter /= longitudeDataPoints;
 
-  return (
-    <>
-      <MapContainer
-        center={[latitudeCenter || 0, longitudeCenter || 0]}
-        zoom={15}
-        scrollWheelZoom={false}
-        style={{ height: "200px" }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {showPoint && (
-          <Circle
-            center={[
-              parseFloat(point.pointLatitude),
-              parseFloat(point.pointLongitude),
-            ]}
-            pathOptions={{
-              fillColor: theme.palette.primary.main,
-              fillOpacity: 1.0,
-              stroke: false,
-            }}
-            radius={50}
-          />
-        )}
-        {showBox && (
-          <Rectangle
-            pathOptions={{
-              color: theme.palette.secondary.main,
-              fillOpacity: 0.5,
-              stroke: false,
-            }}
-            bounds={boxToPolygon.map(({ latitude, longitude }) => [
-              parseFloat(latitude),
-              parseFloat(longitude),
-            ])}
-          />
-        )}
-        {showPolygon && (
-          /*
-           * Note that this code assumes that the region described by the polygon is the one that it
-           * encloses. If `geoLocation.geoLocationInPolygonPoint` is outside the enclosed region
-           * then the polygon is actually describing the region on the outside but the map will not
-           * show this.
-           */
-          <Polygon
-            pathOptions={{
-              color: theme.palette.tertiary.main,
-              fillOpacity: 0.5,
-              stroke: false,
-            }}
-            positions={polygon.mapPoints(
-              ({ pointLatitude: lat, pointLongitude: long }) => [
-                parseFloat(lat),
-                parseFloat(long),
-              ]
-            )}
-          />
-        )}
-      </MapContainer>
-
-      <FormGroup>
-        <Grid container direction="row" spacing={2} sx={{ px: 2 }}>
-          <Grid item>
-            <FormControlLabel
-              control={
-                <Switch
-                  color="primary"
-                  checked={showPoint}
-                  disabled={!pointComplete(point)}
-                  onChange={() => setShowPoint(!showPoint)}
-                  inputProps={{ "aria-label": "show GL Point" }}
+    return (
+        <>
+            <MapContainer
+                center={[latitudeCenter || 0, longitudeCenter || 0]}
+                zoom={15}
+                scrollWheelZoom={false}
+                style={{ height: "200px" }}
+            >
+                <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-              }
-              label="Point"
-            />
-          </Grid>
-          <Grid item>
-            <FormControlLabel
-              control={
-                <Switch
-                  color="secondary"
-                  checked={showBox}
-                  disabled={!boxComplete(box)}
-                  onChange={() => setShowBox(!showBox)}
-                  inputProps={{ "aria-label": "show GL box" }}
-                />
-              }
-              label="Box"
-            />
-          </Grid>
-          <Grid item>
-            <FormControlLabel
-              control={
-                <Switch
-                  color="tertiary"
-                  checked={showPolygon}
-                  disabled={!polygon.isValid}
-                  onChange={() => setShowPolygon(!showPolygon)}
-                  inputProps={{ "aria-label": "show GL Polygon" }}
-                />
-              }
-              label="Polygon"
-            />
-          </Grid>
-        </Grid>
-      </FormGroup>
-    </>
-  );
+                {showPoint && (
+                    <Circle
+                        center={[parseFloat(point.pointLatitude), parseFloat(point.pointLongitude)]}
+                        pathOptions={{
+                            fillColor: theme.palette.primary.main,
+                            fillOpacity: 1.0,
+                            stroke: false,
+                        }}
+                        radius={50}
+                    />
+                )}
+                {showBox && (
+                    <Rectangle
+                        pathOptions={{
+                            color: theme.palette.secondary.main,
+                            fillOpacity: 0.5,
+                            stroke: false,
+                        }}
+                        bounds={boxToPolygon.map(({ latitude, longitude }) => [
+                            parseFloat(latitude),
+                            parseFloat(longitude),
+                        ])}
+                    />
+                )}
+                {showPolygon && (
+                    /*
+                     * Note that this code assumes that the region described by the polygon is the one that it
+                     * encloses. If `geoLocation.geoLocationInPolygonPoint` is outside the enclosed region
+                     * then the polygon is actually describing the region on the outside but the map will not
+                     * show this.
+                     */
+                    <Polygon
+                        pathOptions={{
+                            color: theme.palette.tertiary.main,
+                            fillOpacity: 0.5,
+                            stroke: false,
+                        }}
+                        positions={polygon.mapPoints(({ pointLatitude: lat, pointLongitude: long }) => [
+                            parseFloat(lat),
+                            parseFloat(long),
+                        ])}
+                    />
+                )}
+            </MapContainer>
+
+            <FormGroup>
+                <Grid container direction="row" spacing={2} sx={{ px: 2 }}>
+                    <Grid item>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    color="primary"
+                                    checked={showPoint}
+                                    disabled={!pointComplete(point)}
+                                    onChange={() => setShowPoint(!showPoint)}
+                                    inputProps={{ "aria-label": "show GL Point" }}
+                                />
+                            }
+                            label="Point"
+                        />
+                    </Grid>
+                    <Grid item>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    color="secondary"
+                                    checked={showBox}
+                                    disabled={!boxComplete(box)}
+                                    onChange={() => setShowBox(!showBox)}
+                                    inputProps={{ "aria-label": "show GL box" }}
+                                />
+                            }
+                            label="Box"
+                        />
+                    </Grid>
+                    <Grid item>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    color="tertiary"
+                                    checked={showPolygon}
+                                    disabled={!polygon.isValid}
+                                    onChange={() => setShowPolygon(!showPolygon)}
+                                    inputProps={{ "aria-label": "show GL Polygon" }}
+                                />
+                            }
+                            label="Polygon"
+                        />
+                    </Grid>
+                </Grid>
+            </FormGroup>
+        </>
+    );
 }

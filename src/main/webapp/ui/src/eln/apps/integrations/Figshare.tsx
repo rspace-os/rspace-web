@@ -1,16 +1,16 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useState, useContext } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
-import { useFigshareEndpoint } from "../useFigshare";
+import Grid from "@mui/material/Grid";
+import React, { useContext, useEffect, useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/figshare";
+import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import { useFigshareEndpoint } from "../useFigshare";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type FigshareArgs = {
-  integrationState: IntegrationStates["FIGSHARE"];
-  update: (newIntegrationState: IntegrationStates["FIGSHARE"]) => void;
+    integrationState: IntegrationStates["FIGSHARE"];
+    update: (newIntegrationState: IntegrationStates["FIGSHARE"]) => void;
 };
 
 /*
@@ -38,87 +38,72 @@ type FigshareArgs = {
  * ../useFigshare.
  */
 function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
-  const { addAlert } = useContext(AlertContext);
-  const { disconnect } = useFigshareEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+    const { addAlert } = useContext(AlertContext);
+    const { disconnect } = useFigshareEndpoint();
+    const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
-      setConnected(true);
-      addAlert(
-        mkAlert({
-          variant: "success",
-          message: "Successfully connected to Figshare.",
-        })
-      );
-    };
-    window.addEventListener("FIGSHARE_CONNECTED", f);
-    return () => {
-      window.removeEventListener("FIGSHARE_CONNECTED", f);
-    };
-  }, []);
+    useEffect(() => {
+        const f = () => {
+            setConnected(true);
+            addAlert(
+                mkAlert({
+                    variant: "success",
+                    message: "Successfully connected to Figshare.",
+                }),
+            );
+        };
+        window.addEventListener("FIGSHARE_CONNECTED", f);
+        return () => {
+            window.removeEventListener("FIGSHARE_CONNECTED", f);
+        };
+    }, [addAlert]);
 
-  return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
-      <IntegrationCard
-        name="Figshare"
-        integrationState={integrationState}
-        explanatoryText="Easily manage all your research outputs and make them available in a citable, shareable and discoverable manner."
-        image={FigshareIcon}
-        color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
-        usageText="You can export your files and data directly from RSpace to Figshare. You are able to specify various metadata, and associate a DMP from DMPTool with the deposit."
-        helpLinkText="Figshare integration docs"
-        website="figshare.com"
-        docLink="figshare"
-        setupSection={
-          <>
-            <ol>
-              <li>
-                Click on Connect to authorise RSpace to access your Figshare
-                account.
-              </li>
-              <li>Enable the integration.</li>
-              <li>
-                Figshare will now be available as an option in the export
-                dialog.
-              </li>
-            </ol>
-            {connected ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void (async () => {
-                    await disconnect();
-                    setConnected(false);
-                  })();
-                }}
-              >
-                <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
-                </Button>
-              </form>
-            ) : (
-              <form
-                action="/apps/figshare/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
-                <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
-                </Button>
-              </form>
-            )}
-          </>
-        }
-      />
-    </Grid>
-  );
+    return (
+        <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+            <IntegrationCard
+                name="Figshare"
+                integrationState={integrationState}
+                explanatoryText="Easily manage all your research outputs and make them available in a citable, shareable and discoverable manner."
+                image={FigshareIcon}
+                color={LOGO_COLOR}
+                update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+                usageText="You can export your files and data directly from RSpace to Figshare. You are able to specify various metadata, and associate a DMP from DMPTool with the deposit."
+                helpLinkText="Figshare integration docs"
+                website="figshare.com"
+                docLink="figshare"
+                setupSection={
+                    <>
+                        <ol>
+                            <li>Click on Connect to authorise RSpace to access your Figshare account.</li>
+                            <li>Enable the integration.</li>
+                            <li>Figshare will now be available as an option in the export dialog.</li>
+                        </ol>
+                        {connected ? (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    void (async () => {
+                                        await disconnect();
+                                        setConnected(false);
+                                    })();
+                                }}
+                            >
+                                <Button type="submit" sx={{ mt: 1 }}>
+                                    Disconnect
+                                </Button>
+                            </form>
+                        ) : (
+                            <form action="/apps/figshare/connect" method="POST" target="_blank" rel="noopener opener">
+                                <Button type="submit" sx={{ mt: 1 }} value="Connect">
+                                    Connect
+                                </Button>
+                            </form>
+                        )}
+                    </>
+                }
+            />
+        </Grid>
+    );
 }
 
 export default React.memo(Figshare);

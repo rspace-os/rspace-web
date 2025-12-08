@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
 import styled from "@emotion/styled";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSortAmountUpAlt } from "@fortawesome/free-solid-svg-icons/faSortAmountUpAlt";
 import { faSortAmountDown } from "@fortawesome/free-solid-svg-icons/faSortAmountDown";
+import { faSortAmountUpAlt } from "@fortawesome/free-solid-svg-icons/faSortAmountUpAlt";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import React, { useEffect } from "react";
 
 const SortWrapper = styled.div`
   display: flex;
@@ -40,78 +40,59 @@ const SortWrapper = styled.div`
   }
 `;
 
-export default function TreeSort(props) {
-  const [orderBy, setOrderBy] = React.useState("name");
-  const [sortOrder, setSortOrder] = React.useState("DESC");
+export default function TreeSort(_props) {
+    const [orderBy, setOrderBy] = React.useState("name");
+    const [sortOrder, setSortOrder] = React.useState("DESC");
 
-  function handleChangeOrderBy(event) {
-    setOrderBy(event.target.value);
-    applySettings(event.target.value, sortOrder);
-  }
+    function handleChangeOrderBy(event) {
+        setOrderBy(event.target.value);
+        applySettings(event.target.value, sortOrder);
+    }
 
-  function handleChangeSortOrder(event) {
-    setSortOrder(event.target.value);
-    applySettings(orderBy, event.target.value);
-  }
+    function handleChangeSortOrder(event) {
+        setSortOrder(event.target.value);
+        applySettings(orderBy, event.target.value);
+    }
 
-  function applySettings(order, sort) {
-    updateClientUISetting("treeSort", order + "." + sort);
-    sortFileTreeBrowser(order, sort);
-    RS.trackEvent("user:sorts:file_tree:document_editor", { order, sort });
-  }
+    function applySettings(order, sort) {
+        updateClientUISetting("treeSort", `${order}.${sort}`);
+        sortFileTreeBrowser(order, sort);
+        RS.trackEvent("user:sorts:file_tree:document_editor", { order, sort });
+    }
 
-  useEffect(() => {
-    $(() => {
-      if (clientUISettings) {
-        const [order, sort] = clientUISettings.treeSort.split(".");
-        setOrderBy(order || "name");
-        setSortOrder(sort || "DESC");
-      }
-    });
-  }, []);
+    useEffect(() => {
+        $(() => {
+            if (clientUISettings) {
+                const [order, sort] = clientUISettings.treeSort.split(".");
+                setOrderBy(order || "name");
+                setSortOrder(sort || "DESC");
+            }
+        });
+    }, []);
 
-  return (
-    <SortWrapper className="sortingSettings">
-      <Select
-        className="orderBy"
-        value={orderBy}
-        onChange={handleChangeOrderBy}
-        variant="standard"
-      >
-        <MenuItem value="name" data-test-id="order-name">
-          Name
-        </MenuItem>
-        <MenuItem value="creationdate" data-test-id="order-creation-date">
-          Creation Date
-        </MenuItem>
-        <MenuItem
-          value="modificationdate"
-          data-test-id="order-modification-date"
-        >
-          Last Modified
-        </MenuItem>
-      </Select>
-      <Select
-        className="sortOrder"
-        value={sortOrder}
-        onChange={handleChangeSortOrder}
-        variant="standard"
-      >
-        <MenuItem value="ASC" data-test-id="sort-asc">
-          <FontAwesomeIcon
-            icon={faSortAmountUpAlt}
-            style={{ marginRight: "10px" }}
-          />
-          Ascending
-        </MenuItem>
-        <MenuItem value="DESC" data-test-id="sort-desc">
-          <FontAwesomeIcon
-            icon={faSortAmountDown}
-            style={{ marginRight: "10px" }}
-          />
-          Descending
-        </MenuItem>
-      </Select>
-    </SortWrapper>
-  );
+    return (
+        <SortWrapper className="sortingSettings">
+            <Select className="orderBy" value={orderBy} onChange={handleChangeOrderBy} variant="standard">
+                <MenuItem value="name" data-test-id="order-name">
+                    Name
+                </MenuItem>
+                <MenuItem value="creationdate" data-test-id="order-creation-date">
+                    Creation Date
+                </MenuItem>
+                <MenuItem value="modificationdate" data-test-id="order-modification-date">
+                    Last Modified
+                </MenuItem>
+            </Select>
+            <Select className="sortOrder" value={sortOrder} onChange={handleChangeSortOrder} variant="standard">
+                <MenuItem value="ASC" data-test-id="sort-asc">
+                    <FontAwesomeIcon icon={faSortAmountUpAlt} style={{ marginRight: "10px" }} />
+                    Ascending
+                </MenuItem>
+                <MenuItem value="DESC" data-test-id="sort-desc">
+                    <FontAwesomeIcon icon={faSortAmountDown} style={{ marginRight: "10px" }} />
+                    Descending
+                </MenuItem>
+            </Select>
+        </SortWrapper>
+    );
 }

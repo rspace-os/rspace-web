@@ -1,52 +1,48 @@
-import { type InventoryRecord } from "./InventoryRecord";
-import { type Search, type SearchView } from "./Search";
-import { type Id } from "./BaseRecord";
-import { type Point } from "../../util/types";
-import { type Permissioned } from "./PermissionedData";
-import { type HasLocation } from "./HasLocation";
-import {
-  ContainerType,
-  ContentSummary,
-  GridLayout,
-} from "@/stores/definitions/container/types";
+import type { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
+import type { Point } from "../../util/types";
+import type { Id } from "./BaseRecord";
+import type { HasLocation } from "./HasLocation";
+import type { InventoryRecord } from "./InventoryRecord";
+import type { Permissioned } from "./PermissionedData";
+import type { Search, SearchView } from "./Search";
 
 export function cTypeToDefaultSearchView(cType: ContainerType): SearchView {
-  if (cType === "GRID") return "GRID";
-  if (cType === "IMAGE") return "IMAGE";
-  return "LIST";
+    if (cType === "GRID") return "GRID";
+    if (cType === "IMAGE") return "IMAGE";
+    return "LIST";
 }
 
 export interface Location extends Point {
-  id: number | null;
-  content: null | (InventoryRecord & HasLocation);
-  coordX: number;
-  coordY: number;
-  selected: boolean;
-  parentContainer: Container;
+    id: number | null;
+    content: null | (InventoryRecord & HasLocation);
+    coordX: number;
+    coordY: number;
+    selected: boolean;
+    parentContainer: Container;
 
-  toggleSelected(value: boolean | null): void;
-  selectOnlyThis(): void;
-  setPosition(x: number, y: number): void;
-  setDimensions(width: number, height: number): void;
+    toggleSelected(value: boolean | null): void;
+    selectOnlyThis(): void;
+    setPosition(x: number, y: number): void;
+    setDimensions(width: number, height: number): void;
 
-  readonly siblings: Array<Location>;
-  isShallow(search: Search): boolean;
-  isShallowSelected(search: Search): boolean;
-  isSelectable(search: Search): boolean;
-  isShallowUnselected(search: Search): boolean;
-  readonly isSiblingSelected: boolean | null;
-  isGreyedOut(search: Search): boolean;
-  readonly name: string | null;
-  readonly hasContent: boolean;
-  readonly uniqueColor: string;
+    readonly siblings: Array<Location>;
+    isShallow(search: Search): boolean;
+    isShallowSelected(search: Search): boolean;
+    isSelectable(search: Search): boolean;
+    isShallowUnselected(search: Search): boolean;
+    readonly isSiblingSelected: boolean | null;
+    isGreyedOut(search: Search): boolean;
+    readonly name: string | null;
+    readonly hasContent: boolean;
+    readonly uniqueColor: string;
 
-  /*
-   * The marshalled version of the data modelled by the implementation of this
-   * interface, including the properties listed above. This computed property
-   * MUST always be JSON serialisable, and it is advisable to write a unit test
-   * to assert as such for each implementation.
-   */
-  readonly paramsForBackend: object;
+    /*
+     * The marshalled version of the data modelled by the implementation of this
+     * interface, including the properties listed above. This computed property
+     * MUST always be JSON serialisable, and it is advisable to write a unit test
+     * to assert as such for each implementation.
+     */
+    readonly paramsForBackend: object;
 }
 
 /**
@@ -72,98 +68,98 @@ export interface Location extends Point {
  *   is in use.
  */
 export interface Container extends InventoryRecord, HasLocation {
-  cType: ContainerType;
+    cType: ContainerType;
 
-  /*
-   * A summary of just the immediate contents of the container i.e. not
-   * including any of the contents of the containers within this container.
-   * This is usually only visible if the user has full access to th
-   * container, i.e. they have the permittedAction of READ, however there are
-   * circumstances where the user can view the content summary even without a
-   * specific read access level such as viewing benches.
-   */
-  contentSummary: Permissioned<ContentSummary>;
+    /*
+     * A summary of just the immediate contents of the container i.e. not
+     * including any of the contents of the containers within this container.
+     * This is usually only visible if the user has full access to th
+     * container, i.e. they have the permittedAction of READ, however there are
+     * circumstances where the user can view the content summary even without a
+     * specific read access level such as viewing benches.
+     */
+    contentSummary: Permissioned<ContentSummary>;
 
-  /*
-   * Container can be restricted by what type of records they can contain. Here
-   * `canStoreSamples` determines whether it can store subsamples -- samples
-   * themselves are purely logically groupings of subsamples and as such can't
-   * be stored in containers.
-   */
-  canStoreContainers: boolean;
-  canStoreSamples: boolean;
+    /*
+     * Container can be restricted by what type of records they can contain. Here
+     * `canStoreSamples` determines whether it can store subsamples -- samples
+     * themselves are purely logically groupings of subsamples and as such can't
+     * be stored in containers.
+     */
+    canStoreContainers: boolean;
+    canStoreSamples: boolean;
 
-  /*
-   * If the container is a Grid container, then this defines the labelling of
-   * the axis.
-   */
-  gridLayout: GridLayout | null;
+    /*
+     * If the container is a Grid container, then this defines the labelling of
+     * the axis.
+     */
+    gridLayout: GridLayout | null;
 
-  /*
-   * An instance of the standard Search mechanisn, intended for making possible
-   * the searching of the container's content.
-   */
-  contentSearch: Search;
+    /*
+     * An instance of the standard Search mechanisn, intended for making possible
+     * the searching of the container's content.
+     */
+    contentSearch: Search;
 
-  /*
-   * For determining what colour to highlight a location, to identify groups of
-   * location content based on properties like shared sample.
-   */
-  getColor(sampleId: Id): string | undefined;
+    /*
+     * For determining what colour to highlight a location, to identify groups of
+     * location content based on properties like shared sample.
+     */
+    getColor(sampleId: Id): string | undefined;
 
-  /*
-   * For un/selecting all locations (e.g. when selecting one for creation).
-   */
-  toggleAllLocations(value: boolean): void;
+    /*
+     * For un/selecting all locations (e.g. when selecting one for creation).
+     */
+    toggleAllLocations(value: boolean): void;
 
-  /*
-   * Calculates whether an ongoing more operation can store its current
-   * selection in this container. It is unfortunate that the implementation of
-   * this computed property requires that it reach out and grab the global
-   * variable defining what is currently being moved.
-   */
-  readonly canStoreRecords: boolean;
+    /*
+     * Calculates whether an ongoing more operation can store its current
+     * selection in this container. It is unfortunate that the implementation of
+     * this computed property requires that it reach out and grab the global
+     * variable defining what is currently being moved.
+     */
+    readonly canStoreRecords: boolean;
 
-  /*
-   * All containers have locations in which content may or may not be stored.
-   * - List containers have as many locations as is necessary store their
-   *   contents. None of the locations are empty, and each has an Y-coordinate
-   *   of 1 and an incrementing X-coordinate.
-   * - Grid containers have as many locations as their width times their
-   *   height. Each locations may or may not have any contents and the X and
-   *   Y-coordinates fill the grid.
-   * - Visual containers have some number of locations and fixed points
-   *   relative to the associated locations image. Locations can be add, moved,
-   *   and removed (provided they are empty).
-   */
-  locationsCount: number;
-  locations: Array<Location> | null;
-  findLocation(col: number, row: number): Location | undefined;
+    /*
+     * All containers have locations in which content may or may not be stored.
+     * - List containers have as many locations as is necessary store their
+     *   contents. None of the locations are empty, and each has an Y-coordinate
+     *   of 1 and an incrementing X-coordinate.
+     * - Grid containers have as many locations as their width times their
+     *   height. Each locations may or may not have any contents and the X and
+     *   Y-coordinates fill the grid.
+     * - Visual containers have some number of locations and fixed points
+     *   relative to the associated locations image. Locations can be add, moved,
+     *   and removed (provided they are empty).
+     */
+    locationsCount: number;
+    locations: Array<Location> | null;
+    findLocation(col: number, row: number): Location | undefined;
 
-  /*
-   * All of the container's locations, sorted by their ID.
-   */
-  readonly sortedLocations: Array<Location> | null;
+    /*
+     * All of the container's locations, sorted by their ID.
+     */
+    readonly sortedLocations: Array<Location> | null;
 
-  /*
-   * Locations can be selected independently of the contents they may contain
-   * so that empty locations can be operated on. If a Location has contents,
-   * then the selected state of the Location MUST be synchronised with the
-   * selected state of the Record.
-   */
-  readonly selectedLocations: Array<Location> | null;
+    /*
+     * Locations can be selected independently of the contents they may contain
+     * so that empty locations can be operated on. If a Location has contents,
+     * then the selected state of the Location MUST be synchronised with the
+     * selected state of the Record.
+     */
+    readonly selectedLocations: Array<Location> | null;
 
-  /*
-   * Some containers are used to model user workbenches, an underlying
-   * implementation detail that should be opaque from a user's perspective.
-   */
-  readonly isWorkbench: boolean;
+    /*
+     * Some containers are used to model user workbenches, an underlying
+     * implementation detail that should be opaque from a user's perspective.
+     */
+    readonly isWorkbench: boolean;
 
-  /*
-   * State variables used for selecting regions of a container to ease
-   * selection of several locations.
-   */
-  selectionMode: boolean;
-  selectionStart: Point;
-  selectionEnd: Point;
+    /*
+     * State variables used for selecting regions of a container to ease
+     * selection of several locations.
+     */
+    selectionMode: boolean;
+    selectionStart: Point;
+    selectionEnd: Point;
 }

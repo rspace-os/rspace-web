@@ -1,11 +1,11 @@
 export interface OAuthApp {
-  clientId: string;
-  appName: string;
+    clientId: string;
+    appName: string;
 }
 
 export interface ConnectedOAuthApp {
-  clientId: string;
-  clientName: string;
-  appName: string;
-  scope: string;
+    clientId: string;
+    clientName: string;
+    appName: string;
+    scope: string;
 }

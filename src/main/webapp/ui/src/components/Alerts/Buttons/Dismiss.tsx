@@ -1,24 +1,24 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 import CloseIcon from "@mui/icons-material/Close";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 
 type DismissArgs = {
-  onClose: () => void;
+    onClose: () => void;
 };
 
 function Dismiss({ onClose }: DismissArgs): React.ReactNode {
-  return (
-    <IconButtonWithTooltip
-      title="Dismiss"
-      icon={<CloseIcon />}
-      onClick={() => {
-        onClose();
-      }}
-      data-test-id="toast-close"
-      sx={{ m: 0.5 }}
-    />
-  );
+    return (
+        <IconButtonWithTooltip
+            title="Dismiss"
+            icon={<CloseIcon />}
+            onClick={() => {
+                onClose();
+            }}
+            data-test-id="toast-close"
+            sx={{ m: 0.5 }}
+        />
+    );
 }
 
 /**

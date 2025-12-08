@@ -1,20 +1,20 @@
-import { ListOfMaterials } from "../../stores/models/MaterialsModel";
-import React from "react";
-import MaterialsTable from "./MaterialsTable";
 import Box from "@mui/material/Box";
+import type React from "react";
 import { makeStyles } from "tss-react/mui";
+import type { ListOfMaterials } from "../../stores/models/MaterialsModel";
+import MaterialsTable from "./MaterialsTable";
 
 const useStyles = makeStyles()(() => ({
-  wrapper: {
-    display: "none",
-    "@media print": {
-      display: "initial",
+    wrapper: {
+        display: "none",
+        "@media print": {
+            display: "initial",
+        },
     },
-  },
 }));
 
 type PrintedMaterialsListingArgs = {
-  listsOfMaterials: Array<ListOfMaterials> | null;
+    listsOfMaterials: Array<ListOfMaterials> | null;
 };
 
 /*
@@ -22,19 +22,17 @@ type PrintedMaterialsListingArgs = {
  *  list of materials, as a table, onto the page rather than as it normally
  *  appears in a dialog.
  */
-export default function PrintedMaterialsListing({
-  listsOfMaterials,
-}: PrintedMaterialsListingArgs): React.ReactNode {
-  const { classes } = useStyles();
-  return listsOfMaterials ? (
-    <div className={classes.wrapper}>
-      {listsOfMaterials.map((lom) => (
-        <Box border={1} mb={1} p={1} key={lom.id}>
-          <h2>{lom.name}</h2>
-          <p>{lom.description}</p>
-          <MaterialsTable list={lom} isSingleColumn={false} canEdit={false} />
-        </Box>
-      ))}
-    </div>
-  ) : null;
+export default function PrintedMaterialsListing({ listsOfMaterials }: PrintedMaterialsListingArgs): React.ReactNode {
+    const { classes } = useStyles();
+    return listsOfMaterials ? (
+        <div className={classes.wrapper}>
+            {listsOfMaterials.map((lom) => (
+                <Box border={1} mb={1} p={1} key={lom.id}>
+                    <h2>{lom.name}</h2>
+                    <p>{lom.description}</p>
+                    <MaterialsTable list={lom} isSingleColumn={false} canEdit={false} />
+                </Box>
+            ))}
+        </div>
+    ) : null;
 }

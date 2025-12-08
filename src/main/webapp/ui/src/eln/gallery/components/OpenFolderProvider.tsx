@@ -1,5 +1,5 @@
 import React from "react";
-import { type GalleryFile } from "../useGalleryListing";
+import type { GalleryFile } from "../useGalleryListing";
 
 /**
  * There are various ways to open a folder in a listing:
@@ -29,7 +29,7 @@ import { type GalleryFile } from "../useGalleryListing";
  */
 
 const OpenFolderContext = React.createContext({
-  open: (_file: GalleryFile) => {},
+    open: (_file: GalleryFile) => {},
 });
 
 /**
@@ -37,28 +37,28 @@ const OpenFolderContext = React.createContext({
  * that is manipulated by the passed `setPath` function.
  */
 export default function OpenFolderProvider({
-  children,
-  setPath,
+    children,
+    setPath,
 }: {
-  children: React.ReactNode;
+    children: React.ReactNode;
 
-  /**
-   * Whenever the `open` function exposed by `useFolderOpen` is invoked, this
-   * function will be called with the new path.
-   */
-  setPath: (path: ReadonlyArray<GalleryFile>) => void;
+    /**
+     * Whenever the `open` function exposed by `useFolderOpen` is invoked, this
+     * function will be called with the new path.
+     */
+    setPath: (path: ReadonlyArray<GalleryFile>) => void;
 }): React.ReactNode {
-  return (
-    <OpenFolderContext.Provider
-      value={{
-        open: (file) => {
-          setPath([...file.path, file]);
-        },
-      }}
-    >
-      {children}
-    </OpenFolderContext.Provider>
-  );
+    return (
+        <OpenFolderContext.Provider
+            value={{
+                open: (file) => {
+                    setPath([...file.path, file]);
+                },
+            }}
+        >
+            {children}
+        </OpenFolderContext.Provider>
+    );
 }
 
 /**
@@ -67,8 +67,8 @@ export default function OpenFolderProvider({
  * `OpenFolderProvider`.
  */
 export function useFolderOpen(): { openFolder: (folder: GalleryFile) => void } {
-  const { open } = React.useContext(OpenFolderContext);
-  return {
-    openFolder: open,
-  };
+    const { open } = React.useContext(OpenFolderContext);
+    return {
+        openFolder: open,
+    };
 }

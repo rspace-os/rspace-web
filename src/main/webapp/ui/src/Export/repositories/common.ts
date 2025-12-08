@@ -12,9 +12,9 @@
  * contact.
  */
 export type Person = {
-  uniqueName: string;
-  email: string;
-  type: string;
+    uniqueName: string;
+    email: string;
+    type: string;
 };
 
 /**
@@ -32,9 +32,9 @@ export type DMPUserInternalId = number;
  * deposit to a repository.
  */
 export type Plan = {
-  dmpId: DMPId;
-  dmpTitle: string;
-  dmpUserInternalId: DMPUserInternalId;
+    dmpId: DMPId;
+    dmpTitle: string;
+    dmpUserInternalId: DMPUserInternalId;
 };
 
 /**
@@ -42,30 +42,30 @@ export type Plan = {
  * deposit to.
  */
 export type Repo = {
-  repoName: string;
-  displayName: string;
-  subjects: Array<{
-    id: string | null;
-    name: string;
-    parentSubject: number | null;
-  }>;
-  license: {
-    licenseRequired: boolean;
-    otherLicensePermitted: boolean;
-    licenses: Array<{
-      licenseDefinition: { url: string; name: string };
-      defaultLicense: boolean | null;
+    repoName: string;
+    displayName: string;
+    subjects: Array<{
+        id: string | null;
+        name: string;
+        parentSubject: number | null;
     }>;
-  };
+    license: {
+        licenseRequired: boolean;
+        otherLicensePermitted: boolean;
+        licenses: Array<{
+            licenseDefinition: { url: string; name: string };
+            defaultLicense: boolean | null;
+        }>;
+    };
 
-  /*
-   * The set of DMPs from the user's Gallery, from which they can pick some to
-   * associate with the export.
-   */
-  linkedDMPs: Array<Plan> | null;
+    /*
+     * The set of DMPs from the user's Gallery, from which they can pick some to
+     * associate with the export.
+     */
+    linkedDMPs: Array<Plan> | null;
 
-  label?: string;
-  repoCfg: unknown;
+    label?: string;
+    repoCfg: unknown;
 };
 
 /**
@@ -78,26 +78,26 @@ export type Repo = {
  * value in this object is false.
  */
 export type StandardValidations = {
-  description: boolean;
-  title: boolean;
-  author: boolean;
-  contact: boolean;
-  subject: boolean;
+    description: boolean;
+    title: boolean;
+    author: boolean;
+    contact: boolean;
+    subject: boolean;
 };
 
 export const DEFAULT_REPO_CONFIG = {
-  repoChoice: 0,
-  meta: {
-    title: "",
-    description: "",
-    subject: "",
-    licenseName: "",
-    authors: [] as Array<Person>,
-    contacts: [] as Array<Person>,
-    publish: false as boolean,
-    otherProperties: {},
-  },
-  depositToRepository: false as boolean,
+    repoChoice: 0,
+    meta: {
+        title: "",
+        description: "",
+        subject: "",
+        licenseName: "",
+        authors: [] as Array<Person>,
+        contacts: [] as Array<Person>,
+        publish: false as boolean,
+        otherProperties: {},
+    },
+    depositToRepository: false as boolean,
 };
 
 export type RepoDetails = typeof DEFAULT_REPO_CONFIG;

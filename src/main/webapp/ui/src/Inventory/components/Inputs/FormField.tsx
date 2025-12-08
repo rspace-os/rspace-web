@@ -1,9 +1,7 @@
-import React from "react";
-import BaseFormField, {
-  type FormFieldArgs as BaseFormFieldArgs,
-} from "../../../components/Inputs/FormField";
-import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
+import type React from "react";
+import { makeStyles } from "tss-react/mui";
+import BaseFormField, { type FormFieldArgs as BaseFormFieldArgs } from "../../../components/Inputs/FormField";
 
 /**
  * When not disabled and not batch editing, all of the behaviour of the more
@@ -17,27 +15,26 @@ export type FormFieldArgs<T> = BaseFormFieldArgs<T>;
  * preview mode of the main UI.
  */
 const useStyles = makeStyles()(() => ({
-  formControl: {
-    "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled":
-      {
-        color: "black !important",
-        "& input": {
-          WebkitTextFillColor: "unset",
+    formControl: {
+        "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled": {
+            color: "black !important",
+            "& input": {
+                WebkitTextFillColor: "unset",
+            },
+            "& .MuiSvgIcon-root.MuiSelect-icon": {
+                display: "none",
+            },
         },
-        "& .MuiSvgIcon-root.MuiSelect-icon": {
-          display: "none",
+        "& .MuiSelect-root.MuiSelect-select.MuiSelect-outlined": {
+            padding: "11px 10px 10px 10px",
         },
-      },
-    "& .MuiSelect-root.MuiSelect-select.MuiSelect-outlined": {
-      padding: "11px 10px 10px 10px",
+        "& .Mui-disabled::before": {
+            borderBottom: "0px !important",
+        },
+        "& > .MuiFormLabel-root": {
+            textTransform: "uppercase",
+        },
     },
-    "& .Mui-disabled::before": {
-      borderBottom: "0px !important",
-    },
-    "& > .MuiFormLabel-root": {
-      textTransform: "uppercase",
-    }
-  },
 }));
 
 /**
@@ -55,11 +52,6 @@ const useStyles = makeStyles()(() => ({
  * than having to enter a completely separate edit mode.
  */
 export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
-  const { classes } = useStyles();
-  return (
-    <BaseFormField
-      {...props}
-      className={clsx(props.className, classes.formControl)}
-    />
-  );
+    const { classes } = useStyles();
+    return <BaseFormField {...props} className={clsx(props.className, classes.formControl)} />;
 }

@@ -1,14 +1,12 @@
-import React from "react";
-import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
+import React from "react";
+import { makeStyles } from "tss-react/mui";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import useUiPreference, { PREFERENCES } from "../../../hooks/api/useUiPreference";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
-import useUiPreference, {
-  PREFERENCES,
-} from "../../../hooks/api/useUiPreference";
+import useStores from "../../../stores/use-stores";
 
 /**
  * The main Inventory UI is divided into two column on large viewports and a
@@ -25,8 +23,8 @@ import useUiPreference, {
  * components.
  */
 const UserHiddenRightPanelContext = React.createContext<{
-  userHiddenRightPanel: boolean;
-  setUserHiddenRightPanel: (value: boolean) => void;
+    userHiddenRightPanel: boolean;
+    setUserHiddenRightPanel: (value: boolean) => void;
 }>({ userHiddenRightPanel: false, setUserHiddenRightPanel: () => {} });
 
 /**
@@ -42,11 +40,9 @@ const UserHiddenRightPanelContext = React.createContext<{
  * they can only determine whether the value is true or false; not why.
  */
 export function useIsSingleColumnLayout(): boolean {
-  const { isViewportSmall } = useViewportDimensions();
-  const { userHiddenRightPanel } = React.useContext(
-    UserHiddenRightPanelContext,
-  );
-  return isViewportSmall || userHiddenRightPanel;
+    const { isViewportSmall } = useViewportDimensions();
+    const { userHiddenRightPanel } = React.useContext(UserHiddenRightPanelContext);
+    return isViewportSmall || userHiddenRightPanel;
 }
 
 /**
@@ -58,69 +54,67 @@ export function useIsSingleColumnLayout(): boolean {
  * exported to the whole codebase.
  */
 export const RightPanelToggle = observer(() => {
-  const { userHiddenRightPanel, setUserHiddenRightPanel } = React.useContext(
-    UserHiddenRightPanelContext,
-  );
-  const { uiStore } = useStores();
+    const { userHiddenRightPanel, setUserHiddenRightPanel } = React.useContext(UserHiddenRightPanelContext);
+    const { uiStore } = useStores();
 
-  if (uiStore.isVerySmall || uiStore.isSmall) return null;
-  return (
-    <IconButtonWithTooltip
-      onClick={() => {
-        uiStore.setVisiblePanel("left");
-        setUserHiddenRightPanel(!userHiddenRightPanel);
-      }}
-      sx={{ transform: "rotate(-90deg)", border: "2px solid" }}
-      size="small"
-      color="primary"
-      icon={<ExpandCollapseIcon open={userHiddenRightPanel} />}
-      title={userHiddenRightPanel ? "Show right panel" : "Hide right panel"}
-    />
-  );
+    if (uiStore.isVerySmall || uiStore.isSmall) return null;
+    return (
+        <IconButtonWithTooltip
+            onClick={() => {
+                uiStore.setVisiblePanel("left");
+                setUserHiddenRightPanel(!userHiddenRightPanel);
+            }}
+            sx={{ transform: "rotate(-90deg)", border: "2px solid" }}
+            size="small"
+            color="primary"
+            icon={<ExpandCollapseIcon open={userHiddenRightPanel} />}
+            title={userHiddenRightPanel ? "Show right panel" : "Hide right panel"}
+        />
+    );
 });
 
 const useStyles = makeStyles()((theme) => ({
-  paper: {
-    width: "100%",
-    height: "100%",
-    padding: theme.spacing(0),
-  },
-  wrapper: {
-    padding: 0,
-    width: "100%",
-    margin: "0",
-    height: "100%",
-  },
-  leftPanel: {
-    position: "sticky",
-    top: 0,
-    padding: "0px !important",
-    flexDirection: "column",
-    maxHeight: "100vh",
-    height: "100%",
-  },
-  rightPanel: {
-    height: "100%",
-    padding: "0px !important",
-    flexDirection: "column",
-  },
-  leftPanelMobile: {
-    height: "100%",
-    flexDirection: "column",
-    padding: theme.spacing(1),
-  },
-  dialogWrapper: {
-    height: "calc(100vh - 100px)",
-    padding: "0px",
-    width: "100%",
-    margin: "0",
-  },
+    paper: {
+        width: "100%",
+        height: "100%",
+        padding: theme.spacing(0),
+    },
+    wrapper: {
+        padding: 0,
+        width: "100%",
+        margin: "0",
+        height: "100%",
+    },
+    leftPanel: {
+        position: "sticky",
+        top: 0,
+        padding: "0px !important",
+        flexDirection: "column",
+        maxHeight: "100vh",
+        height: "100%",
+    },
+    rightPanel: {
+        height: "100%",
+        padding: "0px !important",
+        flexDirection: "column",
+    },
+    leftPanelMobile: {
+        height: "100%",
+        flexDirection: "column",
+        padding: theme.spacing(1),
+    },
+    dialogWrapper: {
+        height: "calc(100vh - 100px)",
+        padding: "0px",
+        width: "100%",
+        margin: "0",
+    },
 }));
 
 type Layout2x1Args = {
-  colRight: React.ReactNode;
-  colLeft: React.ReactNode;
-  isDialog?: boolean;
+    colRight: React.ReactNode;
+    colLeft: React.ReactNode;
+    isDialog?: boolean;
 };
 
 /*
@@ -128,59 +122,40 @@ type Layout2x1Args = {
  * but one panel is hidden on smaller ones (depending on viewport size).
  */
 const Layout2x1 = observer((props: Layout2x1Args) => {
-  const { uiStore } = useStores();
-  const isSingleColumnLayout = useIsSingleColumnLayout();
-  const hideLeftPanel = isSingleColumnLayout && uiStore.visiblePanel !== "left";
-  const hideRightPanel =
-    isSingleColumnLayout && uiStore.visiblePanel !== "right";
-  const { classes } = useStyles();
+    const { uiStore } = useStores();
+    const isSingleColumnLayout = useIsSingleColumnLayout();
+    const hideLeftPanel = isSingleColumnLayout && uiStore.visiblePanel !== "left";
+    const hideRightPanel = isSingleColumnLayout && uiStore.visiblePanel !== "right";
+    const { classes } = useStyles();
 
-  return (
-    <Grid
-      container
-      spacing={isSingleColumnLayout ? 0 : 1}
-      className={
-        isSingleColumnLayout
-          ? classes.paper
-          : props.isDialog
-            ? classes.dialogWrapper
-            : classes.wrapper
-      }
-    >
-      <Grid
-        hidden={hideLeftPanel}
-        item
-        xs={isSingleColumnLayout ? 12 : 5}
-        className={
-          isSingleColumnLayout ? classes.leftPanelMobile : classes.leftPanel
-        }
-      >
-        {props.colLeft}
-      </Grid>
-      <Grid
-        item
-        xs={isSingleColumnLayout ? 12 : 7}
-        className={classes.rightPanel}
-        hidden={hideRightPanel}
-      >
-        {props.colRight}
-      </Grid>
-    </Grid>
-  );
+    return (
+        <Grid
+            container
+            spacing={isSingleColumnLayout ? 0 : 1}
+            className={isSingleColumnLayout ? classes.paper : props.isDialog ? classes.dialogWrapper : classes.wrapper}
+        >
+            <Grid
+                hidden={hideLeftPanel}
+                item
+                xs={isSingleColumnLayout ? 12 : 5}
+                className={isSingleColumnLayout ? classes.leftPanelMobile : classes.leftPanel}
+            >
+                {props.colLeft}
+            </Grid>
+            <Grid item xs={isSingleColumnLayout ? 12 : 7} className={classes.rightPanel} hidden={hideRightPanel}>
+                {props.colRight}
+            </Grid>
+        </Grid>
+    );
 });
 
-export default function Layout2x1Wrapper(
-  props: Layout2x1Args,
-): React.ReactNode {
-  const [userHiddenRightPanel, setUserHiddenRightPanel] = useUiPreference(
-    PREFERENCES.INVENTORY_HIDDEN_RIGHT_PANEL,
-    { defaultValue: false },
-  );
-  return (
-    <UserHiddenRightPanelContext.Provider
-      value={{ userHiddenRightPanel, setUserHiddenRightPanel }}
-    >
-      <Layout2x1 {...props} />
-    </UserHiddenRightPanelContext.Provider>
-  );
+export default function Layout2x1Wrapper(props: Layout2x1Args): React.ReactNode {
+    const [userHiddenRightPanel, setUserHiddenRightPanel] = useUiPreference(PREFERENCES.INVENTORY_HIDDEN_RIGHT_PANEL, {
+        defaultValue: false,
+    });
+    return (
+        <UserHiddenRightPanelContext.Provider value={{ userHiddenRightPanel, setUserHiddenRightPanel }}>
+            <Layout2x1 {...props} />
+        </UserHiddenRightPanelContext.Provider>
+    );
 }

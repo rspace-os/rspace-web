@@ -2,23 +2,22 @@
  * @jest-environment jsdom
  */
 /* eslint-env jest */
- 
-import React from "react";
-import { render, cleanup } from "@testing-library/react";
+
+import { cleanup, render } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import each from "jest-each";
-import InputWrapper from "../InputWrapper";
 import { ThemeProvider } from "@mui/material/styles";
+import each from "jest-each";
 import materialTheme from "../../../theme";
+import InputWrapper from "../InputWrapper";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+    jest.clearAllMocks();
 });
 
 afterEach(cleanup);
 
 const expectText = (text: string) => (container: Element) => {
-  expect(container).toHaveTextContent("Nothing here" + text);
+    expect(container).toHaveTextContent(`Nothing here${text}`);
 };
 
 const expectNothing = expectText("");
@@ -27,8 +26,8 @@ const expectCounter = expectText("3 / 2");
 const expectCountError = expectText("No more than 2 characters permitted.");
 
 describe("InputWrapper", () => {
-  describe("Renders correctly", () => {
-    each`
+    describe("Renders correctly", () => {
+        each`
       disabled     | maxLength    | error        | value        | helperText   | expectFn
       ${undefined} | ${undefined} | ${undefined} | ${undefined} | ${undefined} | ${expectNothing}
       ${undefined} | ${undefined} | ${undefined} | ${undefined} | ${null}      | ${expectNothing}
@@ -138,38 +137,35 @@ describe("InputWrapper", () => {
       ${true}      | ${2}         | ${true}      | ${"foo"}     | ${undefined} | ${expectNothing}
       ${true}      | ${2}         | ${true}      | ${"foo"}     | ${null}      | ${expectNothing}
       ${true}      | ${2}         | ${true}      | ${"foo"}     | ${"help"}    | ${expectHelpText}
-    `.test(
-      "{disabled = $disabled, maxLength = $maxLength, error = $error, value = $value, helperText = $helperText}",
-      ({
-        disabled,
-        maxLength,
-        error,
-        value,
-        helperText,
-        expectFn,
-      }: {
-        disabled?: boolean;
-        maxLength?: number;
-        error?: boolean;
-        value?: string;
-        helperText?: string | null | undefined;
-        expectFn: (container: Element) => void;
-      }) => {
-        const { container } = render(
-          <ThemeProvider theme={materialTheme}>
-            <InputWrapper
-              disabled={disabled}
-              maxLength={maxLength}
-              error={error}
-              value={value}
-              helperText={helperText}
-            >
-              <div>Nothing here</div>
-            </InputWrapper>
-          </ThemeProvider>
-        );
-        expectFn(container);
-      }
-    );
-  });
+    `.test("{disabled = $disabled, maxLength = $maxLength, error = $error, value = $value, helperText = $helperText}", ({
+            disabled,
+            maxLength,
+            error,
+            value,
+            helperText,
+            expectFn,
+        }: {
+            disabled?: boolean;
+            maxLength?: number;
+            error?: boolean;
+            value?: string;
+            helperText?: string | null | undefined;
+            expectFn: (container: Element) => void;
+        }) => {
+            const { container } = render(
+                <ThemeProvider theme={materialTheme}>
+                    <InputWrapper
+                        disabled={disabled}
+                        maxLength={maxLength}
+                        error={error}
+                        value={value}
+                        helperText={helperText}
+                    >
+                        <div>Nothing here</div>
+                    </InputWrapper>
+                </ThemeProvider>,
+            );
+            expectFn(container);
+        });
+    });
 });

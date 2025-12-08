@@ -6,19 +6,17 @@ import RsSet from "../../set";
  * for testing functions that operate on sets.
  */
 export function arbRsSet<T>(
-  arb: Arbitrary<T>,
-  options?: {
-    minSize?: number,
-    maxSize?: number,
-  }
+    arb: Arbitrary<T>,
+    options?: {
+        minSize?: number;
+        maxSize?: number;
+    },
 ): Arbitrary<RsSet<T>> {
-  const { minSize, maxSize } = options ?? {};
-  const uniqueArrayOptions: { minLength?: number, maxLength?: number } = {};
-  if (typeof minSize !== "undefined") uniqueArrayOptions.minLength = minSize;
-  if (typeof maxSize !== "undefined") uniqueArrayOptions.maxLength = maxSize;
-  return fc
-    .uniqueArray(arb, uniqueArrayOptions)
-    .map((array) => new RsSet(array));
+    const { minSize, maxSize } = options ?? {};
+    const uniqueArrayOptions: { minLength?: number; maxLength?: number } = {};
+    if (typeof minSize !== "undefined") uniqueArrayOptions.minLength = minSize;
+    if (typeof maxSize !== "undefined") uniqueArrayOptions.maxLength = maxSize;
+    return fc.uniqueArray(arb, uniqueArrayOptions).map((array) => new RsSet(array));
 }
 
 /**
@@ -26,19 +24,14 @@ export function arbRsSet<T>(
  * useful for testing functions that operate on subsets of sets.
  */
 export function arbSubsetOf<T>(arbSet: RsSet<T>): Arbitrary<RsSet<T>> {
-  return fc.subarray(arbSet.toArray()).map((subarray) => new RsSet(subarray));
+    return fc.subarray(arbSet.toArray()).map((subarray) => new RsSet(subarray));
 }
 
 /**
  * A function for unwrapping objects with an id attribute, and a few sets of
  * those objects for testing.
  */
-export type ArbitraryMappableSets<A, B extends { id: A }> = [
-  (arg: B) => A,
-  RsSet<B>,
-  RsSet<B>,
-  RsSet<B>
-];
+export type ArbitraryMappableSets<A, B extends { id: A }> = [(arg: B) => A, RsSet<B>, RsSet<B>, RsSet<B>];
 
 /**
  * Functions like subtractMap, intersectionMap, and unionWith operate over a
@@ -47,24 +40,17 @@ export type ArbitraryMappableSets<A, B extends { id: A }> = [
  * several sets of arbitrary contents.
  */
 export const arbitraryMappableSets: Arbitrary<
-  [
-    (arg: { id: unknown }) => unknown,
-    RsSet<{ id: unknown }>,
-    RsSet<{ id: unknown }>,
-    RsSet<{ id: unknown }>
-  ]
+    [(arg: { id: unknown }) => unknown, RsSet<{ id: unknown }>, RsSet<{ id: unknown }>, RsSet<{ id: unknown }>]
 > = fc.uniqueArray(fc.anything()).chain((ids) => {
-  function makeSetOfObjectsWithId() {
-    return fc
-      .shuffledSubarray(ids)
-      .map((someIds) => new RsSet(someIds).map((id) => ({ id })));
-  }
-  return fc.tuple(
-    fc.constant((arg: { id: unknown }) => arg.id),
-    makeSetOfObjectsWithId(),
-    makeSetOfObjectsWithId(),
-    makeSetOfObjectsWithId()
-  );
+    function makeSetOfObjectsWithId() {
+        return fc.shuffledSubarray(ids).map((someIds) => new RsSet(someIds).map((id) => ({ id })));
+    }
+    return fc.tuple(
+        fc.constant((arg: { id: unknown }) => arg.id),
+        makeSetOfObjectsWithId(),
+        makeSetOfObjectsWithId(),
+        makeSetOfObjectsWithId(),
+    );
 });
 
 /**
@@ -77,10 +63,10 @@ export const arbitraryMappableSets: Arbitrary<
  * interesting results if there is no overlap amongst the inputs.
  */
 export const arbSetOfSetsWithHighOverlap: Arbitrary<RsSet<RsSet<unknown>>> = fc
-  .uniqueArray(fc.anything(), { minLength: 5, maxLength: 5 })
-  .chain((list) =>
-    arbRsSet(
-      fc.shuffledSubarray(list, { minLength: 1 }).map((x) => new RsSet(x)),
-      { maxSize: 3, minSize: 1 }
-    )
-  );
+    .uniqueArray(fc.anything(), { minLength: 5, maxLength: 5 })
+    .chain((list) =>
+        arbRsSet(
+            fc.shuffledSubarray(list, { minLength: 1 }).map((x) => new RsSet(x)),
+            { maxSize: 3, minSize: 1 },
+        ),
+    );

@@ -13,57 +13,51 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import useStores from "../stores/use-stores";
-import { default as React } from "react";
 import { observer } from "mobx-react-lite";
+import { default as React } from "react";
+import useStores from "../stores/use-stores";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
 function Confirm(): React.ReactNode {
-  const [open, setOpen] = React.useState(false);
-  const { uiStore } = useStores();
+    const [open, setOpen] = React.useState(false);
+    const { uiStore } = useStores();
 
-  React.useEffect(() => {
-    setOpen(Boolean(uiStore.confirmationDialogProps));
-  }, [uiStore.confirmationDialogProps]);
+    React.useEffect(() => {
+        setOpen(Boolean(uiStore.confirmationDialogProps));
+    }, [uiStore.confirmationDialogProps]);
 
-  return (
-    <Dialog
-      open={open}
-      onClose={() => {
-        uiStore.confirmationDialogProps?.no();
-      }}
-    >
-      <DialogTitle>{uiStore.confirmationDialogProps?.title ?? ""}</DialogTitle>
-      <DialogContent style={{ overscrollBehavior: "contain" }}>
-        <DialogContentText>
-          {uiStore.confirmationDialogProps?.message ?? ""}
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        {uiStore.confirmationDialogProps?.noLabel && (
-          <Button
-            onClick={() => {
-              uiStore.confirmationDialogProps?.no();
+    return (
+        <Dialog
+            open={open}
+            onClose={() => {
+                uiStore.confirmationDialogProps?.no();
             }}
-          >
-            {uiStore.confirmationDialogProps.noLabel}
-          </Button>
-        )}
-        <SubmitSpinnerButton
-          onClick={() => {
-            uiStore.confirmationDialogProps?.yes();
-          }}
-          loading={Boolean(
-            uiStore.confirmationDialogProps?.confirmationSpinner
-          )}
-          disabled={Boolean(
-            uiStore.confirmationDialogProps?.confirmationSpinner
-          )}
-          label={uiStore.confirmationDialogProps?.yesLabel ?? "OK"}
-        />
-      </DialogActions>
-    </Dialog>
-  );
+        >
+            <DialogTitle>{uiStore.confirmationDialogProps?.title ?? ""}</DialogTitle>
+            <DialogContent style={{ overscrollBehavior: "contain" }}>
+                <DialogContentText>{uiStore.confirmationDialogProps?.message ?? ""}</DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                {uiStore.confirmationDialogProps?.noLabel && (
+                    <Button
+                        onClick={() => {
+                            uiStore.confirmationDialogProps?.no();
+                        }}
+                    >
+                        {uiStore.confirmationDialogProps.noLabel}
+                    </Button>
+                )}
+                <SubmitSpinnerButton
+                    onClick={() => {
+                        uiStore.confirmationDialogProps?.yes();
+                    }}
+                    loading={Boolean(uiStore.confirmationDialogProps?.confirmationSpinner)}
+                    disabled={Boolean(uiStore.confirmationDialogProps?.confirmationSpinner)}
+                    label={uiStore.confirmationDialogProps?.yesLabel ?? "OK"}
+                />
+            </DialogActions>
+        </Dialog>
+    );
 }
 
 export default observer(Confirm);

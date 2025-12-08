@@ -1,4 +1,4 @@
-import { Optional, lift2 } from "../../util/optional";
+import { lift2, type Optional } from "../../util/optional";
 
 /**
  * The definition of a tag in RSpace. If the tag is describing a term from a
@@ -12,10 +12,10 @@ import { Optional, lift2 } from "../../util/optional";
  * disjoint union may become necessary.
  */
 export type Tag = {
-  value: string;
-  version: Optional<string>;
-  vocabulary: Optional<string>;
-  uri: Optional<string>;
+    value: string;
+    version: Optional<string>;
+    vocabulary: Optional<string>;
+    uri: Optional<string>;
 };
 
 /**
@@ -26,6 +26,6 @@ export type Tag = {
  * same.
  */
 export const areSameTag = (tagA: Tag, tagB: Tag): boolean =>
-  lift2((uriA, uriB) => uriA === uriB, tagA.uri, tagB.uri).orElse(
-    !tagA.uri.isPresent() && !tagB.uri.isPresent() && tagA.value === tagB.value,
-  );
+    lift2((uriA, uriB) => uriA === uriB, tagA.uri, tagB.uri).orElse(
+        !tagA.uri.isPresent() && !tagB.uri.isPresent() && tagA.value === tagB.value,
+    );

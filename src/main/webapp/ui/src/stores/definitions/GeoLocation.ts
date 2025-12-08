@@ -6,30 +6,30 @@
  */
 
 export type GeoLocationBox = {
-  eastBoundLongitude: string;
-  northBoundLatitude: string;
-  southBoundLatitude: string;
-  westBoundLongitude: string;
+    eastBoundLongitude: string;
+    northBoundLatitude: string;
+    southBoundLatitude: string;
+    westBoundLongitude: string;
 };
 export type PolygonPoint = {
-  pointLatitude: string;
-  pointLongitude: string;
+    pointLatitude: string;
+    pointLongitude: string;
 };
 export type SimplePoint = {
-  latitude: string;
-  longitude: string;
+    latitude: string;
+    longitude: string;
 };
 
 export interface GeoLocationPolygon {
-  readonly length: number;
-  get(i: number): { polygonPoint: PolygonPoint } | undefined;
-  set(i: number, key: keyof PolygonPoint, value: string): void;
-  mapPoints<T>(f: (pp: PolygonPoint, i: number) => T): Array<T>;
-  addAnotherPoint(i: number): void;
-  removePoint(i: number): void;
-  readonly isValid: boolean;
-  readonly empty: boolean;
-  toJson(): unknown;
+    readonly length: number;
+    get(i: number): { polygonPoint: PolygonPoint } | undefined;
+    set(i: number, key: keyof PolygonPoint, value: string): void;
+    mapPoints<T>(f: (pp: PolygonPoint, i: number) => T): Array<T>;
+    addAnotherPoint(i: number): void;
+    removePoint(i: number): void;
+    readonly isValid: boolean;
+    readonly empty: boolean;
+    toJson(): unknown;
 }
 
 /*
@@ -37,55 +37,55 @@ export interface GeoLocationPolygon {
  * in the database, as part of an IGSN identifier or independently.
  */
 export type GeoLocationAttrs = {
-  geoLocationBox: GeoLocationBox;
-  geoLocationPlace: string;
-  geoLocationPoint: PolygonPoint;
-  geoLocationPolygon: Array<{ polygonPoint: PolygonPoint }>;
-  geoLocationInPolygonPoint: PolygonPoint;
+    geoLocationBox: GeoLocationBox;
+    geoLocationPlace: string;
+    geoLocationPoint: PolygonPoint;
+    geoLocationPolygon: Array<{ polygonPoint: PolygonPoint }>;
+    geoLocationInPolygonPoint: PolygonPoint;
 };
 
 export const newGeoLocation: GeoLocationAttrs = {
-  geoLocationBox: {
-    eastBoundLongitude: "",
-    northBoundLatitude: "",
-    southBoundLatitude: "",
-    westBoundLongitude: "",
-  },
-  geoLocationPlace: "",
-  geoLocationPoint: {
-    pointLatitude: "",
-    pointLongitude: "",
-  },
-  geoLocationPolygon: [
-    {
-      polygonPoint: {
+    geoLocationBox: {
+        eastBoundLongitude: "",
+        northBoundLatitude: "",
+        southBoundLatitude: "",
+        westBoundLongitude: "",
+    },
+    geoLocationPlace: "",
+    geoLocationPoint: {
         pointLatitude: "",
         pointLongitude: "",
-      },
     },
-    {
-      polygonPoint: {
+    geoLocationPolygon: [
+        {
+            polygonPoint: {
+                pointLatitude: "",
+                pointLongitude: "",
+            },
+        },
+        {
+            polygonPoint: {
+                pointLatitude: "",
+                pointLongitude: "",
+            },
+        },
+        {
+            polygonPoint: {
+                pointLatitude: "",
+                pointLongitude: "",
+            },
+        },
+        {
+            polygonPoint: {
+                pointLatitude: "",
+                pointLongitude: "",
+            },
+        },
+    ],
+    geoLocationInPolygonPoint: {
         pointLatitude: "",
         pointLongitude: "",
-      },
     },
-    {
-      polygonPoint: {
-        pointLatitude: "",
-        pointLongitude: "",
-      },
-    },
-    {
-      polygonPoint: {
-        pointLatitude: "",
-        pointLongitude: "",
-      },
-    },
-  ],
-  geoLocationInPolygonPoint: {
-    pointLatitude: "",
-    pointLongitude: "",
-  },
 };
 
 /**
@@ -94,43 +94,43 @@ export const newGeoLocation: GeoLocationAttrs = {
  * which at least one must be defined.
  */
 export interface GeoLocation {
-  /*
-   * A single point, with longtiude and latitude.
-   */
-  geoLocationPoint: PolygonPoint;
+    /*
+     * A single point, with longtiude and latitude.
+     */
+    geoLocationPoint: PolygonPoint;
 
-  /*
-   * A rectangular region. This region is bounded by two longitudinal lines and two latitudinal
-   * lines.
-   */
-  geoLocationBox: GeoLocationBox;
+    /*
+     * A rectangular region. This region is bounded by two longitudinal lines and two latitudinal
+     * lines.
+     */
+    geoLocationBox: GeoLocationBox;
 
-  /*
-   * A named location using free-form text, for example an address.
-   */
-  geoLocationPlace: string;
+    /*
+     * A named location using free-form text, for example an address.
+     */
+    geoLocationPlace: string;
 
-  /*
-   * An arbitrary region enclosed by a series of points. Given that a polygon alone simply divides
-   * the plane into two regions, `geoLocationInPolygonPoint` disambiguates which of the two
-   * regions is being described by defining an arbitrary point within the noteworthy region. If
-   * `geoLocationInPolygonPoint` is undefined, which is to say that either of its two values is
-   * the empty string, then the region being described by the polygon is assumed to the be smaller
-   * of the two regions on the plane.
-   */
-  geoLocationPolygon: GeoLocationPolygon;
-  geoLocationInPolygonPoint: PolygonPoint;
+    /*
+     * An arbitrary region enclosed by a series of points. Given that a polygon alone simply divides
+     * the plane into two regions, `geoLocationInPolygonPoint` disambiguates which of the two
+     * regions is being described by defining an arbitrary point within the noteworthy region. If
+     * `geoLocationInPolygonPoint` is undefined, which is to say that either of its two values is
+     * the empty string, then the region being described by the polygon is assumed to the be smaller
+     * of the two regions on the plane.
+     */
+    geoLocationPolygon: GeoLocationPolygon;
+    geoLocationInPolygonPoint: PolygonPoint;
 
-  /*
-   * A GeoLocation is valid if at least one element is complete, and all three not left incomplete.
-   */
-  readonly isValid: boolean;
+    /*
+     * A GeoLocation is valid if at least one element is complete, and all three not left incomplete.
+     */
+    readonly isValid: boolean;
 
-  /*
-   * Computed values used in the rendering of the UI that facilitates the defining of polygons.
-   */
-  readonly polygonEmpty: boolean;
-  readonly inPolygonPointIncomplete: boolean;
+    /*
+     * Computed values used in the rendering of the UI that facilitates the defining of polygons.
+     */
+    readonly polygonEmpty: boolean;
+    readonly inPolygonPointIncomplete: boolean;
 
-  toJson(): object;
+    toJson(): object;
 }

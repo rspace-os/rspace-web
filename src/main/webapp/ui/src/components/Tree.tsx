@@ -11,11 +11,11 @@ import React from "react";
  * 3. The Tree component controls the lifecycle and ensures type consistency
  */
 const TreeContext = React.createContext<{
-  idMap: Map<string, unknown>;
-  getId: ((t: unknown) => string) | null;
+    idMap: Map<string, unknown>;
+    getId: ((t: unknown) => string) | null;
 }>({
-  idMap: new Map(),
-  getId: null,
+    idMap: new Map(),
+    getId: null,
 });
 
 /*
@@ -24,14 +24,14 @@ const TreeContext = React.createContext<{
  * but is safe when used within the Tree component ecosystem.
  */
 function useTreeContext<Item, Id extends string>(): {
-  idMap: Map<Id, Item>;
-  getId: ((t: Item) => Id) | null;
-} {
-  const context = React.useContext(TreeContext);
-  return context as {
     idMap: Map<Id, Item>;
     getId: ((t: Item) => Id) | null;
-  };
+} {
+    const context = React.useContext(TreeContext);
+    return context as {
+        idMap: Map<Id, Item>;
+        getId: ((t: Item) => Id) | null;
+    };
 }
 
 /*
@@ -40,24 +40,24 @@ function useTreeContext<Item, Id extends string>(): {
  * the input (properly typed) and consumption (through useTreeContext).
  */
 function TreeProvider<Item, Id extends string>({
-  idMap,
-  getId,
-  children,
+    idMap,
+    getId,
+    children,
 }: {
-  idMap: Map<Id, Item>;
-  getId: (item: Item) => Id;
-  children: React.ReactNode;
+    idMap: Map<Id, Item>;
+    getId: (item: Item) => Id;
+    children: React.ReactNode;
 }): React.ReactNode {
-  return (
-    <TreeContext.Provider
-      value={{
-        idMap: idMap as Map<string, unknown>,
-        getId: getId as (t: unknown) => string,
-      }}
-    >
-      {children}
-    </TreeContext.Provider>
-  );
+    return (
+        <TreeContext.Provider
+            value={{
+                idMap: idMap as Map<string, unknown>,
+                getId: getId as (t: unknown) => string,
+            }}
+        >
+            {children}
+        </TreeContext.Provider>
+    );
 }
 
 /**
@@ -79,28 +79,28 @@ function TreeProvider<Item, Id extends string>({
  * ```
  */
 export function TreeItem<Item, Id extends string>({
-  item,
-  ...rest
+    item,
+    ...rest
 }: Omit<React.ComponentProps<typeof MuiTreeItem>, "itemId"> & {
-  item: Item;
+    item: Item;
 }): React.ReactNode {
-  const { idMap, getId } = useTreeContext<Item, Id>();
-  if (!getId) {
-    throw new Error("TreeNode must be used within a TreeContext provider");
-  }
+    const { idMap, getId } = useTreeContext<Item, Id>();
+    if (!getId) {
+        throw new Error("TreeNode must be used within a TreeContext provider");
+    }
 
-  React.useEffect(() => {
-    idMap.set(getId(item), item);
-    /**
-     * NOTE: Not running this on unmount may cause problems when a TreeItem is
-     * deleted, but the entire setup of storing state within the component tree
-     * is bad anyway */
-    // return () => {
-    //   idMap.delete(getId(item));
-    // };
-  }, []);
+    React.useEffect(() => {
+        idMap.set(getId(item), item);
+        /**
+         * NOTE: Not running this on unmount may cause problems when a TreeItem is
+         * deleted, but the entire setup of storing state within the component tree
+         * is bad anyway */
+        // return () => {
+        //   idMap.delete(getId(item));
+        // };
+    }, [getId, idMap.set, item]);
 
-  return <MuiTreeItem itemId={getId(item)} {...rest} />;
+    return <MuiTreeItem itemId={getId(item)} {...rest} />;
 }
 
 /**
@@ -134,121 +134,105 @@ export function TreeItem<Item, Id extends string>({
  * </Tree>
  * ```
  */
-export function Tree<
-  Item,
-  Id extends string,
-  MultiSelect extends boolean = false,
->({
-  multiSelect,
-  expandedItems,
-  onExpandedItemsChange,
-  selectedItems,
-  onSelectedItemsChange,
-  getId,
-  ...rest
+export function Tree<Item, Id extends string, MultiSelect extends boolean = false>({
+    multiSelect,
+    expandedItems,
+    onExpandedItemsChange,
+    selectedItems,
+    onSelectedItemsChange,
+    getId,
+    ...rest
 }: Omit<
-  React.ComponentProps<typeof SimpleTreeView>,
-  | "multiSelect"
-  | "expandedItems"
-  | "onExpandedItemsChange"
-  | "selectedItems"
-  | "onSelectedItemsChange"
-  | "defaultSelectedItems"
+    React.ComponentProps<typeof SimpleTreeView>,
+    | "multiSelect"
+    | "expandedItems"
+    | "onExpandedItemsChange"
+    | "selectedItems"
+    | "onSelectedItemsChange"
+    | "defaultSelectedItems"
 > & {
-  getId: (item: Item) => Id;
-  multiSelect?: MultiSelect;
-  expandedItems?: Array<Item>;
-  onExpandedItemsChange?: (
-    event: React.SyntheticEvent,
-    items: Array<Item>,
-  ) => void;
-  selectedItems?: MultiSelect extends true ? Array<Item> : Item | null;
-  onSelectedItemsChange?: (
-    event: React.SyntheticEvent,
-    item: MultiSelect extends true ? Array<Item> : Item | null,
-  ) => void;
+    getId: (item: Item) => Id;
+    multiSelect?: MultiSelect;
+    expandedItems?: Array<Item>;
+    onExpandedItemsChange?: (event: React.SyntheticEvent, items: Array<Item>) => void;
+    selectedItems?: MultiSelect extends true ? Array<Item> : Item | null;
+    onSelectedItemsChange?: (
+        event: React.SyntheticEvent,
+        item: MultiSelect extends true ? Array<Item> : Item | null,
+    ) => void;
 }): React.ReactNode {
-  const [idMap] = React.useState<Map<Id, Item>>(new Map());
-  return (
-    <TreeProvider idMap={idMap} getId={getId}>
-      <SimpleTreeView
-        multiSelect={multiSelect ?? false}
-        {...(expandedItems !== undefined
-          ? {
-              expandedItems: expandedItems.map((item) => getId(item)),
-            }
-          : {})}
-        {...(onExpandedItemsChange !== undefined
-          ? {
-              onExpandedItemsChange: (event, itemIds) => {
-                onExpandedItemsChange(
-                  event,
-                  itemIds.map((id) => {
-                    const item = idMap.get(id as Id);
-                    if (!item) {
-                      throw new Error(
-                        `Item with id ${id} has not previously been rendered as TreeNode`,
-                      );
-                    }
-                    return item;
-                  }),
-                );
-              },
-            }
-          : {})}
-        {...(selectedItems !== undefined
-          ? {
-              selectedItems: (multiSelect && Array.isArray(selectedItems)
-                ? (selectedItems as Array<Item>).map((item) => getId(item))
-                : (selectedItems as Item | null) === null
-                  ? ""
-                  : getId(selectedItems as Item)) as MultiSelect extends true
-                ? Array<string>
-                : string,
-            }
-          : {})}
-        onItemSelectionToggle={(...args) => {
-          console.debug("onItemSelectionToggle", args);
-        }}
-        {...(onSelectedItemsChange !== undefined
-          ? {
-              onSelectedItemsChange: (
-                event,
-                itemIds: string[] | string | null,
-              ) => {
-                console.debug(
-                  "onSelectedItemsChange",
-                  itemIds,
-                  Array.isArray(itemIds),
-                );
-                onSelectedItemsChange(
-                  event,
-                  Array.isArray(itemIds as any)
-                    ? (itemIds as any).map((id: any) => {
-                        const item = idMap.get(id);
-                        if (!item) {
-                          throw new Error(
-                            `Item with id ${id} has not previously been rendered as TreeNode`,
-                          );
-                        }
-                        return item;
-                      })
-                    : (() => {
-                        if (itemIds === "") return null;
-                        const item = idMap.get(itemIds as Id);
-                        if (!item) {
-                          throw new Error(
-                            `Item with id ${itemIds} has not previously been rendered as TreeNode`,
-                          );
-                        }
-                        return item;
-                      })(),
-                );
-              },
-            }
-          : {})}
-        {...rest}
-      />
-    </TreeProvider>
-  );
+    const [idMap] = React.useState<Map<Id, Item>>(new Map());
+    return (
+        <TreeProvider idMap={idMap} getId={getId}>
+            <SimpleTreeView
+                multiSelect={multiSelect ?? false}
+                {...(expandedItems !== undefined
+                    ? {
+                          expandedItems: expandedItems.map((item) => getId(item)),
+                      }
+                    : {})}
+                {...(onExpandedItemsChange !== undefined
+                    ? {
+                          onExpandedItemsChange: (event, itemIds) => {
+                              onExpandedItemsChange(
+                                  event,
+                                  itemIds.map((id) => {
+                                      const item = idMap.get(id as Id);
+                                      if (!item) {
+                                          throw new Error(
+                                              `Item with id ${id} has not previously been rendered as TreeNode`,
+                                          );
+                                      }
+                                      return item;
+                                  }),
+                              );
+                          },
+                      }
+                    : {})}
+                {...(selectedItems !== undefined
+                    ? {
+                          selectedItems: (multiSelect && Array.isArray(selectedItems)
+                              ? (selectedItems as Array<Item>).map((item) => getId(item))
+                              : (selectedItems as Item | null) === null
+                                ? ""
+                                : getId(selectedItems as Item)) as MultiSelect extends true ? Array<string> : string,
+                      }
+                    : {})}
+                onItemSelectionToggle={(...args) => {
+                    console.debug("onItemSelectionToggle", args);
+                }}
+                {...(onSelectedItemsChange !== undefined
+                    ? {
+                          onSelectedItemsChange: (event, itemIds: string[] | string | null) => {
+                              console.debug("onSelectedItemsChange", itemIds, Array.isArray(itemIds));
+                              onSelectedItemsChange(
+                                  event,
+                                  Array.isArray(itemIds as any)
+                                      ? (itemIds as any).map((id: any) => {
+                                            const item = idMap.get(id);
+                                            if (!item) {
+                                                throw new Error(
+                                                    `Item with id ${id} has not previously been rendered as TreeNode`,
+                                                );
+                                            }
+                                            return item;
+                                        })
+                                      : (() => {
+                                            if (itemIds === "") return null;
+                                            const item = idMap.get(itemIds as Id);
+                                            if (!item) {
+                                                throw new Error(
+                                                    `Item with id ${itemIds} has not previously been rendered as TreeNode`,
+                                                );
+                                            }
+                                            return item;
+                                        })(),
+                              );
+                          },
+                      }
+                    : {})}
+                {...rest}
+            />
+        </TreeProvider>
+    );
 }

@@ -1,4 +1,4 @@
-import { type Validator, mkValidator } from "../util/Validator";
+import { mkValidator, type Validator } from "../util/Validator";
 
 // A unique identifier for each pane
 type Key = string;
@@ -7,24 +7,24 @@ type Key = string;
  * This is a doubly-linked list to model the panes of the wizard.
  */
 type Pane = {
-  key: Key;
+    key: Key;
 
-  prev: Pane | null; // null means it is the first pane
-  next: Pane | null; // null means it is the last pane
+    prev: Pane | null; // null means it is the first pane
+    next: Pane | null; // null means it is the last pane
 
-  // for validating that the next pane can be moved to
-  validator: Validator;
+    // for validating that the next pane can be moved to
+    validator: Validator;
 
-  // title displayed at the top of the dialog
-  title: string;
+    // title displayed at the top of the dialog
+    title: string;
 };
 
 export const makePane = (key: Key, title: string): Pane => ({
-  key,
-  prev: null,
-  next: null,
-  validator: mkValidator(),
-  title,
+    key,
+    prev: null,
+    next: null,
+    validator: mkValidator(),
+    title,
 });
 
 /*
@@ -33,23 +33,23 @@ export const makePane = (key: Key, title: string): Pane => ({
  * the new end pane.
  */
 export const appendPane = (start: Pane, newEnd: Pane): void => {
-  let ptr = start;
-  while (ptr.next) ptr = ptr.next;
-  ptr.next = newEnd;
-  newEnd.prev = ptr;
+    let ptr = start;
+    while (ptr.next) ptr = ptr.next;
+    ptr.next = newEnd;
+    newEnd.prev = ptr;
 };
 
 /*
  * Counts the number of panes in the list, just list Array.prototype.length
  */
 export const numberOfPanes = (start: Pane): number => {
-  let ptr = start;
-  let count = 1;
-  while (ptr.next) {
-    ptr = ptr.next;
-    count++;
-  }
-  return count;
+    let ptr = start;
+    let count = 1;
+    while (ptr.next) {
+        ptr = ptr.next;
+        count++;
+    }
+    return count;
 };
 
 /**
@@ -61,15 +61,15 @@ export const numberOfPanes = (start: Pane): number => {
  * @throws If the specified pane is not in the list
  */
 export const getIndexOfPane = (start: Pane, current: Pane): number => {
-  let ptr = start;
-  let index = 0;
-  if (ptr.key === current.key) return index;
-  while (ptr.next) {
-    ptr = ptr.next;
-    index++;
+    let ptr = start;
+    let index = 0;
     if (ptr.key === current.key) return index;
-  }
-  throw new Error("Did not find current pane");
+    while (ptr.next) {
+        ptr = ptr.next;
+        index++;
+        if (ptr.key === current.key) return index;
+    }
+    throw new Error("Did not find current pane");
 };
 
 /**
@@ -81,11 +81,11 @@ export const getIndexOfPane = (start: Pane, current: Pane): number => {
  * @throws If there is no pane with the provided key in the list
  */
 export const getPaneByKey = (start: Pane, key: string): Pane => {
-  let ptr = start;
-  if (ptr.key === key) return ptr;
-  while (ptr.next) {
-    ptr = ptr.next;
+    let ptr = start;
     if (ptr.key === key) return ptr;
-  }
-  throw new Error(`Did not find pane with key: "${key}"`);
+    while (ptr.next) {
+        ptr = ptr.next;
+        if (ptr.key === key) return ptr;
+    }
+    throw new Error(`Did not find pane with key: "${key}"`);
 };

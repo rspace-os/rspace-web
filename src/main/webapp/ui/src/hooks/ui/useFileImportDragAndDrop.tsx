@@ -17,40 +17,36 @@ import React from "react";
  * disabling the Drag and Drop API at the DOM root and only enabling it for the
  * particular dropzones. To do this, wrap the whole page in this component.
  */
-export const DisableDragAndDropByDefault = ({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode => (
-  <div
-    onDragOver={(e) => {
-      /*
-       * Allow root of page to accept drop events...
-       */
-      e.preventDefault();
-      e.stopPropagation();
-    }}
-    onDrop={(e) => {
-      /*
-       * ..and then ignore those drop events. This way, if the user
-       * drags a file over the page but misses one of the dropzones
-       * the drag action gets cancelled rather than resulting in
-       * the file being opened in a new browser tab.
-       */
-      e.preventDefault();
-    }}
-    /*
-     * Also prevent the user from accidently dragging any content on the page
-     * and then initiating the drag event, with the content unintentionally
-     * dropped onto a dropzone intended for files from outside the browser.
-     */
-    onDragStart={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    }}
-  >
-    {children}
-  </div>
+export const DisableDragAndDropByDefault = ({ children }: { children: React.ReactNode }): React.ReactNode => (
+    <div
+        onDragOver={(e) => {
+            /*
+             * Allow root of page to accept drop events...
+             */
+            e.preventDefault();
+            e.stopPropagation();
+        }}
+        onDrop={(e) => {
+            /*
+             * ..and then ignore those drop events. This way, if the user
+             * drags a file over the page but misses one of the dropzones
+             * the drag action gets cancelled rather than resulting in
+             * the file being opened in a new browser tab.
+             */
+            e.preventDefault();
+        }}
+        /*
+         * Also prevent the user from accidently dragging any content on the page
+         * and then initiating the drag event, with the content unintentionally
+         * dropped onto a dropzone intended for files from outside the browser.
+         */
+        onDragStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }}
+    >
+        {children}
+    </div>
 );
 
 /**
@@ -66,71 +62,71 @@ export const DisableDragAndDropByDefault = ({
  *          true when the user is hovering over the dropzone.
  */
 export const useFileImportDropZone = ({
-  onDrop: onDropProp,
-  disabled,
+    onDrop: onDropProp,
+    disabled,
 }: {
-  onDrop: (files: ReadonlyArray<File>) => void;
-  disabled?: boolean;
+    onDrop: (files: ReadonlyArray<File>) => void;
+    disabled?: boolean;
 }): {
-  onDragEnter: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  over: boolean;
+    onDragEnter: (e: React.DragEvent) => void;
+    onDragOver: (e: React.DragEvent) => void;
+    onDragLeave: (e: React.DragEvent) => void;
+    onDrop: (e: React.DragEvent) => void;
+    over: boolean;
 } => {
-  const [overCount, setOverCount] = React.useState(0);
+    const [overCount, setOverCount] = React.useState(0);
 
-  function onDragEnter(e: React.DragEvent) {
-    e.preventDefault();
-    if (disabled) return;
-    e.stopPropagation();
-    setOverCount((x) => x + 1);
-  }
-
-  function onDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  function onDragLeave(e: React.DragEvent) {
-    e.preventDefault();
-    if (disabled) return;
-    e.stopPropagation();
-    setOverCount((x) => x - 1);
-  }
-
-  function onDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setOverCount(0);
-
-    if (disabled) return;
-    e.stopPropagation();
-
-    const files: Array<File> = [];
-    if (e.dataTransfer?.items) {
-      // Use DataTransferItemList interface to access the file(s)
-      [...e.dataTransfer.items].forEach((item) => {
-        // If dropped items aren't files, reject them
-        if (item.kind === "file") {
-          const f = item.getAsFile();
-          if (f) files.push(f);
-        }
-      });
-    } else {
-      // Use DataTransfer interface to access the file(s)
-      [...(e.dataTransfer?.files ?? [])].forEach((file) => {
-        files.push(file);
-      });
+    function onDragEnter(e: React.DragEvent) {
+        e.preventDefault();
+        if (disabled) return;
+        e.stopPropagation();
+        setOverCount((x) => x + 1);
     }
 
-    onDropProp(files);
-  }
+    function onDragOver(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
 
-  return {
-    onDragEnter,
-    onDragOver,
-    onDragLeave,
-    onDrop,
-    over: overCount > 0,
-  };
+    function onDragLeave(e: React.DragEvent) {
+        e.preventDefault();
+        if (disabled) return;
+        e.stopPropagation();
+        setOverCount((x) => x - 1);
+    }
+
+    function onDrop(e: React.DragEvent) {
+        e.preventDefault();
+        setOverCount(0);
+
+        if (disabled) return;
+        e.stopPropagation();
+
+        const files: Array<File> = [];
+        if (e.dataTransfer?.items) {
+            // Use DataTransferItemList interface to access the file(s)
+            [...e.dataTransfer.items].forEach((item) => {
+                // If dropped items aren't files, reject them
+                if (item.kind === "file") {
+                    const f = item.getAsFile();
+                    if (f) files.push(f);
+                }
+            });
+        } else {
+            // Use DataTransfer interface to access the file(s)
+            [...(e.dataTransfer?.files ?? [])].forEach((file) => {
+                files.push(file);
+            });
+        }
+
+        onDropProp(files);
+    }
+
+    return {
+        onDragEnter,
+        onDragOver,
+        onDragLeave,
+        onDrop,
+        over: overCount > 0,
+    };
 };

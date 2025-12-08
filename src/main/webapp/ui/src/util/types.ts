@@ -19,8 +19,8 @@ export type UseState<T> = [T, UseStateSetter<T>];
  * Geometry
  */
 export interface Point {
-  x: number;
-  y: number;
+    x: number;
+    y: number;
 }
 
 /*
@@ -29,24 +29,21 @@ export interface Point {
 export type Order = "asc" | "desc";
 
 export function parseOrder(str: string): Result<Order> {
-  return Result.first(
-    parseString("asc", str) as Result<Order>,
-    parseString("desc", str) as Result<Order>
-  );
+    return Result.first(parseString("asc", str) as Result<Order>, parseString("desc", str) as Result<Order>);
 }
 
 /*
  * The return type of Promise.allSettled
  */
 export type AllSettled<A> = Array<
-  | {
-      status: "fulfilled";
-      value: A;
-    }
-  | {
-      status: "rejected";
-      reason: Error;
-    }
+    | {
+          status: "fulfilled";
+          value: A;
+      }
+    | {
+          status: "rejected";
+          reason: Error;
+      }
 >;
 
 /*
@@ -75,6 +72,6 @@ export type BlobUrl = URL;
  * implementing Hypermedia as the Engine of Application State (HATEOAS).
  */
 export type _LINK = {
-  link: URL;
-  rel: string;
+    link: URL;
+    rel: string;
 };

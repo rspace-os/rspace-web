@@ -1,34 +1,34 @@
-import React from "react";
-import Portal from "@mui/material/Portal";
-import Typography from "@mui/material/Typography";
-import ErrorBoundary from "../../components/ErrorBoundary";
-import Alerts from "../../components/Alerts/Alerts";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
-import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
-import TagListing from "../../components/Tags/TagListing";
 import Grid from "@mui/material/Grid";
-import AddTag from "../../components/Tags/AddTag";
+import Portal from "@mui/material/Portal";
+import Typography from "@mui/material/Typography";
+import React from "react";
 import axios from "@/common/axios";
-import { type Tag, areSameTag } from "../../stores/definitions/Tag";
-import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
-import {
-  parseEncodedTags,
-  encodeTags,
-} from "../../components/Tags/ParseEncodedTagStrings";
-import { doNotAwait } from "../../util/Util";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import AlertContext, {
-  mkAlert,
-  type AlertDetails,
-} from "../../stores/contexts/Alert";
-import { Optional } from "../../util/optional";
 import docLinks from "../../assets/DocLinks";
+import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
+import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import ErrorBoundary from "../../components/ErrorBoundary";
+import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
+import AddTag from "../../components/Tags/AddTag";
+import {
+  encodeTags,
+  parseEncodedTags,
+} from "../../components/Tags/ParseEncodedTagStrings";
+import TagListing from "../../components/Tags/TagListing";
+import AlertContext, {
+  type AlertDetails,
+  mkAlert,
+} from "../../stores/contexts/Alert";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import { areSameTag, type Tag } from "../../stores/definitions/Tag";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import { Optional } from "../../util/optional";
+import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
+import { doNotAwait } from "../../util/Util";
 
 export default function Wrapper(): React.ReactNode {
   return (
@@ -132,7 +132,7 @@ function TagDialog(): React.ReactNode {
     return () => {
       window.removeEventListener("OPEN_TAG_DIALOG", handler);
     };
-  }, []);
+  }, [addAlert]);
 
   const handleSave = async () => {
     if (selectedIds === null || selectedIds.length === 0) return; // input type should be non-empty list?
@@ -191,13 +191,12 @@ function TagDialog(): React.ReactNode {
     return () => {
       window.removeEventListener("OPEN_TAG_DIALOG", handler);
     };
-  }, []);
+  }, [addAlert]);
 
   return (
     <Dialog open={selectedIds !== null} onClose={() => setSelectedIds(null)}>
       <DialogTitle>
         {selectedIds === null ? (
-          <>{/* never shown due to open prop */}</>
         ) : (
           <>
             Tagging {selectedIds.length} item{selectedIds.length > 1 && "s"}
@@ -232,7 +231,7 @@ function TagDialog(): React.ReactNode {
                       ),
                     ]
               }
-              onDelete={(index, tag) => {
+              onDelete={(_index, tag) => {
                 setDeletedTags([...deletedTags, tag]);
                 setAddedTags(addedTags.filter((aTag) => aTag !== tag));
               }}

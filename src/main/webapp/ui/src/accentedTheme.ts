@@ -1,38 +1,38 @@
 import {
   createTheme,
-  PaletteOptions,
-  SimplePaletteColorOptions,
+  type PaletteOptions,
+  type SimplePaletteColorOptions,
 } from "@mui/material";
-import { ThemeOptions } from "@mui/material/styles/createTheme";
-import { PaletteColorOptions } from "@mui/material/styles/createPalette";
-import baseTheme from "./theme";
-import { mergeThemes } from "./util/styles";
-import { darken, alpha, lighten, Theme } from "@mui/system";
-import { toolbarClasses } from "@mui/material/Toolbar";
-import { typographyClasses } from "@mui/material/Typography";
-import { svgIconClasses } from "@mui/material/SvgIcon";
-import { textFieldClasses } from "@mui/material/TextField";
-import { inputBaseClasses } from "@mui/material/InputBase";
+import { alertTitleClasses } from "@mui/material/AlertTitle";
+import { buttonClasses } from "@mui/material/Button";
+import { buttonGroupClasses } from "@mui/material/ButtonGroup";
+import { cardActionAreaClasses } from "@mui/material/CardActionArea";
+import { checkboxClasses } from "@mui/material/Checkbox";
+import { chipClasses } from "@mui/material/Chip";
 import { dividerClasses } from "@mui/material/Divider";
+import { formLabelClasses } from "@mui/material/FormLabel";
+import { iconButtonClasses } from "@mui/material/IconButton";
+import { inputAdornmentClasses } from "@mui/material/InputAdornment";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { inputLabelClasses } from "@mui/material/InputLabel";
+import { linkClasses } from "@mui/material/Link";
 import { listItemButtonClasses } from "@mui/material/ListItemButton";
 import { listItemIconClasses } from "@mui/material/ListItemIcon";
 import { listItemTextClasses } from "@mui/material/ListItemText";
-import { paperClasses } from "@mui/material/Paper";
-import { cardActionAreaClasses } from "@mui/material/CardActionArea";
-import { buttonClasses } from "@mui/material/Button";
-import { iconButtonClasses } from "@mui/material/IconButton";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
-import { gridClasses } from "@mui/x-data-grid";
-import { alertTitleClasses } from "@mui/material/AlertTitle";
-import { chipClasses } from "@mui/material/Chip";
-import { formLabelClasses } from "@mui/material/FormLabel";
-import { inputLabelClasses } from "@mui/material/InputLabel";
-import { inputAdornmentClasses } from "@mui/material/InputAdornment";
-import { linkClasses } from "@mui/material/Link";
-import { selectClasses } from "@mui/material/Select";
-import { checkboxClasses } from "@mui/material/Checkbox";
+import { paperClasses } from "@mui/material/Paper";
 import { radioClasses } from "@mui/material/Radio";
-import { buttonGroupClasses } from "@mui/material/ButtonGroup";
+import { selectClasses } from "@mui/material/Select";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import type { PaletteColorOptions } from "@mui/material/styles/createPalette";
+import type { ThemeOptions } from "@mui/material/styles/createTheme";
+import { textFieldClasses } from "@mui/material/TextField";
+import { toolbarClasses } from "@mui/material/Toolbar";
+import { typographyClasses } from "@mui/material/Typography";
+import { alpha, darken, lighten, type Theme } from "@mui/system";
+import { gridClasses } from "@mui/x-data-grid";
+import baseTheme from "./theme";
+import { mergeThemes } from "./util/styles";
 
 /**
  * Represents an HSL color.
@@ -131,7 +131,7 @@ export type AccentColor = {
  *
  * This function creates a new theme, given an accent colour.
  */
- 
+
 export default function createAccentedTheme(accent: AccentColor): Theme {
   const prefersMoreContrast = window.matchMedia(
     "(prefers-contrast: more)",
@@ -321,7 +321,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                   color: `${
                     prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor
                   } !important`,
-                  [`&::after`]: {
+                  "&::after": {
                     content: "''",
                     width: "100%",
                     height: "2px",
@@ -336,14 +336,14 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                     opacity: "0",
                     transition: "all .1s ease-in-out",
                   },
-                  [`&:hover`]: {
-                    [`&::after`]: {
+                  "&:hover": {
+                    "&::after": {
                       opacity: "0.75",
                       transform: "translateY(0px)",
                     },
                   },
-                  [`&[aria-current="page"]`]: {
-                    [`&::after`]: {
+                  "&[aria-current="page"]": {
+                    "&::after": {
                       opacity: "0.9",
                       transform: "translateY(0px)",
                       left: baseTheme.spacing(-1),

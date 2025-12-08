@@ -1,11 +1,8 @@
 // @flow
 
-import { type LinkableRecord } from "../definitions/LinkableRecord";
-import {
-  type GlobalId,
-  globalIdToInventoryRecordTypeLabel,
-} from "../definitions/BaseRecord";
 import { getByKey } from "../../util/optional";
+import { type GlobalId, globalIdToInventoryRecordTypeLabel } from "../definitions/BaseRecord";
+import type { LinkableRecord } from "../definitions/LinkableRecord";
 
 /**
  * This is a LinkableRecord that can be constructed from just a Global Id. It
@@ -14,35 +11,35 @@ import { getByKey } from "../../util/optional";
  * information about the record.
  */
 export default class LinkableRecordFromGlobalId implements LinkableRecord {
-  globalId: GlobalId | null;
-  name: string;
-  id: number | null;
+    globalId: GlobalId | null;
+    name: string;
+    id: number | null;
 
-  constructor(globalId: GlobalId) {
-    this.globalId = globalId;
-    this.name = "";
-    this.id = parseInt(globalId.substring(2), 10);
-  }
+    constructor(globalId: GlobalId) {
+        this.globalId = globalId;
+        this.name = "";
+        this.id = parseInt(globalId.substring(2), 10);
+    }
 
-  get recordTypeLabel(): string {
-    if (!this.globalId) throw new Error("Impossible");
-    return globalIdToInventoryRecordTypeLabel(this.globalId);
-  }
+    get recordTypeLabel(): string {
+        if (!this.globalId) throw new Error("Impossible");
+        return globalIdToInventoryRecordTypeLabel(this.globalId);
+    }
 
-  get iconName(): string {
-    if (!this.globalId) throw new Error("Impossible");
-    return getByKey(this.globalId.substring(0, 2) as never, {
-      IC: "container",
-      SA: "sample",
-      SS: "subsample",
-      IT: "template",
-    }).orElseGet(() => {
-      throw new Error("Not an Inventory Record Type");
-    });
-  }
+    get iconName(): string {
+        if (!this.globalId) throw new Error("Impossible");
+        return getByKey(this.globalId.substring(0, 2) as never, {
+            IC: "container",
+            SA: "sample",
+            SS: "subsample",
+            IT: "template",
+        }).orElseGet(() => {
+            throw new Error("Not an Inventory Record Type");
+        });
+    }
 
-  get permalinkURL(): string {
-    if (!this.globalId) throw new Error("Impossible");
-    return `/globalId/${this.globalId}`;
-  }
+    get permalinkURL(): string {
+        if (!this.globalId) throw new Error("Impossible");
+        return `/globalId/${this.globalId}`;
+    }
 }

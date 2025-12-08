@@ -1,43 +1,43 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
-import AppBar from "../../../components/AppBar";
-import createAccentedTheme from "../../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
+import AppBar from "../../../components/AppBar";
 import SidebarToggle from "../../../components/AppBar/SidebarToggle";
+import useStores from "../../../stores/use-stores";
 
 type HeaderArgs = {
-  sidebarId: string;
+    sidebarId: string;
 };
 
 function Header({ sidebarId }: HeaderArgs): React.ReactNode {
-  const { uiStore } = useStores();
+    const { uiStore } = useStores();
 
-  const handleToggleOpen = () => {
-    uiStore.toggleSidebar();
-  };
+    const handleToggleOpen = () => {
+        uiStore.toggleSidebar();
+    };
 
-  return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <AppBar
-        variant="page"
-        currentPage="Inventory"
-        sidebarToggle={
-          <SidebarToggle
-            sidebarId={sidebarId}
-            setSidebarOpen={handleToggleOpen}
-            sidebarOpen={uiStore.sidebarOpen}
-          />
-        }
-        accessibilityTips={{
-          supportsHighContrastMode: true,
-          supports2xZoom: true,
-          supportsSkipToContent: true,
-        }}
-      />
-    </ThemeProvider>
-  );
+    return (
+        <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+            <AppBar
+                variant="page"
+                currentPage="Inventory"
+                sidebarToggle={
+                    <SidebarToggle
+                        sidebarId={sidebarId}
+                        setSidebarOpen={handleToggleOpen}
+                        sidebarOpen={uiStore.sidebarOpen}
+                    />
+                }
+                accessibilityTips={{
+                    supportsHighContrastMode: true,
+                    supports2xZoom: true,
+                    supportsSkipToContent: true,
+                }}
+            />
+        </ThemeProvider>
+    );
 }
 
 export default observer(Header);

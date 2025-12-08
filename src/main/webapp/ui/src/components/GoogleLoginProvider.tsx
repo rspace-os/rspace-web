@@ -1,7 +1,7 @@
 import React from "react";
+import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../util/fetchingData";
 import * as Parsers from "../util/parsers";
-import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
 
 /**
  * On some servers, we allow users to authenticate via Google Login; a single
@@ -14,45 +14,43 @@ import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
  * Google account.
  */
 export default function GoogleLoginProvider(): React.ReactNode {
-  const cloud = useDeploymentProperty("deployment.cloud");
+    const cloud = useDeploymentProperty("deployment.cloud");
 
-  React.useEffect(() => {
-    const scriptId = "google-login-script";
+    React.useEffect(() => {
+        const scriptId = "google-login-script";
 
-    FetchingData.getSuccessValue(cloud)
-      .flatMap(Parsers.isBoolean)
-      .flatMap(Parsers.isTrue)
-      .do(() => {
-        if (!document.getElementById(scriptId)) {
-          const loadScript = () => {
-            return new Promise<void>((resolve, reject) => {
-              const script = document.createElement("script");
-              script.src = "https://accounts.google.com/gsi/client";
-              script.id = scriptId;
-              script.async = true;
-              script.onload = () => resolve();
-              script.onerror = () =>
-                reject(new Error("Failed to load google login script"));
-              document.body?.appendChild(script);
+        FetchingData.getSuccessValue(cloud)
+            .flatMap(Parsers.isBoolean)
+            .flatMap(Parsers.isTrue)
+            .do(() => {
+                if (!document.getElementById(scriptId)) {
+                    const loadScript = () => {
+                        return new Promise<void>((resolve, reject) => {
+                            const script = document.createElement("script");
+                            script.src = "https://accounts.google.com/gsi/client";
+                            script.id = scriptId;
+                            script.async = true;
+                            script.onload = () => resolve();
+                            script.onerror = () => reject(new Error("Failed to load google login script"));
+                            document.body?.appendChild(script);
+                        });
+                    };
+
+                    loadScript()
+                        .then(() => {
+                            console.log(
+                                "Script loaded successfully, logout will now log the user out of google provided login",
+                            );
+                        })
+                        .catch((error) => {
+                            console.error(
+                                "Error loading google login script, logout will not trigger a logout of user via google provided login:",
+                                error,
+                            );
+                        });
+                }
             });
-          };
+    }, [cloud]);
 
-          loadScript()
-            .then(() => {
-               
-              console.log(
-                "Script loaded successfully, logout will now log the user out of google provided login",
-              );
-            })
-            .catch((error) => {
-              console.error(
-                "Error loading google login script, logout will not trigger a logout of user via google provided login:",
-                error,
-              );
-            });
-        }
-      });
-  }, [cloud]);
-
-  return null;
+    return null;
 }

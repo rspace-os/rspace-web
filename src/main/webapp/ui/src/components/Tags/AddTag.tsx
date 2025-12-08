@@ -1,35 +1,36 @@
-import React, { useState } from "react";
-import Chip from "@mui/material/Chip";
 import AddIcon from "@mui/icons-material/Add";
-import TagsCombobox from "./TagsCombobox";
+import Chip from "@mui/material/Chip";
+import type React from "react";
+import { useState } from "react";
+import type { Optional } from "../../util/optional";
 import RsSet from "../../util/set";
-import { Optional } from "../../util/optional";
+import TagsCombobox from "./TagsCombobox";
 
 type AddTagArgs<
-  Toggle extends
-    | {
-        enforce: true;
-        tag: {
-          value: string;
-          vocabulary: string;
-          uri: string;
-          version: string;
-        };
-      }
-    | {
-        enforce: false;
-        tag: {
-          value: string;
-          vocabulary: Optional<string>;
-          uri: Optional<string>;
-          version: Optional<string>;
-        };
-      }
+    Toggle extends
+        | {
+              enforce: true;
+              tag: {
+                  value: string;
+                  vocabulary: string;
+                  uri: string;
+                  version: string;
+              };
+          }
+        | {
+              enforce: false;
+              tag: {
+                  value: string;
+                  vocabulary: Optional<string>;
+                  uri: Optional<string>;
+                  version: Optional<string>;
+              };
+          },
 > = {
-  enforceOntologies?: Toggle["enforce"];
-  onSelection: (tag: Toggle["tag"]) => void;
-  value: Array<Toggle["tag"]>;
-  disabled?: boolean;
+    enforceOntologies?: Toggle["enforce"];
+    onSelection: (tag: Toggle["tag"]) => void;
+    value: Array<Toggle["tag"]>;
+    disabled?: boolean;
 };
 
 /**
@@ -38,55 +39,50 @@ type AddTagArgs<
  * selected tag have all of the metadata when `enforceOntologies` is true.
  */
 export default function AddTag<
-  Toggle extends
-    | {
-        enforce: true;
-        tag: {
-          value: string;
-          vocabulary: string;
-          uri: string;
-          version: string;
-        };
-      }
-    | {
-        enforce: false;
-        tag: {
-          value: string;
-          vocabulary: Optional<string>;
-          uri: Optional<string>;
-          version: Optional<string>;
-        };
-      }
->({
-  onSelection,
-  value,
-  enforceOntologies = false,
-  disabled = false,
-}: AddTagArgs<Toggle>): React.ReactNode {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  return (
-    <>
-      <Chip
-        icon={<AddIcon />}
-        color={disabled ? "default" : "primary"}
-        label="Add Tag"
-        onClick={
-          disabled
-            ? () => {}
-            : (e) => {
-                setAnchorEl(e.currentTarget);
-              }
-        }
-        clickable={!disabled}
-        skipFocusWhenDisabled
-      />
-      <TagsCombobox
-        enforceOntologies={enforceOntologies}
-        onSelection={onSelection}
-        value={new RsSet(value)}
-        anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
-      />
-    </>
-  );
+    Toggle extends
+        | {
+              enforce: true;
+              tag: {
+                  value: string;
+                  vocabulary: string;
+                  uri: string;
+                  version: string;
+              };
+          }
+        | {
+              enforce: false;
+              tag: {
+                  value: string;
+                  vocabulary: Optional<string>;
+                  uri: Optional<string>;
+                  version: Optional<string>;
+              };
+          },
+>({ onSelection, value, enforceOntologies = false, disabled = false }: AddTagArgs<Toggle>): React.ReactNode {
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    return (
+        <>
+            <Chip
+                icon={<AddIcon />}
+                color={disabled ? "default" : "primary"}
+                label="Add Tag"
+                onClick={
+                    disabled
+                        ? () => {}
+                        : (e) => {
+                              setAnchorEl(e.currentTarget);
+                          }
+                }
+                clickable={!disabled}
+                skipFocusWhenDisabled
+            />
+            <TagsCombobox
+                enforceOntologies={enforceOntologies}
+                onSelection={onSelection}
+                value={new RsSet(value)}
+                anchorEl={anchorEl}
+                onClose={() => setAnchorEl(null)}
+            />
+        </>
+    );
 }

@@ -2,36 +2,31 @@
  * @jest-environment jsdom
  */
 /* eslint-env jest */
- 
-import React from "react";
-import { render, cleanup } from "@testing-library/react";
+
+import { cleanup, render } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import StringField from "../StringField";
+import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import each from "jest-each";
-import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
+import StringField from "../StringField";
 
 jest.mock("@mui/material/TextField", () => jest.fn(() => <div></div>));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+    jest.clearAllMocks();
 });
 
 afterEach(cleanup);
 
-const expectLabel = (text: string) => (container: Node) =>
-  expect(container).toHaveTextContent(text);
+const expectLabel = (text: string) => (container: Node) => expect(container).toHaveTextContent(text);
 
 const expectTextField = (value: string) => () =>
-  expect(TextField).toHaveBeenCalledWith(
-    expect.objectContaining({ value }),
-    expect.anything()
-  );
+    expect(TextField).toHaveBeenCalledWith(expect.objectContaining({ value }), expect.anything());
 
 describe("StringField", () => {
-  describe("Renders correctly", () => {
-    each`
+    describe("Renders correctly", () => {
+        each`
       disabled     | value    | noValueLabel | expectFn
       ${true}      | ${""}    | ${undefined} | ${expectLabel("None")}
       ${true}      | ${""}    | ${"foo"}     | ${expectLabel("foo")}
@@ -45,30 +40,23 @@ describe("StringField", () => {
       ${undefined} | ${""}    | ${"foo"}     | ${expectTextField("")}
       ${undefined} | ${"bar"} | ${undefined} | ${expectTextField("bar")}
       ${undefined} | ${"bar"} | ${"foo"}     | ${expectTextField("bar")}
-    `.test(
-      '{disabled = $disabled, value = "$value", noValueLabel = $noValueLabel}',
-      ({
-        disabled,
-        value,
-        noValueLabel,
-        expectFn,
-      }: {
-        disabled: typeof undefined | boolean;
-        value: string;
-        noValueLabel: typeof undefined | string;
-        expectFn: (container: Element) => void;
-      }) => {
-        const { container } = render(
-          <ThemeProvider theme={materialTheme}>
-            <StringField
-              disabled={disabled}
-              value={value}
-              noValueLabel={noValueLabel}
-            />
-          </ThemeProvider>
-        );
-        expectFn(container);
-      }
-    );
-  });
+    `.test('{disabled = $disabled, value = "$value", noValueLabel = $noValueLabel}', ({
+            disabled,
+            value,
+            noValueLabel,
+            expectFn,
+        }: {
+            disabled: typeof undefined | boolean;
+            value: string;
+            noValueLabel: typeof undefined | string;
+            expectFn: (container: Element) => void;
+        }) => {
+            const { container } = render(
+                <ThemeProvider theme={materialTheme}>
+                    <StringField disabled={disabled} value={value} noValueLabel={noValueLabel} />
+                </ThemeProvider>,
+            );
+            expectFn(container);
+        });
+    });
 });

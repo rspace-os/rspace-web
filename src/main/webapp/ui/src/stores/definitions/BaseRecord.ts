@@ -24,17 +24,7 @@ export type GlobalId = string;
  * record that the Global ID refers to. Various record classes supported by the
  * frontend code are detailed below.
  */
-export type GlobalIdPrefix =
-  | "SA"
-  | "SS"
-  | "IC"
-  | "IT"
-  | "BE"
-  | "BA"
-  | "IF"
-  | "SF"
-  | "SD"
-  | "GP";
+export type GlobalIdPrefix = "SA" | "SS" | "IC" | "IT" | "BE" | "BA" | "IF" | "SF" | "SD" | "GP";
 
 /**
  * The Global ID pattern is a regular expression that matches all Global IDs of
@@ -42,29 +32,29 @@ export type GlobalIdPrefix =
  * of record supported by the frontend code.
  */
 export const globalIdPatterns: Record<string, RegExp> = {
-  sample: /^sa\d+$/i,
-  subsample: /^ss\d+$/i,
-  container: /^ic\d+$/i,
-  sampleTemplate: /^it\d+(v\d+)?$/i,
-  bench: /^be\d+$/i,
-  basket: /^ba\d+$/i,
-  attachment: /^if\d+$/i,
-  field: /^sf\d+$/i,
-  document: /^sd\d+$/i,
-  group: /^gp\d+$/i,
+    sample: /^sa\d+$/i,
+    subsample: /^ss\d+$/i,
+    container: /^ic\d+$/i,
+    sampleTemplate: /^it\d+(v\d+)?$/i,
+    bench: /^be\d+$/i,
+    basket: /^ba\d+$/i,
+    attachment: /^if\d+$/i,
+    field: /^sf\d+$/i,
+    document: /^sd\d+$/i,
+    group: /^gp\d+$/i,
 };
 
 export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
-  sample: "SA",
-  subsample: "SS",
-  container: "IC",
-  sampleTemplate: "IT",
-  bench: "BE",
-  basket: "BA",
-  attachment: "IF",
-  field: "SF",
-  document: "SD",
-  group: "GP",
+    sample: "SA",
+    subsample: "SS",
+    container: "IC",
+    sampleTemplate: "IT",
+    bench: "BE",
+    basket: "BA",
+    attachment: "IF",
+    field: "SF",
+    document: "SD",
+    group: "GP",
 };
 
 /*
@@ -72,12 +62,12 @@ export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
  * record.
  */
 export const inventoryRecordTypeLabels = {
-  sample: "Sample",
-  subsample: "Subsample",
-  container: "Container",
-  sampleTemplate: "Sample Template",
-  bench: "Bench",
-  basket: "Basket",
+    sample: "Sample",
+    subsample: "Subsample",
+    container: "Container",
+    sampleTemplate: "Sample Template",
+    bench: "Bench",
+    basket: "Basket",
 };
 
 /**
@@ -85,48 +75,23 @@ export const inventoryRecordTypeLabels = {
  * record.
  */
 export const globalIdToInventoryRecordTypeLabel: (
-  globalId: GlobalId
-) => (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] =
-  match([
-    [
-      (globalId: GlobalId) => globalIdPatterns.sample.test(globalId),
-      inventoryRecordTypeLabels.sample,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.subsample.test(globalId),
-      inventoryRecordTypeLabels.subsample,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.container.test(globalId),
-      inventoryRecordTypeLabels.container,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.sampleTemplate.test(globalId),
-      inventoryRecordTypeLabels.sampleTemplate,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.bench.test(globalId),
-      inventoryRecordTypeLabels.bench,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.basket.test(globalId),
-      inventoryRecordTypeLabels.basket,
-    ],
-  ]);
+    globalId: GlobalId,
+) => (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] = match([
+    [(globalId: GlobalId) => globalIdPatterns.sample.test(globalId), inventoryRecordTypeLabels.sample],
+    [(globalId: GlobalId) => globalIdPatterns.subsample.test(globalId), inventoryRecordTypeLabels.subsample],
+    [(globalId: GlobalId) => globalIdPatterns.container.test(globalId), inventoryRecordTypeLabels.container],
+    [(globalId: GlobalId) => globalIdPatterns.sampleTemplate.test(globalId), inventoryRecordTypeLabels.sampleTemplate],
+    [(globalId: GlobalId) => globalIdPatterns.bench.test(globalId), inventoryRecordTypeLabels.bench],
+    [(globalId: GlobalId) => globalIdPatterns.basket.test(globalId), inventoryRecordTypeLabels.basket],
+]);
 
 /**
  * Creates the Global ID string for a given record type and ID.
  * This works because "type + id <-> Global ID" is an isomorphism
  */
-export function globalId({
-  type,
-  id,
-}: {
-  type: keyof typeof globalIdPatterns;
-  id: number;
-}): GlobalId {
-  const prefix = globalIdPrefixes[type];
-  return `${prefix}${id}`;
+export function globalId({ type, id }: { type: keyof typeof globalIdPatterns; id: number }): GlobalId {
+    const prefix = globalIdPrefixes[type];
+    return `${prefix}${id}`;
 }
 
 /**
@@ -135,14 +100,14 @@ export function globalId({
  * uniquely identifiable.
  */
 export interface BaseRecord {
-  id: Id;
-  name: string;
+    id: Id;
+    name: string;
 
-  /**
-   * Global ID MUST be null when user is creating a new record that has not yet
-   * been persisted on the server, and MUST NOT be null at any other time.
-   */
-  globalId: null | GlobalId;
+    /**
+     * Global ID MUST be null when user is creating a new record that has not yet
+     * been persisted on the server, and MUST NOT be null at any other time.
+     */
+    globalId: null | GlobalId;
 }
 
 /**
@@ -154,9 +119,8 @@ export interface BaseRecord {
  * that the Global ID will be available in a way that Flow can recognise.
  */
 export const getSavedGlobalId = (record: BaseRecord): GlobalId => {
-  if (record.globalId === null || typeof record.globalId === "undefined")
-    throw new TypeError('"globalId" is null.');
-  return record.globalId;
+    if (record.globalId === null || typeof record.globalId === "undefined") throw new TypeError('"globalId" is null.');
+    return record.globalId;
 };
 
 /**
@@ -164,9 +128,9 @@ export const getSavedGlobalId = (record: BaseRecord): GlobalId => {
  * record types.
  */
 export interface RecordIconData {
-  // Used for determining the icon
-  readonly iconName: string;
+    // Used for determining the icon
+    readonly iconName: string;
 
-  // Used for displaying tooltip and aria-label
-  readonly recordTypeLabel: string;
+    // Used for displaying tooltip and aria-label
+    readonly recordTypeLabel: string;
 }
