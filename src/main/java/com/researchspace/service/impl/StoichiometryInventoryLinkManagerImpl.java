@@ -16,6 +16,7 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
+import com.researchspace.service.inventory.InventoryMaterialUsageHelper;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -29,17 +30,20 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private final StoichiometryMoleculeManager stoichiometryMoleculeManager;
   private final IPermissionUtils elnPermissionUtils;
   private final InventoryPermissionUtils invPermissionUtils;
+  private final InventoryMaterialUsageHelper materialUsageHelper;
 
   @Autowired
   public StoichiometryInventoryLinkManagerImpl(
       StoichiometryInventoryLinkDao linkDao,
       StoichiometryMoleculeManager stoichiometryMoleculeManager,
       IPermissionUtils elnPermissionUtils,
-      InventoryPermissionUtils invPermissionUtils) {
+      InventoryPermissionUtils invPermissionUtils,
+      InventoryMaterialUsageHelper materialUsageHelper) {
     this.linkDao = linkDao;
     this.stoichiometryMoleculeManager = stoichiometryMoleculeManager;
     this.elnPermissionUtils = elnPermissionUtils;
     this.invPermissionUtils = invPermissionUtils;
+    this.materialUsageHelper = materialUsageHelper;
   }
 
   @Override
