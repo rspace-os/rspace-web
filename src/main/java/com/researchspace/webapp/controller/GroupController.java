@@ -98,6 +98,7 @@ public class GroupController extends BaseController {
   protected static final String ERROR_ATTRIBUTE_NAME = "error";
   protected static final String EDIT_GROUP_VIEW_NAME = "groups/editGroup";
   protected static final String GROUPS_VIEW_NAME = "groups/viewGroup";
+  protected static final String GROUPS_VIEW_PUBLIC_NAME = "groups/viewGroupPublic";
   public static final String GROUPS_VIEW_URL = "/groups/view";
 
   private final Map<Long, Boolean> groupsWithAutoshareInProgress = new ConcurrentHashMap<>();
@@ -244,6 +245,11 @@ public class GroupController extends BaseController {
     User subject = userManager.getUserByUsername(principal.getName());
     subject = getUserWithRefreshedPermissions(subject);
 
+    boolean isGroupMemberOrAdmin =
+        subject.isPiOrLabAdminOfGroup(group)
+            || subject.hasSysadminRole()
+            || subject.isConnectedToGroup(group);
+
     if (properties.isProfileHidingEnabled()) {
       if (group.isPrivateProfile()) {
         userManager.populateConnectedGroupList(subject);
@@ -293,9 +299,16 @@ public class GroupController extends BaseController {
 
     Long folderId = group.getCommunalGroupFolderId();
     Folder folder = null;
-    if (folderId != null) folder = folderManager.getFolder(folderId, subject);
-    model.addAttribute("folder", folder);
-    return GROUPS_VIEW_NAME;
+    if (isGroupMemberOrAdmin) {
+      if (folderId != null) folder = folderManager.getFolder(folderId, subject);
+      model.addAttribute("folder", folder);
+    }
+
+    if (isGroupMemberOrAdmin) {
+      return GROUPS_VIEW_NAME;
+    } else {
+      return GROUPS_VIEW_PUBLIC_NAME;
+    }
   }
 
   private void setPublicationAllowed(Model model, User user) {
