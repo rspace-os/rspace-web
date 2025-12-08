@@ -1725,7 +1725,7 @@
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-core-model-rsdev-907</artifactId>
+      <artifactId>rspace-core-model-rsdev-876</artifactId>
       <version>${rspace-core-model.version}</version>
       <exclusions>
         <exclusion>

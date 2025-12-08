@@ -9,4 +9,5 @@ public class StoichiometryInventoryLinkDTO {
   private String inventoryItemGlobalId;
   private Long stoichiometryMoleculeId;
   private ApiQuantityInfo quantity;
+  private boolean reducesStock;
 }

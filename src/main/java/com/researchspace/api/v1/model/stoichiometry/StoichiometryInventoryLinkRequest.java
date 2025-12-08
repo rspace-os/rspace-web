@@ -15,4 +15,5 @@ public class StoichiometryInventoryLinkRequest {
   private Long stoichiometryMoleculeId;
   private BigDecimal quantity;
   private Integer unitId;
+  private Boolean reducesStock;
 }

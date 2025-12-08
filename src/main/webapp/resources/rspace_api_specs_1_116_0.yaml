@@ -3528,6 +3528,12 @@ definitions:
         format: int64
       quantity:
         $ref: '#/definitions/QuantityInfo'
+      reducesStock:
+        type: boolean
+        description: |-
+          If true and the linked item is a SubSample, the specified quantity will be deducted from its stock.
+          On updates the delta is applied; on delete the previously deducted amount is restored.
+        default: false
   StoichiometryInventoryLinkRequest:
     description: Request to create a link between a stoichiometry molecule and an Inventory item
     required:
@@ -3548,6 +3554,12 @@ definitions:
         type: integer
         format: int32
         description: Unit identifier. Options can be retrieved from /units endpoint.
+      reducesStock:
+        type: boolean
+        description: |-
+          If true and the linked item is a SubSample, the specified quantity will be deducted from its stock.
+          Optional; defaults to false when omitted.
+        default: false
   StoichiometryLinkQuantityUpdateRequest:
     description: Request to update quantity used for a stoichiometry-inventory link
     required:

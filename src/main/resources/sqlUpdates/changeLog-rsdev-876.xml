@@ -5,10 +5,17 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
     <changeSet id="2025-11-30" context="run" author="fraser">
-        <comment>Add new column for reducing amount of </comment>
+        <comment>Add new column for tracking whether stoichiometry link reduces stock</comment>
         <addColumn tableName="StoichiometryInventoryLink">
-            <column type="boolean" name="reduces_stock">
-                <constraints nullable="true" />
+            <column type="boolean" name="reduces_stock" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+        </addColumn>
+
+        <comment>Add new column for tracking whether stoichiometry link reduces stock</comment>
+        <addColumn tableName="StoichiometryInventoryLink_AUD">
+            <column type="boolean" name="reduces_stock" defaultValueBoolean="false">
+                <constraints nullable="false" />
             </column>
         </addColumn>
     </changeSet>

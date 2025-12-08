@@ -10,12 +10,14 @@ public class EmbeddedInventoryLinkDTO {
   private String inventoryItemGlobalId;
   private BigDecimal quantity;
   private int unitId;
+  private boolean reducesStock;
 
   EmbeddedInventoryLinkDTO(StoichiometryInventoryLink inventoryLink) {
     this.linkId = inventoryLink.getId();
     this.inventoryItemGlobalId = inventoryLink.getConnectedRecordGlobalIdentifier();
     this.quantity = inventoryLink.getQuantity().getNumericValue();
     this.unitId = inventoryLink.getQuantity().getUnitId();
+    this.reducesStock = inventoryLink.getReducesStock();
   }
 
   static EmbeddedInventoryLinkDTO fromInventoryLink(StoichiometryInventoryLink inventoryLink) {
