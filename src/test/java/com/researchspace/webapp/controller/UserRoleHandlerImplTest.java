@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.UserPermissionUtils;
-import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
@@ -29,7 +28,6 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 public class UserRoleHandlerImplTest {
-
   @Rule public MockitoRule mockery = MockitoJUnit.rule();
   @Mock UserManager userManager;
   @Mock UserPermissionUtils userPermUtils;
@@ -103,8 +101,8 @@ public class UserRoleHandlerImplTest {
   @Test(expected = IllegalStateException.class)
   public void revokePiRoleFailsIfPiIsPiOfGroup() {
     User toDemote = createAPi();
-    Group grp = createAnyGroup(toDemote, null);
-    toDemote = roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote);
+    createAnyGroup(toDemote, (User[]) null);
+    roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote);
   }
 
   @Test(expected = AuthorizationException.class)
