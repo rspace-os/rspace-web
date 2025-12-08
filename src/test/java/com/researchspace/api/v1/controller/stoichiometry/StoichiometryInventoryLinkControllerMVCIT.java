@@ -73,7 +73,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
                 createBuilderForPost(API_VERSION.ONE, apiKey, "/stoichiometry/link", user)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsBytes(req)))
-            .andExpect(status().isOk())
+            .andExpect(status().isCreated())
             .andReturn();
 
     StoichiometryInventoryLinkDTO created =
@@ -109,7 +109,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
                 createBuilderForPost(API_VERSION.ONE, apiKey, "/stoichiometry/link", user)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsBytes(req)))
-            .andExpect(status().isOk())
+            .andExpect(status().isCreated())
             .andReturn();
 
     StoichiometryInventoryLinkDTO created =
@@ -160,7 +160,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
                 createBuilderForPost(API_VERSION.ONE, apiKey, "/stoichiometry/link", user)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsBytes(req)))
-            .andExpect(status().isOk())
+            .andExpect(status().isCreated())
             .andReturn();
     StoichiometryInventoryLinkDTO created =
         getFromJsonResponseBody(createResult, StoichiometryInventoryLinkDTO.class);

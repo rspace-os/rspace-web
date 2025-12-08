@@ -2,7 +2,8 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.StoichiometryMoleculeDao;
-import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Record;
+import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
@@ -15,8 +16,8 @@ public class StoichiometryMoleculeDaoHibernate
   }
 
   @Override
-  public BaseRecord getDocContainingMolecule(StoichiometryMolecule molecule) {
-    Query<BaseRecord> query =
+  public StructuredDocument getDocContainingMolecule(StoichiometryMolecule molecule) {
+    Query<Record> query =
         getSession()
             .createQuery(
                 "select r from StoichiometryMolecule m "
@@ -24,8 +25,8 @@ public class StoichiometryMoleculeDaoHibernate
                     + " join s.parentReaction pr "
                     + " join pr.record r "
                     + " where m = :molecule",
-                BaseRecord.class);
+                Record.class);
     query.setParameter("molecule", molecule);
-    return query.uniqueResult();
+    return query.uniqueResult().asStrucDoc();
   }
 }

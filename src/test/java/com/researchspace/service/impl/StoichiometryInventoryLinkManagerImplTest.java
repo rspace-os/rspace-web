@@ -19,7 +19,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
@@ -49,7 +49,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
   private User user;
   private StoichiometryMolecule molecule;
   private Sample invSample;
-  private BaseRecord owningRecord;
+  private StructuredDocument owningRecord;
 
   @Before
   public void setUp() {
@@ -60,7 +60,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     molecule.setStoichiometry(new Stoichiometry());
     invSample = new Sample();
     invSample.setId(200L);
-    owningRecord = mock(BaseRecord.class);
+    owningRecord = mock(StructuredDocument.class);
   }
 
   @Test
@@ -85,6 +85,47 @@ public class StoichiometryInventoryLinkManagerImplTest {
     assertEquals("SA200", dto.getInventoryItemGlobalId());
     assertEquals(BigDecimal.valueOf(2.5), dto.getQuantity().getNumericValue());
     assertEquals(RSUnitDef.MILLI_LITRE.getId(), dto.getQuantity().getUnitId());
+  }
+
+  @Test
+  public void createLinkWhenMoleculeAlreadyHasLinkThrows() {
+    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
+    req.setStoichiometryMoleculeId(10L);
+    req.setInventoryItemGlobalId("SA200");
+    req.setQuantity(BigDecimal.valueOf(1));
+    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
+
+    // molecule already linked
+    molecule.setInventoryLink(new StoichiometryInventoryLink());
+
+    when(moleculeManager.getById(10L)).thenReturn(molecule);
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+
+    IllegalArgumentException ex =
+        assertThrows(IllegalArgumentException.class, () -> manager.createLink(req, user));
+    assertEquals("Stoichiometry molecule already has an inventory link", ex.getMessage());
+  }
+
+  @Test
+  public void createLinkWhenInventoryRecordIsSampleTemplateThrows() {
+    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
+    req.setStoichiometryMoleculeId(10L);
+    req.setInventoryItemGlobalId("SA200");
+    req.setQuantity(BigDecimal.valueOf(1));
+    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
+
+    invSample.setTemplate(true);
+
+    when(moleculeManager.getById(10L)).thenReturn(molecule);
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(invPerms.assertUserCanEditInventoryRecord(any(GlobalIdentifier.class), eq(user)))
+        .thenReturn(invSample);
+
+    IllegalArgumentException ex =
+        assertThrows(IllegalArgumentException.class, () -> manager.createLink(req, user));
+    assertEquals("Cannot link to a sample template", ex.getMessage());
   }
 
   @Test
