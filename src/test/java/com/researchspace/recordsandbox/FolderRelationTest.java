@@ -8,16 +8,15 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
-import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSPath;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class FolderRelnTest {
+public class FolderRelationTest {
 
   static User owner, user2, u3, u4, ROOT;
   static Folder p1, p2, p3, p4, ROOT_NODE, a, b, c, d, cP;
@@ -56,21 +55,18 @@ public class FolderRelnTest {
   @Test(expected = IllegalAddChildOperation.class)
   public void testAddRemoveChildNoSelfEdges() throws IllegalAddChildOperation {
     Folder parent = TestFactory.createAFolder("1", owner);
-    Folder child = TestFactory.createAFolder("2", owner);
     parent.addChild(parent, owner);
   }
 
   @Test(expected = IllegalAddChildOperation.class)
-  public void testCannotCreateSimpleCycles() throws IllegalAddChildOperation {
+  public void testCannotCreateSimpleCycles() {
     Folder parent = TestFactory.createAFolder("1", owner);
     Folder child = TestFactory.createAFolder("2", owner);
     Folder grandchild = TestFactory.createAFolder("3", owner);
 
     parent.addChild(child, owner);
     child.addChild(grandchild, owner);
-
-    assertNull(grandchild.addChild(parent, owner));
-    assertNull(grandchild.addChild(child, owner));
+    grandchild.addChild(parent, owner);
   }
 
   @Test(expected = IllegalAddChildOperation.class)
@@ -81,8 +77,7 @@ public class FolderRelnTest {
     Folder child = TestFactory.createAFolder("3", owner);
     parent.addChild(child, owner);
     parent2.addChild(child, owner);
-
-    assertNull(child.addChild(parent2, owner));
+    child.addChild(parent2, owner);
   }
 
   @Test
@@ -122,7 +117,6 @@ public class FolderRelnTest {
 
     RSPath shortest = node.getShortestPathToParent(u1shared);
     assertEquals(4, shortest.size());
-    System.err.println(shortest);
 
     RSPath shortestVia = node.getShortestPathToParentVia(u1shared, null, groupShared);
     assertEquals(5, shortestVia.size());
@@ -198,16 +192,13 @@ public class FolderRelnTest {
     assertEquals(gchild, trail2.get(2).get());
 
     // edges p1-p2, p1-p3, p3-a, a-b, b-c,c-d; p4-cP,cP-c
-    Folder ROOT = createComplexGraph();
+    createComplexGraph();
     RSPath h1 = d.getParentHierarchyForUser(u4);
-    print(h1);
     assertEquals(4, h1.size());
 
     RSPath h2 = d.getParentHierarchyForUser(user2);
-    print(h2);
     assertEquals(5, h2.size());
     RSPath h3 = d.getParentHierarchyForUser(owner);
-    print(h3);
     assertEquals(6, h3.size());
     assertEquals(5, d.getParentHierarchyForUser(u3).size());
 
@@ -223,8 +214,6 @@ public class FolderRelnTest {
     assertTrue(c.getParentFolders().contains(a));
     assertTrue(a.getChildrens().contains(c));
     assertFalse(c.getParentFolders().contains(b));
-    RSPath h3 = d.getParentHierarchyForUser(owner);
-    print(h3);
 
     // can't move into subfolder of oneself
     assertFalse(p1.move(ROOT_NODE, d, owner));
@@ -274,16 +263,5 @@ public class FolderRelnTest {
     b.addChild(c, user2);
     a.addChild(b, user2);
     return ROOT_NODE;
-  }
-
-  static void print(RSPath h1) {
-    int lastIndex = h1.size() - 1;
-    for (BaseRecord n : h1) {
-
-      System.err.print(n.getName());
-
-      System.err.print("->");
-    }
-    System.err.println("");
   }
 }

@@ -7,8 +7,8 @@ import static org.junit.Assert.assertNull;
 
 import com.researchspace.model.Thumbnail;
 import com.researchspace.model.Thumbnail.SourceType;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;

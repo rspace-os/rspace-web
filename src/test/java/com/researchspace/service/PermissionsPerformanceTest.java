@@ -15,10 +15,10 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.impl.ConditionalTestRunnerNotSpring;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.service.impl.ShiroTestUtils;
+import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,17 +79,14 @@ public class PermissionsPerformanceTest {
     }
 
     sw.stop();
-    System.err.println("generating records  took: " + sw.getTime() + " ms");
     sw.reset();
 
     SecurityUtils.getSubject().login(new UsernamePasswordToken(u.getUsername(), u.getPassword()));
 
-    System.err.println("filtering " + toFilter.size() + " records.");
     sw.start();
     // this will go through subject permissions and ACLS
     utils.filter(toFilter, PermissionType.RENAME, u);
     sw.split();
-    System.err.println("Filtering took: " + sw.toSplitString());
     assertTrue(
         "Should be less than 1500ms but was " + sw.getSplitTime(),
         sw.getSplitTime() < 1500); // check that 10000 records->500 takes < 1.5 second.

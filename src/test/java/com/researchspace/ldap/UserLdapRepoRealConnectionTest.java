@@ -11,15 +11,9 @@ import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.DefaultTestContext;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.ldap.support.LdapUtils;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 /**
@@ -47,8 +41,6 @@ public class UserLdapRepoRealConnectionTest extends AbstractJUnit4SpringContextT
     assertEquals("ldapUser1@researchspace.com", ldapUser1.getEmail());
     assertEquals(LDAPUSER1_TEST_SID, ldapUser1.getSid());
     assertEquals("cn=ldapUser1,dc=test,dc=howler,dc=researchspace,dc=com", ldapUser1.getToken());
-
-    System.out.println("found user: " + ldapUser1);
 
     // found user with no dn
     User ldapUser2 = userLdapRepo.findUserByUsername("ldapUserEmptyDN");
@@ -78,25 +70,5 @@ public class UserLdapRepoRealConnectionTest extends AbstractJUnit4SpringContextT
     } finally {
       ((PropertyHolder) iProperties).setLdapAuthenticationEnabled(isLdapAuthEnabled + "");
     }
-  }
-
-  /*
-   * Helper test, uncomment to run saving sid as a binary file that can be later imported to openldap
-   */
-  // @Test
-  public void generateBinarySID() throws IOException {
-    File sidFile = File.createTempFile("testBinarySid", ".dat");
-
-    byte[] objectSid = LdapUtils.convertStringSidToBinary(LDAPUSER1_TEST_SID);
-    DataOutputStream os = new DataOutputStream(new FileOutputStream(sidFile));
-    os.write(objectSid);
-    os.close();
-
-    // verify the file contains correct sid bytes
-    byte[] bytesFromFile = Files.readAllBytes(sidFile.toPath());
-    String sidFromFile = LdapUtils.convertBinarySidToString(bytesFromFile);
-    assertEquals(LDAPUSER1_TEST_SID, sidFromFile);
-
-    //	System.out.println("test objectSID saved into: " + sidFile.toString());
   }
 }

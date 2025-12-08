@@ -199,7 +199,6 @@ public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isOk())
             .andReturn();
 
-    System.out.println(getResult.getResponse().getContentAsString());
     // do not throw exception here
     getFromJsonResponseBody(getResult, ApiExternalStorageInfo.class);
     assertEquals(EXPECTED_NO_SEVER_INFO, getResult.getResponse().getContentAsString());
@@ -213,7 +212,6 @@ public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isOk())
             .andReturn();
 
-    System.out.println(getResult.getResponse().getContentAsString());
     // do not throw exception here
     getFromJsonResponseBody(getResult, ApiExternalStorageInfo.class);
     assertEquals(
@@ -230,7 +228,6 @@ public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isOk())
             .andReturn();
 
-    System.out.println(getResult.getResponse().getContentAsString());
     // do not throw exception here
     getFromJsonResponseBody(getResult, ApiExternalStorageInfo.class);
     assertEquals(
@@ -283,7 +280,6 @@ public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
                       .param(PARAM_FILESTORE_PATH_ID, fileStorePathId1.toString()))
               .andExpect(status().isOk())
               .andReturn();
-      System.out.println(result.getResponse().getContentAsString());
       // do not throw exception here
       ApiExternalStorageOperationResult response =
           getFromJsonResponseBody(result, ApiExternalStorageOperationResult.class);
@@ -375,7 +371,6 @@ public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
                       .param(PARAM_FILESTORE_PATH_ID, fileStorePathId1.toString()))
               .andExpect(status().isOk())
               .andReturn();
-      System.out.println(result.getResponse().getContentAsString());
       // do not throw exception here
       ApiExternalStorageOperationResult response =
           getFromJsonResponseBody(result, ApiExternalStorageOperationResult.class);

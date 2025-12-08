@@ -21,7 +21,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
@@ -55,11 +54,6 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(1, apiFiles.getFiles().size());
 
     ApiFile apiFile = apiFiles.getFiles().get(0);
-    System.err.println(
-        "apifile "
-            + new Date(apiFile.getCreatedMillis())
-            + ", file: "
-            + galleryImage.getCreationDate());
     apiModelTestUtils.assertApiFileMatchEcatMediaFile(apiFile, galleryImage);
   }
 

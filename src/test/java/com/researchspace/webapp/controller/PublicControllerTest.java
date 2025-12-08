@@ -5,10 +5,10 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.archive.IExportUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
+import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

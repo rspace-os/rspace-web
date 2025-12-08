@@ -10,8 +10,8 @@ import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.impl.MultipleSharesPermittedDocSharedStatusCalculatorImpl;
+import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -53,7 +53,7 @@ public class MultipleSharesPermittedDocSharedStatusCalculatorImplTest {
 
     // now let's return a group that contains the user, we can still share with the user as well?
     // RSPAC 563
-    AbstractUserOrGroupImpl grp = TestFactory.createAnyGroup(toShareWith, null);
+    AbstractUserOrGroupImpl grp = TestFactory.createAnyGroup(toShareWith, (User[]) null);
     groups = TransformerUtils.toList(grp);
     when(groupSharingDao.getUsersOrGroupsWithRecordAccess(doc.getId())).thenReturn(groups);
     assertTrue(sharingStatusImpl.canShare(toShareWith, doc, sharer));

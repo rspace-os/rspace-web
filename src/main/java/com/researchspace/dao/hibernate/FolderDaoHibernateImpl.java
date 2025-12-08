@@ -180,7 +180,7 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
         getFolderCriteria()
             .add(nameRestriction(flderName))
             .add(systemFolderRestriction())
-            .add(Restrictions.in("owner", new User[] {sharer, sharee}))
+            .add(Restrictions.in("owner", (Object[]) new User[] {sharer, sharee}))
             .uniqueResult();
   }
 

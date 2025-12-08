@@ -11,7 +11,7 @@ import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageRecipientFactory;
 import com.researchspace.model.comms.MessageType;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;

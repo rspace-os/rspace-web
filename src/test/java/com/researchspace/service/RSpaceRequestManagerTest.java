@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalStateExceptionThrown;
-import static com.researchspace.model.comms.CommsTestUtils.createRequestOfType;
+import static com.researchspace.testutils.CommsTestUtils.createRequestOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -9,9 +9,9 @@ import com.researchspace.dao.CommunicationDao;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.MessageType;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.impl.RSpaceRequestManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.model;
 
-import static com.researchspace.model.record.TestFactory.createAnyGroup;
-import static com.researchspace.model.record.TestFactory.createAnyUser;
-import static com.researchspace.model.record.TestFactory.createAnyUserWithRole;
+import static com.researchspace.testutils.TestFactory.createAnyGroup;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUserWithRole;
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
 

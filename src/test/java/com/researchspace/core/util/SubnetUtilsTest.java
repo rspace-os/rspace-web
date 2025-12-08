@@ -29,7 +29,6 @@ public class SubnetUtilsTest {
     SubnetInfo info = utils.getInfo();
     assertEquals(VALID_IP, info.getLowAddress());
     assertEquals("123.222.111.223", info.getHighAddress());
-    System.err.println(info.getNetworkAddress());
   }
 
   @Test(expected = IllegalArgumentException.class)

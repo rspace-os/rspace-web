@@ -1,6 +1,6 @@
 package com.researchspace.linkedelements;
 
-import static com.researchspace.model.field.FieldTestUtils.createTextField;
+import static com.researchspace.testutils.FieldTestUtils.createTextField;
 import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -17,13 +17,13 @@ import com.researchspace.model.EcatVideo;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.Field;
-import com.researchspace.model.field.FieldTestUtils;
 import com.researchspace.model.field.TextField;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.record.Record;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.FieldTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -183,11 +183,9 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     oldKey2NewKey.put(32769L, 3L);
     oldKey2NewKey.put(32770L, 4L);
     String updated = updater.updateSketchIdsInCopy(oldKey2NewKey, test);
-    System.err.println(updated);
 
     assertFalse(updated.contains("32769"));
     assertFalse(updated.contains("32770"));
-    //		assertTrue(testAttributeValue("src", updated, "/image/getImageSketch/"));
 
     assertTrue(updated.contains("/image/getImageSketch/3"));
     assertTrue(updated.contains("/image/getImageSketch/4"));
@@ -285,7 +283,6 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
 
     String updated =
         updater.updateImageIdsAndAnnoIdsInCopy(oldKey2NewKey, null, copy.getFieldData());
-    System.err.println(updated);
     // ORIG_ID Could be on the String because now src = /images/getImage/3-1/{ramdom long}
     assertFalse(updated.contains("id=" + ORIG_ID));
     assertTrue(testAttributeValue("id", updated, "3-1"));
