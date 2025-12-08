@@ -80,18 +80,6 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     return formDao.getAllCurrentNormalForms();
   }
 
-  /** Gets all non-temporary, current Forms */
-  @Override
-  public ISearchResults<RSForm> getAllWithPermissions(
-      User user, PermissionType action, boolean visibleOnly) {
-    FormSearchCriteria crit = new FormSearchCriteria();
-    crit.setPublishedOnly(visibleOnly);
-    crit.setRequestedAction(action);
-    PaginationCriteria<RSForm> pgcrit = PaginationCriteria.createDefaultForClass(RSForm.class);
-    pgcrit.setGetAllResults();
-    return formDao.getAllFormsByPermission(user, crit, pgcrit);
-  }
-
   @Override
   public RSForm getBasicDocumentForm() {
     return formDao.getBasicDocumentForm();
@@ -447,15 +435,9 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     return new FormMenu(forms.getResults(), menuToAdd, formsForCreateMenuPagination);
   }
 
-  /*
-   * =============================
-   *  ApiForm handling methods
-   * =============================
-   */
-
   @Override
   public RSForm retrieveFormForApiForm(User user, ApiFormInfo apiForm, FormType formType) {
-    RSForm form = null;
+    RSForm form;
     Long apiFormId = apiForm == null ? null : apiForm.retrieveFormIdFromApiForm();
     if (apiFormId == null) {
       form = getBasicDocumentForm();

@@ -8,11 +8,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.testutils.TestFactory;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.function.Supplier;

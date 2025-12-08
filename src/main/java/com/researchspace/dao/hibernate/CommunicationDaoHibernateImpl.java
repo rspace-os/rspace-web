@@ -27,7 +27,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     super(Communication.class);
   }
 
-  // COMUNICATION_TARGET table not aliased by client code, the CT alias will be prepended to any
+  // COMMUNICATION_TARGET table not aliased by client code, the CT alias will be prepended to any
   // order-by criteria passed in by client code
   private static final String COMMUNICATION_TARGET_ALIAS = "ct";
 
@@ -48,9 +48,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
             .createCriteria(MessageOrRequest.class, "mor")
             .createAlias("mor.originator", "originator");
     criteria.add(Restrictions.not(Restrictions.in("status", TERMINATED_STATES)));
-    criteria.add(
-        Restrictions.not(
-            Restrictions.in("messageType", new MessageType[] {MessageType.SIMPLE_MESSAGE})));
+    criteria.add(Restrictions.not(Restrictions.in("messageType", MessageType.SIMPLE_MESSAGE)));
     criteria.add(Restrictions.eq("originator.id", user.getId()));
     criteria.setProjection(Projections.distinct(Projections.property("id")));
     criteria.setFetchMode("record", FetchMode.SELECT);

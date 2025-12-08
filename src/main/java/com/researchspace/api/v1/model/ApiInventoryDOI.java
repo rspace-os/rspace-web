@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 /** External identifier based on DataCite IGSN. */
 @Data
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @JsonPropertyOrder(
     value = {

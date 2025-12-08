@@ -5,7 +5,7 @@ import static com.researchspace.testutils.SpringELTestUtils.evaluateSpel;
 import static org.junit.Assert.assertEquals;
 
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.Test;
 
 public class UserConnectionImplTest {

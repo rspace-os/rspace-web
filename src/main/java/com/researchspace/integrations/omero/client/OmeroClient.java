@@ -7,7 +7,6 @@ import com.researchspace.integrations.omero.model.PlateAcquisitionRSpaceView;
 import com.researchspace.integrations.omero.model.PlateRSpaceView;
 import com.researchspace.integrations.omero.model.WellRSpaceView;
 import java.util.List;
-import lombok.SneakyThrows;
 
 public interface OmeroClient {
 
@@ -15,7 +14,6 @@ public interface OmeroClient {
 
   List<ImageRSpaceView> getImages(String credentials, long id, boolean fetchLarge);
 
-  @SneakyThrows
   List<PlateAcquisitionRSpaceView> getPlateAcquisitions(String credentials, long plateID);
 
   List<WellRSpaceView> getWells(

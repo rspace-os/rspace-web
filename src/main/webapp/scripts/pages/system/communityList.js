@@ -36,13 +36,12 @@ function addRemoveCommunityHandler(){
 			});
 		}
 
-		var event = new CustomEvent('confirm-action', { 'detail': {
-      title: "Confirm deletion",
-      consequences: `Are you sure you want to delete the following communit${Object.values(data).length > 1 ? 'ies' : 'y'}: <b>${Object.values(data).join(', ')}</b>?`,
+		RS.createConfirmationDialog({
+			title: "Confirm deletion",
+			consequences: `Are you sure you want to delete the following communit${Object.values(data).length > 1 ? 'ies' : 'y'}: <strong>${Object.values(data).join(', ')}</strong>?`,
 			variant: "warning",
-      callback: callback
-    }});
-    document.dispatchEvent(event);
+			callback: callback
+		});
 	});
 }
 

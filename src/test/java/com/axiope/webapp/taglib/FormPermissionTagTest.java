@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import com.researchspace.model.permissions.FormPermissionAdapter;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
 import org.junit.After;

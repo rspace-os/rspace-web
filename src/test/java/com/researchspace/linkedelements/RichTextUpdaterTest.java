@@ -1,6 +1,6 @@
 package com.researchspace.linkedelements;
 
-import static com.researchspace.model.field.FieldTestUtils.createTextField;
+import static com.researchspace.testutils.FieldTestUtils.createTextField;
 import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -17,13 +17,13 @@ import com.researchspace.model.EcatVideo;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.Field;
-import com.researchspace.model.field.FieldTestUtils;
 import com.researchspace.model.field.TextField;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.record.Record;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.FieldTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;

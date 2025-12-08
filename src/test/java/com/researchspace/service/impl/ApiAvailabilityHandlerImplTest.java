@@ -3,9 +3,9 @@ package com.researchspace.service.impl;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummyError;
 import org.junit.jupiter.api.BeforeEach;

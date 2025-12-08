@@ -72,7 +72,7 @@ const config = {
     tinymceStoichiometry: "./src/tinyMCE/stoichiometry/index.tsx",
     tinymceGallery: "./src/tinyMCE/gallery/index.tsx",
     baseSearch: "./src/components/BaseSearch.tsx",
-    confirmationDialog: "./src/components/ConfirmationDialog.js",
+    confirmationDialog: "./src/components/ConfirmationDialog.tsx",
     imageEditor: "./src/Gallery/imageEditorDialog.js",
     materialsListing:
       "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
