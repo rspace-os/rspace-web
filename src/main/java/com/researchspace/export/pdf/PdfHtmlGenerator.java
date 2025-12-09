@@ -1,8 +1,5 @@
 package com.researchspace.export.pdf;
 
-import static com.researchspace.export.pdf.PdfHtmlGenerator.StoichiometryTableData.calculateMoles;
-import static com.researchspace.export.pdf.StoichiometryTableData.calculateMoles;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.export.pdf.ExportToFileConfig.DATE_FOOTER_PREF;
@@ -210,19 +207,7 @@ public class PdfHtmlGenerator {
         stoichiometryService.getById(extracted.getId(), extracted.getRevision(), exporter);
     List<StoichiometryTableData> molecules = new ArrayList<>();
     for (StoichiometryMoleculeDTO moleculeDTO : stoichiometryDTO.getMolecules()) {
-      molecules.add(
-          new StoichiometryTableData(
-              moleculeDTO.getName(),
-              moleculeDTO.getRole().name(),
-              moleculeDTO.getLimitingReagent(),
-              moleculeDTO.getCoefficient(),
-              moleculeDTO.getMolecularWeight(),
-              moleculeDTO.getMass(),
-              calculateMoles(moleculeDTO.getMass(), moleculeDTO.getMolecularWeight()),
-              moleculeDTO.getActualAmount(),
-              calculateMoles(moleculeDTO.getActualAmount(), moleculeDTO.getMolecularWeight()),
-              moleculeDTO.getActualYield(),
-              moleculeDTO.getNotes()));
+      molecules.add(new StoichiometryTableData(moleculeDTO));
     }
     Map<String, Object> context = new HashMap<>();
     context.put("molecules", molecules);
