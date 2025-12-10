@@ -165,9 +165,6 @@ public class PdfHtmlGenerator {
       html = addProvenance(html, documentData.getRevisionInfo());
     }
     if (documentData.hasStoichiometryTable()) {
-      if (!newPageAddedForDocExtras) {
-        html = addNewPageBefore(html, "stoichiometry");
-      }
       html = stoichiometryHtmlGenerator.addStoichiometryLinks(html, config.getExporter());
     }
 
