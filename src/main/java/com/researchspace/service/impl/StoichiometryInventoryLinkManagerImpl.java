@@ -7,9 +7,10 @@ import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
@@ -53,10 +54,23 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         stoichiometryMoleculeManager.getById(req.getStoichiometryMoleculeId());
 
     verifyStoichiometryPermissions(stoichiometryMolecule, PermissionType.WRITE, user);
+    if (stoichiometryMolecule.getInventoryLink() != null) {
+      throw new IllegalArgumentException("Stoichiometry molecule already has an inventory link");
+    }
 
     InventoryRecord inventoryRecord =
         invPermissionUtils.assertUserCanEditInventoryRecord(
             new GlobalIdentifier(req.getInventoryItemGlobalId()), user);
+
+    if (inventoryRecord instanceof Sample) {
+      Sample sample = (Sample) inventoryRecord;
+      if (sample.isTemplate()) {
+        throw new IllegalArgumentException(
+            inventoryRecord.getGlobalIdentifier()
+                + " is a sample template. Only Containers, Samples and Subsamples are valid for"
+                + " linking.");
+      }
+    }
 
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setStoichiometryMolecule(stoichiometryMolecule);
@@ -65,7 +79,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     link.setQuantity(quantityInfo);
     link = linkDao.save(link);
     generateNewStoichiometryRevision(stoichiometryMolecule);
-    return toDto(link);
+    return new StoichiometryInventoryLinkDTO(link);
   }
 
   private QuantityInfo makeQuantity(StoichiometryInventoryLinkRequest request) {
@@ -90,7 +104,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
     verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.READ, user);
     invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
-    return toDto(entity);
+    return new StoichiometryInventoryLinkDTO(entity);
   }
 
   @Override
@@ -102,7 +116,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     entity.setQuantity(newQuantity.toQuantityInfo());
     entity = linkDao.save(entity);
     generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
-    return toDto(entity);
+    return new StoichiometryInventoryLinkDTO(entity);
   }
 
   @Override
@@ -114,21 +128,9 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
   }
 
-  private StoichiometryInventoryLinkDTO toDto(StoichiometryInventoryLink entity) {
-    StoichiometryInventoryLinkDTO dto = new StoichiometryInventoryLinkDTO();
-    dto.setId(entity.getId());
-    dto.setInventoryItemGlobalId(entity.getInventoryRecord().getOid().getIdString());
-    dto.setStoichiometryMoleculeId(entity.getStoichiometryMolecule().getId());
-    dto.setQuantity(
-        entity.getQuantity().getNumericValue() == null
-            ? null
-            : new ApiQuantityInfo(entity.getQuantity()));
-    return dto;
-  }
-
   private void verifyStoichiometryPermissions(
       StoichiometryMolecule stoichiometryMolecule, PermissionType permissionType, User user) {
-    BaseRecord recordContainingStoichiometry =
+    StructuredDocument recordContainingStoichiometry =
         stoichiometryMoleculeManager.getDocContainingMolecule(stoichiometryMolecule);
     if (!elnPermissionUtils.isPermitted(recordContainingStoichiometry, permissionType, user)) {
       throw new NotFoundException(

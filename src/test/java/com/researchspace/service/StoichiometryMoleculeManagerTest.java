@@ -10,7 +10,6 @@ import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.field.Field;
-import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
@@ -54,7 +53,8 @@ public class StoichiometryMoleculeManagerTest extends SpringTransactionalTest {
     Stoichiometry stoich =
         stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, user);
     StoichiometryMolecule molecule = stoich.getMolecules().get(0);
-    BaseRecord retrievedDoc = stoichiometryMoleculeManager.getDocContainingMolecule(molecule);
+    StructuredDocument retrievedDoc =
+        stoichiometryMoleculeManager.getDocContainingMolecule(molecule);
     assertEquals(createdDoc.getId(), retrievedDoc.getId());
   }
 

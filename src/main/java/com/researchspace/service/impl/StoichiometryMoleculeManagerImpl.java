@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import com.researchspace.dao.StoichiometryMoleculeDao;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,8 @@ public class StoichiometryMoleculeManagerImpl implements StoichiometryMoleculeMa
   }
 
   @Override
-  public BaseRecord getDocContainingMolecule(StoichiometryMolecule molecule) {
-    return stoichiometryMoleculeDao.getDocContainingMolecule(molecule);
+  public StructuredDocument getDocContainingMolecule(StoichiometryMolecule molecule) {
+    BaseRecord record = stoichiometryMoleculeDao.getDocContainingMolecule(molecule);
+    return record.asStrucDoc();
   }
 }
