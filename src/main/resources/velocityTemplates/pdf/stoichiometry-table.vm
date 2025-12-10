@@ -29,8 +29,8 @@
             <td>$molecule.getCoefficient()</td>
             <td>$molecule.getMolecularWeight()</td>
             <td>$molecule.getMass()</td>
+            <td>$molecule.getMoles()</td>
             <td>$molecule.getActualAmount()</td>
-            <td>$molecule.getActualYield()</td>
             <td>$molecule.getActualMoles()</td>
             <td>$molecule.getActualYield()</td>
             <td class='stoichiometry-table-notes'>$molecule.getNotes()</td>
