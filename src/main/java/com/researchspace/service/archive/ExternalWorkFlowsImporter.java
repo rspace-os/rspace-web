@@ -15,6 +15,7 @@ import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.ExternalWorkFlowDataManager;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,7 +41,7 @@ public class ExternalWorkFlowsImporter {
         for (ArchiveExternalWorkFlowData externalWorkFlowMetaData : allExternalWorkFlowDataMeta) {
           Long rspaceAttachmentIdUSedForExternalWorkflow =
               findCorrespondingRSpaceDataIdForExportedExternalWorkFlowData(
-                  newField, oldField, externalWorkFlowMetaData, oldIdToNewGalleryItem);
+                  oldField, externalWorkFlowMetaData, oldIdToNewGalleryItem);
           if (rspaceAttachmentIdUSedForExternalWorkflow != null) {
             ExternalWorkFlowData externalWorkFlowData =
                 new ExternalWorkFlowData(
@@ -69,7 +70,7 @@ public class ExternalWorkFlowsImporter {
                         workFlow.getExtId(), workFlow.getName());
                 if (existingWorkFlow != null) {
                   for (ExternalWorkFlowInvocation existingInvocation :
-                      existingWorkFlow.getExternalWorkflowInvocations()) {
+                      new HashSet<>(existingWorkFlow.getExternalWorkflowInvocations())) {
                     if (existingInvocation.getExtId().equals(invocationMetaData.getExtId())) {
                       externalWorkFlowData.getExternalWorkflowInvocations().add(existingInvocation);
                       existingInvocation.getExternalWorkFlowData().add(externalWorkFlowData);
@@ -103,7 +104,6 @@ public class ExternalWorkFlowsImporter {
   }
 
   public Long findCorrespondingRSpaceDataIdForExportedExternalWorkFlowData(
-      Field newField,
       ArchivalField oldField,
       ArchiveExternalWorkFlowData externalWorkFlowMetaDataUsedByOldField,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem) {
@@ -119,7 +119,10 @@ public class ExternalWorkFlowsImporter {
         return oldIdToNewGalleryItem.get(key).getId();
       }
     }
-    return originalRspaceDataId; // this will happen when the attached data in the original field
-    // was removed from that field - so it has not been exported
+    return originalRspaceDataId; // This will happen when the attached data in the original field
+    // was used for an external workflow
+    // and was subsequently removed from that field (unattached). The data has been unattached from
+    // the field and so it has not been exported.
+    // However, it still exists in the externalworkflows for that field which we *are* exporting
   }
 }

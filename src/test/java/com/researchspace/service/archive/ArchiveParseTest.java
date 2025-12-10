@@ -29,6 +29,7 @@ import org.junit.Test;
 public class ArchiveParseTest {
 
   File V018 = RSpaceTestUtils.getResource("archives/v0-18/0.18Export");
+  File V217 = RSpaceTestUtils.getResource("archives/v2-17.Export");
   ArchiveParserTSS parser;
   File anyFolder = new File("src/test/resources/TestResources");
 
@@ -315,6 +316,25 @@ public class ArchiveParseTest {
   public void testParse() throws ArchivalFileNotExistException, IOException {
     ArchiveParserImpl realparser = new ArchiveParserImpl();
     IArchiveModel model = realparser.parse(V018, new ImportArchiveReport());
+    assertEquals(1, model.getTotalRecordCount());
+    assertEquals(1, model.getCurrentRecordCount());
+
+    ArchivalDocumentParserRef ref = model.findCurrentDocArchiveByName(EXPORTED_RECORD).get(0);
+    List<File> files = ref.getFileList();
+    // annotation, chemd, image
+    assertEquals(1, files.size());
+    ArchivalDocument doc = ref.getArchivalDocument();
+    assertEquals(7, doc.getListFields().size());
+
+    ArchiveManifest manifest = model.getManifest();
+    final SemanticVersion EXPECTED_VERSION = new SemanticVersion("0.19.0.begin");
+    assertEquals(EXPECTED_VERSION, manifest.getDatabaseVersion());
+
+  }
+  @Test
+  public void testParseV2_17() throws ArchivalFileNotExistException, IOException {
+    ArchiveParserImpl realparser = new ArchiveParserImpl();
+    IArchiveModel model = realparser.parse(V217, new ImportArchiveReport());
     assertEquals(1, model.getTotalRecordCount());
     assertEquals(1, model.getCurrentRecordCount());
 

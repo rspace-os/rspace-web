@@ -5,32 +5,16 @@
 
   <xs:element name="archivalGalleryMetadata" type="archivalGalleryMetadata"/>
 
-  <xs:element name="archivalListOfMaterials" type="archivalListOfMaterials"/>
-
-  <xs:element name="archivalMaterialUsage" type="archivalMaterialUsage"/>
-
-  <xs:element name="archivalNfsFile" type="archivalNfsFile"/>
-
-  <xs:element name="archiveExternalWorkFlowData" type="archiveExternalWorkFlowData"/>
-
-  <xs:element name="archiveExternalWorkFlowInvocation" type="archiveExternalWorkFlowInvocation"/>
-
   <xs:complexType name="archivalDocument">
     <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-      <xs:element name="type" type="xs:string"/>
       <xs:element name="createdBy" type="xs:string"/>
-      <xs:element name="tag" type="xs:string" minOccurs="0"/>
-      <xs:element name="tagMetaData" type="xs:string" minOccurs="0"/>
-      <xs:element name="formType" type="xs:string" minOccurs="0"/>
       <xs:element name="creationDate" type="xs:dateTime"/>
-      <xs:element name="lastModifiedDate" type="xs:dateTime"/>
-      <xs:element name="recordVersion" type="xs:long"/>
-      <xs:element name="parentFolder" type="xs:string" minOccurs="0"/>
+      <xs:element name="tag" type="xs:string" minOccurs="0"/>
       <xs:element name="folderId" type="xs:long"/>
       <xs:element name="folderName" type="xs:string" minOccurs="0"/>
       <xs:element name="folderType" type="xs:string" minOccurs="0"/>
-      <xs:element name="schemaVersion" type="xs:int"/>
+      <xs:element name="formType" type="xs:string" minOccurs="0"/>
+      <xs:element name="lastModifiedDate" type="xs:dateTime"/>
       <xs:element name="listFields" minOccurs="0">
         <xs:complexType>
           <xs:sequence>
@@ -38,6 +22,11 @@
           </xs:sequence>
         </xs:complexType>
       </xs:element>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="parentFolder" type="xs:string" minOccurs="0"/>
+      <xs:element name="schemaVersion" type="xs:int"/>
+      <xs:element name="type" type="xs:string"/>
+      <xs:element name="recordVersion" type="xs:string"/>
     </xs:sequence>
     <xs:attribute name="docId" type="xs:long" use="required"/>
   </xs:complexType>
@@ -52,7 +41,7 @@
       <xs:element name="commentList" minOccurs="0">
         <xs:complexType>
           <xs:sequence>
-            <xs:element name="comment" type="archiveComment" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="comment" type="ecatComment" minOccurs="0" maxOccurs="unbounded"/>
           </xs:sequence>
         </xs:complexType>
       </xs:element>
@@ -77,24 +66,10 @@
           </xs:sequence>
         </xs:complexType>
       </xs:element>
-      <xs:element name="chemList" minOccurs="0">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="chem-info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
       <xs:element name="chemdooleImageList" minOccurs="0">
         <xs:complexType>
           <xs:sequence>
             <xs:element name="chemdoodle-info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
-      <xs:element name="mathList" minOccurs="0">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="math-info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
           </xs:sequence>
         </xs:complexType>
       </xs:element>
@@ -126,166 +101,50 @@
           </xs:sequence>
         </xs:complexType>
       </xs:element>
-      <xs:element name="listOfMaterialsList" minOccurs="0">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="listOfMaterials" type="archivalListOfMaterials" minOccurs="0" maxOccurs="unbounded"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
-      <xs:element name="nfsElementList" minOccurs="0">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="nfsElement" type="archivalNfsFile" minOccurs="0" maxOccurs="unbounded"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
-      <xs:element name="allExternalWorkFlowData" minOccurs="0">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="externalWorkFlowData" type="archiveExternalWorkFlowData" minOccurs="0" maxOccurs="unbounded"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
-      <xs:element name="externalWorkFlowInvocations" minOccurs="0">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="externalWorkFlowInvocation" type="archiveExternalWorkFlowInvocation" minOccurs="0" maxOccurs="unbounded"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
     </xs:sequence>
     <xs:attribute name="id" type="xs:long" use="required"/>
   </xs:complexType>
 
-  <xs:complexType name="archiveComment">
+  <xs:complexType name="ecatComment">
     <xs:sequence>
       <xs:element name="author" type="xs:string" minOccurs="0"/>
-      <xs:element name="lastUpdater" type="xs:string" minOccurs="0"/>
       <xs:element name="createDate" type="xs:dateTime" minOccurs="0"/>
-      <xs:element name="updateDate" type="xs:dateTime" minOccurs="0"/>
       <xs:element name="items" minOccurs="0">
         <xs:complexType>
           <xs:sequence>
-            <xs:element name="commentItem" type="archiveCommentItem" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="commentItem" type="ecatCommentItem" minOccurs="0" maxOccurs="unbounded"/>
           </xs:sequence>
         </xs:complexType>
       </xs:element>
+      <xs:element name="lastUpdater" type="xs:string" minOccurs="0"/>
+      <xs:element name="updateDate" type="xs:dateTime" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 
-  <xs:complexType name="archiveCommentItem">
+  <xs:complexType name="ecatCommentItem">
     <xs:sequence>
-      <xs:element name="lastUpdater" type="xs:string" minOccurs="0"/>
       <xs:element name="createDate" type="xs:dateTime" minOccurs="0"/>
-      <xs:element name="updateDate" type="xs:dateTime" minOccurs="0"/>
       <xs:element name="itemContent" type="xs:string" minOccurs="0"/>
+      <xs:element name="lastUpdater" type="xs:string" minOccurs="0"/>
+      <xs:element name="updateDate" type="xs:dateTime" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 
   <xs:complexType name="archivalGalleryMetadata">
     <xs:sequence>
-      <xs:element name="schemaVersion" type="xs:int"/>
       <xs:element name="parentId" type="xs:long"/>
-      <xs:element name="originalId" type="xs:long" minOccurs="0"/>
       <xs:element name="fileName" type="xs:string" minOccurs="0"/>
-      <xs:element name="name" type="xs:string" minOccurs="0"/>
       <xs:element name="linkFile" type="xs:string" minOccurs="0"/>
       <xs:element name="contentType" type="xs:string" minOccurs="0"/>
       <xs:element name="extension" type="xs:string" minOccurs="0"/>
       <xs:element name="annotation" type="xs:string" minOccurs="0"/>
       <xs:element name="creationDate" type="xs:dateTime" minOccurs="0"/>
-      <xs:element name="modificationDate" type="xs:dateTime" minOccurs="0"/>
       <xs:element name="createdBy" type="xs:string" minOccurs="0"/>
       <xs:element name="description" type="xs:string" minOccurs="0"/>
-      <xs:element name="chemElementsFormat" type="xs:string" minOccurs="0"/>
-      <xs:element name="version" type="xs:long" minOccurs="0"/>
-      <xs:element name="originalVersion" type="xs:long" minOccurs="0"/>
-      <xs:element name="linkToOriginalFile" type="xs:string" minOccurs="0"/>
+      <xs:element name="schemaVersion" type="xs:int"/>
     </xs:sequence>
     <xs:attribute name="id" type="xs:long" use="required"/>
     <xs:attribute name="parentGalleryFolderId" type="xs:long"/>
-  </xs:complexType>
-
-  <xs:complexType name="archivalListOfMaterials">
-    <xs:sequence>
-      <xs:element name="schemaVersion" type="xs:int"/>
-      <xs:element name="originalElnFieldId" type="xs:long" minOccurs="0"/>
-      <xs:element name="name" type="xs:string" minOccurs="0"/>
-      <xs:element name="description" type="xs:string" minOccurs="0"/>
-      <xs:element name="materials" minOccurs="0">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="materialUsage" type="archivalMaterialUsage" minOccurs="0" maxOccurs="unbounded"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
-    </xs:sequence>
-  </xs:complexType>
-
-  <xs:complexType name="archivalMaterialUsage">
-    <xs:sequence>
-      <xs:element name="schemaVersion" type="xs:int"/>
-      <xs:element name="invRecId" type="xs:long" minOccurs="0"/>
-      <xs:element name="invRecType" type="xs:string" minOccurs="0"/>
-      <xs:element name="usageValue" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="usageUnitId" type="xs:int" minOccurs="0"/>
-      <xs:element name="usagePlainText" type="xs:string" minOccurs="0"/>
-    </xs:sequence>
-  </xs:complexType>
-
-  <xs:complexType name="archivalNfsFile">
-    <xs:sequence>
-      <xs:element name="schemaVersion" type="xs:int"/>
-      <xs:element name="fileSystemId" type="xs:long" minOccurs="0"/>
-      <xs:element name="fileSystemName" type="xs:string" minOccurs="0"/>
-      <xs:element name="fileSystemUrl" type="xs:string" minOccurs="0"/>
-      <xs:element name="fileStoreId" type="xs:long" minOccurs="0"/>
-      <xs:element name="fileStorePath" type="xs:string" minOccurs="0"/>
-      <xs:element name="relativePath" type="xs:string" minOccurs="0"/>
-      <xs:element name="addedToArchive" type="xs:boolean"/>
-      <xs:element name="archivePath" type="xs:string" minOccurs="0"/>
-      <xs:element name="errorMsg" type="xs:string" minOccurs="0"/>
-      <xs:element name="folderLink" type="xs:boolean"/>
-      <xs:element name="folderExportSummaryMsg" type="xs:string" minOccurs="0"/>
-    </xs:sequence>
-  </xs:complexType>
-
-  <xs:complexType name="archiveExternalWorkFlowData">
-    <xs:complexContent>
-      <xs:extension base="archivalGalleryMetadata">
-        <xs:sequence>
-          <xs:element name="rspaceDataId" type="xs:long"/>
-          <xs:element name="externalService" type="xs:string" minOccurs="0"/>
-          <xs:element name="extName" type="xs:string" minOccurs="0"/>
-          <xs:element name="extId" type="xs:string" minOccurs="0"/>
-          <xs:element name="extSecondaryId" type="xs:string" minOccurs="0"/>
-          <xs:element name="extContainerId" type="xs:string" minOccurs="0"/>
-          <xs:element name="extContainerName" type="xs:string" minOccurs="0"/>
-          <xs:element name="baseUrl" type="xs:string" minOccurs="0"/>
-        </xs:sequence>
-      </xs:extension>
-    </xs:complexContent>
-  </xs:complexType>
-
-  <xs:complexType name="archiveExternalWorkFlowInvocation">
-    <xs:complexContent>
-      <xs:extension base="archivalGalleryMetadata">
-        <xs:sequence>
-          <xs:element name="extId" type="xs:string" minOccurs="0"/>
-          <xs:element name="status" type="xs:string" minOccurs="0"/>
-          <xs:element name="externalService" type="xs:string" minOccurs="0"/>
-          <xs:element name="workFlowId" type="xs:long"/>
-          <xs:element name="allExternalWorkFlowDataIds" minOccurs="0">
-            <xs:complexType>
-              <xs:sequence>
-                <xs:element name="dataIds" type="xs:long" minOccurs="0" maxOccurs="unbounded"/>
-              </xs:sequence>
-            </xs:complexType>
-          </xs:element>
-        </xs:sequence>
-      </xs:extension>
-    </xs:complexContent>
   </xs:complexType>
 </xs:schema>
 
