@@ -26,6 +26,7 @@ import com.researchspace.service.AuditManager;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserExternalIdResolver;
+import com.researchspace.service.archive.export.ImageFieldExporter;
 import com.researchspace.session.SessionTimeZoneUtils;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -156,6 +157,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     }
     String htmlStr = sbf.toString();
     org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(htmlStr);
+    ImageFieldExporter.addImageAltToImages(jsoupDoc);
     preProcess(jsoupDoc);
     addMetaData(strucDoc, jsoupDoc);
     List<CommentAppendix> comments = new ArrayList<>();

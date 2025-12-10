@@ -8,9 +8,25 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 @Slf4j
-class ImageFieldExporter extends AbstractFieldExporter<EcatImage> {
+public class ImageFieldExporter extends AbstractFieldExporter<EcatImage> {
+
+  public static String addImageAltToImages(Document doc) {
+    Elements images = doc.getElementsByTag("img");
+    for (Element el : images) {
+      if (el.hasAttr("alt")) {
+        String imageName = el.attr("alt");
+        if (!imageName.isEmpty()) {
+          el.before("<p>" + imageName + ": </p>");
+        }
+      }
+    }
+    return doc.html();
+  }
 
   ImageFieldExporter(FieldExporterSupport support) {
     super(support);

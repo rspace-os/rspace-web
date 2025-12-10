@@ -1,6 +1,6 @@
 <div id='stoichiometry'>
   <br>
-  <h4>Stoichiometry Information</h4>
+  <h4>Stoichiometry Information for $header</h4>
   <table id='stoichiometry-table' class='stoichiometry-table'>
     <thead>
     <tr>

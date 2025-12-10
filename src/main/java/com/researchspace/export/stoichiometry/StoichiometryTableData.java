@@ -1,4 +1,4 @@
-package com.researchspace.export.pdf;
+package com.researchspace.export.stoichiometry;
 
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import java.math.RoundingMode;

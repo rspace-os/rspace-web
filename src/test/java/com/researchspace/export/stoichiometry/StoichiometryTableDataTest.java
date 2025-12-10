@@ -1,4 +1,4 @@
-package com.researchspace.export.pdf;
+package com.researchspace.export.stoichiometry;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,6 +29,7 @@ public class StoichiometryTableDataTest {
     testee = createStoichiometryDataTableWithNullMass();
     assertEquals("0", testee.getMoles());
   }
+
   @Test
   public void testCalculateNullName() {
     testee = createStoichiometryDataTableWithNullName();

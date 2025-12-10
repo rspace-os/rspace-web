@@ -1,14 +1,10 @@
 package com.researchspace.export.pdf;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.export.pdf.ExportToFileConfig.DATE_FOOTER_PREF;
-import com.researchspace.model.User;
+import com.researchspace.export.stoichiometry.StoichiometryHtmlGenerator;
 import com.researchspace.model.core.IRSpaceDoc;
-import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
-import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.service.StoichiometryService;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.SneakyThrows;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
@@ -40,9 +35,8 @@ import org.springframework.ui.velocity.VelocityEngineUtils;
  */
 @Service
 public class PdfHtmlGenerator {
-  @Autowired private StoichiometryService stoichiometryService;
   private List<ArchivalNfsFile> nfsLinks;
-
+  @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
   private final VelocityEngine velocityEngine;
 
   private HTMLUnicodeFontProcesser htmlUnicodeFontProcesser;
@@ -174,7 +168,7 @@ public class PdfHtmlGenerator {
       if (!newPageAddedForDocExtras) {
         html = addNewPageBefore(html, "stoichiometry");
       }
-      html = addStoichiometryLinks(html, config.getExporter());
+      html = stoichiometryHtmlGenerator.addStoichiometryLinks(html, config.getExporter());
     }
 
     if (documentData.hasNfsLinks()) {
@@ -194,27 +188,6 @@ public class PdfHtmlGenerator {
         originalStyles.replace(
             "#" + element + " {", "#" + element + " { page-break-before: always; "));
     return doc.toString();
-  }
-
-  @SneakyThrows
-  private String addStoichiometryLinks(String html, User exporter) {
-    Document doc = Jsoup.parse(html);
-    String stoichiometryAttribute =
-        doc.getElementsByAttribute("data-stoichiometry-table").attr("data-stoichiometry-table");
-    StoichiometryDTO extracted =
-        new ObjectMapper().readValue(stoichiometryAttribute, StoichiometryDTO.class);
-    StoichiometryDTO stoichiometryDTO =
-        stoichiometryService.getById(extracted.getId(), extracted.getRevision(), exporter);
-    List<StoichiometryTableData> molecules = new ArrayList<>();
-    for (StoichiometryMoleculeDTO moleculeDTO : stoichiometryDTO.getMolecules()) {
-      molecules.add(new StoichiometryTableData(moleculeDTO));
-    }
-    Map<String, Object> context = new HashMap<>();
-    context.put("molecules", molecules);
-    String stoichiometryTableHtml =
-        VelocityEngineUtils.mergeTemplateIntoString(
-            velocityEngine, "pdf/stoichiometry-table.vm", "UTF-8", context);
-    return appendToEndOfBody(html, stoichiometryTableHtml);
   }
 
   private String addNfsLinks(String html, List<ArchivalNfsFile> nfsLinks) {
