@@ -169,6 +169,7 @@
 
         <mapping class="com.researchspace.model.stoichiometry.Stoichiometry"/>
         <mapping class="com.researchspace.model.stoichiometry.StoichiometryMolecule"/>
-
-    </session-factory>
-</hibernate-configuration>
+        <mapping class="com.researchspace.model.stoichiometry.StoichiometryInventoryLink"/>
+ 
+     </session-factory>
+ </hibernate-configuration>

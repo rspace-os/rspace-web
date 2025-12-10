@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 public class StoichiometryMoleculeDTO {
   private Long id;
   private Long rsChemElementId;
+  private EmbeddedInventoryLinkDTO inventoryLink;
   private MoleculeRole role;
   private String formula;
   private String name;

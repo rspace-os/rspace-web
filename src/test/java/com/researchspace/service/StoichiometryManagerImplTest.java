@@ -12,6 +12,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.dao.StoichiometryDao;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
@@ -24,13 +25,18 @@ import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
+import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
+import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.service.impl.StoichiometryManagerImpl;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,11 +52,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 
 @RunWith(MockitoJUnitRunner.class)
-public class StoichiometryManagerTest {
+public class StoichiometryManagerImplTest {
 
   @Mock private StoichiometryDao stoichiometryDao;
   @Mock private RSChemElementManager rsChemElementManager;
   @Mock private ChemicalSearcher chemicalSearcher;
+  @Mock private StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager;
 
   @InjectMocks private StoichiometryManagerImpl stoichiometryManager;
 
@@ -348,18 +355,79 @@ public class StoichiometryManagerTest {
     when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
         .thenReturn(newMolecule);
 
-    stoichiometryManager.copyForReaction(sourceParentReactionId, targetParentReaction, user);
+    stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user);
 
     verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
 
-    Stoichiometry finalSave = savedStoichiometries.get(1);
+    Stoichiometry finalSave = savedStoichiometries.get(savedStoichiometries.size() - 1);
     assertEquals(targetParentReaction, finalSave.getParentReaction());
     assertEquals(3, finalSave.getMolecules().size());
   }
 
   @Test
-  public void whenCopyForReaction_withNonExistentSource_thenThrowsException() {
+  public void whenCopy_withInventoryLinks_thenLinksAreCreatedForNewMolecules() throws Exception {
+    Long sourceParentReactionId = 11L;
+    RSChemElement targetParentReaction = createRSChemElement(22L);
+
+    // Build source stoichiometry with two molecules, mol1 has inventory link
+    Stoichiometry source =
+        Stoichiometry.builder()
+            .id(5L)
+            .parentReaction(createRSChemElement(sourceParentReactionId))
+            .molecules(new ArrayList<>())
+            .build();
+    StoichiometryMolecule mol1 =
+        StoichiometryMolecule.builder()
+            .id(1L)
+            .stoichiometry(source)
+            .rsChemElement(createRSChemElement(101L))
+            .smiles("C")
+            .build();
+    StoichiometryMolecule mol2 =
+        StoichiometryMolecule.builder()
+            .id(2L)
+            .stoichiometry(source)
+            .rsChemElement(createRSChemElement(102L))
+            .smiles("CC")
+            .build();
+
+    StoichiometryInventoryLink link1 = new StoichiometryInventoryLink();
+    Sample sample = new Sample();
+    sample.setId(10L);
+    link1.setSample(sample);
+    link1.setQuantity(new QuantityInfo(BigDecimal.valueOf(1.5), RSUnitDef.MILLI_LITRE.getId()));
+    link1.setStoichiometryMolecule(mol1);
+
+    mol1.setInventoryLink(link1);
+
+    source.getMolecules().add(mol1);
+    source.getMolecules().add(mol2);
+
+    when(stoichiometryDao.findByParentReactionId(sourceParentReactionId))
+        .thenReturn(Optional.of(source));
+
+    when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
+        .thenReturn(createRSChemElement(999L));
+
+    stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user);
+
+    // Verify link created for mol1 copy
+    ArgumentCaptor<StoichiometryInventoryLinkRequest> linkReqCaptor =
+        ArgumentCaptor.forClass(StoichiometryInventoryLinkRequest.class);
+    verify(stoichiometryInventoryLinkManager, times(1))
+        .createLink(linkReqCaptor.capture(), any(User.class));
+
+    List<StoichiometryInventoryLinkRequest> reqs = linkReqCaptor.getAllValues();
+    assertEquals(1, reqs.size());
+    StoichiometryInventoryLinkRequest newLink = reqs.get(0);
+    assertEquals("SA" + sample.getId(), newLink.getInventoryItemGlobalId());
+    assertEquals(mol1.getInventoryLink().getQuantity().getNumericValue(), newLink.getQuantity());
+    assertEquals(RSUnitDef.MILLI_LITRE.getId(), newLink.getUnitId());
+  }
+
+  @Test
+  public void whenCopy_withNonExistentSource_thenThrowsException() {
     Long sourceParentReactionId = 999L;
     RSChemElement targetParentReaction = createRSChemElement(2L);
 
@@ -369,9 +437,7 @@ public class StoichiometryManagerTest {
     Exception exception =
         assertThrows(
             StoichiometryException.class,
-            () ->
-                stoichiometryManager.copyForReaction(
-                    sourceParentReactionId, targetParentReaction, user));
+            () -> stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user));
 
     assertTrue(
         exception
@@ -380,8 +446,7 @@ public class StoichiometryManagerTest {
   }
 
   @Test
-  public void whenCopyForReaction_withIOException_thenThrowsStoichiometryException()
-      throws Exception {
+  public void whenCopy_withIOException_thenThrowsStoichiometryException() throws Exception {
     Long sourceParentReactionId = 1L;
     Long targetParentReactionId = 2L;
     Stoichiometry sourceStoichiometry =
@@ -397,9 +462,7 @@ public class StoichiometryManagerTest {
     Exception exception =
         assertThrows(
             StoichiometryException.class,
-            () ->
-                stoichiometryManager.copyForReaction(
-                    sourceParentReactionId, targetParentReaction, user));
+            () -> stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user));
 
     assertTrue(
         exception
