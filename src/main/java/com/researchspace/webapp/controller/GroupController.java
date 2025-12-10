@@ -245,20 +245,21 @@ public class GroupController extends BaseController {
     User subject = userManager.getUserByUsername(principal.getName());
     subject = getUserWithRefreshedPermissions(subject);
 
-    boolean isGroupMemberOrAdmin =
-        subject.isPiOrLabAdminOfGroup(group)
-            || subject.hasSysadminRole()
-            || subject.isConnectedToGroup(group);
+    userManager.populateConnectedGroupList(subject);
+    userManager.populateConnectedUserList(subject);
 
     if (properties.isProfileHidingEnabled()) {
       if (group.isPrivateProfile()) {
-        userManager.populateConnectedGroupList(subject);
         if (!subject.isConnectedToGroup(group)) {
           throw new RecordAccessDeniedException(getResourceNotFoundMessage("Group", groupId));
         }
       }
-      userManager.populateConnectedUserList(subject);
     }
+
+    boolean isGroupMemberOrAdmin =
+        subject.isPiOrLabAdminOfGroup(group)
+            || subject.hasSysadminRole()
+            || subject.isConnectedToGroup(group);
 
     // canEdit would allow lab admins without view all to manage the autoshare status
     boolean canManageAutoshare =
