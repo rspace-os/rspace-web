@@ -56,6 +56,7 @@ import com.researchspace.model.EcatImageAnnotation;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.EcatVideo;
 import com.researchspace.model.Group;
+import com.researchspace.model.GroupType;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RSMath;
@@ -1440,6 +1441,35 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     grp.setDisplayName(grp.getUniqueName() + "display");
 
     for (ConstraintBasedPermission cbp : perFactory.createDefaultGlobalGroupPermissions(grp)) {
+      grp.addPermission(cbp);
+    }
+    grpMgr.saveGroup(grp, sessionUser);
+    grpMgr.addMembersToGroup(grp.getId(), Arrays.asList(users), pi, admin, sessionUser);
+    grpMgr.createSharedCommunalGroupFolders(grp.getId(), sessionUser.getUsername());
+
+    return grpMgr.getGroup(grp.getId());
+  }
+
+  /**
+   * Creates and persists a project group for the specified users. Runs in its own transaction.
+   *
+   * @param sessionUser
+   * @param pi
+   * @param admin
+   * @param users ALL users including PIs and admins
+   * @return the created group
+   * @throws IllegalAddChildOperation
+   */
+  protected Group createProjectGroupForUsers(
+      User sessionUser, String pi, String admin, User... users) throws IllegalAddChildOperation {
+
+    Group grp = new Group(getRandomName(10), users[0]);
+    grp.setOwner(sessionUser);
+    grp.setDisplayName(grp.getUniqueName() + "display");
+    grp.setGroupType(GroupType.PROJECT_GROUP);
+
+    for (ConstraintBasedPermission cbp :
+        perFactory.createDefaultPermissionsForProjectGroupOwner(grp)) {
       grp.addPermission(cbp);
     }
     grpMgr.saveGroup(grp, sessionUser);

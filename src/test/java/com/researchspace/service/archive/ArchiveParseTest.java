@@ -329,8 +329,8 @@ public class ArchiveParseTest {
     ArchiveManifest manifest = model.getManifest();
     final SemanticVersion EXPECTED_VERSION = new SemanticVersion("0.19.0.begin");
     assertEquals(EXPECTED_VERSION, manifest.getDatabaseVersion());
-
   }
+
   @Test
   public void testParseV2_17() throws ArchivalFileNotExistException, IOException {
     ArchiveParserImpl realparser = new ArchiveParserImpl();

@@ -10,15 +10,20 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.CreateCloudGroup;
 import com.researchspace.model.dtos.CreateCloudGroupValidator;
+import com.researchspace.model.dtos.RaidGroupAssociation;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.RaIDServiceManager;
 import com.researchspace.service.cloud.CloudGroupManager;
 import com.researchspace.service.cloud.CloudNotificationManager;
 import com.researchspace.service.cloud.CommunityUserManager;
+import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -39,6 +44,7 @@ public class ProjectGroupController extends BaseController {
 
   private @Autowired CommunityUserManager cloudUserManager;
   private @Autowired CloudGroupManager cloudGroupManager;
+  private @Autowired RaIDServiceManager raidServiceManager;
   private @Autowired CloudNotificationManager cloudNotificationManager;
   private @Autowired CreateCloudGroupValidator cloudGroupValidator;
 
@@ -56,9 +62,8 @@ public class ProjectGroupController extends BaseController {
       @RequestBody CreateCloudGroup createCloudGroup,
       BindingResult errors,
       HttpServletRequest request) {
-
     User creator = userManager.getAuthenticatedUserInSession();
-    createCloudGroup.setSessionUser(creator);
+    createCloudGroup.setSessionUser(creator); // the PI
     cloudGroupValidator.validate(createCloudGroup, errors);
     List<Group> groups = groupManager.listGroupsForOwner(creator);
     Map<String, String> response = new HashMap<>();
@@ -84,10 +89,22 @@ public class ProjectGroupController extends BaseController {
         cloudGroupManager.createAndSaveProjectGroup(
             createCloudGroup.getGroupName(), creator, creator);
 
+    if (createCloudGroup.getRaid() != null) {
+      validateRaidInput(createCloudGroup.getRaid());
+      raidServiceManager.bindRaidToGroupAndSave(
+          creator, new RaidGroupAssociation(newLabGroup.getId(), createCloudGroup.getRaid()));
+    }
     sendInvites(request, creator, listEmails, newLabGroup);
     publisher.publishEvent(new GenericEvent(creator, newLabGroup, AuditAction.CREATE));
     response.put("newGroup", "" + newLabGroup.getId());
     return new AjaxReturnObject<>(response, null);
+  }
+
+  private static void validateRaidInput(RaIDReferenceDTO raidReference) {
+    Validate.isTrue(
+        StringUtils.isNotBlank(raidReference.getRaidIdentifier()), "raidIdentifier is missing");
+    Validate.isTrue(
+        StringUtils.isNotBlank(raidReference.getRaidServerAlias()), "raidServerAlias is missing");
   }
 
   private void sendInvites(
