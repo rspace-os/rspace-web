@@ -14,7 +14,6 @@ import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Entities;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,8 +30,11 @@ public class StoichiometryHtmlGenerator {
 
     Document doc = Jsoup.parse(html);
     Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
-    int elementsPositionInDoc = 0;
     for (Element stoichiometryElement : stoichiometryElements) {
+      if (stoichiometryElement.attr("width") != null) {
+        stoichiometryElement.attr("width", "75%");
+        stoichiometryElement.attr("height", "75%");
+      }
       String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
       StoichiometryDTO extracted =
           new ObjectMapper().readValue(stoichiometryAttribute, StoichiometryDTO.class);
@@ -45,10 +47,10 @@ public class StoichiometryHtmlGenerator {
       Map<String, Object> context = new HashMap<>();
       context.put("molecules", molecules);
       String header = stoichiometryElement.attr("alt");
-      if(header.isEmpty()){
+      if (header.isEmpty()) {
         header = " the chemical reaction above.";
       }
-      context.put("header", stoichiometryElement.attr("alt"));
+      context.put("header", header);
       String stoichiometryTableHtml =
           VelocityEngineUtils.mergeTemplateIntoString(
               velocityEngine, "pdf/stoichiometry-table.vm", "UTF-8", context);
@@ -83,5 +85,4 @@ public class StoichiometryHtmlGenerator {
     }
     return null;
   }
-
 }

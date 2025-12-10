@@ -1,39 +1,42 @@
 <div id='stoichiometry'>
   <br>
   <h4>Stoichiometry Information for $header</h4>
-  <table id='stoichiometry-table' class='stoichiometry-table'>
-    <thead>
-    <tr>
-      <th class='stoichiometry-table-name'>Name</th>
-      <th>Role</th>
-      <th>Limiting
-        Reagent</th>
-      <th>Equivalent</th>
-      <th>Molecular Weight (g/mol)</th>
-      <th>Mass (g)</th>
-      <th>Moles (mol)</th>
-      <th>Actual Mass (g)</th>
-      <th>Actual Moles (mol)</th>
-      <th>Yield/Excess (%)</th>
-      <th class ='stoichiometry-table-notes'>Notes</th>
-    </tr>
-    </thead>
-    <tbody>
-        #foreach($molecule in $molecules)
-        <tr>
-          <td class='stoichiometry-table-name'>$molecule.getName()</td>
-          <td>$molecule.getRole()</td>
-          <td>$molecule.getLimitingReagent()</td>
-          <td>$molecule.getCoefficient()</td>
-          <td>$molecule.getMolecularWeight()</td>
-          <td>$molecule.getMass()</td>
-          <td>$molecule.getActualAmount()</td>
-          <td>$molecule.getActualYield()</td>
-          <td>$molecule.getActualMoles()</td>
-          <td>$molecule.getActualYield()</td>
-          <td class = 'stoichiometry-table-notes'>$molecule.getNotes()</td>
-        </tr>
-        #end
-    </tbody>
-  </table>
+  <div class="stoichiometry-table-container">
+    <table id='stoichiometry-table' class='stoichiometry-table'>
+      <thead>
+      <tr>
+        <th class='stoichiometry-table-name'>Name</th>
+        <th>Role</th>
+        <th>Limiting
+          Reagent
+        </th>
+        <th>Equivalent</th>
+        <th>Molecular Weight (g/mol)</th>
+        <th>Mass (g)</th>
+        <th>Moles (mol)</th>
+        <th>Actual Mass (g)</th>
+        <th>Actual Moles (mol)</th>
+        <th>Yield/Excess (%)</th>
+        <th class='stoichiometry-table-notes'>Notes</th>
+      </tr>
+      </thead>
+      <tbody>
+          #foreach($molecule in $molecules)
+          <tr>
+            <td class='stoichiometry-table-name'>$molecule.getName()</td>
+            <td>$molecule.getRole()</td>
+            <td>$molecule.getLimitingReagent()</td>
+            <td>$molecule.getCoefficient()</td>
+            <td>$molecule.getMolecularWeight()</td>
+            <td>$molecule.getMass()</td>
+            <td>$molecule.getActualAmount()</td>
+            <td>$molecule.getActualYield()</td>
+            <td>$molecule.getActualMoles()</td>
+            <td>$molecule.getActualYield()</td>
+            <td class='stoichiometry-table-notes'>$molecule.getNotes()</td>
+          </tr>
+          #end
+      </tbody>
+    </table>
+  </div>
 </div>

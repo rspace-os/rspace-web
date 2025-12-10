@@ -36,7 +36,23 @@ a:hover {
 	padding: 6px 10px;
 	background-color: #d0d3d3;
 }
-
+/*table.stoichiometry-table tbody {*/
+/*	display: table;*/
+/*	width: 100%;*/
+/*}*/
+table.stoichiometry-table{
+	border: 1px solid #ddd;
+	width: 100%;
+}
+table.stoichiometry-table td {
+	border: 1px solid #ddd;
+}
+table.stoichiometry-table th {
+	border: 1px solid #ddd;
+}
+div.stoichiometry-table-container {
+	overflow-x: auto;
+}
 hr {
 	border: 0;
 	color: #DDDDDD;
