@@ -311,7 +311,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
                 createBuilderForPost(API_VERSION.ONE, ownerApiKey, "/stoichiometry/link", owner)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsBytes(req)))
-            .andExpect(status().isOk())
+            .andExpect(status().isCreated())
             .andReturn();
     return getFromJsonResponseBody(createResult, StoichiometryInventoryLinkDTO.class);
   }
