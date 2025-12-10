@@ -3033,7 +3033,7 @@ paths:
 
   /stoichiometry/link:
     post:
-      summary: Create a link between a stoichiometry molecule and an Inventory sample or subsample
+      summary: Create a link between a stoichiometry molecule and an Inventory Container, Sample or Subsample
       tags:
         - Chemistry
       parameters:
@@ -3043,7 +3043,7 @@ paths:
           schema:
             $ref: '#/definitions/StoichiometryInventoryLinkRequest'
       responses:
-        '200':
+        '201':
           description: Created link
           schema:
             $ref: '#/definitions/StoichiometryInventoryLinkDTO'
@@ -3063,6 +3063,14 @@ paths:
               message:
                 type: string
                 example: "Stoichiometry molecule or inventory item not found"
+        '422':
+          description: Unprocessable request. Examples include linking a molecule that already has a link, attempting to link to a Sample Template, or missing required quantity/unit values.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Stoichiometry molecule already has an inventory link"
         '500':
           description: An unexpected error occurred while creating the link
           schema:
@@ -3529,14 +3537,17 @@ definitions:
       quantity:
         $ref: '#/definitions/QuantityInfo'
   StoichiometryInventoryLinkRequest:
-    description: Request to create a link between a stoichiometry molecule and an Inventory item
+    description: >-
+      Request to create a link between a stoichiometry molecule and an Inventory item.
+      Allowed inventory targets are Containers, Samples and Subsamples. Linking to Sample Templates is not permitted.
     required:
       - inventoryItemGlobalId
       - stoichiometryMoleculeId
     properties:
       inventoryItemGlobalId:
         type: string
-        description: Global identifier of the inventory item (e.g. SA123, SS456, IC789)
+        description: >-
+          Global identifier of the target inventory item (allowed prefixes: IC for Containers, SA for Samples, SS for Subsamples; e.g. IC789, SA123, SS456). Sample Templates are not allowed.
       stoichiometryMoleculeId:
         type: integer
         format: int64
