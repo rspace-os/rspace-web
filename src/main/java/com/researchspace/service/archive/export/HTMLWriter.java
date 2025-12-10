@@ -87,7 +87,8 @@ public class HTMLWriter implements ExportObjectWriter {
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "documentView.vm", "UTF-8", velocityModel);
     org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(htmlExtracted);
-    htmlExtracted = ImageFieldExporter.addImageAltToImages(jsoupDoc);
+    jsoupDoc = ImageFieldExporter.addImageAltToImages(jsoupDoc);
+    htmlExtracted = ImageFieldExporter.resizeChemImages(jsoupDoc).html();
     if (htmlExtracted.contains("data-stoichiometry-table")) {
       htmlExtracted =
           stoichiometryHtmlGenerator.addStoichiometryLinks(

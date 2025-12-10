@@ -31,10 +31,6 @@ public class StoichiometryHtmlGenerator {
     Document doc = Jsoup.parse(html);
     Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
     for (Element stoichiometryElement : stoichiometryElements) {
-      if (stoichiometryElement.attr("width") != null) {
-        stoichiometryElement.attr("width", "75%");
-        stoichiometryElement.attr("height", "75%");
-      }
       String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
       StoichiometryDTO extracted =
           new ObjectMapper().readValue(stoichiometryAttribute, StoichiometryDTO.class);

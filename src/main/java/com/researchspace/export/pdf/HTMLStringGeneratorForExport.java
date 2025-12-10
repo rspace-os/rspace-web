@@ -158,6 +158,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     String htmlStr = sbf.toString();
     org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(htmlStr);
     ImageFieldExporter.addImageAltToImages(jsoupDoc);
+    ImageFieldExporter.resizeChemImages(jsoupDoc);
     preProcess(jsoupDoc);
     addMetaData(strucDoc, jsoupDoc);
     List<CommentAppendix> comments = new ArrayList<>();

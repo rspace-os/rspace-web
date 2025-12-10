@@ -15,7 +15,7 @@ import org.jsoup.select.Elements;
 @Slf4j
 public class ImageFieldExporter extends AbstractFieldExporter<EcatImage> {
 
-  public static String addImageAltToImages(Document doc) {
+  public static Document addImageAltToImages(Document doc) {
     Elements images = doc.getElementsByTag("img");
     for (Element el : images) {
       if (el.hasAttr("alt")) {
@@ -25,7 +25,18 @@ public class ImageFieldExporter extends AbstractFieldExporter<EcatImage> {
         }
       }
     }
-    return doc.html();
+    return doc;
+  }
+
+  public static Document resizeChemImages(Document doc) {
+    doc.select("img.chem")
+        .forEach(
+            el -> {
+              el.attr("width", "90%");
+              el.attr("height", "90%");
+            });
+
+    return doc;
   }
 
   ImageFieldExporter(FieldExporterSupport support) {
