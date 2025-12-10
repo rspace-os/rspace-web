@@ -2,8 +2,11 @@ package com.researchspace.integrations.galaxy.service;
 
 import com.researchspace.galaxy.model.output.upload.DatasetCollection;
 import com.researchspace.galaxy.model.output.workflow.WorkflowInvocationResponse;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
 import java.sql.Date;
 import java.util.List;
+import java.util.Set;
 
 public class GalaxyInvocationDetailsTestMother {
   public static final Date invocationDate = Date.valueOf("2019-01-01");
@@ -20,6 +23,16 @@ public class GalaxyInvocationDetailsTestMother {
     gid.setDataSetCollectionsUsedInInvocation(List.of(used));
     gid.setWorkflowName(name);
     gid.setState(state);
+    gid.setPersistedInvocation(
+        ExternalWorkFlowInvocation.builder()
+            .extId("test_invocation_id_" + name)
+            .externalWorkFlowData(
+                Set.of(
+                    ExternalWorkFlowTestMother.createExternalWorkFlowDataWithNonDefaultName(
+                        historyID, "data1", "history_name1", used.getName())))
+            .externalWorkFlow(new ExternalWorkFlow("extID", name, ""))
+            .status(state)
+            .build());
     return gid;
   }
 }

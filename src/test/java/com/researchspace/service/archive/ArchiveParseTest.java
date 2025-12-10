@@ -2,12 +2,15 @@ package com.researchspace.service.archive;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
 import com.researchspace.archive.ArchivalFileNotExistException;
 import com.researchspace.archive.ArchivalImportConfig;
+import com.researchspace.archive.ArchiveExternalWorkFlow;
 import com.researchspace.archive.ArchiveManifest;
 import com.researchspace.archive.ArchiveModel;
 import com.researchspace.archive.IArchiveModel;
@@ -26,6 +29,7 @@ import org.junit.Test;
 public class ArchiveParseTest {
 
   File V018 = RSpaceTestUtils.getResource("archives/v0-18/0.18Export");
+  File V217 = RSpaceTestUtils.getResource("archives/v2-17.Export");
   ArchiveParserTSS parser;
   File anyFolder = new File("src/test/resources/TestResources");
 
@@ -321,13 +325,34 @@ public class ArchiveParseTest {
     assertEquals(1, files.size());
     ArchivalDocument doc = ref.getArchivalDocument();
     assertEquals(7, doc.getListFields().size());
-    // assertEquals(1,doc.getListFields().get(1).getAnnotMeta().size());
-    // assertEquals(1,doc.getListFields().get(2).getChemMeta().size());
-    // assertEquals(1,doc.getListFields().get(3).getComments().size());
-    // assertEquals(1,doc.getListFields().get(4).getLinkMeta().size());
 
     ArchiveManifest manifest = model.getManifest();
     final SemanticVersion EXPECTED_VERSION = new SemanticVersion("0.19.0.begin");
     assertEquals(EXPECTED_VERSION, manifest.getDatabaseVersion());
+
+  }
+  @Test
+  public void testParseV2_17() throws ArchivalFileNotExistException, IOException {
+    ArchiveParserImpl realparser = new ArchiveParserImpl();
+    IArchiveModel model = realparser.parse(V217, new ImportArchiveReport());
+    assertEquals(1, model.getTotalRecordCount());
+    assertEquals(1, model.getCurrentRecordCount());
+
+    ArchivalDocumentParserRef ref = model.findCurrentDocArchiveByName(EXPORTED_RECORD).get(0);
+    List<File> files = ref.getFileList();
+    // annotation, chemd, image
+    assertEquals(1, files.size());
+    ArchivalDocument doc = ref.getArchivalDocument();
+    assertEquals(7, doc.getListFields().size());
+
+    ArchiveManifest manifest = model.getManifest();
+    final SemanticVersion EXPECTED_VERSION = new SemanticVersion("0.19.0.begin");
+    assertEquals(EXPECTED_VERSION, manifest.getDatabaseVersion());
+    AllArchiveExternalWorkFlowMetaData testExtWF = ref.getArchiveExternalWorkFlowMetaData();
+    assertNotNull(testExtWF);
+    ArchiveExternalWorkFlow aewf = testExtWF.getWorkFlows().iterator().next();
+    assertEquals("9ac5c918248cc7aa", aewf.getExtId());
+    assertEquals("RNA-seq for Paired-end fastqs (release v1.1)", aewf.getName());
+    assertEquals(1, aewf.getId());
   }
 }

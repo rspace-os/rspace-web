@@ -16,10 +16,25 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GalaxySummaryStatusReport {
 
+  @Data
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class GalleryDataNames {
+
+    private String fileName;
+    private long id;
+
+    public GalleryDataNames(String extName, long rspacedataid) {
+      this.fileName = extName;
+      this.id = rspacedataid;
+    }
+
+    public GalleryDataNames() {}
+  }
+
   private String rspaceFieldName;
   private String galaxyHistoryName;
   private String galaxyHistoryId;
-  private String galaxyDataNames;
+  private GalleryDataNames[] galaxyDataNames;
   private String galaxyInvocationName;
   private String galaxyInvocationStatus;
   private String galaxyInvocationId;
@@ -34,11 +49,11 @@ public class GalaxySummaryStatusReport {
       List<ExternalWorkFlowData> allDataUploadedToGalaxyForThisGalaxyHistory) {
     GalaxySummaryStatusReport report = new GalaxySummaryStatusReport();
     ExternalWorkFlowData first = allDataUploadedToGalaxyForThisGalaxyHistory.get(0);
-    List<String> allDataNames = new ArrayList<>();
+    List<GalleryDataNames> allDataNames = new ArrayList<>();
     for (ExternalWorkFlowData data : allDataUploadedToGalaxyForThisGalaxyHistory) {
-      allDataNames.add(data.getExtName());
+      allDataNames.add(new GalleryDataNames(data.getExtName(), data.getRspacedataid()));
     }
-    report.setGalaxyDataNames(String.join(", ", allDataNames));
+    report.setGalaxyDataNames(allDataNames.toArray(new GalleryDataNames[allDataNames.size()]));
     report.setRspaceFieldName(first.getRspacecontainerName());
     report.setGalaxyBaseUrl(first.getBaseUrl());
     report.setGalaxyHistoryName(first.getExtContainerName());
@@ -118,38 +133,18 @@ public class GalaxySummaryStatusReport {
     GalaxySummaryStatusReport report = new GalaxySummaryStatusReport();
     report.setGalaxyInvocationStatus(galaxyInvocationDetails.getState());
     report.setGalaxyInvocationId(galaxyInvocationDetails.getInvocation().getInvocationId());
-    if (galaxyInvocationDetails.getPersistedInvocation() != null) {
-      ExternalWorkFlowInvocation externalWorkFlowInvocation =
-          galaxyInvocationDetails.getPersistedInvocation();
-      report.setGalaxyInvocationName(externalWorkFlowInvocation.getExternalWorkFlow().getName());
-      report.setGalaxyDataNames(
-          String.join(
-              ", ",
-              externalWorkFlowInvocation.getExternalWorkFlowData().stream()
-                  .map(data -> data.getExtName())
-                  .collect(Collectors.toList())));
-    } else {
-      report.setGalaxyInvocationName(galaxyInvocationDetails.getWorkflowName());
-      String dataSetCollectionNames = "";
-      String dataSetNames = "";
-      if (galaxyInvocationDetails.getDataSetCollectionsUsedInInvocation() != null) {
-        dataSetCollectionNames =
-            String.join(
-                ", ",
-                galaxyInvocationDetails.getDataSetCollectionsUsedInInvocation().stream()
-                    .map(data -> data.getName())
-                    .collect(Collectors.toList()));
-      }
-      if (galaxyInvocationDetails.getDataSetsUsedInInvocation() != null) {
-        dataSetNames =
-            String.join(
-                ", ",
-                galaxyInvocationDetails.getDataSetsUsedInInvocation().stream()
-                    .map(data -> data.getName())
-                    .collect(Collectors.toList()));
-      }
-      report.setGalaxyDataNames((dataSetCollectionNames + " ").trim() + dataSetNames);
+    List<GalleryDataNames> allDataNames = new ArrayList<>();
+
+    ExternalWorkFlowInvocation externalWorkFlowInvocation =
+        galaxyInvocationDetails.getPersistedInvocation();
+    for (ExternalWorkFlowData data :
+        externalWorkFlowInvocation.getExternalWorkFlowData().stream()
+            .filter(data -> allDataUploadedToGalaxyForThisRSpaceField.contains(data))
+            .collect(Collectors.toList())) {
+      allDataNames.add(new GalleryDataNames(data.getExtName(), data.getRspacedataid()));
     }
+    report.setGalaxyDataNames(allDataNames.toArray(new GalleryDataNames[allDataNames.size()]));
+    report.setGalaxyInvocationName(externalWorkFlowInvocation.getExternalWorkFlow().getName());
     ExternalWorkFlowData first =
         groupByHistoryId(allDataUploadedToGalaxyForThisRSpaceField)
             .get(galaxyInvocationDetails.getInvocation().getHistoryId())
