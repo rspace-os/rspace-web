@@ -111,7 +111,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
   public void createLinkWhenInventoryRecordIsSampleTemplateThrows() {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
     req.setStoichiometryMoleculeId(10L);
-    req.setInventoryItemGlobalId("SA200");
+    req.setInventoryItemGlobalId("IT200");
     req.setQuantity(BigDecimal.valueOf(1));
     req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
 
@@ -125,7 +125,10 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     IllegalArgumentException ex =
         assertThrows(IllegalArgumentException.class, () -> manager.createLink(req, user));
-    assertEquals("Cannot link to a sample template", ex.getMessage());
+    assertEquals(
+        "IT200 is a sample template. Only Containers, Samples and Subsamples are valid for"
+            + " linking.",
+        ex.getMessage());
   }
 
   @Test

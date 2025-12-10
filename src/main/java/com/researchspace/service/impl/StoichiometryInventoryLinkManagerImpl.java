@@ -61,7 +61,10 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     if (inventoryRecord instanceof Sample) {
       Sample sample = (Sample) inventoryRecord;
       if (sample.isTemplate()) {
-        throw new IllegalArgumentException(inventoryRecord.getGlobalIdentifier() + " is a sample template. Only Containers, Samples and Subsamples are valid for linking.");
+        throw new IllegalArgumentException(
+            inventoryRecord.getGlobalIdentifier()
+                + " is a sample template. Only Containers, Samples and Subsamples are valid for"
+                + " linking.");
       }
     }
 
