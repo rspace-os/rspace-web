@@ -80,6 +80,7 @@ public class StoichiometryTableDataTest {
         new StoichiometryMoleculeDTO(
             1L,
             2L,
+            null,
             MoleculeRole.REACTANT,
             "formula",
             "name",
