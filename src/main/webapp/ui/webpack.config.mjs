@@ -170,35 +170,40 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.css$/,
-        use: ["style-loader", "css-loader"],
-      },
-      {
-        test: /\.m?jsx?$/,
+        test: /\.(js|jsx|ts|tsx)$/,
         exclude: /node_modules/,
         use: {
-          loader: "babel-loader",
-        },
-      },
-      {
-        test: /\.(ts|tsx)$/,
-        exclude: /node_modules/,
-        use: {
-          loader: "ts-loader",
+          loader: "swc-loader",
           options: {
-            /*
-             * By only transpiling and not also doing a type check, this allows
-             * webpack to build code that might fail at runtime with errors that
-             * could be caught by the type checker. This is useful when
-             * developing code but it is important that the Jenkins build runs
-             * the TypeScript compiler separately to ensure that those errors
-             * don't make it into the production code. Devs should also run
-             * `npm run tsc` or rely their editor's LSP integration before
-             * committing.
-             */
-            transpileOnly: true,
+            env: {
+              targets: "defaults",
+            },
+            jsc: {
+              parser: {
+                syntax: "typescript",
+                tsx: true,
+                decorators: true,
+              },
+              transform: {
+                react: {
+                  runtime: "automatic",
+                },
+              },
+              minify: {
+                compress: {
+                  unused: true,
+                },
+                mangle: true,
+              },
+              externalHelpers: true,
+            },
+            isModule: "unknown",
           },
         },
+      },
+      {
+        test: /\.css$/,
+        use: ["style-loader", "css-loader"],
       },
       {
         test: /\.(png|jpe?g|gif|svg)$/i,
