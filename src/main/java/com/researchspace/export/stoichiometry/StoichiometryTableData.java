@@ -7,7 +7,8 @@ import lombok.Getter;
 
 @Getter
 public class StoichiometryTableData {
-
+  public static String serverPrefix = "";
+  private String inventoryLinkedItem;
   private String name;
   private String role;
   private String limitingReagent;
@@ -21,6 +22,7 @@ public class StoichiometryTableData {
   private String notes;
 
   private StoichiometryTableData(
+      String inventoryLinkedItem,
       String name,
       String role,
       Boolean limitingReagent,
@@ -32,6 +34,8 @@ public class StoichiometryTableData {
       Double actualMoles,
       Double actualYield,
       String notes) {
+    this.inventoryLinkedItem =
+        inventoryLinkedItem != null ? inventoryLinkedItem : "-";
     this.name = name != null ? name : "UNKNOWN";
     this.role = role;
     this.limitingReagent = limitingReagent != null ? limitingReagent.toString() : "false";
@@ -47,6 +51,7 @@ public class StoichiometryTableData {
 
   public StoichiometryTableData(StoichiometryMoleculeDTO moleculeDTO) {
     this(
+        readInventoryItemGlobalId(moleculeDTO),
         moleculeDTO.getName(),
         moleculeDTO.getRole().name(),
         moleculeDTO.getLimitingReagent(),
@@ -58,6 +63,17 @@ public class StoichiometryTableData {
         calculateMoles(moleculeDTO.getActualAmount(), moleculeDTO.getMolecularWeight()),
         moleculeDTO.getActualYield(),
         moleculeDTO.getNotes());
+  }
+
+  public String getServerPrefix() {
+    return serverPrefix;
+  }
+
+  private static String readInventoryItemGlobalId(StoichiometryMoleculeDTO moleculeDTO) {
+    if (moleculeDTO.getInventoryLink() == null) {
+      return null;
+    }
+    return moleculeDTO.getInventoryLink().getInventoryItemGlobalId();
   }
 
   public static String roundToThreeDecimals(Double value) {

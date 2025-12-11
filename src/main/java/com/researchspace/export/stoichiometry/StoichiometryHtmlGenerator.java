@@ -16,18 +16,21 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.velocity.VelocityEngineUtils;
 
 @Service
 public class StoichiometryHtmlGenerator {
+  @Value("${server.urls.prefix}")
+  private String urlPrefix;
 
   @Autowired private StoichiometryService stoichiometryService;
   @Autowired private VelocityEngine velocityEngine;
 
   @SneakyThrows
   public String addStoichiometryLinks(String html, User exporter) {
-
+    StoichiometryTableData.serverPrefix = urlPrefix;
     Document doc = Jsoup.parse(html);
     Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
     for (Element stoichiometryElement : stoichiometryElements) {

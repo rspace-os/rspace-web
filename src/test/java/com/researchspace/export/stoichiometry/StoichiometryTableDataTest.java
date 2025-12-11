@@ -2,9 +2,14 @@ package com.researchspace.export.stoichiometry;
 
 import static org.junit.Assert.assertEquals;
 
+import com.researchspace.model.dtos.chemistry.EmbeddedInventoryLinkDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
+import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.stoichiometry.MoleculeRole;
+import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
+import com.researchspace.model.units.QuantityInfo;
 import org.junit.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class StoichiometryTableDataTest {
 
@@ -34,6 +39,24 @@ public class StoichiometryTableDataTest {
   public void testCalculateNullName() {
     testee = createStoichiometryDataTableWithNullName();
     assertEquals("UNKNOWN", testee.getName());
+  }
+
+  @Test
+  public void testInventoryLinkGlobalID() {
+    testee = createStoichiometryDataTableWithDefaults();
+    assertEquals("SA11", testee.getInventoryLinkedItem());
+  }
+
+  @Test
+  public void testInventoryLinkGlobalIDWhenLinkNull() {
+    testee = createStoichiometryDataTableWithNullInventoryLink();
+    assertEquals("-", testee.getInventoryLinkedItem());
+  }
+
+  private StoichiometryTableData createStoichiometryDataTableWithNullInventoryLink() {
+    StoichiometryMoleculeDTO stdo = createStoichiometryMoleculeDTOWithDefaultsPopulated();
+    stdo.setInventoryLink(null);
+    return new StoichiometryTableData(stdo);
   }
 
   private StoichiometryTableData createStoichiometryDataTableWithNullName() {
@@ -76,11 +99,18 @@ public class StoichiometryTableDataTest {
   }
 
   private static StoichiometryMoleculeDTO createStoichiometryMoleculeDTOWithDefaultsPopulated() {
+    Sample sample = new Sample();
+    sample.setId(11L);
+    QuantityInfo qi = QuantityInfo.of("1");
+    StoichiometryInventoryLink invL = new StoichiometryInventoryLink();
+    ReflectionTestUtils.setField(invL, "quantity", qi);
+    invL.setSample(sample);
+    EmbeddedInventoryLinkDTO linkDTO = EmbeddedInventoryLinkDTO.fromInventoryLink(invL);
     StoichiometryMoleculeDTO stdo =
         new StoichiometryMoleculeDTO(
             1L,
             2L,
-            null,
+            linkDTO,
             MoleculeRole.REACTANT,
             "formula",
             "name",

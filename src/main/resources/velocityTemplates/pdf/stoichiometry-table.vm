@@ -14,6 +14,7 @@
         <th>Molecular Weight (g/mol)</th>
         <th>Mass (g)</th>
         <th>Moles (mol)</th>
+        <th>Inventory</th>
         <th>Actual Mass (g)</th>
         <th>Actual Moles (mol)</th>
         <th>Yield/Excess (%)</th>
@@ -30,6 +31,11 @@
             <td>$molecule.getMolecularWeight()</td>
             <td>$molecule.getMass()</td>
             <td>$molecule.getMoles()</td>
+            #if ($molecule.getInventoryLinkedItem() != '-')
+              <td><a href="$molecule.getServerPrefix()/globalId/$molecule.getInventoryLinkedItem()">$molecule.getInventoryLinkedItem()</a></td>
+            #else
+              <td>$molecule.getInventoryLinkedItem()</td>
+            #end
             <td>$molecule.getActualAmount()</td>
             <td>$molecule.getActualMoles()</td>
             <td>$molecule.getActualYield()</td>

@@ -73,7 +73,7 @@
   .stoichiometry-table td, .stoichiometry-table th {
     border: 1px solid #dddddd;
     text-align: left;
-    font-size: 80%;
+    font-size: 70%;
     max-width: 50px;
   }
   .stoichiometry-table-name {
